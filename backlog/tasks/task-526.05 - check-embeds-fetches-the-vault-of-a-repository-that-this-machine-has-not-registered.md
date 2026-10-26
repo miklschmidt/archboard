@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-24T15:36:00Z'
-updated_date: '2026-10-24T18:46:00Z'
+updated_date: '2026-10-24T19:57:00Z'
 labels:
   - cli
   - code-check
@@ -78,4 +78,15 @@ Code check diff: `archboard check code` with and without `--variant TASK-526.05`
 Footprint against 5ba8b3bb7^: namedAndChanged is Embeds check, as a changed part and the added relationship to Vault repository. changedNotNamed is Vault check (vault.ts: only the text of the command metadata changes) and Commands (the container of both). namedNotChanged is empty.
 
 Left out: the fetch uses Bun.spawn with the signal, as gitOutput does, not the process-group runner of the workspace package. That runner is private and takes no environment. Git's helper processes end with Git. A run killed with SIGKILL can leave a `.incoming-<uuid>` directory in the cache. Nothing reads it, and nothing removes it.
+
+Merged onto TASK-526.04 (feat/check-export-artifacts) in worktree-agent-a34a6f2f72c3208c8. A finding names the recipe's vault as vaultRepo, and the embeds part carries both tracked and vaults. Command interface keeps TASK-526.04's adopted version 133. The TASK-526.05 proposal was drawn again on it with the CLI: Vault repository, Embeds check -> Vault repository (anchor fetched-vaults.ts fetchSteps), and the Embeds check responsibility, now naming tracked embeds and the fetch together.
+
+Follow-ups after the merge:
+- A cached vault can be behind its default branch. Every finding against a cached vault is information. --fix writes no embed from it and says why in notFixed (cachedFinding in embed-findings.ts, checkInVault in embeds-check.ts). ADR 0057 says so.
+- The fetch's Git sets GIT_ASKPASS and SSH_ASKPASS empty and SSH_ASKPASS_REQUIRE=never. Decision: SSH_ASKPASS_REQUIRE=never is added, because SSH_ASKPASS_REQUIRE=force in a person's environment otherwise starts an askpass program.
+- gitOutput and the fetch share gitEnvironment (clients/git/git-environment.ts), which removes GIT_DIR, GIT_WORK_TREE, GIT_INDEX_FILE and the other repository variables.
+- In a Git checkout without a vault, check, check all and check embeds run the embeds check alone (contract field runsWithoutVault, and CommandContext.checkout). Decision on the answer: no vault field, and skipped: {checks: ["semantics", "code"], message} for check and check all, with one stderr line. The exit status comes from the embeds part. check semantics and check code stay VAULT_NOT_FOUND. Every server call still names its vault: the listing and the render name each embed's vault, and the tracked-embed listing is not called without a vault.
+- Proposals: Command interface@TASK-526.05 gains the description of Vault check. Command dispatch@TASK-526.05 (new) adds the branch of Addressing a vault where a command that runs without a vault runs in the checkout.
+
+Code check diff (check code with and without --variant TASK-526.05): the same 40 finding lines. No finding is new, and none is cleared.
 <!-- SECTION:NOTES:END -->

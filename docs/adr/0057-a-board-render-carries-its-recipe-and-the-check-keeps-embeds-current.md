@@ -42,6 +42,16 @@ Information never changes the exit status. `--variant`, `--every-draft` and
 With `check --fix`, the other checks still run and report. The flag `--code`
 is removed, with no alias.
 
+A documentation repository that embeds the boards of another repository's
+vault often has no vault of its own. In a Git checkout without a vault,
+`check`, `check all` and `check embeds` therefore run the embeds check alone,
+over the embeds of that checkout. The check finds the vault of each embed by
+its recipe, as everywhere else. The answer names no vault. Its `skipped` part
+says that the semantics and code checks did not run, and why, and stderr says
+it too. The exit status comes from the embeds check alone. `check semantics`
+and `check code` read a vault, so they are refused there with
+`VAULT_NOT_FOUND`, as every other command is (ADR 0049).
+
 The route that every open pane polls stays the semantics check. A pane never
 starts a language server or a fetch.
 
@@ -156,7 +166,11 @@ it is, as a binding reads its checkout. Otherwise it fetches the whole
 the person's own git credentials. A render reads the vault's configuration and
 the levels of the boards that its nodes stand for, so one board file is not
 enough. The fetch is cached in the state directory by commit. Offline with a
-cached copy, the check uses the cache and says so as information. Offline with
+cached copy, the check uses the cache and says so as information. The cache can
+be behind the default branch, and an embed can be drawn from a newer commit.
+So every finding against a cached vault is information, and `--fix` writes no
+embed from it. The answer then says that the vault came from a cache. A stale
+cache fails no check and draws no embed back to an older picture. Offline with
 no cached copy, a failed fetch is a warning that names the repository.
 
 ### Deleting a board

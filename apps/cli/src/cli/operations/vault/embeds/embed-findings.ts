@@ -52,20 +52,23 @@ function unreadableFinding(embed: CheckoutEmbed, problem: string): EmbedFinding 
 }
 
 /**
- * An embed whose vault no checkout on this machine holds.
+ * An embed whose vault cannot be read.
  * @param embed The embed.
  * @param repo The repository identity its recipe names.
  * @param reason Why the vault cannot be read.
- * @returns The information.
+ * @param code Information for a vault nothing can read, a warning for a fetch
+ * that failed with no copy cached (ADR 0057).
+ * @returns The finding.
  */
 function unavailableFinding(
 	embed: CheckoutEmbed,
 	repo: string | null,
 	reason: string,
+	code: "EMBED_VAULT_UNAVAILABLE" | "EMBED_VAULT_FETCH_FAILED",
 ): EmbedFinding {
 	return findingOn(embed, {
-		severity: "information",
-		code: "EMBED_VAULT_UNAVAILABLE",
+		severity: code === "EMBED_VAULT_FETCH_FAILED" ? "warning" : "information",
+		code,
 		vaultRepo: repo,
 		message: reason,
 	});
@@ -191,6 +194,33 @@ function changedFinding(
 	});
 }
 
+/** Why `--fix` leaves an embed that was checked against a cached vault as it is. */
+const CACHED_NOT_FIXED =
+	"Its vault was read from a cache that can be behind its default branch, so `--fix` left the embed as it was. Run the check again where the fetch succeeds.";
+
+/**
+ * A finding against a vault read from the cache. The cache can be behind the
+ * default branch, so the finding is information, and `--fix` says why it left
+ * the embed as it was, when it would have rewritten it from a fetched vault
+ * (ADR 0057).
+ * @param finding The finding against the cached vault.
+ * @param fix Whether the run was asked to fix.
+ * @param repointable Whether `--fix` can point the recipe at the board that
+ * holds its deleted board's name.
+ * @returns The information.
+ */
+function cachedFinding(finding: EmbedFinding, fix: boolean, repointable: boolean): EmbedFinding {
+	const fixable =
+		finding.code === "EMBED_OUTDATED" ||
+		finding.code === "EMBED_RENDERER_CHANGED" ||
+		(finding.nameHeldBy !== undefined && repointable);
+	return {
+		...finding,
+		severity: "information",
+		...(fix && fixable ? { notFixed: CACHED_NOT_FIXED } : {}),
+	};
+}
+
 /**
  * A tracked embed whose recipe names the vault its board moved from: a board
  * of this vault holds the board now (ADR 0051).
@@ -242,6 +272,7 @@ function trackedMissingFinding(entry: TrackedEntry, own: boolean, root: string):
 }
 
 export {
+	cachedFinding,
 	changedFinding,
 	goneBoardFinding,
 	missingFinding,

@@ -55,14 +55,16 @@ const CHECK_CODE_HELP = [
 const CHECK_ALL_HELP = [
 	"Runs the semantics check, the code check and the embeds check, in that order, and answers with one part for each (ADR 0057). --variant, --every-draft and --plan say what the code check reads, as `check code` describes. --fix draws outdated embeds again, as `check embeds` describes, and the other checks still run and report.",
 	"",
+	"In a Git checkout without a vault, such as a documentation repository that embeds the boards of another repository's vault, only the embeds check runs. The answer's skipped names the semantics and code checks and why, the answer names no vault, and the exit status comes from the embeds check alone.",
+	"",
 	"Exit 1 means the semantics check has a diagnostic or a warning, or the code check or the embeds check has a warning. Information never changes the exit status. No board is changed.",
 ].join("\n");
 
 /** What the embeds check reads and reports. */
 const EMBEDS_CHECK = [
-	"The embeds check finds each embed: a file that Git tracks in the checkout that holds the vault, and that is an SVG document or a PNG with a render recipe. A file that Git ignores, a file without a recipe and an SVG inside an HTML, Markdown or MDX page are no embed.",
+	"The embeds check finds each embed: a file that Git tracks in the checkout that holds the vault, or in a Git checkout without a vault, such as a documentation repository, and that is an SVG document or a PNG with a render recipe. A file that Git ignores, a file without a recipe and an SVG inside an HTML, Markdown or MDX page are no embed.",
 	"",
-	"For each embed, it finds the vault that the recipe names by its repository identity: this checkout's own, or the chosen registered checkout of another repository, read as it is. It finds the board by id, so a renamed board is still found. It draws the recipe again through the server and compares the two. A PNG compares by its SVG's digest, without a browser.",
+	"For each embed, it finds the vault that the recipe names by its repository identity: this checkout's own, or the chosen registered checkout of another repository, read as it is. A repository with no registered checkout is fetched (see Fetched vaults). It finds the board by id, so a renamed board is still found. It draws the recipe again through the server and compares the two. A PNG compares by its SVG's digest, without a browser.",
 	"",
 	"Findings:",
 	"- EMBED_OUTDATED, warning: the fingerprint and the picture changed. The board changed what the picture shows.",
@@ -70,7 +72,9 @@ const EMBEDS_CHECK = [
 	"- A changed fingerprint alone is no finding: the embed is current.",
 	"- EMBED_SOURCE_MISSING, warning: the board, the variant or the view is gone, or the recipe now draws nothing. It names the commit that removed a board when the vault's history has it, and the board that holds its name now.",
 	"- EMBED_RECIPE_UNREADABLE, warning: a recipe that cannot be read.",
-	"- EMBED_VAULT_UNAVAILABLE, information: a vault that no checkout on this machine holds, or a vault in no repository. The embed is not checked.",
+	"- EMBED_VAULT_UNAVAILABLE, information: a vault in no repository, a registered checkout without a vault, an identity that names no remote, a fetched or cached commit without a vault, or a vault that the server refuses. The embed is not checked.",
+	"- EMBED_VAULT_FETCH_FAILED, warning: a fetch failed, and no copy is cached. It names the repository.",
+	"- EMBED_VAULT_CACHED, information: the fetch failed, and the newest cached commit was read.",
 	"- EMBED_VAULT_MOVED: a tracked embed whose board this vault holds, while its recipe names another repository, as after a move. It is a warning in this checkout.",
 	"- EMBED_TRACKED_UNREACHABLE, information: a tracked embed in a repository that no checkout on this machine holds.",
 	"- EMBED_TRACKED_MISSING, information: a tracked embed that is gone, that Git does not track in the checkout it is read in, or that holds the recipe of another board.",
@@ -78,6 +82,13 @@ const EMBEDS_CHECK = [
 	"Tracked embeds (semantic render --track):",
 	"- The check also reads each tracked embed that the vault's boards list. One of this repository is read among the checkout's embeds. One of another repository is read in the working tree of that repository's chosen registered checkout, by the same rules. The answer's tracked lists them all.",
 	"- A finding about a file of another repository names it with embedRepo, and is information whatever its code. A warning would fail the vault's pull request until that repository draws the file again, and it can do that only after the merge.",
+	"",
+	"Fetched vaults:",
+	"- A repository with no registered checkout has the .archboard/vault directory of its default branch fetched, shallow and sparse, from https://<identity>. The fetch uses your own Git credentials and url.insteadOf rules, and never prompts.",
+	"- The copy is cached by commit in the state directory, and read again while the branch has not moved.",
+	"- The answer's vaults lists each vault read with its source: checkout, fetched with its commit, or cache.",
+	"- A cached copy can be behind the default branch, so every finding against it is information, and --fix writes no embed from it. notFixed names why.",
+	"- A shallow fetch has no history, so a gone board of a fetched vault names no removing commit.",
 ].join("\n");
 
 /** The description of `check embeds`: the check, and what --fix does. */

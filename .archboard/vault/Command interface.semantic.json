@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 134,
+	"version": 138,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-24T19:19:28.332Z",
+	"updatedAt": "2026-10-24T19:58:23.104Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -55179,7 +55179,7 @@
 		{
 			"id": "21GbEl6v",
 			"name": "TASK-526.04",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "fkmIpH7L",
 			"summary": "render --track makes a tracked embed that its board lists",
 			"content": {
@@ -58755,9 +58755,3611 @@
 					}
 				]
 			}
+		},
+		{
+			"id": "MIL2mAEV",
+			"name": "TASK-526.05",
+			"lifecycle": "current",
+			"parent": "21GbEl6v",
+			"summary": "check embeds fetches the vault of a repository that this machine has not registered",
+			"content": {
+				"nodes": [
+					{
+						"id": "vAQwlVuz",
+						"order": 1000,
+						"name": "Bootstrap",
+						"kind": "module",
+						"responsibility": "Takes the server address out of argv into the environment before any module that reads it loads, and moves a leading -C behind the command name",
+						"parent": "o5zkAtUT",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/bootstrap/bootstrap.ts"
+						}
+					},
+					{
+						"id": "iIVu1bGE",
+						"order": 2000,
+						"name": "Command catalogue",
+						"kind": "module",
+						"responsibility": "The one table of commands: what exists, what it takes and who owns it",
+						"parent": "OM6pX371",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/invocation/run.ts"
+						}
+					},
+					{
+						"id": "PQcK5dF2",
+						"order": 3000,
+						"name": "Command routing",
+						"kind": "module",
+						"responsibility": "Addresses one command, captures the global flags and bounds the run",
+						"parent": "OM6pX371",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/invocation"
+						},
+						"drillDown": {
+							"board": "Command dispatch",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "E2MAq7W7",
+						"order": 4000,
+						"name": "Contract execution",
+						"kind": "module",
+						"responsibility": "Parses and validates a command's input, runs its handler with the prerequisites it asks for, and presents the answer",
+						"description": "runner.ts is the seam callers import; the steps live here. A command that takes -C answers with the vault it used and how it was found, beside a JSON object answer.",
+						"parent": "o5zkAtUT",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts"
+						}
+					},
+					{
+						"id": "cWbvcIYa",
+						"order": 5000,
+						"name": "Semantic authoring",
+						"kind": "module",
+						"responsibility": "The board list, new, edit, branch and show: the commands that state a board and read it back",
+						"parent": "bLpk2XKU",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/board/board.ts"
+						}
+					},
+					{
+						"id": "OfRn3av3",
+						"order": 6000,
+						"name": "Board client",
+						"kind": "module",
+						"responsibility": "The board routes: reads, writes, renders and the vault check, and the refusals they come back with",
+						"parent": "dHZeNcMs",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/semantic-board-client.ts"
+						}
+					},
+					{
+						"id": "fOJvfmZv",
+						"order": 7000,
+						"name": "Runtime control",
+						"kind": "module",
+						"responsibility": "start, stop and restart: the server as a detached child of this command",
+						"parent": "bLpk2XKU",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/server/server.ts"
+						}
+					},
+					{
+						"id": "MUs4pwRq",
+						"order": 8000,
+						"name": "Archboard server",
+						"kind": "service",
+						"responsibility": "Owns every board and answers every command that reads or writes one",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server"
+						},
+						"drillDown": {
+							"board": "Archboard server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "eOsn0BO4",
+						"order": 9000,
+						"name": "Semantic lifecycle",
+						"kind": "module",
+						"responsibility": "resolve, adopt and shelve: settling a proposal, moving the current designation, setting a proposal aside",
+						"parent": "bLpk2XKU",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/board/lifecycle.ts"
+						}
+					},
+					{
+						"id": "e8DKQF2E",
+						"order": 10000,
+						"name": "Comparison",
+						"kind": "module",
+						"responsibility": "compare: what one variant changed about the one it came from",
+						"parent": "bLpk2XKU",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/compare/compare.ts"
+						}
+					},
+					{
+						"id": "69392DWF",
+						"order": 11000,
+						"name": "Rasterize",
+						"kind": "module",
+						"responsibility": "rasterize: one board as a PNG, headlessly, at native scale",
+						"description": "Asks the Archboard server for the SVG, as render does, then takes that SVG into a headless browser here and photographs it. With --clipboard, rasterize publishes PNG and self-contained HTML to the local desktop through a native clipboard helper. With --against it draws relative to the variant named, as render does. Its receipt names what the picture draws and marks, as render's does.",
+						"parent": "bLpk2XKU",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts"
+						}
+					},
+					{
+						"id": "yQCdykGt",
+						"order": 12000,
+						"name": "Vault check",
+						"kind": "module",
+						"responsibility": "check with its subcommands all, semantics and code, and semantic config: each check fills its own part of one answer, and the vault's vocabulary and everything wrong with its boards",
+						"description": "In a Git checkout that holds no vault, check, check all and check embeds run the embeds check alone, and the answer's skipped says why the semantics and code checks did not run.",
+						"parent": "bLpk2XKU",
+						"groups": [
+							"checks"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/vault/vault.ts"
+						}
+					},
+					{
+						"id": "qBnro8cs",
+						"order": 13000,
+						"name": "Claims",
+						"kind": "module",
+						"responsibility": "claim and release: holding a board for a stretch of agent work",
+						"parent": "bLpk2XKU",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/claim/claim.ts"
+						}
+					},
+					{
+						"id": "vn4RDLH9",
+						"order": 14000,
+						"name": "Panes",
+						"kind": "module",
+						"responsibility": "browser: the live session, its panes with the repository and checkout of each, and pointing one at a board, which makes the caller's checkout the chosen one",
+						"description": "browser show from a known checkout that is not the chosen one of its repository makes it the chosen one for the whole machine, and its answer's chose names the checkout it replaced. browser panes reports each pane's vault, repository and checkout, and own: whether the pane shows the vault a command run here finds. The checkout of a pane or of a shown board is always the directory that holds its vault: the checkout root, or the holder of an untracked vault. It finds that vault without refusing or registering, so it still needs no vault.",
+						"parent": "bLpk2XKU",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/pane/pane.ts"
+						}
+					},
+					{
+						"id": "I6RAbOlG",
+						"order": 15000,
+						"name": "Board rasterizer",
+						"kind": "module",
+						"responsibility": "One headless browser, one PNG at a time, refused rather than cropped",
+						"parent": "QKs0tycT",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/rasterizer"
+						},
+						"drillDown": {
+							"board": "Board rasterizer",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "peyArgPx",
+						"order": 16000,
+						"name": "Entry point",
+						"kind": "module",
+						"responsibility": "Hands the command to the archboard checkout it stands in, if that is not the running source; else takes --url out before configuration loads, refuses a removed environment variable and runs the table",
+						"description": "TASK-472.09. EXPRESS_SERVER_URL and a set ARCHBOARD_VAULT are refused with exit 2, unless the call asks for help, so a variable that is no longer read never addresses another vault or server than the person means.",
+						"parent": "OM6pX371",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/bin.ts"
+						}
+					},
+					{
+						"id": "iIJ5MRhi",
+						"order": 17000,
+						"name": "Server client",
+						"kind": "module",
+						"responsibility": "Provides the typed health, claim, pane, and board-refusal operations that commands use",
+						"description": "These operations call the shared request transport. The transport handles server identity and errors and reads the invocation context for request addressing.",
+						"parent": "dHZeNcMs",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts"
+						}
+					},
+					{
+						"id": "gQ3aPXau",
+						"order": 18000,
+						"name": "Render",
+						"kind": "module",
+						"responsibility": "render: a board, a variant or one of its views as the SVG the Archboard server draws",
+						"description": "With --against it reads the board, resolves the variant named as compare does and draws the picture relative to it, without the Planned frame. The receipt names every node, edge, flow and step the picture draws, how each stands, and the counts of the marks its key shows.",
+						"parent": "bLpk2XKU",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/render.ts"
+						}
+					},
+					{
+						"id": "cw2FjFYV",
+						"order": 19000,
+						"name": "Inspect",
+						"kind": "module",
+						"responsibility": "inspect: one configured group of a board, its members and what crosses its boundary",
+						"parent": "bLpk2XKU",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/inspect/inspect.ts"
+						}
+					},
+					{
+						"id": "7QFtvP30",
+						"order": 20000,
+						"name": "Rename",
+						"kind": "module",
+						"responsibility": "rename: another name for a board or one of its variants, the old name kept opening it",
+						"parent": "bLpk2XKU",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/board/rename.ts"
+						}
+					},
+					{
+						"id": "4oWqpsOB",
+						"order": 21000,
+						"name": "Record",
+						"kind": "module",
+						"responsibility": "record: one walkthrough, narrated by the Codex voice, to a video file",
+						"description": "Reads the board and the vault policy through the Archboard server and hands the walkthrough to the recorder, which keeps the talk it records in the state directory, or where --talk says. With --discard it deletes a board made only to be recorded once the file is written, and keeps one somebody changed meanwhile. With --against every frame marks only what the variant changes over the one named, resolved as compare resolves it, and the talk keeps that variant. Its --out checks and its refusals of the browser and ffmpeg are the ones replay uses (lib/recording-output.ts). The page it records names the found vault's repository as repoA, and a checkout that is not the chosen one of its repository is refused.",
+						"parent": "bLpk2XKU",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/record.ts"
+						}
+					},
+					{
+						"id": "XAJYaUnv",
+						"order": 22000,
+						"name": "Walkthrough recorder",
+						"kind": "module",
+						"responsibility": "Records a walkthrough's talk on the Archboard server's own page, then draws it frame by frame in a second private headless browser and encodes the file through ffmpeg",
+						"description": "It proves an ffmpeg first: the one ARCHBOARD_FFMPEG names, else one on PATH, else nixpkgs#ffmpeg-headless run through Nix, and refuses before any browser starts without one. The talk is kept before its picture is drawn, so a render that fails can be rendered again with replay.",
+						"parent": "QKs0tycT",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime"
+						},
+						"drillDown": {
+							"board": "Board rasterizer",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "jAKtfzMA",
+						"order": 23000,
+						"name": "Repositories",
+						"kind": "module",
+						"responsibility": "repo list, add, use, forget and language-server: the checkouts bindings resolve to, the chosen one for each repository, and the servers configured for each",
+						"description": "Keeps this machine's checkout registry. repo add registers a checkout, with the worktrees git lists for it, or an untracked vault, and never changes which checkout of a repository is chosen. A checkout whose identity is an untracked vault's name keeps it, and the answer's renamed gives the vault's new name. repo use chooses one. repo forget removes one; list shows each, chosen or gone. None of them calls a server: every running server watches the registry file. language-server lives in repo-language-server.ts.",
+						"parent": "bLpk2XKU",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/repo/repo.ts"
+						}
+					},
+					{
+						"id": "XgeEM0Pb",
+						"order": 24000,
+						"name": "Install skill",
+						"kind": "module",
+						"responsibility": "install-skill: copies the bundled skills into a skills root and makes this repository's vault, writing nothing into its CLAUDE.md or AGENTS.md",
+						"description": "TASK-471.03. A command finds the vault from the repository it runs in (ADR 0049), so nothing about it is written down. --repo, else the working directory, names a directory, and the vault is made at the root of the git checkout that holds it, where a command run anywhere in the checkout finds it. The receipt's setup names the repository, its vault, whether the vault was made, whether git ignores it and the documents an earlier block was removed from. --vault, --doc and --yes are gone, and --no-setup, once --no-doc, leaves the repository alone.",
+						"parent": "bLpk2XKU",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/install-skill/install-skill.ts"
+						}
+					},
+					{
+						"id": "2KmUovkl",
+						"order": 25000,
+						"name": "Status",
+						"kind": "module",
+						"responsibility": "status: whether the Archboard server answers, who it is, and what it reports",
+						"parent": "o5zkAtUT",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/server/status.ts"
+						}
+					},
+					{
+						"id": "zK5HmiPd",
+						"order": 26000,
+						"name": "Replay",
+						"kind": "module",
+						"responsibility": "replay: a kept talk rendered to a video file again, in either theme, with no voice",
+						"description": "Needs the Archboard server only for the page it draws in. The board need not exist, and no Codex is involved. A talk that cannot be read is refused as a usage error before a browser starts. Its --out checks and its refusals of the browser and ffmpeg are the ones record uses (lib/recording-output.ts).",
+						"parent": "bLpk2XKU",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts"
+						}
+					},
+					{
+						"id": "o5zkAtUT",
+						"order": 27000,
+						"name": "Command contract",
+						"kind": "module",
+						"responsibility": "Runs one bound command contract: parse, prerequisites, handler, presentation; callers reach it only through its root files",
+						"description": "Callers outside import only the root files of src/cli/command-contract. runner.ts exports runCommand, the one call the router makes; it passes straight on to executeCommand in lib/execution.ts, which is private. bootstrap.ts and status.ts are root files too: the bootstrap bin.ts runs first, and the status command contract.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/protocol/contract"
+						}
+					},
+					{
+						"id": "bLpk2XKU",
+						"order": 28000,
+						"name": "Commands",
+						"kind": "module",
+						"responsibility": "The command table and every command family's contracts and handlers",
+						"description": "Each file at the root of src/cli/commands is one command family's entry: run.ts holds the table that bin.ts runs, and the others export the contracts whose handlers Contract execution calls. Their private helpers under lib/ are not drawn.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations"
+						}
+					},
+					{
+						"id": "gt1eCpcS",
+						"order": 29000,
+						"name": "runCommand",
+						"kind": "function",
+						"responsibility": "The seam a selected contract is run through, with the argv and the abort signal",
+						"description": "The module's public entry point. It passes the call straight on to executeCommand; the execution steps behind it are private (runner.ts).",
+						"parent": "o5zkAtUT",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/runner.ts"
+						}
+					},
+					{
+						"id": "NRfiV6wN",
+						"order": 30000,
+						"name": "Locality",
+						"kind": "module",
+						"responsibility": "Ranks parts by commits that changed their bound declarations or paths, labels path-wide fallback, and lists pairs that change together",
+						"parent": "bLpk2XKU",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/history/locality.ts"
+						}
+					},
+					{
+						"id": "MrE3v2T6",
+						"order": 31000,
+						"name": "Footprint",
+						"kind": "module",
+						"responsibility": "Prints the parts a commit range changed against a proposal, with declaration attribution or explicit path-wide fallback",
+						"parent": "bLpk2XKU",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/history/footprint.ts"
+						}
+					},
+					{
+						"id": "eMSAZPvG",
+						"order": 32000,
+						"name": "Server launcher",
+						"kind": "module",
+						"responsibility": "Starts the Archboard server, which needs no vault, as a detached child when nothing answers, and stops it",
+						"parent": "dHZeNcMs",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/operations"
+						}
+					},
+					{
+						"id": "XKjn4icZ",
+						"order": 33000,
+						"name": "Prerequisites",
+						"kind": "module",
+						"responsibility": "Makes sure what a command needs is there: the server, started when it is not running, and an open canvas",
+						"parent": "o5zkAtUT",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/clients/server/prerequisites.ts"
+						}
+					},
+					{
+						"id": "RC1mDWQR",
+						"order": 34000,
+						"name": "Image clipboard",
+						"kind": "module",
+						"responsibility": "Publishes PNG and HTML to the native desktop clipboard; retains Linux ownership until another copy replaces it",
+						"description": "Uses @teddyzhu/clipboard on Linux and macOS. A detached Bun process owns Linux clipboard data after the command exits. macOS retains the data itself.",
+						"parent": "QKs0tycT",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/runtime/clients/clipboard/copy-image.ts"
+						}
+					},
+					{
+						"id": "X4OD7oEH",
+						"order": 35000,
+						"name": "Clipboard image",
+						"kind": "module",
+						"responsibility": "Builds escaped image HTML and its accessible description from the captured board",
+						"parent": "bLpk2XKU",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/image-clipboard.ts"
+						}
+					},
+					{
+						"id": "NG7OXLv9",
+						"order": 36000,
+						"name": "Source checkout",
+						"kind": "module",
+						"responsibility": "Which archboard checkout this process runs and the port of its server: 3000 for the main checkout, a hash of the path for a worktree; hands a command to the bin/archboard of the checkout it stands in",
+						"description": "The main checkout has a .git directory; a linked worktree has a .git file and takes 10000 + sha256(root path) mod 10000. The default server URL, the --url default and the server's own port all come from here. The hand-off follows the working directory, not -C, and does not happen when the environment sets ARCHBOARD_URL: the URL already names the server, and every Codex thread sets it, so a workhorse in another archboard checkout runs the server's own source (ADR 0050). It waits for the other checkout's command, passes SIGINT, SIGTERM and SIGHUP on to it and answers with its exit status, and it refuses a checkout with no node_modules, naming the bun install to run there.",
+						"parent": "OM6pX371",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workspace/src/runtime/services/source-checkout.ts"
+						}
+					},
+					{
+						"id": "Hoz5AbBB",
+						"order": 37000,
+						"name": "Move",
+						"kind": "module",
+						"responsibility": "semantic move: the whole board into the vault found from --to, as -C finds one, and every drill-down the move rewrote",
+						"description": "TASK-472.15, ADR 0051. --expect-version is required, as for every write. A --to holder the registry does not know is registered, and the answer says so. A move that stopped part way names the drill-downs it rewrote already; the same move run again finishes it.",
+						"parent": "bLpk2XKU",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/board/move.ts"
+						}
+					},
+					{
+						"id": "e5UQUj78",
+						"order": 38000,
+						"name": "Removed variables",
+						"kind": "function",
+						"responsibility": "Names the environment variables archboard no longer reads and the refusal for each, which says what to do instead",
+						"parent": "OM6pX371",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/services/config.ts",
+							"symbol": "removedEnvironmentMessage"
+						}
+					},
+					{
+						"id": "tTkbidT4",
+						"order": 39000,
+						"name": "Repository setup",
+						"kind": "function",
+						"responsibility": "Makes the .archboard/vault of the git checkout that holds the directory when it has none, and takes the block an earlier version wrote out of CLAUDE.md and AGENTS.md, changing nothing else in the file",
+						"description": "Only a begin marker and an end marker that each stand on a line of their own bound a block, across CRLF line endings and never past another begin marker. A marker quoted inside a line is prose and stays, and so does a begin marker whose end marker is gone.",
+						"parent": "bLpk2XKU",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/install-skill/repo-setup.ts",
+							"symbol": "setUpRepository"
+						}
+					},
+					{
+						"id": "OM6pX371",
+						"order": 41000,
+						"name": "Command startup",
+						"kind": "module",
+						"responsibility": "Takes argv from the process to one selected command: hands over to the checkout whose source runs, refuses a removed environment variable, finds the command in the table and bounds its run"
+					},
+					{
+						"id": "dHZeNcMs",
+						"order": 42000,
+						"name": "Server access",
+						"kind": "module",
+						"responsibility": "Every reach to the Archboard server: the one request path, the board routes with their refusals, starting the server when nothing answers, and restarting it on a new bundle"
+					},
+					{
+						"id": "QKs0tycT",
+						"order": 43000,
+						"name": "Pictures and video",
+						"kind": "module",
+						"responsibility": "What a command produces as a picture or a video outside the server: a headless browser makes the PNG, the recorder makes the narrated video, and the clipboard takes the image"
+					},
+					{
+						"id": "Cq8mruW3",
+						"order": 44000,
+						"name": "Views",
+						"kind": "module",
+						"responsibility": "views: every view of a board, with what each draws at a variant",
+						"description": "Draws the overview, every authored view and Everything through the render route that render uses, and reports for each what the picture places (nodes, edges, flows and steps), the marks its key counts and its size. A view that draws nothing on the variant is listed with nothing drawn. --variant, --against and --no-comparison read as render reads them.",
+						"parent": "bLpk2XKU",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/board/views.ts"
+						}
+					},
+					{
+						"id": "nvbnGOtV",
+						"order": 45000,
+						"name": "Restart",
+						"kind": "module",
+						"responsibility": "Stops the server, builds the frontend from this checkout, and starts the server again",
+						"description": "It refuses a server that it could not start again before it stops it, and a refused stop leaves the bundle unbuilt. A failed build refuses with FRONTEND_BUILD_FAILED, carries the build's output and says that the server is stopped. The answer names the entry script of the new bundle, as /health reports it.",
+						"parent": "dHZeNcMs",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/operations/restart.ts"
+						}
+					},
+					{
+						"id": "yHgIapK7",
+						"order": 46000,
+						"name": "Request transport",
+						"kind": "module",
+						"responsibility": "Sends JSON requests, rejects a server from another checkout, and reports transport errors",
+						"parent": "dHZeNcMs",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts"
+						}
+					},
+					{
+						"id": "fF4A9uvU",
+						"order": 47000,
+						"name": "Invocation context",
+						"kind": "module",
+						"responsibility": "Keeps the board, vault, doing line, expected version, and writing session for one CLI invocation",
+						"parent": "dHZeNcMs",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/state/server-client-session.ts"
+						}
+					},
+					{
+						"id": "0O1dnPi4",
+						"order": 48000,
+						"name": "Historical correction",
+						"kind": "module",
+						"responsibility": "Suggests historical commits, previews corrections and writes checked corrections",
+						"parent": "bLpk2XKU",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/board/correct.ts"
+						}
+					},
+					{
+						"id": "ZnGFeQlN",
+						"order": 49000,
+						"name": "Embeds check",
+						"kind": "module",
+						"responsibility": "Draws each render that Git tracks here and each tracked embed of the vault's boards again from its recipe, and reports or redraws the outdated ones; fetches a vault no checkout here holds",
+						"parent": "bLpk2XKU",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/vault/embeds"
+						}
+					},
+					{
+						"id": "7tVxXWJd",
+						"order": 50000,
+						"name": "Tracked embed",
+						"kind": "module",
+						"responsibility": "--track on render and rasterize: names the file by its checkout's repository and path, refuses one no repository keeps, and lists it on the board before it is written",
+						"parent": "bLpk2XKU",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/tracked-embed.ts"
+						}
+					},
+					{
+						"id": "Q8t0whmO",
+						"order": 51000,
+						"name": "Vault repository",
+						"kind": "external",
+						"responsibility": "The Git remote of a repository that this machine has no checkout of, whose default branch holds the vault an embed names"
+					}
+				],
+				"edges": [
+					{
+						"id": "SWg7BPZu",
+						"order": 1000,
+						"from": "peyArgPx",
+						"to": "iIVu1bGE",
+						"kind": "call",
+						"label": "argv, and what bootstrap took",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/bin.ts",
+							"symbol": "runCli"
+						}
+					},
+					{
+						"id": "WUygSWX0",
+						"order": 2000,
+						"from": "iIVu1bGE",
+						"to": "PQcK5dF2",
+						"kind": "call",
+						"label": "argv",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/invocation/run.ts",
+							"symbol": "runCliWith"
+						}
+					},
+					{
+						"id": "jKqNz2j3",
+						"order": 3000,
+						"from": "PQcK5dF2",
+						"to": "gt1eCpcS",
+						"kind": "call",
+						"label": "the selected contract",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/invocation/session.ts",
+							"symbol": "runCommand"
+						}
+					},
+					{
+						"id": "kcqc65Ye",
+						"order": 4000,
+						"from": "E2MAq7W7",
+						"to": "cWbvcIYa",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "ytXRvhS3",
+						"order": 5000,
+						"from": "cWbvcIYa",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "board operation",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/board/board.ts",
+							"symbol": "createSemanticBoardOnServer"
+						}
+					},
+					{
+						"id": "pB6BrbXY",
+						"order": 6000,
+						"from": "yHgIapK7",
+						"to": "MUs4pwRq",
+						"kind": "http",
+						"label": "JSON",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+							"symbol": "fetch"
+						}
+					},
+					{
+						"id": "34TPgaMW",
+						"order": 7000,
+						"from": "E2MAq7W7",
+						"to": "fOJvfmZv",
+						"kind": "call",
+						"label": "lifecycle command",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "LvMXIuAw",
+						"order": 8000,
+						"from": "E2MAq7W7",
+						"to": "eOsn0BO4",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "BsJL3bGP",
+						"order": 9000,
+						"from": "E2MAq7W7",
+						"to": "e8DKQF2E",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "06f3KVxy",
+						"order": 10000,
+						"from": "E2MAq7W7",
+						"to": "69392DWF",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "0b4tib6n",
+						"order": 11000,
+						"from": "E2MAq7W7",
+						"to": "yQCdykGt",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "UD3ngpHC",
+						"order": 12000,
+						"from": "E2MAq7W7",
+						"to": "qBnro8cs",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "yUWUF6TZ",
+						"order": 13000,
+						"from": "E2MAq7W7",
+						"to": "vn4RDLH9",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "Ixm9Y4W9",
+						"order": 14000,
+						"from": "eOsn0BO4",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "board operation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/board/lifecycle.ts",
+							"symbol": "resolveSemanticBoardOnServer"
+						}
+					},
+					{
+						"id": "8bgnBTp4",
+						"order": 15000,
+						"from": "e8DKQF2E",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "board operation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/compare/compare.ts",
+							"symbol": "readSemanticBoardAnswerOnServer"
+						}
+					},
+					{
+						"id": "I2CofSP0",
+						"order": 16000,
+						"from": "69392DWF",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "the drawn SVG",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+							"symbol": "renderSemanticBoardOnServer"
+						}
+					},
+					{
+						"id": "QmcmQeFK",
+						"order": 17000,
+						"from": "yQCdykGt",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "board operation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/vault/vault.ts",
+							"symbol": "checkSemanticVaultOnServer"
+						}
+					},
+					{
+						"id": "RoUCyRav",
+						"order": 18000,
+						"from": "qBnro8cs",
+						"to": "iIJ5MRhi",
+						"kind": "call",
+						"label": "claim, release",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/claim/claim.ts",
+							"symbol": "claimBoard"
+						}
+					},
+					{
+						"id": "b7q8WlCg",
+						"order": 19000,
+						"from": "vn4RDLH9",
+						"to": "iIJ5MRhi",
+						"kind": "call",
+						"label": "browser operation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/pane/pane.ts",
+							"symbol": "openPane"
+						}
+					},
+					{
+						"id": "uwbAloqv",
+						"order": 20000,
+						"from": "69392DWF",
+						"to": "I6RAbOlG",
+						"kind": "call",
+						"label": "photograph it headlessly",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+							"symbol": "createSemanticRasterizer"
+						}
+					},
+					{
+						"id": "Hb5DPGx6",
+						"order": 21000,
+						"from": "fOJvfmZv",
+						"to": "eMSAZPvG",
+						"kind": "call",
+						"label": "start and stop the child",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/server/server.ts",
+							"symbol": "ensureServerRunning"
+						}
+					},
+					{
+						"id": "VN95JmCC",
+						"order": 22000,
+						"from": "peyArgPx",
+						"to": "vAQwlVuz",
+						"kind": "call",
+						"label": "take --url",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/bin.ts",
+							"symbol": "applyCliBootstrap"
+						}
+					},
+					{
+						"id": "EBy8Rjwh",
+						"order": 23000,
+						"from": "OfRn3av3",
+						"to": "yHgIapK7",
+						"kind": "call",
+						"label": "requestJson",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/semantic-board-client.ts",
+							"symbol": "requestJson"
+						}
+					},
+					{
+						"id": "REIYPxdO",
+						"order": 24000,
+						"from": "PQcK5dF2",
+						"to": "fF4A9uvU",
+						"kind": "call",
+						"label": "the stated board, doing, version and the found vault",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/invocation/session.ts",
+							"symbol": "setRequestedBoard"
+						}
+					},
+					{
+						"id": "lkwXJ78e",
+						"order": 25000,
+						"from": "E2MAq7W7",
+						"to": "XKjn4icZ",
+						"kind": "call",
+						"label": "ensure what the command needs",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "requirePrerequisite"
+						}
+					},
+					{
+						"id": "HEDb25Es",
+						"order": 26000,
+						"from": "E2MAq7W7",
+						"to": "gQ3aPXau",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "gbDLoul8",
+						"order": 27000,
+						"from": "E2MAq7W7",
+						"to": "cw2FjFYV",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "ZPdOT4dc",
+						"order": 28000,
+						"from": "E2MAq7W7",
+						"to": "7QFtvP30",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "bbPBYyFU",
+						"order": 29000,
+						"from": "E2MAq7W7",
+						"to": "4oWqpsOB",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "OzD86zWV",
+						"order": 30000,
+						"from": "E2MAq7W7",
+						"to": "jAKtfzMA",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "Xrd124y5",
+						"order": 31000,
+						"from": "E2MAq7W7",
+						"to": "XgeEM0Pb",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "LL4azQxP",
+						"order": 32000,
+						"from": "E2MAq7W7",
+						"to": "2KmUovkl",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "W0x3eks9",
+						"order": 33000,
+						"from": "gQ3aPXau",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "the drawn SVG",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/render.ts",
+							"symbol": "renderSemanticBoardOnServer"
+						}
+					},
+					{
+						"id": "ckxyypj5",
+						"order": 34000,
+						"from": "cw2FjFYV",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "board operation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/inspect/inspect.ts",
+							"symbol": "readSemanticBoardAnswerOnServer"
+						}
+					},
+					{
+						"id": "yyAsw9tJ",
+						"order": 35000,
+						"from": "7QFtvP30",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "board operation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/board/rename.ts",
+							"symbol": "renameSemanticBoardOnServer"
+						}
+					},
+					{
+						"id": "2CGrRQ78",
+						"order": 36000,
+						"from": "4oWqpsOB",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "read the board and the vault check; discard with --discard",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+							"symbol": "readSemanticBoardOnServer"
+						}
+					},
+					{
+						"id": "e0tKOIVM",
+						"order": 37000,
+						"from": "4oWqpsOB",
+						"to": "XAJYaUnv",
+						"kind": "call",
+						"label": "keep the talk here; record the walkthrough",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+							"symbol": "recordWalkthrough"
+						}
+					},
+					{
+						"id": "mLWF1WuB",
+						"order": 38000,
+						"from": "XAJYaUnv",
+						"to": "MUs4pwRq",
+						"kind": "http",
+						"label": "the recording and replay pages",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+							"symbol": "pageUrl"
+						}
+					},
+					{
+						"id": "vGr5usXc",
+						"order": 39000,
+						"from": "2KmUovkl",
+						"to": "iIJ5MRhi",
+						"kind": "call",
+						"label": "health",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/server/status.ts",
+							"symbol": "getHealth"
+						}
+					},
+					{
+						"id": "dXmsg74n",
+						"order": 40000,
+						"from": "E2MAq7W7",
+						"to": "zK5HmiPd",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "Pmb7CjKv",
+						"order": 41000,
+						"from": "zK5HmiPd",
+						"to": "XAJYaUnv",
+						"kind": "call",
+						"label": "read the kept talk and render it again",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts",
+							"symbol": "renderTalk"
+						}
+					},
+					{
+						"id": "T7wRpA8y",
+						"order": 42000,
+						"from": "gt1eCpcS",
+						"to": "E2MAq7W7",
+						"kind": "call",
+						"label": "executeCommand",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/runner.ts",
+							"symbol": "executeCommand"
+						}
+					},
+					{
+						"id": "QiGtsvq5",
+						"order": 43000,
+						"from": "yQCdykGt",
+						"to": "yHgIapK7",
+						"kind": "call",
+						"label": "the code check, in check, check all and check code",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/vault/vault.ts",
+							"symbol": "requestJson"
+						}
+					},
+					{
+						"id": "h9ztm3mp",
+						"order": 44000,
+						"from": "E2MAq7W7",
+						"to": "NRfiV6wN",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "VRlgnU3b",
+						"order": 45000,
+						"from": "NRfiV6wN",
+						"to": "yHgIapK7",
+						"kind": "call",
+						"label": "the hotspots of one board, over a period",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/history/locality.ts",
+							"symbol": "requestJson"
+						}
+					},
+					{
+						"id": "xVdE7NdL",
+						"order": 47000,
+						"from": "MrE3v2T6",
+						"to": "yHgIapK7",
+						"kind": "call",
+						"label": "the footprint, from the server",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/history/footprint.ts",
+							"symbol": "requestJson"
+						}
+					},
+					{
+						"id": "LmUmfrVG",
+						"order": 46000,
+						"from": "E2MAq7W7",
+						"to": "MrE3v2T6",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "TVFLwNL6",
+						"order": 48000,
+						"from": "iIVu1bGE",
+						"to": "bLpk2XKU",
+						"kind": "call",
+						"label": "a contract per command",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/invocation/run.ts",
+							"symbol": "claimContract"
+						}
+					},
+					{
+						"id": "l1mVF45a",
+						"order": 49000,
+						"from": "iIVu1bGE",
+						"to": "2KmUovkl",
+						"kind": "call",
+						"label": "its contract",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/invocation/run.ts",
+							"symbol": "statusContract"
+						}
+					},
+					{
+						"id": "vLSjCUqE",
+						"order": 50000,
+						"from": "bLpk2XKU",
+						"to": "o5zkAtUT",
+						"kind": "call",
+						"label": "define each command",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/claim/claim.ts",
+							"symbol": "defineCommand"
+						}
+					},
+					{
+						"id": "Mv8PiJEJ",
+						"order": 51000,
+						"from": "bLpk2XKU",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "board reply schema",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/input/semantic-input.ts",
+							"symbol": "ReconciliationReportSchema"
+						}
+					},
+					{
+						"id": "wRsRzFtD",
+						"order": 52000,
+						"from": "bLpk2XKU",
+						"to": "fF4A9uvU",
+						"kind": "call",
+						"label": "the stated version and doing",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/input/semantic-input.ts",
+							"symbol": "currentExpectedVersion"
+						}
+					},
+					{
+						"id": "kggkjerM",
+						"order": 53000,
+						"from": "o5zkAtUT",
+						"to": "iIVu1bGE",
+						"kind": "call",
+						"label": "the registry, for the generated audit",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/contract-artifacts/render.ts",
+							"symbol": "cliContractRegistry"
+						}
+					},
+					{
+						"id": "pVNsw2ko",
+						"order": 54000,
+						"from": "PQcK5dF2",
+						"to": "o5zkAtUT",
+						"kind": "call",
+						"label": "shared options, usage errors",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/rules/routing/dispatch.ts",
+							"symbol": "CliUsageError"
+						}
+					},
+					{
+						"id": "4aWZZKkA",
+						"order": 55000,
+						"from": "PQcK5dF2",
+						"to": "vAQwlVuz",
+						"kind": "call",
+						"label": "is it a help request",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/invocation/session.ts",
+							"symbol": "isHelpInvocation"
+						}
+					},
+					{
+						"id": "dMtR5BqB",
+						"order": 56000,
+						"from": "XKjn4icZ",
+						"to": "eMSAZPvG",
+						"kind": "call",
+						"label": "start it when nothing answers",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/clients/server/prerequisites.ts",
+							"symbol": "ensureServerRunning"
+						}
+					},
+					{
+						"id": "EywCr04W",
+						"order": 57000,
+						"from": "XKjn4icZ",
+						"to": "iIJ5MRhi",
+						"kind": "call",
+						"label": "health",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/clients/server/prerequisites.ts",
+							"symbol": "getHealth"
+						}
+					},
+					{
+						"id": "CfLy7gvx",
+						"order": 58000,
+						"from": "eMSAZPvG",
+						"to": "MUs4pwRq",
+						"kind": "call",
+						"label": "spawn it detached",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+							"symbol": "spawn"
+						}
+					},
+					{
+						"id": "qXImR60k",
+						"order": 59000,
+						"from": "eMSAZPvG",
+						"to": "yHgIapK7",
+						"kind": "call",
+						"label": "identity probe",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+							"symbol": "markServerIdentityVerified"
+						}
+					},
+					{
+						"id": "iDjPNIJS",
+						"order": 60000,
+						"from": "2KmUovkl",
+						"to": "eMSAZPvG",
+						"kind": "call",
+						"label": "the port it should answer on",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/server/status.ts",
+							"symbol": "serverPort"
+						}
+					},
+					{
+						"id": "XaWtUC7O",
+						"order": 61000,
+						"from": "69392DWF",
+						"to": "X4OD7oEH",
+						"kind": "call",
+						"label": "copy the captured board",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/image-clipboard.ts",
+							"symbol": "copyImageToClipboard"
+						}
+					},
+					{
+						"id": "vxMXavpj",
+						"order": 62000,
+						"from": "X4OD7oEH",
+						"to": "RC1mDWQR",
+						"kind": "call",
+						"label": "publish PNG and HTML",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/runtime/clients/clipboard/copy-image.ts",
+							"symbol": "copyPngAndHtml"
+						}
+					},
+					{
+						"id": "6eWsf9T9",
+						"order": 63000,
+						"from": "peyArgPx",
+						"to": "NG7OXLv9",
+						"kind": "call",
+						"label": "hand off to the checkout it stands in",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/bin.ts",
+							"symbol": "handOff"
+						}
+					},
+					{
+						"id": "WxUHKpD6",
+						"order": 64000,
+						"from": "yHgIapK7",
+						"to": "NG7OXLv9",
+						"kind": "dependency",
+						"label": "the running checkout, to refuse another's server",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+							"symbol": "SOURCE_CHECKOUT"
+						}
+					},
+					{
+						"id": "NAzwezpK",
+						"order": 65000,
+						"from": "o5zkAtUT",
+						"to": "NG7OXLv9",
+						"kind": "dependency",
+						"label": "the --url default",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/protocol/contract/shared-options.ts",
+							"symbol": "DEFAULT_ARCHBOARD_URL"
+						}
+					},
+					{
+						"id": "b6VB0y3K",
+						"order": 66000,
+						"from": "E2MAq7W7",
+						"to": "Hoz5AbBB",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "PtOjefYY",
+						"order": 67000,
+						"from": "Hoz5AbBB",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "board operation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/board/move.ts",
+							"symbol": "moveSemanticBoardOnServer"
+						}
+					},
+					{
+						"id": "nJzL7FNY",
+						"order": 68000,
+						"from": "Hoz5AbBB",
+						"to": "PQcK5dF2",
+						"kind": "call",
+						"label": "the --to vault, found as -C finds one",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/board/move.ts",
+							"symbol": "findVaultOf"
+						}
+					},
+					{
+						"id": "4y3I6aju",
+						"order": 69000,
+						"from": "peyArgPx",
+						"to": "e5UQUj78",
+						"kind": "call",
+						"label": "refuse a removed variable",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/bin.ts",
+							"symbol": "removedEnvironmentMessage"
+						}
+					},
+					{
+						"id": "Kk4jceif",
+						"order": 70000,
+						"from": "XgeEM0Pb",
+						"to": "tTkbidT4",
+						"kind": "call",
+						"label": "make the vault; remove an earlier block",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/install-skill/install-skill.ts",
+							"symbol": "setUpRepository"
+						}
+					},
+					{
+						"id": "lGBAykHr",
+						"order": 71000,
+						"from": "E2MAq7W7",
+						"to": "Cq8mruW3",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/execution/execution.ts",
+							"symbol": "handler"
+						}
+					},
+					{
+						"id": "wASTe7Yz",
+						"order": 72000,
+						"from": "Cq8mruW3",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "each view, drawn",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/board/views.ts",
+							"symbol": "renderSemanticBoardOnServer"
+						}
+					},
+					{
+						"id": "y3Bs3xSs",
+						"order": 73000,
+						"from": "fOJvfmZv",
+						"to": "nvbnGOtV",
+						"kind": "call",
+						"label": "restart on a new bundle",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/server/server.ts",
+							"symbol": "restartServer"
+						}
+					},
+					{
+						"id": "i7r1YcDJ",
+						"order": 74000,
+						"from": "nvbnGOtV",
+						"to": "NG7OXLv9",
+						"kind": "dependency",
+						"label": "the checkout to build",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
+							"symbol": "SOURCE_CHECKOUT"
+						}
+					},
+					{
+						"id": "eSv7lgu3",
+						"order": 75000,
+						"from": "nvbnGOtV",
+						"to": "eMSAZPvG",
+						"kind": "call",
+						"label": "stop, then start again",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
+							"symbol": "stopServer"
+						}
+					},
+					{
+						"id": "k8S5STpk",
+						"order": 76000,
+						"from": "iIJ5MRhi",
+						"to": "yHgIapK7",
+						"kind": "call",
+						"label": "send each operation as JSON",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+							"symbol": "requestJson"
+						}
+					},
+					{
+						"id": "AvVUuBuI",
+						"order": 77000,
+						"from": "yHgIapK7",
+						"to": "fF4A9uvU",
+						"kind": "call",
+						"label": "address each request with its board, vault, and write claims",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+							"symbol": "withVault"
+						}
+					},
+					{
+						"id": "PDFACmp1",
+						"order": 78000,
+						"from": "PQcK5dF2",
+						"to": "iIJ5MRhi",
+						"kind": "call",
+						"label": "formats board refusals for the command result",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
+							"symbol": "formatBoardRefusal"
+						}
+					},
+					{
+						"id": "y4wp6XOf",
+						"order": 79000,
+						"from": "OfRn3av3",
+						"to": "fF4A9uvU",
+						"kind": "call",
+						"label": "reads the write version, doing line and session",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/semantic-board-client.ts",
+							"symbol": "currentExpectedVersion"
+						}
+					},
+					{
+						"id": "IybnFJlJ",
+						"order": 80000,
+						"from": "iIJ5MRhi",
+						"to": "fF4A9uvU",
+						"kind": "call",
+						"label": "reads the writing session for a pane show",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+							"symbol": "currentWriteSession"
+						}
+					},
+					{
+						"id": "lCIipYgU",
+						"order": 81000,
+						"from": "0O1dnPi4",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/semantic-board-client.ts",
+							"symbol": "correctHistoricalBoardOnServer"
+						}
+					},
+					{
+						"id": "Ws8TuOMn",
+						"order": 82000,
+						"from": "yQCdykGt",
+						"to": "ZnGFeQlN",
+						"kind": "call",
+						"label": "the embeds check, in check, check all and check embeds",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/vault/vault.ts",
+							"symbol": "checkEmbeds"
+						}
+					},
+					{
+						"id": "fgk9GRpA",
+						"order": 83000,
+						"from": "ZnGFeQlN",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "each vault's boards, and each embed drawn again",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/vault/embeds/embed-drawing.ts",
+							"symbol": "renderSemanticBoardOnServer"
+						}
+					},
+					{
+						"id": "tVzZrD5a",
+						"order": 84000,
+						"from": "ZnGFeQlN",
+						"to": "I6RAbOlG",
+						"kind": "call",
+						"label": "draw a PNG embed again, with --fix",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/vault/embeds/embed-drawing.ts",
+							"symbol": "createSemanticRasterizer"
+						}
+					},
+					{
+						"id": "eSIdU4BV",
+						"order": 85000,
+						"from": "gQ3aPXau",
+						"to": "7tVxXWJd",
+						"kind": "call",
+						"label": "with --track, the file to list",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/render.ts",
+							"symbol": "plannedFile"
+						}
+					},
+					{
+						"id": "0MY4uLrI",
+						"order": 86000,
+						"from": "69392DWF",
+						"to": "7tVxXWJd",
+						"kind": "call",
+						"label": "with --track, the file to list",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+							"symbol": "plannedFile"
+						}
+					},
+					{
+						"id": "4D5WvWME",
+						"order": 87000,
+						"from": "7tVxXWJd",
+						"to": "yHgIapK7",
+						"kind": "call",
+						"label": "list the file on the board",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/tracked-embed.ts",
+							"symbol": "requestJson"
+						}
+					},
+					{
+						"id": "jAClHEx7",
+						"order": 88000,
+						"from": "ZnGFeQlN",
+						"to": "yHgIapK7",
+						"kind": "call",
+						"label": "the embeds this vault's boards track",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/vault/embeds/tracked-embeds.ts",
+							"symbol": "requestJson"
+						}
+					},
+					{
+						"id": "JO1EJgzh",
+						"order": 89000,
+						"from": "ZnGFeQlN",
+						"to": "Q8t0whmO",
+						"kind": "data",
+						"label": "the default branch vault, shallow and sparse",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/vault/embeds/fetched-vaults.ts",
+							"symbol": "fetchSteps"
+						}
+					}
+				],
+				"flows": [
+					{
+						"id": "mtgSgmey",
+						"name": "One command's path",
+						"participants": [
+							"peyArgPx",
+							"iIVu1bGE",
+							"PQcK5dF2",
+							"E2MAq7W7",
+							"cWbvcIYa",
+							"OfRn3av3",
+							"yHgIapK7",
+							"MUs4pwRq"
+						],
+						"steps": [
+							{
+								"id": "drY9fnVQ",
+								"from": "peyArgPx",
+								"to": "iIVu1bGE",
+								"label": "runCli(argv)",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/bin.ts",
+									"symbol": "runCli"
+								}
+							},
+							{
+								"id": "BJH7QJcu",
+								"from": "iIVu1bGE",
+								"to": "PQcK5dF2",
+								"label": "runCliWith(COMMANDS, argv)",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/invocation/run.ts",
+									"symbol": "runCliWith"
+								}
+							},
+							{
+								"id": "yDMUPALC",
+								"from": "PQcK5dF2",
+								"to": "E2MAq7W7",
+								"label": "run the selected contract",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/invocation/session.ts",
+									"symbol": "runInterruptibleCommand"
+								}
+							},
+							{
+								"id": "yoVHB67J",
+								"from": "E2MAq7W7",
+								"to": "cWbvcIYa",
+								"label": "handler(input, context)",
+								"kind": "sync",
+								"note": "Shown for semantic show. A handler first asks the context for the server (Running a contract); the server is started when nothing answers (Starting the server).",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/execution/execution.ts",
+									"symbol": "handler"
+								}
+							},
+							{
+								"id": "Veh0crvy",
+								"from": "cWbvcIYa",
+								"to": "OfRn3av3",
+								"label": "readSemanticBoardAnswerOnServer",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/board/board.ts",
+									"symbol": "readSemanticBoardAnswerOnServer"
+								}
+							},
+							{
+								"id": "rhovm4Dt",
+								"from": "OfRn3av3",
+								"to": "yHgIapK7",
+								"label": "requestJson",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/server-lifecycle/src/runtime/clients/semantic-board-client.ts",
+									"symbol": "requestJson"
+								}
+							},
+							{
+								"id": "EmmUHOxW",
+								"from": "yHgIapK7",
+								"to": "MUs4pwRq",
+								"label": "GET the board",
+								"kind": "sync",
+								"note": "Carries the vault, the board and the write claims (A request reaches the server).",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+									"symbol": "fetch"
+								}
+							},
+							{
+								"id": "mbT6i23s",
+								"from": "MUs4pwRq",
+								"to": "yHgIapK7",
+								"label": "board as JSON",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+									"symbol": "fetch"
+								}
+							},
+							{
+								"id": "kT7FGZQI",
+								"from": "yHgIapK7",
+								"to": "OfRn3av3",
+								"label": "the answer, or the server's refusal",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/server-lifecycle/src/runtime/clients/semantic-board-client.ts",
+									"symbol": "readSemanticBoardAnswerOnServer"
+								}
+							},
+							{
+								"id": "arXYdCOH",
+								"from": "OfRn3av3",
+								"to": "cWbvcIYa",
+								"label": "board and warnings",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/server-lifecycle/src/runtime/clients/semantic-board-client.ts",
+									"symbol": "readSemanticBoardAnswerOnServer"
+								}
+							},
+							{
+								"id": "5185g9wi",
+								"from": "cWbvcIYa",
+								"to": "E2MAq7W7",
+								"label": "result and diagnostics",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/board/board.ts",
+									"symbol": "semanticShowContract"
+								}
+							},
+							{
+								"id": "uuYPmVES",
+								"from": "E2MAq7W7",
+								"to": "E2MAq7W7",
+								"label": "validate the result and write it to stdout",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/execution/execution.ts",
+									"symbol": "publishExecution"
+								}
+							},
+							{
+								"id": "jaA6sqP8",
+								"from": "E2MAq7W7",
+								"to": "PQcK5dF2",
+								"label": "done, or the failure to report",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/invocation/session.ts",
+									"symbol": "runInterruptibleCommand"
+								}
+							}
+						]
+					},
+					{
+						"id": "QLEP9gr2",
+						"name": "Taking argv to one command",
+						"participants": [
+							"peyArgPx",
+							"NG7OXLv9",
+							"vAQwlVuz",
+							"e5UQUj78",
+							"iIVu1bGE",
+							"PQcK5dF2",
+							"gt1eCpcS"
+						],
+						"steps": [
+							{
+								"id": "4rugqgOn",
+								"from": "peyArgPx",
+								"to": "NG7OXLv9",
+								"label": "handOff(argv)",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/bin.ts",
+									"symbol": "handOff"
+								}
+							},
+							{
+								"id": "8AHb003I",
+								"kind": "decision",
+								"question": "Does it stand in another archboard checkout?",
+								"alternatives": [
+									{
+										"label": "another checkout",
+										"steps": [
+											{
+												"id": "JNDebM7n",
+												"from": "NG7OXLv9",
+												"to": "NG7OXLv9",
+												"label": "run that checkout's bin/archboard with the same arguments",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workspace/src/runtime/services/source-checkout.ts",
+													"symbol": "runInstead"
+												}
+											},
+											{
+												"id": "5ctXAMbv",
+												"from": "NG7OXLv9",
+												"to": "peyArgPx",
+												"label": "its exit status; the process exits with it",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workspace/src/runtime/services/source-checkout.ts",
+													"symbol": "handOff"
+												}
+											}
+										]
+									},
+									{
+										"label": "this source runs it",
+										"steps": [
+											{
+												"id": "lqzL56xQ",
+												"from": "NG7OXLv9",
+												"to": "peyArgPx",
+												"label": "null: run this process's source",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/workspace/src/runtime/services/source-checkout.ts",
+													"symbol": "handOff"
+												}
+											},
+											{
+												"id": "gTLk0YT5",
+												"from": "peyArgPx",
+												"to": "vAQwlVuz",
+												"label": "applyCliBootstrap(argv)",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/cli/src/bin.ts",
+													"symbol": "applyCliBootstrap"
+												}
+											},
+											{
+												"id": "p5EzD4YC",
+												"from": "vAQwlVuz",
+												"to": "vAQwlVuz",
+												"label": "take --url into the environment; move a leading -C",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/cli/src/cli/operations/bootstrap/bootstrap.ts",
+													"symbol": "applyCliBootstrap"
+												}
+											},
+											{
+												"id": "EhVhOlga",
+												"from": "vAQwlVuz",
+												"to": "peyArgPx",
+												"label": "the url and whether it is a help request",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/cli/src/cli/operations/bootstrap/bootstrap.ts",
+													"symbol": "applyCliBootstrap"
+												}
+											},
+											{
+												"id": "L61Go5Yl",
+												"kind": "decision",
+												"question": "Is a removed environment variable set?",
+												"alternatives": [
+													{
+														"label": "set",
+														"steps": [
+															{
+																"id": "dOFATFqF",
+																"from": "peyArgPx",
+																"to": "e5UQUj78",
+																"label": "removedEnvironmentMessage()",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/bin.ts",
+																	"symbol": "removedEnvironmentMessage"
+																}
+															},
+															{
+																"id": "Y45bxYr8",
+																"from": "e5UQUj78",
+																"to": "peyArgPx",
+																"label": "the refusal for that variable",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/server-lifecycle/src/runtime/services/config.ts",
+																	"symbol": "removedEnvironmentMessage"
+																}
+															},
+															{
+																"id": "ck9pqq5a",
+																"from": "peyArgPx",
+																"to": "peyArgPx",
+																"label": "write the refusal to stderr and exit 2",
+																"kind": "self",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/bin.ts",
+																	"symbol": "removed"
+																}
+															}
+														]
+													},
+													{
+														"label": "none set",
+														"steps": [
+															{
+																"id": "XuewPd5T",
+																"from": "peyArgPx",
+																"to": "iIVu1bGE",
+																"label": "runCli(argv, bootstrap)",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/bin.ts",
+																	"symbol": "runCli"
+																}
+															},
+															{
+																"id": "zw5M31Xz",
+																"from": "iIVu1bGE",
+																"to": "PQcK5dF2",
+																"label": "runCliWith(COMMANDS, argv)",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/cli/operations/invocation/run.ts",
+																	"symbol": "runCliWith"
+																}
+															},
+															{
+																"id": "WrHh1lI1",
+																"kind": "decision",
+																"question": "Does the invocation name a command to run?",
+																"alternatives": [
+																	{
+																		"label": "help, version or an unknown command",
+																		"steps": [
+																			{
+																				"id": "lb8nBdWg",
+																				"from": "PQcK5dF2",
+																				"to": "PQcK5dF2",
+																				"label": "print help or the version, or refuse the unknown name",
+																				"kind": "self",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "apps/cli/src/cli/operations/invocation/session.ts",
+																					"symbol": "commandToRun"
+																				}
+																			}
+																		]
+																	},
+																	{
+																		"label": "a command",
+																		"steps": [
+																			{
+																				"id": "riGzuPxU",
+																				"from": "PQcK5dF2",
+																				"to": "PQcK5dF2",
+																				"label": "refuse the removed board forms",
+																				"kind": "self",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "apps/cli/src/cli/operations/invocation/session.ts",
+																					"symbol": "refuseRetiredBoardForms"
+																				}
+																			},
+																			{
+																				"id": "bbgHGi5q",
+																				"from": "PQcK5dF2",
+																				"to": "PQcK5dF2",
+																				"label": "take the shared options out of the arguments",
+																				"kind": "self",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "apps/cli/src/cli/operations/invocation/session.ts",
+																					"symbol": "takeShared"
+																				}
+																			},
+																			{
+																				"id": "yWhXliYF",
+																				"from": "PQcK5dF2",
+																				"to": "PQcK5dF2",
+																				"label": "select the contract the arguments address",
+																				"kind": "self",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "apps/cli/src/cli/operations/invocation/session.ts",
+																					"symbol": "dispatchedTo"
+																				}
+																			},
+																			{
+																				"id": "1khBh13z",
+																				"kind": "decision",
+																				"question": "Does every shared option stated apply to that command?",
+																				"alternatives": [
+																					{
+																						"label": "one does not apply",
+																						"steps": [
+																							{
+																								"id": "JrBadjsf",
+																								"from": "PQcK5dF2",
+																								"to": "PQcK5dF2",
+																								"label": "refuse as a usage error naming the option and the command",
+																								"kind": "self",
+																								"anchor": {
+																									"repo": "github.com/miklschmidt/archboard",
+																									"path": "apps/cli/src/cli/operations/invocation/session.ts",
+																									"symbol": "assertSharedApplies"
+																								}
+																							}
+																						]
+																					},
+																					{
+																						"label": "all apply",
+																						"steps": [
+																							{
+																								"id": "h0icdPzJ",
+																								"from": "PQcK5dF2",
+																								"to": "PQcK5dF2",
+																								"label": "keep the stated board, doing and version for every request",
+																								"kind": "self",
+																								"anchor": {
+																									"repo": "github.com/miklschmidt/archboard",
+																									"path": "apps/cli/src/cli/operations/invocation/session.ts",
+																									"symbol": "applyShared"
+																								}
+																							},
+																							{
+																								"id": "P5bOP9Ma",
+																								"from": "PQcK5dF2",
+																								"to": "PQcK5dF2",
+																								"label": "find the vault the command addresses",
+																								"kind": "self",
+																								"anchor": {
+																									"repo": "github.com/miklschmidt/archboard",
+																									"path": "apps/cli/src/cli/operations/invocation/session.ts",
+																									"symbol": "addressedVault"
+																								}
+																							},
+																							{
+																								"id": "Lc1Aasrw",
+																								"from": "PQcK5dF2",
+																								"to": "gt1eCpcS",
+																								"label": "run the selected contract under an abort signal",
+																								"kind": "sync",
+																								"anchor": {
+																									"repo": "github.com/miklschmidt/archboard",
+																									"path": "apps/cli/src/cli/operations/invocation/session.ts",
+																									"symbol": "runCommand"
+																								}
+																							}
+																						]
+																					}
+																				]
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "hRMIAomc",
+						"name": "Running a contract",
+						"participants": [
+							"gt1eCpcS",
+							"E2MAq7W7",
+							"cWbvcIYa",
+							"XKjn4icZ",
+							"eMSAZPvG",
+							"iIJ5MRhi"
+						],
+						"steps": [
+							{
+								"id": "Y0Bjg6tS",
+								"from": "gt1eCpcS",
+								"to": "E2MAq7W7",
+								"label": "executeCommand",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/execution/runner.ts",
+									"symbol": "executeCommand"
+								}
+							},
+							{
+								"id": "MxbaZX4O",
+								"from": "E2MAq7W7",
+								"to": "E2MAq7W7",
+								"label": "parse the argv the contract declares",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/execution/execution.ts",
+									"symbol": "commanderParser"
+								}
+							},
+							{
+								"id": "1lR8adGc",
+								"from": "E2MAq7W7",
+								"to": "E2MAq7W7",
+								"label": "validate the tokens against the contract's input schema",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/execution/execution.ts",
+									"symbol": "parseInput"
+								}
+							},
+							{
+								"id": "hkWXffTq",
+								"kind": "decision",
+								"question": "Did the arguments parse and validate?",
+								"alternatives": [
+									{
+										"label": "refused",
+										"steps": [
+											{
+												"id": "z7ZvAyDX",
+												"from": "E2MAq7W7",
+												"to": "gt1eCpcS",
+												"label": "usage error naming each problem and where it sits",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/cli/src/cli/operations/execution/execution.ts",
+													"symbol": "parseInput"
+												}
+											}
+										]
+									},
+									{
+										"label": "valid",
+										"steps": [
+											{
+												"id": "oT5eTa5M",
+												"from": "E2MAq7W7",
+												"to": "cWbvcIYa",
+												"label": "handler(input, context)",
+												"kind": "sync",
+												"note": "Shown for semantic show, whose handler asks for the server.",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/cli/src/cli/operations/execution/execution.ts",
+													"symbol": "handler"
+												}
+											},
+											{
+												"id": "DKr03khi",
+												"from": "cWbvcIYa",
+												"to": "E2MAq7W7",
+												"label": "context.require(prerequisite)",
+												"kind": "sync",
+												"note": "Asked once for each prerequisite in a run; a second ask gets the first answer.",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/cli/src/cli/operations/execution/execution.ts",
+													"symbol": "createCommandContext"
+												}
+											},
+											{
+												"id": "eAEAFpSI",
+												"from": "E2MAq7W7",
+												"to": "XKjn4icZ",
+												"label": "requirePrerequisite",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/cli/src/cli/clients/server/prerequisites.ts",
+													"symbol": "requirePrerequisite"
+												}
+											},
+											{
+												"id": "BMVUhrfx",
+												"kind": "decision",
+												"question": "Which prerequisite does the command need?",
+												"alternatives": [
+													{
+														"label": "the server",
+														"steps": [
+															{
+																"id": "XnTayG4S",
+																"from": "XKjn4icZ",
+																"to": "eMSAZPvG",
+																"label": "ensureServerRunning",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/cli/clients/server/prerequisites.ts",
+																	"symbol": "ensureServerRunning"
+																}
+															},
+															{
+																"id": "XKNKF3Q3",
+																"from": "eMSAZPvG",
+																"to": "XKjn4icZ",
+																"label": "the server's url, or the reason it cannot be reached",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+																	"symbol": "ensureServerRunning"
+																}
+															}
+														]
+													},
+													{
+														"label": "an open canvas",
+														"steps": [
+															{
+																"id": "bVXJxN6E",
+																"from": "XKjn4icZ",
+																"to": "iIJ5MRhi",
+																"label": "getHealth",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/cli/clients/server/prerequisites.ts",
+																	"symbol": "getHealth"
+																}
+															},
+															{
+																"id": "r6aNGtRW",
+																"from": "iIJ5MRhi",
+																"to": "XKjn4icZ",
+																"label": "health with the count of browser panes",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+																	"symbol": "getHealth"
+																}
+															}
+														]
+													}
+												]
+											},
+											{
+												"id": "dExptmQH",
+												"kind": "decision",
+												"question": "Does the prerequisite hold?",
+												"alternatives": [
+													{
+														"label": "no: the server cannot be reached, or no canvas is open",
+														"steps": [
+															{
+																"id": "KLi3zgZ5",
+																"from": "XKjn4icZ",
+																"to": "E2MAq7W7",
+																"label": "SERVER_UNREACHABLE or BROWSER_REQUIRED, which ends the run",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/cli/clients/server/prerequisites.ts",
+																	"symbol": "requirePrerequisite"
+																}
+															}
+														]
+													},
+													{
+														"label": "yes",
+														"steps": [
+															{
+																"id": "lk8EHg6u",
+																"from": "XKjn4icZ",
+																"to": "E2MAq7W7",
+																"label": "the prerequisite holds",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/cli/clients/server/prerequisites.ts",
+																	"symbol": "requirePrerequisite"
+																}
+															},
+															{
+																"id": "318tJ5fy",
+																"from": "E2MAq7W7",
+																"to": "cWbvcIYa",
+																"label": "the answer to context.require",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/cli/operations/execution/execution.ts",
+																	"symbol": "createCommandContext"
+																}
+															},
+															{
+																"id": "BxgDzldo",
+																"from": "cWbvcIYa",
+																"to": "E2MAq7W7",
+																"label": "result, diagnostics and any outcome",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/cli/operations/execution/execution.ts",
+																	"symbol": "handler"
+																}
+															},
+															{
+																"id": "ZnxiWZmS",
+																"from": "E2MAq7W7",
+																"to": "E2MAq7W7",
+																"label": "check the result and select the output case",
+																"kind": "self",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/cli/operations/execution/execution.ts",
+																	"symbol": "publishExecution"
+																}
+															},
+															{
+																"id": "Jsb8REUV",
+																"kind": "loop",
+																"condition": "for each presentation step the output case declares",
+																"steps": [
+																	{
+																		"id": "BvNlGTi6",
+																		"from": "E2MAq7W7",
+																		"to": "E2MAq7W7",
+																		"label": "write the diagnostics, then the result",
+																		"kind": "self",
+																		"anchor": {
+																			"repo": "github.com/miklschmidt/archboard",
+																			"path": "apps/cli/src/cli/operations/execution/execution.ts",
+																			"symbol": "publishExecution"
+																		}
+																	}
+																]
+															},
+															{
+																"id": "68xbXD2m",
+																"from": "E2MAq7W7",
+																"to": "gt1eCpcS",
+																"label": "done; the exit code is set",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/cli/operations/execution/runner.ts",
+																	"symbol": "executeCommand"
+																}
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "Xlfo3lAv",
+						"name": "A request reaches the server",
+						"participants": [
+							"OfRn3av3",
+							"yHgIapK7",
+							"MUs4pwRq"
+						],
+						"steps": [
+							{
+								"id": "BlvdRRwP",
+								"from": "OfRn3av3",
+								"to": "yHgIapK7",
+								"label": "requestJson",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/server-lifecycle/src/runtime/clients/semantic-board-client.ts",
+									"symbol": "requestJson"
+								}
+							},
+							{
+								"id": "cdFfK5DW",
+								"kind": "decision",
+								"question": "What answers at the server address?",
+								"alternatives": [
+									{
+										"label": "another service or another checkout's source",
+										"steps": [
+											{
+												"id": "A2YQ6ASl",
+												"from": "yHgIapK7",
+												"to": "MUs4pwRq",
+												"label": "GET /health",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+													"symbol": "probeHealth"
+												}
+											},
+											{
+												"id": "DJOodCKl",
+												"from": "MUs4pwRq",
+												"to": "yHgIapK7",
+												"label": "an identity that is not this checkout's server",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+													"symbol": "probeHealth"
+												}
+											},
+											{
+												"id": "uuuNQUDo",
+												"from": "yHgIapK7",
+												"to": "OfRn3av3",
+												"label": "SERVER_UNREACHABLE, naming the service or the checkout",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+													"symbol": "verifyIdentity"
+												}
+											}
+										]
+									},
+									{
+										"label": "this server, or one verified in the last 3 seconds",
+										"steps": [
+											{
+												"id": "eizWExyA",
+												"from": "yHgIapK7",
+												"to": "MUs4pwRq",
+												"label": "the route, with the vault and the board",
+												"kind": "sync",
+												"note": "An identity older than 3 seconds is probed with GET /health first, and shared by requests that start meanwhile.",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+													"symbol": "fetch"
+												}
+											},
+											{
+												"id": "246hJJey",
+												"from": "MUs4pwRq",
+												"to": "yHgIapK7",
+												"label": "JSON",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+													"symbol": "fetch"
+												}
+											},
+											{
+												"id": "7HdhjtM5",
+												"kind": "decision",
+												"question": "Did the request succeed?",
+												"alternatives": [
+													{
+														"label": "refused or not reached",
+														"steps": [
+															{
+																"id": "AfrwKD7V",
+																"from": "yHgIapK7",
+																"to": "OfRn3av3",
+																"label": "an error carrying the server's code and its reason",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+																	"symbol": "responseError"
+																}
+															}
+														]
+													},
+													{
+														"label": "succeeded",
+														"steps": [
+															{
+																"id": "8OvW4mS5",
+																"from": "yHgIapK7",
+																"to": "OfRn3av3",
+																"label": "the answer, as the route's own shape",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/server-lifecycle/src/runtime/clients/semantic-board-client.ts",
+																	"symbol": "readSemanticBoardAnswerOnServer"
+																}
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "ekeJcn8d",
+						"name": "Starting the server",
+						"participants": [
+							"XKjn4icZ",
+							"eMSAZPvG",
+							"iIJ5MRhi",
+							"yHgIapK7",
+							"MUs4pwRq"
+						],
+						"steps": [
+							{
+								"id": "W2LfjS3z",
+								"from": "XKjn4icZ",
+								"to": "eMSAZPvG",
+								"label": "ensureServerRunning",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/clients/server/prerequisites.ts",
+									"symbol": "ensureServerRunning"
+								}
+							},
+							{
+								"id": "ar5pcVNG",
+								"from": "eMSAZPvG",
+								"to": "iIJ5MRhi",
+								"label": "probe /health",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+									"symbol": "getHealth"
+								}
+							},
+							{
+								"id": "rIL6FqVI",
+								"from": "iIJ5MRhi",
+								"to": "MUs4pwRq",
+								"label": "GET /health",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+									"symbol": "getHealth"
+								}
+							},
+							{
+								"id": "QfFrSi7Q",
+								"from": "MUs4pwRq",
+								"to": "iIJ5MRhi",
+								"label": "health, or no answer",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+									"symbol": "getHealth"
+								}
+							},
+							{
+								"id": "hpjLKEPe",
+								"from": "iIJ5MRhi",
+								"to": "eMSAZPvG",
+								"label": "health, or null",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+									"symbol": "getHealth"
+								}
+							},
+							{
+								"id": "EaellHlW",
+								"kind": "decision",
+								"question": "What answered?",
+								"alternatives": [
+									{
+										"label": "this server",
+										"steps": [
+											{
+												"id": "cUk9DIuM",
+												"from": "eMSAZPvG",
+												"to": "eMSAZPvG",
+												"label": "remember that it identified itself",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+													"symbol": "ensureServerRunning"
+												}
+											},
+											{
+												"id": "rK6I4bhQ",
+												"from": "eMSAZPvG",
+												"to": "XKjn4icZ",
+												"label": "its url; nothing was started",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+													"symbol": "ensureServerRunning"
+												}
+											}
+										]
+									},
+									{
+										"label": "another service",
+										"steps": [
+											{
+												"id": "Hif58fff",
+												"from": "eMSAZPvG",
+												"to": "XKjn4icZ",
+												"label": "SERVER_UNREACHABLE: something else holds the port",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+													"symbol": "ensureServerRunning"
+												}
+											}
+										]
+									},
+									{
+										"label": "nothing",
+										"steps": [
+											{
+												"id": "m27pan6P",
+												"kind": "decision",
+												"question": "May this machine start it?",
+												"alternatives": [
+													{
+														"label": "refused",
+														"steps": [
+															{
+																"id": "CC3Pa3oq",
+																"from": "eMSAZPvG",
+																"to": "XKjn4icZ",
+																"label": "SERVER_UNREACHABLE: auto-start is not allowed here",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+																	"symbol": "refuseUnlessAutoStartAllowed"
+																}
+															}
+														]
+													},
+													{
+														"label": "allowed",
+														"steps": [
+															{
+																"id": "Y8SMRInQ",
+																"from": "eMSAZPvG",
+																"to": "MUs4pwRq",
+																"label": "spawn it detached",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+																	"symbol": "spawnServer"
+																}
+															},
+															{
+																"id": "Gpu3AtJO",
+																"kind": "loop",
+																"condition": "until /health names the server, it fails or time is up",
+																"steps": [
+																	{
+																		"id": "v2t8hLb0",
+																		"from": "eMSAZPvG",
+																		"to": "iIJ5MRhi",
+																		"label": "probe /health",
+																		"kind": "sync",
+																		"anchor": {
+																			"repo": "github.com/miklschmidt/archboard",
+																			"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+																			"symbol": "getHealth"
+																		}
+																	},
+																	{
+																		"id": "29HD06VX",
+																		"from": "iIJ5MRhi",
+																		"to": "eMSAZPvG",
+																		"label": "health, or null",
+																		"kind": "return",
+																		"anchor": {
+																			"repo": "github.com/miklschmidt/archboard",
+																			"path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+																			"symbol": "getHealth"
+																		}
+																	}
+																]
+															},
+															{
+																"id": "6nNYMtCY",
+																"kind": "decision",
+																"question": "Did the new server answer as itself?",
+																"alternatives": [
+																	{
+																		"label": "it answered",
+																		"steps": [
+																			{
+																				"id": "deHPnTNf",
+																				"from": "eMSAZPvG",
+																				"to": "yHgIapK7",
+																				"label": "mark the identity verified",
+																				"kind": "sync",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+																					"symbol": "markServerIdentityVerified"
+																				}
+																			},
+																			{
+																				"id": "6xDK5Yon",
+																				"from": "eMSAZPvG",
+																				"to": "XKjn4icZ",
+																				"label": "its url; this call started it",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+																					"symbol": "awaitServerReadiness"
+																				}
+																			}
+																		]
+																	},
+																	{
+																		"label": "it failed or timed out",
+																		"steps": [
+																			{
+																				"id": "MCB9Xitj",
+																				"from": "eMSAZPvG",
+																				"to": "eMSAZPvG",
+																				"label": "stop what it spawned and clean up",
+																				"kind": "self",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+																					"symbol": "cleanupFailedStart"
+																				}
+																			},
+																			{
+																				"id": "YZoUrEtP",
+																				"from": "eMSAZPvG",
+																				"to": "XKjn4icZ",
+																				"label": "the failure that stopped it",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+																					"symbol": "cleanupFailedStart"
+																				}
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "4ClOYVjH",
+						"name": "Rasterizing a board",
+						"participants": [
+							"69392DWF",
+							"OfRn3av3",
+							"I6RAbOlG",
+							"X4OD7oEH",
+							"RC1mDWQR"
+						],
+						"steps": [
+							{
+								"id": "Vh0YxFo3",
+								"from": "69392DWF",
+								"to": "OfRn3av3",
+								"label": "renderSemanticBoardOnServer",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+									"symbol": "renderSemanticBoardOnServer"
+								}
+							},
+							{
+								"id": "N4TCRHG6",
+								"from": "OfRn3av3",
+								"to": "69392DWF",
+								"label": "the drawn SVG and its size",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+									"symbol": "renderSemanticBoardOnServer"
+								}
+							},
+							{
+								"id": "AhRJBY8A",
+								"kind": "decision",
+								"question": "Is there anything on the board?",
+								"alternatives": [
+									{
+										"label": "nothing yet",
+										"steps": [
+											{
+												"id": "5AfgfAPx",
+												"from": "69392DWF",
+												"to": "69392DWF",
+												"label": "refuse: there is nothing to draw",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+													"symbol": "semanticRasterizeContract"
+												}
+											}
+										]
+									},
+									{
+										"label": "drawn",
+										"steps": [
+											{
+												"id": "GhASHJTd",
+												"from": "69392DWF",
+												"to": "I6RAbOlG",
+												"label": "rasterize the SVG headlessly",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+													"symbol": "createSemanticRasterizer"
+												}
+											},
+											{
+												"id": "QPo6LyHH",
+												"from": "I6RAbOlG",
+												"to": "69392DWF",
+												"label": "the PNG, after a clean teardown",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+													"symbol": "captureBoard"
+												}
+											},
+											{
+												"id": "T8bNO2C8",
+												"kind": "decision",
+												"question": "Where does the picture go?",
+												"alternatives": [
+													{
+														"label": "--clipboard",
+														"steps": [
+															{
+																"id": "Xndcy7Nf",
+																"from": "69392DWF",
+																"to": "X4OD7oEH",
+																"label": "copyImageToClipboard",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+																	"symbol": "copyImageToClipboard"
+																}
+															},
+															{
+																"id": "Gs1PMnRA",
+																"from": "X4OD7oEH",
+																"to": "RC1mDWQR",
+																"label": "publish PNG and HTML",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/runtime/clients/clipboard/copy-image.ts",
+																	"symbol": "copyPngAndHtml"
+																}
+															},
+															{
+																"id": "xfs6QULw",
+																"from": "RC1mDWQR",
+																"to": "X4OD7oEH",
+																"label": "both formats accepted",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/runtime/clients/clipboard/copy-image.ts",
+																	"symbol": "copyPngAndHtml"
+																}
+															},
+															{
+																"id": "DwwtbxLs",
+																"from": "X4OD7oEH",
+																"to": "69392DWF",
+																"label": "the description of the image",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+																	"symbol": "copyImageToClipboard"
+																}
+															}
+														]
+													},
+													{
+														"label": "--out or standard output",
+														"steps": []
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "LXyLO0hq",
+						"name": "Recording a walkthrough",
+						"participants": [
+							"4oWqpsOB",
+							"OfRn3av3",
+							"XAJYaUnv",
+							"MUs4pwRq"
+						],
+						"steps": [
+							{
+								"id": "GsKol6FV",
+								"from": "4oWqpsOB",
+								"to": "OfRn3av3",
+								"label": "read the board",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+									"symbol": "readSemanticBoardOnServer"
+								}
+							},
+							{
+								"id": "XwD5jWW3",
+								"from": "OfRn3av3",
+								"to": "4oWqpsOB",
+								"label": "the board",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+									"symbol": "readSemanticBoardOnServer"
+								}
+							},
+							{
+								"id": "UCqYu5Jq",
+								"from": "4oWqpsOB",
+								"to": "OfRn3av3",
+								"label": "check the vault",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+									"symbol": "checkSemanticVaultOnServer"
+								}
+							},
+							{
+								"id": "lCtFa5OR",
+								"from": "OfRn3av3",
+								"to": "4oWqpsOB",
+								"label": "the vault check the talk keeps",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+									"symbol": "checkSemanticVaultOnServer"
+								}
+							},
+							{
+								"id": "MgzRPdbW",
+								"from": "4oWqpsOB",
+								"to": "XAJYaUnv",
+								"label": "recordWalkthrough",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+									"symbol": "recordWalkthrough"
+								}
+							},
+							{
+								"id": "zjKBvONh",
+								"from": "XAJYaUnv",
+								"to": "MUs4pwRq",
+								"label": "open the recording page in a private browser",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+									"symbol": "openRecordingPage"
+								}
+							},
+							{
+								"id": "vdI92vRM",
+								"kind": "loop",
+								"condition": "for each beat of the walkthrough",
+								"steps": [
+									{
+										"id": "1Sd9drJ9",
+										"from": "XAJYaUnv",
+										"to": "XAJYaUnv",
+										"label": "the page shows the beat; the voice explains it",
+										"kind": "self",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+											"symbol": "talkIn"
+										}
+									}
+								]
+							},
+							{
+								"id": "I2lY4DdR",
+								"from": "XAJYaUnv",
+								"to": "XAJYaUnv",
+								"label": "keep the talk: the voice, the board and each beat's moment",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+									"symbol": "keptTalk"
+								}
+							},
+							{
+								"id": "aKEt5xKb",
+								"from": "XAJYaUnv",
+								"to": "MUs4pwRq",
+								"label": "draw the talk frame by frame, then encode it",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+									"symbol": "recordWalkthrough"
+								}
+							},
+							{
+								"id": "a2l2nxSK",
+								"from": "XAJYaUnv",
+								"to": "4oWqpsOB",
+								"label": "the video file and the talk's place",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+									"symbol": "recordWalkthrough"
+								}
+							},
+							{
+								"id": "xo1LrsHI",
+								"kind": "decision",
+								"question": "Was --discard given?",
+								"alternatives": [
+									{
+										"label": "discard",
+										"steps": [
+											{
+												"id": "Wjnf9ANY",
+												"from": "4oWqpsOB",
+												"to": "OfRn3av3",
+												"label": "discard the board it recorded",
+												"kind": "sync",
+												"note": "A board that changed while it was recorded is kept.",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+													"symbol": "discardSemanticBoardOnServer"
+												}
+											},
+											{
+												"id": "kS7jlSO0",
+												"from": "OfRn3av3",
+												"to": "4oWqpsOB",
+												"label": "deleted, or kept with the reason",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+													"symbol": "discardRecorded"
+												}
+											}
+										]
+									},
+									{
+										"label": "keep",
+										"steps": []
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "6X1vyJVF",
+						"name": "Replaying a talk",
+						"participants": [
+							"zK5HmiPd",
+							"XAJYaUnv"
+						],
+						"steps": [
+							{
+								"id": "8c5XNQAn",
+								"from": "zK5HmiPd",
+								"to": "zK5HmiPd",
+								"label": "read the kept talk, refused first when it cannot be read",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts",
+									"symbol": "readTalkOrRefuse"
+								}
+							},
+							{
+								"id": "XUtjXtqE",
+								"from": "zK5HmiPd",
+								"to": "XAJYaUnv",
+								"label": "renderTalk",
+								"kind": "sync",
+								"note": "Draws the talk frame by frame on the Archboard server's replay pages, then encodes the file.",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts",
+									"symbol": "renderTalk"
+								}
+							},
+							{
+								"id": "6rTfriiJ",
+								"from": "XAJYaUnv",
+								"to": "zK5HmiPd",
+								"label": "the video file",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts",
+									"symbol": "renderTalk"
+								}
+							}
+						]
+					}
+				],
+				"walkthroughs": [
+					{
+						"id": "a4Lboza5",
+						"name": "Read this board",
+						"beats": [
+							{
+								"id": "BT60n3Ki",
+								"heading": "One catalogue defines the surface",
+								"body": "Every command this CLI has is a row of one table, with the contract that says what it takes. Nothing is registered anywhere else, so help, routing and execution cannot disagree about what exists. Inside another archboard checkout, the entry point first hands the command to that checkout's own bin/archboard, so a worktree runs its own source against its own server. Then it takes --url out, because the modules that talk to the server read its address as they load.",
+								"subjects": [
+									"peyArgPx",
+									"vAQwlVuz",
+									"iIVu1bGE",
+									"PQcK5dF2",
+									"NG7OXLv9"
+								]
+							},
+							{
+								"id": "iVdPEdem",
+								"heading": "The contract bounds the invocation",
+								"body": "Input is validated against the contract before a handler runs, a prerequisite the handler asks for is ensured once, so a server that is not running is started, and the answer is presented one way for every command.",
+								"subjects": [
+									"E2MAq7W7",
+									"kcqc65Ye",
+									"lkwXJ78e"
+								]
+							},
+							{
+								"id": "Mr26GVEr",
+								"heading": "Persistence stays in the server",
+								"body": "No command writes a vault file. Board operations go through the board client, health, claims and panes through the server client, and both reach the Archboard server as JSON over HTTP; the server owns the file, the lease and the version check. What the CLI keeps itself is this machine's list of repository checkouts.",
+								"subjects": [
+									"OfRn3av3",
+									"EBy8Rjwh",
+									"iIJ5MRhi",
+									"pB6BrbXY",
+									"MUs4pwRq",
+									"jAKtfzMA"
+								]
+							},
+							{
+								"id": "tHI5I16e",
+								"heading": "Three commands draw for themselves",
+								"body": "Rasterize asks the Archboard server for the SVG like every other command, then photographs it in a headless browser of its own. Record hands a walkthrough to the recorder: the server's own page plays it while the Codex voice narrates, and the recorder keeps that talk. A second browser then draws the talk frame by frame, and ffmpeg makes the video file. Replay renders a kept talk again, with no voice.",
+								"subjects": [
+									"69392DWF",
+									"uwbAloqv",
+									"I6RAbOlG",
+									"4oWqpsOB",
+									"e0tKOIVM",
+									"XAJYaUnv",
+									"mLWF1WuB",
+									"zK5HmiPd",
+									"Pmb7CjKv"
+								]
+							}
+						]
+					}
+				]
+			}
 		}
 	],
-	"current": "21GbEl6v",
+	"current": "MIL2mAEV",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -58926,6 +62528,12 @@
 			"from": "fkmIpH7L",
 			"at": "2026-10-24T19:19:28.332Z",
 			"reason": "A board lists the embeds it tracks, render --track adds one, and the vault side of check embeds reads them (TASK-526.04)"
+		},
+		{
+			"variant": "MIL2mAEV",
+			"from": "21GbEl6v",
+			"at": "2026-10-24T19:58:23.104Z",
+			"reason": "check embeds fetches the vault of an unregistered repository, and the check runs the embeds check alone in a checkout without a vault (TASK-526.05)"
 		}
 	],
 	"shelvings": [

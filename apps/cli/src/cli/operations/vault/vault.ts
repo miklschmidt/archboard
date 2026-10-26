@@ -9,7 +9,7 @@ import {
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { codeCheckLines } from "#cli/rules/check/code-check-lines.ts";
 import { embedsCheckLines } from "#cli/rules/check/embed-state.ts";
-import { EmbedsPartSchema, type EmbedsPart } from "#cli/protocol/check/embeds-answer.ts";
+import { EmbedsPartSchema } from "#cli/protocol/check/embeds-answer.ts";
 import {
 	CHECK_ALL_HELP,
 	CHECK_CODE_HELP,
@@ -27,6 +27,7 @@ import {
 } from "@archboard/code-intel/code-check";
 import { diagnosticLine, VaultCheckSchema } from "@archboard/board/policy";
 import { SemanticBoardConfigurationSchema } from "@archboard/board/vault-policy";
+import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 
 const output = {
 	cases: [
@@ -130,6 +131,13 @@ const CheckAnswerSchema = z.object({
 	semantics: SemanticsPartSchema.optional(),
 	code: CodeCheckAnswerSchema.optional(),
 	embeds: EmbedsPartSchema.optional(),
+	/**
+	 * The checks that read a vault and did not run, and why: the command ran in
+	 * a Git checkout that holds no vault, where only the embeds check runs.
+	 */
+	skipped: z
+		.object({ checks: z.array(z.enum(["semantics", "code"])), message: z.string() })
+		.optional(),
 });
 type CheckAnswer = z.output<typeof CheckAnswerSchema>;
 
@@ -171,14 +179,34 @@ function warns(part: { readonly findings: readonly { severity: string }[] } | un
 type CheckName = "semantics" | "code" | "embeds";
 
 /**
+ * The checks that read a vault, which a command that runs in a Git checkout
+ * without one leaves out, and why.
+ * @param checks The checks the command runs.
+ * @param checkout The checkout without a vault, or null when the command found a vault.
+ * @returns What the answer says it left out, or undefined when it left out nothing.
+ */
+function skippedWithoutVault(
+	checks: readonly CheckName[],
+	checkout: string | null,
+): CheckAnswer["skipped"] {
+	const skipped = checks.filter((check): check is "semantics" | "code" => check !== "embeds");
+	if (checkout === null || skipped.length === 0) return undefined;
+	return {
+		checks: skipped,
+		message: `${checkout} holds no ${VAULT_DIRECTORY}, so the ${skipped.join(" and ")} checks did not run, because they read a vault. The embeds check read the embeds of this checkout.`,
+	};
+}
+
+/**
  * The lines of a command's stderr: for each part that ran, its times, then its
  * diagnostics or findings.
  * @param answer The parts that ran.
  * @returns The lines, in the order of the parts.
  */
 function checkLines(answer: CheckAnswer): string[] {
-	const { semantics, code, embeds } = answer;
+	const { semantics, code, embeds, skipped } = answer;
 	return [
+		...(skipped === undefined ? [] : [`skipped: ${skipped.checks.join(", ")}: ${skipped.message}`]),
 		...(semantics === undefined
 			? []
 			: [...semantics.timings.map(timingLine), ...semantics.diagnostics.map(diagnosticLine)]),
@@ -186,18 +214,6 @@ function checkLines(answer: CheckAnswer): string[] {
 		...codeCheckLines(code),
 		...embedsCheckLines(embeds),
 	];
-}
-
-/**
- * The embeds check of the vault the command found.
- * @param fix Whether to draw the outdated embeds again.
- * @param context Runtime prerequisites and the vault.
- * @returns The embeds part.
- * @throws {Error} When the command found no vault, which a check command always does.
- */
-async function embedsCheck(fix: boolean, context: CommandContext): Promise<EmbedsPart> {
-	if (context.vault === null) throw new Error("The embeds check reads the vault a command finds.");
-	return checkEmbeds(context.vault.path, { fix, signal: context.signal });
 }
 
 /**
@@ -214,16 +230,17 @@ async function runChecks(
 	context: CommandContext,
 ): Promise<CommandExecution<CheckAnswer>> {
 	await context.require("server", "check");
-	const semantics = checks.includes("semantics")
+	const skipped = skippedWithoutVault(checks, context.checkout);
+	// In a checkout without a vault, only the embeds check runs.
+	const ran = context.checkout === null ? checks : checks.filter((check) => check === "embeds");
+	const semantics = ran.includes("semantics")
 		? await semanticsCheckOnServer(context.signal)
 		: undefined;
-	const code = checks.includes("code")
-		? await codeCheckOnServer(reading, context.signal)
+	const code = ran.includes("code") ? await codeCheckOnServer(reading, context.signal) : undefined;
+	const embeds = ran.includes("embeds")
+		? await checkEmbeds(context, reading.fix === true)
 		: undefined;
-	const embeds = checks.includes("embeds")
-		? await embedsCheck(reading.fix === true, context)
-		: undefined;
-	const answer = { semantics, code, embeds };
+	const answer = { semantics, code, embeds, skipped };
 	return {
 		result: answer,
 		...(failsCheck(answer) ? { outcome: "issues" } : {}),
@@ -398,6 +415,7 @@ const checkContract = defineCommand({
 const checkAllContract = defineCommand({
 	path: ["check", "all"],
 	shared: ["url", "directory"],
+	runsWithoutVault: true,
 	summary: "Run every check of the vault: semantics, code, then embeds",
 	description: CHECK_ALL_HELP,
 	examples: [
@@ -433,6 +451,7 @@ const checkAllContract = defineCommand({
 const checkEmbedsContract = defineCommand({
 	path: ["check", "embeds"],
 	shared: ["url", "directory"],
+	runsWithoutVault: true,
 	summary: "Check the board renders that this checkout's documents embed",
 	description: CHECK_EMBEDS_HELP,
 	examples: ["archboard check embeds", "archboard check embeds --fix"],

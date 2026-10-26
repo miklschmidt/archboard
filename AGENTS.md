@@ -106,12 +106,16 @@ rules that will not stop you:
   instead of being ignored. Inside a git
   checkout only `<root>/.archboard/vault` counts. A checkout without one is
   refused with `VAULT_NOT_FOUND` (exit 2), and nothing above the root is used.
+  The one exception is `check`, `check all` and `check embeds` (contract field
+  `runsWithoutVault`). In a checkout without a vault they run the embeds check
+  alone, and the answer names no vault. `check` and `check all` say in
+  `skipped` that the semantics and code checks did not run.
   Outside any checkout the nearest enclosing `<dir>/.archboard/vault` counts.
   `-C` is a shared option of the commands that call a vault. It stands before
   or after the command name. It changes only where the vault is found:
   `--input`, `--out` and other paths resolve against the working directory.
-  Every JSON answer of those commands names `vault: {path, origin}` (`-C` or
-  `working-directory`). The registry can lack the checkout or untracked vault that a command finds.
+  Every JSON answer of those commands that found a vault names
+  `vault: {path, origin}` (`-C` or `working-directory`). The registry can lack the checkout or untracked vault that a command finds.
   That command then registers it, says so in `vault.registered` and writes one
   line to stderr. The Codex child holds no vault setting: a thread's board
   context names each board's vault, and a thread passes it as `-C`.

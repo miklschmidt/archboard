@@ -1004,7 +1004,7 @@
 			"parserOwner": "CommandContract concrete Commander parser",
 			"handlerOwner": "src/cli/commands/vault.ts",
 			"stdout": "JSON with one part for each check that ran: semantics (policy and diagnostics), code, embeds",
-			"result": "check, check all, check semantics, check code and check embeds (ADR 0057): the semantics part is the shared whole-vault check result, the code part is the code check answer (boards, findings, skipped, behind), and the embeds part is the checkout read, its embeds, the tracked embeds of the vault's boards, their findings and the files --fix rewrote",
+			"result": "check, check all, check semantics, check code and check embeds (ADR 0057): the semantics part is the shared whole-vault check result, the code part is the code check answer (boards, findings, skipped, behind), and the embeds part is the checkout read, its embeds, the tracked embeds of the vault's boards, each vault read with its source (checkout, fetched or cache), their findings and the files --fix rewrote; in a Git checkout without a vault, skipped names the semantics and code checks that did not run",
 			"diagnostics": "actionable file locations and messages on stderr; the code check also writes each finding with its subject and evidence, one line per skip reason with a count (checkouts named), and behind per board and part; the embeds check writes each finding with its code and file, why --fix left it, and each file --fix rewrote",
 			"exits": [0, 1, 2, 3],
 			"prerequisites": ["server"],
@@ -1014,9 +1014,9 @@
 				"GET /api/semantic-boards",
 				"GET /api/semantic-boards/render"
 			],
-			"semantics": "checks YAML configuration and every semantic board family; invalid configuration activates defaults and warnings; unreadable families are errors; check code and check all run the code check (ADR 0046) on its own route, never the polled check: it reads every board at its current variant, or at the draft --variant names where a board has one, never a historical or shelved variant, and only files Git does not ignore in registered checkouts, each language and format an adapter knows through code facts and every other file as text; it warns ANCHOR_PATH_MISSING, ANCHOR_SYMBOL_MISSING, BINDING_SYMBOL_MISSING, ANCHOR_MISMATCH and on a named draft BINDING_PATH_MISSING; from the evidence between each board's bound parts it reports RELATIONSHIP_UNDRAWN once on the part that code reaches with no relationship (a warning when resolved, information on candidates) and, for a relationship with no anchor, RELATIONSHIP_BACKWARDS and RELATIONSHIP_UNSUPPORTED as information, judged against the evidence kinds the vault configuration lets each relationship kind accept; across a network hop it joins an environment value that bound code reads with the compose service, Kubernetes workload or Terraform resource that runs that code and sets the value to another part's address, as configured-path evidence (a compose service runs the directory it builds, and any of them the code drawn inside the part bound to it; a candidate where more than one runner sets the value differently or the address leads to more than one part), and an unsupported relationship whose kind accepts a configured path names the side with no evidence in missing, code or infrastructure (TASK-367.23); for each container bound to a module it holds the derived interface (ADR 0044) against what the module exposes (TypeScript: what its root files export; Python: what a package's __init__.py exposes; Swift: the open, public and package declarations of a target's files; C and C++: what a directory's public headers declare; Terraform and OpenTofu: a module directory's variables and outputs, which a call of it uses), warning ENTRY_POINT_UNEXPOSED on an entry point that owns nothing exposed while a drawn caller's code reaches it from outside the module and CALLER_UNDRAWN on a hidden part whose exposed code an unbound outside file uses at run time, and telling EXPOSED_UNUSED as information for exposed names no file outside the module uses, a module it cannot read skipped as exposure-unknown, and for a Terraform module VARIABLE_PASSED_THROUGH (variables passed unchanged to one argument of a resource) and MODULE_SHALLOW (one resource, every variable passed through) as information; a part bound to a Terraform or OpenTofu root module (a directory of .tf or .tofu files) names an address of that root, read across the local modules it calls and never from state, variable files or .terraform, with no terraform or tofu run, and a reference that joins two such parts is resolved configured-path evidence (TASK-367.17); an address inside a remote module is skipped as module-not-read unless --plan, which may repeat, names a plan JSON from terraform show -json or tofu show -json inside a registered checkout for the root module of its directory, of which only addresses and references are read; it lists what it skipped with the reason, and its behind reading is information (ADR 0045); --variant, --every-draft and --plan belong to check, check all and check code, and check semantics refuses them as usage errors (ADR 0057); check embeds, check and check all run the embeds check (ADR 0057): every file Git tracks in the checkout that holds the vault that is an SVG document or a PNG carrying a render recipe, its vault found by repository identity (this checkout's own, else the chosen registered checkout) and its board by id, drawn again through the render route and compared: EMBED_OUTDATED (fingerprint and picture changed) and EMBED_SOURCE_MISSING (board, variant or view gone, naming the removing commit and the board that holds the name now) and EMBED_RECIPE_UNREADABLE are warnings, EMBED_RENDERER_CHANGED (picture alone changed) and EMBED_VAULT_UNAVAILABLE (no checkout on this machine holds the vault) are information, and a changed fingerprint alone is current; --fix draws outdated embeds again in this checkout (a PNG through Chromium, else it stays reported), writes the new recipe of a current one, and re-points a current overview or Everything recipe at the board that took a deleted board's name; it also reads each tracked embed that the vault's boards list (semantic render --track), one of another repository by the same rules in the chosen registered checkout of that repository, and every finding about such a file names its embedRepo and is information; a tracked embed whose board this vault holds is read against this vault, and a recipe that names another repository, as after a move, is EMBED_VAULT_MOVED (a warning in this checkout); a repository with no checkout on this machine is EMBED_TRACKED_UNREACHABLE and a tracked file that is no embed of its board is EMBED_TRACKED_MISSING, both information; --fix draws a tracked embed of another repository again only in that registered checkout and writes the recipe of a moved one, naming movedFrom; check semantics and check code refuse --fix",
-			"ordering": "validate --variant against --every-draft; check semantics reads current policy and inspects every board; check code runs the code check, which refuses a named plan it does not read before the pass; check and check all run the semantics check, then the code check, then the embeds check; check embeds runs the embeds check, one render at a time in the order Git lists the files and then each tracked embed of another repository in the order the boards list them, and with --fix writes each file as it goes; report all diagnostics; exit 1 if a semantics diagnostic or a code check or embeds check warning remains",
-			"nextFields": ["semantics", "code", "embeds"],
+			"semantics": "checks YAML configuration and every semantic board family; invalid configuration activates defaults and warnings; unreadable families are errors; check code and check all run the code check (ADR 0046) on its own route, never the polled check: it reads every board at its current variant, or at the draft --variant names where a board has one, never a historical or shelved variant, and only files Git does not ignore in registered checkouts, each language and format an adapter knows through code facts and every other file as text; it warns ANCHOR_PATH_MISSING, ANCHOR_SYMBOL_MISSING, BINDING_SYMBOL_MISSING, ANCHOR_MISMATCH and on a named draft BINDING_PATH_MISSING; from the evidence between each board's bound parts it reports RELATIONSHIP_UNDRAWN once on the part that code reaches with no relationship (a warning when resolved, information on candidates) and, for a relationship with no anchor, RELATIONSHIP_BACKWARDS and RELATIONSHIP_UNSUPPORTED as information, judged against the evidence kinds the vault configuration lets each relationship kind accept; across a network hop it joins an environment value that bound code reads with the compose service, Kubernetes workload or Terraform resource that runs that code and sets the value to another part's address, as configured-path evidence (a compose service runs the directory it builds, and any of them the code drawn inside the part bound to it; a candidate where more than one runner sets the value differently or the address leads to more than one part), and an unsupported relationship whose kind accepts a configured path names the side with no evidence in missing, code or infrastructure (TASK-367.23); for each container bound to a module it holds the derived interface (ADR 0044) against what the module exposes (TypeScript: what its root files export; Python: what a package's __init__.py exposes; Swift: the open, public and package declarations of a target's files; C and C++: what a directory's public headers declare; Terraform and OpenTofu: a module directory's variables and outputs, which a call of it uses), warning ENTRY_POINT_UNEXPOSED on an entry point that owns nothing exposed while a drawn caller's code reaches it from outside the module and CALLER_UNDRAWN on a hidden part whose exposed code an unbound outside file uses at run time, and telling EXPOSED_UNUSED as information for exposed names no file outside the module uses, a module it cannot read skipped as exposure-unknown, and for a Terraform module VARIABLE_PASSED_THROUGH (variables passed unchanged to one argument of a resource) and MODULE_SHALLOW (one resource, every variable passed through) as information; a part bound to a Terraform or OpenTofu root module (a directory of .tf or .tofu files) names an address of that root, read across the local modules it calls and never from state, variable files or .terraform, with no terraform or tofu run, and a reference that joins two such parts is resolved configured-path evidence (TASK-367.17); an address inside a remote module is skipped as module-not-read unless --plan, which may repeat, names a plan JSON from terraform show -json or tofu show -json inside a registered checkout for the root module of its directory, of which only addresses and references are read; it lists what it skipped with the reason, and its behind reading is information (ADR 0045); --variant, --every-draft and --plan belong to check, check all and check code, and check semantics refuses them as usage errors (ADR 0057); check embeds, check and check all run the embeds check (ADR 0057): every file Git tracks in the checkout that holds the vault, or in a Git checkout that holds no vault, where they run the embeds check alone, name no vault and exit by it alone while check semantics and check code stay VAULT_NOT_FOUND, that is an SVG document or a PNG carrying a render recipe, its vault found by repository identity (this checkout's own, else the chosen registered checkout, else the .archboard/vault directory of the default branch fetched shallow and sparse with the person's own Git credentials, never prompting, and cached by commit in the state directory) and its board by id, drawn again through the render route and compared: EMBED_OUTDATED (fingerprint and picture changed) and EMBED_SOURCE_MISSING (board, variant or view gone, naming the removing commit and the board that holds the name now) and EMBED_RECIPE_UNREADABLE and EMBED_VAULT_FETCH_FAILED (the fetch failed with no copy cached) are warnings, EMBED_RENDERER_CHANGED (picture alone changed) and EMBED_VAULT_UNAVAILABLE (a vault in no repository, a registered checkout or a fetched commit without one, or a vault the server refuses) are information, a vault read from the cache after a failed fetch is EMBED_VAULT_CACHED information in vaults, every finding against it is information and --fix writes nothing from it, and a changed fingerprint alone is current; --fix draws outdated embeds again in this checkout (a PNG through Chromium, else it stays reported), writes the new recipe of a current one, and re-points a current overview or Everything recipe at the board that took a deleted board's name; it also reads each tracked embed that the vault's boards list (semantic render --track), one of another repository by the same rules in the chosen registered checkout of that repository, and every finding about such a file names its embedRepo and is information; a tracked embed whose board this vault holds is read against this vault, and a recipe that names another repository, as after a move, is EMBED_VAULT_MOVED (a warning in this checkout); a repository with no checkout on this machine is EMBED_TRACKED_UNREACHABLE and a tracked file that is no embed of its board is EMBED_TRACKED_MISSING, both information; --fix draws a tracked embed of another repository again only in that registered checkout and writes the recipe of a moved one, naming movedFrom; check semantics and check code refuse --fix",
+			"ordering": "validate --variant against --every-draft; check semantics reads current policy and inspects every board; check code runs the code check, which refuses a named plan it does not read before the pass; check and check all run the semantics check, then the code check, then the embeds check; check embeds runs the embeds check, one render at a time in the order Git lists the files and then each tracked embed of another repository in the order the boards list them, reading or fetching each vault once when an embed first names it, and with --fix writes each file as it goes; report all diagnostics; exit 1 if a semantics diagnostic or a code check or embeds check warning remains",
+			"nextFields": ["semantics", "code", "embeds", "skipped"],
 			"workflow": "necessary composition",
 			"effects": ["read", "local-write"],
 			"refusals": [
@@ -1917,18 +1917,41 @@
 			"stdout": "raw SVG without --out; file receipt with --out",
 			"result": "the standalone SVG bytes, or the written file receipt with its size",
 			"diagnostics": "errors and server progress on stderr",
-			"exits": [0, 1, 2, 3],
+			"exits": [0, 1, 2, 3, 5],
 			"prerequisites": ["server"],
-			"relationships": ["GET /api/semantic-boards/render"],
-			"semantics": "the renderer owns every coordinate; the board states no geometry and the picture is derived; --no-comparison hides comparison marks and removed subjects, and reports comparedWith as null; --theme auto, the default, declares both grounds and follows the reader's colour scheme; --title draws a title band above the picture; the key is drawn under the picture unless --no-legend, --legend vertical draws it beside it, and --legend-only draws the key alone; stdout and --out carry the same SVG with its render recipe (ADR 0057)",
-			"ordering": "render on the server, then publish SVG bytes or stage the file as an artifact",
-			"nextFields": ["file", "width", "height", "version"],
+			"relationships": [
+				"GET /api/semantic-boards/render",
+				"POST /api/semantic-boards/track-embed (with --track)"
+			],
+			"semantics": "the renderer owns every coordinate; the board states no geometry and the picture is derived; --no-comparison hides comparison marks and removed subjects, and reports comparedWith as null; --theme auto, the default, declares both grounds and follows the reader's colour scheme; --title draws a title band above the picture; the key is drawn under the picture unless --no-legend, --legend vertical draws it beside it, and --legend-only draws the key alone; stdout and --out carry the same SVG with its render recipe (ADR 0057); --track lists the file on the board as a tracked embed, { repo, path }, before the file is written, through a board write that takes the board's lease, needs --doing and raises the version; a file the board lists already writes nothing (ADR 0057)",
+			"ordering": "render on the server, then publish SVG bytes or stage the file as an artifact; with --track, refuse a file outside a Git checkout or of an unregistered vault, then list it on the board, then write the file",
+			"nextFields": ["file", "width", "height", "version", "tracked.version"],
 			"workflow": "necessary composition",
-			"effects": ["read", "local-write"],
+			"effects": ["read", "local-write", "server-state-write"],
 			"refusals": [
 				{
 					"code": "SERVER_UNREACHABLE",
 					"exit": 3
+				},
+				{
+					"code": "TRACK_OUTSIDE_CHECKOUT",
+					"exit": 2
+				},
+				{
+					"code": "TRACK_VAULT_UNREGISTERED",
+					"exit": 2
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
 				}
 			],
 			"classification": "board"
@@ -1941,14 +1964,25 @@
 			"stdout": "raw PNG without a destination; file receipt with --out; clipboard receipt with --clipboard",
 			"result": "the PNG bytes, or a file or clipboard receipt with bitmap size, scale, diagram page, variant, view, source digest, and clipboard formats and description when copied",
 			"diagnostics": "errors and server progress on stderr",
-			"exits": [0, 1, 2, 3, 4],
+			"exits": [0, 1, 2, 3, 4, 5],
 			"prerequisites": ["server"],
-			"relationships": ["GET /api/semantic-boards/render"],
-			"semantics": "the same picture semantic render draws, rasterized in a private headless Chromium at one bitmap pixel per diagram pixel by default; the whole diagram, never fitted, cropped or a substituted view; traffic animation paused at its first frame; --no-comparison hides comparison marks and removed subjects; drawn dark unless --theme light; --title, --legend and --no-legend as semantic render; every PNG carries its SVG's render recipe with the scale and region; --clipboard offers PNG and self-contained HTML together through the native Linux or macOS clipboard",
-			"ordering": "refuse --out with --clipboard before server access; render on the server, rasterize locally, make sure that the bitmap size is correct and cleanup succeeds, then publish PNG bytes, stage the file, or publish both native clipboard formats and await acknowledgement",
-			"nextFields": ["file", "width", "height", "scale", "version", "source.svgSha256"],
+			"relationships": [
+				"GET /api/semantic-boards/render",
+				"POST /api/semantic-boards/track-embed (with --track)"
+			],
+			"semantics": "the same picture semantic render draws, rasterized in a private headless Chromium at one bitmap pixel per diagram pixel by default; the whole diagram, never fitted, cropped or a substituted view; traffic animation paused at its first frame; --no-comparison hides comparison marks and removed subjects; drawn dark unless --theme light; --title, --legend and --no-legend as semantic render; every PNG carries its SVG's render recipe with the scale and region; --clipboard offers PNG and self-contained HTML together through the native Linux or macOS clipboard; --track lists the file on the board as a tracked embed, { repo, path }, before the file is written, through a board write that takes the board's lease, needs --doing and raises the version; a file the board lists already writes nothing (ADR 0057)",
+			"ordering": "refuse --out with --clipboard before server access; render on the server, rasterize locally, make sure that the bitmap size is correct and cleanup succeeds, then publish PNG bytes, stage the file, or publish both native clipboard formats and await acknowledgement; with --track, refuse a file outside a Git checkout or of an unregistered vault, then list it on the board, then write the file",
+			"nextFields": [
+				"file",
+				"width",
+				"height",
+				"scale",
+				"version",
+				"source.svgSha256",
+				"tracked.version"
+			],
 			"workflow": "necessary composition",
-			"effects": ["read", "local-write"],
+			"effects": ["read", "local-write", "server-state-write"],
 			"refusals": [
 				{
 					"code": "SERVER_UNREACHABLE",
@@ -1973,6 +2007,26 @@
 				{
 					"code": "CLIPBOARD_FAILED",
 					"exit": 1
+				},
+				{
+					"code": "TRACK_OUTSIDE_CHECKOUT",
+					"exit": 2
+				},
+				{
+					"code": "TRACK_VAULT_UNREGISTERED",
+					"exit": 2
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
 				}
 			],
 			"classification": "board"

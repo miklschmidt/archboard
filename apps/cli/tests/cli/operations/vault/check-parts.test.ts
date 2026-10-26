@@ -183,7 +183,14 @@ const PartsSchema = z.object({
 	embeds: z.object({ checkout: z.string().nullable(), embeds: z.array(z.string()) }).optional(),
 });
 /** The embeds part of a vault in no Git checkout: no file of it can be an embed. */
-const NO_CHECKOUT = { checkout: null, embeds: [], tracked: [], findings: [], fixed: [] };
+const NO_CHECKOUT = {
+	checkout: null,
+	embeds: [],
+	tracked: [],
+	vaults: [],
+	findings: [],
+	fixed: [],
+};
 
 /** The check commands that read `--fix`, as the registry declares them. */
 const readsFix = (entry: CliRegistryEntry): boolean =>
