@@ -201,10 +201,10 @@ Switch that worktree to another branch before retrying retention.
 Preserve that branch and resolve its ownership before retrying.
 An unsuccessful operation keeps its structured JSON and exits with status 2.
 
-This delivery supports manifest and module inputs, retained checkpoints, description edits, and explicit archive publication.
+This delivery supports module structure and relationship edits, retained checkpoints, and explicit archive publication.
 Use existing board commands for legacy vaults.
 For legacy inventory and identity choices, use [legacy migration](legacy-migration.md).
-Module structure, proposal changes, private archives, and cutover arrive through later TASK-549 slices.
+Proposal changes, private archives, and cutover arrive through later TASK-549 slices.
 
 ## Edit one module description
 
@@ -281,3 +281,84 @@ This action ends ownership without changing architecture content.
 Its former writer then receives `CLAIM_REVOKED` and must stop that intent.
 
 The claim and edit commands accept JSON files or standard input.
+
+## Author module structure and relationships
+
+Use the existing `model edit` command for a structural batch.
+A batch holds every change for one intent.
+Keep its complete revision, explicit current target, operation identity, writer, doing line, and claim.
+Replace the description request's `subject` and `description` with `changes`.
+The earlier description request remains supported.
+
+Use these change forms:
+
+```json
+[
+	{ "type": "add-module", "module": { "name": "Cache", "kind": "service", "order": 40 } },
+	{
+		"type": "edit-module",
+		"subject": "Shop#Gateway",
+		"set": { "name": "API", "parent": "Shop#Worker" },
+		"clear": ["description"]
+	},
+	{ "type": "remove-module", "subject": "Shop#Handler" },
+	{
+		"type": "add-relationship",
+		"source": "Shop#Gateway",
+		"relationship": { "to": "Shop#Worker", "kind": "call", "order": 20 }
+	},
+	{
+		"type": "edit-relationship",
+		"subject": "Shop#Dispatch",
+		"source": "Shop#Worker",
+		"set": { "to": "Shop#Gateway" },
+		"clear": ["traffic"]
+	},
+	{ "type": "remove-relationship", "subject": "Shop#Dispatch" }
+]
+```
+
+These forms are separate examples, rather than one valid combined intent.
+State one edit per continuing subject.
+Use `set` for assigned fields and `clear` for optional fields to remove.
+Omitted fields remain unchanged, and null is invalid.
+A rename retains the old name as a former name.
+Use `set.parent` to reparent a module, or `clear:["parent"]` to make it a root.
+Use `edit-relationship.source` to transfer a relationship without replacing its identity.
+Keep its label, description, order, emphasis, traffic, and anchor unstated to preserve them.
+
+New identities come from Archboard in the model namespace.
+Do not supply an ID, schema version, former names, or outgoing array for an addition.
+The result's subjects and the next model read expose the allocated identities.
+New module files use those identities, rather than names.
+Unique current or former module names remain accepted.
+References to a module added in the same batch use its unique name.
+Relationship edits and removals use qualified IDs.
+
+Claim every affected existing subject before the operation.
+A relationship change includes its identity and former and new source and target modules.
+A containment change includes the moved descendants and former and new ancestor paths.
+For additions and removals, also claim the model ID, such as `Shop`.
+This structure scope protects identity allocation and retirement.
+It leaves unrelated module scopes available.
+For example, a transfer claim can name `["Shop#Gateway","Shop#Worker","Shop#Dispatch"]`.
+Refusals identify affected scopes so that you can release a partial claim and obtain the complete scope.
+
+Module removal also removes incident relationships unless the same batch explicitly repairs their endpoints.
+Reparent or remove every surviving child of a removed container in the same batch.
+Archboard never promotes an orphan automatically.
+Removed module and relationship IDs remain reserved in `model.json`.
+Existing proposal confirmation rules remain unchanged and apply when editing proposals.
+This delivery authors only the explicitly selected current state.
+
+The operation retains one checkpoint and announces one complete affected subject set.
+A retry returns the same allocated identities and result.
+A transfer or removal that stops during installation uses the existing `model recover` command.
+The recovery path preserves foreign bytes and refuses changed checkout context.
+Unrelated authored files remain byte-identical.
+
+The browser refreshes current module names, root membership, and connections after the complete operation.
+The selected module keeps its identity through a rename or reparent.
+Its details identify its parent when it has one.
+Removing that module leaves an explicit missing selection until the reader chooses another subject.
+Exact historical readings keep their original names, containment, and relationships.

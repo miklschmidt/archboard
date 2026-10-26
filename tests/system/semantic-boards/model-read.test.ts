@@ -303,7 +303,7 @@ test("CLI and HTTP share claimed edit outcomes and an event connection starts wi
 			target,
 			writer: "surface-agent",
 			reason: "explaining routing",
-			subjects: ["Shop#Gateway"],
+			subjects: ["Shop#Gateway", "Shop#Worker", "Shop#Dispatch"],
 		}),
 	});
 	expect(claimResponse.status).toBe(200);
@@ -316,12 +316,23 @@ test("CLI and HTTP share claimed edit outcomes and an event connection starts wi
 	if (!claim.success) throw new Error(JSON.stringify(claim));
 	const request = {
 		target,
-		subject: "Shop#Gateway",
 		expectedRevision: current.revision,
 		operationId: "surface-edit",
 		writer: "surface-agent",
 		claim: claim.claim.id,
-		description: "A durable surface edit.",
+		changes: [
+			{
+				type: "edit-module",
+				subject: "Shop#Gateway",
+				set: { name: "API", description: "A durable surface edit." },
+			},
+			{
+				type: "edit-relationship",
+				subject: "Shop#Dispatch",
+				source: "Shop#Worker",
+				set: { to: "Shop#Gateway" },
+			},
+		],
 	};
 	const cli = runServerCli({
 		repoRoot,
@@ -366,8 +377,20 @@ test("CLI and HTTP share claimed edit outcomes and an event connection starts wi
 			vault,
 			reading: {
 				success: true,
+				relationships: [
+					expect.objectContaining({
+						id: "Shop#Dispatch",
+						from: "Shop#Worker",
+						to: "Shop#Gateway",
+						emphasis: "hero",
+					}),
+				],
 				modules: expect.arrayContaining([
-					expect.objectContaining({ id: "Shop#Gateway", description: request.description }),
+					expect.objectContaining({
+						id: "Shop#Gateway",
+						name: "API",
+						description: "A durable surface edit.",
+					}),
 				]),
 			},
 			claims: { success: true, claims: [{ id: claim.claim.id }] },
