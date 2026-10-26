@@ -4,7 +4,7 @@ status: accepted
 
 # A node standing for another board carries that board's level
 
-[ADR 0058](0058-canonical-model-reads-keep-legacy-authority-explicit.md) replaces fixed board-level navigation for authored canonical models.
+[ADR 0058](0060-canonical-model-reads-keep-legacy-authority-explicit.md) replaces fixed board-level navigation for authored canonical models.
 The rules below still govern legacy boards until explicit migration.
 
 `external` carried two jobs. The skill defines it as a part outside the
