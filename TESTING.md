@@ -130,8 +130,9 @@ echo '{"nodes": [{"name": "Order queue", "kind": "queue"}],
 
 Each command prints its answer as JSON on stdout and one sentence on stderr.
 The three writes take the board to versions 1, 2 and 3. `compare` reports the
-queue and its two relationships as added. If the configuration and every board
-in the vault are valid, `check` exits 0.
+queue and its two relationships as added. `check` runs every check: the
+semantics check of the vault and the code check. It exits 0 when the
+configuration and every board are valid and the code check has no warning.
 
 The board is the file `payments.semantic.json` in the vault. It holds the
 current variant and every proposal. Write it only through the CLI.
@@ -220,7 +221,7 @@ speakers:
 
 - The exit codes mean: 0 success, 1 an error, 2 wrong usage, 3 no answer from
   the server, 4 no browser page, and 5 a refused board write. `check` exits 1
-  while the vault still has diagnostics.
+  while a check still has a diagnostic or a warning.
 - The answer of a command is JSON on stdout. The reason for a failure is on
   stderr.
 - The server log is `archboard.log` in the state directory.

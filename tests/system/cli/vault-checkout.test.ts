@@ -1,4 +1,4 @@
-// `check --code` against the vault of a linked worktree (ADR 0049,
+// `check code` against the vault of a linked worktree (ADR 0049,
 // TASK-472.03): a binding into the vault's own repository reads the worktree's
 // files while the main checkout is the chosen one, and a binding into another
 // repository reads that repository's chosen checkout. An owned server, with a
@@ -89,7 +89,7 @@ afterAll(async () => {
 	fixture?.dispose();
 });
 
-test("check --code reads the worktree for its own repository and the chosen checkout for another", () => {
+test("check code reads the worktree for its own repository and the chosen checkout for another", () => {
 	const made = cli(
 		["semantic", "new", "orders", "--doing", "drawing the worktree's bindings"],
 		JSON.stringify({
@@ -104,16 +104,16 @@ test("check --code reads the worktree for its own repository and the chosen chec
 	);
 	expect(made.status, made.stderr).toBe(0);
 
-	const checked = cli(["check", "--code"]);
+	const checked = cli(["check", "code"]);
 	const answer = JSON.parse(checked.stdout) as {
-		codeCheck: { findings: { code: string; subject?: { name: string } }[] };
+		code: { findings: { code: string; subject?: { name: string } }[] };
 	};
 	// The symbol that only the worktree defines is found, and the one that only
 	// the chosen main checkout defines is not: the worktree is what is read. In
 	// billing, read in its chosen checkout, its own symbol is found and the
 	// worktree's is not; a repository that was not read would be skipped instead.
 	expect(
-		answer.codeCheck.findings
+		answer.code.findings
 			.filter((finding) => finding.code === "BINDING_SYMBOL_MISSING")
 			.map((finding) => finding.subject?.name)
 			.toSorted(),

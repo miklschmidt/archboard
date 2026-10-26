@@ -109,14 +109,14 @@ In infrastructure it is the address of the declaration:
 `Deployment/checkout` in a Kubernetes manifest, `services.checkout` in a
 compose file. With a symbol, two parts can bind one file and stay told apart;
 without one, the part owns the whole file or directory. A changed symbol is a
-changed binding in a comparison. `archboard check` tests the path only;
-`archboard check --code` warns with `BINDING_SYMBOL_MISSING` when the bound
+changed binding in a comparison. `archboard check semantics` tests the path only;
+`archboard check code` warns with `BINDING_SYMBOL_MISSING` when the bound
 file or directory does not define the symbol. Code facts read TypeScript and
 TSX, Python, C and C++, Objective-C, C# and .NET project files, Swift,
 Terraform and OpenTofu, Kubernetes manifests, docker-compose files, env files
 and Nix flakes. Any other file, such as Objective-C++ (`.mm`), is read only as
 text: it must hold the symbol's last name, and nothing that needs references is
-judged in it. `check --code` names the kinds of file that it read as text in
+judged in it. `check code` names the kinds of file that it read as text in
 its `text-only` skip. A C, C++ or Objective-C part bound to a source file also
 owns its header, and one bound to a header owns its source file: the file of
 the other kind with the same name beside it, or the only one of that name in
@@ -158,13 +158,13 @@ written as the configuration writes it, without an instance key.
 `aws_lambda_function.api` is a declaration of the root module itself.
 `module.checkout.aws_lambda_function.api` is one inside the module that the
 call `checkout` makes, and `module.checkout` is that whole module instance.
-`check --code` reads the root module and every local module that it calls, a
+`check code` reads the root module and every local module that it calls, a
 `source` that starts with `./` or `../`. When the configuration no longer
 declares the address, it warns with `BINDING_SYMBOL_MISSING`. It never reads
 state, a `.tfvars` file or `.terraform`, and never runs `terraform` or `tofu`.
 So it skips an address inside a remote module (the registry, Git) as
 `module-not-read`. To read that module, name a plan JSON with
-`check --code --plan <file>`: what `terraform show -json` or `tofu show -json`
+`check code --plan <file>`: what `terraform show -json` or `tofu show -json`
 wrote into the root module's directory. A reference that joins two such parts
 is evidence. The reference can go through the variables and outputs of a
 module, and the call of a remote module reaches what its arguments name. The
@@ -265,7 +265,7 @@ the caller's manifest and the Service that it names: `Service/cart` in
 Bind a Nix flake output to `flake.nix`, with its attribute path as `symbol`,
 written whole from the output's name: `packages.x86_64-linux.archboard`,
 `devShells.aarch64-darwin.default`, `nixosConfigurations.host`,
-`overlays.default`. `check --code` reads the outputs from the file without
+`overlays.default`. `check code` reads the outputs from the file without
 evaluating it, and never runs `nix`. It follows an attribute set, `let ... in`,
 the file's own functions such as `forAllSystems`, `genAttrs`, flake-utils'
 `eachSystem` and `eachDefaultSystem`, and flake-parts' `mkFlake` with
@@ -430,7 +430,7 @@ A check diagnostic about one node or one relationship carries a `subject`,
 `{ "kind": "node" | "edge" | "step", "id", "name" }`, next to its `board` and
 `variant`. `archboard check` prints the subject's name before the message. A
 relationship's name is its ends, `From -> To`; a step's is its flow, its ends
-and its label, `Flow: From -> To: label`, and only `check --code` names one. A diagnostic about the board or
+and its label, `Flow: From -> To: label`, and only `check code` names one. A diagnostic about the board or
 the configuration has none, and nor has a `RELATIONSHIP_*` write warning: that
 one names its relationship in its `path`.
 
@@ -528,7 +528,7 @@ calls ([the worked example](create-architecture.md) anchors every relationship).
 an end can be unbound or external, and the proof can live in another
 repository. The anchor stores no line, because a line moves with every edit
 above it. It is bookkeeping: a comparison never reads a new or better anchor
-as a change, and a proposal merges it like `emphasis`. `archboard check --code`
+as a change, and a proposal merges it like `emphasis`. `archboard check code`
 warns with `ANCHOR_PATH_MISSING` when its file is not in the checkout, with
 `ANCHOR_SYMBOL_MISSING` when the file neither defines nor uses the symbol (a
 name in a comment or a string does not count, except the name of an
@@ -542,7 +542,7 @@ a way the relationship's kind does not accept: a name used only as a type is
 kind under `relationshipKinds` in `config.yaml` says what it accepts; a kind
 without one accepts everything.
 
-Between the bound parts of a board, `check --code` reads the evidence in their
+Between the bound parts of a board, `check code` reads the evidence in their
 code. A part whose code runs another bound part's code (calls or constructs
 it, renders it, sends it a message), with no relationship or step between them
 or between parts that hold them, is `RELATIONSHIP_UNDRAWN` on the part it
@@ -583,7 +583,7 @@ repository that you work in, read [setup](setup.md). It says what to install and
 run. A configured server runs the code of that repository.
 
 A relationship across a network hop shows no evidence in code alone. An
-example is an `http` call to another service. So `check --code` joins two
+example is an `http` call to another service. So `check code` joins two
 halves. The code of the start reads an environment value, such as
 `process.env.ORDERS_URL` or `os.environ["DATABASE_URL"]`. The infrastructure
 that runs that code sets the value to the address of the end. In compose, that
@@ -622,7 +622,7 @@ name of the value as `symbol`, such as `DATABASE_URL`. If the code reads no
 value, anchor the line that makes the call. A library can read the value, or
 the code can hold the address.
 
-For a container bound to a module, `check --code` also holds the interface
+For a container bound to a module, `check code` also holds the interface
 that the board derives against what the module exposes. The module is a bound
 directory, or the `index.ts`, `__init__.py` or `.csproj` that stands for one. In
 TypeScript, the module exposes what its root files export, also the names that
@@ -691,7 +691,7 @@ That record decides what a valid payload cannot:
   event or a subscription is `event`; a message put on a queue is `queue`; an
   HTTP request is `http`; a dependency the source imports but never calls at
   this level is a `dependency`. Use the configured kind that names what the
-  source does; its `evidence` list says what `check --code` accepts as proof.
+  source does; its `evidence` list says what `check code` accepts as proof.
 
 After the write, read the saved `edges` against the record: every relationship
 has a line, every line has a relationship, and no relationship exists without

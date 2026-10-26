@@ -1,12 +1,15 @@
-// `archboard check --code` from its arguments to its streams and exit status
-// (ADR 0046): it asks the plain check and then the code check route, prints
-// both, and only a diagnostic or a warning fails it. Behind is information
-// (ADR 0045), so a board many commits behind never does. Without `--code` the
-// command never asks the code check route. `--variant` names the draft the
-// route reads. Only the Archboard server is a stand-in.
+// `archboard check` and its subcommands from their arguments to their streams
+// and exit status (ADR 0057, ADR 0046): `check` and `check all` ask the
+// semantics check and then the code check route, `check semantics` and `check
+// code` ask one each, the answer holds a part for each check that ran, and only
+// a diagnostic or a warning fails it. Behind is information (ADR 0045), so a
+// board many commits behind never does. `--variant`, `--every-draft` and
+// `--plan` name what the code check reads. Only the Archboard server is a
+// stand-in.
 
 import { afterAll, expect, spyOn, test } from "bun:test";
 import { resolve } from "node:path";
+import { z } from "zod";
 import {
 	CodeCheckAnswerSchema,
 	type CodeCheckAnswer,
@@ -18,6 +21,7 @@ import {
 	VaultCheckSchema,
 	type VaultCheck,
 } from "@archboard/board/policy";
+import type { CliRegistryEntry } from "#cli/protocol/routing/route.ts";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
 
 const clean: VaultCheck = {
@@ -118,7 +122,7 @@ const environment = {
 process.env["ARCHBOARD_URL"] = url;
 process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
 // Imported only now, because the CLI reads where its server is as it loads.
-const [config, client, { runCli }] = await Promise.all([
+const [config, client, { cliContractRegistry, runCli }] = await Promise.all([
 	import("@archboard/server-lifecycle/config"),
 	import("@archboard/server-lifecycle/server-client"),
 	import("#cli/operations/invocation/run.ts"),
@@ -170,31 +174,50 @@ async function run(argv: string[]): Promise<{ stdout: string; stderr: string; ex
 	return { stdout, stderr, exited };
 }
 
-test("check --code asks the plain check, then the code check, and a board behind its code does not fail it", async () => {
-	plain = clean;
-	asked.length = 0;
-	const { stdout, stderr, exited } = await run(["check", "--code"]);
-	expect(exited).toBe(0);
-	expect(asked).toEqual(["/api/vault/check", "/api/vault/code-check"]);
-	const result = VaultCheckSchema.extend({
-		timings: CheckTimingSchema.array(),
-		codeCheck: CodeCheckAnswerSchema,
-	}).parse(JSON.parse(stdout));
-	expect(result.diagnostics).toEqual([]);
-	expect(result.codeCheck).toEqual(codeCheck);
-	expect(result.timings.map((timing) => timing.check)).toEqual([
-		"board",
-		"code-facts",
-		"language-server",
-		"history",
-	]);
-	const timed = stderr
-		.split("\n")
-		.filter((line) => line.endsWith(" ms"))
-		.slice(0, result.timings.length);
-	expect(timed.map((line) => Number(/: ([\d.]+) ms$/u.exec(line)?.[1]))).toEqual(
-		result.timings.map((timing) => Number(timing.elapsedMs.toFixed(1))),
+const SEMANTICS_ROUTE = "/api/vault/check";
+const CODE_ROUTE = "/api/vault/code-check";
+const PartsSchema = z.object({
+	semantics: VaultCheckSchema.extend({ timings: CheckTimingSchema.array() }).optional(),
+	code: CodeCheckAnswerSchema.optional(),
+});
+
+/** The check commands that read the code check's options, as the registry declares them. */
+const readsCodeOptions = (entry: CliRegistryEntry): boolean =>
+	entry.contract.parameters.some(
+		(parameter) => parameter.kind === "option" && parameter.spellings.includes("--variant"),
 	);
+const checkRoutes = () =>
+	cliContractRegistry().filter(
+		(entry) => entry.name === "check" || entry.name.startsWith("check "),
+	);
+
+test("check and check all ask the semantics check, then the code check, and answer with one part for each", async () => {
+	plain = clean;
+	for (const argv of [["check"], ["check", "all"]]) {
+		asked.length = 0;
+		const { stdout, stderr, exited } = await run(argv);
+		expect(exited).toBe(0);
+		expect(asked).toEqual([SEMANTICS_ROUTE, CODE_ROUTE]);
+		const result = PartsSchema.parse(JSON.parse(stdout));
+		expect(result.semantics?.diagnostics).toEqual([]);
+		expect(result.code).toEqual(codeCheck);
+		expect(result.semantics?.timings.map((timing) => timing.check)).toEqual(["board"]);
+		const timed = stderr
+			.split("\n")
+			.filter((line) => line.endsWith(" ms"))
+			.map((line) => Number(/: ([\d.]+) ms$/u.exec(line)?.[1]));
+		expect(timed).toEqual(
+			[...(result.semantics?.timings ?? []), ...(result.code?.timings ?? [])].map((timing) =>
+				Number(timing.elapsedMs.toFixed(1)),
+			),
+		);
+	}
+});
+
+test("a board behind its code is information and does not fail the check", async () => {
+	plain = clean;
+	const { stderr, exited } = await run(["check", "code"]);
+	expect(exited).toBe(0);
 	const lines = stderr.split("\n");
 	expect(lines.some((line) => line.includes("Orders") && line.includes("1"))).toBe(true);
 	expect(lines.some((line) => line.includes("Ledger") && line.includes("src/ledger.ts"))).toBe(
@@ -202,13 +225,38 @@ test("check --code asks the plain check, then the code check, and a board behind
 	);
 });
 
-test("check --code fails when the plain check has a diagnostic", async () => {
-	plain = warned;
-	const { exited } = await run(["check", "--code"]);
-	expect(exited).toBe(1);
+test("check semantics asks only the semantics check and fills only its part", async () => {
+	plain = clean;
+	asked.length = 0;
+	const { stdout, exited } = await run(["check", "semantics"]);
+	expect(exited).toBe(0);
+	expect(asked).toEqual([SEMANTICS_ROUTE]);
+	const answer: unknown = JSON.parse(stdout);
+	expect(Object.keys(PartsSchema.parse(answer))).toEqual(["semantics"]);
+	expect(answer).not.toHaveProperty("code");
 });
 
-test("check --code prints each finding with its subject and evidence, fails on a warning and never on information", async () => {
+test("check code asks only the code check and fills only its part", async () => {
+	plain = warned;
+	asked.length = 0;
+	const { stdout, exited } = await run(["check", "code"]);
+	// The warning belongs to the semantics check, which this command did not run.
+	expect(exited).toBe(0);
+	expect(asked).toEqual([CODE_ROUTE]);
+	const answer: unknown = JSON.parse(stdout);
+	expect(Object.keys(PartsSchema.parse(answer))).toEqual(["code"]);
+	expect(answer).not.toHaveProperty("semantics");
+});
+
+test("a command that ran the semantics check fails on its diagnostic, and one that did not does not", async () => {
+	plain = warned;
+	for (const argv of [["check"], ["check", "all"], ["check", "semantics"]]) {
+		expect((await run(argv)).exited).toBe(1);
+	}
+	expect((await run(["check", "code"])).exited).toBe(0);
+});
+
+test("a finding prints with its subject and evidence, fails the code check on a warning and never on information", async () => {
 	plain = clean;
 	const finding: CodeFinding = {
 		severity: "warning",
@@ -230,90 +278,93 @@ test("check --code prints each finding with its subject and evidence, fails on a
 		],
 	};
 	try {
+		for (const argv of [["check"], ["check", "all"], ["check", "code"]]) {
+			answered = { ...codeCheck, findings: [finding] };
+			const failed = await run(argv);
+			expect(failed.exited).toBe(1);
+			const lines = failed.stderr.split("\n");
+			const at = lines.findIndex((line) => line.includes("Pay: Api -> Ledger: post"));
+			expect(at).toBeGreaterThanOrEqual(0);
+			expect(lines[at]?.split(": ").slice(0, 2)).toEqual([finding.severity, finding.code]);
+			expect(lines[at + 1]).toContain("src/api.ts:12");
+			answered = { ...codeCheck, findings: [{ ...finding, severity: "information" }] };
+			const information = await run(argv);
+			expect(information.exited).toBe(0);
+			expect(
+				information.stderr
+					.split("\n")
+					.some((line) => line.startsWith(`information: ${finding.code}: `)),
+			).toBe(true);
+		}
 		answered = { ...codeCheck, findings: [finding] };
-		const failed = await run(["check", "--code"]);
-		expect(failed.exited).toBe(1);
-		const lines = failed.stderr.split("\n");
-		const at = lines.findIndex((line) => line.includes("Pay: Api -> Ledger: post"));
-		expect(at).toBeGreaterThanOrEqual(0);
-		expect(lines[at]?.split(": ").slice(0, 2)).toEqual([finding.severity, finding.code]);
-		expect(lines[at + 1]).toContain("src/api.ts:12");
-		answered = { ...codeCheck, findings: [{ ...finding, severity: "information" }] };
-		const information = await run(["check", "--code"]);
-		expect(information.exited).toBe(0);
-		expect(
-			information.stderr
-				.split("\n")
-				.some((line) => line.startsWith(`information: ${finding.code}: `)),
-		).toBe(true);
+		expect((await run(["check", "semantics"])).exited).toBe(0);
 	} finally {
 		answered = codeCheck;
 	}
 });
 
-test("--variant names the draft the code check reads, and a draft no board has is refused", async () => {
+test("--variant, --every-draft and --plan reach the code check of check, check all and check code", async () => {
 	plain = clean;
-	asked.length = 0;
-	expect((await run(["check", "--code", "--variant", "TASK-1"])).exited).toBe(0);
-	expect(asked).toEqual(["/api/vault/check", "/api/vault/code-check?variant=TASK-1"]);
+	for (const argv of [["check"], ["check", "all"], ["check", "code"]]) {
+		asked.length = 0;
+		expect((await run([...argv, "--variant", "TASK-1"])).exited).toBe(0);
+		expect(asked.at(-1)).toBe(`${CODE_ROUTE}?variant=TASK-1`);
+		asked.length = 0;
+		expect((await run([...argv, "--every-draft"])).exited).toBe(0);
+		expect(asked.at(-1)).toBe(`${CODE_ROUTE}?every-draft=true`);
+		asked.length = 0;
+		expect(
+			(await run([...argv, "--plan", "infra/plan.json", "--plan", "/abs/plan.json"])).exited,
+		).toBe(0);
+		const query = new URL(`http://host${asked.at(-1) ?? ""}`).searchParams;
+		expect(query.getAll("plan")).toEqual([resolve("infra/plan.json"), "/abs/plan.json"]);
+	}
+});
+
+test("a draft no board has is refused, and --every-draft beside --variant is refused before the server", async () => {
+	plain = clean;
 	refuseDraft = true;
 	try {
-		expect((await run(["check", "--code", "--variant", "TASK-0"])).exited).toBe(2);
+		for (const argv of [["check"], ["check", "all"], ["check", "code"]]) {
+			expect((await run([...argv, "--variant", "TASK-0"])).exited).toBe(2);
+		}
 	} finally {
 		refuseDraft = false;
 	}
-	asked.length = 0;
-	const alone = await run(["check", "--variant", "TASK-1"]);
-	expect(alone.exited).not.toBe(0);
-	expect(asked).toEqual([]);
+	for (const argv of [["check"], ["check", "all"], ["check", "code"]]) {
+		asked.length = 0;
+		expect((await run([...argv, "--every-draft", "--variant", "TASK-1"])).exited).toBe(2);
+		expect(asked).toEqual([]);
+	}
 });
 
-test("--every-draft asks the code check for every draft, and is refused without --code or beside --variant", async () => {
-	plain = clean;
-	asked.length = 0;
-	expect((await run(["check", "--code", "--every-draft"])).exited).toBe(0);
-	expect(asked).toEqual(["/api/vault/check", "/api/vault/code-check?every-draft=true"]);
-	asked.length = 0;
-	expect((await run(["check", "--every-draft"])).exited).not.toBe(0);
-	expect((await run(["check", "--code", "--every-draft", "--variant", "TASK-1"])).exited).not.toBe(
-		0,
+test("every other check subcommand refuses the code check's options before asking the server", async () => {
+	const others = checkRoutes().filter(
+		(entry) => entry.parent === "check" && !readsCodeOptions(entry),
 	);
-	expect(asked).toEqual([]);
+	expect(others.map((entry) => entry.name)).toContain("check semantics");
+	for (const entry of others) {
+		for (const option of [
+			["--variant", "TASK-1"],
+			["--every-draft"],
+			["--plan", "infra/plan.json"],
+		]) {
+			asked.length = 0;
+			expect((await run([...entry.name.split(" "), ...option])).exited, entry.name).toBe(2);
+			expect(asked).toEqual([]);
+		}
+	}
 });
 
-test("--plan names each plan JSON by its absolute path, and means nothing without --code", async () => {
-	plain = clean;
+test("--code is an unknown option of every check command, and a word that names no check is refused", async () => {
+	for (const entry of checkRoutes()) {
+		asked.length = 0;
+		expect((await run([...entry.name.split(" "), "--code"])).exited, entry.name).toBe(2);
+		expect(asked).toEqual([]);
+	}
 	asked.length = 0;
-	const named = await run([
-		"check",
-		"--code",
-		"--plan",
-		"infra/plan.json",
-		"--plan",
-		"/abs/plan.json",
-	]);
-	expect(named.exited).toBe(0);
-	const query = new URL(`http://host${asked[1] ?? ""}`).searchParams;
-	expect(query.getAll("plan")).toEqual([resolve("infra/plan.json"), "/abs/plan.json"]);
-	asked.length = 0;
-	expect((await run(["check", "--plan", "infra/plan.json"])).exited).not.toBe(0);
+	expect((await run(["check", "nonesuch"])).exited).toBe(2);
 	expect(asked).toEqual([]);
-});
-
-test("check without --code never asks the code check", async () => {
-	plain = clean;
-	asked.length = 0;
-	const { stdout, stderr, exited } = await run(["check"]);
-	expect(exited).toBe(0);
-	expect(asked).toEqual(["/api/vault/check"]);
-	const result = VaultCheckSchema.extend({ timings: CheckTimingSchema.array() }).parse(
-		JSON.parse(stdout),
-	);
-	expect(JSON.parse(stdout)).not.toHaveProperty("codeCheck");
-	expect(result.timings).toEqual([{ check: "board", elapsedMs: expect.any(Number) }]);
-	expect(stderr.split("\n")[0]?.endsWith(`${result.timings[0]?.elapsedMs.toFixed(1)} ms`)).toBe(
-		true,
-	);
 });
 
 test("a skip that holds for a whole language says once which language and why, a checkout with no server says what configures one for each language, and one said for each project of a checkout names the checkout once", async () => {
@@ -333,7 +384,7 @@ test("a skip that holds for a whole language says once which language and why, a
 				{ reason: "language-server-unready", repo, detail: "swift: the package b has no index" },
 			],
 		};
-		const { stderr, exited } = await run(["check", "--code"]);
+		const { stderr, exited } = await run(["check", "code"]);
 		expect(exited).toBe(0);
 		const lines = (reason: string) => stderr.split("\n").filter((line) => line.includes(reason));
 		const missing = lines("language-server-missing");

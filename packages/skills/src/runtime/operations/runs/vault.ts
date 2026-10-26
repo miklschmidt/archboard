@@ -95,7 +95,11 @@ const ListingSchema = z
 	.passthrough();
 const ReadSchema = z.object({ board: SemanticBoardSchema }).passthrough();
 const RegisteredSchema = z.object({ repo: z.string() }).passthrough();
-const CheckSchema = z.object({ diagnostics: z.array(VaultDiagnosticSchema) }).passthrough();
+const CheckSchema = z
+	.object({
+		semantics: z.object({ diagnostics: z.array(VaultDiagnosticSchema) }).passthrough(),
+	})
+	.passthrough();
 const InspectionSchema = z
 	.object({
 		members: z.array(z.object({ name: z.string() }).passthrough()),
@@ -129,20 +133,20 @@ async function readVault(cli: CliContext): Promise<Map<string, SemanticBoard>> {
 }
 
 /**
- * What `archboard check` reports, whatever it exits with.
+ * What `archboard check semantics` reports, whatever it exits with.
  * @param cli How to reach the CLI.
  * @returns The diagnostics.
  */
 async function vaultDiagnostics(cli: CliContext): Promise<VaultDiagnostic[]> {
-	const answer = await archboard(cli, ["check"]);
+	const answer = await archboard(cli, ["check", "semantics"]);
 	const parsed = CheckSchema.safeParse(answer.json);
-	if (parsed.success) return parsed.data.diagnostics;
+	if (parsed.success) return parsed.data.semantics.diagnostics;
 	return [
 		{
 			severity: "error",
 			code: "CHECK_UNREADABLE",
 			file: "-",
-			message: `archboard check answered nothing readable (exit ${answer.exitCode}): ${answer.stderr.trim()}`,
+			message: `archboard check semantics answered nothing readable (exit ${answer.exitCode}): ${answer.stderr.trim()}`,
 		},
 	];
 }
@@ -447,7 +451,9 @@ async function layStep(cli: CliContext, step: RawFixtureStep, repo: string | nul
 async function layTalk(cli: CliContext, talk: TalkFixture, home: string): Promise<void> {
 	const board = await readBoard(cli, talk.board);
 	// `check` exits 1 on a warning; `semantic record` keeps the warnings in the talk's policy too.
-	const policy = VaultCheckSchema.parse((await archboard(cli, ["check"])).json);
+	const policy = z
+		.object({ semantics: VaultCheckSchema })
+		.parse((await archboard(cli, ["check", "semantics"])).json).semantics;
 	writeTalk({
 		...talkOfFixture(talk, board, policy),
 		place: askedTalkPlace(inHome(home, talk.directory)),

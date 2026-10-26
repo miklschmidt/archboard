@@ -86,7 +86,7 @@ Git history. The harness creates the source repository under the take's scratch
 directory. It registers that repository and authors the board through the CLI.
 It leaves Archboard's source files and tracked vault unchanged.
 
-`code-evidence` runs `archboard check --code` and selects its resolved missing-call
+`code-evidence` runs `archboard check code` and selects its resolved missing-call
 warning in the browser. Its terminal shows the source lines behind the finding.
 `module-interfaces` opens two proposals and selects Orders in each. Their
 inspectors show three entry points versus one entry point and two hidden parts.

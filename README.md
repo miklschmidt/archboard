@@ -63,7 +63,7 @@ A proposal starts with a map of what exists. Archboard brings code, module bound
 
 ### Find where the map and the code disagree
 
-Give each part a link to its file or a named function, class, or value. A relationship can cite the source that supports it. With `archboard check --code`, your agent finds broken source links, relationships drawn backwards, and dependencies between mapped parts that the board leaves out.
+Give each part a link to its file or a named function, class, or value. A relationship can cite the source that supports it. With `archboard check code`, your agent finds broken source links, relationships drawn backwards, and dependencies between mapped parts that the board leaves out.
 
 Warnings mark the affected parts and relationships in the canvas. Select a warning to read the finding and open its source when available. Each piece of source evidence says whether analysis resolved it or matched it only by name.
 
@@ -344,7 +344,7 @@ In a vault: a directory of `.semantic.json` files, one per board, holding every 
 <details><summary><b>Does the diagram stay in sync with the code?</b></summary>
 <br>
 
-Your agent keeps it in sync. `archboard check --code` reports broken source evidence, missing dependencies between mapped parts, and disagreements between drawn module boundaries and code. It also shows which parts have commits to their bound files since the board last described them. Your agent reads the findings and updates the map. Archboard never rewrites a board on its own.
+Your agent keeps it in sync. `archboard check code` reports broken source evidence, missing dependencies between mapped parts, and disagreements between drawn module boundaries and code. It also shows which parts have commits to their bound files since the board last described them. Your agent reads the findings and updates the map. Archboard never rewrites a board on its own.
 </details>
 
 <details><summary><b>Is the traffic animation real traffic?</b></summary>

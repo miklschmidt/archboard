@@ -23,7 +23,7 @@ The proposals that branch from the design draft copy its list.
 
 Done: on each board that holds a draft of this design, the design draft names
 the design document and the plan at one commit, and
-`archboard check --code --every-draft` reports no `DOCUMENT_PATH_MISSING`.
+`archboard check code --every-draft` reports no `DOCUMENT_PATH_MISSING`.
 
 ## The state comment
 

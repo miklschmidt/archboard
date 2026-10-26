@@ -30,7 +30,7 @@
 // machine's to fix: a repository this machine has not registered, a ref its
 // checkout cannot resolve, a path Git ignores or one the pass never reads.
 // A checkout that is unavailable is said once for the whole checkout, a bound
-// path that is not there is the plain check's to report, and a bound symbol
+// path that is not there is the semantics check's to report, and a bound symbol
 // that is not there is a finding of its own, so those parts are only unread.
 
 import path from "node:path";

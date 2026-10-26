@@ -2,7 +2,7 @@
 // `GET /api/vault/code-check[?variant=<draft> | ?every-draft=true][&plan=<file>]...`
 // (ADR 0046).
 //
-// `archboard check --code` asks it after the plain check. It reads code and
+// `archboard check code` and `archboard check all` ask it. It reads code and
 // Git, which takes seconds, so it runs only on a request and never inside
 // `/api/vault/check`, which every open canvas polls every 5 seconds. It runs as
 // checkout work, the admission the code opener uses: a caller that hangs up

@@ -145,8 +145,8 @@ const repoLanguageServerContract = defineCommand({
 			},
 			diagnostics: [
 				server === undefined
-					? `${root} has no ${input.language} server now. check --code starts none there.`
-					: `check --code runs ${commandLine(server)} for ${input.language} in ${root}, with the environment and PATH that the Archboard server started with. It runs code of that checkout.${entry.chosen ? "" : ` It is not the chosen checkout of "${repo}", so a pass reads this server only where it reads this checkout.`}`,
+					? `${root} has no ${input.language} server now. check code starts none there.`
+					: `check code runs ${commandLine(server)} for ${input.language} in ${root}, with the environment and PATH that the Archboard server started with. It runs code of that checkout.${entry.chosen ? "" : ` It is not the chosen checkout of "${repo}", so a pass reads this server only where it reads this checkout.`}`,
 			],
 		};
 	},

@@ -90,7 +90,7 @@ function checkClean(_check: OutcomeCheck, reading: Reading): Finding {
 	return finding(
 		count === 0,
 		count === 0
-			? "archboard check reports nothing"
+			? "archboard check semantics reports nothing"
 			: `${count} diagnostics: ${reading.diagnostics
 					.map((issue) => issue.message)
 					.slice(0, 3)
