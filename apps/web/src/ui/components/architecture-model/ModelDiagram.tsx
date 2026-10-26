@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useState, type JSX } from "react";
+import { useCallback, useLayoutEffect, useState, type JSX } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { RenderedDiagram } from "@archboard/renderer/picture";
 import { CameraSurface } from "#ui/components/semantic-board-canvas/CameraSurface.tsx";
@@ -8,11 +8,13 @@ import {
 } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import { useDiagramGestures } from "#ui/hooks/semantic-board-canvas/use-diagram-gestures.ts";
 import { markSubjects } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
-import { projectModel, type Model } from "#ui/rules/architecture-model/projection.ts";
+import type { projectModel, Model } from "#ui/rules/architecture-model/projection.ts";
 import { modelDrawingQuery } from "#ui/clients/architecture-model/drawing.ts";
 
 interface ModelDiagramProps {
 	model: Model;
+	projection: ReturnType<typeof projectModel>;
+	reducedMotion: boolean;
 	selected: string | null;
 	onSelect: (id: string | null) => void;
 }
@@ -23,9 +25,9 @@ interface ModelDiagramProps {
  * @returns The current scene or an explicit rendering state.
  */
 function ModelDiagram(props: ModelDiagramProps): JSX.Element {
-	const projection = useMemo(() => projectModel(props.model), [props.model]);
+	const { projection } = props;
 	const drawing = useQuery(modelDrawingQuery(props.model, projection));
-	const camera = useBoardCamera(false);
+	const camera = useBoardCamera(props.reducedMotion);
 	if (projection.content.nodes.length === 0)
 		return (
 			<output className="text-body text-muted-foreground p-8">This model has no modules.</output>
@@ -86,7 +88,7 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 				size={drawing}
 				attach={attach}
 				gesture={gesture}
-				reducedMotion={false}
+				reducedMotion={props.reducedMotion}
 				marks=""
 			/>
 		</div>

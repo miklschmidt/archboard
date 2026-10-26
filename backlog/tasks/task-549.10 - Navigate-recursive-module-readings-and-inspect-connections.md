@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T10:50:00Z'
+updated_date: '2026-10-26T14:56:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -79,4 +79,6 @@ TASK-549.01
 Affected architecture proposals: Browser application@TASK-549.10 and Semantic renderer@TASK-549.10. The existing camera, atlas, and layout engine retain their contracts. The approved browser seam owns visible navigation and connection inspection.
 
 Checkpoint: root modules now render through the existing browser renderer and camera. The focused browser regression failed before implementation and passes afterward with 12 assertions. Source and browser types pass. Recursive scope navigation, nearby context, connection inspection, and complete freshness coverage remain in progress. Both architecture proposals remain drafts.
+
+Integrated durable reads through signed merge 88578767e. The first recursive browser case failed on the absent opening action after correcting a duplicate fixture identity. It now passes root-to-module-to-child navigation, containment breadcrumbs, Back/Forward, reload, and unchanged input revisions, with four assertions. A router reducer type mismatch was identified and corrected through the existing search validator. The slice remains incomplete: exact-checkpoint URL state, mixed pane address ownership, model identity guards, connection inspection, complete interface presentation, geometry reuse, and obsolete-layout behavior still need delivery.
 <!-- SECTION:NOTES:END -->

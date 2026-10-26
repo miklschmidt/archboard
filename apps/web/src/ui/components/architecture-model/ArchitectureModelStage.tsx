@@ -28,6 +28,8 @@ type ModelQuery = UseQueryResult<Extract<ArchitectureModelRead, { success: true 
 
 interface ModelStageProps {
 	vault: string;
+	paneId: string;
+	reducedMotion: boolean;
 	children: ReactNode;
 }
 
@@ -80,6 +82,8 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 			</ModelHeader>
 			{checkpoint === null && <ModelClaims vault={props.vault} model={data} />}
 			<ModelResponse
+				paneId={props.paneId}
+				reducedMotion={props.reducedMotion}
 				query={query}
 				current={current}
 				stale={stale}
@@ -161,6 +165,8 @@ function readingState(query: ModelQuery, stale: boolean): "loading" | "error" | 
 }
 
 interface ModelResponseProps {
+	paneId: string;
+	reducedMotion: boolean;
 	query: ModelQuery;
 	current: boolean;
 	stale: boolean;
@@ -193,7 +199,12 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			{model !== undefined && (
 				<>
 					<CheckpointEvidence model={model} />
-					<ModelReading key={model.manifest.id} model={model} />
+					<ModelReading
+						key={model.manifest.id}
+						model={model}
+						paneId={props.paneId}
+						reducedMotion={props.reducedMotion}
+					/>
 				</>
 			)}
 		</>
