@@ -169,6 +169,7 @@ const ArchitectureModelSchema = z
 		relationships: z.array(OwnedRelationshipSchema.extend({ from: QualifiedSubjectIdSchema })),
 		roots: z.array(QualifiedSubjectIdSchema),
 		selectedModule: QualifiedSubjectIdSchema.optional(),
+		selectedSubject: QualifiedSubjectIdSchema.optional(),
 		selectedFlow: QualifiedSubjectIdSchema.optional(),
 		revision: ModelRevisionSchema,
 		checkpoint: ArchitectureCheckpointSchema.optional(),

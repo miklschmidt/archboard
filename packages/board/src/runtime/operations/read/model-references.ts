@@ -7,6 +7,7 @@ import {
 import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
 import { readArchitectureModel } from "#runtime/operations/read/model-read.ts";
 import { readCheckpointModel } from "#runtime/operations/history/read.ts";
+import { selectReferenceSubject } from "#runtime/operations/read/reference-subject.ts";
 
 type Resolution = NonNullable<ArchitectureModel["resolvedReferences"]>[number];
 type ReferenceEntry = Pick<Resolution, "module" | "index" | "reference">;
@@ -92,9 +93,9 @@ async function foreignReading(
 	const targetVault = join(checkout.root, ".archboard/vault");
 	const reading =
 		checkpoint === undefined
-			? readArchitectureModel(targetVault, reference.subject)
-			: await readCheckpointModel(targetVault, checkpoint, reference.subject);
-	return { vault: targetVault, reading };
+			? readArchitectureModel(targetVault)
+			: await readCheckpointModel(targetVault, checkpoint);
+	return { vault: targetVault, reading: selectReferenceSubject(reading, reference.subject) };
 }
 
 /**

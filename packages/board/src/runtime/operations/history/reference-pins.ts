@@ -10,6 +10,7 @@ import {
 	matchesReference,
 } from "#runtime/operations/read/model-references.ts";
 import { ArchiveError } from "#runtime/store/model-archive.ts";
+import { selectReferenceSubject } from "#runtime/operations/read/reference-subject.ts";
 
 type Address = NonNullable<ArchitectureModel["location"]>;
 type Resolution = NonNullable<ArchitectureModel["resolvedReferences"]>[number];
@@ -20,7 +21,7 @@ type Resolution = NonNullable<ArchitectureModel["resolvedReferences"]>[number];
  * @returns A deterministic retained identity, when exact content exists.
  */
 async function retainedReference(address: Address) {
-	const current = readArchitectureModel(address.vault, address.subject);
+	const current = readArchitectureModel(address.vault);
 	if (!current.success) return undefined;
 	if (referenceState(current) !== address.state) return undefined;
 	const retained = await listArchitectureCheckpoints(address.vault);
@@ -58,7 +59,10 @@ async function captureReferencePin(entry: Resolution) {
 			"model.json",
 			[entry.module, entry.reference.subject],
 		);
-	const exact = await readCheckpointModel(address.vault, checkpoint, address.subject);
+	const exact = selectReferenceSubject(
+		await readCheckpointModel(address.vault, checkpoint),
+		address.subject,
+	);
 	if (!exact.success)
 		throw new ArchiveError("REFERENCE_UNAVAILABLE", exact.error, checkpoint, [
 			entry.reference.subject,

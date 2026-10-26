@@ -208,7 +208,8 @@ Browser grammar switching remains TASK-549.12.
 ## Code and foreign model references
 
 TASK-549.15 keeps architectural ownership separate from source location and foreign navigation.
-A module can hold explicit references that name repository, model, module identity, and state.
+A module can hold explicit references that name repository, model, subject identity, and state.
+Foreign subjects retain their module, relationship, collection, flow, or step identity and kind.
 `current` follows the current designation explicitly.
 A non-current reference names a complete immutable checkpoint beside its stable state identity.
 Neither a reference nor a code binding establishes containment or transfers ownership.

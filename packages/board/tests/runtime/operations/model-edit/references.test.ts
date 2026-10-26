@@ -247,3 +247,39 @@ test("historical directory bindings ignore architecture-only changes in the same
 		}),
 	).toMatchObject({ success: true, codeTarget: { ok: true, kind: "directory" } });
 });
+
+test("foreign relationship references keep the exact subject without turning it into a module", async () => {
+	const { local } = await referencedFixture();
+	const edited = await editArchitectureModule(local.vault, {
+		...(await structureIntent(local.vault, ["Shop#Gateway"])),
+		changes: [
+			{
+				type: "edit-module",
+				subject: "Shop#Gateway",
+				set: {
+					references: [
+						{
+							repo: "github.com/acme/ledger",
+							model: "Ledger",
+							subject: "Ledger#Dispatch",
+							state: "current",
+						},
+					],
+				},
+			},
+		],
+	});
+	expect(edited.success).toBe(true);
+	if (!edited.success) throw new Error(JSON.stringify(edited));
+	expect(
+		await readArchitectureModel(local.vault, "Shop#Gateway", undefined, {
+			checkpoint: edited.checkpoint.id,
+			reference: 0,
+		}),
+	).toMatchObject({
+		success: true,
+		manifest: { id: "Ledger" },
+		selectedSubject: "Ledger#Dispatch",
+		location: { subject: "Ledger#Dispatch" },
+	});
+});
