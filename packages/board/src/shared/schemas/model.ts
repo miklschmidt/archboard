@@ -73,6 +73,17 @@ const ModelRevisionSchema = z
 		files: z.array(z.object({ path: z.string(), sha256: z.string() }).strict()),
 	})
 	.strict();
+const ModelRecoverySchema = z
+	.object({
+		operationId: z.string(),
+		checkpoint: GitObjectIdSchema,
+		phase: z.enum(["prepared", "installing", "installed", "completed"]),
+		subjects: z.array(QualifiedSubjectIdSchema),
+		before: ModelRevisionSchema,
+		after: ModelRevisionSchema,
+		checkout: z.object({ branch: z.string(), head: GitObjectIdSchema.nullable() }).strict(),
+	})
+	.strict();
 const ArchitectureCheckpointRequestSchema = z
 	.object({
 		target: z.literal("current"),
@@ -147,9 +158,21 @@ const ArchitectureModelFailureSchema = z
 			"ARCHIVE_COMMIT_FAILED",
 			"ARCHIVE_BUSY",
 			"OPERATION_REUSED",
+			"MODEL_BUSY",
+			"TARGET_CHANGED",
+			"CLAIM_REQUIRED",
+			"CLAIM_HELD",
+			"CLAIM_REVOKED",
+			"RECOVERY_REQUIRED",
+			"RECOVERY_CONTEXT_CHANGED",
+			"RECOVERY_CONFLICT",
+			"MODEL_WRITE_FAILED",
 		]),
 		error: z.string(),
 		diagnostics: z.array(ModelDiagnosticSchema).min(1),
+		applied: z.union([z.literal(false), z.literal("unknown")]).optional(),
+		reconciliation: z.literal(false).optional(),
+		recovery: ModelRecoverySchema.optional(),
 	})
 	.strict();
 const ArchitectureModelReadSchema = z.discriminatedUnion("success", [
@@ -177,6 +200,7 @@ type ModelDiagnostic = z.infer<typeof ModelDiagnosticSchema>;
 export {
 	GitObjectIdSchema,
 	ModelRevisionSchema,
+	ModelRecoverySchema,
 	ModelDiagnosticSchema,
 	ArchitectureModelFailureSchema,
 	ArchitectureCheckpointRequestSchema,

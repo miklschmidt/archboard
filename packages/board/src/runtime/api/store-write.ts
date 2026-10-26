@@ -15,3 +15,12 @@ export { writeSemanticBoard } from "#runtime/operations/write/write.ts";
 export { trackEmbedTransition } from "#runtime/operations/embeds/track.ts";
 export { retainArchitectureCheckpoint } from "#runtime/operations/history/retain.ts";
 export { saveLegacyMappingPlan } from "#runtime/operations/legacy-inventory/save-plan.ts";
+export {
+	editArchitectureModule,
+	recoverArchitectureModel,
+} from "#runtime/operations/model-edit/edit.ts";
+export {
+	claimArchitectureSubjects,
+	releaseArchitectureClaim,
+	takeBackArchitectureClaim,
+} from "#runtime/operations/model-edit/claims.ts";
