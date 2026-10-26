@@ -72,7 +72,13 @@ function stateOfReading(reading: RememberedReading, place: ExposedNamesPlace): E
 	if (counts !== undefined) {
 		return { kind: "read", checkedAt, counts };
 	}
-	const skip = reading.skipped.find((one) => one.subject?.id === place.node.id);
+	// An unavailable checkout is reported once for its repository, without a
+	// subject. It still explains why none of that repository's containers were read.
+	const skip =
+		reading.skipped.find((one) => one.subject?.id === place.node.id) ??
+		reading.skipped.find(
+			(one) => one.reason === "checkout-unavailable" && one.repo === place.node.binding?.repo,
+		);
 	return skip === undefined ? NONE : { kind: "skipped", checkedAt, skip };
 }
 

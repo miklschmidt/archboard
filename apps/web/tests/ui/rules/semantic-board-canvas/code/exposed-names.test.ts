@@ -87,3 +87,21 @@ test("a pass that read what is on screen gives the counts, the skip, or no regio
 	// Judged nothing and skipped nothing: the binding names no module.
 	expect(exposedNamesState([reading()], at).kind).toBe("none");
 });
+
+test("an unavailable checkout explains the skipped container only in its own repository", () => {
+	const at = { ...ON, node: ORDERS, content: CONTENT };
+	const skip = {
+		reason: "checkout-unavailable",
+		repo: BINDING.repo,
+		detail: "Checkout is missing.",
+	} as const;
+	expect(exposedNamesState([reading({ skipped: [skip] })], at)).toEqual({
+		kind: "skipped",
+		checkedAt: "2026-10-25T10:00:00.000Z",
+		skip,
+	});
+	expect(
+		exposedNamesState([reading({ skipped: [{ ...skip, repo: "github.com/acme/other" }] })], at)
+			.kind,
+	).toBe("none");
+});
