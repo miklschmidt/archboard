@@ -17,7 +17,7 @@ function decodeLegacyInput(
 	bytes: Buffer,
 	diagnostics: LegacyInventory["diagnostics"],
 ): LegacyInventory["boards"][number] {
-	const source = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+	const source = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
 	const decoded = decodeSemanticBoardDocument(source);
 	if (decoded.ok) return { file, source, document: decoded.board };
 	diagnostics.push({

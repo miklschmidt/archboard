@@ -7,7 +7,7 @@ import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { asyncEndpoint } from "#server/middleware/mutation-work/mutation-work.ts";
 
 const QuerySchema = z.strictObject({ vault: z.string(), origin: z.string().min(1) });
-const WriteSchema = LegacyMappingWriteSchema.extend({ vault: z.string() });
+const WriteSchema = LegacyMappingWriteSchema.extend({ vault: z.string().optional() });
 
 /**
  * Return the shared runtime result with its transport status.

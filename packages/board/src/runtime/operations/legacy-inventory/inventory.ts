@@ -129,10 +129,12 @@ function assembleInventory(
  */
 function inventoryChanged(vault: string, inventory: LegacyInventory): boolean {
 	const latest = readModelFiles(vault);
+	const latestPlan = readMigrationPlan(vault, inventory.plan.origin);
 	return (
 		latest.diagnostics.length > 0 ||
 		latest.revision.digest !== inventory.source.digest ||
-		readMigrationPlan(vault, inventory.plan.origin).revision !== inventory.planRevision
+		latestPlan.problem !== undefined ||
+		latestPlan.revision !== inventory.planRevision
 	);
 }
 
