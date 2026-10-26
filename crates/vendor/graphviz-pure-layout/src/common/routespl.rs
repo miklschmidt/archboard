@@ -436,7 +436,10 @@ pub fn routesplines_(pp: &mut Path, polyline: bool, real: RealEdge<'_>) -> Optio
     {
         let is_horizontal = is_straight(&ps, |p| p.y);
         let is_vertical = is_straight(&ps, |p| p.x);
-        if let (Some(a), Some(b)) = (ps.first(), ps.last()) {
+        // archboard: the ends are written only for the messages, which only `-v` prints.
+        if let (Some(a), Some(b)) = (ps.first(), ps.last())
+            && graphviz_pure_core::diag::verbose_on()
+        {
             use graphviz_pure_core::diag::fmt_f;
             let f = |v: f64| fmt_f(v, 3);
             let ends = format!("[{}, {}] -- [{}, {}]", f(a.x), f(a.y), f(b.x), f(b.y));
