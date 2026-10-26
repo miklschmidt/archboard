@@ -68,8 +68,6 @@ archboard changed four things:
    - `src/dotgen/mincross.rs`: `transpose_step` counts a pair's crossings both
      ways in one pass over their edges (`in_cross_both`, `out_cross_both`).
      `medians` sorts its integer positions with the standard sort.
-   - `src/dotgen/ns.rs`: network simplex works on a dense copy of what it
-     reads and writes of each node and edge, written back when it ends.
    - `graphviz-pure-geom/src/pathplan/triang.rs` and `shortest.rs`:
      `intersects` finds each orientation once, and `pshortestpath` links
      the triangles that share an edge by sorting their edges.
