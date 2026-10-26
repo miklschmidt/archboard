@@ -193,6 +193,16 @@ test("a card shows no exposed names", async () => {
 	expect(document.querySelector("[data-slot='semantic-inspector-exposed']")).toBeNull();
 });
 
+test.each([
+	{ version: 2, checkedAt: CHECKED_AT },
+	{ version: 1, checkedAt: "2026-10-25T11:00:00.000Z" },
+])("names from another board version or pass stay hidden (%j)", async (different) => {
+	server.findings = FINDINGS;
+	server.exposure = { ...EXPOSURE, ...different };
+	await picked("orders");
+	expect(rows("semantic-exposed-name", "data-name")).toEqual([]);
+});
+
 test("before any pass, a bound container says that none has run, and asks for no names", async () => {
 	await picked("orders");
 	expect(

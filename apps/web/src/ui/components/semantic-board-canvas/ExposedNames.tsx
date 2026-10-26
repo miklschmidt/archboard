@@ -85,6 +85,7 @@ function ExposedNames(props: ExposedNamesProps): JSX.Element | null {
 						vault={vault}
 						board={on.board}
 						variant={on.variant}
+						version={on.version}
 						container={node.id}
 						counts={state.counts}
 						checkedAt={state.checkedAt}
@@ -155,6 +156,8 @@ interface ReadNamesProps {
 	readonly board: string;
 	/** The variant on screen, by id. */
 	readonly variant: string;
+	/** The board version on screen and in the polled reading. */
+	readonly version: number;
 	/** The container, by id. */
 	readonly container: string;
 	readonly counts: ContainerCounts;
@@ -171,6 +174,7 @@ function ReadNames(props: ReadNamesProps): JSX.Element {
 	const { counts, vault, board, variant, container, checkedAt } = props;
 	const site = useMemo(() => ({ board, variant, container }), [board, variant, container]);
 	const { data } = useQuery(exposureQuery(vault, site, checkedAt));
+	const matching = data?.version === props.version && data.checkedAt === checkedAt;
 	return (
 		<>
 			<p
@@ -182,7 +186,7 @@ function ReadNames(props: ReadNamesProps): JSX.Element {
 				{counts.exposed} exposed, {counts.usedOutside} used outside{" "}
 				<span className="text-technical text-muted-foreground font-mono">{counts.module}</span>
 			</p>
-			{data !== undefined && data !== null && (
+			{matching && (
 				<NameList
 					names={data.exposure.names}
 					unused={counts.exposed - counts.usedOutside}
