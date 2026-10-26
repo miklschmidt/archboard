@@ -17,7 +17,7 @@ import { serverPath } from "./support/navigator-support.ts";
 import { assertThemeParity } from "./support/theme-parity.ts";
 
 // The core shapes every word a picture draws, and a picture draws the glyphs it
-// was given (ADR 0057). The core says where each glyph stands and how far a run
+// was given (ADR 0059). The core says where each glyph stands and how far a run
 // advances; nothing else measures. This holds every painter to that in a real
 // browser: the page's own core, which draws the pane, and the Bun core, which
 // draws a picture for the CLI, an export and the rasterizer. Each run's glyphs

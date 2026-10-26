@@ -34,7 +34,7 @@ jobs:
           run-install: false
 
       # The flake's dev shell holds the Rust tools that build the renderer
-      # core (ADR 0057), so install and the gate run inside it.
+      # core (ADR 0059), so install and the gate run inside it.
       - name: Setup Nix
         uses: cachix/install-nix-action@v31
 

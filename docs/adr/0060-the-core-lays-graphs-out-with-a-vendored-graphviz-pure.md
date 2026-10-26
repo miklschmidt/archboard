@@ -6,14 +6,14 @@ status: accepted
 
 The user decided this on 2026-10-26. TASK-548.01 builds it. It replaces the
 section "Graphviz stays with the host for now" of
-[ADR 0057](0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md),
+[ADR 0059](0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md),
 and its clause that a worker puts Graphviz back as it was loaded before each
 solve.
 
 ## Context
 
 Track and Blocks rank and order the cards of each block with Graphviz `dot`.
-ADR 0057 kept Graphviz with the host: the WebAssembly core called
+ADR 0059 kept Graphviz with the host: the WebAssembly core called
 `@viz-js/viz`, Graphviz's C code compiled with Emscripten, through an import,
 and a native build was to link the C library. It left open whether the core
 replaces Graphviz.
@@ -71,7 +71,7 @@ A solve's answer depends on its graph alone. graphviz-pure holds a layout's
 state in its own values, and each call starts afresh what C keeps for a
 process. So the layout workers load no viz-js and put back no memory. Each
 worker instantiates the core module its host's thread compiled and checked,
-and the worker pool and the `Solver` port stay as ADR 0057 has them.
+and the worker pool and the `Solver` port stay as ADR 0059 has them.
 
 WebAssembly has no fused multiply-add instruction. graphviz-pure calls
 `f64::mul_add` where C Graphviz is contracted to one, and `compiler_builtins`

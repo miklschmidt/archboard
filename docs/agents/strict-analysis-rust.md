@@ -36,7 +36,7 @@ is `unsafe_code`, which is `deny`. The code that the `wasm-bindgen` macros
 write passes it. One site needs it: the WebAssembly build names the fast `fma`
 of `crates/archboard-graphviz/src/fma.rs` with `#[unsafe(export_name = "fma")]`,
 so that it takes the place of the slow `fma` of `compiler_builtins` that
-`f64::mul_add` calls (ADR 0058). The function is safe Rust, and the site
+`f64::mul_add` calls (ADR 0060). The function is safe Rust, and the site
 carries the one `#[expect(unsafe_code)]`. `forbid` would refuse that
 `expect`, and no other crate needs one.
 

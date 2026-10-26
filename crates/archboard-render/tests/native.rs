@@ -1,10 +1,10 @@
 //! A corpus board drawn by a native build of the core, to the same document
-//! the WebAssembly build draws (ADR 0057).
+//! the WebAssembly build draws (ADR 0059).
 //!
 //! The fixture (`fixtures/recommendations.json`) holds what the WebAssembly core was
 //! asked and answered: the request its host wrote, the icons it was given, and
 //! the document it wrote. The native render lays out each solve here, Graphviz
-//! included (ADR 0058), so a native build lays a board out with no C library
+//! included (ADR 0060), so a native build lays a board out with no C library
 //! and no host's Graphviz.
 //!
 //! `packages/renderer/tests/runtime/support/capture-native-fixture.ts` writes

@@ -5,7 +5,7 @@
 // compiles the core it serves and draws every picture with it on its own
 // thread, and a pool of Web Workers, each handed that compiled core, runs the
 // layout's solves. The core shapes every word itself, so a word is the same
-// width here as on the server (ADR 0057). It holds no theme colours: a
+// width here as on the server (ADR 0059). It holds no theme colours: a
 // picture drawn here paints with the page's own colour tokens, so it takes
 // whichever theme the page is in (TASK-346). What is drawn comes from the
 // board the page read from the server and holds as a read-only cache (ADR 0023),

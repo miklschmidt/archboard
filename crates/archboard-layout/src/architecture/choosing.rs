@@ -5,7 +5,7 @@
 //! weighs are asked for side by side and weighed in the order the choice
 //! weighs them, so the drawing is the one laying them out one by one gives.
 //! Each solve tells, with its drawing, what the choices read of it
-//! (ADR 0039, ADR 0057).
+//! (ADR 0039, ADR 0059).
 
 use std::future::{Future, poll_fn};
 use std::pin::{Pin, pin};

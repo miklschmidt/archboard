@@ -32,7 +32,7 @@ docs/design/generated/*.png
 packages/codex-app-server/src/shared/protocol/generated/
 
 # The renderer core's build and its glue are derived from packages/renderer/crates
-# by `bun run build:core` (ADR 0057); cargo's own output goes to target/.
+# by `bun run build:core` (ADR 0059); cargo's own output goes to target/.
 packages/renderer/src/shared/protocol/generated/
 /target/
 

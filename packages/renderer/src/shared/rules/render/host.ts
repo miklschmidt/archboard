@@ -2,7 +2,7 @@
 //
 // The renderer is the same core under Bun (the CLI, the rasterizer, the
 // Archboard server's render route) and in a browser tab (TASK-247). The core
-// draws every picture (ADR 0057); four things differ between those places,
+// draws every picture (ADR 0059); four things differ between those places,
 // and only four, so they arrive as a host installed once before the first
 // picture:
 //

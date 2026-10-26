@@ -1,7 +1,7 @@
 //! The semantics of ECMAScript the layout was first written with, beyond the
 //! arithmetic of `archboard_scene::js`: how a comparator orders a sort, how a
 //! number reads back from its spelling, and how a set of numbers tells two
-//! apart. The layout is held to what the TypeScript engine answered (ADR 0057).
+//! apart. The layout is held to what the TypeScript engine answered (ADR 0059).
 
 use std::cmp::Ordering;
 

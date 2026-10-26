@@ -21705,7 +21705,7 @@
 						"name": "Page readiness",
 						"kind": "function",
 						"responsibility": "What the page must say before it is photographed, and what the answer must be",
-						"description": "The animation is paused at its first frame and the SVG is the size the job asked for. The SVG draws its words in glyphs it defines (ADR 0057), so there is no face to wait for. A bitmap of the wrong size is refused, never cropped.",
+						"description": "The animation is paused at its first frame and the SVG is the size the job asked for. The SVG draws its words in glyphs it defines (ADR 0059), so there is no face to wait for. A bitmap of the wrong size is refused, never cropped.",
 						"parent": "Z6KpYhw6",
 						"groups": [
 							"drawing"
@@ -26817,7 +26817,7 @@
 						"name": "Page readiness",
 						"kind": "function",
 						"responsibility": "What the page must say before it is photographed, and what the answer must be",
-						"description": "The animation is paused at its first frame and the SVG is the size the job asked for. The SVG draws its words in glyphs it defines (ADR 0057), so there is no face to wait for. A bitmap of the wrong size is refused, never cropped.",
+						"description": "The animation is paused at its first frame and the SVG is the size the job asked for. The SVG draws its words in glyphs it defines (ADR 0059), so there is no face to wait for. A bitmap of the wrong size is refused, never cropped.",
 						"parent": "Z6KpYhw6",
 						"groups": [
 							"drawing"

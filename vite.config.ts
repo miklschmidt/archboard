@@ -201,7 +201,7 @@ export default defineConfig({
 				command: "bun scripts/generate-codex-app-server-contract.ts --ensure",
 				cache: { input: analysisCache.input, env: analysisCache.env },
 			},
-			// The renderer core, built to WebAssembly inside `nix develop` (ADR 0057). The build
+			// The renderer core, built to WebAssembly inside `nix develop` (ADR 0059). The build
 			// script keeps a build that records the hash of this checkout's sources.
 			core: {
 				command: "bun scripts/build-core.ts",

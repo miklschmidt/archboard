@@ -1,4 +1,4 @@
-# The Rust crates of the repository (ADR 0057). Each lives in crates/ under
+# The Rust crates of the repository (ADR 0059). Each lives in crates/ under
 # its crate name; the JavaScript packages stay in packages/.
 [workspace]
 resolver = "3"

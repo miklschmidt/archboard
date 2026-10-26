@@ -1,8 +1,8 @@
 // The layout engine a worker runs, under Bun and in the browser alike. The
 // pool's first message hands the worker the renderer core its main thread
-// compiled and checked (ADR 0057); the worker instantiates it and answers each
+// compiled and checked (ADR 0059); the worker instantiates it and answers each
 // solve after that, one at a time, with the core's `layOutBoard`, which runs
-// Graphviz in the core (ADR 0058). A solve's answer depends on its graph
+// Graphviz in the core (ADR 0060). A solve's answer depends on its graph
 // alone, so neither which worker answers it nor what that worker solved
 // before changes a drawing.
 //

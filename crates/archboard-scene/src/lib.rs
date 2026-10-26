@@ -1,5 +1,5 @@
 //! The renderer core's drawing contract, its scene, and the painter that turns
-//! a drawing into a scene (ADR 0057).
+//! a drawing into a scene (ADR 0059).
 //!
 //! Layout answers a drawing ([`drawing`], [`request`]). The painter
 //! ([`paint::paint`]) turns it into a [`scene::Scene`]: the ordered and

@@ -1,4 +1,4 @@
-//! A native frontend reads a corpus board's scene as typed values (ADR 0057,
+//! A native frontend reads a corpus board's scene as typed values (ADR 0059,
 //! docs/design/typed-scene.md): where each card stands, what each line is
 //! stroked with and which words each card says, with no SVG, path data or CSS
 //! to parse. The board is the dogfood vault's "Codex session", as the renderer

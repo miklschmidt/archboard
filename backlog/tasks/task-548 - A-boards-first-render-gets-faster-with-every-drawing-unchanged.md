@@ -4,7 +4,7 @@ title: A board's first render gets faster, with every drawing unchanged
 status: To Do
 assignee: []
 created_date: '2026-10-26T02:26:00Z'
-updated_date: '2026-10-26T04:00:00Z'
+updated_date: '2026-10-26T13:13:00Z'
 labels:
   - renderer
   - performance
@@ -29,4 +29,6 @@ A first render of a wide dogfood board takes 1.5 to 2 s (Agent workbench, Board 
 2026-10-26: the owner set the goal: rendering fast enough for real-time scene changes, with complex boards' first render under 500 ms (today 1.6 to 1.8 s for Agent workbench and Board viewer). Get as close as possible; a win that would change drawings is reported for the owner to decide, not made.
 
 2026-10-26: the owner waived byte-for-byte drawings where a performance change uncovers and fixes a defect (missed arcs, arrows through cards and the like). Each changed drawing needs evidence that a defect went away and that nothing got worse, listed in the task notes; any other change is reported for the owner to decide.
+
+2026-10-26: rebased onto origin/main (aa364ad76), whose rewritten history holds its own ADR 0057 (render recipe) and ADR 0058 (interface width). The branch's ADRs became ADR 0059 (the renderer is a Rust core) and ADR 0060 (the vendored graphviz-pure). Task notes written before the rebase still cite them as 0057 and 0058.
 <!-- SECTION:NOTES:END -->

@@ -15,7 +15,7 @@ Product source lives in workspaces. The root `package.json` lists `packages/*` a
 ```text
 packages/<name>/   # a library that owns one behavior. See Packages.
 apps/<name>/       # a process entry that nothing imports: cli, server, web, workbench-example. See Apps.
-crates/<crate>/    # a Rust crate of the root Cargo workspace (ADR 0057)
+crates/<crate>/    # a Rust crate of the root Cargo workspace (ADR 0059)
 crates/vendor/     # third-party crates the core builds in, no workspace members (crates/vendor/README.md)
 tests/system/      # repository, process, browser and full-product tests across owners
 scripts/, tools/   # repository scripts and the Oxlint plugin
@@ -443,7 +443,7 @@ The files of `shared/api/` and `ui/api/` are safe for the browser, with no Node 
 The files of `runtime/api/` are Node-bound and run only in Bun.
 
 - `shared/` holds the host code that the browser and Bun both run. It holds no rule of layout, painting or
-  measurement: the renderer core in `crates/` draws every picture (ADR 0057). `rules/` is the pure code: `render/` has
+  measurement: the renderer core in `crates/` draws every picture (ADR 0059). `rules/` is the pure code: `render/` has
   the entry points (`board.ts` resolves a board's variant, view and comparison into what a render asks, and
   `diagram.ts` hands that to the core with this host's durations and theme colours), the host contract, the words a
   pane's key says beside the kinds the core lists (`key-marks.ts`) and the marks a pane draws itself (`marks.ts`), and
@@ -456,7 +456,7 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   as many workers as the place has and calls off when the core drops it, and the path data of the icons it draws. A
   worker (`engine/layout-engine.ts`) instantiates the core its host's thread compiled and handed it, and runs one
   solve at a time with the core's `layOutBoard`, which lays out each graph it ranks with the core's own Graphviz
-  (`crates/archboard-graphviz` over the vendored graphviz-pure, ADR 0058).
+  (`crates/archboard-graphviz` over the vendored graphviz-pure, ADR 0060).
 - `runtime/` holds the Bun host. `services/bun-host.ts` installs the core, the theme colors, the icon paths and the
   pool of layout workers. `processes/layout-worker.ts` is the worker thread, started with
   `new URL("../processes/layout-worker.ts", import.meta.url)`. `operations/` has the render entry points, the
@@ -479,7 +479,7 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
 - The assets live in `assets/`, next to `src/`: `assets/fonts/` holds Onest, DM Mono and Big Shoulders Display with their
   OFL texts and `README.md`, and `assets/theme.css` holds the colors of both themes. No package file reads a `src/`
   path. `./assets` exports `DIAGRAM_FONTS_DIRECTORY` and `THEME_STYLESHEET`, computed from the package's own place. The
-  renderer core carries the four diagram faces in its build (ADR 0057). `readme:assets` and the theme parity test take
+  renderer core carries the four diagram faces in its build (ADR 0059). `readme:assets` and the theme parity test take
   the path from there.
   `./theme.css` and the four `./fonts/<filename>` exports expose the stylesheet and fonts that the web app consumes.
   `apps/web/src/ui/theme/app.css` uses these package names in `@import` and `url()` references, which Vite resolves. `vite.config.ts` hashes `packages/renderer/src/shared`, `packages/renderer/src/ui` and the Bun worker

@@ -124,7 +124,7 @@ equality with the route of libavoid.
 
 ### Graphviz stays with the host for now
 
-[ADR 0058](0058-the-core-lays-graphs-out-with-a-vendored-graphviz-pure.md)
+[ADR 0060](0060-the-core-lays-graphs-out-with-a-vendored-graphviz-pure.md)
 replaces this section: the core lays graphs out with a vendored
 graphviz-pure, and no worker puts Graphviz back before a solve.
 

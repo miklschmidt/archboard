@@ -229,7 +229,7 @@ pub fn paint(request: &PaintRequest) -> Scene {
 
 #[cfg(test)]
 mod tests {
-    //! What a scene is to a painter (ADR 0057): each group names the subject it
+    //! What a scene is to a painter (ADR 0059): each group names the subject it
     //! draws and its role, and traffic is data, which each painter animates as
     //! it can, never an animation written into the scene.
 

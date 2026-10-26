@@ -1,5 +1,5 @@
 //! The scene: the ordered and positioned list of what a picture is made of
-//! (ADR 0057), as typed values a frontend paints without reading SVG or CSS.
+//! (ADR 0059), as typed values a frontend paints without reading SVG or CSS.
 //! Each painter turns it into what a frontend shows; the SVG painter
 //! (`archboard-svg`) writes it as a document.
 //!

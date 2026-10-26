@@ -22,7 +22,7 @@ inside `nix develop`.
    the icons the core was given:
    `bun packages/renderer/tests/runtime/support/capture-render-requests.ts <requests dir> [board ...]`.
 2. Draw each request again with a native build of the core and its own
-   Graphviz (ADR 0058):
+   Graphviz (ADR 0060):
    `cargo run --release -p archboard-render --example critical_path -- <requests dir> [rounds] [board ...]`.
    The example lays out each solve at once and times its Graphviz calls
    apart. On its clock, a solve answers at the time it was asked plus the

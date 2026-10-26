@@ -102,14 +102,14 @@ settlement of routes (`even-pins.ts`), its column fold and
   memory on every host stays.
 
 Superseded in part (2026-10-25, TASK-520.02,
-[ADR 0057](0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)):
+[ADR 0059](0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)):
 the router of the renderer core routes the trunks of Blocks, in place of
 libavoid. The engine pool and the workers load the core and Graphviz, and
 libavoid-js, its patch and the test that it loads into the same memory are
 gone.
 
 Superseded in part (2026-10-25, TASK-520.05,
-[ADR 0057](0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)):
+[ADR 0059](0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)):
 the renderer core lays out every Track and Blocks solve through one call,
 `layOutBoard`, and the `archboard.stage` option is gone. A solve's root
 options say how it draws the board's containers and group regions, in

@@ -4,7 +4,7 @@
 //!
 //! Text width is shaped, never estimated, and never asked of the place that
 //! draws: every layout and every painter reads the same numbers from here
-//! (ADR 0057).
+//! (ADR 0059).
 
 use archboard_text::{Face, Paragraph};
 

@@ -1,7 +1,7 @@
 # graphviz-pure lays our graphs out faster, to the same bytes (TASK-548.03)
 
 The core lays out the graphs of a solve with the vendored graphviz-pure
-([ADR 0058](../adr/0058-the-core-lays-graphs-out-with-a-vendored-graphviz-pure.md)).
+([ADR 0060](../adr/0060-the-core-lays-graphs-out-with-a-vendored-graphviz-pure.md)).
 TASK-548.03 made it faster. Every answer it gives is the same, byte for byte,
 so no drawing changed. This note records how the speed was measured, where
 the time went before and after, what each change gained, and what is left

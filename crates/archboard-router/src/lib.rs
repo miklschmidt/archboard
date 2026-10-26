@@ -1,4 +1,4 @@
-//! Orthogonal connector routing around rectangular obstacles (ADR 0057).
+//! Orthogonal connector routing around rectangular obstacles (ADR 0059).
 //!
 //! Written from the published algorithms, not from any existing router's
 //! source:

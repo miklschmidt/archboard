@@ -35,7 +35,7 @@ Where things are written down:
 - This box has node and bun but no npm or npx. Use `bun run <script>`, never
   `npm run`. `bun install` intermittently fails to extract a tarball. If it
   fails, run it again.
-- The renderer core is Rust, built to WebAssembly (ADR 0057). Run Rust and
+- The renderer core is Rust, built to WebAssembly (ADR 0059). Run Rust and
   build commands inside `nix develop`, which gives cargo, `wasm-bindgen` and
   Bun. After a change to `crates/`, run `bun run build:core`:
   a Bun process refuses a core built from other sources than its checkout
@@ -148,7 +148,7 @@ rules that will not stop you:
   `packages/board/src/shared/rules/ids.ts` (one to eight characters). No second
   site mints an id. An id is what a proposal is compared by, so renaming one
   makes a change look like a deletion and an addition.
-- **The core shapes every word, and nothing else measures text** (ADR 0057,
+- **The core shapes every word, and nothing else measures text** (ADR 0059,
   TASK-520.07). `crates/archboard-text` shapes a run with the bundled font files
   and breaks a paragraph to a width. A character that Onest or DM Mono lacks
   comes from the Noto fallback faces, in the one order of `Face::fallbacks`,

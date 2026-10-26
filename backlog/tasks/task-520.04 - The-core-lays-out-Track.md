@@ -5,14 +5,14 @@ status: Done
 assignee:
   - '@claude'
 created_date: 2026-10-24 12:53
-updated_date: '2026-10-25T04:12:00Z'
+updated_date: '2026-10-26T13:13:00Z'
 labels:
   - renderer
 dependencies:
   - TASK-520.03
 documentation:
   - >-
-    docs/adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md
+    docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md
 parent_task_id: TASK-520
 ordinal: 924000
 ---

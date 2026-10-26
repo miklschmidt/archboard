@@ -1,7 +1,7 @@
 # The typed scene
 
 TASK-520.10, 2026-10-25. This note describes the scene that the renderer core
-answers ([ADR 0057](../adr/0057-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md))
+answers ([ADR 0059](../adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md))
 and why each part of it has the shape it has. The types are in
 `crates/archboard-scene/src/scene/`. The SVG writer is `crates/archboard-svg`.
 

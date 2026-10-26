@@ -1,4 +1,4 @@
-//! The layout of a board's flows (ADR 0057): a variant's flows laid out as a
+//! The layout of a board's flows (ADR 0059): a variant's flows laid out as a
 //! stack of message sequences ([`sequence`]) or as a flowchart
 //! ([`flowchart`]), each answered as the paint request the painter
 //! (`archboard-scene`) turns into a scene.

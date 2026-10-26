@@ -33,7 +33,7 @@ separate static Medium file is the diagrams' weight 500, byte-pinned to the same
 
 The renderer core builds `Onest-wght-v1.000.ttf`, `Onest-Medium-v1.000.ttf` and
 the two DM Mono files into itself, shapes every word of a diagram with them, and
-writes the outline of each glyph a picture uses into that picture (ADR 0057). A
+writes the outline of each glyph a picture uses into that picture (ADR 0059). A
 browser loads no diagram font.
 
 ## DM Mono 1.000
@@ -78,7 +78,7 @@ sentence still uses Onest.
 ## Noto fallback faces
 
 Onest and DM Mono have no glyph for some characters. The renderer core draws
-such a character from the first fallback face that has one (ADR 0057). The order
+such a character from the first fallback face that has one (ADR 0059). The order
 is fixed: Noto Sans at the run's weight for Greek, then Noto Sans Symbols 2,
 then Noto Sans Math (`crates/archboard-text/src/faces.rs`). The shell does not
 use these files. All three families are licensed under the SIL Open Font

@@ -4,7 +4,7 @@
 //! becomes a call to the C function `fma`, which `compiler_builtins` defines
 //! with a generic software routine. graphviz-pure calls `mul_add` wherever C
 //! Graphviz is contracted to a fused multiply-add, and in the core that
-//! routine took 15.6% of every Graphviz layout (ADR 0058).
+//! routine took 15.6% of every Graphviz layout (ADR 0060).
 //!
 //! This module defines `fma` for the WebAssembly build, which the linker
 //! takes in place of the weak definition of `compiler_builtins`. It emulates

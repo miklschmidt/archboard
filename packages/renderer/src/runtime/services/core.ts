@@ -1,4 +1,4 @@
-// The renderer core under Bun (ADR 0057). Bun runs TypeScript from source, but
+// The renderer core under Bun (ADR 0059). Bun runs TypeScript from source, but
 // the core is a build, so the loader refuses a build of other sources than the
 // checkout holds (ADR 0014): a stale copy would answer for code nobody sees.
 

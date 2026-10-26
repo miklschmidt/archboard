@@ -20,7 +20,7 @@ wasm-bindgen = "0.2.129"
 js-sys = "0.3.106"
 wasm-bindgen-futures = "0.4.79"
 archboard-layout = { path = "../archboard-layout" }
-# The layout's Graphviz, in the core (ADR 0058).
+# The layout's Graphviz, in the core (ADR 0060).
 archboard-graphviz = { path = "../archboard-graphviz" }
 archboard-render = { path = "../archboard-render" }
 # Every number the host writes is read back to the same double: the layout's

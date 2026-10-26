@@ -46,7 +46,7 @@ that Codex passes its checks. A Codex on your `PATH` is not used.
 application into `dist/frontend`. Without it, the page tells you to run the
 build. The server and the CLI run from the TypeScript in `apps/` and
 `packages/`. If the renderer core was built from other sources than the
-checkout holds, they refuse to draw and name `bun run build:core` (ADR 0057). After each `git pull`,
+checkout holds, they refuse to draw and name `bun run build:core` (ADR 0059). After each `git pull`,
 run `bun install` and `bun run build` again. `bun install` also links the workspace
 packages into `node_modules`, and the server does not start without those links.
 
