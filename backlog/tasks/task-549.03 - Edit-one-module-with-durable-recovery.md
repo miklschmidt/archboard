@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-backend'
 created_date: '2026-10-26T05:24:00Z'
-updated_date: '2026-10-26T11:01:00Z'
+updated_date: '2026-10-26T11:14:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -77,4 +77,6 @@ Affected drafts: Board persistence@TASK-549.03, Command interface@TASK-549.03, A
 The backend now edits one claimed description through the public runtime, CLI and HTTP contracts. Exact reads keep their schema and synchronous signature. Runtime cases cover retry identity, retained results, visible claim data, take-back, coherent news, foreign inputs and real interruption recovery. A cleanup retry regression exposed a missing-ref deletion bug and now passes. Browser work remains parent-owned. Detailed evidence remains in task-549.03-evidence outside the repository.
 
 Signed preparation now includes any archive synchronization before current-file changes. A real two-worktree regression first proved that late synchronization signing changed current bytes on refusal, then passed after the append split into signed preparation and conditional installation. The final runtime regression command passes 42 tests across six files. Recovery cuts use real process exits and real files/Git objects. A later test-only simplification advances the parent clock after the child dies, so the same 12 recovery cases pass without waiting for each dead lease. CLI/HTTP, source claim behavior, skill inputs and lock regressions pass 41 tests across 13 owners. Public contract notes are in task-549.03-contract.md. The parent now owns the origin/main integration update. Per the owner instruction, this branch retains exact old base a60b0980eca566a0aedcf664544ec598be67ef03 and will not merge or rebase until the parent supplies its updated base.
+
+The parent completed the integration update onto origin/main 6cae688bbaa2b6c9862054258e89f28c605cfc46. The supplied integration base is 56d46888390de7969ceb42d964437b35e9e7c885. Save and sign this ticket work, create a backup ref, and transplant only commits after exact old base a60b0980eca566a0aedcf664544ec598be67ef03 with signed rebase --onto. Do not merge old integration ancestry. Adapt the moved CLI clients, invocation context and Git process API, then rerun affected checks. Parent retains frontend ownership and later architecture adoption.
 <!-- SECTION:NOTES:END -->

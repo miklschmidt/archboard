@@ -373,15 +373,11 @@ async function appendCheckpoint(
  * @returns A signed conditional append plan, or an already-retained checkpoint.
  */
 async function prepareCheckpointAppend(context: ArchiveContext, checkpoint: string) {
-	await assertArchiveWritable(context);
 	const expected = await archiveTip(context);
-	const retained =
-		expected !== undefined && (await isArchiveAncestor(context, checkpoint, expected));
-	return {
-		checkpoint,
-		expected,
-		candidate: retained ? expected : await appendCandidate(context, checkpoint, expected),
-	};
+	if (expected !== undefined && (await isArchiveAncestor(context, checkpoint, expected)))
+		return { checkpoint, expected, candidate: expected };
+	await assertArchiveWritable(context);
+	return { checkpoint, expected, candidate: await appendCandidate(context, checkpoint, expected) };
 }
 
 /**

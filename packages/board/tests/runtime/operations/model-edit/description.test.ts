@@ -126,7 +126,11 @@ test("the complete token includes policy bytes and discovered paths, even when i
 			...input,
 			expectedRevision: { ...input.expectedRevision, files: input.expectedRevision.files.slice(1) },
 		}),
-	).toMatchObject({ success: false, code: "STALE_REVISION" });
+	).toMatchObject({
+		success: false,
+		code: "STALE_REVISION",
+		diagnostics: expect.arrayContaining([expect.objectContaining({ subjects: [input.subject] })]),
+	});
 	const policy = join(vault, ".archboard/config.yaml");
 	const { writeFileSync } = await import("node:fs");
 	writeFileSync(policy, `${readFileSync(policy, "utf8")}\n`);
