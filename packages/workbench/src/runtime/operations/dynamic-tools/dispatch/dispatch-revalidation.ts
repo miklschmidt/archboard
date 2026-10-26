@@ -269,7 +269,7 @@ function assertImmutableForkBoundary(prepared: PreparedDynamicMutation): void {
 }
 
 /**
- * Re-issue the pane-link authority and refuse anything about it that changed while the approval
+ * Re-issue the thread-link authority and refuse anything about it that changed while the approval
  * was open, since the effect is carried out under the token a person was shown.
  * @param prepared The prepared mutation.
  * @param caller The revalidated caller.
@@ -286,7 +286,7 @@ async function revalidatedContext(
 	let fresh: DynamicContextAuthority;
 	try {
 		fresh = assertContextAuthority(
-			await options.context.issueAndRevalidatePaneLinkAuthority({
+			await options.context.issueAndRevalidateLinkAuthority({
 				caller,
 				existing: contextAuthority,
 			}),
@@ -298,12 +298,12 @@ async function revalidatedContext(
 		}
 		throw new CodexDynamicToolsError(
 			"unknown_provenance",
-			"The pane-link authority changed during revalidation.",
+			"The thread-link authority changed during revalidation.",
 			error,
 		);
 	}
 	const sameToken = fresh.token === prepared.effect.contextAuthority;
-	if (!sameToken || fresh.paneId !== contextAuthority.paneId) {
+	if (!sameToken || fresh.linkKey !== contextAuthority.linkKey) {
 		throw new CodexDynamicToolsError(
 			"invalid_call",
 			"The context authority changed during revalidation.",
@@ -362,12 +362,12 @@ function initialTurnPair(
  * Check that nothing an approved mutation stands on has changed while a person was answering.
  *
  * Everything the effect was described against is resolved again — the caller, the target, the
- * fork boundary, the pane-link authority and the operation identities — and anything that has
+ * fork boundary, the thread-link authority and the operation identities — and anything that has
  * moved refuses the call. What a person approved is what runs, or nothing does.
  * @param prepared The prepared mutation.
  * @param decision The approval decision.
  * @param caller The caller's authority as it was.
- * @param contextAuthority The pane-link authority as it was.
+ * @param contextAuthority The thread-link authority as it was.
  * @param options The dynamic tools options.
  * @param request The server request.
  * @returns What the mutation may now be carried out against.

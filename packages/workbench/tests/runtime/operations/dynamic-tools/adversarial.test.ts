@@ -243,7 +243,7 @@ describe("codex dynamic dispatcher terminal boundaries", () => {
 	test("rejects a pane authority that changes identity during post-approval revalidation", async () => {
 		const { authorities, caller } = setupAuthorities();
 		const fixture = optionsFor(authorities, caller);
-		const initialAuthority = await fixture.options.context.issueAndRevalidatePaneLinkAuthority({
+		const initialAuthority = await fixture.options.context.issueAndRevalidateLinkAuthority({
 			caller,
 		});
 		let calls = 0;
@@ -251,9 +251,9 @@ describe("codex dynamic dispatcher terminal boundaries", () => {
 			...fixture.options,
 			context: {
 				...fixture.options.context,
-				issueAndRevalidatePaneLinkAuthority: () => {
+				issueAndRevalidateLinkAuthority: () => {
 					calls += 1;
-					return calls === 1 ? initialAuthority : { ...initialAuthority, paneId: "another-pane" };
+					return calls === 1 ? initialAuthority : { ...initialAuthority, linkKey: "another-link" };
 				},
 			},
 		};

@@ -163,7 +163,7 @@ interface DynamicThreadAuthorityPort {
 
 interface DynamicContextAuthority {
 	readonly token: DynamicAuthorityToken;
-	readonly paneId: string;
+	readonly linkKey: string;
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly threadId: ThreadId;
@@ -176,7 +176,7 @@ type DynamicContextKind =
 	| "send_message_to_thread";
 
 interface DynamicContextPort {
-	readonly issueAndRevalidatePaneLinkAuthority: (input: {
+	readonly issueAndRevalidateLinkAuthority: (input: {
 		readonly caller: DynamicCallerAuthority;
 		readonly existing?: DynamicContextAuthority;
 	}) => Promise<DynamicContextAuthority> | DynamicContextAuthority;

@@ -80,7 +80,7 @@ function createAuthority(
 		 * @returns The context.
 		 */
 		contextFor: (authorityContext) => {
-			const workhorse = parseWorkhorseLinkKey(authorityContext.authority.paneId);
+			const workhorse = parseWorkhorseLinkKey(authorityContext.authority.linkKey);
 			if (workhorse === null) {
 				throw new Error("The dynamic caller's context authority names no workhorse.");
 			}
@@ -143,7 +143,9 @@ function createApproval(
 		 * @returns The session, and the command and link it captured.
 		 */
 		bindingForCaller: (threadId) => {
-			const tabSessionId = tabSessionOfLinkKey(owners.authority?.paneForThread(threadId) ?? null);
+			const tabSessionId = tabSessionOfLinkKey(
+				owners.authority?.executableLinkKeyFor(threadId) ?? null,
+			);
 			if (tabSessionId === null) throw new Error("The dynamic caller has no live tab session.");
 			return {
 				tabSessionId,

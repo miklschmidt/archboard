@@ -292,7 +292,7 @@ export function optionsFor(
 	const contextReads: Array<{ readonly operationId: OperationId; readonly kind: string }> = [];
 	const contextAuthority: DynamicContextAuthority = {
 		token: authorityToken("pane-authority"),
-		paneId: "pane-1",
+		linkKey: "link-1",
 		childId: caller.childId,
 		epoch: caller.epoch,
 		threadId: caller.threadId,
@@ -300,7 +300,7 @@ export function optionsFor(
 	};
 	const approval = new FakeApproval((request) => approvedFor(request, 100));
 	const context = {
-		issueAndRevalidatePaneLinkAuthority: () => contextAuthority,
+		issueAndRevalidateLinkAuthority: () => contextAuthority,
 		readOneFreshArchboardContext: async (input: {
 			readonly caller: DynamicCallerAuthority;
 			readonly authority: DynamicContextAuthority;

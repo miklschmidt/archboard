@@ -44,9 +44,9 @@ export interface ServerDynamicAuthorityAdapters {
 	readonly context: DynamicContextPort;
 	/**
 	 * The link key of the workhorse whose link can run turns on a thread: the key a dynamic
-	 * caller's context is read under, which the link port calls its pane.
+	 * caller's context is read under.
 	 */
-	readonly paneForThread: (threadId: ThreadId) => string | null;
+	readonly executableLinkKeyFor: (threadId: ThreadId) => string | null;
 	readonly dispose: () => void;
 }
 
@@ -209,7 +209,7 @@ export function createServerDynamicAuthorityAdapters(
 	 * @param threadId The thread.
 	 * @returns The link key, or null when no workhorse's link names the thread.
 	 */
-	const paneForThread = (threadId: ThreadId): string | null => {
+	const executableLinkKeyFor = (threadId: ThreadId): string | null => {
 		const key = options.linkKeyForThread(threadId);
 		if (key === null) return null;
 		const binding = options.threadLink.read(key);
@@ -409,25 +409,25 @@ export function createServerDynamicAuthorityAdapters(
 	});
 	const context: DynamicContextPort = Object.freeze({
 		/**
-		 * The authority to read one pane's context, issued against the pane the
-		 * caller's thread is linked to and refused once that link has moved.
+		 * The authority to read context under the thread link of the caller's thread,
+		 * issued against that link and refused once the link has moved.
 		 * @param input The caller, and any authority it already holds.
-		 * @returns The pane context authority.
+		 * @returns The thread-link authority.
 		 */
-		issueAndRevalidatePaneLinkAuthority: (
-			input: Parameters<DynamicContextPort["issueAndRevalidatePaneLinkAuthority"]>[0],
+		issueAndRevalidateLinkAuthority: (
+			input: Parameters<DynamicContextPort["issueAndRevalidateLinkAuthority"]>[0],
 		) => {
 			const { caller, existing } = input;
-			const paneId = paneForThread(caller.threadId);
-			if (paneId === null) throw new Error("The dynamic caller has no executable pane binding.");
+			const linkKey = executableLinkKeyFor(caller.threadId);
+			if (linkKey === null) throw new Error("The dynamic caller has no executable thread link.");
 			if (existing !== undefined) {
-				if (!issuer.owns(existing.token) || existing.paneId !== paneId)
-					throw new Error("The pane context authority is stale.");
+				if (!issuer.owns(existing.token) || existing.linkKey !== linkKey)
+					throw new Error("The thread-link authority is stale.");
 				return existing;
 			}
 			return Object.freeze({
-				token: tokenFor(`context:${caller.authority}:${paneId}`),
-				paneId,
+				token: tokenFor(`context:${caller.authority}:${linkKey}`),
+				linkKey,
 				childId: caller.childId,
 				epoch: caller.epoch,
 				threadId: caller.threadId,
@@ -435,7 +435,7 @@ export function createServerDynamicAuthorityAdapters(
 			});
 		},
 		/**
-		 * One reading of the board as the pane shows it, refused if the pane link
+		 * One reading of the board as the pane shows it, refused if the thread link
 		 * moved between the authority being issued and the context being read.
 		 * @param input The authority, the caller, and what the context is for.
 		 * @returns The context.
@@ -445,15 +445,15 @@ export function createServerDynamicAuthorityAdapters(
 		) => {
 			if (!issuer.owns(input.authority.token))
 				throw new Error("The context authority was retired.");
-			if (paneForThread(input.caller.threadId) !== input.authority.paneId)
-				throw new Error("The pane link changed before context capture.");
+			if (executableLinkKeyFor(input.caller.threadId) !== input.authority.linkKey)
+				throw new Error("The thread link changed before context capture.");
 			return await options.contextFor(input);
 		},
 	});
 	return Object.freeze({
 		thread,
 		context,
-		paneForThread,
+		executableLinkKeyFor,
 		/** Retire every authority this adapter issued, so none outlives it. */
 		dispose: () => {
 			issuer.retireAll();

@@ -70,7 +70,7 @@ interface MutationDispatchState {
  * @param request The server request.
  * @param caller The revalidated caller.
  * @param target The revalidated target, when the mutation names one.
- * @param contextAuthority The revalidated pane-link authority.
+ * @param contextAuthority The revalidated thread-link authority.
  * @param options The dynamic tools options.
  * @param operationSettlement How the call's operation identities are settled.
  * @returns What the mutation did.
@@ -163,7 +163,7 @@ async function resolveMutationSubject(
 }
 
 /**
- * Issue the pane-link authority one mutation is carried out under.
+ * Issue the thread-link authority one mutation is carried out under.
  * @param caller The caller's authority.
  * @param options The dynamic tools options.
  * @returns The authority.
@@ -174,7 +174,7 @@ async function issueContextAuthority(
 ): Promise<DynamicContextAuthority> {
 	try {
 		return assertContextAuthority(
-			await options.context.issueAndRevalidatePaneLinkAuthority({ caller }),
+			await options.context.issueAndRevalidateLinkAuthority({ caller }),
 			caller,
 		);
 	} catch (error) {
@@ -183,7 +183,7 @@ async function issueContextAuthority(
 		}
 		throw new CodexDynamicToolsError(
 			"unknown_provenance",
-			"The pane-link authority could not be issued.",
+			"The thread-link authority could not be issued.",
 			error,
 		);
 	}
