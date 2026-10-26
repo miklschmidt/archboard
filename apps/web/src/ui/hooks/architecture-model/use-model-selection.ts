@@ -6,10 +6,13 @@ type Projection = ReturnType<typeof projectModel>;
 /**
  * Selection holds canonical identities independently from navigation and layout.
  * @param projection The current visible lines and their authored relationships.
+ * @param initialSubject An explicit reference destination, separate from later pointer selection.
  * @returns The selection and immediate pointer, keyboard, and clearing actions.
  */
-function useModelSelection(projection: Projection) {
-	const [ids, setIds] = useState<ReadonlySet<string>>(() => new Set());
+function useModelSelection(projection: Projection, initialSubject: string | null) {
+	const [ids, setIds] = useState<ReadonlySet<string>>(
+		() => new Set(initialSubject === null ? [] : [initialSubject]),
+	);
 	const clear = useCallback((): void => setIds(new Set()), []);
 	const selectMany = useCallback(
 		(subjects: readonly string[], toggle = false): void => {

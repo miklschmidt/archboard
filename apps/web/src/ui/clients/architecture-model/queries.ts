@@ -11,6 +11,10 @@ import { inVault, strictReply, type ReplySchema } from "@archboard/server-reques
 
 type StateSelection = { readonly [Field in "state" | "against"]?: ModelAddress[Field] | null } & {
 	readonly compare?: boolean;
+	readonly module?: Extract<ArchitectureModelRead, { success: true }>["selectedModule"];
+	readonly code?: boolean;
+	readonly references?: boolean;
+	readonly reference?: number;
 };
 
 /** A failed read retains its structured diagnostics while Query keeps the last coherent data. */
@@ -24,6 +28,16 @@ class ArchitectureReadError extends Error {
 		this.name = "ArchitectureReadError";
 	}
 }
+
+const READING_FIELDS = [
+	"state",
+	"against",
+	"compare",
+	"module",
+	"code",
+	"references",
+	"reference",
+] as const;
 
 /** The canonical readings cached by this tab. */
 const architectureModelKeys = {
@@ -47,9 +61,7 @@ const architectureModelKeys = {
 			vault,
 			"reading",
 			checkpoint,
-			selection.state ?? null,
-			selection.against ?? null,
-			selection.compare ?? null,
+			...READING_FIELDS.map((field) => selection[field] ?? null),
 		] as const,
 	/**
 	 * Every mutable state and comparison follows completed model edits.
@@ -104,7 +116,9 @@ async function readModel(
 ): Promise<Extract<ArchitectureModelRead, { success: true }>> {
 	const parameters = new URLSearchParams(
 		Object.entries({ checkpoint, ...selection }).flatMap(([key, value]) =>
-			typeof value === "string" || typeof value === "boolean" ? [[key, String(value)]] : [],
+			typeof value === "string" || typeof value === "boolean" || typeof value === "number"
+				? [[key, String(value)]]
+				: [],
 		),
 	);
 	const url = `${inVault("/api/architecture/model", vault)}&${parameters}`;
@@ -221,6 +235,7 @@ function hasNoCanonicalModel(error: Error | null): boolean {
 }
 
 export {
+	readModel,
 	architectureModelKeys,
 	architectureModelQuery,
 	architectureCheckpointsQuery,

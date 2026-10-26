@@ -112,6 +112,7 @@ async function editCandidate(vault: string, request: ArchitectureModuleEdit) {
 	return {
 		success: true as const,
 		current,
+		model: checked,
 		inputs,
 		revision,
 		files: changedFiles(captured.inputs, inputs),
