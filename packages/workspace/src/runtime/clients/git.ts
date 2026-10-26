@@ -256,25 +256,93 @@ function worktreeEntries(listing: string | undefined): WorktreeEntry[] {
 	});
 }
 
+/** A checkout's root and the identity of its repository. */
+type CheckoutOfIdentity = Pick<CheckoutGitInspection, "root" | "identity">;
+
 /**
- * The working trees of a repository that `git worktree list` reports, the
- * checkout itself first. A bare repository has no working tree, so it is left
- * out, and a worktree whose directory is gone is `prunable` in Git's own words
- * and is left out too.
- * @param root A checkout's root.
- * @param options Cancellation.
- * @returns Each working tree's path; none when Git cannot list them.
+ * The real path of a directory, as Git reports a root.
+ * @param target A path.
+ * @returns Its real path, or undefined when it is no directory.
  */
-async function worktreePaths(root: string, options: InspectOptions = {}): Promise<string[]> {
-	const listing = await optionalGit(root, ["worktree", "list", "--porcelain"], options);
-	return worktreeEntries(listing)
-		.filter((entry) => !entry.bare && !entry.prunable)
-		.map((entry) => entry.path);
+function realDirectory(target: string): string | undefined {
+	try {
+		const real = fs.realpathSync.native(target);
+		return fs.statSync(real).isDirectory() ? real : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * Whether a checkout keeps a config of its own beside its repository's: a
+ * `config.worktree` in its git directory, which `extensions.worktreeConfig`
+ * turns on and which can name another `origin`. A `.git` that cannot be read
+ * counts as one, so that Git is asked.
+ * @param root A checkout's root.
+ * @returns Whether it keeps one.
+ */
+function keepsOwnConfig(root: string): boolean {
+	const entry = path.join(root, ".git");
+	try {
+		if (fs.statSync(entry).isDirectory()) {
+			return fs.existsSync(path.join(entry, "config.worktree"));
+		}
+		// A linked worktree's `.git` is a file that names its git directory.
+		const named = fs
+			.readFileSync(entry, "utf8")
+			.replace(/^gitdir:/u, "")
+			.trim();
+		return fs.existsSync(path.resolve(root, named, "config.worktree"));
+	} catch {
+		return true;
+	}
+}
+
+/**
+ * The worktrees of a checkout other than the checkout itself, as Git lists
+ * them for it, that are checkouts of its identity. A bare repository has no
+ * working tree, Git lists a main checkout whose git directory lives elsewhere
+ * by that git directory, and a worktree whose directory is gone is `prunable`
+ * in Git's own words, so all three are left out.
+ *
+ * One `git worktree list` names every worktree. A worktree reads the
+ * repository's `origin`, as its checkout does, so it has the checkout's
+ * identity, and Git is asked about it again only when it or the checkout keeps
+ * a config of its own (`keepsOwnConfig`). Such a worktree can name another
+ * `origin`, and then it is another repository. So a checkout with many
+ * worktrees runs one Git command for all of them, never several in each.
+ * @param checkout The checkout.
+ * @param options Cancellation.
+ * @returns Each worktree's real root and identity; none when Git cannot list them.
+ */
+async function worktreesOf(
+	checkout: CheckoutOfIdentity,
+	options: InspectOptions = {},
+): Promise<CheckoutOfIdentity[]> {
+	const listing = await optionalGit(checkout.root, ["worktree", "list", "--porcelain"], options);
+	const roots = worktreeEntries(listing).flatMap((entry) => {
+		const root = entry.bare || entry.prunable ? undefined : realDirectory(entry.path);
+		return root === undefined || root === checkout.root || isGitDirectory(root) ? [] : [root];
+	});
+	const shared = !keepsOwnConfig(checkout.root);
+	const worktrees: CheckoutOfIdentity[] = [];
+	for (const root of roots) {
+		if (shared && !keepsOwnConfig(root)) {
+			worktrees.push({ root, identity: checkout.identity });
+			continue;
+		}
+		// oxlint-disable-next-line no-await-in-loop -- one worktree at a time, so many worktrees with a config of their own never run Git at once
+		const identity = await repoIdentityAt(root, options);
+		if (identity === checkout.identity) {
+			worktrees.push({ root, identity });
+		}
+	}
+	return worktrees;
 }
 
 export {
 	type CheckoutHead,
-	worktreePaths,
+	worktreesOf,
 	checkoutHead,
 	repoIdentityFromRemote,
 	existingDir,

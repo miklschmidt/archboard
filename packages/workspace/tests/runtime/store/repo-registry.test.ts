@@ -156,6 +156,27 @@ test("the worktrees that git lists for a known checkout are known, and a deleted
 	expect(orders().chosen).toEqual([worktree]);
 });
 
+test("a worktree whose own config names an origin is another repository", async () => {
+	const base = join(scratch, "forked");
+	mkdirSync(base);
+	git(base, "init", "-q", "-b", "main");
+	git(base, "commit", "-q", "--allow-empty", "-m", "init");
+	const same = addWorktree(base, "forked-same");
+	const own = addWorktree(base, "forked-own");
+	git(base, "config", "extensions.worktreeConfig", "true");
+	git(own, "config", "--worktree", "remote.origin.url", "https://github.com/test/fork.git");
+	await declareDirectory(base);
+	expect(listRegistry().checkouts.map((each) => [each.repo, each.root])).toEqual([
+		["forked", realpathSync.native(base)],
+		["forked", same],
+	]);
+	// Asked from the worktree with its own origin, the others are another repository.
+	expect(await declareDirectory(own)).toMatchObject({
+		checkout: { repo: "github.com/test/fork" },
+		worktrees: [],
+	});
+});
+
 test("a repository with no remote is named by its main checkout, and so is every worktree of it", async () => {
 	const local = join(scratch, "local");
 	mkdirSync(local);
