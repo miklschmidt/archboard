@@ -145,6 +145,14 @@ test("a repeated board narrows the answer to the boards it names", async () => {
 	expect(reply.questions.passThroughEntryPoints.results).toEqual([]);
 });
 
+test("an empty board name is refused instead of reading every board", async () => {
+	for (const name of ["", "   "]) {
+		const { status, body } = await ask(`${inVault}&board=${encodeURIComponent(name)}`);
+		expect(status).toBe(404);
+		expect(body).toMatchObject({ success: false, code: "BOARD_MISSING", missing: [name] });
+	}
+});
+
 test("a board nobody has is refused with its name, and a request that names no vault is refused", async () => {
 	const missing = await ask(`${inVault}&board=Shop&board=Shpo`);
 	expect(missing.status).toBe(404);

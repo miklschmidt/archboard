@@ -24,7 +24,7 @@ import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 function boardsOf(request: Request): string[] {
 	const named = request.query["board"];
 	const each = Array.isArray(named) ? named : [named];
-	return each.filter((one): one is string => typeof one === "string" && one.trim() !== "");
+	return each.filter((one): one is string => typeof one === "string");
 }
 
 /**
