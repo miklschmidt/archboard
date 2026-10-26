@@ -519,6 +519,8 @@ Use Open architecture beside a module reference to follow its explicit model, st
 The address preserves the repository and destination through reload and browser history.
 Unavailable targets keep their authored reference and recovery instructions.
 Saved readings follow captured foreign checkpoints even when current foreign files are unavailable.
+A relationship reference selects that exact relationship within an aggregate.
+A collection offers its authored flows, and flow or step references open their containing flow.
 
 Canonical code activation names the model, subject, and optional selected state or exact checkpoint.
 A draft activation uses that draft's binding. A missing state refuses the action without opening current code.

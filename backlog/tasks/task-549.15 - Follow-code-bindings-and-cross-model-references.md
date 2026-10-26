@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - codex-parent
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T22:10:00Z'
+updated_date: '2026-10-26T22:39:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -96,4 +96,6 @@ CLI-authored combined proposals now preserve both .06 and .15 architecture. Exis
 The first browser slice now opens canonical module code through the existing public activateCodeTarget operation and shell notices. Navigation details use the same query cache and must match model, selected state, checkpoint, and complete revision before enabling the action. ModuleDetails composes the action beside authored evidence. The new browser owner passes1case/3assertions plus process-target polling for current, draft, and exact retained code; unavailable source keeps architecture readable with a disabled action. The initial missing-control RED precedes implementation. A later fixture correction selects the module after an uncached saved reading and moves helper files outside the source checkout. Types and corrected lint pass. Existing legacy activation owners pass9cases/19assertions. Foreign model navigation UI remains pending.
 
 Foreign module navigation now resolves explicit repository addresses through the existing repository query, preserves model/state/checkpoint/subject in the pane router, and seeds only the explicit arrival selection. Pointer selection remains temporary. The shared read must return the captured destination before navigation; source-context changes cancel pending actions. Unbound modules can expose references independently of code. Missing live targets remain explicit, while exact local history reopens its pinned foreign checkpoint without restoring foreign files. The new browser owner reaches a missing-control RED after real repository registration, then passes1case/7assertions. References, code, navigation, and selection regressions pass6cases/34assertions. Source/frontend types and corrected full lint pass. Foreign non-module subject presentation, final visual inspection, architecture closure, and adoption remain pending.
+
+Foreign references now open every canonical subject kind. An exact relationship inspects only its selected aggregate members and opens required endpoint paths. Collections offer their authored flows and participate in relevant-flow selection without becoming module nodes. Flow and step references reuse the returned containing flow and exact arrival identity. The expanded browser owner first failed on relationship inspection, then collection details, and now passes1case/13assertions. The final step failure was a below-viewport control in the test adapter; explicit scrollintoview plus a real hit-target wait fixes that fixture action. Parent inspected the failure screenshot and removed temporary capture/error logging. Types and lint pass. Readable reference labels and final complete-slice validation/architecture closure remain pending.
 <!-- SECTION:NOTES:END -->

@@ -196,7 +196,7 @@ function referenceAddress(reading: Model): ModelAddress {
 		flow: reading.selectedFlow,
 		grammar: reading.selectedFlow === undefined ? undefined : "sequence",
 		against: undefined,
-		focus: undefined,
+		focus: referenceFocus(reading, location.subject),
 		hideKinds: undefined,
 		hideGroups: undefined,
 	};
@@ -209,6 +209,16 @@ function referenceAddress(reading: Model): ModelAddress {
  */
 function referenceScope(reading: Model): string | null {
 	return reading.modules.find((module) => module.id === reading.selectedModule)?.parent ?? null;
+}
+
+/**
+ * A relationship destination opens the containment paths needed to show its endpoints.
+ * @param reading The exact foreign model.
+ * @param subject The qualified reference destination.
+ * @returns One structural focus for a relationship, otherwise no added focus.
+ */
+function referenceFocus(reading: Model, subject: string): ModelAddress["focus"] {
+	return reading.relationships.some((edge) => edge.id === subject) ? [subject] : undefined;
 }
 
 /**

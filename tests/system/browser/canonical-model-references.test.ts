@@ -67,25 +67,47 @@ async function selectGateway(browser: AgentBrowserSession): Promise<void> {
 }
 
 async function followGateway(browser: AgentBrowserSession): Promise<void> {
+	await followSubject(browser, 0, '[data-slot="module-details"][data-module-id="Ledger#Gateway"]');
+}
+
+async function followSubject(
+	browser: AgentBrowserSession,
+	index: number,
+	selector: string,
+): Promise<void> {
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-reference"][data-index="0"] [data-slot="module-follow-reference"]')?.matches(':enabled') === true`,
+				`document.querySelector('[data-slot="module-reference"][data-index="${index}"] [data-slot="module-follow-reference"]')?.matches(':enabled') === true`,
 			),
 		Boolean,
 		"the available foreign module reference",
 		WAIT,
 	);
-	await browser.run([
-		"click",
-		'[data-slot="module-reference"][data-index="0"] [data-slot="module-follow-reference"]',
-	]);
+	const button = `[data-slot="module-reference"][data-index="${index}"] [data-slot="module-follow-reference"]`;
+	await browser.run(["scrollintoview", button]);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-details"][data-module-id="Ledger#Gateway"]') !== null`,
+				`(() => { const node = document.querySelector(${JSON.stringify(button)}); if (!node) return false; const rect = node.getBoundingClientRect(); return rect.height > 0 && node.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)); })()`,
 			),
 		Boolean,
+		"the reference action's visible hit target",
+		WAIT,
+	);
+	await browser.run(["click", button]);
+	await pollUntil(
+		() =>
+			browser.eval<{
+				found: boolean;
+				url: string;
+				error: string | null;
+				steps: unknown[];
+				selected: unknown[];
+			}>(
+				`({ found: document.querySelector(${JSON.stringify(selector)}) !== null, url: location.href, error: document.querySelector('[data-slot="model-error"], [data-slot="module-reference-error"]')?.textContent ?? null, steps: [...document.querySelectorAll('[data-slot="model-flow-steps"] [data-step-id]')].map(node => ({id:node.getAttribute('data-step-id'),pressed:node.getAttribute('aria-pressed')})), selected: [...document.querySelectorAll('[data-slot="model-selected-subjects"] [data-subject-id]')].map(node => node.getAttribute('data-subject-id')) })`,
+			),
+		(value) => value.found,
 		"the exact foreign subject",
 		WAIT,
 	);
@@ -98,6 +120,40 @@ test("foreign references preserve explicit addresses and recover pinned architec
 		foreign = join(home, "ledger");
 	const vault = modelFixture(local, "Shop", "shop");
 	const foreignVault = modelFixture(foreign, "Ledger", "ledger");
+	writeFileSync(
+		join(foreignVault, "requests.flows.json"),
+		JSON.stringify({
+			schemaVersion: 1,
+			id: "Behavior",
+			name: "Ledger requests",
+			flows: [
+				{
+					id: "Ledger#Request",
+					name: "Ledger request",
+					participants: ["Ledger#Gateway", "Ledger#Worker"],
+					steps: [
+						{
+							id: "Ledger#Send",
+							from: "Ledger#Gateway",
+							to: "Ledger#Worker",
+							kind: "sync",
+							label: "Store ledger entry",
+						},
+					],
+				},
+			],
+		}),
+	);
+	const foreignGatewayPath = join(foreignVault, "gateway.module.json");
+	const foreignGateway = JSON.parse(readFileSync(foreignGatewayPath, "utf8"));
+	foreignGateway.outgoing.push({
+		id: "Ledger#Audit",
+		to: "Ledger#Worker",
+		kind: "call",
+		order: 30,
+		label: "Audit dispatch",
+	});
+	writeFileSync(foreignGatewayPath, JSON.stringify(foreignGateway));
 	const server = await startOwnedServer({
 		serverPath,
 		vault,
@@ -165,13 +221,17 @@ test("foreign references preserve explicit addresses and recover pinned architec
 					clear: ["binding"],
 					set: {
 						references: [
-							{
-								repo: "github.com/acme/ledger",
-								model: "Ledger",
-								subject: "Ledger#Gateway",
-								state: "current",
-							},
-						],
+							"Ledger#Gateway",
+							"Ledger#Dispatch",
+							"Ledger#Behavior",
+							"Ledger#Request",
+							"Ledger#Send",
+						].map((subject) => ({
+							repo: "github.com/acme/ledger",
+							model: "Ledger",
+							subject,
+							state: "current",
+						})),
 					},
 				},
 			],
@@ -217,6 +277,53 @@ test("foreign references preserve explicit addresses and recover pinned architec
 	expect(
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('modelA')`),
 	).toBe("Shop");
+	for (const [index, subject, selector] of [
+		[
+			1,
+			"Ledger#Dispatch",
+			'[data-slot="model-connection-details"] [data-relationship-id="Ledger#Dispatch"]',
+		],
+		[
+			2,
+			"Ledger#Behavior",
+			'[data-slot="model-collection-details"][data-collection-id="Ledger#Behavior"]',
+		],
+		[3, "Ledger#Request", '[data-slot="model-flow-details"]'],
+		[
+			4,
+			"Ledger#Send",
+			'[data-slot="model-flow-steps"] [data-step-id="Ledger#Send"][aria-pressed="true"]',
+		],
+	] as const) {
+		await followSubject(browser, index, selector);
+		expect(
+			await browser.eval<string | null>(`new URLSearchParams(location.search).get('subjectA')`),
+		).toBe(subject);
+		if (index === 1)
+			expect(
+				await browser.eval<boolean>(
+					`document.querySelector('[data-slot="model-connection-details"] [data-relationship-id="Ledger#Audit"]') === null`,
+				),
+			).toBe(true);
+		if (index === 2) {
+			await browser.run([
+				"click",
+				'[data-slot="model-collection-details"] [data-open-flow="Ledger#Request"]',
+			]);
+			await pollUntil(
+				() =>
+					browser.eval<boolean>(
+						`document.querySelector('[data-slot="model-flow-details"]') !== null`,
+					),
+				Boolean,
+				"a flow opened from its collection",
+				WAIT,
+			);
+			await browser.run(["back"]);
+		}
+		await browser.run(["back"]);
+		await selectGateway(browser);
+	}
 	rmSync(join(foreignVault, "model.json"));
 	await browser.run(["reload"]);
 	await selectGateway(browser);
@@ -249,4 +356,21 @@ test("foreign references preserve explicit addresses and recover pinned architec
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!after.body.success) throw new Error(JSON.stringify(after.body));
 	expect(after.body.revision).toEqual(before.body.revision);
+	const unavailable = new URL(await browser.eval<string>("location.href"));
+	unavailable.searchParams.set("repoA", "github.com/acme/missing");
+	await browser.run(["open", unavailable.href]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-error"][data-code="REFERENCE_UNAVAILABLE"]') !== null`,
+			),
+		Boolean,
+		"the explicitly unavailable repository",
+		WAIT,
+	);
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="module-details"]') === null && new URLSearchParams(location.search).get('repoA') === 'github.com/acme/missing'`,
+		),
+	).toBe(true);
 }, 60_000);
