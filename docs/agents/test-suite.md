@@ -376,6 +376,8 @@ controls work, server edits reach the page, and presentation writes no board con
 `canonical-model-viewer.test.ts` uses the same browser adapter for current modules and retained readings.
 Its temporary Git repository supplies real checkpoints through the public API.
 It covers selection, changed or missing current inputs, source evidence, archive recovery, and unchanged retention records.
+`canonical-model-publication.test.ts` covers explicit destination choice, publication, and missing-history recovery through a real local Git remote.
+It shares the canonical reader interaction helpers with the viewing owner.
 `semantic-claim.test.ts` proves that a claimed board keeps drawing and shows the claim.
 Its take-back control ends the claim, and the next agent write receives the revocation once.
 The board keeps every accepted edit after take-back.

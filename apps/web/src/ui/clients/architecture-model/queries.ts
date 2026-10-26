@@ -11,6 +11,12 @@ import { inVault, strictReply, type ReplySchema } from "@archboard/server-reques
 const architectureModelKeys = {
 	all: ["architecture-model"] as const,
 	/**
+	 * Every active read resource in one vault, including mutable publication metadata.
+	 * @param vault The explicit vault.
+	 * @returns Its resource prefix.
+	 */
+	vault: (vault: string) => ["architecture-model", vault] as const,
+	/**
 	 * One explicit current or retained reading.
 	 * @param vault The explicitly addressed vault.
 	 * @param checkpoint The exact identity, or null for current inputs.

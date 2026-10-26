@@ -3,9 +3,9 @@ id: TASK-549.16
 title: Publish archive history and recover missing revisions
 status: In Progress
 assignee:
-  - '@codex-archive-backend'
+  - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T13:08:00Z'
+updated_date: '2026-10-26T13:59:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -66,6 +66,8 @@ TASK-549.02
 4. Add explicit configured publication, durable private status, complete history fetching, signed ancestry joins, retention limitations, and CLI/server adapters. Preserve current files, index, source HEAD, and exact identities.
 5. Update consumer guidance, authored workflow examples, evaluation coverage, and ADR 0059. Run focused behavior owners and affected static gates.
 6. Merge latest feat/canonical-module-model, resolve affected contracts, record parent UI work, release claims, stop this server, and leave signed checkpoints.
+
+7. Parent browser delivery: keep publication status separate from immutable reading content. Add explicit destination configuration, publish, pending retry, and missing-history fetch for the selected exact checkpoint. Keep retention limits visible and refresh publication, checkpoint metadata, and the selected reading after accepted actions. Use the existing browser seam and real local bare remotes for the visible workflow. Align the browser proposal and adopt all delivery drafts after the complete slice passes.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -84,6 +86,8 @@ Backend delivery evidence: 32 tests pass across six isolated runtime owners. Twe
 Final simplification: one atomic destination sidecar belongs to the Git common directory per portable vault path. Private pending refs retain the intended archive tip before network work, and immutable published receipt refs retain acknowledged closures. The runtime derives baseline status from Git ancestry. The fetch owner removes temporary incoming refs after use. No current-edit journal or model copy is introduced. A normal named fetch runs first and only an observed archive shallow boundary triggers deeper fetching. Configured signing governs every join. A foreign source branch is refused without changing that remote branch. Publication refuses machine-local source paths without rewriting checkpoint identities.
 
 Failure record: the first combined multi-file test command omitted this repository standard --isolate flag. Bun reset later case timeouts to five seconds and fixture cleanup produced dangling asynchronous errors. The corrected isolated owner run passes all 32 tests without changing global timing policy. Red/green logs record the missing exports, network status, truncated archive, stale push, missing history catalogue, changed destination, pending baseline closure, private source path, missing identity, source-ref refusal, and missing-reading destination. All logs are under /home/msc/.local/state/archboard-implementation/task-549/task-549.16-evidence. Model evaluations and browser tests did not run in this backend assignment.
+
+Parent browser checkpoint: exact readings show separately queried publication status, explicit remote/ref configuration, retention limits, and publish/fetch controls. The initial browser test failed before the surface existed and passes after explicit configuration and publication, with four assertions and the same selected checkpoint. Source and browser types pass. Three form lint findings are corrected. Publication receives a separate browser owner because combining this work with TASK-549.03 exceeds the existing file limit; both owners share interaction helpers. Pending failure/retry and missing-history recovery remain in progress.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
