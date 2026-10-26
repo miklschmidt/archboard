@@ -17,8 +17,8 @@ interface ModelDiagramProps {
 	model: Model;
 	projection: ReturnType<typeof projectModel>;
 	reducedMotion: boolean;
-	selected: string | null;
-	onSelect: (id: string | null) => void;
+	selected: ReadonlySet<string>;
+	onSelect: (id: string | null, toggle?: boolean) => void;
 	onOpen: (id: string | null) => void;
 }
 
@@ -91,8 +91,12 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 			root.innerHTML = drawing.svg;
 			installed.current = drawing.svg;
 		}
-		markSubjects(root, new Set(selected === null ? [] : [selected]));
-	}, [selected, drawing.svg]);
+		const marked = new Set(selected);
+		for (const { line, joins } of props.projection.connections) {
+			if (joins.some((edge) => selected.has(edge.id))) marked.add(line.id);
+		}
+		markSubjects(root, marked);
+	}, [selected, drawing.svg, props.projection.connections]);
 	useLayoutEffect(() => {
 		if (camera.room !== null && !camera.handled())
 			camera.fit({ kind: "whole", content: drawing }, true);

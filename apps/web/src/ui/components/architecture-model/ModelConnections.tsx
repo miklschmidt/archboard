@@ -1,12 +1,15 @@
-import { useCallback, type JSX } from "react";
+import { type JSX } from "react";
 import type { Model, projectModel } from "#ui/rules/architecture-model/projection.ts";
+
+import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
+import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 
 type Connection = ReturnType<typeof projectModel>["connections"][number];
 interface ModelConnectionsProps {
 	model: Model;
 	connections: readonly Connection[];
-	selected: string | null;
-	onSelect: (id: string) => void;
+	selected: ReadonlySet<string>;
+	onSelect: ModelSelection["select"];
 }
 
 /**
@@ -37,7 +40,7 @@ function ConnectionChoice(
 	props: ModelConnectionsProps & { line: Connection["line"] },
 ): JSX.Element {
 	const { line, model, onSelect } = props;
-	const choose = useCallback((): void => onSelect(line.id), [onSelect, line.id]);
+	const pick = useModelPick(line.id, onSelect);
 	return (
 		<li>
 			<button
@@ -46,8 +49,8 @@ function ConnectionChoice(
 				data-from={line.from}
 				data-to={line.to}
 				data-kind={line.kind}
-				aria-pressed={props.selected === line.id}
-				onClick={choose}
+				aria-pressed={props.selected.has(line.id)}
+				{...pick}
 				className="hover:bg-muted aria-pressed:bg-muted rounded-control w-full space-y-1 px-3 py-3 text-left"
 			>
 				<span className="text-control block">
