@@ -131,12 +131,13 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      result and the containers that hold them, with the result's own
      relationships and the parts at their other ends, and the rest recedes.
      The result carries the ring of attention, and its row is pressed. The
-     camera frames the result with those parts. If the view does not draw the
-     result, the pane opens Everything first. The Board tab stays open, so the
-     next row is one click away. Choosing the pressed row again, a group or a
-     walkthrough lets the question go. A pick shows its own light and ring,
-     and letting go of the pick brings the step back. Escape with nothing
-     picked lets the question go. A row under the pointer lights its part,
+     camera frames the result with those parts, nearest first, while their
+     cards still read. A lit line leads to a part it leaves past the edge.
+     If the view does not draw the result, the pane opens Everything first.
+     The Board tab stays open, so the next row is one click away. Choosing
+     the pressed row again, a group or a walkthrough lets the question go. A
+     pick shows its own light and ring, and letting go of the pick brings the
+     step back. Escape with nothing picked lets the question go. A row under the pointer lights its part,
      except the pressed row. Ask the agent, beside the row, sends
      the deletion question about that part to the agent of the pane's
      checkout. A page with no agent, such as a recording page, has no Ask the

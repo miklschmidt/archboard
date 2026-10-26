@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 ---
 
 # A chosen design question lights its answer
@@ -11,7 +11,9 @@ Revised with the owner on 2026-10-25, after the first build. The first build lit
 the whole answer at once. In the Overview it lit three closed containers while
 the Board tab named five entry points that nobody could see. In Everything the
 five lit cards were too small to read. The owner chose a step through the
-answer instead. The decision below is the revised one.
+answer instead. The decision below is the revised one. The owner accepted it
+on 2026-10-26 and left the limit on how far out a step frames to the
+implementer. That limit is in the decision.
 
 ## Context
 
@@ -35,8 +37,11 @@ lights: its relationships and the parts at their other ends. For a pass-through
 entry point, those are its callers and the one call it passes on, which is what
 the question asks about. The rest recedes. The step's subject carries the ring
 of attention, as a walkthrough step's subjects do. The camera frames the
-subject with the parts at the other ends of its relationships. If the view on
-screen does not draw the subject, the pane opens Everything first.
+subject with the parts at the other ends of its relationships, nearest first,
+and goes no further out than half the drawn size, where their cards still read.
+A part that would take the camera further out is left past the edge of the
+picture, and the lit line that reaches it leads there. If the view on screen
+does not draw the subject, the pane opens Everything first.
 
 A step is not a pick, so the Board tab stays open and the next result is one
 click away. Choosing the current result again lets the question go.
@@ -74,3 +79,10 @@ These rules still hold:
   small to read.
 - A result that picks its part, as before. Rejected, because a pick opens the
   Selection tab, and the next result is then two clicks away.
+- A step that frames every part around its subject, however small. Built and
+  rejected: on archboard's own Board viewer board, three of the five steps
+  framed at a third to two fifths of the drawn size. There the names of the
+  cards were seen, and what each card does was not read.
+- A step that stops at half the drawn size and moves toward the middle of all
+  the parts around the subject. Built and rejected: a far caller pulled the
+  subject to the edge of the picture and pushed a part next to it out.
