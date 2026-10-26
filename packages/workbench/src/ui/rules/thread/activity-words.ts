@@ -84,25 +84,34 @@ const SHELLS: ReadonlySet<string> = new Set(["bash", "sh", "zsh"]);
 const SCRIPT_OPTION = /^-[a-z]*c[a-z]*$/u;
 
 /**
+ * Whether a newline separates commands rather than lines inside a quoted script.
+ * @param command The command.
+ * @returns Whether the command contains an unquoted newline.
+ */
+function hasUnquotedNewline(command: string): boolean {
+	// The parser treats newlines as whitespace. Operators expose unquoted newlines
+	// while newlines inside the script's quotes remain part of the same word.
+	return (
+		command.includes("\n") &&
+		parse(command.replaceAll("\n", ";")).some((word) => typeof word !== "string")
+	);
+}
+
+/**
  * The three words of a command, read as a shell reads them.
  * @param command The command.
  * @returns The words, or null for a command of more or fewer words, or with an operator.
  */
 function threeWords(command: string): readonly [string, string, string] | null {
-	try {
-		// A variable stays as it is written: the row shows the script, not its expansion.
-		const words = parse(command, (name) => `$${name}`);
-		const [shell, option, script] = words;
-		return words.length === 3 &&
-			typeof shell === "string" &&
-			typeof option === "string" &&
-			typeof script === "string"
-			? [shell, option, script]
-			: null;
-	} catch {
-		// Commands outside the parser's grammar still have a readable row.
-		return null;
-	}
+	// A variable stays as it is written: the row shows the script, not its expansion.
+	const words = parse(command, (name) => `$${name}`);
+	const [shell, option, script] = words;
+	return words.length === 3 &&
+		typeof shell === "string" &&
+		typeof option === "string" &&
+		typeof script === "string"
+		? [shell, option, script]
+		: null;
 }
 
 /**
@@ -113,11 +122,17 @@ function threeWords(command: string): readonly [string, string, string] | null {
  * @returns The words.
  */
 function commandLabel(command: string): string {
-	const words = threeWords(command);
-	if (words === null) return command;
-	const [shell, option, script] = words;
-	const name = shell.slice(shell.lastIndexOf("/") + 1);
-	return SHELLS.has(name) && SCRIPT_OPTION.test(option) ? script : command;
+	try {
+		if (hasUnquotedNewline(command)) return command;
+		const words = threeWords(command);
+		if (words === null) return command;
+		const [shell, option, script] = words;
+		const name = shell.slice(shell.lastIndexOf("/") + 1);
+		return SHELLS.has(name) && SCRIPT_OPTION.test(option) ? script : command;
+	} catch {
+		// Commands outside the parser's grammar still have a readable row.
+		return command;
+	}
 }
 
 /**

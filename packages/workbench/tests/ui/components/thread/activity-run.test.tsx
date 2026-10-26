@@ -142,3 +142,20 @@ test("a command outside the shell parser's grammar keeps its row", () => {
 	mount({ items: [command("unparsed", "completed", line)], ended: false, live: false });
 	expect(rows()[0]?.querySelector("span[title]")?.textContent).toBe(line);
 });
+
+test("newlines separate commands only outside the script's quotes", () => {
+	const compound = "bash\n-c\n'echo hi'";
+	const script = "echo first\necho second";
+	mount({
+		items: [
+			command("compound", "completed", compound),
+			command("multiline", "completed", `/bin/bash -c '${script}'`),
+		],
+		ended: false,
+		live: false,
+	});
+	expect(rows().map((row) => row.querySelector("span[title]")?.textContent)).toEqual([
+		compound,
+		script,
+	]);
+});
