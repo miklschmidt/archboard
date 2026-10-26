@@ -4,6 +4,9 @@ status: accepted
 
 # Git history is read through bindings, on request, and never stored
 
+[ADR 0059](0059-checkpoints-retain-architecture-without-selecting-current.md) governs retained canonical architecture.
+This decision governs the separate source-history lens.
+
 TASK-369.01 tracks this decision, accepted on 2026-10-06 after an independent
 review. It serves TASK-369, its subtasks TASK-369.02
 to TASK-369.07, and Proposal 3 of `docs/design/design-checks.md`.

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-backend'
 created_date: '2026-10-26T05:24:00Z'
-updated_date: '2026-10-26T08:14:00Z'
+updated_date: '2026-10-26T08:28:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -46,15 +46,15 @@ TASK-549.01
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 An agent retains an architecture reading locally. CLI and browser readers reopen it after current files change. Historical reads never mix in current content.
-- [ ] #2 Preserve required inputs through Git ancestry or retention refs. Honor configured identity and signing without changing the user index, HEAD, or checkout.
-- [ ] #3 Concurrent archive appends preserve both checkpoints through marked synchronization commits. Archive order never selects current architecture or merges architectural meaning.
-- [ ] #4 Linked worktrees share archive objects and refs. Exact reads identify missing architecture or source evidence and provide a recovery action.
+- [x] #2 Preserve required inputs through Git ancestry or retention refs. Honor configured identity and signing without changing the user index, HEAD, or checkout.
+- [x] #3 Concurrent archive appends preserve both checkpoints through marked synchronization commits. Archive order never selects current architecture or merges architectural meaning.
+- [x] #4 Linked worktrees share archive objects and refs. Exact reads identify missing architecture or source evidence and provide a recovery action.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -73,4 +73,6 @@ TASK-549.01
 Initial HEAD f1b91c9a98537a29238ac1575f45d2fcfd5d3259 equals feat/canonical-module-model and contains it. The worktree starts clean. Configured SSH signing succeeds through commit-tree and git verify-commit. Dependencies installed with bun install --frozen-lockfile without lock changes. No parent task notes will change.
 
 Backend checkpoint: exact retain/read/list runtime and public CLI/HTTP/client contracts are implemented. Real red/green evidence is saved under /home/msc/.local/state/archboard-implementation/task-549/task-549.02-evidence. Proven slices include exact reads after current corruption, configured SSH signing and identity with dirty-index preservation, baseline ancestry and collection, concurrent linked-worktree synchronization, missing source evidence, durable operation retries, signing refusal, shallow missing baselines, reserved archive branch protection, Git-sensitive paths and large UTF-8 inputs, and unborn source history. TASK-549.02 proposals remain draft. Browser work remains with the parent.
+
+Backend evidence: 40 focused tests pass across canonical runtime, CLI/HTTP, command help and skill policy owners. The broader board, Git-process, CLI-contract and package-contract run passes 604 tests. Source and browser TypeScript projects pass. Full lint reports zero warnings and errors, and formatting passes. The deterministic skill input check passes with no model evaluation. Architecture semantics report no diagnostics. The three TASK-549.02 proposals have no code warnings; the full-vault code check retains 12 existing warnings on other boards. The code check cannot assess the Commands container interface because that directory has no export root. Its concrete command files and client boundaries were assessed. Final simplification places Git object reads and retention-ref updates in the private archive store, so operations retain the domain contract and no duplicate content cache exists. Consumer guidance, coverage inventory, glossary and ADR 0059 match this backend slice. AC 1 remains unchecked because the browser selector and browser evidence belong to the parent. All proposals remain draft.
 <!-- SECTION:NOTES:END -->

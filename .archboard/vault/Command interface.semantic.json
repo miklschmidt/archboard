@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 147,
+	"version": 148,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-26T07:49:06.967Z",
+	"updatedAt": "2026-10-26T08:20:55.329Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -77075,6 +77075,10 @@
 					"repo": "github.com/miklschmidt/archboard",
 					"commit": "f1b91c9a98537a29238ac1575f45d2fcfd5d3259",
 					"path": "docs/design/canonical-module-tickets.md"
+				},
+				{
+					"repo": "github.com/miklschmidt/archboard",
+					"path": "docs/adr/0059-checkpoints-retain-architecture-without-selecting-current.md"
 				}
 			],
 			"content": {
@@ -77765,12 +77769,36 @@
 						"order": 53000,
 						"name": "Model read",
 						"kind": "module",
-						"responsibility": "Returns canonical model roots and authored module details",
-						"description": "Reads current or exact retained architecture. Retains and lists local checkpoints through the server with actionable architecture and source-evidence diagnostics.",
+						"responsibility": "Returns current or exact retained model roots and authored module details",
+						"description": "The checkpoint selector requires a complete immutable identity. Module names resolve within that reading alone.",
 						"parent": "bLpk2XKU",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/operations/model/read.ts"
+						}
+					},
+					{
+						"id": "XfxA8lUl",
+						"order": 54000,
+						"name": "Model checkpoint commands",
+						"kind": "module",
+						"responsibility": "Retains observed revisions and lists local checkpoint metadata",
+						"parent": "bLpk2XKU",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/model/checkpoints.ts"
+						}
+					},
+					{
+						"id": "TsCise1I",
+						"order": 55000,
+						"name": "Canonical model client",
+						"kind": "module",
+						"responsibility": "Preserves shared read, retain and list outcomes across HTTP, including structured refusals",
+						"parent": "dHZeNcMs",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/architecture-model-client.ts"
 						}
 					}
 				],
@@ -79088,13 +79116,39 @@
 						"id": "TeLAhdej",
 						"order": 92000,
 						"from": "66xX05dW",
-						"to": "OfRn3av3",
+						"to": "TsCise1I",
 						"kind": "call",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/operations/model/read.ts",
 							"symbol": "readArchitectureModelOnServer"
+						}
+					},
+					{
+						"id": "0PBRM9B2",
+						"order": 93000,
+						"from": "XfxA8lUl",
+						"to": "TsCise1I",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/model/checkpoints.ts",
+							"symbol": "retainArchitectureCheckpointOnServer"
+						}
+					},
+					{
+						"id": "ZglcNYUQ",
+						"order": 94000,
+						"from": "TsCise1I",
+						"to": "iIJ5MRhi",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/architecture-model-client.ts",
+							"symbol": "requestJson"
 						}
 					}
 				],

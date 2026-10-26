@@ -1,10 +1,8 @@
-import { git } from "@archboard/workspace/checkouts";
 import {
 	GitObjectIdSchema,
 	type ArchitectureModelRead,
 	type ArchitectureCheckpointList,
 } from "#shared/schemas/model.ts";
-import { modelRevision } from "#runtime/store/model-files.ts";
 import {
 	discoveryFailure,
 	decodeModel,
@@ -14,12 +12,11 @@ import {
 	ArchiveError,
 	CheckpointRecordSchema,
 	archiveContext,
-	archiveTip,
-	readBlob,
+	readCheckpointInputs,
+	archiveRecords,
 	readRecord,
 	sourceEvidence,
 	isArchiveAncestor,
-	settledValues,
 	type ArchiveContext,
 } from "#runtime/store/model-archive.ts";
 import {
@@ -27,41 +24,6 @@ import {
 	historyResult,
 	checkpointMetadata,
 } from "#runtime/operations/history/result.ts";
-
-/**
- * Read a regular checkpoint input from one tree entry.
- * @param context The caller's checkout.
- * @param entry One NUL-delimited Git tree entry.
- * @returns Its relative path and exact authored bytes.
- */
-async function checkpointInput(context: ArchiveContext, entry: string): Promise<[string, Buffer]> {
-	const tab = entry.indexOf("\t");
-	const [mode, kind, object] = entry.slice(0, tab).split(" ");
-	if (mode !== "100644" || kind !== "blob" || object === undefined)
-		throw new ArchiveError("CHECKPOINT_INVALID", "A checkpoint input is not a regular blob.");
-	return [
-		entry.slice(tab + 1).slice("inputs/".length),
-		Buffer.from(await readBlob(context, object)),
-	];
-}
-
-/**
- * Capture checkpoint inputs from Git objects without reading the current vault.
- * @param context The caller's checkout.
- * @param checkpoint The immutable checkpoint identity.
- * @returns Exact bytes, input fingerprints and empty discovery diagnostics.
- */
-async function readCheckpointInputs(context: ArchiveContext, checkpoint: string) {
-	const listing = await git(context.root, ["ls-tree", "-r", "-z", checkpoint, "--", "inputs"], {
-		trimOutput: false,
-		maxOutputBytes: Infinity,
-	});
-	const entries = (listing ?? "").split("\0").filter(Boolean);
-	const inputs = new Map(
-		await settledValues(entries.map((entry) => checkpointInput(context, entry))),
-	);
-	return { inputs, revision: modelRevision(inputs), diagnostics: [] };
-}
 
 /**
  * Require an architectural checkpoint for the addressed vault.
@@ -198,15 +160,7 @@ async function readArchitectureCheckpoint(
 async function listArchitectureCheckpoints(vault: string): Promise<ArchitectureCheckpointList> {
 	return historyResult("ARCHIVE_UNREADABLE", async () => {
 		const context = await archiveContext(vault);
-		const tip = await archiveTip(context);
-		if (tip === undefined) return { success: true as const, checkpoints: [] };
-		const history = await git(context.root, ["rev-list", tip], { maxOutputBytes: Infinity });
-		const records = await settledValues(
-			(history ?? "")
-				.split("\n")
-				.filter(Boolean)
-				.map(async (id) => ({ id, record: await readRecord(context, id) })),
-		);
+		const records = await archiveRecords(context);
 		return {
 			success: true as const,
 			checkpoints: records.flatMap(({ id, record }) =>
