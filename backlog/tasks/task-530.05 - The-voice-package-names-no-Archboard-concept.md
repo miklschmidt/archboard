@@ -4,7 +4,7 @@ title: The voice package names no Archboard concept
 status: Done
 assignee: []
 created_date: '2026-10-25T14:17:00Z'
-updated_date: '2026-10-26T05:46:00Z'
+updated_date: '2026-10-26T06:15:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-530
@@ -126,6 +126,14 @@ Merge of main 5454f51bc (#4 to #10, #15) into PR #2, as baf4f06dd, with the form
 - Board rasterizer: edge eJdDQjo5 and step pGLHZ6HU cited requireFreshPlace in record.ts, which TASK-529.07 (ffe7d60bd) moved into freshTalkPlace. They now cite freshTalkPlace.
 - docs/readme/assets.json: explainer, pr-walkthrough and newcomer named packages/workbench/src/runtime/services/realtime, which this branch moved. They now name packages/codex-realtime-voice/src. The architecture embeds are drawn again and tracked. banner, sequence and web-shop came out byte-identical; only their hashes changed.
 - archboard check after the merge: 16 warnings, all older than the merge. propagateEdit (Board persistence JRnj6xbQ, Zdta8mrP) is missing on main and on the branch tip. Each RELATIONSHIP_UNDRAWN import exists on the branch tip, and main's boards draw none of those relationships either.
+
+After the merge of main, `bun run check` failed the interface width test: board 192 (ceiling 188), code-binding 19 (18), renderer 67 (61). 82ddd5e07 narrows each back to its ceiling, and no ceiling moved:
+- board: the store's BOARD_OPENED_BY refusal names each opening node in its message, so the CLI no longer parses it and BoardOpenedByAnswerSchema is gone. The server still answers openedBy. Callers derive TrackedEmbedSchema and SemanticVariantSchema from SemanticBoardSchema, and PaletteColor from PaletteColorSchema.
+- code-binding: vaultRepositoryIdentity is gone. The render route asks workspace's gitCheckoutOfVault, and its tests moved to packages/workspace/tests/runtime/clients/git-sync.test.ts.
+- renderer: callers derive RenderRecipe, RenderRecipeRead, SemanticRasterReceipt, SemanticRasterPageSize, MarkCount and LineMark. embedRecipeInPng stays public, because folding it into replaceRenderRecipe made Board rasterizer's anchor TIjtkPvX cite code that no part binds.
+Main and this branch had both added an ADR 0057. Main's (render recipes and embeds) keeps the number, and this branch's interface ADR is now 0058 (cd23ea655).
+Reviews on gpt-6.1-sol at xhigh: the merge resolution (baf4f06dd) had no further findings. The narrowing review added ebcca8786 (the delete test covers every opener and the openedBy body) and cf9f76a8a (renderer count in boundaries.md).
+`bun run check` passes on 82ddd5e07: test:modules 4995 pass, test:system 285 pass, test:repository 153 pass, and every serial browser file. archboard check reports the same 16 warnings that predate the merge.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
