@@ -294,7 +294,9 @@ function removeKilledFetches(cache: string, now: number): void {
 	for (const name of fs.readdirSync(cache).filter((one) => one.startsWith(INCOMING_PREFIX))) {
 		const left = path.join(cache, name);
 		const changed = fs.statSync(left, { throwIfNoEntry: false })?.mtimeMs ?? now;
-		if (now - changed > CHECK_MS.fetchIncomingStale) fs.rmSync(left, { recursive: true, force: true });
+		if (now - changed > CHECK_MS.fetchIncomingStale) {
+			fs.rmSync(left, { recursive: true, force: true });
+		}
 	}
 }
 

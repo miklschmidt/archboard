@@ -118,7 +118,9 @@ function timingLine(timing: CheckTiming): string {
 }
 
 /** The semantics check's part of the answer: the vault check and the time it took. */
-const SemanticsPartSchema = VaultCheckSchema.extend({ timings: CodeCheckAnswerSchema.shape.timings });
+const SemanticsPartSchema = VaultCheckSchema.extend({
+	timings: CodeCheckAnswerSchema.shape.timings,
+});
 type SemanticsPart = z.output<typeof SemanticsPartSchema>;
 
 /**

@@ -11,7 +11,10 @@ import { vaultsBoundTo } from "@archboard/board/store-read";
 import { findAndRegisterVault } from "@archboard/workspace/vault";
 
 /** Why a search found no vault, as the finder answers it. */
-type VaultNotFound = Extract<Awaited<ReturnType<typeof findAndRegisterVault>>, { readonly ok: false }>;
+type VaultNotFound = Extract<
+	Awaited<ReturnType<typeof findAndRegisterVault>>,
+	{ readonly ok: false }
+>;
 
 /** A command found no vault; nothing was started and nothing was written. */
 class VaultNotFoundError extends Error {
