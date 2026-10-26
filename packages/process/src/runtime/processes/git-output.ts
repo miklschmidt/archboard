@@ -26,12 +26,14 @@ interface BoundedDrain {
  * @param stream The child's stdout or stderr.
  * @param onExcess Called once when the limit is passed.
  * @param onFailure Called when the read itself fails.
+ * @param limit The output budget for this command.
  * @returns The kept bytes as a promise, and a way to cut the read short.
  */
 function drainBounded(
 	stream: ReadableStream<Uint8Array>,
 	onExcess: () => void,
 	onFailure: (error: Error) => void,
+	limit = GIT_OUTPUT_LIMIT_BYTES,
 ): BoundedDrain {
 	const reader = stream.getReader();
 	let chunks: Uint8Array[] = [];
@@ -75,13 +77,13 @@ function drainBounded(
 	 */
 	const take = (value: Uint8Array): void => {
 		seen += value.byteLength;
-		if (kept < GIT_OUTPUT_LIMIT_BYTES) {
-			const room = GIT_OUTPUT_LIMIT_BYTES - kept;
+		if (kept < limit) {
+			const room = limit - kept;
 			const chunk = value.byteLength <= room ? value : value.slice(0, room);
 			chunks.push(chunk);
 			kept += chunk.byteLength;
 		}
-		if (!exceeded && seen > GIT_OUTPUT_LIMIT_BYTES) {
+		if (!exceeded && seen > limit) {
 			exceeded = true;
 			onExcess();
 		}

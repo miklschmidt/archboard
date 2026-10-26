@@ -66,6 +66,44 @@ const ModelDiagnosticSchema = z
 	})
 	.strict();
 
+const GitObjectIdSchema = z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u);
+const ModelRevisionSchema = z
+	.object({
+		digest: z.string(),
+		files: z.array(z.object({ path: z.string(), sha256: z.string() }).strict()),
+	})
+	.strict();
+const ArchitectureCheckpointRequestSchema = z
+	.object({
+		target: z.literal("current"),
+		operationId: z.string().min(1),
+		writer: z.string().min(1),
+		doing: z.string().min(1),
+		expectedRevision: z.string().regex(/^[a-f0-9]{64}$/u),
+		dependencies: z.array(GitObjectIdSchema).default([]),
+	})
+	.strict();
+const ArchitectureCheckpointSchema = z
+	.object({
+		id: GitObjectIdSchema,
+		model: SemanticIdSchema,
+		state: StateMetadataSchema,
+		revision: ModelRevisionSchema,
+		createdAt: z.iso.datetime(),
+		request: ArchitectureCheckpointRequestSchema,
+		sources: z.array(
+			z
+				.object({
+					repo: z.string().min(1),
+					commit: GitObjectIdSchema.nullable(),
+					uncommitted: z.boolean(),
+				})
+				.strict(),
+		),
+		publication: z.literal("saved-locally"),
+	})
+	.strict();
+
 const ArchitectureModelSchema = z
 	.object({
 		success: z.literal(true),
@@ -75,12 +113,16 @@ const ArchitectureModelSchema = z
 		relationships: z.array(OwnedRelationshipSchema.extend({ from: QualifiedSubjectIdSchema })),
 		roots: z.array(QualifiedSubjectIdSchema),
 		selectedModule: QualifiedSubjectIdSchema.optional(),
-		revision: z
-			.object({
-				digest: z.string(),
-				files: z.array(z.object({ path: z.string(), sha256: z.string() }).strict()),
-			})
-			.strict(),
+		revision: ModelRevisionSchema,
+		checkpoint: ArchitectureCheckpointSchema.optional(),
+		sourceEvidence: z
+			.array(
+				ArchitectureCheckpointSchema.shape.sources.element.extend({
+					status: z.enum(["available", "uncommitted", "unavailable"]),
+					recovery: z.string().optional(),
+				}),
+			)
+			.optional(),
 	})
 	.strict();
 const ArchitectureModelFailureSchema = z
@@ -94,6 +136,17 @@ const ArchitectureModelFailureSchema = z
 			"LEGACY_AUTHORITY",
 			"MODULE_NOT_FOUND",
 			"MODULE_AMBIGUOUS",
+			"ARCHIVE_NOT_INITIALIZED",
+			"ARCHIVE_UNREADABLE",
+			"ARCHIVE_IN_USE",
+			"ARCHITECTURE_UNAVAILABLE",
+			"CHECKPOINT_INVALID",
+			"CHECKPOINT_REQUIRED",
+			"STALE_REVISION",
+			"ARCHIVE_WRITE_FAILED",
+			"ARCHIVE_COMMIT_FAILED",
+			"ARCHIVE_BUSY",
+			"OPERATION_REUSED",
 		]),
 		error: z.string(),
 		diagnostics: z.array(ModelDiagnosticSchema).min(1),
@@ -103,11 +156,37 @@ const ArchitectureModelReadSchema = z.discriminatedUnion("success", [
 	ArchitectureModelSchema,
 	ArchitectureModelFailureSchema,
 ]);
+const ArchitectureCheckpointRetainSchema = z.discriminatedUnion("success", [
+	z.object({ success: z.literal(true), checkpoint: ArchitectureCheckpointSchema }).strict(),
+	ArchitectureModelFailureSchema,
+]);
+const ArchitectureCheckpointListSchema = z.discriminatedUnion("success", [
+	z
+		.object({ success: z.literal(true), checkpoints: z.array(ArchitectureCheckpointSchema) })
+		.strict(),
+	ArchitectureModelFailureSchema,
+]);
+type ArchitectureCheckpointRequest = z.infer<typeof ArchitectureCheckpointRequestSchema>;
+type ArchitectureCheckpoint = z.infer<typeof ArchitectureCheckpointSchema>;
+type ArchitectureCheckpointRetain = z.infer<typeof ArchitectureCheckpointRetainSchema>;
+type ArchitectureCheckpointList = z.infer<typeof ArchitectureCheckpointListSchema>;
 type ArchitectureModelRead = z.infer<typeof ArchitectureModelReadSchema>;
 type ArchitectureModel = z.infer<typeof ArchitectureModelSchema>;
 type ModelDiagnostic = z.infer<typeof ModelDiagnosticSchema>;
 
 export {
+	GitObjectIdSchema,
+	ModelRevisionSchema,
+	ModelDiagnosticSchema,
+	ArchitectureModelFailureSchema,
+	ArchitectureCheckpointRequestSchema,
+	ArchitectureCheckpointSchema,
+	ArchitectureCheckpointRetainSchema,
+	ArchitectureCheckpointListSchema,
+	type ArchitectureCheckpointRequest,
+	type ArchitectureCheckpoint,
+	type ArchitectureCheckpointRetain,
+	type ArchitectureCheckpointList,
 	ArchitectureManifestSchema,
 	ArchitectureModuleSchema,
 	ArchitectureModelReadSchema,

@@ -25,6 +25,18 @@ The namespace records provenance and owns no diagram or containment.
 A fingerprint of discovered architecture paths and their exact bytes.
 File moves and whitespace edits change this revision without replacing subject identities.
 
+**Checkpoint**:
+An immutable retained architectural reading with its exact inputs and source associations.
+It remains independent of the current architecture in any checkout.
+
+**Archive synchronization**:
+A record that preserves concurrent archive histories without merging their architecture.
+It is neither a state nor an adoption.
+
+**Source evidence**:
+The source revision associated with an architectural reading and its uncommitted-code status.
+Architecture retention does not preserve the source code itself.
+
 **Board**:
 A semantically named description of one architectural subject or question at one
 abstraction level. A board owns its shared views and the tree of variants recording

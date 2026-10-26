@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ArchitectureModelReadSchema } from "@archboard/board/model";
-import { readArchitectureModelOnServer } from "#cli/clients/server/semantic-boards.ts";
+import { readArchitectureModelOnServer } from "#cli/clients/server/architecture-model.ts";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 
@@ -13,13 +13,23 @@ const modelReadContract = defineCommand({
 	examples: ["archboard model read", "archboard model read 'Shop#Gateway' -C /tmp/shop"],
 	parameters: [
 		{
+			kind: "option",
+			key: "checkpoint",
+			spellings: ["--checkpoint"],
+			value: "required",
+			placeholder: "id",
+			description: "Read one complete immutable checkpoint identity",
+		},
+		{
 			kind: "positional",
 			key: "module",
 			name: "module",
 			description: "A qualified module id or a unique name",
 		},
 	],
-	input: { ingress: z.object({ module: z.string().optional() }) },
+	input: {
+		ingress: z.object({ module: z.string().optional(), checkpoint: z.string().optional() }),
+	},
 	result: ArchitectureModelReadSchema,
 	output: {
 		cases: [
@@ -65,7 +75,7 @@ const modelReadContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "model read");
-		const result = await readArchitectureModelOnServer(input.module);
+		const result = await readArchitectureModelOnServer(input.module, input.checkpoint);
 		return {
 			result,
 			...(result.success

@@ -16,3 +16,39 @@ The public result identifies the roots as `Shop#Worker` and `Shop#Gateway`, in t
 
 The fixture exercises a read-only path.
 It requires no migration, history archive, or model writer.
+
+## Exact checkpoint workflow
+
+The following commands use your configured Git identity and signing.
+Run them from this Archboard checkout.
+The temporary repository keeps this example separate from the authoritative legacy vault.
+
+```bash
+checkpoint_fixture=$(mktemp -d)
+cp -R examples/canonical-model/.archboard "$checkpoint_fixture/.archboard"
+git -C "$checkpoint_fixture" init --quiet
+git -C "$checkpoint_fixture" add .archboard
+git -C "$checkpoint_fixture" commit -m 'test: seed canonical architecture'
+archboard model read -C "$checkpoint_fixture" > "$checkpoint_fixture/reading.json"
+checkpoint_revision=$(bun -e 'const reading = await Bun.file(process.argv[1]).json(); if (!reading.success) process.exit(1); process.stdout.write(reading.revision.digest);' "$checkpoint_fixture/reading.json")
+archboard model retain -C "$checkpoint_fixture" \
+  --operation-id fixture-before-change --writer fixture-agent \
+  --expect-revision "$checkpoint_revision" \
+  --doing "retaining the original fixture" > "$checkpoint_fixture/retained.json"
+checkpoint_id=$(bun -e 'const receipt = await Bun.file(process.argv[1]).json(); if (!receipt.success) process.exit(1); process.stdout.write(receipt.checkpoint.id);' "$checkpoint_fixture/retained.json")
+bun -e 'const path = `${process.argv[1]}/.archboard/vault/gateway.module.json`; const module = await Bun.file(path).json(); module.responsibility = "Changed after the checkpoint"; await Bun.write(path, JSON.stringify(module));' "$checkpoint_fixture"
+archboard model read 'Shop#Gateway' -C "$checkpoint_fixture"
+archboard model read 'Shop#Gateway' -C "$checkpoint_fixture" --checkpoint "$checkpoint_id"
+archboard model checkpoints -C "$checkpoint_fixture"
+```
+
+The current reading shows `Changed after the checkpoint`.
+The retained reading shows `Accepts shopping requests` and its original revision.
+Its `checkpoint.id` remains exact.
+Its `sourceEvidence` reports source availability independently of the architecture.
+The metadata files above remain outside the vault and never enter the retained architecture.
+
+For the browser handoff, keep the temporary directory and the retained receipt.
+Address its vault explicitly and use `checkpoint.id` with the shared model-read endpoint.
+The browser uses the common result schema and one read-only architecture query snapshot.
+TASK-549.02 leaves its visible checkpoint selector and browser evidence to the parent.
