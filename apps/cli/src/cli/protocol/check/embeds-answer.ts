@@ -1,7 +1,9 @@
 // The embeds check's part of the answer of `archboard check` (ADR 0057): the
-// checkout it read, the embeds it found there, what it found wrong with them,
-// and what `--fix` rewrote. Every file is named as Git names it in that
-// checkout, so the answer is the same on every machine.
+// checkout it read, the embeds it found there, the tracked embeds of the
+// vault's boards, what it found wrong with them, and what `--fix` rewrote.
+// Every file is named as Git names it in the checkout that holds it, and a
+// file of another repository names that repository too, so the answer is the
+// same on every machine.
 
 import { z } from "zod";
 
@@ -19,6 +21,19 @@ import { z } from "zod";
  *   the vault the recipe names, so the embed was not checked.
  * - `EMBED_RECIPE_UNREADABLE` (warning): the file carries a recipe that cannot
  *   be read, so nothing can draw it again.
+ * - `EMBED_VAULT_MOVED` (warning): a board of this vault tracks the embed and
+ *   holds its board, and its recipe names the repository the board moved from
+ *   (ADR 0051). `--fix` writes the recipe again, naming this vault.
+ * - `EMBED_TRACKED_UNREACHABLE` (information): no checkout on this machine
+ *   holds the repository of a tracked embed, so it was not read.
+ * - `EMBED_TRACKED_MISSING` (information): a board of this vault tracks a file
+ *   that is no embed of that board now: it is gone, Git does not track it in
+ *   the checkout it was read in, or it carries no recipe of the board.
+ *
+ * A finding about a file of another repository is information whatever its
+ * code: a warning would fail the vault's pull request until that repository
+ * draws the file again, and that repository reads the vault's default branch
+ * only after the pull request merges (ADR 0057).
  */
 const EMBED_FINDING_CODES = [
 	"EMBED_OUTDATED",
@@ -26,6 +41,9 @@ const EMBED_FINDING_CODES = [
 	"EMBED_SOURCE_MISSING",
 	"EMBED_VAULT_UNAVAILABLE",
 	"EMBED_RECIPE_UNREADABLE",
+	"EMBED_VAULT_MOVED",
+	"EMBED_TRACKED_UNREACHABLE",
+	"EMBED_TRACKED_MISSING",
 ] as const;
 
 /** A board by id, with the name a recipe or the vault gives it. */
@@ -38,8 +56,13 @@ type MissingSource = z.infer<typeof MissingSourceSchema>;
 const EmbedFindingSchema = z.object({
 	severity: z.enum(["warning", "information"]),
 	code: z.enum(EMBED_FINDING_CODES),
-	/** The embed, as Git names it in the checkout. */
+	/** The embed, as Git names it in the checkout that holds it. */
 	file: z.string(),
+	/**
+	 * The repository identity of the file, for a tracked embed of another
+	 * repository; absent for a file of the checkout that holds the vault.
+	 */
+	embedRepo: z.string().optional(),
 	/** The board as the recipe names it; absent when the recipe cannot be read. */
 	board: EmbedBoardSchema.optional(),
 	message: z.string(),
@@ -54,27 +77,44 @@ const EmbedFindingSchema = z.object({
 	 * any of which can be the board, because the listing names no id for them.
 	 */
 	unreadableBoards: z.array(z.string()).optional(),
-	/** For `EMBED_VAULT_UNAVAILABLE`: the repository identity the recipe names, or null for none. */
-	repo: z.string().nullable().optional(),
+	/**
+	 * For `EMBED_VAULT_UNAVAILABLE` and `EMBED_VAULT_MOVED`: the repository
+	 * identity of the vault the recipe names, or null for none.
+	 */
+	vaultRepo: z.string().nullable().optional(),
 	/** Why `--fix` left the embed as it was, when it was asked to fix it. */
 	notFixed: z.string().optional(),
 });
 type EmbedFinding = z.infer<typeof EmbedFindingSchema>;
+
+/** Where a file `--fix` rewrote is: its path, and its repository when it is another's. */
+const FixedFileShape = {
+	file: z.string(),
+	/** The repository identity of a tracked embed of another repository. */
+	embedRepo: z.string().optional(),
+};
+
+/**
+ * The repository the recipe named before `--fix` pointed it at this vault,
+ * which a board of this vault holds since a move; absent when it named this vault.
+ */
+const MovedFromShape = { movedFrom: z.string().nullable().optional() };
 
 /** One file `--fix` rewrote, and why. */
 const EmbedFixSchema = z.discriminatedUnion("action", [
 	/** Drawn again from its own recipe: the board or the renderer changed the picture. */
 	z.object({
 		action: z.literal("drawn"),
-		file: z.string(),
+		...FixedFileShape,
 		code: z.enum(["EMBED_OUTDATED", "EMBED_RENDERER_CHANGED"]),
+		...MovedFromShape,
 	}),
 	/** The picture is current, and only its recipe was written again. */
-	z.object({ action: z.literal("recipe"), file: z.string() }),
+	z.object({ action: z.literal("recipe"), ...FixedFileShape, ...MovedFromShape }),
 	/** Pointed at the board that holds a deleted board's name, and drawn from it. */
 	z.object({
 		action: z.literal("re-pointed"),
-		file: z.string(),
+		...FixedFileShape,
 		from: EmbedBoardSchema,
 		to: EmbedBoardSchema,
 	}),
@@ -86,6 +126,8 @@ const EmbedsPartSchema = z.object({
 	checkout: z.string().nullable(),
 	/** Every embed found: each tracked SVG document and PNG that carries a recipe. */
 	embeds: z.array(z.string()),
+	/** Every tracked embed of the vault's boards (ADR 0057), in the order the boards list them. */
+	tracked: z.array(z.object({ board: EmbedBoardSchema, repo: z.string(), path: z.string() })),
 	findings: z.array(EmbedFindingSchema),
 	/** Every file `--fix` rewrote; empty without `--fix`. */
 	fixed: z.array(EmbedFixSchema),

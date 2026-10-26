@@ -12,6 +12,7 @@ import { z } from "zod";
 import {
 	addressedVariant,
 	SemanticBoardLevelSchema,
+	TrackedEmbedSchema,
 	type SemanticBoard,
 	type SemanticVariant,
 } from "#shared/schemas/board-document.ts";
@@ -68,6 +69,11 @@ const ListedBoardSchema = z.object({
 	links: z.array(BoardLinkSchema),
 	/** The first sentence of that variant's summary, or null when it has none. */
 	description: z.string().nullable(),
+	/**
+	 * The embeds the board tracks, absent when it tracks none. The embeds check
+	 * of the vault reads each of them (ADR 0057).
+	 */
+	trackedEmbeds: z.array(TrackedEmbedSchema).optional(),
 	/** Why the board could not be read. */
 	error: z.string().optional(),
 });
@@ -232,6 +238,15 @@ function bounded(line: string): string {
 }
 
 /**
+ * The embeds a board tracks, as the listing reports them.
+ * @param board The board.
+ * @returns The field, or nothing when it tracks none.
+ */
+function trackedOf(board: SemanticBoard): Pick<ListedBoard, "trackedEmbeds"> {
+	return board.trackedEmbeds === undefined ? {} : { trackedEmbeds: board.trackedEmbeds };
+}
+
+/**
  * One board as the listing reports it.
  * @param location The board's name and key.
  * @param location.name The board's name.
@@ -280,6 +295,7 @@ function listedBoard(
 		})),
 		links: opened.ok ? linksOf(board, opened.variant, accepted, vaultRepo) : [],
 		description: opened.ok ? descriptionOf(opened.variant.summary) : null,
+		...trackedOf(board),
 	};
 }
 

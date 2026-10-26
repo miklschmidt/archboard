@@ -50,7 +50,8 @@ import { DocumentReferenceSchema } from "@archboard/code-binding/bindings";
  * `formerNames` on a board and on a variant (TASK-281, ADR 0036) did not move
  * the version, and neither did `anchor` on a relationship and a step and
  * `symbol` on a binding (TASK-367.04, ADR 0046), nor `documents` on a variant
- * (TASK-498, ADR 0054). Each is optional and
+ * (TASK-498, ADR 0054), nor `trackedEmbeds` on a board (TASK-526.04, ADR 0057).
+ * Each is optional and
  * additive, so every document this build wrote before them is already a
  * document it reads, and an older build meets the field in its strict parse
  * and refuses it by name. A bump would only have made every board of every
@@ -86,6 +87,33 @@ const FormerNamesSchema = z.array(DisplayNameSchema).min(1);
 
 /** A variant's document references, as the board holds them: one at least, or none stored. */
 const DocumentsSchema = z.array(DocumentReferenceSchema).min(1);
+
+/**
+ * A file in a repository, named from the repository's root: forward slashes,
+ * no empty, `.` or `..` segment, and nothing absolute, so a reader joins it to
+ * the checkout that holds the repository and stays inside it.
+ */
+const RepositoryFileSchema = z
+	.string()
+	.min(1)
+	.refine(
+		(file) =>
+			!file.includes("\\") &&
+			file.split("/").every((segment) => segment !== "" && segment !== "." && segment !== ".."),
+		"must name a file from the repository's root, with forward slashes and no . or .. segment",
+	);
+
+/**
+ * One tracked embed (ADR 0057): a board render that a repository keeps under
+ * version control and that the board lists, so the board's side knows where
+ * its picture is shown. It has the shape of a binding without the code fields:
+ * `repo` is a repository identity and `path` the file in that repository. The
+ * render recipe stays in the file, so the list holds nothing else of it.
+ */
+const TrackedEmbedSchema = z
+	.object({ repo: z.string().min(1), path: RepositoryFileSchema })
+	.strict();
+type TrackedEmbed = z.infer<typeof TrackedEmbedSchema>;
 
 const SemanticVersionFieldSchema = z
 	.string()
@@ -252,6 +280,13 @@ const SemanticBoardSchema = z
 		 * designation first moves: an empty record of decisions is not a decision.
 		 */
 		shelvings: z.array(ShelvingSchema).optional(),
+		/**
+		 * The embeds somebody asked this board to track, in the order they were
+		 * tracked (ADR 0057). The list is the board's and not a variant's, because
+		 * a recipe can ask for whichever variant is current. Absent until the first
+		 * one, for the reason `formerNames` is: an empty list says nothing.
+		 */
+		trackedEmbeds: z.array(TrackedEmbedSchema).min(1).optional(),
 	})
 	.strict();
 type SemanticBoard = z.infer<typeof SemanticBoardSchema>;
@@ -476,6 +511,8 @@ export {
 	type SemanticBoardLevel,
 	SemanticBoardSchema,
 	type SemanticBoard,
+	TrackedEmbedSchema,
+	type TrackedEmbed,
 	currentVariant,
 	nothingBuilt,
 	type VariantAddress,

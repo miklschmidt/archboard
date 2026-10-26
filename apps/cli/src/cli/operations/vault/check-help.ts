@@ -71,6 +71,13 @@ const EMBEDS_CHECK = [
 	"- EMBED_SOURCE_MISSING, warning: the board, the variant or the view is gone, or the recipe now draws nothing. It names the commit that removed a board when the vault's history has it, and the board that holds its name now.",
 	"- EMBED_RECIPE_UNREADABLE, warning: a recipe that cannot be read.",
 	"- EMBED_VAULT_UNAVAILABLE, information: a vault that no checkout on this machine holds, or a vault in no repository. The embed is not checked.",
+	"- EMBED_VAULT_MOVED: a tracked embed whose board this vault holds, while its recipe names another repository, as after a move. It is a warning in this checkout.",
+	"- EMBED_TRACKED_UNREACHABLE, information: a tracked embed in a repository that no checkout on this machine holds.",
+	"- EMBED_TRACKED_MISSING, information: a tracked embed that is gone, that Git does not track in the checkout it is read in, or that holds the recipe of another board.",
+	"",
+	"Tracked embeds (semantic render --track):",
+	"- The check also reads each tracked embed that the vault's boards list. One of this repository is read among the checkout's embeds. One of another repository is read in the working tree of that repository's chosen registered checkout, by the same rules. The answer's tracked lists them all.",
+	"- A finding about a file of another repository names it with embedRepo, and is information whatever its code. A warning would fail the vault's pull request until that repository draws the file again, and it can do that only after the merge.",
 ].join("\n");
 
 /** The description of `check embeds`: the check, and what --fix does. */
@@ -80,10 +87,10 @@ const CHECK_EMBEDS_HELP = [
 	[
 		"With --fix:",
 		"- Each outdated embed of this checkout is drawn again, and its whole file is rewritten. A PNG is drawn through Chromium at its recipe's scale and region. Without Chromium, the PNG stays reported, with why it was not fixed.",
-		"- An embed whose picture is current gets only its new recipe.",
+		"- An embed whose picture is current gets only its new recipe. So does a tracked embed whose recipe names the repository that its board moved from.",
 		"- A recipe that asks for the current variant and the overview or Everything is pointed at the board that now holds its deleted board's name.",
 		"- The answer's fixed lists each file it rewrote, and each re-pointing with the old and the new board.",
-		"- No file outside this checkout is written.",
+		"- A tracked embed of another repository is drawn again only in the chosen registered checkout of that repository. No other file outside this checkout is written. The findings name each tracked embed it could not reach.",
 		"",
 		"Exit 1 means a warning remains. Information never changes the exit status. No board is changed.",
 	].join("\n"),
@@ -91,6 +98,6 @@ const CHECK_EMBEDS_HELP = [
 
 /** The description of the --fix option, which `check`, `check all` and `check embeds` read. */
 const FIX_HELP =
-	"Draw each outdated embed of this checkout again from its own recipe, and rewrite its file. Write only the new recipe of an embed whose picture is current. Point a recipe that asks for the current variant and the overview or Everything at the board that now holds its deleted board's name. A PNG needs Chromium. The answer lists every file it rewrote";
+	"Draw each outdated embed of this checkout again from its own recipe, and rewrite its file, and each outdated tracked embed of another repository in the chosen registered checkout of that repository. Write only the new recipe of an embed whose picture is current or whose recipe names the repository its board moved from. Point a recipe that asks for the current variant and the overview or Everything at the board that now holds its deleted board's name. A PNG needs Chromium. The answer lists every file it rewrote";
 
 export { CHECK_ALL_HELP, CHECK_CODE_HELP, CHECK_EMBEDS_HELP, FIX_HELP };

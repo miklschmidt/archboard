@@ -156,6 +156,13 @@ against the current variant. `rasterize` needs Chromium or Google Chrome, as
 the `width` and `height` in the answer of `rasterize` are the ones in the answer
 of `render`.
 
+With `--track --doing "..."`, `render` and `rasterize` also list the file on
+the board as a tracked embed, and `check embeds` in the vault's repository then
+reads that file too. Tracking needs the vault and the file in Git checkouts, so
+the session above cannot use it.
+`tests/system/semantic-boards/tracked-embeds.test.ts` runs it over four
+repositories.
+
 ## 5. See it in a browser
 
 Open `$ARCHBOARD_URL/?paneA=payments` in a browser. The `browser` commands need

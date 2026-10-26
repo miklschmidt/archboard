@@ -1,16 +1,27 @@
 // What the embeds check says about one embed (ADR 0057): each finding with
 // its code, its severity, the board as the recipe names it, and what a person
-// or an agent does next.
+// or an agent does next. A finding about a file of another repository is
+// information: a warning there would fail the vault's pull request until that
+// repository draws the file again, which it can do only after the merge.
 
 import type { EmbedFinding, MissingSource } from "#cli/protocol/check/embeds-answer.ts";
 import type { ListedBoard } from "#cli/operations/vault/embeds/embed-vaults.ts";
 import type { RemovingCommit } from "#cli/operations/vault/embeds/vault-history.ts";
 import type { CheckoutEmbed } from "#cli/operations/vault/embeds/checkout-embeds.ts";
 
+/** A tracked embed of one of the vault's boards. */
+interface TrackedEntry {
+	readonly board: ListedBoard;
+	readonly repo: string;
+	readonly path: string;
+}
+
 /**
- * A finding about one embed, with the board its recipe names when it can be read.
+ * A finding about one embed, with the board its recipe names when it can be
+ * read, and the repository of a file of another repository, whose findings
+ * are information.
  * @param embed The embed.
- * @param finding What it says.
+ * @param finding What it says, at the severity it has in the vault's own checkout.
  * @returns The finding.
  */
 function findingOn(
@@ -19,8 +30,10 @@ function findingOn(
 ): EmbedFinding {
 	return {
 		file: embed.file,
+		...(embed.repo === undefined ? {} : { embedRepo: embed.repo }),
 		...(embed.recipe.ok ? { board: embed.recipe.recipe.board } : {}),
 		...finding,
+		...(embed.repo === undefined ? {} : { severity: "information" as const }),
 	};
 }
 
@@ -53,7 +66,7 @@ function unavailableFinding(
 	return findingOn(embed, {
 		severity: "information",
 		code: "EMBED_VAULT_UNAVAILABLE",
-		repo,
+		vaultRepo: repo,
 		message: reason,
 	});
 }
@@ -178,4 +191,64 @@ function changedFinding(
 	});
 }
 
-export { changedFinding, goneBoardFinding, missingFinding, unavailableFinding, unreadableFinding };
+/**
+ * A tracked embed whose recipe names the vault its board moved from: a board
+ * of this vault holds the board now (ADR 0051).
+ * @param embed The embed.
+ * @param from The repository the recipe names.
+ * @returns The warning, or information for a file of another repository.
+ */
+function movedFinding(embed: CheckoutEmbed, from: string | null): EmbedFinding {
+	return findingOn(embed, {
+		severity: "warning",
+		code: "EMBED_VAULT_MOVED",
+		vaultRepo: from,
+		message: `Its recipe names the vault of ${from ?? "no repository"}, and the board is in this vault now. \`archboard check embeds --fix\` here writes its recipe again, naming this vault.`,
+	});
+}
+
+/**
+ * A tracked embed in a repository that no checkout on this machine holds.
+ * @param entry The tracked embed.
+ * @returns The information.
+ */
+function unreachableFinding(entry: TrackedEntry): EmbedFinding {
+	return {
+		severity: "information",
+		code: "EMBED_TRACKED_UNREACHABLE",
+		file: entry.path,
+		embedRepo: entry.repo,
+		board: entry.board,
+		message: `No registered checkout of ${entry.repo} is on this machine, so this embed of "${entry.board.name}" was not read. Register one with \`archboard repo add <directory>\`, or choose one with \`archboard repo use <directory>\`.`,
+	};
+}
+
+/**
+ * A tracked embed that is no embed of its board now.
+ * @param entry The tracked embed.
+ * @param own Whether the file is in the checkout that holds the vault.
+ * @param root The checkout the file was looked for in.
+ * @returns The information.
+ */
+function trackedMissingFinding(entry: TrackedEntry, own: boolean, root: string): EmbedFinding {
+	return {
+		severity: "information",
+		code: "EMBED_TRACKED_MISSING",
+		file: entry.path,
+		...(own ? {} : { embedRepo: entry.repo }),
+		board: entry.board,
+		message: `"${entry.board.name}" tracks this file, and in ${root} it is no embed of that board: it is gone, Git does not track it, or it carries no render recipe of the board. Draw it again with \`archboard semantic render --out <file> --track\`.`,
+	};
+}
+
+export {
+	changedFinding,
+	goneBoardFinding,
+	missingFinding,
+	movedFinding,
+	trackedMissingFinding,
+	unavailableFinding,
+	unreachableFinding,
+	unreadableFinding,
+	type TrackedEntry,
+};

@@ -319,7 +319,8 @@ const embedsRelationships = [
 		method: "GET",
 		path: "/api/semantic-boards",
 		cardinality: "conditional",
-		description: "Each vault an embed's recipe names, listed once, to find its board by id",
+		description:
+			"Each vault an embed's recipe names, listed once, to find its board by id, and this vault's boards with the embeds they track",
 	},
 	{
 		method: "GET",
