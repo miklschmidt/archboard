@@ -18,11 +18,27 @@ const QuerySchema = z
 		module: z.string().min(1).optional(),
 		flow: z.string().min(1).optional(),
 		walkthrough: z.string().min(1).optional(),
-		shared: z.enum(["true", "false"]).optional(),
+		shared: z
+			.enum(["true", "false"])
+			.transform((value) => value === "true")
+			.optional(),
 		checkpoint: z.string().min(1).optional(),
+		model: z.string().min(1).optional(),
+		references: z
+			.enum(["true", "false"])
+			.transform((value) => value === "true")
+			.optional(),
+		reference: z.coerce.number().int().nonnegative().optional(),
+		code: z
+			.enum(["true", "false"])
+			.transform((value) => value === "true")
+			.optional(),
 		state: z.string().min(1).optional(),
 		against: z.string().min(1).optional(),
-		compare: z.enum(["true", "false"]).optional(),
+		compare: z
+			.enum(["true", "false"])
+			.transform((value) => value === "true")
+			.optional(),
 	})
 	.strict()
 	.refine(
@@ -34,25 +50,6 @@ const ListQuerySchema = z.object({ vault: z.string() }).strict();
 const RetainBodySchema = ArchitectureCheckpointRequestSchema.extend({
 	vault: z.string().optional(),
 });
-/**
- * Translate state query selectors without interpreting architecture.
- * @param vault The explicitly addressed vault.
- * @param query The parsed wire selection.
- * @returns The shared runtime reading.
- */
-function selectedReading(vault: string, query: z.infer<typeof QuerySchema>) {
-	const comparison = {
-		against: query.against,
-		compare: query.compare === undefined ? undefined : query.compare === "true",
-	};
-	return readArchitectureModel(vault, query.module, query.flow, {
-		state: query.state,
-		checkpoint: query.checkpoint,
-		walkthrough: query.walkthrough,
-		shared: query.shared === "true",
-		...comparison,
-	});
-}
 /**
  * Expose the shared current and retained architecture contracts.
  * @param app The server application.
@@ -76,20 +73,14 @@ function mountArchitectureModelRoutes(app: Express): void {
 		requireVault,
 		async (req, res) => {
 			const query = QuerySchema.safeParse(req.query);
-			if (
-				!query.success ||
-				(query.data.checkpoint !== undefined && query.data.state !== undefined)
-			) {
-				res.status(400).json({
-					success: false,
-					code: "INVALID_REQUEST",
-					error: query.success
-						? "Select either state or checkpoint."
-						: z.prettifyError(query.error),
-				});
+			if (!query.success) {
+				res
+					.status(400)
+					.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(query.error) });
 				return;
 			}
-			respond(res, await selectedReading(vaultOfRequest(req), query.data));
+			const { vault: _vault, module, flow, ...navigation } = query.data;
+			respond(res, await readArchitectureModel(vaultOfRequest(req), module, flow, navigation));
 		},
 	);
 	app.get("/api/architecture/checkpoints", requireVault, async (req, res) => {

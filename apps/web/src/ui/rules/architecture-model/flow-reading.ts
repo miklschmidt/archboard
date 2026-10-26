@@ -111,8 +111,36 @@ function modelSubjects(model: Model) {
 	return [
 		...model.modules,
 		...model.relationships,
+		...collectionSubjects(model),
 		...flowSubjects(model.collections.flatMap((collection) => collection.flows)),
 	];
+}
+
+/**
+ * Collection references name a qualified holder without creating a diagram node.
+ * @param model The coherent canonical reading.
+ * @returns Its collection identities and authored names.
+ */
+function collectionSubjects(model: Model) {
+	return model.collections.map((collection) => ({
+		id: `${model.manifest.id}#${collection.id}`,
+		name: collection.name,
+	}));
+}
+
+/**
+ * A selected collection makes its authored flow members relevant to the mode selector.
+ * @param model The complete state that owns the collection.
+ * @param selected The requested reading subjects.
+ * @returns The same identities plus their explicit collection members.
+ */
+function withCollectionFlows(model: Model, selected: ReadonlySet<string>): Set<string> {
+	const subjects = new Set(selected);
+	for (const collection of model.collections) {
+		if (!selected.has(`${model.manifest.id}#${collection.id}`)) continue;
+		for (const flow of collection.flows) subjects.add(flow.id);
+	}
+	return subjects;
 }
 
 /**
@@ -127,4 +155,12 @@ function subjectName(subject: ReturnType<typeof modelSubjects>[number]): string 
 	return subject.label ?? subject.id;
 }
 
-export { relevantFlows, projectFlow, flowSubjects, modelSubjects, subjectName };
+export {
+	relevantFlows,
+	projectFlow,
+	flowSubjects,
+	modelSubjects,
+	subjectName,
+	collectionSubjects,
+	withCollectionFlows,
+};

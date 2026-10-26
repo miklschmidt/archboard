@@ -1,5 +1,5 @@
-import type { readArchitectureModel } from "@archboard/board/store-read";
 import type { z } from "zod";
+import type { readArchitectureModel } from "@archboard/board/store-read";
 import {
 	ArchitectureArchiveInitializationSchema,
 	ArchitectureModuleEditSchema,

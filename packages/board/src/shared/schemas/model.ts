@@ -1,7 +1,10 @@
 import { WalkthroughSchema } from "#shared/schemas/model-walkthroughs.ts";
 import { z } from "zod";
+import { CodeBindingSchema } from "@archboard/code-binding/bindings";
 import { SemanticIdSchema } from "#shared/schemas/primitives.ts";
 import {
+	GitObjectIdSchema,
+	ModelReferenceSchema,
 	StateMetadataSchema,
 	ModelRevisionSchema,
 	ArchitectureManifestSchema,
@@ -16,6 +19,14 @@ import { QualifiedSubjectIdSchema } from "#shared/schemas/primitives.ts";
 import { FlowCollectionSchema } from "#shared/schemas/model-flows.ts";
 import { SemanticPolicySchema } from "#shared/schemas/semantic-policy.ts";
 
+const ModelReferenceAddressSchema = z.strictObject({
+	vault: z.string(),
+	model: SemanticIdSchema,
+	subject: QualifiedSubjectIdSchema,
+	state: SemanticIdSchema,
+	checkpoint: GitObjectIdSchema.optional(),
+});
+
 const ModelDiagnosticSchema = z
 	.object({
 		code: z.string(),
@@ -27,7 +38,6 @@ const ModelDiagnosticSchema = z
 	})
 	.strict();
 
-const GitObjectIdSchema = z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u);
 const PublicationStateSchema = z.enum([
 	"saved-locally",
 	"publication-pending",
@@ -89,6 +99,16 @@ const ArchitectureCheckpointSchema = z
 				.strict(),
 		),
 		publication: PublicationStateSchema,
+		references: z
+			.array(
+				z.strictObject({
+					module: QualifiedSubjectIdSchema,
+					index: z.number().int().nonnegative(),
+					reference: ModelReferenceSchema,
+					checkpoint: GitObjectIdSchema,
+				}),
+			)
+			.optional(),
 	})
 	.strict();
 
@@ -123,9 +143,42 @@ const ArchitectureModelSchema = z
 			})
 			.optional(),
 		selectedModule: QualifiedSubjectIdSchema.optional(),
+		selectedSubject: QualifiedSubjectIdSchema.optional(),
 		selectedFlow: QualifiedSubjectIdSchema.optional(),
 		revision: ModelRevisionSchema,
 		checkpoint: ArchitectureCheckpointSchema.optional(),
+		location: ModelReferenceAddressSchema.optional(),
+		codeBinding: CodeBindingSchema.optional(),
+		resolvedReferences: z
+			.array(
+				z.strictObject({
+					module: QualifiedSubjectIdSchema,
+					index: z.number().int().nonnegative(),
+					reference: ModelReferenceSchema,
+					status: z.enum(["available", "unavailable"]),
+					name: z.string().optional(),
+					modelName: ArchitectureManifestSchema.shape.name.optional(),
+					stateName: SelectedStateSchema.shape.name.optional(),
+					lifecycle: SelectedStateSchema.shape.lifecycle.optional(),
+					address: ModelReferenceAddressSchema.optional(),
+					diagnostics: z.array(ModelDiagnosticSchema),
+				}),
+			)
+			.optional(),
+		codeTarget: z
+			.discriminatedUnion("ok", [
+				z.strictObject({
+					ok: z.literal(true),
+					repository: z.string(),
+					root: z.string(),
+					target: z.string(),
+					path: z.string(),
+					kind: z.enum(["file", "directory"]),
+					otherRef: z.strictObject({ named: z.string(), checkedOut: z.string() }).optional(),
+				}),
+				z.strictObject({ ok: z.literal(false), code: z.string(), error: z.string() }),
+			])
+			.optional(),
 		sourceEvidence: z
 			.array(
 				ArchitectureCheckpointSchema.shape.sources.element.extend({
@@ -157,6 +210,7 @@ const ArchitectureModelFailureSchema = z
 			"RELATIONSHIP_NOT_FOUND",
 			"NODE_HAS_CHILDREN",
 			"MODULE_AMBIGUOUS",
+			"REFERENCE_UNAVAILABLE",
 			"ARCHIVE_NOT_INITIALIZED",
 			"ARCHIVE_UNREADABLE",
 			"ARCHIVE_IN_USE",
