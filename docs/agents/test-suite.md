@@ -378,6 +378,8 @@ Its temporary Git repository supplies real checkpoints through the public API.
 It covers selection, changed or missing current inputs, source evidence, archive recovery, and unchanged retention records.
 `canonical-model-publication.test.ts` covers explicit destination choice, network failure, retry, and missing-history recovery through a real local Git remote.
 It shares the canonical reader interaction helpers with the viewing owner.
+`canonical-model-navigation.test.ts` covers recursive scope, exact reading addresses, independent panes, connection aggregation, and complete interfaces.
+It also proves that a hidden metadata edit preserves the mounted scene while the visible revision advances.
 `canonical-model-structure.test.ts` covers current structural updates through real claims and the public writer.
 It covers pinned history, stable selection through renames, relationship transfer, parent changes, and removal without replacement selection.
 `semantic-claim.test.ts` proves that a claimed board keeps drawing and shows the claim.

@@ -125,14 +125,18 @@ function overviewContent(content: VariantContent): VariantContent {
  * relationship inside one closed card, or between a container and a part it
  * holds, is the card's own business and is not drawn (ADR 0052).
  * @param content The variant's whole content.
+ * @param openSelf The open containers whose authored self-connections stay visible.
  * @returns Each line, with what it joins.
  */
-function overviewLines(content: VariantContent): OverviewLine[] {
+function overviewLines(
+	content: VariantContent,
+	openSelf: ReadonlySet<string> = new Set(),
+): OverviewLine[] {
 	const drawnAs = rootOf(content);
 	const joined = new Map<string, [SemanticEdge, ...SemanticEdge[]]>();
 	for (const edge of content.edges) {
 		const [from, to] = [drawnAs(edge.from), drawnAs(edge.to)];
-		if (from === to) continue;
+		if (from === to && !openSelf.has(from)) continue;
 		const key = `${from}\u0000${to}`;
 		const joins = joined.get(key);
 		if (joins === undefined) joined.set(key, [edge]);

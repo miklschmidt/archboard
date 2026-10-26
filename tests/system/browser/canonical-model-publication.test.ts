@@ -119,6 +119,16 @@ test("saved architecture publishes only after the reader chooses its destination
 	).toBe("false");
 	renameSync(remote, `${remote}.offline`);
 	await browser.run(["click", '[data-slot="publication-publish"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="publication-publish"]')?.getAttribute('aria-busy') === 'true'`,
+			),
+		Boolean,
+		"the accepted publication action",
+		WAIT,
+	);
+
 	// This vault command includes Git transport and cleanup. Its final status follows completion.
 	await waitForAction(browser, "publish", TEST_VAULT_CLI_TIMEOUT_MS);
 	expect(await publication()).toBe("publication-pending");

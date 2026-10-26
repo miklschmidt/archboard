@@ -58,6 +58,20 @@ test("canonical modules open their authored details without writing architecture
 			`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(row => row.getAttribute('data-module-id'))`,
 		),
 	).toEqual(["Shop#Worker", "Shop#Gateway"]);
+	await pollUntil(
+		() =>
+			browser.eval<string[]>(
+				`[...document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"]')].map(node => node.getAttribute('data-semantic-id'))`,
+			),
+		(ids) => ids.includes("Shop#Gateway") && ids.includes("Shop#Worker"),
+		"the root modules to render locally",
+		WAIT,
+	);
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Handler"]') === null`,
+		),
+	).toBe(true);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await pollUntil(
 		() =>

@@ -3,9 +3,17 @@
 // display intent and never board authority (ADR 0015, ADR 0020): it records
 // what is on screen and asks for what should be, and the note still decides.
 
+/** A canonical reading requested in one pane, including an unavailable reading. */
+interface ModelAddress {
+	readonly id: string;
+	readonly scope: string | null;
+	readonly checkpoint: string | null;
+}
+
 /** One pane in an address: which pane, the board it shows, and how it reads it. */
 interface AddressedPane {
 	readonly paneId: string;
+	readonly model?: ModelAddress | undefined;
 	/** The board key, or null while the pane has not said what it holds. */
 	readonly boardKey: string | null;
 	/**
@@ -135,10 +143,43 @@ function sameAddress(one: WorkspaceAddress, other: WorkspaceAddress): boolean {
 				against?.paneId === pane.paneId &&
 				against.boardKey === pane.boardKey &&
 				against.repository === pane.repository &&
-				against.view === pane.view
+				against.view === pane.view &&
+				sameModelAddress(against.model, pane.model)
 			);
 		})
 	);
+}
+
+/**
+ * Compare exact canonical reading intent without inspecting model content.
+ * @param one One requested reading.
+ * @param other The other requested reading.
+ * @returns Whether both identify the same reading.
+ */
+function sameModelAddress(one: ModelAddress | undefined, other: ModelAddress | undefined): boolean {
+	if (one === other) return true;
+	if (one === undefined || other === undefined) return false;
+	return one.id === other.id && one.scope === other.scope && one.checkpoint === other.checkpoint;
+}
+
+/**
+ * Canonical readers consume the router directly, including explicit missing states.
+ * @param displayed Actual open panes and their server-owned legacy boards.
+ * @param requested Canonical reading intent from the router.
+ * @returns Actual panes with their requested canonical locations preserved.
+ */
+function withModelAddresses(
+	displayed: WorkspaceAddress,
+	requested: WorkspaceAddress,
+): WorkspaceAddress {
+	return {
+		...displayed,
+		panes: displayed.panes.map((pane) => {
+			const wanted = requested.panes.find((entry) => entry.paneId === pane.paneId);
+			if (pane.boardKey !== null || wanted?.model === undefined) return pane;
+			return { ...pane, model: wanted.model, repository: wanted.repository ?? pane.repository };
+		}),
+	};
 }
 
 /**
@@ -239,6 +280,7 @@ function planIsEmpty(plan: AddressPlan): boolean {
 
 export {
 	EMPTY_ADDRESS,
+	withModelAddresses,
 	boardIn,
 	repositoryIn,
 	viewIn,
@@ -251,5 +293,6 @@ export {
 	type AddressRead,
 	type AddressPlan,
 	type AddressedPane,
+	type ModelAddress,
 	type WorkspaceAddress,
 };

@@ -1,5 +1,5 @@
 import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
-import { useCallback, useState, type JSX, type ReactNode } from "react";
+import { useCallback, useEffect, type JSX, type ReactNode } from "react";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { RiRefreshLine } from "@remixicon/react";
 import type { ArchitectureModelRead, ArchitectureCheckpointList } from "@archboard/board/model";
@@ -24,12 +24,16 @@ import { CheckpointEvidence } from "#ui/components/architecture-model/Checkpoint
 import { ModelPublication } from "#ui/components/architecture-model/ModelPublication.tsx";
 import { ModelClaims } from "#ui/components/architecture-model/ModelClaims.tsx";
 
+import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
+
 import { useArchitectureFeed } from "#ui/hooks/architecture-model/use-architecture-feed.ts";
 
 type ModelQuery = UseQueryResult<Extract<ArchitectureModelRead, { success: true }>>;
 
 interface ModelStageProps {
 	vault: string;
+	paneId: string;
+	reducedMotion: boolean;
 	children: ReactNode;
 }
 
@@ -50,11 +54,20 @@ function ArchitectureModelStage(props: ModelStageProps): JSX.Element {
  * @returns One coherent reading with explicit recovery.
  */
 function CanonicalModelReader(props: ModelStageProps): JSX.Element {
-	const [checkpoint, selectCheckpoint] = useState<string | null>(null);
+	const {
+		checkpoint,
+		selectCheckpoint,
+		model: requestedModel,
+		identify,
+	} = useModelLocation(props.paneId);
 	const feed = useArchitectureFeed(props.vault);
 	const query = useQuery(architectureModelQuery(props.vault, checkpoint));
 	const history = useQuery(architectureCheckpointsQuery(props.vault));
 	const { data } = query;
+	const resolvedId = data?.manifest.id;
+	useEffect(() => {
+		if (resolvedId !== undefined) identify(resolvedId);
+	}, [identify, resolvedId]);
 	const client = useQueryClient();
 	const { vault } = props;
 	const current = checkpoint === null;
@@ -62,7 +75,13 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const refresh = useCallback((): void => {
 		void client.invalidateQueries({ queryKey: architectureModelKeys.vault(vault) });
 	}, [client, vault]);
-	if (hasNoReadings(query, history, checkpoint)) return <>{props.children}</>;
+	if (requestedModel === null && hasNoReadings(query, history, checkpoint))
+		return <>{props.children}</>;
+	if (differentModel(resolvedId, requestedModel)) {
+		return (
+			<ModelIdentityFailure id={requestedModel} refresh={refresh} refreshing={query.isFetching} />
+		);
+	}
 	return (
 		<section
 			data-slot="architecture-model-stage"
@@ -81,15 +100,74 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 					history={history}
 				/>
 			</ModelHeader>
-			{checkpoint !== null && (
-				<ModelPublication key={checkpoint} vault={vault} checkpoint={checkpoint} />
-			)}
-			{checkpoint === null && <ModelClaims vault={props.vault} model={data} />}
+			<ModelControls vault={vault} checkpoint={checkpoint} model={data} />
 			<ModelResponse
+				paneId={props.paneId}
+				reducedMotion={props.reducedMotion}
 				query={query}
 				current={current}
 				stale={stale}
-				failure={current ? feed.failure : null}
+				failure={feed.failure}
+			/>
+		</section>
+	);
+}
+
+/**
+ * Compare the requested identity with the coherent model that arrived.
+ * @param actual The returned model identity, when available.
+ * @param requested The explicit address identity, when present.
+ * @returns Whether the address names another model.
+ */
+function differentModel(actual: string | undefined, requested: string | null): requested is string {
+	return actual !== undefined && requested !== null && actual !== requested;
+}
+
+/**
+ * Current ownership and exact-history publication have separate controls.
+ * @param props The selected reading and its coherent content.
+ * @param props.vault The addressed vault.
+ * @param props.checkpoint The exact checkpoint, or current.
+ * @param props.model The current query result.
+ * @returns Only the controls that belong to this reading.
+ */
+function ModelControls(props: {
+	vault: string;
+	checkpoint: string | null;
+	model: ModelQuery["data"];
+}): JSX.Element {
+	return props.checkpoint === null ? (
+		<ModelClaims vault={props.vault} model={props.model} />
+	) : (
+		<ModelPublication key={props.checkpoint} vault={props.vault} checkpoint={props.checkpoint} />
+	);
+}
+
+/**
+ * An address cannot silently open another model from the selected vault.
+ * @param props The unavailable identity and its explicit refresh action.
+ * @param props.id The requested model identity.
+ * @param props.refresh Retry the read.
+ * @param props.refreshing Whether a read is pending.
+ * @returns The requested identity with no substitute content or actions.
+ */
+function ModelIdentityFailure(props: {
+	id: string;
+	refresh: () => void;
+	refreshing: boolean;
+}): JSX.Element {
+	return (
+		<section
+			data-slot="architecture-model-stage"
+			data-state="error"
+			className="bg-background flex min-h-0 flex-1 flex-col"
+		>
+			<ModelHeader name="Architecture" refresh={props.refresh} refreshing={props.refreshing}>
+				{null}
+			</ModelHeader>
+			<ModelError
+				code="MODEL_NOT_FOUND"
+				message={`The selected vault does not contain model ${props.id}. Open the model in its repository.`}
 			/>
 		</section>
 	);
@@ -167,6 +245,8 @@ function readingState(query: ModelQuery, stale: boolean): "loading" | "error" | 
 }
 
 interface ModelResponseProps {
+	paneId: string;
+	reducedMotion: boolean;
 	query: ModelQuery;
 	current: boolean;
 	stale: boolean;
@@ -182,7 +262,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 	const { query, stale } = props;
 	if (query.isPending)
 		return <output className="text-body text-muted-foreground p-10">Reading architecture…</output>;
-	const problem = readingProblem(query.error, props.failure);
+	const problem = readingProblem(query.error, props.current ? props.failure : null);
 	const model = visibleModel(query, props.current);
 	return (
 		<>
@@ -199,7 +279,12 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			{model !== undefined && (
 				<>
 					<CheckpointEvidence model={model} />
-					<ModelReading key={model.manifest.id} model={model} />
+					<ModelReading
+						key={model.manifest.id}
+						model={model}
+						paneId={props.paneId}
+						reducedMotion={props.reducedMotion}
+					/>
 				</>
 			)}
 		</>
