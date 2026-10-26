@@ -22,7 +22,10 @@ use crate::track::scene::{Map, Set};
 use crate::track::score::{Weighed, crossings_of, score_of, takes};
 
 use super::assembly::Placed;
+use super::card_layout::{Arrangement, CardLayout};
+use super::laid::LaidMap;
 use super::laying::line_length;
+use super::place::insets_of;
 use super::stacking::{Scored, Stood, stacks};
 use super::tree::{BlockTree, ClusterKind, Kept, Nesting, Projection};
 use super::weighing::weighed_placed;
@@ -342,6 +345,23 @@ pub(crate) fn joining_of(graph: &str, nesting: &str) -> Result<Vec<String>, Stri
         .joining
         .into_iter()
         .collect())
+}
+
+/// Whether a board drawn inline may have a block that could stack, read from
+/// its graph alone: its one block of cards does when a line runs from one
+/// inline container into another. A board drawn with blocks inside it may.
+///
+/// # Errors
+///
+/// When the graph or its options are unreadable.
+pub(crate) fn could_stack(graph: &str) -> Result<bool, String> {
+    let tree = blocks_of(graph, Nesting::Inline)?;
+    if tree.innermost_first(tree.root).len() != 1 {
+        return Ok(true);
+    }
+    let insets = insets_of(tree.get(tree.root));
+    let laid = LaidMap::default();
+    Ok(CardLayout::new(&tree, &laid, tree.root, insets, Arrangement::default()).stacks())
 }
 
 /// Whether a board drawn inline gathers any group into a region.
