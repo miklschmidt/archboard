@@ -116,7 +116,17 @@ function persistedGroupIds(ids: readonly string[] | undefined): string[] | undef
 /** The longer explanation, reached by inspecting a node rather than drawn on it. */
 const DescriptionSchema = NonBlankTextSchema.max(MAX_DESCRIPTION);
 
+/** Model[/original-board]#local-id. Namespace segments preserve identity provenance. */
+const localIdPattern = BLOCK_ID_RE.source.slice(1, -1);
+const QualifiedSubjectIdSchema = z
+	.string()
+	.regex(
+		new RegExp(`^${localIdPattern}(?:/${localIdPattern})?#${localIdPattern}$`, "u"),
+		"Use model[/original-board]#local-id, with one to eight characters per id",
+	);
+
 export {
+	QualifiedSubjectIdSchema,
 	SingleLineTextSchema,
 	SemanticIdSchema,
 	StatedIdSchema,

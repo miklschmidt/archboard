@@ -1,9 +1,11 @@
 ---
 id: TASK-549.05
 title: Author and render independent flow collections
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-10-26T05:24:00Z'
+updated_date: '2026-10-26T17:29:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -54,3 +56,23 @@ TASK-549.04
 - [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
 - [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Confirm integration base and publish the stable flow contract. Create TASK-549.05 proposals on Board persistence, Command interface, Archboard server routes, and Semantic renderer.
+2. Use vertical tdd slices at the approved architecture read/write seam with real files and Git. Extend the existing batch, identity authority, claims, and durable transaction for collections, flows, steps, placements, reference repairs, and explicit conflicts.
+3. Adapt explicit flow selection through existing server, CLI, and renderer operations. Save real CLI sequence and flowchart SVG evidence.
+4. Update consumer examples, ADR0060, test ownership, and evaluation coverage. Run focused runtime/adapter tests, types, lint, formatting, architecture checks, and evaluation input validation. No model evaluation or review phase.
+5. Simplify, merge latest integration, preserve architecture histories, adopt proven proposals, finalize demonstrated criteria, release claims, stop the server, and commit clean with signatures.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Confirmed clean source and integration base 62853e30f78aa52473ed1ef69d9481920e166b2b. Public runtime seam and real temporary files/Git are already owner-approved. No frontend source, browser tests, child agents, pushes, or PR edits.
+
+Early contract: /home/msc/.local/state/archboard-implementation/task-549/task-549.05-contract.md. Proposals: Board persistence@TASK-549.05, Command interface@TASK-549.05, Archboard server routes@TASK-549.05, Semantic renderer@TASK-549.05. Saved nested flow meaning stays behind the existing edit candidate and durable transaction. Public runtime tests own identity, claims, placement, reference repairs, and real Git behavior; actual CLI SVG output owns transport and rendering evidence.
+
+Runtime slices now prove collection creation, cross-module nested flow preservation, stable step moves, atomic alternative renames, explicit placement/order refusals, and same-operation module-removal repairs. Public read and retained reads expose explicit selectedFlow. CLI rendering reuses renderArchitecture with a grammar choice and keeps renderer exports at 60. A real missing-flow CLI refusal exposed unconditional artifact installation before nonzero outcome presentation; the existing execution operation now skips artifact installation for a declared failure.
+<!-- SECTION:NOTES:END -->

@@ -258,7 +258,8 @@ function publishExecution(
 	const outcome = selectedOutcome(contract, execution.outcome);
 	const outputCase = selectedCase(contract, input);
 	const result = withAnsweredVault(outputCase, contract.result.parse(execution.result), vault);
-	commitArtifact(outputCase, validatedArtifact(outputCase, execution.pendingArtifact));
+	if (outcome === undefined || outcome.exit === 0)
+  commitArtifact(outputCase, validatedArtifact(outputCase, execution.pendingArtifact));
 	const presentation = { outputCase, result, diagnostics: execution.diagnostics ?? [] };
 	if (outcome) {
 		presentResult({ ...presentation, outcome });
