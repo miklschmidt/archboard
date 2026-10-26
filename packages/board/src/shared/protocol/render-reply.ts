@@ -243,7 +243,6 @@ const AppliedAppearanceSchema = z.object({
 	dash: z.string(),
 	arrowhead: z.string(),
 });
-type AppliedAppearance = z.infer<typeof AppliedAppearanceSchema>;
 
 /**
  * What a picture's key lists (TASK-383): one sample of each part kind and of
@@ -254,7 +253,6 @@ const PictureKeySchema = z.object({
 	kinds: z.array(AppliedAppearanceSchema).readonly(),
 	relationships: z.array(AppliedAppearanceSchema).readonly(),
 });
-type PictureKey = z.infer<typeof PictureKeySchema>;
 
 /** A board that was drawn. */
 const DrawnBoardSchema = RenderIdentitySchema.extend({
@@ -303,9 +301,7 @@ function wasDrawn(reply: SemanticRenderReply): reply is DrawnBoard {
 
 export {
 	AppliedAppearanceSchema,
-	type AppliedAppearance,
 	PictureKeySchema,
-	type PictureKey,
 	OfferedViewSchema,
 	type OfferedView,
 	SubjectStandingSchema,

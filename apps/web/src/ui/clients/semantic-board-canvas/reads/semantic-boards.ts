@@ -58,6 +58,12 @@ type SemanticVariantRef = RenderedVariant;
 /** What a drawn state is waiting on, when it is waiting on anything. */
 type SemanticWaiting = NonNullable<DrawnBoard["waiting"]>;
 
+/** How the picture drew one subject, as the renderer core read it off the picture. */
+type AppliedAppearance = DrawnBoard["appearances"][number];
+
+/** What the picture's key lists: one sample of each kind it draws. */
+type PictureKey = NonNullable<DrawnBoard["key"]>;
+
 /** One view the board offers, as a switcher needs to know it. */
 type SemanticOfferedView = OfferedView;
 
@@ -398,6 +404,8 @@ export {
 	comparisonKey,
 	fetchSemanticRender,
 	fetchVaultCheck,
+	type AppliedAppearance,
+	type PictureKey,
 	type SemanticAtlas,
 	type SemanticBoardEntry,
 	type SemanticBoardListing,

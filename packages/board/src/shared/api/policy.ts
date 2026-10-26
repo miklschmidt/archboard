@@ -1,5 +1,5 @@
 // The semantic policy, its evidence, palette and levels, and the vault diagnostics that read it.
-export { drillDirection, type DrillDirection } from "#shared/rules/levels.ts";
+export { drillDirection } from "#shared/rules/levels.ts";
 export {
 	DEFAULT_SEMANTIC_POLICY,
 	describeSubject,

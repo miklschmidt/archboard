@@ -10,7 +10,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 
-import type { AppliedAppearance } from "@archboard/board/render-reply";
+import type { AppliedAppearance } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { SemanticBoardSchema } from "@archboard/board/document";
 import { withFixtureOrders } from "#tests/ui/support/semantic-board-canvas/fixture-orders.ts";
 import {

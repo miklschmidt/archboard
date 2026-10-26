@@ -16,7 +16,7 @@ import { drillWayWords } from "#ui/rules/semantic-board-canvas/drilling/drill-wa
 import { everyStep, isMessage, stepWords } from "@archboard/board/flow";
 import type { SemanticEdge, SemanticNode } from "@archboard/board/content";
 import type { SemanticVariant } from "@archboard/board/document";
-import type { AppliedAppearance } from "@archboard/board/render-reply";
+import type { AppliedAppearance } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { PULSE_CLASS } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 import {
 	endsOf,

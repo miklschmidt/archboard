@@ -4,8 +4,11 @@
 
 import { useMemo } from "react";
 
-import type { AppliedAppearance, PictureKey } from "@archboard/board/render-reply";
-import type { SemanticDrawing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+import type {
+	AppliedAppearance,
+	PictureKey,
+	SemanticDrawing,
+} from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { Leaving } from "#ui/hooks/semantic-board-canvas/use-departure.ts";
 
 /** What the picture on screen draws each subject with, and the key that lists its kinds. */
