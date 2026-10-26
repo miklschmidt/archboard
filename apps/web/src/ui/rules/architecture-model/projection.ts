@@ -5,6 +5,7 @@ import { overviewLines } from "@archboard/board/views";
 import { inspectContainer } from "@archboard/board/container-interface";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
+type ModelFlow = Model["collections"][number]["flows"][number];
 type ModelFilters = Pick<ModelAddress, "hideKinds" | "hideGroups">;
 
 /**
@@ -25,7 +26,7 @@ function modelContent(model: Model): VariantContent {
 			}) => node,
 		),
 		edges: model.relationships,
-		flows: [],
+		flows: model.collections.flatMap((collection) => collection.flows),
 		walkthroughs: [],
 	};
 }
@@ -96,18 +97,20 @@ function projectModel(
 	const connections = projection.connections.filter(
 		({ line }) => !filters.hideKinds?.includes(line.kind),
 	);
+	const content: VariantContent = {
+		...projection.content,
+		nodes: projection.content.nodes.map((node) => ({
+			...node,
+			groups: node.groups?.filter((group) => !filters.hideGroups?.includes(group)),
+		})),
+		edges: projection.content.edges.filter((edge) => !filters.hideKinds?.includes(edge.kind)),
+	};
 	return {
 		...projection,
+		flow: null as ModelFlow | null,
 		allConnections: projection.connections,
 		connections,
-		content: {
-			...projection.content,
-			nodes: projection.content.nodes.map((node) => ({
-				...node,
-				groups: node.groups?.filter((group) => !filters.hideGroups?.includes(group)),
-			})),
-			edges: projection.content.edges.filter((edge) => !filters.hideKinds?.includes(edge.kind)),
-		},
+		content,
 	};
 }
 
@@ -304,4 +307,4 @@ function visibleEndpoint(
 	return at;
 }
 
-export { projectModel, type Model, type ModelFilters };
+export { projectModel, type Model, type ModelFilters, type ModelFlow };
