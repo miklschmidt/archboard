@@ -1305,71 +1305,16 @@ impl Dot<'_> {
 
     fn reorder(&mut self, g: G, r: i32, reverse: bool, hasfixed: bool) {
         // archboard: the passes read the rank from a copy and exchange places in `at`, the
-        // place each node started at (`mincross_rank`); the rank is written back once.
+        // place each node started at (`mincross_rank`); the rank is written back once. A
+        // rank of clusters and medians alone is sorted in place of the passes
+        // (`RankCopy::sorted_by_segments`).
         let rank = RankCopy::of(self, g, r);
         let mut at: Vec<usize> = (0..rank.places.len()).collect();
-        let mut changed = 0;
-        let n = rank.places.len() as i32;
-        let mut ep = n as usize;
-        let mut nelt = n - 1;
-        while nelt >= 0 {
-            // archboard: a pass that exchanges nothing leaves the rank as it was, and every
-            // later pass compares the same pairs, or a prefix of them as `ep` falls, so it
-            // exchanges nothing either. C runs them all; the port stops here.
-            let changed_before = changed;
-            let mut lp = 0;
-            while lp < ep {
-                while lp < ep && rank.places[at[lp]].mval < 0.0 {
-                    lp += 1;
-                }
-                if lp >= ep {
-                    break;
-                }
-                let mut sawclust = false;
-                let mut muststay = false;
-                let lpn = at[lp];
-                let mut rp = lp + 1;
-                while rp < ep {
-                    let rpn = at[rp];
-                    if sawclust && rank.places[rpn].clust.is_some() {
-                        rp += 1;
-                        continue;
-                    }
-                    if rank.left2right(lpn, rpn) {
-                        muststay = true;
-                        break;
-                    }
-                    if rank.places[rpn].mval >= 0.0 {
-                        break;
-                    }
-                    if rank.places[rpn].clust.is_some() {
-                        sawclust = true;
-                    }
-                    rp += 1;
-                }
-                if rp >= ep {
-                    break;
-                }
-                if !muststay {
-                    let rpn = at[rp];
-                    let p1 = rank.places[lpn].mval;
-                    let p2 = rank.places[rpn].mval;
-                    if p1 > p2 || (p1 >= p2 && reverse) {
-                        at.swap(lp, rp);
-                        changed += 1;
-                    }
-                }
-                lp = rp;
-            }
-            if changed == changed_before {
-                break;
-            }
-            if !hasfixed && !reverse {
-                ep -= 1;
-            }
-            nelt -= 1;
-        }
-        if changed != 0 {
+        let changed = match rank.sorted_by_segments(&mut at, reverse) {
+            Some(changed) => changed,
+            None => rank.passes(&mut at, reverse, hasfixed),
+        };
+        if changed {
             let places = rank.into_places();
             self.write_rank(g, r, &places, &at);
             self.rk_mut(0, r).valid = false;
