@@ -12,18 +12,10 @@ import { DEFAULT_LAYOUT_ENGINE, LayoutEngineSchema } from "@archboard/board/rend
 import type { VariantContent } from "@archboard/board/content";
 import type { SemanticPolicy } from "@archboard/board/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { locateSemanticBoard } from "@archboard/board/address";
 import { readSemanticBoardAt } from "@archboard/board/store-read";
 import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
-import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
-import {
-	labelsAcrossWalls,
-	nearLanes,
-	runsUnderLabels,
-	slants,
-	wallHugs,
-} from "#tests/runtime/support/drawn-checks.ts";
+import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { declareTestWallClockBudget } from "../../../../../../tests/system/repository-policy/support/test-wall-clock.ts";
 import first from "../../../../../../docs/design/wide-board-layout-fixtures/flask-map-1.content.json";
 import third from "../../../../../../docs/design/wide-board-layout-fixtures/flask-map-3.content.json";
@@ -66,23 +58,6 @@ function vaultBoards(): {
 	} finally {
 		rmSync(copy, { recursive: true, force: true });
 	}
-}
-
-/**
- * Semantic completeness and readable labels across the measured corpus.
- * @param drawing The rendered board.
- * @param content Its authored architecture.
- */
-function expectIntact(drawing: RenderedDiagram, content: VariantContent) {
-	expect(routesThroughCards(drawing, content), "routes through cards").toEqual([]);
-	expect(labelsOffRuns(drawing), "labels off their own route").toEqual([]);
-	expect(runsUnderLabels(drawing), "routes under another's label").toEqual([]);
-	expect(Object.keys(drawing.atlas.nodes).toSorted()).toEqual(
-		content.nodes.map(({ id }) => id).toSorted(),
-	);
-	expect(Object.keys(drawing.atlas.edges).toSorted()).toEqual(
-		content.edges.map(({ id }) => id).toSorted(),
-	);
 }
 
 const { policy, boards } = vaultBoards();
@@ -149,13 +124,7 @@ for (const board of cases) {
 				const took = performance.now() - began;
 				if (layout === DEFAULT_LAYOUT_ENGINE)
 					expect(took, "first layout, ms").toBeLessThan(LOADED_LAYOUT_BOUND_MS);
-				expectIntact(drawing, content);
-				expect(slants(drawing), "routes on a slant").toEqual([]);
-				expect(labelsAcrossWalls(drawing), "labels across a container's edge").toEqual([]);
-				if (layout === "track") {
-					expect(nearLanes(drawing), "lines closer than a lane").toEqual([]);
-					expect(wallHugs(drawing), "lines along a container's wall").toEqual([]);
-				}
+				expectDrawingIntact(drawing, content, layout);
 			},
 			heavy ? TEST_HEAVY_BLOCKS_CASE_MS : RENDER_CASE_TIMEOUT_MS,
 		);

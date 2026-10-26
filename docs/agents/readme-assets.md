@@ -108,7 +108,8 @@ The `architecture` SVGs are tracked embeds (ADR 0057). The kit draws the
 with `semantic render --track`, straight into `docs/readme`. The board lists
 both files, and each file keeps its render recipe. `archboard check` in this
 repository reads that recipe, draws the board again, and warns
-`EMBED_OUTDATED` when the board changed what the picture shows. The first run
+`EMBED_OUTDATED` when the board changed what the picture shows. After a
+renderer change alone, it names `EMBED_RENDERER_CHANGED` as information. The first run
 on a board writes the list and raises its version, so commit
 `.archboard/vault` with the files.
 

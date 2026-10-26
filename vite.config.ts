@@ -165,6 +165,9 @@ const browserTestCache = {
 	env: [...testCache.env, "AGENT_BROWSER_EXECUTABLE_PATH"],
 };
 
+// Corpus rendering and speed gates run only through the uncached benchmark task.
+const benchmarkTests = ["packages/renderer/tests/runtime/operations/blocks/wide-boards.test.ts"];
+
 const capacityTests = [
 	"packages/workbench/tests/runtime/operations/dynamic-tools/wire-capacity.test.ts",
 	"packages/codex-app-server/tests/runtime/clients/transport-write-capacity.test.ts",
@@ -242,7 +245,7 @@ export default defineConfig({
 			"test:modules": {
 				command: [
 					"bun test --isolate",
-					...capacityTests.map((file) => `--path-ignore-patterns ${file}`),
+					...[...capacityTests, ...benchmarkTests].map((file) => `--path-ignore-patterns ${file}`),
 					"packages apps",
 				].join(" "),
 				cache: testCache,
@@ -294,6 +297,10 @@ export default defineConfig({
 					"tests/system/process-contracts/codex-workbench-storage.test.ts",
 				].join(" "),
 				cache: testCache,
+			},
+			"benchmark:all": {
+				command: ["bun test --isolate --max-concurrency=1", ...benchmarkTests].join(" "),
+				cache: false,
 			},
 			"test:opt-in:capacity": {
 				command: ["bun test --isolate", ...capacityTests].join(" "),
