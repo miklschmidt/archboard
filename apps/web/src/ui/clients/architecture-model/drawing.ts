@@ -10,6 +10,10 @@ import type { projectModel, Model } from "#ui/rules/architecture-model/projectio
 function modelDrawingQuery(model: Model, projection: ReturnType<typeof projectModel>) {
 	return queryOptions({
 		queryKey: ["model-drawing", model.manifest.id, model.revision.digest, projection.content],
+		/**
+		 * Render this projected content with the complete interface context.
+		 * @returns Its local SVG and interaction atlas.
+		 */
 		queryFn: async () => {
 			const { drawContentHere } = await import("@archboard/renderer/browser");
 			return drawContentHere({
