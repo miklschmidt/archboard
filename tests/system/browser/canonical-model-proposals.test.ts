@@ -15,35 +15,11 @@ import {
 	createAgentBrowser,
 	pollUntil,
 	registerServerBase,
-	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { initializeSource, selectReading } from "./support/canonical-model.ts";
+import { initializeSource, selectReading, selectState } from "./support/canonical-model.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
-
-async function selectState(browser: AgentBrowserSession, id: string): Promise<void> {
-	await browser.run(["click", '[data-slot="model-reading-selector"]']);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`(() => { const item = document.querySelector('[data-state-id="${id}"]'); if (!item) return false; const r = item.getBoundingClientRect(); return r.height > 0 && item.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })()`,
-			),
-		Boolean,
-		"the proposal state choice",
-		WAIT,
-	);
-	await browser.run(["click", `[data-state-id="${id}"]`]);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-state-details"][data-selected-state="${id}"][data-lifecycle="draft"]') !== null`,
-			),
-		Boolean,
-		"the explicit draft reading",
-		WAIT,
-	);
-}
 
 test("proposal readings keep draft lifecycle and module flow changes separate from current", async () => {
 	await using resources = new AsyncDisposableStack();

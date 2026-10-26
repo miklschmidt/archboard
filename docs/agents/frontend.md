@@ -138,6 +138,10 @@ not add imports or a second state path before that work.
   A current event snapshot populates only the default current query.
   Other mutable readings refresh through the same public reader. Exact checkpoints keep distinct keys.
   The selected state metadata supplies lifecycle labels, including retained drafts.
+  It also supplies unresolved issues and blocked ancestry, independently of comparison changes.
+  The state picker and selected reading expose that standing. The shared issue component shows both values and repair instructions.
+  A blocked reading can open its live ancestor through the same router.
+  Exact checkpoints preserve their original standing after live settlement. The browser authors no settlement.
   The comparison reference must match the requested model, state, checkpoint, and base revision.
   Only a coherent reference supplies removed subjects to the existing semantic comparison operation.
   Code and foreign navigation details use the same cache with module and action selectors.

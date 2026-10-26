@@ -3,6 +3,7 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import type { ArchitectureCheckpointList } from "@archboard/board/model";
 import type { Model } from "#ui/rules/architecture-model/projection.ts";
 import { Select } from "@archboard/ui-kit/components";
+import { proposalStanding, standingSuffix } from "#ui/rules/architecture-model/standing.ts";
 
 interface ModelReadingSelectorProps {
 	checkpoint: string | null;
@@ -92,7 +93,7 @@ function readingLabel(props: ModelReadingSelectorProps): string {
  */
 function selectedStateLabel(state: Model["selectedState"] | undefined, requested: string): string {
 	if (state === null || state === undefined) return requested;
-	return `${state.name} · ${state.lifecycle}`;
+	return `${state.name} · ${state.lifecycle}${standingSuffix(state)}`;
 }
 
 /**
@@ -108,11 +109,17 @@ function ActiveStates(props: ModelReadingSelectorProps): JSX.Element {
 	return (
 		<>
 			{[...entries].map(([id, entry]) => (
-				<Select.Item key={id} value={`state:${id}`} data-state-id={id}>
+				<Select.Item
+					key={id}
+					value={`state:${id}`}
+					data-state-id={id}
+					data-standing={proposalStanding(entry)}
+				>
 					<span className="flex flex-col gap-1">
 						<span>{entry?.name ?? `Unavailable state · ${id}`}</span>
 						<span className="text-muted-foreground text-body">
 							{entry?.lifecycle ?? "Unavailable"}
+							{standingSuffix(entry)}
 						</span>
 					</span>
 				</Select.Item>
