@@ -81,11 +81,7 @@ function modelWriteFailure(
 	failure: ModelFailure,
 	operationId?: string,
 ): ModelFailure {
-	const result = {
-		...failure,
-		applied: false as false | "unknown",
-		reconciliation: false as const,
-	};
+	const result: ModelFailure = { ...failure, applied: false, reconciliation: false };
 	try {
 		const journal = readState(vault, "transaction.json", JournalSchema);
 		if (journal === undefined) return result;

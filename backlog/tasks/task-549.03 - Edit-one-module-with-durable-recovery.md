@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-backend'
 created_date: '2026-10-26T05:24:00Z'
-updated_date: '2026-10-26T12:09:00Z'
+updated_date: '2026-10-26T12:15:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -45,17 +45,17 @@ TASK-549.02
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An agent changes a module description through the shared operation interface. The CLI and server return the same durable outcome and recovery information.
+- [x] #1 An agent changes a module description through the shared operation interface. The CLI and server return the same durable outcome and recovery information.
 - [ ] #2 Include an explicit target, expected read token, operation ID, writer, doing line, and subject claim. Claim visibility and take-back work in the browser.
-- [ ] #3 Use the complete journal and installation contract for this narrow edit. Signing failure changes no current files. Interrupted installation resumes or reports preserved foreign content.
-- [ ] #4 Repeating a completed request returns its recorded result. Reusing its operation ID for another request fails. Readers never receive a mixed installation.
+- [x] #3 Use the complete journal and installation contract for this narrow edit. Signing failure changes no current files. Interrupted installation resumes or reports preserved foreign content.
+- [x] #4 Repeating a completed request returns its recorded result. Reusing its operation ID for another request fails. Readers never receive a mixed installation.
 - [ ] #5 Stable external edits refresh readers without inventing adoption. Invalid or changing files block writes and mark an old scene stale.
 - [ ] #6 Journals remain checkout-specific. Branch changes block unsafe recovery. Notifications follow durable completion, and reconnection obtains a fresh coherent read.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
 - [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
@@ -82,4 +82,6 @@ The parent completed the integration update onto origin/main 6cae688bbaa2b6c9862
 The signed --onto transplant is complete. backup/task-549.03-before-main-refactor retains exact source 86f03ab1c. New source history excludes old integration a60b0980e. Signed merge 2cfbd91ab includes adopted follow-up 8af747543. CLI model clients now use their app-owned architecture-model.ts, statedInvocation().doing and @archboard/process/git. Removed lifecycle exports remain removed, and RequestFailure stays private. Locked dependencies were reinstalled without lockfile changes. Both type projects pass. The rebased runtime command passes 48 tests across seven owners. Rebased CLI/HTTP, skills and lock contracts pass 41 tests across 13 owners. The original task drafts stay intact. TASK-549.03 integration drafts derive from the adopted current readings and restore the same subject IDs through the CLI. No browser code or browser tests changed. Canonical read ADR references now name ADR 0060. The width test remains unchanged: board exports 234 names against 188, from the parent-reported baseline 209. Owner-directed superseded API retirement remains TASK-549.24. Workspace stays within its ceiling because private state records use the existing atomic write operation to create durable parent directories.
 
 Recovery refusals now expose the operation, retained checkpoint, progress, affected identities, fingerprints, and original branch and HEAD without private paths or logged bytes. The new public-runtime assertion failed before this projection and then passed, including an exact read of the retained candidate while current inputs remain blocked. Edit and recovery failures state applied false or unknown plus reconciliation false. Source and browser types pass. Full lint passes with zero warnings. Final adapter checks pass 21 tests across five owners, with another 20 passing across eight contract and lock owners. One broad runtime run passed 38 tests but four real-Git owners exceeded their default five-second timeout under load. Preserve that evidence and rerun with an explicit command timeout before accepting the slice. Delivery architecture checks retain zero semantics diagnostics and no warning on the three affected boards. Ten unrelated code warnings remain.
+
+Backend completion evidence: the accepted public-runtime command passes 48 tests across seven files with --timeout 15000. It covers all 19 new description, claim/news, exclusion and recovery cases, plus the existing 12 canonical-read, 11 checkpoint and six inventory cases. The earlier default-timeout run remains recorded with 38 pass and four timeouts. Final CLI/HTTP, skills, schema/help and legacy lock commands pass 41 tests across 13 files. The executable README fixture returns an identical retry result, changes only gateway.module.json, verifies its configured checkpoint signature, and ends with no claim. The fixture registrations are forgotten and this checkout server is stopped. All integration variants, adoption and shelving records match baf552fde, and the original TASK-549.03 drafts match the signed backup exactly. The new integration drafts preserve all task-added subject IDs. The delivery semantics check reports zero diagnostics. The code check reports ten unrelated warnings, none on the three touched boards. The unchanged package API/width gate reports 68 pass and one failure: board has 234 names against 188. Owner-directed retirement remains TASK-549.24. Acceptance criteria 1, 3 and 4 and the runtime-test definition item are proven. Criteria 2, 5 and 6 and final architecture/browser closure remain for the parent. Keep this ticket In Progress. The final source pointer, APIs, exact evidence, fixture instructions and limitations will be in task-549.03-backend.md outside the repository.
 <!-- SECTION:NOTES:END -->
