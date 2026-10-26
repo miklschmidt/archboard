@@ -1,11 +1,11 @@
 ---
 id: TASK-549.02
 title: Retain and reopen exact architecture checkpoints
-status: In Progress
+status: Done
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:24:00Z'
-updated_date: '2026-10-26T09:27:00Z'
+updated_date: '2026-10-26T09:43:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -45,7 +45,7 @@ TASK-549.01
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An agent retains an architecture reading locally. CLI and browser readers reopen it after current files change. Historical reads never mix in current content.
+- [x] #1 An agent retains an architecture reading locally. CLI and browser readers reopen it after current files change. Historical reads never mix in current content.
 - [x] #2 Preserve required inputs through Git ancestry or retention refs. Honor configured identity and signing without changing the user index, HEAD, or checkout.
 - [x] #3 Concurrent archive appends preserve both checkpoints through marked synchronization commits. Archive order never selects current architecture or merges architectural meaning.
 - [x] #4 Linked worktrees share archive objects and refs. Exact reads identify missing architecture or source evidence and provide a recovery action.
@@ -85,4 +85,12 @@ Backend checkpoint: exact retain/read/list runtime and public CLI/HTTP/client co
 Backend evidence: 40 focused tests pass across canonical runtime, CLI/HTTP, command help and skill policy owners. The broader board, Git-process, CLI-contract and package-contract run passes 604 tests. Source and browser TypeScript projects pass. Full lint reports zero warnings and errors, and formatting passes. The deterministic skill input check passes with no model evaluation. Architecture semantics report no diagnostics. The three TASK-549.02 proposals have no code warnings; the full-vault code check retains 12 existing warnings on other boards. The code check cannot assess the Commands container interface because that directory has no export root. Its concrete command files and client boundaries were assessed. Final simplification places Git object reads and retention-ref updates in the private archive store, so operations retain the domain contract and no duplicate content cache exists. Consumer guidance, coverage inventory, glossary and ADR 0059 match this backend slice. AC 1 remains unchecked because the browser selector and browser evidence belong to the parent. All proposals remain draft.
 
 The parent implemented the browser reading selector, exact identity and source evidence, and explicit archive recovery. Current remains an explicit choice. Query keys separate retained snapshots from working files, and selection refetches its own reading. A regression caught stale current-cache reuse and an automatic select-control fallback when checkpoint metadata disappeared. The selector now preserves the chosen identity even when it is absent from the catalogue. The canonical cases use a dedicated owner under the existing browser adapter. Both canonical and both legacy viewer cases pass. Source and frontend types pass; full lint reports zero warnings. Light and dark inspection is complete, and all temporary probes and capture code are removed. Four affected TASK-549.02 proposals have no code findings; 12 existing warnings remain on unrelated boards. Closure and adoption remain next.
+
+The complete ticket now adopts TASK-549.02 on Board persistence (version 109), Command interface (149), Archboard server routes (110), and Browser application (138). All claims are clear. Adoption exposed a crowded store overview. One factual grouping correction places the three existing legacy write groups under Legacy board writes and preserves every subject identity. Two views keep legacy writes and canonical checkpoints discoverable. Semantics now pass. The current-state code check reports no warnings on the four touched boards. It retains the 12 known warnings elsewhere and informational exposure findings. Final types, formatting and focused browser tests pass; the final lint pass has zero warnings and errors. The browser simplification uses one ordered identity map and retains an unavailable selection. Evidence is in task-549.02-browser-final.log, task-549.02-ui-simplified-*.log, task-549.02-ui-lint-accepted.log and task-549.02-final-code.json under the external campaign directory.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Delivered exact local checkpoints across the runtime, CLI, server, and browser. Retained readings preserve their architecture despite changed or missing current files and expose source evidence separately. Git ancestry and retention refs preserve checkpoints without changing HEAD, the index, or current architecture. Focused runtime and browser tests, lint, types, and formatting pass. Four architecture proposals are adopted. Publication, private archives, proposals, and migration remain assigned to later tickets.
+<!-- SECTION:FINAL_SUMMARY:END -->

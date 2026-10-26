@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 148,
+	"version": 149,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-26T08:20:55.329Z",
+	"updatedAt": "2026-10-26T09:32:00.325Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -73400,7 +73400,7 @@
 		{
 			"id": "WtdTTTOd",
 			"name": "TASK-549.01",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "6YXZ2wX4",
 			"summary": "Read canonical module models without changing legacy commands",
 			"content": {
@@ -77067,7 +77067,7 @@
 		{
 			"id": "b5XrsxTf",
 			"name": "TASK-549.02",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "WtdTTTOd",
 			"summary": "Retain and reopen exact local architecture checkpoints",
 			"documents": [
@@ -80794,7 +80794,7 @@
 			}
 		}
 	],
-	"current": "WtdTTTOd",
+	"current": "b5XrsxTf",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -80993,6 +80993,12 @@
 			"from": "6YXZ2wX4",
 			"at": "2026-10-26T06:38:01.347Z",
 			"reason": "Canonical models can be read through the runtime, CLI, server, and browser"
+		},
+		{
+			"variant": "b5XrsxTf",
+			"from": "WtdTTTOd",
+			"at": "2026-10-26T09:32:00.325Z",
+			"reason": "Retain exact local architecture and reopen explicit historical readings"
 		}
 	],
 	"shelvings": [
