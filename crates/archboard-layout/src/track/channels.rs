@@ -115,7 +115,14 @@ pub(crate) fn port_reach(face: &Rect) -> (f64, f64) {
 /// Spread the ports on one face, each as close to its other end as spacing
 /// allows, in the order the ports must keep.
 pub(crate) fn spread_ports(face: &Rect, wanted: &[f64]) -> Vec<f64> {
-    let (low, high) = port_reach(face);
+    spread_along(port_reach(face), wanted)
+}
+
+/// Spread ports along one stretch, each as close to where it wants to stand
+/// as a lane apart allows, or closer where the stretch is too short for that.
+/// The stretch is the lowest and highest place a port may stand, and the
+/// ports keep the order of `wanted`.
+pub(crate) fn spread_along((low, high): (f64, f64), wanted: &[f64]) -> Vec<f64> {
     let count = wanted.len();
     let gap = if count > 1 {
         js_min(LANE, (high - low) / (count - 1) as f64)
