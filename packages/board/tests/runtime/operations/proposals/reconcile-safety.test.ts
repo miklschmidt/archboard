@@ -1,5 +1,6 @@
+import { behaviorFixture } from "#tests/runtime/operations/model-edit/flow-fixture.ts";
 import { afterEach, expect, test } from "bun:test";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, renameSync } from "node:fs";
 import { join } from "node:path";
 import { readArchitectureModel, readArchitectureClaims } from "@archboard/board/store-read";
 import {
@@ -53,7 +54,7 @@ test("the writer refuses an incomplete descendant claim without installing any p
 	expect(readArchitectureModel(vault)).toMatchObject({ success: true, revision: current.revision });
 });
 test("deliberate reconciliation follows external predecessor edits without hiding their initial refusal", async () => {
-	const { vault } = fixture();
+	const { vault } = behaviorFixture();
 	const draft = await proposal(vault, "Queued", "Current", [
 		{ type: "edit-module", subject: "Shop#Gateway", set: { description: "Queues work." } },
 	]);
@@ -61,6 +62,8 @@ test("deliberate reconciliation follows external predecessor edits without hidin
 	const gateway = JSON.parse(readFileSync(path, "utf8"));
 	gateway.responsibility = "External predecessor";
 	writeFileSync(path, JSON.stringify(gateway));
+	renameSync(path, join(vault, "relocated.module.json"));
+	renameSync(join(vault, "unrelated-name.flows.json"), join(vault, "relocated.flows.json"));
 	expect(
 		await readArchitectureModel(vault, undefined, undefined, { state: draft.target.state! }),
 	).toMatchObject({ success: false, code: "PREDECESSOR_CHANGED" });
@@ -70,10 +73,16 @@ test("deliberate reconciliation follows external predecessor edits without hidin
 		changes: [],
 	});
 	expect(result).toMatchObject({ success: true, reconciliation: false });
-	expect(
-		(await selected(vault, draft.target.state!)).modules.find((m) => m.id === "Shop#Gateway"),
-	).toMatchObject({ description: "Queues work.", responsibility: "External predecessor" });
+	const reading = await selected(vault, draft.target.state!);
+	expect(reading.modules.find((module) => module.id === "Shop#Gateway")).toMatchObject({
+		id: "Shop#Gateway",
+		description: "Queues work.",
+		responsibility: "External predecessor",
+		file: "relocated.module.json",
+	});
+	expect(reading.collections[0]?.file).toBe("relocated.flows.json");
 });
+
 test("a proposal-only relationship keeps its removed source readable while unrelated predecessor fields inherit", async () => {
 	const { vault } = fixture();
 	const draft = await proposal(vault, "Worker callback", "Current", [

@@ -9,6 +9,7 @@ import {
 	resolveState,
 	proposalBaseline,
 	decodeProposal,
+	decodeSubjects,
 	predecessorRevision,
 	requireModel,
 } from "#runtime/operations/proposals/read.ts";
@@ -18,7 +19,11 @@ import {
 	proposalDependencies,
 } from "#runtime/operations/proposals/candidate.ts";
 import { reconcileModels } from "#runtime/operations/proposals/reconcile.ts";
-import { subjectsOf } from "#runtime/operations/proposals/subjects.ts";
+import {
+	subjectsOf,
+	compactChanges,
+	applyCompactChanges,
+} from "#runtime/operations/proposals/subjects.ts";
 import { claimableSubjects, requireSubjectClaim } from "#runtime/operations/model-edit/claims.ts";
 import { includeContainment } from "#runtime/operations/model-edit/containment.ts";
 import { readEntries, includeAffected } from "#runtime/operations/model-edit/flow-state.ts";
@@ -85,6 +90,25 @@ function standingOf(
 	};
 }
 /**
+ * Materialize the intended meaning through the chosen baseline before exact compact agreement.
+ * @param baseline The baseline selected for this coherent result.
+ * @param next The reconciled complete meaning.
+ * @returns The same meaning with the baseline's paths and deterministic subject order.
+ */
+function materializeAgainst(
+	baseline: ArchitectureModel,
+	next: ArchitectureModel,
+): ArchitectureModel {
+	const decoded = requireModel(
+		decodeSubjects(
+			{ ...next, modules: baseline.modules, collections: baseline.collections },
+			applyCompactChanges(subjectsOf(baseline), compactChanges(baseline, next)),
+			next.selectedState,
+		),
+	);
+	return { ...decoded, proposals: next.proposals };
+}
+/**
  * Reconcile one unblocked proposal and retain its next immutable baseline only when settled.
  * @param family The complete operation context.
  * @param proposal The mutable compact draft.
@@ -101,13 +125,15 @@ async function advanceProposal(
 	parent: ArchitectureModel,
 ) {
 	const merged = reconcileModels(base, mine, parent);
-	const next = { ...requireModel(merged.result), proposals: family.model.proposals };
+	let next = { ...requireModel(merged.result), proposals: family.model.proposals };
 	const issues = standingIssues(proposal.standing?.issues ?? [], merged.issues);
 	if (issues.length > 0) {
+		next = materializeAgainst(base, next);
 		proposal.standing = standingOf(family, proposal, parent.selectedState!, issues);
 		updateChanges(proposal, base, next);
 	} else {
 		delete proposal.standing;
+		next = materializeAgainst(parent, next);
 		proposal.baseline = await retainBaseline(family.vault, family.request, parent, proposal);
 		proposal.predecessorRevision = predecessorRevision(parent);
 		updateChanges(proposal, parent, next);

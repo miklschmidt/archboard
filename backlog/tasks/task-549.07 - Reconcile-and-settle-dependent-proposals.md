@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T21:46:00Z'
+updated_date: '2026-10-26T21:55:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -86,4 +86,6 @@ Shared legacy durability exposed canonical-only undefined fields crossing into l
 The final lifecycle regression proves that a child created from an unsettled proposal starts blocked in its creation receipt and first reading. Creation no longer labels that child settled. The early contract includes this behavior and complete-holder order choices. No adoption, shelving, correction, frontend source, browser tests, or Browser application architecture changed.
 
 Simplification pause: settlement requires one complete decision instead of a partial-resolution ledger. Shared sibling ordering and flow placement remain the sole semantic mechanism. Candidate dispatch now has no unreachable fallback. The family regression reads blocked catalogue metadata without another retained materialization; the blocked write and later selected child still prove the selected-state contract. This reduces test cost without changing product coverage. Latest integration merge remains already up to date at signed 212ef722bd5b0b9d6ce976119231be8d6378abb8.
+
+The frozen runtime set passes 67 cases/398 assertions. A final external-edit regression exposed input file moves that failed exact compact agreement despite stable subject identities. Family preparation now rematerializes its intended meaning through the chosen baseline before agreement. Safe reconciliation uses updated predecessor paths; standing conflicts retain their establishing baseline paths. This reuses the compact change and canonical reconstruction owners instead of adding path authority.
 <!-- SECTION:NOTES:END -->
