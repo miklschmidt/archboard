@@ -1143,7 +1143,7 @@
 				},
 				{
 					"path": "canonical code bindings and explicit foreign model references",
-					"expectedUse": "Resolve source through existing checkout selection. Follow explicit model, module and state references without changing ownership. Retain exact foreign pins and expose unavailable architecture or source without current substitutes.",
+					"expectedUse": "Resolve source through existing checkout selection. Follow explicit model, subject and state references without changing ownership. Retain exact foreign pins and expose unavailable architecture or source without current substitutes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/board/tests/runtime/operations/model-edit/references.test.ts; tests/system/semantic-boards/model-references.test.ts; tests/system/code-targets/canonical-model.test.ts; visible controls and addresses: tests/system/browser/canonical-model-code.test.ts, canonical-model-references.test.ts; guidance skills/archboard/references/canonical-models.md"
