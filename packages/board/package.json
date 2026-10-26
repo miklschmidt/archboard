@@ -10,6 +10,7 @@
 		"#tests/*": "./tests/*"
 	},
 	"exports": {
+		"./model": "./src/shared/api/model.ts",
 		"./document": "./src/shared/api/document.ts",
 		"./content": "./src/shared/api/content.ts",
 		"./flow": "./src/shared/api/flow.ts",

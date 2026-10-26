@@ -13,6 +13,9 @@ description: >-
 
 # Archboard
 
+For an authored vault with `model.json`, read [canonical models](references/canonical-models.md) before using `model read`.
+Legacy vaults keep the board workflow below until explicit migration.
+
 An agent states what an architecture IS; archboard draws it. A **board** is one
 document in the vault holding a family of **variants** (the current architecture,
 when anything it describes is built, and proposals). There is no layout to author: every picture is

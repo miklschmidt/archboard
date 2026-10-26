@@ -1,5 +1,8 @@
 # The vault is the truth, and the agent-friendly shape is an input format
 
+[ADR 0058](0058-canonical-model-reads-keep-legacy-authority-explicit.md) replaces board-file ownership for authored canonical models.
+Legacy vaults retain the contract below until explicit migration.
+
 Amended by [ADR
 0049](0049-one-server-serves-every-vault-and-every-call-names-its-vault.md)
 (2026-10-14). The server starts without a vault, because every call names its
