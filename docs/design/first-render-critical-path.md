@@ -404,3 +404,151 @@ six, at load 25 to 28, gave each board's render and its three longest solves:
 The boards that the rebase onto main left (889af5401, 3194b3b2e) ask for
 solves two to four times longer. The work on the core's layout and on
 Graphviz must take those solves on.
+
+## The wrap search split between solves (TASK-548.06)
+
+### What the critical solve did
+
+A temporary trace in the native `critical_path` example on b39ce7afa showed
+the critical solve of both boards. Both are the whole solve that the stacking
+choice chose, drawn inline, and the root block is the first block that could
+stack.
+
+| board           | stack prefix, ms | sink checks, ms | rest, ms |
+| --------------- | ---------------- | --------------- | -------- |
+| Agent workbench | 252              | 326 (8 checks)  | 6        |
+| Board viewer    | 311              | 365 (8 checks)  | 8        |
+
+Every sink check is one Graphviz call of 35 to 55 ms, and in both solves
+every candidate sank. The partial solve of the same stacking way lays the
+same stack prefix and then stops. So when it stops, it already knows the
+candidates of the wrap search: they come from the block laid whole.
+
+### What changed
+
+The design uses the partial solves that the stacking choice already asks.
+It does not use shares of candidates, which would make each extra solve
+repeat the stack prefix of 250 to 310 ms.
+
+- A partial solve tells, beside what its block stood at, the wrap search of
+  that block: the score that a wrap must beat, and each candidate (the grid,
+  or a lowered plan with its columns held or free), in the order that the
+  search weighs them (`archboard.blocks.wraps`).
+- Drawn inline, each whole solve of the stacking choice lays that block with
+  no wrap (`archboard.blocks.wrap` is `null`). It makes no sink check. Every
+  other wrap search of the solve is the same as before.
+- When a partial solve answers first, the solves for its way are asked at
+  once: one solve for each candidate (`archboard.blocks.wrap` names the
+  candidate and the score it must beat). When a partial solve answers last,
+  the choice is known, so only the chosen way asks its solves. Such a solve
+  does not lay the block whole. It tries its one candidate. It answers no
+  drawing when the candidate sinks a card. When the candidate cannot beat the
+  score, it answers only what the search weighs the candidate on
+  (`archboard.blocks.wrapped`). Otherwise it lays the whole board with that
+  wrap.
+- When every candidate has answered, the choice weighs them in search order
+  with the search's own comparison (`wraps.rs`, `kept_of`). If the search
+  keeps a candidate, that candidate's drawing is used, and the whole solve
+  with no wrap is called off. Otherwise the whole solve gives the drawing.
+  The way that is not chosen is called off together with its candidates.
+- With groups packed, the search is not split. Each group is a block of its
+  own, and in Agent workbench those partial and whole solves took 90 to
+  134 ms. The split added 12 solves there and gained nothing.
+
+Each solve's answer is the same as before. For a candidate that the search
+keeps, the solve laid with that candidate alone makes the same calls as the
+whole solve after its search. A candidate whose score is not above the
+required score can never be kept. Across the 23 `timing.ts` boards, the
+split keeps a candidate on Archboard, Board rasterizer and Browser
+application, and keeps none on the other boards.
+
+`crates/archboard-layout/tests/async_solves.rs` holds the order of the asks,
+the call-off of the way not chosen and of the whole solve, the choice between
+the candidates' answers in either order, and the failure paths.
+
+### Measured and not kept
+
+The first version asked the candidates only after both partial solves had
+answered. Each candidate that sank no card then laid the whole board. Agent
+workbench got slower (496 to 543 ms). One of its candidates sinks no card
+but cannot beat the score, and its solve laid the board after the partial
+solve. Now such a solve stops when it has weighed the candidate. A partial
+solve that answers first also asks its candidates at once.
+
+### Critical paths after
+
+These are the native `critical_path` example, best of 3 rounds, on the
+`timing.ts` requests. During all of the runs below, about 15 spinning
+`bun.native` processes of another worktree kept the 24-core box at a load
+of 21 to 35. The parent and this branch were run alternately with the
+example built once for each.
+
+| run                             | Agent workbench, ms | Board viewer, ms |
+| ------------------------------- | ------------------- | ---------------- |
+| parent, load 11 (12:04)         | 496                 | 557              |
+| parent, alternating, load 30-34 | 688 to 821          | 867 to 928       |
+| after, alternating, load 31-34  | 503 to 648          | 605 to 765       |
+| after, load 21 (13:01)          | 394                 | 430              |
+| after, load 28 (12:49)          | 367                 | 435              |
+
+Agent workbench asks 19 solves instead of 11, and Board viewer asks 16
+instead of 8. The extra solves are candidates of 30 to 50 ms each when they
+sink a card. The solve CPU stays near the parent's, because the whole solves
+no longer make the sink checks. At load 21 to 28, Agent workbench took 3.1 to
+3.4 s and Board viewer 2.5 to 3.2 s. The parent took 3.2 s and 2.4 s at load
+11, and 4.6 to 5.4 s and 3.5 to 3.6 s at load 30 to 35.
+
+Now the path of Board viewer is the partial solve of the stacked way (430 ms
+at load 21). The stacking choice waits for it, but the chosen way is the
+plain one. The path of Agent workbench is one of two things: a joins solve of
+the groups nesting with blocks kept apart, which is not split (about 360 ms at
+load 11 on the parent), or the plain partial solve and then the one candidate
+that sinks no card (156 + 238 ms at load 21).
+
+### Through the pool
+
+`bun docs/design/wide-board-layout-fixtures/timing.ts 7`, alternating the
+parent b39ce7afa and this branch, with the core built from each before each
+run. The round marked "early" ran the first version, which also split the
+groups nesting.
+
+| run          | load at start | first total, ms | Agent workbench | Board viewer |
+| ------------ | ------------- | --------------- | --------------- | ------------ |
+| parent       | 32.8          | 11380           | 1858            | 1158         |
+| after, early | 29.6          | 11380           | 1885            | 1213         |
+| after        | 21.4          | 7958            | 1500            | 991          |
+| parent       | 28.5          | 13860           | 1863            | 1742         |
+| after        | 34.8          | 14776           | 2728            | 1673         |
+| parent       | 29.0          | 13429           | 2091            | 1174         |
+
+A re-render after a card grows: a scratch script rendered the board through
+the pool, then the same content with one card's name made one line longer
+(Workhorse queue on Agent workbench, Camera arithmetic on Board viewer), and
+timed the second render.
+
+| run          | Agent workbench, ms | Board viewer, ms |
+| ------------ | ------------------- | ---------------- |
+| parent       | 1911                | 1685             |
+| after, early | 1305                | 1240             |
+| after        | 1104                | 1038             |
+| parent       | 2527                | 1773             |
+| after        | 1623                | 1744             |
+| parent       | 1715                | 1615             |
+
+At this load, the first renders through the pool do not show the gain of the
+critical path. The pool starts one worker at a time, and only after every
+worker has answered a solve. It sends solves to workers in the order they
+were asked, so on a cold pool the candidates wait behind longer solves
+(TASK-548.05). After a card grows, the workers of the first render are ready.
+Agent workbench re-rendered faster in every round of this branch than in the
+parent round next to it, and Board viewer in two of three. The load was too
+high and too variable for a reliable number.
+
+### What still stands between them and 500 ms
+
+- Through the pool: the workers that are not ready (TASK-548.05). With more
+  solves to send, this change needs ready workers even more.
+- Board viewer: the partial solve of the way that the choice does not keep.
+- Agent workbench: the joins solves of the groups nesting. Each makes a full
+  wrap search of about 220 ms and keeps a wrap. They have no partial solve
+  that could tell the search.

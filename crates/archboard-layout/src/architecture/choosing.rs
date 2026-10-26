@@ -1,16 +1,14 @@
 //! A board laid out as blocks, chosen between solves. Each way to lay it out
 //! is one solve: with the joins of some blocks kept apart (`joins.rs`), and,
 //! drawn inline, with its groups inline or each packed as a block of its own,
-//! and its first block that could stack laid each way. The solves a choice
+//! its first block that could stack laid each way, and, drawn inline, each
+//! wrap of that block tried alone (`stacking.rs`). The solves a choice
 //! weighs are asked for side by side and weighed in the order the choice
 //! weighs them, so the drawing is the one laying them out one by one gives.
 //! Each solve tells, with its drawing, what the choices read of it
 //! (ADR 0039, ADR 0059).
 
-use std::future::{Future, poll_fn};
-use std::pin::{Pin, pin};
 use std::rc::Rc;
-use std::task::Poll;
 
 use archboard_scene::geometry::{Point, Rect};
 use indexmap::IndexMap;
@@ -19,19 +17,18 @@ use serde::Deserialize;
 use super::graph::Graph;
 use super::joins::{Apart, Lay, lay_joined};
 use super::solving::{Boxed, Calling, Solver, Unsolved, try_both};
-use crate::blocks::choosing::{
-    could_stack, draws_better, has_regions, joining_of, reads_better_packed, stacks_of,
-};
+use super::stacking::stacked_solved;
+use crate::blocks::choosing::{draws_better, has_regions, joining_of, reads_better_packed};
 use crate::blocks::place::{
     BLOCKS_APART, BLOCKS_FACING, BLOCKS_NESTING, BLOCKS_PLACED, BLOCKS_READ, BLOCKS_READING,
-    BLOCKS_STACKING, BLOCKS_STOOD, BLOCKS_UNTIL_STOOD,
+    BLOCKS_STACKING, BLOCKS_STOOD, BLOCKS_UNTIL_STOOD, BLOCKS_WRAP, BLOCKS_WRAPPED, BLOCKS_WRAPS,
 };
 use crate::json::J;
 
 /// How a board's containers and group regions are drawn: packed as blocks,
 /// inline, or inline with each group packed.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Nesting {
+pub(super) enum Nesting {
     Blocks,
     Inline,
     Groups,
@@ -131,24 +128,31 @@ pub(crate) fn better(one: &Drawing, other: &Drawing) -> Result<bool, String> {
 
 /// How one solve lays a board out.
 #[derive(Clone, Debug, Default)]
-struct Way {
+pub(super) struct Way {
     /// The blocks whose joins stay apart.
-    apart: Apart,
+    pub(super) apart: Apart,
     /// Whether a choice weighs its drawing, so it tells its reading.
-    read: bool,
+    pub(super) read: bool,
     /// Whether every block faces its walls.
-    facing: bool,
+    pub(super) facing: bool,
     /// How its first block that could stack is laid, if named.
-    stacking: Option<bool>,
+    pub(super) stacking: Option<bool>,
     /// Whether it answers once that block is laid.
-    until: bool,
+    pub(super) until: bool,
+    /// How it wraps that block, as the root option names it, if it names it.
+    pub(super) wrap: Option<String>,
 }
 
 /// What one solve answers: the drawing, unless it answered once its first
-/// block that could stack was laid, and what that block stood at.
-struct Answer {
-    drawing: Option<Drawing>,
-    stood: Option<String>,
+/// block that could stack was laid or the one wrap it tried there sank a
+/// card; what that block stood at; the block's wrap search, told by a solve
+/// that answered once the block was laid; and what that search weighs the
+/// one wrap a solve tried on.
+pub(super) struct Answer {
+    pub(super) drawing: Option<Drawing>,
+    pub(super) stood: Option<String>,
+    pub(super) wraps: Option<String>,
+    pub(super) wrapped: Option<String>,
 }
 
 /// The root options that ask a solve to lay a board out one way.
@@ -165,6 +169,9 @@ fn options_of(nesting: Nesting, way: &Way) -> Vec<(&'static str, String)> {
     if way.until {
         options.push((BLOCKS_UNTIL_STOOD, "true".to_owned()));
     }
+    if let Some(wrap) = &way.wrap {
+        options.push((BLOCKS_WRAP, wrap.clone()));
+    }
     if way.read {
         options.push((BLOCKS_READ, "true".to_owned()));
     }
@@ -179,27 +186,30 @@ struct Told {
 }
 
 /// What a solve answered, read.
-fn read(told: &str) -> Result<Answer, Unsolved> {
+pub(super) fn read(told: &str) -> Result<Answer, Unsolved> {
     let Told { mut options } = serde_json::from_str(told)
         .map_err(|error| format!("A solve's answer is unreadable: {error}"))?;
     let stood = options.swap_remove(BLOCKS_STOOD);
-    let Some(placed) = options.get(BLOCKS_PLACED) else {
-        return Ok(Answer {
-            drawing: None,
-            stood,
-        });
+    let wraps = options.swap_remove(BLOCKS_WRAPS);
+    let wrapped = options.swap_remove(BLOCKS_WRAPPED);
+    let drawing = match options.get(BLOCKS_PLACED) {
+        None => None,
+        Some(placed) => Some(Drawing {
+            placed: serde_json::from_str(placed)
+                .map_err(|error| format!("A solve's drawing is unreadable: {error}"))?,
+            reading: options.swap_remove(BLOCKS_READING),
+        }),
     };
-    let placed: Placed = serde_json::from_str(placed)
-        .map_err(|error| format!("A solve's drawing is unreadable: {error}"))?;
-    let reading = options.swap_remove(BLOCKS_READING);
     Ok(Answer {
-        drawing: Some(Drawing { placed, reading }),
+        drawing,
         stood,
+        wraps,
+        wrapped,
     })
 }
 
 /// Ask for a solve that lays a board out one way. It starts at once.
-fn asked<'s, S: Solver>(
+pub(super) fn asked<'s, S: Solver>(
     solver: &'s S,
     graph: &Graph,
     nesting: Nesting,
@@ -210,7 +220,7 @@ fn asked<'s, S: Solver>(
 }
 
 /// What a solve that lays a board out one way answers.
-async fn answered<S: Solver>(
+pub(super) async fn answered<S: Solver>(
     solver: &S,
     graph: &Graph,
     nesting: Nesting,
@@ -221,7 +231,7 @@ async fn answered<S: Solver>(
 }
 
 /// The drawing a solve answered.
-fn drawing_of(answer: Answer) -> Result<Rc<Drawing>, String> {
+pub(super) fn drawing_of(answer: Answer) -> Result<Rc<Drawing>, String> {
     answer
         .drawing
         .map(Rc::new)
@@ -229,7 +239,7 @@ fn drawing_of(answer: Answer) -> Result<Rc<Drawing>, String> {
 }
 
 /// A board laid out one way, in one solve.
-async fn solved<S: Solver>(
+pub(super) async fn solved<S: Solver>(
     solver: &S,
     graph: &Graph,
     nesting: Nesting,
@@ -239,167 +249,6 @@ async fn solved<S: Solver>(
     Ok(drawing_of(
         answered(solver, graph, nesting, &way, calling).await?,
     )?)
-}
-
-/// Whether the first block that can stack is stacked, as the partial solves
-/// laid each way tell; nothing when no block could stack.
-fn stacking_of(stacked: &Answer, plain: &Answer) -> Result<Option<bool>, String> {
-    match (&stacked.stood, &plain.stood) {
-        (Some(high), Some(low)) => stacks_of(high, low).map(Some),
-        _ => Ok(None),
-    }
-}
-
-/// Two callings of their own, each called off with `calling` as well.
-fn callings_under(calling: &Calling) -> [Calling; 2] {
-    let callings = [Calling::default(), Calling::default()];
-    let off = callings.clone();
-    calling.on_call_off(move || {
-        for one in &off {
-            one.call_off();
-        }
-    });
-    callings
-}
-
-/// A way to lay a board out, its first block that could stack laid one way,
-/// and the solve laying it answering once that block is laid where `until`.
-fn stacked_way(way: &Way, stacking: bool, until: bool) -> Way {
-    Way {
-        stacking: Some(stacking),
-        until,
-        ..way.clone()
-    }
-}
-
-/// Choose whether the first block that can stack is stacked, and lay the
-/// whole board only that way. The two partial solves stop once they can
-/// answer the choice (TASK-512). Where they do not answer at once, the whole
-/// board laid each way is asked for too, a turn after every other solve the
-/// render is sure to need, so the render waits for the longer of the partial
-/// solves and the whole one chosen, not for one after the other. The whole
-/// one not chosen is called off, and a host that has not started it never
-/// lays it out. A board with no block that can stack is drawn by the partial
-/// solve that does not stack. Drawn inline, a board whose graph shows that no
-/// block could stack is drawn by that solve alone, which lays the whole board.
-async fn stacked_solved<S: Solver>(
-    solver: &S,
-    graph: &Graph,
-    nesting: Nesting,
-    way: Way,
-    calling: &Calling,
-) -> Result<Rc<Drawing>, Unsolved> {
-    if nesting == Nesting::Inline && !could_stack(&graph.with_options(&[]))? {
-        return solved(
-            solver,
-            graph,
-            nesting,
-            stacked_way(&way, false, true),
-            calling,
-        )
-        .await;
-    }
-    let (high, low) = (
-        stacked_way(&way, true, true),
-        stacked_way(&way, false, true),
-    );
-    let partial = try_both(
-        answered(solver, graph, nesting, &high, calling),
-        answered(solver, graph, nesting, &low, calling),
-    );
-    let mut partial = pin!(partial);
-    let laying = Laying {
-        solver,
-        graph,
-        nesting,
-        way: &way,
-        calling,
-    };
-    match first_answers(partial.as_mut()).await {
-        Poll::Ready(answers) => laying.chosen(answers?).await,
-        Poll::Pending => laying.speculated(partial).await,
-    }
-}
-
-/// The partial solves' answers if they come at once: polling them asks for
-/// them, and they are polled again once every other solve the render is
-/// sure to need has been asked for.
-async fn first_answers<F: Future>(mut partial: Pin<&mut F>) -> Poll<F::Output> {
-    let early = polled(partial.as_mut()).await;
-    if early.is_ready() {
-        return early;
-    }
-    once_more().await;
-    polled(partial).await
-}
-
-/// One stacking choice: where its solves run, the board and how it is laid.
-struct Laying<'a, S> {
-    solver: &'a S,
-    graph: &'a Graph,
-    nesting: Nesting,
-    way: &'a Way,
-    calling: &'a Calling,
-}
-
-impl<S: Solver> Laying<'_, S> {
-    /// The board laid the way the partial solves' answers choose.
-    async fn chosen(&self, (stacked, plain): (Answer, Answer)) -> Result<Rc<Drawing>, Unsolved> {
-        let Some(stacking) = stacking_of(&stacked, &plain)? else {
-            return Ok(drawing_of(plain)?);
-        };
-        let way = stacked_way(self.way, stacking, false);
-        solved(self.solver, self.graph, self.nesting, way, self.calling).await
-    }
-
-    /// The board laid both ways whole beside the partial solves, the way
-    /// they choose kept and the other called off.
-    async fn speculated<F>(&self, partial: Pin<&mut F>) -> Result<Rc<Drawing>, Unsolved>
-    where
-        F: Future<Output = Result<(Answer, Answer), Unsolved>>,
-    {
-        let callings = callings_under(self.calling);
-        let ask = |stacking: bool, calling: &Calling| {
-            let way = stacked_way(self.way, stacking, false);
-            asked(self.solver, self.graph, self.nesting, &way, calling)
-        };
-        let mut wholes = [
-            Some(ask(true, &callings[0])),
-            Some(ask(false, &callings[1])),
-        ];
-        let (stacked, plain) = partial.await?;
-        let chosen = stacking_of(&stacked, &plain)?.map(|stacking| usize::from(!stacking));
-        for (at, one) in callings.iter().enumerate() {
-            if Some(at) != chosen {
-                one.call_off();
-                wholes[at] = None;
-            }
-        }
-        let Some(whole) = chosen.and_then(|at| wholes[at].take()) else {
-            return Ok(drawing_of(plain)?);
-        };
-        Ok(drawing_of(read(&whole.await?)?)?)
-    }
-}
-
-/// A future polled once: what it answered, or that it waits.
-async fn polled<F: Future>(mut future: Pin<&mut F>) -> Poll<F::Output> {
-    poll_fn(|context| Poll::Ready(future.as_mut().poll(context))).await
-}
-
-/// Wait once, so that whatever else the render polls now asks for its solves first.
-async fn once_more() {
-    let mut waited = false;
-    poll_fn(|context| {
-        if waited {
-            Poll::Ready(())
-        } else {
-            waited = true;
-            context.waker().wake_by_ref();
-            Poll::Pending
-        }
-    })
-    .await;
 }
 
 /// A board laid out with every join of lines to one card kept whole the way

@@ -29,6 +29,7 @@ use super::place::insets_of;
 use super::stacking::{Scored, Stood, stacks};
 use super::tree::{BlockTree, ClusterKind, Kept, Nesting, Projection};
 use super::weighing::weighed_placed;
+use super::wraps::{Search, Tried, Weighing, kept_of};
 
 /// How much line costs as much as one crossing in the joins' earlier
 /// weighing: a crossing the reader has to look twice at is worth a long run
@@ -324,6 +325,54 @@ fn stood_of(told: &str) -> Result<Stood, String> {
 /// When either is not what a solve told.
 pub(crate) fn stacks_of(stacked: &str, plain: &str) -> Result<bool, String> {
     Ok(stacks(&stood_of(stacked)?, &stood_of(plain)?))
+}
+
+/// A block's wrap search as a solve told it, and the root option that asks a
+/// solve to try each of its candidates alone, in the order the search weighs them.
+///
+/// # Errors
+///
+/// When the search is not what a solve told.
+pub(crate) fn wraps_asked(told: &str) -> Result<(Search, Vec<String>), String> {
+    let search: Search = serde_json::from_str(told)
+        .map_err(|error| format!("A block's wrap search is unreadable: {error}"))?;
+    let asked = search
+        .candidates
+        .iter()
+        .map(|candidate| {
+            let alone = Tried {
+                candidate: candidate.clone(),
+                needed: search.needed,
+            };
+            serde_json::to_string(&Some(alone))
+                .map_err(|error| format!("A wrap cannot be asked for: {error}"))
+        })
+        .collect::<Result<_, _>>()?;
+    Ok((search, asked))
+}
+
+/// Which candidate of a wrap search to keep, from what each solve that tried
+/// one alone told the search weighs it on, nothing where it sank a card: the
+/// one the search keeps, or none.
+///
+/// # Errors
+///
+/// When there is not one answer for each candidate, or one is not what a solve told.
+pub(crate) fn wrap_kept(search: &Search, told: &[Option<&str>]) -> Result<Option<usize>, String> {
+    if told.len() != search.candidates.len() {
+        return Err("A wrap search was answered for other candidates than it has.".to_owned());
+    }
+    let weighings = told
+        .iter()
+        .map(|told| {
+            told.map(|told| {
+                serde_json::from_str::<Weighing>(told)
+                    .map_err(|error| format!("A wrap's weighing is unreadable: {error}"))
+            })
+            .transpose()
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(kept_of(search.needed, &weighings))
 }
 
 /// A measured hierarchy's blocks, drawn one way, as no layout has decided anything yet.

@@ -18,7 +18,7 @@ use super::laying::{Laying, Make, lay_both, line_length, settled};
 use super::place::Stop;
 use super::tree::{BlockId, BlockTree};
 use super::weighing::weighed_laid;
-use super::wraps::weighed;
+use super::wraps::{Search, Tried, Unwrapped, Weighing, Wrapping, search_of, weighed};
 
 /// How near two scores or fits of a block are for the stacking choice's earlier weighing to call them tied.
 const NEAR: f64 = 0.05;
@@ -70,14 +70,53 @@ impl Stood {
     }
 }
 
+/// How a solve that names the way its first block that could stack is laid
+/// wraps that block.
+#[derive(Clone, Debug, Default)]
+pub(crate) enum Wrap {
+    /// As its wrap search chooses.
+    #[default]
+    Searched,
+    /// Not at all: solves of their own try its candidates.
+    Unwrapped,
+    /// With this candidate alone, the block not laid whole first.
+    Only(Tried),
+}
+
 /// The stacking choice of one solve: the way its first block that could
 /// stack is laid, when only one way is, whether the solve answers once it is,
-/// and what that way stood at once laid.
+/// how it wraps that block, and what that way stood at once laid. A solve
+/// that answers once the block is laid tells that block's wrap search too;
+/// one that tries a single candidate tells what the search weighs it on.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Stacking {
     pub way: Option<bool>,
     pub until: bool,
+    pub wrap: Wrap,
     pub stood: Option<Stood>,
+    pub search: Option<Search>,
+    pub weighing: Option<Weighing>,
+}
+
+/// The way a solve names for its first block that could stack, and how it wraps it.
+pub(crate) struct Named {
+    pub way: bool,
+    pub wrap: Wrap,
+}
+
+impl Stacking {
+    /// The way the solve names for a block of cards, and how it wraps it,
+    /// when the block could stack and is the first that could: taken, so a
+    /// later block, or this block laid again, is laid both ways.
+    pub(crate) fn named(&mut self, could_stack: bool) -> Option<Named> {
+        if !could_stack {
+            return None;
+        }
+        Some(Named {
+            way: self.way.take()?,
+            wrap: std::mem::take(&mut self.wrap),
+        })
+    }
 }
 
 /// Whether two measures of a block stand within a near tie of each other.
@@ -142,47 +181,78 @@ pub(crate) fn stacks(stacked: &Stood, plain: &Stood) -> bool {
     takes(&stacked.weighed, &plain.weighed, earlier, None)
 }
 
+/// A fresh layout of a block of cards, stacked or not.
+fn made<'t>(
+    tree: &'t BlockTree,
+    laid: &'t LaidMap,
+    block: BlockId,
+    insets: Insets,
+    stacked: bool,
+) -> Make<'t> {
+    Rc::new(move || {
+        CardLayout::new(
+            tree,
+            laid,
+            block,
+            insets,
+            Arrangement {
+                stacked,
+                ..Arrangement::default()
+            },
+        )
+    })
+}
+
+/// The first block of a solve that could stack, laid out whole only the way
+/// the solve names, and what that way stood at kept. A solve that answers
+/// once the block is laid ends here, and tells the block's wrap search too.
+pub(crate) fn named_whole(
+    gv: &mut Engine<'_>,
+    tree: &BlockTree,
+    block: BlockId,
+    laid: &LaidMap,
+    insets: Insets,
+    way: bool,
+    stacking: &mut Stacking,
+) -> Result<Rc<Laid>, Stop> {
+    let laying = lay_both(gv, made(tree, laid, block, insets, way))?;
+    let stood = stood_of(gv, tree, block, insets, &laying)?;
+    let whole = settled(gv, &laying)?;
+    stacking.stood = Some(stood.clone());
+    if stacking.until {
+        let wrapping = Wrapping {
+            laid,
+            stacked: way,
+            insets,
+        };
+        stacking.search = search_of(
+            tree,
+            block,
+            &Unwrapped {
+                wrapping,
+                whole: &whole,
+            },
+        );
+        return Err(Stop::Stood(Box::new(stood)));
+    }
+    Ok(whole)
+}
+
 /// A block of cards laid out whole: with the containers a line from another
-/// container enters stacked below it, or else as Graphviz ranks them. The
-/// first block of a solve that could stack is laid only the way the solve's
-/// stacking names, when it names one, and what that way stood at is kept; a
-/// solve that answers once it is laid ends there. Answers the block laid out,
-/// and whether it stacks.
+/// container enters stacked below it, or else as Graphviz ranks them, where
+/// it `could_stack`. Answers the block laid out, and whether it stacks.
 pub(crate) fn stacked_or_not(
     gv: &mut Engine<'_>,
     tree: &BlockTree,
     block: BlockId,
     laid: &LaidMap,
     insets: Insets,
-    stacking: &mut Stacking,
-) -> Result<(Rc<Laid>, bool), Stop> {
-    let make = |stacked: bool| -> Make<'_> {
-        Rc::new(move || {
-            CardLayout::new(
-                tree,
-                laid,
-                block,
-                insets,
-                Arrangement {
-                    stacked,
-                    ..Arrangement::default()
-                },
-            )
-        })
-    };
-    if !CardLayout::new(tree, laid, block, insets, Arrangement::default()).stacks() {
+    could_stack: bool,
+) -> Result<(Rc<Laid>, bool), String> {
+    let make = |stacked: bool| made(tree, laid, block, insets, stacked);
+    if !could_stack {
         let laying = lay_both(gv, make(false))?;
         return Ok((settled(gv, &laying)?, false));
-    }
-    if let Some(way) = stacking.way {
-        let laying = lay_both(gv, make(way))?;
-        stacking.way = None;
-        let stood = stood_of(gv, tree, block, insets, &laying)?;
-        stacking.stood = Some(stood.clone());
-        if stacking.until {
-            return Err(Stop::Stood(Box::new(stood)));
-        }
-        return Ok((settled(gv, &laying)?, way));
     }
     let plain = lay_both(gv, make(false))?;
     let stacked = lay_both(gv, make(true))?;

@@ -32,11 +32,11 @@ use super::orders::held_orders;
 use super::packing::{PackLayout, Packing};
 use super::settle::{Settling, settle_ports};
 use super::sides::sides_of;
-use super::stacking::{Stacking, Stood, stacked_or_not};
+use super::stacking::{Named, Stacking, Stood, Wrap, named_whole, stacked_or_not};
 use super::tree::{Block, BlockId, BlockTree, Kept, Kind, Nesting};
 use super::walls::facing_turns;
 use super::weighing::routed_weighed;
-use super::wraps::{Unwrapped, best_wrap, weighed};
+use super::wraps::{Tried, Unwrapped, Wrapping, best_wrap, only_wrap, weighed};
 
 /// The root option carrying the placed drawing, as the JSON the assembly answers.
 pub(crate) const BLOCKS_PLACED: &str = "archboard.blocks.placed";
@@ -59,11 +59,24 @@ pub(crate) const BLOCKS_STACKING: &str = "archboard.blocks.stacking";
 pub(crate) const BLOCKS_UNTIL_STOOD: &str = "archboard.blocks.until-stood";
 /// The root option a solve answers what that block stood at in, as JSON.
 pub(crate) const BLOCKS_STOOD: &str = "archboard.blocks.stood";
+/// The root option naming how a solve wraps that block, as JSON: `null` for
+/// no wrap, or one candidate of its wrap search tried alone with the score it
+/// must beat (`wraps.rs`, `Tried`). Without it the block's wrap search chooses.
+pub(crate) const BLOCKS_WRAP: &str = "archboard.blocks.wrap";
+/// The root option a solve that answers once that block is laid tells the
+/// block's wrap search in, as JSON, when the block has one.
+pub(crate) const BLOCKS_WRAPS: &str = "archboard.blocks.wraps";
+/// The root option a solve that tries one candidate alone tells what the
+/// search weighs that candidate on in, as JSON, when it sinks no card.
+pub(crate) const BLOCKS_WRAPPED: &str = "archboard.blocks.wrapped";
 
 /// What ends a solve early: what its first block that could stack stood at,
-/// when it was asked to answer once that block is laid, or what went wrong.
+/// when it was asked to answer once that block is laid; the one candidate it
+/// was asked to try alone there sinking a card or scoring too little to be
+/// kept; or what went wrong.
 pub(crate) enum Stop {
     Stood(Box<Stood>),
+    Unkept,
     Failed(String),
 }
 
@@ -111,7 +124,10 @@ fn plain_insets(block: &Block) -> Insets {
 
 /// Lay one block of cards out: whole, stacked or not, its widest rank wrapped
 /// into rows when that reads clearly better, or folded into columns when that
-/// does. The columns are added to `laid`.
+/// does. The columns are added to `laid`. The first block that could stack
+/// is laid the way the solve names, if it names one, and wrapped as it asks:
+/// as its search chooses, not at all, or with one candidate alone, in which
+/// case the solve ends when that candidate sinks a card.
 fn lay_cards(
     gv: &mut Engine<'_>,
     tree: &mut BlockTree,
@@ -120,18 +136,40 @@ fn lay_cards(
     stacking: &mut Stacking,
 ) -> Result<Rc<Laid>, Stop> {
     let insets = insets_of(tree.get(block));
-    let (whole, stacked) = stacked_or_not(gv, tree, block, laid, insets, stacking)?;
-    if let Some(wrapped) = best_wrap(
-        gv,
-        tree,
-        block,
-        &Unwrapped {
+    let could_stack = CardLayout::new(tree, laid, block, insets, Arrangement::default()).stacks();
+    let (whole, stacked, searched) = match stacking.named(could_stack) {
+        None => {
+            let (whole, stacked) = stacked_or_not(gv, tree, block, laid, insets, could_stack)?;
+            (whole, stacked, true)
+        }
+        Some(Named {
+            way,
+            wrap: Wrap::Only(alone),
+        }) => {
+            let wrapping = Wrapping {
+                laid,
+                stacked: way,
+                insets,
+            };
+            let (weighing, wrapped) =
+                only_wrap(gv, tree, block, wrapping, &alone)?.ok_or(Stop::Unkept)?;
+            stacking.weighing = Some(weighing);
+            return wrapped.ok_or(Stop::Unkept);
+        }
+        Some(Named { way, wrap }) => {
+            let whole = named_whole(gv, tree, block, laid, insets, way, stacking)?;
+            (whole, way, matches!(wrap, Wrap::Searched))
+        }
+    };
+    let unwrapped = Unwrapped {
+        wrapping: Wrapping {
             laid,
-            whole: &whole,
             stacked,
             insets,
         },
-    )? {
+        whole: &whole,
+    };
+    if searched && let Some(wrapped) = best_wrap(gv, tree, block, &unwrapped)? {
         return Ok(wrapped);
     }
     let walled = tree
@@ -396,10 +434,20 @@ fn way_of(graph: &Node) -> Result<(Way, Stacking), String> {
             ));
         }
     };
+    let wrap = match graph.option(BLOCKS_WRAP) {
+        None => Wrap::Searched,
+        Some(wrap) => match serde_json::from_str::<Option<Tried>>(wrap)
+            .map_err(|error| format!("{BLOCKS_WRAP} is unreadable: {error}"))?
+        {
+            None => Wrap::Unwrapped,
+            Some(alone) => Wrap::Only(alone),
+        },
+    };
     let stacking = Stacking {
         way,
         until: graph.option(BLOCKS_UNTIL_STOOD) == Some("true"),
-        stood: None,
+        wrap,
+        ..Stacking::default()
     };
     Ok((
         Way {
@@ -409,6 +457,11 @@ fn way_of(graph: &Node) -> Result<(Way, Stacking), String> {
         },
         stacking,
     ))
+}
+
+/// What a solve tells the renderer's choices, as JSON only the core reads.
+fn told_json(told: &impl serde::Serialize) -> Result<String, String> {
+    serde_json::to_string(told).map_err(|error| format!("A solve cannot tell its answer: {error}"))
 }
 
 /// A solve's answer: the hierarchy's root, as large as the drawing, carrying it in its options.
@@ -456,12 +509,18 @@ pub fn lay_out_board(graph: &str, host: &mut dyn Graphviz) -> Result<String, Str
     let (board, faces) = match lay_out(&mut gv, &graph, &way, &mut stacking) {
         Ok(laid_out) => laid_out,
         Err(Stop::Stood(stood)) => {
-            return Ok(answer(
-                &graph,
-                0.0,
-                0.0,
-                vec![(BLOCKS_STOOD, stood.json().text())],
-            ));
+            let mut told = vec![(BLOCKS_STOOD, stood.json().text())];
+            if let Some(search) = &stacking.search {
+                told.push((BLOCKS_WRAPS, told_json(search)?));
+            }
+            return Ok(answer(&graph, 0.0, 0.0, told));
+        }
+        Err(Stop::Unkept) => {
+            let mut told = Vec::new();
+            if let Some(weighing) = &stacking.weighing {
+                told.push((BLOCKS_WRAPPED, told_json(weighing)?));
+            }
+            return Ok(answer(&graph, 0.0, 0.0, told));
         }
         Err(Stop::Failed(error)) => return Err(error),
     };
@@ -474,6 +533,9 @@ pub fn lay_out_board(graph: &str, host: &mut dyn Graphviz) -> Result<String, Str
     }
     if let Some(stood) = &stacking.stood {
         told.push((BLOCKS_STOOD, stood.json().text()));
+    }
+    if let Some(weighing) = &stacking.weighing {
+        told.push((BLOCKS_WRAPPED, told_json(weighing)?));
     }
     Ok(answer(&graph, placed.width, placed.height, told))
 }
