@@ -238,7 +238,8 @@ An unsuccessful operation keeps its structured JSON and exits with status 2.
 This delivery supports module structure and relationship edits, retained checkpoints, private archives, and explicit archive publication.
 Use existing board commands for legacy vaults.
 For legacy inventory and identity choices, use [legacy migration](legacy-migration.md).
-Proposal changes and cutover arrive through later TASK-549 slices.
+Compact proposals use the workflow below.
+Reconciliation, adoption, shelving, and cutover remain later TASK-549 slices.
 
 ## Edit one module description
 
@@ -383,7 +384,8 @@ Reparent or remove every surviving child of a removed container in the same batc
 Archboard never promotes an orphan automatically.
 Removed module and relationship IDs remain reserved in `model.json`.
 Existing proposal confirmation rules remain unchanged and apply when editing proposals.
-This delivery authors only the explicitly selected current state.
+A batch without a proposal intent authors only the explicitly selected current state.
+The compact proposal workflow below uses the same batch for a selected draft.
 
 The operation retains one checkpoint and announces one complete affected subject set.
 A retry returns the same allocated identities and result.
@@ -501,3 +503,97 @@ Both readings use the existing renderer and include the complete selected flow.
 Structural scope and relationship filters cannot remove its participants or messages.
 These commands do not require a board or named view.
 The browser grammar controls belong to a later delivery.
+
+## Create and compare compact proposals
+
+A proposal states unbuilt architecture across any modules and flows in the model.
+Its active `.proposal.json` file stores only identity changes against an immutable retained baseline.
+Current module and flow files remain unchanged.
+Use `model proposals` to read the catalogue, including each proposal's identity, name, predecessor, baseline, and lifecycle.
+
+```bash
+archboard model proposals -C <directory>
+archboard model read --state '<proposal-name>' -C <directory>
+archboard model compare --state '<proposal-name>' -C <directory>
+archboard model compare --state '<proposal-name>' --against '<other-state-or-checkpoint>' -C <directory>
+```
+
+State selectors resolve a stable identity before a unique current or former name.
+`current` explicitly requests the current designation.
+A planning model has no current designation until later explicit adoption.
+Missing or ambiguous state selectors refuse rather than choose another reading.
+Exact checkpoint selectors use their complete immutable identities.
+
+Read `selectedState` for the selected state's identity, name, summary, documents, and lifecycle.
+A draft always reports lifecycle `draft`.
+`manifest.current` describes the retained designation, rather than the selected proposal's lifecycle.
+Never label a selected draft as implemented Current.
+The revision remains the complete addressed vault token, including all active proposal files.
+Keep that complete object for the next write.
+
+Create a proposal through the existing `model edit` request.
+Its target state names the chosen predecessor's stable state ID.
+To choose a named predecessor, read that state first and use `selectedState.id`.
+Claim the model identity and every affected existing subject in that predecessor.
+Add the following fields to the common target, revision, operation, writer, and claim fields.
+
+```json
+{
+	"proposal": {
+		"type": "create",
+		"name": "Queued dispatch",
+		"summary": "Queue accepted requests",
+		"documents": [{ "repo": "github.com/acme/shop", "path": "docs/queue.md" }]
+	},
+	"changes": [
+		{
+			"type": "edit-module",
+			"subject": "Shop#Gateway",
+			"set": { "description": "Queues accepted requests for the worker." }
+		}
+	]
+}
+```
+
+The source example `examples/canonical-model/compact-proposal.changes.json` spans modules and a new independent flow.
+Supply the common request fields from the selected predecessor and pass the doing line through `--doing`.
+A lost response uses the same exact request and operation identity.
+The receipt identifies the newly allocated draft through `target` and `selectedState`.
+
+For a sibling, create another proposal against the same predecessor identity.
+For a child, select the named draft and use its identity as the new target state.
+For a planning root, start with an authored manifest whose `current` is null and no current modules or flows.
+Use target state null, claim the model identity, and add every unbuilt subject through the proposal batch.
+Archboard retains the empty baseline before installing the root proposal.
+
+To edit a draft, select it and claim its state ID, model identity, and affected existing subjects.
+Release a former predecessor claim before claiming a different target.
+Use the draft's identity as `target.state` and add `proposal:{"type":"edit"}` to the existing module and flow batch.
+Use `proposal.set` for its name, summary, or documents.
+Use `proposal.clear:["summary","documents"]` for explicit metadata removal.
+A rename preserves the previous name.
+A metadata-only edit uses `changes:[]`.
+Every edit keeps the original immutable baseline.
+
+Stored changes distinguish `add`, `remove`, `assign`, `clear`, and `place`.
+Agents continue to submit the normal module and flow operations.
+Archboard derives the compact representation and requires exact materialization before installation.
+Bindings and other composite fields remain atomic.
+A placement addresses its holder and following sibling by stable identity.
+A decision placement also names the exact alternative label.
+No active proposal stores unrelated module or flow snapshots.
+
+A selected draft compares against current by default.
+Without current, a dependent draft compares against its retained predecessor.
+A planning root has no default comparison.
+Use `--against` for an explicit coherent named state or complete checkpoint.
+The result's `comparison.reason` identifies the chosen default or explicit base.
+Its subject entries identify additions, removals, changes, unchanged subjects, and changed semantic fields.
+Presentation order and emphasis retain the existing semantic comparison rules.
+
+`PREDECESSOR_CHANGED` means that the proposal's starting state changed after baseline retention.
+Preserve the baseline and proposal changes.
+Ordinary reads and edits refuse until the reconciliation delivery exists.
+An exact retained proposal checkpoint remains readable against its own inputs.
+Neither a code merge nor an approval adopts a draft.
+Reconciliation, adoption, and shelving remain later delivery slices.

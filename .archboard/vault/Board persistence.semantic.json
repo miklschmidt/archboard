@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 164,
+	"version": 165,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T18:20:41.121Z",
+	"updatedAt": "2026-10-26T18:50:05.712Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -369,6 +369,29 @@
 					"Zeo3aQWz",
 					"yEqHs86l",
 					"ffFYC0XR"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "7ChCMGBj",
+			"name": "Compact proposals",
+			"grammar": "architecture",
+			"summary": "Drafts share the canonical reader, claim and durable archive pipeline.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"KJy5yYuq",
+					"cNaEpWjJ",
+					"Bd4GPG6d",
+					"ov7pPg21",
+					"e0GTqv1k",
+					"ZRq51Ecz",
+					"W6wFcSQz",
+					"ZLJy8ivl",
+					"8Uq1mtzw",
+					"CLdaoYy3"
 				],
 				"edges": [],
 				"flows": []
@@ -143507,6 +143530,19 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/model-edit/structure.ts"
 						}
+					},
+					{
+						"id": "KJy5yYuq",
+						"order": 53700,
+						"name": "Compact proposals",
+						"kind": "module",
+						"responsibility": "Materializes draft identity changes from retained baselines and derives exact compact candidates and semantic comparisons.",
+						"description": "The existing canonical reader validates every result. Proposal writes reuse subject claims, the signed archive and the durable installation journal. Changed predecessors refuse until explicit reconciliation exists.",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/proposals"
+						}
 					}
 				],
 				"edges": [
@@ -146106,6 +146142,160 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/model-edit/structure.ts",
 							"symbol": "selectedId"
+						}
+					},
+					{
+						"id": "IFI468Vn",
+						"order": 189000,
+						"from": "cNaEpWjJ",
+						"to": "KJy5yYuq",
+						"kind": "call",
+						"label": "select state",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-read.ts",
+							"symbol": "readArchitectureModel"
+						}
+					},
+					{
+						"id": "Zf3j7TZc",
+						"order": 190000,
+						"from": "Bd4GPG6d",
+						"to": "KJy5yYuq",
+						"kind": "call",
+						"label": "reopen exact draft",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/history/read.ts",
+							"symbol": "recordedSelection"
+						}
+					},
+					{
+						"id": "GoFHOClD",
+						"order": 191000,
+						"from": "ov7pPg21",
+						"to": "KJy5yYuq",
+						"kind": "call",
+						"label": "claim selected state",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/claims.ts",
+							"symbol": "requireTarget"
+						}
+					},
+					{
+						"id": "5EqQZzLi",
+						"order": 192000,
+						"from": "e0GTqv1k",
+						"to": "KJy5yYuq",
+						"kind": "call",
+						"label": "compact candidate",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+							"symbol": "editCandidate"
+						}
+					},
+					{
+						"id": "HuWEB6r9",
+						"order": 193000,
+						"from": "KJy5yYuq",
+						"to": "cNaEpWjJ",
+						"kind": "call",
+						"label": "canonical decoder",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/proposals/read.ts",
+							"symbol": "decodeProposal"
+						}
+					},
+					{
+						"id": "26VVxTms",
+						"order": 194000,
+						"from": "KJy5yYuq",
+						"to": "Bd4GPG6d",
+						"kind": "call",
+						"label": "retained baseline",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/proposals/read.ts",
+							"symbol": "proposalBaseline"
+						}
+					},
+					{
+						"id": "7ArYACBc",
+						"order": 195000,
+						"from": "KJy5yYuq",
+						"to": "e0GTqv1k",
+						"kind": "call",
+						"label": "serialize changed definitions",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+							"symbol": "decodedDraft"
+						}
+					},
+					{
+						"id": "HQwxAHRe",
+						"order": 196000,
+						"from": "KJy5yYuq",
+						"to": "ov7pPg21",
+						"kind": "call",
+						"label": "complete claim scope",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+							"symbol": "proposalCandidate"
+						}
+					},
+					{
+						"id": "pOm4j7QN",
+						"order": 197000,
+						"from": "KJy5yYuq",
+						"to": "ZRq51Ecz",
+						"kind": "call",
+						"label": "signed baseline ancestry",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+							"symbol": "retainBaseline"
+						}
+					},
+					{
+						"id": "Wb4yWBbs",
+						"order": 198000,
+						"from": "KJy5yYuq",
+						"to": "ZLJy8ivl",
+						"kind": "call",
+						"label": "complete model contract",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/proposals/read.ts",
+							"symbol": "decodeProposal"
+						}
+					},
+					{
+						"id": "igvDGP6v",
+						"order": 199000,
+						"from": "KJy5yYuq",
+						"to": "W6wFcSQz",
+						"kind": "call",
+						"label": "same write request",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+							"symbol": "proposalCandidate"
 						}
 					}
 				],

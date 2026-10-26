@@ -184,3 +184,10 @@ CLI and HTTP adapters preserve the complete behavioral reading without copying a
 The CLI installs an output artifact only for a successful command outcome.
 A refused render preserves any existing output file and returns structured diagnostics.
 Browser grammar switching remains TASK-549.12.
+
+## Compact proposal readings
+
+[ADR 0061](0061-active-proposals-store-identity-changes.md) extends this reader to compact active proposals.
+Current files and complete materialized drafts use the same decoder and shared runtime operations.
+Selected state metadata names the draft lifecycle explicitly.
+Legacy authority, recursive readings, independent flows, measured rendering, and explicit vault addressing remain in force.

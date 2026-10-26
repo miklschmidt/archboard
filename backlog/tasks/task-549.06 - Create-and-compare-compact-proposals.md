@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-compact-proposals'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T18:19:00Z'
+updated_date: '2026-10-26T18:50:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -73,4 +73,6 @@ TASK-549.05
 
 <!-- SECTION:NOTES:BEGIN -->
 Backend and CLI only. Initial HEAD equals feat/canonical-module-model at 24f76895d1555418782e973b021c4aceeb5a7f5c. No child agents, frontend source, browser tests, review phase, push, or PR changes. The owner already approved the public architecture read/write seam with real temporary files and Git.
+
+Backend implementation now creates and edits compact proposals through the existing architecture write operation. The early contract is /home/msc/.local/state/archboard-implementation/task-549/task-549.06-contract.md. Current files remain unchanged. The public reader materializes named states and exact drafts with explicit lifecycle and comparison metadata. Nine focused real-file/Git cases pass, including planning roots, siblings, metadata, nested moves, exact retry, predecessor refusal, signing refusal, interrupted recovery and private archives. Existing semantic comparison and durable archive owners remain in use. Browser acceptance remains open, and all three task architecture proposals remain draft.
 <!-- SECTION:NOTES:END -->

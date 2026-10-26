@@ -45,6 +45,7 @@ test("one claimed description edit retains its outcome without changing other au
 	});
 	if (!result.success) throw new Error(JSON.stringify(result));
 	const after = readArchitectureModel(vault, "Shop#Gateway");
+	if (!after.success) throw new Error(JSON.stringify(after));
 	expect(after).toMatchObject({
 		success: true,
 		revision: result.after,
@@ -54,7 +55,7 @@ test("one claimed description edit retains its outcome without changing other au
 	});
 	expect(
 		await readArchitectureCheckpoint(vault, result.checkpoint.id, "Shop#Gateway"),
-	).toMatchObject(after);
+	).toMatchObject({ ...after, selectedState: { ...after.selectedState, lifecycle: "historical" } });
 	for (const [file, bytes] of untouched) expect(readFileSync(join(vault, file))).toEqual(bytes);
 	expect(readFileSync(join(root, ".git/index"))).toEqual(index);
 	expect(await editArchitectureModule(vault, input)).toEqual(result);
