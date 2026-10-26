@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 189,
+	"version": 190,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-26T18:21:03.553Z",
+	"updatedAt": "2026-10-26T20:58:26.675Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -128181,7 +128181,7 @@
 		{
 			"id": "l5wQV8vl",
 			"name": "TASK-549.05",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "wva6A0cu",
 			"content": {
 				"nodes": [
@@ -132283,7 +132283,7 @@
 		{
 			"id": "pJeSfYJs",
 			"name": "TASK-549.06",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "l5wQV8vl",
 			"summary": "Read create edit and compare explicit canonical draft states through normal CLI",
 			"content": {
@@ -136384,7 +136384,7 @@
 			}
 		}
 	],
-	"current": "l5wQV8vl",
+	"current": "pJeSfYJs",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -136644,6 +136644,12 @@
 			"from": "wva6A0cu",
 			"at": "2026-10-26T17:53:08.806Z",
 			"reason": "Independent flow authoring, identity-preserving placement, complete reference repair and explicit sequence and flowchart rendering are implemented and demonstrated through runtime and signed CLI evidence"
+		},
+		{
+			"variant": "pJeSfYJs",
+			"from": "l5wQV8vl",
+			"at": "2026-10-26T20:58:26.675Z",
+			"reason": "Compact proposals and coherent browser comparisons are implemented and tested"
 		}
 	],
 	"shelvings": [

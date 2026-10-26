@@ -1146,7 +1146,7 @@
 					"expectedUse": "Create and edit a selected draft through the normal claimed batch. Keep current files unchanged and use selectedState lifecycle. Compare against current, retained predecessor, or an explicit coherent state. Preserve unsupported predecessor changes for later reconciliation.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/proposals/; tests/system/semantic-boards/model-proposals.test.ts; guidance skills/archboard/references/canonical-models.md"
+					"owner": "packages/board/tests/runtime/operations/proposals/; tests/system/semantic-boards/model-proposals.test.ts; visible state, comparison, and planning behavior: tests/system/browser/canonical-model-proposals.test.ts, canonical-model-comparison.test.ts, canonical-model-planning.test.ts; guidance skills/archboard/references/canonical-models.md"
 				},
 				{
 					"path": "canonical browser diagram modes and explicit flow identity",

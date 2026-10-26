@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 176,
+	"version": 178,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-26T19:30:29.611Z",
+	"updatedAt": "2026-10-26T20:58:25.225Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -68488,7 +68488,7 @@
 		{
 			"id": "JN8jIONv",
 			"name": "TASK-549.12",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "dfw8YWLy",
 			"summary": "Switch diagram modes through explicit complete flow readings",
 			"documents": [
@@ -72109,7 +72109,7 @@
 		{
 			"id": "FzIKjcPd",
 			"name": "TASK-549.06",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "JN8jIONv",
 			"summary": "Read explicit proposal states and coherent architecture comparisons",
 			"documents": [
@@ -72855,7 +72855,7 @@
 						"name": "Model access",
 						"kind": "module",
 						"responsibility": "Reads coherent content and claims, applies live updates, and sends human take-back",
-						"description": "One query cache owns each reading. One event connection per vault and query cache cancels obsolete reads before applying fresh snapshots. Failed current reads retain coherent content with an explicit stale indication. Exact checkpoint caches remain separate. Scene queries use renderer-prepared keys from projected meaning and complete interface classification. Obsolete scene keys cannot replace the selected reading. Mutable proposal queries use distinct state and comparison keys. Current snapshots never replace a selected draft. One event stream refreshes mutable readings and the catalogue, while exact checkpoints stay separate. Removed comparison definitions come only from the identified coherent base.",
+						"description": "One query cache owns each reading. One event connection per vault and query cache cancels obsolete reads before applying fresh snapshots. Failed mutable reads retain coherent content with an explicit stale indication. Exact checkpoint caches remain separate. Scene queries use renderer-prepared keys from projected meaning and complete interface classification. Obsolete scene keys cannot replace the selected reading. Mutable proposal queries use distinct state and comparison keys. Current snapshots populate only the default current query. The event stream refreshes other mutable readings and the catalogue. Removed comparison definitions require the exact base model, state, checkpoint, and revision. Unavailable bases supply no removed definitions and expose a refresh action.",
 						"parent": "TLCeNkdh",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -72926,7 +72926,7 @@
 						"order": 61000,
 						"name": "Model projection",
 						"kind": "module",
-						"responsibility": "Projects recursive scopes and aggregates directed connections by kind",
+						"responsibility": "Projects recursive scopes and aggregates directed connections by kind and comparison standing",
 						"description": "Keeps direct context and complete interface facts. Underlying relationship identities and labels stay in authored order. Whole-module endpoints retain their boundary. Closed internal connections disappear without deleting meaning. Focus retains selected ancestors and descendants, expands only needed paths, and keeps required endpoint context. Filters operate after complete interface classification. Authored open-module self-connections stay visible without converting hidden internal self-connections into ancestor loops. Group filtering changes visual memberships only in projected content. Behavioral projection reads one authored flow and all required participants without converting structural relationships into execution order. Relevant flow choices follow the current subjects, and structural filters never remove messages. One complete subject inventory includes flows and their nested steps. Hidden behavior remains separate from structural focus. Flow relevance includes selected step participants and contained modules. Proposal pictures use the existing semantic comparison rules and renderer standing fields. Removed subjects come from the coherent base and never become authored members of the selected state. Scope, filters, and behavioral projection retain complete state and comparison identity.",
 						"parent": "TLCeNkdh",
 						"binding": {
@@ -75728,7 +75728,7 @@
 			}
 		}
 	],
-	"current": "JN8jIONv",
+	"current": "FzIKjcPd",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -75879,6 +75879,12 @@
 			"from": "dfw8YWLy",
 			"at": "2026-10-26T19:24:09.176Z",
 			"reason": "Readers now use explicit complete flows for sequence and flowchart diagrams while preserving architecture readings"
+		},
+		{
+			"variant": "FzIKjcPd",
+			"from": "JN8jIONv",
+			"at": "2026-10-26T20:58:25.225Z",
+			"reason": "Compact proposals and coherent browser comparisons are implemented and tested"
 		}
 	],
 	"shelvings": [

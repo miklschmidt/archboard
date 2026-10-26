@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 166,
+	"version": 167,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T18:53:17.041Z",
+	"updatedAt": "2026-10-26T20:58:25.911Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -136142,7 +136142,7 @@
 		{
 			"id": "lGNHPMqK",
 			"name": "TASK-549.05",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "g8J0CTsa",
 			"documents": [
 				{
@@ -142625,7 +142625,7 @@
 		{
 			"id": "AFx23EEN",
 			"name": "TASK-549.06",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "lGNHPMqK",
 			"summary": "Compact identity changes materialize from retained baselines without changing current files",
 			"documents": [
@@ -149302,7 +149302,7 @@
 			}
 		}
 	],
-	"current": "lGNHPMqK",
+	"current": "AFx23EEN",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -149496,6 +149496,12 @@
 			"from": "g8J0CTsa",
 			"at": "2026-10-26T17:53:06.556Z",
 			"reason": "Independent flow authoring, identity-preserving placement, complete reference repair and explicit sequence and flowchart rendering are implemented and demonstrated through runtime and signed CLI evidence"
+		},
+		{
+			"variant": "AFx23EEN",
+			"from": "lGNHPMqK",
+			"at": "2026-10-26T20:58:25.911Z",
+			"reason": "Compact proposals and coherent browser comparisons are implemented and tested"
 		}
 	],
 	"shelvings": [
