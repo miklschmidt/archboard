@@ -87,14 +87,19 @@ function readModelFiles(vault: string): {
 			recovery: "Restore access to the vault and read the model again.",
 		});
 	}
+	return { inputs, diagnostics, revision: modelRevision(inputs) };
+}
+
+/**
+ * Fingerprint exact recognized paths and bytes.
+ * @param inputs The captured authored input files.
+ * @returns The complete input revision.
+ */
+function modelRevision(inputs: Map<string, Buffer>): ArchitectureModel["revision"] {
 	const files = [...inputs]
 		.toSorted(([one], [other]) => (one < other ? -1 : Number(one > other)))
 		.map(([path, bytes]) => ({ path, sha256: createHash("sha256").update(bytes).digest("hex") }));
-	return {
-		inputs,
-		diagnostics,
-		revision: { files, digest: createHash("sha256").update(JSON.stringify(files)).digest("hex") },
-	};
+	return { files, digest: createHash("sha256").update(JSON.stringify(files)).digest("hex") };
 }
 
-export { readModelFiles };
+export { readModelFiles, modelRevision };

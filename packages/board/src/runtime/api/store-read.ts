@@ -6,3 +6,7 @@ export { readBoardVariant } from "#runtime/operations/read/variant.ts";
 export { vaultsBoundTo } from "#runtime/store/bound-vaults.ts";
 export { decodeSemanticBoardDocument } from "#runtime/store/format/decode.ts";
 export { readArchitectureModel } from "#runtime/operations/read/model-read.ts";
+export {
+	readArchitectureCheckpoint,
+	listArchitectureCheckpoints,
+} from "#runtime/operations/history/read.ts";
