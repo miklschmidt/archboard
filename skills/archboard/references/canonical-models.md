@@ -658,6 +658,7 @@ An absent standing means that the state is settled.
 Each issue names its subject, kind, disputed field, both values, and repair action.
 A blocked descendant names its unsettled ancestor through `standing.blockedBy`.
 Its last coherent architecture remains readable.
+A child created from an unsettled proposal starts blocked.
 
 Claim the affected descendant state IDs beside the existing subjects and model structure scope.
 Use the complete vault revision from the current read.
@@ -698,6 +699,8 @@ Submit one choice for every issue in the same request:
 `edited` accepts the accompanying ordinary batch as a third answer.
 A resolution without `field` covers every issue of that subject.
 Give each issue exactly one choice.
+For order issues under one holder, use the same choice throughout.
+Use `edited` with an ordinary movement batch for a third order.
 Incomplete or overlapping choices refuse with `MODEL_INVALID` and install nothing.
 Ordinary edits preserve standing until an explicit settlement clears it.
 A blocked draft refuses edits and settlement with `PROPOSAL_BLOCKED`.

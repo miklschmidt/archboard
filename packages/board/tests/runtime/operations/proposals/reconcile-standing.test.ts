@@ -68,3 +68,26 @@ test("independent arrivals keep stable identities and avoid automatically assign
 	expect(queue.order).toBeGreaterThan(own.order);
 	expect(reading.selectedState).not.toHaveProperty("standing");
 });
+
+test("a draft created from an unsettled proposal starts blocked rather than appearing settled", async () => {
+	const { vault } = fixture();
+	const parent = await proposal(vault, "Queued", "Current", [
+		{ type: "edit-module", subject: "Shop#Gateway", set: { description: "Queues work." } },
+	]);
+	const changed = await editArchitectureModule(vault, {
+		...(await request(vault)),
+		changes: [
+			{ type: "edit-module", subject: "Shop#Gateway", set: { description: "Dispatches work." } },
+		],
+	});
+	if (!changed.success) throw new Error(JSON.stringify(changed));
+	const child = await proposal(vault, "Following draft", parent.target.state!);
+	expect(child).toMatchObject({
+		success: true,
+		reconciliation: true,
+		selectedState: { standing: { blockedBy: parent.target.state } },
+	});
+	expect((await selected(vault, child.target.state!)).selectedState).toMatchObject({
+		standing: { blockedBy: parent.target.state, issues: [] },
+	});
+});

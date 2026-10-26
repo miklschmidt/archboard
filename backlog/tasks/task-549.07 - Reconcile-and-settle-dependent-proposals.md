@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T21:42:00Z'
+updated_date: '2026-10-26T21:45:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -82,4 +82,6 @@ Expanded public operation coverage for lost owners, independent arrivals, comple
 A public regression exposed the existing per-flow step merge limit. The same semantic engine now reconciles continuing step identities globally and keeps flow plus nested holder as one placement. Independent fields inherit after cross-flow moves. Competing moves preserve the complete proposal side. The unchanged semantic reconciliation suite passes 35 cases/95 assertions. Board persistence proposal now shows the shared semantic authority used by canonical and legacy families. The CLI/HTTP family adapter owner passes, including structured blocked refusal and complete settlement.
 
 Shared legacy durability exposed canonical-only undefined fields crossing into legacy content. Canonical extension fields now stay absent unless a side authors them. Legacy reconciliation, comparison, propagation and settlement pass 120 cases/401 assertions. Order settlement reuses the shared order rule and updates the complete sibling chain, including a middle step whose absolute position stays the same. Mixed choices for one holder refuse. Interface measurement remains board 245/188, the known TASK-549.24 excess. No ceiling changes.
+
+The final lifecycle regression proves that a child created from an unsettled proposal starts blocked in its creation receipt and first reading. Creation no longer labels that child settled. The early contract includes this behavior and complete-holder order choices. No adoption, shelving, correction, frontend source, browser tests, or Browser application architecture changed.
 <!-- SECTION:NOTES:END -->
