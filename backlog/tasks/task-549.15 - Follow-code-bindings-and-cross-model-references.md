@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - codex-parent
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T21:11:00Z'
+updated_date: '2026-10-26T21:20:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -84,4 +84,6 @@ Backend handoff evidence: the broad runtime run passes 86 tests across 16 files.
 Parent takes browser ownership after backend e08007684. Integration212ef722 includes completed .06 proposals. The in-progress merge preserves all original variant meanings and ancestry from both sources. Shared reader options will select one coherent state before navigation enrichment. The .07 backend delegate works separately from integration212ef722; it owns no frontend.
 
 The combined proposal/reference runtime case now passes after failing proposal creation. The common preparation path receives the materialized draft, and retained baselines capture source associations and exact foreign pins. The fixture releases its initial claim before expanding scope. Eighteen reference/proposal cases pass with96assertions, and source/frontend types plus full lint pass. The composed reader preserves .06 state and comparison selectors before .15 navigation enrichment. Foreign draft selection, reference comparison fields, explicit draft code activation, and browser acceptance remain pending.
+
+Foreign draft references now use the explicit selected state, preserve draft lifecycle, find an existing exact checkpoint for that state, and retain that pin for historical navigation. Proposal comparisons report references as an atomic field change. The corrected runtime regression failed on a foreign model/state mismatch, then passed1case/7assertions. Its fixture retains the current revision after foreign draft creation with a distinct operation identity. The combined references/proposals suite passes19cases/103assertions; source/frontend types and full lint pass. Explicit draft code activation and browser work remain pending.
 <!-- SECTION:NOTES:END -->

@@ -106,7 +106,9 @@ async function openReference(
 	const target = await readModelNavigation(address.vault, undefined, undefined, {
 		model: address.model,
 		references: true,
-		...(address.checkpoint === undefined ? {} : { checkpoint: address.checkpoint }),
+		...(address.checkpoint === undefined
+			? { state: address.state }
+			: { checkpoint: address.checkpoint }),
 	});
 	const selected = selectReferenceSubject(target, address.subject);
 	if (!selected.success) return selected;

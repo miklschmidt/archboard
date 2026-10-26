@@ -109,6 +109,78 @@ test("draft navigation composes state selection with code, comparisons, and exac
 	expect(current.modules.find((module) => module.id === "Shop#Gateway")?.name).toBe("Gateway");
 }, 20_000);
 
+test("a foreign draft reference follows its explicit state and retains that draft for history", async () => {
+	const { local, foreign, reference } = await referencedFixture();
+	const foreignDraft = await editArchitectureModule(foreign.vault, {
+		...(await structureIntent(foreign.vault, ["Ledger", "Ledger#Gateway"])),
+		proposal: { type: "create", name: "Foreign plan" },
+		changes: [{ type: "edit-module", subject: "Ledger#Gateway", set: { name: "Planned ledger" } }],
+	});
+	if (!foreignDraft.success || foreignDraft.target.state === null)
+		throw new Error(JSON.stringify(foreignDraft));
+	await retain(foreign.vault, "retain-current-with-draft");
+	const authored = { ...reference, state: foreignDraft.target.state };
+	const localDraft = await editArchitectureModule(local.vault, {
+		...(await structureIntent(local.vault, ["Shop", "Shop#Gateway"])),
+		proposal: { type: "create", name: "Linked foreign plan" },
+		changes: [{ type: "edit-module", subject: "Shop#Gateway", set: { references: [authored] } }],
+	});
+	expect(localDraft).toMatchObject({ success: true });
+	if (!localDraft.success || localDraft.target.state === null)
+		throw new Error(JSON.stringify(localDraft));
+	expect(localDraft.checkpoint.references).toEqual([
+		{
+			module: "Shop#Gateway",
+			index: 0,
+			reference: authored,
+			checkpoint: foreignDraft.checkpoint.id,
+		},
+	]);
+	const selected = await readArchitectureModel(local.vault, "Shop#Gateway", undefined, {
+		state: localDraft.target.state,
+		references: true,
+	});
+	if (!selected.success) throw new Error(JSON.stringify(selected));
+	expect(
+		selected.comparison?.subjects.find((subject) => subject.id === "Shop#Gateway"),
+	).toMatchObject({
+		kind: "changed",
+		fields: expect.arrayContaining([
+			{ field: "references", before: [reference], after: [authored] },
+		]),
+	});
+	const followed = await readArchitectureModel(local.vault, "Shop#Gateway", undefined, {
+		state: localDraft.target.state,
+		reference: 0,
+	});
+	expect(followed).toMatchObject({
+		success: true,
+		selectedState: { id: foreignDraft.target.state, lifecycle: "draft" },
+		location: { state: foreignDraft.target.state },
+	});
+	if (!followed.success) throw new Error(JSON.stringify(followed));
+	expect(followed.modules.find((module) => module.id === "Ledger#Gateway")?.name).toBe(
+		"Planned ledger",
+	);
+	writeFileSync(join(foreign.vault, "gateway.module.json"), "{");
+	expect(
+		await readArchitectureModel(local.vault, "Shop#Gateway", undefined, {
+			state: localDraft.target.state,
+			reference: 0,
+		}),
+	).toMatchObject({ success: false, code: "REFERENCE_UNAVAILABLE" });
+	expect(
+		await readArchitectureModel(local.vault, "Shop#Gateway", undefined, {
+			checkpoint: localDraft.checkpoint.id,
+			reference: 0,
+		}),
+	).toMatchObject({
+		success: true,
+		selectedState: { id: foreignDraft.target.state, lifecycle: "draft" },
+		checkpoint: { id: foreignDraft.checkpoint.id },
+	});
+}, 20_000);
+
 test("a bound module resolves code in its own checkout without changing architecture ownership", async () => {
 	const { root, vault } = isolatedFixture();
 	const edited = await editArchitectureModule(vault, {

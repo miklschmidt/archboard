@@ -16,12 +16,15 @@ type Address = NonNullable<ArchitectureModel["location"]>;
 type Resolution = NonNullable<ArchitectureModel["resolvedReferences"]>[number];
 
 /**
- * Find an existing exact checkpoint for the observed current foreign reading.
+ * Find an existing exact checkpoint for the observed foreign state.
  * @param address The explicit foreign model, subject and state.
  * @returns A deterministic retained identity, when exact content exists.
  */
 async function retainedReference(address: Address) {
-	const current = readArchitectureModel(address.vault);
+	const current = await readArchitectureModel(address.vault, undefined, undefined, {
+		state: address.state,
+		compare: false,
+	});
 	if (!current.success) return undefined;
 	if (referenceState(current) !== address.state) return undefined;
 	const retained = await listArchitectureCheckpoints(address.vault);

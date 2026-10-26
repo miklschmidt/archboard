@@ -93,7 +93,10 @@ function withMetadata(
 	before: Subject | undefined,
 	after: Subject | undefined,
 ): Comparison {
-	const fields = [...standing.fields, ...fieldChanges(before, after, ["formerNames", "documents"])];
+	const fields = [
+		...standing.fields,
+		...fieldChanges(before, after, ["formerNames", "documents", "references"]),
+	];
 	if (standing.subjectKind === "flow") fields.push(...collectionChange(before, after));
 	const kind = standing.kind === "unchanged" && fields.length > 0 ? "changed" : standing.kind;
 	return { ...standing, kind, fields };
