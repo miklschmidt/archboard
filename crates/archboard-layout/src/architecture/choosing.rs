@@ -5,6 +5,7 @@
 //! wrap of that block tried alone (`stacking.rs`). The solves a choice
 //! weighs are asked for side by side and weighed in the order the choice
 //! weighs them, so the drawing is the one laying them out one by one gives.
+//! Graphs with at least 32 leaf cards pack their regions before any solve.
 //! Each solve tells, with its drawing, what the choices read of it
 //! (ADR 0039, ADR 0059).
 
@@ -18,7 +19,7 @@ use super::graph::Graph;
 use super::joins::{Apart, Lay, lay_joined};
 use super::solving::{Boxed, Calling, Solver, Unsolved, try_both};
 use super::stacking::stacked_solved;
-use crate::blocks::choosing::{draws_better, has_regions, joining_of, reads_better_packed};
+use crate::blocks::choosing::{draws_better, joining_of, reads_better_packed, region_cards};
 use crate::blocks::place::{
     BLOCKS_APART, BLOCKS_FACING, BLOCKS_NESTING, BLOCKS_PLACED, BLOCKS_READ, BLOCKS_READING,
     BLOCKS_STACKING, BLOCKS_STOOD, BLOCKS_UNTIL_STOOD, BLOCKS_WRAP, BLOCKS_WRAPPED, BLOCKS_WRAPS,
@@ -304,15 +305,26 @@ pub(crate) async fn placed_blocks<S: Solver>(
     graph: &Graph,
     inline: bool,
 ) -> Result<Placed, String> {
-    let regions = inline && has_regions(&graph.with_options(&[]))?;
+    let regions = inline
+        .then(|| region_cards(&graph.with_options(&[])))
+        .transpose()?
+        .flatten();
     let nesting = if inline {
         Nesting::Inline
     } else {
         Nesting::Blocks
     };
-    if !regions {
+    if regions.is_none() {
         let laid = joined_out(solver, graph, nesting, false).await?;
         return Ok(unshared(laid));
+    }
+    // Keep the small-graph comparison: reduced fixtures need both nestings.
+    // Large inline graphs dominate the first-render path. Pack their regions
+    // before solving so that no competing whole-board inline solve is needed.
+    if regions.is_some_and(|cards| cards >= 32) {
+        return Ok(unshared(
+            joined_out(solver, graph, Nesting::Groups, false).await?,
+        ));
     }
     let (laid, packed) = try_both(
         joined_out(solver, graph, nesting, true),

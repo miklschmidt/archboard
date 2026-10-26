@@ -4,9 +4,9 @@
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 96,
+	"version": 102,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-10-26T13:27:10.674Z",
+	"updatedAt": "2026-10-26T17:23:25.449Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -22257,6 +22257,1368 @@
 						"kind": "module",
 						"responsibility": "Draws an architecture in the renderer core and lays out each of its solves: ranks cards with Graphviz, routes lines on tracks and trunks, chooses the solve and settles crossings",
 						"description": "crates/archboard-layout, linked into the renderer core. Two calls reach it. draw(content, measured, standings, entries, engine, solver) draws an architecture: it states the compound graph, asks the Solver for each way to lay it out side by side, chooses between the answers, fits the page and settles the crossings. lay_out_board(graph, &mut dyn Graphviz) lays out one solve a layout worker runs: the measured graph as JSON, its root options naming how the containers and group regions are drawn (blocks, inline or groups), answered with the root of the drawing and what the choices read of it. The wasm binding exports only layOutBoard of it, and satisfies the Graphviz trait with archboard_graphviz::InCore (crates/archboard-renderer-wasm/src/layout.rs). It answers what the TypeScript stage answered, to the bit (ADR 0057, docs/design/layout-rules.md).",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-layout/src"
+						}
+					},
+					{
+						"id": "WRLVrbkq",
+						"order": 25000,
+						"name": "Text shaping",
+						"kind": "module",
+						"responsibility": "Shapes words into glyphs in the faces the core carries, breaks a paragraph to a width, and draws each glyph's outline",
+						"description": "crates/archboard-text: shape (harfrust), width, outline (Skrifa, unhinted) and Paragraph (lines, line_count, natural_width, balanced_width, fewer_lines_at). A paragraph breaks where UAX #14 allows, after any space and never after a slash, its spaces hang, and an overlong word breaks between graphemes. Onest and DM Mono at 400 and 500 are built into the core from packages/renderer/assets/fonts, with Noto faces for the Greek, symbols and math they lack. A width is taken to a hundredth of a unit in single precision, as the canvas gave it before.",
+						"parent": "5UnSr8ZQ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-text/src"
+						}
+					},
+					{
+						"id": "3i20NlSQ",
+						"order": 26000,
+						"name": "Engine pool",
+						"kind": "function",
+						"responsibility": "Schedules each solve on the first free worker, starting workers up to a ceiling, answers a solve it answered before at once, and refuses a solve called off while it still waits",
+						"description": "The pool weighs nothing: the core asks for the solves, and decides between their answers. A worker whose engine aborted or failed to start is replaced, and the solve it held waits once more. It remembers each solve's answer by its graph, within a bound, so every solve of a re-render after an edit that keeps every card's size reaches no worker (TASK-548.02). An answer depends on its graph alone, so what it holds never changes a drawing.",
+						"parent": "e10t6gst",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/engine/engine-pool.ts"
+						}
+					},
+					{
+						"id": "6VLj0TVr",
+						"order": 27000,
+						"name": "Crossing pass",
+						"kind": "module",
+						"responsibility": "Settles the crossings of a chosen drawing: puts each fan in order, moves a crossing folded into two corners onto straight runs, and hops one line over another where a hop fits",
+						"description": "archboard_layout::routes, after the page is fitted (bridge_crossings). A picture that leaves out its comparison keeps every route and settles only the hops and cuts of the lines it keeps (shown_drawing, bridge_unfolded).",
+						"parent": "H0PF4BhI",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-layout/src/routes"
+						}
+					},
+					{
+						"id": "VpK4wjd8",
+						"order": 28000,
+						"name": "In-core Graphviz",
+						"kind": "module",
+						"responsibility": "Lays one graph out with graphviz-pure, to the bytes viz-js answered",
+						"description": "crates/archboard-graphviz implements the layout's Graphviz trait (InCore). It reads the viz-js Graph object the layout states, replays the cgraph calls viz-js made of it, writes DOT that states every final value, and answers dot's json0 with y inverted. It also defines the fma symbol the WebAssembly build lacks, exactly and fast.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-graphviz/src"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "TPRWw9F4",
+						"order": 1000,
+						"from": "nmyK8UOO",
+						"to": "kHpIix5b",
+						"kind": "call",
+						"label": "measure every word",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-render/src/architecture.rs",
+							"symbol": "measure_node"
+						}
+					},
+					{
+						"id": "notKnIIz",
+						"order": 4000,
+						"from": "nmyK8UOO",
+						"to": "mHYMkWdE",
+						"kind": "call",
+						"label": "content, measured sizes and the engine named",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-render/src/architecture.rs",
+							"symbol": "draw"
+						}
+					},
+					{
+						"id": "lbUaPzWc",
+						"order": 8000,
+						"from": "mHYMkWdE",
+						"to": "ZRFUJrjD",
+						"kind": "call",
+						"label": "state the graph",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-layout/src/architecture/mod.rs",
+							"symbol": "compound_graph"
+						}
+					},
+					{
+						"id": "wCXK6KYw",
+						"order": 9000,
+						"from": "oycxx6G2",
+						"to": "3i20NlSQ",
+						"kind": "call",
+						"label": "each solve, through the Solver port the host fills",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-layout/src/architecture/choosing.rs",
+							"symbol": "solve"
+						}
+					},
+					{
+						"id": "oYEzQ4k5",
+						"order": 13000,
+						"from": "nmyK8UOO",
+						"to": "H0xU45vp",
+						"kind": "render",
+						"label": "paint the settled drawing",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-render/src/lib.rs",
+							"symbol": "drawn"
+						}
+					},
+					{
+						"id": "PYJsIDYm",
+						"order": 18000,
+						"from": "H0PF4BhI",
+						"to": "PzFXfM5n",
+						"kind": "call",
+						"label": "route the trunks around the packed blocks",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-layout/src/blocks/packing/trunks.rs",
+							"symbol": "route"
+						}
+					},
+					{
+						"id": "Gejk3C1W",
+						"order": 20000,
+						"from": "mHYMkWdE",
+						"to": "oycxx6G2",
+						"kind": "call",
+						"label": "lay it out, Track or Blocks, and choose",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-layout/src/architecture/mod.rs",
+							"symbol": "placed_blocks"
+						}
+					},
+					{
+						"id": "EGgs1DlZ",
+						"order": 27000,
+						"from": "JwgvpLYJ",
+						"to": "H0PF4BhI",
+						"kind": "call",
+						"label": "lay out each solve, Track or Blocks",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
+							"symbol": "answer"
+						}
+					},
+					{
+						"id": "S2sty0rs",
+						"order": 28000,
+						"from": "H0PF4BhI",
+						"to": "VpK4wjd8",
+						"kind": "call",
+						"label": "rank and order the cards, through the Graphviz trait",
+						"description": "The crate asks for each graph through its Graphviz trait; the wasm binding satisfies it with archboard_graphviz::InCore.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-layout/src/blocks/card_layout.rs",
+							"symbol": "render"
+						}
+					},
+					{
+						"id": "nlR1sSHS",
+						"order": 30000,
+						"from": "kHpIix5b",
+						"to": "WRLVrbkq",
+						"kind": "call",
+						"label": "shape and break every word",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-scene/src/measure/mod.rs",
+							"symbol": "Paragraph"
+						}
+					},
+					{
+						"id": "0z8re0C8",
+						"order": 31000,
+						"from": "3i20NlSQ",
+						"to": "JwgvpLYJ",
+						"kind": "rpc",
+						"label": "one solve on a free worker",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/engine/engine-pool.ts",
+							"symbol": "postMessage"
+						}
+					},
+					{
+						"id": "fL9rdfaS",
+						"order": 32000,
+						"from": "mHYMkWdE",
+						"to": "6VLj0TVr",
+						"kind": "call",
+						"label": "settle the crossings",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-layout/src/architecture/mod.rs",
+							"symbol": "bridge_crossings"
+						}
+					},
+					{
+						"id": "GrgmNGXb",
+						"order": 33000,
+						"from": "nmyK8UOO",
+						"to": "H0PF4BhI",
+						"kind": "dependency",
+						"label": "the measured input types: groups, captions, line looks",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-render/src/architecture.rs",
+							"symbol": "MeasuredGroups"
+						}
+					},
+					{
+						"id": "AwrJQYEh",
+						"order": 34000,
+						"from": "VpK4wjd8",
+						"to": "KdNM1Q56",
+						"kind": "call",
+						"label": "lay the replayed DOT out as json0",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-graphviz/src/lib.rs",
+							"symbol": "render"
+						}
+					}
+				],
+				"flows": [
+					{
+						"id": "EnnH7t3r",
+						"name": "Measure, settle, paint",
+						"participants": [
+							"nmyK8UOO",
+							"kHpIix5b",
+							"mHYMkWdE",
+							"oycxx6G2",
+							"H0xU45vp"
+						],
+						"steps": [
+							{
+								"id": "XFEvswz4",
+								"from": "nmyK8UOO",
+								"to": "nmyK8UOO",
+								"label": "Turn flow steps into lines, keeping every id and parent",
+								"kind": "self",
+								"note": "only on a board that has no relationships",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-render/src/steps.rs",
+									"symbol": "with_step_lines"
+								}
+							},
+							{
+								"id": "86rBqUC3",
+								"from": "nmyK8UOO",
+								"to": "kHpIix5b",
+								"label": "Names, responsibilities and edge labels",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-render/src/architecture.rs",
+									"symbol": "measure_node"
+								}
+							},
+							{
+								"id": "VvuVMt2N",
+								"from": "kHpIix5b",
+								"to": "nmyK8UOO",
+								"label": "Card sizes, wrapped lines, label sizes",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-scene/src/measure/cards.rs",
+									"symbol": "measure_node"
+								}
+							},
+							{
+								"id": "vaFxgWaQ",
+								"kind": "decision",
+								"question": "Was this content laid out before?",
+								"alternatives": [
+									{
+										"label": "remembered",
+										"steps": [
+											{
+												"id": "WiMnRPRD",
+												"from": "nmyK8UOO",
+												"to": "nmyK8UOO",
+												"label": "Take the remembered layout",
+												"kind": "self",
+												"note": "the last 64 layouts are remembered, by everything they are laid out from; a layout under way is shared",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "crates/archboard-render/src/memo.rs",
+													"symbol": "laid"
+												}
+											}
+										]
+									},
+									{
+										"label": "new",
+										"steps": [
+											{
+												"id": "kxYHJhGT",
+												"from": "nmyK8UOO",
+												"to": "mHYMkWdE",
+												"label": "draw, with the engine the render names",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "crates/archboard-render/src/architecture.rs",
+													"symbol": "draw"
+												}
+											},
+											{
+												"id": "J795yjMO",
+												"kind": "decision",
+												"question": "Which engine does the render name?",
+												"alternatives": [
+													{
+														"label": "Track",
+														"steps": [
+															{
+																"id": "ZPdck4Gv",
+																"from": "mHYMkWdE",
+																"to": "oycxx6G2",
+																"label": "inline: containers and groups drawn inline",
+																"kind": "sync",
+																"note": "Track unless the render asks for Blocks",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "crates/archboard-layout/src/architecture/mod.rs",
+																	"symbol": "placed_blocks"
+																}
+															}
+														]
+													},
+													{
+														"label": "Blocks",
+														"steps": [
+															{
+																"id": "TajM0vVL",
+																"from": "mHYMkWdE",
+																"to": "oycxx6G2",
+																"label": "blocks: every container a block of its own",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "crates/archboard-layout/src/architecture/mod.rs",
+																	"symbol": "placed_blocks"
+																}
+															}
+														]
+													}
+												]
+											},
+											{
+												"id": "5eEToV3m",
+												"from": "oycxx6G2",
+												"to": "mHYMkWdE",
+												"label": "the chosen solve's geometry",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "crates/archboard-layout/src/architecture/choosing.rs",
+													"symbol": "placed_blocks"
+												}
+											},
+											{
+												"id": "L9F90cm5",
+												"from": "mHYMkWdE",
+												"to": "nmyK8UOO",
+												"label": "Boxes, ports, routes and label boxes, crossings settled",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "crates/archboard-layout/src/architecture/mod.rs",
+													"symbol": "draw"
+												}
+											}
+										]
+									}
+								]
+							},
+							{
+								"id": "WLZ1TpXI",
+								"from": "nmyK8UOO",
+								"to": "H0xU45vp",
+								"label": "The settled drawing, each subject's look and the icons",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-render/src/lib.rs",
+									"symbol": "drawn"
+								}
+							},
+							{
+								"id": "fGx4kjfR",
+								"from": "H0xU45vp",
+								"to": "H0xU45vp",
+								"label": "Paint the supplied lines and geometry",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-scene/src/paint/architecture.rs",
+									"symbol": "paint_architecture"
+								}
+							},
+							{
+								"id": "UMqwdfOH",
+								"from": "H0xU45vp",
+								"to": "nmyK8UOO",
+								"label": "The scene and the matching atlas",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-scene/src/paint/architecture.rs",
+									"symbol": "paint_architecture"
+								}
+							}
+						]
+					},
+					{
+						"id": "8bDSfxwQ",
+						"name": "Sizing a card",
+						"participants": [
+							"nmyK8UOO",
+							"kHpIix5b",
+							"WRLVrbkq"
+						],
+						"steps": [
+							{
+								"id": "K9SFgjvi",
+								"from": "nmyK8UOO",
+								"to": "kHpIix5b",
+								"label": "Measure title, responsibility and labels",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-render/src/architecture.rs",
+									"symbol": "measure_node"
+								}
+							},
+							{
+								"id": "D87PmS4z",
+								"kind": "decision",
+								"question": "Is the part a container?",
+								"alternatives": [
+									{
+										"label": "container",
+										"steps": [
+											{
+												"id": "2leWQWCZ",
+												"from": "kHpIix5b",
+												"to": "kHpIix5b",
+												"label": "Size a header slab, narrower by its inset each side",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "crates/archboard-scene/src/measure/cards.rs",
+													"symbol": "header"
+												}
+											}
+										]
+									},
+									{
+										"label": "card",
+										"steps": [
+											{
+												"id": "bmSCOd8q",
+												"from": "kHpIix5b",
+												"to": "kHpIix5b",
+												"label": "Size a card, at least 260 wide and 72 tall",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "crates/archboard-scene/src/measure/cards.rs",
+													"symbol": "measure_node"
+												}
+											}
+										]
+									}
+								]
+							},
+							{
+								"id": "T4D1Md6Z",
+								"kind": "decision",
+								"question": "Does the part open another board?",
+								"alternatives": [
+									{
+										"label": "opens a board",
+										"steps": [
+											{
+												"id": "jzt1WWkm",
+												"from": "kHpIix5b",
+												"to": "kHpIix5b",
+												"label": "Keep the name clear of the mark in the corner",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "crates/archboard-scene/src/measure/cards.rs",
+													"symbol": "slab"
+												}
+											}
+										]
+									},
+									{
+										"label": "no",
+										"steps": []
+									}
+								]
+							},
+							{
+								"id": "1jTaxmfT",
+								"kind": "loop",
+								"condition": "for the name, then for the responsibility",
+								"steps": [
+									{
+										"id": "25HE191y",
+										"from": "kHpIix5b",
+										"to": "WRLVrbkq",
+										"label": "Paragraph::new(face, size, words)",
+										"kind": "sync",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "crates/archboard-scene/src/measure/mod.rs",
+											"symbol": "Paragraph"
+										}
+									},
+									{
+										"id": "PmcyOckC",
+										"from": "WRLVrbkq",
+										"to": "WRLVrbkq",
+										"label": "Shape each word in its face, or a Noto face it falls back to",
+										"kind": "self",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "crates/archboard-text/src/shape.rs",
+											"symbol": "shape"
+										}
+									},
+									{
+										"id": "4VDj3O5C",
+										"from": "WRLVrbkq",
+										"to": "kHpIix5b",
+										"label": "A paragraph, ready to break at any width",
+										"kind": "return",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "crates/archboard-text/src/paragraph.rs",
+											"symbol": "Paragraph"
+										}
+									},
+									{
+										"id": "5BB225La",
+										"from": "kHpIix5b",
+										"to": "WRLVrbkq",
+										"label": "natural_width()",
+										"kind": "sync",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "crates/archboard-scene/src/measure/cards.rs",
+											"symbol": "natural_width"
+										}
+									},
+									{
+										"id": "mYPHaKGi",
+										"from": "WRLVrbkq",
+										"to": "kHpIix5b",
+										"label": "The widest line, unbroken",
+										"kind": "return",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "crates/archboard-text/src/paragraph.rs",
+											"symbol": "natural_width"
+										}
+									}
+								]
+							},
+							{
+								"id": "mY1hDmn2",
+								"from": "kHpIix5b",
+								"to": "kHpIix5b",
+								"label": "Clamp the width: cards 260 to 340",
+								"kind": "self",
+								"note": "a relationship label is clamped the same way, 40 to 200 wide",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-scene/src/measure/cards.rs",
+									"symbol": "CARD_LEAST"
+								}
+							},
+							{
+								"id": "UKKTtBY2",
+								"kind": "loop",
+								"condition": "for the name, then for the responsibility",
+								"steps": [
+									{
+										"id": "pg7iuzfp",
+										"from": "kHpIix5b",
+										"to": "WRLVrbkq",
+										"label": "lines(width)",
+										"kind": "sync",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "crates/archboard-scene/src/measure/cards.rs",
+											"symbol": "runs_for"
+										}
+									},
+									{
+										"id": "Q7y55Dyj",
+										"from": "WRLVrbkq",
+										"to": "kHpIix5b",
+										"label": "Each line, with its width shaped whole",
+										"kind": "return",
+										"note": "the painted width wins over the sum of words a fit read, so no character is cut",
+										"anchor": {
+											"repo": "github.com/miklschmidt/archboard",
+											"path": "crates/archboard-text/src/paragraph.rs",
+											"symbol": "lines"
+										}
+									}
+								]
+							},
+							{
+								"id": "dcc2Zdl3",
+								"from": "kHpIix5b",
+								"to": "kHpIix5b",
+								"label": "Add padding, icon space and baselines",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-scene/src/measure/cards.rs",
+									"symbol": "slab"
+								}
+							},
+							{
+								"id": "k46CuhtA",
+								"from": "kHpIix5b",
+								"to": "nmyK8UOO",
+								"label": "Outer card size and the exact text runs",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-scene/src/measure/cards.rs",
+									"symbol": "measure_node"
+								}
+							}
+						]
+					},
+					{
+						"id": "zSKT3nqZ",
+						"name": "Lay out a drawing",
+						"participants": [
+							"nmyK8UOO",
+							"mHYMkWdE",
+							"ZRFUJrjD",
+							"oycxx6G2",
+							"3i20NlSQ",
+							"JwgvpLYJ",
+							"H0PF4BhI",
+							"6VLj0TVr"
+						],
+						"steps": [
+							{
+								"id": "yoSrTHtA",
+								"from": "nmyK8UOO",
+								"to": "mHYMkWdE",
+								"label": "draw: content, measured sizes and the engine",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-render/src/architecture.rs",
+									"symbol": "draw"
+								}
+							},
+							{
+								"id": "fwbm6WZ5",
+								"from": "mHYMkWdE",
+								"to": "ZRFUJrjD",
+								"label": "State the graph",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-layout/src/architecture/mod.rs",
+									"symbol": "compound_graph"
+								}
+							},
+							{
+								"id": "eLtscXpT",
+								"from": "ZRFUJrjD",
+								"to": "mHYMkWdE",
+								"label": "Containment, sizes, order and kinds as one graph",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-layout/src/architecture/graph.rs",
+									"symbol": "compound_graph"
+								}
+							},
+							{
+								"id": "iL4N7FNL",
+								"from": "mHYMkWdE",
+								"to": "oycxx6G2",
+								"label": "placed_blocks: lay it out, Track or Blocks",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-layout/src/architecture/mod.rs",
+									"symbol": "placed_blocks"
+								}
+							},
+							{
+								"id": "BaLRgz68",
+								"from": "oycxx6G2",
+								"to": "oycxx6G2",
+								"label": "Does any group gather into a region? has_regions",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-layout/src/architecture/choosing.rs",
+									"symbol": "placed_blocks"
+								}
+							},
+							{
+								"id": "9PtOgYTY",
+								"from": "oycxx6G2",
+								"to": "3i20NlSQ",
+								"label": "Ask for each way to lay it out, side by side",
+								"kind": "sync",
+								"note": "joins kept whole or apart and, with regions, each group packed as a block too; a solve the choice no longer needs is called off",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-layout/src/architecture/choosing.rs",
+									"symbol": "solve"
+								}
+							},
+							{
+								"id": "qM8GBOT8",
+								"from": "3i20NlSQ",
+								"to": "JwgvpLYJ",
+								"label": "one solve, on the first free worker",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/engine/engine-pool.ts",
+									"symbol": "postMessage"
+								}
+							},
+							{
+								"id": "C2WAYl64",
+								"from": "JwgvpLYJ",
+								"to": "H0PF4BhI",
+								"label": "layOutBoard: lay the solve out in the core",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
+									"symbol": "answer"
+								}
+							},
+							{
+								"id": "fWRYFUaD",
+								"from": "H0PF4BhI",
+								"to": "JwgvpLYJ",
+								"label": "The drawing's geometry and its reading, as JSON",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-layout/src/blocks/place.rs",
+									"symbol": "lay_out_board"
+								}
+							},
+							{
+								"id": "CDlrijzI",
+								"from": "JwgvpLYJ",
+								"to": "3i20NlSQ",
+								"label": "Each solve's cards, frames, regions, routes and label boxes",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
+									"symbol": "serveLayoutEngine"
+								}
+							},
+							{
+								"id": "SCBTVr3L",
+								"from": "3i20NlSQ",
+								"to": "oycxx6G2",
+								"label": "each answer, as it comes",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/shared/rules/engine/engine-pool.ts",
+									"symbol": "settle"
+								}
+							},
+							{
+								"id": "mpCTSEj5",
+								"from": "oycxx6G2",
+								"to": "oycxx6G2",
+								"label": "Which solve reads better? draws_better on their readings",
+								"kind": "self",
+								"note": "weighed as drawn: crossings, line length and fit in the reference pane of the tuned 1.4 page shape, in the order laying them out one by one weighs them",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-layout/src/architecture/choosing.rs",
+									"symbol": "placed_blocks"
+								}
+							},
+							{
+								"id": "hTLQ3eGY",
+								"kind": "decision",
+								"question": "Does a group gather into a region, drawn inline?",
+								"alternatives": [
+									{
+										"label": "regions",
+										"steps": [
+											{
+												"id": "mVDdGjOV",
+												"from": "oycxx6G2",
+												"to": "oycxx6G2",
+												"label": "Does the packed solve read better? reads_better_packed",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "crates/archboard-layout/src/architecture/choosing.rs",
+													"symbol": "placed_blocks"
+												}
+											}
+										]
+									},
+									{
+										"label": "none",
+										"steps": []
+									}
+								]
+							},
+							{
+								"id": "raqkfF1x",
+								"from": "oycxx6G2",
+								"to": "mHYMkWdE",
+								"label": "the chosen drawing's geometry",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-layout/src/architecture/choosing.rs",
+									"symbol": "placed_blocks"
+								}
+							},
+							{
+								"id": "LxoOhChw",
+								"from": "mHYMkWdE",
+								"to": "mHYMkWdE",
+								"label": "Cut the page to what it draws",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-layout/src/architecture/mod.rs",
+									"symbol": "draw"
+								}
+							},
+							{
+								"id": "5rR69oPZ",
+								"from": "mHYMkWdE",
+								"to": "6VLj0TVr",
+								"label": "Bridge the crossings as settled geometry",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-layout/src/architecture/mod.rs",
+									"symbol": "bridge_crossings"
+								}
+							},
+							{
+								"id": "RpJP5G2u",
+								"from": "6VLj0TVr",
+								"to": "mHYMkWdE",
+								"label": "the routes with their hops and cuts settled",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-layout/src/routes/crossings.rs",
+									"symbol": "bridge_crossings"
+								}
+							},
+							{
+								"id": "C3xBMmQH",
+								"from": "mHYMkWdE",
+								"to": "nmyK8UOO",
+								"label": "One drawing: boxes, text, routes, labels",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-layout/src/architecture/mod.rs",
+									"symbol": "draw"
+								}
+							}
+						]
+					},
+					{
+						"id": "KBB38tYG",
+						"name": "Place the blocks",
+						"participants": [
+							"H0PF4BhI",
+							"KdNM1Q56",
+							"PzFXfM5n"
+						],
+						"steps": [
+							{
+								"id": "MgyCoowR",
+								"kind": "loop",
+								"condition": "for each block, innermost first",
+								"steps": [
+									{
+										"id": "wKrhQEsl",
+										"kind": "decision",
+										"question": "Is the block a block of blocks, and are blocks packed?",
+										"alternatives": [
+											{
+												"label": "blocks",
+												"steps": [
+													{
+														"id": "wRIl17Ia",
+														"from": "H0PF4BhI",
+														"to": "H0PF4BhI",
+														"label": "Try each promising packing, keep the best scoring",
+														"kind": "self",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "crates/archboard-layout/src/blocks/packing/pack.rs",
+															"symbol": "PackLayout"
+														}
+													},
+													{
+														"id": "7IED3t0f",
+														"from": "H0PF4BhI",
+														"to": "PzFXfM5n",
+														"label": "route the trunks around the packed blocks",
+														"kind": "sync",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "crates/archboard-layout/src/blocks/packing/trunks.rs",
+															"symbol": "route"
+														}
+													},
+													{
+														"id": "Pd3I6jNp",
+														"from": "PzFXfM5n",
+														"to": "H0PF4BhI",
+														"label": "a route for each trunk",
+														"kind": "return",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "crates/archboard-router/src/lib.rs",
+															"symbol": "route"
+														}
+													}
+												]
+											},
+											{
+												"label": "cards",
+												"steps": [
+													{
+														"id": "WcX3o1Ct",
+														"from": "H0PF4BhI",
+														"to": "KdNM1Q56",
+														"label": "rank and order the cards",
+														"kind": "sync",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "crates/archboard-layout/src/blocks/card_layout.rs",
+															"symbol": "render"
+														}
+													},
+													{
+														"id": "JcDP3Nuf",
+														"from": "KdNM1Q56",
+														"to": "H0PF4BhI",
+														"label": "ranks and positions",
+														"kind": "return",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "crates/archboard-layout/src/blocks/card_layout.rs",
+															"symbol": "render"
+														}
+													},
+													{
+														"id": "iYunIpOr",
+														"from": "H0PF4BhI",
+														"to": "H0PF4BhI",
+														"label": "Route the lines on tracks between the ranks",
+														"kind": "self",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "crates/archboard-layout/src/blocks/card_layout.rs",
+															"symbol": "routed"
+														}
+													}
+												]
+											}
+										]
+									}
+								]
+							},
+							{
+								"id": "d0DitITp",
+								"from": "H0PF4BhI",
+								"to": "H0PF4BhI",
+								"label": "weigh the routed lines, ports settled or not",
+								"kind": "self",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "crates/archboard-layout/src/blocks/place.rs",
+									"symbol": "routed_weighed"
+								}
+							},
+							{
+								"id": "zOME8YlR",
+								"kind": "decision",
+								"question": "Does the settled drawing score worse than the unsettled?",
+								"alternatives": [
+									{
+										"label": "worse",
+										"steps": [
+											{
+												"id": "zQJVheH1",
+												"from": "H0PF4BhI",
+												"to": "H0PF4BhI",
+												"label": "Keep the blocks as they were before the ports settled",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "crates/archboard-layout/src/blocks/place.rs",
+													"symbol": "settled_or_not"
+												}
+											}
+										]
+									},
+									{
+										"label": "as well or better",
+										"steps": []
+									}
+								]
+							}
+						]
+					}
+				],
+				"walkthroughs": [
+					{
+						"id": "5fTFmh80",
+						"name": "Why the drawing settles once",
+						"beats": [
+							{
+								"id": "4gGw0YbA",
+								"heading": "Words first, then space",
+								"body": "Nothing is placed before it is measured. The core shapes each name in the face the picture draws it in, and the size it needs is a fact the layout is handed, so no later pass has to make room it did not reserve.",
+								"subjects": [
+									"kHpIix5b",
+									"WRLVrbkq"
+								],
+								"view": "lHmaM9Zg"
+							},
+							{
+								"id": "rNW1w4av",
+								"heading": "The text module breaks lines; the renderer owns card policy",
+								"body": "The core's text module is given words, a face, a size and a width and hands back lines. Padding, icon space, baselines and the bounds a card may take are the measuring module's, not the text module's.",
+								"subjects": [
+									"WRLVrbkq",
+									"kHpIix5b"
+								],
+								"view": "lHmaM9Zg"
+							},
+							{
+								"id": "FWMgjXxD",
+								"heading": "One engine places and routes",
+								"body": "Track or Blocks lays the board out, one block at a time from the innermost, and the renderer core lays out every solve of either. Graphviz ranks a block's cards and its lines run on tracks between the ranks; the orthogonal router of the core routes the trunks between packed blocks. Nothing after it may repair a coordinate, which is why there is no second geometry to keep in step.",
+								"subjects": [
+									"oycxx6G2",
+									"wCXK6KYw",
+									"H0PF4BhI",
+									"EGgs1DlZ",
+									"PYJsIDYm",
+									"PzFXfM5n"
+								],
+								"view": "lHmaM9Zg"
+							},
+							{
+								"id": "AOPSXwkc",
+								"heading": "The drawing that reads best is kept",
+								"body": "A board is solved more than one way, and the answers are weighed as drawn: crossings, line length and how well it fits the reference pane, which is as wide as the shell gives a drawing and as tall as the tuned 1.4 page shape makes that width, not the shell's own pane (ADR 0043). A block of cards wraps a wide rank or folds tall ranks into columns only where that reads better. The core asks for every way at once and weighs the answers in the order laying them out one by one weighs them, so the drawing never depends on which worker answered first; the host's pool only schedules the solves. Nobody authors the reading, and every variant is laid out fresh.",
+								"subjects": [
+									"oycxx6G2",
+									"3i20NlSQ"
+								],
+								"view": "lHmaM9Zg"
+							},
+							{
+								"id": "WUyyBFmG",
+								"heading": "Crossings are settled once, on the chosen drawing",
+								"body": "Once a drawing is chosen and its page fitted, the crossing pass puts each fan in order, moves a crossing folded into two corners onto straight runs, and hops one line over another where a hop fits. A picture that leaves out its comparison keeps every route where it ran and settles only the hops and cuts of the lines it keeps.",
+								"subjects": [
+									"fL9rdfaS"
+								],
+								"view": "lHmaM9Zg"
+							},
+							{
+								"id": "xfpajsvv",
+								"heading": "The painter decides no geometry",
+								"body": "By the time the painter runs, every box, port, route and label box is settled. It paints what it is given, so the picture a reader points at and the atlas the inspector reads are the same geometry.",
+								"subjects": [
+									"H0xU45vp"
+								],
+								"view": "lHmaM9Zg"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "QzYwJbby",
+			"name": "TASK-548.08",
+			"lifecycle": "draft",
+			"parent": "yeaF7hVY",
+			"summary": "Choose group packing from the graph before solving",
+			"documents": [
+				{
+					"repo": "github.com/miklschmidt/archboard",
+					"path": "docs/adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md"
+				},
+				{
+					"repo": "github.com/miklschmidt/archboard",
+					"path": "backlog/tasks/task-520.08 - The-renderer-package-is-a-thin-host-of-the-core.md"
+				},
+				{
+					"repo": "github.com/miklschmidt/archboard",
+					"commit": "7b1609cd53d25a43f0f64e4548df32b12cc0f758",
+					"path": "docs/adr/0061-group-regions-are-packed-before-solving.md"
+				},
+				{
+					"repo": "github.com/miklschmidt/archboard",
+					"commit": "54efd0759bec06e157d2c46aebba03d3d542c31f",
+					"path": "backlog/tasks/task-548.08 - Deterministic-layout-replaces-the-speculative-solves-of-a-first-render.md"
+				}
+			],
+			"content": {
+				"nodes": [
+					{
+						"id": "nmyK8UOO",
+						"order": 1000,
+						"name": "View dispatcher",
+						"kind": "module",
+						"responsibility": "Measures, settles and paints one drawing, in that order",
+						"description": "The core's render call (crates/archboard-render), drawn here only as the caller of the layout. Follow it for the rest of the renderer.",
+						"parent": "5UnSr8ZQ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-render/src"
+						},
+						"drillDown": {
+							"board": "Semantic renderer",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "kHpIix5b",
+						"order": 2000,
+						"name": "Measured text",
+						"kind": "module",
+						"responsibility": "Wraps every card, note and label and measures it in the faces the core carries, before the layout places anything",
+						"description": "archboard_scene::measure, in the renderer core (ADR 0057). The core's render call measures a reading's cards, container headers, relationship labels and group captions through it (measure_node, measure_label, measure_caption) before the layout places anything. The layout crates and the painters ask this module for every other width and line break, so every place reads the same numbers. A card is 260 to 340 wide and at least 72 tall; a label's plate is 40 to 200 wide.",
+						"parent": "5UnSr8ZQ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-scene/src/measure"
+						}
+					},
+					{
+						"id": "H0xU45vp",
+						"order": 4000,
+						"name": "Architecture painter",
+						"kind": "function",
+						"responsibility": "Paints the settled drawing into a scene in the renderer core, and decides no geometry of its own",
+						"parent": "5UnSr8ZQ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-scene/src/paint/architecture.rs"
+						}
+					},
+					{
+						"id": "ZRFUJrjD",
+						"order": 7000,
+						"name": "Compound graph",
+						"kind": "function",
+						"responsibility": "States containment, measured sizes, authored order, relationship kinds, comparison standing and entry points as one graph",
+						"parent": "H0PF4BhI",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-layout/src/architecture/graph.rs",
+							"symbol": "compound_graph"
+						}
+					},
+					{
+						"id": "JwgvpLYJ",
+						"order": 8000,
+						"name": "Layout engine",
+						"kind": "function",
+						"responsibility": "Lays one solve out inside a layout worker, through the renderer core",
+						"description": "serveLayoutEngine instantiates the renderer core module its host's thread compiled and checked, then hands every solve to the core's layOutBoard, which ranks with the Graphviz built into the core (ADR 0058); the solve's root options say how it is laid out. An answer depends on its graph alone, so no worker puts state back between solves. The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab (layout-worker.ts). Engine coordinates are never authored or persisted (ADR 0023).",
+						"parent": "e10t6gst",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/shared/rules/engine/layout-engine.ts"
+						}
+					},
+					{
+						"id": "KdNM1Q56",
+						"order": 10000,
+						"name": "Graphviz",
+						"kind": "external",
+						"responsibility": "Ranks and orders the cards of a block",
+						"description": "graphviz-pure 0.2.1, a pure-Rust port of Graphviz 16.1.0 under the EPL-2.0, vendored in crates/vendor and built into the renderer core. It sorts ties as musl's qsort does, so it answers what viz-js's Graphviz answered (ADR 0058).",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/vendor/graphviz-pure"
+						}
+					},
+					{
+						"id": "mHYMkWdE",
+						"order": 12000,
+						"name": "Layout entry",
+						"kind": "function",
+						"responsibility": "Draws an architecture with the engine a render names, Track or Blocks: states the graph, has it laid out and chosen, fits the page and settles the crossings",
+						"description": "draw, the one call for a render's architecture and for a flowchart's step graph (ADR 0057). Track, the default, draws containers and group regions inline; Blocks packs each as a block of its own (ADR 0040). The chosen drawing is moved to the margin and its page cut to what it draws, and then its crossings are settled, so nothing after it repairs a coordinate.",
+						"parent": "H0PF4BhI",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-layout/src/architecture/mod.rs",
+							"symbol": "draw"
+						}
+					},
+					{
+						"id": "oycxx6G2",
+						"order": 13000,
+						"name": "Choice between solves",
+						"kind": "function",
+						"responsibility": "Chooses packing before solving large grouped graphs, then keeps the joins and stacking solves that read best",
+						"description": "Track counts leaf cards when it discovers group regions. At 32 cards or more, it packs each region before asking for a solve and omits the competing whole-board inline nesting. Compact graphs retain the existing comparison because reduced regression fixtures need both nestings. Graphs without regions stay inline. Blocks keeps packing containers and regions. Joins, stacking, wraps, ordering and cancellation keep their existing contracts.",
+						"parent": "H0PF4BhI",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-layout/src/architecture/choosing.rs",
+							"symbol": "placed_blocks"
+						}
+					},
+					{
+						"id": "jLUi9ZuH",
+						"order": 19000,
+						"name": "Entry row",
+						"kind": "function",
+						"responsibility": "Stands each container's hidden parts below its first entry points, so the parts its callers reach take its first row",
+						"description": "Track only (ADR 0044). A first entry point is one no other part of the container leads to on the variant, as the compound graph marks it. Each other hidden part is held below it by an invisible edge that ranks and pulls nothing; an edge that would close a loop is left out, so a hidden part that calls an entry point stands above it.",
+						"parent": "H0PF4BhI",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-layout/src/blocks/holding.rs",
+							"symbol": "entry_row_edges"
+						}
+					},
+					{
+						"id": "5UnSr8ZQ",
+						"order": 20000,
+						"name": "Draw and measure",
+						"kind": "module",
+						"responsibility": "Measures every card and label in the renderer core, then paints the settled drawing, and decides no geometry of its own"
+					},
+					{
+						"id": "e10t6gst",
+						"order": 21000,
+						"name": "Layout workers",
+						"kind": "module",
+						"responsibility": "Runs the solves the core asks for: the host's pool schedules each on a free worker, which lays it out through the core, and chooses nothing"
+					},
+					{
+						"id": "PzFXfM5n",
+						"order": 23000,
+						"name": "Orthogonal router",
+						"kind": "module",
+						"responsibility": "Routes orthogonal connectors around rectangles, nudged a lane apart",
+						"description": "archboard-router, linked into the renderer core: an A* search over the grid of the obstacles' buffer edges that pays for each turn and crossing, then nudging that stands the routes on one line a lane apart in the order they part. Written from the published papers it cites, not from libavoid. A connector it cannot route comes back empty, and nothing throws.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "crates/archboard-router/src/lib.rs"
+						}
+					},
+					{
+						"id": "H0PF4BhI",
+						"order": 24000,
+						"name": "Board layout",
+						"kind": "module",
+						"responsibility": "Draws an architecture in the renderer core and lays out each of its solves: ranks cards with Graphviz, routes lines on tracks and trunks, chooses the solve and settles crossings",
+						"description": "crates/archboard-layout, linked into the renderer core. draw(content, measured, standings, entries, engine, solver) chooses packing before solving grouped graphs of at least 32 leaf cards. Compact grouped graphs compare inline and packed nesting. It asks the Solver for the remaining alternatives, fits the page and settles crossings. lay_out_board(graph, &mut dyn Graphviz) lays out one solve. The wasm binding exports layOutBoard and satisfies Graphviz with archboard_graphviz::InCore.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-layout/src"

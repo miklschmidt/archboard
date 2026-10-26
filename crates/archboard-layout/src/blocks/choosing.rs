@@ -413,16 +413,17 @@ pub(crate) fn could_stack(graph: &str) -> Result<bool, String> {
     Ok(CardLayout::new(&tree, &laid, tree.root, insets, Arrangement::default()).stacks())
 }
 
-/// Whether a board drawn inline gathers any group into a region.
+/// How many leaf cards an inline graph holds, when it gathers a group into a region.
 ///
 /// # Errors
 ///
 /// When the graph or its options are unreadable.
-pub(crate) fn has_regions(graph: &str) -> Result<bool, String> {
+pub(crate) fn region_cards(graph: &str) -> Result<Option<usize>, String> {
     let tree = blocks_of(graph, Nesting::Inline)?;
     Ok(tree
         .get(tree.root)
         .clusters
         .values()
-        .any(|cluster| cluster.kind == ClusterKind::Region))
+        .any(|cluster| cluster.kind == ClusterKind::Region)
+        .then_some(tree.cards.len()))
 }
