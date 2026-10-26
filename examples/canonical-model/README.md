@@ -120,3 +120,60 @@ Stable external edits refresh the reading automatically.
 Invalid input or disconnected updates leave the last coherent reading visible with a stale notice.
 Repairing the files or reconnecting restores a fresh reading without changing the selected subject.
 Exact checkpoint readings remain independent of current updates.
+
+## Module rename and relationship transfer
+
+Run this workflow from this Archboard checkout with a configured Git identity and signer.
+Start this checkout's server with `archboard start` before the first model command.
+The authored `structure-changes.json` supplies one batch, which holds every change for one intent.
+This batch renames Gateway and transfers Dispatch to Worker without changing either identity.
+
+```bash
+structure_fixture_dir=$(mktemp -d)
+cp -R examples/canonical-model/.archboard "$structure_fixture_dir/.archboard"
+git -C "$structure_fixture_dir" init --quiet --initial-branch=main
+git -C "$structure_fixture_dir" add .archboard
+git -C "$structure_fixture_dir" commit -m 'test: seed canonical structure fixture'
+archboard model read -C "$structure_fixture_dir" > "$structure_fixture_dir/reading.json"
+bun -e '
+const reading = await Bun.file(process.argv[1]).json();
+if (!reading.success || reading.manifest.current === null) process.exit(1);
+console.log(JSON.stringify({
+  target: { model: reading.manifest.id, state: reading.manifest.current.id },
+  writer: "fixture-agent", reason: "changing structure",
+  subjects: ["Shop#Gateway", "Shop#Worker", "Shop#Dispatch"]
+}));
+' "$structure_fixture_dir/reading.json" > "$structure_fixture_dir/claim.json"
+archboard model claim -C "$structure_fixture_dir" --input "$structure_fixture_dir/claim.json" > "$structure_fixture_dir/claimed.json"
+bun -e '
+const reading = await Bun.file(process.argv[1]).json();
+const claimed = await Bun.file(process.argv[2]).json();
+const changes = await Bun.file(process.argv[3]).json();
+if (!claimed.success) process.exit(1);
+console.log(JSON.stringify({
+  target: claimed.claim.target, expectedRevision: reading.revision,
+  operationId: "fixture-structure-1", writer: "fixture-agent", claim: claimed.claim.id,
+  ...changes
+}));
+' "$structure_fixture_dir/reading.json" "$structure_fixture_dir/claimed.json" \
+  examples/canonical-model/structure-changes.json > "$structure_fixture_dir/edit.json"
+archboard model edit -C "$structure_fixture_dir" --input "$structure_fixture_dir/edit.json" \
+  --doing "renaming the gateway and transferring dispatch" > "$structure_fixture_dir/edited.json"
+archboard model edit -C "$structure_fixture_dir" --input "$structure_fixture_dir/edit.json" \
+  --doing "renaming the gateway and transferring dispatch" > "$structure_fixture_dir/retried.json"
+archboard model read 'Shop#Gateway' -C "$structure_fixture_dir"
+git -C "$structure_fixture_dir" diff --name-only
+bun -e '
+const claimed = await Bun.file(process.argv[1]).json();
+console.log(JSON.stringify({ claim: claimed.claim.id, writer: "fixture-agent" }));
+' "$structure_fixture_dir/claimed.json" > "$structure_fixture_dir/release.json"
+archboard model release -C "$structure_fixture_dir" --input "$structure_fixture_dir/release.json"
+```
+
+The changed tracked files are `gateway.module.json` and `worker.module.json` inside the fixture vault.
+The Gateway keeps its ID, filename, and former names, including the newly retained name `Gateway`.
+Dispatch keeps its ID, metadata, and evidence anchor.
+Its new source is Worker and its new target is Gateway.
+The retry returns the same checkpoint and complete affected subject set.
+The child module file and manifest remain byte-identical.
+Use the canonical model reference for module additions, removals, reparenting, and relationship field clearing.

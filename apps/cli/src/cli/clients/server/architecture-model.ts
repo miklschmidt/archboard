@@ -73,7 +73,7 @@ function listArchitectureCheckpointsOnServer() {
 }
 
 /**
- * Send one fully stated description edit through the shared server operation.
+ * Send one complete architecture intent through the shared server operation.
  * @param input The complete caller input.
  * @returns The shared edit result or structured refusal.
  */
@@ -85,7 +85,7 @@ function editArchitectureModuleOnServer(input: z.infer<typeof ArchitectureModule
 	);
 }
 /**
- * Claim explicit modules without holding the installation lease.
+ * Claim explicit structure and subject scopes without holding the installation lease.
  * @param input The complete caller input.
  * @returns The shared claim result or structured refusal.
  */

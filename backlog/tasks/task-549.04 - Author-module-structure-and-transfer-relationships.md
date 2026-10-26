@@ -1,9 +1,11 @@
 ---
 id: TASK-549.04
 title: Author module structure and transfer relationships
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-10-26T05:24:00Z'
+updated_date: '2026-10-26T14:41:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -54,3 +56,22 @@ TASK-549.03
 - [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
 - [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Extend the approved architecture read/write seam with checked module structure and relationship operations, using TASK-549.03 transactions and events.
+2. Maintain Board persistence@TASK-549.04, Command interface@TASK-549.04, and Archboard server routes@TASK-549.04 as task drafts through the normal CLI.
+3. Use short red-to-green runtime slices with real temporary files and Git repositories for module add/remove/rename/reparent, relationship edits and source transfer, claims, stale tokens, identity retirement, containment, and unrelated bytes.
+4. Publish the stable shared request/result and event contract in the external task-549.04-contract.md handoff. Add normal CLI and HTTP adapters without frontend changes.
+5. Update affected ADRs, consumer guidance, examples, and evaluation coverage. Run focused behavior, types, lint, formatting, semantics, and affected code checks. Simplify the resulting implementation.
+6. Merge the latest integration tip, preserve all histories, leave proposals draft, release claims, stop the worktree server, and commit signed checkpoints. Keep TASK-549.04 In Progress for parent browser acceptance.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Backend owner starts from clean feat/module-structure-transfers at integration d1d6d8524d1f7ba663cf5d347f0c3c341279e1f7. Parent owns apps/web and tests/system/browser. Public runtime and existing browser test seams already have owner approval. No child agents, push, PR edit, or review phase belong to this backend assignment.
+
+Backend runtime now supports one checked batch for module add/remove/rename/reparent and relationship add/edit/remove/source transfer. New IDs use the existing authority. Former names, authored order, retired identity reservations, complete affected claims, stale tokens and unrelated bytes are preserved. Eleven new public-runtime cases pass, including real interrupted multi-file recovery and foreign-byte refusal. The CLI/HTTP owner passes three cases with a structural batch and fresh event snapshot. Source/browser types and full lint pass. Contract pointer: /home/msc/.local/state/archboard-implementation/task-549/task-549.04-contract.md. Three TASK-549.04 architecture drafts remain in progress. Frontend/browser acceptance remains parent-owned.
+<!-- SECTION:NOTES:END -->

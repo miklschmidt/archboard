@@ -1,3 +1,4 @@
+import { operationSubjects } from "#shared/rules/model-operation.ts";
 import type { ArchitectureModuleEditResult } from "#shared/schemas/model-operations.ts";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import type { ArchitectureModelRead, ArchitectureCheckpoint } from "#shared/schemas/model.ts";
@@ -6,6 +7,8 @@ import { ArchiveError, ARCHIVE_REF, CheckpointRecordSchema } from "#runtime/stor
 
 type Failure = Extract<ArchitectureModelRead, { success: false }>;
 const recovery: Partial<Record<Failure["code"], string>> = {
+	RELATIONSHIP_NOT_FOUND: "Read the model relationships and use an existing qualified identity.",
+	NODE_HAS_CHILDREN: "Reparent or remove the remaining children in the same batch.",
 	MODEL_BUSY: "Retry after the short installation lease releases.",
 	TARGET_CHANGED: "Read the intended model and current state again before preparing a new intent.",
 	CLAIM_REQUIRED: "Claim every affected module identity before editing it.",
@@ -97,7 +100,14 @@ function checkpointMetadata(
 	id: string,
 	record: ReturnType<typeof CheckpointRecordSchema.parse>,
 ): ArchitectureCheckpoint {
-	const { schemaVersion: _version, kind: _kind, vault: _vault, edit: _edit, ...metadata } = record;
+	const {
+		schemaVersion: _version,
+		kind: _kind,
+		vault: _vault,
+		edit: _edit,
+		subjects: _subjects,
+		...metadata
+	} = record;
 	return { ...metadata, id, publication: "saved-locally" };
 }
 
@@ -124,7 +134,7 @@ function editResult(
 		reconciliation: false,
 		operationId: request.operationId,
 		target: request.target,
-		subjects: [request.subject],
+		subjects: operationSubjects(request, record.subjects),
 		before: request.expectedRevision,
 		after: record.revision,
 		checkpoint: checkpointMetadata(id, record),
