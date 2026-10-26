@@ -1,11 +1,11 @@
 ---
 id: TASK-548.01
 title: The core runs Graphviz itself, and viz-js leaves the renderer
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-26T02:27:00Z'
-updated_date: '2026-10-26T03:28:00Z'
+updated_date: '2026-10-26T03:33:00Z'
 labels:
   - renderer
   - performance
@@ -22,13 +22,13 @@ ADR 0057 kept Graphviz with the host "for now" and left replacing it to a separa
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An ADR records that the core lays graphs out with the vendored graphviz-pure, and why (musl tie order, exactness, the spikes' findings), and ADR 0057 points to it
-- [ ] #2 The vendored crates carry their EPL-2.0 license and THIRD_PARTY_NOTICES.md names them
-- [ ] #3 No package of the renderer depends on @viz-js/viz, and no worker loads it
-- [ ] #4 Every drawing of the corpus is unchanged against feat/rust-desktop-frontend
-- [ ] #5 A native build of the core lays a board out with no C library and no host Graphviz
-- [ ] #6 Rendering works in Bun and in the browser
-- [ ] #7 The renderer's focused tests (bun test packages/renderer) and cargo test for the changed crates pass
+- [x] #1 An ADR records that the core lays graphs out with the vendored graphviz-pure, and why (musl tie order, exactness, the spikes' findings), and ADR 0057 points to it
+- [x] #2 The vendored crates carry their EPL-2.0 license and THIRD_PARTY_NOTICES.md names them
+- [x] #3 No package of the renderer depends on @viz-js/viz, and no worker loads it
+- [x] #4 Every drawing of the corpus is unchanged against feat/rust-desktop-frontend
+- [x] #5 A native build of the core lays a board out with no C library and no host Graphviz
+- [x] #6 Rendering works in Bun and in the browser
+- [x] #7 The renderer's focused tests (bun test packages/renderer) and cargo test for the changed crates pass
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -70,4 +70,12 @@ Evidence:
 - The spike measured the same: pure 11,202 and 11,381 ms against viz 10,494 and 10,517 ms. The total is about 5% slower on this shared machine and the slowest board is slightly faster. TASK-548.03 owns the speed.
 - Boards: on Renderer layout, proposal TASK-548.01 adds the part In-core Graphviz. It makes Graphviz the vendored graphviz-pure, bound to crates/vendor/graphviz-pure. It moves the anchors off createLayoutEngine and layOutBoard to serveLayoutEngine and answer. Proposal TASK-548.01 on Semantic renderer says the workers instantiate the core they were handed and layOutBoard(graph) ranks in the core. Both were compared and adopted (versions 87 and 132), commit d698e8f97. archboard check --code: no error, and the five ANCHOR_SYMBOL_MISSING findings on those boards are gone (26 to 21 warnings, the rest on other boards).
 - The task stays In Progress with its criteria unchecked, for the reviewer and the parent to finalize.
+
+Verified by the parent session: render-corpus compare /tmp/t548/base /tmp/t548/01-after reported 0 of 2344 drawings differ (re-run); bun test packages/renderer 649 pass, 1 skip, 0 fail; bun run benchmark 40 pass; cargo test -p archboard-render --test native passes with InCore Graphviz and no recorded answers; browser-drawn-pictures and drawn-glyphs pass; no package.json names @viz-js/viz. timing.ts 7 first-render totals, alternating: this build 10729 and 10649 ms, parent e84d2c488 10273 and 10062 ms (load 3.9 to 5.1), about 5% slower; TASK-548.03 owns graphviz-pure's speed. The owner accepted unsafe_code moving from forbid to deny with the one documented expect in crates/archboard-graphviz/src/fma.rs.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The core lays every graph out with graphviz-pure 0.2.1, vendored under crates/vendor with its EPL-2.0 licences and one change: equal items sort as musl 1.2.6's qsort, the C library of viz-js's Graphviz. crates/archboard-graphviz fills the layout's Graphviz port, writing DOT as viz-js's cgraph calls did and giving WebAssembly an exact fast fma. @viz-js/viz, the host Graphviz import and the workers' memory snapshot are gone, and each layout worker gets the core module its host compiled. ADR 0058 records the decision and the rejected alternatives; ADR 0057 points to it. Renderer layout and Semantic renderer adopted TASK-548.01. Every corpus drawing is unchanged, and a native build draws a corpus board with no C library and no host. First renders are about 5% slower than with viz-js; TASK-548.03 owns the speed. Risk: the vendored crates follow upstream only by hand.
+<!-- SECTION:FINAL_SUMMARY:END -->
