@@ -117,6 +117,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 			<ModelControls vault={vault} checkpoint={checkpoint} model={data} />
 			<ModelResponse
 				paneId={props.paneId}
+				vault={props.vault}
 				reducedMotion={props.reducedMotion}
 				query={query}
 				current={current}
@@ -269,6 +270,7 @@ function readingState(query: ModelQuery, stale: boolean): "loading" | "error" | 
 }
 
 interface ModelResponseProps {
+	vault: string;
 	paneId: string;
 	reducedMotion: boolean;
 	query: ModelQuery;
@@ -306,6 +308,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 					<CheckpointEvidence model={model} />
 					<ModelReading
 						key={model.manifest.id}
+						vault={props.vault}
 						model={model}
 						paneId={props.paneId}
 						reducedMotion={props.reducedMotion}

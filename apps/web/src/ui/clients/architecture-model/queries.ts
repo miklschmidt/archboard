@@ -9,7 +9,9 @@ import {
 } from "@archboard/board/model";
 import { inVault, strictReply, type ReplySchema } from "@archboard/server-requests";
 
-type StateSelection = { readonly [Field in "state" | "against"]?: ModelAddress[Field] | null };
+type StateSelection = { readonly [Field in "state" | "against"]?: ModelAddress[Field] | null } & {
+	readonly compare?: boolean;
+};
 
 /** A failed read retains its structured diagnostics while Query keeps the last coherent data. */
 class ArchitectureReadError extends Error {
@@ -47,6 +49,7 @@ const architectureModelKeys = {
 			checkpoint,
 			selection.state ?? null,
 			selection.against ?? null,
+			selection.compare ?? null,
 		] as const,
 	/**
 	 * Every mutable state and comparison follows completed model edits.
@@ -101,7 +104,7 @@ async function readModel(
 ): Promise<Extract<ArchitectureModelRead, { success: true }>> {
 	const parameters = new URLSearchParams(
 		Object.entries({ checkpoint, ...selection }).flatMap(([key, value]) =>
-			typeof value === "string" ? [[key, value]] : [],
+			typeof value === "string" || typeof value === "boolean" ? [[key, String(value)]] : [],
 		),
 	);
 	const url = `${inVault("/api/architecture/model", vault)}&${parameters}`;
