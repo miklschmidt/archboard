@@ -3,11 +3,20 @@
 // Routing takes every `--board` out of the arguments before dispatch, so these
 // hold what happens to them afterwards. Commands are found in the live
 // registry by what their contracts declare, so renaming or adding one changes
-// nothing here.
+// nothing here. Each invocation names a temporary vault with `-C` and keeps a
+// temporary registry, so none reads this checkout or the person's registry.
 
 import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { cliContractRegistry, runCli } from "#cli/operations/invocation/run.ts";
 import { statedInvocation } from "@archboard/server-lifecycle/server-client";
+
+const home = mkdtempSync(join(tmpdir(), "archboard-board-flags-"));
+mkdirSync(join(home, ".archboard", "vault"), { recursive: true });
+const registryFile = process.env["ARCHBOARD_REPOS"];
+process.env["ARCHBOARD_REPOS"] = join(home, "repos.json");
 
 const registry = cliContractRegistry();
 const ownsBoards = (entry: (typeof registry)[number]): boolean =>
@@ -38,6 +47,9 @@ afterEach(() => {
 });
 afterAll(() => {
 	for (const handler of handlers.values()) handler.mockRestore();
+	if (registryFile === undefined) delete process.env["ARCHBOARD_REPOS"];
+	else process.env["ARCHBOARD_REPOS"] = registryFile;
+	rmSync(home, { recursive: true, force: true });
 });
 
 /**
@@ -53,8 +65,17 @@ test("a command that declares --board receives every one stated, in order, befor
 	expect(narrowing.length).toBeGreaterThan(0);
 	for (const entry of narrowing) {
 		for (const argv of [
-			[...entry.contract.path, "--board", "a", "--board=b"],
-			[entry.contract.path[0]!, "--board", "a", ...entry.contract.path.slice(1), "--board", "b"],
+			[...entry.contract.path, "--board", "a", "--board=b", "-C", home],
+			[
+				entry.contract.path[0]!,
+				"--board",
+				"a",
+				...entry.contract.path.slice(1),
+				"--board",
+				"b",
+				"-C",
+				home,
+			],
 		]) {
 			handlers.get(entry.name)?.mockClear();
 			process.exitCode = 0;
@@ -70,7 +91,7 @@ test("a command that takes the one board of an invocation refuses a second, and 
 	expect(naming.length).toBeGreaterThan(0);
 	for (const entry of naming) {
 		process.exitCode = 0;
-		await runCli([...entry.contract.path, "--board", "a", "--board", "b"], {
+		await runCli([...entry.contract.path, "--board", "a", "--board", "b", "-C", home], {
 			url: "http://127.0.0.1:1",
 			help: false,
 		});
