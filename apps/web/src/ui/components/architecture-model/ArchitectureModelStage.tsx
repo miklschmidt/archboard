@@ -3,6 +3,7 @@ import { useCallback, type JSX, type ReactNode } from "react";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { RiRefreshLine } from "@remixicon/react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
+import { RequestFailure } from "@archboard/server-requests";
 import { Button } from "@archboard/ui-kit/components";
 import {
 	PaneHeaderRow,
@@ -90,7 +91,17 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 	const { query } = props;
 	if (query.isPending)
 		return <output className="text-body text-muted-foreground p-10">Reading architecture…</output>;
-	if (query.isError) return <ModelError code="READ_FAILED" message={query.error.message} />;
+	if (query.isError)
+		return (
+			<ModelError
+				code={
+					query.error instanceof RequestFailure
+						? (query.error.code ?? "READ_FAILED")
+						: "READ_FAILED"
+				}
+				message={query.error.message}
+			/>
+		);
 	if (!query.data.success)
 		return (
 			<ModelError
