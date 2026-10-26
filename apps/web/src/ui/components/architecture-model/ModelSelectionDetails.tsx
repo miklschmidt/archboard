@@ -2,6 +2,7 @@ import { useCallback, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import type { Model, projectModel } from "#ui/rules/architecture-model/projection.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
+import { ModelFlowDetails } from "#ui/components/architecture-model/ModelFlowDetails.tsx";
 import { ModuleDetails } from "#ui/components/architecture-model/ModuleDetails.tsx";
 import { ConnectionDetails } from "#ui/components/architecture-model/ModelConnections.tsx";
 import { ModelInterface } from "#ui/components/architecture-model/ModelInterface.tsx";
@@ -24,6 +25,14 @@ function ModelSelectionDetails(props: ModelSelectionDetailsProps): JSX.Element {
 	const only = ids.size === 1 ? [...ids][0] : undefined;
 	const module = props.model.modules.find((entry) => entry.id === only);
 	if (module !== undefined) return <SelectedModule {...props} module={module} />;
+	if (props.projection.flow !== null)
+		return (
+			<ModelFlowDetails
+				model={props.model}
+				flow={props.projection.flow}
+				selection={props.selection}
+			/>
+		);
 	const connection = props.projection.allConnections.find(
 		({ joins }) => joins.length === ids.size && joins.every((edge) => ids.has(edge.id)),
 	);
@@ -38,6 +47,15 @@ function ModelSelectionDetails(props: ModelSelectionDetailsProps): JSX.Element {
 				slot="model-selected-subjects"
 			/>
 		);
+	return <UnselectedDetails {...props} />;
+}
+
+/**
+ * With no transient selection, explain the captured focus or the open scope.
+ * @param props The current architectural reading.
+ * @returns Focused identities or the complete scope introduction and interface.
+ */
+function UnselectedDetails(props: ModelSelectionDetailsProps): JSX.Element {
 	if (props.projection.focused !== null)
 		return (
 			<SelectedSubjects

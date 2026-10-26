@@ -21,6 +21,8 @@ function useModelLocation(paneId: string) {
 	const model = search[`model${paneId}`] ?? null;
 	const scope = search[`scope${paneId}`] ?? null;
 	const checkpoint = search[`checkpoint${paneId}`] ?? null;
+	const grammar = search[`grammar${paneId}`] ?? "architecture";
+	const flow = search[`flow${paneId}`] ?? null;
 	const focused = search[`focus${paneId}`];
 	const hiddenKinds = search[`hideKinds${paneId}`];
 	const hiddenGroups = search[`hideGroups${paneId}`];
@@ -69,7 +71,7 @@ function useModelLocation(paneId: string) {
 	);
 	const open = useCallback(
 		(id: string, next: string | null): void => {
-			navigate({ id, scope: next, focus: undefined });
+			navigate({ id, scope: next, focus: undefined, grammar: undefined });
 		},
 		[navigate],
 	);
@@ -101,13 +103,30 @@ function useModelLocation(paneId: string) {
 		(ids: readonly string[], kinds: readonly string[]): void => {
 			const hidden = filters.hideKinds.filter((kind) => !kinds.includes(kind));
 			navigate({
+				grammar: undefined,
 				focus: [...new Set(ids)].toSorted(),
 				hideKinds: hidden.length === 0 ? undefined : hidden,
 			});
 		},
 		[filters.hideKinds, navigate],
 	);
+	const selectGrammar = useCallback(
+		(next: string): void => {
+			if (next !== grammar) navigate({ grammar: next === "architecture" ? undefined : next });
+		},
+		[grammar, navigate],
+	);
+	const selectFlow = useCallback(
+		(next: string): void => {
+			if (next !== flow) navigate({ flow: next });
+		},
+		[flow, navigate],
+	);
 	return {
+		grammar,
+		flow,
+		selectGrammar,
+		selectFlow,
 		model,
 		scope,
 		checkpoint,
