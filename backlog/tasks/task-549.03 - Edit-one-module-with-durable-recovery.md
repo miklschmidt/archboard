@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-backend'
 created_date: '2026-10-26T05:24:00Z'
-updated_date: '2026-10-26T11:14:00Z'
+updated_date: '2026-10-26T11:53:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -62,13 +62,12 @@ TASK-549.02
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Create TASK-549.03 draft proposals on Board persistence, Command interface, and Archboard server routes. Preserve every existing identity.
-2. Add subject claims and one description-edit operation at the approved public runtime seam. Keep the current read schema stable.
-3. Build signed preparation, checkout-local journal recovery, exact-byte guards, durable completion, retries, and public news in red/green slices with real files and Git.
-4. Connect the same contracts to CLI and HTTP. Document recovery, domain terms, and consumer examples.
-5. Simplify, run focused checks, merge latest integration, commit signed checkpoints, and hand off remaining browser criteria without closing the ticket.
-
-Affected drafts: Board persistence@TASK-549.03, Command interface@TASK-549.03, Archboard server routes@TASK-549.03. Browser proposals remain parent-owned. The public read signature stays synchronous and its success schema stays unchanged. Current reads block pending installs. Explicit recovery and a vault-scoped snapshot/news stream supply the browser integration.
+1. Preserve the original task drafts and create TASK-549.03 integration drafts on Board persistence, Command interface, and Archboard server routes from the adopted refactored readings. Keep every retained subject identity.
+2. Deliver one explicit claimed description edit through the shared architecture runtime, CLI and HTTP, with the existing current-read success schema.
+3. Prepare checkpoint and archive-join signatures before installation. Use a checkout-private durable journal, exact images, complete read tokens, conditional archive completion, safe retries and recovery.
+4. Expose fresh coherent event snapshots, completion and external-change news, visible claim data and explicit take-back. Keep every browser component and browser test with the parent.
+5. Preserve signed backup/task-549.03-before-main-refactor, transplant only own commits after a60b0980eca566a0aedcf664544ec598be67ef03 onto new integration 56d468883, and merge the adopted integration follow-up normally. Adapt the relocated clients, process Git API and timing groups.
+6. Simplify, run focused public-boundary tests, lint, both type projects, formatting and draft checks. Record the unchanged board interface-width gate for TASK-549.24. Save the backend handoff, release claims, stop the server, commit signed checkpoints, and keep the mixed ticket In Progress.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -79,4 +78,6 @@ The backend now edits one claimed description through the public runtime, CLI an
 Signed preparation now includes any archive synchronization before current-file changes. A real two-worktree regression first proved that late synchronization signing changed current bytes on refusal, then passed after the append split into signed preparation and conditional installation. The final runtime regression command passes 42 tests across six files. Recovery cuts use real process exits and real files/Git objects. A later test-only simplification advances the parent clock after the child dies, so the same 12 recovery cases pass without waiting for each dead lease. CLI/HTTP, source claim behavior, skill inputs and lock regressions pass 41 tests across 13 owners. Public contract notes are in task-549.03-contract.md. The parent now owns the origin/main integration update. Per the owner instruction, this branch retains exact old base a60b0980eca566a0aedcf664544ec598be67ef03 and will not merge or rebase until the parent supplies its updated base.
 
 The parent completed the integration update onto origin/main 6cae688bbaa2b6c9862054258e89f28c605cfc46. The supplied integration base is 56d46888390de7969ceb42d964437b35e9e7c885. Save and sign this ticket work, create a backup ref, and transplant only commits after exact old base a60b0980eca566a0aedcf664544ec598be67ef03 with signed rebase --onto. Do not merge old integration ancestry. Adapt the moved CLI clients, invocation context and Git process API, then rerun affected checks. Parent retains frontend ownership and later architecture adoption.
+
+The signed --onto transplant is complete. backup/task-549.03-before-main-refactor retains exact source 86f03ab1c. New source history excludes old integration a60b0980e. Signed merge 2cfbd91ab includes adopted follow-up 8af747543. CLI model clients now use their app-owned architecture-model.ts, statedInvocation().doing and @archboard/process/git. Removed lifecycle exports remain removed, and RequestFailure stays private. Locked dependencies were reinstalled without lockfile changes. Both type projects pass. The rebased runtime command passes 48 tests across seven owners. Rebased CLI/HTTP, skills and lock contracts pass 41 tests across 13 owners. The original task drafts stay intact. TASK-549.03 integration drafts derive from the adopted current readings and restore the same subject IDs through the CLI. No browser code or browser tests changed. Canonical read ADR references now name ADR 0060. The width test remains unchanged: board exports 234 names against 188, from the parent-reported baseline 209. Owner-directed superseded API retirement remains TASK-549.24. Workspace stays within its ceiling because private state records use the existing atomic write operation to create durable parent directories.
 <!-- SECTION:NOTES:END -->

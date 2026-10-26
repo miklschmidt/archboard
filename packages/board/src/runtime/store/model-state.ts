@@ -5,7 +5,7 @@ import { existsSync, readFileSync, lstatSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { z } from "zod";
 import { BOARD_LOCK_MS } from "@archboard/timing";
-import { mkdirDurably, writeFileAtomic } from "@archboard/workspace/atomic-write";
+import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import { mintId } from "#shared/rules/ids.ts";
 import {
 	type ArchitectureModelRead,
@@ -138,8 +138,9 @@ function writeState(vault: string, file: string, value: unknown): void {
 			"RECOVERY_CONFLICT",
 			"Private runtime state is not a regular directory. Preserve it before recovery.",
 		);
-	mkdirDurably(directory);
-	writeFileAtomic(modelStatePath(vault, file), `${JSON.stringify(value)}\n`);
+	writeFileAtomic(modelStatePath(vault, file), `${JSON.stringify(value)}\n`, {
+		createParents: true,
+	});
 }
 /**
  * Identify the source branch without publishing local paths.
@@ -167,6 +168,18 @@ async function requireCheckout(
 		);
 }
 /**
+ * Keep the ephemeral lease separate from the durable journal directory.
+ * @param vault The explicitly addressed vault.
+ * @returns The checkout-private lease address for this vault.
+ */
+function modelLease(vault: string) {
+	return {
+		vault: dirname(dirname(modelStatePath(vault, ""))),
+		board: `${MODEL_LOCK}-${operationKey(resolve(vault))}`,
+	};
+}
+
+/**
  * Share the existing cross-process lease without holding a standing subject claim.
  * @param vault The explicitly addressed vault.
  * @param work The operation while the installation lease stands.
@@ -177,12 +190,10 @@ async function withModelLock<T>(
 	work: (guard: () => void) => Promise<T> | T,
 ): Promise<T> {
 	const id = mintId();
-	const leaseVault = modelStatePath(vault, "");
-	mkdirDurably(leaseVault);
+	const lease = modelLease(vault);
 	try {
 		await holdBoard({
-			vault: leaseVault,
-			board: MODEL_LOCK,
+			...lease,
 			holder: { id, kind: "agent" },
 			waitMs: 0,
 		});
@@ -195,13 +206,13 @@ async function withModelLock<T>(
 		throw error;
 	}
 	const timer = setInterval(
-		() => renewRecord(leaseVault, MODEL_LOCK, id, BOARD_LOCK_MS.lease),
+		() => renewRecord(lease.vault, lease.board, id, BOARD_LOCK_MS.lease),
 		BOARD_LOCK_MS.renew,
 	);
 	timer.unref();
 	try {
 		return await work(() => {
-			if (boardLockState(leaseVault, MODEL_LOCK)?.id !== id)
+			if (boardLockState(lease.vault, lease.board)?.id !== id)
 				throw new ArchiveError(
 					"MODEL_BUSY",
 					"The installation lease was lost. Retry through recovery.",
@@ -209,7 +220,7 @@ async function withModelLock<T>(
 		});
 	} finally {
 		clearInterval(timer);
-		releaseHold(leaseVault, MODEL_LOCK, id);
+		releaseHold(lease.vault, lease.board, id);
 	}
 }
 /**
@@ -228,7 +239,8 @@ function modelBoundaryFailure(
 				"A durable architecture transaction is pending.",
 				"Run model recover in this checkout. Preserve foreign inputs and restore its original branch if recovery refuses.",
 			);
-		if (boardLockState(modelStatePath(vault, ""), MODEL_LOCK) !== null)
+		const lease = modelLease(vault);
+		if (boardLockState(lease.vault, lease.board) !== null)
 			return blockedRead(
 				"MODEL_BUSY",
 				"An architecture operation is in progress.",
