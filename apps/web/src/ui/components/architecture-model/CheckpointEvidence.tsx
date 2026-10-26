@@ -20,7 +20,7 @@ function CheckpointEvidence(props: CheckpointEvidenceProps): JSX.Element | null 
 			className="border-border bg-muted/30 text-control border-b px-6 py-3"
 		>
 			<div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-				<span className="font-semibold">Saved locally</span>
+				<span className="font-semibold">Retained architecture</span>
 				<time className="text-muted-foreground" dateTime={checkpoint.createdAt}>
 					{new Date(checkpoint.createdAt).toLocaleString()}
 				</time>
