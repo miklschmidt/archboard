@@ -35,10 +35,10 @@ interface ModelReadingProps {
  */
 function ModelReading(props: ModelReadingProps): JSX.Element {
 	const { model } = props;
-	const { scope, open } = useModelLocation(props.paneId);
+	const { scope, open, focus, setFocus } = useModelLocation(props.paneId);
 	const { id } = model.manifest;
 	const onOpen = useCallback((next: string | null): void => open(id, next), [id, open]);
-	const projection = useMemo(() => projectModel(model, scope), [model, scope]);
+	const projection = useMemo(() => projectModel(model, scope, focus), [model, scope, focus]);
 	const selection = useModelSelection(projection);
 	const { clear } = selection;
 	const attach = useCallback(
@@ -69,7 +69,8 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				trail={projection.trail}
 				onOpen={onOpen}
 			/>
-			<ModelSelectionBar selection={selection} />
+			<ModelSelectionBar selection={selection} focus={focus} onFocus={setFocus} />
+			<FocusAvailability missing={projection.missingFocus} />
 			{projection.missing ? (
 				<output data-slot="model-missing-scope" className="text-body p-8">
 					The requested module is absent from this reading: {scope}. Open the repository from the
@@ -198,6 +199,22 @@ function ModuleRow(props: ModuleRowProps): JSX.Element {
 				)}
 			</button>
 		</li>
+	);
+}
+
+/**
+ * Missing focus targets never select replacement architecture.
+ * @param props The requested identities absent from this reading.
+ * @param props.missing Unavailable canonical identities.
+ * @returns An explicit partial-reading notice, or no notice.
+ */
+function FocusAvailability(props: { missing: readonly string[] }): JSX.Element | null {
+	if (props.missing.length === 0) return null;
+	return (
+		<output data-slot="model-focus-missing" className="text-body border-border border-b px-6 py-3">
+			{props.missing.length} focused subjects are unavailable. Change focus or restore the missing
+			architecture.
+		</output>
 	);
 }
 

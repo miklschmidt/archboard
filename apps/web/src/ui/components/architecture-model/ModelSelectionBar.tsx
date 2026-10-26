@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import { useCallback, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 
@@ -6,10 +6,21 @@ import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-sele
  * The selected set remains visible without changing the architecture reading.
  * @param props The selection and its clearing action.
  * @param props.selection Canonical selected identities.
- * @returns A count and a direct action, or no row for an empty selection.
+ * @param props.focus The captured focused identities, or no focus.
+ * @param props.onFocus Changes the focused reading.
+ * @returns Stable selection and focus controls without resizing the canvas.
  */
-function ModelSelectionBar(props: { selection: ModelSelection }): JSX.Element | null {
-	const { selection } = props;
+function ModelSelectionBar(props: {
+	selection: ModelSelection;
+	focus: readonly string[] | null;
+	onFocus: (ids: readonly string[] | null) => void;
+}): JSX.Element {
+	const { selection, focus, onFocus } = props;
+	const focusSelection = useCallback(
+		(): void => onFocus([...selection.ids]),
+		[onFocus, selection.ids],
+	);
+	const clearFocus = useCallback((): void => onFocus(null), [onFocus]);
 	return (
 		<div className="border-border flex items-center gap-4 border-b px-6 py-2">
 			<output
@@ -19,6 +30,20 @@ function ModelSelectionBar(props: { selection: ModelSelection }): JSX.Element | 
 			>
 				{selection.ids.size} selected
 			</output>
+			<Button
+				data-slot="model-focus"
+				variant="outline"
+				size="sm"
+				disabled={selection.ids.size === 0}
+				onClick={focusSelection}
+			>
+				Focus
+			</Button>
+			{focus !== null && (
+				<Button data-slot="model-clear-focus" variant="outline" size="sm" onClick={clearFocus}>
+					Clear focus ({focus.length})
+				</Button>
+			)}
 			<Button
 				variant="ghost"
 				size="sm"
