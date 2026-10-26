@@ -5,7 +5,7 @@ import {
 	type ArchitectureModelRead,
 	type ArchitectureCheckpointList,
 } from "@archboard/board/model";
-import { inVault, RequestFailure, strictReply, type ReplySchema } from "@archboard/server-requests";
+import { inVault, strictReply, type ReplySchema } from "@archboard/server-requests";
 
 /** The canonical readings cached by this tab. */
 const architectureModelKeys = {
@@ -35,7 +35,7 @@ const architectureModelKeys = {
  */
 async function readReply<T>(url: string, schema: ReplySchema<T>, signal: AbortSignal): Promise<T> {
 	const result = await strictReply<T, T | Error>(url, { signal }, schema, schema, (error) =>
-		error instanceof RequestFailure
+		error instanceof Error && "code" in error
 			? error
 			: new Error("The architecture could not be read. Retry when the local server is available."),
 	);

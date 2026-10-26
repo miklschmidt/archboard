@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 117,
+	"version": 119,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T11:12:52.284Z",
+	"updatedAt": "2026-10-26T11:23:07.083Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -67196,7 +67196,7 @@
 		{
 			"id": "Vdci4jYl",
 			"name": "TASK-549.19-integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "90xGRcVg",
 			"summary": "Combine retained checkpoints with explicit legacy inventory and mapping plans",
 			"documents": [
@@ -76625,7 +76625,7 @@
 		{
 			"id": "VgmksD9c",
 			"name": "TASK-549-main-refactor-integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "6IsBkqSN",
 			"documents": [
 				{
@@ -77279,7 +77279,7 @@
 						"responsibility": "Runs supervised Git processes with exact input and optional untrimmed object output",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workspace/src/runtime/clients/git-command.ts"
+							"path": "packages/process/src/runtime/processes/git-command.ts"
 						}
 					},
 					{
@@ -80718,12 +80718,12 @@
 																								"id": "Zdta8mrP",
 																								"from": "i2CrY6Xj",
 																								"to": "8CAH6rSD",
-																								"label": "propagateEdit",
+																								"label": "carry edits into descendants",
 																								"kind": "sync",
 																								"anchor": {
 																									"repo": "github.com/miklschmidt/archboard",
 																									"path": "packages/board/src/runtime/operations/write/transitions.ts",
-																									"symbol": "propagateEdit"
+																									"symbol": "editVariantTransition"
 																								}
 																							},
 																							{
@@ -82036,7 +82036,7 @@
 			}
 		}
 	],
-	"current": "Vdci4jYl",
+	"current": "VgmksD9c",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -82181,6 +82181,13 @@
 			"from": "90xGRcVg",
 			"at": "2026-10-26T10:01:46.266Z",
 			"reason": "TASK-549.02 checkpoints and TASK-549.19 inventory are implemented together; both original adopted readings remain historical"
+		},
+		{
+			"variant": "VgmksD9c",
+			"from": "Vdci4jYl",
+			"at": "2026-10-26T11:23:07.083Z",
+			"reason": "Combines the refactored main architecture with every implemented canonical model, checkpoint, and migration capability. Tests and affected proposal code checks pass.",
+			"forced": true
 		}
 	],
 	"shelvings": [

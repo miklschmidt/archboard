@@ -3,7 +3,6 @@ import { useCallback, useState, type JSX, type ReactNode } from "react";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { RiRefreshLine } from "@remixicon/react";
 import type { ArchitectureModelRead, ArchitectureCheckpointList } from "@archboard/board/model";
-import { RequestFailure } from "@archboard/server-requests";
 import { Button } from "@archboard/ui-kit/components";
 import {
 	PaneHeaderRow,
@@ -128,16 +127,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 	if (query.isPending)
 		return <output className="text-body text-muted-foreground p-10">Reading architecture…</output>;
 	if (query.isError)
-		return (
-			<ModelError
-				code={
-					query.error instanceof RequestFailure
-						? (query.error.code ?? "READ_FAILED")
-						: "READ_FAILED"
-				}
-				message={query.error.message}
-			/>
-		);
+		return <ModelError code={failureCode(query.error)} message={query.error.message} />;
 	if (!query.data.success)
 		return (
 			<ModelError
@@ -152,6 +142,15 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			<ModelReading key={query.data.manifest.id} model={query.data} />
 		</>
 	);
+}
+
+/**
+ * Read a structured request refusal without depending on its error class.
+ * @param error The failed request.
+ * @returns Its public refusal code or the transport fallback.
+ */
+function failureCode(error: Error): string {
+	return "code" in error && typeof error.code === "string" ? error.code : "READ_FAILED";
 }
 
 interface ModelErrorProps {
