@@ -1,9 +1,9 @@
-# Canonical module delivery proposal
+# Canonical module delivery
 
 Date: 2026-10-26.
 
-This is the proposed ticket breakdown for [TASK-549](../../backlog/tasks/task-549%20-%20Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md).
-It awaits owner approval before publication through Backlog. Numbers below are proposal numbers, not task IDs.
+This is the approved ticket breakdown for [TASK-549](../../backlog/tasks/task-549%20-%20Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md).
+The owner approved it on 2026-10-26. Backlog now tracks the 24 slices as TASK-549.01 through TASK-549.24.
 
 The parent specification remains unchanged. Its contracts govern every slice, including the testing seams that the owner approved.
 
@@ -25,9 +25,9 @@ Runtime tests use real temporary files and Git repositories through the public a
 
 No standalone test, documentation, or renderer rewrite phase substitutes for those responsibilities. Database and hosted deployment work remain outside this breakdown.
 
-## Proposed tickets
+## Approved tickets
 
-1. Read one canonical module model
+1. [TASK-549.01: Read one canonical module model](../../backlog/tasks/task-549.01%20-%20Read-one-canonical-module-model.md)
 
    Blocked by: None.
 
@@ -39,7 +39,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
    The returned revision covers discovered paths and exact bytes. The browser lists root modules and opens their authored details.
 
-2. Retain and reopen exact architecture checkpoints
+2. [TASK-549.02: Retain and reopen exact architecture checkpoints](../../backlog/tasks/task-549.02%20-%20Retain-and-reopen-exact-architecture-checkpoints.md)
 
    Blocked by: 1.
 
@@ -51,7 +51,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
    Linked worktrees share archive objects and refs. Exact reads identify missing architecture or source evidence and provide a recovery action.
 
-3. Edit one module with durable recovery
+3. [TASK-549.03: Edit one module with durable recovery](../../backlog/tasks/task-549.03%20-%20Edit-one-module-with-durable-recovery.md)
 
    Blocked by: 2.
 
@@ -67,7 +67,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
    Journals remain checkout-specific. Branch changes block unsafe recovery. Notifications follow durable completion, and reconnection obtains a fresh coherent read.
 
-4. Author module structure and transfer relationships
+4. [TASK-549.04: Author module structure and transfer relationships](../../backlog/tasks/task-549.04%20-%20Author-module-structure-and-transfer-relationships.md)
 
    Blocked by: 3.
 
@@ -79,7 +79,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
    Preserve reserved identities, former names, authored order, and containment rules. A one-field edit leaves unrelated files byte-identical.
 
-5. Author and render independent flow collections
+5. [TASK-549.05: Author and render independent flow collections](../../backlog/tasks/task-549.05%20-%20Author-and-render-independent-flow-collections.md)
 
    Blocked by: 4.
 
@@ -91,7 +91,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
    Returns remain messages without creating reverse structural relationships. Flow reference repairs participate in the same operation and claim calculation as module edits.
 
-6. Create and compare compact proposals
+6. [TASK-549.06: Create and compare compact proposals](../../backlog/tasks/task-549.06%20-%20Create-and-compare-compact-proposals.md)
 
    Blocked by: 5.
 
@@ -103,7 +103,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
    Comparison defaults follow TASK-549. Unsupported predecessor changes refuse safely until reconciliation is available. Small edits store no unrelated snapshots.
 
-7. Reconcile and settle dependent proposals
+7. [TASK-549.07: Reconcile and settle dependent proposals](../../backlog/tasks/task-549.07%20-%20Reconcile-and-settle-dependent-proposals.md)
 
    Blocked by: 6.
 
@@ -115,7 +115,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
    Reuse the existing semantic reconciliation cases through the public operation seam. No second transport-specific reconciliation path exists.
 
-8. Adopt or shelve a proposal without growing current history files
+8. [TASK-549.08: Adopt or shelve a proposal without growing current history files](../../backlog/tasks/task-549.08%20-%20Adopt-or-shelve-a-proposal-without-growing-current-history-files.md)
 
    Blocked by: 7.
 
@@ -127,7 +127,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
    Repeated requests create one lifecycle event. The same later edit produces the same current-file delta after zero or many completed proposals.
 
-9. Correct historical architecture with an audit trail
+9. [TASK-549.09: Correct historical architecture with an audit trail](../../backlog/tasks/task-549.09%20-%20Correct-historical-architecture-with-an-audit-trail.md)
 
    Blocked by: 8.
 
@@ -137,7 +137,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
    Following local drafts reconcile against the correction. Adopted successors and unrelated current states remain unchanged.
 
-10. Navigate recursive module readings and inspect connections
+10. [TASK-549.10: Navigate recursive module readings and inspect connections](../../backlog/tasks/task-549.10%20-%20Navigate-recursive-module-readings-and-inspect-connections.md)
 
     Blocked by: 1.
 
@@ -149,7 +149,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
     Reuse client rendering. Reject obsolete layout results by reading and revision. Camera changes remain immediate, and missing subjects produce explicit partial readings.
 
-11. Select, focus, and filter a reading
+11. [TASK-549.11: Select, focus, and filter a reading](../../backlog/tasks/task-549.11%20-%20Select-focus-and-filter-a-reading.md)
 
     Blocked by: 10.
 
@@ -161,7 +161,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
     Visible controls filter relationship kinds and groups. Hidden selections retain an inspector count and reveal action. These actions change no architecture files.
 
-12. Switch between architecture, sequence, and flowchart readings
+12. [TASK-549.12: Switch between architecture, sequence, and flowchart readings](../../backlog/tasks/task-549.12%20-%20Switch-between-architecture-sequence-and-flowchart-readings.md)
 
     Blocked by: 5, 11.
 
@@ -171,7 +171,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
     Returning to architecture restores the prior reading. No selection of structural relationships invents execution order.
 
-13. Explain the captured reading through local agent actions
+13. [TASK-549.13: Explain the captured reading through local agent actions](../../backlog/tasks/task-549.13%20-%20Explain-the-captured-reading-through-local-agent-actions.md)
 
     Blocked by: 6, 12.
 
@@ -183,7 +183,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
     Answers remain temporary until an explicit agent edit records them through normal claims and stale-write protection.
 
-14. Present and record dynamic walkthroughs
+14. [TASK-549.14: Present and record dynamic walkthroughs](../../backlog/tasks/task-549.14%20-%20Present-and-record-dynamic-walkthroughs.md)
 
     Blocked by: 6, 12.
 
@@ -195,7 +195,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
     Recording and shared playback use an exact retained revision. Existing local recording and rendering remain the execution owners.
 
-15. Follow code bindings and cross-model references
+15. [TASK-549.15: Follow code bindings and cross-model references](../../backlog/tasks/task-549.15%20-%20Follow-code-bindings-and-cross-model-references.md)
 
     Blocked by: 4, 10.
 
@@ -205,7 +205,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
     CLI and browser readers expose unavailable models or source evidence. No operation silently transfers ownership or writes across two models.
 
-16. Publish archive history and recover missing revisions
+16. [TASK-549.16: Publish archive history and recover missing revisions](../../backlog/tasks/task-549.16%20-%20Publish-archive-history-and-recover-missing-revisions.md)
 
     Blocked by: 2.
 
@@ -217,7 +217,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
     Publication setup establishes remote retention policy or reports its limitation. Network failure never reverses a completed local write.
 
-17. Keep local history for an untracked vault
+17. [TASK-549.17: Keep local history for an untracked vault](../../backlog/tasks/task-549.17%20-%20Keep-local-history-for-an-untracked-vault.md)
 
     Blocked by: 3.
 
@@ -227,7 +227,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
     The same signing, recovery, and diagnostic contracts apply. Published architecture contains no private machine paths.
 
-18. Export and import a complete portable model
+18. [TASK-549.18: Export and import a complete portable model](../../backlog/tasks/task-549.18%20-%20Export-and-import-a-complete-portable-model.md)
 
     Blocked by: 8, 14, 17.
 
@@ -237,7 +237,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
     Import uses the existing installation contract. A restored bundle can supply lost local history without claiming that archive deletion is impossible.
 
-19. Inventory legacy boards and record identity choices
+19. [TASK-549.19: Inventory legacy boards and record identity choices](../../backlog/tasks/task-549.19%20-%20Inventory-legacy-boards-and-record-identity-choices.md)
 
     Blocked by: None.
 
@@ -249,7 +249,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
     This workflow changes no active architecture and needs no completed target writer.
 
-20. Preview the composed current model
+20. [TASK-549.20: Preview the composed current model](../../backlog/tasks/task-549.20%20-%20Preview-the-composed-current-model.md)
 
     Blocked by: 5, 15, 19.
 
@@ -261,7 +261,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
     The preview retains its source fingerprint. Legacy files remain the sole live authority.
 
-21. Preserve legacy proposals and historical coverage
+21. [TASK-549.21: Preserve legacy proposals and historical coverage](../../backlog/tasks/task-549.21%20-%20Preserve-legacy-proposals-and-historical-coverage.md)
 
     Blocked by: 9, 20.
 
@@ -273,7 +273,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
     Planning-only boards become proposals. An immutable checkpoint retains complete originals, including unresolved data, before any later cutover.
 
-22. Preserve legacy walkthroughs, bookmarks, and addresses
+22. [TASK-549.22: Preserve legacy walkthroughs, bookmarks, and addresses](../../backlog/tasks/task-549.22%20-%20Preserve-legacy-walkthroughs-bookmarks-and-addresses.md)
 
     Blocked by: 14, 21.
 
@@ -285,7 +285,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
     A reader can play the converted walkthrough and follow a legacy address within the preview. The original vault still remains authoritative.
 
-23. Install and recover an explicit vault migration
+23. [TASK-549.23: Install and recover an explicit vault migration](../../backlog/tasks/task-549.23%20-%20Install-and-recover-an-explicit-vault-migration.md)
 
     Blocked by: 17, 22.
 
@@ -297,7 +297,7 @@ No standalone test, documentation, or renderer rewrite phase substitutes for tho
 
     The same workflow supports Git-backed and untracked vaults. Cache and subscription changes follow durable completion. Ownership transfer controls explain that transfer is unavailable.
 
-24. Make canonical models the default and retire live board paths
+24. [TASK-549.24: Make canonical models the default and retire live board paths](../../backlog/tasks/task-549.24%20-%20Make-canonical-models-the-default-and-retire-live-board-paths.md)
 
     Blocked by: 13, 16, 18, 23.
 
@@ -329,7 +329,7 @@ Listed blockers are direct dependencies. Transitive dependencies are omitted. Ev
 
 The following numbers refer to the implementation decisions in TASK-549. Each row names the primary tickets that deliver them.
 
-| Parent decisions | Proposed tickets     | Contract                                                                    |
+| Parent decisions | Delivery tickets     | Contract                                                                    |
 | ---------------- | -------------------- | --------------------------------------------------------------------------- |
 | 1–4, 6–7         | 1, 4                 | Canonical model, identity, discovery, relationships, addressing             |
 | 5, 11            | 5, 6, 7              | Independent flows and stable ordered changes                                |
@@ -351,7 +351,7 @@ The runtime and browser seams remain the test owners throughout. Ticket 8 measur
 
 These existing tasks cover regressions that the new model must preserve or resolve. Their status alone does not block this feature.
 
-| Existing task | Proposed ticket | Shared behavior                                                             |
+| Existing task | Delivery ticket | Shared behavior                                                             |
 | ------------- | --------------- | --------------------------------------------------------------------------- |
 | TASK-318      | 13              | Voice questions carry the selection that the user meant                     |
 | TASK-354      | 2, 10           | Historical rendering uses the selected state without current-state leakage  |
@@ -359,10 +359,14 @@ These existing tasks cover regressions that the new model must preserve or resol
 
 Reuse their regression evidence when implementing these slices. Do not publish duplicate bug tickets or change those tasks during this decomposition.
 
-## Publication after approval
+## Implementation authorization
 
-Publish each approved slice as an unassigned To Do child of TASK-549 with the `ready-for-agent` label. Use native Backlog dependencies.
+The owner approved autonomous implementation through implement-spec with gpt-6.1-sol agents in separate worktrees.
+The integration branch is `feat/canonical-module-model`.
 
-Each ticket receives its own acceptance criteria and a reference to the parent contracts. Keep the parent body and status unchanged.
+The owner requested one PR against main when complete. Open it as a draft after the first implementation merge.
+Avoid heavy PR stack splitting. Mark the PR ready after the full specification and final review are complete.
 
-Approval covers ticket granularity, blocking edges, and any requested merges or splits. Publication does not start implementation.
+Each published ticket starts unassigned with To Do status and the `ready-for-agent` label. Native Backlog dependencies define the available work.
+
+TASK-549.01 and TASK-549.19 are the initial unblocked tickets. Publication preserved the parent specification and its status.
