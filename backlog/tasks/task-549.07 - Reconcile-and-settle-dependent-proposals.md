@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T21:45:00Z'
+updated_date: '2026-10-26T21:46:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -84,4 +84,6 @@ A public regression exposed the existing per-flow step merge limit. The same sem
 Shared legacy durability exposed canonical-only undefined fields crossing into legacy content. Canonical extension fields now stay absent unless a side authors them. Legacy reconciliation, comparison, propagation and settlement pass 120 cases/401 assertions. Order settlement reuses the shared order rule and updates the complete sibling chain, including a middle step whose absolute position stays the same. Mixed choices for one holder refuse. Interface measurement remains board 245/188, the known TASK-549.24 excess. No ceiling changes.
 
 The final lifecycle regression proves that a child created from an unsettled proposal starts blocked in its creation receipt and first reading. Creation no longer labels that child settled. The early contract includes this behavior and complete-holder order choices. No adoption, shelving, correction, frontend source, browser tests, or Browser application architecture changed.
+
+Simplification pause: settlement requires one complete decision instead of a partial-resolution ledger. Shared sibling ordering and flow placement remain the sole semantic mechanism. Candidate dispatch now has no unreachable fallback. The family regression reads blocked catalogue metadata without another retained materialization; the blocked write and later selected child still prove the selected-state contract. This reduces test cost without changing product coverage. Latest integration merge remains already up to date at signed 212ef722bd5b0b9d6ce976119231be8d6378abb8.
 <!-- SECTION:NOTES:END -->
