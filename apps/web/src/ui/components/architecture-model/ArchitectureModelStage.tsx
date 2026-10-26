@@ -1,8 +1,8 @@
 import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
-import { useCallback, type JSX, type ReactNode } from "react";
+import { useCallback, useState, type JSX, type ReactNode } from "react";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { RiRefreshLine } from "@remixicon/react";
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureModelRead, ArchitectureCheckpointList } from "@archboard/board/model";
 import { RequestFailure } from "@archboard/server-requests";
 import { Button } from "@archboard/ui-kit/components";
 import {
@@ -12,10 +12,14 @@ import {
 } from "#ui/components/semantic-board-canvas/PaneHeaderFrame.tsx";
 import {
 	architectureModelQuery,
+	architectureCheckpointsQuery,
 	hasNoCanonicalModel,
+	hasNoCheckpoints,
 } from "#ui/clients/architecture-model/queries.ts";
 import { semanticBoardListQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
+import { ModelReadingSelector } from "#ui/components/architecture-model/ModelReadingSelector.tsx";
+import { CheckpointEvidence } from "#ui/components/architecture-model/CheckpointEvidence.tsx";
 
 interface ModelStageProps {
 	vault: string;
@@ -39,22 +43,54 @@ function ArchitectureModelStage(props: ModelStageProps): JSX.Element {
  * @returns One coherent reading with explicit recovery.
  */
 function CanonicalModelReader(props: ModelStageProps): JSX.Element {
-	const query = useQuery(architectureModelQuery(props.vault));
-	const { refetch, data, isError } = query;
+	const [checkpoint, selectCheckpoint] = useState<string | null>(null);
+	const query = useQuery(architectureModelQuery(props.vault, checkpoint));
+	const history = useQuery(architectureCheckpointsQuery(props.vault));
+	const { refetch, data } = query;
+	const { refetch: refetchHistory } = history;
 	const refresh = useCallback((): void => {
-		void refetch();
-	}, [refetch]);
-	if (data !== undefined && hasNoCanonicalModel(data) && !isError) return <>{props.children}</>;
+		void Promise.all([refetch(), refetchHistory()]);
+	}, [refetch, refetchHistory]);
+	if (hasNoReadings(query, history, checkpoint)) return <>{props.children}</>;
 	return (
 		<section
 			data-slot="architecture-model-stage"
 			data-state={readingState(query)}
+			data-reading={checkpoint ?? "current"}
+			aria-busy={query.isFetching}
 			aria-label="Architecture"
 			className="bg-background flex min-h-0 flex-1 flex-col"
 		>
-			<ModelHeader name={modelName(data)} refresh={refresh} refreshing={query.isFetching} />
+			<ModelHeader name={modelName(data)} refresh={refresh} refreshing={query.isFetching}>
+				<ModelReadingSelector
+					checkpoint={checkpoint}
+					onSelect={selectCheckpoint}
+					history={history}
+				/>
+			</ModelHeader>
 			<ModelResponse query={query} />
 		</section>
+	);
+}
+
+/**
+ * Keep saved readings reachable even when current inputs disappear.
+ * @param query The explicitly selected reading.
+ * @param history Retained metadata, independent of current inputs.
+ * @param checkpoint The selected identity, or null for current.
+ * @returns True only when both current and retained architecture are absent.
+ */
+function hasNoReadings(
+	query: UseQueryResult<ArchitectureModelRead>,
+	history: UseQueryResult<ArchitectureCheckpointList>,
+	checkpoint: string | null,
+): boolean {
+	return (
+		checkpoint === null &&
+		query.isSuccess &&
+		history.isSuccess &&
+		hasNoCanonicalModel(query.data) &&
+		hasNoCheckpoints(history.data)
 	);
 }
 
@@ -73,7 +109,7 @@ function modelName(model: ArchitectureModelRead | undefined): string {
  * @returns The visible state.
  */
 function readingState(query: UseQueryResult<ArchitectureModelRead>): "loading" | "error" | "ready" {
-	if (query.isPending) return "loading";
+	if (query.isPending || query.isFetching) return "loading";
 	if (query.isError) return "error";
 	return query.data.success ? "ready" : "error";
 }
@@ -110,7 +146,12 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 				diagnostics={query.data.diagnostics}
 			/>
 		);
-	return <ModelReading key={query.data.manifest.id} model={query.data} />;
+	return (
+		<>
+			<CheckpointEvidence model={query.data} />
+			<ModelReading key={query.data.manifest.id} model={query.data} />
+		</>
+	);
 }
 
 interface ModelErrorProps {
@@ -150,6 +191,7 @@ interface ModelHeaderProps {
 	name: string;
 	refresh: () => void;
 	refreshing: boolean;
+	children: ReactNode;
 }
 
 /**
@@ -163,6 +205,7 @@ function ModelHeader(props: ModelHeaderProps): JSX.Element {
 		<PaneHeaderRow>
 			<PaneHeaderStart>
 				<h2 className="text-control truncate font-semibold">{props.name}</h2>
+				{props.children}
 			</PaneHeaderStart>
 			<PaneHeaderEnd>
 				<Button

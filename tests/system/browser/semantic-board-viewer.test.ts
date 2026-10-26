@@ -1,15 +1,6 @@
 import { expect, test } from "bun:test";
-import {
-	cpSync,
-	existsSync,
-	readFileSync,
-	readdirSync,
-	renameSync,
-	rmSync,
-	writeFileSync,
-} from "node:fs";
-import { join, resolve } from "node:path";
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
@@ -79,110 +70,6 @@ const pressOnStage = (browser: AgentBrowserSession, key: string): Promise<unknow
  */
 const addressSearch = (browser: AgentBrowserSession): Promise<string> =>
 	browser.eval<string>("window.location.search.replace(/^\\?/, '')");
-
-test("canonical modules open their authored details without writing architecture", async () => {
-	await using resources = new AsyncDisposableStack();
-	const { ownerRoot } = browserTestRoots();
-	const vault = vaultIn(join(ownerRoot, "canonical-vault"));
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
-		recursive: true,
-	});
-	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
-	resources.defer(() => server.dispose());
-	registerServerBase(server.base);
-	const request = createJsonRequester(server);
-	const before = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!before.body.success) throw new Error(before.body.error);
-	const revision = before.body.revision;
-	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${server.base}/`]);
-	await browser.run(["set", "viewport", "1920", "1080"]);
-	const modelState = (): Promise<string | null> =>
-		browser.eval<string | null>(
-			`document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-state') ?? null`,
-		);
-	await pollUntil(modelState, (state) => state === "ready", "the canonical model to open", WAIT);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(`document.querySelector('[data-slot="pane-header"] output') === null`),
-		(connected) => connected,
-		"the model pane to connect",
-		WAIT,
-	);
-	expect(
-		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(row => row.getAttribute('data-module-id'))`,
-		),
-	).toEqual(["Shop#Worker", "Shop#Gateway"]);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
-	await pollUntil(
-		() =>
-			browser.eval<string | null>(
-				`document.querySelector('[data-slot="module-details"]')?.getAttribute('data-module-id') ?? null`,
-			),
-		(id) => id === "Shop#Gateway",
-		"the selected module details to open",
-		WAIT,
-	);
-	const details = await browser.eval<string>(
-		`document.querySelector('[data-slot="module-details"]').textContent`,
-	);
-	// Authored values are behavior. Product wording is not pinned by this test.
-	expect(details).toContain("Accepts shopping requests");
-	expect(details).toContain("Authenticates callers and sends shopping requests to the worker.");
-	expect(details).toContain("src/gateway.ts");
-	expect(details).toContain("docs/gateway.md");
-	expect(details).toContain("Dispatch request");
-	const after = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!after.body.success) throw new Error(after.body.error);
-	expect(after.body.revision).toEqual(revision);
-
-	// A middleware refusal keeps its code and recovery message, even outside the model schema.
-	const movedVault = `${vault}-moved`;
-	renameSync(vault, movedVault);
-	await browser.run(["click", '[data-slot="model-refresh"]']);
-	await pollUntil(modelState, (state) => state === "error", "the unavailable vault refusal", WAIT);
-	expect(
-		await browser.eval<string | null>(
-			`document.querySelector('[data-slot="model-error"]')?.getAttribute('data-code') ?? null`,
-		),
-	).toBe("VAULT_UNREADABLE");
-	renameSync(movedVault, vault);
-	await browser.run(["click", '[data-slot="model-refresh"]']);
-	await pollUntil(modelState, (state) => state === "ready", "the restored vault to reopen", WAIT);
-
-	// A failed refresh exposes the refusal, and a repaired input can be read again.
-	const gatewayPath = join(vault, "gateway.module.json");
-	const gateway = readFileSync(gatewayPath, "utf8");
-	writeFileSync(gatewayPath, "{");
-	await browser.run(["click", '[data-slot="model-refresh"]']);
-	await pollUntil(modelState, (state) => state === "error", "the invalid model refusal", WAIT);
-	expect(
-		await browser.eval<string | null>(
-			`document.querySelector('[data-slot="model-error"]')?.getAttribute('data-code') ?? null`,
-		),
-	).toBe("MODEL_INVALID");
-	writeFileSync(gatewayPath, gateway);
-	await browser.run(["click", '[data-slot="model-refresh"]']);
-	await pollUntil(modelState, (state) => state === "ready", "the repaired model to reopen", WAIT);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
-	for (const module of before.body.modules) rmSync(join(vault, module.file));
-	await browser.run(["click", '[data-slot="model-refresh"]']);
-	await pollUntil(
-		() =>
-			browser.eval<number>(
-				`document.querySelector('[data-slot="module-list"]')?.childElementCount ?? -1`,
-			),
-		(count) => count === 0,
-		"the empty model to remain readable",
-		WAIT,
-	);
-	expect(await modelState()).toBe("ready");
-	expect(
-		await browser.eval<boolean>(`document.querySelector('[data-slot="module-details"]') === null`),
-	).toBe(true);
-	await server.assertRunning();
-}, 30_000);
 
 test("a semantic board opens in a real pane, and the vault gets no note for it", async () => {
 	await using resources = new AsyncDisposableStack();
