@@ -49,6 +49,9 @@ const onMessage = (message: unknown): void => {
 	}
 };
 process.on("message", onMessage);
+// A parent that is gone can never release this owner, and Bun spins on an IPC
+// channel whose other end closed, so a lost parent releases it too.
+process.once("disconnect", () => releaseOwner());
 
 /**
  * Send the command's outcome to the parent over IPC.
