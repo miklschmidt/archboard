@@ -70,10 +70,16 @@ function isJsonValue(value: unknown, path: readonly object[]): boolean {
  */
 function isJsonContainer(value: object, path: readonly object[]): boolean {
 	const prototype: unknown = Object.getPrototypeOf(value);
-	const plain = Array.isArray(value) || prototype === Object.prototype || prototype === null;
+	const plain = Array.isArray(value)
+		? prototype === Array.prototype
+		: prototype === Object.prototype || prototype === null;
 	if (!plain || path.includes(value)) return false;
 	const inside = [...path, value];
-	return Object.values(value).every((entry) => entry === undefined || isJsonValue(entry, inside));
+	// The codec reads array positions through their iterator, including non-enumerable entries.
+	const values: readonly unknown[] = Array.isArray(value)
+		? [...new Set([...Object.values(value), ...Array.from(value)])]
+		: Object.values(value);
+	return values.every((entry) => entry === undefined || isJsonValue(entry, inside));
 }
 
 // The checks read the payload the host passed: a parsed copy leaves out an own `__proto__` key,

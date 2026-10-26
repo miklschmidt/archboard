@@ -240,4 +240,29 @@ describe("announcing a context change", () => {
 		}
 		expect([...t.told, ...t.queued]).toHaveLength(0);
 	});
+
+	test.each([
+		["a non-enumerable array entry", Object.defineProperty([], "0", { value: () => "file" })],
+		["an array subclass", new (class extends Array<string> {})("file")],
+		[
+			"an array iterator returning a function",
+			Object.assign([], {
+				*[Symbol.iterator]() {
+					yield () => "file";
+				},
+			}),
+		],
+	])("a payload holding %s is refused before anybody is told", async (_name, entries) => {
+		const t = tab();
+		await expect(
+			t.announce({
+				feed: "editor",
+				sequence: 1,
+				workhorse: { checkouts: [CHECKOUT], text: "x", payload: { entries } },
+				coordinator: { text: "x" },
+				voice: { text: "x" },
+			}),
+		).rejects.toBeInstanceOf(TypeError);
+		expect([...t.told, ...t.queued]).toHaveLength(0);
+	});
 });
