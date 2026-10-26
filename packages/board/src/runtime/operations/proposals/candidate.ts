@@ -284,10 +284,81 @@ async function proposalCandidate(
 		subjects: structure.subjects,
 		scopes,
 		selection: SelectedStateSchema.strip().parse(proposal),
-		dependencies: [
-			proposal.baseline,
-			...(proposal.restorations ?? []).map((proof) => proof.checkpoint),
-		],
+		dependencies: proposalDependencies(proposal),
 	};
 }
-export { proposalCandidate, retainBaseline, updateChanges, decodedDraft, proposalInputs };
+/**
+ * Name all immutable inputs required to materialize this proposal.
+ * @param proposal The continuing compact document.
+ * @returns Retained dependency identities.
+ */
+function proposalDependencies(proposal: Proposal) {
+	return [proposal.baseline, ...(proposal.restorations ?? []).map((proof) => proof.checkpoint)];
+}
+/**
+ * Start an explicit external-edit reconciliation without another predecessor edit.
+ * @param current The coherent predecessor.
+ * @param captured The exact before images.
+ * @param changes The number of accompanying statements.
+ * @returns The unchanged predecessor candidate for family propagation.
+ */
+function reconciliationCandidate(
+	current: ArchitectureModel,
+	captured: ReturnType<typeof readModelFiles>,
+	changes: number,
+) {
+	if (changes > 0)
+		throw new ArchiveError("MODEL_INVALID", "Reconcile accepts no accompanying changes.");
+	return {
+		success: true as const,
+		current,
+		inputs: captured.inputs,
+		revision: captured.revision,
+		files: [],
+		subjects: [],
+		scopes: [current.manifest.id],
+		selection: current.selectedState ?? undefined,
+		dependencies: [],
+	};
+}
+/**
+ * Adapt proposal intent inside the existing candidate owner.
+ * @param vault The addressed vault.
+ * @param request The complete proposal intent.
+ * @param current The coherent target.
+ * @param captured The complete before images.
+ * @returns One predecessor candidate.
+ */
+async function proposalIntentCandidate(
+	vault: string,
+	request: Extract<ArchitectureModuleEdit, { proposal: unknown }>,
+	current: ArchitectureModel,
+	captured: ReturnType<typeof readModelFiles>,
+) {
+	switch (request.proposal.type) {
+		case "create":
+		case "edit":
+			return proposalCandidate(
+				vault,
+				{ ...request, proposal: request.proposal },
+				current,
+				captured,
+			);
+		case "settle": {
+			const { settleCandidate } = await import("#runtime/operations/proposals/settle.ts");
+			return settleCandidate(vault, { ...request, proposal: request.proposal }, current, captured);
+		}
+		case "reconcile":
+			return reconciliationCandidate(current, captured, request.changes.length);
+	}
+	throw new ArchiveError("MODEL_INVALID", "Unknown proposal intent.");
+}
+export {
+	proposalDependencies,
+	proposalIntentCandidate,
+	proposalCandidate,
+	retainBaseline,
+	updateChanges,
+	decodedDraft,
+	proposalInputs,
+};

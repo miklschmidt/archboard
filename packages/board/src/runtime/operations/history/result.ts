@@ -138,6 +138,30 @@ function checkpointMetadata(
 }
 
 /**
+ * Expose selected draft metadata from its durable operation record.
+ * @param record The immutable operation record.
+ * @returns Its selected target and draft metadata, when present.
+ */
+function selectedEdit(record: ReturnType<typeof CheckpointRecordSchema.parse>) {
+	const selection = record.selection;
+	if (selection?.lifecycle !== "draft") return {};
+	return {
+		target: { model: record.model, state: selection.id },
+		selectedState: { ...selection, lifecycle: "draft" as const },
+	};
+}
+/**
+ * Report unresolved standing from either the target or its following family.
+ * @param record The immutable operation record.
+ * @returns Whether settlement remains.
+ */
+function standingRemains(record: ReturnType<typeof CheckpointRecordSchema.parse>): boolean {
+	return (
+		record.selection?.standing !== undefined ||
+		(record.reconciliations ?? []).some((entry) => entry.standing !== undefined)
+	);
+}
+/**
  * Derive the durable result from its signed operation record.
  * @param id The retained checkpoint or claim identity.
  * @param record The record value.
@@ -157,20 +181,11 @@ function editResult(
 	return {
 		success: true,
 		applied: true,
-		reconciliation:
-			record.reconciliations?.some((entry) => entry.standing !== undefined) ||
-			record.selection?.standing !== undefined,
-		...(record.reconciliations === undefined ? {} : { reconciliations: record.reconciliations }),
+		reconciliation: standingRemains(record),
+		reconciliations: record.reconciliations,
 		operationId: request.operationId,
-		target:
-			record.selection?.lifecycle === "draft"
-				? { model: record.model, state: record.selection.id }
-				: request.target,
-		...(record.selection?.lifecycle !== "draft"
-			? {}
-			: {
-					selectedState: { ...record.selection, lifecycle: "draft" as const },
-				}),
+		target: request.target,
+		...selectedEdit(record),
 		subjects: operationSubjects(request, record.subjects),
 		before: request.expectedRevision,
 		after: record.revision,

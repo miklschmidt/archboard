@@ -43,9 +43,14 @@ test("standing keeps the disputed baseline readable and blocks children until ex
 		{ type: "edit-module", subject: "Shop#Gateway", set: { description: "Queues work." } },
 	]);
 	const child = await proposal(vault, "Batch", first.target.state!);
-	const original = (await selected(vault, first.target.state!)).selectedState!.baseline;
+	const initial = readArchitectureModel(vault);
+	if (!initial.success) throw new Error(JSON.stringify(initial));
+	const original = initial.proposals.find(
+		(proposal) => proposal.id === first.target.state,
+	)!.baseline;
+	const advance = await request(vault);
 	const result = await editArchitectureModule(vault, {
-		...(await request(vault)),
+		...advance,
 		changes: [
 			{
 				type: "edit-module",
@@ -89,7 +94,10 @@ test("standing keeps the disputed baseline readable and blocks children until ex
 	});
 	expect(
 		await editArchitectureModule(vault, {
-			...(await request(vault, child.target.state!)),
+			...advance,
+			target: child.target,
+			operationId: "blocked-descendant",
+			expectedRevision: result.success ? result.after : advance.expectedRevision,
 			proposal: { type: "edit" },
 			changes: [],
 		}),
@@ -104,7 +112,8 @@ test("standing keeps the disputed baseline readable and blocks children until ex
 	};
 	const settled = await editArchitectureModule(vault, intent);
 	expect(settled).toMatchObject({ success: true, reconciliation: false });
-	expect((await selected(vault, first.target.state!)).selectedState).not.toHaveProperty("standing");
+	if (!settled.success) throw new Error(JSON.stringify(settled));
+	expect(settled.selectedState).not.toHaveProperty("standing");
 	const following = await selected(vault, child.target.state!);
 	expect(following.selectedState).not.toHaveProperty("standing");
 	expect(following.modules.find((m) => m.id === "Shop#Gateway")).toMatchObject({

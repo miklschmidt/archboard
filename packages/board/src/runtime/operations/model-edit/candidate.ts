@@ -90,47 +90,16 @@ function requireCurrentEdit(model: ArchitectureModel): void {
  * Capture one complete checked candidate and all affected claims.
  * @param vault The explicit vault.
  * @param request The original operation.
+ * @param current The complete coherent starting reading.
+ * @param captured The exact starting files.
  * @returns The checked candidate or refusal.
  */
-async function initialCandidate(vault: string, request: ArchitectureModuleEdit) {
-	const current = await requireTarget(vault, request.target);
-	if (!current.success) return current;
-	if (!isDeepStrictEqual(current.revision, request.expectedRevision))
-		throw new ArchiveError("STALE_REVISION", "Read the complete model again before a new edit.");
-	const captured = captureRevision(vault, current.revision);
-	if (current.selectedState?.standing?.blockedBy !== undefined)
-		throw new ArchiveError(
-			"PROPOSAL_BLOCKED",
-			"Settle the ancestor before editing this descendant.",
-			"model.json",
-			[current.selectedState.standing.blockedBy],
-		);
-	if ("proposal" in request && request.proposal.type === "reconcile") {
-		if (request.changes.length > 0)
-			throw new ArchiveError("MODEL_INVALID", "Reconcile accepts no accompanying changes.");
-		return {
-			success: true as const,
-			current,
-			inputs: captured.inputs,
-			revision: captured.revision,
-			files: [],
-			subjects: [],
-			scopes: [current.manifest.id],
-			selection: current.selectedState ?? undefined,
-			dependencies: [],
-		};
-	}
-	if ("proposal" in request && request.proposal.type === "settle") {
-		const { settleCandidate } = await import("#runtime/operations/proposals/settle.ts");
-		return settleCandidate(vault, request, current, captured);
-	}
-	if (
-		"proposal" in request &&
-		(request.proposal.type === "create" || request.proposal.type === "edit")
-	) {
-		const { proposalCandidate } = await import("#runtime/operations/proposals/candidate.ts");
-		return proposalCandidate(vault, { ...request, proposal: request.proposal }, current, captured);
-	}
+function currentCandidate(
+	vault: string,
+	request: ArchitectureModuleEdit,
+	current: ArchitectureModel,
+	captured: ReturnType<typeof readModelFiles>,
+) {
 	requireCurrentEdit(current);
 	const candidate = applyStructure(current, request, captured.inputs.keys());
 	const inputs = candidateInputs(captured, current, candidate);
@@ -151,6 +120,40 @@ async function initialCandidate(vault: string, request: ArchitectureModuleEdit) 
 	};
 }
 /**
+ * Reject a descendant that waits on an unsettled ancestor.
+ * @param current The explicitly selected reading.
+ */
+function requireWritableTarget(current: ArchitectureModel): void {
+	const ancestor = current.selectedState?.standing?.blockedBy;
+	if (ancestor !== undefined)
+		throw new ArchiveError(
+			"PROPOSAL_BLOCKED",
+			"Settle the ancestor before editing this descendant.",
+			"model.json",
+			[ancestor],
+		);
+}
+/**
+ * Capture one checked predecessor candidate before family reconciliation.
+ * @param vault The explicit vault.
+ * @param request The complete original intent.
+ * @returns The predecessor candidate or its refusal.
+ */
+async function initialCandidate(vault: string, request: ArchitectureModuleEdit) {
+	const current = await requireTarget(vault, request.target);
+	if (!current.success) return current;
+	if (!isDeepStrictEqual(current.revision, request.expectedRevision))
+		throw new ArchiveError("STALE_REVISION", "Read the complete model again before a new edit.");
+	const captured = captureRevision(vault, current.revision);
+	requireWritableTarget(current);
+	if ("proposal" in request) {
+		const { proposalIntentCandidate } = await import("#runtime/operations/proposals/candidate.ts");
+		return proposalIntentCandidate(vault, request, current, captured);
+	}
+	return currentCandidate(vault, request, current, captured);
+}
+
+/**
  * Add all dependent results to the same durable candidate.
  * @param vault The explicitly addressed vault.
  * @param request The complete architectural intent.
@@ -167,4 +170,4 @@ async function editCandidate(vault: string, request: ArchitectureModuleEdit) {
 		candidate,
 	);
 }
-export { editCandidate, candidateInputs, changedFiles };
+export { initialCandidate, editCandidate, candidateInputs, changedFiles };
