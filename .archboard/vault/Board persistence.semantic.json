@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 170,
+	"version": 171,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T21:34:40.050Z",
+	"updatedAt": "2026-10-26T22:03:07.737Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -149310,7 +149310,8 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0054-a-variant-names-the-repository-documents-it-draws.md"
+					"commit": "212ef722bd5b0b9d6ce976119231be8d6378abb8",
+					"path": "backlog/tasks/task-549.07 - Reconcile-and-settle-dependent-proposals.md"
 				}
 			],
 			"content": {

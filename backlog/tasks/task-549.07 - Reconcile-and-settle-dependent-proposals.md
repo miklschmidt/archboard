@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T21:55:00Z'
+updated_date: '2026-10-26T22:05:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -88,4 +88,6 @@ The final lifecycle regression proves that a child created from an unsettled pro
 Simplification pause: settlement requires one complete decision instead of a partial-resolution ledger. Shared sibling ordering and flow placement remain the sole semantic mechanism. Candidate dispatch now has no unreachable fallback. The family regression reads blocked catalogue metadata without another retained materialization; the blocked write and later selected child still prove the selected-state contract. This reduces test cost without changing product coverage. Latest integration merge remains already up to date at signed 212ef722bd5b0b9d6ce976119231be8d6378abb8.
 
 The frozen runtime set passes 67 cases/398 assertions. A final external-edit regression exposed input file moves that failed exact compact agreement despite stable subject identities. Family preparation now rematerializes its intended meaning through the chosen baseline before agreement. Safe reconciliation uses updated predecessor paths; standing conflicts retain their establishing baseline paths. This reuses the compact change and canonical reconstruction owners instead of adding path authority.
+
+Backend and CLI handoff: the final proposal owner passes 26 cases/137 assertions after the input-path refinement. The frozen combined proposal/current-edit set passes 67 cases/398 assertions. Legacy semantic comparison, propagation and settlement pass 120 cases/401 assertions. Normal CLI/HTTP adapters pass 7 cases/85 assertions. Source/frontend types, full lint and formatting pass. Evaluation inputs pass 21 scenarios/21 fixtures/14 coverage parts; no model evaluations run. Semantics has zero diagnostics. All three affected proposals have zero code warnings; ten unchanged warnings remain on Archboard (8), Archboard server (1) and Live panes (1). The full gate is not claimed: board 245/188 remains assigned to TASK-549.24. Proposals remain draft: Board persistence 3ocaLJ1M version 171, Command interface r47rxhJB version 193, Archboard server routes aNGGjJ4X version 159. Each links the approved task at signed 212ef722b, and all prior variants match their initial snapshots. All claims are released. Server 14548 is stopped. TASK-549.07 stays In Progress with unchecked acceptance criteria for parent browser acceptance. The exact contract and backend handoff live beside the delegate brief. No push, PR action, review phase, child agent or model evaluation occurs.
 <!-- SECTION:NOTES:END -->

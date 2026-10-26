@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 158,
+	"version": 159,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-26T21:04:51.138Z",
+	"updatedAt": "2026-10-26T22:03:08.798Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -140695,7 +140695,8 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "docs/adr/0054-a-variant-names-the-repository-documents-it-draws.md"
+					"commit": "212ef722bd5b0b9d6ce976119231be8d6378abb8",
+					"path": "backlog/tasks/task-549.07 - Reconcile-and-settle-dependent-proposals.md"
 				}
 			],
 			"content": {

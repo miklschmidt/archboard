@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 192,
+	"version": 193,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-26T21:04:50.038Z",
+	"updatedAt": "2026-10-26T22:03:08.274Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -136389,6 +136389,13 @@
 			"lifecycle": "draft",
 			"parent": "pJeSfYJs",
 			"summary": "Reconcile and settle dependent canonical proposals",
+			"documents": [
+				{
+					"repo": "github.com/miklschmidt/archboard",
+					"commit": "212ef722bd5b0b9d6ce976119231be8d6378abb8",
+					"path": "backlog/tasks/task-549.07 - Reconcile-and-settle-dependent-proposals.md"
+				}
+			],
 			"content": {
 				"nodes": [
 					{
