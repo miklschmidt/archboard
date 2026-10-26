@@ -50,6 +50,14 @@ It remains independent of the current architecture in any checkout.
 A record that preserves concurrent archive histories without merging their architecture.
 It is neither a state nor an adoption.
 
+Archive publication:
+An explicit exchange that makes retained architecture available at a configured remote and archive ref.
+A source-code push does not establish this fact.
+
+Publication evidence:
+The retained result of the last successful explicit archive exchange.
+It establishes observed availability, not permanent remote protection.
+
 **Source evidence**:
 The source revision associated with an architectural reading and its uncommitted-code status.
 Architecture retention does not preserve the source code itself.

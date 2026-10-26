@@ -24,6 +24,7 @@ import {
 } from "#runtime/store/model-archive.ts";
 import { readArchitectureCheckpoint } from "#runtime/operations/history/read.ts";
 import { historyResult, checkpointMetadata } from "#runtime/operations/history/result.ts";
+import { checkpointPublication } from "#runtime/store/model-publication.ts";
 
 /**
  * Prepare an immutable checkpoint from exactly the revision the caller read.
@@ -95,7 +96,14 @@ async function resumeRetention(
 			id,
 		);
 	await appendCheckpoint(context, id, await archiveTip(context));
-	return { success: true, checkpoint: checkpointMetadata(id, record) };
+	return {
+		success: true,
+		checkpoint: checkpointMetadata(
+			id,
+			record,
+			(await checkpointPublication(context, id)).publication,
+		),
+	};
 }
 
 /**

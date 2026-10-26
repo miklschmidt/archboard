@@ -48,7 +48,44 @@ The browser never creates checkpoints.
 
 This decision extends ADR 0060 for retained canonical readings.
 The source-history lens in ADR 0045 remains separate from retained architecture.
-Publication, private archives, proposal changes, and migration remain separate delivery slices.
+Private archives, proposal changes, and migration remain separate delivery slices.
+
+## Explicit archive publication
+
+TASK-549.16 adds a configured named remote and independent archive ref.
+Normal source pushes create no archive publication evidence.
+A private sidecar beside common Git objects records the destination per portable vault address.
+Private pending refs retain publication intent and its archive ancestry.
+Immutable receipt refs retain the exact closures acknowledged by explicit exchanges.
+Linked worktrees share this evidence while their current architecture remains independent.
+The current-edit journal remains checkout-specific and separate from publication state.
+
+Local status distinguishes saved-locally, publication-pending, published, and unavailable.
+Published means availability at the last successful explicit exchange.
+It does not establish permanent remote retention.
+The result reports the host-policy limitation because generic Git transport cannot install or inspect rewrite and deletion controls.
+The remote owner must enforce those controls and maintain backups.
+Changing an effective remote URL requires explicit configuration again and invalidates the former destination's evidence.
+Publication metadata failures do not block coherent local retention or exact architecture reads.
+
+A stale non-forced push fetches complete named archive history.
+The runtime joins divergent tips through the existing signed synchronization record and retries an ordinary push.
+The record retains both parents without merging architectural meaning or rewriting accepted checkpoint identities.
+Signing failure preserves local checkpoints and the remote's accepted tip.
+Network failure preserves durable pending intent and never reverses local work.
+
+An explicit fetch restores referenced history without checking out archive content.
+It retains the fetched closure under a named private ref and makes those checkpoints discoverable.
+A shallow archive boundary triggers a deeper fetch of the configured archive ref.
+The runtime refuses incomplete or foreign archive ancestry and keeps current files, the index, source HEAD, and source fetch mappings unchanged.
+Machine-local source repository paths remain local because publication cannot redact immutable metadata.
+The browser reads publication status separately from the exact architecture cache.
+The reader explicitly sets the destination and starts each publish or fetch action.
+Network failures leave a pending status with a retry action and recovery instructions.
+Missing history shows an unavailable reading until the explicit fetch restores that exact checkpoint.
+The selection stays fixed throughout the exchange.
+The browser shows the remote retention limitation beside the status.
+Publication updates fresh reading metadata but never changes a completed edit receipt.
 
 ## Canonical description installation
 
