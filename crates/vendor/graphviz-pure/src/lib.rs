@@ -26,7 +26,7 @@ pub use graphviz_pure_core::{Graph, GraphvizError, Result, charset};
 pub use graphviz_pure_layout::cutil::{RandState, in_rand_run, with_rand_state};
 pub use graphviz_pure_layout::fdpgen::tlayout::FdpParms;
 pub use graphviz_pure_layout::{LayoutEngine, LayoutOptions};
-pub use graphviz_pure_parser::GlobalAttrs;
+pub use graphviz_pure_parser::{AttrKind, GlobalAttrs, Statements};
 pub use graphviz_pure_render::{OutputFormat, loadimage_installed, set_y_invert};
 
 use decoded::Decoded;
@@ -41,6 +41,15 @@ pub fn render_dot(dot_source: &str, engine: &str, format: &str) -> Result<String
     )
     .map(text)
     .map_err(error_text)
+}
+
+/// archboard: [`render_dot`] of a graph made statement by statement ([`Statements`]),
+/// which is the graph [`render_dot`] reads from the DOT text of those statements, so the
+/// text is neither written nor read.
+pub fn render_made(graph: Graph, engine: &str, format: &str) -> Result<String> {
+    decoded::render_made(graph, &charset::from_text(engine), &charset::from_text(format))
+        .map(text)
+        .map_err(error_text)
 }
 
 /// Renders every graph in `dot_source`, applying `globals` (`-G`/`-N`/`-E`) before each graph body.

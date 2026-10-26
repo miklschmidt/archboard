@@ -38,6 +38,21 @@ pub fn render_dot(dot_source: &Decoded, engine: &str, format: &str) -> Result<St
     )
 }
 
+/// archboard: [`render_dot`] of a graph made statement by statement
+/// ([`graphviz_pure_parser::Statements`]) instead of read from DOT text.
+pub fn render_made(graph: Graph, engine: &str, format: &str) -> Result<String> {
+    let output_format = OutputFormat::parse(format)?;
+    // Each call is one C process: per-process counters (gradient and anchor ids) restart.
+    graphviz_pure_render::reset_render_state();
+    render_parsed(
+        graph,
+        engine,
+        output_format,
+        format,
+        &mut LayoutOptions::default(),
+    )
+}
+
 /// [`crate::render_dot_all`] on decoded text.
 pub fn render_dot_all(
     dot_source: &Decoded,

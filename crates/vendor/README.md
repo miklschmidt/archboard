@@ -47,6 +47,12 @@ archboard changed three things:
    - `graphviz-pure-core/src/diag.rs`: `fmt_g` prints a number in fixed
      notation from one double product where its digits are certain, instead
      of two exact decimal conversions.
+   - `graphviz-pure-parser/src/parser/statements.rs` (`Statements`) and
+     `graphviz-pure/src/lib.rs` (`render_made`): a graph made statement by
+     statement with the parser's own actions, the graph the parser reads from
+     the DOT text of those statements, and laid out and written as
+     `render_dot` does. `src/parser.rs` moves `startgraph` and the action of
+     `attrstmt` into methods of their own for it.
 
 ## Why they are not workspace members
 

@@ -39,11 +39,23 @@ impl archboard_layout::Graphviz for InCore {
 ///
 /// A graph that does not read, or what Graphviz refused it with.
 pub fn render(graph: &str) -> Result<String, String> {
+    // A JSON string without a backslash escapes nothing, so no name or value
+    // holds a quote, a backslash, a line break or a NUL, which DOT's quoted
+    // strings would carry otherwise. Without those, and without the characters
+    // graphviz-pure's charset stands for raw bytes with, the parser makes the
+    // same graph of the statements as of their DOT text, so the text is skipped.
+    let plain = !graph.contains('\\') && !graph.chars().any(|c| c >= '\u{10FF00}');
     let graph: graph::Graph = serde_json::from_str(graph).map_err(|error| error.to_string())?;
     let built = cgraph::Built::of(&graph);
     // `Y_invert` is a setting of the thread, as `dot -y` sets it for a run.
     // Every call sets it, so no call answers by what another set.
     graphviz_pure::set_y_invert(true);
-    graphviz_pure::render_dot(&dot::of(&graph, &built), "dot", "json0")
-        .map_err(|error| error.to_string())
+    let answer = if plain {
+        let mut statements = graphviz_pure::Statements::new(true);
+        dot::write(&graph, &built, &mut statements);
+        graphviz_pure::render_made(statements.finish(), "dot", "json0")
+    } else {
+        graphviz_pure::render_dot(&dot::of(&graph, &built), "dot", "json0")
+    };
+    answer.map_err(|error| error.to_string())
 }

@@ -7,7 +7,7 @@ pub mod parser;
 
 pub use canon::{canon_str, canon_str_with, canon_value, write_canon, write_canon_forced};
 pub use lexer::{Lexer, Token, TokenKind, reading_file};
-pub use parser::{GlobalAttrs, GraphStream, Parser};
+pub use parser::{AttrKind, GlobalAttrs, GraphStream, Parser, Statements};
 
 use graphviz_pure_core::{Graph, Result};
 

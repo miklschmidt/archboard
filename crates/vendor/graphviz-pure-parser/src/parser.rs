@@ -13,6 +13,10 @@ use graphviz_pure_core::{
 /// bison's `YYMAXDEPTH` (grammar.c): the most states its parser stack holds.
 const YYMAXDEPTH: usize = 10000;
 
+// archboard: the statements of a graph made without its text.
+mod statements;
+pub use statements::{AttrKind, Statements};
+
 /// An atom as grammar.y's semantic values carry it: its text, and whether cgraph's
 /// `aghtmlstr` is set on it (an HTML string, `<...>`, whose text is the inner part).
 #[derive(Debug, Clone)]
@@ -352,7 +356,17 @@ impl<'a> Parser<'a> {
         };
         self.reduce(3)?;
 
-        // startgraph
+        self.start_graph(name, kind, strict);
+        self.body()?;
+        self.finish_root();
+        // `endgraph` ends the scan here (`aglexeof`), so nothing after the closing brace is
+        // read; stray tokens on the next lines are the next read's (`parse_all_partial`).
+        Ok(())
+    }
+
+    /// grammar.y's `startgraph`: opens the root graph. archboard: a method of its own, which
+    /// [`Statements`] calls as well.
+    fn start_graph(&mut self, name: Option<String>, kind: GraphKind, strict: bool) {
         self.started = true;
         self.anon_ctr = if name.as_deref().is_none_or(|n| n.starts_with('%')) {
             3
@@ -406,12 +420,6 @@ impl<'a> Parser<'a> {
                 );
             }
         }
-
-        self.body()?;
-        self.finish_root();
-        // `endgraph` ends the scan here (`aglexeof`), so nothing after the closing brace is
-        // read; stray tokens on the next lines are the next read's (`parse_all_partial`).
-        Ok(())
     }
 
     /// A graph attribute first declared in a subgraph is declared on the root with
@@ -586,6 +594,13 @@ impl<'a> Parser<'a> {
         if macro_name {
             graphviz_pure_core::diag::agwarningf("attribute macros not implemented");
         }
+        self.apply_attr_items(kind);
+        Ok(())
+    }
+
+    /// `attrstmt`'s action on the items of its list ([`Parser::attr_items`]). archboard: a
+    /// method of its own, which [`Statements`] calls as well.
+    fn apply_attr_items(&mut self, kind: DictKind) {
         // The items `attrstmt` sets. `bindattrs` skips an edge `key`, and `attrstmt` then
         // skips the unbound item: `edge [key=k]` sets nothing. `-G`/`-N`/`-E` symbols are
         // `fixed`: a root attribute statement only marks them to be written.
@@ -617,7 +632,6 @@ impl<'a> Parser<'a> {
             DictKind::Edge => self.current_edge_defaults_mut(),
         };
         target.extend_from(&attrs);
-        Ok(())
     }
 
     /// `optattr : attrlist | /* empty */` after a node or edge statement.
