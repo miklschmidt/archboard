@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 147,
+	"version": 149,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-26T08:36:12.320Z",
+	"updatedAt": "2026-10-26T09:09:21.352Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -73400,7 +73400,7 @@
 		{
 			"id": "WtdTTTOd",
 			"name": "TASK-549.01",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "6YXZ2wX4",
 			"summary": "Read canonical module models without changing legacy commands",
 			"content": {
@@ -77067,7 +77067,7 @@
 		{
 			"id": "ha3ruWgt",
 			"name": "TASK-549.19",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "WtdTTTOd",
 			"content": {
 				"nodes": [
@@ -77774,6 +77774,18 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/operations/model/migration.ts"
+						}
+					},
+					{
+						"id": "AhjN13Ip",
+						"order": 55000,
+						"name": "Migration planning client",
+						"kind": "module",
+						"responsibility": "Carries explicit vault requests and shared inventory or refusal contracts over HTTP",
+						"parent": "dHZeNcMs",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/legacy-migration-client.ts"
 						}
 					}
 				],
@@ -79098,6 +79110,58 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/operations/model/read.ts",
 							"symbol": "readArchitectureModelOnServer"
+						}
+					},
+					{
+						"id": "T67XkF7L",
+						"order": 93000,
+						"from": "iIVu1bGE",
+						"to": "e7erk6w3",
+						"kind": "dependency",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/invocation/run.ts",
+							"symbol": "modelInventoryContract"
+						}
+					},
+					{
+						"id": "BLYJHegI",
+						"order": 94000,
+						"from": "e7erk6w3",
+						"to": "AhjN13Ip",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/model/migration.ts",
+							"symbol": "readLegacyInventoryOnServer"
+						}
+					},
+					{
+						"id": "YyXXHRVN",
+						"order": 95000,
+						"from": "AhjN13Ip",
+						"to": "yHgIapK7",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/legacy-migration-client.ts",
+							"symbol": "requestJson"
+						}
+					},
+					{
+						"id": "DugcdHTp",
+						"order": 96000,
+						"from": "AhjN13Ip",
+						"to": "fF4A9uvU",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/server-lifecycle/src/runtime/clients/legacy-migration-client.ts",
+							"symbol": "currentWriteDoing"
 						}
 					}
 				],
@@ -80743,7 +80807,7 @@
 			}
 		}
 	],
-	"current": "WtdTTTOd",
+	"current": "ha3ruWgt",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -80942,6 +81006,12 @@
 			"from": "6YXZ2wX4",
 			"at": "2026-10-26T06:38:01.347Z",
 			"reason": "Canonical models can be read through the runtime, CLI, server, and browser"
+		},
+		{
+			"variant": "ha3ruWgt",
+			"from": "WtdTTTOd",
+			"at": "2026-10-26T09:09:21.352Z",
+			"reason": "TASK-549.19 CLI inventory and mapping commands pass the public workflow"
 		}
 	],
 	"shelvings": [

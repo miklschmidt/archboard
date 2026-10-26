@@ -7,7 +7,7 @@ The commands require Archboard on PATH and Bun.
 ```bash
 example_dir=$(mktemp -d)
 git init --quiet "$example_dir"
-archboard install-skill --agent codex --repo "$example_dir"
+archboard install-skill --dir "$example_dir/.agents/skills" --repo "$example_dir"
 archboard semantic new System -C "$example_dir" --doing "Describe the public API" <<'JSON'
 {"level":"system","nodes":[{"name":"API","kind":"module","responsibility":"Accepts requests","binding":{"repo":"github.com/acme/shop","path":"src/api.ts"}}]}
 JSON

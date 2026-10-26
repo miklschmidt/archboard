@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-26T08:59:00Z'
+updated_date: '2026-10-26T09:10:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -72,4 +72,8 @@ None. This ticket can start immediately.
 Integration ancestor f1b91c9a9 confirmed. Proposals created before implementation: Board persistence@TASK-549.19, Command interface@TASK-549.19, Archboard server routes@TASK-549.19. Tests use the approved public runtime seam with real files and disposable Git.
 
 Implemented public readLegacyInventory and saveLegacyMappingPlan through shared schema-derived contracts. Red failures precede inventory, evidence, saved choices, conflict categories, and duplicate-namespace behavior. Six focused migration cases pass with real files and Git. Current-only conflict analysis preserves separate historical coverage. Thin CLI model inventory/model plan and GET/PUT architecture migration routes are implemented. lint, both TypeScript projects, and 27 focused runtime/CLI contract cases pass. No frontend changes or target writer.
+
+Acceptance evidence: inventory preserves complete original source and normalized supported documents, including lifecycle records, reconciliation bases, views, walkthroughs, former addresses and document references. Exact source paths/bytes include policy and exclude the separate plan. Six public runtime cases prove provenance, evidence without identity merges, all five conflict categories, persistent explicit choices, stale refusal, invalid mappings, and unchanged legacy files. One real CLI/server process case proves vault transport and structured stale refusals; its red failure reproduces the required-body-vault bug before the fix.
+Consumer guidance, worked example, ADR 0058, domain terms and S20 evaluation coverage are updated. No model evaluation ran. Proposals Board persistence@TASK-549.19, Command interface@TASK-549.19 and Archboard server routes@TASK-549.19 were compared, checked, adopted at versions 108/149/109 and released. Touched boards have zero semantics/code warnings. The all-vault code pass still warns on unrelated Archboard, Archboard server and Live panes boards.
+Simplification: reused the in-memory legacy decoder, existing vocabulary references, ID/schema authorities, lease and atomic writer. Removed redundant mapping validation. The plan has no active-model writer, journal, history conversion or cutover; explicit replacement values record intent for later composition validation. External referenced documents/source bytes are not retained by inventory.
 <!-- SECTION:NOTES:END -->

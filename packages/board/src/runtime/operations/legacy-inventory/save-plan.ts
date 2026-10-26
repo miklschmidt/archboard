@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import { mintId } from "#shared/rules/ids.ts";
-import { mappingProblem } from "#shared/rules/legacy-inventory/plan.ts";
+import { checkDoing } from "#runtime/store/doing.ts";
 import {
 	LegacyMappingWriteSchema,
 	type LegacyMappingWrite,
@@ -28,14 +28,17 @@ async function saveLegacyMappingPlan(
 	const parsed = LegacyMappingWriteSchema.safeParse(request);
 	if (!parsed.success)
 		return migrationFailure("MAPPING_INVALID", MIGRATION_PLAN_PATH, parsed.error.message);
-	const { plan, expectedPlan, doing } = parsed.data;
+	const { plan, expectedPlan } = parsed.data;
+	const description = checkDoing(parsed.data.doing);
+	if (!description.ok)
+		return migrationFailure("MAPPING_INVALID", MIGRATION_PLAN_PATH, description.problem);
 	try {
 		// Board names cannot contain @, so this lease cannot alias a board claim.
 		return await withBoardLock(
 			{
 				vault,
 				board: "@migration-plan",
-				holder: { id: mintId(), kind: "agent", reason: doing },
+				holder: { id: mintId(), kind: "agent", reason: description.doing },
 				waitMs: 0,
 			},
 			() => {
@@ -50,9 +53,6 @@ async function saveLegacyMappingPlan(
 						MIGRATION_PLAN_PATH,
 						"The source or mapping plan changed. Review a fresh inventory before saving choices.",
 					);
-				const problem = mappingProblem(inventory);
-				if (problem !== undefined)
-					return migrationFailure("MAPPING_INVALID", MIGRATION_PLAN_PATH, problem);
 				if (inventory.diagnostics.some((diagnostic) => diagnostic.code !== "INVALID_POLICY"))
 					return migrationFailure(
 						"MAPPING_INVALID",

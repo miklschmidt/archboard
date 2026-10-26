@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 105,
+	"version": 108,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T08:36:12.055Z",
+	"updatedAt": "2026-10-26T09:09:21.096Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -53565,7 +53565,7 @@
 		{
 			"id": "luWuDR18",
 			"name": "TASK-549.01",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "5jMVnOIW",
 			"summary": "Read authored canonical model files through the existing runtime",
 			"documents": [
@@ -58010,7 +58010,7 @@
 		{
 			"id": "yfzXckUF",
 			"name": "TASK-549.19",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "luWuDR18",
 			"documents": [
 				{
@@ -58578,7 +58578,19 @@
 						"parent": "ZqkmwupZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/migration"
+							"path": "packages/board/src/runtime/operations/legacy-inventory"
+						}
+					},
+					{
+						"id": "O3Pczt31",
+						"order": 41000,
+						"name": "Migration planning contracts",
+						"kind": "module",
+						"responsibility": "Defines original inventory, qualified identity mappings and source-bound conflict choices",
+						"parent": "ZqkmwupZ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/shared/schemas/migration.ts"
 						}
 					}
 				],
@@ -59878,6 +59890,110 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/read/model-read.ts",
 							"symbol": "SemanticBoardConfigurationSchema"
+						}
+					},
+					{
+						"id": "PvjdCCub",
+						"order": 95000,
+						"from": "7mTerd6Y",
+						"to": "R3ldC44x",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/legacy-inventory/inputs.ts",
+							"symbol": "decodeSemanticBoardDocument"
+						}
+					},
+					{
+						"id": "yTYxw24a",
+						"order": 96000,
+						"from": "7mTerd6Y",
+						"to": "qTv7HuBw",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/legacy-inventory/save-plan.ts",
+							"symbol": "writeFileAtomic"
+						}
+					},
+					{
+						"id": "czjf7II5",
+						"order": 97000,
+						"from": "7mTerd6Y",
+						"to": "UFO3ulXp",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/legacy-inventory/save-plan.ts",
+							"symbol": "withBoardLock"
+						}
+					},
+					{
+						"id": "m8cmnXnS",
+						"order": 98000,
+						"from": "7mTerd6Y",
+						"to": "AJGft3Pe",
+						"kind": "dependency",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/legacy-inventory/inputs.ts",
+							"symbol": "SemanticBoardConfigurationSchema"
+						}
+					},
+					{
+						"id": "AlSqD5eq",
+						"order": 99000,
+						"from": "7mTerd6Y",
+						"to": "O3Pczt31",
+						"kind": "dependency",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/legacy-inventory/save-plan.ts",
+							"symbol": "LegacyMappingWriteSchema"
+						}
+					},
+					{
+						"id": "VRAAecug",
+						"order": 100000,
+						"from": "O3Pczt31",
+						"to": "ZLJy8ivl",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/shared/schemas/migration.ts",
+							"symbol": "QualifiedSubjectIdSchema"
+						}
+					},
+					{
+						"id": "VoM3JXyO",
+						"order": 101000,
+						"from": "4P7YZdnj",
+						"to": "7mTerd6Y",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/migration-routes.ts",
+							"symbol": "readLegacyInventory"
+						}
+					},
+					{
+						"id": "LF1VUIUY",
+						"order": 102000,
+						"from": "4P7YZdnj",
+						"to": "O3Pczt31",
+						"kind": "call",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/migration-routes.ts",
+							"symbol": "LegacyMappingWriteSchema"
 						}
 					}
 				],
@@ -62461,7 +62577,7 @@
 			}
 		}
 	],
-	"current": "luWuDR18",
+	"current": "yfzXckUF",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -62588,6 +62704,12 @@
 			"from": "5jMVnOIW",
 			"at": "2026-10-26T06:38:00.124Z",
 			"reason": "Canonical models can be read through the runtime, CLI, server, and browser"
+		},
+		{
+			"variant": "yfzXckUF",
+			"from": "luWuDR18",
+			"at": "2026-10-26T09:09:21.096Z",
+			"reason": "TASK-549.19 backend inventory and explicit planning contracts are implemented and tested"
 		}
 	],
 	"shelvings": [
