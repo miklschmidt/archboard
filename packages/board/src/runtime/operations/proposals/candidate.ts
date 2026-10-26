@@ -350,8 +350,9 @@ async function proposalIntentCandidate(
 		}
 		case "reconcile":
 			return reconciliationCandidate(current, captured, request.changes.length);
+		default:
+			throw new ArchiveError("MODEL_INVALID", "Unknown proposal intent.");
 	}
-	throw new ArchiveError("MODEL_INVALID", "Unknown proposal intent.");
 }
 export {
 	proposalDependencies,

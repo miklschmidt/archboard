@@ -647,7 +647,7 @@ It never substitutes current definitions for another requested base.
 
 Active draft readings follow accepted edits through the architecture change feed.
 Saved draft readings keep their original content and draft identity.
-If a mutable predecessor changes, the browser preserves the requested state and shows the refusal.
+If an external file edit changes a predecessor, the browser preserves the requested state and shows the refusal.
 Select an available saved reading to inspect the retained proposal.
 
 ## Reconcile dependent proposals

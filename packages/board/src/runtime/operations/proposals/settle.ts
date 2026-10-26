@@ -89,7 +89,7 @@ function takeField(
 	source: NonNullable<ReturnType<Subjects["get"]>>,
 	field: string,
 ): void {
-	if (["parent", "from", "collection", "within"].includes(field)) {
+	if (["parent", "from", "collection", "within", "flow"].includes(field)) {
 		if (source.placement === undefined) delete mine.placement;
 		else mine.placement = structuredClone(source.placement);
 		return;

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T21:27:00Z'
+updated_date: '2026-10-26T21:34:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -78,4 +78,6 @@ Published early backend contract beside the delegate brief. Created draft TASK-5
 Public runtime cases now pass safe two-level inheritance, retained conflict standing, blocked-child refusal, explicit mine/theirs settlement, deletion against modification, exact settlement retry, alternative renames, competing holders and empty-flow preservation. A deleted subject kept by settlement carries a retained restoration proof, so the existing identity authority never treats it as a fresh allocation. The original conflict baseline remains unchanged until settlement.
 
 Expanded public operation coverage for lost owners, independent arrivals, complete settlement refusal, external reconciliation and a forced interruption after the first installed file. Existing semantic rules remain the merge authority. The parent contract now requires complete, non-overlapping settlement choices to avoid a second partial-decision mechanism. Source/frontend types and full lint pass. The known board interface ceiling stays unchanged. Consumer instructions, ADR0061, test ownership and evaluation coverage now describe this slice. No model evaluations run.
+
+A public regression exposed the existing per-flow step merge limit. The same semantic engine now reconciles continuing step identities globally and keeps flow plus nested holder as one placement. Independent fields inherit after cross-flow moves. Competing moves preserve the complete proposal side. The unchanged semantic reconciliation suite passes 35 cases/95 assertions. Board persistence proposal now shows the shared semantic authority used by canonical and legacy families. The CLI/HTTP family adapter owner passes, including structured blocked refusal and complete settlement.
 <!-- SECTION:NOTES:END -->

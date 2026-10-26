@@ -33,7 +33,7 @@ import { same } from "#shared/rules/reconcile/removed.ts";
  * @returns One issue per reason it cannot stand, or none.
  */
 function incoherenceOf(content: VariantContent): ReconciliationIssue[] {
-	const shape = VariantContentSchema.safeParse(content);
+	const shape = VariantContentSchema.safeParse(JSON.parse(JSON.stringify(content)));
 	if (!shape.success) {
 		return [danglingIssue(WHOLE_CONTENT, z.prettifyError(shape.error))];
 	}

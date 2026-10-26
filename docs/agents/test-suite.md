@@ -523,7 +523,8 @@ No renderer algorithm test or model evaluation belongs to this slice.
 The public architecture operations own reconciliation tests under `packages/board/tests/runtime/operations/proposals/`.
 The cases use real temporary files and Git through the same reader and writer as CLI and HTTP.
 They reuse the canonical model and independent-flow fixtures beside the existing semantic reconciliation regressions.
-Coverage includes safe family inheritance, standing baselines, blocked descendants, complete settlement, retired identity restoration, alternative renames, empty holders, and claim closure.
+Coverage includes safe inheritance, standing baselines, blocked descendants, and complete settlement.
+Other cases cover retired identities, alternative renames, empty holders, claim closure, and step moves across flows.
 The recovery case uses the existing crash fixture after a real atomic file installation.
 It proves that readers block until the exact family installation finishes.
 
