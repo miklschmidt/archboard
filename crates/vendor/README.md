@@ -19,7 +19,7 @@ port of Graphviz 16.1.0. The core lays out the graphs of a solve with it
   names Graphviz's authors and the MIT-licensed code inside
   (`graphviz-pure-core/LICENSES`, `graphviz-pure-geom/LICENSES`).
 
-archboard changed three things:
+archboard changed four things:
 
 1. Each `Cargo.toml` names its sibling crates by `path` as well as version.
 2. `graphviz-pure-layout` sorts as musl's `qsort` does. Graphviz sorts with
@@ -55,6 +55,27 @@ archboard changed three things:
      the DOT text of those statements, and laid out and written as
      `render_dot` does. `src/parser.rs` moves `startgraph` and the action of
      `attrstmt` into methods of their own for it.
+4. graphviz-pure lays out the graphs of the slowest first renders faster, to
+   the same answer byte for byte (TASK-548.07,
+   `docs/design/graphviz-pure-speed.md`). Each change leaves every decision,
+   tie and floating-point operation as it was, and says `archboard:` where it
+   is:
+   - `src/dotgen/mincross_rank.rs` (`RankCopy::sorted_by_segments`): `reorder`
+     sorts a rank whose nodes all have a median, under `remincross` and
+     without flat edges, in place of its passes, as the passes leave it. A
+     test there holds the two equal on 20,000 random ranks.
+     `RankCopy::passes` holds the passes, moved from `src/dotgen/mincross.rs`.
+   - `src/dotgen/mincross.rs`: `transpose_step` counts a pair's crossings both
+     ways in one pass over their edges (`in_cross_both`, `out_cross_both`).
+     `medians` sorts its integer positions with the standard sort.
+   - `src/dotgen/ns.rs`: network simplex works on a dense copy of what it
+     reads and writes of each node and edge, written back when it ends.
+   - `graphviz-pure-geom/src/pathplan/triang.rs` and `shortest.rs`:
+     `intersects` finds each orientation once, and `pshortestpath` links
+     the triangles that share an edge by sorting their edges.
+   - `src/common/routespl.rs`: `limit_boxes_by_extremes` reads, for each box,
+     only the run of samples, ordered by y, that its test does not leave out
+     at once.
 
 ## Why they are not workspace members
 
@@ -73,7 +94,7 @@ build lands in the checkout.
 ## Updating
 
 Take the crates.io archives of the new version, replace each folder's files
-with theirs, and apply the three changes again. The `qsort` vectors must come
+with theirs, and apply the four changes again. The `qsort` vectors must come
 from musl's `qsort.c`. Then render the corpus before and after
 (`bun scripts/render-corpus.ts`): every drawing must be unchanged, or each
 change must be one the update means to make.
