@@ -4,11 +4,11 @@ import type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";
 /** The chats on screen by tab, and when each tab that has none left ends. */
 interface TabSessions {
 	/** Remember which tab a chat belongs to, as its authoritative socket named it. */
-	readonly note: (clientId: string, tabSessionId: TabSessionId | null) => void;
+	readonly note: (browserId: string, tabSessionId: TabSessionId | null) => void;
 	/** The tab a chat belongs to, or null while its socket named none. */
-	readonly of: (clientId: string) => TabSessionId | null;
+	readonly of: (browserId: string) => TabSessionId | null;
 	/** Forget the tab of a chat whose socket has gone; its tab's grace starts if it was the last. */
-	readonly forget: (clientId: string) => void;
+	readonly forget: (browserId: string) => void;
 	/** Forget every chat and every grace, because the server is stopping. Nothing ends. */
 	readonly forgetAll: () => void;
 	/** Hear each tab session that ended, once the grace passed with no chat of it back. */
@@ -45,7 +45,7 @@ function subscribe<Listener>(listeners: Set<Listener>, listener: Listener): () =
  * @returns The tab sessions.
  */
 function createTabSessions(graceMs: number = TAB_SESSION_GRACE_MS): TabSessions {
-	const byClient = new Map<string, TabSessionId>();
+	const byBrowser = new Map<string, TabSessionId>();
 	const graces = new Map<TabSessionId, ReturnType<typeof setTimeout>>();
 	const listeners = new Set<(tabSessionId: TabSessionId) => void>();
 	const shownByTab = new Map<TabSessionId, string>();
@@ -57,7 +57,7 @@ function createTabSessions(graceMs: number = TAB_SESSION_GRACE_MS): TabSessions 
 	 * @returns True while one does.
 	 */
 	const present = (tabSessionId: TabSessionId): boolean =>
-		[...byClient.values()].includes(tabSessionId);
+		[...byBrowser.values()].includes(tabSessionId);
 
 	/**
 	 * Start a tab's grace once its last chat has gone.
@@ -88,15 +88,15 @@ function createTabSessions(graceMs: number = TAB_SESSION_GRACE_MS): TabSessions 
 	return Object.freeze({
 		/**
 		 * Remember which tab a chat belongs to; a chat that moved tabs leaves the old one.
-		 * @param clientId The chat's client id.
+		 * @param browserId The browser identity the host gave the chat's socket.
 		 * @param tabSessionId The tab its socket named, or null.
 		 */
-		note: (clientId, tabSessionId) => {
-			const previous = byClient.get(clientId);
+		note: (browserId, tabSessionId) => {
+			const previous = byBrowser.get(browserId);
 			if (tabSessionId === null) {
-				byClient.delete(clientId);
+				byBrowser.delete(browserId);
 			} else {
-				byClient.set(clientId, tabSessionId);
+				byBrowser.set(browserId, tabSessionId);
 				arrived(tabSessionId);
 			}
 			if (previous !== undefined && previous !== tabSessionId) {
@@ -105,24 +105,24 @@ function createTabSessions(graceMs: number = TAB_SESSION_GRACE_MS): TabSessions 
 		},
 		/**
 		 * The tab a chat belongs to.
-		 * @param clientId The chat's client id.
+		 * @param browserId The browser identity the host gave the chat's socket.
 		 * @returns Its tab session, or null.
 		 */
-		of: (clientId) => byClient.get(clientId) ?? null,
+		of: (browserId) => byBrowser.get(browserId) ?? null,
 		/**
 		 * Forget a chat whose socket has gone.
-		 * @param clientId The chat's client id.
+		 * @param browserId The browser identity the host gave the chat's socket.
 		 */
-		forget: (clientId) => {
-			const previous = byClient.get(clientId);
-			byClient.delete(clientId);
+		forget: (browserId) => {
+			const previous = byBrowser.get(browserId);
+			byBrowser.delete(browserId);
 			if (previous !== undefined) {
 				left(previous);
 			}
 		},
 		/** Forget every chat and every grace, ending nothing. */
 		forgetAll: () => {
-			byClient.clear();
+			byBrowser.clear();
 			for (const grace of graces.values()) clearTimeout(grace);
 			graces.clear();
 			shownByTab.clear();
