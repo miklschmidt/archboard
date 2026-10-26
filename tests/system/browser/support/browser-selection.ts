@@ -7,6 +7,7 @@ const BROWSER_TEST_PATHS = [
 	"tests/system/browser/canonical-model-viewer.test.ts",
 	"tests/system/browser/canonical-model-navigation.test.ts",
 	"tests/system/browser/canonical-model-selection.test.ts",
+	"tests/system/browser/canonical-model-gestures.test.ts",
 	"tests/system/browser/canonical-model-structure.test.ts",
 	"tests/system/browser/canonical-model-publication.test.ts",
 	"tests/system/browser/semantic-status-legibility.test.ts",

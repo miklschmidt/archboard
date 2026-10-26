@@ -156,6 +156,7 @@ function ScopedModelReading(props: ScopedModelReadingProps): JSX.Element {
 					projection={props.projection}
 					selected={selected}
 					onSelect={select}
+					onSelectMany={props.selection.selectMany}
 					onOpen={props.onOpen}
 					reducedMotion={props.reducedMotion}
 				/>
