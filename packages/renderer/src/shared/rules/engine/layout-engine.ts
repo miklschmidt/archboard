@@ -1,147 +1,104 @@
-// Pure layout shared by the Bun and browser workers. Hosts initialize
-// Graphviz through `loadLayoutEngine`, which puts back what it held as loaded
-// before every solve. The renderer core lays every board out, Track and
-// Blocks, and asks this host's Graphviz for each graph it ranks (ADR 0057,
-// TASK-520.04, TASK-520.05).
-import type { Viz } from "@viz-js/viz";
-import {
-	layOutBoard,
-	type GraphvizHost,
-} from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
+// The layout engine a worker runs, under Bun and in the browser alike. The
+// pool's first message hands the worker the renderer core its main thread
+// compiled and checked (ADR 0057); the worker instantiates it and answers each
+// solve after that, one at a time, with the core's `layOutBoard`, which runs
+// Graphviz in the core (ADR 0058). A solve's answer depends on its graph
+// alone, so neither which worker answers it nor what that worker solved
+// before changes a drawing.
+//
+// The worker accepts `{ core }` once, then `{ id, graph }`, and answers each
+// solve with `{ id, data }` or `{ id, error, fatal }`.
 
-/**
- * Bind an initialized Graphviz without I/O or environment-specific loading.
- * A solve's answer can depend on what Graphviz solved before it; an engine
- * that must answer the same graph the same way every time is loaded with
- * {@link loadLayoutEngine}.
- * @param viz The initialized Graphviz instance.
- * @returns A complete layout operation.
- */
-export function createLayoutEngine(viz: Viz) {
-	const graphviz: GraphvizHost = {
-		/**
-		 * Lay out one graph the core ranks.
-		 * @param graph The graph.
-		 * @returns What Graphviz answers of it as `json0`, y inverted.
-		 */
-		render: (graph) => viz.renderString(graph, { yInvert: true, format: "json0" }),
-	};
-	return (graph: string): string => layOutBoard(graph, graphviz);
-}
+import { engineAborted } from "#shared/rules/engine/engine-pool.ts";
 
 /** One solve: a measured graph, its root options naming how it is laid out, in; its geometry out, each as the core writes it. */
-type LayoutEngine = ReturnType<typeof createLayoutEngine>;
+type Solve = (graph: string) => string;
+
+/** What a layout worker uses of its global scope. */
+interface WorkerScope {
+	addEventListener(type: "message", listener: (event: MessageEvent<unknown>) => void): void;
+	postMessage(message: unknown): void;
+}
 
 /**
- * Every memory a WebAssembly instantiation exports.
- * @param answered What `WebAssembly.instantiate` or `instantiateStreaming` resolved to.
- * @returns The memories, none when it answered something else.
+ * Whether a message hands the worker its core.
+ * @param message What the pool sent.
+ * @returns True for `{ core }`.
  */
-function exportedMemories(answered: unknown): WebAssembly.Memory[] {
-	const instance =
-		typeof answered === "object" && answered !== null && "instance" in answered
-			? answered.instance
-			: answered;
-	if (!(instance instanceof WebAssembly.Instance)) return [];
-	return Object.values(instance.exports).filter(
-		(value): value is WebAssembly.Memory => value instanceof WebAssembly.Memory,
+function isCore(message: unknown): message is { readonly core: WebAssembly.Module } {
+	return (
+		typeof message === "object" &&
+		message !== null &&
+		"core" in message &&
+		message.core instanceof WebAssembly.Module
 	);
 }
 
 /**
- * The same instantiation, which keeps each memory a module exports.
- * @param instantiate `WebAssembly.instantiate`.
- * @param memories Where each memory is kept.
- * @returns The instantiation, of the same type.
+ * Whether a message asks for one solve.
+ * @param message What the pool sent.
+ * @returns True for `{ id, graph }`.
  */
-function instantiating(
-	instantiate: typeof WebAssembly.instantiate,
-	memories: WebAssembly.Memory[],
-): typeof WebAssembly.instantiate {
-	return new Proxy(instantiate, {
-		/**
-		 * Instantiate, and keep what it exports of memory.
-		 * @param target The instantiation.
-		 * @param self Its receiver.
-		 * @param args Its arguments: the module or its bytes, and the imports.
-		 * @returns What it answered.
-		 */
-		async apply(target, self, args: unknown[]) {
-			const answered: unknown = await Reflect.apply(target, self, args);
-			memories.push(...exportedMemories(answered));
-			return answered;
-		},
-	});
+function isSolve(message: unknown): message is { readonly id: number; readonly graph: string } {
+	return (
+		typeof message === "object" &&
+		message !== null &&
+		"id" in message &&
+		typeof message.id === "number" &&
+		"graph" in message &&
+		typeof message.graph === "string"
+	);
 }
 
 /**
- * A streaming instantiation that reads the module's bytes whole and hands
- * them to an instantiation, so that one sees every module's memory too.
- * @param instantiate The instantiation.
- * @returns The streaming instantiation.
+ * The answer to one solve.
+ * @param engine The core's solve, once the worker instantiated it.
+ * @param id The solve's number.
+ * @param graph The measured graph.
+ * @returns The solved graph, or why there is none and whether the worker can answer more.
  */
-function streaming(
-	instantiate: typeof WebAssembly.instantiate,
-): typeof WebAssembly.instantiateStreaming {
-	return async (source, imports) => {
-		const response = await source;
-		return instantiate(await response.arrayBuffer(), imports);
-	};
-}
-
-/**
- * What a memory holds: everything below its last byte that is not zero. The
- * allocator heads the memory it has not handed out with a size, which is never
- * zero, so static data, the stack, every allocation and the allocator's own
- * bookkeeping lie below that byte; above it is only memory not handed out,
- * which an engine writes before it reads.
- * @param memory The memory.
- * @returns A copy of what it holds.
- */
-function heldBytes(memory: WebAssembly.Memory): Uint8Array {
-	const words = new Uint32Array(memory.buffer);
-	let end = words.length;
-	while (end > 0 && words[end - 1] === 0) end -= 1;
-	return new Uint8Array(memory.buffer, 0, end * Uint32Array.BYTES_PER_ELEMENT).slice();
-}
-
-/**
- * Load Graphviz and bind the layout, every solve starting from what Graphviz
- * held when it was loaded.
- *
- * Putting back what Graphviz held as loaded, its allocator included, hands
- * every solve's objects the same places, so a solve's answer is decided by
- * its graph and options alone, not by which worker answered it or what that
- * worker solved before. What is put back is a few hundred kilobytes, which
- * costs microseconds. The renderer core, which lays every board out, holds
- * no state between calls, and a host loads it before this (ADR 0057).
- * @param load Instantiates Graphviz, answering its instance. It must
- * instantiate it itself: an engine loaded earlier has nothing as loaded to
- * go back to.
- * @returns The layout engine.
- * @throws {Error} When the load did not instantiate one WebAssembly memory.
- */
-export async function loadLayoutEngine(load: () => Promise<Viz>): Promise<LayoutEngine> {
-	const memories: WebAssembly.Memory[] = [];
-	const { instantiate, instantiateStreaming } = WebAssembly;
-	WebAssembly.instantiate = instantiating(instantiate, memories);
-	WebAssembly.instantiateStreaming = streaming(WebAssembly.instantiate);
-	let viz: Viz;
+async function answer(engine: Promise<Solve>, id: number, graph: string): Promise<unknown> {
+	let solve: Solve;
 	try {
-		viz = await load();
-	} finally {
-		WebAssembly.instantiate = instantiate;
-		WebAssembly.instantiateStreaming = instantiateStreaming;
+		solve = await engine;
+	} catch (error) {
+		return { id, error: String(error), fatal: true };
 	}
-	if (memories.length !== 1) {
-		throw new Error(
-			`Loading the layout engine instantiated ${memories.length} WebAssembly memories where Graphviz makes one: load Graphviz in the call, and the renderer core before it.`,
-		);
+	try {
+		return { id, data: solve(graph) };
+	} catch (error) {
+		return { id, error: String(error), fatal: engineAborted(error) };
 	}
-	const solve = createLayoutEngine(viz);
-	const asLoaded = memories.map((memory) => ({ memory, held: heldBytes(memory) }));
-	return (graph) => {
-		for (const { memory, held } of asLoaded) new Uint8Array(memory.buffer).set(held);
-		return solve(graph);
-	};
+}
+
+/**
+ * Serve the layout engine in this worker.
+ * @param scope The worker's global scope.
+ * @param instantiate Instantiates the core the pool handed over, answering its `layOutBoard`.
+ */
+export function serveLayoutEngine(
+	scope: WorkerScope,
+	instantiate: (core: WebAssembly.Module) => Solve | Promise<Solve>,
+): void {
+	let ready: Promise<Solve> = Promise.reject(
+		new Error("The layout worker was asked to solve before it was handed the renderer core."),
+	);
+	ready.catch(() => undefined);
+	let queue: Promise<void> = Promise.resolve();
+	scope.addEventListener("message", (event) => {
+		const message = event.data;
+		if (isCore(message)) {
+			ready = Promise.resolve().then(() => instantiate(message.core));
+			ready.catch(() => undefined);
+			return;
+		}
+		if (!isSolve(message)) return;
+		const engine = ready;
+		queue = queue.then(async () => {
+			const reply = await answer(engine, message.id, message.graph);
+			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker's postMessage has no target origin
+			scope.postMessage(reply);
+			return undefined;
+		});
+	});
 }

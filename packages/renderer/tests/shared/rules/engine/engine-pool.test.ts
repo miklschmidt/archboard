@@ -230,7 +230,7 @@ test.each(["worker error", "engine abort"] as const)(
 		const needed = solve("needed");
 		controller.abort();
 		if (failure === "worker error") workers[0]!.dispatchEvent(new Event("error"));
-		else workers[0]!.answer(0, { error: "program has already aborted!", fatal: true });
+		else workers[0]!.answer(0, { error: "RuntimeError: unreachable", fatal: true });
 
 		expect(await refused).toBe(controller.signal.reason);
 		expect(workers[0]!.terminated).toBe(true);
@@ -352,7 +352,7 @@ test("an engine that aborted is replaced, and the solve it held is sent once mor
 	const { solve, workers } = heldPool(1);
 	const first = solve("a");
 	const second = solve("b");
-	workers[0]!.answer(0, { error: "program has already aborted!", fatal: true });
+	workers[0]!.answer(0, { error: "RuntimeError: unreachable", fatal: true });
 	expect(workers[0]!.terminated).toBe(true);
 	expect(sentTo(workers[1]!)).toEqual(["b"]);
 	workers[1]!.answer(0, { data: "b!" });
@@ -428,8 +428,6 @@ test("a failed replacement constructor rejects all waiting solves and releases t
 
 test("an engine abort, never a layout refusal, marks a worker for replacement", () => {
 	expect(engineAborted(new WebAssembly.RuntimeError("unreachable"))).toBe(true);
-	expect(engineAborted(new Error("program has already aborted!"))).toBe(true);
-	expect(engineAborted(new Error("Aborted(OOM)"))).toBe(true);
 	expect(engineAborted(new Error("Layout relationship e1: Route leg 2 has 4 units"))).toBe(false);
 });
 

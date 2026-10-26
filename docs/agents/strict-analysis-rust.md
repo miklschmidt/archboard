@@ -25,12 +25,20 @@ TypeScript rule that does not carry over, with the reason.
   holds the two rules that no lint can see. Every crate manifest under
   `crates/` inherits the workspace lints, and every `.rs` file under `crates/`
   has 600 lines or fewer, counted as `max-lines` counts them.
+- The third-party crates under `crates/vendor` are not workspace members, and
+  none of these rules reads them: they keep upstream's files, so a later
+  upstream version diffs cleanly against them (`crates/vendor/README.md`).
 
 Every lint is at `warn`, and `lint:core` and `lint:core-docs` turn every
 warning into a failure.
 A build or a test run still works while a fix is under way. The one exception
-is `unsafe_code`, which is `forbid`: no crate needs unsafe code. The code
-that the `wasm-bindgen` macros write passes it.
+is `unsafe_code`, which is `deny`. The code that the `wasm-bindgen` macros
+write passes it. One site needs it: the WebAssembly build names the fast `fma`
+of `crates/archboard-graphviz/src/fma.rs` with `#[unsafe(export_name = "fma")]`,
+so that it takes the place of the slow `fma` of `compiler_builtins` that
+`f64::mul_add` calls (ADR 0058). The function is safe Rust, and the site
+carries the one `#[expect(unsafe_code)]`. `forbid` would refuse that
+`expect`, and no other crate needs one.
 
 ## Exceptions
 

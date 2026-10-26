@@ -22,3 +22,7 @@ serde_json = { version = "1", features = ["float_roundtrip"] }
 # The TypeScript types of the core's contract are generated from its Rust
 # types (src/bin/export-types.rs).
 ts-rs = "12"
+
+[dev-dependencies]
+# The native test lays its solves out with the core's own Graphviz (ADR 0058).
+archboard-graphviz = { path = "../archboard-graphviz" }

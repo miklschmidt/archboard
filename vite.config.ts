@@ -40,7 +40,6 @@ const RENDERER_SOURCES = [
 	"packages/timing/src",
 	"node_modules/@chenglou/pretext/package.json",
 	"node_modules/@remixicon/react/package.json",
-	"node_modules/@viz-js/viz/package.json",
 ];
 
 /**

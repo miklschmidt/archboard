@@ -1,9 +1,10 @@
 // The renderer's host under Bun: the CLI, the rasterizer and the Archboard
 // server's render route.
 //
-// The layout engine is a pool of Bun Workers; the theme colours are read from
-// the shared stylesheet on disk; the core is this checkout's build of it, and
-// it measures and draws every word itself.
+// The layout engine is a pool of Bun Workers, each handed the core this
+// thread compiled; the theme colours are read from the shared stylesheet on
+// disk; the core is this checkout's build of it, and it measures and draws
+// every word itself.
 
 import { readFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
@@ -16,7 +17,7 @@ import {
 	type EngineWorker,
 } from "#shared/rules/engine/engine-pool.ts";
 import { iconPaths } from "#runtime/operations/icon-paths.ts";
-import { loadCore, type Core } from "#runtime/services/core.ts";
+import { compiledCore, loadCore, type Core } from "#runtime/services/core.ts";
 
 let installed = false;
 
@@ -34,16 +35,21 @@ function loadedCore(): Core {
 }
 
 /**
- * Start one engine worker, which keeps Bun alive only while it holds a solve.
+ * Start one engine worker, handed the core this thread compiled and checked,
+ * which keeps Bun alive only while it holds a solve.
  * @returns The worker.
+ * @throws {CoreBuildError} When there is no build, or it was made from other sources.
  * @throws {Error} When this Bun lacks the worker lifetime controls.
  */
 function startEngineWorker(): EngineWorker {
+	const module = compiledCore();
 	const worker = new Worker(new URL("../processes/layout-worker.ts", import.meta.url).href);
 	if (!hasProcessLifetime(worker)) {
 		worker.terminate();
 		throw new Error("Architecture layout requires Bun's worker ref/unref lifecycle API");
 	}
+	// oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker's postMessage has no target origin
+	worker.postMessage({ core: module });
 	return worker;
 }
 

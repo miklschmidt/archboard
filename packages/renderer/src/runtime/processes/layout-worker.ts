@@ -1,43 +1,7 @@
-import { instance } from "@viz-js/viz";
-import type { RendererHost } from "#shared/rules/render/host.ts";
-import { loadLayoutEngine } from "#shared/rules/engine/layout-engine.ts";
-import { engineAborted } from "#shared/rules/engine/engine-pool.ts";
-import { loadCore } from "#runtime/services/core.ts";
+import { serveLayoutEngine } from "#shared/rules/engine/layout-engine.ts";
+import { instantiateCore } from "#runtime/services/core.ts";
 
-type Solve = RendererHost["solve"];
-interface Request {
-	readonly id: number;
-	readonly graph: Parameters<Solve>[0];
-}
-
-// An initialization promise is shared by every request in this worker. The
-// engine's WASM state stays private to the worker; requests run serially, each
-// from the engine's memory as loaded. The core loads first, outside the
-// engine's load, and the worker refuses to start on a core built from other
-// sources (ADR 0057).
-const ready = (async () => {
-	loadCore();
-	return await loadLayoutEngine(instance);
-})();
-let initFailure = false;
-void ready.catch(() => {
-	initFailure = true;
-});
-let queue: Promise<void> = Promise.resolve();
-
-self.addEventListener("message", (event: MessageEvent<Request>) => {
-	const request = event.data;
-	queue = queue.then(async () => {
-		try {
-			const solve = await ready;
-			const data = solve(request.graph);
-			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker has no target origin
-			self.postMessage({ id: request.id, data });
-		} catch (error) {
-			const fatal = initFailure || engineAborted(error);
-			// oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker has no target origin
-			self.postMessage({ id: request.id, error: String(error), fatal });
-		}
-		return undefined;
-	});
-});
+// The Bun host's layout worker. It instantiates the core the host's thread
+// compiled and checked against the checkout's sources (ADR 0057), so it reads,
+// hashes and compiles nothing itself, and solves one graph at a time.
+serveLayoutEngine(self, (core) => instantiateCore(core).layOutBoard);

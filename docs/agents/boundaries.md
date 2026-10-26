@@ -16,6 +16,7 @@ Product source lives in workspaces. The root `package.json` lists `packages/*` a
 packages/<name>/   # a library that owns one behavior. See Packages.
 apps/<name>/       # a process entry that nothing imports: cli, server, web, workbench-example. See Apps.
 crates/<crate>/    # a Rust crate of the root Cargo workspace (ADR 0057)
+crates/vendor/     # third-party crates the core builds in, no workspace members (crates/vendor/README.md)
 tests/system/      # repository, process, browser and full-product tests across owners
 scripts/, tools/   # repository scripts and the Oxlint plugin
 vite.config.ts     # the build host of the browser app
@@ -453,7 +454,9 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   (`crates/archboard-render`), and answers the document, its atlas, each subject's appearance and the picture's key.
   It asks the host for two things through `RenderHost`: each solve of the layout, which `engine/` runs side by side on
   as many workers as the place has and calls off when the core drops it, and the path data of the icons it draws. A
-  worker runs one solve with the core's `layOutBoard`, which asks the host's Graphviz for each graph it ranks.
+  worker (`engine/layout-engine.ts`) instantiates the core its host's thread compiled and handed it, and runs one
+  solve at a time with the core's `layOutBoard`, which lays out each graph it ranks with the core's own Graphviz
+  (`crates/archboard-graphviz` over the vendored graphviz-pure, ADR 0058).
 - `runtime/` holds the Bun host. `services/bun-host.ts` installs the core, the theme colors, the icon paths and the
   pool of layout workers. `processes/layout-worker.ts` is the worker thread, started with
   `new URL("../processes/layout-worker.ts", import.meta.url)`. `operations/` has the render entry points, the
@@ -465,7 +468,7 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   `startBrowserRenderer()` and draws a board with `drawBoardHere`. The worker is started inside the
   package with `new Worker(new URL("../workers/layout-worker.ts", import.meta.url), { type: "module" })`, which Vite
   bundles into its own chunk. So there is no `./worker` subpath: no code outside the package runs the worker. The
-  worker loads the renderer core, whose glue fetches the core's WebAssembly beside it, and then Graphviz.
+  page fetches and compiles the core's WebAssembly, served beside its glue, and hands each worker the compiled module.
 - `./picture` is what a pane reads of a picture besides its pixels: the words of the key it lists, the inks and marks
   the canvas draws with, the code warnings, and what a render asks and answers. The kinds the key lists and each
   subject's appearance arrive with the picture (`@archboard/board/render-reply`). `./shell-geometry` is the shell's fixed geometry and the
