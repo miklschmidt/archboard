@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 145,
+	"version": 146,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-26T11:10:01.233Z",
+	"updatedAt": "2026-10-26T11:26:42.925Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -233,6 +233,32 @@
 				"flows": [
 					"2UbNBuFP"
 				]
+			}
+		},
+		{
+			"id": "i5PmVM5D",
+			"name": "Pane beside and ask",
+			"grammar": "architecture",
+			"summary": "How a pane opens a variant in the pane beside it, learns what the linked pane shows, and asks the agent a design question.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"HggZR41l",
+					"txs9GZyL",
+					"zkDth8gp",
+					"clycGnpR",
+					"c4LPnwh5",
+					"dtYjWvlf",
+					"TY7m2mtd",
+					"DW1hIFRx",
+					"pY2w7QLg",
+					"HSvgZcmx",
+					"xsn0RvSi",
+					"G4NHQC25",
+					"cLeaiTWy"
+				],
+				"edges": [],
+				"flows": []
 			}
 		}
 	],
