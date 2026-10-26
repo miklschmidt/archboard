@@ -8,6 +8,9 @@ import {
 	ArchitectureClaimListSchema,
 	ArchitectureClaimReleaseSchema,
 	ArchitectureModelReadSchema,
+	ArchitecturePublicationSchema,
+	ArchitecturePublicationDestinationSchema,
+	ArchitecturePublicationRequestSchema,
 	ArchitectureCheckpointRetainSchema,
 	ArchitectureCheckpointListSchema,
 	type ArchitectureCheckpointRequest,
@@ -73,7 +76,7 @@ function listArchitectureCheckpointsOnServer() {
 }
 
 /**
- * Send one fully stated description edit through the shared server operation.
+ * Send one complete architecture intent through the shared server operation.
  * @param input The complete caller input.
  * @returns The shared edit result or structured refusal.
  */
@@ -85,7 +88,7 @@ function editArchitectureModuleOnServer(input: z.infer<typeof ArchitectureModule
 	);
 }
 /**
- * Claim explicit modules without holding the installation lease.
+ * Claim explicit structure and subject scopes without holding the installation lease.
  * @param input The complete caller input.
  * @returns The shared claim result or structured refusal.
  */
@@ -148,4 +151,76 @@ export {
 	readArchitectureModelOnServer,
 	retainArchitectureCheckpointOnServer,
 	listArchitectureCheckpointsOnServer,
+};
+
+/**
+ * Read one checkpoint's durable publication evidence.
+ * @param checkpoint The exact checkpoint identity.
+ * @returns The shared publication outcome.
+ */
+function readArchitecturePublicationOnServer(checkpoint: string) {
+	return architectureResult(
+		ArchitecturePublicationSchema,
+		`/api/architecture/publication?${new URLSearchParams({ checkpoint })}`,
+	);
+}
+
+/**
+ * Configure an explicit archive destination.
+ * @param input The named remote and complete archive ref.
+ * @returns The destination and retention limitation.
+ */
+function configureArchitecturePublicationOnServer(
+	input: z.infer<typeof ArchitecturePublicationDestinationSchema>,
+) {
+	return architectureResult(
+		ArchitecturePublicationSchema,
+		"/api/architecture/publication/configure",
+		{
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(input),
+		},
+	);
+}
+
+/**
+ * Publish retained history through the common runtime.
+ * @param input The configured destination and exact checkpoint.
+ * @returns The shared publication outcome.
+ */
+function publishArchitectureHistoryOnServer(
+	input: z.infer<typeof ArchitecturePublicationRequestSchema>,
+) {
+	return architectureResult(
+		ArchitecturePublicationSchema,
+		"/api/architecture/publication/publish",
+		{
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(input),
+		},
+	);
+}
+
+/**
+ * Restore the requested archive closure through the common runtime.
+ * @param input The configured destination and exact checkpoint.
+ * @returns The shared recovery outcome.
+ */
+function fetchArchitectureHistoryOnServer(
+	input: z.infer<typeof ArchitecturePublicationRequestSchema>,
+) {
+	return architectureResult(ArchitecturePublicationSchema, "/api/architecture/publication/fetch", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(input),
+	});
+}
+
+export {
+	readArchitecturePublicationOnServer,
+	configureArchitecturePublicationOnServer,
+	publishArchitectureHistoryOnServer,
+	fetchArchitectureHistoryOnServer,
 };

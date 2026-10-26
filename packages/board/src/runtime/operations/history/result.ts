@@ -1,3 +1,4 @@
+import { operationSubjects } from "#shared/rules/model-operation.ts";
 import type { ArchitectureModuleEditResult } from "#shared/schemas/model-operations.ts";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import type { ArchitectureModelRead, ArchitectureCheckpoint } from "#shared/schemas/model.ts";
@@ -6,9 +7,28 @@ import { ArchiveError, ARCHIVE_REF, CheckpointRecordSchema } from "#runtime/stor
 
 type Failure = Extract<ArchitectureModelRead, { success: false }>;
 const recovery: Partial<Record<Failure["code"], string>> = {
+	MODEL_INVALID: "Repair the requested changes and read the model again before a new intent.",
+	MODULE_NOT_FOUND:
+		"Read the model and use an existing qualified module ID or a unique current or former name.",
+	MODULE_AMBIGUOUS: "Use one of the qualified module identities in the diagnostic.",
+	RELATIONSHIP_NOT_FOUND: "Read the model relationships and use an existing qualified identity.",
+	NODE_HAS_CHILDREN: "Reparent or remove the remaining children in the same batch.",
+	ARCHIVE_UNREADABLE:
+		"Inspect the named archive ref. Preserve unrelated source branches and restore a complete Archboard archive or configure its correct independent ref.",
+	ARCHIVE_NOT_PORTABLE:
+		"Keep this checkpoint local. Publication cannot redact immutable checkpoint metadata. Future retained source associations require a portable repository identity rather than a machine path.",
+	ARCHIVE_NETWORK_FAILED:
+		"Restore access to the configured remote and retry the same explicit publish or fetch request. Local architecture remains retained.",
+	PUBLICATION_NOT_CONFIGURED:
+		"Configure an existing Git remote and a full archive ref before publishing or fetching history.",
+	PUBLICATION_DESTINATION_CHANGED:
+		"Read the intended remote configuration and explicitly configure the publication destination again.",
+	PUBLICATION_INVALID:
+		"Use one named Git remote with one fetch URL, one push URL, and a valid full archive branch ref.",
 	MODEL_BUSY: "Retry after the short installation lease releases.",
 	TARGET_CHANGED: "Read the intended model and current state again before preparing a new intent.",
-	CLAIM_REQUIRED: "Claim every affected module identity before editing it.",
+	CLAIM_REQUIRED:
+		"Claim every affected existing subject and required model structure scope before editing.",
 	CLAIM_HELD: "Wait for the owner to release the scope, or ask the reader to take the claim back.",
 	CLAIM_REVOKED:
 		"Stop the former intent. Obtain a new explicit claim before preparing another edit.",
@@ -91,14 +111,23 @@ async function historyResult<T>(
  * Present one retained record without private archive fields.
  * @param id The immutable checkpoint identity.
  * @param record The retained checkpoint record.
+ * @param publication The current explicit publication evidence.
  * @returns Public checkpoint metadata.
  */
 function checkpointMetadata(
 	id: string,
 	record: ReturnType<typeof CheckpointRecordSchema.parse>,
+	publication: ArchitectureCheckpoint["publication"] = "saved-locally",
 ): ArchitectureCheckpoint {
-	const { schemaVersion: _version, kind: _kind, vault: _vault, edit: _edit, ...metadata } = record;
-	return { ...metadata, id, publication: "saved-locally" };
+	const {
+		schemaVersion: _version,
+		kind: _kind,
+		vault: _vault,
+		edit: _edit,
+		subjects: _subjects,
+		...metadata
+	} = record;
+	return { ...metadata, id, publication };
 }
 
 /**
@@ -124,7 +153,7 @@ function editResult(
 		reconciliation: false,
 		operationId: request.operationId,
 		target: request.target,
-		subjects: [request.subject],
+		subjects: operationSubjects(request, record.subjects),
 		before: request.expectedRevision,
 		after: record.revision,
 		checkpoint: checkpointMetadata(id, record),

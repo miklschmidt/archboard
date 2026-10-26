@@ -4,6 +4,7 @@ const rename = fs.renameSync;
 const sync = fs.fsyncSync;
 const unlink = fs.unlinkSync;
 let renamed = "";
+let removed = "";
 fs.renameSync = (from, to) => {
 	rename(from, to);
 	renamed = String(to);
@@ -16,6 +17,7 @@ fs.fsyncSync = (fd) => {
 		const phase = JSON.parse(fs.readFileSync(renamed, "utf8")).phase;
 		if (point === phase) process.exit(86);
 	}
+	if (point === "removed" && removed.endsWith("/worker.module.json")) process.exit(86);
 	if (point === "file" && renamed.endsWith("/gateway.module.json")) process.exit(86);
 };
 fs.unlinkSync = (path) => {
@@ -25,4 +27,5 @@ fs.unlinkSync = (path) => {
 	)
 		throw new Error("fixture cleanup refusal");
 	unlink(path);
+	removed = String(path);
 };

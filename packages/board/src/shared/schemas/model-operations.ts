@@ -17,7 +17,7 @@ const ArchitectureClaimRequestSchema = z
 		target: ArchitectureTargetSchema,
 		writer: SingleLineTextSchema,
 		reason: SingleLineTextSchema.max(140),
-		subjects: z.array(QualifiedSubjectIdSchema).min(1),
+		subjects: z.array(z.union([QualifiedSubjectIdSchema, SemanticIdSchema])).min(1),
 	})
 	.strict();
 const ArchitectureClaimSchema = ArchitectureClaimRequestSchema.extend({
@@ -39,7 +39,7 @@ const ArchitectureClaimReleaseSchema = z
 const ArchitectureClaimTakeBackSchema = z
 	.object({ claim: SemanticIdSchema, origin: z.literal("human") })
 	.strict();
-const ArchitectureModuleEditSchema = z
+const DescriptionEditSchema = z
 	.object({
 		target: ArchitectureTargetSchema,
 		subject: QualifiedSubjectIdSchema,
@@ -51,6 +51,56 @@ const ArchitectureModuleEditSchema = z
 		description: ArchitectureModuleSchema.shape.description.unwrap(),
 	})
 	.strict();
+const ModuleFieldsSchema = ArchitectureModuleSchema.omit({
+	schemaVersion: true,
+	id: true,
+	outgoing: true,
+	formerNames: true,
+}).extend({ parent: SingleLineTextSchema.optional() });
+const RelationshipFieldsSchema = ArchitectureModuleSchema.shape.outgoing.element
+	.omit({ id: true })
+	.extend({ to: SingleLineTextSchema });
+const StructureChangeSchema = z.discriminatedUnion("type", [
+	z.object({ type: z.literal("remove-module"), subject: SingleLineTextSchema }).strict(),
+	z
+		.object({
+			type: z.literal("add-relationship"),
+			source: SingleLineTextSchema,
+			relationship: RelationshipFieldsSchema,
+		})
+		.strict(),
+	z.object({ type: z.literal("remove-relationship"), subject: QualifiedSubjectIdSchema }).strict(),
+	z
+		.object({
+			type: z.literal("edit-relationship"),
+			subject: QualifiedSubjectIdSchema,
+			source: SingleLineTextSchema.optional(),
+			set: RelationshipFieldsSchema.partial()
+				.extend({ emphasis: RelationshipFieldsSchema.shape.emphasis.removeDefault().optional() })
+				.optional(),
+			clear: z.array(z.enum(["label", "description", "traffic", "anchor"])).optional(),
+		})
+		.strict(),
+	z.object({ type: z.literal("add-module"), module: ModuleFieldsSchema }).strict(),
+	z
+		.object({
+			type: z.literal("edit-module"),
+			subject: SingleLineTextSchema,
+			set: ModuleFieldsSchema.partial().optional(),
+			clear: z
+				.array(
+					z.enum(["responsibility", "description", "parent", "groups", "binding", "documents"]),
+				)
+				.optional(),
+		})
+		.strict(),
+]);
+const ArchitectureModuleEditSchema = z.union([
+	DescriptionEditSchema,
+	DescriptionEditSchema.omit({ subject: true, description: true })
+		.extend({ changes: z.array(StructureChangeSchema).min(1) })
+		.strict(),
+]);
 const ArchitectureEditSuccessSchema = z
 	.object({
 		success: z.literal(true),

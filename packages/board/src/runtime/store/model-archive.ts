@@ -5,6 +5,7 @@ import { git, GitCommandError } from "@archboard/process/git";
 import { repoRootOf, repoIdentityAt } from "@archboard/workspace/checkouts";
 import {
 	ArchitectureCheckpointSchema,
+	QualifiedSubjectIdSchema,
 	type ArchitectureCheckpoint,
 	type ArchitectureModel,
 	type ArchitectureModelRead,
@@ -19,6 +20,7 @@ const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, pub
 		kind: z.literal("checkpoint"),
 		vault: z.string(),
 		edit: ArchitectureModuleEditSchema.optional(),
+		subjects: z.array(QualifiedSubjectIdSchema).optional(),
 	})
 	.strict();
 const ArchiveRecordSchema = z.discriminatedUnion("kind", [
@@ -519,12 +521,14 @@ async function retainOperation(
 /**
  * Read archive records in traversal order without assigning architectural meaning.
  * @param context The caller's checkout.
+ * @param tips The retained archive roots, or the local archive tip by default.
  * @returns The retained record identities and metadata.
  */
-async function archiveRecords(context: ArchiveContext) {
+async function archiveRecords(context: ArchiveContext, tips?: string[]) {
 	const tip = await archiveTip(context);
-	if (tip === undefined) return [];
-	const history = await git(context.root, ["rev-list", tip], { maxOutputBytes: Infinity });
+	const roots = tips ?? (tip === undefined ? [] : [tip]);
+	if (roots.length === 0) return [];
+	const history = await git(context.root, ["rev-list", ...roots], { maxOutputBytes: Infinity });
 	return settledValues(
 		(history ?? "")
 			.split("\n")

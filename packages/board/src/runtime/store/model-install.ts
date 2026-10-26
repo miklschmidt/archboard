@@ -98,10 +98,20 @@ async function requirePrepared(context: ArchiveContext, journal: ModelJournal) {
 	const record = await readRecord(context, journal.checkpoint);
 	if (record.kind !== "checkpoint")
 		throw new ArchiveError("RECOVERY_CONFLICT", "The journal names no architecture checkpoint.");
-	const expected = { vault: context.vault, edit: journal.request, revision: journal.after };
+	const expected = {
+		vault: context.vault,
+		edit: journal.request,
+		revision: journal.after,
+		subjects: journal.subjects,
+	};
 	if (
 		!isDeepStrictEqual(
-			{ vault: record.vault, edit: record.edit, revision: record.revision },
+			{
+				vault: record.vault,
+				edit: record.edit,
+				revision: record.revision,
+				subjects: record.subjects,
+			},
 			expected,
 		) ||
 		!isDeepStrictEqual(journal.before, journal.request.expectedRevision)

@@ -26,7 +26,7 @@ The temporary repository keeps this example separate from the authoritative lega
 ```bash
 checkpoint_fixture=$(mktemp -d)
 cp -R examples/canonical-model/.archboard "$checkpoint_fixture/.archboard"
-git -C "$checkpoint_fixture" init --quiet
+git -C "$checkpoint_fixture" init --quiet --initial-branch=main
 git -C "$checkpoint_fixture" add .archboard
 git -C "$checkpoint_fixture" commit -m 'test: seed canonical architecture'
 archboard model read -C "$checkpoint_fixture" > "$checkpoint_fixture/reading.json"
@@ -52,6 +52,55 @@ If the browser shows this model, open the reading menu.
 Select the retained checkpoint.
 Select Current to return to current files.
 Each reading shows its own architecture and source evidence.
+
+## Publish and recover a local example
+
+Complete the exact checkpoint workflow above first.
+These commands use its temporary repository and checkpoint identity.
+The bare remote below is disposable and receives only that example's history.
+
+```bash
+archive_fixture=$(mktemp -d)
+git init --bare --quiet --initial-branch=main "$archive_fixture/history.git"
+git -C "$checkpoint_fixture" remote add archive "file://$archive_fixture/history.git"
+archboard model publication-configure -C "$checkpoint_fixture" \
+  --remote archive --ref refs/heads/archboard-history
+archboard model publication "$checkpoint_id" -C "$checkpoint_fixture"
+git -C "$checkpoint_fixture" push archive main:main
+archboard model publication "$checkpoint_id" -C "$checkpoint_fixture"
+archboard model publish "$checkpoint_id" -C "$checkpoint_fixture" \
+  --remote archive --ref refs/heads/archboard-history
+archive_reader="$archive_fixture/reader"
+git clone --quiet --depth=1 --single-branch --branch=main \
+  "file://$archive_fixture/history.git" "$archive_reader"
+git -C "$archive_reader" remote add archive "file://$archive_fixture/history.git"
+archboard model publication-configure -C "$archive_reader" \
+  --remote archive --ref refs/heads/archboard-history
+archboard model read -C "$archive_reader" --checkpoint "$checkpoint_id"
+archboard model fetch "$checkpoint_id" -C "$archive_reader" \
+  --remote archive --ref refs/heads/archboard-history
+archboard model read -C "$archive_reader" --checkpoint "$checkpoint_id"
+archboard model checkpoints -C "$archive_reader"
+```
+
+Both status reads before explicit publication return `saved-locally`.
+The ordinary code push does not publish the archive.
+The initial exact read in the shallow reader returns `ARCHITECTURE_UNAVAILABLE` and exits 2.
+The explicit fetch restores the exact checkpoint and its referenced baselines.
+The final reading preserves the checkpoint identity and reports `published`.
+The source checkout stays on its original HEAD.
+
+The result reports the remote retention limitation through `retention`.
+This example installs no rewrite or deletion protection on the disposable remote.
+For a shared remote, its owner must establish those controls and maintain backups.
+The focused runtime owners also cover network loss, signed stale-publication joins, shallow archive recovery, and independent current models.
+The browser shows the selected checkpoint with its sharing status.
+Select Set sharing destination to enter the configured remote and archive ref.
+Select Publish history to send the archive explicitly.
+After a network failure, select Retry publication when the remote returns.
+For missing history, select Fetch this reading.
+The reading stays selected while the archive restores its exact content.
+The browser keeps the remote retention limitation visible beside these controls.
 
 ## Durable description edit
 
@@ -120,3 +169,66 @@ Stable external edits refresh the reading automatically.
 Invalid input or disconnected updates leave the last coherent reading visible with a stale notice.
 Repairing the files or reconnecting restores a fresh reading without changing the selected subject.
 Exact checkpoint readings remain independent of current updates.
+
+## Module rename and relationship transfer
+
+Run this workflow from this Archboard checkout with a configured Git identity and signer.
+Start this checkout's server with `archboard start` before the first model command.
+The authored `structure-changes.json` supplies one batch, which holds every change for one intent.
+This batch renames Gateway and transfers Dispatch to Worker without changing either identity.
+
+```bash
+structure_fixture_dir=$(mktemp -d)
+cp -R examples/canonical-model/.archboard "$structure_fixture_dir/.archboard"
+git -C "$structure_fixture_dir" init --quiet --initial-branch=main
+git -C "$structure_fixture_dir" add .archboard
+git -C "$structure_fixture_dir" commit -m 'test: seed canonical structure fixture'
+archboard model read -C "$structure_fixture_dir" > "$structure_fixture_dir/reading.json"
+bun -e '
+const reading = await Bun.file(process.argv[1]).json();
+if (!reading.success || reading.manifest.current === null) process.exit(1);
+console.log(JSON.stringify({
+  target: { model: reading.manifest.id, state: reading.manifest.current.id },
+  writer: "fixture-agent", reason: "changing structure",
+  subjects: ["Shop#Gateway", "Shop#Worker", "Shop#Dispatch"]
+}));
+' "$structure_fixture_dir/reading.json" > "$structure_fixture_dir/claim.json"
+archboard model claim -C "$structure_fixture_dir" --input "$structure_fixture_dir/claim.json" > "$structure_fixture_dir/claimed.json"
+bun -e '
+const reading = await Bun.file(process.argv[1]).json();
+const claimed = await Bun.file(process.argv[2]).json();
+const changes = await Bun.file(process.argv[3]).json();
+if (!claimed.success) process.exit(1);
+console.log(JSON.stringify({
+  target: claimed.claim.target, expectedRevision: reading.revision,
+  operationId: "fixture-structure-1", writer: "fixture-agent", claim: claimed.claim.id,
+  ...changes
+}));
+' "$structure_fixture_dir/reading.json" "$structure_fixture_dir/claimed.json" \
+  examples/canonical-model/structure-changes.json > "$structure_fixture_dir/edit.json"
+archboard model edit -C "$structure_fixture_dir" --input "$structure_fixture_dir/edit.json" \
+  --doing "renaming the gateway and transferring dispatch" > "$structure_fixture_dir/edited.json"
+archboard model edit -C "$structure_fixture_dir" --input "$structure_fixture_dir/edit.json" \
+  --doing "renaming the gateway and transferring dispatch" > "$structure_fixture_dir/retried.json"
+archboard model read 'Shop#Gateway' -C "$structure_fixture_dir"
+git -C "$structure_fixture_dir" diff --name-only
+bun -e '
+const claimed = await Bun.file(process.argv[1]).json();
+console.log(JSON.stringify({ claim: claimed.claim.id, writer: "fixture-agent" }));
+' "$structure_fixture_dir/claimed.json" > "$structure_fixture_dir/release.json"
+archboard model release -C "$structure_fixture_dir" --input "$structure_fixture_dir/release.json"
+```
+
+The changed tracked files are `gateway.module.json` and `worker.module.json` inside the fixture vault.
+The Gateway keeps its ID, filename, and former names, including the newly retained name `Gateway`.
+Dispatch keeps its ID, metadata, and evidence anchor.
+Its new source is Worker and its new target is Gateway.
+The retry returns the same checkpoint and complete affected subject set.
+The child module file and manifest remain byte-identical.
+Use the canonical model reference for module additions, removals, reparenting, and relationship field clearing.
+
+If the browser already shows Gateway, its details update to API after the operation.
+The incoming connection now names Worker, while the outgoing Dispatch connection is absent.
+A reparented module keeps its selection and identifies its parent in the details.
+Removing the selected module shows an unavailable selection instead of opening another module.
+A retained reading still shows the original Gateway and Dispatch connection.

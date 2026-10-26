@@ -82,3 +82,50 @@ Later composition and installation must validate the complete candidate before a
 CLI and server adapters share these schemas and runtime operations.
 The public runtime tests use temporary files and disposable Git repositories.
 Inventory does not retain external source code or referenced document contents.
+
+## Canonical structure authoring
+
+TASK-549.04 extends the existing edit operation with a batch of module and relationship changes.
+A batch holds every change for one intent.
+The shared runtime validates the whole candidate before the existing durable transaction installs its affected files.
+The CLI and HTTP adapters use the same schema and operation.
+The earlier description request remains supported.
+
+New subjects use the model namespace and the existing identity authority.
+Callers cannot choose a new subject ID or replace a continuing ID.
+New module files use the allocated local ID as their filename.
+Renames preserve former names, identities, containment, and file locations.
+Field omission preserves the existing value, and an explicit clear list removes optional fields.
+Null never requests deletion.
+Authored order remains a semantic field with stable identity as its tie breaker.
+
+Each relationship belongs to its source module file.
+Changing its source transfers the continuing relationship between files in one transaction.
+The transfer preserves all fields that the caller leaves unstated.
+Incoming relationships remain derived.
+Removal cascades incident relationships unless the same batch explicitly rescues them through valid endpoints.
+A removed container cannot leave children behind.
+The caller must reparent or remove those children in the same batch.
+Removed module and relationship IDs remain reserved in the manifest.
+Existing proposal inheritance and restoration confirmations still belong to proposal operations.
+Current-state edits create no proposal ancestry and bypass no confirmation requirement.
+
+Claims cover explicit modules, relationships, and the model ID as a structure scope.
+That structure scope protects identity allocation and retirement without claiming every module.
+A transfer requires its old and new sources and endpoints, plus the relationship identity.
+Containment changes include former and new ancestor paths and moved descendants.
+One claim must cover the affected existing subjects and any required structure scope.
+A competing claim refuses admission, while unrelated subjects remain available.
+The complete read token continues to cover all recognized paths, exact bytes, and policy.
+
+Each signed operation retains its affected identities beside the original request.
+Recovery details, results, and completion events derive their subjects from that retained record.
+Old description records retain their original single-subject interpretation.
+A recovered transfer never allocates another identity or repeats the accepted operation.
+
+The existing event stream refreshes current browser readings after the complete structural operation.
+Module selection follows identity through a rename or containment change.
+The details show the selected module's parent.
+Removing the selected module leaves an explicit missing state without selecting a replacement.
+Pinned historical readings remain unchanged by those current events.
+Unrelated files remain byte-identical.

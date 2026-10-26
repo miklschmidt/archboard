@@ -30,6 +30,10 @@ An agent's exclusive scope of named architecture subjects.
 The claim identifies its writer, purpose, and start time.
 A reader can take it back without undoing completed work.
 
+Structure scope:
+The model identity claimed for subject allocation and retirement.
+It protects identity changes without claiming every module.
+
 Model operation:
 One stated architectural intent with a stable retry identity.
 The operation names its target state and complete observed input revision.
@@ -45,6 +49,14 @@ It remains independent of the current architecture in any checkout.
 **Archive synchronization**:
 A record that preserves concurrent archive histories without merging their architecture.
 It is neither a state nor an adoption.
+
+Archive publication:
+An explicit exchange that makes retained architecture available at a configured remote and archive ref.
+A source-code push does not establish this fact.
+
+Publication evidence:
+The retained result of the last successful explicit archive exchange.
+It establishes observed availability, not permanent remote protection.
 
 **Source evidence**:
 The source revision associated with an architectural reading and its uncommitted-code status.
