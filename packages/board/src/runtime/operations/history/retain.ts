@@ -85,6 +85,7 @@ async function resumeRetention(
 	const record = await readRecord(context, id);
 	if (
 		record.kind !== "checkpoint" ||
+		record.edit !== undefined ||
 		record.vault !== context.vault ||
 		JSON.stringify(record.request) !== JSON.stringify(request)
 	)

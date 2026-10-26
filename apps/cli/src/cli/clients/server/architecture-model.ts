@@ -1,6 +1,8 @@
 import type { z } from "zod";
 import {
-	ArchitectureModelReadSchema,
+	ArchitectureModuleEditSchema,
+ ArchitectureModuleEditResultSchema, ArchitectureRecoveryResultSchema, ArchitectureClaimRequestSchema, ArchitectureClaimResultSchema, ArchitectureClaimListSchema, ArchitectureClaimReleaseSchema,
+ ArchitectureModelReadSchema,
 	ArchitectureCheckpointRetainSchema,
 	ArchitectureCheckpointListSchema,
 	type ArchitectureCheckpointRequest,
@@ -65,7 +67,27 @@ function listArchitectureCheckpointsOnServer() {
 	return architectureResult(ArchitectureCheckpointListSchema, "/api/architecture/checkpoints");
 }
 
+/** Send one fully stated description edit through the shared server operation. */
+function editArchitectureModuleOnServer(input: z.infer<typeof ArchitectureModuleEditSchema>) {
+ return architectureResult(ArchitectureModuleEditResultSchema,"/api/architecture/module",jsonPost(input));
+}
+/** Claim explicit modules without holding the installation lease. */
+function claimArchitectureSubjectsOnServer(input: z.infer<typeof ArchitectureClaimRequestSchema>) {
+ return architectureResult(ArchitectureClaimResultSchema,"/api/architecture/claims",jsonPost(input));
+}
+/** List the current subject claims. */
+function readArchitectureClaimsOnServer() { return architectureResult(ArchitectureClaimListSchema,"/api/architecture/claims"); }
+/** Release a standing claim owned by the caller. */
+function releaseArchitectureClaimOnServer(input: z.infer<typeof ArchitectureClaimReleaseSchema>) {
+ return architectureResult(ArchitectureClaimListSchema,"/api/architecture/claims/release",jsonPost(input));
+}
+/** Resume the checkout's pending durable journal. */
+function recoverArchitectureModelOnServer() { return architectureResult(ArchitectureRecoveryResultSchema,"/api/architecture/recover",jsonPost({})); }
+/** Encode one complete operation body. */
+function jsonPost(input: unknown): RequestInit { return {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(input)}; }
+
 export {
+ editArchitectureModuleOnServer, claimArchitectureSubjectsOnServer, readArchitectureClaimsOnServer, releaseArchitectureClaimOnServer, recoverArchitectureModelOnServer,
 	readArchitectureModelOnServer,
 	retainArchitectureCheckpointOnServer,
 	listArchitectureCheckpointsOnServer,

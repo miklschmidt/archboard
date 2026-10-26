@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-backend'
 created_date: '2026-10-26T05:24:00Z'
-updated_date: '2026-10-26T10:16:00Z'
+updated_date: '2026-10-26T10:30:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -70,3 +70,9 @@ TASK-549.02
 
 Affected drafts: Board persistence@TASK-549.03, Command interface@TASK-549.03, Archboard server routes@TASK-549.03. Browser proposals remain parent-owned. The public read signature stays synchronous and its success schema stays unchanged. Current reads block pending installs. Explicit recovery and a vault-scoped snapshot/news stream supply the browser integration.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+The backend now edits one claimed description through the public runtime, CLI and HTTP contracts. Exact reads keep their schema and synchronous signature. Runtime cases cover retry identity, retained results, visible claim data, take-back, coherent news, foreign inputs and real interruption recovery. A cleanup retry regression exposed a missing-ref deletion bug and now passes. Browser work remains parent-owned. Detailed evidence remains in task-549.03-evidence outside the repository.
+<!-- SECTION:NOTES:END -->

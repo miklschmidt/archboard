@@ -278,4 +278,26 @@ function fsyncDir(dir: string): void {
 	}
 }
 
-export { moveFileDurably, tempPathFor, unlinkDurably, writeFileAtomic };
+/**
+ * Create private state directories and persist their directory entries.
+ * @param directory The complete directory path.
+ */
+function mkdirDurably(directory: string): void {
+	const first = fs.mkdirSync(directory, { recursive: true });
+	if (first === undefined) return;
+	let at = path.resolve(directory);
+	for (;;) {
+		fsyncDir(at);
+		fsyncDir(path.dirname(at));
+		if (at === path.resolve(first)) return;
+		at = path.dirname(at);
+	}
+}
+
+export {
+	mkdirDurably,
+	moveFileDurably,
+	tempPathFor,
+	unlinkDurably,
+	writeFileAtomic,
+};
