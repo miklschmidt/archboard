@@ -12,7 +12,14 @@ const modelReadContract = defineCommand({
 		"Returns ordered root modules, authored details, source-owned relationships and the exact input revision. A module selector accepts a qualified id or a unique name. Legacy vaults require explicit migration.",
 	examples: ["archboard model read", "archboard model read 'Shop#Gateway' -C /tmp/shop"],
 	parameters: [
- {kind:"option",key:"flow",spellings:["--flow"],value:"required",placeholder:"id",description:"Select one flow by qualified identity or unique current or former name"},
+		{
+			kind: "option",
+			key: "flow",
+			spellings: ["--flow"],
+			value: "required",
+			placeholder: "id",
+			description: "Select one flow by qualified identity or unique current or former name",
+		},
 		{
 			kind: "option",
 			key: "checkpoint",
@@ -29,7 +36,11 @@ const modelReadContract = defineCommand({
 		},
 	],
 	input: {
-		ingress: z.object({ module: z.string().optional(), checkpoint: z.string().optional(),flow:z.string().optional() }),
+		ingress: z.object({
+			module: z.string().optional(),
+			checkpoint: z.string().optional(),
+			flow: z.string().optional(),
+		}),
 	},
 	result: ArchitectureModelReadSchema,
 	output: {
@@ -76,7 +87,7 @@ const modelReadContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "model read");
-		const result = await readArchitectureModelOnServer(input.module, input.checkpoint,input.flow);
+		const result = await readArchitectureModelOnServer(input.module, input.checkpoint, input.flow);
 		return {
 			result,
 			...(result.success

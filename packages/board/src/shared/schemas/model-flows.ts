@@ -3,7 +3,7 @@ import {
 	QualifiedSubjectIdSchema,
 	SemanticIdSchema,
 	DisplayNameSchema,
- SingleLineTextSchema,
+	SingleLineTextSchema,
 } from "#shared/schemas/primitives.ts";
 import {
 	FlowMessageSchema,
@@ -20,18 +20,30 @@ const MessageSchema = FlowMessageSchema.safeExtend({
 });
 const DecisionSchema = FlowDecisionSchema.omit({ alternatives: true }).extend({
 	id: QualifiedSubjectIdSchema,
+	/**
+	 * Resolve recursive alternatives from the existing semantic contract.
+	 * @returns The ordered alternative schema.
+	 */
 	get alternatives(): z.ZodArray<typeof AlternativeSchema> {
 		return alternativesOf(AlternativeSchema);
 	},
 });
 const AlternativeSchema = z.strictObject({
 	label: FlowDecisionSchema.shape.alternatives.element.shape.label,
+	/**
+	 * Resolve recursive steps from the existing semantic contract.
+	 * @returns The ordered step schema.
+	 */
 	get steps(): z.ZodArray<typeof StepSchema> {
 		return z.array(StepSchema);
 	},
 });
 const LoopSchema = FlowLoopSchema.omit({ steps: true }).extend({
 	id: QualifiedSubjectIdSchema,
+	/**
+	 * Resolve recursive steps from the existing semantic contract.
+	 * @returns The ordered step schema.
+	 */
 	get steps(): z.ZodArray<typeof StepSchema> {
 		return z.array(StepSchema).min(1);
 	},
@@ -52,35 +64,54 @@ const FlowCollectionSchema = z.strictObject({
 
 const NewAlternativeSchema = z.strictObject({
 	label: AlternativeSchema.shape.label,
+	/**
+	 * Resolve recursive steps from the existing semantic contract.
+	 * @returns The ordered step schema.
+	 */
 	get steps(): z.ZodArray<typeof NewStepSchema> {
 		return z.array(NewStepSchema);
 	},
 });
 const NewDecisionSchema = DecisionSchema.omit({ id: true, alternatives: true }).extend({
+	/**
+	 * Resolve recursive alternatives from the existing semantic contract.
+	 * @returns The ordered alternative schema.
+	 */
 	get alternatives(): z.ZodArray<typeof NewAlternativeSchema> {
 		return alternativesOf(NewAlternativeSchema);
 	},
 });
 const NewLoopSchema = LoopSchema.omit({ id: true, steps: true }).extend({
+	/**
+	 * Resolve recursive steps from the existing semantic contract.
+	 * @returns The ordered step schema.
+	 */
 	get steps(): z.ZodArray<typeof NewStepSchema> {
 		return z.array(NewStepSchema).min(1);
 	},
 });
 const NewStepSchema = z.union([
-	z.strictObject({...MessageSchema.shape,id:z.never().optional(),from:SingleLineTextSchema,to:SingleLineTextSchema}),
+	z.strictObject({
+		...MessageSchema.shape,
+		id: z.never().optional(),
+		from: SingleLineTextSchema,
+		to: SingleLineTextSchema,
+	}),
 	NewDecisionSchema,
 	NewLoopSchema,
 ]);
 const NewFlowSchema = ModelFlowSchema.omit({ id: true, formerNames: true, steps: true }).extend({
 	steps: z.array(NewStepSchema).min(1),
- participants:z.array(SingleLineTextSchema).min(1),
+	participants: z.array(SingleLineTextSchema).min(1),
 });
 const PlacementSchema = z.strictObject({
 	holder: QualifiedSubjectIdSchema,
 	alternative: AlternativeSchema.shape.label.optional(),
 	before: QualifiedSubjectIdSchema.optional(),
 });
-const FlowFieldsSchema = ModelFlowSchema.omit({ id: true, formerNames: true, steps: true }).extend({participants:z.array(SingleLineTextSchema).min(1)});
+const FlowFieldsSchema = ModelFlowSchema.omit({ id: true, formerNames: true, steps: true }).extend({
+	participants: z.array(SingleLineTextSchema).min(1),
+});
 const StepFieldsSchema = z.strictObject({
 	kind: MessageSchema.shape.kind.removeDefault().optional(),
 	from: SingleLineTextSchema.optional(),

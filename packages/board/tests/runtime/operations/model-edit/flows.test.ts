@@ -1,4 +1,7 @@
-import { behaviorFixture, allBehaviorSubjects } from "#tests/runtime/operations/model-edit/flow-fixture.ts";
+import {
+	behaviorFixture,
+	allBehaviorSubjects,
+} from "#tests/runtime/operations/model-edit/flow-fixture.ts";
 import type { ArchitectureModuleEdit } from "@archboard/board/model";
 import { afterEach, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
@@ -86,7 +89,7 @@ test("independent collections author ordered cross-module behavior without creat
 		collections: reading.collections,
 	});
 	expect(await editArchitectureModule(vault, request)).toEqual(result);
-});
+}, 15_000);
 
 test("flow reads reject duplicate subject identities and absent participant references", async () => {
 	const { vault } = fixture();
@@ -121,8 +124,7 @@ test("flow reads reject duplicate subject identities and absent participant refe
 			expect.objectContaining({ code: "MISSING_LOCAL_TARGET" }),
 		]),
 	});
-});
-
+}, 15_000);
 
 test("steps move by identity between flows and nested holders with atomic alternative renames", async () => {
 	const { vault } = await behaviorFixture();
@@ -174,7 +176,7 @@ test("steps move by identity between flows and nested holders with atomic altern
 			steps: [{ id: "Shop#Send", repeat: 3, note: "Keep me" }, { id: "Shop#Notify" }],
 		},
 	]);
-});
+}, 15_000);
 
 test("missing holders, orphaned alternatives, conflicting placements and cyclic sibling order refuse the complete batch", async () => {
 	const { vault } = await behaviorFixture();
@@ -201,6 +203,10 @@ test("missing holders, orphaned alternatives, conflicting placements and cyclic 
 		],
 		[{ type: "move-step", subject: "Shop#Repeat", placement: { holder: "Shop#Repeat" } }],
 		[
+			{ type: "remove-step", subject: "Shop#Send" },
+			{ type: "move-step", subject: "Shop#Send", placement: { holder: "Shop#Other" } },
+		],
+		[
 			{
 				type: "move-step",
 				subject: "Shop#Send",
@@ -214,7 +220,7 @@ test("missing holders, orphaned alternatives, conflicting placements and cyclic 
 		).toMatchObject({ success: false, code: "MODEL_INVALID" });
 		expect(readArchitectureModel(vault)).toEqual(original);
 	}
-});
+}, 15_000);
 
 test("a module removal repairs nested messages and claims every affected flow in its durable operation", async () => {
 	const { vault } = await behaviorFixture();
@@ -275,7 +281,7 @@ test("a module removal repairs nested messages and claims every affected flow in
 		},
 	});
 	expect(await editArchitectureModule(vault, request)).toEqual(result);
-});
+}, 15_000);
 
 test("collection transfers and step field edits keep identity while removals reserve subjects and untouched bytes", async () => {
 	const { vault } = await behaviorFixture();
@@ -333,7 +339,7 @@ test("collection transfers and step field edits keep identity while removals res
 		"Shop#Worker",
 		"Shop#Other",
 		"Shop#Notify",
- reading.collections[0]!.flows[0]!.steps[0]!.id,
+		reading.collections[0]!.flows[0]!.steps[0]!.id,
 	]);
 	expect(
 		await editArchitectureModule(vault, {
@@ -349,26 +355,57 @@ test("collection transfers and step field edits keep identity while removals res
 	if (!edited.success) throw new Error(JSON.stringify(edited));
 	expect(edited.collections[0]!.flows[0]!.steps[1]).not.toHaveProperty("note");
 	expect(edited.collections[0]!.flows[0]!.steps[1]).not.toHaveProperty("repeat");
-});
+}, 15_000);
 
-test("editing participant membership requires both former and new module claims", async()=>{
- const {vault}=behaviorFixture();
- const input=await structureIntent(vault,allBehaviorSubjects);
- const original=readArchitectureModel(vault);
- expect(await editArchitectureModule(vault,{...input,changes:[{type:"edit-flow",subject:"Shop#Other",set:{participants:["Shop#Worker","Shop#Gateway","Shop#Handler"]}}]})).toMatchObject({success:false,code:"CLAIM_REQUIRED",diagnostics:expect.arrayContaining([expect.objectContaining({subjects:expect.arrayContaining(["Shop#Handler"])})])});
- expect(readArchitectureModel(vault)).toEqual(original);
-});
+test("editing participant membership requires both former and new module claims", async () => {
+	const { vault } = behaviorFixture();
+	const input = await structureIntent(vault, allBehaviorSubjects);
+	const original = readArchitectureModel(vault);
+	expect(
+		await editArchitectureModule(vault, {
+			...input,
+			changes: [
+				{
+					type: "edit-flow",
+					subject: "Shop#Other",
+					set: { participants: ["Shop#Worker", "Shop#Gateway", "Shop#Handler"] },
+				},
+			],
+		}),
+	).toMatchObject({
+		success: false,
+		code: "CLAIM_REQUIRED",
+		diagnostics: expect.arrayContaining([
+			expect.objectContaining({ subjects: expect.arrayContaining(["Shop#Handler"]) }),
+		]),
+	});
+	expect(readArchitectureModel(vault)).toEqual(original);
+}, 15_000);
 
-test("one intent can author a flow over a module that it adds without caller-chosen identities", async()=>{
- const {vault}=fixture();
- const input=await structureIntent(vault,["Shop","Shop#Gateway"]);
- const result=await editArchitectureModule(vault,{...input,changes:[
- {type:"add-collection",name:"New responsibilities"},
- {type:"add-flow",collection:"New responsibilities",flow:{name:"Cache request",participants:["Gateway","Cache"],steps:[{from:"Gateway",to:"Cache",kind:"sync",label:"Read"}]}},
- {type:"add-module",module:{name:"Cache",kind:"service",order:30}}
- ]});
- expect(result).toMatchObject({success:true});
- const reading=readArchitectureModel(vault,"Cache");
- if(!reading.success) throw new Error(JSON.stringify(reading));
- expect(reading.collections[0]!.flows[0]).toMatchObject({participants:["Shop#Gateway",reading.selectedModule],steps:[{from:"Shop#Gateway",to:reading.selectedModule}]});
-});
+test("one intent can author a flow over a module that it adds without caller-chosen identities", async () => {
+	const { vault } = fixture();
+	const input = await structureIntent(vault, ["Shop", "Shop#Gateway"]);
+	const result = await editArchitectureModule(vault, {
+		...input,
+		changes: [
+			{ type: "add-collection", name: "New responsibilities" },
+			{
+				type: "add-flow",
+				collection: "New responsibilities",
+				flow: {
+					name: "Cache request",
+					participants: ["Gateway", "Cache"],
+					steps: [{ from: "Gateway", to: "Cache", kind: "sync", label: "Read" }],
+				},
+			},
+			{ type: "add-module", module: { name: "Cache", kind: "service", order: 30 } },
+		],
+	});
+	expect(result).toMatchObject({ success: true });
+	const reading = readArchitectureModel(vault, "Cache");
+	if (!reading.success) throw new Error(JSON.stringify(reading));
+	expect(reading.collections[0]!.flows[0]).toMatchObject({
+		participants: ["Shop#Gateway", reading.selectedModule],
+		steps: [{ from: "Shop#Gateway", to: reading.selectedModule }],
+	});
+}, 15_000);

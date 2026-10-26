@@ -1,6 +1,6 @@
-import {writeFileSync} from "node:fs";
-import {join} from "node:path";
-import {fixture} from "#tests/runtime/operations/model-edit/fixture.ts";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { fixture } from "#tests/runtime/operations/model-edit/fixture.ts";
 function behaviorFixture() {
 	const context = fixture();
 	writeFileSync(
@@ -85,4 +85,4 @@ const allBehaviorSubjects = [
 	"Shop#Notify",
 ];
 
-export {behaviorFixture,allBehaviorSubjects};
+export { behaviorFixture, allBehaviorSubjects };

@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 150,
+	"version": 152,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-26T17:15:59.182Z",
+	"updatedAt": "2026-10-26T17:46:43.203Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -130942,7 +130942,7 @@
 						"order": 35000,
 						"name": "Canonical model routes",
 						"kind": "module",
-						"responsibility": "Read canonical modules and independent flows, retain checkpoints, and render an explicitly selected flow through existing renderer operations",
+						"responsibility": "Reads canonical modules and independent flows, retains checkpoints and explicitly initializes private history",
 						"description": "Every request names its vault. The shared runtime owns retention, dependency and evidence semantics. Browser selection opens an exact checkpoint through the same read contract. Canonical edit, claim and recovery adapters use the shared operation contract. A vault-scoped event stream sends fresh coherent readings and durable news. The private archive endpoint translates an explicit setup request through the same runtime. It sends no history and returns local setup information.",
 						"parent": "ETrslazw",
 						"binding": {
@@ -130975,8 +130975,8 @@
 						"order": 38000,
 						"name": "Canonical edit routes",
 						"kind": "module",
-						"responsibility": "Adapts canonical structure and relationship batches, claims, recovery and fresh current event streams",
-						"description": "Every call names a vault. Mutation work stays tracked through response loss and shutdown. Shared runtime contracts own claims, durable completion and recovery. The browser presentation remains parent-owned TASK-549.03 work.",
+						"responsibility": "Adapts complete module and flow batches, claims, recovery and coherent event streams",
+						"description": "Every mutation uses the same public operation schema and durable runtime. The browser grammar controls belong to TASK-549.12.",
 						"parent": "I6MrfGUg",
 						"groups": [
 							"writes"
@@ -131011,6 +131011,18 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/architecture/publication-routes.ts"
+						}
+					},
+					{
+						"id": "gRG7JEPt",
+						"order": 41000,
+						"name": "Canonical flow render routes",
+						"kind": "module",
+						"responsibility": "Reads one explicitly selected current or retained flow and renders its complete behavior through the existing renderer",
+						"parent": "ETrslazw",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/flow-routes.ts"
 						}
 					}
 				],
@@ -132528,6 +132540,62 @@
 						"kind": "http",
 						"label": "Configured archive status, publish and fetch",
 						"emphasis": "normal"
+					},
+					{
+						"id": "5eMr0hkn",
+						"order": 120000,
+						"from": "gRG7JEPt",
+						"to": "FB409nLS",
+						"kind": "call",
+						"label": "renderArchitecture with grammar",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/flow-routes.ts",
+							"symbol": "flowPicture"
+						}
+					},
+					{
+						"id": "WpbKgDdF",
+						"order": 121000,
+						"from": "gRG7JEPt",
+						"to": "bB2IRV9I",
+						"kind": "call",
+						"label": "readArchitectureModel and readArchitectureCheckpoint",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/flow-routes.ts",
+							"symbol": "flowReading"
+						}
+					},
+					{
+						"id": "7fKX6THX",
+						"order": 122000,
+						"from": "gRG7JEPt",
+						"to": "fs2ehN0i",
+						"kind": "call",
+						"label": "requireVault and vaultOfRequest",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/flow-routes.ts",
+							"symbol": "mountArchitectureFlowRoutes"
+						}
+					},
+					{
+						"id": "Io53QUgK",
+						"order": 123000,
+						"from": "nn1ec9Tw",
+						"to": "gRG7JEPt",
+						"kind": "call",
+						"label": "mountArchitectureFlowRoutes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/model-routes.ts",
+							"symbol": "mountArchitectureModelRoutes"
+						}
 					}
 				],
 				"flows": [

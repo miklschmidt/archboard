@@ -76,6 +76,10 @@ const modelRenderContract = defineCommand({
 				description: "The exact reading receipt or structured refusal",
 			},
 		],
+		/**
+		 * Select the SVG file receipt.
+		 * @returns The file output case.
+		 */
 		select: () => "file",
 	},
 	prerequisites: ["server"],
@@ -98,6 +102,12 @@ const modelRenderContract = defineCommand({
 			description: "Render the explicit behavioral reading",
 		},
 	],
+	/**
+	 * Render the explicitly selected flow and defer artifact installation until success.
+	 * @param input The selected flow, grammar, checkpoint, and file.
+	 * @param context The invocation capabilities.
+	 * @returns A file receipt or an explicit refusal.
+	 */
 	async handler(input, context) {
 		await context.require("server", "model render");
 		const { out, ...request } = input;

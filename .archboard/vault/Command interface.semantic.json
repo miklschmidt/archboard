@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 185,
+	"version": 186,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-26T17:15:56.251Z",
+	"updatedAt": "2026-10-26T17:41:30.045Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -128908,7 +128908,7 @@
 						"order": 53000,
 						"name": "Model read",
 						"kind": "module",
-						"responsibility": "Returns current or exact retained model roots and authored module details",
+						"responsibility": "Reads current or exact retained modules and independent flows with explicit subject selection",
 						"description": "The checkpoint selector requires a complete immutable identity. Module names resolve within that reading alone.",
 						"parent": "bLpk2XKU",
 						"binding": {
@@ -128933,7 +128933,7 @@
 						"order": 57000,
 						"name": "Canonical model client",
 						"kind": "module",
-						"responsibility": "Preserves shared read, retain and list outcomes across HTTP, including structured refusals",
+						"responsibility": "Preserves shared canonical reads, edits, claims, history and explicit flow render outcomes across HTTP",
 						"description": "Preserves shared current reads, checkpoint results, edit outcomes, claims and recovery across HTTP, including structured domain refusals.",
 						"parent": "dHZeNcMs",
 						"binding": {
@@ -128970,7 +128970,7 @@
 						"order": 60000,
 						"name": "Model edit commands",
 						"kind": "module",
-						"responsibility": "Author modules, relationships, independent flow collections and stable ordered steps through the shared durable batch",
+						"responsibility": "Authors canonical modules, relationships, independent flows and nested steps through one durable batch",
 						"description": "JSON requests preserve explicit targets, subject identity, full read tokens and stable operation IDs. The shared runtime owns installation, recovery and retry rules.",
 						"parent": "bLpk2XKU",
 						"groups": [
@@ -129003,6 +129003,18 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/operations/model/archive.ts"
+						}
+					},
+					{
+						"id": "255ksC3D",
+						"order": 63000,
+						"name": "Model render commands",
+						"kind": "module",
+						"responsibility": "Exports an explicitly selected canonical flow as sequence or flowchart SVG with an exact reading receipt",
+						"parent": "bLpk2XKU",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/model/render.ts"
 						}
 					}
 				],
@@ -130555,6 +130567,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/operations/model/archive.ts",
 							"symbol": "initializeArchitectureArchiveOnServer"
+						}
+					},
+					{
+						"id": "OanwxJtd",
+						"order": 110000,
+						"from": "255ksC3D",
+						"to": "TsCise1I",
+						"kind": "call",
+						"label": "renderArchitectureFlowOnServer",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/model/render.ts",
+							"symbol": "modelRenderContract"
 						}
 					}
 				],
