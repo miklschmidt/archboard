@@ -6,7 +6,10 @@ import {
 	readArchitectureCheckpoint,
 	listArchitectureCheckpoints,
 } from "@archboard/board/store-read";
-import { retainArchitectureCheckpoint } from "@archboard/board/store-write";
+import {
+	retainArchitectureCheckpoint,
+	initializeArchitectureArchive,
+} from "@archboard/board/store-write";
 import { ArchitectureCheckpointRequestSchema } from "@archboard/board/model";
 import { respond } from "#server/routes/architecture/model-response.ts";
 import { mountArchitectureEditRoutes } from "#server/routes/architecture/model-edit-routes.ts";
@@ -19,6 +22,7 @@ const QuerySchema = z
 		checkpoint: z.string().min(1).optional(),
 	})
 	.strict();
+const InitializeBodySchema = z.object({ vault: z.string().optional() }).strict();
 const ListQuerySchema = QuerySchema.pick({ vault: true });
 const RetainBodySchema = ArchitectureCheckpointRequestSchema.extend({
 	vault: z.string().optional(),
@@ -30,6 +34,16 @@ const RetainBodySchema = ArchitectureCheckpointRequestSchema.extend({
 function mountArchitectureModelRoutes(app: Express): void {
 	mountArchitecturePublicationRoutes(app);
 	mountArchitectureEditRoutes(app);
+	app.post("/api/architecture/archive/init", requireVault, async (req, res) => {
+		const parsed = InitializeBodySchema.safeParse(req.body);
+		if (!parsed.success) {
+			res
+				.status(400)
+				.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(parsed.error) });
+			return;
+		}
+		respond(res, await initializeArchitectureArchive(vaultOfRequest(req)));
+	});
 	app.get("/api/architecture/model", requireVault, async (req, res) => {
 		const query = QuerySchema.safeParse(req.query);
 		if (!query.success) {

@@ -1,18 +1,20 @@
 import { modelRevision } from "#runtime/store/model-files.ts";
-import { relative } from "node:path";
+import {
+	archiveContext,
+	ARCHIVE_REF,
+	ArchiveError,
+} from "#runtime/store/model-archive-location.ts";
 import { z } from "zod";
 import { git, GitCommandError } from "@archboard/process/git";
-import { repoRootOf, repoIdentityAt } from "@archboard/workspace/checkouts";
+import { repoIdentityAt } from "@archboard/workspace/checkouts";
 import {
 	ArchitectureCheckpointSchema,
 	type ArchitectureCheckpoint,
 	type ArchitectureModel,
-	type ArchitectureModelRead,
 } from "#shared/schemas/model.ts";
 
 import { ArchitectureModuleEditSchema } from "#shared/schemas/model-operations.ts";
 
-const ARCHIVE_REF = "refs/heads/archboard-history";
 const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, publication: true })
 	.extend({
 		schemaVersion: z.literal(1),
@@ -26,39 +28,6 @@ const ArchiveRecordSchema = z.discriminatedUnion("kind", [
 	z.object({ schemaVersion: z.literal(1), kind: z.literal("synchronization") }).strict(),
 ]);
 
-/** A structured local archive failure. */
-class ArchiveError extends Error {
-	/**
-	 * Retain the public failure category and affected object.
-	 * @param code The shared architecture failure code.
-	 * @param message The underlying failure.
-	 * @param checkpoint The unavailable object or reserved ref.
-	 * @param subjects The affected architecture identities.
-	 */
-	constructor(
-		readonly code: Extract<ArchitectureModelRead, { success: false }>["code"],
-		message: string,
-		readonly checkpoint = ARCHIVE_REF,
-		readonly subjects: string[] = [],
-	) {
-		super(message);
-	}
-}
-
-/**
- * Locate the caller's checkout. Git resolves its common objects and refs itself.
- * @param vault The explicitly addressed vault.
- * @returns The checkout and portable vault address.
- */
-async function archiveContext(vault: string) {
-	const root = await repoRootOf(vault);
-	if (root === undefined)
-		throw new ArchiveError(
-			"ARCHIVE_NOT_INITIALIZED",
-			"The vault has no source Git repository. Private archive initialization is not available yet.",
-		);
-	return { root, vault: relative(root, vault).replaceAll("\\", "/") };
-}
 type ArchiveContext = Awaited<ReturnType<typeof archiveContext>>;
 
 /**
@@ -175,6 +144,7 @@ async function readRecord(context: ArchiveContext, id: string) {
  * @returns The source identity, revision and uncommitted-code status.
  */
 async function captureSource(context: ArchiveContext) {
+	if (context.sourceRoot === undefined) return [];
 	const repo = await repoIdentityAt(context.root);
 	const commit = await optionalValue(context, ["rev-parse", "--verify", "--quiet", "HEAD"]);
 	const dirty = await git(context.root, [
@@ -431,7 +401,8 @@ async function sourceEvidence(
 	context: ArchiveContext,
 	sources: ArchitectureCheckpoint["sources"],
 ): Promise<NonNullable<ArchitectureModel["sourceEvidence"]>> {
-	const ownIdentity = await repoIdentityAt(context.root);
+	const ownIdentity =
+		context.sourceRoot === undefined ? "" : await repoIdentityAt(context.sourceRoot);
 	return settledValues(
 		sources.map(async (source) => {
 			if (!(await sourceAvailable(context, source, ownIdentity)))

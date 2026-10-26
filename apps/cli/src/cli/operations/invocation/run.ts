@@ -1,3 +1,4 @@
+import { modelArchiveInitContract } from "#cli/operations/model/archive.ts";
 import {
 	modelPublicationContract,
 	modelPublicationConfigureContract,
@@ -84,6 +85,9 @@ const COMMANDS: Record<string, CommandRoute> = {
 	model: {
 		owner: contract(modelContract, "apps/cli/src/cli/operations/model/read.ts"),
 		children: {
+			"archive-init": child(
+				contract(modelArchiveInitContract, "apps/cli/src/cli/operations/model/archive.ts"),
+			),
 			edit: child(contract(modelEditContract, "apps/cli/src/cli/operations/model/edit.ts")),
 			claim: child(contract(modelClaimContract, "apps/cli/src/cli/operations/model/edit.ts")),
 			release: child(contract(modelReleaseContract, "apps/cli/src/cli/operations/model/edit.ts")),

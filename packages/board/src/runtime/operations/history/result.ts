@@ -34,11 +34,12 @@ const recovery: Partial<Record<Failure["code"], string>> = {
 		"Restore local write access, read the model again, and retry the original intent if it remains current.",
 	ARCHIVE_COMMIT_FAILED:
 		"Repair the configured Git identity and signing key or signer. Retry the same operation without disabling signing.",
-	ARCHIVE_IN_USE: "Switch the worktree away from archboard-history before retrying the operation.",
+	ARCHIVE_IN_USE:
+		"For a source vault, use its existing archive. For private history, keep the vault and machine state outside source repositories. Switch checked-out archive branches before retrying.",
 	ARCHIVE_BUSY: "Retry the same operation. Its checkpoint remains retained locally.",
 	ARCHIVE_WRITE_FAILED: "Restore local Git write access and retry the same operation.",
 	ARCHIVE_NOT_INITIALIZED:
-		"Use a canonical vault in a source Git repository. Private archive initialization is not available yet.",
+		"For a vault outside a source repository, run model archive-init explicitly. Otherwise restore the source Git repository.",
 	STALE_REVISION:
 		"Read the current model again and use its new revision with a new operation identity.",
 	OPERATION_REUSED:
