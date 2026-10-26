@@ -4,7 +4,7 @@ title: A board's first render gets faster, with every drawing unchanged
 status: To Do
 assignee: []
 created_date: '2026-10-26T02:26:00Z'
-updated_date: '2026-10-26T13:13:00Z'
+updated_date: '2026-10-26T16:24:00Z'
 labels:
   - renderer
   - performance
@@ -20,7 +20,7 @@ A first render of a wide dogfood board takes 1.5 to 2 s (Agent workbench, Board 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every drawing of the corpus (scripts/render-corpus.ts, current variants) is unchanged by the work, except a drawing whose change fixes a defect (a missed line, an arrow through a card, a label off its route) that the task notes name with evidence, and none gets worse
+- [ ] #1 Every drawing the work changes is judged by the grading council (TASK-548.09) to read as well or better, and no change the council judges worse lands
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -31,4 +31,6 @@ A first render of a wide dogfood board takes 1.5 to 2 s (Agent workbench, Board 
 2026-10-26: the owner waived byte-for-byte drawings where a performance change uncovers and fixes a defect (missed arcs, arrows through cards and the like). Each changed drawing needs evidence that a defect went away and that nothing got worse, listed in the task notes; any other change is reported for the owner to decide.
 
 2026-10-26: rebased onto origin/main (aa364ad76), whose rewritten history holds its own ADR 0057 (render recipe) and ADR 0058 (interface width). The branch's ADRs became ADR 0059 (the renderer is a Rust core) and ADR 0060 (the vendored graphviz-pure). Task notes written before the rebase still cite them as 0057 and 0058.
+
+2026-10-26: the owner dropped byte-identical drawings as the bar. A council of graders (Opus, gpt-6.1-sol and gpt-6-astra), each with criteria of its own and blind to the old scorecard metrics, decides whether a changed drawing reads better or worse. The owner also asked for out-of-the-box work: layout moved into the Graphviz crates if that pays, and deterministic heuristics in place of parallel solves that lay a board several ways to pick the best.
 <!-- SECTION:NOTES:END -->
