@@ -409,7 +409,11 @@ scheme (`--theme auto`), and `semantic rasterize` draws dark. Both commands draw
 the key under the picture. `--legend vertical` draws it beside the picture,
 `--no-legend` draws none, and `--legend-only` draws the key alone. `--title`
 draws a title above the picture. Each SVG and PNG carries its render recipe,
-which names the board and the drawing choices.
+which names the board and the drawing choices. An SVG keeps it in its
+`<metadata>` element, so a pipeline that runs SVGO must keep that element
+(turn off its `removeMetadata`). With `--track`, the board lists the file, and
+`archboard check` in that repository says when the picture is outdated;
+`archboard check --fix` draws it again.
 
 The CLI starts the browser itself, with a private temporary profile, and stops
 it and removes the profile before the command ends. It uses the first of
