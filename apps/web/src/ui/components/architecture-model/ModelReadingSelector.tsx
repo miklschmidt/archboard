@@ -219,4 +219,4 @@ function checkpointTime(value: string): string {
 	);
 }
 
-export { ModelReadingSelector };
+export { ModelReadingSelector, HistoryStatus, checkpointTime };

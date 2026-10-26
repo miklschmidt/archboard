@@ -72,5 +72,20 @@ This delivery adds none of those lifecycle actions.
 
 CLI and HTTP adapt the existing architecture operations.
 The public package interface gains no names.
-Browser selection and visible acceptance remain the parent implementation's work.
-The browser must use explicit selected state metadata when it labels a draft.
+The browser uses explicit selected state metadata when it labels a draft.
+State and comparison selectors belong to each pane address.
+The state picker lists active proposals and exact saved readings.
+The comparison picker supports the runtime default and explicit bases.
+Unavailable selections remain in the address and controls.
+
+Mutable draft queries follow the existing architecture change feed.
+Current snapshots update only the default current query.
+Other mutable readings refresh through their own state and comparison selectors.
+Exact checkpoint queries remain separate.
+
+The browser compares complete semantic contents through the existing comparison operation.
+Removed subjects come from a separately read base with the same model, state, checkpoint, and comparison revision.
+An unavailable or changed base supplies no removed definitions.
+The diagram explains its incomplete comparison and offers a refresh action.
+The inspector uses the runtime's changed fields rather than inferring changes from placement.
+Scope, focus, and filters affect depiction without changing the selected architecture or its complete interfaces.
