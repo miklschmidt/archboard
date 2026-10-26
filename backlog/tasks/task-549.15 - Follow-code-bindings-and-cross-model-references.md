@@ -1,9 +1,11 @@
 ---
 id: TASK-549.15
 title: Follow code bindings and cross-model references
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-10-26T05:25:00Z'
+updated_date: '2026-10-26T19:14:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -54,3 +56,12 @@ TASK-549.04, TASK-549.10
 - [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
 - [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Record the stable backend contract and draft proposals on Board persistence, Archboard server routes, and Command interface.
+2. Use short TDD slices at the approved public architecture read/write boundary with real temporary files and Git. Add explicit foreign references and read-only resolution, immutable checkpoint pins, and canonical code opening through existing authorities.
+3. Extend the CLI and HTTP adapters, consumer guidance, ADR 0060, and coverage. Preserve package ceilings and leave frontend and browser acceptance to the parent.
+4. Merge the latest integration, run applicable backend checks, simplify, commit with signatures, release claims, stop the worktree server, and save the backend handoff. Keep the ticket In Progress and proposals draft.
+<!-- SECTION:PLAN:END -->
