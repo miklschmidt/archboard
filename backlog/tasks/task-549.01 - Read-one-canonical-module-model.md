@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:24:00Z'
-updated_date: '2026-10-26T07:00:00Z'
+updated_date: '2026-10-26T07:43:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -89,6 +89,8 @@ The final simplification moves the shared pane header frame into the UI kit. Bot
 Board persistence, Command interface, Archboard server routes, and Browser application now adopt TASK-549.01. The semantic check has no diagnostics. Their code checks have no warnings. The complete vault code check still reports 12 existing warnings on other boards. The frontend build retains its existing large-chunk warning.
 
 Evidence and handoff files are under /home/msc/.local/state/archboard-implementation/task-549. No push or PR occurred in this ticket checkout. The integration merger and PR review remain parent work.
+
+Pre-push review: the independent backend review found no Standards or Spec issues through integration 66981b2ca. The parent reviewed the browser scope and fixed one Spec issue: generic middleware refusals lost their code and recovery message. The shared request client now preserves those refusals. The existing browser owner proves that a missing vault reports VAULT_UNREADABLE and reopens after restoration. The regression failed with READ_FAILED before the fix. All three browser cases and 73 request-client and code-opener tests pass. Final lint and both type checks pass. No architecture description changes are needed because the existing Server requests responsibility already owns consistent refusal handling. Review evidence remains under /home/msc/.local/state/archboard-implementation/task-549.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

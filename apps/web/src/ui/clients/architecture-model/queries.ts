@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { ArchitectureModelReadSchema, type ArchitectureModelRead } from "@archboard/board/model";
-import { cancellable, inVault, strictReply } from "@archboard/server-requests";
+import { cancellable, inVault, RequestFailure, strictReply } from "@archboard/server-requests";
 
 /** The canonical readings cached by this tab. */
 const architectureModelKeys = {
@@ -22,11 +22,15 @@ const architectureModelKeys = {
 async function readModel(vault: string, signal: AbortSignal): Promise<ArchitectureModelRead> {
 	const result = await strictReply<ArchitectureModelRead, ArchitectureModelRead | Error>(
 		inVault("/api/architecture/model", vault),
-		cancellable(signal),
+		{ signal },
 		ArchitectureModelReadSchema,
 		ArchitectureModelReadSchema,
-		() =>
-			new Error("The architecture could not be read. Retry when the local server is available."),
+		(error) =>
+			error instanceof RequestFailure
+				? error
+				: new Error(
+						"The architecture could not be read. Retry when the local server is available.",
+					),
 	);
 	if (result instanceof Error) throw result;
 	return result;

@@ -1,5 +1,13 @@
 import { expect, test } from "bun:test";
-import { cpSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+	cpSync,
+	existsSync,
+	readFileSync,
+	readdirSync,
+	renameSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 import type { ArchitectureModelRead } from "@archboard/board/model";
 
@@ -128,6 +136,20 @@ test("canonical modules open their authored details without writing architecture
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!after.body.success) throw new Error(after.body.error);
 	expect(after.body.revision).toEqual(revision);
+
+	// A middleware refusal keeps its code and recovery message, even outside the model schema.
+	const movedVault = `${vault}-moved`;
+	renameSync(vault, movedVault);
+	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await pollUntil(modelState, (state) => state === "error", "the unavailable vault refusal", WAIT);
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('[data-slot="model-error"]')?.getAttribute('data-code') ?? null`,
+		),
+	).toBe("VAULT_UNREADABLE");
+	renameSync(movedVault, vault);
+	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await pollUntil(modelState, (state) => state === "ready", "the restored vault to reopen", WAIT);
 
 	// A failed refresh exposes the refusal, and a repaired input can be read again.
 	const gatewayPath = join(vault, "gateway.module.json");

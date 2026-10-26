@@ -6,5 +6,6 @@ export {
 	requestJson,
 	servedVault,
 	strictReply,
+	RequestFailure,
 } from "#ui/clients/server-requests.ts";
 export type { ReplySchema } from "#ui/clients/server-requests.ts";
