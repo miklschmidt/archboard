@@ -4,6 +4,7 @@ title: Deterministic layout replaces the speculative solves of a first render
 status: To Do
 assignee: []
 created_date: '2026-10-26T16:24:00Z'
+updated_date: '2026-10-26T18:09:00Z'
 labels:
   - renderer
   - performance
@@ -24,3 +25,9 @@ The owner's goal is real-time scene changes, with complex boards (Board viewer, 
 - [ ] #2 Every changed drawing passes the grading council of TASK-548.09, and the council's verdicts are recorded
 - [ ] #3 The design and the levers tried, kept or dropped are recorded in docs/design, with ADRs for any decision that replaces ADR 0059 or ADR 0060
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Council, 2026-10-26, on f55ca07dc (the only changed drawings: the whole-board Track pictures of Browser application and Command interface). Blind pairs in /tmp/grading-548-08 (overview and full-size Chromium rasters), key and verdicts kept in /tmp/548-08/council. Unanimous: Command interface reads better after (Opus, gpt-6.1-sol, gpt-6-astra: top-to-bottom reading, shorter routes). Browser application reads worse after, and all three name a defect new in the after picture: parent cards (Semantic viewer, Workspace routing, Pane session, Walkthrough replay, Walkthrough recording, Voice session) are drawn with no frame, so their lines end in blank space beside a title. The parent confirmed it on Semantic viewer in the full-size after picture; the before picture frames it. By the procedure (docs/design/grading-council.md), the change fails as it stands and is not merged.
+<!-- SECTION:NOTES:END -->
