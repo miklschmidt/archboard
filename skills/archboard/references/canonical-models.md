@@ -187,6 +187,7 @@ The failure's `recovery` object names its operation, checkpoint, progress, finge
 Use `model read --checkpoint <recovery.checkpoint>` to inspect the retained candidate while current reads remain blocked.
 An edit refusal states `applied: false` before installation or `applied: "unknown"` when the durable outcome remains uncertain.
 If application remains uncertain, recover the journal or retry the original request.
+If another process finishes cleanup after durable completion, the original request returns success with `cleanup: "pending"`.
 Keep external editors and Git checkout idle during installation.
 Archboard detects interference but cannot provide atomic visibility to arbitrary filesystem readers.
 
