@@ -3,13 +3,13 @@
 //! sideways and on, or doubles back, where one turn would do, alone or on a
 //! trunk; and a slide that takes a step out by moving part of a trunk, by
 //! carrying a trunk's line the long way round, by moving a line's end run or
-//! its run through its label, or by running a new stretch into a card or past
-//! it nearer than the router keeps lines, a title band, a wall it did not
-//! cross, along a wall, onto another line's axis, beside it, across it where it
-//! did not cross or where that line turns, or into a jog too short for its
-//! bends, or that leaves the last run too short for its bend and its
-//! arrowhead; and a step left in place because a line that slides away later
-//! stood in its way.
+//! its run through its label, by turning the line within a bend of its label,
+//! or by running a new stretch into a card or past it nearer than the router
+//! keeps lines, a title band, a wall it did not cross, along a wall, onto
+//! another line's axis, beside it, across it where it did not cross or where
+//! that line turns, or into a jog too short for its bends, or that leaves the
+//! last run too short for its bend and its arrowhead; and a step left in place
+//! because a line that slides away later stood in its way.
 
 use std::slice;
 
@@ -199,6 +199,23 @@ fn a_step_stays_where_it_is_the_line_s_run_through_its_label() {
     let label = rect(130.0, 140.0, 40.0, 20.0);
     let drawn = unstepped_labelled(&[(doubling(), Some(label))], &Around::default());
     assert_eq!(drawn[0], doubling());
+}
+
+#[test]
+fn a_step_stays_where_the_slide_would_turn_the_line_within_a_bend_of_its_label() {
+    // Reduced from Codex workhorse under blocks (TASK-536): the slide kept the
+    // run through the label but turned it 7.5 units short of the label, so the
+    // rounded bend ran under the label's end.
+    let step = line(&[
+        (300.0, 20.0),
+        (250.0, 20.0),
+        (250.0, 0.0),
+        (0.0, 0.0),
+        (0.0, 120.0),
+    ]);
+    let label = rect(-20.0, 26.0, 40.0, 46.0);
+    let drawn = unstepped_labelled(&[(step.clone(), Some(label))], &Around::default());
+    assert_eq!(drawn[0], step);
 }
 
 #[test]
