@@ -13,6 +13,11 @@
 import { DEFAULT_LAYOUT_ENGINE } from "@archboard/board/render-reply";
 import type { SemanticBoard } from "@archboard/board/document";
 import type { SemanticPolicy } from "@archboard/board/policy";
+import { renderSemanticView } from "#shared/rules/render/diagram.ts";
+import type {
+	SemanticViewRenderRequest,
+	RenderedDiagram,
+} from "#shared/protocol/render-request.ts";
 import {
 	renderBoard,
 	type BoardRenderChoices,
@@ -112,4 +117,18 @@ async function drawBoardHere(
 	return renderBoard(board, { ...choices, fonts: "linked" }, policy);
 }
 
-export { drawBoardHere, startBrowserRenderer, type BrowserRendererSetup };
+/**
+ * Draw an already scoped reading through the same local renderer as a board.
+ * @param request The content, complete model, and presentation policy.
+ * @returns The picture and its interaction geometry.
+ * @throws {Error} When the browser renderer is not started or rendering fails.
+ */
+async function drawContentHere(
+	request: Omit<SemanticViewRenderRequest, "fonts" | "theme"> & { policy: SemanticPolicy },
+): Promise<RenderedDiagram> {
+	if (started === undefined) throw new Error("Start the browser renderer before drawing content.");
+	await Promise.all([started, loadDiagramIcons(request.policy)]);
+	return renderSemanticView({ ...request, fonts: "linked" });
+}
+
+export { drawBoardHere, drawContentHere, startBrowserRenderer, type BrowserRendererSetup };
