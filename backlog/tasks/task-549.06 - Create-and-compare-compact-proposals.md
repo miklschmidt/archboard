@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T19:28:00Z'
+updated_date: '2026-10-26T19:30:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -67,6 +67,20 @@ TASK-549.05
 5. Expose the contract through normal CLI and HTTP adapters. Update consumer guidance, examples, ADRs, test ownership, and evaluation inputs without model evaluation.
 6. Run focused behavior, type, lint, formatting, and architecture checks. Simplify, merge latest integration, release claims, stop the server, and sign all commits.
 7. Leave browser acceptance and task completion to the parent. Keep architecture proposals draft and TASK-549.06 In Progress.
+
+8. Parent extends the existing router and query owner with explicit proposal/state and comparison selectors, preserving checkpoint exclusivity and all per-pane scope/focus/filter/grammar fields.
+
+9. Add proposals to the existing state picker. Use selectedState lifecycle for draft, current, historical, and planning labels. Preserve unavailable selections and predecessor-change refusals without substitution.
+
+10. Render comparisons through the existing semantic comparison and renderer mechanisms. Keep removed definitions tied to the coherent base revision. Show comparison metadata and field changes without architecture writes.
+
+11. Refresh mutable selected drafts and their catalog through the existing event stream. Keep exact checkpoints separate, and label state-specific claims accurately.
+
+12. Use short browser TDD slices with real temporary files and Git through public writes. Cover cross-module/flow drafts, comparison defaults, explicit bases, current isolation, retained draft identity, planning-only models, siblings, unavailable states, and live updates as required by visible acceptance.
+
+13. Maintain Browser application@TASK-549.06 and the three backend drafts. Update complete-slice docs, ADRs, coverage, and test ownership. Run focused regression evidence, types, lint, formatting, metadata, architecture checks, and parent visual inspection.
+
+14. Simplify, merge latest integration, adopt accurate proposals, release all claims, stop the server, complete proven criteria, sign the source, and dispatch its required integration merger.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -83,4 +97,6 @@ Merged latest integration 5432fed897cd0b7bcbb8ada2c41dabd533305cca through signe
 Closing backend records: Board persistence@TASK-549.06 is draft AFx23EEN at version 166; Command interface@TASK-549.06 is draft pJeSfYJs at version 189; Archboard server routes@TASK-549.06 is draft o6rDNILx at version 155. The closing graph comparison retains all 66 original parts (63 unchanged and three changed) and 188 original relationships, with one compact-proposal part and 13 explicit relationships added. All three claims are released, and the worktree server at http://127.0.0.1:16610 is stopped. The final contract and backend handoff remain outside the repository under /home/msc/.local/state/archboard-implementation/task-549. Browser criterion 1 and complete-slice documentation closure remain open for the parent.
 
 Parent takes browser ownership after backend handoff b9f8de66b. Latest integration3a0efd30 includes completed .12 diagram modes. Merge resolution preserves the backend task record and completed criteria, both ADR sections, and both coverage entries. No backend work or retained architecture history is discarded. Browser state selection, lifecycle labels, comparison readings, mutable draft refresh, and visible acceptance remain to implement.
+
+Parent browser proposal Browser application@TASK-549.06 now describes state selection, coherent comparisons, mutable query refresh, and renderer projection. It preserves all delivered .11 and .12 interaction responsibilities. The merged source passes types. Server16610 runs at PID1373887, and the parent holds Browser application while working.
 <!-- SECTION:NOTES:END -->
