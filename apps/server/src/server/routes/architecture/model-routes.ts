@@ -1,3 +1,4 @@
+import { mountArchitecturePublicationRoutes } from "#server/routes/architecture/publication-routes.ts";
 import type { Express } from "express";
 import { z } from "zod";
 import {
@@ -27,6 +28,7 @@ const RetainBodySchema = ArchitectureCheckpointRequestSchema.extend({
  * @param app The server application.
  */
 function mountArchitectureModelRoutes(app: Express): void {
+	mountArchitecturePublicationRoutes(app);
 	mountArchitectureEditRoutes(app);
 	app.get("/api/architecture/model", requireVault, async (req, res) => {
 		const query = QuerySchema.safeParse(req.query);

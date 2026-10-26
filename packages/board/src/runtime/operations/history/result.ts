@@ -6,6 +6,18 @@ import { ArchiveError, ARCHIVE_REF, CheckpointRecordSchema } from "#runtime/stor
 
 type Failure = Extract<ArchitectureModelRead, { success: false }>;
 const recovery: Partial<Record<Failure["code"], string>> = {
+	ARCHIVE_UNREADABLE:
+		"Inspect the named archive ref. Preserve unrelated source branches and restore a complete Archboard archive or configure its correct independent ref.",
+	ARCHIVE_NOT_PORTABLE:
+		"Keep this checkpoint local. Publication cannot redact immutable checkpoint metadata. Future retained source associations require a portable repository identity rather than a machine path.",
+	ARCHIVE_NETWORK_FAILED:
+		"Restore access to the configured remote and retry the same explicit publish or fetch request. Local architecture remains retained.",
+	PUBLICATION_NOT_CONFIGURED:
+		"Configure an existing Git remote and a full archive ref before publishing or fetching history.",
+	PUBLICATION_DESTINATION_CHANGED:
+		"Read the intended remote configuration and explicitly configure the publication destination again.",
+	PUBLICATION_INVALID:
+		"Use one named Git remote with one fetch URL, one push URL, and a valid full archive branch ref.",
 	MODEL_BUSY: "Retry after the short installation lease releases.",
 	TARGET_CHANGED: "Read the intended model and current state again before preparing a new intent.",
 	CLAIM_REQUIRED: "Claim every affected module identity before editing it.",
@@ -91,14 +103,16 @@ async function historyResult<T>(
  * Present one retained record without private archive fields.
  * @param id The immutable checkpoint identity.
  * @param record The retained checkpoint record.
+ * @param publication The current explicit publication evidence.
  * @returns Public checkpoint metadata.
  */
 function checkpointMetadata(
 	id: string,
 	record: ReturnType<typeof CheckpointRecordSchema.parse>,
+	publication: ArchitectureCheckpoint["publication"] = "saved-locally",
 ): ArchitectureCheckpoint {
 	const { schemaVersion: _version, kind: _kind, vault: _vault, edit: _edit, ...metadata } = record;
-	return { ...metadata, id, publication: "saved-locally" };
+	return { ...metadata, id, publication };
 }
 
 /**
