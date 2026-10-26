@@ -24,7 +24,11 @@ afterEach(cleanPublicationFixtures);
 
 test("publication refreshes reading evidence without changing a completed edit receipt", async () => {
 	const { vault, destination } = publicationFixture();
-	const request = await intent(vault, "published-edit");
+	const { subject, description: _description, ...envelope } = await intent(vault, "published-edit");
+	const request = {
+		...envelope,
+		changes: [{ type: "edit-module" as const, subject, set: { name: "API" } }],
+	};
 	const completed = await editArchitectureModule(vault, request);
 	if (!completed.success) throw new Error(JSON.stringify(completed));
 	await configureArchitecturePublication(vault, destination);

@@ -53,3 +53,27 @@ function readBytes(vault: string, file = "gateway.module.json") {
 	return readFileSync(join(vault, file));
 }
 export { fixture, git, intent, readBytes, disposeFixtures };
+
+async function structureIntent(vault: string, subjects: string[]) {
+	const current = readArchitectureModel(vault);
+	if (!current.success || current.manifest.current === null)
+		throw new Error(JSON.stringify(current));
+	const target = { model: current.manifest.id, state: current.manifest.current.id };
+	const claimed = await claimArchitectureSubjects(vault, {
+		target,
+		writer: "agent",
+		reason: "changing module structure",
+		subjects,
+	});
+	if (!claimed.success) throw new Error(JSON.stringify(claimed));
+	return {
+		target,
+		expectedRevision: current.revision,
+		operationId: crypto.randomUUID(),
+		writer: "agent",
+		doing: "changing module structure",
+		claim: claimed.claim.id,
+	};
+}
+
+export { structureIntent };

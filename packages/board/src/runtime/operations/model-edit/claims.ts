@@ -114,7 +114,7 @@ function requireNoPending(vault: string): void {
 }
 
 /**
- * Claim explicit module identities while leaving long agent work outside the installation lease.
+ * Claim explicit subject and structure scopes while leaving long agent work outside the installation lease.
  * @param vault The explicitly addressed vault.
  * @param input The complete caller input.
  * @returns The claimed scope or structured refusal.
@@ -130,11 +130,16 @@ async function claimArchitectureSubjects(
 			const current = requireTarget(vault, request.target);
 			if (!current.success) return current;
 			if (
-				request.subjects.some((subject) => !current.modules.some((module) => module.id === subject))
+				request.subjects.some(
+					(subject) =>
+						subject !== current.manifest.id &&
+						!current.modules.some((module) => module.id === subject) &&
+						!current.relationships.some((relationship) => relationship.id === subject),
+				)
 			)
 				throw new ArchiveError(
 					"MODULE_NOT_FOUND",
-					"A claimed subject does not exist in this model.",
+					"A claimed scope does not exist in this model. Use its model ID, module IDs or relationship IDs.",
 				);
 			const state = claimState(vault);
 			const live = state.claims.filter((claim) => Date.parse(claim.until) > Date.now());
@@ -217,10 +222,12 @@ function takeBackArchitectureClaim(
  * Require ownership of every affected subject immediately before installation.
  * @param vault The explicitly addressed vault.
  * @param request The original operation intent.
+ * @param subjects The complete affected scope.
  */
 function requireSubjectClaim(
 	vault: string,
-	request: Pick<ArchitectureModuleEdit, "claim" | "writer" | "target" | "subject">,
+	request: Pick<ArchitectureModuleEdit, "claim" | "writer" | "target">,
+	subjects: string[],
 ): void {
 	const state = claimState(vault);
 	if (state.revoked.includes(request.claim))
@@ -228,7 +235,20 @@ function requireSubjectClaim(
 			"CLAIM_REVOKED",
 			"The claim ended. Stop this intent and obtain a new claim before another write.",
 			"model.json",
-			[request.subject],
+			subjects,
+		);
+	const competing = state.claims.find(
+		(value) =>
+			value.id !== request.claim &&
+			Date.parse(value.until) > Date.now() &&
+			value.subjects.some((subject) => subjects.includes(subject)),
+	);
+	if (competing !== undefined)
+		throw new ArchiveError(
+			"CLAIM_HELD",
+			`Affected subjects are claimed by ${competing.writer}. Wait for release or request human take-back.`,
+			"model.json",
+			subjects,
 		);
 	const claim = state.claims.find(
 		(value) =>
@@ -237,12 +257,12 @@ function requireSubjectClaim(
 			Date.parse(value.until) > Date.now() &&
 			isDeepStrictEqual(value.target, request.target),
 	);
-	if (claim === undefined || !claim.subjects.includes(request.subject))
+	if (claim === undefined || subjects.some((subject) => !claim.subjects.includes(subject)))
 		throw new ArchiveError(
 			"CLAIM_REQUIRED",
-			"Claim the affected module before writing its description.",
+			"Claim every affected subject before this operation.",
 			"model.json",
-			[request.subject],
+			subjects,
 		);
 }
 export {

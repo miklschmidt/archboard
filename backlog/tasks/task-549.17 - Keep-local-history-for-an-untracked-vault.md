@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex-local-history'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-26T16:00:00Z'
+updated_date: '2026-10-26T16:23:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -65,6 +65,8 @@ TASK-549.03
 4. Use short red-green runtime slices with real files and Git for initialization, retain/reopen, durable edit/recovery, signing, isolation, and local-only publication. Add thin CLI/HTTP translations.
 5. Update ADR 0059, consumer instructions, examples, evaluation coverage, and architecture proposals. Run focused runtime/adapter tests, types, lint, and formatting. Preserve the 241/188 width gate and unrelated baseline findings.
 6. Merge the latest integration into this branch, simplify the result, finalize proven criteria, adopt affected proposals, release claims, stop the server, and deliver signed commits with exact evidence.
+
+7. Required merger: synchronize integration 1dba8fd12 into this source, preserve both authored histories and frontend bytes, and restate both delivered meanings on combined proposals. Test structural batches with source/private history and publication/recovery. Diagnose the inherited shallow-fetch timeout without deadline changes. Adopt, release claims, stop the server, and supply signed integration evidence.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -81,6 +83,8 @@ The corrected private initialization test passes. Its prior failure came from a 
 All three TASK-549.17 proposals are adopted after comparison and code evidence. Earlier variant contents, document references, decision history, and existing shared views remain exact. A new Private archive history view shows the one shared engine. Current semantics has zero diagnostics. The affected boards have zero code warnings; ten baseline warnings remain elsewhere. Static architecture pictures were rendered and inspected without frontend edits or browser tests. Synchronizing feat/canonical-module-model into this branch reports Already up to date at b5be713977e7829f16b404314af9fd8f653f70be. The final simplification returns setup information only from initialization, leaving publication evidence checkpoint-specific. No separate history or transaction implementation was added.
 
 All three task claims are released and the worktree server is stopped. Final status reports running:false. The implementation used no child agents, frontend edits, browser tests, review phase, source push, PR action, integration-branch merge, other ticket implementation, or real external archive publication. Disposable local Git remotes own all publication evidence. The parent owns the 198-worktree registry repair in .04; this task used a one-checkout isolated registry after the pressure incident and did not copy that source.
+
+Required merger starts from source a8837de0 and integration 1dba8fd12. Text conflicts retain both imports, examples, and guidance. Explicit architecture reconciliation keeps the later .04 current as the proposal base and retains .17 as historical with its original adoption. Original meanings, identities, decisions, and view expansions remain protected by recorded provenance.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
