@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import { StateMetadataSchema } from "#shared/schemas/model-definitions.ts";
+import { captureReferencePins } from "#runtime/operations/history/reference-pins.ts";
 import { SelectedStateSchema } from "#shared/schemas/model-proposals.ts";
 import { mintId } from "#shared/rules/ids.ts";
 import { assignFields } from "#runtime/operations/model-edit/fields.ts";
@@ -71,7 +72,8 @@ async function retainBaseline(
 			expectedRevision: request.expectedRevision.digest,
 			dependencies,
 		},
-		sources: await captureSource(context),
+		sources: await captureSource(context, predecessor, vault),
+		...(await captureReferencePins(vault, predecessor)),
 	});
 	const files = new Map([...inputs].map(([file, bytes]) => [`inputs/${file}`, bytes]));
 	files.set("record.json", Buffer.from(JSON.stringify(record)));
@@ -273,6 +275,7 @@ async function proposalCandidate(
 	return {
 		success: true as const,
 		current: predecessor,
+		model: draft,
 		inputs: candidate.inputs,
 		revision: candidate.revision,
 		files: changedFiles(captured.inputs, candidate.inputs),

@@ -7,6 +7,20 @@ import {
 	DescriptionSchema,
 	QualifiedSubjectIdSchema,
 } from "#shared/schemas/primitives.ts";
+const GitObjectIdSchema = z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u);
+const ModelReferenceSchema = z
+	.strictObject({
+		repo: z.string().min(1),
+		model: SemanticIdSchema,
+		subject: QualifiedSubjectIdSchema,
+		state: SemanticIdSchema,
+		checkpoint: GitObjectIdSchema.optional(),
+	})
+	.refine((reference) => reference.checkpoint === undefined || reference.state !== "current", {
+		message: "An exact reference requires a stable state identity.",
+		path: ["state"],
+	});
+
 const ModelRevisionSchema = z
 	.object({
 		digest: z.string(),
@@ -48,10 +62,13 @@ const ArchitectureModuleSchema = SemanticNodeSchema.omit({
 	parent: QualifiedSubjectIdSchema.optional(),
 	formerNames: z.array(DisplayNameSchema).optional(),
 	documents: z.array(DocumentReferenceSchema).optional(),
+	references: z.array(ModelReferenceSchema).optional(),
 	outgoing: z.array(OwnedRelationshipSchema),
 });
 
 export {
+	GitObjectIdSchema,
+	ModelReferenceSchema,
 	ModelRevisionSchema,
 	StateMetadataSchema,
 	ArchitectureManifestSchema,

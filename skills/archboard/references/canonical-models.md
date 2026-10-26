@@ -510,6 +510,88 @@ Retired flow and step IDs stay reserved in the manifest.
 The existing signed transaction, exact retry, recovery, and publication contracts apply to these files.
 Unrelated files keep their exact bytes.
 
+## Follow code and foreign references
+
+In the browser, select a module and use Open code beside its authored binding.
+The action follows the selected current state, draft, or exact saved reading.
+If source is unavailable, the architecture remains readable and the disabled action states the reason.
+Use Open architecture beside a module reference to follow its explicit model, state, and subject.
+The address preserves the repository and destination through reload and browser history.
+Unavailable targets keep their authored reference and recovery instructions.
+Saved readings follow captured foreign checkpoints even when current foreign files are unavailable.
+A relationship reference selects that exact relationship within an aggregate.
+A collection offers its authored flows, and flow or step references open their containing flow.
+
+Canonical code activation names the model, subject, and optional selected state or exact checkpoint.
+A draft activation uses that draft's binding. A missing state refuses the action without opening current code.
+
+A module binding names source code, independently of its architecture owner.
+Use `model read <module> --code` to resolve that binding through the existing checkout selection.
+The vault uses its own checkout for its repository and the chosen checkout for each other repository.
+The result reports `codeTarget` and the effective `codeBinding`.
+Unavailable source includes a structured failure and recovery action without hiding readable architecture.
+
+An explicit reference names another model, its subject, and its state.
+The subject can be a module, relationship, collection, flow, or step.
+Author `references` through the existing `edit-module.set` field.
+Use `edit-module.clear:["references"]` to remove that list.
+Omission preserves the list.
+
+```json
+{
+	"type": "edit-module",
+	"subject": "Shop#Gateway",
+	"set": {
+		"references": [
+			{
+				"repo": "github.com/acme/ledger",
+				"model": "Ledger",
+				"subject": "Ledger#Gateway",
+				"state": "current"
+			}
+		]
+	}
+}
+```
+
+`current` explicitly follows the foreign current designation.
+A stable state ID requires that exact state.
+An active draft reference names its stable `state` ID.
+For an exact retained state, include its complete `checkpoint` identity beside that ID.
+Draft navigation preserves the selected lifecycle and reports reference changes in proposal comparisons.
+A pinned reference cannot use `state:"current"`.
+References create no containment, relationship, claim, or ownership transfer.
+
+```bash
+archboard model read 'Shop#Gateway' --references
+archboard model read 'Shop#Gateway' --reference 0
+archboard model read 'Shop#Gateway' --reference 0 --code
+archboard model read 'Shop#Gateway' --model Shop --code
+```
+
+`--reference` selects a zero-based index in the module's authored list.
+`resolvedReferences` reports each target address or its unavailable diagnostics.
+Available entries include the authored subject, model, and state names from that exact reading.
+The browser uses those names for reference actions and keeps unavailable destinations visible.
+A successful follow returns the foreign reading and its `location` address.
+`selectedSubject` preserves the exact subject identity.
+A module also sets `selectedModule`.
+A flow or step also sets its containing `selectedFlow`.
+The address names the target vault, model, subject, state, and any exact checkpoint.
+Unavailable models never resolve against another model with a similar name.
+These commands change neither model.
+
+Before a local edit or retention, retain each referenced foreign reading through its own separate operation.
+Archboard requires an existing exact foreign checkpoint that matches the selected reading.
+The local checkpoint records those pins without writing a foreign vault or archive.
+Historical navigation uses those pins even when foreign current files change or disappear.
+Missing pins or checkpoint objects remain unavailable and never select foreign current content.
+Restore the foreign archive through its existing history recovery commands, then retry the exact reading.
+
+For historical code, Archboard uses retained source associations and refuses changed working files or another source revision.
+An uncommitted source association does not retain those source bytes.
+Recover that source separately before opening it.
+
 ## Render a selected flow
 
 Use `model read --flow <id>` to resolve an explicit flow selection.

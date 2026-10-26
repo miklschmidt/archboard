@@ -1,20 +1,26 @@
 import { modelSubjects, subjectName } from "#ui/rules/architecture-model/flow-reading.ts";
-import { useCallback, type JSX } from "react";
+import { useCallback, type ComponentProps, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import type { Model, projectModel } from "#ui/rules/architecture-model/projection.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { ModelFlowDetails } from "#ui/components/architecture-model/ModelFlowDetails.tsx";
 import { ModuleDetails } from "#ui/components/architecture-model/ModuleDetails.tsx";
+import { ModuleNavigation } from "#ui/components/architecture-model/ModuleNavigation.tsx";
+import { ModelCollectionDetails } from "#ui/components/architecture-model/ModelCollectionDetails.tsx";
 import { ConnectionDetails } from "#ui/components/architecture-model/ModelConnections.tsx";
 import { ModelInterface } from "#ui/components/architecture-model/ModelInterface.tsx";
 
 interface ModelSelectionDetailsProps {
+	vault: string;
+	paneId: string;
+	onCodeTargetNotice: ComponentProps<typeof ModuleNavigation>["onNotice"];
 	model: Model;
 	scope: string | null;
 	projection: ReturnType<typeof projectModel>;
 	selection: ModelSelection;
 	onOpen: (scope: string | null) => void;
+	onRevealFlow: (id: string) => void;
 }
 
 /**
@@ -24,9 +30,12 @@ interface ModelSelectionDetailsProps {
  */
 function ModelSelectionDetails(props: ModelSelectionDetailsProps): JSX.Element {
 	const { ids } = props.selection;
-	const only = ids.size === 1 ? [...ids][0] : undefined;
+	const only = selectedIdentity(ids);
 	const module = inspectedModule(props, only);
 	if (module !== undefined) return <SelectedModule {...props} module={module} />;
+	const collection = inspectedCollection(props, only);
+	if (collection !== undefined)
+		return <ModelCollectionDetails {...collection} onOpenFlow={props.onRevealFlow} />;
 	if (props.projection.flow !== null)
 		return (
 			<ModelFlowDetails
@@ -36,9 +45,7 @@ function ModelSelectionDetails(props: ModelSelectionDetailsProps): JSX.Element {
 				selection={props.selection}
 			/>
 		);
-	const connection = props.projection.allConnections.find(
-		({ joins }) => joins.length === ids.size && joins.every((edge) => ids.has(edge.id)),
-	);
+	const connection = inspectedConnection(props);
 	if (connection !== undefined)
 		return (
 			<ConnectionDetails
@@ -58,6 +65,47 @@ function ModelSelectionDetails(props: ModelSelectionDetailsProps): JSX.Element {
 			/>
 		);
 	return <UnselectedDetails {...props} />;
+}
+
+/**
+ * An explicit relationship can select one member of a projected aggregate.
+ * @param props The authored selection and projected connections.
+ * @returns Only the selected relationships when one connection contains them all.
+ */
+function inspectedConnection(props: ModelSelectionDetailsProps) {
+	const { ids } = props.selection;
+	if (ids.size === 0) return undefined;
+	const connection = props.projection.allConnections.find(({ joins }) =>
+		[...ids].every((id) => joins.some((edge) => edge.id === id)),
+	);
+	if (connection === undefined) return undefined;
+	const [first, ...rest] = connection.joins.filter((edge) => ids.has(edge.id));
+	return first === undefined ? undefined : { ...connection, joins: [first, ...rest] as const };
+}
+
+/**
+ * Only a single authored identity opens its dedicated inspector.
+ * @param selected The temporary selected identities.
+ * @returns The one subject, or absence for empty and mixed selections.
+ */
+function selectedIdentity(selected: ReadonlySet<string>): string | undefined {
+	return selected.size === 1 ? [...selected][0] : undefined;
+}
+
+/**
+ * Collections use qualified subject identities while retaining their local authored identity.
+ * @param props The selected reading and coherent comparison reference.
+ * @param id The exact inspected identity.
+ * @returns The collection and the state that owns its definition.
+ */
+function inspectedCollection(props: ModelSelectionDetailsProps, id: string | undefined) {
+	if (props.projection.flow !== null) return undefined;
+	for (const model of [props.model, props.projection.reference]) {
+		if (model === undefined) continue;
+		const collection = model.collections.find((entry) => `${model.manifest.id}#${entry.id}` === id);
+		if (collection !== undefined) return { model, collection };
+	}
+	return undefined;
 }
 
 /**
@@ -140,7 +188,7 @@ function SelectedModule(
 function SelectedModuleContent(
 	props: ModelSelectionDetailsProps & { module: Model["modules"][number]; removed: boolean },
 ): JSX.Element {
-	if (props.removed) return <ModuleDetails module={props.module} model={props.model} />;
+	if (props.removed) return <SelectedModuleDetails {...props} />;
 	if (props.module.id === props.scope)
 		return (
 			<>
@@ -153,7 +201,7 @@ function SelectedModuleContent(
 				<details className="text-body mt-6">
 					<summary>Module details</summary>
 					<div className="mt-4">
-						<ModuleDetails module={props.module} model={props.model} />
+						<SelectedModuleDetails {...props} />
 					</div>
 				</details>
 			</>
@@ -161,8 +209,29 @@ function SelectedModuleContent(
 	return (
 		<>
 			<OpenModule id={props.module.id} onOpen={props.onOpen} />
-			<ModuleDetails module={props.module} model={props.model} />
+			<SelectedModuleDetails {...props} />
 		</>
+	);
+}
+
+/**
+ * Source actions sit beside the module's authored evidence in every inspection mode.
+ * @param props The actual selected or removed module and its owning reading.
+ * @returns Authored details with the shared navigation controls.
+ */
+function SelectedModuleDetails(
+	props: ModelSelectionDetailsProps & { module: Model["modules"][number] },
+): JSX.Element {
+	return (
+		<ModuleDetails module={props.module} model={props.model}>
+			<ModuleNavigation
+				paneId={props.paneId}
+				vault={props.vault}
+				model={props.model}
+				module={props.module}
+				onNotice={props.onCodeTargetNotice}
+			/>
+		</ModuleDetails>
 	);
 }
 

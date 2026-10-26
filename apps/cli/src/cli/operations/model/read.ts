@@ -14,6 +14,36 @@ const modelReadContract = defineCommand({
 	parameters: [
 		{
 			kind: "option",
+			key: "references",
+			spellings: ["--references"],
+			value: "none",
+			description: "Resolve explicit foreign model references without changing either model",
+		},
+		{
+			kind: "option",
+			key: "reference",
+			spellings: ["--reference"],
+			value: "required",
+			placeholder: "index",
+			description: "Follow this zero-based reference index on the selected module",
+		},
+		{
+			kind: "option",
+			key: "code",
+			spellings: ["--code"],
+			value: "none",
+			description: "Resolve code for the selected module through existing checkout selection",
+		},
+		{
+			kind: "option",
+			key: "model",
+			spellings: ["--model"],
+			value: "required",
+			placeholder: "id",
+			description: "Require this exact model identity in the addressed vault",
+		},
+		{
+			kind: "option",
 			key: "state",
 			spellings: ["--state"],
 			value: "required",
@@ -66,6 +96,10 @@ const modelReadContract = defineCommand({
 			compare: z.boolean().optional(),
 			checkpoint: z.string().optional(),
 			flow: z.string().optional(),
+			references: z.boolean().optional(),
+			reference: z.coerce.number().int().nonnegative().optional(),
+			code: z.boolean().optional(),
+			model: z.string().optional(),
 		}),
 	},
 	result: ArchitectureModelReadSchema,
@@ -113,11 +147,12 @@ const modelReadContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "model read");
-		const result = await readArchitectureModelOnServer(input.module, input.checkpoint, input.flow, {
-			state: input.state,
-			against: input.against,
-			compare: input.compare,
-		});
+		const result = await readArchitectureModelOnServer(
+			input.module,
+			input.checkpoint,
+			input.flow,
+			input,
+		);
 		return {
 			result,
 			...(result.success

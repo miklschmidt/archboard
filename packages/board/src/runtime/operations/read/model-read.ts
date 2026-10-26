@@ -1,4 +1,4 @@
-import { ProposalSchema, StateSelectionSchema } from "#shared/schemas/model-proposals.ts";
+import { ProposalSchema } from "#shared/schemas/model-proposals.ts";
 import { FlowCollectionSchema } from "#shared/schemas/model-flows.ts";
 import { z } from "zod";
 import { errorMessage } from "@archboard/diagnostics/errno";
@@ -14,6 +14,10 @@ import { readModelFiles } from "#runtime/store/model-files.ts";
 import { modelDiagnostics, compareModelSubjects } from "#shared/rules/coherence/model.ts";
 
 import { modelBoundaryFailure } from "#runtime/store/model-state.ts";
+import {
+	readModelNavigation,
+	type NavigationOptions,
+} from "#runtime/operations/read/model-navigation.ts";
 
 type CapturedModel = ReturnType<typeof readModelFiles>;
 
@@ -350,20 +354,19 @@ function readArchitectureModel(
 	vault: string,
 	module: string | undefined,
 	flow: string | undefined,
-	selection: z.input<typeof StateSelectionSchema>,
+	options: NavigationOptions,
 ): Promise<ArchitectureModelRead>;
 function readArchitectureModel(
 	vault: string,
 	module?: string,
 	flow?: string,
-	selection?: z.input<typeof StateSelectionSchema>,
+	options?: NavigationOptions,
 ): ArchitectureModelRead | Promise<ArchitectureModelRead> {
 	const blocked = modelBoundaryFailure(vault);
-	if (selection !== undefined)
+	if (options !== undefined)
 		return (async () => {
 			if (blocked !== undefined) return blocked;
-			const { readSelectedState } = await import("#runtime/operations/proposals/read.ts");
-			const result = await readSelectedState(vault, module, flow, selection);
+			const result = await readModelNavigation(vault, module, flow, options);
 			return modelBoundaryFailure(vault) ?? result;
 		})();
 	if (blocked !== undefined) return blocked;
