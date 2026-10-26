@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - codex-parent
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T21:20:00Z'
+updated_date: '2026-10-26T21:25:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -86,4 +86,6 @@ Parent takes browser ownership after backend e08007684. Integration212ef722 incl
 The combined proposal/reference runtime case now passes after failing proposal creation. The common preparation path receives the materialized draft, and retained baselines capture source associations and exact foreign pins. The fixture releases its initial claim before expanding scope. Eighteen reference/proposal cases pass with96assertions, and source/frontend types plus full lint pass. The composed reader preserves .06 state and comparison selectors before .15 navigation enrichment. Foreign draft selection, reference comparison fields, explicit draft code activation, and browser acceptance remain pending.
 
 Foreign draft references now use the explicit selected state, preserve draft lifecycle, find an existing exact checkpoint for that state, and retain that pin for historical navigation. Proposal comparisons report references as an atomic field change. The corrected runtime regression failed on a foreign model/state mismatch, then passed1case/7assertions. Its fixture retains the current revision after foreign draft creation with a distinct operation identity. The combined references/proposals suite passes19cases/103assertions; source/frontend types and full lint pass. Explicit draft code activation and browser work remain pending.
+
+Canonical code opening now accepts an explicit state or exact checkpoint, with those selectors mutually exclusive. The shared reader resolves that selected binding before the existing opener runs. A real-process regression first received HTTP400 for a draft request, then opened src/planned.ts while current retained src/index.ts. Missing states return MODEL_UNAVAILABLE without substitution. The canonical owner passes2cases/8assertions, all code-target/opener owners pass163cases/405assertions, and types/lint pass. Server12813 now runs at PID2897352 for parent architecture and browser work.
 <!-- SECTION:NOTES:END -->

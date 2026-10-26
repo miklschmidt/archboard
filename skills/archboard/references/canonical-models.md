@@ -512,6 +512,9 @@ Unrelated files keep their exact bytes.
 
 ## Follow code and foreign references
 
+Canonical code activation names the model, subject, and optional selected state or exact checkpoint.
+A draft activation uses that draft's binding. A missing state refuses the action without opening current code.
+
 A module binding names source code, independently of its architecture owner.
 Use `model read <module> --code` to resolve that binding through the existing checkout selection.
 The vault uses its own checkout for its repository and the chosen checkout for each other repository.

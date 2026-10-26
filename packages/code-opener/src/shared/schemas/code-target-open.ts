@@ -4,11 +4,17 @@ import { NonemptyString } from "#shared/schemas/nonempty-string.ts";
 
 const CodeTargetOpenRequestSchema = z.union([
 	z.strictObject({ board: NonemptyString, element: NonemptyString }),
-	z.strictObject({
-		model: NonemptyString,
-		subject: NonemptyString,
-		checkpoint: NonemptyString.optional(),
-	}),
+	z
+		.strictObject({
+			model: NonemptyString,
+			subject: NonemptyString,
+			state: NonemptyString.optional(),
+			checkpoint: NonemptyString.optional(),
+		})
+		.refine(
+			(request) => request.state === undefined || request.checkpoint === undefined,
+			"Select either state or checkpoint.",
+		),
 ]);
 type CodeTargetOpenRequest = z.infer<typeof CodeTargetOpenRequestSchema>;
 

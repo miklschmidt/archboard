@@ -17,6 +17,7 @@ async function canonicalModelTarget(
 	const reading = await readArchitectureModel(vault, request.subject, undefined, {
 		model: request.model,
 		code: true,
+		state: request.state,
 		checkpoint: request.checkpoint,
 	});
 	if (!reading.success)
