@@ -3,6 +3,12 @@
 [workspace]
 resolver = "3"
 members = ["crates/*"]
+# Third-party crates vendored with archboard's changes (crates/vendor/README.md).
+# They are path dependencies of the core, not members: they keep upstream's
+# shape and lints, so a later upstream version diffs cleanly against them, and
+# the workspace's lints, docs, tests and the crate rules of
+# tests/system/repository-policy/rust-crates.test.ts stay on archboard's own crates.
+exclude = ["crates/vendor"]
 
 [workspace.package]
 edition = "2024"

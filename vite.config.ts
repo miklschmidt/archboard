@@ -413,6 +413,9 @@ export default defineConfig({
 			// authored in skills/, which is formatted.
 			".claude/**",
 			".agents/skills/**",
+			// Vendored third-party crates keep upstream's files for the same reason
+			// (crates/vendor/README.md).
+			"crates/vendor/*/**",
 			"dist/**",
 			"node_modules/**",
 			"backlog/**",
