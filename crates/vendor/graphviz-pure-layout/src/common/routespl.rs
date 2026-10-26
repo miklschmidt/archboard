@@ -153,7 +153,11 @@ fn limit_boxes_by_extremes(boxes: &mut [BoundingBox], control: [Point; 4], num_d
     }
     // archboard: the samples are counted ahead, and each box reads only the samples whose
     // rows can reach it, found in an order of the samples by y (below).
-    let count = if num_div >= 0.0 { num_div as usize + 1 } else { 0 };
+    let count = if num_div >= 0.0 {
+        num_div as usize + 1
+    } else {
+        0
+    };
     let mut ts = Vec::with_capacity(count);
     let mut near = Vec::with_capacity(count);
     let mut si = 0.0f64;
