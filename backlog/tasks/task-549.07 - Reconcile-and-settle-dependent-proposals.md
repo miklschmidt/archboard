@@ -1,9 +1,11 @@
 ---
 id: TASK-549.07
 title: Reconcile and settle dependent proposals
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
+updated_date: '2026-10-26T23:41:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -43,14 +45,73 @@ TASK-549.06
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An agent changes a predecessor and sees safe inherited changes across following drafts. Conflicts remain visible in both CLI results and browser readings.
-- [ ] #2 Preserve the baseline that established each conflict. Reconcile parents before children, block unsettled descendants, and publish the complete family result together.
-- [ ] #3 Settlement handles competing fields, deletion against change, lost references, alternative renames, and structural ordering. Claims cover the affected descendants.
-- [ ] #4 Reuse the existing semantic reconciliation cases through the public operation seam. No second transport-specific reconciliation path exists.
+- [x] #1 An agent changes a predecessor and sees safe inherited changes across following drafts. Conflicts remain visible in both CLI results and browser readings.
+- [x] #2 Preserve the baseline that established each conflict. Reconcile parents before children, block unsettled descendants, and publish the complete family result together.
+- [x] #3 Settlement handles competing fields, deletion against change, lost references, alternative renames, and structural ordering. Claims cover the affected descendants.
+- [x] #4 Reuse the existing semantic reconciliation cases through the public operation seam. No second transport-specific reconciliation path exists.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Extend the existing architecture read/write seam with retained reconciliation standing and explicit settlement. Publish task-549.07-contract.md for parent browser work.
+2. Create draft TASK-549.07 proposals on Board persistence, Command interface, and Archboard server routes. Preserve current variants and all identities.
+3. Use TDD with real temporary files and Git through the public architecture operations. Reuse the semantic reconciliation engine, then publish complete families through the existing durable journal.
+4. Cover descendant claims, blocked ancestry, conflict preservation, settlement, exact retries, and recovery. Adapt normal CLI/HTTP results without another engine.
+5. Update consumer guidance, ADR0061, test ownership, and evaluation coverage. Run focused regressions, types, lint, formatting, and proposal checks without model evaluations.
+6. Pause for simplification, merge latest signed integration, release claims, stop the server, commit clean source, and hand off backend evidence. Leave task In Progress and proposals draft.
+
+7. Parent merges integrated .15 while preserving every authored architecture variant. Compose reconciliation and settlement candidates with source capture and exact foreign pins, then prove that boundary through the existing public real-file/Git owner.
+
+8. Parent creates a Browser application proposal and implements visible unresolved issues, blocked ancestry, coherent comparison, and exact retained standing. Agents continue to own settlement writes. Use the existing browser seam for live inheritance, settlement refresh, explicit external refusal, and retained recovery.
+
+9. Complete consumer and architecture evidence, simplify, adopt accurate combined proposals, close proven criteria, sign the clean source, and dispatch the required merger.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Started from clean signed integration 212ef722bd5b0b9d6ce976119231be8d6378abb8. TASK-549.06 is Done and integrated. Parent owns frontend and full acceptance. Public operation seams and signed branch work are approved.
+
+Published early backend contract beside the delegate brief. Created draft TASK-549.07 proposals on Board persistence, Command interface and Archboard server routes. First public operation test failed on descendant claim scopes, then passed after claim validation and parent-first family candidate integration. Source and browser type checks found one result narrowing issue, now corrected. No frontend source or browser tests changed.
+
+Public runtime cases now pass safe two-level inheritance, retained conflict standing, blocked-child refusal, explicit mine/theirs settlement, deletion against modification, exact settlement retry, alternative renames, competing holders and empty-flow preservation. A deleted subject kept by settlement carries a retained restoration proof, so the existing identity authority never treats it as a fresh allocation. The original conflict baseline remains unchanged until settlement.
+
+Expanded public operation coverage for lost owners, independent arrivals, complete settlement refusal, external reconciliation and a forced interruption after the first installed file. Existing semantic rules remain the merge authority. The parent contract now requires complete, non-overlapping settlement choices to avoid a second partial-decision mechanism. Source/frontend types and full lint pass. The known board interface ceiling stays unchanged. Consumer instructions, ADR0061, test ownership and evaluation coverage now describe this slice. No model evaluations run.
+
+A public regression exposed the existing per-flow step merge limit. The same semantic engine now reconciles continuing step identities globally and keeps flow plus nested holder as one placement. Independent fields inherit after cross-flow moves. Competing moves preserve the complete proposal side. The unchanged semantic reconciliation suite passes 35 cases/95 assertions. Board persistence proposal now shows the shared semantic authority used by canonical and legacy families. The CLI/HTTP family adapter owner passes, including structured blocked refusal and complete settlement.
+
+Shared legacy durability exposed canonical-only undefined fields crossing into legacy content. Canonical extension fields now stay absent unless a side authors them. Legacy reconciliation, comparison, propagation and settlement pass 120 cases/401 assertions. Order settlement reuses the shared order rule and updates the complete sibling chain, including a middle step whose absolute position stays the same. Mixed choices for one holder refuse. Interface measurement remains board 245/188, the known TASK-549.24 excess. No ceiling changes.
+
+The final lifecycle regression proves that a child created from an unsettled proposal starts blocked in its creation receipt and first reading. Creation no longer labels that child settled. The early contract includes this behavior and complete-holder order choices. No adoption, shelving, correction, frontend source, browser tests, or Browser application architecture changed.
+
+Simplification pause: settlement requires one complete decision instead of a partial-resolution ledger. Shared sibling ordering and flow placement remain the sole semantic mechanism. Candidate dispatch now has no unreachable fallback. The family regression reads blocked catalogue metadata without another retained materialization; the blocked write and later selected child still prove the selected-state contract. This reduces test cost without changing product coverage. Latest integration merge remains already up to date at signed 212ef722bd5b0b9d6ce976119231be8d6378abb8.
+
+The frozen runtime set passes 67 cases/398 assertions. A final external-edit regression exposed input file moves that failed exact compact agreement despite stable subject identities. Family preparation now rematerializes its intended meaning through the chosen baseline before agreement. Safe reconciliation uses updated predecessor paths; standing conflicts retain their establishing baseline paths. This reuses the compact change and canonical reconstruction owners instead of adding path authority.
+
+Backend and CLI handoff: the final proposal owner passes 26 cases/137 assertions after the input-path refinement. The frozen combined proposal/current-edit set passes 67 cases/398 assertions. Legacy semantic comparison, propagation and settlement pass 120 cases/401 assertions. Normal CLI/HTTP adapters pass 7 cases/85 assertions. Source/frontend types, full lint and formatting pass. Evaluation inputs pass 21 scenarios/21 fixtures/14 coverage parts; no model evaluations run. Semantics has zero diagnostics. All three affected proposals have zero code warnings; ten unchanged warnings remain on Archboard (8), Archboard server (1) and Live panes (1). The full gate is not claimed: board 245/188 remains assigned to TASK-549.24. Proposals remain draft: Board persistence 3ocaLJ1M version 171, Command interface r47rxhJB version 193, Archboard server routes aNGGjJ4X version 159. Each links the approved task at signed 212ef722b, and all prior variants match their initial snapshots. All claims are released. Server 14548 is stopped. TASK-549.07 stays In Progress with unchecked acceptance criteria for parent browser acceptance. The exact contract and backend handoff live beside the delegate brief. No push, PR action, review phase, child agent or model evaluation occurs.
+
+The parent merge includes signed integration ae6afbf8 and preserves every original variant content and parent through an ordinary Git merge. The combined public regression exposes missing materialized models during source capture for reconcile and settle intents. Both candidates now supply their actual current or settled model. All four TASK-549.07-integration proposals derive from adopted .15. The three original backend drafts remain shelved provenance. Browser application now plans visible issues, blocked ancestry, selected-state navigation, and exact retained standing. The browser writes no settlement.
+
+The combined reference-conflict regression now passes and proves exact foreign retention through explicit external reconciliation and settlement. The first broader run exposed seven existing 15-second deadlines. Source capture treated the shared Git fixture as a foreign repository because its example bindings name github.com/acme/shop but the fixture had no origin. Checkout snapshot resolution then inspected the real machine registry and left over a hundred Git processes for deadline cleanup. The fixture now states the repository identity its authored model already uses. No production resolver, deadline, or rule changes. Browser RED reaches the missing conflict standing control after a successful live family write.
+
+The corrected fixture resolves the machine-registry cost and 76 of 77 runtime cases pass together. The remaining standing case passes alone at 14.6 seconds against its unchanged 15-second budget; the backend baseline already took 13.8 seconds. The final simplification reuses the validated materialized candidate for family propagation instead of resolving and decoding that same selected parent again from retained inputs. No cache or second semantic authority is added. The browser conflict, blocked ancestor, live settlement, external refusal, and retained-standing owner passes one case with nine assertions. Source/frontend types and full lint pass before the candidate reuse refinement.
+
+The final candidate reuse passes all 36 proposal/reference cases with 174 assertions. The previously tight standing case takes 13.43 seconds in the focused owner. No assertions or deadlines changed. Types, lint, and formatting pass. Reconciliation, proposal, planning, and legacy status browser owners pass. The comparison fixture now uses a deliberate external file edit for its existing refusal/recovery contract, because ordinary agent writes now reconcile the family. Parent visual inspection found that global issues lacked subject names, so the disclosure now uses authored names and permits keyboard scrolling. The current .15 architecture emits two redundant container-to-own-part warnings; the combined .07 drafts remove those edges and retain the containment meaning. Final comparison and label validation remain pending.
+
+All final focused behavior owners pass. The complete proposal/reference suite passes 36 cases and 174 assertions after candidate reuse. Final reconciliation and comparison browser owners pass two cases and 18 assertions. Proposal, planning, and legacy status owners also pass. Types, full lint, and formatting pass. Parent inspected the conflict disclosure with authored subject names and both values, plus the blocked ancestor action. Temporary screenshot calls are removed. The combined draft code check has zero warnings on all four affected boards. The two current .15 containment warnings are corrected in the combined .07 drafts and will be checked after adoption. The resulting design uses one semantic engine, one durable family transaction, and one shared issue presentation.
+
+All four combined proposals are adopted. The final current semantics check reports zero diagnostics after removing redundant contained-part lines and grouping legacy document reads and writes in the existing legacy container. Its new view opens the same stable subjects. The schema relationship now describes its actual runtime extend call. The final current code check has zero warnings on all four affected boards and ten inherited warnings elsewhere. Parent inspected the storage overview. Every claim is released, and server14548 is stopped. The known board interface excess remains assigned to TASK-549.24. No full-gate pass, push, PR update, or review phase is claimed.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Canonical predecessor edits reconcile the complete proposal family through the shared semantic engine and durable writer. Conflicts retain their baseline and coherent proposal side. Descendants remain blocked until complete explicit settlement. The browser shows authored subject names, both values, repair instructions, and blocked ancestry. Live settlement refreshes the family, while saved readings keep exact standing. Source capture preserves selected foreign pins through reconciliation and settlement. Focused runtime and browser owners, types, lint, formatting, and current semantics pass. All affected architecture proposals are adopted with no code warnings. Claims are released and the worktree server is stopped. Known interface width debt remains with TASK-549.24.
+<!-- SECTION:FINAL_SUMMARY:END -->
