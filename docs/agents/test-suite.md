@@ -373,6 +373,9 @@ The runner accepts the package command or a focused selection from this inventor
 
 `semantic-board-viewer.test.ts` proves that a board opens in the shell, camera
 controls work, server edits reach the page, and presentation writes no board content.
+`canonical-model-viewer.test.ts` uses the same browser adapter for current modules and retained readings.
+Its temporary Git repository supplies real checkpoints through the public API.
+It covers selection, changed or missing current inputs, source evidence, archive recovery, and unchanged retention records.
 `semantic-claim.test.ts` proves that a claimed board keeps drawing and shows the claim.
 Its take-back control ends the claim, and the next agent write receives the revocation once.
 The board keeps every accepted edit after take-back.
