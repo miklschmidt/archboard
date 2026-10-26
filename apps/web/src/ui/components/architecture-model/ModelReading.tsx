@@ -1,24 +1,79 @@
-import { useCallback, useState, type JSX } from "react";
+import { useCallback, useMemo, useState, type JSX } from "react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
 import { Button } from "@archboard/ui-kit/components";
 import { ModuleDetails } from "#ui/components/architecture-model/ModuleDetails.tsx";
 import { ModelDiagram } from "#ui/components/architecture-model/ModelDiagram.tsx";
+import { ModelBreadcrumbs } from "#ui/components/architecture-model/ModelBreadcrumbs.tsx";
+import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
+import { projectModel } from "#ui/rules/architecture-model/projection.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 interface ModelReadingProps {
 	model: Model;
+	paneId: string;
+	reducedMotion: boolean;
+}
+
+/**
+ * A scope changes the reading of the existing model without copying its content.
+ * @param props The coherent model.
+ * @returns Recursive navigation and the selected scope.
+ */
+function ModelReading(props: ModelReadingProps): JSX.Element {
+	const { model } = props;
+	const { scope, open } = useModelLocation(props.paneId);
+	const { id } = model.manifest;
+	const onOpen = useCallback((next: string | null): void => open(id, next), [id, open]);
+	const projection = useMemo(() => projectModel(model, scope), [model, scope]);
+	return (
+		<div
+			data-slot="model-reading"
+			data-scope={scope ?? ""}
+			className="flex min-h-0 flex-1 flex-col"
+		>
+			<ModelBreadcrumbs
+				name={model.manifest.name}
+				scope={scope}
+				trail={projection.trail}
+				onOpen={onOpen}
+			/>
+			{projection.missing ? (
+				<output data-slot="model-missing-scope" className="text-body p-8">
+					The requested module is absent from this reading: {scope}. Open the repository from the
+					path above.
+				</output>
+			) : (
+				<ScopedModelReading
+					key={scope ?? "root"}
+					model={model}
+					scope={scope}
+					projection={projection}
+					reducedMotion={props.reducedMotion}
+					onOpen={onOpen}
+				/>
+			)}
+		</div>
+	);
+}
+
+interface ScopedModelReadingProps {
+	model: Model;
+	scope: string | null;
+	projection: ReturnType<typeof projectModel>;
+	reducedMotion: boolean;
+	onOpen: (scope: string | null) => void;
 }
 
 /**
  * Only selection is local state; authored content remains the query snapshot.
- * @param props The coherent model.
- * @returns Root selection beside authored details.
+ * @param props The coherent model and scope projection.
+ * @returns Immediate children, nearby context, and authored details.
  */
-function ModelReading(props: ModelReadingProps): JSX.Element {
+function ScopedModelReading(props: ScopedModelReadingProps): JSX.Element {
 	const { model } = props;
 	const [selected, select] = useState<string | null>(null);
 	const module = model.modules.find((entry) => entry.id === selected);
-	const roots = model.roots.flatMap((id) => model.modules.filter((entry) => entry.id === id));
+	const { children, context } = props.projection;
 	const clear = useCallback((): void => select(null), []);
 	return (
 		<div className="flex min-h-0 flex-1">
@@ -27,11 +82,11 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				className="border-border w-80 shrink-0 overflow-y-auto border-r px-6 py-8"
 			>
 				<h3 className="text-title mb-4 font-semibold">Modules</h3>
-				{roots.length === 0 && (
+				{children.length === 0 && (
 					<p className="text-body text-muted-foreground">This model has no modules.</p>
 				)}
 				<ul data-slot="module-list" className="space-y-1">
-					{roots.map((entry) => (
+					{children.map((entry) => (
 						<ModuleRow
 							key={entry.id}
 							module={entry}
@@ -40,11 +95,35 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 						/>
 					))}
 				</ul>
+				{context.length > 0 && (
+					<>
+						<h3 className="text-title mt-8 mb-4 font-semibold">Nearby modules</h3>
+						<ul data-slot="module-context" className="space-y-1">
+							{context.map((entry) => (
+								<ModuleRow
+									key={entry.id}
+									module={entry}
+									selected={selected === entry.id}
+									onSelect={select}
+								/>
+							))}
+						</ul>
+					</>
+				)}
 			</nav>
-			<ModelDiagram model={model} selected={selected} onSelect={select} />
+			<ModelDiagram
+				model={model}
+				projection={props.projection}
+				selected={selected}
+				onSelect={select}
+				reducedMotion={props.reducedMotion}
+			/>
 			<div className="border-border w-80 shrink-0 overflow-y-auto border-l px-6 py-8">
 				{module !== undefined ? (
-					<ModuleDetails module={module} model={model} />
+					<>
+						<OpenModule id={module.id} onOpen={props.onOpen} />
+						<ModuleDetails module={module} model={model} />
+					</>
 				) : selected !== null ? (
 					<div className="text-body space-y-3">
 						<output className="block">
@@ -63,7 +142,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 }
 
 interface ModuleRowProps {
-	module: Model["modules"][number];
+	module: ReturnType<typeof projectModel>["children"][number];
 	selected: boolean;
 	onSelect: (id: string) => void;
 }
@@ -100,7 +179,7 @@ function ModuleRow(props: ModuleRowProps): JSX.Element {
  * @param props The coherent model.
  * @returns Its authored name, current state, and summary.
  */
-function ModelIntroduction(props: ModelReadingProps): JSX.Element {
+function ModelIntroduction(props: Pick<ModelReadingProps, "model">): JSX.Element {
 	const { model } = props;
 	const current = model.manifest.current;
 	return (
@@ -114,6 +193,23 @@ function ModelIntroduction(props: ModelReadingProps): JSX.Element {
 				</p>
 			)}
 		</div>
+	);
+}
+
+/**
+ * Opening changes scope while preserving the selected module identity.
+ * @param props The module destination and navigation action.
+ * @param props.id The existing module identity.
+ * @param props.onOpen The scope navigation action.
+ * @returns A keyboard-accessible opening action.
+ */
+function OpenModule(props: { id: string; onOpen: (scope: string | null) => void }): JSX.Element {
+	const { id, onOpen } = props;
+	const open = useCallback((): void => onOpen(id), [id, onOpen]);
+	return (
+		<Button variant="outline" data-slot="module-open" className="mb-6" onClick={open}>
+			Open module
+		</Button>
 	);
 }
 

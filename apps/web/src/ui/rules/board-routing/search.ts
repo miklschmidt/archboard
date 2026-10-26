@@ -145,7 +145,12 @@ function validateWorkspaceSearch(input: Record<string, unknown>): WorkspaceSearc
 }
 
 /** The parameters each pane owns: its board, its view and its board's repository. */
-const PANE_PARAMS: readonly RegExp[] = [PANE_PARAM, VIEW_PARAM, REPO_PARAM];
+const PANE_PARAMS: readonly RegExp[] = [
+	PANE_PARAM,
+	VIEW_PARAM,
+	REPO_PARAM,
+	/^(model|scope|checkpoint)([A-Za-z0-9]+)$/,
+];
 
 /**
  * Whether a search parameter is one the workspace owns.
