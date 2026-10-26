@@ -79,7 +79,7 @@ pub(super) async fn stacked_solved<S: Solver>(
     way: Way,
     calling: &Calling,
 ) -> Result<Rc<Drawing>, Unsolved> {
-    if nesting == Nesting::Inline && !could_stack(&graph.with_options(&[]))? {
+    if !could_stack(&graph.with_options(&[]), nesting.name())? {
         return solved(
             solver,
             graph,

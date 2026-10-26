@@ -15,6 +15,57 @@ The owner targets first renders and size-changing edits below 500 ms.
 The current slow boards are Board viewer, Board persistence, and Archboard server routes.
 The grading council of TASK-548.09 decides whether changed drawings can land.
 
+## Measurement reset after TASK-553
+
+TASK-553 fixes a Git owner process that survives its caller and spins at full CPU.
+The parent finds 37 such orphans on this machine.
+They account for the sustained load near 40 during the earlier experiments.
+The earlier native elapsed paths, pool timings, and corpus durations remain historical logs, not performance evidence.
+Instruction counts still describe work, with the virtual-clock caveat below.
+All wall-clock comparisons need fresh measurements after this fix.
+
+The branch rebases onto `f06fa5317` before further work.
+The frame-fix checkpoint becomes `adc7bc3de`, previously `e2cfd77e7`.
+The core rebuild succeeds, and the process inventory finds no Git owner worker.
+Fresh measurements and complete corpora stay under `/tmp/548-08/post-553`.
+Their parent baseline uses `f06fa5317` and the matching core source hash `ce42bd12e4ee9ccb`.
+The corpus tool still includes every whole board beside the authored views.
+
+### Fresh parent and no-op stacking checkpoint
+
+The parent baseline now reports load 3.32 to 4.08 during the pool pair.
+The repaired candidate reports load 4.40 to 4.59.
+The baseline instruction count is 152.714 billion, and the candidate count is 58.158 billion.
+Their solve counts are 27/25/24 and 27/5/4 in routes/persistence/viewer order.
+The best native paths are 329/1100/1059 ms before and 329/186/255 ms after.
+
+| Board                   | Parent first, ms | Candidate first, ms | Parent growing edit, ms | Candidate growing edit, ms |
+| ----------------------- | ---------------: | ------------------: | ----------------------: | -------------------------: |
+| Board viewer            |             1503 |                 392 |                    1627 |                        644 |
+| Board persistence       |             1572 |                 297 |                    1564 |                        297 |
+| Archboard server routes |              637 |                 653 |                     640 |                        638 |
+
+The canonical timing script warms the renderer on another board before its first measured board.
+The separate edit harness starts a fresh process and draws each board before its measured edit.
+It asserts that Browser client grows from 72 to 105 units.
+The other two cards grow from 105 to 139 units.
+Viewer edits and both routes measurements still miss 500 ms.
+
+The candidate also extends the existing graph proof across every block in the chosen nesting.
+Stacking adds constraints only where a ranked line enters one inline container from another.
+That predicate reads links and containment, without positions or measured sizes.
+If no block has such a line, the renderer asks one solve rather than two speculative partial solves.
+The red async contract asks two solves before the change and one after it.
+The three slow complete boards contain actual stacking choices, so this proof does not reduce their solve counts.
+Its simpler control flow replaces the old assumption that any graph with several blocks can stack.
+
+The layout crate passes 102 tests, and Clippy passes with warnings denied.
+The renderer suite reports 662 passes, one platform skip, and no failures.
+The extended corpus changes zero of 2452 drawings against the frame-fix checkpoint.
+The fresh parent and candidate corpora are `/tmp/548-08/post-553/base` and `/tmp/548-08/post-553/after-5`.
+Their 22 changed drawings match the frame-fix changes, with every whole-board SVG present on both sides.
+The next experiment removes the numerical cutoff and tests Groups directly on every graph that contains a multi-member region.
+
 ## Council rejection and the second round
 
 The council rejects `f55ca07dc` on 2026-10-26.

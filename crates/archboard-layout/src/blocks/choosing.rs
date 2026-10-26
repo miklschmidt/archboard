@@ -396,21 +396,20 @@ pub(crate) fn joining_of(graph: &str, nesting: &str) -> Result<Vec<String>, Stri
         .collect())
 }
 
-/// Whether a board drawn inline may have a block that could stack, read from
-/// its graph alone: its one block of cards does when a line runs from one
-/// inline container into another. A board drawn with blocks inside it may.
+/// Whether any block could stack: a ranked line enters an inline container
+/// from another container. This depends on containment and links, not sizes
+/// or positions, including when group regions are blocks of their own.
 ///
 /// # Errors
 ///
-/// When the graph or its options are unreadable.
-pub(crate) fn could_stack(graph: &str) -> Result<bool, String> {
-    let tree = blocks_of(graph, Nesting::Inline)?;
-    if tree.innermost_first(tree.root).len() != 1 {
-        return Ok(true);
-    }
-    let insets = insets_of(tree.get(tree.root));
+/// When the graph, its options or nesting are unreadable.
+pub(crate) fn could_stack(graph: &str, nesting: &str) -> Result<bool, String> {
+    let tree = blocks_of(graph, Nesting::named(nesting)?)?;
     let laid = LaidMap::default();
-    Ok(CardLayout::new(&tree, &laid, tree.root, insets, Arrangement::default()).stacks())
+    Ok(tree.innermost_first(tree.root).into_iter().any(|id| {
+        let insets = insets_of(tree.get(id));
+        CardLayout::new(&tree, &laid, id, insets, Arrangement::default()).stacks()
+    }))
 }
 
 /// How many leaf cards an inline graph holds, when it gathers a group into a region.
