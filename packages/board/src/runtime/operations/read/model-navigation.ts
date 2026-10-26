@@ -15,7 +15,6 @@ type NavigationOptions = z.input<typeof StateSelectionSchema> & {
 	code?: boolean | undefined;
 	references?: boolean | undefined;
 	reference?: number | undefined;
-	checkpoint?: string | undefined;
 	model?: string | undefined;
 };
 
@@ -48,16 +47,7 @@ async function navigationReading(
 	flow: string | undefined,
 	options: NavigationOptions,
 ) {
-	const { readSelectedState } = await import("#runtime/operations/proposals/read.ts");
-	const selection = { state: options.state, against: options.against, compare: options.compare };
-	if (options.walkthrough !== undefined) return playbackNavigation(vault, module, flow, options);
-	const model =
-		options.checkpoint === undefined
-			? await readSelectedState(vault, module, flow, selection)
-			: await readCheckpointModel(vault, options.checkpoint, module, flow, {
-					against: options.against,
-					compare: options.compare,
-				});
+	const model = await localReading(vault, module, flow, options);
 	if (!model.success) return model;
 	if (options.model === undefined) return model;
 	return options.model === model.manifest.id
@@ -70,27 +60,28 @@ async function navigationReading(
 }
 
 /**
- * Resolve a narrative before enriching the captured model with navigation evidence.
+ * Resolve state, retained inputs, or narrative playback through their existing owners.
  * @param vault The explicit vault.
  * @param module The optional module selector.
  * @param flow The optional flow selector.
- * @param options The combined public reader options.
- * @returns One pinned model with the requested identity guard.
+ * @param options The combined reader request.
+ * @returns One complete local reading.
  */
-async function playbackNavigation(
+async function localReading(
 	vault: string,
 	module: string | undefined,
 	flow: string | undefined,
 	options: NavigationOptions,
 ): Promise<ArchitectureModelRead> {
-	const model = await readPlayback(vault, module, flow, options);
-	if (!model.success) return model;
-	if (options.model === undefined || options.model === model.manifest.id) return model;
-	return navigationFailure(
-		"TARGET_CHANGED",
-		"The addressed model identity changed.",
-		"Open the vault that owns the requested model identity.",
-	);
+	if (options.walkthrough !== undefined) return readPlayback(vault, module, flow, options);
+	const { readSelectedState } = await import("#runtime/operations/proposals/read.ts");
+	const selection = { state: options.state, against: options.against, compare: options.compare };
+	return options.checkpoint === undefined
+		? readSelectedState(vault, module, flow, selection)
+		: readCheckpointModel(vault, options.checkpoint, module, flow, {
+				against: options.against,
+				compare: options.compare,
+			});
 }
 
 /**

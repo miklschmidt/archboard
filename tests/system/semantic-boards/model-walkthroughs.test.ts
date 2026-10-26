@@ -130,6 +130,27 @@ test("CLI narrative authoring and HTTP playback share the public writer and reta
 	expect(refused.status).toBe(2);
 	expect(JSON.parse(refused.stdout).code).toBe("WALKTHROUGH_NOT_FOUND");
 	expect(readFileSync(output, "utf8")).toBe("keep");
+	const occupied = runServerCli({
+		repoRoot,
+		server,
+		args: [
+			"model",
+			"record",
+			"--walkthrough",
+			"Tour",
+			"--checkpoint",
+			created.checkpoint.id,
+			"--talk",
+			home,
+			"--out",
+			output,
+		],
+		input: undefined,
+		env: { ARCHBOARD_FFMPEG: "/nonexistent/no-encoder" },
+	});
+	expect(occupied.status).toBe(2);
+	expect(readFileSync(output, "utf8")).toBe("keep");
+
 	const shared = await fetch(
 		`${server.base}/api/architecture/model?${new URLSearchParams({ vault, walkthrough: "Tour", shared: "true" })}`,
 	);

@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 174,
+	"version": 176,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T23:11:58.642Z",
+	"updatedAt": "2026-10-26T23:14:58.272Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -163591,7 +163591,7 @@
 						"order": 42000,
 						"name": "Canonical model contracts",
 						"kind": "module",
-						"responsibility": "Defines canonical modules, independent collections, exact revisions, checkpoint metadata and shared outcomes",
+						"responsibility": "Defines canonical meaning, state comparisons, exact revisions, model references, and immutable foreign pins",
 						"parent": "1VHRyajb",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -163616,7 +163616,7 @@
 						"order": 46000,
 						"name": "Canonical archive objects",
 						"kind": "module",
-						"responsibility": "Stores architecture-only Git objects and joins concurrent archive ancestry",
+						"responsibility": "Stores architecture-only Git objects, joins concurrent ancestry, and retains exact foreign pins",
 						"description": "Configured identity and signing govern checkpoints and marked synchronization commits. Required checkpoints remain actual Git parents. Retention refs preserve operations before conditional archive appends. Common Git objects and refs serve linked worktrees without changing current files, index or HEAD.",
 						"parent": "1VHRyajb",
 						"binding": {
@@ -163894,6 +163894,91 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/proposals"
+						}
+					},
+					{
+						"id": "vvxDSZoQ",
+						"order": 66000,
+						"name": "Canonical navigation",
+						"kind": "function",
+						"responsibility": "Resolves explicit references and bound code through the public model reader",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-navigation.ts"
+						}
+					},
+					{
+						"id": "Mv3r4IsX",
+						"order": 67000,
+						"name": "Foreign model references",
+						"kind": "module",
+						"responsibility": "Reads explicit foreign models and states without expanding or transferring ownership",
+						"description": "Uses the existing checkout resolver and selected-state reader for explicit model, subject, and state identities. Available references carry authored subject, model, and state names from that exact reading. Historical navigation requires the retained foreign pin. Missing destinations remain explicit and never substitute current content. A follow writes neither model.",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-references.ts"
+						}
+					},
+					{
+						"id": "QDE2xctM",
+						"order": 68000,
+						"name": "Foreign revision pins",
+						"kind": "module",
+						"responsibility": "Requires existing exact foreign checkpoints before local signed preparation",
+						"parent": "Bd4GPG6d",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/history/reference-pins.ts"
+						}
+					},
+					{
+						"id": "jQ671Dxs",
+						"order": 69000,
+						"name": "Canonical code targets",
+						"kind": "module",
+						"responsibility": "Resolves current bindings and refuses substitutes for historical source",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-code.ts"
+						}
+					},
+					{
+						"id": "D5PpXrVK",
+						"order": 70000,
+						"name": "Bound source associations",
+						"kind": "module",
+						"responsibility": "Captures chosen foreign source revisions without retaining code",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-source.ts"
+						}
+					},
+					{
+						"id": "8nPhZJ6C",
+						"order": 71000,
+						"name": "Narrative playback",
+						"kind": "module",
+						"responsibility": "Resolves one narrative target and reports beat readiness against one captured revision.",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/playback.ts"
+						}
+					},
+					{
+						"id": "d8uON4nq",
+						"order": 72000,
+						"name": "Narrative candidate",
+						"kind": "module",
+						"responsibility": "Preserves continuing beat identities and applies narrative edits inside the structural transaction.",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/walkthroughs.ts"
 						}
 					}
 				],
@@ -165455,11 +165540,12 @@
 						"from": "4P7YZdnj",
 						"to": "Bd4GPG6d",
 						"kind": "call",
+						"label": "retains exact local checkpoints",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/architecture/model-routes.ts",
-							"symbol": "readArchitectureCheckpoint"
+							"symbol": "retainArchitectureCheckpoint"
 						}
 					},
 					{
@@ -166676,6 +166762,300 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/proposals/candidate.ts",
 							"symbol": "archiveContext"
+						}
+					},
+					{
+						"id": "PA8QWoMK",
+						"order": 202000,
+						"from": "cNaEpWjJ",
+						"to": "vvxDSZoQ",
+						"kind": "call",
+						"label": "readModelNavigation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-read.ts",
+							"symbol": "readModelNavigation"
+						}
+					},
+					{
+						"id": "aEqCF5VY",
+						"order": 203000,
+						"from": "vvxDSZoQ",
+						"to": "Mv3r4IsX",
+						"kind": "call",
+						"label": "resolveModelReferences",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-navigation.ts",
+							"symbol": "resolveModelReferences"
+						}
+					},
+					{
+						"id": "wlWo6SPu",
+						"order": 204000,
+						"from": "vvxDSZoQ",
+						"to": "jQ671Dxs",
+						"kind": "call",
+						"label": "modelCodeTarget",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-navigation.ts",
+							"symbol": "modelCodeTarget"
+						}
+					},
+					{
+						"id": "gcijTSIS",
+						"order": 205000,
+						"from": "vvxDSZoQ",
+						"to": "KJy5yYuq",
+						"kind": "call",
+						"label": "readSelectedState",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-navigation.ts",
+							"symbol": "readSelectedState"
+						}
+					},
+					{
+						"id": "vpsNmFef",
+						"order": 206000,
+						"from": "Mv3r4IsX",
+						"to": "Bd4GPG6d",
+						"kind": "call",
+						"label": "readCheckpointModel",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-references.ts",
+							"symbol": "readCheckpointModel"
+						}
+					},
+					{
+						"id": "5J0MoNa1",
+						"order": 207000,
+						"from": "8Uq1mtzw",
+						"to": "QDE2xctM",
+						"kind": "call",
+						"label": "captureReferencePins",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
+							"symbol": "captureReferencePins"
+						}
+					},
+					{
+						"id": "e0O9TV5d",
+						"order": 208000,
+						"from": "Bd4GPG6d",
+						"to": "QDE2xctM",
+						"kind": "call",
+						"label": "captureReferencePins",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/history/retain.ts",
+							"symbol": "captureReferencePins"
+						}
+					},
+					{
+						"id": "pG0y6qDe",
+						"order": 209000,
+						"from": "QDE2xctM",
+						"to": "Mv3r4IsX",
+						"kind": "call",
+						"label": "resolveModelReferences",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/history/reference-pins.ts",
+							"symbol": "resolveModelReferences"
+						}
+					},
+					{
+						"id": "kn7RIsa6",
+						"order": 210000,
+						"from": "ZRq51Ecz",
+						"to": "D5PpXrVK",
+						"kind": "call",
+						"label": "captureBoundSources",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-archive.ts",
+							"symbol": "captureBoundSources"
+						}
+					},
+					{
+						"id": "Yw4B2gp3",
+						"order": 211000,
+						"from": "Mv3r4IsX",
+						"to": "cNaEpWjJ",
+						"kind": "call",
+						"label": "readArchitectureModel",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-references.ts",
+							"symbol": "readArchitectureModel"
+						}
+					},
+					{
+						"id": "AjGkFCES",
+						"order": 212000,
+						"from": "vvxDSZoQ",
+						"to": "Bd4GPG6d",
+						"kind": "call",
+						"label": "readCheckpointModel",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-navigation.ts",
+							"symbol": "readCheckpointModel"
+						}
+					},
+					{
+						"id": "RQgSYJGP",
+						"order": 213000,
+						"from": "jQ671Dxs",
+						"to": "RfwX9gsx",
+						"kind": "call",
+						"label": "git",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-code.ts",
+							"symbol": "git"
+						}
+					},
+					{
+						"id": "815HRSTZ",
+						"order": 214000,
+						"from": "D5PpXrVK",
+						"to": "RfwX9gsx",
+						"kind": "call",
+						"label": "git",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-source.ts",
+							"symbol": "git"
+						}
+					},
+					{
+						"id": "KU0dnode",
+						"order": 215000,
+						"from": "KJy5yYuq",
+						"to": "QDE2xctM",
+						"kind": "call",
+						"label": "captureReferencePins",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+							"symbol": "captureReferencePins"
+						}
+					},
+					{
+						"id": "hVCOfnrb",
+						"order": 216000,
+						"from": "vvxDSZoQ",
+						"to": "8nPhZJ6C",
+						"kind": "call",
+						"label": "readPlayback",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-navigation.ts",
+							"symbol": "readPlayback"
+						}
+					},
+					{
+						"id": "JGBxddlN",
+						"order": 217000,
+						"from": "llmZ5fau",
+						"to": "d8uON4nq",
+						"kind": "call",
+						"label": "applyWalkthroughChanges",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/structure.ts",
+							"symbol": "applyWalkthroughChanges"
+						}
+					},
+					{
+						"id": "IUelf4x1",
+						"order": 218000,
+						"from": "8nPhZJ6C",
+						"to": "KJy5yYuq",
+						"kind": "call",
+						"label": "readSelectedState",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/playback.ts",
+							"symbol": "readSelectedState"
+						}
+					},
+					{
+						"id": "vVbPUTQy",
+						"order": 219000,
+						"from": "8nPhZJ6C",
+						"to": "cNaEpWjJ",
+						"kind": "call",
+						"label": "readCurrentModel",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/playback.ts",
+							"symbol": "readCurrentModel"
+						}
+					},
+					{
+						"id": "8yI2otaH",
+						"order": 220000,
+						"from": "8nPhZJ6C",
+						"to": "Bd4GPG6d",
+						"kind": "call",
+						"label": "historyResult",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/playback.ts",
+							"symbol": "historyResult"
+						}
+					},
+					{
+						"id": "bMnT3nY6",
+						"order": 221000,
+						"from": "e0GTqv1k",
+						"to": "Bd4GPG6d",
+						"kind": "call",
+						"label": "walkthroughDependencies",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+							"symbol": "walkthroughDependencies"
+						}
+					},
+					{
+						"id": "4RcfNmFu",
+						"order": 222000,
+						"from": "d8uON4nq",
+						"to": "nqi2h0Ku",
+						"kind": "call",
+						"label": "ArchiveError",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/walkthroughs.ts",
+							"symbol": "ArchiveError"
 						}
 					}
 				],

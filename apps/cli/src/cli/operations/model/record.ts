@@ -9,13 +9,14 @@ import {
 	DEFAULT_RECORDING_LANGUAGE,
 	RecordingLanguageSchema,
 } from "@archboard/walkthrough/recording";
-import { freshTalkPlace, recordWalkthrough } from "@archboard/walkthrough/recorder";
+import { recordWalkthrough } from "@archboard/walkthrough/recorder";
 import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
 import { semanticRecordContract } from "#cli/operations/semantic/draw/record.ts";
 import { readArchitectureModelOnServer } from "#cli/clients/server/architecture-model.ts";
 import { defineCommand, CliUsageError } from "#cli/protocol/contract/contract.ts";
 import {
 	containerOf,
+	talkPlaceOf,
 	requireWritableDirectory,
 } from "#cli/rules/semantic/draw/recording-output.ts";
 
@@ -78,10 +79,9 @@ function recordingRequest(
 		theme: input.theme,
 		layout: input.layout,
 		out: context.resolvePath(input.out),
-		talk: freshTalkPlace(
+		talk: talkPlaceOf(
 			input.talk === undefined ? undefined : context.resolvePath(input.talk),
 			architecture.manifest.name,
-			new Date(),
 		),
 		signal: context.signal,
 		say: context.diagnostic,
@@ -98,6 +98,9 @@ function recordingRequest(
 
 const modelRecordContract = defineCommand({
 	...semanticRecordContract,
+	refusals: semanticRecordContract.refusals.filter(
+		(refusal) => !["DOING_REQUIRED", "CHECKOUT_NOT_CHOSEN"].includes(refusal.code),
+	),
 	output: {
 		cases: [
 			{
@@ -172,7 +175,7 @@ const modelRecordContract = defineCommand({
 			description: "The retained walkthrough cannot be recorded",
 		},
 	],
-	effects: ["read", "local-write"],
+	effects: ["read", "local-write", "server-state-write"],
 	relationships: [
 		{
 			method: "GET",

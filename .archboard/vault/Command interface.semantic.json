@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 196,
+	"version": 198,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-26T23:11:58.757Z",
+	"updatedAt": "2026-10-26T23:14:58.854Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -145351,7 +145351,7 @@
 						"order": 57000,
 						"name": "Canonical model client",
 						"kind": "module",
-						"responsibility": "Translates state selection, comparison and complete proposal intents through shared server schemas.",
+						"responsibility": "Translates state selection, comparison, navigation, and durable proposal intents through shared server schemas",
 						"description": "Preserves shared current reads, checkpoint results, edit outcomes, claims and recovery across HTTP, including structured domain refusals.",
 						"parent": "dHZeNcMs",
 						"binding": {
@@ -145433,6 +145433,18 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/operations/model/render.ts"
+						}
+					},
+					{
+						"id": "tXESqrQK",
+						"order": 64000,
+						"name": "Canonical record",
+						"kind": "module",
+						"responsibility": "Records an exact retained narrative through the existing local talk recorder.",
+						"parent": "bLpk2XKU",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/model/record.ts"
 						}
 					}
 				],
@@ -146999,6 +147011,48 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/operations/model/render.ts",
 							"symbol": "modelRenderContract"
+						}
+					},
+					{
+						"id": "KLeoJwpA",
+						"order": 111000,
+						"from": "tXESqrQK",
+						"to": "TsCise1I",
+						"kind": "call",
+						"label": "readArchitectureModelOnServer",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/model/record.ts",
+							"symbol": "readArchitectureModelOnServer"
+						}
+					},
+					{
+						"id": "O0mnsHg3",
+						"order": 112000,
+						"from": "tXESqrQK",
+						"to": "XAJYaUnv",
+						"kind": "call",
+						"label": "recordWalkthrough",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/model/record.ts",
+							"symbol": "recordWalkthrough"
+						}
+					},
+					{
+						"id": "nayrDZvG",
+						"order": 113000,
+						"from": "tXESqrQK",
+						"to": "4oWqpsOB",
+						"kind": "call",
+						"label": "semanticRecordContract",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/model/record.ts",
+							"symbol": "semanticRecordContract"
 						}
 					}
 				],

@@ -3,8 +3,11 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ArchitectureModuleEditSchema } from "@archboard/board/model";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/board/store-read";
-import { retainArchitectureCheckpoint,
-	releaseArchitectureClaim, editArchitectureModule } from "@archboard/board/store-write";
+import {
+	retainArchitectureCheckpoint,
+	releaseArchitectureClaim,
+	editArchitectureModule,
+} from "@archboard/board/store-write";
 import {
 	fixture,
 	structureIntent,
@@ -249,7 +252,14 @@ test("exact narrative targets retain their history and unavailable targets never
 	const { vault } = fixture();
 	const initial = readArchitectureModel(vault);
 	if (!initial.success) throw new Error(JSON.stringify(initial));
-	const baseline = await retainArchitectureCheckpoint(vault,{target:"current",operationId:"exact-target",writer:"agent",doing:"retaining a narrative target",expectedRevision:initial.revision.digest,dependencies:[]});
+	const baseline = await retainArchitectureCheckpoint(vault, {
+		target: "current",
+		operationId: "exact-target",
+		writer: "agent",
+		doing: "retaining a narrative target",
+		expectedRevision: initial.revision.digest,
+		dependencies: [],
+	});
 	if (!baseline.success) throw new Error(JSON.stringify(baseline));
 	const add = await structureIntent(vault, ["Shop"]);
 	const made = await editArchitectureModule(vault, {

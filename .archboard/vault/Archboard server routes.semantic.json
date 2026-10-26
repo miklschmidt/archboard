@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 162,
+	"version": 163,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-26T23:11:58.512Z",
+	"updatedAt": "2026-10-26T23:14:03.296Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -151354,7 +151354,7 @@
 						"order": 35000,
 						"name": "Canonical model routes",
 						"kind": "module",
-						"responsibility": "Reads canonical modules and independent flows from current, named proposals or exact checkpoints, with explicit lifecycle and comparison metadata.",
+						"responsibility": "Exposes current, draft, and exact architecture with lifecycle, comparisons, source resolution, and foreign navigation",
 						"description": "Every request names its vault. The shared runtime owns retention, dependency and evidence semantics. Browser selection opens an exact checkpoint through the same read contract. Canonical edit, claim and recovery adapters use the shared operation contract. A vault-scoped event stream sends fresh coherent readings and durable news. The private archive endpoint translates an explicit setup request through the same runtime. It sends no history and returns local setup information.",
 						"parent": "ETrslazw",
 						"binding": {

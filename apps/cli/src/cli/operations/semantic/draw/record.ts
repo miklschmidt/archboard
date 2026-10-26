@@ -25,7 +25,7 @@ import {
 	discardSemanticBoardOnServer,
 	readSemanticBoardOnServer,
 } from "#cli/clients/server/semantic-boards.ts";
-import { TalkFileError, freshTalkPlace, recordWalkthrough } from "@archboard/walkthrough/recorder";
+import { recordWalkthrough } from "@archboard/walkthrough/recorder";
 import {
 	CliUsageError,
 	defineCommand,
@@ -34,6 +34,7 @@ import {
 import { doingRefusal, serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import {
 	containerOf,
+	talkPlaceOf,
 	encoderUnavailableRefusal,
 	recorderUnavailableRefusal,
 	renderFailedRefusal,
@@ -135,22 +136,6 @@ function recordedRepository(vault: CommandContext["vault"]): string | null {
 		);
 	}
 	return repository.name;
-}
-
-/**
- * Where the talk is kept: the directory asked for, or a new one in the state directory.
- * @param asked The --talk the command was given, resolved, if any.
- * @param board The board recorded, which names a talk kept in the state directory.
- * @returns The place, proven free.
- * @throws {CliUsageError} When the directory asked for exists or cannot be made.
- */
-function talkPlaceOf(asked: string | undefined, board: string): ReturnType<typeof freshTalkPlace> {
-	try {
-		return freshTalkPlace(asked, board, new Date());
-	} catch (error) {
-		if (error instanceof TalkFileError) throw new CliUsageError(error.message);
-		throw error;
-	}
 }
 
 /**
