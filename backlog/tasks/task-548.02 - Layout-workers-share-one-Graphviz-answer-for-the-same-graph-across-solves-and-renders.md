@@ -3,11 +3,11 @@ id: TASK-548.02
 title: >-
   Layout workers share one Graphviz answer for the same graph, across solves and
   renders
-status: Done
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-26T02:27:00Z'
-updated_date: '2026-10-26T04:13:00Z'
+updated_date: '2026-10-26T06:49:00Z'
 labels:
   - renderer
   - performance
@@ -25,7 +25,7 @@ In the 23 first renders that timing.ts measures, 359 of 1,072 Graphviz calls lay
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [x] #1 A Graphviz call for a graph that any earlier solve of the process laid out is answered from the shared cache, on any worker
+- [ ] #1 A Graphviz call for a graph that any earlier solve of the process laid out is answered from the shared cache, on any worker
 - [x] #2 A re-render after an edit that keeps every card's size lays out no graph again
 - [x] #3 The cache's memory is bounded, and the bound is stated where it is set
 - [x] #4 Every drawing of the corpus is unchanged
@@ -64,6 +64,14 @@ Corpus: render-corpus render /tmp/t548/02-after --variants current --jobs 1 (20 
 Tests: bun test packages/renderer 653 pass, 1 skip, 0 fail; cargo test --locked -p archboard-renderer-wasm 2 pass; type-check, lint (nix develop) and fmt:check exit 0; bun run benchmark 40 pass (05:09:13 load 4.63); browser lane --focus browser-drawn-pictures 1 pass and drawn-glyphs 1 pass (the lane rebuilt dist/frontend from these sources); archboard semantic rasterize of Renderer layout through this worktree's restarted server drew the board.
 
 Correction: the instrumented hit-rate runs were at 04:52-04:53 (load 4.75-5.18), not 05:52. The change uses no SharedArrayBuffer, Atomics or cross-origin isolation: answers move by postMessage only.
+
+Regression fix on task-548.02-fix (from feat/faster-first-render 33d00368e): the Graphviz answer relay and the per-instance Graphviz memory are removed; the pool's solve memory stays.
+Mechanism: under Bun, the ninth WebAssembly instance of a process and every later one (the main thread's core plus eight or more workers) grows its memory about 35 times slower. A replay of the real 469-pair, 33.5 M character store into a fresh worker took 44-48 ms with up to 6 other workers running and 1,708-1,758 ms with 7, 8, 9 or 12. The pool handed each worker it started late the whole store, so the late worker spent 1.7 s growing memory before the solve it was started for: Live panes started worker 9 (1,693 ms in rememberGraphvizAnswers), Board rasterizer started worker 8 (795 ms). Every worker also grew to hold the full store through the relay.
+Measured over the full vault sequence (scripts/tmp-seq.ts, one render each, two rounds, load 1.3-2.8): relay with start-up store 8,778/8,726 ms; relay without it 5,926/5,998; per-worker memory without relay 5,741/5,678; no Graphviz memory 5,728/5,685. Neither the relay nor a per-worker memory pays for itself once TASK-548.03 made Graphviz faster, so both are gone.
+Against 33d00368e, alternating (load 1.2-3.3): timing.ts 7 first-render total 9,134/9,208 ms against 5,760/5,746 ms; Live panes 2,002/2,046 against 327/332; Browser application 1,900/1,983 against 380/344. Full sequence 8,594/8,773 against 5,701/5,653 ms; Live panes 1,972/2,122 against 395/359.
+Edits (Bun host, load about 2.8): Agent workbench first 1,200-1,205 ms, size-keeping relabel 47 ms, growing relabel 941-944 ms; Board viewer first 1,307-1,319 ms, size-keeping relabel 53-54 ms, growing relabel 859-863 ms.
+Corpus against /tmp/t548/all-after (33d00368e): 0 of 2,344 drawings differ. bun test packages/renderer 651 pass, 1 skip, 0 fail; type-check, lint, fmt:check exit 0; cargo test -p archboard-renderer-wasm passes. The edit owner is now packages/renderer/tests/runtime/services/layout-workers.test.ts, which holds a size-keeping relabel to sending no solve to a worker; it fails with the solve memory disabled.
+Follow-up for the parent: AC #1 (a Graphviz call for a graph any earlier solve laid out is answered from the shared cache, on any worker) is no longer met, because the relay was removed for being a net loss. Workers past the eighth WebAssembly instance also grow memory slowly in their own solves; the pool's ceiling (cores minus one, 23 here) starts them on wide boards.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
