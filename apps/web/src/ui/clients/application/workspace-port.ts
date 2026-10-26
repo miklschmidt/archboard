@@ -69,10 +69,11 @@ function addressingOver(binding: LiveBinding<WorkspaceAddressing>): WorkspaceAdd
  * The address bar cannot tell a person's gesture from a change that simply
  * happened — both arrive as the workspace being different — so the gesture says
  * so, and that is what makes this a history entry somebody can go Back through
- * rather than a silent rewrite of the address they are on.
+ * rather than a silent rewrite of the address they are on. A restore reads
+ * through `showView`, which says nothing: the address already names that view.
  * @param readings What each pane is reading.
  * @param addressing Where a person's moves are announced.
- * @returns The readings, with `showView` announcing itself.
+ * @returns The readings, with `chooseView` announcing itself.
  */
 function announcingViews(readings: PaneReadings, addressing: WorkspaceAddressing): PaneReadings {
 	return {
@@ -81,10 +82,12 @@ function announcingViews(readings: PaneReadings, addressing: WorkspaceAddressing
 		 * The person chose a way of reading one pane's board.
 		 * @param paneId The pane.
 		 * @param view The view's id, or null for the overview.
+		 * @returns Each pane the choice reached, with the view it read before.
 		 */
-		showView: (paneId: string, view: string | null): void => {
-			addressing.expect({ kind: "view", paneId, from: readings.viewOf(paneId) });
-			readings.showView(paneId, view);
+		chooseView: (paneId: string, view: string | null) => {
+			const reached = readings.chooseView(paneId, view);
+			addressing.expect({ kind: "view", panes: reached });
+			return reached;
 		},
 	};
 }
@@ -98,8 +101,13 @@ const NO_READINGS: PaneReadings = Object.freeze({
 	viewOf: (): string | null => null,
 	/** Nothing to read through a view. */
 	showView: (): void => {
-		// A caller with no readings has no view to choose.
+		// A caller with no readings has no view to read.
 	},
+	/**
+	 * Nothing to choose a view for.
+	 * @returns No pane.
+	 */
+	chooseView: (): readonly [] => [],
 	/**
 	 * Nothing is picked out.
 	 * @returns Null, always.

@@ -270,7 +270,9 @@ open, so a pick never changes the size of the pane or moves the picture.
 
 Two panes on the same board of the same vault are linked. A part picked in one
 is picked in the other, and letting go clears both. Only the pane where the
-person picked tells the agent that the person changed it. A drill-down, another
+person picked tells the agent that the person changed it. A view chosen in one
+is read in both, and Back takes both back in one step. A pane that drilled into
+the board beside it keeps the view of its own level. A drill-down, another
 board or a presented walkthrough in either pane ends the link, and each pane
 keeps what it picked. A pane whose variant lacks the part names the variant
 beside that holds it, so a part that a proposal adds is not read as gone.

@@ -75,7 +75,8 @@ _Avoid_: split, view, tab, panel, frame, window
 **Linked panes**:
 Two panes that show the same board of the same vault while neither presents a
 walkthrough. A part picked in one is picked in the other, and letting go clears
-both. A drill-down or another board in either pane ends the link.
+both. A view chosen in one is read in both, while the other pane reads the board
+it was opened on. A drill-down or another board in either pane ends the link.
 _Avoid_: synced panes, mirrored panes
 
 **User**:

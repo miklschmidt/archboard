@@ -96,7 +96,7 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 	 * @param view The view's id, or null for the overview.
 	 */
 	function readThrough(view: string | null): void {
-		readings.showView(paneId, view);
+		readings.chooseView(paneId, view);
 	}
 	/**
 	 * The person picked a subject out in this pane, or cleared it.

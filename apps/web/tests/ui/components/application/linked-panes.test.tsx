@@ -4,6 +4,10 @@
 // link, and the pane it leaves behind keeps its pick. A pane whose variant lacks
 // the part names the variant beside that holds it.
 //
+// A view chosen in one linked pane is read in both, as one history entry, and
+// Back reads each pane as it was (TASK-538.03). A pane that drilled into the
+// board beside it keeps the view of its own level.
+//
 // What the panes report to the server is what is checked, because that is what
 // an agent is told each pane reads (ADR 0023).
 
@@ -41,6 +45,9 @@ const PARTS: Readonly<Record<string, readonly Part[]>> = {
 		{ id: "ref", name: "Refunds" },
 	],
 };
+
+/** The shop's one authored view: views belong to the board, so both variants offer it. */
+const QUERIES = { id: "vq", name: "Queries", grammar: "architecture" } as const;
 
 /** Each variant of the shop, as the board lists it. */
 const VARIANTS = [
@@ -99,7 +106,10 @@ function documentOf(name: string): Record<string, unknown> {
 		version: 1,
 		createdAt: "2026-10-25T00:00:00.000Z",
 		updatedAt: "2026-10-25T00:00:00.000Z",
-		views: [],
+		views:
+			name === "shop"
+				? [{ ...QUERIES, scope: { kind: "selection", nodes: ["ord"], edges: [], flows: [] } }]
+				: [],
 		current: name === "shop" ? "v1" : "o1",
 		variants,
 	};
@@ -124,12 +134,27 @@ const PICTURED: Readonly<
 };
 
 /**
+ * The view a picture was asked to be drawn through.
+ * @param view The view's id, or null for the whole variant.
+ * @returns The view as the render route names it, or null.
+ */
+function drawnView(view: string | null): Record<string, string> | null {
+	if (view === null) return null;
+	return view === QUERIES.id ? QUERIES : { id: view, name: view, grammar: "architecture" };
+}
+
+/**
  * One board's picture: each part of the variant as one card.
  * @param board The board.
  * @param variant The variant asked for, or none for the current one.
+ * @param view The view asked for, or none for the whole variant.
  * @returns The render route's answer.
  */
-function drawingOf(board: string, variant: string | null): Record<string, unknown> {
+function drawingOf(
+	board: string,
+	variant: string | null,
+	view: string | null,
+): Record<string, unknown> {
 	const { variant: drawn, parts } = PICTURED[`${board}@${variant}`] ?? PICTURED[board]!;
 	const cards = parts.map(
 		(part, index) =>
@@ -140,8 +165,8 @@ function drawingOf(board: string, variant: string | null): Record<string, unknow
 		board,
 		version: 1,
 		variant: { id: drawn.id, name: drawn.name, lifecycle: drawn.lifecycle },
-		view: null,
-		views: [],
+		view: drawnView(view),
+		views: board === "shop" ? [QUERIES] : [],
 		changes: null,
 		waiting: null,
 		width: 400,
@@ -245,7 +270,13 @@ function documentRoute(request: Asked): Promise<Response> {
  */
 function renderRoute(request: Asked): Promise<Response> {
 	const { searchParams } = request.url;
-	return answer(drawingOf(searchParams.get("board") ?? "", searchParams.get("variant")));
+	return answer(
+		drawingOf(
+			searchParams.get("board") ?? "",
+			searchParams.get("variant"),
+			searchParams.get("view"),
+		),
+	);
 }
 
 /** The routes the server is faked on, by path. */
@@ -270,17 +301,17 @@ server.answering = function answering(url, init) {
 };
 
 /**
- * Point one pane's socket at the shop, at one of its variants.
+ * Point one pane's socket at a board, the way the server does.
  * @param socket The pane's socket.
- * @param variant The variant, or null for the current one.
+ * @param key The board key: the shop, one of its variants, or the orders board.
  */
-function pointAt(socket: FakeSocket, variant: string | null): void {
-	const board = variant === null ? "shop" : `shop@${variant}`;
+function pointAt(socket: FakeSocket, key: string): void {
+	const [board, variant] = key.split("@");
 	act(() => {
 		socket.say({
 			type: "pane_board",
-			board,
-			identity: { board: "shop", variant: variant ?? "current" },
+			board: key,
+			identity: { board, variant: variant ?? "current" },
 			...SERVED,
 		});
 	});
@@ -308,20 +339,33 @@ function onScreen(paneId: string): string | null {
 }
 
 /**
- * Two panes on the shop: pane A on what is built, pane B on the proposal.
+ * Two panes: by default both on the shop, pane A on what is built and pane B on the proposal.
+ * @param a The board pane A is opened on.
+ * @param b The board pane B is opened on.
  * @returns Each pane's socket.
  */
-async function twoPanes(): Promise<{ a: FakeSocket; b: FakeSocket }> {
-	const a = await paneShowing("shop");
+async function twoPanes(a = "shop", b = "shop@v2"): Promise<{ a: FakeSocket; b: FakeSocket }> {
+	const first = await paneShowing(a);
 	const made = FakeSocket.made.length;
-	act(() => a.say({ type: "pane_open" }));
+	act(() => first.say({ type: "pane_open" }));
 	await settleUntil(() => FakeSocket.made.length > made);
-	const b = FakeSocket.made.at(-1)!;
-	act(() => b.open());
+	const second = FakeSocket.made.at(-1)!;
+	act(() => second.open());
 	await settle();
-	pointAt(b, "v2");
-	await settleUntil(() => pane("B")?.querySelector("[data-semantic-id='ref']") != null);
-	return { a, b };
+	pointAt(second, b);
+	await settleUntil(() => draws("B", b));
+	return { a: first, b: second };
+}
+
+/**
+ * Whether one pane draws a board.
+ * @param paneId The pane.
+ * @param key The board key it was pointed at.
+ * @returns True once its picture is of that board and variant.
+ */
+function draws(paneId: string, key: string): boolean {
+	const card = key === "shop@v2" ? "ref" : key === "orders" ? "cart" : "ord";
+	return pane(paneId)?.querySelector(`[data-semantic-id='${card}']`) != null;
 }
 
 /**
@@ -337,6 +381,67 @@ async function pickIn(paneId: string, id: string): Promise<void> {
 		fireEvent.pointerDown(card, at);
 		fireEvent.pointerUp(card, at);
 		fireEvent.click(card, at);
+	});
+	await settle();
+}
+
+/**
+ * Choose a view in one pane, the way a person does: from the Board tab, which a
+ * pane beside another shows only once it is asked for.
+ * @param paneId The pane.
+ * @param view The view's id, or the empty id of the overview.
+ */
+async function chooseViewIn(paneId: string, view: string): Promise<void> {
+	if (viewChoice(paneId, view) === null) {
+		act(() => {
+			fireEvent.click(pane(paneId)!.querySelector("[data-slot='semantic-sidebar-toggle']")!);
+		});
+		await settleUntil(() => viewChoice(paneId, view) !== null);
+	}
+	act(() => {
+		fireEvent.click(viewChoice(paneId, view)!);
+	});
+	await settle();
+}
+
+/**
+ * One view's choice in one pane's Board tab.
+ * @param paneId The pane.
+ * @param view The view's id, or the empty id of the overview.
+ * @returns The choice, or null while the tab is not shown.
+ */
+function viewChoice(paneId: string, view: string): HTMLElement | null {
+	return (
+		pane(paneId)?.querySelector<HTMLElement>(
+			`[data-slot='semantic-view-choice'][data-semantic-view='${view}']`,
+		) ?? null
+	);
+}
+
+/**
+ * The view each pane last reported reading, once their reports have settled.
+ * @returns Each pane's view id, or null for the whole variant.
+ */
+async function viewsRead(): Promise<{ A: string | null; B: string | null }> {
+	await settleUntil(() => false, 12);
+	return { A: viewReadIn("A"), B: viewReadIn("B") };
+}
+
+/**
+ * The view one pane last reported reading.
+ * @param paneId The pane.
+ * @returns The view's id, or null for the whole variant or before any report.
+ */
+function viewReadIn(paneId: string): string | null {
+	return readings.findLast((one) => one.paneId === paneId)?.view?.id ?? null;
+}
+
+/**
+ * Go back the way a person does.
+ */
+async function goBack(): Promise<void> {
+	act(() => {
+		window.history.back();
 	});
 	await settle();
 }
@@ -393,4 +498,50 @@ test("a pane whose variant lacks the part picked beside it names the variant tha
 	const inspector = pane("A")?.querySelector("[data-slot='semantic-inspector']");
 	expect(inspector?.getAttribute("data-subject")).toBe("unknown");
 	expect(inspector?.textContent).toContain("Returns desk");
+});
+
+test("a view chosen in one linked pane is read in both, as one history entry, and Back reads both as they were", async () => {
+	await twoPanes();
+	const before = window.history.length;
+	await chooseViewIn("A", QUERIES.id);
+	expect(await viewsRead()).toEqual({ A: QUERIES.id, B: QUERIES.id });
+	expect(window.history.length).toBe(before + 1);
+	const address = new URLSearchParams(window.location.search);
+	expect([address.get("viewA"), address.get("viewB")]).toEqual([QUERIES.id, QUERIES.id]);
+
+	await goBack();
+	expect(await viewsRead()).toEqual({ A: null, B: null });
+});
+
+test("Back reads each linked pane through the view it read before, not the other pane's", async () => {
+	const { b } = await twoPanes("shop", "orders");
+	await chooseViewIn("A", "Everything");
+	// The proposal opened beside the view pane A reads, and the panes are linked.
+	pointAt(b, "shop@v2");
+	await settleUntil(() => draws("B", "shop@v2"));
+	await chooseViewIn("A", QUERIES.id);
+	expect(await viewsRead()).toEqual({ A: QUERIES.id, B: QUERIES.id });
+
+	await goBack();
+	expect(await viewsRead()).toEqual({ A: "Everything", B: null });
+});
+
+test("a pane that drilled into the board beside it keeps the view of its own level", async () => {
+	await twoPanes("orders", "shop");
+	await chooseViewIn("B", QUERIES.id);
+	act(() => {
+		fireEvent.doubleClick(pane("B")!.querySelector("[data-semantic-id='ord'] rect")!);
+	});
+	await settleUntil(() => onScreen("B") === "orders");
+	// Both read the orders board now, and are linked: a view chosen at the drilled level stays there.
+	await chooseViewIn("B", "Everything");
+	expect(await viewsRead()).toEqual({ A: null, B: "Everything" });
+
+	// And a view chosen beside it does not reach the board it was opened on.
+	await chooseViewIn("A", "Everything");
+	act(() => {
+		fireEvent.click([...pane("B")!.querySelectorAll("[data-slot='pane-crumb']")].at(-1)!);
+	});
+	await settleUntil(() => onScreen("B") === "shop");
+	expect((await viewsRead()).B).toBe(QUERIES.id);
 });

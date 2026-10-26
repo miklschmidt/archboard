@@ -11,20 +11,21 @@ import { emptyPaneStatus } from "#ui/rules/application/pane-records.ts";
 import type { PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 
 /**
- * One pane showing a board.
+ * One pane showing the board it was opened on.
  * @param paneId The pane.
  * @param boardKey The board on screen, as its key.
  * @param over What else differs from a pane in the shop's vault.
  * @returns Its status.
  */
 function showing(paneId: string, boardKey: string, over: Partial<PaneStatus> = {}): PaneStatus {
-	return { ...emptyPaneStatus(paneId), boardKey, vault: "/shop/.archboard/vault", ...over };
+	const vault = "/shop/.archboard/vault";
+	return { ...emptyPaneStatus(paneId), boardKey, opened: boardKey, vault, ...over };
 }
 
 test("two panes on one board are linked, each told the variant the other shows", () => {
 	expect(paneLinks([showing("A", "checkout"), showing("B", "Checkout@v2")])).toEqual({
-		A: { paneId: "B", variant: "v2" },
-		B: { paneId: "A", variant: null },
+		A: { paneId: "B", variant: "v2", ownBoard: true },
+		B: { paneId: "A", variant: null, ownBoard: true },
 	});
 });
 

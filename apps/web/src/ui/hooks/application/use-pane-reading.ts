@@ -14,17 +14,17 @@
 //
 // Two linked panes share a pick (TASK-538.02): the person picks a part in one,
 // and the other picks it too. Only the pane they picked in tells the server
-// that the person changed it (ADR 0034), because only that pane marks it.
+// that the person changed it (ADR 0034), because only that pane marks it. They
+// share a view the person chooses as well (TASK-538.03), while the other pane
+// reads the board it was opened on. A restore reads each pane through the view
+// its address names, one pane at a time, and never across the link.
 
 import { useCallback, useMemo, useState } from "react";
 
 import type { SemanticSubjectRef } from "@archboard/board/pane-context";
 import type { PaneLinks } from "#ui/rules/application/pane-link.ts";
 import { boardAddressOf, sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
-import type { z } from "zod";
-
-type SemanticSubjectRef = z.infer<typeof SemanticPaneContextSchema>["selection"][number];
+import type { ViewBefore } from "#ui/state/board-routing/intent.ts";
 
 /** One picked subject, as the viewer described it. */
 type PickedSubject = SemanticSubjectRef;
@@ -41,11 +41,19 @@ interface PaneReadings {
 	 */
 	readonly viewOf: (paneId: string) => string | null;
 	/**
-	 * Read a board through one of its views, in this pane.
+	 * Read a board through one of its views, in this pane only: what a restore does.
 	 * @param paneId The pane.
 	 * @param view The view's id, or null for the overview.
 	 */
 	readonly showView: (paneId: string, view: string | null) => void;
+	/**
+	 * The person chose a view in one pane. It is read there, and in the pane linked to
+	 * it while that pane reads the board it was opened on.
+	 * @param paneId The pane.
+	 * @param view The view's id, or null for the overview.
+	 * @returns Each pane the choice reached, with the view it read before.
+	 */
+	readonly chooseView: (paneId: string, view: string | null) => readonly ViewBefore[];
 	/**
 	 * What the person has picked out in one pane.
 	 * @param paneId The pane.
@@ -102,6 +110,17 @@ function cleared<Value>(current: ByPane<Value>, paneId: string): ByPane<Value> {
 }
 
 /**
+ * The record with one pane's view set, or the overview read.
+ * @param current What the panes hold now.
+ * @param paneId The pane.
+ * @param view The view's id, or null for the overview.
+ * @returns The record.
+ */
+function viewedAs(current: ByPane<string>, paneId: string, view: string | null): ByPane<string> {
+	return view === null ? cleared(current, paneId) : held(current, paneId, view);
+}
+
+/**
  * The record with one pane's pick set, or let go.
  * @param current What the panes hold now.
  * @param paneId The pane.
@@ -125,8 +144,17 @@ function usePaneReadings(links: PaneLinks): PaneReadings {
 	const [views, setViews] = useState<ByPane<string>>(NONE);
 	const [picked, setPicked] = useState<ByPane<PickedSubject>>(NONE);
 	const showView = useCallback((paneId: string, view: string | null): void => {
-		setViews((current) => (view === null ? cleared(current, paneId) : held(current, paneId, view)));
+		setViews((current) => viewedAs(current, paneId, view));
 	}, []);
+	const chooseView = useCallback(
+		(paneId: string, view: string | null): readonly ViewBefore[] => {
+			const linked = links[paneId];
+			const reached = linked?.ownBoard === true ? [paneId, linked.paneId] : [paneId];
+			setViews((current) => reached.reduce((now, one) => viewedAs(now, one, view), current));
+			return reached.map((one) => ({ paneId: one, from: views[one] ?? null }));
+		},
+		[links, views],
+	);
 	const pick = useCallback(
 		(paneId: string, subject: PickedSubject | null): void => {
 			const linked = links[paneId]?.paneId;
@@ -157,8 +185,8 @@ function usePaneReadings(links: PaneLinks): PaneReadings {
 		[picked],
 	);
 	return useMemo(
-		() => ({ viewOf, showView, pickedIn, pick, leave, boardChanged }),
-		[viewOf, showView, pickedIn, pick, leave, boardChanged],
+		() => ({ viewOf, showView, chooseView, pickedIn, pick, leave, boardChanged }),
+		[viewOf, showView, chooseView, pickedIn, pick, leave, boardChanged],
 	);
 }
 

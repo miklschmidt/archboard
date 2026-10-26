@@ -37,10 +37,16 @@ type NavigationIntent =
 	  }
 	| {
 			readonly kind: "view";
-			readonly paneId: string;
-			/** The view that pane was reading through when the gesture was made. */
-			readonly from: string | null;
+			/** Each pane the choice reached: one, or two linked panes (TASK-538.03). */
+			readonly panes: readonly ViewBefore[];
 	  };
+
+/** One pane a view choice reached. */
+interface ViewBefore {
+	readonly paneId: string;
+	/** The view that pane was reading through when the gesture was made. */
+	readonly from: string | null;
+}
 
 /** The one expectation outstanding, if any. */
 interface DeliberateNavigation {
@@ -68,9 +74,11 @@ function met(intent: NavigationIntent, address: WorkspaceAddress): boolean {
 	}
 	// Choosing another explanation of the same board is a move a person made and
 	// expects Back to undo, so it earns a history entry of its own — the same way
-	// opening a board does, and unlike the board changing under them.
+	// opening a board does, and unlike the board changing under them. Two linked
+	// panes draw the view one after the other: the first to draw it is the move,
+	// and the other's drawing replaces the entry it made, so the choice is one.
 	if (intent.kind === "view") {
-		return viewIn(address, intent.paneId) !== intent.from;
+		return intent.panes.some((pane) => viewIn(address, pane.paneId) !== pane.from);
 	}
 	// The pane the person asked to move has moved. A board open is expected only
 	// once its own command has been seen through, so there is no window in which
@@ -112,4 +120,9 @@ function createDeliberateNavigation(): DeliberateNavigation {
 	};
 }
 
-export { createDeliberateNavigation, type DeliberateNavigation, type NavigationIntent };
+export {
+	createDeliberateNavigation,
+	type DeliberateNavigation,
+	type NavigationIntent,
+	type ViewBefore,
+};
