@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - codex-parent
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T21:42:00Z'
+updated_date: '2026-10-26T22:10:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -94,4 +94,6 @@ Canonical code opening now accepts an explicit state or exact checkpoint, with t
 CLI-authored combined proposals now preserve both .06 and .15 architecture. Existing five navigation/source nodes and thirteen relationships are restored under their original IDs with explicit RESTORE_UNCONFIRMED authorization. The navigation call now targets selected-state reading, and compact proposal baselines explicitly capture foreign pins. The original backend variants are shelved with a reason and retain their content and ancestry. Browser application@TASK-549.15-integration adds module navigation to the existing reader, query access, code opener, and router. Backend claims are released; the parent holds Browser application for implementation. No current architecture is replaced or force-adopted.
 
 The first browser slice now opens canonical module code through the existing public activateCodeTarget operation and shell notices. Navigation details use the same query cache and must match model, selected state, checkpoint, and complete revision before enabling the action. ModuleDetails composes the action beside authored evidence. The new browser owner passes1case/3assertions plus process-target polling for current, draft, and exact retained code; unavailable source keeps architecture readable with a disabled action. The initial missing-control RED precedes implementation. A later fixture correction selects the module after an uncached saved reading and moves helper files outside the source checkout. Types and corrected lint pass. Existing legacy activation owners pass9cases/19assertions. Foreign model navigation UI remains pending.
+
+Foreign module navigation now resolves explicit repository addresses through the existing repository query, preserves model/state/checkpoint/subject in the pane router, and seeds only the explicit arrival selection. Pointer selection remains temporary. The shared read must return the captured destination before navigation; source-context changes cancel pending actions. Unbound modules can expose references independently of code. Missing live targets remain explicit, while exact local history reopens its pinned foreign checkpoint without restoring foreign files. The new browser owner reaches a missing-control RED after real repository registration, then passes1case/7assertions. References, code, navigation, and selection regressions pass6cases/34assertions. Source/frontend types and corrected full lint pass. Foreign non-module subject presentation, final visual inspection, architecture closure, and adoption remain pending.
 <!-- SECTION:NOTES:END -->

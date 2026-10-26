@@ -510,7 +510,9 @@ It uses the public architecture operations with real files, signed checkpoints, 
 It covers foreign navigation, immutable foreign pins, unavailable checkpoints, separate ownership, and exact source refusal.
 `tests/system/semantic-boards/model-references.test.ts` owns agreement between the CLI and HTTP adapters.
 `tests/system/code-targets/canonical-model.test.ts` owns canonical activation through the existing opener and a real process.
-The parent owns visible acceptance for TASK-549.15.
+`canonical-model-code.test.ts` owns visible current, draft, and exact code activation with unavailable source.
+`canonical-model-references.test.ts` owns portable foreign module addresses, reload, Back, unavailable targets, and pinned recovery.
+Both browser owners use real files and Git with the existing browser adapter and public architecture operations.
 
 ## Compact canonical proposals
 

@@ -1,32 +1,59 @@
 import { useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
 import type { Model } from "#ui/rules/architecture-model/projection.ts";
-import { architectureModelQuery } from "#ui/clients/architecture-model/queries.ts";
+import { architectureModelQuery, readModel } from "#ui/clients/architecture-model/queries.ts";
 
 /**
  * Navigation details belong to the exact state whose module the inspector shows.
  * @param vault The addressed vault.
  * @param model The inspector's coherent reading.
- * @param subject The selected module identity.
+ * @param module The selected authored module.
  * @returns The ordinary query and a matching source target, when available.
  */
-function useModelNavigation(vault: string, model: Model, subject: string) {
+function useModelNavigation(vault: string, model: Model, module: Model["modules"][number]) {
+	const subject = module.id;
 	const target = navigationTarget(model, subject);
 	const { checkpoint, state } = target;
 	const query = useQuery(
 		architectureModelQuery(vault, checkpoint ?? null, {
 			module: subject,
 			state,
-			code: true,
+			code: module.binding !== undefined,
+			references: true,
 			compare: false,
 		}),
 	);
 	const coherent = !query.isError && matchingNavigation(query.data, model);
+	const data = coherent ? query.data : undefined;
+	const follow = useCallback(
+		(index: number, signal: AbortSignal) =>
+			readModel(vault, checkpoint ?? null, signal, {
+				state,
+				module: subject,
+				reference: index,
+				compare: false,
+			}),
+		[vault, checkpoint, state, subject],
+	);
 	return {
 		query,
 		coherent,
-		code: coherent ? query.data?.codeTarget : undefined,
+		code: data?.codeTarget,
+		references: moduleReferences(data, subject),
+		follow,
 		target,
 	};
+}
+
+/**
+ * A selected module exposes only its own authored references.
+ * @param model The coherent navigation reading.
+ * @param subject The selected module.
+ * @returns Its resolved entries in authored order.
+ */
+function moduleReferences(model: Model | undefined, subject: string) {
+	if (model === undefined) return [];
+	return model.resolvedReferences?.filter((entry) => entry.module === subject) ?? [];
 }
 
 /**

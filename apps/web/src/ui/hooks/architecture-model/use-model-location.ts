@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useRouter, useRouterState } from "@tanstack/react-router";
 import { validateWorkspaceSearch } from "#ui/rules/board-routing/search.ts";
 import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
+import type { Model } from "#ui/rules/architecture-model/projection.ts";
 
 /**
  * Module navigation shares the application's router and browser history.
@@ -23,6 +24,7 @@ function useModelLocation(paneId: string) {
 	const checkpoint = nullableParameter(search[`checkpoint${paneId}`]);
 	const state = nullableParameter(search[`state${paneId}`]);
 	const against = nullableParameter(search[`against${paneId}`]);
+	const subject = nullableParameter(search[`subject${paneId}`]);
 	const grammar = search[`grammar${paneId}`] ?? "architecture";
 	const flow = nullableParameter(search[`flow${paneId}`]);
 	const focused = search[`focus${paneId}`];
@@ -40,7 +42,7 @@ function useModelLocation(paneId: string) {
 		[focused],
 	);
 	const navigate = useCallback(
-		(patch: Partial<ModelAddress>, replace = false): void => {
+		(patch: Partial<ModelAddress>, replace = false, repository?: string): void => {
 			void router.navigate({
 				to: "/",
 				replace,
@@ -51,6 +53,7 @@ function useModelLocation(paneId: string) {
 				 */
 				search: (previous) => {
 					const updated = { ...validateWorkspaceSearch(previous) };
+					if (repository !== undefined) updated[`repo${paneId}`] = repository;
 					for (const [field, value] of Object.entries(patch)) {
 						const key = `${field === "id" ? "model" : field}${paneId}`;
 						const serialized = searchValue(value);
@@ -142,7 +145,15 @@ function useModelLocation(paneId: string) {
 		},
 		[navigate],
 	);
+	const openReference = useCallback(
+		(repository: string, reading: Model): void => {
+			navigate(referenceAddress(reading), false, repository);
+		},
+		[navigate],
+	);
 	return {
+		subject,
+		openReference,
 		state,
 		against,
 		selectState,
@@ -164,6 +175,40 @@ function useModelLocation(paneId: string) {
 		selectCheckpoint,
 		identify,
 	};
+}
+
+/**
+ * A followed reference creates one explicit destination without carrying source filters.
+ * @param reading The foreign reading returned by the shared runtime.
+ * @returns Its portable model, state, subject, scope, and behavior intent.
+ */
+function referenceAddress(reading: Model): ModelAddress {
+	const location = reading.location;
+	if (location === undefined)
+		throw new Error("The reference returned no destination. Refresh and retry.");
+	const checkpoint = location.checkpoint ?? null;
+	return {
+		id: location.model,
+		subject: location.subject,
+		scope: referenceScope(reading),
+		checkpoint,
+		state: checkpoint === null ? location.state : undefined,
+		flow: reading.selectedFlow,
+		grammar: reading.selectedFlow === undefined ? undefined : "sequence",
+		against: undefined,
+		focus: undefined,
+		hideKinds: undefined,
+		hideGroups: undefined,
+	};
+}
+
+/**
+ * A module destination appears among its immediate siblings with its exact identity selected.
+ * @param reading The complete target model.
+ * @returns Its containing module, or the model root.
+ */
+function referenceScope(reading: Model): string | null {
+	return reading.modules.find((module) => module.id === reading.selectedModule)?.parent ?? null;
 }
 
 /**

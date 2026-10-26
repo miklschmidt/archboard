@@ -12,6 +12,7 @@ import { ModelInterface } from "#ui/components/architecture-model/ModelInterface
 
 interface ModelSelectionDetailsProps {
 	vault: string;
+	paneId: string;
 	onCodeTargetNotice: ComponentProps<typeof ModuleNavigation>["onNotice"];
 	model: Model;
 	scope: string | null;
@@ -180,6 +181,7 @@ function SelectedModuleDetails(
 	return (
 		<ModuleDetails module={props.module} model={props.model}>
 			<ModuleNavigation
+				paneId={props.paneId}
 				vault={props.vault}
 				model={props.model}
 				module={props.module}

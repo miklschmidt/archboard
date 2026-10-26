@@ -13,6 +13,8 @@ type StateSelection = { readonly [Field in "state" | "against"]?: ModelAddress[F
 	readonly compare?: boolean;
 	readonly module?: Extract<ArchitectureModelRead, { success: true }>["selectedModule"];
 	readonly code?: boolean;
+	readonly references?: boolean;
+	readonly reference?: number;
 };
 
 /** A failed read retains its structured diagnostics while Query keeps the last coherent data. */
@@ -27,7 +29,15 @@ class ArchitectureReadError extends Error {
 	}
 }
 
-const READING_FIELDS = ["state", "against", "compare", "module", "code"] as const;
+const READING_FIELDS = [
+	"state",
+	"against",
+	"compare",
+	"module",
+	"code",
+	"references",
+	"reference",
+] as const;
 
 /** The canonical readings cached by this tab. */
 const architectureModelKeys = {
@@ -106,7 +116,9 @@ async function readModel(
 ): Promise<Extract<ArchitectureModelRead, { success: true }>> {
 	const parameters = new URLSearchParams(
 		Object.entries({ checkpoint, ...selection }).flatMap(([key, value]) =>
-			typeof value === "string" || typeof value === "boolean" ? [[key, String(value)]] : [],
+			typeof value === "string" || typeof value === "boolean" || typeof value === "number"
+				? [[key, String(value)]]
+				: [],
 		),
 	);
 	const url = `${inVault("/api/architecture/model", vault)}&${parameters}`;
@@ -223,6 +235,7 @@ function hasNoCanonicalModel(error: Error | null): boolean {
 }
 
 export {
+	readModel,
 	architectureModelKeys,
 	architectureModelQuery,
 	architectureCheckpointsQuery,

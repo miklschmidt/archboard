@@ -515,6 +515,10 @@ Unrelated files keep their exact bytes.
 In the browser, select a module and use Open code beside its authored binding.
 The action follows the selected current state, draft, or exact saved reading.
 If source is unavailable, the architecture remains readable and the disabled action states the reason.
+Use Open architecture beside a module reference to follow its explicit model, state, and subject.
+The address preserves the repository and destination through reload and browser history.
+Unavailable targets keep their authored reference and recovery instructions.
+Saved readings follow captured foreign checkpoints even when current foreign files are unavailable.
 
 Canonical code activation names the model, subject, and optional selected state or exact checkpoint.
 A draft activation uses that draft's binding. A missing state refuses the action without opening current code.
