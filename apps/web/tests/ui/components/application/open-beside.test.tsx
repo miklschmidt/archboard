@@ -12,8 +12,10 @@ import { afterEach, expect, spyOn, test, type Mock } from "bun:test";
 import {
 	FakeSocket,
 	act,
+	answer,
 	fireEvent,
 	paneShowing,
+	server,
 	settle,
 	settleUntil,
 } from "#tests/ui/support/application/application-page.ts";
@@ -155,4 +157,33 @@ test("Alt on a navigator row opens a proposal beside on its board through the vi
 	expect(await secondPaneStarts(made)).toBe("shop@v2");
 	await settleUntil(() => draws("B", "shop@v2"));
 	expect(await viewsRead()).toEqual({ A: QUERIES.id, B: QUERIES.id });
+});
+
+test("a refused open beside keeps the other pane's view and address", async () => {
+	const { b } = await twoPanes("shop", "orders");
+	await chooseViewIn("A", QUERIES.id);
+	pointAt(b, "shop@v2");
+	await settleUntil(() => draws("B", "shop@v2"));
+	expect(await viewsRead()).toEqual({ A: QUERIES.id, B: null });
+	const before = window.location.search;
+	const answering = server.answering;
+	/**
+	 * Refuse the show without moving the pane.
+	 * @param url The route.
+	 * @param init The request.
+	 * @returns The refusal, or the fixture's normal answer.
+	 */
+	server.answering = function refuseShow(url, init) {
+		return url.pathname === "/api/panes/show"
+			? answer({ success: false, error: "The variant is unavailable." }, 404)
+			: answering(url, init);
+	};
+	try {
+		await openBesideFromAbout("A", "Gift wrap");
+		expect(await viewsRead()).toEqual({ A: QUERIES.id, B: null });
+		expect(draws("B", "shop@v2")).toBe(true);
+		expect(window.location.search).toBe(before);
+	} finally {
+		server.answering = answering;
+	}
 });

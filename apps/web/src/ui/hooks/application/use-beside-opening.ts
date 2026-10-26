@@ -55,7 +55,7 @@ function arrivalFrom(from: PaneStatus, key: string): Arrival | null {
 
 /**
  * Whether a pane was opened on a board of this name. An adoption of the same
- * board keeps the view a pane reads, so such a pane can read it at once.
+ * board can leave its arrival unchanged, so success must apply its view too.
  * @param status The pane.
  * @param board The board's name.
  * @returns True when its own board has that name.
@@ -95,14 +95,17 @@ function showBeside(
 	beside: Beside,
 ): void {
 	const { arrival } = beside;
-	if (arrival !== null && openedOn(status, arrival.board)) {
-		actors.showView(paneId, arrival.view);
-	} else {
-		actors.arriveThrough(paneId, arrival);
-	}
+	actors.arriveThrough(paneId, arrival);
 	void actors.selectBoard(beside.key, paneId, beside.repository).then((shown) => {
 		// A board that never comes is no board for the pane to arrive on.
-		if (!shown) actors.arriveThrough(paneId, null);
+		if (!shown) {
+			actors.arriveThrough(paneId, null);
+		} else if (arrival !== null && openedOn(status, arrival.board)) {
+			// Showing the same board can leave its arrival unchanged. Apply the
+			// view only after success, so a refused show changes no reading.
+			actors.arriveThrough(paneId, null);
+			actors.showView(paneId, arrival.view);
+		}
 		return shown;
 	});
 }
