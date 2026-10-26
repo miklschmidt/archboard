@@ -1,5 +1,6 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, type JSX } from "react";
 import { useQuery } from "@tanstack/react-query";
+import type { DiagramBox } from "@archboard/board/render-reply";
 import type { prepareContentHere } from "@archboard/renderer/browser";
 import { CameraSurface } from "#ui/components/semantic-board-canvas/CameraSurface.tsx";
 import {
@@ -17,8 +18,9 @@ interface ModelDiagramProps {
 	model: Model;
 	projection: ReturnType<typeof projectModel>;
 	reducedMotion: boolean;
-	selected: string | null;
-	onSelect: (id: string | null) => void;
+	selected: ReadonlySet<string>;
+	onSelect: (id: string | null, toggle?: boolean) => void;
+	onSelectMany: (ids: readonly string[], toggle?: boolean) => void;
 	onOpen: (id: string | null) => void;
 }
 
@@ -34,7 +36,9 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 	const camera = useBoardCamera(props.reducedMotion);
 	if (projection.content.nodes.length === 0)
 		return (
-			<output className="text-body text-muted-foreground p-8">This model has no modules.</output>
+			<output data-slot="model-empty-diagram" className="text-body text-muted-foreground p-8">
+				No modules are visible in this reading.
+			</output>
 		);
 	if (drawing.isPending)
 		return <output className="text-body text-muted-foreground p-8">Drawing modules…</output>;
@@ -58,7 +62,7 @@ interface ModelSceneProps extends ModelDiagramProps {
  * @returns A selectable, pannable diagram.
  */
 function ModelScene(props: ModelSceneProps): JSX.Element {
-	const { drawing, camera, selected, onSelect, onOpen, model } = props;
+	const { drawing, camera, selected, onSelect, onSelectMany, onOpen, model } = props;
 	const surface = useRef<HTMLDivElement | null>(null);
 	const installed = useRef<string | null>(null);
 	const attach = useCallback((element: HTMLDivElement | null): void => {
@@ -66,7 +70,7 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		installed.current = null;
 	}, []);
 	const attachViewport = useCallback(
-		(element: HTMLDivElement | null): void => camera.attachViewport(element),
+		(element: HTMLElement | null): void => camera.attachViewport(element),
 		[camera],
 	);
 	const open = useCallback(
@@ -76,10 +80,31 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		[model.modules, onOpen],
 	);
 	const ignore = useCallback((): void => {}, []);
-	const { pointer, gesture } = useDiagramGestures({
+	const selectArea = useCallback(
+		(rectangle: DiagramBox, toggle: boolean): void => {
+			const pose = camera.view().camera;
+			const area = {
+				x: (rectangle.x - pose.x) / pose.scale,
+				y: (rectangle.y - pose.y) / pose.scale,
+				width: rectangle.width / pose.scale,
+				height: rectangle.height / pose.scale,
+			};
+			const known = new Set(
+				[...model.modules, ...model.relationships].map((subject) => subject.id),
+			);
+			const boxes = { ...drawing.atlas.regions, ...drawing.atlas.nodes, ...drawing.atlas.edges };
+			const ids = Object.entries(boxes)
+				.filter(([id, box]) => known.has(id) && intersects(box, area))
+				.map(([id]) => id);
+			onSelectMany(ids, toggle);
+		},
+		[camera, drawing.atlas, model.modules, model.relationships, onSelectMany],
+	);
+	const { pointer, gesture, rectangle, keyboard } = useDiagramGestures({
 		camera,
 		atlas: drawing.atlas,
 		onSelect,
+		onSelectArea: selectArea,
 		onHover: ignore,
 		dismissTip: ignore,
 		openDown: open,
@@ -91,19 +116,26 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 			root.innerHTML = drawing.svg;
 			installed.current = drawing.svg;
 		}
-		markSubjects(root, new Set(selected === null ? [] : [selected]));
-	}, [selected, drawing.svg]);
+		const marked = new Set(selected);
+		for (const { line, joins } of props.projection.connections) {
+			if (joins.some((edge) => selected.has(edge.id))) marked.add(line.id);
+		}
+		markSubjects(root, marked);
+	}, [selected, drawing.svg, props.projection.connections]);
 	useLayoutEffect(() => {
 		if (camera.room !== null && !camera.handled())
 			camera.fit({ kind: "whole", content: drawing }, true);
 	}, [camera, drawing]);
 	return (
-		<div
+		<section
 			data-slot="model-diagram"
+			tabIndex={-1}
+			aria-label="Module diagram"
 			data-revision={props.model.revision.digest}
 			className="relative min-h-0 min-w-0 flex-1 overflow-hidden"
 			ref={attachViewport}
 			{...pointer}
+			{...keyboard}
 		>
 			<CameraSurface
 				camera={camera}
@@ -113,7 +145,50 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 				reducedMotion={props.reducedMotion}
 				marks=""
 			/>
-		</div>
+			{rectangle !== null && <ModelSelectionRectangle rectangle={rectangle} />}
+		</section>
+	);
+}
+
+/**
+ * Draw immediate selection feedback in viewport coordinates.
+ * @param props The current pointer rectangle.
+ * @param props.rectangle Its bounds in CSS pixels.
+ * @returns A noninteractive overlay independent from scene layout.
+ */
+function ModelSelectionRectangle(props: { rectangle: DiagramBox }): JSX.Element {
+	const { rectangle } = props;
+	const style = useMemo(
+		() => ({
+			left: rectangle.x,
+			top: rectangle.y,
+			width: rectangle.width,
+			height: rectangle.height,
+		}),
+		[rectangle],
+	);
+	return (
+		<div
+			data-slot="model-selection-rectangle"
+			aria-hidden="true"
+			className="border-primary bg-primary/10 pointer-events-none absolute border"
+			style={style}
+		/>
+	);
+}
+
+/**
+ * Select only subjects whose drawn bounds meet the visible rectangle.
+ * @param box The renderer-owned subject bounds.
+ * @param area The selection in diagram units.
+ * @returns Whether the subject intersects the selection.
+ */
+function intersects(box: DiagramBox, area: DiagramBox): boolean {
+	return (
+		box.x <= area.x + area.width &&
+		box.x + box.width >= area.x &&
+		box.y <= area.y + area.height &&
+		box.y + box.height >= area.y
 	);
 }
 
