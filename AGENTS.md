@@ -23,8 +23,9 @@ Where things are written down:
 - Changing tests or CI: [docs/agents/test-suite.md](docs/agents/test-suite.md)
 - Refreshing the README's diagrams, clips, banner and videos:
   [docs/agents/readme-assets.md](docs/agents/readme-assets.md)
-- Working on this repo, including planning and closing a task (each carries a board
-  proposal): the [archboard-dev skill](skills/archboard-dev/SKILL.md). Using archboard: the [archboard skill](skills/archboard/SKILL.md)
+- Maintaining architecture boards and the consumer skill: the [archboard-dev skill](skills/archboard-dev/SKILL.md).
+  Using archboard: the [archboard skill](skills/archboard/SKILL.md).
+- Upgrading Codex: read [docs/agents/codex-upgrades.md](docs/agents/codex-upgrades.md).
 - Reading or updating this repo's architecture: [.archboard/README.md](.archboard/README.md). Start at
   `Archboard` with `archboard` and the tracked `.archboard/vault`.
 - Work tracking: Backlog.md through the `backlog` CLI, never by editing `backlog/`

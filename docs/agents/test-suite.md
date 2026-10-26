@@ -7,7 +7,7 @@ changing tests or CI, or when a browser check fails.
 native lanes in this order:
 
 - `test:modules`: isolated package-owned and app-owned product tests discovered under
-  `packages/` and `apps/`;
+  `packages/` and `apps/`, excluding the capacity and benchmark inventories;
 - `test:system`: system product owners under the five explicit non-browser
   directories, with `--max-concurrency=1` because they own real processes and
   shared local ports;
@@ -22,6 +22,19 @@ native lanes in this order:
   (`tests/system/repository-policy/readme-lockup.test.ts`);
 - `test:serial-browser`: every owner in the executable `BROWSER_TEST_PATHS`
   inventory through the strict adapter.
+
+`bun run benchmark` runs the renderer corpus separately and never caches results.
+It renders the current variant of every board in this checkout’s `.archboard/vault`,
+plus three fixed wide-board fixtures, on both layout engines.
+It retains the drawing assertions and first-layout speed limits.
+It does not scan other repositories or historical variants.
+The normal gate also renders three fixed fixtures on both engines in
+`packages/renderer/tests/runtime/operations/blocks/drawing-integrity.test.ts`.
+They cover labeled dependencies, dense cross-links, and nested containers.
+Shared assertions detect missing parts, routes through cards, misplaced labels,
+and line clearance defects. These six cases read no vault and enforce no speed limit.
+Focused renderer tests and process cancellation deadlines also remain in the normal gate.
+Neither `bun run test` nor `bun run check` invokes the benchmark task.
 
 `bun run check` is the complete normal gate locally and on GitHub Actions.
 It runs lint, formatting, both TypeScript projects, and the normal test chain.
@@ -164,7 +177,7 @@ caller's value out. No CLI case reaches the change-feed settle, so its 1,200 ms
 default costs them nothing. When a test must outwait a product timer, write why
 beside its own literal in `timing.ts`.
 
-The diagram corpus in `packages/renderer/tests/runtime/operations/blocks/wide-boards.test.ts`
+The opt-in benchmark corpus in `packages/renderer/tests/runtime/operations/blocks/wide-boards.test.ts`
 uses a 60-second case deadline when `CI=true`. Its default engine also gets
 60 seconds for a first render. GitHub Actions recorded first renders up to
 45.3 seconds (TASK-451). Local runs keep the 20-second case deadline and
