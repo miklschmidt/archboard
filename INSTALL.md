@@ -201,7 +201,7 @@ Run these commands in the repository:
 
 ```bash
 archboard status          # the server runs, and at which URL
-archboard check           # the vault configuration and every board are valid
+archboard check           # every check: the vault and its boards are valid, the boards match their code, and the board pictures the repository keeps are current
 archboard semantic config # the vocabulary in use, and the configuration file
 ```
 
@@ -288,7 +288,7 @@ GitHub. It uses the commit, then the branch, then the default branch.
 
 ## Language servers for the code check
 
-`archboard check --code` reads the registered checkouts and matches the names that the code uses. A match by name only is a _candidate_. A language server (a program that knows where code defines a name) resolves a candidate that joins two parts to its definition. It also resolves the use that an anchor names, such as `ledger.post()` through a value. Evidence that a server resolved can make a warning. A candidate never does.
+`archboard check code` reads the registered checkouts and matches the names that the code uses. A match by name only is a _candidate_. A language server (a program that knows where code defines a name) resolves a candidate that joins two parts to its definition. It also resolves the use that an anchor names, such as `ledger.post()` through a value. Evidence that a server resolved can make a warning. A candidate never does.
 
 A language server reads a checkout the way your editor does. For most languages, that runs code of the checkout:
 
@@ -336,7 +336,7 @@ The Archboard server reads `repos.json` again each time that the check runs. So 
 
 If a checkout has no configured server for a language, the check says `language-server-missing` once for the checkout and the language. If the Archboard server cannot find the configured command, the check says the same. The answer names the command that configures one, and the uses stay candidates.
 
-The output starts with the elapsed time for each check: the board check, code facts, each language server and the history lens. JSON carries the same times in `timings`, in milliseconds. Code facts time measures file reading and parsing. Each language server time includes its startup, index, questions and cleanup, but excludes idle time between questions. The code and history checks run together, so their times overlap.
+The code check's output starts with the elapsed time of each step: code facts, each language server and the history lens. JSON carries the same times in `code.timings`, in milliseconds. Code facts time measures file reading and parsing. Each language server time includes its startup, index, questions and cleanup, but excludes idle time between questions. The code and history checks run together, so their times overlap.
 
 If a server does not start or stops, the check says `language-server-failed` once for that checkout. Then the check starts no other server of that language in that checkout. This includes the other Swift packages and the other C compilation databases of the checkout.
 
@@ -404,9 +404,16 @@ fonts in it, and needs no browser. `archboard semantic rasterize <board> --out
 Both take `--variant`, `--view` and `--theme`. To export a variant
 without comparison marks and removed subjects, add `--no-comparison`. To draw a
 variant relative to another one, with no "Planned" frame, add `--against <variant>`.
-`semantic render --theme auto` draws one SVG that shows the ground of the reader's colour
-scheme. Both commands take `--title` and `--legend horizontal|vertical` to draw
-a title and the key into the picture, and `--legend-only` to draw the key alone.
+`semantic render` draws one SVG that shows the ground of the reader's colour
+scheme (`--theme auto`), and `semantic rasterize` draws dark. Both commands draw
+the key under the picture. `--legend vertical` draws it beside the picture,
+`--no-legend` draws none, and `--legend-only` draws the key alone. `--title`
+draws a title above the picture. Each SVG and PNG carries its render recipe,
+which names the board and the drawing choices. An SVG keeps it in its
+`<metadata>` element, so a pipeline that runs SVGO must keep that element
+(turn off its `removeMetadata`). With `--track`, the board lists the file, and
+`archboard check` in that repository says when the picture is outdated;
+`archboard check --fix` draws it again.
 
 The CLI starts the browser itself, with a private temporary profile, and stops
 it and removes the profile before the command ends. It uses the first of

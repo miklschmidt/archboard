@@ -11,4 +11,8 @@ export {
 	snapshotCheckoutAccess,
 } from "#runtime/operations/checkout-snapshot.ts";
 export type { CheckoutSnapshot } from "#runtime/operations/checkout-snapshot.ts";
-export { checkoutsReadFrom, vaultIdentity } from "#runtime/services/vault-checkout.ts";
+export {
+	checkoutsReadFrom,
+	vaultIdentity,
+	vaultRepositoryIdentity,
+} from "#runtime/services/vault-checkout.ts";

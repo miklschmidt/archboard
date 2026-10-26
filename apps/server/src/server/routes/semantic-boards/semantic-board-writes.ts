@@ -192,6 +192,7 @@ function answerRefusal(
 			error: refused.problem,
 			version: refused.version,
 			...(refused.cause === undefined ? {} : { cause: refused.cause }),
+			...(refused.openedBy === undefined ? {} : { openedBy: refused.openedBy }),
 		});
 }
 

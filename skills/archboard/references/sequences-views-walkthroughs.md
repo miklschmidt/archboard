@@ -124,21 +124,80 @@ archboard semantic render pr-128 --variant "This pull request" --against "Pull r
 ```
 
 For a picture in a document, a README or a pull request, draw one SVG with
-`semantic render <board> --theme auto --out <file.svg>`. It carries both
-grounds and shows the one of the reader's colour scheme (the page's own scheme where the
-page declares one, else the browser's), as an
-image, a background or inline. A PNG holds one ground, so `semantic rasterize` takes
-`--theme light` or `--theme dark`.
+`semantic render <board> --out <file.svg>`. Its default theme is `auto`: it
+carries both grounds and shows the one of the reader's colour scheme (the
+page's own scheme where the page declares one, else the browser's), as an
+image, a background or inline. A PNG holds one ground, so `semantic rasterize`
+draws `--theme dark` by default and takes `--theme light`.
 
 Both export commands can draw what a reader needs beside the picture:
 
 - `--title` draws the board, the view, the variant and what it is compared
   with above the picture. `--title "<text>"` draws your own words.
-- `--legend horizontal` draws the key under the picture, and
-  `--legend vertical` draws it beside the picture. The key lists what the
-  board's legend on the page lists for the same picture.
-- `--legend-only` with `--legend <layout>` draws the key alone, for a page
-  that shows several pictures with one key.
+- The key is drawn under the picture by default (`--legend horizontal`).
+  `--legend vertical` draws it beside the picture, and `--no-legend` draws
+  none. The key lists what the board's legend on the page lists for the same
+  picture.
+- `--legend-only` draws the key alone, in the layout `--legend` names, for a
+  page that shows several pictures with one key.
+
+Every SVG and PNG that the two commands give out carries its render recipe:
+the board, the variant (or "current" when you named none), the view and the
+comparison by id, the drawing choices, and a fingerprint of what the picture
+is drawn from: the drawn variant and the one it is drawn against, the view, the
+vault's presentation policy and the title. A walkthrough edit or a changed code
+citation leaves the picture current. A rename leaves it current too, unless its
+title names the board. An SVG keeps the recipe in its `<metadata>` element and
+a PNG in a text chunk.
+A post-processor that strips metadata, such as SVGO with its default
+`removeMetadata`, removes the recipe, so keep the metadata.
+
+### A picture in documentation that stays current
+
+When a document in a Git checkout shows a board, draw the picture into that
+checkout with `--track`. Prefer SVG; `semantic rasterize` takes the same
+options for a PNG. A picture for a pull request body, or one you draw only to
+look at, is no embed: draw it in a temporary directory without `--track`.
+
+```bash
+archboard semantic render payments --out docs/payments.svg --track --doing "Drawing the payments picture for the design doc"
+```
+
+The board then lists the file as a tracked embed, `{ repo, path }`. That is a
+board write: it takes the lease and needs `--doing`, and it needs no
+`--expect-version`. It is refused with `TRACK_OUTSIDE_CHECKOUT` when no Git
+checkout holds the file or Git ignores it, and with `TRACK_VAULT_UNREGISTERED`
+when this machine has no registered checkout of the vault's repository. To
+draw a board of another repository's vault, name that vault with `-C <its
+checkout>`: `--out` still resolves against the working directory. Commit the
+file, and commit the vault when the answer raised its version.
+
+Keep the file as the command wrote it. Its recipe names the board, the
+variant, the view and the drawing choices, so a pipeline that runs SVGO must
+keep `<metadata>`. A file without its recipe is no longer an embed.
+
+After a change, run `archboard check`. It runs every check, and the embeds
+check is the last:
+
+1. `check code` says that a board no longer matches the code.
+2. Correct the board.
+3. `archboard check` names each embed that the correction made outdated, as
+   the warning `EMBED_OUTDATED`. `EMBED_RENDERER_CHANGED` is information: the
+   renderer draws the same board differently now.
+4. `archboard check --fix` draws each one again from its own recipe and lists
+   every file it rewrote. Commit them.
+
+The check reads the embeds that Git tracks in the checkout that it runs in.
+A documentation repository without a vault is such a checkout: there
+`archboard check` runs only the embeds check. The check finds each embed's
+vault by the repository that its recipe names. It reads a registered checkout
+of that repository as it is. Otherwise it fetches that repository's
+`.archboard/vault` from the default branch with your Git credentials. When
+the fetch fails, it reads the copy it cached before: every finding from that
+copy is information, and `--fix` writes nothing from it. With no copy, the
+failed fetch is a warning that names the repository. In the vault's own repository, an outdated tracked
+embed of another repository is information, and `--fix` draws it again only
+in a registered checkout of that repository.
 
 ### Copy an image with its description
 

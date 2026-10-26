@@ -1,17 +1,17 @@
-// `archboard check` from its arguments to its two streams (TASK-367.03): the
+// `archboard check semantics` from its arguments to its two streams (TASK-367.03): the
 // line for a diagnostic about one node or relationship names it, and the JSON
 // answer carries its id. Only the Archboard server is a stand-in, answering
 // what the vault checker would; the store owners prove the checker fills the
 // subject in.
 
 import { afterAll, expect, spyOn, test } from "bun:test";
+import { z } from "zod";
 import {
 	DEFAULT_SEMANTIC_POLICY,
 	VaultCheckSchema,
 	type SharedSymbol,
 } from "@archboard/board/policy";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
-import type { z } from "zod";
 import type { describeSubject } from "@archboard/board/policy";
 
 type DiagnosticSubject = Parameters<typeof describeSubject>[0];
@@ -58,6 +58,8 @@ const check: VaultCheck = {
 		},
 	],
 };
+
+const AnswerSchema = z.object({ semantics: VaultCheckSchema });
 
 const vault = makeStandInVault();
 let service = "";
@@ -113,7 +115,7 @@ test("check names the subject beside its message, and its JSON answer carries th
 	});
 	let exited: typeof process.exitCode;
 	try {
-		await runCli(vault.argv(["check"]));
+		await runCli(vault.argv(["check", "semantics"]));
 		exited = process.exitCode;
 	} finally {
 		out.mockRestore();
@@ -121,13 +123,12 @@ test("check names the subject beside its message, and its JSON answer carries th
 		process.exitCode = exitCode ?? 0;
 	}
 	expect(exited).toBe(1);
-	expect(VaultCheckSchema.parse(JSON.parse(stdout)).diagnostics[0]?.subject).toEqual(ledger);
+	const { semantics } = AnswerSchema.parse(JSON.parse(stdout));
+	expect(semantics.diagnostics[0]?.subject).toEqual(ledger);
 	// The machine-readable fields of a diagnostic survive the command's own schema.
-	expect(
-		VaultCheckSchema.parse(JSON.parse(stdout)).diagnostics.find(
-			(one) => one.code === "SHARED_SYMBOL",
-		)?.sharedSymbol,
-	).toEqual(sharedSymbol);
+	expect(semantics.diagnostics.find((one) => one.code === "SHARED_SYMBOL")?.sharedSymbol).toEqual(
+		sharedSymbol,
+	);
 	const [named, , plain] = check.diagnostics;
 	const lines = stderr.split("\n");
 	expect(lines.find((line) => line.includes(named?.message ?? "-"))).toContain(ledger.name);

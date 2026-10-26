@@ -20,37 +20,76 @@ import {
 	UNNAMED_VARIANT,
 	drawnAgainst,
 	exportRenderRequest,
-	TITLE_OPTION,
-	TitleOptionSchema,
+} from "#cli/operations/semantic/input/semantic-input.ts";
+import {
+	drawnLegend,
 	LEGEND_OPTIONS,
-	LEGEND_ONLY_REFUSAL,
 	LegendInputSchema,
 	legendStated,
-} from "#cli/operations/semantic/input/semantic-input.ts";
+	NO_LEGEND_REFUSAL,
+	TITLE_OPTION,
+	TitleOptionSchema,
+} from "#cli/operations/semantic/draw/framing-options.ts";
 import {
 	AGAINST_NO_COMPARISON_REFUSAL,
 	AGAINST_OPTION,
 	againstAgreesWithComparison,
 	resolvedAgainst,
 } from "#cli/operations/semantic/draw/drawn-against.ts";
-import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
+import {
+	boardHeldRefusal,
+	claimRevokedRefusal,
+	doingRefusal,
+	serverRefusal,
+} from "#cli/protocol/contract/refusals.ts";
 import { pictureReceipt } from "#cli/rules/semantic/draw/drawn-receipt.ts";
+import {
+	recipeOfPicture,
+	vaultRepositoryUnknownRefusal,
+} from "#cli/rules/semantic/draw/picture-recipe.ts";
+import {
+	plannedFile,
+	requireTrackable,
+	TRACK_NEEDS_OUT,
+	TRACK_OPTION,
+	TRACK_RELATIONSHIP,
+	TrackedReceiptSchema,
+	trackedField,
+	trackHasOut,
+	trackOutsideCheckoutRefusal,
+	trackVaultUnregisteredRefusal,
+} from "#cli/operations/semantic/draw/tracked-embed.ts";
 
 const RenderInputSchema = z
 	.object({
 		name: z.string(),
 		variant: SelectorSchema.optional(),
 		view: SelectorSchema.optional(),
-		theme: StandaloneThemeSchema.default("light"),
+		theme: StandaloneThemeSchema.default("auto"),
 		layout: LayoutEngineSchema.optional(),
 		against: SelectorSchema.optional(),
 		noComparison: z.boolean().default(false),
 		title: TitleOptionSchema,
 		...LegendInputSchema,
 		out: z.string().optional(),
+		track: z.boolean().default(false),
 	})
-	.refine(legendStated, LEGEND_ONLY_REFUSAL)
+	.refine(trackHasOut, TRACK_NEEDS_OUT)
+	.refine(legendStated, NO_LEGEND_REFUSAL)
 	.refine(againstAgreesWithComparison, AGAINST_NO_COMPARISON_REFUSAL);
+
+const recipeUnavailableRefusal = {
+	code: "RENDER_RECIPE_UNAVAILABLE",
+	exit: 1,
+	stream: "stderr" as const,
+	description:
+		"The server's SVG carries no render recipe, or one that cannot be read, as a server that started before the recipe existed draws; nothing was written. Run `archboard restart`, then try again.",
+};
+
+/** A server's picture without the recipe that every board render carries (ADR 0057). */
+class RecipeUnavailableError extends Error {
+	readonly code = recipeUnavailableRefusal.code;
+}
 
 const SemanticRenderResultSchema = z.object({
 	success: z.literal(true),
@@ -82,26 +121,44 @@ const SemanticRenderResultSchema = z.object({
 	width: z.number(),
 	height: z.number(),
 	...PictureReceiptShape,
+	/** With --track: the file as the board lists it, and the board's version after the write. */
+	tracked: TrackedReceiptSchema.optional(),
 });
 
 const semanticRenderContract = defineCommand({
 	path: ["semantic", "render"],
-	shared: ["url", "directory"],
+	shared: ["url", "directory", "doing"],
 	summary: "Draw a semantic board as SVG",
-	description:
-		"Draws a semantic board at one variant, optionally through a board-owned named view. Layout, typography and " +
-		"routing belong to the renderer. Without --out, stdout carries the SVG, including its accessibility metadata. " +
-		"With --out, the receipt names every node, edge, flow and step the picture draws and the counts of the marks " +
-		"its key shows; semantic views lists that for every view at once. " +
-		"Use --no-comparison to hide comparison marks and removed subjects. " +
-		"Use --against to draw relative to another variant, marking only what the drawn variant changes over it and " +
-		"leaving out the Planned frame. " +
-		"Use semantic rasterize --clipboard for PNG and HTML clipboard output.",
+	description: [
+		"Draws a semantic board at one variant as SVG, optionally through a named view of the board. The renderer owns the layout, the typography and the routing.",
+		"",
+		"Output:",
+		"- Without --out, stdout carries the SVG. It is the same SVG that --out writes, with its accessibility metadata and its render recipe.",
+		"- With --out, the answer is a receipt. It names every node, edge, flow and step that the picture draws, and the counts of the marks that its key shows. `semantic views` lists that for every view at once.",
+		"- The render recipe names the board, the variant and the view by id, and the drawing choices.",
+		"",
+		"Comparison:",
+		"- --no-comparison hides the comparison marks and the removed subjects.",
+		"- --against draws relative to another variant. It marks only what the drawn variant changes over that variant, and leaves out the Planned frame.",
+		"",
+		"Tracked embeds (--track, with --out):",
+		"- The board lists the file as a tracked embed, { repo, path }, before the file is written.",
+		"- It is a board write: it takes the board's lease, needs --doing and raises the version. It needs no --expect-version, because it only adds to the list. Tracking a file that the board lists already writes nothing.",
+		"",
+		"For PNG, and for PNG and HTML on the clipboard, use `semantic rasterize`.",
+		"",
+		"Refusals:",
+		"- TRACK_OUTSIDE_CHECKOUT: --track names a file that no Git checkout holds, or that Git ignores.",
+		"- TRACK_VAULT_UNREGISTERED: --track, while no registered checkout of the vault's repository exists.",
+		"- RENDER_RECIPE_UNAVAILABLE: the server's SVG carries no recipe. Restart the server.",
+		"- VAULT_REPOSITORY_UNKNOWN: Git does not say which repository holds the vault.",
+	].join("\n"),
 	examples: [
 		"archboard semantic render pipeline --out pipeline.svg --theme dark",
 		'archboard semantic render pipeline --variant "Queued ingest" --no-comparison --out proposal.svg',
 		'archboard semantic render pipeline --variant "TASK-2" --against "TASK-1" --out task-2.svg',
 		"archboard semantic rasterize pipeline --clipboard",
+		'archboard semantic render pipeline --out docs/pipeline.svg --track --doing "tracking the pipeline picture in the docs"',
 	],
 	parameters: [
 		{
@@ -153,7 +210,7 @@ const semanticRenderContract = defineCommand({
 			value: "required",
 			placeholder: "theme",
 			choices: StandaloneThemeSchema.options,
-			default: "light",
+			default: "auto",
 			description:
 				"Which ground to draw on; auto carries both and follows the reader's colour scheme, as an image, a background or inline",
 		},
@@ -168,6 +225,7 @@ const semanticRenderContract = defineCommand({
 		},
 		TITLE_OPTION,
 		...LEGEND_OPTIONS,
+		TRACK_OPTION,
 	],
 	input: { ingress: RenderInputSchema },
 	result: z.union([
@@ -182,7 +240,8 @@ const semanticRenderContract = defineCommand({
 				id: "stdout",
 				when: { key: "out", present: false },
 				mode: "raw",
-				description: "The standalone SVG, with embedded fonts and its accessibility metadata",
+				description:
+					"The standalone SVG, with embedded fonts, its accessibility metadata and its render recipe",
 			},
 			{
 				id: "file",
@@ -200,8 +259,18 @@ const semanticRenderContract = defineCommand({
 		select: (input) => (input.out === undefined ? "stdout" : "file"),
 	},
 	prerequisites: ["server"],
-	effects: ["read", "local-write"],
-	refusals: [serverRefusal, viewEmptyRefusal],
+	effects: ["read", "local-write", "server-state-write"],
+	refusals: [
+		serverRefusal,
+		viewEmptyRefusal,
+		recipeUnavailableRefusal,
+		vaultRepositoryUnknownRefusal,
+		trackOutsideCheckoutRefusal,
+		trackVaultUnregisteredRefusal,
+		doingRefusal,
+		boardHeldRefusal,
+		claimRevokedRefusal,
+	],
 	relationships: [
 		{
 			method: "GET",
@@ -209,6 +278,7 @@ const semanticRenderContract = defineCommand({
 			cardinality: "one",
 			description: "Draw the variant",
 		},
+		TRACK_RELATIONSHIP,
 	],
 	/**
 	 * Draw the board.
@@ -216,16 +286,26 @@ const semanticRenderContract = defineCommand({
 	 * @param context The command context.
 	 * @returns The SVG bytes or the file receipt.
 	 * @throws {Error} When the board or the view has nothing to draw.
+	 * @throws {RecipeUnavailableError} When the server's SVG carries no readable render recipe.
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic render");
+		const planned = await plannedFile(input, context);
 		const drawn = await renderSemanticBoardOnServer(
 			input.name,
-			exportRenderRequest({ ...input, against: await resolvedAgainst(input.name, input) }),
+			exportRenderRequest({
+				...input,
+				legend: drawnLegend(input),
+				against: await resolvedAgainst(input.name, input),
+			}),
 		);
 		if ("empty" in drawn) refuseNothingDrawn(drawn);
-		if (input.out === undefined) return { result: Buffer.from(drawn.svg, "utf8") };
-		const file = context.resolvePath(input.out);
+		const recipe = recipeOfPicture(drawn.svg);
+		if ("problem" in recipe) throw new RecipeUnavailableError(recipe.problem);
+		const { file } = planned;
+		if (file === undefined) return { result: Buffer.from(drawn.svg, "utf8") };
+		requireTrackable(planned, recipe.recipe);
+		const tracked = await trackedField(input.name, planned);
 		return {
 			result: {
 				success: true as const,
@@ -238,6 +318,7 @@ const semanticRenderContract = defineCommand({
 				width: drawn.width,
 				height: drawn.height,
 				...pictureReceipt(drawn, input.noComparison),
+				...tracked,
 			},
 			pendingArtifact: { path: file, content: drawn.svg, encoding: "utf8" as const },
 		};

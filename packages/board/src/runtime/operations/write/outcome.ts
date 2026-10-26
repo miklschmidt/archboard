@@ -94,7 +94,13 @@ type SemanticRefusalCode =
 	/** The move needs a drill-down into an untracked vault, which has no identity to name. */
 	| "MOVE_NEEDS_IDENTITY"
 	/** The move wrote the target note and stopped before it deleted the source note. */
-	| "MOVE_STOPPED";
+	| "MOVE_STOPPED"
+	// Deleting a board (ADR 0057).
+	/** A node on another board of the vault opens the board. */
+	| "BOARD_OPENED_BY"
+	// Tracking an embed (ADR 0057).
+	/** The board lists the embed already, so tracking it changes nothing. */
+	| "EMBED_ALREADY_TRACKED";
 
 /** A transition either produced a whole new board, or refused. */
 interface SemanticRefusal {

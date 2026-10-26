@@ -7,6 +7,7 @@ import { Window } from "happy-dom";
 import { startOwnedServer, waitForProcessExit, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";
+import { readRenderRecipe } from "@archboard/renderer/recipe";
 import { TEST_WALL_CLOCK_BUDGET_MS } from "../support/timing.ts";
 
 // The public path to a bitmap: `semantic rasterize` draws the same picture
@@ -121,7 +122,8 @@ describe("semantic rasterize", () => {
 				// A root variant came from nothing, so the picture is of it alone.
 				comparedWith: null,
 				view: null,
-				theme: "light",
+				// A bitmap cannot follow the reader's colour scheme, so it is drawn dark.
+				theme: "dark",
 				file: out,
 				scale: 1,
 				source: { renderer: "semantic-renderer", fonts: "embedded", motion: "paused-at-start" },
@@ -253,41 +255,19 @@ describe("semantic rasterize", () => {
 			// The plain SVG must omit the removed subject and every standing marker.
 			const decorated = fs.readFileSync(path.join(vault, "proposal.svg"), "utf8");
 			const plainPath = path.join(vault, "plain.svg");
-			const plainSvg = cli([
-				"semantic",
-				"render",
-				"transfers",
-				"--variant",
-				"No auditor",
-				"--no-comparison",
-				"--out",
-				plainPath,
-			]);
+			// The SVG a PNG is drawn from is in the PNG's theme, dark by default.
+			const plainArgs = ["transfers", "--variant", "No auditor", "--no-comparison"];
+			const darkPlain = [...plainArgs, "--theme", "dark"];
+			const plainSvg = cli(["semantic", "render", ...darkPlain, "--out", plainPath]);
 			expect(plainSvg.status, plainSvg.stderr).toBe(0);
 			expect(JSON.parse(plainSvg.stdout).comparedWith).toBeNull();
 			const plain = fs.readFileSync(plainPath, "utf8");
 			expect(decorated).toContain("Auditor");
 			expect(plain).not.toContain("Auditor");
 			expect(plain).not.toContain('data-standing="removed"');
-			const rawPlain = cli([
-				"semantic",
-				"render",
-				"transfers",
-				"--variant",
-				"No auditor",
-				"--no-comparison",
-			]);
-			expect(rawPlain.stdout).toBe(plain);
-			const plainPng = cli([
-				"semantic",
-				"rasterize",
-				"transfers",
-				"--variant",
-				"No auditor",
-				"--no-comparison",
-				"--out",
-				path.join(vault, "plain.png"),
-			]);
+			expect(cli(["semantic", "render", ...darkPlain]).stdout).toBe(plain);
+			const plainOut = path.join(vault, "plain.png");
+			const plainPng = cli(["semantic", "rasterize", ...plainArgs, "--out", plainOut]);
 			expect(plainPng.status, plainPng.stderr).toBe(0);
 			const plainReceipt = JSON.parse(plainPng.stdout);
 			expect(plainReceipt.comparedWith).toBeNull();
@@ -347,6 +327,10 @@ describe("semantic rasterize", () => {
 				expect(sent.formats).toEqual(["image/png", "text/html"]);
 				const png = Buffer.from(sent.payload.png, "base64");
 				expect(pngSize(png)).toEqual({ width: 240, height: 160 });
+				// The copied bitmap, which the HTML holds too, carries its recipe.
+				const region = { scale: 2, region: { x: 0, y: 0, width: 120, height: 80 } };
+				const recipe = { comparison: "off", theme: "dark", raster: region };
+				expect(readRenderRecipe(png)).toMatchObject({ kind: "recipe", recipe });
 				const window = new Window();
 				try {
 					const rendered = cli([
@@ -419,7 +403,7 @@ describe("semantic rasterize", () => {
 			expect(words).toContain("transfers");
 			expect(words).toContain(plain.variant.name);
 			expect(framed.stdout).toContain('data-slot="export-legend" data-layout="vertical"');
-			const aloneFlags = ["--title", "Transfers", "--legend", "horizontal", "--legend-only"];
+			const aloneFlags = ["--title", "Transfers", "--legend-only", "--theme", "dark"];
 			const alone = cli(["semantic", "render", "transfers", ...aloneFlags]);
 			expect(alone.stdout).toContain('data-slot="export-legend" data-layout="horizontal"');
 			expect(alone.stdout).not.toContain('data-semantic-id="');
@@ -435,9 +419,15 @@ describe("semantic rasterize", () => {
 				width: receipt.width,
 				height: receipt.height,
 			});
-			// A title with no words, and a legend alone with no layout, are refused.
+			// A title with no words, and no legend with a legend, are refused.
+			const refusals = [
+				["--title", ""],
+				["--title", " "],
+				["--legend-only", "--no-legend"],
+				["--legend", "vertical", "--no-legend"],
+			];
 			for (const command of ["render", "rasterize"]) {
-				for (const refused of [["--title", ""], ["--title", " "], ["--legend-only"]]) {
+				for (const refused of refusals) {
 					const answer = cli(["semantic", command, "transfers", ...refused]);
 					expect(answer.status, refused.join(" ")).toBe(2);
 					expect(answer.stdoutBytes).toHaveLength(0);

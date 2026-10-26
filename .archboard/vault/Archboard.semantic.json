@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 90,
+	"version": 92,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-25T17:36:00.808Z",
+	"updatedAt": "2026-10-26T05:42:16.992Z",
 	"views": [
 		{
 			"id": "BtsFlK0s",
@@ -15105,6 +15105,16 @@
 			"variant": "VPnAp2Wz",
 			"at": "2026-10-22T03:18:00.073Z",
 			"reason": "Keep singular bindings. Repair existing boards with bound children and accurate anchors instead of adding ownership paths."
+		}
+	],
+	"trackedEmbeds": [
+		{
+			"repo": "github.com/miklschmidt/archboard",
+			"path": "docs/readme/architecture-light.svg"
+		},
+		{
+			"repo": "github.com/miklschmidt/archboard",
+			"path": "docs/readme/architecture-dark.svg"
 		}
 	]
 }

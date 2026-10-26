@@ -1,9 +1,13 @@
-// One Archboard server for one take, over a fresh copy of a tracked vault.
+// One Archboard server for one take, over a fresh copy of a tracked vault or over the checkout's
+// own vault.
 //
-// The copy holds the vault's tracked files and nothing else, so a take shows what the checkout
+// A copy holds the vault's tracked files and nothing else, so a take shows what the checkout
 // holds and its writes never reach the repository. The copy is the `.archboard/vault` of a
-// directory of its own, which the take's commands run in and which a registry of its own lists,
-// so the machine's registry never sees a take. The server listens on a free port. A take that
+// directory of its own, which the take's commands run in. The checkout's own vault is served in
+// place for a picture that its board lists as a tracked embed: the picture's recipe then names
+// this repository, so `archboard check` here finds its board, and the write that tracks it lands
+// in the vault. Either way a registry of the take's own lists the directory, so the machine's
+// registry never sees a take. The server listens on a free port. A take that
 // needs no Codex gets a state directory of its own in the scratch directory (on Linux, through
 // XDG_STATE_HOME), so it starts without a Codex sign-in and leaves the machine's state alone. A
 // take that needs Codex uses the machine's state directory and its Archboard Codex sign-in, which
@@ -85,6 +89,27 @@ async function startServer(name: string, vault: TrackedVault, codex: boolean): P
 	const home = scratch("takes", name);
 	const holder = join(home, "repository");
 	await copyTracked(vault, join(holder, ".archboard", "vault"));
+	return launch(home, holder, codex);
+}
+
+/**
+ * Start a server for a take over this checkout's own vault, in place. Its commands run in the
+ * checkout, so what they write reaches the repository.
+ * @param name The take, which names its directory in the scratch directory.
+ * @returns The running server.
+ */
+async function startCheckoutServer(name: string): Promise<TakeServer> {
+	return launch(scratch("takes", name), ROOT, false);
+}
+
+/**
+ * Start a server for a take whose commands run in the directory that holds its vault.
+ * @param home The take's directory in the scratch directory.
+ * @param holder The directory that holds the vault.
+ * @param codex Whether the take needs the machine's Codex sign-in.
+ * @returns The running server.
+ */
+async function launch(home: string, holder: string, codex: boolean): Promise<TakeServer> {
 	const url = `http://127.0.0.1:${freePort()}`;
 	const env: Record<string, string> = {
 		ARCHBOARD_URL: url,
@@ -134,4 +159,4 @@ async function readBoard(server: TakeServer, name: string): Promise<SemanticBoar
 	return parsed.board;
 }
 
-export { readBoard, startServer, type TakeServer, type TrackedVault };
+export { readBoard, startCheckoutServer, startServer, type TakeServer, type TrackedVault };

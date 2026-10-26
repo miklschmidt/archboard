@@ -1,4 +1,8 @@
-// What an agent may say to create, edit, adopt, rename, shelve or move a board.
+// What an agent may say to create, edit, adopt, rename, shelve, move or delete a board.
+export {
+	BoardDiscardAnswerSchema,
+	BoardOpenedByAnswerSchema,
+} from "#shared/protocol/board-discard.ts";
 export {
 	BoardBranchInputSchema,
 	BoardCreateInputSchema,

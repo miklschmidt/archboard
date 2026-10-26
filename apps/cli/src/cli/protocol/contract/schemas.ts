@@ -71,7 +71,9 @@ const RegisteredVaultSchema = z.discriminatedUnion("kind", [
 
 /**
  * The vault a command addressed and how it was found (ADR 0049). Every JSON
- * answer of a command that reads `-C` carries it as `vault`.
+ * answer of a command that reads `-C` and found a vault carries it as `vault`;
+ * a command that runs without a vault (`runsWithoutVault`) and runs in a Git
+ * checkout that holds none names no vault.
  */
 const AnsweredVaultSchema = z.object({
 	/** The vault directory, as its real path. */

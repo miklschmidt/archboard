@@ -1,4 +1,4 @@
-// Writing a board: the one write, a write prepared before it is committed, the transitions it applies, a transition accepted in memory, a discard, a rename and the propagation to drill-downs.
+// Writing a board: the one write, a write prepared before it is committed, the transitions it applies, a transition accepted in memory, a discard, a rename, tracking an embed and the propagation to drill-downs.
 export { renameSemanticBoard } from "#runtime/operations/rename/carry.ts";
 export { acceptedTransition } from "#runtime/operations/write/accepted.ts";
 export { discardSemanticBoard } from "#runtime/operations/write/discard.ts";
@@ -12,3 +12,4 @@ export {
 	shelveVariantTransition,
 } from "#runtime/operations/write/transitions.ts";
 export { writeSemanticBoard } from "#runtime/operations/write/write.ts";
+export { trackEmbedTransition } from "#runtime/operations/embeds/track.ts";

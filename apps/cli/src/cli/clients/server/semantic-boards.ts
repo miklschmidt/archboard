@@ -11,7 +11,7 @@ import { VaultCheckSchema, VaultDiagnosticSchema } from "@archboard/board/policy
 import { z } from "zod";
 import { CodeCheckAnswerSchema } from "@archboard/code-intel/code-check";
 import { requestJson, statedInvocation } from "@archboard/server-lifecycle/server-client";
-import { BoardMoveAnswerSchema } from "@archboard/board/commands";
+import { BoardDiscardAnswerSchema, BoardMoveAnswerSchema } from "@archboard/board/commands";
 import {
 	SemanticBoardSchema,
 	SemanticBoardLevelSchema,
@@ -35,6 +35,8 @@ type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 /** One board in the vault's semantic listing. */
 const SemanticBoardEntrySchema = z.object({
+	/** The board's id; absent for a board the server could not read. */
+	id: z.string().optional(),
 	name: z.string(),
 	key: z.string(),
 	level: SemanticBoardLevelSchema.optional(),
@@ -162,11 +164,16 @@ async function postSemantic(
 }
 
 /**
- * Every semantic board the server's vault holds.
+ * Every semantic board a vault holds.
+ * @param vault The vault to list, when it is not the one this invocation names.
  * @returns The boards, by name.
  */
-async function listSemanticBoardsOnServer(): Promise<SemanticBoardListing> {
-	return ListingReplySchema.parse(await requestJson<unknown>("/api/semantic-boards"));
+async function listSemanticBoardsOnServer(vault?: string): Promise<SemanticBoardListing> {
+	const path =
+		vault === undefined
+			? "/api/semantic-boards"
+			: `/api/semantic-boards?${new URLSearchParams({ vault })}`;
+	return ListingReplySchema.parse(await requestJson<unknown>(path));
 }
 
 /**
@@ -196,6 +203,7 @@ async function readSemanticBoardOnServer(board: string): Promise<SemanticBoard> 
  * @param options.titled Draws the names of what is drawn above the picture, when no words are given.
  * @param options.legend How the legend is laid out beside the picture.
  * @param options.legendOnly Draws the legend without the picture.
+ * @param vault The vault that holds the board, when it is not the one this invocation names.
  * @returns The picture, or the fact that there is nothing on the board yet.
  */
 async function renderSemanticBoardOnServer(
@@ -213,9 +221,11 @@ async function renderSemanticBoardOnServer(
 		legend?: LegendLayout;
 		legendOnly?: "on";
 	} = {},
+	vault?: string,
 ): Promise<SemanticRenderReply> {
 	const query = new URLSearchParams({ board });
 	for (const [name, value] of Object.entries(options)) query.set(name, value);
+	if (vault !== undefined) query.set("vault", vault);
 	return SemanticRenderReplySchema.parse(
 		await requestJson<unknown>(`/api/semantic-boards/render?${query.toString()}`),
 	);
@@ -401,33 +411,29 @@ export {
 	suggestHistoricalCommitsOnServer,
 };
 
-const DiscardReplySchema = z.object({
-	success: z.literal(true),
-	discarded: z.object({ board: z.string(), version: z.int() }),
-});
-
 /**
  * Delete a board, every variant of it, under its lease.
  *
  * It states what it is doing and which session asked the way every write does,
  * because it is one: a person watching the board is told why it went. A board
- * changed since the version stated is refused and kept.
+ * changed since the version stated is refused and kept, and so is a board that
+ * a node on another board of the vault opens.
  * @param board The board name.
  * @param expectedVersion The version the caller read the board at; the one this invocation
  *   was told when absent.
- * @returns The board that went, and the version it was at when it did.
+ * @returns The board that went, the version it was at when it did, and the embeds it tracked.
  */
 async function discardSemanticBoardOnServer(
 	board: string,
 	expectedVersion?: number,
-): Promise<z.infer<typeof DiscardReplySchema>["discarded"]> {
+): Promise<z.infer<typeof BoardDiscardAnswerSchema>["discarded"]> {
 	const path = withWriterClaims("/api/semantic-boards/discard", expectedVersion);
 	const reply = await requestJson<unknown>(path, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ board, ...statedSession() }),
 	});
-	return DiscardReplySchema.parse(reply).discarded;
+	return BoardDiscardAnswerSchema.parse(reply).discarded;
 }
 
 export {

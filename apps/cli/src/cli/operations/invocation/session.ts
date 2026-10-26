@@ -30,19 +30,28 @@ import {
 	takeSessionFlag,
 	takeExpectVersionFlag,
 } from "#cli/rules/routing/global-flags.ts";
-import { addressVault } from "#cli/operations/invocation/addressed-vault.ts";
+import { addressVault, VaultNotFoundError } from "#cli/operations/invocation/addressed-vault.ts";
+
+/**
+ * Where an invocation runs: the vault it addresses, or for a command that runs
+ * without a vault, the Git checkout that holds none.
+ */
+interface Addressed {
+	readonly vault: AnsweredVault | null;
+	readonly checkout: string | null;
+}
 
 /**
  * Runs a command contract while forwarding SIGINT and SIGTERM as an abort, then re-raises
  * the signal once cleanup has finished (or after the cleanup grace period, whichever is first).
  * @param commandContract - The contract to run.
  * @param argv - The contract's own arguments.
- * @param vault - The vault the invocation addresses, or null when it finds none.
+ * @param addressed - The vault the invocation addresses, or the checkout without one.
  */
 async function runInterruptibleCommand(
 	commandContract: AnyCommandContract,
 	argv: readonly string[],
-	vault: AnsweredVault | null,
+	addressed: Addressed,
 ): Promise<void> {
 	const controller = new AbortController();
 	let interrupted: NodeJS.Signals | undefined;
@@ -72,7 +81,7 @@ async function runInterruptibleCommand(
 	process.on("SIGINT", interrupt);
 	process.on("SIGTERM", interrupt);
 	try {
-		await runCommand(commandContract, argv, controller.signal, vault);
+		await runCommand(commandContract, argv, controller.signal, addressed.vault, addressed.checkout);
 	} finally {
 		remove();
 		if (forceTimer !== undefined) {
@@ -397,20 +406,29 @@ function applyShared(stated: StatedShared): void {
 /**
  * The vault the invocation addresses, found before the command starts anything
  * or reaches a server. A command that does not read `-C` in this invocation
- * finds none, and its answer names none.
+ * finds none, and its answer names none. A command that runs without a vault
+ * runs in a Git checkout that holds none, instead of being refused.
  * @param contract - The command that will run.
  * @param argv - The command's local arguments.
  * @param stated - What the invocation stated.
- * @returns The vault, or null when the command finds none.
+ * @returns The vault, or the checkout without one, or neither when the command finds none.
+ * @throws {VaultNotFoundError} When there is no vault, and no checkout the command runs in.
  */
 async function addressedVault(
 	contract: AnyCommandContract,
 	argv: readonly string[],
 	stated: StatedShared,
-): Promise<AnsweredVault | null> {
-	return applicableShared(contract, argv).includes("directory")
-		? addressVault(stated.directory)
-		: null;
+): Promise<Addressed> {
+	if (!applicableShared(contract, argv).includes("directory")) {
+		return { vault: null, checkout: null };
+	}
+	try {
+		return { vault: await addressVault(stated.directory), checkout: null };
+	} catch (error) {
+		const checkout = error instanceof VaultNotFoundError ? error.checkoutWithoutVault : undefined;
+		if (contract.runsWithoutVault !== true || checkout === undefined) throw error;
+		return { vault: null, checkout };
+	}
 }
 
 /**
@@ -468,8 +486,8 @@ async function runCliWith(
 		selected = dispatched.selected;
 		assertSharedApplies(selected, stated, dispatched.argv);
 		applyShared(stated);
-		const vault = await addressedVault(selected.contract, dispatched.argv, stated);
-		await runInterruptibleCommand(selected.contract, dispatched.argv, vault);
+		const addressed = await addressedVault(selected.contract, dispatched.argv, stated);
+		await runInterruptibleCommand(selected.contract, dispatched.argv, addressed);
 	} catch (error) {
 		reportFailure(error, usageLine(routes, selected.contract.path));
 		process.exitCode = exitCodeFor(error, selected);

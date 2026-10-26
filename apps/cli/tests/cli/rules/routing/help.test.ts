@@ -29,8 +29,13 @@ let stdout: ReturnType<typeof spyOn>;
 let stderr: ReturnType<typeof spyOn>;
 let exitCode: typeof process.exitCode;
 const handlers = registry.map((entry) => spyOn(entry.contract, "handler"));
+// Help shows emphasis where the environment asks for colour, as CI's FORCE_COLOR does;
+// these owners read the plain text.
+const colour = { NO_COLOR: process.env["NO_COLOR"], FORCE_COLOR: process.env["FORCE_COLOR"] };
 
 beforeEach(() => {
+	process.env["NO_COLOR"] = "1";
+	delete process.env["FORCE_COLOR"];
 	exitCode = process.exitCode;
 	process.exitCode = 0;
 	stdout = spyOn(process.stdout, "write").mockImplementation(() => true);
@@ -38,6 +43,10 @@ beforeEach(() => {
 	for (const handler of handlers) handler.mockClear();
 });
 afterEach(() => {
+	for (const [key, value] of Object.entries(colour)) {
+		if (value === undefined) delete process.env[key];
+		else process.env[key] = value;
+	}
 	stdout.mockRestore();
 	stderr.mockRestore();
 	process.exitCode = exitCode ?? 0;

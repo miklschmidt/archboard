@@ -1,4 +1,11 @@
-import { checkContract, semanticConfigContract } from "#cli/operations/vault/vault.ts";
+import {
+	checkAllContract,
+	checkCodeContract,
+	checkContract,
+	checkEmbedsContract,
+	checkSemanticsContract,
+	semanticConfigContract,
+} from "#cli/operations/vault/vault.ts";
 import { statusContract } from "#cli/operations/server/status.ts";
 import { restartContract, startContract, stopContract } from "#cli/operations/server/server.ts";
 import {
@@ -31,6 +38,7 @@ import {
 import { semanticCompareContract } from "#cli/operations/semantic/compare/compare.ts";
 import { semanticCorrectContract } from "#cli/operations/semantic/board/correct.ts";
 import { semanticMoveContract } from "#cli/operations/semantic/board/move.ts";
+import { semanticDeleteContract } from "#cli/operations/semantic/board/delete.ts";
 import { semanticRenameContract } from "#cli/operations/semantic/board/rename.ts";
 import { semanticInspectContract } from "#cli/operations/semantic/inspect/inspect.ts";
 import { semanticFootprintContract } from "#cli/operations/semantic/history/footprint.ts";
@@ -54,7 +62,18 @@ import { registryOf } from "#cli/rules/routing/registry.ts";
 // The one command table: every top-level command and its subcommands. What each is
 // called and what it accepts is its contract's; dispatch, the registry and help live in rules/routing/.
 const COMMANDS: Record<string, CommandRoute> = {
-	check: { owner: contract(checkContract, "apps/cli/src/cli/operations/vault/vault.ts") },
+	check: {
+		owner: contract(checkContract, "apps/cli/src/cli/operations/vault/vault.ts"),
+		children: {
+			all: child(contract(checkAllContract, "apps/cli/src/cli/operations/vault/vault.ts")),
+			semantics: child(
+				contract(checkSemanticsContract, "apps/cli/src/cli/operations/vault/vault.ts"),
+			),
+			code: child(contract(checkCodeContract, "apps/cli/src/cli/operations/vault/vault.ts")),
+			embeds: child(contract(checkEmbedsContract, "apps/cli/src/cli/operations/vault/vault.ts")),
+		},
+		bare: { kind: "default", child: "all", withLeadingOptions: true },
+	},
 	start: {
 		owner: contract(startContract, "apps/cli/src/cli/operations/server/server.ts"),
 	},
@@ -100,6 +119,9 @@ const COMMANDS: Record<string, CommandRoute> = {
 			),
 			move: child(
 				contract(semanticMoveContract, "apps/cli/src/cli/operations/semantic/board/move.ts"),
+			),
+			delete: child(
+				contract(semanticDeleteContract, "apps/cli/src/cli/operations/semantic/board/delete.ts"),
 			),
 			show: child(
 				contract(semanticShowContract, "apps/cli/src/cli/operations/semantic/board/board.ts"),

@@ -130,10 +130,13 @@ recipe names.
     ([variants](references/variants.md)); on a board nobody has built, against
     the draft it came from. The current variant, and the first draft of a board
     nobody has built, have nothing to compare against: say so instead.
-16. **Run `archboard check`** after a vocabulary edit or an answer that
+16. **Run `archboard check semantics`** after a vocabulary edit or an answer that
     carried `warnings` ([Vocabulary](#essentials)), and
-    `archboard check --code` after a write that adds or changes an anchor or a
-    binding's `symbol` ([Verification](#essentials)).
+    `archboard check code` after a write that adds or changes an anchor or a
+    binding's `symbol` ([Verification](#essentials)). `archboard check` runs
+    both, and `check embeds`, which says which board pictures that the
+    repository keeps are outdated; `archboard check --fix` draws them again
+    ([a picture in documentation](references/sequences-views-walkthroughs.md#a-picture-in-documentation-that-stays-current)).
 17. **Repeat steps 4 to 16** for each further write the board still needs — a
     flow over parts already drawn, a view a later reading wants, the correction
     the picture showed you.
@@ -245,7 +248,10 @@ recipe names.
   PNG, or `semantic render <board> --out <file.svg>` and open the SVG in a
   viewer. Reading the SVG's text is not looking at a diagram. A picture the
   request names goes where it says; one you draw only to look at goes in a
-  temporary directory, never into the checkout you are describing.
+  temporary directory, never into the checkout you are describing. A picture
+  that a document embeds is drawn into its Git checkout with `--track`, so its
+  board lists it, and committed, so `archboard check` there says when it is outdated
+  ([a picture in documentation](references/sequences-views-walkthroughs.md#a-picture-in-documentation-that-stays-current)).
   On macOS, Chromium commands detect the host sandbox before starting a browser.
   If startup reports a macOS sandbox, request approved execution outside it for
   the same command. In Codex, use `sandbox_permissions="require_escalated"`.
@@ -256,9 +262,10 @@ recipe names.
   containment count. A self call or presentation membership does not count.
   Add the missing connection, move the node to a board where it connects, or
   delete it.
-  The check has no time limit. Cancel the command to stop waiting. Its output
-  starts with the time for each check, and JSON carries those times in `timings`.
-  `archboard check --code` holds every anchor and bound `symbol` of each
+  The check has no time limit. Cancel the command to stop waiting. The lines of
+  each check start with its times, and the JSON part of each check carries those
+  times in its `timings`.
+  `archboard check code` holds every anchor and bound `symbol` of each
   board's current variant to the files on disk, or to the code of the branch or
   commit that its binding names when the checkout does not have it out. That
   code is read from Git without a checkout, in every check (anchors, bound
@@ -609,7 +616,8 @@ are what a branch of one needs on top of it.
   repository that you work in, read it. It configures a language server, and it
   says what a configured server runs and which TypeScript the check runs.
 - [sequences, views and walkthroughs](references/sequences-views-walkthroughs.md):
-  view scopes and grammars, message kinds, decisions and loops, repeat/note, walkthrough beats and
+  view scopes and grammars, message kinds, decisions and loops, repeat/note, a
+  picture in documentation that `archboard check` keeps current, walkthrough beats and
   their identity, recording a walkthrough to a narrated video, and rendering a
   recording's kept talk again.
 - [variants](references/variants.md): the documents a variant draws, what a

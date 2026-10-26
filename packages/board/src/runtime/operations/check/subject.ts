@@ -1,6 +1,6 @@
 // The subject a diagnostic is about, built one way for every producer so a
 // node and a relationship are named the same wherever the vault says something
-// about them: the plain check here, and the code check (ADR 0046), which names
+// about them: the semantics check here, and the code check (ADR 0046), which names
 // a flow step by its flow, these ends and its label.
 
 import type { SemanticEdge, SemanticNode, VariantContent } from "#shared/schemas/content.ts";

@@ -83,7 +83,8 @@ export interface AvoidEngine {
  * {@link loadLayoutEngine}.
  * @param viz The initialized Graphviz instance.
  * @param instance The initialized libavoid Embind module.
- * @returns A complete layout operation.
+ * @returns A complete layout operation: a graph and its options in, and what
+ * the solve tells before it answers, as root options, to `tell`.
  */
 export function createLayoutEngine(viz: Viz, instance: unknown) {
 	const avoid = z
@@ -96,10 +97,14 @@ export function createLayoutEngine(viz: Viz, instance: unknown) {
 				"RouterFlag" in value,
 		)
 		.parse(instance);
-	return (graph: ElkNode, options: LayoutOptions): ElkNode => {
+	return (
+		graph: ElkNode,
+		options: LayoutOptions,
+		tell?: (told: LayoutOptions) => void,
+	): ElkNode => {
 		const stage = options[SOLVE_STAGE];
-		if (stage === "track") return placeBlocks(viz, avoid, graph, true);
-		if (stage === "blocks") return placeBlocks(viz, avoid, graph);
+		if (stage === "track") return placeBlocks(viz, avoid, graph, true, tell);
+		if (stage === "blocks") return placeBlocks(viz, avoid, graph, false, tell);
 		throw new Error(
 			`A solve names its stage in ${SOLVE_STAGE}, "track" or "blocks"; this one said ${String(stage)}.`,
 		);
@@ -243,8 +248,8 @@ export async function loadLayoutEngine(
 	}
 	const solve = createLayoutEngine(...loaded);
 	const asLoaded = memories.map((memory) => ({ memory, held: heldBytes(memory) }));
-	return (graph, options) => {
+	return (graph, options, tell) => {
 		for (const { memory, held } of asLoaded) new Uint8Array(memory.buffer).set(held);
-		return solve(graph, options);
+		return solve(graph, options, tell);
 	};
 }

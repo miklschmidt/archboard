@@ -16,7 +16,22 @@
 // a directory.
 
 import fs from "node:fs";
+import { GitCommandError } from "@archboard/process/git";
 import { chosenCheckouts, gitCheckoutOfVault, listRegistry } from "@archboard/workspace/checkouts";
+
+/**
+ * The checkout that holds a vault.
+ * @param vault The vault directory.
+ * @returns Its checkout, or undefined when the vault is in none or Git did not answer.
+ */
+function vaultCheckoutOf(vault: string): ReturnType<typeof gitCheckoutOfVault> {
+	try {
+		return gitCheckoutOfVault(vault);
+	} catch (error) {
+		if (error instanceof GitCommandError) return undefined;
+		throw error;
+	}
+}
 
 /**
  * Whether a registered directory is the one at a canonical root.
@@ -41,7 +56,7 @@ function isRoot(registered: string, root: string): boolean {
  */
 function checkoutsReadFrom(vault: string | null): ReturnType<typeof chosenCheckouts> {
 	const chosen = chosenCheckouts();
-	const own = vault === null ? undefined : gitCheckoutOfVault(vault);
+	const own = vault === null ? undefined : vaultCheckoutOf(vault);
 	if (own === undefined) return chosen;
 	// A registered entry for this directory keeps its language servers; one
 	// that nobody registered has none.
@@ -66,7 +81,20 @@ function checkoutsReadFrom(vault: string | null): ReturnType<typeof chosenChecko
  * @returns The identity, or undefined for an untracked vault or a Git that did not answer.
  */
 function vaultIdentity(vault: string): string | undefined {
-	return gitCheckoutOfVault(vault)?.identity;
+	return vaultCheckoutOf(vault)?.identity;
 }
 
-export { checkoutsReadFrom, vaultIdentity };
+/**
+ * The repository identity of the checkout that holds a vault, for a reader that
+ * writes it down. `vaultIdentity` answers undefined when Git did not answer, as
+ * it does for a vault in no repository; a record of "no repository" must tell
+ * the two apart.
+ * @param vault The vault directory.
+ * @returns The identity, or null when the vault is in no Git repository.
+ * @throws {GitCommandError} When Git could not start, was killed or timed out.
+ */
+function vaultRepositoryIdentity(vault: string): string | null {
+	return gitCheckoutOfVault(vault)?.identity ?? null;
+}
+
+export { checkoutsReadFrom, vaultIdentity, vaultRepositoryIdentity };

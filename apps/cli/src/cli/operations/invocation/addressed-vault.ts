@@ -10,9 +10,24 @@ import { stateInvocation } from "@archboard/server-lifecycle/server-client";
 import { vaultsBoundTo } from "@archboard/board/store-read";
 import { findAndRegisterVault } from "@archboard/workspace/vault";
 
+/** Why a search found no vault, as the finder answers it. */
+type VaultNotFound = Extract<Awaited<ReturnType<typeof findAndRegisterVault>>, { readonly ok: false }>;
+
 /** A command found no vault; nothing was started and nothing was written. */
 class VaultNotFoundError extends Error {
-	readonly code = "VAULT_NOT_FOUND";
+	readonly code: VaultNotFound["code"] = "VAULT_NOT_FOUND";
+	/** The root of the Git checkout that holds no vault, when the search was in one. */
+	readonly checkoutWithoutVault: string | undefined;
+
+	/**
+	 * A search that found no vault.
+	 * @param finding - What the search found instead.
+	 */
+	constructor(finding: VaultNotFound) {
+		super(finding.message);
+		this.checkoutWithoutVault =
+			finding.reason === "checkout-without-vault" ? finding.checkoutRoot : undefined;
+	}
 }
 
 /**
@@ -79,7 +94,7 @@ async function foundAndRegistered(
 ): Promise<AnsweredVault> {
 	const vault = await findAndRegisterVault({ ...search, cwd: process.cwd() });
 	if (!vault.ok) {
-		throw new VaultNotFoundError(vault.message);
+		throw new VaultNotFoundError(vault);
 	}
 	const { registered, unregistered } = vault;
 	if (registered !== undefined) {

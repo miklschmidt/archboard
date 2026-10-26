@@ -117,11 +117,9 @@ async function filmCode(server: TakeServer, browser: Browser, fixture: Fixture):
 	);
 	const take = await filmTogether("code-evidence", [terminal.page, page], async () => {
 		await Bun.sleep(1400);
-		await terminal.command("archboard check --code");
-		const checked = await server.attempt(["check", "--code"]);
-		const answer = z
-			.object({ codeCheck: CodeCheckAnswerSchema })
-			.parse(JSON.parse(checked.stdout)).codeCheck;
+		await terminal.command("archboard check code");
+		const checked = await server.attempt(["check", "code"]);
+		const answer = z.object({ code: CodeCheckAnswerSchema }).parse(JSON.parse(checked.stdout)).code;
 		const finding = answer.findings.find((one) => one.code === "RELATIONSHIP_UNDRAWN");
 		const evidence = finding?.evidence?.find(
 			(one) =>
@@ -369,7 +367,7 @@ function evidenceProducer(name: string, description: string, scene: Scene): Prod
 
 const codeEvidence = evidenceProducer(
 	"code-evidence",
-	"Run check --code, select its missing-call warning, and read the real source line beside the finding.",
+	"Run check code, select its missing-call warning, and read the real source line beside the finding.",
 	filmCode,
 );
 const moduleInterfaces = evidenceProducer(

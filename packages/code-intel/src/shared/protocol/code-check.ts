@@ -1,4 +1,4 @@
-// The answer of the code check, `archboard check --code` and
+// The answer of the code check, `archboard check code` and
 // `GET /api/vault/code-check` (ADR 0046).
 //
 // `timings` records elapsed work for code facts, each language server and
@@ -379,8 +379,8 @@ const RememberedReadingSchema = CodeCheckBoardSchema.extend({
  * The answer of `GET /api/vault/code-findings`: one reading for each board and
  * variant that a pass has read since the server started. The route only reads
  * the server's memory and never starts a pass, so it is empty until somebody
- * runs `archboard check --code`. The route answers it beside `success: true`,
- * and a parse keeps only the answer.
+ * runs the code check, with `archboard check` or `archboard check code`. The
+ * route answers it beside `success: true`, and a parse keeps only the answer.
  */
 const RememberedFindingsSchema = z.object({ readings: z.array(RememberedReadingSchema) });
 

@@ -7,6 +7,7 @@
 
 import { Command } from "commander";
 import { declareCommand } from "#cli/rules/commander/commander.ts";
+import { HELP_STYLE, afterText, heading } from "#cli/rules/routing/help-style.ts";
 import { SHARED_OPTIONS, SHARED_OPTION_KEYS } from "#cli/protocol/contract/shared-options.ts";
 import type { CommandRoute, CommandRoutes } from "#cli/protocol/routing/route.ts";
 
@@ -38,7 +39,7 @@ function conventions(): string {
 	const width = Math.max(...SHARED_OPTION_KEYS.map((key) => sharedSpelling(key).length));
 	return [
 		"",
-		"Shared options (each command's help lists the ones it reads; any other is refused):",
+		heading("Shared options (each command's help lists the ones it reads; any other is refused):"),
 		...SHARED_OPTION_KEYS.map(
 			(key) => `  ${sharedSpelling(key).padEnd(width)}  ${SHARED_OPTIONS[key].description}`,
 		),
@@ -49,7 +50,7 @@ function conventions(): string {
 		"",
 		"Exit codes: 0 ok, 1 error, 2 usage, 3 server unreachable, 4 browser pane required,",
 		"5 board write refused (held, claim revoked, or version moved).",
-		"`check` exits 1 while the vault still has diagnostics.",
+		"`check` exits 1 while a check still has a diagnostic or a warning.",
 		"",
 		`Inside the archboard checkout, \`./bin/archboard <command>\` runs the CLI from source.`,
 		`Run \`${PROGRAM} help <command>\` or \`${PROGRAM} <command> --help\` for one command.`,
@@ -72,7 +73,7 @@ function afterHelp(route: CommandRoute, path: readonly string[]): string {
 	}
 	const { examples } = route.owner.contract;
 	if (examples.length > 0) {
-		lines.push("", "Examples:", ...examples.map((example) => `  ${example}`));
+		lines.push("", heading("Examples:"), ...examples.map((example) => `  ${example}`));
 	}
 	return lines.length === 0 ? "" : `${lines.join("\n")}\n`;
 }
@@ -98,7 +99,8 @@ function commandFor(
 	command
 		.summary(contract.summary)
 		.description(contract.description)
-		.helpOption("-h, --help", "Show this help");
+		.helpOption("-h, --help", "Show this help")
+		.configureHelp(HELP_STYLE);
 	const children = Object.entries(route.children ?? {});
 	// The one help command is the root's `help <path>`; descendants use flags.
 	command.helpCommand(false);
@@ -163,7 +165,8 @@ function commanderTree(routes: CommandRoutes, version: string): HelpTree {
 		)
 		.version(version, "-v, --version", "Print the version")
 		.helpOption("-h, --help", "Show this help")
-		.helpCommand("help [command]", "Show help for one command");
+		.helpCommand("help [command]", "Show help for one command")
+		.configureHelp(HELP_STYLE);
 	after.set(root, conventions());
 	for (const [name, route] of Object.entries(routes)) {
 		root.addCommand(commandFor(name, route, [name], after));
@@ -200,7 +203,8 @@ function commandAt(root: Command, topic: readonly string[]): Command {
 function helpText(routes: CommandRoutes, version: string, topic: readonly string[]): string {
 	const tree = commanderTree(routes, version);
 	const command = commandAt(tree.root, topic);
-	return command.helpInformation() + (tree.after.get(command) ?? "");
+	const colors = command.configureOutput().getOutHasColors?.() === true;
+	return command.helpInformation() + afterText(tree.after.get(command) ?? "", colors);
 }
 
 /**

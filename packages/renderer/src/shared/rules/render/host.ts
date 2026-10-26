@@ -39,13 +39,18 @@ interface RendererHost {
 	 * @param layoutOptions The options for this solve.
 	 * @param signal Calls the solve off: one still waiting for the engine is
 	 * never solved, and is refused with the signal's reason; one the engine
-	 * holds finishes normally.
+	 * holds finishes normally, unless the caller hears it.
+	 * @param hear Hears what the engine tells of the solve before it answers,
+	 * as root options. The caller weighs what it hears and may call the solve
+	 * off: the engine that holds a solve somebody hears then stops it, and the
+	 * solve is refused with the signal's reason.
 	 * @returns Its solved geometry.
 	 */
 	readonly solve: (
 		graph: ElkNode,
 		layoutOptions: LayoutOptions,
 		signal?: AbortSignal,
+		hear?: (told: LayoutOptions) => void,
 	) => Promise<ElkNode>;
 	/** The theme colours, where a document that stands alone can be drawn. */
 	readonly themeColors?: ThemeColors | undefined;

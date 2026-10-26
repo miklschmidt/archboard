@@ -41,7 +41,7 @@ export {
 	SEMANTIC_RASTER_JOB_TIMEOUT_MS,
 	SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
 } from "#shared/constants/raster.ts";
-export { LANGUAGE_SERVER_STOP_MS } from "#shared/constants/code-check.ts";
+export { CHECK_MS } from "#shared/constants/checks.ts";
 export { LOCALITY_DEFAULT_PERIOD_MS } from "#shared/constants/history-lens.ts";
 export { createElapsedClock } from "#shared/constants/elapsed-clock.ts";
 export { RECORDER_MS, RECORDING_MS } from "#shared/constants/walkthrough-recording.ts";

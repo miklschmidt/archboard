@@ -172,6 +172,12 @@ interface CommandContext {
 	readonly diagnostic: (message: string) => void;
 	/** The vault the command addressed, when it reads `-C` and found one. */
 	readonly vault: AnsweredVault | null;
+	/**
+	 * The root of the Git checkout that a command which runs without a vault
+	 * (`runsWithoutVault`) runs in, when that checkout holds no vault; null
+	 * otherwise.
+	 */
+	readonly checkout: string | null;
 }
 
 interface CommandContract<Shape extends z.ZodRawShape, Result> {
@@ -182,6 +188,12 @@ interface CommandContract<Shape extends z.ZodRawShape, Result> {
 	parameters: readonly TokenParameter[];
 	/** The shared options this command reads; every other one is refused. */
 	shared: readonly SharedOptionKey[];
+	/**
+	 * In a Git checkout that holds no vault, the command runs with no vault and
+	 * `checkout` names that checkout, where every other command that reads `-C`
+	 * is refused with VAULT_NOT_FOUND. A directory in no checkout is still refused.
+	 */
+	runsWithoutVault?: true;
 	input: CommandInput<Shape>;
 	result: z.ZodType<Result>;
 	output: OutputPolicy<z.output<z.ZodObject<Shape>>>;

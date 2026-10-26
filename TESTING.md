@@ -130,8 +130,11 @@ echo '{"nodes": [{"name": "Order queue", "kind": "queue"}],
 
 Each command prints its answer as JSON on stdout and one sentence on stderr.
 The three writes take the board to versions 1, 2 and 3. `compare` reports the
-queue and its two relationships as added. If the configuration and every board
-in the vault are valid, `check` exits 0.
+queue and its two relationships as added. `check` runs every check: the
+semantics check of the vault, the code check and the embeds check. It exits 0
+when the configuration and every board are valid and neither the code check
+nor the embeds check has a warning. The session's vault is in no Git checkout,
+so the embeds check has no file to read there.
 
 The board is the file `payments.semantic.json` in the vault. It holds the
 current variant and every proposal. Write it only through the CLI.
@@ -152,6 +155,13 @@ against the current variant. `rasterize` needs Chromium or Google Chrome, as
 [INSTALL.md](INSTALL.md#rendering-to-a-bitmap) describes. At the default scale,
 the `width` and `height` in the answer of `rasterize` are the ones in the answer
 of `render`.
+
+With `--track --doing "..."`, `render` and `rasterize` also list the file on
+the board as a tracked embed, and `check embeds` in the vault's repository then
+reads that file too. Tracking needs the vault and the file in Git checkouts, so
+the session above cannot use it.
+`tests/system/semantic-boards/tracked-embeds.test.ts` runs it over four
+repositories.
 
 ## 5. See it in a browser
 
@@ -220,7 +230,7 @@ speakers:
 
 - The exit codes mean: 0 success, 1 an error, 2 wrong usage, 3 no answer from
   the server, 4 no browser page, and 5 a refused board write. `check` exits 1
-  while the vault still has diagnostics.
+  while a check still has a diagnostic or a warning.
 - The answer of a command is JSON on stdout. The reason for a failure is on
   stderr.
 - The server log is `archboard.log` in the state directory.

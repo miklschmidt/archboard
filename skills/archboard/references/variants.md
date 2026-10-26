@@ -51,7 +51,7 @@ that draws a design pins the commit it was drawn from.
   longer stands on.
 - `semantic show` returns each variant with its `documents`. To find the draft
   that draws a design, read the drafts' lists for the design document's path.
-- `archboard check --code` reads the references of every variant it reads, as
+- `archboard check code` reads the references of every variant it reads, as
   it reads a binding of the same repository and ref. A file that is not at
   that version is `DOCUMENT_PATH_MISSING`, at `variants.<id>.documents.<n>`:
   name the file where it is now, pin a commit that holds it, or remove it.
@@ -89,7 +89,7 @@ holds the whole architecture with the changes of every pull request below it.
 4. To show one pull request on its own, use a view that selects the parts it
    changes, or `semantic compare --against "<proposal below>"`, which marks
    what that proposal changed.
-5. To hold the whole stack to its code, run `archboard check --code --every-draft`.
+5. To hold the whole stack to its code, run `archboard check code --every-draft`.
    It reads every draft of every board. It reads each draft against the branch
    (or commit) that its bindings name and no proposal below names: the pull
    request's own branch. A binding that names a branch or commit that the

@@ -16,8 +16,7 @@ import {
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@archboard/board/document";
-import { LegendLayoutSchema, type RenderedChanges } from "@archboard/board/render-reply";
-import type { RenderedVariantSchema } from "@archboard/board/render-reply";
+import type { RenderedChanges, RenderedVariantSchema } from "@archboard/board/render-reply";
 
 type RenderedVariant = z.infer<typeof RenderedVariantSchema>;
 
@@ -142,65 +141,6 @@ function framingRequest(input: {
 		...(input.legendOnly === true ? { legendOnly: "on" } : {}),
 	};
 }
-
-/** The options both drawing commands declare for the legend, and how they are read. */
-const LEGEND_OPTIONS = [
-	{
-		kind: "option",
-		key: "legend",
-		spellings: ["--legend"],
-		value: "required",
-		placeholder: "layout",
-		choices: LegendLayoutSchema.options,
-		description:
-			"Add the key to what the picture draws: a row under it (horizontal) or a column beside it (vertical)",
-	},
-	{
-		kind: "option",
-		key: "legendOnly",
-		spellings: ["--legend-only"],
-		value: "none",
-		description: "Draw the legend by itself, without the picture, in the layout --legend names",
-	},
-] as const;
-const LegendInputSchema = {
-	legend: LegendLayoutSchema.optional(),
-	legendOnly: z.boolean().default(false),
-};
-
-/**
- * Whether a drawing's input asks for the legend alone without saying how to lay it out.
- * @param input The parsed input.
- * @param input.legend How the legend is laid out, when it was asked for.
- * @param input.legendOnly Whether the legend is drawn alone.
- * @returns True when it may be drawn.
- */
-function legendStated(input: { legend?: unknown; legendOnly: boolean }): boolean {
-	return !input.legendOnly || input.legend !== undefined;
-}
-const LEGEND_ONLY_REFUSAL = {
-	message: "--legend-only draws the legend by itself, so it needs --legend horizontal or vertical.",
-	path: ["legendOnly"],
-};
-
-/**
- * What `--title` takes: words of its own, or nothing for the names of what is
- * drawn. Blank words are refused here, as the render route refuses them.
- */
-const TitleOptionSchema = z
-	.union([z.string().regex(/\S/u, "A title needs words"), z.literal(true)])
-	.optional();
-
-/** The `--title` option both drawing commands declare. */
-const TITLE_OPTION = {
-	kind: "option",
-	key: "title",
-	spellings: ["--title"],
-	value: "optional",
-	placeholder: "text",
-	description:
-		"Draw a title above the picture: this text, or without text the board's, view's and variant's names",
-} as const;
 
 /**
  * The stated change, from a file when one was named and standard input
@@ -439,12 +379,6 @@ export {
 	SemanticBoardReadSchema,
 	drawnAgainst,
 	exportRenderRequest,
-	TitleOptionSchema,
-	TITLE_OPTION,
-	LEGEND_OPTIONS,
-	LEGEND_ONLY_REFUSAL,
-	LegendInputSchema,
-	legendStated,
 	DRAWN_AGAINST,
 	statedJson,
 	named,

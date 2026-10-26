@@ -30,6 +30,7 @@ import {
 	type LockRequest,
 } from "#runtime/store/lock/lock.ts";
 import { mintId } from "#shared/rules/ids.ts";
+import type { BoardOpener } from "#shared/protocol/board-discard.ts";
 import { type SemanticBoard } from "#shared/schemas/board-document.ts";
 import {
 	locateSemanticBoard,
@@ -100,6 +101,8 @@ interface SemanticWriteRejection {
 	readonly version: number | null;
 	/** Why the writer's claim ended, on a CLAIM_REVOKED refusal. */
 	readonly cause?: ClaimEndCause;
+	/** Every node on another board that opens the board, on a BOARD_OPENED_BY refusal. */
+	readonly openedBy?: readonly BoardOpener[];
 }
 
 /** What a write did, or why it did nothing. */

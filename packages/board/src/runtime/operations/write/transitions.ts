@@ -92,7 +92,9 @@ interface SemanticTransition {
 	 * A command that does must say which version of it it was written against,
 	 * and the write boundary refuses it otherwise: applied to whatever the board
 	 * happens to say now, it is exactly how one agent's change disappears under
-	 * another's. Creation is the one command with no prior version to have read.
+	 * another's. Creation has no prior version to have read, and tracking an
+	 * embed (ADR 0057) only adds to a list, which undoes nothing another writer
+	 * did, so both say false.
 	 */
 	readonly changesExistingBoard: boolean;
 	/**

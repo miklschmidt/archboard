@@ -193,7 +193,7 @@ Do this for each vault board that section 1 chose.
      not checked out, add `--head <branch>`: it reads that branch from Git, and
      nothing is checked out. A branch that no checkout has is refused with
      `HEAD_UNRESOLVED`.
-   - `archboard check --code --variant "<proposal>"` reports no warning that
+   - `archboard check code --variant "<proposal>"` reports no warning that
      the same run without `--variant` lacks. It reads the draft of that name
      on every board, and it skips a part whose binding names a branch that is
      not checked out, such as a part of a lower pull request in a stack.

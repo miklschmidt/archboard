@@ -888,7 +888,7 @@
 				},
 				{
 					"feature": "check.clean",
-					"requirement": "`archboard check` reports no diagnostics at the end",
+					"requirement": "`archboard check semantics` reports no diagnostics at the end",
 					"skill": ["SKILL.md#the-runbook", "SKILL.md#essentials"]
 				}
 			],

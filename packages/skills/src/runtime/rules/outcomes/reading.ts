@@ -81,7 +81,7 @@ interface Reading {
 	readonly snapshot: ReadonlyMap<string, SemanticBoard>;
 	/** The vault policy as configured after the run. */
 	readonly policy: SemanticPolicy;
-	/** What `archboard check` reported after the run. */
+	/** What `archboard check semantics` reported after the run. */
 	readonly diagnostics: readonly VaultDiagnostic[];
 	readonly renders: readonly RenderAttempt[];
 	readonly inspections: readonly InspectionAttempt[];

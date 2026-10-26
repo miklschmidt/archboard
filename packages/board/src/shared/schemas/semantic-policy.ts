@@ -67,7 +67,7 @@ const RelationshipPolicySchema = z
 			.meta({
 				uniqueItems: true,
 				description:
-					"The evidence kinds that prove a relationship of this kind to `archboard check --code` (ADR 0046). A kind without the key accepts every evidence kind, and the check never judges the evidence of its relationships.",
+					"The evidence kinds that prove a relationship of this kind to `archboard check code` (ADR 0046). A kind without the key accepts every evidence kind, and the check never judges the evidence of its relationships.",
 			}),
 	})
 	.strict();

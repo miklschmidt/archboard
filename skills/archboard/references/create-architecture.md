@@ -154,7 +154,7 @@ whole, with no children. Draw its functions inside it, and the call lands on
    the level this recipe opens with: cut it, or add the views its readings want;
    a second edit is the normal loop, not a repair. A request path the board
    carries is a `flow` drawn through a `sequence` view, not a row to declare
-   inapplicable. Run `archboard check --code`: every anchor and bound symbol
+   inapplicable. Run `archboard check code`: every anchor and bound symbol
    holds in the files on disk.
 
 Read [authoring](authoring.md) for groups, drill-down links to

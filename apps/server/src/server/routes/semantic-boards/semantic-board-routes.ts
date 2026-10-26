@@ -25,7 +25,8 @@ import {
 import type { SemanticBoard } from "@archboard/board/document";
 import { listSemanticBoards, readSemanticBoard } from "@archboard/board/store-read";
 import { checkSemanticVault, readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
-import { vaultIdentity } from "@archboard/code-binding/resolution";
+import { vaultIdentity, vaultRepositoryIdentity } from "@archboard/code-binding/resolution";
+import { GitCommandError } from "@archboard/process/git";
 import { renderBoard } from "@archboard/renderer/bun";
 import { asyncEndpoint } from "#server/middleware/mutation-work/mutation-work.ts";
 import {
@@ -36,6 +37,7 @@ import {
 import { discardRoute } from "#server/routes/semantic-boards/semantic-board-discard.ts";
 import { movePreviewRoute, moveRoute } from "#server/routes/semantic-boards/semantic-board-move.ts";
 import { renameRoute } from "#server/routes/semantic-boards/semantic-board-rename.ts";
+import { trackEmbedRoute } from "#server/routes/semantic-boards/semantic-board-track.ts";
 import {
 	adoptRoute,
 	shelveRoute,
@@ -437,16 +439,72 @@ async function answerRender(req: Request, res: Response, asked: string): Promise
 	if (board === null) {
 		return;
 	}
-	const outcome = await renderBoard(
-		board,
-		stated.how,
-		readSemanticBoardConfiguration(vault).configuration,
-	);
+	await sendRender(res, vault, board, stated.how);
+}
+
+/**
+ * Draw a board and answer with the picture.
+ * @param res The response.
+ * @param vault The vault the request named.
+ * @param board The board, as read.
+ * @param how What the request selects.
+ */
+async function sendRender(
+	res: Response,
+	vault: string,
+	board: SemanticBoard,
+	how: RenderChoices,
+): Promise<void> {
+	const policy = readSemanticBoardConfiguration(vault).configuration;
+	const recipe = standsAlone(how) ? recipeContext(vault) : undefined;
+	if (recipe?.ok === false) {
+		res.status(500).json({ success: false, code: recipe.code, error: recipe.error });
+		return;
+	}
+	const outcome = await renderBoard(board, how, policy, recipe?.context);
 	if (!outcome.ok) {
 		res.status(404).json({ success: false, code: outcome.code, error: outcome.error });
 		return;
 	}
 	res.json(outcome.reply);
+}
+
+/**
+ * What a render's recipe needs to know of the vault: the repository that holds
+ * it, or null when none does. A Git that does not answer is no such fact, and
+ * a recipe that said "no repository" would send an embed to a vault that has one.
+ * @param vault The vault directory.
+ * @returns The context, or the refusal to answer with when Git did not answer.
+ */
+function recipeContext(vault: string):
+	| { readonly ok: true; readonly context: { vault: { repo: string | null } } }
+	| {
+			readonly ok: false;
+			readonly code: "VAULT_REPOSITORY_UNKNOWN";
+			readonly error: string;
+	  } {
+	try {
+		return { ok: true, context: { vault: { repo: vaultRepositoryIdentity(vault) } } };
+	} catch (error) {
+		if (!(error instanceof GitCommandError)) throw error;
+		return {
+			ok: false,
+			code: "VAULT_REPOSITORY_UNKNOWN",
+			error: `Git did not say which repository holds the vault, so the render's recipe cannot name it: ${error.message} Try again.`,
+		};
+	}
+}
+
+/**
+ * Whether a render is a board render: a document in a theme of its own with
+ * its faces embedded, which a file keeps without a server behind it. Such a
+ * render carries its render recipe (ADR 0057). A pane's picture and a picture
+ * that links its faces carry none.
+ * @param how What the request selects.
+ * @returns True when the render stands alone.
+ */
+function standsAlone(how: RenderChoices): boolean {
+	return how.theme !== undefined && how.fonts === "embedded";
 }
 
 /**
@@ -501,6 +559,7 @@ function mountSemanticBoardRoutes(app: Express): void {
 	app.post("/api/semantic-boards/adopt", requireVault, asyncEndpoint(adoptRoute));
 	app.post("/api/semantic-boards/shelve", requireVault, asyncEndpoint(shelveRoute));
 	app.post("/api/semantic-boards/rename", requireVault, asyncEndpoint(renameRoute));
+	app.post("/api/semantic-boards/track-embed", requireVault, asyncEndpoint(trackEmbedRoute));
 	app.post("/api/semantic-boards/discard", requireVault, asyncEndpoint(discardRoute));
 	app.post("/api/semantic-boards/move", requireVault, asyncEndpoint(moveRoute));
 	app.get("/api/semantic-boards/move-preview", requireVault, movePreviewRoute);

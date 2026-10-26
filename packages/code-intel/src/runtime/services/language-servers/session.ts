@@ -54,7 +54,7 @@ import {
 	type Position,
 	type Server,
 } from "#runtime/processes/language-servers/server.ts";
-import { LANGUAGE_SERVER_STOP_MS } from "@archboard/timing";
+import { CHECK_MS } from "@archboard/timing";
 
 /** Where a file uses a name: its checkout, the file in it, the line and the spelling. */
 interface DefinitionQuestion {
@@ -186,7 +186,7 @@ class Session {
 	 */
 	constructor(options: SessionOptions) {
 		this.#options = options;
-		this.#stopMs = options.stopMs ?? LANGUAGE_SERVER_STOP_MS;
+		this.#stopMs = options.stopMs ?? CHECK_MS.languageServerStop;
 	}
 
 	/**

@@ -436,9 +436,9 @@ subpaths with 16 names, where code outside imported 7 module paths. It imports `
   with their dotfiles. A test finds them through `FIXTURES` of the `checkout.ts` beside them.
 
 The eleventh is `renderer` (`@archboard/renderer`). It draws a board as a picture. It adopts the `api/` role for
-`shared/`, `runtime/` and `ui/` and exposes 8 subpaths with 61 names, where code outside imported 10 module paths and
+`shared/`, `runtime/` and `ui/` and exposes 9 subpaths with 67 names, where code outside imported 10 module paths and
 two asset paths. It imports `board`, `timing` and `process`. The 2 files of `shared/api/` and the
-1 file of `ui/api/` are safe for the browser, with no Node import. The 5 files of `runtime/api/` are Node-bound and run
+1 file of `ui/api/` are safe for the browser, with no Node import. The 6 files of `runtime/api/` are Node-bound and run
 only in Bun.
 
 - `shared/` holds the picture code that the browser and Bun both run. `rules/` is the pure code: `render/` has the entry
@@ -450,7 +450,7 @@ only in Bun.
 - `runtime/` holds the Bun host. `services/bun-host.ts` installs the `@napi-rs/canvas` canvas, the diagram fonts, the
   theme colors and the pool of layout workers. `processes/layout-worker.ts` is the worker thread, started with
   `new URL("../processes/layout-worker.ts", import.meta.url)`. `operations/` has the render and measure entry points, the
-  icon paths and the bounds, PNG and receipt of the rasterizer. `services/rasterizer/` is the rasterizer,
+  icon paths, the bounds, PNG and receipt of the rasterizer, and in `recipe/` the render recipe in a file. `services/rasterizer/` is the rasterizer,
   `processes/headless-chromium/` and `clients/headless-chromium/` are the private Chromium and its DevTools client, and
   `store/` reads the theme stylesheet and names where the assets are.
 - `ui/` holds the browser host. `state/` keeps what the page loads once (the faces, the icons, whether the renderer has
@@ -464,7 +464,7 @@ only in Bun.
   with, the code warnings, and what a render asks and answers. `./shell-geometry` is the shell's fixed geometry and the
   page shape that boards are laid out for. `./browser` is the browser host. `./bun` draws with the Bun host:
   `renderBoard`, `renderArchitecture`, the diagram icon paths and the text width. `./rasterizer` is the bitmap of a
-  picture and the receipt of the capture. `./headless-chromium` is the private Chromium, which the walkthrough recorder
+  picture and the receipt of the capture. `./recipe` is the render recipe that a board render carries: `readRenderRecipe` reads it from the bytes of an SVG or a PNG, `embedRecipeInPng` writes it into a bitmap, `replaceRenderRecipe` puts another recipe in its place and keeps every other byte, and `recipeRenderRequest` is the render request that draws it again; the Bun `renderBoard` writes it into an SVG when the caller names the vault. `./headless-chromium` is the private Chromium, which the walkthrough recorder
   and the README scripts also start. `./theme` reads the colors of the shared stylesheet.
 - The assets live in `assets/`, next to `src/`: `assets/fonts/` holds Onest, DM Mono and Big Shoulders Display with their
   OFL texts and `README.md`, and `assets/theme.css` holds the colors of both themes. No package file reads a `src/`
