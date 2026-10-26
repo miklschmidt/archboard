@@ -200,23 +200,26 @@ pub fn pshortestpath(
         }
     }
     // Connect triangles sharing an edge.
-    for trii in 0..tris.len() {
-        for trij in (trii + 1)..tris.len() {
-            for ei in 0..3 {
-                for ej in 0..3 {
-                    let a = tris[trii].e[ei];
-                    let b = tris[trij].e[ej];
-                    let (a0, a1, b0, b1) = (
-                        pnl.id[a.pnl0],
-                        pnl.id[a.pnl1],
-                        pnl.id[b.pnl0],
-                        pnl.id[b.pnl1],
-                    );
-                    if (a0 == b0 && a1 == b1) || (a0 == b1 && a1 == b0) {
-                        tris[trii].e[ei].right_index = trij;
-                        tris[trij].e[ej].right_index = trii;
-                    }
-                }
+    // archboard: C compares every edge of every triangle with every edge of each later
+    // one, and each match sets both edges' `right_index` to the other triangle, the later
+    // match over the earlier. The last match an edge sees is with the highest-numbered other
+    // triangle that holds its two points, so each edge gets that one, found by sorting
+    // the edges by their points.
+    let mut ends: Vec<(usize, usize, usize, usize)> = Vec::with_capacity(tris.len() * 3);
+    for (trii, tri) in tris.iter().enumerate() {
+        for (ei, e) in tri.e.iter().enumerate() {
+            let (a, b) = (pnl.id[e.pnl0], pnl.id[e.pnl1]);
+            ends.push((a.min(b), a.max(b), trii, ei));
+        }
+    }
+    ends.sort_unstable();
+    for shared in ends.chunk_by(|x, y| (x.0, x.1) == (y.0, y.1)) {
+        let last = shared[shared.len() - 1].2;
+        let before = shared.iter().rev().map(|x| x.2).find(|&t| t != last);
+        for &(_, _, trii, ei) in shared {
+            let other = if trii == last { before } else { Some(last) };
+            if let Some(other) = other {
+                tris[trii].e[ei].right_index = other;
             }
         }
     }
