@@ -193,6 +193,40 @@ test("Git process owner exits after one result and release", async () => {
 	}
 });
 
+test("Git process owner exits when its parent's channel closes before release", async () => {
+	let finishResult!: (value: unknown) => void;
+	const result = new Promise<unknown>((resolve) => {
+		finishResult = resolve;
+	});
+	const owner = Bun.spawn([process.execPath, GIT_PROCESS_OWNER, process.execPath, "-e", ""], {
+		detached: true,
+		ipc: finishResult,
+		stdin: "ignore",
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	try {
+		owner.send({ kind: "start" });
+		await result;
+		// A parent that dies closes the channel without ever sending release.
+		owner.disconnect();
+		const exited = await Promise.race([
+			owner.exited.then((exitCode) => ({ kind: "exit" as const, exitCode })),
+			Bun.sleep(3_000).then(() => ({ kind: "deadline" as const })),
+		]);
+		expect(exited).toEqual({ kind: "exit", exitCode: 0 });
+	} finally {
+		if (owner.exitCode === null) {
+			owner.kill("SIGKILL");
+		}
+		await owner.exited;
+		await Promise.all([
+			new Response(owner.stdout).arrayBuffer(),
+			new Response(owner.stderr).arrayBuffer(),
+		]);
+	}
+});
+
 test("real detached Git commands settle for success and nonzero exit", async () => {
 	const root = mkdtempSync(join(tmpdir(), "archboard-git-real-"));
 	try {
