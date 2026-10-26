@@ -11,7 +11,10 @@
 // solve finds every running one busy and none of them still starting, up to
 // one fewer than the cores the place reports, so a small board starts one and
 // a wide one spreads its candidates out without starting a dozen workers at
-// once. A solve's answer depends on its graph alone (`layout-engine.ts`), so
+// once. A worker is starting until it says its core is instantiated, not
+// until it answers its first solve: a first render waited for that whole
+// solve before it started a second worker, while every other solve it asked
+// for waited behind it (TASK-527). A solve's answer depends on its graph alone (`layout-engine.ts`), so
 // neither which worker answers a solve nor what that worker solved before
 // changes the drawing.
 //
@@ -32,7 +35,8 @@
 // size is, is answered at once and reaches no worker (TASK-548.02).
 //
 // The workers accept `{ id, graph }` and answer with
-// `{ id, data }` or `{ id, error, fatal }`.
+// `{ id, data }` or `{ id, error, fatal }`. A worker says `{ ready: true }`
+// once its core is instantiated.
 
 import type { RendererHost } from "#shared/rules/render/host.ts";
 
@@ -83,8 +87,8 @@ interface Pending {
 /** One worker, and the solve it was sent and has not answered yet. */
 interface PooledEngine {
 	readonly worker: EngineWorker;
-	/** Whether it has answered anything yet, which is when it has started. */
-	answered: boolean;
+	/** Whether it has started: it said its core is instantiated, or it answered. */
+	started: boolean;
 	solving?: { readonly id: number; readonly pending: Pending } | undefined;
 }
 
@@ -96,6 +100,17 @@ interface PooledEngine {
  */
 function engineAborted(error: unknown): boolean {
 	return error instanceof WebAssembly.RuntimeError;
+}
+
+/**
+ * Whether a message event says that a worker's core is instantiated.
+ * @param event The event.
+ * @returns True for `{ ready: true }`.
+ */
+function isReady(event: Event): boolean {
+	if (!(event instanceof MessageEvent)) return false;
+	const data: unknown = event.data;
+	return typeof data === "object" && data !== null && "ready" in data && data.ready === true;
 }
 
 /**
@@ -259,7 +274,7 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	function hear(engine: PooledEngine, answer: EngineAnswer): void {
 		const solving = engine.solving;
 		if (solving?.id !== answer.id) return;
-		engine.answered = true;
+		engine.started = true;
 		if (answer.fatal === true) {
 			discard(engine, engineError(answer.error ?? "The layout worker stopped answering."));
 			return;
@@ -275,9 +290,13 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	 * @returns The pooled worker.
 	 */
 	function start(): PooledEngine {
-		const engine: PooledEngine = { worker: startWorker(), answered: false };
+		const engine: PooledEngine = { worker: startWorker(), started: false };
 		engine.worker.addEventListener("message", (event) => {
 			if (isAnswer(event)) hear(engine, event.data);
+			else if (isReady(event)) {
+				engine.started = true;
+				dispatch();
+			}
 		});
 		engine.worker.addEventListener("error", (event) => {
 			const said = event instanceof ErrorEvent ? event.message : "";
@@ -295,9 +314,9 @@ function createEnginePool(startWorker: () => EngineWorker, ceiling: number): Sol
 	function freeEngine(): PooledEngine | undefined {
 		const idle = engines.find((engine) => engine.solving === undefined);
 		if (idle !== undefined) return idle;
-		// One worker starting at a time: a worker that has not answered is still
+		// One worker starting at a time: a worker that has not said it is ready is still
 		// loading its script and instantiating the core, and a solve sent to it waits for that.
-		if (engines.length < ceiling && engines.every((engine) => engine.answered)) return start();
+		if (engines.length < ceiling && engines.every((engine) => engine.started)) return start();
 		return undefined;
 	}
 

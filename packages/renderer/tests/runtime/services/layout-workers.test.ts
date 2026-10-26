@@ -96,3 +96,18 @@ test("a re-render after a relabel that keeps every card's size sends no solve to
 		installRendererHost(host);
 	}
 });
+
+test("a layout worker says it is ready once it instantiated the core, before it is sent a solve", async () => {
+	// What this catches: a worker that never says so, which leaves the pool
+	// starting its next worker only after this one answers a whole solve (TASK-527).
+	const worker = new Worker(
+		new URL("../../../src/runtime/processes/layout-worker.ts", import.meta.url).href,
+	);
+	started.push(worker);
+	const said = new Promise<unknown>((resolve) => {
+		worker.addEventListener("message", (event) => resolve(event.data), { once: true });
+	});
+	// oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker's postMessage has no target origin
+	worker.postMessage({ core: compiledCore() });
+	expect(await said).toEqual({ ready: true });
+});
