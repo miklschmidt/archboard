@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex-orchestrator'
 created_date: '2026-10-26T04:11:00Z'
-updated_date: '2026-10-26T17:59:00Z'
+updated_date: '2026-10-26T18:48:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -312,4 +312,10 @@ Exact tree equality permits reuse of the recorded source evidence. The focused o
 TASK-549 remains In Progress. TASK-549.05 remains Done with all four acceptance criteria and both completion items satisfied. All task statuses remain unchanged from the source. The dependency-ready incomplete frontier is TASK-549.06, TASK-549.11, and TASK-549.15. TASK-549.06 is next for backend implementation. The parent owns dirty TASK-549.11 work in /home/msc/Projects/archboard.feat-module-selection-focus and retains frontend ownership and orchestration. Its integration task record remains To Do until that work is integrated. This merger does not touch that checkout or dispatch an implementer.
 
 No new tests, fresh review, frontend edits, child agents, push, or PR edit occurred. The source handoff records released claims and a stopped server. This merger starts no server and acquires no claims. The simplification pause leaves the exact validated source unchanged. Exact signatures, ancestry, tree equality, clean state, reused evidence, and limits are recorded externally in /home/msc/.local/state/archboard-implementation/task-549/task-549.05-merged.md.
+
+Integrated TASK-549.11 from signed source 3f649c41939555204c01c30d3cb47def4c91afe6 through signed no-fast-forward merge e121fc5a32b5a63f0678c7fcdf3b8f1ec9f95846. Merge parents are integration 24f76895d1555418782e973b021c4aceeb5a7f5c and source 3f649c41939555204c01c30d3cb47def4c91afe6. Merge tree 406fdf1eb1db2c21f46980e82114af65f51a21fd equals the validated source tree exactly. Both checkouts were clean before merge; source and merge signatures verify with the configured SSH signer.
+
+TASK-549.11 is Done with all four acceptance criteria and both definition items checked. TASK-549 remains In Progress. Reused the signed source evidence because the merge tree is identical; no tests or checks were rerun. Recorded evidence: nine browser cases / 108 assertions; 16 scope cases / 25 assertions; 81 API and consumer cases; source/frontend types, full lint, formatting, evaluation metadata covering 21 scenarios, 21 fixtures, and 14 coverage parts; current semantics has zero diagnostics and affected code has zero warnings. Ten unrelated warnings remain. Known board width 245/188 remains under TASK-549.24; no full-gate success is claimed.
+
+The ready frontier is TASK-549.12 and TASK-549.15. The TASK-549.06 backend delegate is active in its separate T3 checkout and was not inspected or changed; its Backlog status in this integration tree remains To Do.
 <!-- SECTION:NOTES:END -->
