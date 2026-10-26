@@ -1307,9 +1307,9 @@ impl Dot<'_> {
         // archboard: the passes read the rank from a copy and exchange places in `at`, the
         // place each node started at (`mincross_rank`); the rank is written back once.
         let rank = RankCopy::of(self, g, r);
-        let mut at: Vec<usize> = (0..rank.nodes.len()).collect();
+        let mut at: Vec<usize> = (0..rank.places.len()).collect();
         let mut changed = 0;
-        let n = rank.nodes.len() as i32;
+        let n = rank.places.len() as i32;
         let mut ep = n as usize;
         let mut nelt = n - 1;
         while nelt >= 0 {
@@ -1319,7 +1319,7 @@ impl Dot<'_> {
             let changed_before = changed;
             let mut lp = 0;
             while lp < ep {
-                while lp < ep && rank.mval[at[lp]] < 0.0 {
+                while lp < ep && rank.places[at[lp]].mval < 0.0 {
                     lp += 1;
                 }
                 if lp >= ep {
@@ -1331,7 +1331,7 @@ impl Dot<'_> {
                 let mut rp = lp + 1;
                 while rp < ep {
                     let rpn = at[rp];
-                    if sawclust && rank.clust[rpn].is_some() {
+                    if sawclust && rank.places[rpn].clust.is_some() {
                         rp += 1;
                         continue;
                     }
@@ -1339,10 +1339,10 @@ impl Dot<'_> {
                         muststay = true;
                         break;
                     }
-                    if rank.mval[rpn] >= 0.0 {
+                    if rank.places[rpn].mval >= 0.0 {
                         break;
                     }
-                    if rank.clust[rpn].is_some() {
+                    if rank.places[rpn].clust.is_some() {
                         sawclust = true;
                     }
                     rp += 1;
@@ -1352,8 +1352,8 @@ impl Dot<'_> {
                 }
                 if !muststay {
                     let rpn = at[rp];
-                    let p1 = rank.mval[lpn];
-                    let p2 = rank.mval[rpn];
+                    let p1 = rank.places[lpn].mval;
+                    let p2 = rank.places[rpn].mval;
                     if p1 > p2 || (p1 >= p2 && reverse) {
                         at.swap(lp, rp);
                         changed += 1;
@@ -1369,9 +1369,9 @@ impl Dot<'_> {
             }
             nelt -= 1;
         }
-        let (nodes, orders) = rank.into_places();
         if changed != 0 {
-            self.write_rank(g, r, &nodes, &orders, &at);
+            let places = rank.into_places();
+            self.write_rank(g, r, &places, &at);
             self.rk_mut(0, r).valid = false;
             if r > 0 {
                 self.rk_mut(0, r - 1).valid = false;
