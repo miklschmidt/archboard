@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex-orchestrator'
 created_date: '2026-10-26T04:11:00Z'
-updated_date: '2026-10-26T18:48:00Z'
+updated_date: '2026-10-26T19:27:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -318,4 +318,10 @@ Integrated TASK-549.11 from signed source 3f649c41939555204c01c30d3cb47def4c91af
 TASK-549.11 is Done with all four acceptance criteria and both definition items checked. TASK-549 remains In Progress. Reused the signed source evidence because the merge tree is identical; no tests or checks were rerun. Recorded evidence: nine browser cases / 108 assertions; 16 scope cases / 25 assertions; 81 API and consumer cases; source/frontend types, full lint, formatting, evaluation metadata covering 21 scenarios, 21 fixtures, and 14 coverage parts; current semantics has zero diagnostics and affected code has zero warnings. Ten unrelated warnings remain. Known board width 245/188 remains under TASK-549.24; no full-gate success is claimed.
 
 The ready frontier is TASK-549.12 and TASK-549.15. The TASK-549.06 backend delegate is active in its separate T3 checkout and was not inspected or changed; its Backlog status in this integration tree remains To Do.
+
+Integrated TASK-549.12 from signed source ff10c140f78caffd3b163a853ae9599f16895f7a through signed no-fast-forward merge 466db8edb15556f1ef7957dae088324ae73e00bd. Merge parents are integration 5432fed897cd0b7bcbb8ada2c41dabd533305cca and source ff10c140f78caffd3b163a853ae9599f16895f7a. Merge tree cf245d1f3e6becef62f1268c165464f77c76a571 exactly equals the validated source tree. Both checkouts were clean before merge; source and merge signatures verify with the configured SSH signer.
+
+TASK-549.12 is Done with all three acceptance criteria and both definition items complete. TASK-549 remains In Progress. The merge tree is identical to the validated source, so the signed source evidence is reused without rerunning tests or checks. Evidence records ten browser cases / 71 assertions; types, full lint, formatting, evaluation metadata covering 21 scenarios, 21 fixtures, and 14 coverage parts; the affected code check has zero warnings and semantics has zero findings before adoption. Ten unrelated warnings remain. The renderer stays at 60 and the known board width 245/188 remains under TASK-549.24; no full-gate success is claimed. Thirty prior variant meanings, views, and earlier decisions remain intact.
+
+The active frontier is TASK-549.06 for parent-owned browser acceptance and TASK-549.15 with its separate backend delegate. Both are recorded In Progress. TASK-549.13 and TASK-549.14 remain blocked by unfinished .06. The .15 checkout was not inspected or changed.
 <!-- SECTION:NOTES:END -->

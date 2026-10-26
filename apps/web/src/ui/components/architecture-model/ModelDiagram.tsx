@@ -1,5 +1,7 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, type JSX } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { everyStep } from "@archboard/board/flow";
+import type { DiagramGrammar } from "@archboard/board/views";
 import type { DiagramBox } from "@archboard/board/render-reply";
 import type { prepareContentHere } from "@archboard/renderer/browser";
 import { CameraSurface } from "#ui/components/semantic-board-canvas/CameraSurface.tsx";
@@ -16,6 +18,7 @@ type RenderedDiagram = Awaited<ReturnType<ReturnType<typeof prepareContentHere>[
 
 interface ModelDiagramProps {
 	model: Model;
+	grammar: DiagramGrammar;
 	projection: ReturnType<typeof projectModel>;
 	reducedMotion: boolean;
 	selected: ReadonlySet<string>;
@@ -31,7 +34,10 @@ interface ModelDiagramProps {
  */
 function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 	const { projection, model } = props;
-	const drawingOptions = useMemo(() => modelDrawingQuery(model, projection), [model, projection]);
+	const drawingOptions = useMemo(
+		() => modelDrawingQuery(model, projection, props.grammar),
+		[model, projection, props.grammar],
+	);
 	const drawing = useQuery(drawingOptions);
 	const camera = useBoardCamera(props.reducedMotion);
 	if (projection.content.nodes.length === 0)
@@ -90,7 +96,9 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 				height: rectangle.height / pose.scale,
 			};
 			const known = new Set(
-				[...model.modules, ...model.relationships].map((subject) => subject.id),
+				[...model.modules, ...model.relationships, ...projectionSteps(props.projection)].map(
+					(subject) => subject.id,
+				),
 			);
 			const boxes = { ...drawing.atlas.regions, ...drawing.atlas.nodes, ...drawing.atlas.edges };
 			const ids = Object.entries(boxes)
@@ -98,7 +106,7 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 				.map(([id]) => id);
 			onSelectMany(ids, toggle);
 		},
-		[camera, drawing.atlas, model.modules, model.relationships, onSelectMany],
+		[camera, drawing.atlas, model.modules, model.relationships, onSelectMany, props.projection],
 	);
 	const { pointer, gesture, rectangle, keyboard } = useDiagramGestures({
 		camera,
@@ -148,6 +156,15 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 			{rectangle !== null && <ModelSelectionRectangle rectangle={rectangle} />}
 		</section>
 	);
+}
+
+/**
+ * Only steps in the complete selected flow are selectable in its diagram.
+ * @param projection The reading whose bounds the renderer returns.
+ * @returns Canonical step identities, including nested control steps.
+ */
+function projectionSteps(projection: ReturnType<typeof projectModel>) {
+	return projection.content.flows.flatMap((flow) => everyStep(flow.steps));
 }
 
 /**

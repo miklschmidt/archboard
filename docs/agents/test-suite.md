@@ -384,6 +384,7 @@ It also proves that a hidden metadata edit preserves the mounted scene while the
 `canonical-model-gestures.test.ts` covers drag selection and Space/middle-button panning through the existing renderer bounds.
 `canonical-model-focus.test.ts` covers mixed ancestor/descendant focus, required context, history restoration, and unavailable subjects.
 `canonical-model-filters.test.ts` covers relationship and group visibility, hidden selections, reveal, and unchanged authored revisions.
+`canonical-model-modes.test.ts` covers explicit flow choices, complete behavioral diagrams, architecture restoration, and selection across modes.
 `canonical-model-structure.test.ts` covers current structural updates through real claims and the public writer.
 It covers pinned history, stable selection through renames, relationship transfer, parent changes, and removal without replacement selection.
 `semantic-claim.test.ts` proves that a claimed board keeps drawing and shows the claim.
