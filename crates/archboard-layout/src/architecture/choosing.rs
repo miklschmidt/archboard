@@ -241,62 +241,17 @@ async fn solved<S: Solver>(
     )?)
 }
 
-/// Choose whether the first block that can stack is stacked, and lay the
-/// whole board only that way. The two partial solves stop once they can
-/// answer the choice (TASK-512). The whole board laid each way is asked for
-/// beside them, after them, so the render waits for the longer of the
-/// partial solves and the whole one chosen, not for one after the other;
-/// the whole one not chosen is called off, and a host that has not started
-/// it never lays it out. A board with no block that can stack is drawn by
-/// the partial solves, and both whole ones are called off. Drawn inline, a
-/// board whose graph shows that no block could stack is drawn by the one
-/// partial solve that does not stack, alone, which lays the whole board.
-async fn stacked_solved<S: Solver>(
-    solver: &S,
-    graph: &Graph,
-    nesting: Nesting,
-    way: Way,
-    calling: &Calling,
-) -> Result<Rc<Drawing>, Unsolved> {
-    let partly = |stacking| Way {
-        stacking: Some(stacking),
-        until: true,
-        ..way.clone()
-    };
-    if nesting == Nesting::Inline && !could_stack(&graph.with_options(&[]))? {
-        return solved(solver, graph, nesting, partly(false), calling).await;
+/// Whether the first block that can stack is stacked, as the partial solves
+/// laid each way tell; nothing when no block could stack.
+fn stacking_of(stacked: &Answer, plain: &Answer) -> Result<Option<bool>, String> {
+    match (&stacked.stood, &plain.stood) {
+        (Some(high), Some(low)) => stacks_of(high, low).map(Some),
+        _ => Ok(None),
     }
-    let wholly = |stacking| Way {
-        stacking: Some(stacking),
-        ..way.clone()
-    };
-    let (high, low) = (partly(true), partly(false));
-    let partial = try_both(
-        answered(solver, graph, nesting, &high, calling),
-        answered(solver, graph, nesting, &low, calling),
-    );
-    let mut partial = pin!(partial);
-    // Polling the partial solves asks for them. Every other solve the render
-    // is sure to need is then asked before the whole ones, which it may not.
-    let mut early = polled(partial.as_mut()).await;
-    if early.is_pending() {
-        once_more().await;
-        early = polled(partial.as_mut()).await;
-    }
-    if let Poll::Ready(answers) = early {
-        let (stacked, plain) = answers?;
-        let (Some(high), Some(low)) = (&stacked.stood, &plain.stood) else {
-            return Ok(drawing_of(plain)?);
-        };
-        return solved(
-            solver,
-            graph,
-            nesting,
-            wholly(stacks_of(high, low)?),
-            calling,
-        )
-        .await;
-    }
+}
+
+/// Two callings of their own, each called off with `calling` as well.
+fn callings_under(calling: &Calling) -> [Calling; 2] {
     let callings = [Calling::default(), Calling::default()];
     let off = callings.clone();
     calling.on_call_off(move || {
@@ -304,28 +259,127 @@ async fn stacked_solved<S: Solver>(
             one.call_off();
         }
     });
-    let mut wholes = [
-        Some(asked(solver, graph, nesting, &wholly(true), &callings[0])),
-        Some(asked(solver, graph, nesting, &wholly(false), &callings[1])),
-    ];
-    let (stacked, plain) = partial.await?;
-    let chosen = match (&stacked.stood, &plain.stood) {
-        (Some(high), Some(low)) => Some(usize::from(!stacks_of(high, low)?)),
-        _ => None,
-    };
-    for (at, one) in callings.iter().enumerate() {
-        if Some(at) != chosen {
-            one.call_off();
-            wholes[at] = None;
-        }
+    callings
+}
+
+/// A way to lay a board out, its first block that could stack laid one way,
+/// and the solve laying it answering once that block is laid where `until`.
+fn stacked_way(way: &Way, stacking: bool, until: bool) -> Way {
+    Way {
+        stacking: Some(stacking),
+        until,
+        ..way.clone()
     }
-    let Some(chosen) = chosen else {
-        return Ok(drawing_of(plain)?);
+}
+
+/// Choose whether the first block that can stack is stacked, and lay the
+/// whole board only that way. The two partial solves stop once they can
+/// answer the choice (TASK-512). Where they do not answer at once, the whole
+/// board laid each way is asked for too, a turn after every other solve the
+/// render is sure to need, so the render waits for the longer of the partial
+/// solves and the whole one chosen, not for one after the other. The whole
+/// one not chosen is called off, and a host that has not started it never
+/// lays it out. A board with no block that can stack is drawn by the partial
+/// solve that does not stack. Drawn inline, a board whose graph shows that no
+/// block could stack is drawn by that solve alone, which lays the whole board.
+async fn stacked_solved<S: Solver>(
+    solver: &S,
+    graph: &Graph,
+    nesting: Nesting,
+    way: Way,
+    calling: &Calling,
+) -> Result<Rc<Drawing>, Unsolved> {
+    if nesting == Nesting::Inline && !could_stack(&graph.with_options(&[]))? {
+        return solved(
+            solver,
+            graph,
+            nesting,
+            stacked_way(&way, false, true),
+            calling,
+        )
+        .await;
+    }
+    let (high, low) = (
+        stacked_way(&way, true, true),
+        stacked_way(&way, false, true),
+    );
+    let partial = try_both(
+        answered(solver, graph, nesting, &high, calling),
+        answered(solver, graph, nesting, &low, calling),
+    );
+    let mut partial = pin!(partial);
+    let laying = Laying {
+        solver,
+        graph,
+        nesting,
+        way: &way,
+        calling,
     };
-    let whole = wholes[chosen]
-        .take()
-        .expect("the whole solve chosen is still asked for");
-    Ok(drawing_of(read(&whole.await?)?)?)
+    match first_answers(partial.as_mut()).await {
+        Poll::Ready(answers) => laying.chosen(answers?).await,
+        Poll::Pending => laying.speculated(partial).await,
+    }
+}
+
+/// The partial solves' answers if they come at once: polling them asks for
+/// them, and they are polled again once every other solve the render is
+/// sure to need has been asked for.
+async fn first_answers<F: Future>(mut partial: Pin<&mut F>) -> Poll<F::Output> {
+    let early = polled(partial.as_mut()).await;
+    if early.is_ready() {
+        return early;
+    }
+    once_more().await;
+    polled(partial).await
+}
+
+/// One stacking choice: where its solves run, the board and how it is laid.
+struct Laying<'a, S> {
+    solver: &'a S,
+    graph: &'a Graph,
+    nesting: Nesting,
+    way: &'a Way,
+    calling: &'a Calling,
+}
+
+impl<S: Solver> Laying<'_, S> {
+    /// The board laid the way the partial solves' answers choose.
+    async fn chosen(&self, (stacked, plain): (Answer, Answer)) -> Result<Rc<Drawing>, Unsolved> {
+        let Some(stacking) = stacking_of(&stacked, &plain)? else {
+            return Ok(drawing_of(plain)?);
+        };
+        let way = stacked_way(self.way, stacking, false);
+        solved(self.solver, self.graph, self.nesting, way, self.calling).await
+    }
+
+    /// The board laid both ways whole beside the partial solves, the way
+    /// they choose kept and the other called off.
+    async fn speculated<F>(&self, partial: Pin<&mut F>) -> Result<Rc<Drawing>, Unsolved>
+    where
+        F: Future<Output = Result<(Answer, Answer), Unsolved>>,
+    {
+        let callings = callings_under(self.calling);
+        let ask = |stacking: bool, calling: &Calling| {
+            let way = stacked_way(self.way, stacking, false);
+            asked(self.solver, self.graph, self.nesting, &way, calling)
+        };
+        let mut wholes = [
+            Some(ask(true, &callings[0])),
+            Some(ask(false, &callings[1])),
+        ];
+        let (stacked, plain) = partial.await?;
+        let chosen = stacking_of(&stacked, &plain)?.map(|stacking| usize::from(!stacking));
+        for (at, one) in callings.iter().enumerate() {
+            if Some(at) != chosen {
+                one.call_off();
+                wholes[at] = None;
+            }
+        }
+        let Some(whole) = chosen.and_then(|at| wholes[at].take()) else {
+            return Ok(drawing_of(plain)?);
+        };
+        Ok(drawing_of(read(&whole.await?)?)?)
+    }
 }
 
 /// A future polled once: what it answered, or that it waits.

@@ -165,10 +165,7 @@ impl Relay {
         let (upper_band, lower_band) = (track.station(upper).band, track.station(lower).band);
         let mut kinds: Map<Crossed, Set<Option<Rc<str>>>> = Map::default();
         for &other in crossed {
-            let (one, two) = (
-                self.bands[other][&upper_band],
-                self.bands[other][&lower_band],
-            );
+            let (one, two) = (self.bands[other][upper_band], self.bands[other][lower_band]);
             let (one, two) = (track.station(one), track.station(two));
             let card = if one.kind == Kind::Card {
                 Crossed::Card(one.item.expect("a card"))

@@ -35,7 +35,7 @@ import { orderedFixture } from "./ordered-fixture.ts";
 
 /** One graph a solve's Graphviz laid out, what it answered, and how long it took. */
 interface Render {
-	readonly graph: string;
+	readonly graph: Parameters<Viz["renderString"]>[0];
 	readonly answer: string;
 	readonly ms: number;
 }
@@ -84,7 +84,8 @@ for (const file of fs
 	const parsed = parseSemanticBoard(JSON.parse(fs.readFileSync(path.join(vault, file), "utf8")));
 	if (!parsed.ok) continue;
 	const current = parsed.board.variants.find((variant) => variant.id === parsed.board.current);
-	if (current !== undefined) items.push({ name: parsed.board.name, content: current.content, policy });
+	if (current !== undefined)
+		items.push({ name: parsed.board.name, content: current.content, policy });
 }
 
 /** The Graphviz calls of the solve under way. */

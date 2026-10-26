@@ -90,7 +90,7 @@ pub(crate) struct ByBand {
 
 impl ByBand {
     /// The station on a band, if the chain has one there.
-    pub(crate) fn get(&self, band: &usize) -> Option<&StationId> {
+    pub(crate) fn get(&self, band: usize) -> Option<&StationId> {
         self.stations.get(band.checked_sub(self.first)?)?.as_ref()
     }
 
@@ -100,10 +100,10 @@ impl ByBand {
     }
 }
 
-impl std::ops::Index<&usize> for ByBand {
+impl std::ops::Index<usize> for ByBand {
     type Output = StationId;
 
-    fn index(&self, band: &usize) -> &StationId {
+    fn index(&self, band: usize) -> &StationId {
         self.get(band).expect("a station on the band")
     }
 }
@@ -340,7 +340,7 @@ impl<'s> Track<'s> {
             let crossed: Vec<usize> = (0..bands.len())
                 .filter(|&at| {
                     let other = &bands[at];
-                    let (Some(&one), Some(&two)) = (other.get(&upper_band), other.get(&lower_band))
+                    let (Some(&one), Some(&two)) = (other.get(upper_band), other.get(lower_band))
                     else {
                         return false;
                     };

@@ -73,7 +73,7 @@ impl Relay {
             .bands
             .iter()
             .filter_map(|other| {
-                let (&one, &two) = (other.get(&upper_band)?, other.get(&lower_band)?);
+                let (&one, &two) = (other.get(upper_band)?, other.get(lower_band)?);
                 if track.meets(one, upper) || track.meets(two, lower) {
                     return None;
                 }
