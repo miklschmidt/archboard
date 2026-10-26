@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex-orchestrator'
 created_date: '2026-10-26T04:11:00Z'
-updated_date: '2026-10-26T16:01:00Z'
+updated_date: '2026-10-26T16:17:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -286,4 +286,12 @@ Integrated TASK-549.16 from signed source bfd6da3b0c18012816f3aaa7b31aa470f4c2d7
 TASK-549 orchestration exposed a blocking registry failure on this repository with198worktrees. Each unknown checkout launched every sibling inspection concurrently and exhausted the unchanged Git deadlines. A public vault-registration probe with an isolated registry failed after22.5s. Bounding private inspections to8 and settling each group before refusal registers all197siblings in20.6s without skipping identities, changing the chosen checkout, or increasing timeouts. A real12-worktree case protects complete registration; existing registry owners and static checks are running. The architecture and public registry interface remain unchanged, so existing architecture descriptions remain accurate.
 
 Registry follow-up:22real-Git tests with71assertions pass, and both type projects pass. The batching loop uses a scoped no-await-in-loop exception because awaiting each batch is the mechanism that bounds concurrent process ownership. This follows existing deliberate serial-process patterns. The actual198-worktree red/green probe proves why parallelizing that loop is incorrect; no global lint rule or product duration changes.
+
+Integrated TASK-549.04 from signed source 642d447ba509e9e91370cb253fc33d1a184151d0 through signed no-ff merge b53c9e7732e67ed712d5a33117dcc1b808245301. The merge parents are integration b5be713977e7829f16b404314af9fd8f653f70be and the exact source. The conflict-free merge tree equals validated source tree b90a68de51a10d83a41a02e8bf95436d7567bbde. All architecture records, ADRs, and Backlog state remain exact at the merge. This later parent note is the only content change after that merge.
+
+Reused the recorded source evidence without repeating unchanged tests or review. Evidence includes 60 backend runtime cases, nine combined structure cases, four publication runtime cases, four adapter cases, and ten browser cases with 63 assertions. The registry repair passes 22 cases with 71 assertions and restores the real 198-worktree scan. Types, lint, formatting, 15 consumer cases with 97 assertions, and evaluation inputs pass. Current semantics has zero diagnostics. Four affected boards have zero code warnings. Ten unrelated code warnings remain. No model evaluation ran. The unchanged interface-width gate remains 241/188 under TASK-549.24. The full gate does not pass.
+
+TASK-549 remains In Progress and TASK-549.04 remains Done with four acceptance criteria and two completion items satisfied. The dependency-ready frontier is TASK-549.05, TASK-549.10, and TASK-549.17. TASK-549.05 is newly ready for implementation. TASK-549.17 is already complete at signed a8837de0efc6cdfb9dde4ba078f1969721006328 and awaits its separate merger next. Do not dispatch another implementer for .17. Parent-owned TASK-549.10 remains incomplete at 6c9cdd8cc1890b0d90fb9cb95bde0b3c874fd26c on feat/recursive-module-readings. Its integration record remains To Do until the parent merges that work.
+
+No frontend edits, fresh review, repeated tests, implementation dispatch, push, PR edit, or .17 merge occurred. The parent retains orchestration and frontend ownership. Detailed merge evidence is external at /home/msc/.local/state/archboard-implementation/task-549/task-549.04-merged.md.
 <!-- SECTION:NOTES:END -->
