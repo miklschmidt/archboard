@@ -146,7 +146,10 @@ const modelEditContract = defineCommand({
 		);
 		return presented(
 			await editArchitectureModuleOnServer(
-				context.parse(ArchitectureModuleEditSchema, { ...request, doing: statedInvocation().doing }),
+				context.parse(ArchitectureModuleEditSchema, {
+					...request,
+					doing: statedInvocation().doing,
+				}),
 			),
 		);
 	},
