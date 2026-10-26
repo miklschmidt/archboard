@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 183,
+	"version": 184,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-26T22:48:58.944Z",
+	"updatedAt": "2026-10-26T22:55:39.807Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -72112,7 +72112,7 @@
 		{
 			"id": "FzIKjcPd",
 			"name": "TASK-549.06",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "JN8jIONv",
 			"summary": "Read explicit proposal states and coherent architecture comparisons",
 			"documents": [
@@ -75733,7 +75733,7 @@
 		{
 			"id": "lGZBoeX1",
 			"name": "TASK-549.15-integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "FzIKjcPd",
 			"summary": "Open code and follow explicit foreign model references from the selected canonical reading.",
 			"documents": [
@@ -79434,7 +79434,7 @@
 			}
 		}
 	],
-	"current": "FzIKjcPd",
+	"current": "lGZBoeX1",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -79591,6 +79591,12 @@
 			"from": "JN8jIONv",
 			"at": "2026-10-26T20:58:25.225Z",
 			"reason": "Compact proposals and coherent browser comparisons are implemented and tested"
+		},
+		{
+			"variant": "lGZBoeX1",
+			"from": "FzIKjcPd",
+			"at": "2026-10-26T22:55:39.807Z",
+			"reason": "Readers open selected code and exact foreign architecture through the shared canonical model interface"
 		}
 	],
 	"shelvings": [
