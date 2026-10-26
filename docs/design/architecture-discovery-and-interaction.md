@@ -101,6 +101,41 @@ Their placement is unresolved and does not establish another per-module board
 or variant tree. Walkthroughs carry narrative and reading instructions in
 `[name].walkthrough.json`, as described below.
 
+## Proposal and history storage candidate
+
+The [churn investigation](proposal-history-churn.md) measures repeated snapshots
+in the current format. The following approach is under discussion, not selected
+or implemented.
+
+An active proposal stores a baseline reference and changes to subjects by stable
+ID. It can add or remove subjects and change individual fields across modules
+and flows. Reconciliation compares the retained baseline, proposed state, and
+updated parent. Conflicting edits and invalid combined architecture remain
+explicit outcomes.
+
+One candidate retains architecture checkpoints on a dedicated Git branch,
+such as `archboard-history`. Each checkpoint contains ordinary architecture
+files and event metadata. The branch's commit ancestry retains older states.
+The current module files do not embed those states as JSON arrays.
+
+A shelved proposal needs both its final patch and its original baseline.
+Both must remain reachable through the archive's Git references and ancestry.
+A hash written inside proposal metadata does not retain the referenced object.
+Historical reads load one coherent architecture revision from Git objects.
+They do not change the checkout or combine old modules with current files.
+
+Archboard must distinguish locally saved history from history published to the
+shared remote. Publishing must include the required archive references.
+Missing history requires an explicit fetch or an unavailable-state result.
+Archive updates must preserve concurrent appends and existing checkpoint IDs.
+Remote policy must prevent history rewrites and deletion of the archive branch.
+This design adds archive synchronization work even though Git stores the objects.
+
+Git documents [retained objects](https://git-scm.com/docs/git-gc#_notes),
+[history fetching](https://git-scm.com/docs/git-fetch), and
+[reading files at revisions](https://git-scm.com/docs/git-show#_examples).
+Retention, publication, and recovery behavior need evidence before migration.
+
 ## Dynamic readings and selection
 
 A reading is a temporary description of what the reader wants drawn. It carries
