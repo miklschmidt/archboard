@@ -204,3 +204,32 @@ CLI and HTTP adapters preserve the complete behavioral reading without copying a
 The CLI installs an output artifact only for a successful command outcome.
 A refused render preserves any existing output file and returns structured diagnostics.
 Browser grammar switching remains TASK-549.12.
+
+## Code and foreign model references
+
+TASK-549.15 keeps architectural ownership separate from source location and foreign navigation.
+A module can hold explicit references that name repository, model, module identity, and state.
+`current` follows the current designation explicitly.
+A non-current reference names a complete immutable checkpoint beside its stable state identity.
+Neither a reference nor a code binding establishes containment or transfers ownership.
+
+The existing architecture reader resolves references through the existing checkout resolver and canonical readers.
+The source vault uses its own checkout for its repository and chosen checkouts for other repositories.
+Derived reference results report an exact target address or actionable unavailable diagnostics.
+The CLI and HTTP adapters share this operation, including explicit reference following and code resolution.
+No navigation operation writes either model.
+
+Local checkpoint preparation records exact foreign revision pins.
+It requires an existing coherent foreign checkpoint that matches the selected target.
+Preparation refuses an unretained target before changing current files.
+It never creates foreign history or writes across models.
+Historical readers resolve only the retained pins or an explicitly authored exact checkpoint.
+Missing foreign models, subjects, states, or archive objects remain unavailable without a current substitute.
+Legacy checkpoints without following-reference pins expose that missing coverage explicitly.
+
+Bound foreign repositories add source associations through the existing checkout resolver.
+Source availability stays separate from architecture availability.
+The existing code opener accepts canonical model and module addresses, including an exact architecture checkpoint.
+Historical code resolution requires the retained source commit and unchanged bound working files.
+Missing source, uncommitted evidence, and another checked-out revision refuse opening while architecture remains readable.
+The opener never switches a checkout or copies source code into architecture history.

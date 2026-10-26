@@ -503,3 +503,10 @@ The flow-repair case in `structure-recovery.test.ts` owns interrupted module and
 `tests/system/semantic-boards/model-flows.test.ts` owns CLI authoring, explicit flow selection, real SVG output, and refused output preservation.
 Existing renderer owners retain sequence and flowchart drawing rules.
 No browser owner is added for this backend delivery.
+
+The canonical reference owner is `packages/board/tests/runtime/operations/model-edit/references.test.ts`.
+It uses the public architecture operations with real files, signed checkpoints, and disposable Git repositories.
+It covers foreign navigation, immutable foreign pins, unavailable checkpoints, separate ownership, and exact source refusal.
+`tests/system/semantic-boards/model-references.test.ts` owns agreement between the CLI and HTTP adapters.
+`tests/system/code-targets/canonical-model.test.ts` owns canonical activation through the existing opener and a real process.
+The parent owns visible acceptance for TASK-549.15.

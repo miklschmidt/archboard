@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import type { readArchitectureModel } from "@archboard/board/store-read";
 import {
 	ArchitectureArchiveInitializationSchema,
 	ArchitectureModuleEditSchema,
@@ -48,14 +49,23 @@ async function architectureResult<T>(
  * @param module The optional module selector.
  * @param checkpoint The complete immutable checkpoint identity.
  * @param flow The optional explicit flow selector.
+ * @param navigation The optional navigation and code actions.
  * @returns The coherent reading or structured refusal.
  */
-function readArchitectureModelOnServer(module?: string, checkpoint?: string, flow?: string) {
-	const query = new URLSearchParams({
-		...(module === undefined ? {} : { module }),
-		...(flow === undefined ? {} : { flow }),
-		...(checkpoint === undefined ? {} : { checkpoint }),
-	});
+function readArchitectureModelOnServer(
+	module?: string,
+	checkpoint?: string,
+	flow?: string,
+	navigation: Pick<
+		Parameters<typeof readArchitectureModel>[3],
+		"references" | "reference" | "code" | "model"
+	> = {},
+) {
+	const query = new URLSearchParams(
+		Object.entries({ ...navigation, module, flow, checkpoint }).flatMap(([key, value]) =>
+			value === undefined ? [] : [[key, String(value)]],
+		),
+	);
 	return architectureResult(ArchitectureModelReadSchema, `/api/architecture/model?${query}`);
 }
 

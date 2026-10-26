@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 154,
+	"version": 155,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-26T19:15:20.990Z",
+	"updatedAt": "2026-10-26T19:15:47.145Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -135588,6 +135588,7 @@
 			"name": "TASK-549.15",
 			"lifecycle": "draft",
 			"parent": "tGGAu1sm",
+			"summary": "TASK-549.15 backend and CLI reference navigation. Browser acceptance remains with the parent.",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -136044,7 +136045,7 @@
 						"order": 35000,
 						"name": "Canonical model routes",
 						"kind": "module",
-						"responsibility": "Reads canonical modules and independent flows, retains checkpoints and explicitly initializes private history",
+						"responsibility": "Exposes current and pinned architecture, foreign reference navigation and existing binding resolution",
 						"description": "Every request names its vault. The shared runtime owns retention, dependency and evidence semantics. Browser selection opens an exact checkpoint through the same read contract. Canonical edit, claim and recovery adapters use the shared operation contract. A vault-scoped event stream sends fresh coherent readings and durable news. The private archive endpoint translates an explicit setup request through the same runtime. It sends no history and returns local setup information.",
 						"parent": "ETrslazw",
 						"binding": {

@@ -30,6 +30,7 @@ import {
 	checkpointPublication,
 	retainedPublicationTips,
 } from "#runtime/store/model-publication.ts";
+import { resolveModelReferences } from "#runtime/operations/read/model-references.ts";
 
 /**
  * Require an architectural checkpoint for the addressed vault.
@@ -150,7 +151,7 @@ async function exactReading(
  * @param flow A qualified flow identity or unique retained name.
  * @returns One retained architecture or actionable diagnostics.
  */
-async function readArchitectureCheckpoint(
+async function readCheckpointModel(
 	vault: string,
 	checkpoint: string,
 	module?: string,
@@ -167,6 +168,24 @@ async function readArchitectureCheckpoint(
 		async () => exactReading(await archiveContext(vault), checkpoint, module, flow),
 		checkpoint,
 	);
+}
+
+/**
+ * Read exact inputs and report foreign availability through retained pins only.
+ * @param vault The explicitly addressed vault.
+ * @param checkpoint The immutable architecture checkpoint.
+ * @param module The optional retained module selector.
+ * @param flow The optional retained flow selector.
+ * @returns The coherent retained reading and direct reference availability.
+ */
+async function readArchitectureCheckpoint(
+	vault: string,
+	checkpoint: string,
+	module?: string,
+	flow?: string,
+): Promise<ArchitectureModelRead> {
+	const reading = await readCheckpointModel(vault, checkpoint, module, flow);
+	return reading.success ? resolveModelReferences(vault, reading) : reading;
 }
 
 /**
@@ -201,4 +220,4 @@ async function listArchitectureCheckpoints(vault: string): Promise<ArchitectureC
 	});
 }
 
-export { readArchitectureCheckpoint, listArchitectureCheckpoints };
+export { readArchitectureCheckpoint, readCheckpointModel, listArchitectureCheckpoints };
