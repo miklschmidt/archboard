@@ -13,3 +13,4 @@ export {
 } from "#runtime/operations/write/transitions.ts";
 export { writeSemanticBoard } from "#runtime/operations/write/write.ts";
 export { trackEmbedTransition } from "#runtime/operations/embeds/track.ts";
+export { saveLegacyMappingPlan } from "#runtime/operations/legacy-inventory/save-plan.ts";

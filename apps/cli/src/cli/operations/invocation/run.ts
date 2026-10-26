@@ -7,6 +7,7 @@ import {
 	semanticConfigContract,
 } from "#cli/operations/vault/vault.ts";
 import { statusContract } from "#cli/operations/server/status.ts";
+import { modelInventoryContract, modelPlanContract } from "#cli/operations/model/migration.ts";
 import { modelContract, modelReadContract } from "#cli/operations/model/read.ts";
 import { restartContract, startContract, stopContract } from "#cli/operations/server/server.ts";
 import {
@@ -67,6 +68,10 @@ const COMMANDS: Record<string, CommandRoute> = {
 		owner: contract(modelContract, "apps/cli/src/cli/operations/model/read.ts"),
 		children: {
 			read: child(contract(modelReadContract, "apps/cli/src/cli/operations/model/read.ts")),
+			inventory: child(
+				contract(modelInventoryContract, "apps/cli/src/cli/operations/model/migration.ts"),
+			),
+			plan: child(contract(modelPlanContract, "apps/cli/src/cli/operations/model/migration.ts")),
 		},
 		bare: { kind: "default", child: "read", withLeadingOptions: true },
 	},

@@ -1134,6 +1134,26 @@
 					"owner": "visualStandingOf (packages/skills/tests/runtime/operations/runs/captures.test.ts); rubric.md What you can and cannot see"
 				}
 			]
+		},
+		{
+			"part": 15,
+			"title": "Legacy migration planning",
+			"entries": [
+				{
+					"path": "model inventory: exact originals, source fingerprints, namespaces, aliases and evidence",
+					"expectedUse": "Preserve independent coverage and report possible duplicate definitions without automatic identity merges.",
+					"scenarios": ["S20"],
+					"evidence": "author-run",
+					"owner": "S20 grader; public runtime owner packages/board/tests/runtime/operations/legacy-inventory/legacy-inventory.test.ts"
+				},
+				{
+					"path": "model plan: explicit canonical mappings, definition/parent/order/relationship-owner/policy choices and stale refusal",
+					"expectedUse": "Save only the separate mapping plan. Keep active architecture unchanged.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/legacy-inventory/legacy-inventory.test.ts; guidance skills/archboard/references/legacy-migration.md"
+				}
+			]
 		}
 	]
 }
