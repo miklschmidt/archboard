@@ -2,6 +2,7 @@ import { useCallback, useState, type JSX } from "react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
 import { Button } from "@archboard/ui-kit/components";
 import { ModuleDetails } from "#ui/components/architecture-model/ModuleDetails.tsx";
+import { ModelDiagram } from "#ui/components/architecture-model/ModelDiagram.tsx";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 interface ModelReadingProps {
@@ -40,7 +41,8 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 					))}
 				</ul>
 			</nav>
-			<div className="min-w-0 flex-1 overflow-y-auto px-10 py-8">
+			<ModelDiagram model={model} selected={selected} onSelect={select} />
+			<div className="border-border w-80 shrink-0 overflow-y-auto border-l px-6 py-8">
 				{module !== undefined ? (
 					<ModuleDetails module={module} model={model} />
 				) : selected !== null ? (
