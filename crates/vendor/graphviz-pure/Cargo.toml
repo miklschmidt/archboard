@@ -45,18 +45,23 @@ path = "src/lib.rs"
 
 [dependencies.graphviz-pure-core]
 version = "0.2.1"
+path = "../graphviz-pure-core"
 
 [dependencies.graphviz-pure-geom]
 version = "0.2.1"
+path = "../graphviz-pure-geom"
 
 [dependencies.graphviz-pure-layout]
 version = "0.2.1"
+path = "../graphviz-pure-layout"
 
 [dependencies.graphviz-pure-parser]
 version = "0.2.1"
+path = "../graphviz-pure-parser"
 
 [dependencies.graphviz-pure-render]
 version = "0.2.1"
+path = "../graphviz-pure-render"
 
 [dependencies.serde]
 version = "1.0"

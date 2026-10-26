@@ -1,16 +1,16 @@
-//! Exact port of the platform `qsort(3)` used to produce the C goldens.
+//! Exact port of a platform `qsort(3)`.
 //!
 //! Graphviz sorts with `qsort`, which is not stable, so the order of equal
-//! elements leaks into layouts (e.g. `TB_balance` in `ns.c`). The goldens were
-//! produced on macOS, whose libc `qsort` is Apple's FreeBSD-derived
-//! Bentley-McIlroy quicksort with a bounded insertion-sort switch and a
-//! heapsort fallback. The implementation is shared with the other engines in
+//! elements leaks into layouts (e.g. `TB_balance` in `ns.c`). archboard: this
+//! copy sorts as musl's `qsort` (smoothsort), the libc viz-js's Graphviz runs
+//! on, where upstream sorts as Apple's, the libc of its macOS goldens. The
+//! implementation is shared with the other engines in
 //! [`crate::cutil::qsort_by`]; `qsort_vectors.txt` holds permutations recorded
-//! from the system `qsort` to guard it.
+//! from musl 1.2.6's `qsort` to guard it.
 
 use std::cmp::Ordering;
 
-/// Sorts `a` with the exact element movement of Apple libc `qsort`.
+/// Sorts `a` with the exact element movement of musl libc `qsort`.
 pub fn qsort<T: Copy>(a: &mut [T], cmp: &mut impl FnMut(&T, &T) -> Ordering) {
     crate::cutil::qsort_by(a, |x, y| match cmp(x, y) {
         Ordering::Less => -1,

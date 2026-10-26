@@ -49,6 +49,7 @@ path = "tests/syntax_errors.rs"
 
 [dependencies.graphviz-pure-core]
 version = "0.2.1"
+path = "../graphviz-pure-core"
 
 [dependencies.thiserror]
 version = "2.0"

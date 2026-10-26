@@ -45,6 +45,7 @@ path = "src/lib.rs"
 
 [dependencies.graphviz-pure-core]
 version = "0.2.1"
+path = "../graphviz-pure-core"
 
 [lints.rust]
 unsafe_code = "forbid"

@@ -7,9 +7,9 @@
 //!
 //! - [`drand48`]/[`srand48`]: the POSIX 48-bit linear congruential generator.
 //! - [`rand`]/[`srand`]: Apple libc `rand()` (Park–Miller "minimal standard", seed 1).
-//! - [`qsort_by`]: Apple libc `qsort` (BSD Bentley–McIlroy quicksort with an
-//!   insertion-sort shortcut and heapsort fallback); not stable, so ties end
-//!   up in the same order as in C.
+//! - [`qsort_by`]: musl libc `qsort` (smoothsort; archboard: upstream ports
+//!   Apple's); not stable, so ties end up in the same order as in C built
+//!   against musl, as viz-js's Graphviz is.
 //!
 //! # One generator state per run
 //!
@@ -234,217 +234,181 @@ pub fn rand() -> i32 {
     })
 }
 
-/// Apple libc `qsort` (FreeBSD-derived introsort) over a slice with a C-style
-/// comparator returning negative, zero or positive. Like C it is not stable.
+/// musl libc `qsort` (musl 1.2.6, `src/stdlib/qsort.c`: smoothsort) over a slice with a
+/// C-style comparator returning negative, zero or positive. Like C it is not stable.
+///
+/// archboard: upstream ports Apple libc's `qsort`, the libc of its macOS goldens. viz-js
+/// builds Graphviz with Emscripten, whose libc is musl, so equal elements fall in musl's
+/// order here, and a layout answers what viz-js answers. `qsort_vectors.txt` and
+/// `tests/data/qsort_expected.txt` were recorded from musl's own `qsort.c`.
 pub fn qsort_by<T: Clone, F>(v: &mut [T], mut cmp: F)
 where
     F: FnMut(&T, &T) -> i32,
 {
-    let n = v.len();
-    let depth = if n == 0 {
-        0
-    } else {
-        // DEPTH(x) = 2 * (flsl(x) - 1)
-        2 * (usize::BITS as i32 - n.leading_zeros() as i32 - 1)
-    };
-    qsort_impl(v, &mut cmp, depth);
+    musl::qsort(v, &mut cmp);
 }
 
-fn med3<T, F: FnMut(&T, &T) -> i32>(v: &[T], a: usize, b: usize, c: usize, cmp: &mut F) -> usize {
-    if cmp(&v[a], &v[b]) < 0 {
-        if cmp(&v[b], &v[c]) < 0 {
-            b
-        } else if cmp(&v[a], &v[c]) < 0 {
-            c
-        } else {
-            a
-        }
-    } else if cmp(&v[b], &v[c]) > 0 {
-        b
-    } else if cmp(&v[a], &v[c]) < 0 {
-        a
-    } else {
-        c
+/// musl's smoothsort, by element index. qsort.c keeps the sizes of its Leonardo heaps as
+/// a bitmap of two `size_t` words; this keeps it in one `u128`, which answers the same
+/// for every slice whose heaps stay below order 64 (more than 10^13 elements).
+mod musl {
+    /// The positions one sift or trinkle moves, qsort.c's `ar`, which it sizes
+    /// `14 * sizeof(size_t) + 1`.
+    struct Moves {
+        at: [usize; 113],
+        len: usize,
     }
-}
 
-/// `_isort`: insertion sort giving up after `swap_limit` swaps (0 = no limit).
-fn isort<T, F: FnMut(&T, &T) -> i32>(v: &mut [T], cmp: &mut F, swap_limit: usize) -> bool {
-    let mut swap_cnt = 0usize;
-    for m in 1..v.len() {
-        let mut l = m;
-        while l > 0 && cmp(&v[l - 1], &v[l]) > 0 {
-            v.swap(l, l - 1);
-            l -= 1;
-            if swap_limit != 0 {
-                swap_cnt += 1;
-                if swap_cnt > swap_limit {
-                    return false;
-                }
+    impl Moves {
+        fn new(head: usize) -> Moves {
+            let mut at = [0; 113];
+            at[0] = head;
+            Moves { at, len: 1 }
+        }
+
+        fn push(&mut self, position: usize) {
+            self.at[self.len] = position;
+            self.len += 1;
+        }
+
+        fn first(&self) -> usize {
+            self.at[0]
+        }
+
+        /// `cycle`: each position takes the element of the next, and the last the first's.
+        fn cycle<T>(&self, v: &mut [T]) {
+            for i in 1..self.len {
+                v.swap(self.at[i - 1], self.at[i]);
             }
         }
     }
-    true
-}
 
-fn vecswap<T>(v: &mut [T], a: usize, b: usize, n: usize) {
-    for i in 0..n {
-        v.swap(a + i, b + i);
+    /// `pntz`: the trailing zeros of `p - 1`, `p` never 1 where it is called.
+    fn pntz(p: u128) -> usize {
+        (p - 1).trailing_zeros() as usize
     }
-}
 
-/// BSD `heapsort` (Knuth vol. 3), used by `qsort` past its recursion limit.
-fn heapsort<T: Clone, F: FnMut(&T, &T) -> i32>(v: &mut [T], cmp: &mut F) {
-    let mut nmemb = v.len();
-    if nmemb <= 1 {
-        return;
-    }
-    // Items are numbered 1..=nmemb.
-    let at = |i: usize| i - 1;
-    let mut l = nmemb / 2 + 1;
-    loop {
-        l -= 1;
-        if l == 0 {
-            break;
-        }
-        let mut par_i = l;
-        loop {
-            let mut child_i = par_i * 2;
-            if child_i > nmemb {
+    /// `sift`.
+    fn sift<T, F: FnMut(&T, &T) -> i32>(
+        v: &mut [T],
+        cmp: &mut F,
+        mut head: usize,
+        mut pshift: usize,
+        lp: &[usize],
+    ) {
+        let mut moves = Moves::new(head);
+        while pshift > 1 {
+            let rt = head - 1;
+            let lf = head - 1 - lp[pshift - 2];
+            let root = moves.first();
+            if cmp(&v[root], &v[lf]) >= 0 && cmp(&v[root], &v[rt]) >= 0 {
                 break;
             }
-            if child_i < nmemb && cmp(&v[at(child_i)], &v[at(child_i + 1)]) < 0 {
-                child_i += 1;
+            if cmp(&v[lf], &v[rt]) >= 0 {
+                moves.push(lf);
+                head = lf;
+                pshift -= 1;
+            } else {
+                moves.push(rt);
+                head = rt;
+                pshift -= 2;
             }
-            if cmp(&v[at(child_i)], &v[at(par_i)]) <= 0 {
-                break;
-            }
-            v.swap(at(par_i), at(child_i));
-            par_i = child_i;
         }
+        moves.cycle(v);
     }
-    while nmemb > 1 {
-        let k = v[at(nmemb)].clone();
-        v[at(nmemb)] = v[at(1)].clone();
-        nmemb -= 1;
-        let mut par_i = 1;
-        loop {
-            let mut child_i = par_i * 2;
-            if child_i > nmemb {
-                break;
-            }
-            if child_i < nmemb && cmp(&v[at(child_i)], &v[at(child_i + 1)]) < 0 {
-                child_i += 1;
-            }
-            v[at(par_i)] = v[at(child_i)].clone();
-            par_i = child_i;
-        }
-        loop {
-            let child_i = par_i;
-            par_i = child_i / 2;
-            if child_i == 1 || cmp(&k, &v[at(par_i)]) < 0 {
-                v[at(child_i)] = k.clone();
-                break;
-            }
-            v[at(child_i)] = v[at(par_i)].clone();
-        }
-    }
-}
 
-fn qsort_impl<T: Clone, F: FnMut(&T, &T) -> i32>(
-    mut v: &mut [T],
-    cmp: &mut F,
-    mut depth_limit: i32,
-) {
-    loop {
-        let n = v.len();
-        if depth_limit <= 0 {
-            heapsort(v, cmp);
-            return;
-        }
-        depth_limit -= 1;
-        if n <= 7 {
-            isort(v, cmp, 0);
-            return;
-        }
-        let mut pl = 0;
-        let mut pm = n / 2;
-        let mut pn = n - 1;
-        if n > 40 {
-            let d = n / 8;
-            pl = med3(v, pl, pl + d, pl + 2 * d, cmp);
-            pm = med3(v, pm - d, pm, pm + d, cmp);
-            pn = med3(v, pn - 2 * d, pn - d, pn, cmp);
-        }
-        pm = med3(v, pl, pm, pn, cmp);
-        v.swap(0, pm);
-        let mut pa = 1usize;
-        let mut pb = 1usize;
-        // pc and pd may step below pb; keep them signed.
-        let mut pc = n as isize - 1;
-        let mut pd = n as isize - 1;
-        let mut swap_cnt = false;
-        loop {
-            while pb as isize <= pc {
-                let r = cmp(&v[pb], &v[0]);
-                if r > 0 {
+    /// `trinkle`.
+    fn trinkle<T, F: FnMut(&T, &T) -> i32>(
+        v: &mut [T],
+        cmp: &mut F,
+        mut head: usize,
+        mut p: u128,
+        mut pshift: usize,
+        mut trusty: bool,
+        lp: &[usize],
+    ) {
+        let mut moves = Moves::new(head);
+        while p != 1 {
+            let stepson = head - lp[pshift];
+            if cmp(&v[stepson], &v[moves.first()]) <= 0 {
+                break;
+            }
+            if !trusty && pshift > 1 {
+                let rt = head - 1;
+                let lf = head - 1 - lp[pshift - 2];
+                if cmp(&v[rt], &v[stepson]) >= 0 || cmp(&v[lf], &v[stepson]) >= 0 {
                     break;
                 }
-                if r == 0 {
-                    swap_cnt = true;
-                    v.swap(pa, pb);
-                    pa += 1;
-                }
-                pb += 1;
             }
-            while pb as isize <= pc {
-                let r = cmp(&v[pc as usize], &v[0]);
-                if r < 0 {
-                    break;
-                }
-                if r == 0 {
-                    swap_cnt = true;
-                    v.swap(pc as usize, pd as usize);
-                    pd -= 1;
-                }
-                pc -= 1;
-            }
-            if pb as isize > pc {
-                break;
-            }
-            v.swap(pb, pc as usize);
-            swap_cnt = true;
-            pb += 1;
-            pc -= 1;
+            moves.push(stepson);
+            head = stepson;
+            let trail = pntz(p);
+            p >>= trail;
+            pshift += trail;
+            trusty = false;
         }
-        let pn = n;
-        let d1 = pa.min(pb - pa);
-        vecswap(v, 0, pb - d1, d1);
-        let d1 = ((pd - pc) as usize).min(pn - pd as usize - 1);
-        vecswap(v, pb, pn - d1, d1);
-        if !swap_cnt && isort(v, cmp, 1 + n / 4) {
+        if !trusty {
+            moves.cycle(v);
+            sift(v, cmp, head, pshift, lp);
+        }
+    }
+
+    /// `__qsort_r`.
+    pub(super) fn qsort<T, F: FnMut(&T, &T) -> i32>(v: &mut [T], cmp: &mut F) {
+        let size = v.len();
+        if size == 0 {
             return;
         }
-        let d1 = pb - pa;
-        let d2 = (pd - pc) as usize;
-        if d1 <= d2 {
-            if d1 > 1 {
-                qsort_impl(&mut v[..d1], cmp, depth_limit);
-            }
-            if d2 > 1 {
-                v = &mut v[pn - d2..];
-                continue;
-            }
-        } else {
-            if d2 > 1 {
-                qsort_impl(&mut v[pn - d2..], cmp, depth_limit);
-            }
-            if d1 > 1 {
-                v = &mut v[..d1];
-                continue;
-            }
+        // The Leonardo numbers, up to the first that is not below the size.
+        let mut lp = vec![1usize, 1];
+        while lp[lp.len() - 1] < size {
+            let next = lp[lp.len() - 2] + lp[lp.len() - 1] + 1;
+            lp.push(next);
         }
-        return;
+        let high = size - 1;
+        let mut head = 0;
+        let mut p: u128 = 1;
+        let mut pshift = 1;
+        while head < high {
+            if p & 3 == 3 {
+                sift(v, cmp, head, pshift, &lp);
+                p >>= 2;
+                pshift += 2;
+            } else {
+                if lp[pshift - 1] >= high - head {
+                    trinkle(v, cmp, head, p, pshift, false, &lp);
+                } else {
+                    sift(v, cmp, head, pshift, &lp);
+                }
+                if pshift == 1 {
+                    p <<= 1;
+                    pshift = 0;
+                } else {
+                    p <<= pshift - 1;
+                    pshift = 1;
+                }
+            }
+            p |= 1;
+            head += 1;
+        }
+        trinkle(v, cmp, head, p, pshift, false, &lp);
+        while pshift != 1 || p != 1 {
+            if pshift <= 1 {
+                let trail = pntz(p);
+                p >>= trail;
+                pshift += trail;
+            } else {
+                p <<= 2;
+                pshift -= 2;
+                p ^= 7;
+                p >>= 1;
+                trinkle(v, cmp, head - lp[pshift] - 1, p, pshift + 1, true, &lp);
+                p <<= 1;
+                p |= 1;
+                trinkle(v, cmp, head - 1, p, pshift, true, &lp);
+            }
+            head -= 1;
+        }
     }
 }
 
@@ -1414,7 +1378,8 @@ mod tests {
     }
 
     /// Replays the generator of the C probe that produced `qsort_expected.txt`
-    /// with macOS `qsort` and checks the permutations agree, ties included.
+    /// with musl's `qsort` (archboard: upstream's came from macOS `qsort`) and
+    /// checks the permutations agree, ties included.
     #[test]
     fn qsort_matches_libc_on_ties() {
         let expected = include_str!("../tests/data/qsort_expected.txt");
