@@ -256,25 +256,139 @@ function worktreeEntries(listing: string | undefined): WorktreeEntry[] {
 	});
 }
 
+/** A checkout's root and the identity of its repository. */
+type CheckoutOfIdentity = Pick<CheckoutGitInspection, "root" | "identity">;
+
 /**
- * The working trees of a repository that `git worktree list` reports, the
- * checkout itself first. A bare repository has no working tree, so it is left
- * out, and a worktree whose directory is gone is `prunable` in Git's own words
- * and is left out too.
- * @param root A checkout's root.
- * @param options Cancellation.
- * @returns Each working tree's path; none when Git cannot list them.
+ * The real path of a directory, as Git reports a root.
+ * @param target A path.
+ * @returns Its real path, or undefined when it is no directory.
  */
-async function worktreePaths(root: string, options: InspectOptions = {}): Promise<string[]> {
-	const listing = await optionalGit(root, ["worktree", "list", "--porcelain"], options);
-	return worktreeEntries(listing)
-		.filter((entry) => !entry.bare && !entry.prunable)
-		.map((entry) => entry.path);
+function realDirectory(target: string): string | undefined {
+	try {
+		const real = fs.realpathSync.native(target);
+		return fs.statSync(real).isDirectory() ? real : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * The git directory of a checkout: its `.git`, or the directory that a linked
+ * worktree's `.git` file names.
+ * @param root A checkout's root.
+ * @returns The git directory, or undefined when `.git` names none.
+ */
+function ownGitDirectory(root: string): string | undefined {
+	const entry = path.join(root, ".git");
+	try {
+		if (fs.statSync(entry).isDirectory()) {
+			return entry;
+		}
+		const gitfile = fs.readFileSync(entry, "utf8");
+		return gitfile.startsWith("gitdir: ")
+			? path.resolve(root, gitfile.slice("gitdir: ".length).trimEnd())
+			: undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * The git directory that a checkout shares with every worktree of its
+ * repository, when the checkout reads no config but that directory's. A linked
+ * worktree's own git directory names the shared one in `commondir`. A checkout
+ * with a `config.worktree`, which `extensions.worktreeConfig` turns on and
+ * which can name another `origin`, root or `core.bare`, has none.
+ * @param root A checkout's root.
+ * @returns The real path of the shared git directory, or undefined when only Git can tell.
+ */
+function commonGitDirectory(root: string): string | undefined {
+	const own = ownGitDirectory(root);
+	if (own === undefined || !fs.existsSync(path.join(own, "HEAD"))) {
+		return undefined;
+	}
+	const common = path.join(own, "commondir");
+	try {
+		return fs.existsSync(path.join(own, "config.worktree"))
+			? undefined
+			: realDirectory(
+					fs.existsSync(common)
+						? path.resolve(own, fs.readFileSync(common, "utf8").trimEnd())
+						: own,
+				);
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * One worktree that Git listed for a checkout. It has the checkout's identity
+ * and its listed root when it shares the checkout's git directory and config,
+ * and Git inspects it otherwise.
+ * @param root The worktree's listed root.
+ * @param common The checkout's shared git directory, when it reads no config of its own.
+ * @param checkout The checkout.
+ * @param options Cancellation.
+ * @returns Its root and identity, or undefined when it is no checkout.
+ */
+async function listedWorktree(
+	root: string,
+	common: string | undefined,
+	checkout: CheckoutOfIdentity,
+	options: InspectOptions,
+): Promise<CheckoutOfIdentity | undefined> {
+	if (common !== undefined && commonGitDirectory(root) === common) {
+		return { root, identity: checkout.identity };
+	}
+	return inspectCheckout(root, options);
+}
+
+/**
+ * The worktrees of a checkout other than the checkout itself, as Git lists
+ * them for it, that are checkouts of its identity. A bare repository has no
+ * working tree, Git lists a main checkout whose git directory lives elsewhere
+ * by that git directory, and a worktree whose directory is gone is `prunable`
+ * in Git's own words, so all three are left out.
+ *
+ * One `git worktree list` names every worktree. A worktree that shares its git
+ * directory with the checkout, where neither keeps a config of its own, reads
+ * the repository's config as the checkout does, so it has the checkout's
+ * identity and its listed root (`commonGitDirectory`). Git inspects any other
+ * worktree, one at a time: a config of its own can give it another `origin`
+ * or another root, and a `.git` that names the git directory of another
+ * repository makes it a checkout of that one. So a checkout with many
+ * worktrees runs one Git command for all of them, never several in each.
+ * @param checkout The checkout.
+ * @param options Cancellation.
+ * @returns Each worktree's real root and identity; none when Git cannot list them.
+ */
+async function worktreesOf(
+	checkout: CheckoutOfIdentity,
+	options: InspectOptions = {},
+): Promise<CheckoutOfIdentity[]> {
+	const listing = await optionalGit(checkout.root, ["worktree", "list", "--porcelain"], options);
+	const roots = worktreeEntries(listing).flatMap((entry) => {
+		const root = entry.bare || entry.prunable ? undefined : realDirectory(entry.path);
+		return root === undefined || root === checkout.root || isGitDirectory(root) ? [] : [root];
+	});
+	const common = commonGitDirectory(checkout.root);
+	const worktrees: CheckoutOfIdentity[] = [];
+	for (const root of roots) {
+		// oxlint-disable-next-line no-await-in-loop -- one worktree at a time, so many worktrees that Git must inspect never run Git at once
+		const each = await listedWorktree(root, common, checkout, options);
+		if (each !== undefined) {
+			worktrees.push({ root: each.root, identity: each.identity });
+		}
+	}
+	return worktrees.filter(
+		(each) => each.root !== checkout.root && each.identity === checkout.identity,
+	);
 }
 
 export {
 	type CheckoutHead,
-	worktreePaths,
+	worktreesOf,
 	checkoutHead,
 	repoIdentityFromRemote,
 	existingDir,
