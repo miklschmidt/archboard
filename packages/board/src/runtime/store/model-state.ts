@@ -1,3 +1,4 @@
+import { operationSubjects } from "#shared/rules/model-operation.ts";
 import { stateDir } from "@archboard/workspace/state-dir";
 import { isDeepStrictEqual } from "node:util";
 import { createHash } from "node:crypto";
@@ -10,6 +11,7 @@ import { mintId } from "#shared/rules/ids.ts";
 import {
 	type ArchitectureModelRead,
 	ModelRevisionSchema,
+	QualifiedSubjectIdSchema,
 	ModelRecoverySchema,
 	GitObjectIdSchema,
 } from "#shared/schemas/model.ts";
@@ -38,6 +40,7 @@ const JournalSchema = z
 		schemaVersion: z.literal(1),
 		context: CheckoutContextSchema,
 		request: ArchitectureModuleEditSchema,
+		subjects: z.array(QualifiedSubjectIdSchema).optional(),
 		before: ModelRevisionSchema,
 		after: ModelRevisionSchema,
 		checkpoint: GitObjectIdSchema,
@@ -63,7 +66,7 @@ function recoveryDetails(journal: ModelJournal): z.infer<typeof ModelRecoverySch
 		operationId: journal.request.operationId,
 		checkpoint: journal.checkpoint,
 		phase: journal.phase,
-		subjects: [journal.request.subject],
+		subjects: operationSubjects(journal.request, journal.subjects),
 		before: journal.before,
 		after: journal.after,
 		checkout: { branch: journal.context.branch, head: journal.context.head },

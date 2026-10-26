@@ -1,8 +1,7 @@
 import { isDeepStrictEqual } from "node:util";
 import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts";
-import { decodeModel } from "#runtime/operations/read/model-read.ts";
+import { editCandidate } from "#runtime/operations/model-edit/candidate.ts";
 import { requireSubjectClaim, requireTarget } from "#runtime/operations/model-edit/claims.ts";
-import { readModelFiles, modelRevision } from "#runtime/store/model-files.ts";
 import {
 	archiveContext,
 	assertArchiveWritable,
@@ -16,70 +15,14 @@ import {
 import { operationRef, checkoutContext, type ModelJournal } from "#runtime/store/model-state.ts";
 
 /**
- * Capture exactly the complete revision that the caller read.
- * @param vault The explicitly addressed vault.
- * @param revision The revision value.
- * @returns The operation result.
- */
-function captureRevision(vault: string, revision: ArchitectureModuleEdit["expectedRevision"]) {
-	const captured = readModelFiles(vault);
-	if (captured.diagnostics.length > 0 || !isDeepStrictEqual(captured.revision, revision))
-		throw new ArchiveError("STALE_REVISION", "Inputs changed before candidate preparation.");
-	return captured;
-}
-
-/**
- * Capture one complete candidate, preserving every unrelated authored byte.
- * @param vault The explicitly addressed vault.
- * @param request The original operation intent.
- * @returns The complete checked candidate or a structured refusal.
- */
-function editCandidate(vault: string, request: ArchitectureModuleEdit) {
-	const current = requireTarget(vault, request.target);
-	if (!current.success) return current;
-	requireSubjectClaim(vault, request);
-	if (!isDeepStrictEqual(current.revision, request.expectedRevision))
-		throw new ArchiveError(
-			"STALE_REVISION",
-			"The complete read token changed. Read the model again before a new edit.",
-		);
-	const subject = current.modules.find((module) => module.id === request.subject);
-	if (subject === undefined)
-		throw new ArchiveError(
-			"MODULE_NOT_FOUND",
-			"Use an existing qualified module identity.",
-			request.subject,
-		);
-	const captured = captureRevision(vault, current.revision);
-	const before = captured.inputs.get(subject.file)!;
-	const after = Buffer.from(
-		`${JSON.stringify({ ...JSON.parse(before.toString("utf8")), description: request.description }, null, 2)}\n`,
-	);
-	const inputs = new Map(captured.inputs);
-	inputs.set(subject.file, after);
-	const revision = modelRevision(inputs);
-	const checked = decodeModel({ inputs, revision, diagnostics: [] });
-	if (!checked.success) return checked;
-	return {
-		success: true as const,
-		current,
-		inputs,
-		revision,
-		file: {
-			path: subject.file,
-			before: before.toString("base64"),
-			after: after.toString("base64"),
-		},
-	};
-}
-/**
  * Recheck the caller's complete token after the asynchronous signer finishes.
  * @param vault The explicitly addressed vault.
  * @param request The original operation intent.
+ * @param subjects The complete affected claim scope.
  * @returns The still-current reading or a structured refusal.
  */
-function requireUnchanged(vault: string, request: ArchitectureModuleEdit) {
-	requireSubjectClaim(vault, request);
+function requireUnchanged(vault: string, request: ArchitectureModuleEdit, subjects: string[]) {
+	requireSubjectClaim(vault, request, subjects);
 	const current = requireTarget(vault, request.target);
 	if (!current.success) return current;
 	if (!isDeepStrictEqual(current.revision, request.expectedRevision))
@@ -119,6 +62,7 @@ async function prepareEdit(vault: string, request: ArchitectureModuleEdit) {
 			dependencies: [],
 		},
 		edit: request,
+		subjects: candidate.subjects,
 		sources: await captureSource(context),
 	});
 	const inputs = new Map([...candidate.inputs].map(([file, bytes]) => [`inputs/${file}`, bytes]));
@@ -127,9 +71,9 @@ async function prepareEdit(vault: string, request: ArchitectureModuleEdit) {
 		context,
 		await tree(context, inputs),
 		tip === undefined ? [] : [tip],
-		"archboard: edit module description",
+		"archboard: edit canonical architecture",
 	);
-	const latest = requireUnchanged(vault, request);
+	const latest = requireUnchanged(vault, request, candidate.scopes);
 	if (!latest.success) return latest;
 	const journal: ModelJournal = {
 		schemaVersion: 1,
@@ -140,7 +84,8 @@ async function prepareEdit(vault: string, request: ArchitectureModuleEdit) {
 		checkpoint,
 		ref: operationRef(vault, request.operationId, "transactions"),
 		phase: "prepared",
-		files: [candidate.file],
+		files: candidate.files,
+		subjects: candidate.subjects,
 	};
 	return journal;
 }
