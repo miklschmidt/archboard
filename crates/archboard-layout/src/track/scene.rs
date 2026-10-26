@@ -132,6 +132,9 @@ pub(crate) struct Heading {
 /// Each frame and region a band passes through, by id, with its walls.
 pub(crate) type Walls = Rc<Map<String, (f64, f64)>>;
 
+/// The stretch each wall keeps a lane off on one band, by the wall and its side.
+pub(crate) type KeptOff = Rc<Map<(String, usize), (f64, f64)>>;
+
 /// The placed hierarchy read back into items, bands and frames.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Placement {
@@ -148,6 +151,9 @@ pub(crate) struct Placement {
     pub frames: Map<String, Frame>,
     /// Each band's frame and region walls, once asked for.
     pub(super) walls: RefCell<FxHashMap<usize, Walls>>,
+    /// The stretch each wall keeps a lane off on a band, by the band and the
+    /// bits of what the band holds, once worked out (`occupancy.rs`).
+    pub(super) kept_off: RefCell<FxHashMap<(usize, Vec<u64>), KeptOff>>,
     pub regions: Vec<Region>,
     pub bands: Vec<Band>,
     /// A block's own ports that may still slide along its top or bottom edge,

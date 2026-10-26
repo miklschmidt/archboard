@@ -7,7 +7,7 @@ use std::rc::Rc;
 use crate::ecma::{abs, js_max, js_min, or, sorted_by};
 use crate::track::chains::{LANE, LaneRun, REGION_CLEARANCE, StationId, Track};
 use crate::track::clear::ClearOf;
-use crate::track::scene::{ItemId, Map, Placement, Set, Spot};
+use crate::track::scene::{ItemId, KeptOff, Map, Placement, Set, Spot};
 use crate::track::walls::KeepsFrames;
 
 /// How many quarter lanes either way a lane looks for a free column.
@@ -63,13 +63,49 @@ fn shared_gutter(
     })
 }
 
+/// The stretch each wall on a band keeps a lane off, given what the band
+/// holds: worked out once for each band and what it holds, as a scene is
+/// routed many times over with most of its bands as they were.
+fn kept_off(scene: &Placement, band: usize, held: &[(f64, f64)]) -> KeptOff {
+    let key = (
+        band,
+        held.iter()
+            .flat_map(|&(low, high)| [low.to_bits(), high.to_bits()])
+            .collect::<Vec<u64>>(),
+    );
+    if let Some(known) = scene.kept_off.borrow().get(&key) {
+        return Rc::clone(known);
+    }
+    let walled = scene.walled(band);
+    let mut walls = Map::default();
+    for (id, &pair) in walled.iter() {
+        for (side, wall) in [pair.0, pair.1].into_iter().enumerate() {
+            let stretch = if scene.frames.contains_key(id) {
+                outside_frame(wall, pair, held)
+            } else {
+                beside_region(wall, held)
+            };
+            let facing = walled
+                .values()
+                .map(|&(left, right)| if side == 0 { right } else { left });
+            walls.insert(
+                (id.clone(), side),
+                shared_gutter(stretch, wall, side, facing),
+            );
+        }
+    }
+    let walls = Rc::new(walls);
+    scene.kept_off.borrow_mut().insert(key, Rc::clone(&walls));
+    walls
+}
+
 /// Which horizontal intervals of each band are taken by items and settled lanes.
 pub(crate) struct Occupancy {
     pub taken: Vec<Vec<(f64, f64)>>,
     /// What each band holds but the stretches its walls keep a lane off.
     pub held: Vec<Vec<(f64, f64)>>,
     /// The stretch each wall keeps a lane off, on each band, by the wall.
-    pub walls: Vec<Map<(String, usize), (f64, f64)>>,
+    pub walls: Vec<KeptOff>,
     /// Whether an x is clear of what a run's bands hold for its lanes, by those bands, until a lane is taken.
     alongs: Map<Vec<usize>, Rc<ClearOf>>,
 }
@@ -109,29 +145,8 @@ impl Occupancy {
             taken[heading.band].push((heading.left - LANE, heading.end + LANE));
         }
         let held = taken.clone();
-        let walls: Vec<Map<(String, usize), (f64, f64)>> = (0..scene.bands.len())
-            .map(|band| {
-                let held = &held[band];
-                let walled = scene.walled(band);
-                let mut walls = Map::default();
-                for (id, &pair) in walled.iter() {
-                    for (side, wall) in [pair.0, pair.1].into_iter().enumerate() {
-                        let stretch = if scene.frames.contains_key(id) {
-                            outside_frame(wall, pair, held)
-                        } else {
-                            beside_region(wall, held)
-                        };
-                        let facing = walled
-                            .values()
-                            .map(|&(left, right)| if side == 0 { right } else { left });
-                        walls.insert(
-                            (id.clone(), side),
-                            shared_gutter(stretch, wall, side, facing),
-                        );
-                    }
-                }
-                walls
-            })
+        let walls: Vec<KeptOff> = (0..scene.bands.len())
+            .map(|band| kept_off(scene, band, &held[band]))
             .collect();
         for (band, one) in walls.iter().enumerate() {
             taken[band].extend(one.values().copied());
