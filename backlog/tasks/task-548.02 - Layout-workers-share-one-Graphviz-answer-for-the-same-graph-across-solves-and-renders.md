@@ -3,11 +3,11 @@ id: TASK-548.02
 title: >-
   Layout workers share one Graphviz answer for the same graph, across solves and
   renders
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-26T02:27:00Z'
-updated_date: '2026-10-26T03:50:00Z'
+updated_date: '2026-10-26T04:13:00Z'
 labels:
   - renderer
   - performance
@@ -25,12 +25,12 @@ In the 23 first renders that timing.ts measures, 359 of 1,072 Graphviz calls lay
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A Graphviz call for a graph that any earlier solve of the process laid out is answered from the shared cache, on any worker
-- [ ] #2 A re-render after an edit that keeps every card's size lays out no graph again
-- [ ] #3 The cache's memory is bounded, and the bound is stated where it is set
-- [ ] #4 Every drawing of the corpus is unchanged
-- [ ] #5 It works under Bun and in the browser without SharedArrayBuffer
-- [ ] #6 The renderer's focused tests (bun test packages/renderer) and cargo test for the changed crates pass
+- [x] #1 A Graphviz call for a graph that any earlier solve of the process laid out is answered from the shared cache, on any worker
+- [x] #2 A re-render after an edit that keeps every card's size lays out no graph again
+- [x] #3 The cache's memory is bounded, and the bound is stated where it is set
+- [x] #4 Every drawing of the corpus is unchanged
+- [x] #5 It works under Bun and in the browser without SharedArrayBuffer
+- [x] #6 The renderer's focused tests (bun test packages/renderer) and cargo test for the changed crates pass
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -45,4 +45,50 @@ Why this design: no SharedArrayBuffer and no synchronous wait; the alternative o
 5. Measure: hits/misses and Graphviz CPU on timing.ts first renders (temporary instrumentation, not committed), timing.ts 7 alternating with 1db8eb36b twice each with uptime, the relabel and a size-changing edit, corpus compare against /tmp/t548/base.
 6. Boards: proposals Renderer layout@TASK-548.02 and Semantic renderer@TASK-548.02 for the engine pool and the wasm binding, then adopt.
 7. Gates: bun test packages/renderer, cargo test for archboard-renderer-wasm, type-check, lint, fmt:check, benchmark, browser-drawn-pictures and drawn-glyphs.
+
+8. Added after the owner's 500 ms target for re-renders: the pool also remembers each solve's answer by its graph (16 Mi characters, oldest forgotten first). Every solve text of a re-render after a size-keeping relabel equals the first render's (measured on Agent workbench and Board viewer), and a solve's answer depends on its graph alone, so this is exact. It took that re-render from about 0.8 s, all core layout with no Graphviz, to about 50 ms.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Design: each worker's core keeps a per-instance memory of Graphviz answers keyed by the full graph text (crates/archboard-renderer-wasm/src/layout.rs, Remembering wraps archboard_graphviz::render; archboard-layout and archboard-graphviz are untouched). layOutBoard(graph, learned?) pushes each graph it laid out and its answer onto learned; rememberGraphvizAnswers(pairs) adds answers from other workers. The pool (engine-pool.ts) remembers every reported pair and posts the new ones at once to every other worker and the whole memory to each worker it starts; worker messages are FIFO, so a solve dispatched after an answer finds it. Bounds: 32 MiB per core instance and 32 Mi characters in the pool for Graphviz answers, 16 Mi characters for solve answers; oldest forgotten first, and a forgotten graph or solve is laid out again to the same answer.
+Rejected: sending a working set with each solve (the core cannot name in advance which graphs a solve asks for; sending all of a board's answers with every solve moves the same bytes more often); routing a solve to the worker that holds the answers (parallel candidates run on several workers at once, and broadcasting makes every worker hold everything anyway).
+Moving cost (instrumented run, not committed, timing.ts first renders): 893 pairs reported, 53.4 MB (15.3 MB graph text, about 38 MB answers); the pool spent 70-81 ms relaying them, the workers 260 ms remembering them. Graph text is 29% of the bytes, so a hash key would save less than a third of it, and would need a new SHA dependency; the full text is the exact key.
+Hit rate, timing.ts first renders (instrumented, 05:52 load 4.8-5.2): 1,070 Graphviz calls with sharing off, 11.3 s Graphviz CPU. With sharing: 177 answered from memory, 893 laid out (10.5 s and 9.9 s Graphviz CPU in two runs), so 0.8-1.4 s saved against 0.33 s of relaying. 181 of the misses are graphs another worker was laying out at the same time: solves that run at once cannot share without shared memory, so 177 of the 359 repeats are reachable this way.
+Timing, timing.ts 7, alternating parent 1db8eb36b and HEAD in this worktree (sources and core build swapped): parent 11,339 ms (05:08:04 load 5.03), HEAD 10,191 ms (05:08:19 load 5.50), parent 11,018 ms (05:08:31 load 5.35), HEAD 9,913 ms (05:08:45 load 5.05). Agent workbench first 1,820/1,691 parent against 1,666/1,646; Board viewer 1,669/1,676 against 1,457/1,443.
+Edits (scratch script, real pool of 7 Bun workers, load about 4.6-6): Agent workbench first 2,213-2,358 ms; relabel of Workhorse queue keeping its size: 48 ms, 0 graphs laid out, 9 solves answered from the pool (before the solve memory: 755-863 ms with 0 graphs laid out; with sharing off 1,477 ms); relabel that grows the card one line: 1,375-1,478 ms, 110 graphs laid out. Board viewer first 2,063 ms; size-keeping relabel of Camera arithmetic 53-56 ms, 0 laid out; growing it 1,466-1,483 ms, 22 laid out.
+Why a size change lays everything out again: every Graphviz graph of both boards holds the grown card or a region holding it (Agent workbench: 84 graphs of 47 nodes, 16 of 121, 10 others; Board viewer: 6 of 117 and 16 of 162 nodes, whole-board graphs). The only attributes that differ are that card's height and its regions' sizes, so no answer can be reused exactly. With every Graphviz answer reused a size change would still cost about 0.7-0.8 s of the core's own layout per solve round (the size-keeping re-render before the solve memory), so 500 ms for a size change needs TASK-548.04's work or an incremental layout that keeps unchanged parts, which changes the method and is outside this task.
+Boards: proposals Renderer layout@TASK-548.02 (Engine pool, Layout engine, Board layout descriptions) and Semantic renderer@TASK-548.02 (Engine pool, Renderer core), compared (descriptions and responsibilities only, no interface change) and adopted (versions 90 and 135). archboard check --code: no finding on the parts this task touched; the four findings on those boards (EXPOSED_UNUSED x2, CALLER_UNDRAWN Crossing pass, RELATIONSHIP_UNDRAWN Scene) predate it.
+Corpus: render-corpus render /tmp/t548/02-after --variants current --jobs 1 (20 s) against /tmp/t548/02-parent rendered from the parent's sources in this worktree on the same vault (25 s): 0 of 2,344 drawings differ. Against /tmp/t548/base (e84d2c48, an older vault): 2,128 shared drawings identical, 216 under renamed variants paired by board and view, 160 identical, 56 of Renderer layout and Semantic renderer whose content TASK-548.01 changed. No drawing changed, so the defect waiver did not arise.
+Tests: bun test packages/renderer 653 pass, 1 skip, 0 fail; cargo test --locked -p archboard-renderer-wasm 2 pass; type-check, lint (nix develop) and fmt:check exit 0; bun run benchmark 40 pass (05:09:13 load 4.63); browser lane --focus browser-drawn-pictures 1 pass and drawn-glyphs 1 pass (the lane rebuilt dist/frontend from these sources); archboard semantic rasterize of Renderer layout through this worktree's restarted server drew the board.
+
+Correction: the instrumented hit-rate runs were at 04:52-04:53 (load 4.75-5.18), not 05:52. The change uses no SharedArrayBuffer, Atomics or cross-origin isolation: answers move by postMessage only.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Layout workers now share Graphviz answers, and the engine pool shares solve answers, across solves and renders, with every drawing unchanged.
+
+What changed:
+- Each core instance remembers the Graphviz answers it laid out or was handed, keyed by the full graph text and bounded at 32 MiB (crates/archboard-renderer-wasm/src/layout.rs). layOutBoard(graph, learned?) reports new answers, and rememberGraphvizAnswers adds answers from other workers.
+- The pool relays each new answer to every other worker, and the whole memory to each worker it starts (bound 32 Mi characters).
+- The pool also answers a solve it answered before at once (bound 16 Mi characters).
+- archboard-layout and archboard-graphviz are untouched.
+
+Why: 359 of 1,072 first-render Graphviz calls repeated an earlier solve's graph. The owner rejected shared memory, so answers move by postMessage. Solves that run at the same time cannot share, so 177 of those repeats are hits.
+
+Evidence:
+- Graphviz CPU on the timing.ts first renders: 11.3 s down to 10.5 s and 9.9 s.
+- timing.ts 7, alternating with 1db8eb36b: 11,339 and 11,018 ms down to 10,191 and 9,913 ms.
+- A relabel that keeps card sizes re-renders Agent workbench in 48 ms and Board viewer in 53-56 ms, with no graph laid out, against about 1.5 s before. A relabel that grows one card still takes about 1.4-1.5 s: every Graphviz graph of those boards holds that card.
+- Corpus: 0 of 2,344 drawings differ against the parent.
+- Gates: renderer tests, cargo test, type-check, lint, fmt:check, benchmark and the two browser owners all pass.
+- Tests that own the work: tests/runtime/services/layout-workers.test.ts (real workers) and engine-pool.test.ts.
+- Boards: Renderer layout and Semantic renderer proposals were adopted.
+
+Risks and follow-ups:
+- Memory: about 32 MiB of wasm memory per worker once full, plus up to 48 Mi characters in the pool's thread.
+- A size change on a wide board stays above 500 ms. That needs faster core layout (TASK-548.04) or incremental layout, which is outside this task.
+<!-- SECTION:FINAL_SUMMARY:END -->
