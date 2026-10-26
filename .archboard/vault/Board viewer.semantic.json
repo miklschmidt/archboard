@@ -4,9 +4,9 @@
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
 	"level": "module",
-	"version": 140,
+	"version": 141,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-10-26T11:10:00.698Z",
+	"updatedAt": "2026-10-26T11:17:33.731Z",
 	"views": [
 		{
 			"id": "DurpAt5K",
@@ -437,6 +437,32 @@
 				"flows": [
 					"RYeM7bcW"
 				]
+			}
+		},
+		{
+			"id": "NflZ7OLv",
+			"name": "Design insight",
+			"grammar": "architecture",
+			"summary": "The stage's readings of a board's design: interface changes, measures on each variant, exposed names, design questions and the variant beside.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"3KqRuOEN",
+					"aYC7if1N",
+					"tmwUm8BL",
+					"TK7SUGoc",
+					"qV7dcNI5",
+					"51hijVQY",
+					"uPniwNFZ",
+					"pQWmUnTL",
+					"lP4yTWc8",
+					"5mOpXpZ6",
+					"YIuQlF65",
+					"05lXLR8J",
+					"hwcU8GfA"
+				],
+				"edges": [],
+				"flows": []
 			}
 		}
 	],
