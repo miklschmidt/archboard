@@ -54,10 +54,8 @@ function comparison(choices: BoardRenderChoices, reply: DrawnBoard): RenderRecip
 function drawingChoices(
 	choices: BoardRenderChoices,
 ): Pick<RenderRecipe, "theme" | "layout" | "title" | "legend"> {
-	if (choices.theme === undefined || choices.fonts !== "embedded") {
-		throw new Error(
-			"Only a render that stands alone, in a theme with its faces embedded, carries a recipe.",
-		);
+	if (choices.theme === undefined) {
+		throw new Error("Only a render that stands alone, in a theme of its own, carries a recipe.");
 	}
 	return {
 		theme: choices.theme,

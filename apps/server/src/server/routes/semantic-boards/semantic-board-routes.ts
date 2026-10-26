@@ -489,15 +489,14 @@ function recipeContext(vault: string):
 }
 
 /**
- * Whether a render is a board render: a document in a theme of its own with
- * its faces embedded, which a file keeps without a server behind it. Such a
- * render carries its render recipe (ADR 0057). A pane's picture and a picture
- * that links its faces carry none.
+ * Whether a render is a board render: a document in a theme of its own, its
+ * words drawn as glyphs, which a file keeps without a server behind it. Such a
+ * render carries its render recipe (ADR 0057). A pane's picture carries none.
  * @param how What the request selects.
  * @returns True when the render stands alone.
  */
 function standsAlone(how: RenderChoices): boolean {
-	return how.theme !== undefined && how.fonts === "embedded";
+	return how.theme !== undefined;
 }
 
 /**

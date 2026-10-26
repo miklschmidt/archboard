@@ -60,7 +60,7 @@ function render(query: Record<string, string>): Promise<Response> {
 }
 
 /** The query that asks for a board render, which carries a recipe. */
-const standalone = { theme: "dark", fonts: "embedded" };
+const standalone = { theme: "dark" };
 
 /**
  * Run a body while the first `git` on the PATH is killed, as one that times out is.
