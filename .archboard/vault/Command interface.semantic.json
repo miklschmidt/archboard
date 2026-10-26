@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 198,
+	"version": 199,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-26T23:03:36.032Z",
+	"updatedAt": "2026-10-26T23:35:29.185Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -144599,7 +144599,7 @@
 		{
 			"id": "88bBHFNP",
 			"name": "TASK-549.15-integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "pJeSfYJs",
 			"summary": "Resolve explicit code and model references from current, draft, and retained architecture without changing ownership.",
 			"documents": [
@@ -148708,7 +148708,7 @@
 		{
 			"id": "T2GzB51A",
 			"name": "TASK-549.07-integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "88bBHFNP",
 			"summary": "Reconcile complete proposal families while preserving source and foreign reference navigation.",
 			"documents": [
@@ -152815,7 +152815,7 @@
 			}
 		}
 	],
-	"current": "88bBHFNP",
+	"current": "T2GzB51A",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -153087,6 +153087,12 @@
 			"from": "pJeSfYJs",
 			"at": "2026-10-26T22:55:38.817Z",
 			"reason": "Readers open selected code and exact foreign architecture through the shared canonical model interface"
+		},
+		{
+			"variant": "T2GzB51A",
+			"from": "88bBHFNP",
+			"at": "2026-10-26T23:35:29.185Z",
+			"reason": "Canonical families inherit safe changes and retain explicit conflicts until complete agent settlement"
 		}
 	],
 	"shelvings": [

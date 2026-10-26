@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 177,
+	"version": 180,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T23:30:32.895Z",
+	"updatedAt": "2026-10-26T23:39:01.879Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -401,6 +401,22 @@
 					"CLdaoYy3",
 					"llmZ5fau",
 					"nqi2h0Ku"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "xq2DngP3",
+			"name": "Legacy board documents",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"ZqkmwupZ",
+					"VCoMuJnP",
+					"0z23E66v",
+					"IbkA2Se8"
 				],
 				"edges": [],
 				"flows": []
@@ -162772,7 +162788,7 @@
 		{
 			"id": "WjtKLTV6",
 			"name": "TASK-549.15-integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "AFx23EEN",
 			"summary": "Resolve explicit code and model references from current, draft, and retained architecture without changing ownership.",
 			"documents": [
@@ -169709,7 +169725,7 @@
 		{
 			"id": "8sdo0DeV",
 			"name": "TASK-549.07-integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "WjtKLTV6",
 			"summary": "Reconcile complete proposal families while preserving source and foreign reference navigation.",
 			"documents": [
@@ -170139,7 +170155,8 @@
 						"order": 29000,
 						"name": "Board reading",
 						"kind": "module",
-						"responsibility": "Finds a board by its name or a former name, lists the boards of a vault, reads and validates one from disk, and reads the vault configuration its vocabulary comes from"
+						"responsibility": "Finds a board by its name or a former name, lists the boards of a vault, reads and validates one from disk, and reads the vault configuration its vocabulary comes from",
+						"parent": "EekL5c17"
 					},
 					{
 						"id": "VCoMuJnP",
@@ -170372,9 +170389,10 @@
 					{
 						"id": "EekL5c17",
 						"order": 48000,
-						"name": "Legacy board writes",
+						"name": "Legacy board documents",
 						"kind": "module",
-						"responsibility": "Validates, writes, and moves legacy board documents"
+						"responsibility": "Reads and changes legacy board families while canonical models coexist",
+						"description": "Owns legacy document reading, configuration, migration inventory, transitions, durable writes, and moves. The overview separates this legacy document path from the canonical model path. Both paths use the shared semantic reconciliation rules."
 					},
 					{
 						"id": "7mTerd6Y",
@@ -172340,7 +172358,8 @@
 						"order": 108000,
 						"from": "4P7YZdnj",
 						"to": "ZLJy8ivl",
-						"kind": "dependency",
+						"kind": "call",
+						"label": "derive the checkpoint request contract",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -176684,7 +176703,7 @@
 			}
 		}
 	],
-	"current": "WjtKLTV6",
+	"current": "8sdo0DeV",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -176890,6 +176909,12 @@
 			"from": "AFx23EEN",
 			"at": "2026-10-26T22:55:38.255Z",
 			"reason": "Readers open selected code and exact foreign architecture through the shared canonical model interface"
+		},
+		{
+			"variant": "8sdo0DeV",
+			"from": "WjtKLTV6",
+			"at": "2026-10-26T23:35:28.682Z",
+			"reason": "Canonical families inherit safe changes and retain explicit conflicts until complete agent settlement"
 		}
 	],
 	"shelvings": [

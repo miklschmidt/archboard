@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 187,
+	"version": 188,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-26T23:30:32.057Z",
+	"updatedAt": "2026-10-26T23:35:30.215Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -75733,7 +75733,7 @@
 		{
 			"id": "lGZBoeX1",
 			"name": "TASK-549.15-integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "FzIKjcPd",
 			"summary": "Open code and follow explicit foreign model references from the selected canonical reading.",
 			"documents": [
@@ -79436,7 +79436,7 @@
 		{
 			"id": "5TS6RQ6W",
 			"name": "TASK-549.07-integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "lGZBoeX1",
 			"summary": "Show unresolved proposals and their blocked descendants without changing coherent architecture",
 			"documents": [
@@ -83123,7 +83123,7 @@
 			}
 		}
 	],
-	"current": "lGZBoeX1",
+	"current": "5TS6RQ6W",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -83286,6 +83286,12 @@
 			"from": "FzIKjcPd",
 			"at": "2026-10-26T22:55:39.807Z",
 			"reason": "Readers open selected code and exact foreign architecture through the shared canonical model interface"
+		},
+		{
+			"variant": "5TS6RQ6W",
+			"from": "lGZBoeX1",
+			"at": "2026-10-26T23:35:30.215Z",
+			"reason": "Canonical families inherit safe changes and retain explicit conflicts until complete agent settlement"
 		}
 	],
 	"shelvings": [

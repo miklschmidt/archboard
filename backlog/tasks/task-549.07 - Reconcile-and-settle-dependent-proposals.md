@@ -1,11 +1,11 @@
 ---
 id: TASK-549.07
 title: Reconcile and settle dependent proposals
-status: In Progress
+status: Done
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T23:35:00Z'
+updated_date: '2026-10-26T23:41:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -45,16 +45,16 @@ TASK-549.06
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An agent changes a predecessor and sees safe inherited changes across following drafts. Conflicts remain visible in both CLI results and browser readings.
-- [ ] #2 Preserve the baseline that established each conflict. Reconcile parents before children, block unsettled descendants, and publish the complete family result together.
-- [ ] #3 Settlement handles competing fields, deletion against change, lost references, alternative renames, and structural ordering. Claims cover the affected descendants.
-- [ ] #4 Reuse the existing semantic reconciliation cases through the public operation seam. No second transport-specific reconciliation path exists.
+- [x] #1 An agent changes a predecessor and sees safe inherited changes across following drafts. Conflicts remain visible in both CLI results and browser readings.
+- [x] #2 Preserve the baseline that established each conflict. Reconcile parents before children, block unsettled descendants, and publish the complete family result together.
+- [x] #3 Settlement handles competing fields, deletion against change, lost references, alternative renames, and structural ordering. Claims cover the affected descendants.
+- [x] #4 Reuse the existing semantic reconciliation cases through the public operation seam. No second transport-specific reconciliation path exists.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -106,4 +106,12 @@ The corrected fixture resolves the machine-registry cost and 76 of 77 runtime ca
 The final candidate reuse passes all 36 proposal/reference cases with 174 assertions. The previously tight standing case takes 13.43 seconds in the focused owner. No assertions or deadlines changed. Types, lint, and formatting pass. Reconciliation, proposal, planning, and legacy status browser owners pass. The comparison fixture now uses a deliberate external file edit for its existing refusal/recovery contract, because ordinary agent writes now reconcile the family. Parent visual inspection found that global issues lacked subject names, so the disclosure now uses authored names and permits keyboard scrolling. The current .15 architecture emits two redundant container-to-own-part warnings; the combined .07 drafts remove those edges and retain the containment meaning. Final comparison and label validation remain pending.
 
 All final focused behavior owners pass. The complete proposal/reference suite passes 36 cases and 174 assertions after candidate reuse. Final reconciliation and comparison browser owners pass two cases and 18 assertions. Proposal, planning, and legacy status owners also pass. Types, full lint, and formatting pass. Parent inspected the conflict disclosure with authored subject names and both values, plus the blocked ancestor action. Temporary screenshot calls are removed. The combined draft code check has zero warnings on all four affected boards. The two current .15 containment warnings are corrected in the combined .07 drafts and will be checked after adoption. The resulting design uses one semantic engine, one durable family transaction, and one shared issue presentation.
+
+All four combined proposals are adopted. The final current semantics check reports zero diagnostics after removing redundant contained-part lines and grouping legacy document reads and writes in the existing legacy container. Its new view opens the same stable subjects. The schema relationship now describes its actual runtime extend call. The final current code check has zero warnings on all four affected boards and ten inherited warnings elsewhere. Parent inspected the storage overview. Every claim is released, and server14548 is stopped. The known board interface excess remains assigned to TASK-549.24. No full-gate pass, push, PR update, or review phase is claimed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Canonical predecessor edits reconcile the complete proposal family through the shared semantic engine and durable writer. Conflicts retain their baseline and coherent proposal side. Descendants remain blocked until complete explicit settlement. The browser shows authored subject names, both values, repair instructions, and blocked ancestry. Live settlement refreshes the family, while saved readings keep exact standing. Source capture preserves selected foreign pins through reconciliation and settlement. Focused runtime and browser owners, types, lint, formatting, and current semantics pass. All affected architecture proposals are adopted with no code warnings. Claims are released and the worktree server is stopped. Known interface width debt remains with TASK-549.24.
+<!-- SECTION:FINAL_SUMMARY:END -->
