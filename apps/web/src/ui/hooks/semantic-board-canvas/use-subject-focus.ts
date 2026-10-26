@@ -21,6 +21,7 @@ import { EVERYTHING_VIEW } from "@archboard/board/views";
 import { EXPLORING_MS } from "@archboard/timing";
 import type { SemanticRender } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
+import type { ViewChange } from "#ui/hooks/semantic-board-canvas/use-level-reading.ts";
 import { subjectBox } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 import type { FitTarget } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
 
@@ -57,7 +58,7 @@ function useSubjectFocus(
 	drawing: SemanticRender | undefined,
 	camera: BoardCamera,
 	reducedMotion: boolean,
-	onView: (view: string | null) => void,
+	onView: ViewChange,
 ): (id: string, around?: readonly string[]) => void {
 	const [ask, setAsk] = useState<Ask | null>(null);
 	// The last ask the camera went to, and the last one Everything was opened for.
@@ -76,7 +77,7 @@ function useSubjectFocus(
 			fitted.current = ask;
 		} else if (widened.current !== ask) {
 			widened.current = ask;
-			onView(EVERYTHING_VIEW.id);
+			onView(EVERYTHING_VIEW.id, "reveal");
 		}
 	}, [ask, focus, onView]);
 	return useCallback((id: string, around: readonly string[] = []): void => {

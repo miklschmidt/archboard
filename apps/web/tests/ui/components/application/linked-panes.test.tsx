@@ -59,6 +59,43 @@ async function goBack(): Promise<void> {
 }
 
 /**
+ * Step through a question in one pane, without choosing a view by hand.
+ * @param paneId The pane.
+ * @param part The answer's subject.
+ */
+async function stepIn(paneId: string, part: string): Promise<void> {
+	const selector = `[data-slot='semantic-board-question-result'][data-part='${part}']`;
+	if (pane(paneId)!.querySelector(selector) === null) {
+		act(() => {
+			const boardTab = pane(paneId)!.querySelector(
+				"[data-slot='semantic-sidebar-tab'][data-tab='board']",
+			);
+			fireEvent.click(
+				boardTab ?? pane(paneId)!.querySelector("[data-slot='semantic-sidebar-toggle']")!,
+			);
+		});
+		await settleUntil(() => pane(paneId)!.querySelector(selector) !== null);
+	}
+	act(() => {
+		fireEvent.click(pane(paneId)!.querySelector(selector)!);
+	});
+	await settle();
+}
+
+/**
+ * The subjects that carry an attention class in one pane's picture.
+ * @param paneId The pane.
+ * @param mark The attention class.
+ * @returns Their ids, sorted.
+ */
+function attendedIn(paneId: string, mark: "is-selected" | "is-lit"): string[] {
+	const surface = pane(paneId)!.querySelector("[data-slot='semantic-board-surface']")!;
+	return [...surface.querySelectorAll(`[data-semantic-id].${mark}`)]
+		.map((subject) => subject.getAttribute("data-semantic-id")!)
+		.toSorted();
+}
+
+/**
  * What one pane last reported, once its reports have settled.
  * @param paneId The pane.
  * @returns What it picked and whether the person's hand changed that, or null before any report.
@@ -123,6 +160,92 @@ test("a view chosen in one linked pane is read in both, as one history entry, an
 
 	await goBack();
 	expect(await viewsRead()).toEqual({ A: null, B: null });
+});
+
+test("a question step opens Everything only in its own pane, without a view gesture or history entry", async () => {
+	await twoPanes();
+	const before = window.history.length;
+	readings.length = 0;
+	await stepIn("A", "charge");
+	expect(await viewsRead()).toEqual({ A: "Everything", B: null });
+	expect(window.history.length).toBe(before);
+	const address = new URLSearchParams(window.location.search);
+	expect([address.get("viewA"), address.get("viewB")]).toEqual(["Everything", null]);
+	expect(readings.some((reading) => reading.byUser?.includes("view"))).toBe(false);
+});
+
+test("a linked pick takes each pane's answer light and letting go restores each pane's own step", async () => {
+	await twoPanes();
+	await stepIn("A", "charge");
+	await stepIn("B", "refund");
+	await viewsRead();
+	const before = { address: window.location.search, history: window.history.length };
+	const lights = { A: attendedIn("A", "is-lit"), B: attendedIn("B", "is-lit") };
+	expect(attendedIn("A", "is-selected")).toEqual(["charge"]);
+	expect(attendedIn("B", "is-selected")).toEqual(["refund"]);
+	expect(lights.A).not.toEqual(lights.B);
+	readings.length = 0;
+	await pickIn("B", "pay");
+	expect(await reported("A")).toEqual({ picked: ["pay"], byHand: false });
+	expect(await reported("B")).toEqual({ picked: ["pay"], byHand: true });
+	expect(attendedIn("A", "is-selected")).toEqual(["pay"]);
+	expect(attendedIn("B", "is-selected")).toEqual(["pay"]);
+	expect(attendedIn("A", "is-lit")).not.toEqual(lights.A);
+	act(() => {
+		fireEvent.keyDown(pane("B")!.querySelector("[data-slot='semantic-board-viewport']")!, {
+			key: "Escape",
+		});
+	});
+	expect(await reported("A")).toEqual({ picked: [], byHand: false });
+	expect(await reported("B")).toEqual({ picked: [], byHand: true });
+	expect(attendedIn("A", "is-selected")).toEqual(["charge"]);
+	expect(attendedIn("B", "is-selected")).toEqual(["refund"]);
+	expect(attendedIn("A", "is-lit")).toEqual(lights.A);
+	expect(attendedIn("B", "is-lit")).toEqual(lights.B);
+	expect({ address: window.location.search, history: window.history.length }).toEqual(before);
+});
+
+test("linked views and Back keep pane-local answer steps, and closing one pane keeps the other's attention", async () => {
+	const { b } = await twoPanes();
+	await stepIn("A", "charge");
+	const before = window.history.length;
+	await chooseViewIn("A", QUERIES.id);
+	expect(await viewsRead()).toEqual({ A: QUERIES.id, B: QUERIES.id });
+	expect(window.history.length).toBe(before + 1);
+	await goBack();
+	expect(await viewsRead()).toEqual({ A: "Everything", B: null });
+	expect(attendedIn("A", "is-selected")).toEqual(["charge"]);
+	expect(attendedIn("B", "is-selected")).toEqual([]);
+	act(() => b.say({ type: "pane_close" }));
+	await settleUntil(() => pane("B") === null);
+	expect(pane("B")).toBeNull();
+	expect(attendedIn("A", "is-selected")).toEqual(["charge"]);
+});
+
+test("a drill-down drops only its pane's answer step, and returning does not revive it", async () => {
+	await twoPanes();
+	await stepIn("A", "charge");
+	await stepIn("B", "refund");
+	await viewsRead();
+	await pickIn("A", "ord");
+	act(() => {
+		fireEvent.doubleClick(pane("A")!.querySelector("[data-semantic-id='ord'] rect")!);
+	});
+	await settleUntil(() => onScreen("A") === "orders");
+	expect((await reported("B"))?.picked).toEqual(["ord"]);
+	act(() => {
+		fireEvent.keyDown(pane("B")!.querySelector("[data-slot='semantic-board-viewport']")!, {
+			key: "Escape",
+		});
+	});
+	await settle();
+	expect(attendedIn("B", "is-selected")).toEqual(["refund"]);
+	act(() => {
+		fireEvent.click([...pane("A")!.querySelectorAll("[data-slot='pane-crumb']")].at(-1)!);
+	});
+	await settleUntil(() => onScreen("A") === "shop");
+	expect(attendedIn("A", "is-selected")).toEqual([]);
+	expect(attendedIn("B", "is-selected")).toEqual(["refund"]);
 });
 
 test("Back reads each linked pane through the view it read before, not the other pane's", async () => {

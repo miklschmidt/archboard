@@ -118,10 +118,12 @@ function paneElement(sources: PaneViewSources, entry: PaneEntry, index: number):
 	/**
 	 * The person chose a different way of reading this pane's board.
 	 * @param view The view's id, or null for the overview.
+	 * @param cause An automatic reveal, which changes only this pane and adds no history entry.
 	 */
-	function readThrough(view: string | null): void {
-		readings.chooseView(paneId, view);
-	}
+	const readThrough: ApplicationPaneProps["onViewChange"] = (view, cause): void => {
+		if (cause === "reveal") readings.showView(paneId, view);
+		else readings.chooseView(paneId, view);
+	};
 	/**
 	 * The person picked a subject out in this pane, or cleared it.
 	 * @param subject The subject, or null.

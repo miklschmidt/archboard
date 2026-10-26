@@ -32,7 +32,10 @@ import { useDrillDown, type Dive } from "#ui/hooks/semantic-board-canvas/use-dri
 import { useDrillMoves } from "#ui/hooks/semantic-board-canvas/use-drill-moves.ts";
 import { useKindLook } from "#ui/hooks/semantic-board-canvas/use-kind-look.ts";
 import { useLayoutEngine } from "#ui/hooks/semantic-board-canvas/use-layout-engine.ts";
-import { useLevelReading } from "#ui/hooks/semantic-board-canvas/use-level-reading.ts";
+import {
+	useLevelReading,
+	type ViewChange,
+} from "#ui/hooks/semantic-board-canvas/use-level-reading.ts";
 import { usePicking } from "#ui/hooks/semantic-board-canvas/use-picking.ts";
 import { usePresentationPosition } from "#ui/hooks/semantic-board-canvas/use-presentation-position.ts";
 import { useReported } from "#ui/hooks/semantic-board-canvas/use-reported-reading.ts";
@@ -104,8 +107,9 @@ interface SemanticBoardStageProps {
 	 * Owned above the stage, because the choice belongs in the address: two
 	 * panes can read one board two ways, and a reload keeps both.
 	 * @param view The view's id, or null for the whole variant.
+	 * @param cause An automatic reveal, which stays in this pane without a view gesture.
 	 */
-	onViewChange?: ((view: string | null) => void) | undefined;
+	onViewChange?: ViewChange | undefined;
 	/**
 	 * The person chose a different state of this architecture.
 	 *
@@ -344,10 +348,10 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 		choose(null);
 	}, [choose]);
 	const chooseView = level.onView;
-	const onChooseView = useCallback(
-		(view: string | null): void => {
+	const onChooseView = useCallback<ViewChange>(
+		(view, cause): void => {
 			choose(null);
-			chooseView?.(view);
+			chooseView?.(view, cause);
 		},
 		[choose, chooseView],
 	);

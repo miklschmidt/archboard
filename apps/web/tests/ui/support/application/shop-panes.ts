@@ -30,23 +30,38 @@ type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 interface Part {
 	readonly id: string;
 	readonly name: string;
+	readonly parent?: string;
 }
+
+/** Two entry points of Payments that pass one call on, for question steps. */
+const PAYMENT_PARTS: readonly Part[] = [
+	{ id: "charge", name: "Charge", parent: "pay" },
+	{ id: "refund", name: "Refund", parent: "pay" },
+	{ id: "bank", name: "Bank" },
+];
+
+/** Each payment entry point receives and sends one call of the same kind. */
+const PAYMENT_EDGES = [
+	{ id: "oc", from: "ord", to: "charge", kind: "call" },
+	{ id: "cb", from: "charge", to: "bank", kind: "call" },
+	{ id: "or", from: "ord", to: "refund", kind: "call" },
+	{ id: "rb", from: "refund", to: "bank", kind: "call" },
+];
 
 /** The shop's parts, by variant: the proposal adds Refunds, and the shelved one Gift wrap. */
 const PARTS: Readonly<Record<string, readonly Part[]>> = {
-	v1: [
-		{ id: "ord", name: "Orders" },
-		{ id: "pay", name: "Payments" },
-	],
+	v1: [{ id: "ord", name: "Orders" }, { id: "pay", name: "Payments" }, ...PAYMENT_PARTS],
 	v2: [
 		{ id: "ord", name: "Orders" },
 		{ id: "pay", name: "Payments" },
 		{ id: "ref", name: "Refunds" },
+		...PAYMENT_PARTS,
 	],
 	v3: [
 		{ id: "ord", name: "Orders" },
 		{ id: "pay", name: "Payments" },
 		{ id: "gw", name: "Gift wrap" },
+		...PAYMENT_PARTS,
 	],
 };
 
@@ -78,7 +93,10 @@ function variantOf(id: string): Record<string, unknown> {
 		name: entry.name,
 		lifecycle: entry.lifecycle,
 		...(entry.parentId === null ? {} : { parent: entry.parentId }),
-		content: { nodes, edges: [] },
+		content: {
+			nodes,
+			edges: PAYMENT_EDGES.map((edge, index) => ({ ...edge, order: (index + 1) * 1000 })),
+		},
 	};
 }
 
@@ -161,10 +179,25 @@ function drawingOf(
 	variant: string | null,
 	view: string | null,
 ): Record<string, unknown> {
-	const { variant: drawn, parts } = PICTURED[`${board}@${variant}`] ?? PICTURED[board]!;
+	const { variant: drawn, parts: allParts } = PICTURED[`${board}@${variant}`] ?? PICTURED[board]!;
+	const parts = allParts.filter((part) =>
+		view === QUERIES.id ? part.id === "ord" : view !== null || part.parent === undefined,
+	);
+	const edges =
+		board === "shop"
+			? PAYMENT_EDGES.filter(
+					(edge) =>
+						parts.some((part) => part.id === edge.from) &&
+						parts.some((part) => part.id === edge.to),
+				)
+			: [];
 	const cards = parts.map(
 		(part, index) =>
 			`<g data-semantic-kind="node" data-semantic-id="${part.id}"><rect x="${index * 100}" width="80" height="40"></rect></g>`,
+	);
+	const lines = edges.map(
+		(edge) =>
+			`<g data-semantic-kind="edge" data-semantic-id="${edge.id}"><path d="M0,0 L100,40"></path></g>`,
 	);
 	return {
 		success: true,
@@ -177,13 +210,15 @@ function drawingOf(
 		waiting: null,
 		width: 400,
 		height: 300,
-		svg: `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">${cards.join("")}</svg>`,
+		svg: `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">${cards.join("")}${lines.join("")}</svg>`,
 		drawn: { nodes: [], edges: [], flows: [], steps: [] },
 		atlas: {
 			nodes: Object.fromEntries(
 				parts.map((part, index) => [part.id, { x: index * 100, y: 0, width: 80, height: 40 }]),
 			),
-			edges: {},
+			edges: Object.fromEntries(
+				edges.map((edge) => [edge.id, { x: 0, y: 0, width: 100, height: 40 }]),
+			),
 			regions: {},
 		},
 	};
@@ -396,8 +431,11 @@ async function twoPanes(a = "shop", b = "shop@v2"): Promise<{ a: FakeSocket; b: 
  * @returns True once its picture is of that board and variant.
  */
 function draws(paneId: string, key: string): boolean {
-	const card = { "shop@v2": "ref", "shop@v3": "gw", orders: "cart" }[key] ?? "ord";
-	return pane(paneId)?.querySelector(`[data-semantic-id='${card}']`) != null;
+	const stage = pane(paneId)?.querySelector("[data-slot='semantic-board-stage']");
+	return (
+		stage?.getAttribute("data-board") === key.split("@")[0] &&
+		stage?.getAttribute("data-variant") === PICTURED[key]?.variant.name
+	);
 }
 
 /**

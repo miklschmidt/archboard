@@ -73,8 +73,9 @@ interface ApplicationPaneProps {
 	/**
 	 * The person chose a different way of reading this board.
 	 * @param view The view's id, or null for the overview.
+	 * @param cause An automatic reveal, which stays in this pane without a view gesture.
 	 */
-	onViewChange: (view: string | null) => void;
+	onViewChange: NonNullable<SemanticBoardStageProps["onViewChange"]>;
 	/** What the person has picked out in this pane, or null. */
 	picked: PickedSubject | null;
 	/**
@@ -403,10 +404,10 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 		onUserChanged("selection");
 		leave();
 	}, [leave, onUserChanged]);
-	const onView = useCallback(
-		(next: string | null): void => {
-			onUserChanged("view");
-			onViewChange(next);
+	const onView = useCallback<ApplicationPaneProps["onViewChange"]>(
+		(next, cause): void => {
+			if (cause !== "reveal") onUserChanged("view");
+			onViewChange(next, cause);
 		},
 		[onUserChanged, onViewChange],
 	);
