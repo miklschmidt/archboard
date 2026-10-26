@@ -63,13 +63,14 @@ async function requireTarget(vault: string, target: ArchitectureClaim["target"])
 			"The selected model changed. Read it again before writing.",
 		);
 	if (currentStateId(current.manifest) === target.state) return current;
-	if (target.state === null)
+	const proposal = current.proposals.find((entry) => entry.id === target.state);
+	if (proposal === undefined)
 		throw new ArchiveError(
 			"TARGET_CHANGED",
-			"The planning model now has a current state. Read it again before writing.",
+			"The selected state changed. Read it again and use its stable identity before writing.",
 		);
 	const { resolveState } = await import("#runtime/operations/proposals/read.ts");
-	return resolveState(await archiveContext(vault), current, target.state);
+	return resolveState(await archiveContext(vault), current, proposal.id);
 }
 /**
  * Read the designated state without inventing one for a planning model.

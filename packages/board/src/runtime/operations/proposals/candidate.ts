@@ -252,7 +252,13 @@ async function proposalCandidate(
 	const baseline =
 		existing === undefined
 			? predecessor
-			: await exactReading(await archiveContext(vault), proposal.baseline);
+			: await exactReading(
+					await archiveContext(vault),
+					proposal.baseline,
+					undefined,
+					undefined,
+					false,
+				);
 	if (!baseline.success) return baseline;
 	const structure = applyStructure(predecessor, request, captured.inputs.keys());
 	const draft = decodedDraft(predecessor, structure, proposal);

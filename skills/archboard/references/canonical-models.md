@@ -612,3 +612,7 @@ Ordinary reads and edits refuse until the reconciliation delivery exists.
 An exact retained proposal checkpoint remains readable against its own inputs.
 Neither a code merge nor an approval adopts a draft.
 Reconciliation, adoption, and shelving remain later delivery slices.
+
+An explicit comparison against an empty planning baseline returns `comparison.against:null` and the baseline's exact `comparison.checkpoint`.
+Its subject changes still identify the planning additions.
+This absence names no implemented state and does not suppress the requested comparison.

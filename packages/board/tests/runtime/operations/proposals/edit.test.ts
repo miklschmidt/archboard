@@ -145,9 +145,19 @@ test("planning roots and named predecessors keep additions out of current and us
 		manifest: { current: null },
 		selectedState: null,
 	});
-	const plan = await readArchitectureModel(vault, undefined, undefined, { state: "Plan" });
+	const plan = await readArchitectureModel(vault, undefined, undefined, {
+		state: "Plan",
+		against: created.checkpoint.request.dependencies[0],
+	});
 	if (!plan.success || !plan.selectedState) throw new Error(JSON.stringify(plan));
 	expect(plan.modules.map((m) => m.name)).toEqual(["Future API"]);
+	expect(plan.comparison).toMatchObject({
+		reason: "explicit",
+		against: null,
+		subjects: expect.arrayContaining([
+			expect.objectContaining({ kind: "added", subjectKind: "module" }),
+		]),
+	});
 	await releaseArchitectureClaim(vault, { claim: request.claim, writer: "agent" });
 	const childTarget = { model: "Shop", state: plan.selectedState.id };
 	const claim = await claimArchitectureSubjects(vault, {

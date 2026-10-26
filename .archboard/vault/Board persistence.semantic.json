@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 165,
+	"version": 166,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T18:50:05.712Z",
+	"updatedAt": "2026-10-26T18:53:17.041Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -391,7 +391,9 @@
 					"W6wFcSQz",
 					"ZLJy8ivl",
 					"8Uq1mtzw",
-					"CLdaoYy3"
+					"CLdaoYy3",
+					"llmZ5fau",
+					"nqi2h0Ku"
 				],
 				"edges": [],
 				"flows": []
@@ -146296,6 +146298,34 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/proposals/candidate.ts",
 							"symbol": "proposalCandidate"
+						}
+					},
+					{
+						"id": "J6sf7wpy",
+						"order": 200000,
+						"from": "KJy5yYuq",
+						"to": "llmZ5fau",
+						"kind": "call",
+						"label": "module and flow batch",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+							"symbol": "applyStructure"
+						}
+					},
+					{
+						"id": "OePzvDJW",
+						"order": 201000,
+						"from": "KJy5yYuq",
+						"to": "nqi2h0Ku",
+						"kind": "call",
+						"label": "same source or private archive",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+							"symbol": "archiveContext"
 						}
 					}
 				],
