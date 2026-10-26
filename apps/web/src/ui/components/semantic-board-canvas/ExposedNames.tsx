@@ -171,10 +171,7 @@ interface ReadNamesProps {
  * @returns The section's body.
  */
 function ReadNames(props: ReadNamesProps): JSX.Element {
-	const { counts, vault, board, variant, container, checkedAt } = props;
-	const site = useMemo(() => ({ board, variant, container }), [board, variant, container]);
-	const { data } = useQuery(exposureQuery(vault, site, checkedAt));
-	const matching = data?.version === props.version && data.checkedAt === checkedAt;
+	const { counts } = props;
 	return (
 		<>
 			<p
@@ -186,15 +183,66 @@ function ReadNames(props: ReadNamesProps): JSX.Element {
 				{counts.exposed} exposed, {counts.usedOutside} used outside{" "}
 				<span className="text-technical text-muted-foreground font-mono">{counts.module}</span>
 			</p>
-			{matching && (
-				<NameList
-					names={data.exposure.names}
-					unused={counts.exposed - counts.usedOutside}
-					{...props}
-				/>
-			)}
+			<ExposureNames {...props} />
 			<PassTime checkedAt={props.checkedAt} />
 		</>
+	);
+}
+
+/**
+ * Read the names on demand, with progress and a retry when that read fails.
+ * @param props The container and the pass whose counts are on screen.
+ * @returns Its names, or the state of their read.
+ */
+function ExposureNames(props: ReadNamesProps): JSX.Element {
+	const { vault, board, variant, container, checkedAt, counts } = props;
+	const site = useMemo(() => ({ board, variant, container }), [board, variant, container]);
+	const { data, isFetching, refetch } = useQuery(exposureQuery(vault, site, checkedAt));
+	const again = useCallback((): void => {
+		void refetch();
+	}, [refetch]);
+	if (isFetching) {
+		return (
+			<output
+				data-slot="semantic-exposed-status"
+				data-state="loading"
+				className="text-muted-foreground text-body"
+			>
+				Reading exposed names.
+			</output>
+		);
+	}
+	if (!data) {
+		return (
+			<div data-slot="semantic-exposed-status" data-state="unavailable">
+				<p className="text-muted-foreground text-body">
+					{data === null
+						? "The server no longer remembers these names."
+						: "The request for exposed names failed."}
+				</p>
+				<SidebarChoice data-slot="semantic-exposed-retry" onClick={again}>
+					<SidebarLabel>Read exposed names again</SidebarLabel>
+				</SidebarChoice>
+			</div>
+		);
+	}
+	if (data.version !== props.version || data.checkedAt !== checkedAt) {
+		return (
+			<output
+				data-slot="semantic-exposed-status"
+				data-state="changed"
+				className="text-muted-foreground text-body"
+			>
+				The code pass changed. Waiting for its reading.
+			</output>
+		);
+	}
+	return (
+		<NameList
+			names={data.exposure.names}
+			unused={counts.exposed - counts.usedOutside}
+			content={props.content}
+		/>
 	);
 }
 

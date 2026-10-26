@@ -171,10 +171,11 @@ function fakeFetch(input: RequestInfo | URL): Promise<Response> {
  * What the exposure route answers: the remembered exposure, or that none is.
  * @returns The reply.
  */
-function exposureReply(): Promise<Response> {
-	return server.exposure === undefined
+async function exposureReply(): Promise<Response> {
+	const exposure = await server.exposure;
+	return exposure === undefined
 		? answered({ status: 404, body: { success: false, code: "EXPOSURE_NOT_REMEMBERED" } })
-		: answered({ status: 200, body: server.exposure });
+		: answered({ status: 200, body: exposure });
 }
 
 /**

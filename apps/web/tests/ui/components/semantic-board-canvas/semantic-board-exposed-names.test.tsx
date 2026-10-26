@@ -203,6 +203,33 @@ test.each([
 	expect(rows("semantic-exposed-name", "data-name")).toEqual([]);
 });
 
+test.each([undefined, { success: false, code: "READ_FAILED", error: "Exposure read failed." }])(
+	"an unavailable exposure has a retry that recovers its names (%j)",
+	async (reply) => {
+		server.findings = FINDINGS;
+		server.exposure = reply;
+		await picked("orders");
+		expect(document.querySelector("[data-slot='semantic-exposed-retry']")).not.toBeNull();
+		server.exposure = EXPOSURE;
+		await press("[data-slot='semantic-exposed-retry']");
+		expect(rows("semantic-exposed-name", "data-name")).toEqual(["placeOrder", "cancelOrder"]);
+		expect(server.calls.some((url) => url.startsWith("/api/vault/code-check"))).toBe(false);
+	},
+);
+
+test("a pending exposure shows progress until its names arrive", async () => {
+	const held = Promise.withResolvers<typeof EXPOSURE>();
+	server.findings = FINDINGS;
+	server.exposure = held.promise;
+	await picked("orders");
+	expect(
+		document.querySelector("[data-slot='semantic-exposed-status']")?.getAttribute("data-state"),
+	).toBe("loading");
+	await act(async () => held.resolve(EXPOSURE));
+	await settle();
+	expect(rows("semantic-exposed-name", "data-name")).toEqual(["placeOrder", "cancelOrder"]);
+});
+
 test("before any pass, a bound container says that none has run, and asks for no names", async () => {
 	await picked("orders");
 	expect(
