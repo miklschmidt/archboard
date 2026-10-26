@@ -2,7 +2,7 @@
 	"name": "@archboard/timing",
 	"version": "0.0.0",
 	"private": true,
-	"description": "Every duration in Archboard, with what each one pulls against.",
+	"description": "Every duration of Archboard and of the packages it publishes, with what each one pulls against.",
 	"license": "MIT",
 	"type": "module",
 	"sideEffects": false,
