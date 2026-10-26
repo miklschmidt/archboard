@@ -61139,7 +61139,7 @@
 		{
 			"id": "WwMsHkt1",
 			"name": "TASK-526.02",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "MgiCUw9a",
 			"summary": "Meaning to SVG and interaction geometry, and the recipe a board render carries",
 			"content": {

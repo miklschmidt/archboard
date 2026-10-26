@@ -29391,7 +29391,7 @@
 		{
 			"id": "jkbv1nsL",
 			"name": "TASK-532",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "HdKXEgPD",
 			"summary": "The page a person works in: the panes and their sessions with the server, the viewer that reads and draws each pane's board, the catalog and address that restore the workspace, the agent dock with its voice, and the pages that record and replay a walkthrough. It holds board content only as a read-only cache.",
 			"documents": [
