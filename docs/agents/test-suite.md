@@ -499,3 +499,14 @@ The flow-repair case in `structure-recovery.test.ts` owns interrupted module and
 `tests/system/semantic-boards/model-flows.test.ts` owns CLI authoring, explicit flow selection, real SVG output, and refused output preservation.
 Existing renderer owners retain sequence and flowchart drawing rules.
 No browser owner is added for this backend delivery.
+
+## Compact canonical proposals
+
+`packages/board/tests/runtime/operations/proposals/` owns proposal behavior at the public architecture read/write interface.
+Its real file and Git cases cover compact deltas, exact materialization, planning roots, siblings, metadata, placements, predecessor refusal, signing, recovery, and private archives.
+Existing history owners retain publication, shallow recovery, source isolation, and linked-worktree coverage.
+`tests/system/semantic-boards/model-proposals.test.ts` owns normal CLI and HTTP routing, schema parity, lifecycle metadata, comparison selection, and refusal status.
+These adapters do not repeat the domain matrix.
+The parent owns visible proposal selection and comparison acceptance through the existing browser interface.
+TASK-549.06 remains In Progress until that browser evidence exists.
+No renderer algorithm test or model evaluation belongs to this slice.

@@ -27,7 +27,12 @@ import {
 	modelRetainContract,
 } from "#cli/operations/model/checkpoints.ts";
 import { modelInventoryContract, modelPlanContract } from "#cli/operations/model/migration.ts";
-import { modelContract, modelReadContract } from "#cli/operations/model/read.ts";
+import {
+	modelContract,
+	modelReadContract,
+	modelProposalsContract,
+	modelCompareContract,
+} from "#cli/operations/model/read.ts";
 import { restartContract, startContract, stopContract } from "#cli/operations/server/server.ts";
 import {
 	browserContract,
@@ -96,6 +101,10 @@ const COMMANDS: Record<string, CommandRoute> = {
 			recover: child(contract(modelRecoverContract, "apps/cli/src/cli/operations/model/edit.ts")),
 			render: child(contract(modelRenderContract, "apps/cli/src/cli/operations/model/render.ts")),
 			read: child(contract(modelReadContract, "apps/cli/src/cli/operations/model/read.ts")),
+			proposals: child(
+				contract(modelProposalsContract, "apps/cli/src/cli/operations/model/read.ts"),
+			),
+			compare: child(contract(modelCompareContract, "apps/cli/src/cli/operations/model/read.ts")),
 			retain: child(
 				contract(modelRetainContract, "apps/cli/src/cli/operations/model/checkpoints.ts"),
 			),
