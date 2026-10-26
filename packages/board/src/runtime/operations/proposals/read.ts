@@ -86,28 +86,57 @@ async function proposalBaseline(
 			proposal.baseline,
 			[proposal.id],
 		);
-	const retired = new Set(baseline.manifest.retiredIds);
-	for (const change of proposal.changes) {
-		if (change.type !== "add" || !retired.has(change.subject)) continue;
-		const proof = proposal.restorations?.find((entry) => entry.subject === change.subject);
-		if (proof === undefined)
-			throw new ArchiveError(
-				"MODEL_INVALID",
-				"A proposal cannot allocate a retired identity.",
-				proposal.file,
-				[change.subject],
-			);
-		const origin = await exactReading(context, proof.checkpoint, undefined, undefined, false);
-		if (!origin.success || !subjectsOf(origin).has(change.subject))
-			throw new ArchiveError(
-				"CHECKPOINT_INVALID",
-				"Restoration requires the original retained subject.",
-				proof.checkpoint,
-				[change.subject],
-			);
-	}
+	await Promise.all(
+		proposal.changes
+			.filter(
+				(change) => change.type === "add" && baseline.manifest.retiredIds?.includes(change.subject),
+			)
+			.map((change) => requireRestoration(context, proposal, change.subject)),
+	);
 
 	return baseline;
+}
+/**
+ * Require original retained identity evidence before restoring a retired subject.
+ * @param context The archive owner.
+ * @param proposal The selected compact draft.
+ * @param subject The continuing identity.
+ */
+async function requireRestoration(
+	context: ArchiveContext,
+	proposal: Proposal,
+	subject: string,
+): Promise<void> {
+	const proof = proposal.restorations?.find((entry) => entry.subject === subject);
+	if (proof === undefined)
+		throw new ArchiveError(
+			"MODEL_INVALID",
+			"A proposal cannot allocate a retired identity.",
+			proposal.file,
+			[subject],
+		);
+	const origin = requireModel(
+		await exactReading(context, proof.checkpoint, undefined, undefined, false),
+	);
+	if (!subjectsOf(origin).has(subject))
+		throw new ArchiveError(
+			"CHECKPOINT_INVALID",
+			"Restoration requires the original retained subject.",
+			proof.checkpoint,
+			[subject],
+		);
+}
+/**
+ * Preserve structured diagnostics when a candidate needs a coherent reading.
+ * @param reading The shared reader result.
+ * @returns The coherent model.
+ */
+function requireModel(reading: ArchitectureModelRead): ArchitectureModel {
+	if (!reading.success) {
+		const diagnostic = reading.diagnostics[0]!;
+		throw new ArchiveError(reading.code, diagnostic.message, diagnostic.file, diagnostic.subjects);
+	}
+	return reading;
 }
 /**
  * Refuse changed predecessors until explicit reconciliation exists.
@@ -405,4 +434,5 @@ export {
 	decodeProposal,
 	proposalBaseline,
 	decodeSubjects,
+	requireModel,
 };

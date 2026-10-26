@@ -1154,6 +1154,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "tests/system/browser/canonical-model-modes.test.ts; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
+					"path": "canonical family reconciliation: retained conflict baselines, safe inheritance, blocked descendants, complete settlement, claims and exact family recovery",
+					"expectedUse": "Claim affected descendant states and existing subjects. Read durable standing. Resolve every issue explicitly in one settlement. Preserve continuing identities and retry the exact operation after interruption.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/proposals/reconcile*.test.ts; existing semantic rules packages/board/tests/shared/rules/reconcile/; adapter parity tests/system/semantic-boards/model-proposals.test.ts; browser acceptance remains with TASK-549.07 parent; guidance skills/archboard/references/canonical-models.md"
 				}
 			]
 		},

@@ -1,4 +1,5 @@
-import { everyStep } from "#shared/rules/flow-steps.ts";
+import { subjectsOf } from "#runtime/operations/proposals/subjects.ts";
+import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import { notifyArchitecture } from "#runtime/store/model-news.ts";
 import { isDeepStrictEqual } from "node:util";
 import { CLAIM_MS } from "@archboard/timing";
@@ -134,6 +135,45 @@ function requireNoPending(vault: string): void {
 }
 
 /**
+ * Discover existing subjects and proposal scopes through canonical meaning.
+ * @param model The selected target and active catalogue.
+ * @returns Every explicit claim scope.
+ */
+function claimableSubjects(model: ArchitectureModel): Set<string> {
+	return new Set([
+		model.manifest.id,
+		...(model.selectedState === null ? [] : [model.selectedState.id]),
+		...subjectsOf(model).keys(),
+		...model.proposals.flatMap((proposal) => [
+			proposal.id,
+			...proposal.changes.map((change) => change.subject),
+			...(proposal.retiredIds ?? []),
+		]),
+	]);
+}
+/**
+ * Include retained subjects after an external predecessor deletion.
+ * @param vault The explicitly addressed vault.
+ * @param model The coherent catalogue.
+ * @param subjects The requested explicit scopes.
+ * @returns Current and retained subjects that the caller can claim.
+ */
+async function knownClaimScopes(vault: string, model: ArchitectureModel, subjects: string[]) {
+	const known = claimableSubjects(model);
+	if (subjects.every((subject) => known.has(subject))) return known;
+	if (model.proposals.length === 0) return known;
+	const { exactReading } = await import("#runtime/operations/history/read.ts");
+	const context = await archiveContext(vault);
+	const baselines = await Promise.all(
+		model.proposals.map((proposal) =>
+			exactReading(context, proposal.baseline, undefined, undefined, false),
+		),
+	);
+	for (const baseline of baselines)
+		if (baseline.success) for (const id of subjectsOf(baseline).keys()) known.add(id);
+	return known;
+}
+/**
  * Claim explicit subject and structure scopes while leaving long agent work outside the installation lease.
  * @param vault The explicitly addressed vault.
  * @param input The complete caller input.
@@ -149,30 +189,8 @@ async function claimArchitectureSubjects(
 			requireNoPending(vault);
 			const current = await requireTarget(vault, request.target);
 			if (!current.success) return current;
-			if (
-				request.subjects.some(
-					(subject) =>
-						subject !== current.manifest.id &&
-						subject !== current.selectedState?.id &&
-						!current.proposals.some(
-							(proposal) =>
-								proposal.id === subject ||
-								proposal.changes.some((change) => change.subject === subject) ||
-								proposal.retiredIds?.includes(subject),
-						) &&
-						!current.modules.some((module) => module.id === subject) &&
-						!current.relationships.some((relationship) => relationship.id === subject) &&
-						!current.collections.some(
-							(collection) =>
-								`${current.manifest.id}#${collection.id}` === subject ||
-								collection.flows.some(
-									(flow) =>
-										flow.id === subject ||
-										everyStep(flow.steps).some((step) => step.id === subject),
-								),
-						),
-				)
-			)
+			const known = await knownClaimScopes(vault, current, request.subjects);
+			if (request.subjects.some((subject) => !known.has(subject)))
 				throw new ArchiveError(
 					"MODULE_NOT_FOUND",
 					"A claimed scope does not exist in this model. Use its model ID, module IDs or relationship IDs.",
@@ -302,6 +320,7 @@ function requireSubjectClaim(
 		);
 }
 export {
+	claimableSubjects,
 	readArchitectureClaims,
 	claimArchitectureSubjects,
 	releaseArchitectureClaim,

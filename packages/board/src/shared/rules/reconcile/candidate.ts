@@ -107,6 +107,7 @@ const COLLECTIONS = ["nodes", "edges", "flows", "walkthroughs"] as const;
  * steps and a walkthrough's beats are taken or held back with it.
  * @param states The base, this proposal, and the predecessor as it stands.
  * @param merge The merge of three states, coherent or not.
+ * @param incoherence The selected architecture coherence authority.
  * @returns The merge of the largest part a board may hold.
  */
 function coherentPart(

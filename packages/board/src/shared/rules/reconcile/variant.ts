@@ -388,6 +388,7 @@ function settledMembership(here: boolean, was: boolean, there: boolean): boolean
 /**
  * What this proposal should say now that the variant it came from has moved.
  * @param states The base, this proposal, and the predecessor as it stands.
+ * @param incoherence The selected architecture coherence authority.
  * @returns The proposal's content afterwards, and what is left to settle.
  */
 function reconcileVariant(states: ThreeStates, incoherence = incoherenceOf): Reconciliation {

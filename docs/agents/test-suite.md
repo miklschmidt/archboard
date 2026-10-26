@@ -517,3 +517,17 @@ These adapters do not repeat the domain matrix.
 `canonical-model-planning.test.ts` owns planning roots, retained predecessor comparisons, empty baselines, and unavailable state intent.
 These browser owners use real temporary files and Git through the normal public HTTP writes.
 No renderer algorithm test or model evaluation belongs to this slice.
+
+## Canonical proposal reconciliation
+
+The public architecture operations own reconciliation tests under `packages/board/tests/runtime/operations/proposals/`.
+The cases use real temporary files and Git through the same reader and writer as CLI and HTTP.
+They reuse the canonical model and independent-flow fixtures beside the existing semantic reconciliation regressions.
+Coverage includes safe family inheritance, standing baselines, blocked descendants, complete settlement, retired identity restoration, alternative renames, empty holders, and claim closure.
+The recovery case uses the existing crash fixture after a real atomic file installation.
+It proves that readers block until the exact family installation finishes.
+
+`tests/system/semantic-boards/model-proposals.test.ts` owns CLI and HTTP parity for standing, refusal status, and settlement.
+The parent browser slice owns visible acceptance.
+The backend handoff does not claim that browser evidence.
+No model evaluation runs as part of these tests.

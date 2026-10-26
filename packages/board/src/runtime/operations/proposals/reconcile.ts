@@ -11,12 +11,110 @@ import { subjectsOf } from "#runtime/operations/proposals/subjects.ts";
 
 type Collection = ArchitectureModel["collections"][number];
 /**
- * Decode a semantic candidate through canonical ownership and coherence rules.
+ * Keep a continuing module path or use the existing canonical identity path.
+ * @param mine The coherent proposal side.
+ * @param theirs The coherent predecessor.
+ * @param id The continuing module identity.
+ * @returns Its canonical materialization path.
+ */
+function moduleFile(mine: ArchitectureModel, theirs: ArchitectureModel, id: string) {
+	return (
+		mine.modules.find((module) => module.id === id)?.file ??
+		theirs.modules.find((module) => module.id === id)?.file ??
+		`${id.split("#")[1]}.module.json`
+	);
+}
+/**
+ * Serialize source-owned relationships with each complete module.
+ * @param inputs The candidate input map.
+ * @param mine The coherent proposal side.
+ * @param theirs The coherent predecessor.
+ * @param content The existing semantic engine result.
+ */
+function writeModules(
+	inputs: Map<string, Buffer>,
+	mine: ArchitectureModel,
+	theirs: ArchitectureModel,
+	content: VariantContent,
+): void {
+	for (const node of content.nodes) {
+		const outgoing = content.edges
+			.filter((edge) => edge.from === node.id)
+			.map(({ from: _from, ...edge }) => edge);
+		inputs.set(
+			moduleFile(mine, theirs, node.id),
+			Buffer.from(JSON.stringify({ ...node, schemaVersion: 1, outgoing })),
+		);
+	}
+}
+/**
+ * Refuse subjects that serialization cannot place under their exact owners.
+ * @param mine The coherent proposal side.
+ * @param content The complete semantic candidate.
+ * @param collections The merged collection definitions.
+ * @returns Owner diagnostics before any definition can disappear.
+ */
+function ownerDiagnostics(
+	mine: ArchitectureModel,
+	content: VariantContent,
+	collections: Collection[],
+) {
+	const modules = new Set(content.nodes.map((node) => node.id));
+	const owners = new Set(collections.map((collection) => `${mine.manifest.id}#${collection.id}`));
+	const missingEdges = content.edges.filter((edge) => !modules.has(edge.from));
+	const missingFlows = content.flows.filter((flow) => !owners.has(Reflect.get(flow, "collection")));
+	const lost = [...missingEdges, ...missingFlows].map((subject) => ({
+		code: "REFERENCE_LOST",
+		file: "model.json",
+		subjects: [subject.id],
+		message: "A subject lost its exact owner.",
+		recovery: "Restore its owner, explicitly move the subject, or remove it.",
+	}));
+	const empty = collections
+		.filter(
+			(collection) =>
+				!content.flows.some(
+					(flow) => Reflect.get(flow, "collection") === `${mine.manifest.id}#${collection.id}`,
+				),
+		)
+		.map((collection) => ({
+			code: "LEFT_EMPTY",
+			file: collection.file,
+			subjects: [`${mine.manifest.id}#${collection.id}`],
+			message: "The combined deletions leave the collection empty.",
+			recovery: "State the collection contents or remove the collection.",
+		}));
+	return [...lost, ...empty];
+}
+/**
+ * Serialize independent flows under their reconciled collections.
+ * @param inputs The candidate input map.
+ * @param model The model namespace.
+ * @param content The semantic engine result.
+ * @param collections The reconciled collection definitions.
+ */
+function writeCollections(
+	inputs: Map<string, Buffer>,
+	model: string,
+	content: VariantContent,
+	collections: Collection[],
+): void {
+	for (const { file, ...collection } of collections) {
+		const flows = content.flows
+			.filter((flow) => Reflect.get(flow, "collection") === `${model}#${collection.id}`)
+			.map((flow) =>
+				Object.fromEntries(Object.entries(flow).filter(([key]) => key !== "collection")),
+			);
+		inputs.set(file, Buffer.from(JSON.stringify({ ...collection, flows })));
+	}
+}
+/**
+ * Decode semantic results through canonical ownership and coherence rules.
  * @param mine The proposal reading.
- * @param theirs The predecessor reading.
+ * @param theirs The new predecessor.
  * @param content The existing semantic engine result.
  * @param collections The merged collection definitions.
- * @returns The coherent canonical result or its diagnostics.
+ * @returns The complete canonical result or its actionable diagnostics.
  */
 function canonicalContent(
 	mine: ArchitectureModel,
@@ -24,10 +122,20 @@ function canonicalContent(
 	content: VariantContent,
 	collections: Collection[],
 ): ArchitectureModelRead {
+	const diagnostics = ownerDiagnostics(mine, content, collections);
+	if (diagnostics.length > 0)
+		return {
+			success: false,
+			code: "MODEL_INVALID",
+			error: "The merged subjects need their original owners.",
+			diagnostics,
+		};
 	const inputs = materializedInputs(
 		{ ...mine, modules: [], collections: [] },
 		Buffer.from(Bun.YAML.stringify(theirs.policy)),
 	);
+	writeModules(inputs, mine, theirs, content);
+	writeCollections(inputs, mine.manifest.id, content, collections);
 	const live = new Set(
 		[
 			...content.nodes,
@@ -36,63 +144,10 @@ function canonicalContent(
 			...content.flows.flatMap((flow) => everyStep(flow.steps)),
 		].map((subject) => subject.id),
 	);
-	for (const node of content.nodes) {
-		const file =
-			mine.modules.find((module) => module.id === node.id)?.file ??
-			theirs.modules.find((module) => module.id === node.id)?.file ??
-			`${node.id.split("#")[1]}.module.json`;
-		const outgoing = content.edges
-			.filter((edge) => edge.from === node.id)
-			.map(({ from: _from, ...edge }) => edge);
-		inputs.set(file, Buffer.from(JSON.stringify({ ...node, schemaVersion: 1, outgoing })));
-	}
-	const flows = content.flows.map((flow) => ({
-		flow: Object.fromEntries(Object.entries(flow).filter(([key]) => key !== "collection")),
-		holder: Reflect.get(flow, "collection"),
-	}));
-	for (const collection of collections) {
-		const { file, ...definition } = collection;
-		inputs.set(
-			file,
-			Buffer.from(
-				JSON.stringify({
-					...definition,
-					flows: flows
-						.filter((entry) => entry.holder === `${mine.manifest.id}#${collection.id}`)
-						.map((entry) => entry.flow),
-				}),
-			),
-		);
-	}
-	if (
-		collections.reduce(
-			(count, collection) =>
-				count +
-				flows.filter((entry) => entry.holder === `${mine.manifest.id}#${collection.id}`).length,
-			0,
-		) !== flows.length
-	)
-		return {
-			success: false,
-			code: "MODEL_INVALID",
-			error: "A flow lost its collection.",
-			diagnostics: [
-				{
-					code: "REFERENCE_LOST",
-					file: "model.json",
-					subjects: content.flows.map((flow) => flow.id),
-					message: "A flow lost its collection.",
-					recovery: "Restore its collection or explicitly move the flow.",
-				},
-			],
-		};
-	const reserved = [
+	const retiredIds = [
 		...new Set([...(mine.manifest.retiredIds ?? []), ...(theirs.manifest.retiredIds ?? [])]),
 	].filter((id) => !live.has(id));
-	inputs.set(
-		"model.json",
-		Buffer.from(JSON.stringify({ ...theirs.manifest, retiredIds: reserved })),
-	);
+	inputs.set("model.json", Buffer.from(JSON.stringify({ ...theirs.manifest, retiredIds })));
 	return decodeModel(
 		{ inputs, revision: modelRevision(inputs), diagnostics: [] },
 		mine.selectedState,
@@ -114,7 +169,8 @@ function coherenceIssues(
 		(diagnostic.subjects?.length ? diagnostic.subjects : [mine.manifest.id]).map((subject) => ({
 			subject,
 			what: known.get(subject)?.kind ?? "model",
-			kind: "reference-lost" as const,
+			kind:
+				diagnostic.code === "LEFT_EMPTY" ? ("left-empty" as const) : ("reference-lost" as const),
 			mine: "kept its coherent proposal side",
 			theirs: diagnostic.message,
 			repair: diagnostic.recovery,
@@ -143,6 +199,11 @@ function reconcileModels(
 		"collection",
 	);
 	const states = { base: contentOf(base), mine: contentOf(mine), theirs: contentOf(theirs) };
+	/**
+	 * Decode through the already reconciled collection ownership.
+	 * @param content The semantic candidate.
+	 * @returns The canonical reader result.
+	 */
 	const decode = (content: VariantContent) =>
 		canonicalContent(mine, theirs, content, collections.entities);
 	const merged = reconcileVariant(states, (content) => coherenceIssues(decode(content), mine));

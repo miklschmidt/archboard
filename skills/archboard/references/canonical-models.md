@@ -599,7 +599,8 @@ Use `proposal.set` for its name, summary, or documents.
 Use `proposal.clear:["summary","documents"]` for explicit metadata removal.
 A rename preserves the previous name.
 A metadata-only edit uses `changes:[]`.
-Every edit keeps the original immutable baseline.
+An ordinary draft edit keeps its immutable baseline.
+A settled reconciliation retains the updated predecessor as its new baseline.
 
 Stored changes distinguish `add`, `remove`, `assign`, `clear`, and `place`.
 Agents continue to submit the normal module and flow operations.
@@ -623,10 +624,10 @@ Presentation order and emphasis retain the existing semantic comparison rules.
 
 `PREDECESSOR_CHANGED` means that the proposal's starting state changed after baseline retention.
 Preserve the baseline and proposal changes.
-Ordinary reads and edits refuse until the reconciliation delivery exists.
+Ordinary reads and edits refuse until an explicit reconciliation follows that external edit.
 An exact retained proposal checkpoint remains readable against its own inputs.
 Neither a code merge nor an approval adopts a draft.
-Reconciliation, adoption, and shelving remain later delivery slices.
+Adoption and shelving remain separate lifecycle actions.
 
 An explicit comparison against an empty planning baseline returns `comparison.against:null` and the baseline's exact `comparison.checkpoint`.
 Its subject changes still identify the planning additions.
@@ -648,3 +649,70 @@ Active draft readings follow accepted edits through the architecture change feed
 Saved draft readings keep their original content and draft identity.
 If a mutable predecessor changes, the browser preserves the requested state and shows the refusal.
 Select an available saved reading to inspect the retained proposal.
+
+## Reconcile dependent proposals
+
+A standing is a durable record of unresolved issues.
+Read `selectedState.standing` and each proposal catalogue entry before editing a family.
+An absent standing means that the state is settled.
+Each issue names its subject, kind, disputed field, both values, and repair action.
+A blocked descendant names its unsettled ancestor through `standing.blockedBy`.
+Its last coherent architecture remains readable.
+
+Claim the affected descendant state IDs beside the existing subjects and model structure scope.
+Use the complete vault revision from the current read.
+Submit the predecessor edit through `model edit`.
+Archboard reconciles parents before children through the same durable installation.
+Safe changes reach following proposals together.
+Disputed subjects keep the proposal side, and unsettled ancestors block their descendants.
+The baseline that established each conflict remains retained until settlement.
+
+If external files change a predecessor, ordinary reads return `PREDECESSOR_CHANGED`.
+Read the current catalogue and claim the affected family.
+Target the changed predecessor and submit this intent through `model edit`:
+
+```json
+{ "proposal": { "type": "reconcile" }, "changes": [] }
+```
+
+Reconciliation changes following proposals without another predecessor edit.
+It preserves the existing current designation.
+A saved checkpoint remains an exact reading of its retained content and standing.
+
+To settle a proposal, read its issues and claim its state and affected family subjects.
+Use its stable identity as `target.state`.
+Submit one choice for every issue in the same request:
+
+```json
+{
+	"proposal": {
+		"type": "settle",
+		"resolutions": [{ "subject": "Shop#Gateway", "field": "description", "take": "mine" }]
+	},
+	"changes": []
+}
+```
+
+`mine` explicitly accepts the proposal side.
+`theirs` takes the predecessor side.
+`edited` accepts the accompanying ordinary batch as a third answer.
+A resolution without `field` covers every issue of that subject.
+Give each issue exactly one choice.
+Incomplete or overlapping choices refuse with `MODEL_INVALID` and install nothing.
+Ordinary edits preserve standing until an explicit settlement clears it.
+A blocked draft refuses edits and settlement with `PROPOSAL_BLOCKED`.
+Settle its named ancestor first.
+
+A complete settlement reconciles following drafts in the same transaction.
+A continuing subject that the predecessor deleted keeps its original qualified identity.
+Archboard retains proof of that subject in the existing archive.
+This proof never permits a fresh allocation from retired identities.
+Agents author through operations and leave proof storage to Archboard.
+
+The receipt reports `applied:true` and `reconciliation` as a boolean.
+True means that affected family states still need settlement.
+`reconciliations` identifies those changed states and their standing when present.
+The selected proposal also exposes its standing through `selectedState`.
+Retry an identical request with the same operation ID after a lost response.
+If installation stops, use `model recover` in the original checkout.
+Recovery completes the same family and returns its retained receipt.
