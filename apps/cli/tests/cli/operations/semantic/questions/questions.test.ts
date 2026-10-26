@@ -1,5 +1,5 @@
 // `archboard semantic questions` from its arguments to its streams and exit
-// status (ADR 0044, ADR 0057): it asks the design questions route with each
+// status (ADR 0044, ADR 0059): it asks the design questions route with each
 // board it was told to narrow to, prints the answer the route gave, and never
 // fails for what the questions find. A refusal of the route keeps the exit
 // status its code declares. Only the Archboard server is a stand-in.
@@ -61,9 +61,8 @@ const environment = {
 process.env["ARCHBOARD_URL"] = url;
 process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
 // Imported only now, because the CLI reads where its server is as it loads.
-const [config, client, { runCli }] = await Promise.all([
+const [config, { runCli }] = await Promise.all([
 	import("@archboard/server-lifecycle/config"),
-	import("@archboard/server-lifecycle/server-client"),
 	import("#cli/operations/invocation/run.ts"),
 ]);
 if (config.ARCHBOARD_URL !== url) {
@@ -71,7 +70,7 @@ if (config.ARCHBOARD_URL !== url) {
 		`The CLI loaded before this file pointed it at its stand-in server. Run it in its own process: bun test --isolate ${import.meta.path}`,
 	);
 }
-service = client.ARCHBOARD_SERVICE_NAME;
+service = "archboard-server";
 
 afterAll(async () => {
 	for (const [key, value] of Object.entries(environment)) {

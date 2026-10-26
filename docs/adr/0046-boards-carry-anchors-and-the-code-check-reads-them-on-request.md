@@ -272,6 +272,17 @@ include startup, indexing, questions and cleanup, but exclude idle time between
 questions. Code and history run together, so their times overlap. TASK-429 is
 archived because a first index longer than 30 seconds no longer fails the pass.
 
+Amended by TASK-526.01 (2026-10-24): `archboard check code` runs the code check,
+and `archboard check` and `archboard check all` run it after the semantics
+check. The option that once asked for the code check is removed, with no alias,
+and what this ADR calls the plain check is now `archboard check semantics`.
+`--variant`, `--every-draft` and `--plan` belong to `check code`, `check` and
+`check all`. The answer holds one part for each check, and `check code` fills
+only the code part. The route that the panes poll stays the semantics check, so
+a pane never starts a pass. The other decisions of this ADR hold.
+[ADR 0057](0057-a-board-render-carries-its-recipe-and-the-check-keeps-embeds-current.md)
+decides the split.
+
 Amended by TASK-539.01 (2026-10-25): the pass keeps what it reads of each module
 that a container binds, and the server remembers it for the panes. For each
 judged container the pass makes an exposure reading. It holds the module's
@@ -290,7 +301,7 @@ places declare counts once, and a member of a name counts with that name.
 A reading quotes symbols, paths and lines, and no other text of a file
 ("Safety" holds for it).
 
-The reading is no part of the answer of `archboard check --code`. The answer is
+The reading is no part of the answer of `archboard check code`. The answer is
 what it was, until a command asks for the names with an option of its own. The
 server remembers each reading with the findings of its board and variant, in
 the memory of TASK-367.24, and a later pass replaces it. Each remembered reading
@@ -302,10 +313,11 @@ answers the names of one container from the same memory. Like the other route,
 it requires a vault (ADR 0049), reads memory alone and never starts a pass. It
 answers 404 when no pass has judged that container since the server started.
 
-Amended by TASK-539.06 (2026-10-25): `archboard check --code --exposed` is the
+Amended by TASK-539.06 (2026-10-25): `archboard check code --exposed` is the
 option of its own. It sends `exposed=true` to the code check route, and the
-answer then carries the readings as `exposures`, with the caps above; it needs
-`--code`. Without the option the answer has no `exposures` key. Agents asked
+answer then carries the readings as `exposures`, with the caps above. Like
+`--variant`, it belongs to `check code`, `check` and `check all`. Without the
+option the answer has no `exposures` key. Agents asked
 for it by opting in, so an ordinary check stays small. The text output adds one
 line for each container with its counts.
 

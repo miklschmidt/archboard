@@ -8,7 +8,7 @@
 // the part and all it holds, every relationship that touches any of it, and the
 // parts at their other ends. A step through a chosen design question's answer
 // lights every subject of the answer, and what a pick of the one the person is
-// at lights (`litByAnswer`, ADR 0057).
+// at lights (`litByAnswer`, ADR 0059).
 
 import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
 import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";

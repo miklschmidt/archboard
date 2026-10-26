@@ -48,12 +48,15 @@ const CHECK_CODE_HELP = [
 	"- --every-draft reads every draft of every board instead, each as a named draft.",
 	"- A draft is read at the ref that its bindings name and no earlier variant names, else at the one ref that they name. It is read from Git, without a checkout, or from the checkout's files when the bindings name no ref. A part that pins a ref that the draft's ref does not hold is read at its own ref.",
 	"",
+	"Exposed names:",
+	"- --exposed adds, for each container that the check judged against a module, the names that the module exposes with the files outside it that use each, as exposures in the answer, and one line for each container to stderr (TASK-539.06).",
+	"",
 	"Exit 1 means the code check has a warning. No board is changed.",
 ].join("\n");
 
 /** The description of `check all`, which `check` runs. */
 const CHECK_ALL_HELP = [
-	"Runs the semantics check, the code check and the embeds check, in that order, and answers with one part for each (ADR 0057). --variant, --every-draft and --plan say what the code check reads, as `check code` describes. --fix draws outdated embeds again, as `check embeds` describes, and the other checks still run and report.",
+	"Runs the semantics check, the code check and the embeds check, in that order, and answers with one part for each (ADR 0057). --variant, --every-draft, --plan and --exposed say what the code check reads, as `check code` describes. --fix draws outdated embeds again, as `check embeds` describes, and the other checks still run and report.",
 	"",
 	"In a Git checkout without a vault, such as a documentation repository that embeds the boards of another repository's vault, only the embeds check runs. The answer's skipped names the semantics and code checks and why, the answer names no vault, and the exit status comes from the embeds check alone.",
 	"",

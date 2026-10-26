@@ -7,7 +7,7 @@
 
 import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import { cliContractRegistry, runCli } from "#cli/operations/invocation/run.ts";
-import { currentRequestedBoard } from "@archboard/server-lifecycle/request-context";
+import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 
 const registry = cliContractRegistry();
 const ownsBoards = (entry: (typeof registry)[number]): boolean =>
@@ -61,7 +61,7 @@ test("a command that declares --board receives every one stated, in order, befor
 			await runCli(argv, { url: "http://127.0.0.1:1", help: false });
 			expect(inputOf(entry.name), argv.join(" ")).toMatchObject({ board: ["a", "b"] });
 			// It names no board for every request of the invocation.
-			expect(currentRequestedBoard()).toBeNull();
+			expect(statedInvocation().board).toBeNull();
 		}
 	}
 });

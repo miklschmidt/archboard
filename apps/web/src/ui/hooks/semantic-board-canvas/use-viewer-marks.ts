@@ -1,7 +1,7 @@
 // What the viewer marks on the picture on screen: attention, drawn as the
 // selection ring, and a presented step's veil. The subject a step through a
 // design question's answer is at is ringed as a walkthrough step's subjects
-// are, while nothing is picked: a pick rings itself in its place (ADR 0057).
+// are, while nothing is picked: a pick rings itself in its place (ADR 0059).
 //
 // Attention only. What the board says nobody has decided is drawn into the
 // picture by the renderer, from the same reconciliation the sentences above it

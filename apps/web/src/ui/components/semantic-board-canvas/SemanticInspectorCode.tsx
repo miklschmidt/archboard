@@ -16,16 +16,15 @@ import {
 	SidebarGlyph,
 	SidebarSection,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
-import { cn } from "@archboard/ui-kit/class-names";
+import { cn } from "@archboard/ui-kit/components";
+import type { CodeStanding } from "#ui/rules/semantic-board-canvas/code/code-standing.ts";
 import { whenChecked } from "#ui/rules/semantic-board-canvas/code/when-checked.ts";
 
-/** What the code check said about one subject, and when. */
-interface CodeStanding {
-	/** Its findings, warnings first, and never none. */
-	readonly findings: readonly CodeFinding[];
-	/** When the pass that found them ran. */
-	readonly checkedAt: string;
-}
+/** One finding of the code check. */
+type CodeFinding = CodeCheckAnswer["findings"][number];
+
+/** One piece of evidence behind a finding. */
+type CodeEvidence = NonNullable<CodeFinding["evidence"]>[number];
 
 /**
  * The picture's warning triangle, at the size of a row's glyph.
@@ -135,4 +134,4 @@ function CodeBlock(props: { readonly code: CodeStanding | null }): JSX.Element |
 	);
 }
 
-export { CodeBlock, type CodeStanding };
+export { CodeBlock };

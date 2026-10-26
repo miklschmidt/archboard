@@ -3,7 +3,7 @@
 // to the agent of the pane's checkout. The question names the subjects by id, so
 // that the agent reads the part the person chose.
 //
-// Each result is a step through the answer (ADR 0057): it lights every entry
+// Each result is a step through the answer (ADR 0059): it lights every entry
 // point and the containers that hold them, with what the result calls and what
 // calls it, rings the result while nothing is picked, and the camera brings that
 // in. The Board tab stays open for the next step.

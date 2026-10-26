@@ -50,7 +50,7 @@
 // as `variants.<id>.documents.<index>` (ADR 0054). TASK-539.01 keeps what each
 // judged container exposes, name by name, with the files that use each name
 // (`ContainerExposureSchema`). The server remembers it for the panes. The
-// answer carries it as `exposures` only on request (`archboard check --code
+// answer carries it as `exposures` only on request (`archboard check code
 // --exposed`, TASK-539.06).
 
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";

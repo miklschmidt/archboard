@@ -301,7 +301,7 @@ recipe names.
   server, read [setup](references/setup.md). Configure one only for a repository
   that you work in, because a configured server runs the code of that
   repository, as an editor does.
-  `--code --exposed` adds what each container bound to a module exposes, with
+  `check code --exposed` adds what each container bound to a module exposes, with
   its users ([interfaces](references/authoring.md#evidence-for-a-relationship)).
 - **Open questions.** A question about the product (a field, a selector, what
   a refusal means, what a command accepts) is answered by the references

@@ -1,6 +1,6 @@
 // Asking the boards of a vault the design questions: which entry points only
 // pass one call on, which containers have no hidden part and which have no
-// entry point (ADR 0044, ADR 0057).
+// entry point (ADR 0044, ADR 0059).
 //
 // The survey step of an architecture review reads every board at once, so the
 // command reads every current variant of the vault and lists, for each question,
@@ -9,13 +9,12 @@
 // fault: the answer holds counts and names, and no score or verdict.
 
 import { z } from "zod";
-import {
-	DesignQuestionsReplySchema,
-	type DesignQuestionsReply,
-} from "@archboard/board/design-questions";
+import { DesignQuestionsReplySchema } from "@archboard/board/design-questions";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
+
+type DesignQuestionsReply = z.infer<typeof DesignQuestionsReplySchema>;
 
 const QuestionsInputSchema = z.object({ board: z.array(z.string()).optional() });
 

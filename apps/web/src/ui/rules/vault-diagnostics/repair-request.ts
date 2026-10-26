@@ -1,6 +1,7 @@
-// What "Fix with Codex" asks the agent: run the checker against the vault the
-// focused pane is in, repair what is clear, ask about what is not, and check
-// again. The vault is named with -C on every command (ADR 0049).
+// What "Fix with Codex" asks the agent: run the semantics check, the checker
+// the pane's diagnostics come from, against the vault the focused pane is in,
+// repair what is clear, ask about what is not, and check again. The vault is
+// named with -C on every command (ADR 0049).
 
 import { archboardIn } from "#ui/rules/agent-requests/archboard-command.ts";
 
@@ -14,7 +15,7 @@ const REPAIR_INSTRUCTIONS =
  * @returns The message for the agent.
  */
 function vaultRepairRequest(serverUrl: string, vault: string): string {
-	return `Run ${archboardIn(serverUrl, vault)} check. Use this same -C and --url for every archboard command. ${REPAIR_INSTRUCTIONS}`;
+	return `Run ${archboardIn(serverUrl, vault)} check semantics. Use this same -C and --url for every archboard command. ${REPAIR_INSTRUCTIONS}`;
 }
 
 export { vaultRepairRequest };

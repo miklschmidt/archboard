@@ -27,18 +27,18 @@
 // exposes (TASK-539.01). `GET /api/vault/code-findings/exposure?board=&variant=&container=`
 // answers one container's names and users from it, for a pane that a person
 // asked. The answer of the check carries them as `exposures` only when the
-// request says `exposed=true` (`archboard check --code --exposed`, TASK-539.06),
+// request says `exposed=true` (`archboard check code --exposed`, TASK-539.06),
 // so an ordinary check stays small.
 
 import type { Express, Request, Response } from "express";
 import { createCodeCheck } from "@archboard/code-intel/code-check-run";
+import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import {
 	createCodeFindingsMemory,
 	type CodeFindingsMemory,
 } from "#server/state/code-findings/code-findings-memory.ts";
 import { checkoutWork } from "#server/wiring/owners/server-owners.ts";
-import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { errorMessage } from "@archboard/diagnostics/errno";
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */
@@ -51,7 +51,7 @@ interface CodeCheckRouteDependencies {
 		work: (signal: AbortSignal) => Promise<T>,
 	): Promise<T>;
 	/** Run the code check, or say that no board has the named draft or that a plan is refused. */
-	readonly check: (request: CodeCheckRequest) => Promise<CodeCheckAnswer | CodeCheckRefusal>;
+	readonly check: ReturnType<typeof createCodeCheck>["run"];
 	/** What the finished passes found, which the panes read. */
 	readonly memory: CodeFindingsMemory;
 }
@@ -61,80 +61,6 @@ const codeCheck = createCodeCheck();
 
 /** The server's one memory of the last passes, so every pane reads what any pass found. */
 const codeFindings = createCodeFindingsMemory();
-
-/**
- * Run the code check over every board of the vault, at its current variant,
- * the named draft or every draft, with behind beside it.
- * @param request The draft to read, the plans named, and the signal that
- * cancels the check and every Git command it runs.
- * @returns The answer and what each judged container exposes, the drafts that
- * exist when no board has the named one, or the plan the check refuses.
- */
-async function runCodeCheck(
-	request: CodeCheckRequest,
-): Promise<CodeCheckAnswer | CodeCheckRefusal> {
-	const { vault } = request;
-	const read = request.everyDraft
-		? readEveryDraftToCheck(vault)
-		: readBoardsToCheck(vault, request.variant);
-	if (!read.ok) return read;
-	// Every draft of a board is one board to behind, which reads its current variant.
-	const files = new Map(read.boards.map(({ board, file }) => [file, { board, file }]));
-	const plans = await readPlans(vault, request.plans, request.signal);
-	if (!plans.ok) return plans;
-	const historyStarted = performance.now();
-	const [code, history] = await Promise.all([
-		checkCode(vault, read.boards, request.signal, plans.plans),
-		behindReading
-			.read(vault, [...files.values()], request.signal)
-			.then((behind) => ({ behind, elapsedMs: performance.now() - historyStarted })),
-	]);
-	return CodeCheckAnswerSchema.parse({
-		timings: [...code.timings, { check: "history", elapsedMs: history.elapsedMs }],
-		boards: read.boards.map(({ board, variant }) => ({
-			board: board.name,
-			variant: variant.id,
-			version: board.version,
-		})),
-		findings: code.findings,
-		skipped: [...read.skipped, ...code.skipped],
-		behind: history.behind,
-		exposures: code.exposures,
-	});
-}
-
-/**
- * The refusal of a variant that names no draft.
- * @param refused The variant asked for and the drafts that exist.
- * @returns The refusal's body.
- */
-function noSuchDraft(refused: NoSuchDraft): { code: string; error: string } {
-	const drafts =
-		refused.drafts.length === 0
-			? "No board has a draft."
-			: `The drafts that exist: ${refused.drafts.map((name) => JSON.stringify(name)).join(", ")}.`;
-	return {
-		code: "NO_SUCH_DRAFT",
-		error: `No board has a draft named ${JSON.stringify(refused.variant)}, so there is nothing to read at it. ${drafts}`,
-	};
-}
-
-/**
- * The refusal's body.
- * @param refused The draft or the plan refused.
- * @returns Its code and what it says.
- */
-function refusalOf(refused: CodeCheckRefusal): { code: string; error: string } {
-	if (!("refused" in refused)) return noSuchDraft(refused);
-	return {
-		code: "PLAN_REFUSED",
-		error:
-			`The check does not read the plan ${JSON.stringify(refused.plan)}: ${refused.reason}. ` +
-			"Name a plan JSON that terraform show -json or tofu show -json wrote inside the " +
-			"checkout that holds the vault, or inside the chosen checkout of another repository, by its path. " +
-			"archboard repo list shows which checkout is chosen.",
-	};
-}
 
 /**
  * The answer a caller reads: the pass, with what its containers expose only
@@ -176,7 +102,7 @@ function answerExposure(
 			success: false,
 			code: "EXPOSURE_NOT_REMEMBERED",
 			error:
-				"No pass has judged that container since the server started. Run archboard check --code, and ask again.",
+				"No pass has judged that container since the server started. Run archboard check code, and ask again.",
 		});
 		return;
 	}
@@ -247,7 +173,7 @@ async function answerCodeCheck(
 		);
 		if (callerGone(request, response)) return;
 		if ("boards" in answer) response.json({ success: true, ...answerOf(answer, exposed) });
-		else response.status(422).json({ success: false, ...refusalOf(answer) });
+		else response.status(422).json({ success: false, ...answer });
 	} catch (error) {
 		if (!callerGone(request, response)) {
 			response.status(500).json({ success: false, error: errorMessage(error) });

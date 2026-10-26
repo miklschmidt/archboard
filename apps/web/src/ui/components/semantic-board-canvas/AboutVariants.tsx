@@ -11,8 +11,7 @@
 import { RiLayoutColumnLine } from "@remixicon/react";
 import { useCallback, useMemo, type JSX } from "react";
 
-import { cn } from "@archboard/ui-kit/class-names";
-import { IconButton } from "@archboard/ui-kit/controls";
+import { cn, IconButton } from "@archboard/ui-kit/components";
 import type {
 	TimelineEntry,
 	VariantTimeline,

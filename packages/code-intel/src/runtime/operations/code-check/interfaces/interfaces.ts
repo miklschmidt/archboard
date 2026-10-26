@@ -72,7 +72,7 @@ import type {
 	CodeFinding,
 	ContainerExposure,
 } from "#shared/protocol/code-check.ts";
-import { inspectContainer, type ContainerInterface } from "@archboard/board/container-interface";
+import { inspectContainer } from "@archboard/board/container-interface";
 import type { SemanticNode } from "@archboard/board/content";
 import { describeSubject } from "@archboard/board/policy";
 import type { interfaceMeasures } from "@archboard/board/container-interface";

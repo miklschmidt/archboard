@@ -6,10 +6,4 @@ export {
 	interfaceMeasures,
 	passThroughEntryPoints,
 } from "#shared/rules/inspect/container-interface.ts";
-export type {
-	Caller,
-	ContainerInspection,
-	ContainerInterface,
-	InterfaceMeasures,
-	PassThrough,
-} from "#shared/rules/inspect/container-interface.ts";
+export type { Caller } from "#shared/rules/inspect/container-interface.ts";

@@ -11,6 +11,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { DEFAULT_LAYOUT_ENGINE } from "@archboard/board/render-reply";
 import {
 	comparisonKey,
+	type ExposureSite,
 	type SemanticRenderRequest,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { ReadingOnScreen } from "#ui/hooks/semantic-board-canvas/use-code-findings.ts";
@@ -32,6 +33,16 @@ const semanticBoardKeys = {
 	 * @returns Its cache key.
 	 */
 	codeFindings: (vault: string) => ["code-findings", vault] as const,
+	/**
+	 * What one container exposed in the pass that ran at one time: a new pass
+	 * is a new key, so its names are read again and nothing is read on a timer.
+	 * @param vault The vault.
+	 * @param at The board, variant and container.
+	 * @param checkedAt When the pass ran.
+	 * @returns Its cache key.
+	 */
+	exposure: (vault: string, at: ExposureSite, checkedAt: string) =>
+		["code-findings", vault, "exposure", at.board, at.variant, at.container, checkedAt] as const,
 	/**
 	 * Where one variant of one board changes in code, at one version of the
 	 * board. Under a root of its own, so no sweep of the board's pictures or

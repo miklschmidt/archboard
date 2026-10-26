@@ -11,17 +11,16 @@
 
 import { useMemo, type JSX } from "react";
 
-import {
-	inspectContainer,
-	interfaceMeasures,
-	type InterfaceMeasures,
-} from "@archboard/board/container-interface";
+import { inspectContainer, interfaceMeasures } from "@archboard/board/container-interface";
 import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import {
 	SidebarRegion,
 	SidebarSection,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
 import { VariantMark } from "#ui/components/variant-lifecycle/VariantMark.tsx";
+
+/** The five measures of a container's interface. */
+type InterfaceMeasures = ReturnType<typeof interfaceMeasures>;
 
 /** One variant, with the container measured on it. */
 interface MeasuredVariant {

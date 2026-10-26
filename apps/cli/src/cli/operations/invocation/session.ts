@@ -431,10 +431,12 @@ function dispatchedTo(
  * @param stated - What the invocation stated.
  */
 function applyShared(stated: StatedShared): void {
-	setRequestedBoard(stated.board[0] ?? null);
-	setWriteDoing(stated.doing);
-	setWriteSession(stated.session);
-	setExpectedVersion(stated.expectVersion);
+	stateInvocation({
+		board: stated.board[0] ?? null,
+		doing: stated.doing,
+		session: stated.session,
+		expectedVersion: stated.expectVersion,
+	});
 }
 
 /**
@@ -521,8 +523,8 @@ async function runCliWith(
 		const given = boardsAsOptions(selected.contract, stated, dispatched.argv);
 		assertSharedApplies(selected, given.stated, given.argv);
 		applyShared(given.stated);
-		const vault = await addressedVault(selected.contract, given.argv, given.stated);
-		await runInterruptibleCommand(selected.contract, given.argv, vault);
+		const addressed = await addressedVault(selected.contract, given.argv, given.stated);
+		await runInterruptibleCommand(selected.contract, given.argv, addressed);
 	} catch (error) {
 		reportFailure(error, usageLine(routes, selected.contract.path));
 		process.exitCode = exitCodeFor(error, selected);

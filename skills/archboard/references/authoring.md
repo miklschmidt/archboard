@@ -680,8 +680,8 @@ The check skips a container whose module has no root file that it reads, as
 skip: neither declares an interface the check can read.
 
 To see what a module exposes, and who uses each name, add `--exposed`:
-`archboard check --code --exposed`. It needs `--code`, and without it the
-answer stays small. The JSON answer then carries `codeCheck.exposures`, one
+`archboard check code --exposed`. `check` and `check all` take it too, and
+without it the answer stays small. The JSON answer then carries `code.exposures`, one
 entry for each container the check judged against a module: its `board`,
 `variant`, `container`, `module` and `rootFiles`; `exposed`, the exact count of
 names the module exposes; `usedOutside`, the exact count of them that a file

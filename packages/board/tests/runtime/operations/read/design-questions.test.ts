@@ -8,7 +8,7 @@ import { createBoardTransition } from "#runtime/operations/write/transitions.ts"
 import { writeSemanticBoard } from "#runtime/operations/write/write.ts";
 import { BoardCreateInputSchema } from "#shared/protocol/board-input.ts";
 
-// The design questions of a vault (ADR 0044, ADR 0057), read from the files of
+// The design questions of a vault (ADR 0044, ADR 0059), read from the files of
 // its boards: each board at its current variant, the boards that cannot be
 // read listed with the reason, and the boards a caller names narrowing the read.
 

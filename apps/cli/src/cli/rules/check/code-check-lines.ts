@@ -4,13 +4,7 @@
 // container whose exposed names were asked for (`--exposed`), and how far each
 // board is behind its code, per board and per part (ADR 0045, ADR 0046).
 
-import type {
-	BoardBehind,
-	CodeCheckAnswer,
-	CodeCheckSkip,
-	CodeFinding,
-	ContainerExposure,
-} from "@archboard/code-intel/code-check";
+import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { diagnosticLine } from "@archboard/board/policy";
 
 /** How far one board is behind its code. */
@@ -21,6 +15,9 @@ type CodeCheckSkip = CodeCheckAnswer["skipped"][number];
 
 /** One finding of the code check. */
 type CodeFinding = CodeCheckAnswer["findings"][number];
+
+/** What one judged container exposes. */
+type ContainerExposure = NonNullable<CodeCheckAnswer["exposures"]>[number];
 
 /**
  * Count entries by a key, in the order each key first appears.

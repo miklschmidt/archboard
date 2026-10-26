@@ -1,6 +1,6 @@
 // What a pane has picked out: one subject, or one group's members, never both;
 // and the step through a design question's answer that the picture lights
-// while nothing is picked (ADR 0057).
+// while nothing is picked (ADR 0059).
 //
 // Which group is selected, and where the person is in which question, is this
 // pane's, kept on the board and the resolved variant it was chosen on

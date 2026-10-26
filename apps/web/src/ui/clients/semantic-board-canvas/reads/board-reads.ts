@@ -7,7 +7,10 @@
 // is the one the voice spoke over, whatever the board says now (TASK-381). The
 // page chooses once, at start, before anything is read.
 
-import type { RememberedExposure, RememberedFindings } from "@archboard/code-intel/code-check";
+import type {
+	RememberedExposureSchema,
+	RememberedFindings,
+} from "@archboard/code-intel/code-check";
 import type { LocalityAnswer } from "@archboard/code-intel/history";
 import {
 	fetchCodeFindings,
@@ -19,6 +22,9 @@ import {
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { VaultCheckSchema } from "@archboard/board/policy";
 import type { z } from "zod";
+
+/** What one container exposed in the last pass, with when it was read. */
+type RememberedExposure = z.infer<typeof RememberedExposureSchema>;
 
 type VaultCheck = z.infer<typeof VaultCheckSchema>;
 

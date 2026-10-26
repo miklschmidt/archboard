@@ -1,5 +1,5 @@
 // The design questions' route, `GET /api/vault/design-questions[?board=<name>]...`
-// (ADR 0044, ADR 0057).
+// (ADR 0044, ADR 0059).
 //
 // `archboard semantic questions` asks it. It answers pass-through entry
 // points, containers with no hidden part and containers with no entry point

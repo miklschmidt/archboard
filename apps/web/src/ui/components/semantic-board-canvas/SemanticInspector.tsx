@@ -25,7 +25,6 @@ import type { SemanticNode } from "@archboard/board/content";
 import { RelationshipChip } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import { DetailsPanel } from "#ui/components/semantic-board-canvas/DetailsPanel.tsx";
 import { LineBody } from "#ui/components/semantic-board-canvas/SemanticInspectorLine.tsx";
-import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import {
 	Account,
@@ -42,7 +41,7 @@ import {
 	SidebarRegion,
 	SidebarSection,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
-import type { CodeStanding } from "#ui/components/semantic-board-canvas/SemanticInspectorCode.tsx";
+import { codeOn, type CodeStanding } from "#ui/rules/semantic-board-canvas/code/code-standing.ts";
 import { cn } from "@archboard/ui-kit/components";
 import {
 	useCodeFindings,
@@ -73,9 +72,6 @@ import type { ReconciliationIssueSchema } from "@archboard/board/reconciliation"
 import type { z } from "zod";
 
 type ReconciliationIssue = z.infer<typeof ReconciliationIssueSchema>;
-
-/** What the last pass found on one board at one variant. */
-type RememberedReading = RememberedFindings["readings"][number];
 
 /**
  * What a part is called, or the id the board names it by when the variant no
@@ -498,21 +494,6 @@ function explain(
 function openOn(shown: SemanticVariant, ids: readonly string[]): readonly ReconciliationIssue[] {
 	const issues = shown.reconciliation?.issues ?? [];
 	return issues.filter((issue) => ids.includes(issue.subject));
-}
-
-/**
- * What the last code check found about one subject, warnings first.
- * @param reading What the pass found on the board on screen, or null.
- * @param ids The ids the selection stands for.
- * @returns Its findings and when the pass ran, or null when there are none.
- */
-function codeOn(reading: RememberedReading | null, ids: readonly string[]): CodeStanding | null {
-	const findings = (reading?.findings ?? [])
-		.filter((finding) => finding.subject !== undefined && ids.includes(finding.subject.id))
-		.toSorted((a, b) => Number(b.severity === "warning") - Number(a.severity === "warning"));
-	return reading === null || findings.length === 0
-		? null
-		: { findings, checkedAt: reading.checkedAt };
 }
 
 /** Inputs for the inspector. */

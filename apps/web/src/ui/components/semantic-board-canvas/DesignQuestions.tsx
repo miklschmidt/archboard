@@ -4,7 +4,7 @@
 // The first question is the deletion test's: an entry point that only passes
 // one call on (ADR 0044). Each is a question for the reader, never a fault, so
 // the region states counts and names and no verdict. Each row is a step through
-// the answer (ADR 0057): choosing it lights the whole answer, with what the row's
+// the answer (ADR 0059): choosing it lights the whole answer, with what the row's
 // part calls and what calls it, and brings that part in. The tab stays open, so
 // the next row is one click away, and choosing the row of the current step again
 // lets the question go. A row lights its part while the pointer rests on it,
@@ -15,8 +15,8 @@
 import { RiChat3Line } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
-import type { PassThrough } from "@archboard/board/container-interface";
-import { IconButton } from "@archboard/ui-kit/controls";
+import type { passThroughEntryPoints } from "@archboard/board/container-interface";
+import { IconButton } from "@archboard/ui-kit/components";
 import { KindIcon } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import {
 	SidebarChoice,
@@ -36,6 +36,9 @@ import type {
 	QuestionStep,
 } from "#ui/rules/semantic-board-canvas/board/design-questions.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
+
+/** An entry point that only passes one call on, with its container. */
+type PassThrough = ReturnType<typeof passThroughEntryPoints>[number];
 
 /** Inputs for the design questions. */
 interface DesignQuestionsProps {

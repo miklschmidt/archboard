@@ -17,8 +17,6 @@ import { z } from "zod";
 import {
 	RememberedExposureSchema,
 	RememberedFindingsSchema,
-	type ContainerExposure,
-	type RememberedExposure,
 	type RememberedFindings,
 } from "@archboard/code-intel/code-check";
 import { LocalityReplySchema, type LocalityAnswer } from "@archboard/code-intel/history";
@@ -35,6 +33,11 @@ import {
 	type OfferedView,
 } from "@archboard/board/render-reply";
 import type { RenderedVariantSchema } from "@archboard/board/render-reply";
+
+/** What one container exposed in the last pass, with when it was read. */
+type RememberedExposure = z.infer<typeof RememberedExposureSchema>;
+/** What one judged container exposes. */
+type ContainerExposure = RememberedExposure["exposure"];
 
 type ListedBoard = z.infer<typeof BoardListingSchema>["boards"][number];
 

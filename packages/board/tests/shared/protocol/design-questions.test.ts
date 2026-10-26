@@ -1,4 +1,4 @@
-// The answer of the design questions (ADR 0044, ADR 0057): the boards it read
+// The answer of the design questions (ADR 0044, ADR 0059): the boards it read
 // and skipped, and for each question the containers and parts behind its two
 // counts. The CLI and the pane parse one schema, and nothing in it can hold a
 // score, a combined number or a verdict.

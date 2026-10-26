@@ -1,4 +1,4 @@
-// The design questions of a vault, read from its boards (ADR 0044, ADR 0057).
+// The design questions of a vault, read from its boards (ADR 0044, ADR 0059).
 //
 // Every board is read at its current variant, because that is the architecture
 // that is built. A board nobody has built has none, and a board that cannot be

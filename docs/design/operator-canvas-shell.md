@@ -127,7 +127,7 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      with its count and the question to the reader under it. Then one
      row for each result, named by its part and its container. The first
      question lists the entry points that only pass one call on (ADR 0044).
-     Each row is a step through the answer (ADR 0057). Choosing it lights every
+     Each row is a step through the answer (ADR 0059). Choosing it lights every
      result and the containers that hold them, with the result's own
      relationships and the parts at their other ends, and the rest recedes.
      The result carries the ring of attention, and its row is pressed. The

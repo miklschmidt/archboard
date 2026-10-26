@@ -24,10 +24,13 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import type { SemanticSubjectRef } from "@archboard/board/pane-context";
 import type { PaneLinks } from "#ui/rules/application/pane-link.ts";
 import { boardAddressOf, sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import type { ViewBefore } from "#ui/state/board-routing/intent.ts";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
+
+type SemanticSubjectRef = z.infer<typeof SemanticPaneContextSchema>["selection"][number];
 
 /** One picked subject, as the viewer described it. */
 type PickedSubject = SemanticSubjectRef;

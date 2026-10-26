@@ -1,5 +1,5 @@
 // A choice one pane made about the picture on screen: a group, or a step
-// through a design question's answer (ADR 0057).
+// through a design question's answer (ADR 0059).
 //
 // Session state, in the same class as the camera, the selection and the place
 // in a walkthrough: choosing is reading, not editing. Nothing is written, no

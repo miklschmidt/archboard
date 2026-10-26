@@ -8,7 +8,7 @@
 // The pass also leaves what each container it judged exposes (TASK-539.01): the
 // panes poll its counts with the findings, and `GET
 // /api/vault/code-findings/exposure` answers the names of one container from
-// the same memory. `archboard check --code` carries them only with `--exposed`.
+// the same memory. `archboard check code` carries them only with `--exposed`.
 //
 // A stand-in pass counts how often it runs, so "a read starts no pass" is
 // observed rather than assumed.
@@ -26,8 +26,10 @@ import {
 	RememberedExposureSchema,
 	RememberedFindingsSchema,
 	type CodeCheckAnswer,
-	type ContainerExposure,
 } from "@archboard/code-intel/code-check";
+
+/** What one judged container exposes. */
+type ContainerExposure = NonNullable<CodeCheckAnswer["exposures"]>[number];
 
 const scratch = mkdtempSync(join(tmpdir(), "archboard-code-findings-route-"));
 const ownVault = vaultIn(scratch);

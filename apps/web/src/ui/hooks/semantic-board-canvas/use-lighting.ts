@@ -9,7 +9,7 @@
 // part lights, beyond its connections, everything it reaches in one direction,
 // each further hop more faintly. With nothing poked, a step through a chosen
 // design question lights its whole answer, and the connections of the subject
-// the person is at (ADR 0057), so letting go of a pick brings that light back.
+// the person is at (ADR 0059), so letting go of a pick brings that light back.
 //
 // The light is attention only. It stands down while a presented step or a group
 // says what the picture is about, while the picture is leaving, and for a part

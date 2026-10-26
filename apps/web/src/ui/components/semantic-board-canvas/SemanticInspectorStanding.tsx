@@ -16,10 +16,8 @@ import type { JSX } from "react";
 
 import type { ChangeKind, FieldChange } from "@archboard/board/comparison";
 import { cn } from "@archboard/ui-kit/components";
-import {
-	CodeBlock,
-	type CodeStanding,
-} from "#ui/components/semantic-board-canvas/SemanticInspectorCode.tsx";
+import { CodeBlock } from "#ui/components/semantic-board-canvas/SemanticInspectorCode.tsx";
+import type { CodeStanding } from "#ui/rules/semantic-board-canvas/code/code-standing.ts";
 import {
 	SidebarRegion,
 	SidebarSection,

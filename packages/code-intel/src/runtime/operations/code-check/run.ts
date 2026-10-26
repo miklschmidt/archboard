@@ -1,7 +1,8 @@
 // One run of the code check over a vault's boards (ADR 0046), with behind beside it (ADR 0045).
 //
 // It reads every board at its current variant, or at the draft `variant`
-// names, and gives `boards`, `findings` and `skipped`. `everyDraft` reads every
+// names, and gives `boards`, `findings`, `skipped` and what each judged
+// container exposes (`exposures`, TASK-539.01). `everyDraft` reads every
 // draft of every board instead, and a `variant` beside it is not read
 // (TASK-488). Behind (TASK-369.02) reads the current variant of each board
 // once, whatever the pass reads. A `variant` that names no draft on any board
@@ -121,6 +122,7 @@ function createCodeCheck(): CodeCheck {
 				findings: code.findings,
 				skipped: [...read.skipped, ...code.skipped],
 				behind: history.behind,
+				exposures: code.exposures,
 			});
 		},
 	};

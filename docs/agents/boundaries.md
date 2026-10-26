@@ -253,7 +253,7 @@ reader and writer. The package is complete. It has two areas. `shared/` holds th
 browser and the server both run, and imports no Node module. `runtime/` holds the store and runs
 only in Bun. Browser code imports only `shared/` exports. The `shared/` folder keeps its code in
 private role folders and exposes it through `shared/api/`. `runtime/` exposes itself through
-`runtime/api/`. Both use the `api/` role, and `board` has 20 api subpaths in total. The role
+`runtime/api/`. Both use the `api/` role, and `board` has 21 api subpaths in total. The role
 folders of `shared/` are:
 
 - `schemas/` are the data shapes: the board aggregate, what one variant holds, the views, the
@@ -270,7 +270,7 @@ folders of `shared/` are:
   `rules/inspect/` reads one container or one group off a variant. `scope.ts` and `flow-steps.ts`
   stand beside them.
 
-The thirteen files of `shared/api/` are the whole browser-safe interface. Each carries only the
+The fourteen files of `shared/api/` are the whole browser-safe interface. Each carries only the
 names that code outside the package imports. A name sits in the file of its meaning, not of the
 private file that defines it. A type that only restates an exported schema, an operation's result
 or a field of another exported shape is not exported: the caller derives it, with `z.infer` of the
@@ -285,7 +285,9 @@ schema, `ReturnType` of the operation or an indexed access (ADR 0058):
 - `./policy` is the semantic policy, its evidence and palette, and the vault check with the
   diagnostic helpers that read it.
 - `./comparison` compares two variants and draws the proposal against current.
-- `./container-interface` reads and compares what a container exposes to its callers.
+- `./container-interface` reads and compares what a container exposes to its callers, and finds
+  the entry points that only pass one call on.
+- `./design-questions` is the answer of the design questions route.
 - `./commands` is what an agent may say: create, edit, branch, adopt, rename, shelve and move.
 - `./render-reply` is what a render answers and the theme it draws with.
 - `./pane-context` is what a pane reports about its reading, and its route.
@@ -390,10 +392,10 @@ on a URL, and `learnServedVault` and `servedVault` are the vault a page opens in
 options, the reply guards `isRecord` and `trustReply` stay private. It
 holds the one module-level value, the served vault, which the page learns once before it draws.
 
-The tenth is `code-intel` (`@archboard/code-intel`). It is what the code says about a board: the code
-facts of a checkout, the code check of a board's claims, the history lens over Git and the language
-servers that resolve a name. It adopts the `api/` role for `shared/` and `runtime/` and exposes 5
-subpaths with 40 names, where code outside imported 7 module paths. It imports `board`,
+The tenth is `code-intel` (`@archboard/code-intel`). It is what the code says about a board. It holds
+the code facts of a checkout and the code check of a board's claims. It also holds the history lens
+over Git and the language servers that resolve a name. It adopts the `api/` role for `shared/` and `runtime/` and exposes 5
+subpaths with 17 names, where code outside imported 7 module paths. It imports `board`,
 `code-binding`, `workspace`, `diagnostics` and `timing`. The 2 files of
 `shared/api/` are safe for the browser, with no Node import: the canvas imports them. The 3 files of
 `runtime/api/` are Node-bound and run only in Bun.

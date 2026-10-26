@@ -1,5 +1,5 @@
 // The board's design questions, read off one variant: where understanding or
-// changing the code may take more work than its job needs (ADR 0044, ADR 0057).
+// changing the code may take more work than its job needs (ADR 0044, ADR 0059).
 //
 // There are three. Which entry points only pass one call on? Which containers
 // have no hidden part? Which containers have no entry point? Each answer is a

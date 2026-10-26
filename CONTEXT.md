@@ -368,7 +368,7 @@ A question that the Board tab asks of the board on screen: where does
 understanding or changing the code take more work than its job needs? Its
 answer names subjects and counts them, such as the pass-through entry points.
 It gives no score and no verdict. A person goes through its answer one subject
-at a time, and each step lights the whole answer (ADR 0057).
+at a time, and each step lights the whole answer (ADR 0059).
 _Avoid_: smell, lint, warning, score, finding (that is what the code check reports)
 
 **Interface measures**:

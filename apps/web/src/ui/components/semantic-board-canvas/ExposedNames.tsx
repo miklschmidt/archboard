@@ -15,7 +15,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState, type JSX } from "react";
 
-import type { RememberedExposure, RememberedFindings } from "@archboard/code-intel/code-check";
+import type {
+	RememberedExposureSchema,
+	RememberedFindings,
+} from "@archboard/code-intel/code-check";
+import type { z } from "zod";
 import type { SemanticNode, VariantContent } from "@archboard/board/content";
 import {
 	codeFindingsQuery,
@@ -39,6 +43,8 @@ import {
 } from "#ui/rules/semantic-board-canvas/code/exposed-names.ts";
 import { whenChecked } from "#ui/rules/semantic-board-canvas/code/when-checked.ts";
 
+/** What one container exposed in the last pass, with when it was read. */
+type RememberedExposure = z.infer<typeof RememberedExposureSchema>;
 /** One name the module exposes, as the server remembers it. */
 type ExposedName = RememberedExposure["exposure"]["names"][number];
 

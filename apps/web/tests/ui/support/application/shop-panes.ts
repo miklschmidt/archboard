@@ -9,7 +9,7 @@
 
 import { afterEach } from "bun:test";
 
-import { SemanticPaneContextSchema, type SemanticPaneContext } from "@archboard/board/pane-context";
+import { SemanticPaneContextSchema } from "@archboard/board/pane-context";
 import { z } from "zod";
 import {
 	SERVED,
@@ -23,6 +23,8 @@ import {
 	settle,
 	settleUntil,
 } from "#tests/ui/support/application/application-page.ts";
+
+type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 /** One part of the shop. */
 interface Part {
