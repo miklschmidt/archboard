@@ -67,6 +67,27 @@ const ModelDiagnosticSchema = z
 	.strict();
 
 const GitObjectIdSchema = z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u);
+const PublicationStateSchema = z.enum([
+	"saved-locally",
+	"publication-pending",
+	"published",
+	"unavailable",
+]);
+const ArchitecturePublicationDestinationSchema = z
+	.object({
+		remote: z
+			.string()
+			.min(1)
+			.regex(/^[^-\s][^\s]*$/u),
+		ref: z.string().startsWith("refs/heads/"),
+	})
+	.strict();
+const ArchitecturePublicationRequestSchema = ArchitecturePublicationDestinationSchema.extend({
+	checkpoint: GitObjectIdSchema,
+});
+const RetentionPolicySchema = z
+	.object({ protected: z.literal(false), limitation: z.string(), recovery: z.string() })
+	.strict();
 const ModelRevisionSchema = z
 	.object({
 		digest: z.string(),
@@ -100,7 +121,7 @@ const ArchitectureCheckpointSchema = z
 				})
 				.strict(),
 		),
-		publication: z.literal("saved-locally"),
+		publication: PublicationStateSchema,
 	})
 	.strict();
 
@@ -147,9 +168,17 @@ const ArchitectureModelFailureSchema = z
 			"ARCHIVE_COMMIT_FAILED",
 			"ARCHIVE_BUSY",
 			"OPERATION_REUSED",
+			"PUBLICATION_NOT_CONFIGURED",
+			"PUBLICATION_DESTINATION_CHANGED",
+			"PUBLICATION_INVALID",
+			"ARCHIVE_NETWORK_FAILED",
 		]),
 		error: z.string(),
 		diagnostics: z.array(ModelDiagnosticSchema).min(1),
+		publication: PublicationStateSchema.optional(),
+		checkpoint: GitObjectIdSchema.optional(),
+		destination: ArchitecturePublicationDestinationSchema.optional(),
+		retention: RetentionPolicySchema.optional(),
 	})
 	.strict();
 const ArchitectureModelReadSchema = z.discriminatedUnion("success", [
@@ -166,6 +195,19 @@ const ArchitectureCheckpointListSchema = z.discriminatedUnion("success", [
 		.strict(),
 	ArchitectureModelFailureSchema,
 ]);
+const ArchitecturePublicationSchema = z.discriminatedUnion("success", [
+	z
+		.object({
+			success: z.literal(true),
+			publication: PublicationStateSchema,
+			checkpoint: GitObjectIdSchema.optional(),
+			destination: ArchitecturePublicationDestinationSchema.optional(),
+			publishedTip: GitObjectIdSchema.optional(),
+			retention: RetentionPolicySchema,
+		})
+		.strict(),
+	ArchitectureModelFailureSchema,
+]);
 type ArchitectureCheckpointRequest = z.infer<typeof ArchitectureCheckpointRequestSchema>;
 type ArchitectureCheckpoint = z.infer<typeof ArchitectureCheckpointSchema>;
 type ArchitectureCheckpointRetain = z.infer<typeof ArchitectureCheckpointRetainSchema>;
@@ -175,6 +217,9 @@ type ArchitectureModel = z.infer<typeof ArchitectureModelSchema>;
 type ModelDiagnostic = z.infer<typeof ModelDiagnosticSchema>;
 
 export {
+	ArchitecturePublicationDestinationSchema,
+	ArchitecturePublicationRequestSchema,
+	ArchitecturePublicationSchema,
 	GitObjectIdSchema,
 	ModelRevisionSchema,
 	ModelDiagnosticSchema,

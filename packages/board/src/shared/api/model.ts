@@ -1,4 +1,9 @@
 export { ArchitectureModelReadSchema } from "#shared/schemas/model.ts";
+export {
+	ArchitecturePublicationDestinationSchema,
+	ArchitecturePublicationRequestSchema,
+	ArchitecturePublicationSchema,
+} from "#shared/schemas/model.ts";
 export type { ArchitectureModelRead } from "#shared/schemas/model.ts";
 export {
 	ArchitectureCheckpointRequestSchema,
