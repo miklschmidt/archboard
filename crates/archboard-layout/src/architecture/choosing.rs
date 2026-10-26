@@ -17,7 +17,7 @@ use super::graph::Graph;
 use super::joins::{Apart, Lay, lay_joined};
 use super::solving::{Boxed, Calling, Solver, Unsolved, try_both};
 use crate::blocks::choosing::{
-    draws_better, has_regions, joining_of, reads_better_packed, stacks_of,
+    could_stack, draws_better, has_regions, joining_of, reads_better_packed, stacks_of,
 };
 use crate::blocks::place::{
     BLOCKS_APART, BLOCKS_FACING, BLOCKS_NESTING, BLOCKS_PLACED, BLOCKS_READ, BLOCKS_READING,
@@ -175,18 +175,9 @@ struct Told {
     options: IndexMap<String, String>,
 }
 
-/// What a solve that lays a board out one way answers.
-async fn answered<S: Solver>(
-    solver: &S,
-    graph: &Graph,
-    nesting: Nesting,
-    way: &Way,
-    calling: &Calling,
-) -> Result<Answer, Unsolved> {
-    let told = solver
-        .solve(graph.with_options(&options_of(nesting, way)), calling)
-        .await?;
-    let Told { mut options } = serde_json::from_str(&told)
+/// What a solve answered, read.
+fn read(told: &str) -> Result<Answer, Unsolved> {
+    let Told { mut options } = serde_json::from_str(told)
         .map_err(|error| format!("A solve's answer is unreadable: {error}"))?;
     let stood = options.swap_remove(BLOCKS_STOOD);
     let Some(placed) = options.get(BLOCKS_PLACED) else {
@@ -202,6 +193,28 @@ async fn answered<S: Solver>(
         drawing: Some(Drawing { placed, reading }),
         stood,
     })
+}
+
+/// Ask for a solve that lays a board out one way. It starts at once.
+fn asked<'s, S: Solver>(
+    solver: &'s S,
+    graph: &Graph,
+    nesting: Nesting,
+    way: &Way,
+    calling: &Calling,
+) -> S::Solve<'s> {
+    solver.solve(graph.with_options(&options_of(nesting, way)), calling)
+}
+
+/// What a solve that lays a board out one way answers.
+async fn answered<S: Solver>(
+    solver: &S,
+    graph: &Graph,
+    nesting: Nesting,
+    way: &Way,
+    calling: &Calling,
+) -> Result<Answer, Unsolved> {
+    read(&asked(solver, graph, nesting, way, calling).await?)
 }
 
 /// The drawing a solve answered.
@@ -225,10 +238,16 @@ async fn solved<S: Solver>(
     )?)
 }
 
-/// Choose whether the first block that can stack is stacked, then lay the
+/// Choose whether the first block that can stack is stacked, and lay the
 /// whole board only that way. The two partial solves stop once they can
-/// answer the choice (TASK-512). A board with no block that can stack is
-/// drawn by the partial solves.
+/// answer the choice (TASK-512). The whole board laid each way is asked for
+/// beside them, after them, so the render waits for the longer of the
+/// partial solves and the whole one chosen, not for one after the other;
+/// the whole one not chosen is called off, and a host that has not started
+/// it never lays it out. A board with no block that can stack is drawn by
+/// the partial solves, and both whole ones are called off. Drawn inline, a
+/// board whose graph shows that no block could stack is drawn by the one
+/// partial solve that does not stack, alone, which lays the whole board.
 async fn stacked_solved<S: Solver>(
     solver: &S,
     graph: &Graph,
@@ -241,26 +260,55 @@ async fn stacked_solved<S: Solver>(
         until: true,
         ..way.clone()
     };
-    let (stacked, plain) = try_both(
-        answered(solver, graph, nesting, &partly(true), calling),
-        answered(solver, graph, nesting, &partly(false), calling),
-    )
-    .await?;
-    let (Some(high), Some(low)) = (&stacked.stood, &plain.stood) else {
+    if nesting == Nesting::Inline && !could_stack(&graph.with_options(&[]))? {
+        return solved(solver, graph, nesting, partly(false), calling).await;
+    }
+    let wholly = |stacking| Way {
+        stacking: Some(stacking),
+        ..way.clone()
+    };
+    let (high, low) = (partly(true), partly(false));
+    let partial = try_both(
+        answered(solver, graph, nesting, &high, calling),
+        answered(solver, graph, nesting, &low, calling),
+    );
+    let mut partial = std::pin::pin!(partial);
+    // Poll the partial solves once so they are asked before the whole ones.
+    let early =
+        std::future::poll_fn(|context| std::task::Poll::Ready(partial.as_mut().poll(context)))
+            .await;
+    let callings = [Calling::default(), Calling::default()];
+    let off = callings.clone();
+    calling.on_call_off(move || {
+        for one in &off {
+            one.call_off();
+        }
+    });
+    let mut wholes = [
+        Some(asked(solver, graph, nesting, &wholly(true), &callings[0])),
+        Some(asked(solver, graph, nesting, &wholly(false), &callings[1])),
+    ];
+    let (stacked, plain) = match early {
+        std::task::Poll::Ready(answers) => answers,
+        std::task::Poll::Pending => partial.await,
+    }?;
+    let chosen = match (&stacked.stood, &plain.stood) {
+        (Some(high), Some(low)) => Some(usize::from(!stacks_of(high, low)?)),
+        _ => None,
+    };
+    for (at, one) in callings.iter().enumerate() {
+        if Some(at) != chosen {
+            one.call_off();
+            wholes[at] = None;
+        }
+    }
+    let Some(chosen) = chosen else {
         return Ok(drawing_of(plain)?);
     };
-    let stacking = stacks_of(high, low)?;
-    solved(
-        solver,
-        graph,
-        nesting,
-        Way {
-            stacking: Some(stacking),
-            ..way
-        },
-        calling,
-    )
-    .await
+    let whole = wholes[chosen]
+        .take()
+        .expect("the whole solve chosen is still asked for");
+    Ok(drawing_of(read(&whole.await?)?)?)
 }
 
 /// A board laid out with every join of lines to one card kept whole the way

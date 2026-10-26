@@ -167,15 +167,128 @@ fn ready<T>(answer: Poll<T>) -> T {
     }
 }
 
+/// A board whose one block could stack: a line from a card in one container
+/// into a card in another.
+fn stacking_board() -> (Content, Measured) {
+    let content: Content = serde_json::from_value(json!({
+        "nodes": [
+            { "id": "left", "name": "Left", "kind": "service" },
+            { "id": "out", "name": "Out", "kind": "service", "parent": "left" },
+            { "id": "box", "name": "Box", "kind": "service" },
+            { "id": "inner", "name": "Inner", "kind": "service", "parent": "box" },
+        ],
+        "edges": [{ "id": "line", "order": 1, "from": "out", "to": "inner", "kind": "call" }],
+    }))
+    .expect("the fixture is board content");
+    let mut measured = Measured::default();
+    for node in &content.nodes {
+        measured.nodes.insert(
+            node.id.clone(),
+            MeasuredNode {
+                node: node.facts(),
+                width: 100.0,
+                height: 60.0,
+                header_height: if ["left", "box"].contains(&node.id.as_str()) {
+                    30.0
+                } else {
+                    0.0
+                },
+                runs: Vec::new(),
+                headers: None,
+                pointed: None,
+            },
+        );
+    }
+    (content, measured)
+}
+
+/// A partial solve's reply: what its first block that could stack stood at.
+fn stood() -> String {
+    let scored = json!({ "score": 0.5, "fit": 0.5 });
+    let stood = json!({
+        "tied": scored,
+        "settled": {
+            "score": 0.5, "fit": 0.5, "length": 100,
+            "weighed": { "width": 100, "height": 60, "crossings": 0 },
+        },
+    });
+    json!({"layoutOptions": { "archboard.blocks.stood": stood.to_string() }}).to_string()
+}
+
+/// A whole solve's reply on the stacking board, which tells what its block stood at.
+fn whole(width: f64) -> String {
+    let mut reply: Value = serde_json::from_str(&answer(width)).expect("an answer");
+    let cards = ["out", "inner"].map(
+        |id| json!({"id": id, "depth": 0, "box": {"x": 0, "y": 0, "width": width, "height": 60}}),
+    );
+    let frames = ["left", "box"].map(|id| {
+        json!({"id": id, "depth": 0, "box": {"x": 0, "y": 100, "width": width, "height": 100}})
+    });
+    let placed = json!({
+        "width": width, "height": 200, "regions": [], "edges": [],
+        "cards": cards,
+        "frames": frames,
+    });
+    let stood: Value = serde_json::from_str(&stood()).expect("a stood reply");
+    reply["layoutOptions"]["archboard.blocks.placed"] = Value::String(placed.to_string());
+    reply["layoutOptions"]["archboard.blocks.stood"] =
+        stood["layoutOptions"]["archboard.blocks.stood"].clone();
+    reply.to_string()
+}
+
+/// The solves asked so far that name a stacking, partial first, by whether they stack.
+fn stacking_solves(host: &Host) -> Vec<(usize, bool, bool)> {
+    host.0
+        .borrow()
+        .iter()
+        .enumerate()
+        .filter_map(|(index, asked)| {
+            let options = &asked.graph["layoutOptions"];
+            let stacked = options["archboard.blocks.stacking"].as_str()? == "true";
+            let partial = options["archboard.blocks.until-stood"] == "true";
+            Some((index, partial, stacked))
+        })
+        .collect()
+}
+
+#[test]
+fn a_board_that_could_stack_asks_both_whole_solves_beside_its_partial_ones() {
+    let host = Host::default();
+    let (content, measured) = stacking_board();
+    let mut drawing = Box::pin(drawing(&host, &content, &measured));
+    let mut context = Context::from_waker(Waker::noop());
+    assert!(drawing.as_mut().poll(&mut context).is_pending());
+    let asked = stacking_solves(&host);
+    assert_eq!(
+        asked
+            .iter()
+            .map(|&(_, partial, stacked)| (partial, stacked))
+            .collect::<Vec<_>>(),
+        [(true, true), (true, false), (false, true), (false, false)]
+    );
+}
+
+#[test]
+fn a_board_that_cannot_stack_asks_one_solve() {
+    let host = Host::default();
+    let (content, measured) = board(false);
+    let mut drawing = Box::pin(drawing(&host, &content, &measured));
+    let mut context = Context::from_waker(Waker::noop());
+    assert!(drawing.as_mut().poll(&mut context).is_pending());
+    assert_eq!(host.0.borrow().len(), 1);
+    host.answer(0, Ok(answer(100.0)));
+    let result = ready(drawing.as_mut().poll(&mut context));
+    assert_eq!(result.unwrap().drawing.cards[0].bounds.width, 100.0);
+}
+
 #[test]
 fn either_partial_solve_failure_returns_without_the_other_reply() {
     for failed in [0, 1] {
         let host = Host::default();
-        let (content, measured) = board(false);
+        let (content, measured) = stacking_board();
         let mut drawing = Box::pin(drawing(&host, &content, &measured));
         let mut context = Context::from_waker(Waker::noop());
         assert!(drawing.as_mut().poll(&mut context).is_pending());
-        assert_eq!(host.0.borrow().len(), 2);
         host.answer(failed, Err(Unsolved::Failed("host failure".to_owned())));
         host.fails(drawing.as_mut().poll(&mut context), "host failure");
     }
@@ -189,61 +302,67 @@ fn either_nesting_failure_returns_without_the_other_layout() {
         let mut drawing = Box::pin(drawing(&host, &content, &measured));
         let mut context = Context::from_waker(Waker::noop());
         assert!(drawing.as_mut().poll(&mut context).is_pending());
-        assert_eq!(host.0.borrow().len(), 4);
-        let failed: Vec<usize> = host
+        let failed = host
             .0
             .borrow()
             .iter()
-            .enumerate()
-            .filter(|(_, asked)| {
-                asked.graph["layoutOptions"]["archboard.blocks.nesting"] == nesting
-            })
-            .map(|(index, _)| index)
-            .collect();
-        assert_eq!(failed.len(), 2);
-        host.answer(
-            failed[0],
-            Err(Unsolved::Failed("nesting failure".to_owned())),
-        );
-        host.answer(failed[1], Ok(answer(100.0)));
+            .position(|asked| asked.graph["layoutOptions"]["archboard.blocks.nesting"] == nesting)
+            .expect("a solve of the nesting");
+        host.answer(failed, Err(Unsolved::Failed("nesting failure".to_owned())));
         host.fails(drawing.as_mut().poll(&mut context), "nesting failure");
     }
 }
 
 #[test]
 fn reversing_reply_order_keeps_the_chosen_drawing() {
-    let widths = [200.0, 100.0];
     for order in [[0, 1], [1, 0]] {
         let host = Host::default();
-        let (content, measured) = board(false);
+        let (content, measured) = stacking_board();
         let mut drawing = Box::pin(drawing(&host, &content, &measured));
         let mut context = Context::from_waker(Waker::noop());
         assert!(drawing.as_mut().poll(&mut context).is_pending());
-        host.answer(order[0], Ok(answer(widths[order[0]])));
+        let asked = stacking_solves(&host);
+        let partials: Vec<usize> = asked.iter().filter(|one| one.1).map(|one| one.0).collect();
+        let wholes: Vec<(usize, bool)> = asked
+            .iter()
+            .filter(|one| !one.1)
+            .map(|one| (one.0, one.2))
+            .collect();
+        // The whole solves answer first, in either order, and only count once chosen.
+        for &at in &order {
+            let (index, stacked) = wholes[at];
+            host.answer(index, Ok(whole(if stacked { 200.0 } else { 100.0 })));
+        }
         assert!(drawing.as_mut().poll(&mut context).is_pending());
-        host.answer(order[1], Ok(answer(widths[order[1]])));
+        host.answer(partials[order[0]], Ok(stood()));
+        assert!(drawing.as_mut().poll(&mut context).is_pending());
+        host.answer(partials[order[1]], Ok(stood()));
         let result = ready(drawing.as_mut().poll(&mut context));
-        // Without a stackable block, the plain solve is kept in either reply order.
+        // Stood alike, the block is not stacked, so the whole solve laid plain is kept.
         assert_eq!(result.unwrap().drawing.cards[0].bounds.width, 100.0);
+        let stacked_whole = wholes.iter().find(|one| one.1).expect("a stacked whole").0;
+        assert!(host.0.borrow()[stacked_whole].dropped);
     }
 }
 
 #[test]
 fn dropping_a_layout_cancels_its_solves_and_late_replies_do_not_answer_a_new_layout() {
     let host = Host::default();
-    let (content, measured) = board(false);
+    let (content, measured) = stacking_board();
     let mut first = Box::pin(drawing(&host, &content, &measured));
     let mut context = Context::from_waker(Waker::noop());
     assert!(first.as_mut().poll(&mut context).is_pending());
     drop(first);
     assert!(host.0.borrow().iter().all(|asked| asked.dropped));
+    let earlier = host.0.borrow().len();
+    let (content, measured) = board(false);
     let mut next = Box::pin(drawing(&host, &content, &measured));
     assert!(next.as_mut().poll(&mut context).is_pending());
-    host.answer(0, Ok(answer(200.0)));
-    host.answer(1, Ok(answer(200.0)));
+    for late in 0..earlier {
+        host.answer(late, Ok(answer(200.0)));
+    }
     assert!(next.as_mut().poll(&mut context).is_pending());
-    host.answer(2, Ok(answer(100.0)));
-    host.answer(3, Ok(answer(100.0)));
+    host.answer(earlier, Ok(answer(100.0)));
     let result = ready(next.as_mut().poll(&mut context));
     assert_eq!(result.unwrap().drawing.cards[0].bounds.width, 100.0);
 }
