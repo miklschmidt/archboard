@@ -7,6 +7,7 @@ import {
 	discoveryFailure,
 	decodeModel,
 	selectModule,
+	selectFlow,
 } from "#runtime/operations/read/model-read.ts";
 import {
 	ArchiveError,
@@ -102,12 +103,14 @@ async function requireDependencies(
  * @param context The caller's checkout.
  * @param checkpoint The immutable checkpoint identity.
  * @param module The optional module selector.
+ * @param flow The optional explicit flow selector.
  * @returns A coherent retained reading or model validation diagnostics.
  */
 async function exactReading(
 	context: ArchiveContext,
 	checkpoint: string,
 	module?: string,
+	flow?: string,
 ): Promise<ArchitectureModelRead> {
 	const record = await checkpointRecord(context, checkpoint);
 	await requireDependencies(context, checkpoint, record, new Set());
@@ -122,17 +125,20 @@ async function exactReading(
 	if (refused !== undefined) return refused;
 	const model = decodeModel(captured);
 	if (!model.success) return model;
-	return selectModule(
-		{
-			...model,
-			checkpoint: checkpointMetadata(
-				checkpoint,
-				record,
-				(await checkpointPublication(context, checkpoint)).publication,
-			),
-			sourceEvidence: await sourceEvidence(context, record.sources),
-		},
-		module,
+	return selectFlow(
+		selectModule(
+			{
+				...model,
+				checkpoint: checkpointMetadata(
+					checkpoint,
+					record,
+					(await checkpointPublication(context, checkpoint)).publication,
+				),
+				sourceEvidence: await sourceEvidence(context, record.sources),
+			},
+			module,
+		),
+		flow,
 	);
 }
 
@@ -141,12 +147,14 @@ async function exactReading(
  * @param vault The explicitly addressed vault.
  * @param checkpoint A complete immutable Git commit identity.
  * @param module A qualified module identity or unique retained name.
+ * @param flow A qualified flow identity or unique retained name.
  * @returns One retained architecture or actionable diagnostics.
  */
 async function readArchitectureCheckpoint(
 	vault: string,
 	checkpoint: string,
 	module?: string,
+	flow?: string,
 ): Promise<ArchitectureModelRead> {
 	if (!GitObjectIdSchema.safeParse(checkpoint).success)
 		return archiveFailure(
@@ -156,7 +164,7 @@ async function readArchitectureCheckpoint(
 		);
 	return historyResult(
 		"ARCHITECTURE_UNAVAILABLE",
-		async () => exactReading(await archiveContext(vault), checkpoint, module),
+		async () => exactReading(await archiveContext(vault), checkpoint, module, flow),
 		checkpoint,
 	);
 }

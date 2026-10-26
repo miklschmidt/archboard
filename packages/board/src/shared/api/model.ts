@@ -18,6 +18,8 @@ export type {
 } from "#shared/schemas/model.ts";
 export {
 	ArchitectureModuleEditSchema,
+	ArchitectureFlowRenderRequestSchema,
+	ArchitectureFlowRenderResultSchema,
 	ArchitectureModuleEditResultSchema,
 	ArchitectureRecoveryResultSchema,
 	ArchitectureClaimRequestSchema,

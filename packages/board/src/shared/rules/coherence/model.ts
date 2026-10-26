@@ -1,3 +1,4 @@
+import { everyStep, messagesOf } from "#shared/rules/flow-steps.ts";
 import type { ArchitectureModel, ModelDiagnostic } from "#shared/schemas/model.ts";
 
 type Module = ArchitectureModel["modules"][number];
@@ -6,17 +7,29 @@ type Module = ArchitectureModel["modules"][number];
  * Find conflicting definitions and retired identities.
  * @param modules All modules in path order.
  * @param manifest The current model manifest.
+ * @param collections The independent flow definitions.
  * @returns Identity diagnostics.
  */
 function identityDiagnostics(
 	modules: Module[],
 	manifest: ArchitectureModel["manifest"],
+	collections: ArchitectureModel["collections"],
 ): ModelDiagnostic[] {
 	const definitions = new Map<string, string>();
 	const retired = new Set(manifest.retiredIds);
 	const diagnostics: ModelDiagnostic[] = [];
 	const subjects = modules.flatMap((module) =>
 		[module.id, ...module.outgoing.map((edge) => edge.id)].map((id) => ({ id, file: module.file })),
+	);
+	subjects.push(
+		...collections.flatMap((collection) =>
+			collection.flows.flatMap((flow) =>
+				[flow.id, ...everyStep(flow.steps).map((step) => step.id)].map((id) => ({
+					id,
+					file: collection.file,
+				})),
+			),
+		),
 	);
 	for (const { id, file } of subjects) {
 		if (retired.has(id))
@@ -159,12 +172,14 @@ function forestDiagnostics(modules: Module[], byId: Map<string, Module>): ModelD
  * @param modules All discovered modules in path order.
  * @param policy The valid authored vocabulary.
  * @param manifest The model identity and current-state metadata.
+ * @param collections The independent flow definitions.
  * @returns Diagnostics that refuse the complete model.
  */
 function modelDiagnostics(
 	modules: Module[],
 	policy: ArchitectureModel["policy"],
 	manifest: ArchitectureModel["manifest"],
+	collections: ArchitectureModel["collections"],
 ): ModelDiagnostic[] {
 	const byId = new Map(modules.map((module) => [module.id, module]));
 	return [
@@ -179,13 +194,113 @@ function modelDiagnostics(
 					},
 				]
 			: []),
-		...identityDiagnostics(modules, manifest),
+		...identityDiagnostics(modules, manifest, collections),
 		...modules.flatMap((module) => [
 			...vocabularyDiagnostics(module, policy),
 			...referenceDiagnostics(module, byId),
 		]),
 		...forestDiagnostics(modules, byId),
+		...collectionDiagnostics(collections, byId),
 	];
+}
+
+/**
+ * Name the file and subjects of one behavioral failure.
+ * @param file The authored collection path.
+ * @param code The stable diagnostic code.
+ * @param subjects The affected subject identities.
+ * @param message The violated behavioral contract.
+ * @returns The complete actionable diagnostic.
+ */
+function flowDiagnostic(
+	file: string,
+	code: string,
+	subjects: string[],
+	message: string,
+): ModelDiagnostic {
+	return {
+		file,
+		code,
+		subjects,
+		message,
+		recovery: "Repair the explicit flow references and read the complete model again.",
+	};
+}
+/**
+ * Validate ordered participants and message membership independently of file naming.
+ * @param flow One complete flow tree.
+ * @param file The authored collection path.
+ * @param modules Every canonical module definition.
+ * @returns The reference and membership failures.
+ */
+function flowDiagnostics(
+	flow: ArchitectureModel["collections"][number]["flows"][number],
+	file: string,
+	modules: Map<string, Module>,
+): ModelDiagnostic[] {
+	return [
+		...(new Set(flow.participants).size === flow.participants.length
+			? []
+			: [
+					flowDiagnostic(
+						file,
+						"DUPLICATE_PARTICIPANT",
+						[flow.id],
+						"Each participant must appear once in its authored order.",
+					),
+				]),
+		...flow.participants
+			.filter((id) => !modules.has(id))
+			.map((id) =>
+				flowDiagnostic(
+					file,
+					"MISSING_LOCAL_TARGET",
+					[flow.id, id],
+					"A participant has no module definition.",
+				),
+			),
+		...messagesOf(flow.steps).flatMap((step) =>
+			[step.from, step.to]
+				.filter((id) => !flow.participants.includes(id))
+				.map((id) =>
+					flowDiagnostic(
+						file,
+						"MISSING_PARTICIPANT",
+						[flow.id, step.id, id],
+						"A message endpoint is absent from the participant list.",
+					),
+				),
+		),
+	];
+}
+/**
+ * Validate collection identity separately from subject identity.
+ * @param collections The independent flow collections.
+ * @param modules Every canonical module definition.
+ * @returns Collection and behavioral reference diagnostics.
+ */
+function collectionDiagnostics(
+	collections: ArchitectureModel["collections"],
+	modules: Map<string, Module>,
+): ModelDiagnostic[] {
+	const seen = new Set<string>();
+	const diagnostics: ModelDiagnostic[] = [];
+	for (const collection of collections) {
+		if (seen.has(collection.id))
+			diagnostics.push(
+				flowDiagnostic(
+					collection.file,
+					"DUPLICATE_COLLECTION",
+					[],
+					"A collection identity has more than one definition.",
+				),
+			);
+		seen.add(collection.id);
+		diagnostics.push(
+			...collection.flows.flatMap((flow) => flowDiagnostics(flow, collection.file, modules)),
+		);
+	}
+	return diagnostics;
 }
 
 /**

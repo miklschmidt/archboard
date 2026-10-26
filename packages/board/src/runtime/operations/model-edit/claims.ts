@@ -1,3 +1,4 @@
+import { everyStep } from "#shared/rules/flow-steps.ts";
 import { notifyArchitecture } from "#runtime/store/model-news.ts";
 import { isDeepStrictEqual } from "node:util";
 import { CLAIM_MS } from "@archboard/timing";
@@ -134,7 +135,13 @@ async function claimArchitectureSubjects(
 					(subject) =>
 						subject !== current.manifest.id &&
 						!current.modules.some((module) => module.id === subject) &&
-						!current.relationships.some((relationship) => relationship.id === subject),
+						!current.relationships.some((relationship) => relationship.id === subject) &&
+						!current.collections.some((collection) =>
+							collection.flows.some(
+								(flow) =>
+									flow.id === subject || everyStep(flow.steps).some((step) => step.id === subject),
+							),
+						),
 				)
 			)
 				throw new ArchiveError(

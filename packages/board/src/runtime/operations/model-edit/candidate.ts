@@ -21,6 +21,27 @@ function captureRevision(vault: string, revision: ArchitectureModel["revision"])
 }
 
 /**
+ * Write only changed definitions of one authored kind.
+ * @param inputs The complete candidate inputs.
+ * @param before The original definitions and paths.
+ * @param after The continuing definitions and paths.
+ */
+function writeDefinitions<T extends { id: string; file: string }>(
+	inputs: Map<string, Buffer>,
+	before: T[],
+	after: T[],
+): void {
+	const continuing = new Map(after.map((value) => [value.id, value]));
+	for (const value of before) if (!continuing.has(value.id)) inputs.delete(value.file);
+	const originals = new Map(before.map((value) => [value.id, value]));
+	for (const value of after) {
+		if (isDeepStrictEqual(originals.get(value.id), value)) continue;
+		const { file, ...definition } = value;
+		inputs.set(file, Buffer.from(`${JSON.stringify(definition, null, 2)}\n`));
+	}
+}
+
+/**
  * Serialize only changed definitions while preserving unrelated authored bytes.
  * @param captured The original files.
  * @param current The coherent starting model.
@@ -33,14 +54,8 @@ function candidateInputs(
 	candidate: ReturnType<typeof applyStructure>,
 ) {
 	const inputs = new Map(captured.inputs);
-	const byId = new Map(candidate.modules.map((module) => [module.id, module]));
-	for (const module of current.modules) if (!byId.has(module.id)) inputs.delete(module.file);
-	const originals = new Map(current.modules.map((module) => [module.id, module]));
-	for (const module of candidate.modules) {
-		if (isDeepStrictEqual(originals.get(module.id), module)) continue;
-		const { file, ...definition } = module;
-		inputs.set(file, Buffer.from(`${JSON.stringify(definition, null, 2)}\n`));
-	}
+	writeDefinitions(inputs, current.modules, candidate.modules);
+	writeDefinitions(inputs, current.collections, candidate.collections);
 	if (!isDeepStrictEqual(current.manifest, candidate.manifest))
 		inputs.set("model.json", Buffer.from(`${JSON.stringify(candidate.manifest, null, 2)}\n`));
 	return inputs;

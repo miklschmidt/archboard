@@ -1,3 +1,4 @@
+import { FlowCollectionSchema } from "#shared/schemas/model-flows.ts";
 import { z } from "zod";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import {
@@ -105,7 +106,7 @@ function discoveryFailure(captured: CapturedModel): ArchitectureModelRead | unde
 			},
 		]);
 	for (const file of captured.inputs.keys()) {
-		if (/\.(?:flows|proposal|walkthrough)\.json$/u.test(file))
+		if (/\.(?:proposal|walkthrough)\.json$/u.test(file))
 			captured.diagnostics.push({
 				code: "UNSUPPORTED_FORMAT",
 				file,
@@ -138,8 +139,16 @@ function decodeModel(captured: CapturedModel): ArchitectureModelRead {
 			return definition === undefined ? [] : [{ ...definition, file }];
 		});
 	if (manifest === undefined || policy === undefined) return failure("MODEL_INVALID", diagnostics);
-	diagnostics.push(...modelDiagnostics(discovered, policy, manifest));
+	const collections = [...inputs]
+		.filter(([file]) => file.endsWith(".flows.json"))
+		.flatMap(([file, bytes]) => {
+			const collection = decode(file, bytes, FlowCollectionSchema, diagnostics);
+			return collection === undefined ? [] : [{ ...collection, file }];
+		});
 	if (diagnostics.length > 0) return failure("MODEL_INVALID", diagnostics);
+	diagnostics.push(...modelDiagnostics(discovered, policy, manifest, collections));
+	if (diagnostics.length > 0) return failure("MODEL_INVALID", diagnostics);
+
 	const modules = discovered
 		.toSorted(compareModelSubjects)
 		.map((module) => ({ ...module, outgoing: module.outgoing.toSorted(compareModelSubjects) }));
@@ -149,6 +158,7 @@ function decodeModel(captured: CapturedModel): ArchitectureModelRead {
 		policy,
 		revision,
 		modules,
+		collections,
 		roots: modules.filter((module) => module.parent === undefined).map((module) => module.id),
 		relationships: modules.flatMap((source) =>
 			source.outgoing.map((edge) => ({ ...edge, from: source.id })),
@@ -186,12 +196,40 @@ function selectModule(
 }
 
 /**
+ * Resolve an explicit flow without inferring execution order.
+ * @param model The coherent model or an earlier refusal.
+ * @param selector The optional explicit flow selector.
+ * @returns The selected reading or actionable diagnostics.
+ */
+function selectFlow(model: ArchitectureModelRead, selector?: string): ArchitectureModelRead {
+	if (!model.success || selector === undefined) return model;
+	const flows = model.collections.flatMap((collection) => collection.flows);
+	const exact = flows.find((flow) => flow.id === selector);
+	if (exact) return { ...model, selectedFlow: exact.id };
+	const matches = flows.filter(
+		(flow) => flow.name === selector || flow.formerNames?.includes(selector),
+	);
+	if (matches.length === 1) return { ...model, selectedFlow: matches[0]!.id };
+	const code = matches.length === 0 ? "FLOW_NOT_FOUND" : "FLOW_AMBIGUOUS";
+	return failure(code, [
+		{
+			code,
+			file: "model.json",
+			subjects: matches.map((flow) => flow.id),
+			message: `Flow selector resolves to ${matches.length} flows.`,
+			recovery: "Read collections and select one qualified flow identity.",
+		},
+	]);
+}
+
+/**
  * Read authored canonical modules without changing any architecture input.
  * @param vault The explicitly addressed vault.
  * @param module A qualified module id or a unique current or former name.
+ * @param flow The optional explicit flow selector.
  * @returns One model and its exact input revision, or structured diagnostics.
  */
-function readCurrentModel(vault: string, module?: string): ArchitectureModelRead {
+function readCurrentModel(vault: string, module?: string, flow?: string): ArchitectureModelRead {
 	const captured = readModelFiles(vault);
 	const refusal = discoveryFailure(captured);
 	if (refusal !== undefined) return refusal;
@@ -207,7 +245,7 @@ function readCurrentModel(vault: string, module?: string): ArchitectureModelRead
 				recovery: "Finish external file edits and read the model again.",
 			},
 		]);
-	return selectModule(model, module);
+	return selectFlow(selectModule(model, module), flow);
 }
 
 /**
@@ -231,13 +269,18 @@ function failure(
 /**
  * Read current inputs only outside a pending installation.
  * @param vault The explicitly addressed vault.
- * @param module The module value.
+ * @param module The module selector.
+ * @param flow The optional explicit flow selector.
  * @returns The operation result.
  */
-function readArchitectureModel(vault: string, module?: string): ArchitectureModelRead {
+function readArchitectureModel(
+	vault: string,
+	module?: string,
+	flow?: string,
+): ArchitectureModelRead {
 	const blocked = modelBoundaryFailure(vault);
 	if (blocked !== undefined) return blocked;
-	const reading = readCurrentModel(vault, module);
+	const reading = readCurrentModel(vault, module, flow);
 	return modelBoundaryFailure(vault) ?? reading;
 }
 
@@ -247,5 +290,6 @@ export {
 	decodeModel,
 	discoveryFailure,
 	selectModule,
+	selectFlow,
 	failure,
 };
