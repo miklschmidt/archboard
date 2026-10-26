@@ -10,8 +10,6 @@ export {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	SemanticBoardLevelSchema,
 	SemanticBoardSchema,
-	SemanticVariantSchema,
-	TrackedEmbedSchema,
 	variantNamed,
 } from "#shared/schemas/board-document.ts";
 export type { SemanticBoard, SemanticVariant } from "#shared/schemas/board-document.ts";

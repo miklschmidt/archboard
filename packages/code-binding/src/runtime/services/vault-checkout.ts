@@ -84,17 +84,4 @@ function vaultIdentity(vault: string): string | undefined {
 	return vaultCheckoutOf(vault)?.identity;
 }
 
-/**
- * The repository identity of the checkout that holds a vault, for a reader that
- * writes it down. `vaultIdentity` answers undefined when Git did not answer, as
- * it does for a vault in no repository; a record of "no repository" must tell
- * the two apart.
- * @param vault The vault directory.
- * @returns The identity, or null when the vault is in no Git repository.
- * @throws {GitCommandError} When Git could not start, was killed or timed out.
- */
-function vaultRepositoryIdentity(vault: string): string | null {
-	return gitCheckoutOfVault(vault)?.identity ?? null;
-}
-
-export { checkoutsReadFrom, vaultIdentity, vaultRepositoryIdentity };
+export { checkoutsReadFrom, vaultIdentity };

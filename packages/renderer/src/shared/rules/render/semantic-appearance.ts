@@ -1,11 +1,15 @@
 import { placingGroups, type SemanticEdge, type SemanticNode } from "@archboard/board/content";
 import type { LineLook } from "#shared/rules/render/drawing.ts";
 import { drillDirection, type DrillDirection } from "#shared/rules/svg/parts/drill-mark.ts";
+import type { z } from "zod";
 import {
 	DEFAULT_SEMANTIC_POLICY,
-	type PaletteColor,
+	type PaletteColorSchema,
 	type SemanticPolicy,
 } from "@archboard/board/policy";
+
+/** One colour of the curated palette a group or a kind takes. */
+type PaletteColor = z.infer<typeof PaletteColorSchema>;
 
 /** The independent visual channels of a node in this reading. */
 interface NodeAppearance {
@@ -175,4 +179,11 @@ function lineLooks(
 	);
 }
 
-export { type NodeAppearance, nodeAppearances, lineAppearance, lineLooks, relationshipAppearance };
+export {
+	type NodeAppearance,
+	type PaletteColor,
+	nodeAppearances,
+	lineAppearance,
+	lineLooks,
+	relationshipAppearance,
+};

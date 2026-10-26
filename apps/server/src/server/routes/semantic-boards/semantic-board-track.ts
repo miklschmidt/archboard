@@ -7,7 +7,7 @@
 // stands, unchanged and at the same version, so a repeated `--track` is one.
 
 import type { NextFunction, Request, Response } from "express";
-import { TrackedEmbedSchema } from "@archboard/board/document";
+import { SemanticBoardSchema } from "@archboard/board/document";
 import { readSemanticBoard } from "@archboard/board/store-read";
 import { trackEmbedTransition, writeSemanticBoard } from "@archboard/board/store-write";
 import { vaultOfRequest } from "@archboard/workbench/host";
@@ -22,6 +22,9 @@ import {
 	describedWrite,
 	writerOf,
 } from "#server/routes/semantic-boards/semantic-board-writes.ts";
+
+/** One embed a board lists, as a caller states it. */
+const TrackedEmbedSchema = SemanticBoardSchema.shape.trackedEmbeds.unwrap().element;
 
 /**
  * Answer a tracking the board had already: the board as it stands.

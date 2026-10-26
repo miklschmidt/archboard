@@ -8,7 +8,7 @@
 // so in its own repository. The browser offers no delete.
 
 import { z } from "zod";
-import { BoardDiscardAnswerSchema, BoardOpenedByAnswerSchema } from "@archboard/board/commands";
+import { BoardDiscardAnswerSchema } from "@archboard/board/commands";
 import { discardSemanticBoardOnServer } from "#cli/clients/server/semantic-boards.ts";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import {
@@ -28,25 +28,6 @@ const DeleteInputSchema = z.object({ name: z.string() });
 /** The delete's answer: the board that went, the version it was at, and the embeds it tracked. */
 const DeleteResultSchema = BoardDiscardAnswerSchema.shape.discarded;
 type DeleteResult = z.infer<typeof DeleteResultSchema>;
-
-/**
- * A delete refused because other boards open the board, with each node that
- * does named after its reason, so the person knows which drill-down to change.
- * @param error What the delete threw.
- * @returns The same error, naming each node when that is why it was refused.
- */
-function namingEachOpener(error: unknown): unknown {
-	if (!(error instanceof Error) || !("answer" in error)) return error;
-	const refused = BoardOpenedByAnswerSchema.safeParse(error.answer);
-	if (!refused.success) return error;
-	error.message = [
-		error.message,
-		...refused.data.openedBy.map(
-			(one) => `  node ${one.node} of "${one.board}" (variant ${one.variant}) opens it`,
-		),
-	].join("\n");
-	return error;
-}
 
 /**
  * What a delete is worth saying out loud: which board went, and each embed
@@ -145,11 +126,7 @@ const semanticDeleteContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "semantic delete");
 		const version = editedVersion(input.name);
-		const result = await discardSemanticBoardOnServer(input.name, version).catch(
-			(error: unknown) => {
-				throw namingEachOpener(error);
-			},
-		);
+		const result = await discardSemanticBoardOnServer(input.name, version);
 		return { result, diagnostics: deletedLines(result) };
 	},
 });

@@ -64,7 +64,8 @@ interface Discarded {
 type SemanticDiscardResult = (Discarded & { readonly heldAs: string }) | SemanticWriteRejection;
 
 /**
- * Refuse a discard while nodes on other boards open the board.
+ * Refuse a discard while nodes on other boards open the board, naming each
+ * node so the person knows which drill-down to change.
  * @param location Where the board lives.
  * @param version The version it is at.
  * @param openedBy Every node that opens it.
@@ -76,6 +77,9 @@ function openedByRefusal(
 	openedBy: readonly BoardOpener[],
 ): SemanticWriteRejection {
 	const boards = [...new Set(openedBy.map((one) => `"${one.board}"`))].join(", ");
+	const nodes = openedBy.map(
+		(one) => `\n  node ${one.node} of "${one.board}" (variant ${one.variant}) opens it`,
+	);
 	return {
 		...rejected(
 			location,
@@ -83,7 +87,7 @@ function openedByRefusal(
 			"BOARD_OPENED_BY",
 			`${openedBy.length} node(s) on ${boards} open "${location.name}", and after the delete ` +
 				"they would open nothing. Remove each drill-down, or point it at another board, " +
-				"first. Nothing was removed.",
+				`first. Nothing was removed.${nodes.join("")}`,
 		),
 		openedBy,
 	};

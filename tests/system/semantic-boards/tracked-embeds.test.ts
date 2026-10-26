@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { readRenderRecipe, type RenderRecipe } from "@archboard/renderer/recipe";
+import { readRenderRecipe } from "@archboard/renderer/recipe";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { ensureSemanticVaultConfiguration } from "../support/semantic-vault.ts";
@@ -20,6 +20,9 @@ import { TEST_WALL_CLOCK_BUDGET_MS } from "../support/timing.ts";
 // the wiki picture it cannot reach; after a move the platform vault's check
 // names the recipe that still names the models repository, and `--fix`
 // writes the recipe again.
+
+/** A board render's recipe, as a file carries it. */
+type RenderRecipe = Extract<ReturnType<typeof readRenderRecipe>, { kind: "recipe" }>["recipe"];
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "archboard-tracked-")));

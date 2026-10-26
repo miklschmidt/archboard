@@ -36,7 +36,7 @@ import {
 	SidebarSection,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
 import { StandingSample } from "#ui/components/semantic-board-canvas/SemanticTypeSamples.tsx";
-import { markCounts, type MarkCount } from "@archboard/renderer/picture";
+import { markCounts } from "@archboard/renderer/picture";
 
 /** Inputs for the changes. */
 interface SemanticChangesProps {
@@ -79,7 +79,7 @@ function SemanticChanges(props: SemanticChangesProps): JSX.Element {
  * @returns The key and its control.
  */
 function ChangeKey(props: {
-	readonly counts: readonly MarkCount[];
+	readonly counts: ReturnType<typeof markCounts>;
 	readonly comparison: boolean;
 	readonly onComparisonChange: (comparison: boolean) => void;
 }): JSX.Element {

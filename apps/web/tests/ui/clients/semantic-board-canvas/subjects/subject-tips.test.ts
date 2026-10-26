@@ -10,7 +10,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 
-import { SemanticVariantSchema } from "@archboard/board/document";
+import { SemanticBoardSchema } from "@archboard/board/document";
 import { withFixtureOrders } from "#tests/ui/support/semantic-board-canvas/fixture-orders.ts";
 import {
 	openableAt,
@@ -18,6 +18,8 @@ import {
 	tipAnchor,
 	tipTargetAt,
 } from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
+
+const SemanticVariantSchema = SemanticBoardSchema.shape.variants.element;
 
 beforeAll(() => {
 	GlobalRegistrator.register();

@@ -2,7 +2,10 @@
 // recipe (ADR 0057). A server that started before the recipe existed draws
 // none, and the commands refuse that picture in their own words.
 
-import { readRenderRecipe, type RenderRecipe } from "@archboard/renderer/recipe";
+import { readRenderRecipe } from "@archboard/renderer/recipe";
+
+/** A board render's recipe, as a file carries it. */
+type RenderRecipe = Extract<ReturnType<typeof readRenderRecipe>, { kind: "recipe" }>["recipe"];
 
 /** The refusal of a server that cannot say which repository holds the vault, as a command declares it. */
 const vaultRepositoryUnknownRefusal = {
@@ -32,4 +35,4 @@ function recipeOfPicture(
 	};
 }
 
-export { recipeOfPicture, vaultRepositoryUnknownRefusal };
+export { recipeOfPicture, type RenderRecipe, vaultRepositoryUnknownRefusal };

@@ -1,5 +1,4 @@
-import type { PaletteColor } from "@archboard/board/policy";
-import type { NodeAppearance } from "#shared/rules/render/semantic-appearance.ts";
+import type { NodeAppearance, PaletteColor } from "#shared/rules/render/semantic-appearance.ts";
 import type { Box } from "#shared/rules/geometry.ts";
 import { token, type Palette } from "#shared/rules/svg/page/theme.ts";
 import {

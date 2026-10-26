@@ -8,7 +8,6 @@ import {
 	embedRecipeInPng,
 	recipeRenderRequest,
 	replaceRenderRecipe,
-	type RenderRecipe,
 } from "@archboard/renderer/recipe";
 import { createSemanticRasterizer } from "@archboard/renderer/rasterizer";
 import { renderSemanticBoardOnServer } from "#cli/clients/server/semantic-boards.ts";
@@ -17,7 +16,7 @@ import type { DrawnBoard, NothingDrawn } from "@archboard/board/render-reply";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
 import { regionWithin } from "#cli/rules/semantic/draw/raster-region.ts";
-import { recipeOfPicture } from "#cli/rules/semantic/draw/picture-recipe.ts";
+import { recipeOfPicture, type RenderRecipe } from "#cli/rules/semantic/draw/picture-recipe.ts";
 import type { MissingSource } from "#cli/protocol/check/embeds-answer.ts";
 import type { CheckoutEmbed } from "#cli/operations/vault/embeds/checkout-embeds.ts";
 

@@ -7,19 +7,20 @@
 // also cut into native-scale tiles so no detail is lost to a viewer that
 // shrinks a big image.
 
+import type { z } from "zod";
 import fs from "node:fs";
 import path from "node:path";
 
 import type { PageRegion } from "@archboard/renderer/rasterizer";
-import {
-	SemanticRasterReceiptSchema,
-	type SemanticRasterReceipt,
-} from "@archboard/renderer/rasterizer";
+import { SemanticRasterReceiptSchema } from "@archboard/renderer/rasterizer";
 import { archboard, type CliAnswer, type CliContext } from "#runtime/processes/archboard.ts";
 import { namedEntry, variantNamed, viewNamed } from "#runtime/rules/outcomes/naming.ts";
 import { sequentially } from "#runtime/processes/process.ts";
 import type { CaptureDeclaration, CaptureRequest } from "#runtime/schemas/suite.ts";
 import type { SemanticBoard } from "@archboard/board/document";
+
+/** What the rasterizer says about one capture. */
+type SemanticRasterReceipt = z.infer<typeof SemanticRasterReceiptSchema>;
 
 /**
  * The longest side a capture keeps whole before it is also cut into tiles.

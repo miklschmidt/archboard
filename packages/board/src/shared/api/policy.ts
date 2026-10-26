@@ -9,8 +9,4 @@ export {
 	VaultCheckSchema,
 	VaultDiagnosticSchema,
 } from "#shared/schemas/semantic-policy.ts";
-export type {
-	PaletteColor,
-	SemanticPolicy,
-	SharedSymbol,
-} from "#shared/schemas/semantic-policy.ts";
+export type { SemanticPolicy, SharedSymbol } from "#shared/schemas/semantic-policy.ts";

@@ -5,7 +5,7 @@
 // Everything, read against nothing, can follow a deleted board's name.
 
 import { expect, test } from "bun:test";
-import type { RenderRecipe } from "@archboard/renderer/recipe";
+import type { RenderRecipe } from "#cli/rules/semantic/draw/picture-recipe.ts";
 import { embedStanding, isRepointable } from "#cli/rules/check/embed-state.ts";
 
 const digest = (digit: string) => `sha256:${digit.repeat(64)}`;

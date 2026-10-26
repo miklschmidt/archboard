@@ -25,8 +25,9 @@ import {
 import type { SemanticBoard } from "@archboard/board/document";
 import { listSemanticBoards, readSemanticBoard } from "@archboard/board/store-read";
 import { checkSemanticVault, readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
-import { vaultIdentity, vaultRepositoryIdentity } from "@archboard/code-binding/resolution";
+import { vaultIdentity } from "@archboard/code-binding/resolution";
 import { GitCommandError } from "@archboard/process/git";
+import { gitCheckoutOfVault } from "@archboard/workspace/checkouts";
 import { renderBoard } from "@archboard/renderer/bun";
 import { asyncEndpoint } from "#server/middleware/mutation-work/mutation-work.ts";
 import {
@@ -484,7 +485,7 @@ function recipeContext(vault: string):
 			readonly error: string;
 	  } {
 	try {
-		return { ok: true, context: { vault: { repo: vaultRepositoryIdentity(vault) } } };
+		return { ok: true, context: { vault: { repo: gitCheckoutOfVault(vault)?.identity ?? null } } };
 	} catch (error) {
 		if (!(error instanceof GitCommandError)) throw error;
 		return {
