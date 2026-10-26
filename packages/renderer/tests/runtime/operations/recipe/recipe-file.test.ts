@@ -28,7 +28,7 @@ import { EXPORT_BOARD } from "#tests/runtime/support/export-board.ts";
 async function drawnSvg(recipe: boolean, board = EXPORT_BOARD, view = "intake"): Promise<string> {
 	const outcome = await renderBoard(
 		board,
-		{ theme: "light", fonts: "embedded", variant: "draft", view, legend: "vertical" },
+		{ theme: "light", variant: "draft", view, legend: "vertical" },
 		DEFAULT_SEMANTIC_POLICY,
 		recipe ? { vault: { repo: "github.com/example/vault" } } : undefined,
 	);

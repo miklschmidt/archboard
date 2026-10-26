@@ -14,7 +14,6 @@ import type { RenderRecipe } from "#runtime/operations/recipe/schema.ts";
 /** The render route's selectors that draw one recipe again, as the route reads them. */
 interface RecipeRenderRequest {
 	readonly theme: StandaloneTheme;
-	readonly fonts: "embedded";
 	readonly variant?: string;
 	readonly view?: string;
 	readonly against?: string;
@@ -70,7 +69,6 @@ function framingRequest(
 function recipeRenderRequest(recipe: RenderRecipe): RecipeRenderRequest {
 	return {
 		theme: recipe.theme,
-		fonts: "embedded",
 		...(recipe.variant === "current" ? {} : { variant: recipe.variant.id }),
 		...(recipe.view === "overview" ? {} : { view: recipe.view.id }),
 		...comparisonRequest(recipe.comparison),
