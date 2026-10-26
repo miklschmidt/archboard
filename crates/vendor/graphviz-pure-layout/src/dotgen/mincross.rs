@@ -1523,7 +1523,9 @@ impl Dot<'_> {
                 1 => list[0] as f64,
                 2 => ((list[0] + list[1]) / 2) as f64,
                 _ => {
-                    qsort(&mut list, &mut |a: &i32, b: &i32| a.cmp(b));
+                    // archboard: equal integers cannot be told apart, so every sort leaves
+                    // the list as `qsort` does.
+                    list.sort_unstable();
                     if j % 2 == 1 {
                         list[j / 2] as f64
                     } else {
