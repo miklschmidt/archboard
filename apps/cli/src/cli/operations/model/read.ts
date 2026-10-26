@@ -14,6 +14,21 @@ const modelReadContract = defineCommand({
 	parameters: [
 		{
 			kind: "option",
+			key: "walkthrough",
+			spellings: ["--walkthrough"],
+			value: "required",
+			placeholder: "id|name",
+			description: "Resolve one narrative against one complete revision",
+		},
+		{
+			kind: "option",
+			key: "shared",
+			spellings: ["--shared"],
+			value: "none",
+			description: "Require an exact retained playback target",
+		},
+		{
+			kind: "option",
 			key: "state",
 			spellings: ["--state"],
 			value: "required",
@@ -61,6 +76,8 @@ const modelReadContract = defineCommand({
 	input: {
 		ingress: z.object({
 			module: z.string().optional(),
+			walkthrough: z.string().optional(),
+			shared: z.boolean().optional(),
 			state: z.string().optional(),
 			against: z.string().optional(),
 			compare: z.boolean().optional(),
@@ -115,6 +132,8 @@ const modelReadContract = defineCommand({
 		await context.require("server", "model read");
 		const result = await readArchitectureModelOnServer(input.module, input.checkpoint, input.flow, {
 			state: input.state,
+			walkthrough: input.walkthrough,
+			shared: input.shared,
 			against: input.against,
 			compare: input.compare,
 		});

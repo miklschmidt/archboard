@@ -1,3 +1,4 @@
+import { walkthroughDependencies } from "#runtime/operations/history/walkthrough-targets.ts";
 import type { z } from "zod";
 import { StateMetadataSchema } from "#shared/schemas/model-definitions.ts";
 import { SelectedStateSchema } from "#shared/schemas/model-proposals.ts";
@@ -50,8 +51,14 @@ async function retainBaseline(
 		predecessor,
 		Buffer.from(Bun.YAML.stringify(predecessor.policy)),
 	);
-	const dependencies =
-		predecessor.selectedState?.baseline === undefined ? [] : [predecessor.selectedState.baseline];
+	const dependencies = [
+		...new Set([
+			...(predecessor.selectedState?.baseline === undefined
+				? []
+				: [predecessor.selectedState.baseline]),
+			...(await walkthroughDependencies(context, predecessor)),
+		]),
+	];
 	const record = CheckpointRecordSchema.parse({
 		schemaVersion: 1,
 		kind: "checkpoint",
@@ -279,7 +286,12 @@ async function proposalCandidate(
 		subjects: structure.subjects,
 		scopes,
 		selection: SelectedStateSchema.strip().parse(proposal),
-		dependencies: [proposal.baseline],
+		dependencies: [
+			...new Set([
+				proposal.baseline,
+				...(await walkthroughDependencies(await archiveContext(vault), draft)),
+			]),
+		],
 	};
 }
 export { proposalCandidate };

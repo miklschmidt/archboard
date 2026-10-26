@@ -50,6 +50,16 @@ Selected state:
 The explicit state metadata and lifecycle of the returned reading.
 A selected draft remains draft even when its retained manifest names a current state.
 
+Canonical walkthrough:
+An ordered narrative that selects readings of one architectural state.
+
+Narrative beat:
+One stable step that states its text and complete reading instructions.
+
+Pinned playback:
+A presentation that uses one resolved complete revision for every beat.
+A restart explicitly resolves a newer reading.
+
 Subject claim:
 An agent's exclusive scope of named architecture subjects.
 The claim identifies its writer, purpose, and start time.

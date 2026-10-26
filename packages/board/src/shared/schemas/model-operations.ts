@@ -1,3 +1,4 @@
+import { WalkthroughChangeSchema } from "#shared/schemas/model-walkthroughs.ts";
 import { DiagramGrammarSchema } from "#shared/schemas/vocabulary.ts";
 import { StandaloneThemeSchema, DiagramAtlasSchema } from "#shared/protocol/render-reply.ts";
 import { FlowChangeSchema } from "#shared/schemas/model-flows.ts";
@@ -137,12 +138,16 @@ const ArchitectureModuleEditSchema = z.union([
 	DescriptionEditSchema.omit({ subject: true, description: true })
 		.extend({
 			proposal: ProposalIntentSchema,
-			changes: z.array(z.union([StructureChangeSchema, FlowChangeSchema])),
+			changes: z.array(z.union([StructureChangeSchema, FlowChangeSchema, WalkthroughChangeSchema])),
 		})
 		.strict(),
 	DescriptionEditSchema,
 	DescriptionEditSchema.omit({ subject: true, description: true })
-		.extend({ changes: z.array(z.union([StructureChangeSchema, FlowChangeSchema])).min(1) })
+		.extend({
+			changes: z
+				.array(z.union([StructureChangeSchema, FlowChangeSchema, WalkthroughChangeSchema]))
+				.min(1),
+		})
 		.strict(),
 ]);
 const ArchitectureEditSuccessSchema = z

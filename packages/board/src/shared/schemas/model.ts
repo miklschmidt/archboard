@@ -1,3 +1,4 @@
+import { WalkthroughSchema } from "#shared/schemas/model-walkthroughs.ts";
 import { z } from "zod";
 import { SemanticIdSchema } from "#shared/schemas/primitives.ts";
 import {
@@ -98,6 +99,7 @@ const ArchitectureModelSchema = z
 		policy: SemanticPolicySchema,
 		modules: z.array(ArchitectureModuleSchema.extend({ file: z.string() })),
 		collections: z.array(FlowCollectionSchema.extend({ file: z.string() })),
+		walkthroughs: z.array(WalkthroughSchema.extend({ file: z.string() })).default([]),
 		relationships: z.array(
 			ArchitectureModuleSchema.shape.outgoing.element.extend({ from: QualifiedSubjectIdSchema }),
 		),
@@ -105,6 +107,21 @@ const ArchitectureModelSchema = z
 		selectedState: SelectedStateSchema.nullable(),
 		proposals: z.array(ProposalSchema.extend({ file: z.string() })),
 		comparison: ComparisonSchema.optional(),
+		playback: z
+			.strictObject({
+				walkthrough: WalkthroughSchema.extend({ file: z.string() }),
+				sourceRevision: ModelRevisionSchema,
+				revision: ModelRevisionSchema,
+				checkpoint: GitObjectIdSchema.optional(),
+				beats: z.array(
+					z.strictObject({
+						id: QualifiedSubjectIdSchema,
+						status: z.enum(["ready", "unavailable"]),
+						diagnostics: z.array(ModelDiagnosticSchema),
+					}),
+				),
+			})
+			.optional(),
 		selectedModule: QualifiedSubjectIdSchema.optional(),
 		selectedFlow: QualifiedSubjectIdSchema.optional(),
 		revision: ModelRevisionSchema,
@@ -123,6 +140,8 @@ const ArchitectureModelFailureSchema = z
 	.object({
 		success: z.literal(false),
 		code: z.enum([
+			"WALKTHROUGH_NOT_FOUND",
+			"WALKTHROUGH_AMBIGUOUS",
 			"STATE_NOT_FOUND",
 			"STATE_AMBIGUOUS",
 			"PREDECESSOR_CHANGED",

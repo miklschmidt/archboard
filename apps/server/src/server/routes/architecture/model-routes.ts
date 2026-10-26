@@ -2,11 +2,7 @@ import { mountArchitectureFlowRoutes } from "#server/routes/architecture/flow-ro
 import { mountArchitecturePublicationRoutes } from "#server/routes/architecture/publication-routes.ts";
 import type { Express } from "express";
 import { z } from "zod";
-import {
-	readArchitectureModel,
-	readArchitectureCheckpoint,
-	listArchitectureCheckpoints,
-} from "@archboard/board/store-read";
+import { readArchitectureModel, listArchitectureCheckpoints } from "@archboard/board/store-read";
 import {
 	retainArchitectureCheckpoint,
 	initializeArchitectureArchive,
@@ -21,6 +17,8 @@ const QuerySchema = z
 		vault: z.string(),
 		module: z.string().min(1).optional(),
 		flow: z.string().min(1).optional(),
+		walkthrough: z.string().min(1).optional(),
+		shared: z.enum(["true", "false"]).optional(),
 		checkpoint: z.string().min(1).optional(),
 		state: z.string().min(1).optional(),
 		against: z.string().min(1).optional(),
@@ -47,16 +45,11 @@ function selectedReading(vault: string, query: z.infer<typeof QuerySchema>) {
 		against: query.against,
 		compare: query.compare === undefined ? undefined : query.compare === "true",
 	};
-	if (query.checkpoint !== undefined)
-		return readArchitectureCheckpoint(
-			vault,
-			query.checkpoint,
-			query.module,
-			query.flow,
-			comparison,
-		);
 	return readArchitectureModel(vault, query.module, query.flow, {
 		state: query.state,
+		checkpoint: query.checkpoint,
+		walkthrough: query.walkthrough,
+		shared: query.shared === "true",
 		...comparison,
 	});
 }

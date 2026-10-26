@@ -4,6 +4,8 @@ const failureStatuses: Partial<
 	Record<Extract<ArchitectureModelRead, { success: false }>["code"], number>
 > = {
 	STATE_NOT_FOUND: 404,
+	WALKTHROUGH_NOT_FOUND: 404,
+	WALKTHROUGH_AMBIGUOUS: 409,
 	STATE_AMBIGUOUS: 409,
 	PREDECESSOR_CHANGED: 409,
 	MODEL_NOT_FOUND: 404,

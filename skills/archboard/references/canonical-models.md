@@ -648,3 +648,8 @@ Active draft readings follow accepted edits through the architecture change feed
 Saved draft readings keep their original content and draft identity.
 If a mutable predecessor changes, the browser preserves the requested state and shows the refusal.
 Select an available saved reading to inspect the retained proposal.
+
+## Dynamic walkthroughs
+
+For narrative authoring, pinned playback, or canonical recording, read [canonical walkthroughs](canonical-walkthroughs.md).
+That recipe uses the existing claimed writer and exact checkpoint workflow.

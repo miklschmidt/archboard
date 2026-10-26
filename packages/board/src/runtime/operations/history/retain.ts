@@ -1,3 +1,4 @@
+import { walkthroughDependencies } from "#runtime/operations/history/walkthrough-targets.ts";
 import { createHash } from "node:crypto";
 import {
 	ArchitectureCheckpointRequestSchema,
@@ -49,6 +50,7 @@ async function prepareCheckpoint(
 	if (captured.diagnostics.length > 0 || captured.revision.digest !== request.expectedRevision)
 		throw new ArchiveError("STALE_REVISION", "Inputs changed before retention.");
 	const tip = await archiveTip(context);
+	const narrativeDependencies = await walkthroughDependencies(context, current);
 	const record = CheckpointRecordSchema.parse({
 		schemaVersion: 1,
 		kind: "checkpoint",
@@ -58,6 +60,7 @@ async function prepareCheckpoint(
 		revision: captured.revision,
 		createdAt: new Date().toISOString(),
 		request,
+		...(narrativeDependencies.length === 0 ? {} : { narrativeDependencies }),
 		sources: await captureSource(context),
 	});
 	const inputs = new Map([...captured.inputs].map(([file, bytes]) => [`inputs/${file}`, bytes]));
@@ -66,7 +69,13 @@ async function prepareCheckpoint(
 	return archiveCommit(
 		context,
 		rootTree,
-		[...new Set([...(tip === undefined ? [] : [tip]), ...request.dependencies])],
+		[
+			...new Set([
+				...(tip === undefined ? [] : [tip]),
+				...request.dependencies,
+				...narrativeDependencies,
+			]),
+		],
 		"archboard: retain architecture checkpoint",
 	);
 }

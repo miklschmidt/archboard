@@ -1,3 +1,4 @@
+import { applyWalkthroughChanges } from "#runtime/operations/model-edit/walkthroughs.ts";
 import { assignFields } from "#runtime/operations/model-edit/fields.ts";
 import { everyStep } from "#shared/rules/flow-steps.ts";
 import { applyFlowChanges } from "#runtime/operations/model-edit/flows.ts";
@@ -31,6 +32,7 @@ function openStructure(model: ArchitectureModel, paths: Iterable<string>) {
 				...proposal.changes.flatMap((change) => (change.type === "add" ? [change.subject] : [])),
 				...(proposal.retiredIds ?? []),
 			]),
+			...model.walkthroughs.flatMap((walk) => [walk.id, ...walk.beats.map((beat) => beat.id)]),
 			...model.modules.map((module) => module.id),
 			...model.relationships.map((edge) => edge.id),
 			...model.collections.flatMap((collection) => [
@@ -110,7 +112,8 @@ function freshIdentity(state: Structure): string {
 			return (
 				state.used.has(`${state.before.manifest.id}#${id}`) ||
 				state.paths.has(`${id}.module.json`) ||
-				state.paths.has(`${id}.flows.json`)
+				state.paths.has(`${id}.flows.json`) ||
+				state.paths.has(`${id}.walkthrough.json`)
 			);
 		},
 	});
@@ -391,9 +394,17 @@ function applyStructure(
 		state.removedModules,
 		state.modules,
 	);
+	const walkthroughs = applyWalkthroughChanges(
+		model,
+		changes,
+		() => freshIdentity(state),
+		state.subjects,
+		state.retired,
+	);
 	state.structural ||= changesStructure(changes, state.retired, model);
 	includeContainment(model.modules, state.modules, state.subjects);
 	const known = new Set([
+		...model.walkthroughs.flatMap((walk) => [walk.id, ...walk.beats.map((beat) => beat.id)]),
 		...model.modules.map((module) => module.id),
 		...model.relationships.map((edge) => edge.id),
 		...model.collections.flatMap((collection) =>
@@ -406,6 +417,13 @@ function applyStructure(
 	const scopes = [...state.subjects].filter((id) => known.has(id));
 	if (state.structural) scopes.push(model.manifest.id);
 	const manifest = candidateManifest(state);
-	return { modules: state.modules, collections, manifest, subjects: [...state.subjects], scopes };
+	return {
+		modules: state.modules,
+		collections,
+		walkthroughs,
+		manifest,
+		subjects: [...state.subjects],
+		scopes,
+	};
 }
 export { applyStructure };

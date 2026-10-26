@@ -89,3 +89,13 @@ An unavailable or changed base supplies no removed definitions.
 The diagram explains its incomplete comparison and offers a refresh action.
 The inspector uses the runtime's changed fields rather than inferring changes from placement.
 Scope, focus, and filters affect depiction without changing the selected architecture or its complete interfaces.
+
+## Narrative subjects
+
+TASK-549.14 extends compact changes to walkthroughs and their beats.
+A walkthrough stores metadata and its reading target.
+Each beat stores its narrative and complete reading instructions as atomic fields.
+Beat placement identifies its walkthrough and optional following sibling.
+Reordering or editing a beat preserves its identity.
+Current and proposal materialization include narrative inputs in one coherent revision.
+The existing claimed transaction owns narrative installation and identity retirement.

@@ -99,6 +99,72 @@ function withMetadata(
 	return { ...standing, kind, fields };
 }
 /**
+ * Compare a narrative subject without copying its owned beats.
+ * @param id The stable subject identity.
+ * @param before The baseline subject.
+ * @param after The selected subject.
+ * @returns Its semantic standing, or no narrative entry.
+ */
+function narrativeStanding(
+	id: string,
+	before: Subject | undefined,
+	after: Subject | undefined,
+): Comparison[] {
+	const subject = after ?? before!;
+	if (subject.kind !== "walkthrough" && subject.kind !== "beat") return [];
+	const fields = [
+		...fieldChanges(before, after, [
+			"name",
+			"formerNames",
+			"summary",
+			"target",
+			"title",
+			"narrative",
+			"reading",
+		]),
+		...placementChanges(before, after),
+	];
+	return [
+		{
+			id,
+			subjectKind: subject.kind,
+			kind: subjectStanding(before, after, fields),
+			fields,
+		},
+	];
+}
+/**
+ * Classify a stable definition from its existence and changed fields.
+ * @param before The original definition.
+ * @param after The continuing definition.
+ * @param fields Its changed fields.
+ * @returns The semantic standing.
+ */
+function subjectStanding(
+	before: Subject | undefined,
+	after: Subject | undefined,
+	fields: Comparison["fields"],
+): Comparison["kind"] {
+	if (before === undefined) return "added";
+	if (after === undefined) return "removed";
+	return fields.length > 0 ? "changed" : "unchanged";
+}
+
+/**
+ * Compare beat order through stable holders and siblings.
+ * @param before The baseline subject.
+ * @param after The selected subject.
+ * @returns Placement differences.
+ */
+function placementChanges(
+	before: Subject | undefined,
+	after: Subject | undefined,
+): Comparison["fields"] {
+	if (!before || !after || sameSemanticValue(before.placement, after.placement)) return [];
+	return [{ field: "placement", before: before.placement, after: after.placement }];
+}
+
+/**
  * Compare stable subjects through the existing semantic rules.
  * @param before The complete comparison base.
  * @param after The complete selected architecture.
@@ -125,11 +191,16 @@ function comparisonOf(before: ArchitectureModel, after: ArchitectureModel): Comp
 	const collections = [...new Set([...left.keys(), ...right.keys()])]
 		.filter((id) => (right.get(id) ?? left.get(id))!.kind === "collection")
 		.map((id) => collectionStanding(id, left.get(id), right.get(id)));
+	const narratives = [...new Set([...left.keys(), ...right.keys()])].flatMap((id) =>
+		narrativeStanding(id, left.get(id), right.get(id)),
+	);
+
 	return [
 		...semantic.map((standing) =>
 			withMetadata(standing, left.get(standing.id), right.get(standing.id)),
 		),
 		...collections,
+		...narratives,
 	];
 }
 export { comparisonOf };

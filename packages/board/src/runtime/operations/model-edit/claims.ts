@@ -134,6 +134,30 @@ function requireNoPending(vault: string): void {
 }
 
 /**
+ * Identify the existing subjects that an agent can claim.
+ * @param model The selected complete model.
+ * @returns Stable subjects and explicit structure scopes.
+ */
+function claimableSubjects(
+	model: Extract<ReturnType<typeof readCurrentModel>, { success: true }>,
+): Set<string> {
+	const scopes = new Set([
+		model.manifest.id,
+		...model.modules.map((module) => module.id),
+		...model.relationships.map((edge) => edge.id),
+		...model.walkthroughs.flatMap((walk) => [walk.id, ...walk.beats.map((beat) => beat.id)]),
+		...model.collections.flatMap((collection) =>
+			collection.flows.flatMap((flow) => [
+				flow.id,
+				...everyStep(flow.steps).map((step) => step.id),
+			]),
+		),
+	]);
+	if (model.selectedState !== null) scopes.add(model.selectedState.id);
+	return scopes;
+}
+
+/**
  * Claim explicit subject and structure scopes while leaving long agent work outside the installation lease.
  * @param vault The explicitly addressed vault.
  * @param input The complete caller input.
@@ -149,21 +173,8 @@ async function claimArchitectureSubjects(
 			requireNoPending(vault);
 			const current = await requireTarget(vault, request.target);
 			if (!current.success) return current;
-			if (
-				request.subjects.some(
-					(subject) =>
-						subject !== current.manifest.id &&
-						subject !== current.selectedState?.id &&
-						!current.modules.some((module) => module.id === subject) &&
-						!current.relationships.some((relationship) => relationship.id === subject) &&
-						!current.collections.some((collection) =>
-							collection.flows.some(
-								(flow) =>
-									flow.id === subject || everyStep(flow.steps).some((step) => step.id === subject),
-							),
-						),
-				)
-			)
+			const scopes = claimableSubjects(current);
+			if (request.subjects.some((subject) => !scopes.has(subject)))
 				throw new ArchiveError(
 					"MODULE_NOT_FOUND",
 					"A claimed scope does not exist in this model. Use its model ID, module IDs or relationship IDs.",

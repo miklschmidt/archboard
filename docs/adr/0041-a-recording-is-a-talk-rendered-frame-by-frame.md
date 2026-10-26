@@ -410,3 +410,22 @@ This reverses these parts of ADR 0035:
   the replay draws the voice box in the walkthrough box's pill. The pill has one
   height whatever it holds, so the camera frames each step the same way on both
   pages.
+
+## Canonical walkthrough recordings
+
+TASK-549.14 extends the existing talk with an optional `architecture` payload.
+It contains one complete canonical reading and its resolved playback.
+Canonical talks require an exact retained checkpoint and available beats.
+Their `document` is null because the architecture payload owns the captured meaning.
+Legacy talks keep their original document and remain readable.
+
+The existing recording page receives that exact payload through its optional `load` operation before voice starts.
+The page address names the model, checkpoint, walkthrough, and explicit vault.
+The recorder never resolves the architecture from a chosen mutable checkout.
+Canonical drawn events report the captured revision digest.
+The talk reader refuses a different revision before replay starts.
+
+The page driver, audio timeline, talk store, frame renderer, and encoder remain the execution owners.
+Replay loads the stored payload and uses the existing frame clock.
+It reads no current vault and starts no voice model.
+Canonical recording and replay page acceptance remain with the parent frontend implementation.

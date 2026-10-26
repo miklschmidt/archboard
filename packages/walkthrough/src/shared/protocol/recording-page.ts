@@ -1,3 +1,4 @@
+import type { ArchitectureModelRead } from "@archboard/board/model";
 // A recording of one walkthrough, as the page that records it and the command
 // that drives the page agree on it (TASK-304, TASK-381).
 //
@@ -100,6 +101,9 @@ type RecordingState = z.infer<typeof RecordingStateSchema>;
  * are null before the state says `finished`.
  */
 interface RecordingPage {
+	readonly load?: (
+		architecture: Extract<ArchitectureModelRead, { success: true }>,
+	) => Promise<void>;
 	readonly state: () => RecordingState;
 	readonly start: () => Promise<void>;
 	readonly voice: () => Blob | null;
@@ -130,6 +134,22 @@ function searchValue(params: URLSearchParams, name: string): string | null {
 }
 
 /**
+ * Preserve explicit canonical recording intent, including malformed addresses.
+ * @param params The recording address.
+ * @returns Canonical addressing or no canonical intent.
+ */
+function canonicalRecording(params: URLSearchParams) {
+	if (!params.has("recordVault") && !params.has("modelA")) return {};
+	return {
+		canonical: {
+			model: params.get("modelA") ?? "",
+			checkpoint: params.get("checkpointA") ?? "",
+			vault: params.get("recordVault") ?? "",
+		},
+	};
+}
+
+/**
  * The walkthrough a page's address asks it to record, and the language to narrate it in.
  * @param search The address's search string, with or without its leading `?`.
  * @returns The walkthrough's id or name, the language as the address gives it (English when it
@@ -140,6 +160,11 @@ function recordingAskedOf(search: string): {
 	readonly walkthrough: string;
 	readonly language: string;
 	readonly against: string | null;
+	readonly canonical?: {
+		readonly model: string;
+		readonly checkpoint: string;
+		readonly vault: string;
+	};
 } | null {
 	const params = new URLSearchParams(search);
 	const walkthrough = searchValue(params, RECORDING_SEARCH_PARAM);
@@ -149,6 +174,7 @@ function recordingAskedOf(search: string): {
 		walkthrough,
 		language: language ?? DEFAULT_RECORDING_LANGUAGE,
 		against: searchValue(params, RECORDING_AGAINST_SEARCH_PARAM),
+		...canonicalRecording(params),
 	};
 }
 

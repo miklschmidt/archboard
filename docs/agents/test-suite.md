@@ -517,3 +517,14 @@ These adapters do not repeat the domain matrix.
 `canonical-model-planning.test.ts` owns planning roots, retained predecessor comparisons, empty baselines, and unavailable state intent.
 These browser owners use real temporary files and Git through the normal public HTTP writes.
 No renderer algorithm test or model evaluation belongs to this slice.
+
+## Canonical narrative playback
+
+`packages/board/tests/runtime/operations/model-edit/walkthroughs.test.ts` owns narrative authoring and target resolution through public architecture operations with real files and Git.
+It covers beat identity, claims, stale tokens, exact retry, retained inputs, pinned playback, restart reads, and per-beat missing subjects.
+The proposal owner covers independent compact narrative and beat subjects.
+`tests/system/semantic-boards/model-walkthroughs.test.ts` owns CLI and HTTP routing, schema agreement, retained selection, and refused output preservation.
+`packages/walkthrough/tests/runtime/store/canonical-talk.test.ts` owns the controlled page load, exact payload storage, and revision refusal through existing recording contracts.
+Existing talk, timeline, encoder, and renderer owners keep their behavior matrices.
+The parent owns frontend and browser acceptance.
+No live voice model or model evaluation runs for this backend slice.

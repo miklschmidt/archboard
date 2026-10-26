@@ -1154,6 +1154,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "tests/system/browser/canonical-model-modes.test.ts; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
+					"path": "canonical walkthroughs: narrative inputs, stable beats, compact changes, revision-pinned playback, retained recording and replay",
+					"expectedUse": "Author through the shared claimed writer. Preserve beat identities. Resolve one complete target for playback. Retain exact history before sharing or recording. Reuse the local talk pipeline.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/model-edit/walkthroughs.test.ts; packages/board/tests/runtime/operations/proposals/proposals.test.ts; tests/system/semantic-boards/model-walkthroughs.test.ts; packages/walkthrough/tests/runtime/store/canonical-talk.test.ts; guidance skills/archboard/references/canonical-walkthroughs.md; parent owns browser acceptance"
 				}
 			]
 		},

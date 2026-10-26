@@ -3,11 +3,25 @@ import { StateMetadataSchema, ModelRevisionSchema } from "#shared/schemas/model-
 import { QualifiedSubjectIdSchema, SemanticIdSchema } from "#shared/schemas/primitives.ts";
 const StateSelectionSchema = z.strictObject({
 	state: z.string().min(1).optional(),
+	walkthrough: z.string().min(1).optional(),
+	checkpoint: z
+		.string()
+		.regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u)
+		.optional(),
+	shared: z.boolean().optional(),
 	against: z.string().min(1).optional(),
 	compare: z.boolean().optional(),
 });
 const CheckpointIdSchema = z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u);
-const SubjectKindSchema = z.enum(["module", "relationship", "collection", "flow", "step"]);
+const SubjectKindSchema = z.enum([
+	"module",
+	"relationship",
+	"collection",
+	"flow",
+	"step",
+	"walkthrough",
+	"beat",
+]);
 const PlacementSchema = z.strictObject({
 	holder: z.union([QualifiedSubjectIdSchema, SemanticIdSchema]),
 	alternative: z.string().optional(),

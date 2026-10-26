@@ -1,9 +1,11 @@
 ---
 id: TASK-549.14
 title: Present and record dynamic walkthroughs
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex-backend'
 created_date: '2026-10-26T05:25:00Z'
+updated_date: '2026-10-26T22:55:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -55,3 +57,14 @@ TASK-549.06, TASK-549.12
 - [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
 - [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Implement backend and CLI only in feat/backend-recording-replay. Parent owns frontend and browser acceptance.
+1. Publish the exact walkthrough read/write and recording contract in the durable state directory.
+2. Create draft TASK-549.14 proposals on Board persistence, Archboard server routes, Command interface, and Board rasterizer.
+3. Use public architecture operations with real files and Git for each red-green slice: narrative authoring, compact proposals, pinned playback, and retained recording inputs.
+4. Extend existing local recording and replay contracts without adding an engine. Update consumer instructions, ADRs, and test ownership.
+5. Simplify, merge the latest integration tip, run affected evidence, sign checkpoints, release claims, and publish the backend handoff. Leave criteria unchecked and proposals draft.
+<!-- SECTION:PLAN:END -->
