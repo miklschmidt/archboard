@@ -1112,6 +1112,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/board/tests/runtime/operations/legacy-inventory/legacy-inventory.test.ts; guidance skills/archboard/references/legacy-migration.md"
+				},
+				{
+					"path": "canonical recursive readings: scopes, exact checkpoint addresses, direct context, complete interfaces and connection aggregation",
+					"expectedUse": "Open immediate module children without creating boards. Preserve exact readings through navigation and inspect every authored relationship behind a projected line.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "tests/system/browser/canonical-model-navigation.test.ts; guidance skills/archboard/references/canonical-models.md"
 				}
 			]
 		},

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T16:19:00Z'
+updated_date: '2026-10-26T16:58:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -85,4 +85,10 @@ Checkpoint: root modules now render through the existing browser renderer and ca
 Integrated durable reads through signed merge 88578767e. The first recursive browser case failed on the absent opening action after correcting a duplicate fixture identity. It now passes root-to-module-to-child navigation, containment breadcrumbs, Back/Forward, reload, and unchanged input revisions, with four assertions. A router reducer type mismatch was identified and corrected through the existing search validator. The slice remains incomplete: exact-checkpoint URL state, mixed pane address ownership, model identity guards, connection inspection, complete interface presentation, geometry reuse, and obsolete-layout behavior still need delivery.
 
 The corrected recursive slice passes source and frontend types. Focused production lint passes after six initial findings were fixed without changing rules. The DOM installation now keeps its SVG in refs and updates selection without replacing unchanged SVG. The browser navigation owner passes again after that change. This is a partial checkpoint, not completion of TASK-549.10.
+
+The integrated source includes structural editing and publication through signed c9f7b03ec. Canonical addresses now restore independent panes, exact checkpoints, scopes, pane closure, Back, and reload. Unknown model and scope identities stay explicit. Projected connections separate direction and kind and expose every underlying identity and label. Complete interface facts reuse the existing container inspector. A real hidden-description edit exposed scene replacement; renderer-prepared semantic keys now preserve the mounted scene across that revision. Three navigation cases pass, plus the existing scope owner. Types and lint pass before final visual corrections. The publication regression exposed a test race: completion polling could observe the initially enabled button before the action started. The test now observes aria-busy before waiting for completion, without a product timeout or implementation change. Final closure validation and architecture adoption remain pending.
+
+Final browser evidence passes 13 distinct cases and 83 assertions across navigation, publication, current/historical viewing, structural updates, and workspace addresses. Shared scope regression passes 16 cases and 25 assertions. Final source/frontend types and full lint pass with no warnings. Evaluation inputs pass 21 scenarios, 21 fixtures, and 14 coverage parts. The parent inspected root connection details and the corrected open-module interface at 1920 by 1080. Temporary screenshot calls and diagnostics are removed. The first code check identified one missing browser-host to view-dispatcher relationship; the task proposal now includes the evidenced call. Final architecture checks and adoption remain pending.
+
+The renderer width gate exposed two added names at 63/61. Its callers now derive draw parameters and results from the existing operations. Removing the redundant public BoardRenderChoices, BoardRenderOutcome, and RenderedDiagram types reduces the result to 60 names, so the renderer ceiling falls from 61 to 60. The board ceiling remains unchanged at 188. No operation is hidden behind a namespace and no lint or type rule changes.
 <!-- SECTION:NOTES:END -->

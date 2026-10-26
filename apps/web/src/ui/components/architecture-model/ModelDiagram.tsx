@@ -1,6 +1,6 @@
-import { useCallback, useLayoutEffect, useRef, type JSX } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, type JSX } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { RenderedDiagram } from "@archboard/renderer/picture";
+import type { prepareContentHere } from "@archboard/renderer/browser";
 import { CameraSurface } from "#ui/components/semantic-board-canvas/CameraSurface.tsx";
 import {
 	useBoardCamera,
@@ -11,12 +11,15 @@ import { markSubjects } from "#ui/clients/semantic-board-canvas/subjects/subject
 import type { projectModel, Model } from "#ui/rules/architecture-model/projection.ts";
 import { modelDrawingQuery } from "#ui/clients/architecture-model/drawing.ts";
 
+type RenderedDiagram = Awaited<ReturnType<ReturnType<typeof prepareContentHere>["draw"]>>;
+
 interface ModelDiagramProps {
 	model: Model;
 	projection: ReturnType<typeof projectModel>;
 	reducedMotion: boolean;
 	selected: string | null;
 	onSelect: (id: string | null) => void;
+	onOpen: (id: string | null) => void;
 }
 
 /**
@@ -25,8 +28,9 @@ interface ModelDiagramProps {
  * @returns The current scene or an explicit rendering state.
  */
 function ModelDiagram(props: ModelDiagramProps): JSX.Element {
-	const { projection } = props;
-	const drawing = useQuery(modelDrawingQuery(props.model, projection));
+	const { projection, model } = props;
+	const drawingOptions = useMemo(() => modelDrawingQuery(model, projection), [model, projection]);
+	const drawing = useQuery(drawingOptions);
 	const camera = useBoardCamera(props.reducedMotion);
 	if (projection.content.nodes.length === 0)
 		return (
@@ -54,7 +58,7 @@ interface ModelSceneProps extends ModelDiagramProps {
  * @returns A selectable, pannable diagram.
  */
 function ModelScene(props: ModelSceneProps): JSX.Element {
-	const { drawing, camera, selected, onSelect } = props;
+	const { drawing, camera, selected, onSelect, onOpen, model } = props;
 	const surface = useRef<HTMLDivElement | null>(null);
 	const installed = useRef<string | null>(null);
 	const attach = useCallback((element: HTMLDivElement | null): void => {
@@ -65,6 +69,12 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		(element: HTMLDivElement | null): void => camera.attachViewport(element),
 		[camera],
 	);
+	const open = useCallback(
+		(id: string | null): void => {
+			if (id !== null && model.modules.some((module) => module.id === id)) onOpen(id);
+		},
+		[model.modules, onOpen],
+	);
 	const ignore = useCallback((): void => {}, []);
 	const { pointer, gesture } = useDiagramGestures({
 		camera,
@@ -72,7 +82,7 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		onSelect,
 		onHover: ignore,
 		dismissTip: ignore,
-		openDown: ignore,
+		openDown: open,
 	});
 	useLayoutEffect(() => {
 		const root = surface.current;
