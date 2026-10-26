@@ -3077,3 +3077,16 @@ is called off. Track's router also got 24.5% cheaper in the core.
 measurements, the tools that measure a critical path, the critical paths against the
 500 ms target and what still stands between the boards and it. No drawing
 changed.
+
+## 59. graphviz-pure lays our graphs out faster, to the same bytes (2026-10-26, TASK-548.03)
+
+The vendored graphviz-pure gives every graph the same answer, byte for byte,
+in about a third less time. On the 1,072 Graphviz calls of the first renders
+that `timing.ts 7` measures, WebAssembly in Bun took 7.2 s against 11.0 s.
+Two alternated runs of `timing.ts 7` took 8,559 ms and 8,645 ms of first
+renders in all, against 10,556 ms and 10,601 ms. Agent workbench took
+1,359 ms and 1,398 ms against 1,669 ms and 1,680 ms. None of the 2,344
+current drawings changed.
+[graphviz-pure-speed.md](graphviz-pure-speed.md) records the oracle, the
+profile before and after, the gain of each change, and Graphviz's share of
+the slowest boards' critical paths against the target of 500 ms.

@@ -44,8 +44,7 @@ impl Statements {
         p.attr_items.clear();
         p.html_keys.clear();
         for &(key, value) in items {
-            p.attr_items
-                .push((key.to_owned(), value.to_owned(), false));
+            p.attr_items.push((key.to_owned(), value.to_owned(), false));
         }
         p.apply_attr_items(match kind {
             AttrKind::Graph => DictKind::Graph,
@@ -105,8 +104,7 @@ impl Statements {
     pub fn close_subgraph(&mut self) {
         let subgraph = self.parser.closesubg();
         let attrs = self.list(&[]);
-        self.parser
-            .endnode(&EdgeItem::Subgraph(subgraph), &attrs);
+        self.parser.endnode(&EdgeItem::Subgraph(subgraph), &attrs);
     }
 
     /// `k=v;`
@@ -115,8 +113,7 @@ impl Statements {
             text: text.to_owned(),
             html: false,
         };
-        self.parser
-            .graph_attr_assignment(atom(key), atom(value));
+        self.parser.graph_attr_assignment(atom(key), atom(value));
     }
 
     /// The root's `}`: the graph read.

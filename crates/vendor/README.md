@@ -32,8 +32,8 @@ archboard changed three things:
    `tests/data/qsort_expected.txt` were recorded again from musl's own
    `qsort.c`, compiled natively, on the same inputs. Every comment that the
    change touches says `archboard:`.
-3. `graphviz-pure-layout` lays a graph out faster, to the same answer byte for
-   byte (TASK-548.03). Each change keeps the order of every decision, every tie
+3. graphviz-pure lays a graph out faster, to the same answer byte for byte
+   (TASK-548.03, `docs/design/graphviz-pure-speed.md`). Each change keeps the order of every decision, every tie
    and every floating-point operation, and says `archboard:` where it is:
    - `src/dotgen/mincross.rs`: `reorder` stops at the first pass that exchanges
      nothing, and runs its passes on a one-array copy of the rank
