@@ -21,6 +21,7 @@ import {
 	EXPOSED_USER_LIMIT,
 	ContainerExposureSchema,
 } from "#shared/protocol/code-check.ts";
+import files from "#tests/runtime/support/code-check/interfaces-files.json";
 import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 
 const caller = {
@@ -79,78 +80,7 @@ beforeAll(async () => {
 	writeFileSync(join(scratch, "gitconfig"), "");
 	git(scratch, shop, "init", "-q", "-b", "main");
 	git(scratch, shop, "remote", "add", "origin", `https://${SHOP}.git`);
-	write(shop, {
-		"src/store/index.ts": [
-			'export { readShelf } from "./lib/read";',
-			'export { writeShelf } from "./lib/write";',
-			'export { auditShelf } from "./lib/audit";',
-			'export { onShelf } from "./lib/callback";',
-			'export { unusedHelper, SHELF_LIMIT, type ShelfType } from "./lib/util";',
-			"",
-		].join("\n"),
-		"src/store/lib/read.ts":
-			'import { cached } from "./cache";\nexport function readShelf(): string { return cached(); }\n',
-		"src/store/lib/cache.ts": 'export function cached(): string { return "x"; }\n',
-		"src/store/lib/write.ts": "export function writeShelf(): void {}\n",
-		"src/store/lib/audit.ts": "export function auditShelf(): void {}\n",
-		"src/store/lib/callback.ts": "export function onShelf(name: string): void {}\n",
-		"src/store/lib/hook.ts": "export function hook(): void {}\n",
-		"src/store/lib/inner.ts":
-			'import { hook } from "./hook";\nexport function inner(): void { hook(); }\n',
-		"src/store/lib/util.ts":
-			"export function unusedHelper(): void {}\nexport interface ShelfType { name: string }\nexport const SHELF_LIMIT = 3;\n",
-		// A file of tests at the store's root, which is no root file.
-		"src/store/index.test.ts": "export function shelfFixture(): void {}\n",
-		"src/server/routes.ts": [
-			'import { readShelf, writeShelf } from "../store";',
-			'import { cached } from "../store/lib/cache";',
-			"export function route(): string { writeShelf(); return readShelf() + cached(); }",
-			"",
-		].join("\n"),
-		"src/report/report.ts": [
-			'import { auditShelf, SHELF_LIMIT, type ShelfType } from "../store";',
-			"export function report(shelf: ShelfType): string { auditShelf(); return shelf.name.slice(SHELF_LIMIT); }",
-			"",
-		].join("\n"),
-		"src/report/listen.ts": [
-			'import { onShelf, SHELF_LIMIT } from "../store";',
-			"function consume(value: unknown): void {}",
-			"export function listen(names: string[]): void { names.forEach(onShelf); consume(SHELF_LIMIT); }",
-			"",
-		].join("\n"),
-		"tests/system/store.test.ts":
-			'import { unusedHelper } from "../../src/store";\nunusedHelper();\n',
-		"tests/system/private.test.ts": [
-			'import { cached } from "../../src/store/lib/cache";',
-			'import { readShelf } from "../../src/store/lib/read";',
-			'import { cached as again } from "../../src/store/lib/cache";',
-			"cached(); readShelf(); again();",
-			"",
-		].join("\n"),
-		"src/store/tests/private.test.ts": 'import { cached } from "../lib/cache";\ncached();\n',
-		"docs/guide.md": "# Guide\n",
-		"infra/flake/flake.nix": '{ outputs = { self }: { lib.version = "1"; }; }\n',
-		"infra/chart/Chart.yaml": "apiVersion: v2\nname: cart\nversion: 1.0.0\n",
-		"infra/chart/values.yaml": "replicas: 2\nimage:\n  tag: stable\n",
-		"infra/chart/templates/service.yaml":
-			"apiVersion: v1\nkind: Service\nmetadata:\n  name: cart\nspec:\n  ports:\n    - port: 80\n",
-		"infra/routes.yaml": [
-			"apiVersion: networking.k8s.io/v1",
-			"kind: Ingress",
-			"metadata:",
-			"  name: shop",
-			"spec:",
-			"  defaultBackend:",
-			"    service:",
-			"      name: cart",
-			"      port:",
-			"        number: 80",
-			"",
-		].join("\n"),
-		"infra/compose/compose.yaml": "services:\n  cart:\n    image: cart\n",
-		"infra/plain/config.yaml":
-			"apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: settings\ndata:\n  MODE: demo\n",
-	});
+	write(shop, files);
 	write(shop, {
 		"src/wide/index.ts": 'export * from "./names";\n',
 		"src/wide/names.ts": `${Array.from({ length: WIDE }, (_, at) => `export const ${wideName(at)} = ${at};`).join("\n")}\n`,
