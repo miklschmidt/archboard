@@ -284,7 +284,10 @@ async function proposalCandidate(
 		subjects: structure.subjects,
 		scopes,
 		selection: SelectedStateSchema.strip().parse(proposal),
-		dependencies: [proposal.baseline],
+		dependencies: [
+			proposal.baseline,
+			...(proposal.restorations ?? []).map((proof) => proof.checkpoint),
+		],
 	};
 }
 export { proposalCandidate, retainBaseline, updateChanges, decodedDraft, proposalInputs };

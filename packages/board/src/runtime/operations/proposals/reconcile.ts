@@ -1,8 +1,7 @@
+import { everyStep } from "#shared/rules/flow-steps.ts";
 import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
 import type { ReconciliationIssue } from "#shared/schemas/reconciliation.ts";
-import { ArchitectureModuleSchema } from "#shared/schemas/model-definitions.ts";
-import { FlowCollectionSchema, ModelFlowSchema } from "#shared/schemas/model-flows.ts";
 import { reconcileVariant, mergeByIdentity } from "#shared/rules/reconcile/variant.ts";
 import { contentOf } from "#runtime/operations/proposals/compare.ts";
 import { decodeModel } from "#runtime/operations/read/model-read.ts";
@@ -25,33 +24,54 @@ function canonicalContent(
 	content: VariantContent,
 	collections: Collection[],
 ): ArchitectureModelRead {
-	const modules = content.nodes.map((node) => ({
-		...ArchitectureModuleSchema.strip().parse({
-			...node,
-			schemaVersion: 1,
-			outgoing: content.edges
-				.filter((edge) => edge.from === node.id)
-				.map(({ from: _from, ...edge }) => edge),
-		}),
-		file:
+	const inputs = materializedInputs(
+		{ ...mine, modules: [], collections: [] },
+		Buffer.from(Bun.YAML.stringify(theirs.policy)),
+	);
+	const live = new Set(
+		[
+			...content.nodes,
+			...content.edges,
+			...content.flows,
+			...content.flows.flatMap((flow) => everyStep(flow.steps)),
+		].map((subject) => subject.id),
+	);
+	for (const node of content.nodes) {
+		const file =
 			mine.modules.find((module) => module.id === node.id)?.file ??
 			theirs.modules.find((module) => module.id === node.id)?.file ??
-			`${node.id.split("#")[1]}.module.json`,
-	}));
+			`${node.id.split("#")[1]}.module.json`;
+		const outgoing = content.edges
+			.filter((edge) => edge.from === node.id)
+			.map(({ from: _from, ...edge }) => edge);
+		inputs.set(file, Buffer.from(JSON.stringify({ ...node, schemaVersion: 1, outgoing })));
+	}
 	const flows = content.flows.map((flow) => ({
-		flow: ModelFlowSchema.strip().parse(flow),
+		flow: Object.fromEntries(Object.entries(flow).filter(([key]) => key !== "collection")),
 		holder: Reflect.get(flow, "collection"),
 	}));
-	const groups = collections.map((collection) => ({
-		...FlowCollectionSchema.strip().parse({
-			...collection,
-			flows: flows
-				.filter((entry) => entry.holder === `${mine.manifest.id}#${collection.id}`)
-				.map((entry) => entry.flow),
-		}),
-		file: collection.file,
-	}));
-	if (groups.flatMap((collection) => collection.flows).length !== flows.length)
+	for (const collection of collections) {
+		const { file, ...definition } = collection;
+		inputs.set(
+			file,
+			Buffer.from(
+				JSON.stringify({
+					...definition,
+					flows: flows
+						.filter((entry) => entry.holder === `${mine.manifest.id}#${collection.id}`)
+						.map((entry) => entry.flow),
+				}),
+			),
+		);
+	}
+	if (
+		collections.reduce(
+			(count, collection) =>
+				count +
+				flows.filter((entry) => entry.holder === `${mine.manifest.id}#${collection.id}`).length,
+			0,
+		) !== flows.length
+	)
 		return {
 			success: false,
 			code: "MODEL_INVALID",
@@ -60,33 +80,19 @@ function canonicalContent(
 				{
 					code: "REFERENCE_LOST",
 					file: "model.json",
-					subjects: flows
-						.filter(
-							(entry) =>
-								!collections.some(
-									(collection) => entry.holder === `${mine.manifest.id}#${collection.id}`,
-								),
-						)
-						.map((entry) => entry.flow.id),
+					subjects: content.flows.map((flow) => flow.id),
 					message: "A flow lost its collection.",
 					recovery: "Restore its collection or explicitly move the flow.",
 				},
 			],
 		};
-	const live = new Set(
-		[...content.nodes, ...content.edges, ...content.flows].map((subject) => subject.id),
-	);
 	const reserved = [
 		...new Set([...(mine.manifest.retiredIds ?? []), ...(theirs.manifest.retiredIds ?? [])]),
 	].filter((id) => !live.has(id));
-	const model = {
-		...mine,
-		manifest: { ...theirs.manifest, retiredIds: reserved },
-		policy: theirs.policy,
-		modules,
-		collections: groups,
-	};
-	const inputs = materializedInputs(model, Buffer.from(Bun.YAML.stringify(model.policy)));
+	inputs.set(
+		"model.json",
+		Buffer.from(JSON.stringify({ ...theirs.manifest, retiredIds: reserved })),
+	);
 	return decodeModel(
 		{ inputs, revision: modelRevision(inputs), diagnostics: [] },
 		mine.selectedState,

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T21:08:00Z'
+updated_date: '2026-10-26T21:14:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -74,4 +74,6 @@ TASK-549.06
 Started from clean signed integration 212ef722bd5b0b9d6ce976119231be8d6378abb8. TASK-549.06 is Done and integrated. Parent owns frontend and full acceptance. Public operation seams and signed branch work are approved.
 
 Published early backend contract beside the delegate brief. Created draft TASK-549.07 proposals on Board persistence, Command interface and Archboard server routes. First public operation test failed on descendant claim scopes, then passed after claim validation and parent-first family candidate integration. Source and browser type checks found one result narrowing issue, now corrected. No frontend source or browser tests changed.
+
+Public runtime cases now pass safe two-level inheritance, retained conflict standing, blocked-child refusal, explicit mine/theirs settlement, deletion against modification, exact settlement retry, alternative renames, competing holders and empty-flow preservation. A deleted subject kept by settlement carries a retained restoration proof, so the existing identity authority never treats it as a fresh allocation. The original conflict baseline remains unchanged until settlement.
 <!-- SECTION:NOTES:END -->

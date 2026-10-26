@@ -72,6 +72,9 @@ const ProposalSchema = StateMetadataSchema.extend({
 	changes: z.array(ProposalChangeSchema),
 	standing: ModelStandingSchema.optional(),
 	retiredIds: z.array(QualifiedSubjectIdSchema).optional(),
+	restorations: z
+		.array(z.strictObject({ subject: QualifiedSubjectIdSchema, checkpoint: CheckpointIdSchema }))
+		.optional(),
 }).strict();
 const SelectedStateSchema = StateMetadataSchema.extend({
 	lifecycle: z.enum(["current", "draft", "historical", "shelved"]),

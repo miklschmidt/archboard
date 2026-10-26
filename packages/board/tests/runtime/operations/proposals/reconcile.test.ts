@@ -1,67 +1,10 @@
 import { afterEach, expect, test } from "bun:test";
-import {
-	readArchitectureModel,
-	readArchitectureCheckpoint,
-	readArchitectureClaims,
-} from "@archboard/board/store-read";
-import {
-	claimArchitectureSubjects,
-	releaseArchitectureClaim,
-	editArchitectureModule,
-} from "@archboard/board/store-write";
-import type { ArchitectureModuleEdit } from "@archboard/board/model";
+import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/board/store-read";
+import { editArchitectureModule } from "@archboard/board/store-write";
+import { request, selected, proposal } from "#tests/runtime/operations/proposals/fixture.ts";
 import { fixture, disposeFixtures } from "#tests/runtime/operations/model-edit/fixture.ts";
 afterEach(disposeFixtures);
 
-async function request(vault: string, state = "Current") {
-	const model = readArchitectureModel(vault);
-	if (!model.success) throw new Error(JSON.stringify(model));
-	const claims = readArchitectureClaims(vault);
-	if (!claims.success) throw new Error(JSON.stringify(claims));
-	for (const claim of claims.claims)
-		await releaseArchitectureClaim(vault, { claim: claim.id, writer: claim.writer });
-	const target = { model: model.manifest.id, state };
-	const scopes = [
-		model.manifest.id,
-		...model.modules.map((m) => m.id),
-		...model.relationships.map((e) => e.id),
-		...model.proposals.map((p) => p.id),
-	];
-	const claim = await claimArchitectureSubjects(vault, {
-		target,
-		writer: "agent",
-		reason: "reconciling family",
-		subjects: scopes,
-	});
-	if (!claim.success) throw new Error(JSON.stringify(claim));
-	return {
-		target,
-		writer: "agent",
-		doing: "reconciling family",
-		claim: claim.claim.id,
-		operationId: crypto.randomUUID(),
-		expectedRevision: model.revision,
-	};
-}
-async function selected(vault: string, state: string) {
-	const model = await readArchitectureModel(vault, undefined, undefined, { state, compare: false });
-	if (!model.success) throw new Error(JSON.stringify(model));
-	return model;
-}
-async function proposal(
-	vault: string,
-	name: string,
-	state = "Current",
-	changes: Extract<ArchitectureModuleEdit, { changes: unknown }>["changes"] = [],
-) {
-	const result = await editArchitectureModule(vault, {
-		...(await request(vault, state)),
-		proposal: { type: "create", name },
-		changes,
-	});
-	if (!result.success || result.target.state === null) throw new Error(JSON.stringify(result));
-	return result;
-}
 test("a predecessor edit publishes safe inherited fields through the complete dependent family", async () => {
 	const { vault } = fixture();
 	const first = await proposal(vault, "Queued", "Current", [
@@ -93,4 +36,80 @@ test("a predecessor edit publishes safe inherited fields through the complete de
 		]),
 	});
 });
-export { request, selected, proposal };
+
+test("standing keeps the disputed baseline readable and blocks children until explicit settlement", async () => {
+	const { vault } = fixture();
+	const first = await proposal(vault, "Queued", "Current", [
+		{ type: "edit-module", subject: "Shop#Gateway", set: { description: "Queues work." } },
+	]);
+	const child = await proposal(vault, "Batch", first.target.state!);
+	const original = (await selected(vault, first.target.state!)).selectedState!.baseline;
+	const result = await editArchitectureModule(vault, {
+		...(await request(vault)),
+		changes: [
+			{
+				type: "edit-module",
+				subject: "Shop#Gateway",
+				set: { description: "Dispatches immediately.", responsibility: "Accepts public work" },
+			},
+		],
+	});
+	expect(result).toMatchObject({
+		success: true,
+		reconciliation: true,
+		reconciliations: expect.arrayContaining([
+			{
+				state: child.target.state,
+				standing: expect.objectContaining({ blockedBy: first.target.state }),
+			},
+		]),
+	});
+	const held = await selected(vault, first.target.state!);
+	expect(held.modules.find((m) => m.id === "Shop#Gateway")).toMatchObject({
+		description: "Queues work.",
+		responsibility: "Accepts public work",
+	});
+	expect(held.selectedState).toMatchObject({
+		baseline: original,
+		standing: {
+			baseline: original,
+			issues: [
+				expect.objectContaining({
+					subject: "Shop#Gateway",
+					field: "description",
+					kind: "competing-field",
+					mine: "Queues work.",
+					theirs: "Dispatches immediately.",
+				}),
+			],
+		},
+	});
+	expect((await selected(vault, child.target.state!)).selectedState).toMatchObject({
+		standing: { blockedBy: first.target.state },
+	});
+	expect(
+		await editArchitectureModule(vault, {
+			...(await request(vault, child.target.state!)),
+			proposal: { type: "edit" },
+			changes: [],
+		}),
+	).toMatchObject({ success: false, code: "PROPOSAL_BLOCKED", applied: false });
+	const intent = {
+		...(await request(vault, first.target.state!)),
+		proposal: {
+			type: "settle" as const,
+			resolutions: [{ subject: "Shop#Gateway", field: "description", take: "mine" as const }],
+		},
+		changes: [],
+	};
+	const settled = await editArchitectureModule(vault, intent);
+	expect(settled).toMatchObject({ success: true, reconciliation: false });
+	expect((await selected(vault, first.target.state!)).selectedState).not.toHaveProperty("standing");
+	const following = await selected(vault, child.target.state!);
+	expect(following.selectedState).not.toHaveProperty("standing");
+	expect(following.modules.find((m) => m.id === "Shop#Gateway")).toMatchObject({
+		description: "Queues work.",
+		responsibility: "Accepts public work",
+	});
+	expect(await editArchitectureModule(vault, intent)).toEqual(settled);
+});
