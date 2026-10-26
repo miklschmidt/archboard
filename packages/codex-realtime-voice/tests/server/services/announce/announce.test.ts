@@ -220,6 +220,18 @@ describe("announcing a context change", () => {
 				workhorse: { checkouts: [CHECKOUT], text: "x", payload: { open: () => "file" } },
 				voice: { text: "x" },
 			},
+			{
+				feed: "editor",
+				sequence: 1,
+				workhorse: {
+					checkouts: [CHECKOUT],
+					text: "x",
+					payload: Object.defineProperty({}, "__proto__", {
+						value: () => "file",
+						enumerable: true,
+					}),
+				},
+			},
 			{ feed: "editor", sequence: 1, voice: { text: "x", withheld: "y" } },
 			{ feed: "editor", sequence: 1, capturedAtMs: Date.now() + 60_000, voice: { text: "x" } },
 		];

@@ -76,8 +76,13 @@ function isJsonContainer(value: object, path: readonly object[]): boolean {
 	return Object.values(value).every((entry) => entry === undefined || isJsonValue(entry, inside));
 }
 
+// The checks read the payload the host passed: a parsed copy leaves out an own `__proto__` key,
+// whose value the codec still writes.
 const Payload = z
-	.record(z.string(), z.unknown())
+	.custom<Record<string, unknown>>(
+		(value) => typeof value === "object" && value !== null && !Array.isArray(value),
+		"a payload is an object",
+	)
 	.refine(
 		(payload) => Object.keys(payload).every((key) => !EXECUTION_CONTEXT_KEYS.includes(key)),
 		`a payload cannot use the keys ${EXECUTION_CONTEXT_KEYS.join(", ")}`,
