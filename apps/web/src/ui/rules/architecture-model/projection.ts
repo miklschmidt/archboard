@@ -145,7 +145,13 @@ function projectFocused(
 	const relevant = complete.edges.filter(
 		(edge) => focused.has(edge.id) || inside.has(edge.from) || inside.has(edge.to),
 	);
-	const connections = projectedConnections(complete, relevant, drawnAs, open);
+	const selfConnections = edges.filter((edge) => edge.from === edge.to).map((edge) => edge.from);
+	const connections = projectedConnections(
+		complete,
+		relevant,
+		drawnAs,
+		new Set([...open, ...selfConnections]),
+	);
 	const visible = new Set([...base, ...connections.flatMap(({ line }) => [line.from, line.to])]);
 	const known = new Set([...complete.nodes, ...complete.edges].map((subject) => subject.id));
 	return {

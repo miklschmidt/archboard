@@ -9,6 +9,7 @@
 
 import {
 	useCallback,
+	useEffect,
 	useRef,
 	useState,
 	type MouseEvent as ReactMouseEvent,
@@ -75,14 +76,14 @@ interface DiagramPointer {
  */
 function useDiagramGestures(inputs: DiagramGestureInputs): {
 	readonly rectangle: DiagramBox | null;
-	readonly keyboard: Pick<HTMLAttributes<HTMLElement>, "onKeyDown" | "onKeyUp" | "onBlur">;
+	readonly keyboard: Pick<HTMLAttributes<HTMLElement>, "onKeyDown">;
 	readonly gesture: Gesture;
 	readonly pointer: DiagramPointer;
 } {
 	const { camera, atlas, onSelect, onSelectArea, onHover, dismissTip, openDown } = inputs;
 	const [gesture, setGesture] = useState<Gesture>("idle");
 	const drag = useRef<CanvasDrag | null>(null);
-	const space = useRef(false);
+	const space = useSpacePan(onSelectArea !== undefined);
 	const [rectangle, setRectangle] = useState<DiagramBox | null>(null);
 	const dragged = useRef(false);
 	// What the last press landed on, carried from pointerup to the click that
@@ -130,7 +131,7 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 			setGesture("pressed");
 			dismissTip();
 		},
-		[atlas, camera, dismissTip, pinch, onSelectArea],
+		[atlas, camera, dismissTip, pinch, onSelectArea, space],
 	);
 
 	// A press whose end this viewport never saw, so it is over: forgotten, and
@@ -283,21 +284,14 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 	const onKeyDown = useCallback(
 		(event: ReactKeyboardEvent<HTMLElement>): void => {
 			if (onSelectArea === undefined || event.code !== "Space") return;
-			space.current = true;
 			event.preventDefault();
 		},
 		[onSelectArea],
 	);
-	const onKeyUp = useCallback((event: ReactKeyboardEvent<HTMLElement>): void => {
-		if (event.code === "Space") space.current = false;
-	}, []);
-	const onBlur = useCallback((): void => {
-		space.current = false;
-	}, []);
 
 	return {
 		rectangle,
-		keyboard: { onKeyDown, onKeyUp, onBlur },
+		keyboard: { onKeyDown },
 		gesture,
 		pointer: {
 			onPointerDown,
@@ -308,6 +302,38 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 			onDoubleClick,
 		},
 	};
+}
+
+/**
+ * Track Space before the pointer gives the canvas keyboard focus.
+ * @param enabled Whether this canvas supports primary rectangle selection.
+ * @returns The held modifier without changing keyboard actions outside the canvas.
+ */
+function useSpacePan(enabled: boolean) {
+	const held = useRef(false);
+	useEffect(() => {
+		if (!enabled) return undefined;
+		/**
+		 * Remember the physical modifier independently of the focused control.
+		 * @param event The keyboard transition.
+		 */
+		function change(event: KeyboardEvent): void {
+			if (event.code === "Space") held.current = event.type === "keydown";
+		}
+		/** Clear a modifier when the browser loses keyboard ownership. */
+		function clear(): void {
+			held.current = false;
+		}
+		window.addEventListener("keydown", change);
+		window.addEventListener("keyup", change);
+		window.addEventListener("blur", clear);
+		return (): void => {
+			window.removeEventListener("keydown", change);
+			window.removeEventListener("keyup", change);
+			window.removeEventListener("blur", clear);
+		};
+	}, [enabled]);
+	return held;
 }
 
 /** One pressed pointer with its fixed selection or panning intent. */
