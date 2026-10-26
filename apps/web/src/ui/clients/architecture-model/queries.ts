@@ -8,6 +8,18 @@ import {
 } from "@archboard/board/model";
 import { inVault, strictReply, type ReplySchema } from "@archboard/server-requests";
 
+/** A failed read retains its structured diagnostics while Query keeps the last coherent data. */
+class ArchitectureReadError extends Error {
+	/**
+	 * Keep the public refusal attached to the failed read.
+	 * @param failure The runtime refusal.
+	 */
+	constructor(readonly failure: Extract<ArchitectureModelRead, { success: false }>) {
+		super(failure.error);
+		this.name = "ArchitectureReadError";
+	}
+}
+
 /** The canonical readings cached by this tab. */
 const architectureModelKeys = {
 	all: ["architecture-model"] as const,
@@ -57,23 +69,25 @@ async function readReply<T>(url: string, schema: ReplySchema<T>, signal: AbortSi
  * @param signal Cancels an obsolete request.
  * @returns The shared runtime reading.
  */
-function readModel(
+async function readModel(
 	vault: string,
 	checkpoint: string | null,
 	signal: AbortSignal,
-): Promise<ArchitectureModelRead> {
+): Promise<Extract<ArchitectureModelRead, { success: true }>> {
 	const url = inVault("/api/architecture/model", vault);
-	return readReply(
+	const result = await readReply(
 		checkpoint === null ? url : `${url}&checkpoint=${encodeURIComponent(checkpoint)}`,
 		ArchitectureModelReadSchema,
 		signal,
 	);
+	if (!result.success) throw new ArchitectureReadError(result);
+	return result;
 }
 
 /**
  * A model has one server snapshot, shared by every reader of its vault.
- * Reads refresh on selection, mounting, focus, reconnect, or an explicit refresh. There
- * is no canonical write feed yet. Query cancellation discards obsolete reads.
+ * Reads refresh on selection, mounting, focus, model events, or an explicit refresh.
+ * Query cancellation discards obsolete reads. A failed refresh keeps the last coherent data.
  * @param vault The addressed vault.
  * @param checkpoint The exact identity, or null for current inputs.
  * @returns Query options for the shared model result.
@@ -135,8 +149,12 @@ function architectureClaimsQuery(vault: string) {
 		 * @param context The query cancellation signal.
 		 * @returns The shared ownership result.
 		 */
-		queryFn: ({ signal }) =>
-			readReply(inVault("/api/architecture/claims", vault), ArchitectureClaimListSchema, signal),
+		queryFn: (context) =>
+			readReply(
+				inVault("/api/architecture/claims", vault),
+				ArchitectureClaimListSchema,
+				context.signal,
+			),
 		staleTime: 0,
 		refetchOnMount: "always",
 		refetchOnWindowFocus: "always",
@@ -158,12 +176,13 @@ function hasNoCheckpoints(result: ArchitectureCheckpointList): boolean {
 
 /**
  * Whether this vault still belongs to the legacy reader or has no model.
- * @param result The server answer.
+ * @param error The structured read failure.
  * @returns True when the existing empty-board surface remains appropriate.
  */
-function hasNoCanonicalModel(result: ArchitectureModelRead): boolean {
+function hasNoCanonicalModel(error: Error | null): boolean {
 	return (
-		!result.success && (result.code === "LEGACY_AUTHORITY" || result.code === "MODEL_NOT_FOUND")
+		error instanceof ArchitectureReadError &&
+		(error.failure.code === "LEGACY_AUTHORITY" || error.failure.code === "MODEL_NOT_FOUND")
 	);
 }
 
@@ -172,6 +191,7 @@ export {
 	architectureModelQuery,
 	architectureCheckpointsQuery,
 	architectureClaimsQuery,
+	ArchitectureReadError,
 	hasNoCanonicalModel,
 	hasNoCheckpoints,
 };

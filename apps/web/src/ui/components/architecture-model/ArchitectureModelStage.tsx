@@ -10,6 +10,7 @@ import {
 	PaneHeaderEnd,
 } from "#ui/components/semantic-board-canvas/PaneHeaderFrame.tsx";
 import {
+	ArchitectureReadError,
 	architectureModelQuery,
 	architectureCheckpointsQuery,
 	hasNoCanonicalModel,
@@ -20,6 +21,10 @@ import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx
 import { ModelReadingSelector } from "#ui/components/architecture-model/ModelReadingSelector.tsx";
 import { CheckpointEvidence } from "#ui/components/architecture-model/CheckpointEvidence.tsx";
 import { ModelClaims } from "#ui/components/architecture-model/ModelClaims.tsx";
+
+import { useArchitectureFeed } from "#ui/hooks/architecture-model/use-architecture-feed.ts";
+
+type ModelQuery = UseQueryResult<Extract<ArchitectureModelRead, { success: true }>>;
 
 interface ModelStageProps {
 	vault: string;
@@ -44,9 +49,12 @@ function ArchitectureModelStage(props: ModelStageProps): JSX.Element {
  */
 function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const [checkpoint, selectCheckpoint] = useState<string | null>(null);
+	const feed = useArchitectureFeed(props.vault);
 	const query = useQuery(architectureModelQuery(props.vault, checkpoint));
 	const history = useQuery(architectureCheckpointsQuery(props.vault));
 	const { refetch, data } = query;
+	const current = checkpoint === null;
+	const stale = currentIsStale(query, current, feed);
 	const { refetch: refetchHistory } = history;
 	const refresh = useCallback((): void => {
 		void Promise.all([refetch(), refetchHistory()]);
@@ -55,7 +63,9 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	return (
 		<section
 			data-slot="architecture-model-stage"
-			data-state={readingState(query)}
+			data-state={readingState(query, stale)}
+			data-stale={stale}
+			data-connection={feed.connection}
 			data-reading={checkpoint ?? "current"}
 			aria-busy={query.isFetching}
 			aria-label="Architecture"
@@ -69,9 +79,42 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				/>
 			</ModelHeader>
 			{checkpoint === null && <ModelClaims vault={props.vault} model={data} />}
-			<ModelResponse query={query} />
+			<ModelResponse
+				query={query}
+				current={current}
+				stale={stale}
+				failure={current ? feed.failure : null}
+			/>
 		</section>
 	);
+}
+
+/**
+ * A cached current reading stays visible only with its availability stated.
+ * @param query The selected read and its last coherent result.
+ * @param current Whether this is a current reading.
+ * @param feed The current update stream's availability.
+ * @returns Whether the visible cached model lacks fresh confirmation.
+ */
+function currentIsStale(
+	query: ModelQuery,
+	current: boolean,
+	feed: ReturnType<typeof useArchitectureFeed>,
+): boolean {
+	if (!current) return false;
+	if (query.data === undefined) return false;
+	return query.isError || feed.connection !== "live" || feed.failure !== null || feed.refreshing;
+}
+
+/**
+ * Historical failures never substitute another reading or silently reuse an unavailable checkpoint.
+ * @param query The selected read.
+ * @param current Whether stale current content can remain visible.
+ * @returns The coherent content that this surface can show.
+ */
+function visibleModel(query: ModelQuery, current: boolean): ModelQuery["data"] {
+	if (!current && query.isError) return undefined;
+	return query.data;
 }
 
 /**
@@ -82,15 +125,16 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
  * @returns True only when both current and retained architecture are absent.
  */
 function hasNoReadings(
-	query: UseQueryResult<ArchitectureModelRead>,
+	query: ModelQuery,
 	history: UseQueryResult<ArchitectureCheckpointList>,
 	checkpoint: string | null,
 ): boolean {
 	return (
 		checkpoint === null &&
-		query.isSuccess &&
+		query.data === undefined &&
+		query.isError &&
 		history.isSuccess &&
-		hasNoCanonicalModel(query.data) &&
+		hasNoCanonicalModel(query.error) &&
 		hasNoCheckpoints(history.data)
 	);
 }
@@ -107,16 +151,20 @@ function modelName(model: ArchitectureModelRead | undefined): string {
 /**
  * The visible read state includes domain refusals and transport failures.
  * @param query The shared query snapshot.
+ * @param stale Whether the cached current reading lacks fresh confirmation.
  * @returns The visible state.
  */
-function readingState(query: UseQueryResult<ArchitectureModelRead>): "loading" | "error" | "ready" {
+function readingState(query: ModelQuery, stale: boolean): "loading" | "error" | "stale" | "ready" {
 	if (query.isPending || query.isFetching) return "loading";
 	if (query.isError) return "error";
-	return query.data.success ? "ready" : "error";
+	return stale ? "stale" : "ready";
 }
 
 interface ModelResponseProps {
-	query: UseQueryResult<ArchitectureModelRead>;
+	query: ModelQuery;
+	current: boolean;
+	stale: boolean;
+	failure: Extract<ArchitectureModelRead, { success: false }> | null;
 }
 
 /**
@@ -125,25 +173,47 @@ interface ModelResponseProps {
  * @returns The authored model or its unavailable state.
  */
 function ModelResponse(props: ModelResponseProps): JSX.Element {
-	const { query } = props;
+	const { query, stale } = props;
 	if (query.isPending)
 		return <output className="text-body text-muted-foreground p-10">Reading architecture…</output>;
-	if (query.isError)
-		return <ModelError code={failureCode(query.error)} message={query.error.message} />;
-	if (!query.data.success)
-		return (
-			<ModelError
-				code={query.data.code}
-				message={query.data.error}
-				diagnostics={query.data.diagnostics}
-			/>
-		);
+	const problem = readingProblem(query.error, props.failure);
+	const model = visibleModel(query, props.current);
 	return (
 		<>
-			<CheckpointEvidence model={query.data} />
-			<ModelReading key={query.data.manifest.id} model={query.data} />
+			{stale && (
+				<output
+					data-slot="model-stale"
+					className="border-border bg-status-subtle text-status-foreground text-body border-b px-4 py-2"
+				>
+					Showing the last coherent reading. Current architecture is not confirmed. Refresh to
+					retry.
+				</output>
+			)}
+			{problem !== null && <ModelError {...problem} compact={stale} />}
+			{model !== undefined && (
+				<>
+					<CheckpointEvidence model={model} />
+					<ModelReading key={model.manifest.id} model={model} />
+				</>
+			)}
 		</>
 	);
+}
+
+/**
+ * Present a refusal from either the selected read or the current update stream.
+ * @param error The selected request failure.
+ * @param observed The current stream's refusal.
+ * @returns The visible problem, without discarding cached coherent content.
+ */
+function readingProblem(
+	error: Error | null,
+	observed: ModelResponseProps["failure"],
+): ModelErrorProps | null {
+	const failure = error instanceof ArchitectureReadError ? error.failure : observed;
+	if (failure !== null)
+		return { code: failure.code, message: failure.error, diagnostics: failure.diagnostics };
+	return error === null ? null : { code: failureCode(error), message: error.message };
 }
 
 /**
@@ -156,6 +226,7 @@ function failureCode(error: Error): string {
 }
 
 interface ModelErrorProps {
+	compact?: boolean;
 	code: string;
 	message: string;
 	diagnostics?: Extract<ArchitectureModelRead, { success: false }>["diagnostics"];
@@ -173,7 +244,11 @@ function ModelError(props: ModelErrorProps): JSX.Element {
 			role="alert"
 			data-slot="model-error"
 			data-code={props.code}
-			className="text-body max-w-prose space-y-4 p-10"
+			className={
+				props.compact
+					? "text-body border-border max-h-40 shrink-0 space-y-2 overflow-auto border-b px-4 py-3"
+					: "text-body max-w-prose space-y-4 p-10"
+			}
 		>
 			<h3 className="text-title font-semibold">Architecture unavailable</h3>
 			<p>{props.message}</p>

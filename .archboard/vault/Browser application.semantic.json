@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 147,
+	"version": 149,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-26T12:37:20.541Z",
+	"updatedAt": "2026-10-26T13:07:23.573Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -36382,7 +36382,7 @@
 		{
 			"id": "t6cnlkTi",
 			"name": "TASK-549-main-refactor",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "Coee17cN",
 			"documents": [
 				{
@@ -39932,7 +39932,7 @@
 		{
 			"id": "QksZ7u5D",
 			"name": "TASK-549.03 integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "t6cnlkTi",
 			"documents": [
 				{
@@ -40673,13 +40673,14 @@
 					{
 						"id": "AIp6YN1P",
 						"order": 58000,
-						"name": "Model content query",
+						"name": "Model access",
 						"kind": "module",
-						"responsibility": "Owns coherent model snapshots, claim metadata and exact checkpoint caches, refreshed through model events",
+						"responsibility": "Reads coherent content and claims, applies live updates, and sends human take-back",
+						"description": "One query cache owns each reading. One event connection per vault and query cache cancels obsolete reads before applying fresh snapshots. Failed current reads retain coherent content with an explicit stale indication. Exact checkpoint caches remain separate.",
 						"parent": "TLCeNkdh",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "apps/web/src/ui/clients/architecture-model/queries.ts"
+							"path": "apps/web/src/ui/clients/architecture-model"
 						}
 					},
 					{
@@ -40726,6 +40727,19 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web/src/ui/components/semantic-board-canvas/PaneChrome.tsx"
+						}
+					},
+					{
+						"id": "JrTKhhoI",
+						"order": 59000,
+						"name": "Live reading subscription",
+						"kind": "module",
+						"responsibility": "Shares current update availability between model readers",
+						"parent": "AIp6YN1P",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/hooks/architecture-model/use-architecture-feed.ts",
+							"symbol": "useArchitectureFeed"
 						}
 					}
 				],
@@ -41762,6 +41776,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web/src/ui/components/shell/PaneStages.tsx",
 							"symbol": "PaneChromeContext"
+						}
+					},
+					{
+						"id": "m551U9Gl",
+						"order": 74000,
+						"from": "n2ONtqdt",
+						"to": "JrTKhhoI",
+						"kind": "call",
+						"label": "subscribe to current model updates",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/architecture-model/ArchitectureModelStage.tsx",
+							"symbol": "useArchitectureFeed"
 						}
 					}
 				],
@@ -43480,7 +43508,7 @@
 			}
 		}
 	],
-	"current": "t6cnlkTi",
+	"current": "QksZ7u5D",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -43595,6 +43623,12 @@
 			"from": "Coee17cN",
 			"at": "2026-10-26T11:23:10.270Z",
 			"reason": "Combines the refactored main architecture with every implemented canonical model, checkpoint, and migration capability. Tests and affected proposal code checks pass."
+		},
+		{
+			"variant": "QksZ7u5D",
+			"from": "t6cnlkTi",
+			"at": "2026-10-26T13:07:23.573Z",
+			"reason": "Public runtime and browser tests prove durable claimed edits, recovery, visible take-back, external updates, stale scenes and fresh reconnection."
 		}
 	],
 	"shelvings": [

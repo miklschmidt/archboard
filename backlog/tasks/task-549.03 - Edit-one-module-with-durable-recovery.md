@@ -1,11 +1,11 @@
 ---
 id: TASK-549.03
 title: Edit one module with durable recovery
-status: In Progress
+status: Done
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:24:00Z'
-updated_date: '2026-10-26T12:42:00Z'
+updated_date: '2026-10-26T13:14:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -46,17 +46,17 @@ TASK-549.02
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 An agent changes a module description through the shared operation interface. The CLI and server return the same durable outcome and recovery information.
-- [ ] #2 Include an explicit target, expected read token, operation ID, writer, doing line, and subject claim. Claim visibility and take-back work in the browser.
+- [x] #2 Include an explicit target, expected read token, operation ID, writer, doing line, and subject claim. Claim visibility and take-back work in the browser.
 - [x] #3 Use the complete journal and installation contract for this narrow edit. Signing failure changes no current files. Interrupted installation resumes or reports preserved foreign content.
 - [x] #4 Repeating a completed request returns its recorded result. Reusing its operation ID for another request fails. Readers never receive a mixed installation.
-- [ ] #5 Stable external edits refresh readers without inventing adoption. Invalid or changing files block writes and mark an old scene stale.
-- [ ] #6 Journals remain checkout-specific. Branch changes block unsafe recovery. Notifications follow durable completion, and reconnection obtains a fresh coherent read.
+- [x] #5 Stable external edits refresh readers without inventing adoption. Invalid or changing files block writes and mark an old scene stale.
+- [x] #6 Journals remain checkout-specific. Branch changes block unsafe recovery. Notifications follow durable completion, and reconnection obtains a fresh coherent read.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
 - [x] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -92,4 +92,12 @@ A final real-process regression found that an already completed request returned
 Final backend source includes the completed-cleanup concurrency correction. delivery-runtime-final.log passes 49 tests across seven files with zero failures and 263 assertions. That matrix contains all 20 edit, claim/news, exclusion and recovery cases plus the existing 29 read, checkpoint and inventory cases. After the final dispatch simplification, delivery-exclusion-final.log passes both real-process exclusion owners. delivery-process-accepted.log repeats the HTTP/CLI and skill boundary subset with ten passes. These are reruns within the 41 already recorded adapter and contract cases, not extra unique tests. The functional evidence therefore covers 90 distinct tests across 20 files. delivery-types-accepted.log passes both type projects. delivery-lint-accepted.log passes with zero warnings and errors. delivery-format-accepted.log passes formatting. The width gate remains explicitly failed at board 234/188, unchanged and owned by TASK-549.24. All browser work and final draft adoption remain with the parent. The worktree stays clean after the signed handoff commit, and its server stays stopped. No push or PR edit occurs.
 
 Parent browser checkpoint: current subject claims show the agent, purpose, subjects, and start time. Human take-back uses the exact displayed claim and refreshes ownership without an architecture write. The approved browser owner failed before implementation and passes with five assertions. Source and browser types pass. Three lint documentation findings are corrected. Automatic change/reconnect refresh and stale-scene behavior remain in progress.
+
+Parent browser delivery is complete. Claims arrive live after the reader opens and human take-back ends their exact identities without architecture writes. Current events cancel obsolete requests and refresh the shared query cache. Invalid inputs and disconnected updates retain the last coherent current reading with an explicit stale notice. Repair and reconnect restore fresh content without losing selection. Exact historical caches and missing-reading guards remain independent. The existing browser owners pass six cases with 43 assertions; source/browser types, lint, formatting, and 15 skill policy tests pass. Parent inspected the claim and stale screens, then removed temporary capture calls. Four delivery proposals are adopted. A final route overview proposal groups the new write parts under their existing responsibility and reduces the overview to 10 roots and 25 lines. Current semantics now pass; affected code checks have zero warnings. Ten unrelated warnings remain. Backend evidence at ce1319151 is reused because its code is unchanged. The board width gate remains 234/188 and stays with TASK-549.24, with no ceiling change.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+An agent can change one claimed module description with signed durable preparation, exact retries, and recoverable installation. The browser shows current ownership, supports human take-back, follows stable edits, and marks retained current content stale during failures or disconnects. Reconnection restores a fresh coherent reading. Runtime and adapter evidence covers 90 distinct backend tests; six browser cases, 15 skill policy tests, types, lint, formatting, and semantics pass. Affected architecture proposals are adopted. Ten unrelated code warnings and the temporary board interface-width overage remain explicit. The full TASK-549 migration continues.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -48,10 +48,10 @@ Its `checkpoint.id` remains exact.
 Its `sourceEvidence` reports source availability independently of the architecture.
 The metadata files above remain outside the vault and never enter the retained architecture.
 
-For the browser handoff, keep the temporary directory and the retained receipt.
-Address its vault explicitly and use `checkpoint.id` with the shared model-read endpoint.
-The browser uses the common result schema and one read-only architecture query snapshot.
-TASK-549.02 leaves its visible checkpoint selector and browser evidence to the parent.
+If the browser shows this model, open the reading menu.
+Select the retained checkpoint.
+Select Current to return to current files.
+Each reading shows its own architecture and source evidence.
 
 ## Durable description edit
 
@@ -115,4 +115,8 @@ A retry finishes cleanup without another checkpoint.
 
 The backend event stream is `/api/architecture/events?vault=<absolute-vault-path>`.
 It sends a fresh current reading and claim list on every connection.
-The parent owns browser claim controls, stale indications, and reconnect evidence for TASK-549.03.
+The current browser reading shows the agent claim and offers Take back control.
+Stable external edits refresh the reading automatically.
+Invalid input or disconnected updates leave the last coherent reading visible with a stale notice.
+Repairing the files or reconnecting restores a fresh reading without changing the selected subject.
+Exact checkpoint readings remain independent of current updates.
