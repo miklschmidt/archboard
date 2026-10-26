@@ -512,6 +512,8 @@ Its real file and Git cases cover compact deltas, exact materialization, plannin
 Existing history owners retain publication, shallow recovery, source isolation, and linked-worktree coverage.
 `tests/system/semantic-boards/model-proposals.test.ts` owns normal CLI and HTTP routing, schema parity, lifecycle metadata, comparison selection, and refusal status.
 These adapters do not repeat the domain matrix.
-The parent owns visible proposal selection and comparison acceptance through the existing browser interface.
-TASK-549.06 remains In Progress until that browser evidence exists.
+`canonical-model-proposals.test.ts` owns visible state selection, draft lifecycle, flow readings, claims, and live draft refresh.
+`canonical-model-comparison.test.ts` owns comparison choices, coherent removed definitions, changed fields, refusal, and retained recovery.
+`canonical-model-planning.test.ts` owns planning roots, retained predecessor comparisons, empty baselines, and unavailable state intent.
+These browser owners use real temporary files and Git through the normal public HTTP writes.
 No renderer algorithm test or model evaluation belongs to this slice.

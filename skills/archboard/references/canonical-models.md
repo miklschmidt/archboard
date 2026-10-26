@@ -616,6 +616,7 @@ Use `--against` for an explicit coherent named state or complete checkpoint.
 The result's `comparison.reason` identifies the chosen default or explicit base.
 `comparison.revision` identifies the exact architecture inputs used for that base.
 If you read base definitions separately, require their revision to match this value.
+Require their model, state, and exact checkpoint identities to match the comparison metadata too.
 A retained selected state can have a different revision from its live comparison base.
 Its subject entries identify additions, removals, changes, unchanged subjects, and changed semantic fields.
 Presentation order and emphasis retain the existing semantic comparison rules.
@@ -630,3 +631,20 @@ Reconciliation, adoption, and shelving remain later delivery slices.
 An explicit comparison against an empty planning baseline returns `comparison.against:null` and the baseline's exact `comparison.checkpoint`.
 Its subject changes still identify the planning additions.
 This absence names no implemented state and does not suppress the requested comparison.
+
+The browser state picker lists current architecture, active proposals, and saved readings.
+Select a proposal to read its modules and flows without changing current architecture.
+The header states whether the selected reading is implemented, draft, historical, or shelved.
+The Compare control selects the default comparison, another active state, or an exact saved reading.
+The address preserves both selections through reload and browser history.
+
+The diagram marks added, removed, and changed subjects.
+Select a subject to inspect its changed fields.
+Removed subjects use the exact comparison base definitions.
+If that base becomes unavailable, the browser explains the incomplete comparison and offers Refresh comparison.
+It never substitutes current definitions for another requested base.
+
+Active draft readings follow accepted edits through the architecture change feed.
+Saved draft readings keep their original content and draft identity.
+If a mutable predecessor changes, the browser preserves the requested state and shows the refusal.
+Select an available saved reading to inspect the retained proposal.

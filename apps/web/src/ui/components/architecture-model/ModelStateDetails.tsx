@@ -60,7 +60,7 @@ function ComparisonSummary({
 			className="text-body text-muted-foreground"
 		>
 			Compared with {comparison.against?.name ?? "empty planning baseline"} · {changed.length}{" "}
-			changed subjects
+			changed {changed.length === 1 ? "subject" : "subjects"}
 		</p>
 	);
 }

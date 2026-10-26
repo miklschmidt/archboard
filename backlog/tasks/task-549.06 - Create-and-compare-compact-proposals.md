@@ -1,11 +1,11 @@
 ---
 id: TASK-549.06
 title: Create and compare compact proposals
-status: In Progress
+status: Done
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T20:53:00Z'
+updated_date: '2026-10-26T20:58:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -45,7 +45,7 @@ TASK-549.05
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An agent creates a proposal spanning modules and flows. CLI and browser readers materialize and compare it from a retained baseline and identity-based changes.
+- [x] #1 An agent creates a proposal spanning modules and flows. CLI and browser readers materialize and compare it from a retained baseline and identity-based changes.
 - [x] #2 Support siblings, named predecessors, and planning-only models without a current state. New draft subjects remain outside current architecture until adoption.
 - [x] #3 Preserve stable state identities, names, summaries, and documents. Additions, removals, assignments, explicit clearing, and placements have distinct meanings.
 - [x] #4 Comparison defaults follow TASK-549. Unsupported predecessor changes refuse safely until reconciliation is available. Small edits store no unrelated snapshots.
@@ -54,7 +54,7 @@ TASK-549.05
 ## Definition of Done
 <!-- DOD:BEGIN -->
 - [x] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -111,4 +111,14 @@ Browser comparison integration exposed a missing coherence field: an exact retai
 Comparison visualization passes its browser owner (1case/5assertions). Removed modules and relationships come from the verified base, added/changed subjects use authoritative semantic marks, and the inspector reuses existing field-change details. Current inputs remain unchanged. The existing drawingOf operation now also accepts complete canonical contents; its single removed-subject algorithm still serves legacy callers. Legacy comparison owners pass37cases/109assertions. Types and corrected full lint pass. Projection keeps selected interface facts separate from the depiction, separates differing standings in aggregated lines, and uses comparison.revision before accepting reference definitions. Explicit base controls and further planning/refusal acceptance remain unfinished.
 
 Explicit browser comparison choices now preserve current, sibling, and retained bases in the pane address. The regression first failed at the missing selector, then passed one case and eight assertions. Reload preserves the explicit base. A changed predecessor exposes PREDECESSOR_CHANGED and removes incoherent base definitions. Selecting the retained draft recovers its comparison against verified newer current content. The reference guard matches model, state, checkpoint, and base revision. Source/frontend types and corrected full lint pass. Planning-only acceptance is the next browser owner.
+
+The complete browser slice passes 16 cases and 116 assertions across ten affected owners. This includes proposal refresh, explicit comparisons, planning roots, predecessor refusal, exact recovery, current readings, scope navigation, selection, focus, filters, diagram modes, and structural updates. Source/frontend types, full lint, formatting, and evaluation input validation pass. The parent inspected comparison and planning renders and removed temporary screenshot calls. Semantics has zero diagnostics. All four affected proposals have zero code warnings; ten known warnings remain on other boards. The full gate is not claimed because the existing board interface excess remains assigned to .24. The implementation reuses the existing semantic comparison and renderer mechanisms, one query cache and event feed, and the durable proposal/archive engine. No second interpretation or content store was added.
+
+All four TASK-549.06 proposals are adopted after parent comparisons and source inspection: Browser application FzIKjcPd v178, Board persistence AFx23EEN v167, Command interface pJeSfYJs v190, and Archboard server routes o6rDNILx v156. Every prior variant identity and content survives adoption. Claims are released and the worktree server is stopped. Latest integration3a0efd30 is already included through signedbfb9b6c94. Consumer guidance, ADR0061, frontend ownership, test ownership, and evaluation coverage describe the delivered behavior. .07 reconciliation, .08 lifecycle actions, and .15 reference integration remain separate approved slices.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented compact proposals across modules and flows through the shared durable runtime, CLI, HTTP, and browser reader. Proposals retain immutable baselines and identity changes. Readers preserve lifecycle, explicit comparison intent, coherent removed definitions, planning-only states, exact history, and safe predecessor refusals. Runtime and adapter evidence is recorded above; the complete browser regression passes16cases/116assertions. Types, lint, formatting, metadata, semantics, and affected proposal checks pass. Four architecture proposals are adopted. Existing unrelated warnings and the .24 interface-width debt remain explicit. Reconciliation and adoption are later slices.
+<!-- SECTION:FINAL_SUMMARY:END -->

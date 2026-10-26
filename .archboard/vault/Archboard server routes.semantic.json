@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 155,
+	"version": 156,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-26T18:21:04.697Z",
+	"updatedAt": "2026-10-26T20:58:27.413Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -130484,7 +130484,7 @@
 		{
 			"id": "tGGAu1sm",
 			"name": "TASK-549.05",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "dRj9IjMQ",
 			"documents": [
 				{
@@ -135586,7 +135586,7 @@
 		{
 			"id": "o6rDNILx",
 			"name": "TASK-549.06",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "tGGAu1sm",
 			"summary": "Serve explicit current draft and retained readings with comparison metadata",
 			"documents": [
@@ -140687,7 +140687,7 @@
 			}
 		}
 	],
-	"current": "tGGAu1sm",
+	"current": "o6rDNILx",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -140887,6 +140887,12 @@
 			"from": "dRj9IjMQ",
 			"at": "2026-10-26T17:53:10.842Z",
 			"reason": "Independent flow authoring, identity-preserving placement, complete reference repair and explicit sequence and flowchart rendering are implemented and demonstrated through runtime and signed CLI evidence"
+		},
+		{
+			"variant": "o6rDNILx",
+			"from": "tGGAu1sm",
+			"at": "2026-10-26T20:58:27.413Z",
+			"reason": "Compact proposals and coherent browser comparisons are implemented and tested"
 		}
 	],
 	"shelvings": [
