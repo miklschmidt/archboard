@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 144,
+	"version": 145,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-26T11:11:50.347Z",
+	"updatedAt": "2026-10-26T11:23:10.270Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -32948,7 +32948,7 @@
 		{
 			"id": "Coee17cN",
 			"name": "TASK-549.02",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "Cu1IBS4u",
 			"summary": "Open current or retained architecture with explicit source evidence",
 			"documents": [
@@ -36382,7 +36382,7 @@
 		{
 			"id": "t6cnlkTi",
 			"name": "TASK-549-main-refactor",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "Coee17cN",
 			"documents": [
 				{
@@ -43364,7 +43364,7 @@
 			}
 		}
 	],
-	"current": "Coee17cN",
+	"current": "t6cnlkTi",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -43473,6 +43473,12 @@
 			"from": "Cu1IBS4u",
 			"at": "2026-10-26T09:32:01.559Z",
 			"reason": "Retain exact local architecture and reopen explicit historical readings"
+		},
+		{
+			"variant": "t6cnlkTi",
+			"from": "Coee17cN",
+			"at": "2026-10-26T11:23:10.270Z",
+			"reason": "Combines the refactored main architecture with every implemented canonical model, checkpoint, and migration capability. Tests and affected proposal code checks pass."
 		}
 	],
 	"shelvings": [
