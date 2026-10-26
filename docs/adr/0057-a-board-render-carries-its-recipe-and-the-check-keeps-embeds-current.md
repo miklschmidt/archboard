@@ -178,7 +178,12 @@ no cached copy, a failed fetch is a warning that names the repository.
 `archboard semantic delete <board>` removes the whole note. It follows the
 rules of every other write: the lease, `--doing` for an agent and
 `--expect-version`. It refuses while a node on another board opens the board,
-and the refusal names those boards. It does not refuse for tracked embeds: its
+and the refusal names those boards. It reads the drill-downs on the current and
+draft variants of the other boards of its own vault. A drill-down on history or
+on a shelved proposal does not refuse, because neither takes an edit, so
+nobody could repair that refusal. A board in another repository's vault cannot
+be seen from here, and that vault's own check names its link once the board is
+gone. It does not refuse for tracked embeds: its
 answer lists them, and their own check then names the deleting commit. A
 delete frees the name and the former names. The browser offers no delete.
 

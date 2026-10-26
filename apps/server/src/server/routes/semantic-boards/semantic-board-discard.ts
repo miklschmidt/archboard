@@ -1,8 +1,11 @@
-// The route that lets a whole board go (TASK-304.02).
+// The route that lets a whole board go (TASK-304.02): `semantic delete` and
+// `semantic record --discard` (ADR 0057).
 //
 // A discard is a change to the board like any write: the same envelope, the
 // same `?doing=` a person watching is owed, the same mutation admission and the
-// same lease, and a refusal answered in the same shape and status. What it
+// same lease, and a refusal answered in the same shape and status. A refusal
+// because other boards open the board lists each node that does in
+// `openedBy`, and the answer lists the embeds the board tracked. What it
 // announces is the news a board removed by somebody else makes — `board_note`
 // on the board — so every pane on it reads the board again and finds it gone,
 // every navigator reads the listing again, and the agent's change feed says it
@@ -10,6 +13,8 @@
 // watch, as it hears any board appear or disappear.
 
 import type { NextFunction, Request, Response } from "express";
+import type { z } from "zod";
+import type { BoardDiscardAnswerSchema } from "@archboard/board/commands";
 import { forgetDoing } from "@archboard/board/doing";
 import { discardSemanticBoard } from "@archboard/board/store-write";
 import { announceDoing } from "#server/projections/board-announcements/board-announcements.ts";
@@ -101,10 +106,15 @@ async function discardRoute(
 		by: envelope.session ?? null,
 		heldAs: result.heldAs,
 	});
-	res.json({
+	const answer: z.input<typeof BoardDiscardAnswerSchema> = {
 		success: true,
-		discarded: { board: result.location.name, version: result.previousVersion },
-	});
+		discarded: {
+			board: result.location.name,
+			version: result.previousVersion,
+			trackedEmbeds: [...result.trackedEmbeds],
+		},
+	};
+	res.json(answer);
 }
 
 export { discardRoute };
