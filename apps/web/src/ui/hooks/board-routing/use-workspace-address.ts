@@ -30,6 +30,7 @@ import { useRouter, useRouterState } from "@tanstack/react-router";
 import {
 	sameAddress,
 	settledAddress,
+	withModelAddresses,
 	type WorkspaceAddress,
 } from "#ui/rules/board-routing/address.ts";
 import {
@@ -127,7 +128,10 @@ interface Reconciliation {
  * @returns True when the whole workspace is known.
  */
 function isSettled(address: WorkspaceAddress): boolean {
-	return address.panes.length > 0 && address.panes.every((pane) => pane.boardKey !== null);
+	return (
+		address.panes.length > 0 &&
+		address.panes.every((pane) => pane.boardKey !== null || pane.model !== undefined)
+	);
 }
 
 /**
@@ -354,8 +358,11 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 		 */
 		select: (state) => state.location.search,
 	});
-	const displayed = useMemo(() => settledAddress(port.displayed), [port.displayed]);
 	const wanted = useMemo(() => addressFromSearch(validateWorkspaceSearch(search)), [search]);
+	const displayed = useMemo(
+		() => withModelAddresses(settledAddress(port.displayed), wanted),
+		[port.displayed, wanted],
+	);
 	const [deliberate] = useState(createDeliberateNavigation);
 	// The reconciliation is made from the first render, which is before anything
 	// has been published, so the address it restores is the one the tab opened on.

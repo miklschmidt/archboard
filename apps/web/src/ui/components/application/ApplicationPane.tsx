@@ -249,7 +249,12 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 			className="relative flex min-h-0 min-w-0 flex-1 flex-col"
 		>
 			{address === null ? (
-				<ArchitectureModelStage key={vault} vault={vault}>
+				<ArchitectureModelStage
+					key={vault}
+					vault={vault}
+					paneId={paneId}
+					reducedMotion={props.reducedMotion}
+				>
 					<NoBoard />
 				</ArchitectureModelStage>
 			) : (

@@ -282,3 +282,11 @@ The incoming connection now names Worker, while the outgoing Dispatch connection
 A reparented module keeps its selection and identifies its parent in the details.
 Removing the selected module shows an unavailable selection instead of opening another module.
 A retained reading still shows the original Gateway and Dispatch connection.
+
+Open Gateway to read its immediate Handler module.
+Worker stays nearby because Gateway calls it.
+The breadcrumb returns to the repository roots without changing either module file.
+Select Gateway → Worker through the Connections list.
+Its details identify the Dispatch request relationship and its original endpoints.
+The address records the model, scope, and saved reading for each pane.
+Reload preserves that reading.

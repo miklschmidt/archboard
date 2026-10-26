@@ -1,5 +1,4 @@
 // What a pane reads of a picture besides its pixels: the key it lists, the inks and marks it draws with, the warnings on code, and what a render asks and answers. Safe for the browser.
-export type { BoardRenderChoices, BoardRenderOutcome } from "#shared/rules/render/board.ts";
 export {
 	headLength,
 	lineInk,
