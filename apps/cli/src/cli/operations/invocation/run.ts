@@ -1,4 +1,10 @@
-import { modelClaimContract, modelEditContract, modelReleaseContract, modelClaimsContract, modelRecoverContract } from "#cli/operations/model/edit.ts";
+import {
+	modelClaimContract,
+	modelEditContract,
+	modelReleaseContract,
+	modelClaimsContract,
+	modelRecoverContract,
+} from "#cli/operations/model/edit.ts";
 import {
 	checkAllContract,
 	checkCodeContract,
@@ -72,11 +78,11 @@ const COMMANDS: Record<string, CommandRoute> = {
 	model: {
 		owner: contract(modelContract, "apps/cli/src/cli/operations/model/read.ts"),
 		children: {
-   edit: child(contract(modelEditContract,"apps/cli/src/cli/operations/model/edit.ts")),
-   claim: child(contract(modelClaimContract,"apps/cli/src/cli/operations/model/edit.ts")),
-   release: child(contract(modelReleaseContract,"apps/cli/src/cli/operations/model/edit.ts")),
-   claims: child(contract(modelClaimsContract,"apps/cli/src/cli/operations/model/edit.ts")),
-   recover: child(contract(modelRecoverContract,"apps/cli/src/cli/operations/model/edit.ts")),
+			edit: child(contract(modelEditContract, "apps/cli/src/cli/operations/model/edit.ts")),
+			claim: child(contract(modelClaimContract, "apps/cli/src/cli/operations/model/edit.ts")),
+			release: child(contract(modelReleaseContract, "apps/cli/src/cli/operations/model/edit.ts")),
+			claims: child(contract(modelClaimsContract, "apps/cli/src/cli/operations/model/edit.ts")),
+			recover: child(contract(modelRecoverContract, "apps/cli/src/cli/operations/model/edit.ts")),
 			read: child(contract(modelReadContract, "apps/cli/src/cli/operations/model/read.ts")),
 			retain: child(
 				contract(modelRetainContract, "apps/cli/src/cli/operations/model/checkpoints.ts"),

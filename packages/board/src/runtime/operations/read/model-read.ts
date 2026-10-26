@@ -228,7 +228,12 @@ function failure(
 	};
 }
 
-/** Read current inputs only outside a pending installation. */
+/**
+ * Read current inputs only outside a pending installation.
+ * @param vault The explicitly addressed vault.
+ * @param module The module value.
+ * @returns The operation result.
+ */
 function readArchitectureModel(vault: string, module?: string): ArchitectureModelRead {
 	const blocked = modelBoundaryFailure(vault);
 	if (blocked !== undefined) return blocked;

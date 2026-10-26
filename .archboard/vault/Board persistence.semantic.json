@@ -4,7 +4,7 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 119,
+	"version": 121,
 	"createdAt": "2026-09-12T22:28:19.828Z",
 	"updatedAt": "2026-10-26T11:12:52.284Z",
 	"views": [
@@ -324,6 +324,27 @@
 					"ZLJy8ivl",
 					"RfwX9gsx",
 					"4P7YZdnj"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "AXFHrqyO",
+			"name": "Canonical edits and recovery",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"Zeo3aQWz",
+					"8Uq1mtzw",
+					"CLdaoYy3",
+					"YREYrbYW",
+					"ov7pPg21",
+					"ZRq51Ecz",
+					"4P7YZdnj",
+					"qTv7HuBw",
+					"RfwX9gsx"
 				],
 				"edges": [],
 				"flows": []
@@ -82591,7 +82612,7 @@
 						"kind": "function",
 						"responsibility": "Reads one coherent authored model with exact path and byte revisions",
 						"description": "Decodes captured architecture through shared schemas and coherence rules. Current reads capture paths and exact bytes twice. Retained reads reuse its decoder and module selection without opening current files. Pending canonical installation blocks a current read with recovery instructions.",
-						"parent": "ZqkmwupZ",
+						"parent": "1VHRyajb",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/read/model-read.ts"
@@ -82603,7 +82624,7 @@
 						"name": "Canonical model contracts",
 						"kind": "module",
 						"responsibility": "Defines canonical inputs, exact revisions, checkpoint metadata and shared outcomes",
-						"parent": "ZqkmwupZ",
+						"parent": "1VHRyajb",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/shared/schemas/model.ts"
@@ -82615,7 +82636,8 @@
 						"name": "Canonical checkpoint operations",
 						"kind": "module",
 						"responsibility": "Retains exact current architecture and reads or lists immutable checkpoints",
-						"description": "Expected revisions and operation identities protect retention. Retries return the same checkpoint. Exact reads use retained policy and modules only. Unavailable source evidence stays separate from missing architecture.",
+						"description": "Expected revisions and operation identities protect retention. Retries return the same checkpoint. Exact reads use retained policy and modules only. Unavailable source evidence stays separate from missing architecture. Its shared result projection and structured refusal mapping also serve canonical edits, claims and recovery.",
+						"parent": "1VHRyajb",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/history"
@@ -82628,6 +82650,7 @@
 						"kind": "module",
 						"responsibility": "Stores architecture-only Git objects and joins concurrent archive ancestry",
 						"description": "Configured identity and signing govern checkpoints and marked synchronization commits. Required checkpoints remain actual Git parents. Retention refs preserve operations before conditional archive appends. Common Git objects and refs serve linked worktrees without changing current files, index or HEAD.",
+						"parent": "1VHRyajb",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/store/model-archive.ts"
@@ -82681,8 +82704,134 @@
 						"order": 46000,
 						"name": "Canonical edit operations",
 						"kind": "module",
-						"responsibility": "Changes one module description with explicit claims, signed preparation and durable recovery",
-						"description": "TASK-549 decisions 18 through 22 require a checkout-local journal, before and after images, guarded installation, retained completion and idempotent retries."
+						"responsibility": "Applies an explicit description intent or returns its signed durable result",
+						"description": "Same-operation retries can read completion without the installation lease or current inputs. New edits and recovery use the shared checkout-private transaction boundary.",
+						"parent": "1VHRyajb",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/edit.ts"
+						}
+					},
+					{
+						"id": "1VHRyajb",
+						"order": 47000,
+						"name": "Canonical architecture",
+						"kind": "module",
+						"responsibility": "Reads, retains and edits one canonical model with durable recovery"
+					},
+					{
+						"id": "8Uq1mtzw",
+						"order": 48000,
+						"name": "Canonical edit preparation",
+						"kind": "module",
+						"responsibility": "Validates one complete candidate and signs its checkpoint before installation",
+						"description": "Preserves exact unrelated bytes and checks the full read token, target state and subject claim again after signing.",
+						"parent": "1VHRyajb",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/prepare.ts"
+						}
+					},
+					{
+						"id": "CLdaoYy3",
+						"order": 49000,
+						"name": "Canonical installation",
+						"kind": "module",
+						"responsibility": "Resumes exact logged images and completes retention before announcing a write",
+						"description": "Preserves foreign bytes and refuses changed branch context. Prepares archive synchronization signing before file installation. A conditional append conflict leaves recovery work instead of invoking a signer after file changes.",
+						"parent": "1VHRyajb",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-install.ts"
+						}
+					},
+					{
+						"id": "YREYrbYW",
+						"order": 50000,
+						"name": "Canonical recovery state",
+						"kind": "module",
+						"responsibility": "Keeps a durable journal and short installation lease in the checkout private Git directory",
+						"description": "The current reader refuses unfinished installation. Linked worktrees keep separate journals and branch context. Durable completed results remain readable while cleanup is pending.",
+						"parent": "1VHRyajb",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-state.ts"
+						}
+					},
+					{
+						"id": "ov7pPg21",
+						"order": 51000,
+						"name": "Canonical subject claims",
+						"kind": "module",
+						"responsibility": "Claims explicit module identities and records release or reader take-back",
+						"description": "A claim names the writer, purpose, target and time. It leaves the short installation lease free during agent work. Take-back refuses the former claim on its next edit.",
+						"parent": "1VHRyajb",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/claims.ts"
+						}
+					},
+					{
+						"id": "hLWF9OC5",
+						"order": 52000,
+						"name": "Canonical model subscription",
+						"kind": "module",
+						"responsibility": "Sends a fresh coherent snapshot and observes valid external changes without adoption",
+						"description": "Each connection receives current reading and claims. Completion, external observations, unavailable reads and claim changes use shared public event payloads. Historical reads stay independent.",
+						"parent": "1VHRyajb",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-watch.ts"
+						}
+					},
+					{
+						"id": "IyV7OF9L",
+						"order": 53000,
+						"name": "Canonical local news",
+						"kind": "module",
+						"responsibility": "Notifies local subscribers after durable operations release their lease",
+						"description": "Disk observation covers other processes. Observer failures cannot undo an accepted edit.",
+						"parent": "1VHRyajb",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-news.ts"
+						}
+					},
+					{
+						"id": "W6wFcSQz",
+						"order": 54000,
+						"name": "Canonical operation contracts",
+						"kind": "module",
+						"responsibility": "Defines explicit edit targets, complete read tokens, claims, recovery outcomes and wire events",
+						"parent": "1VHRyajb",
+						"groups": [
+							"writes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/shared/schemas/model-operations.ts"
+						}
 					}
 				],
 				"edges": [
@@ -84176,6 +84325,482 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/architecture/migration-routes.ts",
 							"symbol": "LegacyMappingWriteSchema"
+						}
+					},
+					{
+						"id": "SuACli3y",
+						"order": 110000,
+						"from": "4P7YZdnj",
+						"to": "Zeo3aQWz",
+						"kind": "call",
+						"label": "edit and recover canonical description",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+							"symbol": "editArchitectureModule"
+						}
+					},
+					{
+						"id": "miCieAcV",
+						"order": 111000,
+						"from": "Zeo3aQWz",
+						"to": "8Uq1mtzw",
+						"kind": "call",
+						"label": "prepare complete candidate",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/edit.ts",
+							"symbol": "prepareEdit"
+						}
+					},
+					{
+						"id": "1CMGODuG",
+						"order": 112000,
+						"from": "Zeo3aQWz",
+						"to": "CLdaoYy3",
+						"kind": "call",
+						"label": "resume durable installation",
+						"emphasis": "hero",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/edit.ts",
+							"symbol": "installJournal"
+						}
+					},
+					{
+						"id": "WpAdVbQ4",
+						"order": 113000,
+						"from": "8Uq1mtzw",
+						"to": "ov7pPg21",
+						"kind": "call",
+						"label": "require target and subject ownership",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
+							"symbol": "requireSubjectClaim"
+						}
+					},
+					{
+						"id": "gj0AysX5",
+						"order": 114000,
+						"from": "8Uq1mtzw",
+						"to": "ZRq51Ecz",
+						"kind": "call",
+						"label": "sign candidate checkpoint",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
+							"symbol": "archiveCommit"
+						}
+					},
+					{
+						"id": "MWwtJ07I",
+						"order": 115000,
+						"from": "ov7pPg21",
+						"to": "cNaEpWjJ",
+						"kind": "call",
+						"label": "require explicit current target",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/claims.ts",
+							"symbol": "readCurrentModel"
+						}
+					},
+					{
+						"id": "Unx9ZNwy",
+						"order": 116000,
+						"from": "ov7pPg21",
+						"to": "YREYrbYW",
+						"kind": "call",
+						"label": "serialize claim records",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/claims.ts",
+							"symbol": "withModelLock"
+						}
+					},
+					{
+						"id": "4BbNhYeL",
+						"order": 117000,
+						"from": "CLdaoYy3",
+						"to": "YREYrbYW",
+						"kind": "call",
+						"label": "record durable progress",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-install.ts",
+							"symbol": "writeState"
+						}
+					},
+					{
+						"id": "lihhHpxZ",
+						"order": 118000,
+						"from": "CLdaoYy3",
+						"to": "ZRq51Ecz",
+						"kind": "call",
+						"label": "prepare signing then conditionally retain completion",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-install.ts",
+							"symbol": "prepareCheckpointAppend"
+						}
+					},
+					{
+						"id": "VESQgtYF",
+						"order": 119000,
+						"from": "CLdaoYy3",
+						"to": "qTv7HuBw",
+						"kind": "call",
+						"label": "durable atomic replacement",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-install.ts",
+							"symbol": "writeFileAtomic"
+						}
+					},
+					{
+						"id": "qyBfoMqw",
+						"order": 120000,
+						"from": "cNaEpWjJ",
+						"to": "YREYrbYW",
+						"kind": "call",
+						"label": "refuse mixed current installation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-read.ts",
+							"symbol": "modelBoundaryFailure"
+						}
+					},
+					{
+						"id": "lDmGxPX5",
+						"order": 121000,
+						"from": "Zeo3aQWz",
+						"to": "IyV7OF9L",
+						"kind": "call",
+						"label": "announce durable completion",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/edit.ts",
+							"symbol": "notifyArchitecture"
+						}
+					},
+					{
+						"id": "pwwBQjxG",
+						"order": 122000,
+						"from": "ov7pPg21",
+						"to": "IyV7OF9L",
+						"kind": "call",
+						"label": "announce claim changes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/claims.ts",
+							"symbol": "notifyArchitecture"
+						}
+					},
+					{
+						"id": "dsLuZ7fl",
+						"order": 123000,
+						"from": "hLWF9OC5",
+						"to": "IyV7OF9L",
+						"kind": "call",
+						"label": "subscribe to local durable news",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-watch.ts",
+							"symbol": "onArchitectureNews"
+						}
+					},
+					{
+						"id": "U1wBMUoF",
+						"order": 124000,
+						"from": "hLWF9OC5",
+						"to": "cNaEpWjJ",
+						"kind": "call",
+						"label": "fresh coherent snapshot and observation",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-watch.ts",
+							"symbol": "readArchitectureModel"
+						}
+					},
+					{
+						"id": "Mu9aMjws",
+						"order": 125000,
+						"from": "hLWF9OC5",
+						"to": "ov7pPg21",
+						"kind": "call",
+						"label": "fresh visible claims",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-watch.ts",
+							"symbol": "readArchitectureClaims"
+						}
+					},
+					{
+						"id": "tDk3zmci",
+						"order": 126000,
+						"from": "4P7YZdnj",
+						"to": "hLWF9OC5",
+						"kind": "call",
+						"label": "vault-scoped current event stream",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+							"symbol": "watchArchitectureModel"
+						}
+					},
+					{
+						"id": "9eRTT5wz",
+						"order": 127000,
+						"from": "Zeo3aQWz",
+						"to": "W6wFcSQz",
+						"kind": "dependency",
+						"label": "parse complete intent",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/edit.ts",
+							"symbol": "ArchitectureModuleEditSchema"
+						}
+					},
+					{
+						"id": "ROJixHYk",
+						"order": 128000,
+						"from": "YREYrbYW",
+						"to": "qTv7HuBw",
+						"kind": "call",
+						"label": "mkdirDurably",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-state.ts",
+							"symbol": "mkdirDurably"
+						}
+					},
+					{
+						"id": "Fr0oDPug",
+						"order": 129000,
+						"from": "YREYrbYW",
+						"to": "UFO3ulXp",
+						"kind": "call",
+						"label": "holdBoard",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-state.ts",
+							"symbol": "holdBoard"
+						}
+					},
+					{
+						"id": "wP2zZutN",
+						"order": 130000,
+						"from": "8Uq1mtzw",
+						"to": "cNaEpWjJ",
+						"kind": "call",
+						"label": "decodeModel",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
+							"symbol": "decodeModel"
+						}
+					},
+					{
+						"id": "iPPIY0dg",
+						"order": 131000,
+						"from": "W6wFcSQz",
+						"to": "ZLJy8ivl",
+						"kind": "call",
+						"label": "ArchitectureModuleSchema",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/shared/schemas/model-operations.ts",
+							"symbol": "ArchitectureModuleSchema"
+						}
+					},
+					{
+						"id": "L9qSRNoR",
+						"order": 132000,
+						"from": "ov7pPg21",
+						"to": "Bd4GPG6d",
+						"kind": "call",
+						"label": "archiveFailure",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/claims.ts",
+							"symbol": "archiveFailure"
+						}
+					},
+					{
+						"id": "Ei40PGJf",
+						"order": 133000,
+						"from": "Zeo3aQWz",
+						"to": "Bd4GPG6d",
+						"kind": "call",
+						"label": "editResult",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/edit.ts",
+							"symbol": "editResult"
+						}
+					},
+					{
+						"id": "06G2g8VM",
+						"order": 134000,
+						"from": "CLdaoYy3",
+						"to": "Bd4GPG6d",
+						"kind": "call",
+						"label": "editResult",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-install.ts",
+							"symbol": "editResult"
+						}
+					},
+					{
+						"id": "VTZKWgse",
+						"order": 135000,
+						"from": "ov7pPg21",
+						"to": "ZRq51Ecz",
+						"kind": "call",
+						"label": "ArchiveError",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/claims.ts",
+							"symbol": "ArchiveError"
+						}
+					},
+					{
+						"id": "CT2AMZDt",
+						"order": 136000,
+						"from": "Zeo3aQWz",
+						"to": "ZRq51Ecz",
+						"kind": "call",
+						"label": "ArchiveError",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/edit.ts",
+							"symbol": "ArchiveError"
+						}
+					},
+					{
+						"id": "2PHWJ0zL",
+						"order": 137000,
+						"from": "YREYrbYW",
+						"to": "ZRq51Ecz",
+						"kind": "call",
+						"label": "ArchiveError",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-state.ts",
+							"symbol": "ArchiveError"
+						}
+					},
+					{
+						"id": "D5n9O1JP",
+						"order": 138000,
+						"from": "CLdaoYy3",
+						"to": "RfwX9gsx",
+						"kind": "call",
+						"label": "git",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-install.ts",
+							"symbol": "git"
+						}
+					},
+					{
+						"id": "5eI7is0k",
+						"order": 139000,
+						"from": "Zeo3aQWz",
+						"to": "YREYrbYW",
+						"kind": "call",
+						"label": "operationRef",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/edit.ts",
+							"symbol": "operationRef"
+						}
+					},
+					{
+						"id": "aI4dCY36",
+						"order": 140000,
+						"from": "8Uq1mtzw",
+						"to": "YREYrbYW",
+						"kind": "call",
+						"label": "checkoutContext",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
+							"symbol": "checkoutContext"
+						}
+					},
+					{
+						"id": "gCSSYsMT",
+						"order": 141000,
+						"from": "4P7YZdnj",
+						"to": "ov7pPg21",
+						"kind": "call",
+						"label": "claimArchitectureSubjects",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+							"symbol": "claimArchitectureSubjects"
+						}
+					},
+					{
+						"id": "FNRbx70t",
+						"order": 142000,
+						"from": "ov7pPg21",
+						"to": "W6wFcSQz",
+						"kind": "call",
+						"label": "ArchitectureClaimRequestSchema",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/claims.ts",
+							"symbol": "ArchitectureClaimRequestSchema"
+						}
+					},
+					{
+						"id": "2fr60kVw",
+						"order": 143000,
+						"from": "ZRq51Ecz",
+						"to": "W6wFcSQz",
+						"kind": "call",
+						"label": "ArchitectureModuleEditSchema",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-archive.ts",
+							"symbol": "ArchitectureModuleEditSchema"
 						}
 					}
 				],
