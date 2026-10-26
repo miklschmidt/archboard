@@ -1,9 +1,11 @@
 ---
 id: TASK-549.01
 title: Read one canonical module model
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-10-26T05:24:00Z'
+updated_date: '2026-10-26T05:30:00Z'
 labels:
   - ready-for-agent
 dependencies: []
