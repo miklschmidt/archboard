@@ -36,7 +36,7 @@ archboard changed three things:
    byte (TASK-548.03). Each change keeps the order of every decision, every tie
    and every floating-point operation, and says `archboard:` where it is:
    - `src/dotgen/mincross.rs`: `reorder` stops at the first pass that exchanges
-     nothing, and runs its passes on a copy of the rank
+     nothing, and runs its passes on a one-array copy of the rank
      (`src/dotgen/mincross_rank.rs`). A pass of `mincross` stops running
      iterations once one leaves what an earlier one left, and plays the rest out
      on the recorded crossings (`src/dotgen/mincross_repeat.rs`).
