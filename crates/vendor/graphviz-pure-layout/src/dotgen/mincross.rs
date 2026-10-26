@@ -370,36 +370,53 @@ impl Dot<'_> {
         m.get(self.nodes[a].low as usize, self.nodes[b].low as usize)
     }
 
-    fn in_cross(&self, v: N, w: N) -> i64 {
-        let mut cross: i64 = 0;
+    /// archboard: `(in_cross(v, w), in_cross(w, v))` in one pass over the pairs of their
+    /// in-edges. Both count over the same pairs, each one way round, and their sums of
+    /// products are the same whatever order they are added in.
+    fn in_cross_both(&self, v: N, w: N) -> (i64, i64) {
+        let (mut vw, mut wv): (i64, i64) = (0, 0);
         for &e2 in &self.nodes[w].in_ {
-            let cnt = self.edges[e2].xpenalty as i64;
-            let inv = self.nodes[self.edges[e2].tail].order;
+            let edge2 = &self.edges[e2];
+            let cnt = edge2.xpenalty as i64;
+            let inv = self.nodes[edge2.tail].order;
+            let x2 = edge2.tail_port.p.x;
             for &e1 in &self.nodes[v].in_ {
-                let t = self.nodes[self.edges[e1].tail].order - inv;
-                if t > 0 || (t == 0 && self.edges[e1].tail_port.p.x > self.edges[e2].tail_port.p.x)
-                {
-                    cross += self.edges[e1].xpenalty as i64 * cnt;
+                let edge1 = &self.edges[e1];
+                let t = self.nodes[edge1.tail].order - inv;
+                let x1 = edge1.tail_port.p.x;
+                if t > 0 || (t == 0 && x1 > x2) {
+                    vw += edge1.xpenalty as i64 * cnt;
+                }
+                if t < 0 || (t == 0 && x2 > x1) {
+                    wv += cnt * edge1.xpenalty as i64;
                 }
             }
         }
-        cross
+        (vw, wv)
     }
 
-    fn out_cross(&self, v: N, w: N) -> i64 {
-        let mut cross: i32 = 0;
+    /// archboard: `(out_cross(v, w), out_cross(w, v))` in one pass over the pairs of their
+    /// out-edges, each summed in `int` as C sums it.
+    fn out_cross_both(&self, v: N, w: N) -> (i64, i64) {
+        let (mut vw, mut wv): (i32, i32) = (0, 0);
         for &e2 in &self.nodes[w].out {
-            let cnt = self.edges[e2].xpenalty;
-            let inv = self.nodes[self.edges[e2].head].order;
+            let edge2 = &self.edges[e2];
+            let cnt = edge2.xpenalty;
+            let inv = self.nodes[edge2.head].order;
+            let x2 = edge2.head_port.p.x;
             for &e1 in &self.nodes[v].out {
-                let t = self.nodes[self.edges[e1].head].order - inv;
-                if t > 0 || (t == 0 && self.edges[e1].head_port.p.x > self.edges[e2].head_port.p.x)
-                {
-                    cross = cross.wrapping_add(self.edges[e1].xpenalty.wrapping_mul(cnt));
+                let edge1 = &self.edges[e1];
+                let t = self.nodes[edge1.head].order - inv;
+                let x1 = edge1.head_port.p.x;
+                if t > 0 || (t == 0 && x1 > x2) {
+                    vw = vw.wrapping_add(edge1.xpenalty.wrapping_mul(cnt));
+                }
+                if t < 0 || (t == 0 && x2 > x1) {
+                    wv = wv.wrapping_add(cnt.wrapping_mul(edge1.xpenalty));
                 }
             }
         }
-        cross as i64
+        (vw as i64, wv as i64)
     }
 
     fn exchange(&mut self, v: N, w: N) {
@@ -426,12 +443,14 @@ impl Dot<'_> {
             let mut c0: i64 = 0;
             let mut c1: i64 = 0;
             if r > 0 {
-                c0 += self.in_cross(v, w);
-                c1 += self.in_cross(w, v);
+                let (vw, wv) = self.in_cross_both(v, w);
+                c0 += vw;
+                c1 += wv;
             }
             if self.rank_n(g, r + 1) > 0 {
-                c0 += self.out_cross(v, w);
-                c1 += self.out_cross(w, v);
+                let (vw, wv) = self.out_cross_both(v, w);
+                c0 += vw;
+                c1 += wv;
             }
             if c1 < c0 || (c0 > 0 && reverse && c1 == c0) {
                 self.exchange(v, w);
