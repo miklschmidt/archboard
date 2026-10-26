@@ -198,3 +198,174 @@ then `compare` against a render of the base commit: 0 of 2,344 drawings
 differ. Against the older render `/tmp/t548/base`, the only differences are
 216 drawings that only one side has, under variant names that the vault
 renamed since then. The base commit's own render shows the same 216.
+
+## The critical solves, faster again (TASK-548.07)
+
+TASK-548.07 made graphviz-pure faster for the graphs of the two slowest first
+renders, Agent workbench and Board viewer, again to the same answers byte for
+byte. The base is `b39ce7afa`. The `critical_path` example of
+`archboard-render` names each board's critical solve: the solve that its first
+render waits for longest. That is solve 8 of Agent workbench, with 13 Graphviz
+calls, and solve 5 of Board viewer, with 12.
+
+### How it was measured
+
+The oracle of TASK-548.03 (2,106 pairs) got two more sets. The first holds the
+223 Graphviz calls of all 19 solves of the two first renders (163 distinct
+graphs). The second holds the 25 calls of the two critical solves. A harness
+outside the repository replayed them through `archboard-graphviz`, natively
+and as WebAssembly in Bun. Each change was kept only if every pair of the
+three sets got the same answer.
+
+The machine was shared, with a load average of 24 to 41 on 24 hardware
+threads, during all of the measurements below. Instruction counts do not move
+with load. Wall times move by 10% and more, so each one is alternated with the
+base.
+
+### Before and after
+
+The wall times below were measured at `db587cf0b`, which still held the
+network simplex copy that `1b616a63a` took back. That copy made no difference
+in time that stood out from the noise (see the commits below). The instruction
+counts are of the final branch.
+
+The `critical_path` example (`target/release/examples/critical_path`),
+built from the base and from the branch, alternated, four runs each, at a load
+of 24.5 to 26.9. The medians, with the range of the four runs:
+
+| Measure                        | Before                    | After                     | Change |
+| ------------------------------ | ------------------------- | ------------------------- | ------ |
+| Agent workbench, Graphviz      | 381 ms (343 to 385)       | 296 ms (275 to 320)       | -22%   |
+| Agent workbench, critical path | 679 ms (604 to 685)       | 578 ms (538 to 622)       | -15%   |
+| Board viewer, Graphviz         | 522 ms (515 to 527)       | 418 ms (408 to 435)       | -20%   |
+| Board viewer, critical path    | 757 ms (748 to 762)       | 652 ms (639 to 679)       | -14%   |
+| Both boards drawn              | 1,435 ms (1,353 to 1,447) | 1,224 ms (1,190 to 1,301) | -15%   |
+
+The 25 calls of the two critical solves, replayed alone:
+
+| Build                                               | Before  | After   | Change |
+| --------------------------------------------------- | ------- | ------- | ------ |
+| Native, Agent workbench, instructions               | 4.010 G | 3.037 G | -24%   |
+| Native, Board viewer, instructions                  | 5.648 G | 4.237 G | -25%   |
+| Native, both, cycles of five replays, load 35 to 38 | 24.61 G | 20.71 G | -16%   |
+| WebAssembly in Bun, Agent workbench, median of five | 434 ms  | 369 ms  | -15%   |
+| WebAssembly in Bun, Board viewer, median of five    | 576 ms  | 494 ms  | -14%   |
+
+The pool timing (`bun docs/design/wide-board-layout-fixtures/timing.ts 7`), the
+base tree and the branch alternated, four runs each, at a load of 26.7 to
+32.9, did not show the change. The sum of the 29 first renders was 12,682 to
+14,527 ms before and 12,727 to 15,727 ms after. Agent workbench's first
+render was 2,197 to 2,536 ms before and 2,062 to 2,842 ms after. The pool runs
+solves on parallel workers, so at this load the scheduling of the workers
+decides more than a 20% cut in Graphviz time does. This measurement must be
+taken again on a quiet machine.
+
+Each commit, built on its own, with the user instructions of one native replay
+of the 25 calls. Every commit answered all 25 the same:
+
+| Commit      | Change                                           | Instructions | Against the commit before |
+| ----------- | ------------------------------------------------ | ------------ | ------------------------- |
+| `b39ce7afa` | base                                             | 9.659 G      |                           |
+| `f656e9157` | `reorder` sorts a rank in place of its passes    | 9.059 G      | -6.2%                     |
+| `c66996c47` | `transpose` counts a pair both ways at once      | 7.921 G      | -12.6%                    |
+| `d6ea9719a` | network simplex on a dense copy                  | 7.826 G      | -1.2%                     |
+| `399e1fb7a` | routing finds orientations once, sorts triangles | 7.432 G      | -5.0%                     |
+| `7673e7b6c` | `limit_boxes` reads only the samples it can use  | 7.255 G      | -2.4%                     |
+| `db587cf0b` | `medians` sorts with the standard sort           | 7.179 G      | -1.0%                     |
+| `1b616a63a` | network simplex on dot's graph again             | 7.274 G      | +1.3%                     |
+
+The dense copy of network simplex (`d6ea9719a`) saved 1.2% of the
+instructions. Its cycles, alternated twice with the commit before at a load of
+36 to 41, were 2.7% lower once and 2.4% higher once. As WebAssembly in Bun,
+alternated five times, its median was 1,007 ms against 997 ms before. It
+copied and wrote back every field that network simplex touches, so
+`1b616a63a` took it back.
+
+### Each change
+
+1. `reorder` sorts a rank in place of its passes (`mincross_rank.rs`,
+   `RankCopy::sorted_by_segments`). Under `remincross`, with no flat edges and
+   a median for every node, the passes of `reorder` are a bubble sort of each
+   run of nodes between cluster borders, by median. A stable sort gives the
+   same order. In the reverse pass, nodes of equal median also exchange, so
+   each run of equal medians is rotated as the passes rotate it. Any other rank
+   still runs the passes (`RankCopy::passes`). A test holds the sort equal to
+   the passes on 20,000 random ranks.
+2. `transpose` counts the crossings of a pair both ways in one pass over their
+   edges (`mincross.rs`, `in_cross_both`, `out_cross_both`). The sums are of
+   integers, so their order does not change them, and the sum of `out_cross`
+   wraps as an `i32` as before.
+3. Routing finds each orientation once and links triangles by sorting
+   (`graphviz-pure-geom`, `triang.rs`, `shortest.rs`). `intersects` computed
+   the same four `ccw` results more than once. `pshortestpath` compared each
+   triangle with every other one to link those that share an edge. It now sorts
+   the triangles' edges by their two points and links each edge to the
+   largest other triangle that holds both points, as the old loop did.
+4. `limit_boxes` reads, for each box, only the samples that can reach its rows
+   (`routespl.rs`). The test of a sample against a box's rows depends only on
+   the sample's y. So the samples that can pass it are one run of the samples
+   ordered by y, which a binary search finds. The samples of that run are read
+   in their old order.
+5. `medians` sorts its integer positions with the standard sort, in place of
+   the musl `qsort`. Equal integers cannot be told apart, so any sort gives the
+   same array.
+
+`crates/vendor/README.md` lists each changed file, and each change says
+`archboard:` where it is. `crates/archboard-graphviz/tests/critical_graphs.rs`
+holds the answer of one graph of each critical solve to its hash from the
+base. A fault put in on purpose into the rotation of equal medians, the run
+of samples, or the bubble sort's compare makes it fail. So did a fault in the
+write-back of the network simplex copy, while the branch held it.
+
+These experiments did not help, and were taken back:
+
+- a copy of a rank's edges for each `transpose` step (15% more instructions)
+- `NodeInfo` and `EdgeInfo` with their hot fields first (`repr(C)`, under 1%)
+- crossing sums without branches (about 1%)
+- the sort of `reorder` for ranks with fixed nodes (no gain on these graphs)
+- a cheaper hash of the ranks in the repeat detection of `mincross` (0.2%)
+- a static Leonardo table for `qsort` (0.1% natively, none as WebAssembly)
+- a memo of the crossing counts of each pair inside one `transpose` (12.6%
+  more instructions)
+- a WebAssembly build with `simd128`, and `wasm-opt -O3` (no gain in Bun)
+- network simplex on a dense copy of its fields (1.2% fewer instructions, no
+  time that stood out from the noise)
+
+### A typed port, measured and not built
+
+The `Graphviz` port takes viz-js Graph JSON text and gives json0 text. A
+native profile of the critical solves at the base put the text work at about
+2.3% of the solve's CPU time: the graph's text 0.42%, reading it 0.35%, the
+json0 writing 0.56% (`write_json`) and 0.75% (`emit_null`), and the layout's
+reading of the answer 0.26%. That is about 11 to 12 ms of Board viewer's critical solve. After the changes,
+the whole json0 render is 7.8% of Graphviz time, and a typed answer would
+leave out only a part of that. A typed port changes the interface that
+TASK-548.05 and TASK-548.06 work beside, and the memo of the layout's engine
+keys its answers by the graph's text. So it was not built.
+
+### Options that change answers, for the owner
+
+Measured on the 25 calls of the two critical solves, natively, with the
+branch's changes made so far, at a load of about 28. A changed answer is a
+changed layout, so drawings change:
+
+| Option                          | Time    | Answers changed, of 25 |
+| ------------------------------- | ------- | ---------------------- |
+| None                            | 886 ms  | none                   |
+| `mclimit=1`                     | 588 ms  | 19                     |
+| `mclimit=2`                     | 724 ms  | 15                     |
+| `remincross=false`              | 670 ms  | 25                     |
+| `mclimit=1`, `remincross=false` | 541 ms  | 25                     |
+| `searchsize=10`                 | no gain | 25                     |
+
+### The critical path against 500 ms
+
+On the quieter machine where the base was first measured, the critical path
+was 483 ms for Agent workbench (Graphviz 269 ms) and 545 ms for Board viewer
+(Graphviz 374 ms). Under load, the branch took 101 ms off Agent workbench's
+critical path and 105 ms off Board viewer's, about 14% to 15%. If the same
+share holds on the quiet machine, Agent workbench comes to about 410 ms and
+Board viewer to about 470 ms. That is an estimate from scaling, not a
+measurement. A WebAssembly profile of the critical graphs still puts about 9%
+of the time in the allocator (dlmalloc), and crossing reduction remains the
+largest part of Graphviz time.
