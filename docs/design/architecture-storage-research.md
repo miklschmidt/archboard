@@ -10,9 +10,10 @@ sound. Modules, containment, relationships, flows, explanations, and proposals
 remain. The problem is duplicated ownership across boards and flat JSON files.
 
 Deployment scope clarified on 2026-10-26: prove the complete system locally
-before moving board storage, the frontend, and the renderer to Scaleway Kapsule.
-Agents stay machine-local, and the hosted service contains no repository
-checkouts. The [deployment boundary](architecture-discovery-and-interaction.md#local-operation-and-hosted-boundary)
+before moving board storage and frontend hosting to Scaleway Kapsule.
+Rendering stays local or runs in the client. Agents stay machine-local, and
+the hosted service contains no repository checkouts.
+The [deployment boundary](architecture-discovery-and-interaction.md#local-operation-and-hosted-boundary)
 records this direction. The selected engine must run locally. Managed offerings
 remain useful comparisons rather than required dependencies.
 

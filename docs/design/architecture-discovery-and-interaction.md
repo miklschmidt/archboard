@@ -155,6 +155,11 @@ supplies a scene model, which describes what the frontend renders. The frontend
 retains control of interaction and can render that scene through its chosen
 technology.
 
+Layout computation stays on the user's machine or runs in the client, including
+when the frontend uses hosted storage. The hosted service does not supply
+renderer compute. The choice between a local native process and a client runtime
+remains open.
+
 Selection and highlighting respond without another layout operation. Changes
 to scope or visible content request a new scene. The frontend preserves the
 reader's location where possible and never lets an older result replace a
@@ -184,20 +189,21 @@ replacement must work locally before deployment to a hosted environment.
 Local operation includes the new storage model, frontend, renderer, and their
 integration with machine-local agents.
 
-The eventual hosted service contains board storage, the frontend, and the
-renderer. All agent execution and agent session state stay on the user's
-machine. The hosted service contains no repository checkouts. Code bindings
-continue to identify source that local tools can access.
+The eventual hosted service contains board storage and serves the frontend.
+The renderer runs locally or in the client. All agent execution and agent
+session state stay on the user's machine. The hosted service contains no
+repository checkouts. Code bindings continue to identify source that local
+tools can access.
 
 Scaleway Kapsule is the intended production deployment target. EU sovereignty
 and low maintenance guide that deployment. Kapsule is a future operating
 environment, not a prerequisite for developing or using the new model locally.
 The database engine remains undecided.
 
-The storage and rendering interfaces must support both local and hosted
-operation. The connection between the frontend and machine-local agents
-remains a design decision. Hosted agent workers and cloud repository checkouts
-are outside this direction.
+The storage interface must support both local and hosted operation. Rendering
+stays local in either deployment. The connection between the frontend and
+machine-local agents remains a design decision. Hosted agent workers and cloud
+repository checkouts are outside this direction.
 
 ## Open decisions
 
