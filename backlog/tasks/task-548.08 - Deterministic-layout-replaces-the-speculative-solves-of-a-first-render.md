@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T16:24:00Z'
-updated_date: '2026-10-26T19:03:00Z'
+updated_date: '2026-10-26T19:16:00Z'
 labels:
   - renderer
   - performance
@@ -59,4 +59,8 @@ The corpus now explicitly draws complete architectures through renderArchitectur
 Frame-fix checks: 102 layout Rust tests pass, Clippy denies warnings and passes, TypeScript checks and focused lints pass. Renderer tests report 661 passes, one platform skip, and one existing 3 s timing failure on Codex realtime voice (3093 ms). A focused rerun also exceeds that bound at 3082 ms. A separate complete-source run applies all geometry helpers without the speed bound and reports zero findings on all 17 current vault boards. Pool and native measurements are recorded before the next optimization. The empirical 32-card choice remains only in this defect-fix checkpoint. The next step removes redundant stacking solves from a graph proof, then tests a graph-based packing decision.
 
 Frame-fix measurements: 58.114 billion native instructions, with 27/5/4 solves for routes/persistence/viewer. Best native paths are 458/260/793 ms at load 41.91 to 40.39. The new alternating pool pair reports viewer 4359 to 1733 ms, persistence 3315 to 1180 ms, and routes 2437 to 2607 ms. Growing edits take 4043 to 2111 ms, 2943 to 1094 ms, and 1926 to 2730 ms, respectively. Parent load is 40.39 to 41.47, and frame-fix load is 41.47 to 45.53. These timings do not establish the 500 ms target. The design note and /tmp/548-08/round-2 keep the logs and full corpus.
+
+TASK-553 measurement reset: rebased task-548.08 onto f06fa5317 before further work. The frame-fix checkpoint is now adc7bc3de (formerly e2cfd77e7). The core rebuild succeeds with source hash 6f1dfb479391b4f8 for the current no-op stacking proof. ps finds no actual git-owner.ts worker. The parent found 37 orphan Git owners that held the box at load 40, so all earlier wall-clock comparisons are noise. Keep their logs as history, use instruction counts with the recorded caveat, and replace elapsed evidence with fresh measurements under /tmp/548-08/post-553. The baseline uses f06fa5317 source files and its matching ce42bd12e4ee9ccb core. No orphan in this worktree needed SIGTERM.
+
+Fresh measurements after TASK-553: parent f06fa5317 has 152.714 billion native instructions and 27/25/24 solves for routes/persistence/viewer. The repaired candidate has 58.158 billion instructions and 27/5/4 solves. Native best paths are 329/1100/1059 ms before and 329/186/255 ms after. At pool loads 3.32 to 4.08 before and 4.40 to 4.59 after, first renders are viewer 1503 to 392 ms, persistence 1572 to 297 ms, and routes 637 to 653 ms. Growing edits take 1627 to 644 ms, 1564 to 297 ms, and 640 to 638 ms, respectively. The 500 ms target remains unmet for viewer edits and routes. Fresh complete corpora are /tmp/548-08/post-553/base and after-5; 22 of 2452 drawings change, matching the frame-fix checkpoint. No-op stacking proof: all blocks use the same graph predicate, with one solve when no ranked line enters an inline container from another. Its async regression goes from two requests to one, and all 102 layout tests plus Clippy pass. All 662 renderer cases pass with one platform skip. The proof adds no claimed speed gain on the three slow whole boards, whose actual stacking choices remain.
 <!-- SECTION:NOTES:END -->

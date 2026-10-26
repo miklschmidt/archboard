@@ -341,12 +341,11 @@ fn a_large_grouped_graph_asks_only_for_packed_solves_and_propagates_failure() {
     let mut drawing = Box::pin(drawing(&host, &content, &measured));
     let mut context = Context::from_waker(Waker::noop());
     assert!(drawing.as_mut().poll(&mut context).is_pending());
-    assert!(
-        host.0
-            .borrow()
-            .iter()
-            .all(|asked| { asked.graph["layoutOptions"]["archboard.blocks.nesting"] == "groups" })
-    );
+    let asked = host.0.borrow();
+    assert_eq!(asked.len(), 1);
+    let way = &asked[0].graph["layoutOptions"];
+    assert_eq!(way["archboard.blocks.nesting"], "groups");
+    drop(asked);
     host.answer(0, Err(Unsolved::Failed("nesting failure".to_owned())));
     host.fails(drawing.as_mut().poll(&mut context), "nesting failure");
 }

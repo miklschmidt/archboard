@@ -37,7 +37,7 @@ pub(super) enum Nesting {
 
 impl Nesting {
     /// Its name in a solve's options.
-    fn name(self) -> &'static str {
+    pub(super) fn name(self) -> &'static str {
         match self {
             Nesting::Blocks => "blocks",
             Nesting::Inline => "inline",
