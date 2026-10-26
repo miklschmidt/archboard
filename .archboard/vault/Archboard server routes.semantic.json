@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 103,
+	"version": 105,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-26T05:45:07.629Z",
+	"updatedAt": "2026-10-26T06:49:45.189Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -322,6 +322,23 @@
 				"flows": [
 					"YZf2E6Tj"
 				]
+			}
+		},
+		{
+			"id": "cgS1V35Y",
+			"name": "Clients and reads",
+			"grammar": "architecture",
+			"summary": "The local browser and agent reach legacy and canonical readers through the server.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"wQ63dmRZ",
+					"sVYH3JhL",
+					"nn1ec9Tw",
+					"r6IpmadI"
+				],
+				"edges": [],
+				"flows": []
 			}
 		}
 	],
@@ -40686,7 +40703,7 @@
 		{
 			"id": "hHZmPq4X",
 			"name": "TASK-526 after TASK-532",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "F7wnCYPs",
 			"summary": "The route handlers, and what each one reaches",
 			"documents": [
@@ -58366,7 +58383,7 @@
 		{
 			"id": "3eJku1sU",
 			"name": "TASK-549.01",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "MFjeX8GB",
 			"summary": "Expose the canonical model read through the shared runtime",
 			"documents": [
@@ -58574,6 +58591,7 @@
 						"name": "Agent CLI",
 						"kind": "service",
 						"responsibility": "Sends every board operation over HTTP and never writes a vault file itself",
+						"parent": "ldITx5BG",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/bin.ts"
@@ -58591,6 +58609,7 @@
 						"name": "Browser",
 						"kind": "service",
 						"responsibility": "Reads boards, says what each pane is showing, and writes nothing",
+						"parent": "ldITx5BG",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web"
@@ -58829,6 +58848,14 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/architecture/model-routes.ts"
 						}
+					},
+					{
+						"id": "ldITx5BG",
+						"order": 36000,
+						"name": "Local clients",
+						"kind": "module",
+						"responsibility": "Reads architecture and issues local commands",
+						"description": "The browser reader and agent CLI share the local server interface. Each keeps its own role and identity."
 					}
 				],
 				"edges": [
@@ -60156,6 +60183,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/store/bound-vaults.ts",
 							"symbol": "chosenCheckouts"
+						}
+					},
+					{
+						"id": "NcnDdoyZ",
+						"order": 105000,
+						"from": "sVYH3JhL",
+						"to": "nn1ec9Tw",
+						"kind": "http",
+						"label": "Read the canonical model",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/clients/architecture-model/queries.ts",
+							"symbol": "readModel"
 						}
 					}
 				],
@@ -62834,7 +62875,7 @@
 			}
 		}
 	],
-	"current": "hHZmPq4X",
+	"current": "3eJku1sU",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -62933,6 +62974,24 @@
 			"reason": "Correction routes check an immutable candidate and commit it through the existing write boundary"
 		},
 		{
+			"variant": "bURuoB8l",
+			"from": "jHge59R8",
+			"at": "2026-10-24T17:14:14.517Z",
+			"reason": "A board render carries its render recipe, and standalone renders default to a legend (TASK-526.02)"
+		},
+		{
+			"variant": "HygCzh3o",
+			"from": "bURuoB8l",
+			"at": "2026-10-24T19:19:28.889Z",
+			"reason": "A board lists the embeds it tracks, render --track adds one, and the vault side of check embeds reads them (TASK-526.04)"
+		},
+		{
+			"variant": "MFjeX8GB",
+			"from": "HygCzh3o",
+			"at": "2026-10-24T20:14:24.413Z",
+			"reason": "semantic delete removes a board, refused while another board opens it (TASK-526.06)"
+		},
+		{
 			"variant": "F7wnCYPs",
 			"from": "jHge59R8",
 			"at": "2026-10-25T05:22:41.176Z",
@@ -62943,6 +63002,12 @@
 			"from": "F7wnCYPs",
 			"at": "2026-10-26T05:37:13.568Z",
 			"reason": "Merges main into PR #2: restates main's TASK-526 change (embed tracking, check parts and semantic delete), adopted on main from the same parent, on the branch's current variant"
+		},
+		{
+			"variant": "3eJku1sU",
+			"from": "MFjeX8GB",
+			"at": "2026-10-26T06:38:02.513Z",
+			"reason": "Canonical models can be read through the runtime, CLI, server, and browser"
 		}
 	],
 	"shelvings": [

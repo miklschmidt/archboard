@@ -28,6 +28,13 @@ It validates all discovered definitions before returning any part of the model.
 Failures return structured codes, source paths, affected identities, and recovery actions.
 An unsuccessful CLI read exits with status 2 and keeps its structured JSON result.
 
+When a pane opens an authored model vault, the browser lists its root modules.
+Select a module to read its responsibility, description, evidence, and connections.
+The browser keeps selection as presentation state and writes no architecture content.
+Use Refresh to read repaired or externally edited files.
+Opening the reading, returning to the tab, and reconnecting also refresh its content.
+Invalid input shows its source and recovery instructions instead of a partial model.
+
 The revision covers recognized input paths and exact bytes, including policy.
 A file rename changes the revision and preserves identity.
 A whitespace edit changes the revision and preserves meaning.

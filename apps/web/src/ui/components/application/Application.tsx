@@ -71,6 +71,8 @@ import { PresentationVoiceKey } from "#ui/components/application/PresentationVoi
 import type { AgentContext } from "@archboard/workbench/agent";
 import { SETTINGS_TRIGGER_ID } from "#ui/components/shell/BrandBar.tsx";
 import { Shell } from "#ui/components/shell/Shell.tsx";
+import { EmptyBoardNotice } from "#ui/components/shell/Navigator.tsx";
+import { EmptyBoardCatalog } from "#ui/components/architecture-model/EmptyBoardCatalog.tsx";
 import {
 	type SettingsSurface,
 	type ShellActions,
@@ -483,6 +485,16 @@ function ApplicationBody(): JSX.Element {
 		() => <VaultDiagnostics vault={diagnosed} transport={transport} ask={askAboutDiagnosed} />,
 		[diagnosed, transport, askAboutDiagnosed],
 	);
+	const emptyNotice = useMemo(() => {
+		const vaults = catalog.repositories.flatMap(({ repository }) =>
+			repository.vault === null ? [] : [repository.vault],
+		);
+		return (
+			<EmptyBoardCatalog vaults={vaults}>
+				<EmptyBoardNotice />
+			</EmptyBoardCatalog>
+		);
+	}, [catalog.repositories]);
 	const recordedPane = recordedPaneOf(recorded.recording, panes.list, mounted);
 	if (recordedPane !== null) {
 		return (
@@ -497,6 +509,7 @@ function ApplicationBody(): JSX.Element {
 			<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
 				<Tooltip.Provider>
 					<Shell
+						emptyNotice={emptyNotice}
 						view={view}
 						actions={actions}
 						diagnostics={diagnostics}

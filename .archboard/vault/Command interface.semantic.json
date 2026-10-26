@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 144,
+	"version": 145,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-26T05:44:26.926Z",
+	"updatedAt": "2026-10-26T06:38:01.347Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -51822,7 +51822,7 @@
 		{
 			"id": "K60P8BZk",
 			"name": "TASK-526 after TASK-532",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "oaIxEiFM",
 			"summary": "CLI application modules and its command groups",
 			"content": {
@@ -73400,7 +73400,7 @@
 		{
 			"id": "WtdTTTOd",
 			"name": "TASK-549.01",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "6YXZ2wX4",
 			"summary": "Read canonical module models without changing legacy commands",
 			"content": {
@@ -77065,7 +77065,7 @@
 			}
 		}
 	],
-	"current": "K60P8BZk",
+	"current": "WtdTTTOd",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -77218,6 +77218,36 @@
 			"reason": "TASK-515: restart uses the single build command, backed by the cached Vite+ frontend task"
 		},
 		{
+			"variant": "tEUCnc5Z",
+			"from": "qzEzNiJl",
+			"at": "2026-10-24T16:39:43.011Z",
+			"reason": "archboard check runs every check, and check semantics and check code run one each (TASK-526.01)"
+		},
+		{
+			"variant": "fkmIpH7L",
+			"from": "tEUCnc5Z",
+			"at": "2026-10-24T18:23:45.887Z",
+			"reason": "archboard check embeds reports outdated embeds and --fix draws them again (TASK-526.03)"
+		},
+		{
+			"variant": "21GbEl6v",
+			"from": "fkmIpH7L",
+			"at": "2026-10-24T19:19:28.332Z",
+			"reason": "A board lists the embeds it tracks, render --track adds one, and the vault side of check embeds reads them (TASK-526.04)"
+		},
+		{
+			"variant": "MIL2mAEV",
+			"from": "21GbEl6v",
+			"at": "2026-10-24T19:58:23.104Z",
+			"reason": "check embeds fetches the vault of an unregistered repository, and the check runs the embeds check alone in a checkout without a vault (TASK-526.05)"
+		},
+		{
+			"variant": "6YXZ2wX4",
+			"from": "MIL2mAEV",
+			"at": "2026-10-24T20:14:23.411Z",
+			"reason": "semantic delete removes a board, refused while another board opens it (TASK-526.06)"
+		},
+		{
 			"variant": "oaIxEiFM",
 			"from": "qzEzNiJl",
 			"at": "2026-10-25T05:16:17.839Z",
@@ -77228,6 +77258,12 @@
 			"from": "oaIxEiFM",
 			"at": "2026-10-26T05:37:15.265Z",
 			"reason": "Merges main into PR #2: restates main's TASK-526 change (embed tracking, check parts and semantic delete), adopted on main from the same parent, on the branch's current variant"
+		},
+		{
+			"variant": "WtdTTTOd",
+			"from": "6YXZ2wX4",
+			"at": "2026-10-26T06:38:01.347Z",
+			"reason": "Canonical models can be read through the runtime, CLI, server, and browser"
 		}
 	],
 	"shelvings": [

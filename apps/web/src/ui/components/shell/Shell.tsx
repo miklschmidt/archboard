@@ -32,6 +32,8 @@ function noop(): void {}
 
 /** Inputs for the shell. */
 interface ShellProps {
+	/** The application supplies format-aware empty guidance. */
+	emptyNotice?: ReactNode;
 	diagnostics?: ReactNode;
 	view: ShellView;
 	actions: ShellActions;
@@ -63,7 +65,13 @@ function Shell(props: ShellProps): JSX.Element {
 	);
 	return (
 		<div className="bg-background flex h-full min-w-0" style={SHELL_STYLE}>
-			<Navigator view={view} actions={actions} head={head} foot={props.agentDock} />
+			<Navigator
+				view={view}
+				actions={actions}
+				head={head}
+				foot={props.agentDock}
+				emptyNotice={props.emptyNotice}
+			/>
 			<ConversationColumns
 				open={props.agentPanelOpen ?? false}
 				onClose={props.onAgentPanelClose ?? noop}
