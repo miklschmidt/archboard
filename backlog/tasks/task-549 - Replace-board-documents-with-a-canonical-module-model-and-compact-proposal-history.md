@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex-orchestrator'
 created_date: '2026-10-26T04:11:00Z'
-updated_date: '2026-10-26T11:11:00Z'
+updated_date: '2026-10-26T11:23:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -272,4 +272,8 @@ Integrated TASK-549.02 from signed source 8f2a9f98efdb1e23ce3794d5ca49d8627cec26
 Integrated completed TASK-549.19 from signed source e1aa6590c7178e140144ca9253d7db362f72b9c1 through signed no-ff merge 3c5c97f9c80fd2fd756004b86e7642acbd78c5bb. The merge preserves the complete TASK-549.02 implementation and every signed planning, specification, and ticket commit. Shared contracts retain exact checkpoint reads and legacy inventory/planning. Both adopted architecture histories remain intact. New CLI-authored integration readings combine them without forced adoption or replacement IDs. Browser application@TASK-549.02, all frontend source, and browser tests match the pre-merge integration exactly, so their evidence is reused. Focused integration evidence passes 62 tests across 12 files, both TypeScript projects, lint with zero warnings, and formatting. Semantics have zero diagnostics. Current code checks retain the same 12 known warnings outside affected boards and informational exposure findings. Claims are released and the integration server is stopped. TASK-549 remains In Progress. TASK-549.02 and TASK-549.19 remain Done. The recomputed ready frontier is TASK-549.03, TASK-549.10, and TASK-549.16. The parent owns frontend work and dispatch. No implementer launched. Review coverage remains f1b91c9a98537a29238ac1575f45d2fcfd5d3259. New work needs parent review before the next push. No push, PR edit, watch, or PR merge occurred. PR 19 remains draft at its published f1b91c9a9 head. Complete merge evidence and provenance are in /home/msc/.local/state/archboard-implementation/task-549/task-549.19-merged.md.
 
 Owner requested an immediate update onto origin/main after the large refactor. Rebased the integration history onto 6cae688bbaa2b6c9862054258e89f28c605cfc46 with signed commits and merge topology retained. Original integration and browser histories remain on local backup branches. Adapted CLI clients, shared Git access, composite UI controls, pane header ownership, and refresh invalidation to the new interfaces. Runtime and CLI process tests pass. Reconciliation proposals: Board persistence, Command interface, Archboard server routes, and Browser application at TASK-549-main-refactor. Browser validation and proposal adoption remain in progress.
+
+The new main branch owns ADR 0058 for interface width. The canonical-read decision moves to ADR 0060, and its live references follow that path. The temporary board interface-width overage remains explicit on TASK-549.24. Its final cutover must remove superseded legacy exports without raising ceilings or hiding names behind objects.
+
+The rebased integration passes source/browser types, lint, 44 focused tests, three CLI/server process tests, seven request/refresh tests, and the four canonical/legacy browser cases. All four reconciliation proposals pass their affected code checks and are adopted. All original variant meanings remain intact. RequestFailure stays private, so server-requests meets its interface ceiling. Board currently has 209 public names against 188 during the dual-model transition; TASK-549.24 explicitly owns removal of superseded legacy APIs before completion. Parent UI checkpoint rebased cleanly to 097d2b1fc and passes types. Final current-vault validation and child branch synchronization remain.
 <!-- SECTION:NOTES:END -->

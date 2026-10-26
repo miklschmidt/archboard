@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 123,
+	"version": 124,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-26T11:12:55.370Z",
+	"updatedAt": "2026-10-26T11:23:09.373Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -71925,7 +71925,7 @@
 		{
 			"id": "kYIX7mDH",
 			"name": "TASK-549.19-integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "ihbp3mkh",
 			"summary": "Combine retained checkpoints with explicit legacy inventory and mapping plans",
 			"documents": [
@@ -81016,7 +81016,7 @@
 		{
 			"id": "pCuQrE4j",
 			"name": "TASK-549-main-refactor-integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "hHZmPq4X",
 			"documents": [
 				{
@@ -90532,7 +90532,7 @@
 			}
 		}
 	],
-	"current": "kYIX7mDH",
+	"current": "pCuQrE4j",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -90683,6 +90683,13 @@
 			"from": "ihbp3mkh",
 			"at": "2026-10-26T10:01:48.641Z",
 			"reason": "TASK-549.02 checkpoints and TASK-549.19 inventory are implemented together; both original adopted readings remain historical"
+		},
+		{
+			"variant": "pCuQrE4j",
+			"from": "kYIX7mDH",
+			"at": "2026-10-26T11:23:09.373Z",
+			"reason": "Combines the refactored main architecture with every implemented canonical model, checkpoint, and migration capability. Tests and affected proposal code checks pass.",
+			"forced": true
 		}
 	],
 	"shelvings": [
