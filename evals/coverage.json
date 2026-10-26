@@ -1126,6 +1126,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "tests/system/browser/canonical-model-navigation.test.ts; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
+					"path": "canonical selection, focus, and visibility filters",
+					"expectedUse": "Readers select canonical subjects without layout, focus required paths, preserve hidden selections, and reveal them without changing architecture.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "tests/system/browser/canonical-model-selection.test.ts; canonical-model-gestures.test.ts; canonical-model-focus.test.ts; canonical-model-filters.test.ts"
 				}
 			]
 		},

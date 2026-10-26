@@ -24,7 +24,7 @@ function ModelSelectionDetails(props: ModelSelectionDetailsProps): JSX.Element {
 	const only = ids.size === 1 ? [...ids][0] : undefined;
 	const module = props.model.modules.find((entry) => entry.id === only);
 	if (module !== undefined) return <SelectedModule {...props} module={module} />;
-	const connection = props.projection.connections.find(
+	const connection = props.projection.allConnections.find(
 		({ joins }) => joins.length === ids.size && joins.every((edge) => ids.has(edge.id)),
 	);
 	if (connection !== undefined)

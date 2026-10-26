@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T18:24:00Z'
+updated_date: '2026-10-26T18:32:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -80,4 +80,6 @@ First selection slice is implemented and remains partial. The browser owner pass
 The gesture slice passes its red-to-green browser owner. Primary dragging from empty canvas draws an immediate rectangle and selects intersecting canonical subjects through renderer-owned bounds. Middle-button and Space dragging pan without changing selection, history, or scene identity. The selection row keeps viewport height stable. Keyboard handlers remain separate from legacy pointer handlers, preserving the existing keyboard owner. Combined gesture, selection, and legacy exploration owners pass3cases/65assertions. Source/frontend types and full lint pass with zero findings. Focus, filters, hidden/reveal behavior, final docs, and adoption remain pending.
 
 Focus now captures selected canonical identities in the router address, preserves mixed ancestors and descendants, and opens only required containment paths with direct endpoint context. Collapsed private self-relationships do not invent visible self-loops. Back, Forward, and reload restore focus without changing model revisions. The focused browser owner passes one case and six assertions. Source/frontend types and full lint pass with zero findings. Filters, hidden/reveal behavior, final documentation, and adoption remain pending.
+
+The filter and Focus browser owners pass two cases and fourteen assertions, including partial/all-missing focus, relationship/group visibility, hidden selection details, Reveal, Back, reload, and unchanged revisions. Filters reuse the existing dropdown checkbox owner and its keyboard dismissal. Source/frontend types and evaluation metadata pass. Documentation and coverage now describe the delivered selection workflow. Browser application@TASK-549.11 is updated at version169. Final integrated regressions, visual inspection, proposal adoption, and closure remain.
 <!-- SECTION:NOTES:END -->

@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 168,
+	"version": 169,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-26T17:18:21.019Z",
+	"updatedAt": "2026-10-26T18:30:55.986Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -64873,7 +64873,7 @@
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"path": "backlog/tasks/task-549.01 - Read-one-canonical-module-model.md"
+					"path": "backlog/tasks/task-549.11 - Select-focus-and-filter-a-reading.md"
 				}
 			],
 			"content": {
@@ -64934,7 +64934,7 @@
 						"name": "Workspace routing",
 						"kind": "module",
 						"responsibility": "Restores pane display intent",
-						"description": "One TanStack Router route at /, whose search parameters paneA, paneB and pane are the workspace, with repoA and repoB beside them naming each pane's repository by its identity or an untracked vault's registry name, never by a path. The address follows what the panes report; on a first load and on Back or Forward it leads, restoring through the workspace port with the same command the navigator runs, once the repositories are known. It is never board authority. Canonical model, scope, and checkpoint parameters describe each open pane directly, including unavailable readings. Pane closure removes those parameters. Back and reload restore them without altering legacy board command ownership.",
+						"description": "One TanStack Router route at /, whose search parameters paneA, paneB and pane are the workspace, with repoA and repoB beside them naming each pane's repository by its identity or an untracked vault's registry name, never by a path. The address follows what the panes report; on a first load and on Back or Forward it leads, restoring through the workspace port with the same command the navigator runs, once the repositories are known. It is never board authority. Canonical model, scope, and checkpoint parameters describe each open pane directly, including unavailable readings. Pane closure removes those parameters. Back and reload restore them without altering legacy board command ownership. Canonical focus, hidden relationship kinds, and hidden group regions also belong to each pane address. Back, Forward, and reload restore them. Transient selection and camera state remain outside browser history.",
 						"parent": "wlbLOPSH",
 						"groups": [
 							"panes"
@@ -65600,7 +65600,7 @@
 						"name": "Model reading",
 						"kind": "module",
 						"responsibility": "Shows recursive modules, interfaces, connection evidence, and exact reading history",
-						"description": "One cache serves canonical current and exact readings. Durable events refresh names, containment, and source-owned relationships. Selection follows identity and shows its parent or explicit removal. Separate sharing status supports explicit destination configuration, publication, retry, and fetching. Network actions never select current architecture. The router preserves model, scope, and checkpoint per pane. Direct context and aggregate inspection keep every underlying relationship. Scene selection and the camera remain independent from layout. Transient multi-selection resolves canonical subjects without layout or history changes. A visible Focus action and relationship-kind and group-region controls change the reading. Hidden selections remain inspectable and can be revealed.",
+						"description": "One cache serves canonical current and exact readings. Durable events refresh names, containment, and source-owned relationships. Selection follows identity and shows its parent or explicit removal. Separate sharing status supports explicit destination configuration, publication, retry, and fetching. Network actions never select current architecture. The router preserves model, scope, and checkpoint per pane. Direct context and aggregate inspection keep every underlying relationship. Scene selection and the camera remain independent from layout. Transient multi-selection resolves canonical subjects without layout or history changes. A visible Focus action and relationship-kind and group-region controls change the reading. Hidden selections remain inspectable and can be revealed. Pointer modifiers and Ctrl/Cmd+Enter toggle the same identities. Empty-canvas dragging selects through renderer bounds. Space and middle-button dragging pan. Escape clears selection. The diagram loads behind its own deferred boundary. Focus and filtering retain explicit missing and hidden subjects. Reveal opens selected paths and removes filters that hide selected relationships.",
 						"parent": "TLCeNkdh",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -65685,7 +65685,7 @@
 						"name": "Model projection",
 						"kind": "module",
 						"responsibility": "Projects recursive scopes and aggregates directed connections by kind",
-						"description": "Keeps direct context and complete interface facts. Underlying relationship identities and labels stay in authored order. Whole-module endpoints retain their boundary. Closed internal connections disappear without deleting meaning. Focus retains selected ancestors and descendants, expands only needed paths, and keeps required endpoint context. Filters operate after complete interface classification.",
+						"description": "Keeps direct context and complete interface facts. Underlying relationship identities and labels stay in authored order. Whole-module endpoints retain their boundary. Closed internal connections disappear without deleting meaning. Focus retains selected ancestors and descendants, expands only needed paths, and keeps required endpoint context. Filters operate after complete interface classification. Authored open-module self-connections stay visible without converting hidden internal self-connections into ancestor loops. Group filtering changes visual memberships only in projected content.",
 						"parent": "TLCeNkdh",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",

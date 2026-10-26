@@ -9,6 +9,8 @@ interface ModelAddress {
 	readonly scope: string | null;
 	readonly checkpoint: string | null;
 	readonly focus?: readonly string[] | undefined;
+	readonly hideKinds?: readonly string[] | undefined;
+	readonly hideGroups?: readonly string[] | undefined;
 }
 
 /** One pane in an address: which pane, the board it shows, and how it reads it. */
@@ -162,7 +164,9 @@ function sameModelAddress(one: ModelAddress | undefined, other: ModelAddress | u
 	if (one === undefined || other === undefined) return false;
 	return (
 		(["id", "scope", "checkpoint"] as const).every((field) => one[field] === other[field]) &&
-		sameFocus(one.focus, other.focus)
+		(["focus", "hideKinds", "hideGroups"] as const).every((field) =>
+			sameSubjects(one[field], other[field]),
+		)
 	);
 }
 
@@ -172,7 +176,7 @@ function sameModelAddress(one: ModelAddress | undefined, other: ModelAddress | u
  * @param other The other focused reading.
  * @returns Whether both carry the same explicit focus.
  */
-function sameFocus(one: ModelAddress["focus"], other: ModelAddress["focus"]): boolean {
+function sameSubjects(one: ModelAddress["focus"], other: ModelAddress["focus"]): boolean {
 	return one?.join(",") === other?.join(",");
 }
 
