@@ -195,7 +195,16 @@ async function emulateMedia(
  * @returns The probe.
  */
 async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
-	return browser.eval<MatrixProbe>(`(() => {
+	return browser.eval<MatrixProbe>(`(async () => {
+		// Each declared face, loaded here rather than checked. A change of the
+		// emulated media replaces the page's CSS font faces with new, unloaded
+		// ones, and one that no text uses stays unloaded until asked for. So a
+		// face counts when its load gives back loaded faces: one still loading
+		// is waited for, and one that fails, or that nothing declares, is false.
+		const fontChecks = await Promise.all(['400 14px "Archboard Onest"', '500 14px "Archboard Onest"',
+			'600 14px "Archboard Onest"', '700 14px "Archboard Onest"', '400 10px "Archboard DM Mono"',
+			'500 10px "Archboard DM Mono"'].map(font => document.fonts.load(font).then(
+				faces => faces.length > 0 && faces.every(face => face.status === 'loaded'), () => false)));
 		const shell = document.getElementById('root')?.firstElementChild;
 		// The navigator's top row: the brand and the application's own controls.
 		const header = document.querySelector('${BRAND_BAR}');
@@ -350,9 +359,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				connectionTrouble,
 				headerSectionsAligned: boardRect.right < presentRect.left &&
 					Math.abs((boardRect.top + boardRect.height / 2) - (presentRect.top + presentRect.height / 2)) < 0.5,
-				fontChecks: [document.fonts.check('400 14px "Archboard Onest"'), document.fonts.check('500 14px "Archboard Onest"'),
-					document.fonts.check('600 14px "Archboard Onest"'), document.fonts.check('700 14px "Archboard Onest"'),
-					document.fonts.check('400 10px "Archboard DM Mono"'), document.fonts.check('500 10px "Archboard DM Mono"')],
+				fontChecks,
 				fontResources: performance.getEntriesByType('resource').map(entry => entry.name)
 					.filter(name => /(?:Onest-wght|DMMono-(?:Regular|Medium)).*[.]ttf/.test(name))
 					.filter(name => !name.includes('/assets/diagram-fonts/')),
@@ -423,11 +430,8 @@ async function captureShellRenderMatrix(
 				const screenshot = join(artifactRoot, `${name}.png`);
 				try {
 					await switchTheme(browser, theme);
-					// The default shell has no technical footer. Check its declared
-					// technical face after viewport changes recreate the page context.
-					await browser.eval<boolean>(
-						`document.fonts.load('400 10px "Archboard DM Mono"').then(() => document.fonts.load('500 10px "Archboard DM Mono"')).then(() => document.fonts.ready).then(() => true)`,
-					);
+					// The sizes the probe reads are those of the loaded faces.
+					await browser.eval<boolean>("document.fonts.ready.then(() => true)");
 					await browser.eval<boolean>(
 						"new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))",
 					);
