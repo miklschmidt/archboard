@@ -8,7 +8,7 @@ import {
 	listArchitectureCheckpointsOnServer,
 	retainArchitectureCheckpointOnServer,
 } from "#cli/clients/server/architecture-model.ts";
-import { currentWriteDoing } from "@archboard/server-lifecycle/request-context";
+import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal, doingRefusal } from "#cli/protocol/contract/refusals.ts";
 
@@ -182,7 +182,7 @@ const modelRetainContract = defineCommand({
 		const request = context.parse(ArchitectureCheckpointRequestSchema, {
 			...input,
 			target: "current",
-			doing: currentWriteDoing(),
+			doing: statedInvocation().doing,
 		});
 		const result = await retainArchitectureCheckpointOnServer(request);
 		return {

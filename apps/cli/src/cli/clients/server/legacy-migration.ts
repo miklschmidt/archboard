@@ -4,7 +4,7 @@ import {
 	type LegacyMappingWrite,
 } from "@archboard/board/migration";
 import { isRecord } from "@archboard/diagnostics/unknown-record";
-import { currentWriteDoing, requestJson } from "@archboard/server-lifecycle/server-client";
+import { statedInvocation, requestJson } from "@archboard/server-lifecycle/server-client";
 
 /**
  * Preserve structured runtime refusals across the HTTP boundary.
@@ -46,7 +46,7 @@ function saveLegacyMappingPlanOnServer(
 	return migrationRequest("/api/architecture/migration/plan", {
 		method: "PUT",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ ...request, doing: currentWriteDoing() }),
+		body: JSON.stringify({ ...request, doing: statedInvocation().doing }),
 	});
 }
 export { readLegacyInventoryOnServer, saveLegacyMappingPlanOnServer };

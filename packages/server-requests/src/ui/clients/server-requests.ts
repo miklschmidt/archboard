@@ -162,7 +162,7 @@ interface JsonRequest {
  * @param asked The request.
  * @returns The fetch options.
  */
-function fetchOptions(asked: JsonRequest): RequestInit {
+function fetchOptions(asked: JsonRequest = {}): RequestInit {
 	return {
 		...(asked.method === undefined ? {} : { method: asked.method }),
 		...(asked.payload === undefined
@@ -232,7 +232,7 @@ async function strictReply<T, F>(
 	invalid: (error?: unknown) => F,
 ): Promise<T | F> {
 	try {
-		const response = await fetch(url, asked === undefined ? undefined : fetchOptions(asked));
+		const response = await fetch(url, fetchOptions(asked));
 		const body: unknown = await response.json();
 		const parsed = response.ok ? successSchema.safeParse(body) : failureSchema.safeParse(body);
 		if (parsed.success) return parsed.data;
@@ -242,4 +242,12 @@ async function strictReply<T, F>(
 	}
 }
 
-export { inVault, learnServedVault, requestJson, servedVault, strictReply, RequestFailure, type ReplySchema };
+export {
+	inVault,
+	learnServedVault,
+	requestJson,
+	servedVault,
+	strictReply,
+	RequestFailure,
+	type ReplySchema,
+};
