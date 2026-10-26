@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T19:44:00Z'
+updated_date: '2026-10-26T19:49:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -101,4 +101,6 @@ Parent takes browser ownership after backend handoff b9f8de66b. Latest integrati
 Parent browser proposal Browser application@TASK-549.06 now describes state selection, coherent comparisons, mutable query refresh, and renderer projection. It preserves all delivered .11 and .12 interaction responsibilities. The merged source passes types. Server16610 runs at PID1373887, and the parent holds Browser application while working.
 
 First browser slice passes one case and seven assertions. Real HTTP proposal creation updates the existing state picker, selectedState drives explicit draft/current labels, module and flow changes read from the selected draft, reload preserves state, Current stays unchanged, and an exact checkpoint retains draft identity. State and checkpoint query keys are distinct and router selections are mutually exclusive. Source/frontend types and corrected full lint pass. The comparison summary shows the backend base metadata. Detailed comparison projection, mutable draft refresh, refusal/planning coverage, complete docs, and final adoption remain pending.
+
+The selected-draft update regression failed after a successful public edit, then passed after the existing event feed refreshed mutable reading keys. Current snapshots still populate only the default current query. Exact checkpoint keys remain separate and retain original draft flow content. The fixture now claims the model structure scope required by proposal metadata edits. Browser owner1/7, source/frontend types, and full lint pass. Detailed comparisons, claim-state labels, planning/refusal coverage, final docs, and adoption remain pending.
 <!-- SECTION:NOTES:END -->
