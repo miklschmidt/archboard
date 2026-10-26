@@ -4,9 +4,9 @@
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 59,
+	"version": 60,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-10-26T17:41:35.834Z",
+	"updatedAt": "2026-10-26T17:53:13.868Z",
 	"views": [
 		{
 			"id": "MTm8t3yK",
@@ -8215,7 +8215,7 @@
 		{
 			"id": "iekngjyz",
 			"name": "TASK-526 after TASK-529",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "aQqg9sy4",
 			"summary": "How one CLI invocation is routed to a command, finds its vault and bounds its run",
 			"content": {
@@ -9879,7 +9879,7 @@
 		{
 			"id": "5rkUVKSR",
 			"name": "TASK-549.05",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "iekngjyz",
 			"content": {
 				"nodes": [
@@ -11565,7 +11565,7 @@
 			}
 		}
 	],
-	"current": "iekngjyz",
+	"current": "5rkUVKSR",
 	"adoptions": [
 		{
 			"variant": "eLxlFOKI",
@@ -11632,6 +11632,12 @@
 			"from": "aQqg9sy4",
 			"at": "2026-10-26T05:37:14.743Z",
 			"reason": "Merges main into PR #2: restates main's TASK-526 change (embed tracking, check parts and semantic delete), adopted on main from the same parent, on the branch's current variant"
+		},
+		{
+			"variant": "5rkUVKSR",
+			"from": "iekngjyz",
+			"at": "2026-10-26T17:53:13.868Z",
+			"reason": "Independent flow authoring, identity-preserving placement, complete reference repair and explicit sequence and flowchart rendering are implemented and demonstrated through runtime and signed CLI evidence"
 		}
 	]
 }

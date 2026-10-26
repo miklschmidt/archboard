@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 152,
+	"version": 153,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-26T17:46:43.203Z",
+	"updatedAt": "2026-10-26T17:53:10.842Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -125449,7 +125449,7 @@
 		{
 			"id": "dRj9IjMQ",
 			"name": "TASK-549.17 integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "gXQDOzX5",
 			"summary": "Structural module batches and private archives share durable edits, history, recovery, and publication",
 			"documents": [
@@ -130484,7 +130484,7 @@
 		{
 			"id": "tGGAu1sm",
 			"name": "TASK-549.05",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "dRj9IjMQ",
 			"documents": [
 				{
@@ -135584,7 +135584,7 @@
 			}
 		}
 	],
-	"current": "dRj9IjMQ",
+	"current": "tGGAu1sm",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -135778,6 +135778,12 @@
 			"from": "gXQDOzX5",
 			"at": "2026-10-26T16:44:56.021Z",
 			"reason": "Structural batches and private archives retain both implemented meanings through the tested shared history and transaction contract"
+		},
+		{
+			"variant": "tGGAu1sm",
+			"from": "dRj9IjMQ",
+			"at": "2026-10-26T17:53:10.842Z",
+			"reason": "Independent flow authoring, identity-preserving placement, complete reference repair and explicit sequence and flowchart rendering are implemented and demonstrated through runtime and signed CLI evidence"
 		}
 	],
 	"shelvings": [

@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 161,
+	"version": 162,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T17:48:43.594Z",
+	"updatedAt": "2026-10-26T17:53:06.556Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -129767,7 +129767,7 @@
 		{
 			"id": "g8J0CTsa",
 			"name": "TASK-549.17 integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "3VFBZJuP",
 			"summary": "Structural module batches and private archives share durable edits, history, recovery, and publication",
 			"documents": [
@@ -136117,7 +136117,7 @@
 		{
 			"id": "lGNHPMqK",
 			"name": "TASK-549.05",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "g8J0CTsa",
 			"documents": [
 				{
@@ -142598,7 +142598,7 @@
 			}
 		}
 	],
-	"current": "g8J0CTsa",
+	"current": "lGNHPMqK",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -142786,6 +142786,12 @@
 			"from": "3VFBZJuP",
 			"at": "2026-10-26T16:44:46.755Z",
 			"reason": "Structural batches and private archives retain both implemented meanings through the tested shared history and transaction contract"
+		},
+		{
+			"variant": "lGNHPMqK",
+			"from": "g8J0CTsa",
+			"at": "2026-10-26T17:53:06.556Z",
+			"reason": "Independent flow authoring, identity-preserving placement, complete reference repair and explicit sequence and flowchart rendering are implemented and demonstrated through runtime and signed CLI evidence"
 		}
 	],
 	"shelvings": [
