@@ -74,6 +74,11 @@ interface ThreeStates {
  * do not mark a subject as changed, but they are still somebody's decision, so
  * a merge carries them and holds two different answers as a disagreement.
  */
+const EXTENDED_FIELDS = {
+	node: ["formerNames", "documents", "references"],
+	flow: ["formerNames", "collection"],
+} as const;
+const UNWRITTEN_EXTENSIONS = new Set<string>([...EXTENDED_FIELDS.node, ...EXTENDED_FIELDS.flow]);
 const MERGED = {
 	node: [
 		"order",
@@ -85,12 +90,10 @@ const MERGED = {
 		"groups",
 		"binding",
 		"drillDown",
-		"formerNames",
-		"documents",
-		"references",
+		...EXTENDED_FIELDS.node,
 	],
 	edge: ["order", "from", "to", "kind", "label", "description", "emphasis", "traffic", "anchor"],
-	flow: ["name", "summary", "participants", "formerNames", "collection"],
+	flow: ["name", "summary", "participants", ...EXTENDED_FIELDS.flow],
 	walkthrough: ["name", "summary"],
 } as const;
 
@@ -278,6 +281,7 @@ function mergeFields<Entity extends { readonly id: string }>(
 	const issues: ReconciliationIssue[] = [];
 	const inherited: string[] = [];
 	for (const field of fields) {
+		if (unwrittenExtension(field, [mine, base, theirs])) continue;
 		const decided = decideField(field, { mine, base, theirs, fields, what, id });
 		settled = { ...settled, [field]: decided.value };
 		issues.push(...decided.issues);
@@ -286,6 +290,15 @@ function mergeFields<Entity extends { readonly id: string }>(
 	return { entity: settled, issues, inherited };
 }
 
+/**
+ * Keep canonical-only fields absent from legacy semantic content.
+ * @param field The field under consideration.
+ * @param sides The three complete subject definitions.
+ * @returns Whether this extension is absent from every side.
+ */
+function unwrittenExtension(field: string, sides: object[]): boolean {
+	return UNWRITTEN_EXTENSIONS.has(field) && !sides.some((side) => Object.hasOwn(side, field));
+}
 /**
  * Decide one field: inherit it, keep it, or hold it as a disagreement.
  * @param field The field's name.

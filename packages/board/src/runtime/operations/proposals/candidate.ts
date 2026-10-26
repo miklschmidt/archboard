@@ -335,24 +335,13 @@ async function proposalIntentCandidate(
 	current: ArchitectureModel,
 	captured: ReturnType<typeof readModelFiles>,
 ) {
-	switch (request.proposal.type) {
-		case "create":
-		case "edit":
-			return proposalCandidate(
-				vault,
-				{ ...request, proposal: request.proposal },
-				current,
-				captured,
-			);
-		case "settle": {
-			const { settleCandidate } = await import("#runtime/operations/proposals/settle.ts");
-			return settleCandidate(vault, { ...request, proposal: request.proposal }, current, captured);
-		}
-		case "reconcile":
-			return reconciliationCandidate(current, captured, request.changes.length);
-		default:
-			throw new ArchiveError("MODEL_INVALID", "Unknown proposal intent.");
+	if (request.proposal.type === "reconcile")
+		return reconciliationCandidate(current, captured, request.changes.length);
+	if (request.proposal.type === "settle") {
+		const { settleCandidate } = await import("#runtime/operations/proposals/settle.ts");
+		return settleCandidate(vault, { ...request, proposal: request.proposal }, current, captured);
 	}
+	return proposalCandidate(vault, { ...request, proposal: request.proposal }, current, captured);
 }
 export {
 	proposalDependencies,

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T21:34:00Z'
+updated_date: '2026-10-26T21:42:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -80,4 +80,6 @@ Public runtime cases now pass safe two-level inheritance, retained conflict stan
 Expanded public operation coverage for lost owners, independent arrivals, complete settlement refusal, external reconciliation and a forced interruption after the first installed file. Existing semantic rules remain the merge authority. The parent contract now requires complete, non-overlapping settlement choices to avoid a second partial-decision mechanism. Source/frontend types and full lint pass. The known board interface ceiling stays unchanged. Consumer instructions, ADR0061, test ownership and evaluation coverage now describe this slice. No model evaluations run.
 
 A public regression exposed the existing per-flow step merge limit. The same semantic engine now reconciles continuing step identities globally and keeps flow plus nested holder as one placement. Independent fields inherit after cross-flow moves. Competing moves preserve the complete proposal side. The unchanged semantic reconciliation suite passes 35 cases/95 assertions. Board persistence proposal now shows the shared semantic authority used by canonical and legacy families. The CLI/HTTP family adapter owner passes, including structured blocked refusal and complete settlement.
+
+Shared legacy durability exposed canonical-only undefined fields crossing into legacy content. Canonical extension fields now stay absent unless a side authors them. Legacy reconciliation, comparison, propagation and settlement pass 120 cases/401 assertions. Order settlement reuses the shared order rule and updates the complete sibling chain, including a middle step whose absolute position stays the same. Mixed choices for one holder refuse. Interface measurement remains board 245/188, the known TASK-549.24 excess. No ceiling changes.
 <!-- SECTION:NOTES:END -->
