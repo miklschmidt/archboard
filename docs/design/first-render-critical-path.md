@@ -15,23 +15,36 @@ A render asks the `Solver` port for solves. Each solve is one call of
 `Graphviz` trait. The critical path is the longest chain of solves where one
 solve waits for the answer of another.
 
-Two tools record and replay the solves of the `timing.ts` boards.
+Two tools measure the critical path of the `timing.ts` boards. Run both
+inside `nix develop`.
 
-- `packages/renderer/tests/runtime/support/capture-solves.ts` renders each
-  board and records every solve: its graph, its answer, each Graphviz call
-  with its answer and time, and when it was asked and answered. Its clock
-  assumes one worker for each solve, so the recorded path is the critical
-  path without queueing. Run it inside `nix develop` after
-  `bun run build:core`:
-  `bun packages/renderer/tests/runtime/support/capture-solves.ts <out> [board ...]`.
-- `crates/archboard-layout/examples/replay.rs` replays those solves natively
-  and answers each Graphviz call from the recording. Its first round is not
-  timed. That round requires each Graphviz graph to equal the recorded one
-  and each answer to equal the recorded answer byte for byte. Later rounds
-  report the fastest time of each solve. Run it with
-  `CARGO_PROFILE_RELEASE_DEBUG=line-tables-only cargo run --release -p archboard-layout --example replay -- <dir> [rounds] [board ...]`.
-  Point `perf record -e task-clock:u --call-graph dwarf,32768 --user-callchains`
-  at the release binary for a profile.
+1. After `bun run build:core`, write the render request of each board, with
+   the icons the core was given:
+   `bun packages/renderer/tests/runtime/support/capture-render-requests.ts <requests dir> [board ...]`.
+2. Draw each request again with a native build of the core and its own
+   Graphviz (ADR 0058):
+   `cargo run --release -p archboard-render --example critical_path -- <requests dir> [rounds] [board ...]`.
+   The example lays out each solve at once and times its Graphviz calls
+   apart. On its clock, a solve answers at the time it was asked plus the
+   time it took. Thus every solve has a worker of its own. A solve that the
+   render dropped answers nothing. For each board the example prints the
+   round with the shortest path. The line gives the solves, their time and
+   the Graphviz part of it, and the time of dropped solves. It also gives the
+   critical path and the render's own time beside its solves. The lines below
+   it give the chain of solves on the path.
+
+For a profile, build with line tables and record the example:
+
+```sh
+CARGO_PROFILE_RELEASE_DEBUG=line-tables-only cargo build --release -p archboard-render --example critical_path
+nix shell nixpkgs#perf --command perf record -e task-clock:u --call-graph dwarf,32768 --user-callchains -o /tmp/critical-path.perf target/release/examples/critical_path <requests dir> 1 "Board viewer"
+```
+
+The tables below the next heading and in "Critical paths after" were
+measured with the tools of commit c78d1bcfb. Those tools recorded the solves in
+the WebAssembly core with viz-js as Graphviz, and replayed them natively.
+Since TASK-548.01 Graphviz runs inside the core, and a host cannot see its
+calls. "On the in-core Graphviz" gives the numbers of the native tool.
 
 ## The critical path before
 
@@ -110,7 +123,7 @@ the pool belongs to TASK-548.01.
 
 ## Critical paths after
 
-Recorded with `capture-solves.ts`, one worker for each solve:
+Recorded with the tools of commit c78d1bcfb, one worker for each solve:
 
 | board                   | path before, ms | path after, ms | solve CPU before, ms | solve CPU after, ms |
 | ----------------------- | --------------- | -------------- | -------------------- | ------------------- |
@@ -163,10 +176,37 @@ Archboard is about 45 ms slower. Its cause was not traced. The probable cause
 is the whole solves that are asked beside the partial solves, because they
 take workers.
 
+## On the in-core Graphviz
+
+These numbers are from the `critical_path` example on `feat/faster-first-render`.
+That branch holds this work, TASK-548.01 (Graphviz in the core) and
+TASK-548.02 (shared Graphviz and solve answers in the pool). The example ran three rounds of each board. It runs
+the native core, not the WebAssembly core of the pool, and it does not share
+answers between solves as the pool does. Thus its paths are not the pool's
+times, and they do not compare one for one with the tables above.
+
+| board               | critical path, ms | Graphviz of it, ms | solve CPU, ms | dropped, ms |
+| ------------------- | ----------------- | ------------------ | ------------- | ----------- |
+| Agent workbench     | 644               | 431                | 3924          | 1156        |
+| Board viewer        | 647               | 478                | 2717          | 744         |
+| Semantic renderer   | 398               | 260                | 721           | 118         |
+| Command interface   | 345               | 307                | 2227          | 1091        |
+| Board rasterizer    | 342               | 213                | 761           | 157         |
+| Board persistence   | 315               | 158                | 2112          | 959         |
+| Browser application | 305               | 199                | 2585          | 1337        |
+| All 23 boards       | 4517              |                    |               |             |
+
+On every board the path is one solve, asked at the start. On Agent workbench
+and Board viewer it is the whole solve that the stacking choice chose, and
+Graphviz is 67% and 74% of it. The partial solves answer earlier, beside it.
+The render's own work beside its solves is 29 to 41 ms.
+
 ## What still stands between them and 500 ms
 
-The critical path of Agent workbench and Board viewer is now one whole solve,
-about 730 to 760 ms with no queueing. Graphviz is about 65% of it.
+The critical path of Agent workbench and Board viewer is now one whole solve.
+With viz-js it took 730 to 760 ms with no queueing, and Graphviz was about 65%
+of it. With the in-core Graphviz the native example measures 644 and 647 ms,
+and Graphviz is 67% and 74% of it.
 
 - The stack prefix of the whole solve: Board viewer 159 ms in Graphviz and
   155 ms in the core, Agent workbench 91 ms and 99 ms.
@@ -174,20 +214,20 @@ about 730 to 760 ms with no queueing. Graphviz is about 65% of it.
   after another, about 365 ms, and keeps no wrap. Agent workbench makes 9 and
   lays one candidate (110 ms core, 77 ms Graphviz).
 - The pool: it starts one worker at a time, after every worker answered its
-  first solve, so a cold pool queues solves and each worker compiles its
-  module on first use. Solves that run side by side on this box take 30 to
-  40% longer than alone.
+  first solve, so a cold pool queues solves. Solves that run side by side on
+  this box take 30 to 40% longer than alone.
 
 These changes could reach the target. None of them was made here.
 
 - Wrap candidates as solves of their own, asked side by side. The path would
   be about the stack prefix plus the slowest candidate, near 300 ms on both
   boards. It needs a change to the solve protocol and costs much more CPU.
-- A faster Graphviz (TASK-548.01, TASK-548.03), and Graphviz answers shared
-  between solves of one render (TASK-548.02). The partial and whole solves
-  ask the same stack prefix graphs.
-- A warm pool: one compiled module shared by the workers, and a worker start
-  that waits for the compile, not for the first answer.
+- A faster Graphviz (TASK-548.03). TASK-548.01 put Graphviz in the core and
+  TASK-548.02 shares Graphviz answers between the solves of a render, both
+  beside this work. The partial and whole solves ask the same stack prefix
+  graphs.
+- A warm pool: a worker start that does not wait for the first answer of
+  every worker.
 - About 5.6% of routing time is `routed` called again with the same input.
   A memo could save it.
 

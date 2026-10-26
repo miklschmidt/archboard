@@ -3074,6 +3074,6 @@ row: a partial solve, then the whole solve that it chose. The whole solve
 laid each way is now asked beside the partial solves, and the one not chosen
 is called off. Track's router also got 24.5% cheaper in the core.
 [first-render-critical-path.md](first-render-critical-path.md) records the
-measurements, the capture and replay tools, the critical paths against the
+measurements, the tools that measure a critical path, the critical paths against the
 500 ms target and what still stands between the boards and it. No drawing
 changed.
