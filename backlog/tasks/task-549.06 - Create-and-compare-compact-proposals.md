@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T19:56:00Z'
+updated_date: '2026-10-26T20:06:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -105,4 +105,6 @@ First browser slice passes one case and seven assertions. Real HTTP proposal cre
 The selected-draft update regression failed after a successful public edit, then passed after the existing event feed refreshed mutable reading keys. Current snapshots still populate only the default current query. Exact checkpoint keys remain separate and retain original draft flow content. The fixture now claims the model structure scope required by proposal metadata edits. Browser owner1/7, source/frontend types, and full lint pass. Detailed comparisons, claim-state labels, planning/refusal coverage, final docs, and adoption remain pending.
 
 Draft claims now name their target state independently of the pane reading. The new visible-claim regression failed with only subject names, then passed after state metadata resolved the claim label. The proposal browser owner remains1case/7assertions, with source/frontend types and full lint passing. Comparison detail and projection work is next.
+
+Browser comparison integration exposed a missing coherence field: an exact retained draft can compare with live current, whose input revision differs from the selected snapshot. The shared response now includes comparison.revision from the actual base. ModelRevisionSchema moved to the existing common definition owner without new public exports. The new public-runtime regression fails before the field and passes afterward (1case/3assertions); proposal and adapter regressions pass11cases/83assertions. Types and lint pass. Consumers must match separately read base definitions against this token. ADR0061, consumer guidance, and the external exact contract record this extension.
 <!-- SECTION:NOTES:END -->

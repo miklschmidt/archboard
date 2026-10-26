@@ -614,6 +614,9 @@ Without current, a dependent draft compares against its retained predecessor.
 A planning root has no default comparison.
 Use `--against` for an explicit coherent named state or complete checkpoint.
 The result's `comparison.reason` identifies the chosen default or explicit base.
+`comparison.revision` identifies the exact architecture inputs used for that base.
+If you read base definitions separately, require their revision to match this value.
+A retained selected state can have a different revision from its live comparison base.
 Its subject entries identify additions, removals, changes, unchanged subjects, and changed semantic fields.
 Presentation order and emphasis retain the existing semantic comparison rules.
 

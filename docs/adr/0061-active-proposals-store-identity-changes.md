@@ -57,6 +57,9 @@ Without current, a dependent draft compares against its retained predecessor.
 A planning root has no predecessor comparison.
 An explicit comparison can select two coherent named states or exact checkpoints.
 The existing semantic comparison rules report changes by subject identity.
+The response includes the comparison base revision independently of the selected revision.
+A renderer that reads base definitions separately requires that exact revision before composing removed subjects.
+This also applies when a retained draft compares against live current architecture.
 Canonical metadata and collection ownership extend those rules without interpreting geometry as architecture.
 
 A predecessor fingerprint identifies complete meaning, metadata, policy, and identity reservations independently of sibling proposal files.
