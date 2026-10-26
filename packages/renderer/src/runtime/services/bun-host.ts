@@ -5,6 +5,14 @@
 // thread compiled; the theme colours are read from the shared stylesheet on
 // disk; the core is this checkout's build of it, and it measures and draws
 // every word itself.
+//
+// The pool runs no more workers than JavaScriptCore has fast WebAssembly
+// memories for. A process gets eight memories that grow in place. Every one
+// after them is bounds-checked: each grow copies the whole memory, 4 to 16 ms
+// a page for a solve's memory, and its solves run about 20% slower. This
+// thread's core holds one fast memory, and the code check's tree-sitter holds
+// another in the Archboard server, so six are left for workers (TASK-548.05).
+// A worker that stops gives its memory back. A browser has no such limit.
 
 import { readFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
@@ -20,6 +28,19 @@ import { iconPaths } from "#runtime/operations/icon-paths.ts";
 import { compiledCore, loadCore, type Core } from "#runtime/services/core.ts";
 
 let installed = false;
+
+/** The fast WebAssembly memories left for layout workers: eight, less this thread's core and tree-sitter. */
+const FAST_MEMORY_WORKERS = 6;
+
+/**
+ * How many layout workers the Bun host runs: one fewer than the cores, and
+ * no more than the fast WebAssembly memories left for them.
+ * @param cores The cores the machine reports.
+ * @returns The pool's ceiling.
+ */
+function bunWorkerCeiling(cores: number): number {
+	return Math.min(workerCeiling(cores), FAST_MEMORY_WORKERS);
+}
 
 /** The core, once something asked for it. */
 let core: Core | undefined;
@@ -75,11 +96,11 @@ function installBunHost(): void {
 	if (installed) return;
 	installRendererHost({
 		core: loadedCore,
-		solve: createEnginePool(startEngineWorker, workerCeiling(availableParallelism())),
+		solve: createEnginePool(startEngineWorker, bunWorkerCeiling(availableParallelism())),
 		themeColors: readThemeColors(readFileSync(THEME_STYLESHEET, "utf8")),
 		iconPaths,
 	});
 	installed = true;
 }
 
-export { installBunHost };
+export { bunWorkerCeiling, installBunHost };

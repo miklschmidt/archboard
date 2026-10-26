@@ -9,7 +9,8 @@
 // when it answers, and a candidate sent behind a long one waited for it while
 // another worker stood idle (TASK-377). The pool starts a worker only when a
 // solve finds every running one busy and none of them still starting, up to
-// one fewer than the cores the place reports, so a small board starts one and
+// one fewer than the cores the place reports (under Bun, also no more than
+// its fast WebAssembly memories allow, `bun-host.ts`), so a small board starts one and
 // a wide one spreads its candidates out without starting a dozen workers at
 // once. A worker is starting until it says its core is instantiated, not
 // until it answers its first solve: a first render waited for that whole
