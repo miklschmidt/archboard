@@ -505,7 +505,8 @@ The vault uses its own checkout for its repository and the chosen checkout for e
 The result reports `codeTarget` and the effective `codeBinding`.
 Unavailable source includes a structured failure and recovery action without hiding readable architecture.
 
-An explicit module reference names another model, its module, and its state.
+An explicit reference names another model, its subject, and its state.
+The subject can be a module, relationship, collection, flow, or step.
 Author `references` through the existing `edit-module.set` field.
 Use `edit-module.clear:["references"]` to remove that list.
 Omission preserves the list.
@@ -543,6 +544,9 @@ archboard model read 'Shop#Gateway' --model Shop --code
 `--reference` selects a zero-based index in the module's authored list.
 `resolvedReferences` reports each target address or its unavailable diagnostics.
 A successful follow returns the foreign reading and its `location` address.
+`selectedSubject` preserves the exact subject identity.
+A module also sets `selectedModule`.
+A flow or step also sets its containing `selectedFlow`.
 The address names the target vault, model, subject, state, and any exact checkpoint.
 Unavailable models never resolve against another model with a similar name.
 These commands change neither model.

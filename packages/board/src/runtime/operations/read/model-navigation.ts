@@ -3,6 +3,7 @@ import { readArchitectureModel, failure } from "#runtime/operations/read/model-r
 import { readCheckpointModel } from "#runtime/operations/history/read.ts";
 import { resolveModelReferences } from "#runtime/operations/read/model-references.ts";
 import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
+import { selectReferenceSubject } from "#runtime/operations/read/reference-subject.ts";
 
 interface NavigationOptions {
 	code?: boolean | undefined;
@@ -79,13 +80,28 @@ async function followReference(
 		);
 	const { address } = reference;
 	if (address === undefined) return failure("REFERENCE_UNAVAILABLE", reference.diagnostics);
-	const target = await readModelNavigation(address.vault, address.subject, undefined, {
+	return openReference(address, code);
+}
+
+/**
+ * Open the explicit foreign subject through one selected reading.
+ * @param address The resolved foreign reading and subject address.
+ * @param code Whether to resolve code on the selected subject.
+ * @returns The exact addressed subject, without substituting another subject kind.
+ */
+async function openReference(
+	address: NonNullable<ArchitectureModel["location"]>,
+	code: boolean | undefined,
+): Promise<ArchitectureModelRead> {
+	const target = await readModelNavigation(address.vault, undefined, undefined, {
 		model: address.model,
 		references: true,
 		...(address.checkpoint === undefined ? {} : { checkpoint: address.checkpoint }),
-		code: code === true,
 	});
-	return target.success ? { ...target, location: address } : target;
+	const selected = selectReferenceSubject(target, address.subject);
+	if (!selected.success) return selected;
+	const located = { ...selected, location: address };
+	return code ? { ...located, ...(await modelCodeTarget(address.vault, located)) } : located;
 }
 
 /**
