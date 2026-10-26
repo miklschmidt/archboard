@@ -122,6 +122,7 @@ test("a command that one shell call runs reads as its script, and any other comm
 		String.raw`/nix/store/10dx-bash-5.3p15/bin/bash -lc 'git status --short && echo "it'\''s done"'`,
 		"/bin/zsh -c 'ls -la $HOME'",
 		"bash -Eec 'echo hi'",
+		"sh -c 'echo ${HOME}/file'",
 		"cd /work && make",
 		"python3 -c 'print(1)'",
 	];
@@ -134,6 +135,7 @@ test("a command that one shell call runs reads as its script, and any other comm
 		`git status --short && echo "it's done"`,
 		"ls -la $HOME",
 		"echo hi",
+		"echo ${HOME}/file",
 		"cd /work && make",
 		"python3 -c 'print(1)'",
 	]);
@@ -160,4 +162,14 @@ test("newlines separate commands only outside the script's quotes", () => {
 		compound,
 		script,
 	]);
+});
+
+test("shell expansions outside literal script quotes keep the exact command", () => {
+	const sent = [String.raw`bash -c $'echo one\necho two'`, 'bash -lc "echo ${HOME}/file"'];
+	mount({
+		items: sent.map((line, index) => command(String(index), "completed", line)),
+		ended: false,
+		live: false,
+	});
+	expect(rows().map((row) => row.querySelector("span[title]")?.textContent)).toEqual(sent);
 });

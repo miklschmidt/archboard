@@ -103,8 +103,8 @@ function hasUnquotedNewline(command: string): boolean {
  * @returns The words, or null for a command of more or fewer words, or with an operator.
  */
 function threeWords(command: string): readonly [string, string, string] | null {
-	// A variable stays as it is written: the row shows the script, not its expansion.
-	const words = parse(command, (name) => `$${name}`);
+	// An expansion has no known value here. An object keeps it out of literal words.
+	const words = parse(command, () => ({}));
 	const [shell, option, script] = words;
 	return words.length === 3 &&
 		typeof shell === "string" &&
