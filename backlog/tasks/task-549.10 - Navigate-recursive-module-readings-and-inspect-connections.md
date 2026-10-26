@@ -1,11 +1,11 @@
 ---
 id: TASK-549.10
 title: Navigate recursive module readings and inspect connections
-status: In Progress
+status: Done
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T16:58:00Z'
+updated_date: '2026-10-26T17:05:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -45,16 +45,16 @@ TASK-549.01
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A reader opens root modules, drills into immediate children, and returns through breadcrumbs or browser Back and Forward.
-- [ ] #2 Show direct callers and outgoing targets as nearby context. Derive interfaces before filters, and retain whole-module endpoints without inventing internal targets.
-- [ ] #3 Project and aggregate connections by visible endpoints and kind. Inspection reveals every underlying relationship and distinct label in deterministic order.
-- [ ] #4 Reuse client rendering. Reject obsolete layout results by reading and revision. Camera changes remain immediate, and missing subjects produce explicit partial readings.
+- [x] #1 A reader opens root modules, drills into immediate children, and returns through breadcrumbs or browser Back and Forward.
+- [x] #2 Show direct callers and outgoing targets as nearby context. Derive interfaces before filters, and retain whole-module endpoints without inventing internal targets.
+- [x] #3 Project and aggregate connections by visible endpoints and kind. Inspection reveals every underlying relationship and distinct label in deterministic order.
+- [x] #4 Reuse client rendering. Reject obsolete layout results by reading and revision. Camera changes remain immediate, and missing subjects produce explicit partial readings.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -91,4 +91,12 @@ The integrated source includes structural editing and publication through signed
 Final browser evidence passes 13 distinct cases and 83 assertions across navigation, publication, current/historical viewing, structural updates, and workspace addresses. Shared scope regression passes 16 cases and 25 assertions. Final source/frontend types and full lint pass with no warnings. Evaluation inputs pass 21 scenarios, 21 fixtures, and 14 coverage parts. The parent inspected root connection details and the corrected open-module interface at 1920 by 1080. Temporary screenshot calls and diagnostics are removed. The first code check identified one missing browser-host to view-dispatcher relationship; the task proposal now includes the evidenced call. Final architecture checks and adoption remain pending.
 
 The renderer width gate exposed two added names at 63/61. Its callers now derive draw parameters and results from the existing operations. Removing the redundant public BoardRenderChoices, BoardRenderOutcome, and RenderedDiagram types reduces the result to 60 names, so the renderer ceiling falls from 61 to 60. The board ceiling remains unchanged at 188. No operation is hidden behind a namespace and no lint or type rule changes.
+
+Latest integration35b630ed4 is included through signed f63560aa5. Both parent histories and all shared views are preserved. Combined types, metadata validation, and formatting pass. Both integration proposals are adopted and current semantics has zero diagnostics. Affected code checks have no warnings; ten existing warnings remain elsewhere. Renderer width passes at60/60. Only board243/188 remains under TASK-549.24. Browser and renderer interfaces retain one content cache, one router, the existing camera, and the existing layout engine.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Readers explore recursive scopes, inspect complete directed connections and interfaces, and restore exact readings independently in each pane. Missing model, scope, or history stays explicit. Scene reuse preserves the mounted diagram when hidden evidence changes. Thirteen browser cases and83assertions pass, with16shared scope cases and81API/consumer contract cases. Types, lint, metadata, formatting, current semantics, and affected architecture checks pass. The renderer interface shrinks to60names. The known board width remains243/188 until TASK-549.24.
+<!-- SECTION:FINAL_SUMMARY:END -->

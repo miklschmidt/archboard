@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 91,
+	"version": 92,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-26T16:53:12.205Z",
+	"updatedAt": "2026-10-26T17:04:01.313Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -23106,7 +23106,7 @@
 		{
 			"id": "WwMsHkt1",
 			"name": "TASK-526.02",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "MgiCUw9a",
 			"summary": "Meaning to SVG and interaction geometry, and the recipe a board render carries",
 			"content": {
@@ -28304,7 +28304,7 @@
 		{
 			"id": "E13nRMYa",
 			"name": "TASK-549.10 integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "WwMsHkt1",
 			"content": {
 				"nodes": [
@@ -30914,7 +30914,7 @@
 			}
 		}
 	],
-	"current": "WwMsHkt1",
+	"current": "E13nRMYa",
 	"adoptions": [
 		{
 			"variant": "bYt4adrf",
@@ -31017,6 +31017,12 @@
 			"from": "MgiCUw9a",
 			"at": "2026-10-24T17:14:14.024Z",
 			"reason": "A board render carries its render recipe, and standalone renders default to a legend (TASK-526.02)"
+		},
+		{
+			"variant": "E13nRMYa",
+			"from": "WwMsHkt1",
+			"at": "2026-10-26T17:04:01.313Z",
+			"reason": "Recursive reading, complete connection inspection, and client scene reuse pass their browser contracts."
 		}
 	],
 	"shelvings": [

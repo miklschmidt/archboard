@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 165,
+	"version": 166,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-26T16:53:13.639Z",
+	"updatedAt": "2026-10-26T17:03:59.813Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -57669,7 +57669,7 @@
 		{
 			"id": "Kh42glKp",
 			"name": "TASK-549.04 integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "ITTGdz4x",
 			"documents": [
 				{
@@ -61248,7 +61248,7 @@
 		{
 			"id": "wwirh4GU",
 			"name": "TASK-549.10 integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "Kh42glKp",
 			"documents": [
 				{
@@ -64866,7 +64866,7 @@
 			}
 		}
 	],
-	"current": "Kh42glKp",
+	"current": "wwirh4GU",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -64999,6 +64999,12 @@
 			"from": "ITTGdz4x",
 			"at": "2026-10-26T16:14:58.117Z",
 			"reason": "Module structure and relationship edits are implemented and verified in the current and historical reader."
+		},
+		{
+			"variant": "wwirh4GU",
+			"from": "Kh42glKp",
+			"at": "2026-10-26T17:03:59.813Z",
+			"reason": "Recursive reading, complete connection inspection, and client scene reuse pass their browser contracts."
 		}
 	],
 	"shelvings": [

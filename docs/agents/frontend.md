@@ -113,6 +113,14 @@ not add imports or a second state path before that work.
   vault's registry name, and never a path. An address without `repoX` opens the
   board in the repository the pane is in.
 
+  Canonical panes use `modelX`, `scopeX`, and `checkpointX` beside `repoX`.
+  An absent scope means repository roots. An absent checkpoint means current inputs.
+  These parameters remain router-owned reading intent, including explicit unavailable states.
+  The canonical reader consumes them directly without opening a legacy board on the server.
+  The workspace records actual pane presence and preserves each canonical reading during closure, reload, Back, and Forward.
+  A mismatched model identity refuses the reading instead of substituting the vault's current model.
+  Selection and the camera remain separate from the address.
+
   The address follows the note, which is the persisted content of the board.
   When a person opens a board, the open runs the command of the shell. Then the
   pane reports its new board. Only after that report does the page write the
