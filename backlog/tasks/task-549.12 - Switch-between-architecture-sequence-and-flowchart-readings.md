@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-26T19:03:00Z'
+updated_date: '2026-10-26T19:13:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -78,4 +78,6 @@ Parent frontend work starts in isolated checkout /home/msc/Projects/archboard.fe
 Browser application@TASK-549.12 is draft at version172. The proposal describes per-pane grammar/flow addresses, complete behavioral projections, relevant explicit flow choices, and preservation of architecture scope/focus/filters. The existing renderer already supports all three grammars, so no renderer architecture or API addition is planned. Worktree server12686 is ready at PID1128291. Dependencies install successfully.
 
 First grammar slice passes its RED-to-GREEN browser owner: one case and seven assertions. The reader chooses among relevant flows, draws complete sequence and flowchart content outside the prior scope, preserves structural filters without removing messages, and restores architecture scope/focus/filter addresses. Source/frontend types and full lint pass. The browser owner waits until the menu option is the actual hit target before clicking. Missing-flow recovery, history/reload coverage, behavioral selection details, final documentation, visual inspection, architecture adoption, and closure remain incomplete.
+
+The behavioral-selection regression first failed because an existing hidden step appeared missing. It now passes within the mode owner, one case and nine assertions. Complete subject lookup includes flows and nested steps. The inspector offers separate explicit flow actions for hidden behavioral selections. Structural Focus refuses behavioral subjects, and reveal preserves selection. The original scope camera remount remains, with deliberate grammar/flow changes framing their own scene. Corrected lint passes. Missing-flow/history coverage, final checks, visual inspection, and adoption remain open.
 <!-- SECTION:NOTES:END -->

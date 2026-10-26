@@ -1,3 +1,4 @@
+import { everyStep, type SemanticFlow } from "@archboard/board/flow";
 import type { Model, ModelFlow, projectModel } from "#ui/rules/architecture-model/projection.ts";
 
 /**
@@ -13,6 +14,10 @@ function relevantFlows(model: Model, subjects: ReadonlySet<string>): ModelFlow[]
 	for (const edge of model.relationships.filter((entry) => subjects.has(entry.id))) {
 		seeds.add(edge.from);
 		seeds.add(edge.to);
+	}
+	for (const flow of flows) {
+		if (flowSubjects([flow]).some((subject) => subjects.has(subject.id)))
+			for (const id of flow.participants) seeds.add(id);
 	}
 	const parents = new Map(model.modules.map((module) => [module.id, module.parent]));
 	return flows.filter((flow) => flow.participants.some((id) => touchesScope(id, parents, seeds)));
@@ -68,4 +73,38 @@ function projectFlow(
 	};
 }
 
-export { relevantFlows, projectFlow };
+/**
+ * Flows and their nested steps share stable subject identity with modules.
+ * @param flows Authored flows from one coherent state.
+ * @returns Every behavioral subject without copying its meaning.
+ */
+function flowSubjects(flows: readonly SemanticFlow[]) {
+	return [...flows, ...flows.flatMap((flow) => everyStep(flow.steps))];
+}
+
+/**
+ * Inspection can resolve subjects that another diagram mode currently hides.
+ * @param model The complete model state.
+ * @returns Structural and behavioral subjects with their original identities.
+ */
+function modelSubjects(model: Model) {
+	return [
+		...model.modules,
+		...model.relationships,
+		...flowSubjects(model.collections.flatMap((collection) => collection.flows)),
+	];
+}
+
+/**
+ * Keep each subject's authored name or explanatory words in selection details.
+ * @param subject A canonical structural or behavioral subject.
+ * @returns Its readable label, with identity as the relationship fallback.
+ */
+function subjectName(subject: ReturnType<typeof modelSubjects>[number]): string {
+	if ("name" in subject) return subject.name;
+	if ("question" in subject) return subject.question;
+	if ("condition" in subject) return subject.condition;
+	return subject.label ?? subject.id;
+}
+
+export { relevantFlows, projectFlow, flowSubjects, modelSubjects, subjectName };

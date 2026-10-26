@@ -221,6 +221,7 @@ test("diagram modes require a relevant flow and restore the prior architecture r
 			"Shop#Finish",
 		]),
 	);
+	await browser.run(["click", '[data-slot="model-flow-steps"] [data-step-id="Shop#Send"]']);
 	await chooseMode(browser, "architecture");
 	await pollUntil(
 		() =>
@@ -237,6 +238,52 @@ test("diagram modes require a relevant flow and restore the prior architecture r
 		),
 	).toEqual(["Shop#Gateway", "Shop#Handler", "call"]);
 	expect(await drawnSubjects(browser)).not.toContain("Shop#Finish");
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-hidden-selection"]')?.getAttribute('data-count') === '1' && document.querySelector('[data-reveal-flow="Shop#Request"]') !== null`,
+			),
+		Boolean,
+		"the hidden authored step and its flow action",
+		WAIT,
+	);
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="module-missing-selection"]') === null && document.querySelector('[data-slot="model-focus"]')?.disabled === true`,
+		),
+	).toBe(true);
+	await browser.run(["click", '[data-reveal-flow="Shop#Request"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-reading"][data-grammar="sequence"]') !== null && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Send"].is-selected') !== null`,
+			),
+		Boolean,
+		"the selected step revealed in its authored flow",
+		WAIT,
+	);
+	await browser.run(["click", '[data-slot="model-flow-selector"]']);
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector('[data-flow-id="Shop#Retry"]') !== null`),
+		Boolean,
+		"another relevant flow",
+		WAIT,
+	);
+	await browser.run(["click", '[data-flow-id="Shop#Retry"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-hidden-selection"]')?.getAttribute('data-count') === '1' && document.querySelector('[data-reveal-flow="Shop#Request"]') !== null`,
+			),
+		Boolean,
+		"the step kept while another flow is read",
+		WAIT,
+	);
+	expect(
+		await browser.eval<number>(
+			`Number(document.querySelector('[data-slot="model-selection-count"]')?.getAttribute('data-count'))`,
+		),
+	).toBe(1);
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!after.body.success) throw new Error(after.body.error);
 	expect(after.body.revision).toEqual(before.body.revision);

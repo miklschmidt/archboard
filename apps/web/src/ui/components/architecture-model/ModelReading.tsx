@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useMemo, type JSX } from "react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
 import { DiagramGrammarSchema, type DiagramGrammar } from "@archboard/board/views";
 import { ModelModeControls } from "#ui/components/architecture-model/ModelModeControls.tsx";
-import { projectFlow } from "#ui/rules/architecture-model/flow-reading.ts";
+import { projectFlow, flowSubjects } from "#ui/rules/architecture-model/flow-reading.ts";
 import { ModelFilters } from "#ui/components/architecture-model/ModelFilters.tsx";
 import { ModelHiddenSelection } from "#ui/components/architecture-model/ModelHiddenSelection.tsx";
 import { ModelConnections } from "#ui/components/architecture-model/ModelConnections.tsx";
@@ -52,15 +52,26 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 		flow,
 		selectGrammar,
 		selectFlow,
+		openFlow,
 	} = useModelLocation(props.paneId);
-	const { id } = model.manifest;
-	const onOpen = useCallback((next: string | null): void => open(id, next), [id, open]);
+	const { id: modelId } = model.manifest;
+	const onOpen = useCallback((next: string | null): void => open(modelId, next), [modelId, open]);
 	const projection = useMemo(
 		() => projectModel(model, scope, focus, filters),
 		[model, scope, focus, filters],
 	);
 	const selection = useModelSelection(projection);
 	const { clear } = selection;
+	const behavioralIds = useMemo(
+		() =>
+			new Set(
+				flowSubjects(model.collections.flatMap((collection) => collection.flows)).map(
+					(subject) => subject.id,
+				),
+			),
+		[model.collections],
+	);
+	const canFocus = ![...selection.ids].some((id) => behavioralIds.has(id));
 	const subjects = useMemo(() => {
 		if (selection.ids.size > 0) return selection.ids;
 		return new Set(focus ?? (scope === null ? [] : [scope]));
@@ -69,8 +80,11 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 		const kinds = model.relationships
 			.filter((edge) => selection.ids.has(edge.id))
 			.map((edge) => edge.kind);
-		reveal([...selection.ids], kinds);
-	}, [model.relationships, selection.ids, reveal]);
+		reveal(
+			[...selection.ids].filter((id) => !behavioralIds.has(id)),
+			kinds,
+		);
+	}, [model.relationships, selection.ids, reveal, behavioralIds]);
 	const attach = useCallback(
 		(element: HTMLDivElement | null) => {
 			if (element === null) return undefined;
@@ -105,6 +119,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				focus={focus}
 				onFocus={setFocus}
 				architectural={grammar === "architecture"}
+				canFocus={canFocus}
 			>
 				<ModelModeControls
 					model={model}
@@ -126,6 +141,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				reducedMotion={props.reducedMotion}
 				onOpen={onOpen}
 				onReveal={revealSelection}
+				onRevealFlow={openFlow}
 				grammar={grammar}
 				flow={flow}
 			/>
@@ -137,6 +153,7 @@ interface ScopedModelReadingProps {
 	model: Model;
 	selection: ModelSelection;
 	onReveal: () => void;
+	onRevealFlow: (id: string) => void;
 	scope: string | null;
 	projection: ReturnType<typeof projectModel>;
 	reducedMotion: boolean;
@@ -169,7 +186,7 @@ function ModelReadingContent(
 	return (
 		<>
 			<FocusAvailability missing={props.projection.missingFocus} />
-			<ScopedModelReading {...props} grammar={parsed.data} />
+			<ScopedModelReading key={props.scope ?? "root"} {...props} grammar={parsed.data} />
 		</>
 	);
 }
@@ -200,7 +217,14 @@ function BehavioralReading(
 					: `The selected flow is unavailable: ${props.flow}. Choose another flow or restore its architecture.`}
 			</output>
 		);
-	return <ScopedModelReading {...props} projection={projection} grammar={props.grammar} />;
+	return (
+		<ScopedModelReading
+			key={`${props.grammar}:${props.flow}`}
+			{...props}
+			projection={projection}
+			grammar={props.grammar}
+		/>
+	);
 }
 
 /**
@@ -273,6 +297,7 @@ function ScopedModelReading(
 					projection={props.projection}
 					selected={selected}
 					onReveal={props.onReveal}
+					onRevealFlow={props.onRevealFlow}
 				/>
 				<ModelSelectionDetails {...props} />
 			</div>
