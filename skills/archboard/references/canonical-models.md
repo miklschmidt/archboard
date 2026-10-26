@@ -183,6 +183,10 @@ If `RECOVERY_REQUIRED` appears, run `archboard model recover -C <directory>`.
 The operation resumes its original journal and retained checkpoint.
 If recovery reports foreign content, preserve those bytes before restoring a logged image.
 If recovery reports another branch or HEAD, restore the recorded context before retrying.
+The failure's `recovery` object names its operation, checkpoint, progress, fingerprints, and original branch and HEAD.
+Use `model read --checkpoint <recovery.checkpoint>` to inspect the retained candidate while current reads remain blocked.
+An edit refusal states `applied: false` before installation or `applied: "unknown"` when the durable outcome remains uncertain.
+If application remains uncertain, recover the journal or retry the original request.
 Keep external editors and Git checkout idle during installation.
 Archboard detects interference but cannot provide atomic visibility to arbitrary filesystem readers.
 

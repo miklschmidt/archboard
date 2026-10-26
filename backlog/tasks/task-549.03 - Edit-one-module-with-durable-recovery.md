@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-backend'
 created_date: '2026-10-26T05:24:00Z'
-updated_date: '2026-10-26T11:53:00Z'
+updated_date: '2026-10-26T12:09:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -80,4 +80,6 @@ Signed preparation now includes any archive synchronization before current-file 
 The parent completed the integration update onto origin/main 6cae688bbaa2b6c9862054258e89f28c605cfc46. The supplied integration base is 56d46888390de7969ceb42d964437b35e9e7c885. Save and sign this ticket work, create a backup ref, and transplant only commits after exact old base a60b0980eca566a0aedcf664544ec598be67ef03 with signed rebase --onto. Do not merge old integration ancestry. Adapt the moved CLI clients, invocation context and Git process API, then rerun affected checks. Parent retains frontend ownership and later architecture adoption.
 
 The signed --onto transplant is complete. backup/task-549.03-before-main-refactor retains exact source 86f03ab1c. New source history excludes old integration a60b0980e. Signed merge 2cfbd91ab includes adopted follow-up 8af747543. CLI model clients now use their app-owned architecture-model.ts, statedInvocation().doing and @archboard/process/git. Removed lifecycle exports remain removed, and RequestFailure stays private. Locked dependencies were reinstalled without lockfile changes. Both type projects pass. The rebased runtime command passes 48 tests across seven owners. Rebased CLI/HTTP, skills and lock contracts pass 41 tests across 13 owners. The original task drafts stay intact. TASK-549.03 integration drafts derive from the adopted current readings and restore the same subject IDs through the CLI. No browser code or browser tests changed. Canonical read ADR references now name ADR 0060. The width test remains unchanged: board exports 234 names against 188, from the parent-reported baseline 209. Owner-directed superseded API retirement remains TASK-549.24. Workspace stays within its ceiling because private state records use the existing atomic write operation to create durable parent directories.
+
+Recovery refusals now expose the operation, retained checkpoint, progress, affected identities, fingerprints, and original branch and HEAD without private paths or logged bytes. The new public-runtime assertion failed before this projection and then passed, including an exact read of the retained candidate while current inputs remain blocked. Edit and recovery failures state applied false or unknown plus reconciliation false. Source and browser types pass. Full lint passes with zero warnings. Final adapter checks pass 21 tests across five owners, with another 20 passing across eight contract and lock owners. One broad runtime run passed 38 tests but four real-Git owners exceeded their default five-second timeout under load. Preserve that evidence and rerun with an explicit command timeout before accepting the slice. Delivery architecture checks retain zero semantics diagnostics and no warning on the three affected boards. Ten unrelated code warnings remain.
 <!-- SECTION:NOTES:END -->

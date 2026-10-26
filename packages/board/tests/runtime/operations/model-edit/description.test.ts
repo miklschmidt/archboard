@@ -109,6 +109,8 @@ test("configured signing failure changes no current file, HEAD, index or accepte
 	expect(await editArchitectureModule(vault, input)).toMatchObject({
 		success: false,
 		code: "ARCHIVE_COMMIT_FAILED",
+		applied: false,
+		reconciliation: false,
 	});
 	expect(readArchitectureModel(vault)).toEqual(before);
 	expect(readFileSync(join(root, ".git/index"))).toEqual(index);

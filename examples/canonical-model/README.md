@@ -107,6 +107,8 @@ The journal records branch and HEAD context, so a branch switch blocks unsafe re
 
 If installation stops, run `archboard model recover -C "$edit_fixture_dir"`.
 A coherent current read refuses unfinished installation with recovery instructions.
+Its `recovery` object identifies the original branch, HEAD, operation, retained checkpoint, progress, and fingerprints.
+Use `model read --checkpoint <recovery.checkpoint>` to inspect that candidate independently of the blocked current inputs.
 Foreign inputs remain untouched until the owner restores a permitted image.
 A completed result with pending cleanup remains applied and readable.
 A retry finishes cleanup without another checkpoint.
