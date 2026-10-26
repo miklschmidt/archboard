@@ -1,3 +1,5 @@
+import { everyStep } from "#shared/rules/flow-steps.ts";
+import { applyFlowChanges } from "#runtime/operations/model-edit/flows.ts";
 import { isDeepStrictEqual } from "node:util";
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts";
@@ -21,10 +23,18 @@ function openStructure(model: ArchitectureModel, paths: Iterable<string>) {
 	return {
 		before: model,
 		modules: structuredClone(model.modules),
+
 		lookup: [...model.modules],
 		used: new Set([
 			...model.modules.map((module) => module.id),
 			...model.relationships.map((edge) => edge.id),
+			...model.collections.flatMap((collection) => [
+				`${model.manifest.id}#${collection.id}`,
+				...collection.flows.flatMap((flow) => [
+					flow.id,
+					...everyStep(flow.steps).map((step) => step.id),
+				]),
+			]),
 			...(model.manifest.retiredIds ?? []),
 		]),
 		paths: new Set(paths),
@@ -93,12 +103,15 @@ function freshIdentity(state: Structure): string {
 		 */
 		has(id) {
 			return (
-				state.used.has(`${state.before.manifest.id}#${id}`) || state.paths.has(`${id}.module.json`)
+				state.used.has(`${state.before.manifest.id}#${id}`) ||
+				state.paths.has(`${id}.module.json`) ||
+				state.paths.has(`${id}.flows.json`)
 			);
 		},
 	});
 	const id = `${state.before.manifest.id}#${local}`;
 	state.used.add(id);
+	state.structural = true;
 	return id;
 }
 
@@ -367,14 +380,34 @@ function applyStructure(
 	planRemovals(state, changes);
 	for (const change of changes) applyChange(state, change);
 	finishRemovals(state);
+	const collections = applyFlowChanges(
+		model,
+		changes,
+		() => freshIdentity(state),
+		state.subjects,
+		state.retired,
+		state.removedModules,
+ state.modules,
+	);
+	if (
+		changes.some((change) => change.type.endsWith("collection")) ||
+		state.retired.size !== (model.manifest.retiredIds?.length ?? 0)
+	)
+		state.structural = true;
 	includeContainment(model.modules, state.modules, state.subjects);
 	const known = new Set([
 		...model.modules.map((module) => module.id),
 		...model.relationships.map((edge) => edge.id),
+		...model.collections.flatMap((collection) =>
+			collection.flows.flatMap((flow) => [
+				flow.id,
+				...everyStep(flow.steps).map((step) => step.id),
+			]),
+		),
 	]);
 	const scopes = [...state.subjects].filter((id) => known.has(id));
 	if (state.structural) scopes.push(model.manifest.id);
 	const manifest = candidateManifest(state);
-	return { modules: state.modules, manifest, subjects: [...state.subjects], scopes };
+	return { modules: state.modules, collections, manifest, subjects: [...state.subjects], scopes };
 }
 export { applyStructure };

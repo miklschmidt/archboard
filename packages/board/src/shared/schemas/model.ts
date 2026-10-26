@@ -6,17 +6,9 @@ import {
 	DisplayNameSchema,
 	DescriptionSchema,
 } from "#shared/schemas/primitives.ts";
-import { BLOCK_ID_RE } from "#shared/rules/ids.ts";
+import { QualifiedSubjectIdSchema } from "#shared/schemas/primitives.ts";
+import { FlowCollectionSchema } from "#shared/schemas/model-flows.ts";
 import { SemanticPolicySchema } from "#shared/schemas/semantic-policy.ts";
-
-/** Model[/original-board]#local-id. Namespace segments preserve identity provenance. */
-const localIdPattern = BLOCK_ID_RE.source.slice(1, -1);
-const QualifiedSubjectIdSchema = z
-	.string()
-	.regex(
-		new RegExp(`^${localIdPattern}(?:/${localIdPattern})?#${localIdPattern}$`, "u"),
-		"Use model[/original-board]#local-id, with one to eight characters per id",
-	);
 
 const StateMetadataSchema = z
 	.object({
@@ -142,9 +134,11 @@ const ArchitectureModelSchema = z
 		manifest: ArchitectureManifestSchema,
 		policy: SemanticPolicySchema,
 		modules: z.array(ArchitectureModuleSchema.extend({ file: z.string() })),
+		collections: z.array(FlowCollectionSchema.extend({ file: z.string() })),
 		relationships: z.array(OwnedRelationshipSchema.extend({ from: QualifiedSubjectIdSchema })),
 		roots: z.array(QualifiedSubjectIdSchema),
 		selectedModule: QualifiedSubjectIdSchema.optional(),
+		selectedFlow: QualifiedSubjectIdSchema.optional(),
 		revision: ModelRevisionSchema,
 		checkpoint: ArchitectureCheckpointSchema.optional(),
 		sourceEvidence: z
@@ -167,6 +161,9 @@ const ArchitectureModelFailureSchema = z
 			"MODEL_CHANGED",
 			"LEGACY_AUTHORITY",
 			"MODULE_NOT_FOUND",
+			"FLOW_REQUIRED",
+			"FLOW_NOT_FOUND",
+			"FLOW_AMBIGUOUS",
 			"RELATIONSHIP_NOT_FOUND",
 			"NODE_HAS_CHILDREN",
 			"MODULE_AMBIGUOUS",

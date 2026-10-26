@@ -41,6 +41,20 @@ function candidateInputs(
 		const { file, ...definition } = module;
 		inputs.set(file, Buffer.from(`${JSON.stringify(definition, null, 2)}\n`));
 	}
+	for (const collection of current.collections)
+		if (!candidate.collections.some((value) => value.id === collection.id))
+			inputs.delete(collection.file);
+	for (const collection of candidate.collections) {
+		if (
+			isDeepStrictEqual(
+				current.collections.find((value) => value.id === collection.id),
+				collection,
+			)
+		)
+			continue;
+		const { file, ...definition } = collection;
+		inputs.set(file, Buffer.from(`${JSON.stringify(definition, null, 2)}\n`));
+	}
 	if (!isDeepStrictEqual(current.manifest, candidate.manifest))
 		inputs.set("model.json", Buffer.from(`${JSON.stringify(candidate.manifest, null, 2)}\n`));
 	return inputs;

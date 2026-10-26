@@ -9,6 +9,8 @@ import {
 	ArchitectureClaimListSchema,
 	ArchitectureClaimReleaseSchema,
 	ArchitectureModelReadSchema,
+	ArchitectureFlowRenderRequestSchema,
+	ArchitectureFlowRenderResultSchema,
 	ArchitecturePublicationSchema,
 	ArchitecturePublicationDestinationSchema,
 	ArchitecturePublicationRequestSchema,
@@ -47,9 +49,10 @@ async function architectureResult<T>(
  * @param checkpoint The complete immutable checkpoint identity.
  * @returns The coherent reading or structured refusal.
  */
-function readArchitectureModelOnServer(module?: string, checkpoint?: string) {
+function readArchitectureModelOnServer(module?: string, checkpoint?: string, flow?: string) {
 	const query = new URLSearchParams({
 		...(module === undefined ? {} : { module }),
+		...(flow === undefined ? {} : { flow }),
 		...(checkpoint === undefined ? {} : { checkpoint }),
 	});
 	return architectureResult(ArchitectureModelReadSchema, `/api/architecture/model?${query}`);
@@ -238,3 +241,17 @@ function initializeArchitectureArchiveOnServer() {
 	);
 }
 export { initializeArchitectureArchiveOnServer };
+
+/** Ask the server for an explicitly selected flow picture. */
+function renderArchitectureFlowOnServer(
+	input: z.infer<typeof ArchitectureFlowRenderRequestSchema>,
+) {
+	const query = new URLSearchParams(
+		Object.entries(input).filter((entry): entry is [string, string] => entry[1] !== undefined),
+	);
+	return architectureResult(
+		ArchitectureFlowRenderResultSchema,
+		`/api/architecture/render?${query}`,
+	);
+}
+export { renderArchitectureFlowOnServer };

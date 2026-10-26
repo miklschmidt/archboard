@@ -1,3 +1,4 @@
+import {behaviorFixture,allBehaviorSubjects} from "#tests/runtime/operations/model-edit/flow-fixture.ts";
 import { afterEach, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -22,15 +23,16 @@ afterEach(() => {
 	disposeFixtures();
 });
 
-test.each(["transfer", "remove-and-add"])(
+test.each(["transfer", "remove-and-add", "flow-repair"])(
 	"interrupted %s recovers its complete file set and affected identities",
 	async (kind) => {
-		const { root, vault } = fixture();
+		const { root, vault } = kind === "flow-repair" ? behaviorFixture() : fixture();
 		const base = await structureIntent(vault, [
 			"Shop",
 			"Shop#Gateway",
 			"Shop#Worker",
 			"Shop#Dispatch",
+ ...(kind === "flow-repair" ? allBehaviorSubjects : []),
 		]);
 		const changes: Extract<ArchitectureModuleEdit, { changes: unknown }>["changes"] =
 			kind === "transfer"
@@ -42,7 +44,7 @@ test.each(["transfer", "remove-and-add"])(
 							set: { to: "Shop#Gateway" },
 						},
 					]
-				: [
+				: kind === "flow-repair" ? [{type:"remove-module",subject:"Shop#Worker"}] : [
 						{ type: "remove-module", subject: "Shop#Worker" },
 						{ type: "add-module", module: { name: "Cache", kind: "service", order: 3 } },
 					];
@@ -60,7 +62,7 @@ test.each(["transfer", "remove-and-add"])(
 				request,
 			],
 			{
-				env: { ...process.env, ARCHBOARD_EDIT_CRASH: kind === "transfer" ? "file" : "removed" },
+				env: { ...process.env, ARCHBOARD_EDIT_CRASH: kind === "remove-and-add" ? "removed" : "file" },
 				stdout: "pipe",
 				stderr: "pipe",
 			},
@@ -98,6 +100,7 @@ test.each(["transfer", "remove-and-add"])(
 			success: true,
 			modules: retained.modules,
 			relationships: retained.relationships,
+ collections:retained.collections,
 			revision: retained.revision,
 		});
 		expect(await editArchitectureModule(vault, input)).toEqual(recovered.operation);

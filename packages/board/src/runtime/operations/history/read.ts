@@ -7,6 +7,7 @@ import {
 	discoveryFailure,
 	decodeModel,
 	selectModule,
+	selectFlow,
 } from "#runtime/operations/read/model-read.ts";
 import {
 	ArchiveError,
@@ -108,6 +109,7 @@ async function exactReading(
 	context: ArchiveContext,
 	checkpoint: string,
 	module?: string,
+	flow?: string,
 ): Promise<ArchitectureModelRead> {
 	const record = await checkpointRecord(context, checkpoint);
 	await requireDependencies(context, checkpoint, record, new Set());
@@ -122,17 +124,20 @@ async function exactReading(
 	if (refused !== undefined) return refused;
 	const model = decodeModel(captured);
 	if (!model.success) return model;
-	return selectModule(
-		{
-			...model,
-			checkpoint: checkpointMetadata(
-				checkpoint,
-				record,
-				(await checkpointPublication(context, checkpoint)).publication,
-			),
-			sourceEvidence: await sourceEvidence(context, record.sources),
-		},
-		module,
+	return selectFlow(
+		selectModule(
+			{
+				...model,
+				checkpoint: checkpointMetadata(
+					checkpoint,
+					record,
+					(await checkpointPublication(context, checkpoint)).publication,
+				),
+				sourceEvidence: await sourceEvidence(context, record.sources),
+			},
+			module,
+		),
+		flow,
 	);
 }
 
@@ -147,6 +152,7 @@ async function readArchitectureCheckpoint(
 	vault: string,
 	checkpoint: string,
 	module?: string,
+	flow?: string,
 ): Promise<ArchitectureModelRead> {
 	if (!GitObjectIdSchema.safeParse(checkpoint).success)
 		return archiveFailure(
@@ -156,7 +162,7 @@ async function readArchitectureCheckpoint(
 		);
 	return historyResult(
 		"ARCHITECTURE_UNAVAILABLE",
-		async () => exactReading(await archiveContext(vault), checkpoint, module),
+		async () => exactReading(await archiveContext(vault), checkpoint, module, flow),
 		checkpoint,
 	);
 }

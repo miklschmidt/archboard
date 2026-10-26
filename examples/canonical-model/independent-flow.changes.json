@@ -1,0 +1,14 @@
+[
+  {"type":"add-collection","name":"Request behavior"},
+  {"type":"add-flow","collection":"Request behavior","flow":{
+    "name":"Request","summary":"Dispatch work and return each result.",
+    "participants":["Shop#Worker","Shop#Gateway"],
+    "steps":[
+      {"from":"Shop#Gateway","to":"Shop#Worker","kind":"sync","label":"Dispatch","repeat":3,"note":"The caller supplies three batches."},
+      {"kind":"decision","question":"Ready?","alternatives":[
+        {"label":"yes","steps":[{"kind":"loop","condition":"More items","steps":[{"from":"Shop#Worker","to":"Shop#Gateway","kind":"return","label":"Result"}]}]},
+        {"label":"no","steps":[]}
+      ]}
+    ]
+  }}
+]

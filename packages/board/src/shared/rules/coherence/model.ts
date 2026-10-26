@@ -1,3 +1,4 @@
+import { everyStep, messagesOf } from "#shared/rules/flow-steps.ts";
 import type { ArchitectureModel, ModelDiagnostic } from "#shared/schemas/model.ts";
 
 type Module = ArchitectureModel["modules"][number];
@@ -11,12 +12,23 @@ type Module = ArchitectureModel["modules"][number];
 function identityDiagnostics(
 	modules: Module[],
 	manifest: ArchitectureModel["manifest"],
+	collections: ArchitectureModel["collections"],
 ): ModelDiagnostic[] {
 	const definitions = new Map<string, string>();
 	const retired = new Set(manifest.retiredIds);
 	const diagnostics: ModelDiagnostic[] = [];
 	const subjects = modules.flatMap((module) =>
 		[module.id, ...module.outgoing.map((edge) => edge.id)].map((id) => ({ id, file: module.file })),
+	);
+	subjects.push(
+		...collections.flatMap((collection) =>
+			collection.flows.flatMap((flow) =>
+				[flow.id, ...everyStep(flow.steps).map((step) => step.id)].map((id) => ({
+					id,
+					file: collection.file,
+				})),
+			),
+		),
 	);
 	for (const { id, file } of subjects) {
 		if (retired.has(id))
@@ -165,6 +177,7 @@ function modelDiagnostics(
 	modules: Module[],
 	policy: ArchitectureModel["policy"],
 	manifest: ArchitectureModel["manifest"],
+	collections: ArchitectureModel["collections"],
 ): ModelDiagnostic[] {
 	const byId = new Map(modules.map((module) => [module.id, module]));
 	return [
@@ -179,13 +192,56 @@ function modelDiagnostics(
 					},
 				]
 			: []),
-		...identityDiagnostics(modules, manifest),
+		...identityDiagnostics(modules, manifest, collections),
 		...modules.flatMap((module) => [
 			...vocabularyDiagnostics(module, policy),
 			...referenceDiagnostics(module, byId),
 		]),
 		...forestDiagnostics(modules, byId),
+		...collectionDiagnostics(collections, byId),
 	];
+}
+
+/** Validate independent collection identity and every behavioral reference. */
+function collectionDiagnostics(
+	collections: ArchitectureModel["collections"],
+	modules: Map<string, Module>,
+): ModelDiagnostic[] {
+	const seen = new Set<string>();
+	const diagnostics: ModelDiagnostic[] = [];
+	for (const collection of collections) {
+		const report = (code: string, subjects: string[], message: string) =>
+			diagnostics.push({
+				code,
+				subjects,
+				file: collection.file,
+				message,
+				recovery: "Repair the explicit flow references and read the complete model again.",
+			});
+		if (seen.has(collection.id))
+			report("DUPLICATE_COLLECTION", [], "A collection identity has more than one definition.");
+		seen.add(collection.id);
+		for (const flow of collection.flows) {
+			if (new Set(flow.participants).size !== flow.participants.length)
+				report(
+					"DUPLICATE_PARTICIPANT",
+					[flow.id],
+					"Each participant must appear once in its authored order.",
+				);
+			for (const id of flow.participants)
+				if (!modules.has(id))
+					report("MISSING_LOCAL_TARGET", [flow.id, id], "A participant has no module definition.");
+			for (const step of messagesOf(flow.steps))
+				for (const id of [step.from, step.to])
+					if (!flow.participants.includes(id))
+						report(
+							"MISSING_PARTICIPANT",
+							[flow.id, step.id, id],
+							"A message endpoint is absent from the participant list.",
+						);
+		}
+	}
+	return diagnostics;
 }
 
 /**
