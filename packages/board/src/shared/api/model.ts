@@ -1,3 +1,4 @@
+export { ArchitectureArchiveInitializationSchema } from "#shared/schemas/model.ts";
 export { ArchitectureModelReadSchema } from "#shared/schemas/model.ts";
 export {
 	ArchitecturePublicationDestinationSchema,
