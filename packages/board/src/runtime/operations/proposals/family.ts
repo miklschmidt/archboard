@@ -203,7 +203,7 @@ async function reconcileChild(
 	const proposal = ProposalSchema.strip().parse(existing);
 	const base = requireModel(await proposalBaseline(family.context, family.model, proposal));
 	const mine = requireModel(decodeProposal(base, proposal, family.model));
-	for (const id of subjectsOf(mine).keys()) family.known.add(id);
+	family.known = new Set([...family.known, ...subjectsOf(mine).keys()]);
 	const state = parent.selectedState!;
 	let next = mine;
 	if (state.standing === undefined)

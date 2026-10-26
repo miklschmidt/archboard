@@ -94,6 +94,8 @@ The existing semantic reconciliation engine applies the canonical decoder as its
 Canonical module metadata, collection ownership, qualified identities, and reference rules remain part of that complete result.
 Serialization refuses an unowned relationship or flow before it can disappear.
 Automatically assigned arrival positions use the existing semantic rule.
+Step identity spans flows before each flow receives its reconciled order.
+A step placement keeps its flow and nested holder together, so competing moves cannot compose an unwritten location.
 
 Reconciliation visits parents before children.
 An unsettled parent blocks its descendants while their last coherent content stays readable.

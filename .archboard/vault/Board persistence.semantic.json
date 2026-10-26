@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 169,
+	"version": 170,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T21:04:48.909Z",
+	"updatedAt": "2026-10-26T21:34:40.050Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -150224,6 +150224,18 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/proposals"
 						}
+					},
+					{
+						"id": "Jx4O72DO",
+						"order": 66000,
+						"name": "Semantic reconciliation",
+						"kind": "module",
+						"responsibility": "Merges stable subjects and complete step placements through shared three-way semantic rules",
+						"description": "Canonical proposals and legacy families share one engine. Step identity spans flows. A step placement keeps its flow and nested holder together. The selected decoder decides candidate coherence.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/shared/rules/reconcile"
+						}
 					}
 				],
 				"edges": [
@@ -153005,6 +153017,48 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/proposals/candidate.ts",
 							"symbol": "archiveContext"
+						}
+					},
+					{
+						"id": "NmLgBfWk",
+						"order": 202000,
+						"from": "KJy5yYuq",
+						"to": "Jx4O72DO",
+						"kind": "call",
+						"label": "reconcile complete meaning",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/proposals/reconcile.ts",
+							"symbol": "reconcileModels"
+						}
+					},
+					{
+						"id": "sTWqGRdl",
+						"order": 203000,
+						"from": "8CAH6rSD",
+						"to": "Jx4O72DO",
+						"kind": "call",
+						"label": "reconcile complete meaning",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/variant/propagate.ts",
+							"symbol": "answerFor"
+						}
+					},
+					{
+						"id": "B8mtuLA3",
+						"order": 204000,
+						"from": "DJXluInA",
+						"to": "Jx4O72DO",
+						"kind": "call",
+						"label": "reconcile complete meaning",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/settle/settle.ts",
+							"symbol": "caughtUp"
 						}
 					}
 				],
