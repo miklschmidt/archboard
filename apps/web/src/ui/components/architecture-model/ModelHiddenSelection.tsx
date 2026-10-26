@@ -57,17 +57,17 @@ function hiddenSelection({ projection, selected }: ModelHiddenSelectionProps) {
 		...projection.connections.flatMap(({ joins }) => joins.map((edge) => edge.id)),
 		...flowSubjects(projection.content.flows).map((subject) => subject.id),
 	]);
-	const structural = [...projection.complete.nodes, ...projection.complete.edges].filter(
+	const structural = [...projection.depicted.nodes, ...projection.depicted.edges].filter(
 		(subject) => selected.has(subject.id) && !visible.has(subject.id),
 	);
-	const behavioral = flowSubjects(projection.complete.flows).filter(
+	const behavioral = flowSubjects(projection.depicted.flows).filter(
 		(subject) => selected.has(subject.id) && !visible.has(subject.id),
 	);
 	const hiddenIds = new Set(behavioral.map((subject) => subject.id));
 	return {
 		count: structural.length + behavioral.length,
 		structural: structural.length,
-		flows: projection.complete.flows.filter((flow) =>
+		flows: projection.depicted.flows.filter((flow) =>
 			flowSubjects([flow]).some((subject) => hiddenIds.has(subject.id)),
 		),
 	};

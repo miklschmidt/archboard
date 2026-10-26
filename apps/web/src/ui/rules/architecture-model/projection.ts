@@ -1,5 +1,6 @@
 import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
 import type { ArchitectureModelRead } from "@archboard/board/model";
+import { drawingOf, type ChangeKind } from "@archboard/board/comparison";
 import type { VariantContent } from "@archboard/board/content";
 import { overviewLines } from "@archboard/board/views";
 import { inspectContainer } from "@archboard/board/container-interface";
@@ -33,12 +34,16 @@ function modelContent(model: Model): VariantContent {
 
 /**
  * Draw one recursive scope with direct context and closed implementation parts.
- * @param model The complete model.
+ * @param complete The complete depicted content.
  * @param scope The module to open, or null for repository roots.
+ * @param standing The comparison status of each depicted relationship.
  * @returns The projected content and every relationship behind each line.
  */
-function projectScope(model: Model, scope: string | null) {
-	const complete = modelContent(model);
+function projectScope(
+	complete: VariantContent,
+	scope: string | null,
+	standing: Readonly<Record<string, ChangeKind>>,
+) {
 	const byId = new Map(complete.nodes.map((node) => [node.id, node]));
 	const trail = scope === null ? [] : ancestors(byId, scope).toReversed();
 	const boundary = new Set(trail);
@@ -52,7 +57,7 @@ function projectScope(model: Model, scope: string | null) {
 	);
 	const relevant = complete.edges.filter((edge) => inside.has(edge.from) || inside.has(edge.to));
 	const open = new Set(scope === null ? [] : [scope]);
-	const connections = projectedConnections(complete, relevant, drawnAs, open);
+	const connections = projectedConnections(complete, relevant, drawnAs, open, standing);
 	const children = complete.nodes.filter((node) => (node.parent ?? null) === scope);
 	const visible = new Set([
 		...children.map((node) => node.id),
@@ -84,6 +89,7 @@ function projectScope(model: Model, scope: string | null) {
  * @param scope The scope to restore when focus is cleared.
  * @param focus Explicit focused identities, or no focus.
  * @param filters Hidden relationship kinds and group regions.
+ * @param reference The coherent comparison base, when available.
  * @returns Visible parts, complete interface facts, and exact underlying connections.
  */
 function projectModel(
@@ -91,42 +97,100 @@ function projectModel(
 	scope: string | null = null,
 	focus: readonly string[] | null = null,
 	filters: ModelFilters = {},
+	reference?: Model,
 ) {
-	const projection =
-		focus === null ? projectScope(model, scope) : projectFocused(model, scope, focus);
-	const connections = projection.connections.filter(
-		({ line }) => !filters.hideKinds?.includes(line.kind),
-	);
-	const content: VariantContent = {
-		...projection.content,
-		nodes: projection.content.nodes.map((node) => ({
+	const context = comparisonContent(model, reference);
+	const standing = context.standing ?? {};
+	const projection = projectContent(context.depicted, scope, focus, standing);
+	const held =
+		reference === undefined
+			? undefined
+			: filteredContent(projectContent(context.complete, scope, focus, standing).content, filters);
+	return {
+		...projection,
+		...context,
+		reference,
+		held,
+		inspection: interfaceOf(
+			context.complete,
+			context.complete.nodes.find((node) => node.id === scope),
+		),
+		flow: null as ModelFlow | null,
+		allConnections: projection.connections,
+		connections: projection.connections.filter(
+			({ line }) => !filters.hideKinds?.includes(line.kind),
+		),
+		content: filteredContent(projection.content, filters),
+	};
+}
+
+/**
+ * Keep authored interface meaning separate from the temporary comparison depiction.
+ * @param model The selected coherent state.
+ * @param reference Its verified comparison base, when available.
+ * @returns The selected content, depicted content, and authoritative subject standing.
+ */
+function comparisonContent(model: Model, reference: Model | undefined) {
+	const complete = modelContent(model);
+	if (reference === undefined) return { complete, depicted: complete, standing: undefined };
+	const compared = drawingOf(complete, modelContent(reference));
+	const standing: Readonly<Record<string, ChangeKind>> =
+		model.comparison === undefined
+			? compared.standing
+			: Object.fromEntries(model.comparison.subjects.map((subject) => [subject.id, subject.kind]));
+	return { complete, depicted: compared.content, standing };
+}
+
+/**
+ * Scope and focus share the same complete-content projection for selected and depicted states.
+ * @param complete The content to project.
+ * @param scope The recursive scope.
+ * @param focus Explicit focused identities, or no focus.
+ * @param standing Exact subject comparison states.
+ * @returns The requested structural reading.
+ */
+function projectContent(
+	complete: VariantContent,
+	scope: string | null,
+	focus: readonly string[] | null,
+	standing: Readonly<Record<string, ChangeKind>>,
+) {
+	return focus === null
+		? projectScope(complete, scope, standing)
+		: projectFocused(complete, scope, focus, standing);
+}
+
+/**
+ * Apply visual controls after complete interface and comparison classification.
+ * @param content The projected picture.
+ * @param filters Hidden visual features.
+ * @returns Only the filtered depiction, without altering either source state.
+ */
+function filteredContent(content: VariantContent, filters: ModelFilters): VariantContent {
+	return {
+		...content,
+		nodes: content.nodes.map((node) => ({
 			...node,
 			groups: node.groups?.filter((group) => !filters.hideGroups?.includes(group)),
 		})),
-		edges: projection.content.edges.filter((edge) => !filters.hideKinds?.includes(edge.kind)),
-	};
-	return {
-		...projection,
-		flow: null as ModelFlow | null,
-		allConnections: projection.connections,
-		connections,
-		content,
+		edges: content.edges.filter((edge) => !filters.hideKinds?.includes(edge.kind)),
 	};
 }
 
 /**
  * Expand only selected paths while closed selected modules represent their hidden parts.
- * @param model The complete model.
+ * @param complete The complete depicted content.
  * @param scope The underlying recursive scope.
  * @param focus The captured subject identities, including missing identities.
+ * @param standing The comparison status of depicted subjects.
  * @returns The focused reading and required endpoint context.
  */
 function projectFocused(
-	model: Model,
+	complete: VariantContent,
 	scope: string | null,
 	focus: readonly string[],
+	standing: Readonly<Record<string, ChangeKind>>,
 ): ReturnType<typeof projectScope> {
-	const complete = modelContent(model);
 	const byId = new Map(complete.nodes.map((node) => [node.id, node]));
 	const focused = new Set(focus);
 	const selected = new Set(
@@ -154,6 +218,7 @@ function projectFocused(
 		relevant,
 		drawnAs,
 		new Set([...open, ...selfConnections]),
+		standing,
 	);
 	const visible = new Set([...base, ...connections.flatMap(({ line }) => [line.from, line.to])]);
 	const known = new Set([...complete.nodes, ...complete.edges].map((subject) => subject.id));
@@ -203,6 +268,7 @@ function focusEndpoint(
  * @param relevant Relationships included by this reading.
  * @param drawnAs The visible representative of each endpoint.
  * @param open Containers whose authored self-connections remain visible.
+ * @param standing Distinct comparison states must remain separate lines.
  * @returns Every drawn line with all original relationships.
  */
 function projectedConnections(
@@ -210,19 +276,22 @@ function projectedConnections(
 	relevant: VariantContent["edges"],
 	drawnAs: ReadonlyMap<string, string>,
 	open: ReadonlySet<string>,
+	standing: Readonly<Record<string, ChangeKind>>,
 ) {
 	const flat = complete.nodes.map((node) => {
 		const { parent: _parent, ...part } = node;
 		const at = drawnAs.get(node.id);
 		return at === node.id ? part : { ...part, parent: at };
 	});
-	return [...new Set(relevant.map((edge) => edge.kind))]
-		.flatMap((kind) =>
-			overviewLines(
-				{ ...complete, nodes: flat, edges: relevant.filter((edge) => edge.kind === kind) },
-				open,
-			),
-		)
+	const groups = new Map<string, VariantContent["edges"]>();
+	for (const edge of relevant) {
+		const key = `${edge.kind}\0${standing[edge.id] ?? "unchanged"}`;
+		const group = groups.get(key);
+		if (group === undefined) groups.set(key, [edge]);
+		else group.push(edge);
+	}
+	return [...groups.values()]
+		.flatMap((edges) => overviewLines({ ...complete, nodes: flat, edges }, open))
 		.toSorted((one, other) => one.line.order - other.line.order);
 }
 
@@ -307,4 +376,4 @@ function visibleEndpoint(
 	return at;
 }
 
-export { projectModel, type Model, type ModelFilters, type ModelFlow };
+export { projectModel, modelContent, type Model, type ModelFilters, type ModelFlow };

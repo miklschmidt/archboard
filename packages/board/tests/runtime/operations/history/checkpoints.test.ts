@@ -61,6 +61,7 @@ function request(vault: string, operationId = "retain-first") {
 test("retained architecture reopens exact bytes without reading damaged current inputs", async () => {
 	const { root, vault } = fixture();
 	const before = readArchitectureModel(vault, "Shop#Gateway");
+	if (!before.success) throw new Error(JSON.stringify(before));
 	const input = request(vault);
 	const retained = await retainArchitectureCheckpoint(vault, input);
 	expect(retained.success).toBe(true);
@@ -68,7 +69,10 @@ test("retained architecture reopens exact bytes without reading damaged current 
 	writeFileSync(join(vault, "gateway.module.json"), "{");
 	writeFileSync(join(vault, ".archboard/config.yaml"), "invalid: [");
 	const exact = await readArchitectureCheckpoint(vault, retained.checkpoint.id, "Shop#Gateway");
-	expect(exact).toMatchObject(before);
+	expect(exact).toMatchObject({
+		...before,
+		selectedState: { ...before.selectedState, lifecycle: "historical" },
+	});
 	expect(exact).toMatchObject({
 		checkpoint: { id: retained.checkpoint.id, publication: "saved-locally" },
 	});
@@ -284,6 +288,7 @@ test("signing failure refuses retention with recovery and leaves all current inp
 	const { home, root, vault } = fixture();
 	const input = request(vault);
 	const before = readArchitectureModel(vault);
+	if (!before.success) throw new Error(JSON.stringify(before));
 	const head = git(root, "rev-parse", "HEAD");
 	const index = readFileSync(join(root, ".git/index"));
 	git(root, "config", "user.signingkey", join(home, "missing-key"));
@@ -368,10 +373,14 @@ test("retention preserves large UTF-8 inputs and Git-sensitive filenames exactly
 	);
 	rmSync(join(vault, "gateway.module.json"));
 	const before = readArchitectureModel(vault);
+	if (!before.success) throw new Error(JSON.stringify(before));
 	const retained = await retainArchitectureCheckpoint(vault, request(vault));
 	if (!retained.success) throw new Error(JSON.stringify(retained));
 	rmSync(join(vault, path));
-	expect(await readArchitectureCheckpoint(vault, retained.checkpoint.id)).toMatchObject(before);
+	expect(await readArchitectureCheckpoint(vault, retained.checkpoint.id)).toMatchObject({
+		...before,
+		selectedState: { ...before.selectedState, lifecycle: "historical" },
+	});
 });
 
 test("a source repository without commits retains architecture without inventing source evidence", async () => {

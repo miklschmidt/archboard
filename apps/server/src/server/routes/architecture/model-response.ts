@@ -3,6 +3,9 @@ import type { ArchitectureModelRead } from "@archboard/board/model";
 const failureStatuses: Partial<
 	Record<Extract<ArchitectureModelRead, { success: false }>["code"], number>
 > = {
+	STATE_NOT_FOUND: 404,
+	STATE_AMBIGUOUS: 409,
+	PREDECESSOR_CHANGED: 409,
 	MODEL_NOT_FOUND: 404,
 	MODULE_NOT_FOUND: 404,
 	FLOW_NOT_FOUND: 404,

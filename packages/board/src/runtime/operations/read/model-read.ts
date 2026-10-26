@@ -1,3 +1,4 @@
+import { ProposalSchema, StateSelectionSchema } from "#shared/schemas/model-proposals.ts";
 import { FlowCollectionSchema } from "#shared/schemas/model-flows.ts";
 import { z } from "zod";
 import { errorMessage } from "@archboard/diagnostics/errno";
@@ -106,7 +107,7 @@ function discoveryFailure(captured: CapturedModel): ArchitectureModelRead | unde
 			},
 		]);
 	for (const file of captured.inputs.keys()) {
-		if (/\.(?:proposal|walkthrough)\.json$/u.test(file))
+		if (file.endsWith(".walkthrough.json"))
 			captured.diagnostics.push({
 				code: "UNSUPPORTED_FORMAT",
 				file,
@@ -119,11 +120,62 @@ function discoveryFailure(captured: CapturedModel): ArchitectureModelRead | unde
 }
 
 /**
+ * Find conflicting state definitions without borrowing archive state.
+ * @param manifest The current designation.
+ * @param proposals The active proposal documents.
+ * @returns Identity and name diagnostics.
+ */
+function proposalDiagnostics(
+	manifest: ArchitectureModel["manifest"],
+	proposals: ArchitectureModel["proposals"],
+): ModelDiagnostic[] {
+	const stateIds = new Set(manifest.current === null ? [] : [manifest.current.id]);
+	const diagnostics: ModelDiagnostic[] = [];
+	for (const proposal of proposals) {
+		if (stateIds.has(proposal.id))
+			diagnostics.push({
+				code: "DUPLICATE_STATE_ID",
+				file: proposal.file,
+				subjects: [proposal.id],
+				message: "A state identity has more than one definition.",
+				recovery: "Keep each stable state identity in one proposal or current designation.",
+			});
+		stateIds.add(proposal.id);
+	}
+	return diagnostics;
+}
+/**
+ * Return the current designation as explicit reader metadata.
+ * @param manifest The addressed manifest.
+ * @returns The designation or absence for a planning model.
+ */
+function currentSelection(
+	manifest: ArchitectureModel["manifest"],
+): ArchitectureModel["selectedState"] {
+	return manifest.current === null ? null : { ...manifest.current, lifecycle: "current" };
+}
+/**
+ * Validate a materialized draft without changing the current designation.
+ * @param manifest The retained manifest.
+ * @param state The explicit selected state, when present.
+ * @returns The validation context.
+ */
+function validationManifest(
+	manifest: ArchitectureModel["manifest"],
+	state: ArchitectureModel["selectedState"] | undefined,
+) {
+	return state == null ? manifest : { ...manifest, current: state };
+}
+/**
  * Interpret the captured file set as one complete model.
  * @param captured The exact bytes and their revision.
+ * @param selectedState The explicit materialized state, when present.
  * @returns A coherent model or diagnostics for the complete input set.
  */
-function decodeModel(captured: CapturedModel): ArchitectureModelRead {
+function decodeModel(
+	captured: CapturedModel,
+	selectedState?: ArchitectureModel["selectedState"],
+): ArchitectureModelRead {
 	const { inputs, diagnostics, revision } = captured;
 	const manifest = decode(
 		"model.json",
@@ -145,8 +197,22 @@ function decodeModel(captured: CapturedModel): ArchitectureModelRead {
 			const collection = decode(file, bytes, FlowCollectionSchema, diagnostics);
 			return collection === undefined ? [] : [{ ...collection, file }];
 		});
+	const proposals = [...inputs]
+		.filter(([file]) => file.endsWith(".proposal.json"))
+		.flatMap(([file, bytes]) => {
+			const proposal = decode(file, bytes, ProposalSchema, diagnostics);
+			return proposal === undefined ? [] : [{ ...proposal, file }];
+		});
+	diagnostics.push(...proposalDiagnostics(manifest, proposals));
 	if (diagnostics.length > 0) return failure("MODEL_INVALID", diagnostics);
-	diagnostics.push(...modelDiagnostics(discovered, policy, manifest, collections));
+	diagnostics.push(
+		...modelDiagnostics(
+			discovered,
+			policy,
+			validationManifest(manifest, selectedState),
+			collections,
+		),
+	);
 	if (diagnostics.length > 0) return failure("MODEL_INVALID", diagnostics);
 
 	const modules = discovered
@@ -159,6 +225,8 @@ function decodeModel(captured: CapturedModel): ArchitectureModelRead {
 		revision,
 		modules,
 		collections,
+		proposals,
+		selectedState: selectedState ?? currentSelection(manifest),
 		roots: modules.filter((module) => module.parent === undefined).map((module) => module.id),
 		relationships: modules.flatMap((source) =>
 			source.outgoing.map((edge) => ({ ...edge, from: source.id })),
@@ -277,8 +345,27 @@ function readArchitectureModel(
 	vault: string,
 	module?: string,
 	flow?: string,
-): ArchitectureModelRead {
+): ArchitectureModelRead;
+function readArchitectureModel(
+	vault: string,
+	module: string | undefined,
+	flow: string | undefined,
+	selection: z.input<typeof StateSelectionSchema>,
+): Promise<ArchitectureModelRead>;
+function readArchitectureModel(
+	vault: string,
+	module?: string,
+	flow?: string,
+	selection?: z.input<typeof StateSelectionSchema>,
+): ArchitectureModelRead | Promise<ArchitectureModelRead> {
 	const blocked = modelBoundaryFailure(vault);
+	if (selection !== undefined)
+		return (async () => {
+			if (blocked !== undefined) return blocked;
+			const { readSelectedState } = await import("#runtime/operations/proposals/read.ts");
+			const result = await readSelectedState(vault, module, flow, selection);
+			return modelBoundaryFailure(vault) ?? result;
+		})();
 	if (blocked !== undefined) return blocked;
 	const reading = readCurrentModel(vault, module, flow);
 	return modelBoundaryFailure(vault) ?? reading;
