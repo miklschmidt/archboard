@@ -331,10 +331,15 @@ async function worktreesOf(
 			worktrees.push({ root, identity: checkout.identity });
 			continue;
 		}
-		// oxlint-disable-next-line no-await-in-loop -- one worktree at a time, so many worktrees with a config of their own never run Git at once
-		const identity = await repoIdentityAt(root, options);
-		if (identity === checkout.identity) {
-			worktrees.push({ root, identity });
+		// A worktree's own configuration can also change its root or make it bare.
+		// oxlint-disable-next-line no-await-in-loop -- inspect exceptional worktrees one at a time to keep the Git process count bounded
+		const inspected = await inspectCheckout(root, options);
+		if (
+			inspected !== undefined &&
+			inspected.root !== checkout.root &&
+			inspected.identity === checkout.identity
+		) {
+			worktrees.push(inspected);
 		}
 	}
 	return worktrees;

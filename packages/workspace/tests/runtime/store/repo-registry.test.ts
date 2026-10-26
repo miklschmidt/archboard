@@ -177,6 +177,19 @@ test("a worktree whose own config names an origin is another repository", async 
 	});
 });
 
+test.each(["core.bare", "core.worktree"])(
+	"a worktree whose own %s changes its root is not registered at the listed path",
+	async (key) => {
+		const base = repository(join(scratch, key));
+		const side = addWorktree(base, `${key}-side`);
+		git(base, "config", "extensions.worktreeConfig", "true");
+		git(side, "config", "--worktree", key, key === "core.bare" ? "true" : base);
+		const declared = await declareDirectory(base);
+		expect(declared).toMatchObject({ worktrees: [] });
+		expect(orders().roots).toEqual([base]);
+	},
+);
+
 test("a repository with no remote is named by its main checkout, and so is every worktree of it", async () => {
 	const local = join(scratch, "local");
 	mkdirSync(local);
