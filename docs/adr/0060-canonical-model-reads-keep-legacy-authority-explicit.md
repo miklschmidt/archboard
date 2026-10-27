@@ -356,6 +356,9 @@ TASK-549.23 owns conversion installation and cutover through the existing durabl
 
 TASK-549.22 extends preview through the existing reading, reference, and playback owners.
 Referenced views expand into complete narrative beat readings with stable identities.
+Every converted beat requires an explicit original view.
+Older originals remain decodable, but a missing view stops its affected beat with an owner correction diagnostic.
+Conversion preserves original bytes and never inherits another view or supplies an overview.
 Identity-only visibility lists preserve exact relationship subsets without copying architectural content.
 Unused views become optional imported bookmarks.
 Basic recursive navigation depends on neither named views nor bookmarks.

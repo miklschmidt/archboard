@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 217,
+	"version": 218,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-27T10:55:50.040Z",
+	"updatedAt": "2026-10-27T11:10:22.473Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -285333,7 +285333,7 @@
 						"name": "Legacy migration planning",
 						"kind": "function",
 						"responsibility": "Inventories legacy boards, records explicit choices, and composes a read-only current migration candidate",
-						"description": "Inventories exact originals and previews composed current architecture, scoped legacy histories, and explicitly mapped compact draft changes. Independent histories keep board coverage. Standing bases and lifecycle evidence remain original.\n\nMigration preview converts stable narratives and complete reading instructions. Unused views become content-free bookmarks. Exact original aliases select qualified original states. Current composition applies saved identity choices. Original history and retained playback preserve original coverage and never borrow current surroundings.",
+						"description": "Inventories exact originals and previews composed current architecture, scoped legacy histories, and explicitly mapped compact draft changes. Independent histories keep board coverage. Standing bases and lifecycle evidence remain original.\n\nMigration preview converts stable narratives and complete reading instructions. Unused views become content-free bookmarks. Exact original aliases select qualified original states. Current composition applies saved identity choices. Original history and retained playback preserve original coverage and never borrow current surroundings.\n\nEvery converted beat requires an explicit original view. Missing views stop their affected beat with an owner correction diagnostic. The original decoder retains omitted fields and exact bytes. Conversion never inherits another view or selects an implicit overview.",
 						"parent": "ZqkmwupZ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -289242,6 +289242,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/architecture/portable-routes.ts",
 							"symbol": "exportArchitectureModel"
+						}
+					},
+					{
+						"id": "DZAdVgog",
+						"order": 257000,
+						"from": "7mTerd6Y",
+						"to": "8nPhZJ6C",
+						"kind": "call",
+						"label": "resolve and capture converted playback",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/legacy-inventory/preview.ts",
+							"symbol": "walkthroughOf"
 						}
 					}
 				],

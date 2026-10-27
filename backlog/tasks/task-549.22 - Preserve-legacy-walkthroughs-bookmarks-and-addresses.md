@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-backend'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T11:00:00Z'
+updated_date: '2026-10-27T11:09:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -77,4 +77,6 @@ Focused RED/GREEN cases now pass for complete narrative conversion, unused bookm
 Extended thin CLI and HTTP selectors for exact legacy addresses and optional bookmarks. Historical drill-down choices now identify their original source state. Same-vault preview references use the existing reference owner, including explicit earlier checkpoint targets. Legacy omitted views expand to complete instructions: the original overview before the first explicit view, then the last explicit view. Parent contract records this behavior. Preparing the signed TASK-549.18 integration merge while preserving accepted diagrams and draft .22 provenance.
 
 Merged signed integration 9d19307d41d33b328916a9a3ebe6c3bca309a21c through signed merge 4b6ced182. All accepted .18 variants, views, and lifecycle decisions remain exact. Preserved .22 draft identities and parents, then composed accepted .18 content into those drafts through claimed CLI edits with explicit identity restoration. The portable closure validator now accepts only the migration checkpoint envelope through the existing originals reader. A focused RED/GREEN export/import case preserves exact original playback, bookmarks, and former addresses. No current portable input validation rule changed.
+
+Owner correction supersedes the prior view inheritance plan. Every converted beat now requires an explicit original view. Removed activeView inheritance and implicit overview selection. Old original bytes and omitted fields remain decodable and retained. Missing views produce WALKTHROUGH_VIEW_REQUIRED on only their affected beats. Overview fixtures now name an explicit all-scope architecture view. Canonical beats retain their existing required complete reading, with no legacy view ID added. Focused RED/GREEN missing-view evidence is 42-required-view-red.log and 43-required-view-green.log. Parent has no UI edits yet.
 <!-- SECTION:NOTES:END -->

@@ -45,9 +45,8 @@ test("preview converts complete stable narrative readings and keeps only unused 
 			{
 				id: "Shop/System#End",
 				reading: {
-					grammar: "sequence",
-					flow: "Shop/System#Buy",
-					focus: ["Shop/System#Api", "Shop/System#Db"],
+					grammar: "architecture",
+					focus: ["Shop/System#Shop", "Shop/System#Api", "Shop/System#Db"],
 					selection: [],
 					filters: { relationships: [], groups: [] },
 				},
@@ -283,8 +282,6 @@ test("original current coverage retains its predecessor names without borrowing 
 	old.content.nodes[1]!.name = "Former API";
 	old.content.nodes[1]!.responsibility = "Historical request handling";
 	const current = { ...original.variants[0]!, parent: "Past" };
-	const { view: _view, ...opening } = current.content.walkthroughs[0]!.beats[0]!;
-	current.content.walkthroughs[0]!.beats[0] = opening;
 	writeFileSync(
 		join(vault, "Shop.semantic.json"),
 		JSON.stringify({ ...original, variants: [old, current] }),
@@ -295,13 +292,52 @@ test("original current coverage retains its predecessor names without borrowing 
 		legacyAddress: "Store@Implemented",
 	});
 	if (!result.success) throw new Error(JSON.stringify(result));
-	expect(result.walkthroughs[0]?.beats[0]?.reading).toMatchObject({
-		grammar: "architecture",
-		focus: [],
-		filters: { relationships: [], groups: [] },
-	});
+
 	expect(result.selectedModule).toBe("Shop/System#Api");
 	expect(result.modules.find((entry) => entry.id === result.selectedModule)?.responsibility).toBe(
 		"Accepts requests",
 	);
+});
+
+test("missing original views stop only their beats without inheriting a prior view or selecting an overview", async () => {
+	const { home, vault, original } = narrativeFixture();
+	homes.push(home);
+	const state = original.variants[0]!;
+	const walk = state.content.walkthroughs[0]!;
+	const beats = walk.beats.map((beat) => {
+		if (!["Start", "End"].includes(beat.id)) return beat;
+		const { view: _view, ...withoutView } = beat;
+		return withoutView;
+	});
+	const source = JSON.stringify({
+		...original,
+		variants: [{ ...state, content: { ...state.content, walkthroughs: [{ ...walk, beats }] } }],
+	});
+	writeFileSync(join(vault, "Shop.semantic.json"), source);
+	await savePreviewPlan(vault);
+	const result = await readArchitectureModel(vault, undefined, undefined, {
+		preview: "Shop",
+		walkthrough: "Shop/System#Tour",
+	});
+	if (!result.success) throw new Error(JSON.stringify(result));
+	expect(result.playback?.beats).toMatchObject([
+		{
+			id: "Shop/System#Start",
+			status: "unavailable",
+			diagnostics: [{ code: "WALKTHROUGH_VIEW_REQUIRED", subjects: ["Shop/System#Start"] }],
+		},
+		{ id: "Shop/System#Call", status: "ready", diagnostics: [] },
+		{
+			id: "Shop/System#End",
+			status: "unavailable",
+			diagnostics: [{ code: "WALKTHROUGH_VIEW_REQUIRED", subjects: ["Shop/System#End"] }],
+		},
+	]);
+	for (const index of [0, 2])
+		expect(result.playback?.walkthrough.beats[index]?.reading.visibility).toEqual({
+			modules: [],
+			relationships: [],
+			flows: [],
+		});
+	expect(readFileSync(join(vault, "Shop.semantic.json"), "utf8")).toBe(source);
 });

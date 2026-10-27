@@ -315,9 +315,11 @@ Each converted beat contains complete reading instructions.
 A referenced view supplies its grammar and exact visible subjects.
 Optional `reading.visibility` lists module, relationship, and flow identities without content or geometry.
 It preserves a view that isolates one relationship between otherwise connected modules.
-An initial beat without a view explicitly selects its original board overview.
-Later omissions expand the last explicit original view into complete instructions.
-Converted beats inherit no hidden presentation state.
+Every original beat must name an explicit view for conversion.
+For the whole original board, select an all-scope architecture view.
+A missing view produces `WALKTHROUGH_VIEW_REQUIRED` on that beat and stops its playback.
+The decoder preserves the original bytes and omission for explicit owner correction.
+Conversion selects neither a prior view nor an implicit overview.
 Unavailable subjects or behavioral flows stop their affected beat with recovery diagnostics.
 Recursive navigation remains independent of these readings.
 

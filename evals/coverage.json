@@ -1136,7 +1136,7 @@
 				},
 				{
 					"path": "converted legacy readings: complete beats, imported bookmarks, former names, and exact original addresses",
-					"expectedUse": "Play one captured preview revision. Preserve exact original coverage and explicit identity choices. Follow only captured aliases and state-specific reference choices without current fallback.",
+					"expectedUse": "Play one captured preview revision. Require an explicit original view for every converted beat. Preserve original bytes and report missing views without inheritance or an overview fallback. Follow captured aliases and state-specific reference choices.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/board/tests/runtime/operations/legacy-preview/readings.test.ts, reading-history.test.ts, reference-readings.test.ts and portable-readings.test.ts; tests/system/semantic-boards/migration-planning.test.ts; guidance skills/archboard/references/legacy-migration.md#read-converted-narratives"

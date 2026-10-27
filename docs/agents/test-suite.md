@@ -674,6 +674,8 @@ It uses real public export/import operations and does not repeat persistence ass
 
 Public architecture operations own `legacy-preview/readings.test.ts`, `reading-history.test.ts`, and `reference-readings.test.ts`.
 Real files and Git prove complete beat conversion, exact relationship visibility, content-free bookmarks, former names, and explicit alias refusal.
+A focused missing-view case stops the affected original beats without view inheritance or an overview fallback.
+The decoder preserves those original bytes, while explicit-view beats stay ready.
 The same owners prove mapped current identities, original namespaces, immutable retained playback, and state-specific drill-down choices.
 The signed retention case reopens playback and former addresses after live inputs disappear.
 The existing reference owner retains foreign pin and unavailable-history coverage.

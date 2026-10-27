@@ -161,7 +161,7 @@ function requireArchitectureEntry(entry: string, id: string, migration: boolean)
 async function requireArchitectureTree(
 	context: ArchiveContext,
 	id: string,
-	record: Record,
+	record: Awaited<ReturnType<typeof requireCompleteArchive>>[number]["record"],
 ): Promise<void> {
 	const listing =
 		(await git(context.root, ["ls-tree", "-r", "-z", id], {

@@ -8,6 +8,7 @@ function narrativeFixture() {
 	const original = {
 		...board,
 		views: [
+			{ id: "Whole", name: "Whole shop", grammar: "architecture", scope: { kind: "all" } },
 			{
 				id: "Entry",
 				name: "Entry",
@@ -53,7 +54,13 @@ function narrativeFixture() {
 									subjects: ["Ask"],
 									view: "Order",
 								},
-								{ id: "End", heading: "Finish", body: "Keep the purchase in view", subjects: [] },
+								{
+									id: "End",
+									heading: "Whole shop",
+									body: "Return to the whole shop",
+									subjects: [],
+									view: "Whole",
+								},
 							],
 						},
 					],

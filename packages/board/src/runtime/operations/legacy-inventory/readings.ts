@@ -23,7 +23,8 @@ function viewReading(
 	view: SemanticView | undefined,
 	qualify: (id: string) => string,
 ) {
-	const content = scopedContent(state.content, view?.scope ?? { kind: "all" });
+	if (view === undefined) return missingViewReading();
+	const content = scopedContent(state.content, view.scope);
 	const visibility = {
 		modules: content.nodes.map((node) => qualify(node.id)),
 		relationships: content.edges.map((edge) => qualify(edge.id)),
@@ -32,13 +33,37 @@ function viewReading(
 	const reading: Reading = {
 		visibility,
 		selection: [],
-		focus: view === undefined ? [] : visibility.modules,
+		focus: visibility.modules,
 		filters: { relationships: [], groups: [] },
-		grammar: view?.grammar ?? "architecture",
+		grammar: view.grammar,
 	};
 	return { reading, diagnostics: behavioralReading(reading, content.flows, qualify) };
 }
 
+/**
+ * Preserve an unavailable beat without inventing reading intent.
+ * @returns An inert reading and its explicit authoring refusal.
+ */
+function missingViewReading(): { reading: Reading; diagnostics: ModelDiagnostic[] } {
+	return {
+		reading: {
+			grammar: "architecture",
+			selection: [],
+			focus: [],
+			filters: { relationships: [], groups: [] },
+			visibility: { modules: [], relationships: [], flows: [] },
+		},
+		diagnostics: [
+			{
+				code: "WALKTHROUGH_VIEW_REQUIRED",
+				file: ".",
+				message: "This original walkthrough beat names no explicit view.",
+				recovery:
+					"Set an explicit original view for this beat, then save a fresh mapping plan. Use an all-scope architecture view for the whole original board.",
+			},
+		],
+	};
+}
 /**
  * Select one authored behavioral flow without inferring execution order.
  * @param reading The complete converted reading.
@@ -117,7 +142,6 @@ function convertedReadings(inventory: LegacyInventory) {
 					).filter((name) => name !== walk.name),
 				),
 			];
-			let activeView: SemanticView | undefined;
 			walkthroughs.push({
 				schemaVersion: 1,
 				id: qualify(walk.id),
@@ -126,9 +150,11 @@ function convertedReadings(inventory: LegacyInventory) {
 				...(formerNames.length === 0 ? {} : { formerNames }),
 				target: { state: "current" },
 				beats: walk.beats.map((beat) => {
-					if (beat.view !== undefined)
-						activeView = document.views.find((view) => view.id === beat.view);
-					const { reading, diagnostics } = viewReading(state, activeView, qualify);
+					const { reading, diagnostics } = viewReading(
+						state,
+						document.views.find((view) => view.id === beat.view),
+						qualify,
+					);
 					if (diagnostics.length > 0)
 						readingDiagnostics.push({
 							id: qualify(beat.id),
