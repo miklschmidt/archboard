@@ -107,15 +107,17 @@ function routePoints(svg: string, kind: "edge" | "step" = "edge"): Map<string, D
 		),
 	)) {
 		const drawn = [...(group[2] ?? "").matchAll(/<path[^>]*\sd="([^"]*)"[^>]*marker-end=/g)];
-		// A relationship is drawn as more than one group — its route, and the words
-		// it says on the layer above every route. Only the arrow-bearing path is
-		// a route; warning glyphs in the words group must not replace it.
-		if (drawn.length === 0) {
-			continue;
-		}
+		// Labels repeat the subject's ID. The arrow or the line group's explicit
+		// headless treatment identifies its route, rather than a warning glyph.
+		const path =
+			drawn.at(-1)?.[1] ??
+			(/^<g[^>]*data-arrowhead="none"/u.test(group[0])
+				? /<path(?![^>]*class=)[^>]*\sd="([^"]*)"/u.exec(group[2] ?? "")?.[1]
+				: undefined);
+		if (path === undefined) continue;
 		paths.set(
 			group[1] ?? "",
-			pointsOf(drawn[drawn.length - 1]?.[1] ?? "").map((point) => ({
+			pointsOf(path).map((point) => ({
 				x: point.x + shift.x,
 				y: point.y + shift.y,
 			})),
