@@ -1,8 +1,10 @@
-import type { SemanticBoard } from "#shared/schemas/board-document.ts";
+import { addressedVariant, type SemanticBoard } from "#shared/schemas/board-document.ts";
 import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
 import type { LegacyInventory } from "#shared/schemas/migration.ts";
 import { mappedIdentity } from "#shared/rules/legacy-inventory/plan.ts";
+import { readingDiagnostics } from "#runtime/operations/read/reading-readiness.ts";
 import { failure } from "#runtime/operations/read/model-read.ts";
+import { paneBoardAddress, parseBoardKey, statedVariant } from "#runtime/store/address.ts";
 
 type Address = NonNullable<NonNullable<ArchitectureModel["migrationPreview"]>["addresses"]>[number];
 /**
@@ -17,8 +19,33 @@ function legacyAddresses(inventory: LegacyInventory): Address[] {
 		const id = originalAliasState(board, alias.state);
 		if (id === undefined) return [];
 		const state = `${inventory.plan.origin}/${board.id}#${id}`;
-		return [{ ...alias, state, canonical: mappedIdentity(inventory.plan, state) }];
+		const addresses = new Set([
+			alias.address,
+			serializedAlias(board, alias.address, id) ?? alias.address,
+		]);
+		return [...addresses].map((address) => ({
+			...alias,
+			address,
+			state,
+			canonical: mappedIdentity(inventory.plan, state),
+		}));
 	});
+}
+/**
+ * Capture the public pane key only when it opens the same original state.
+ * @param board The captured original family.
+ * @param address The captured authored address.
+ * @param state The exact original state identity.
+ * @returns Its serialized public alias, when the legacy interface accepts it.
+ */
+function serializedAlias(board: SemanticBoard, address: string, state: string): string | undefined {
+	try {
+		const identity = parseBoardKey(address);
+		const opened = addressedVariant(board, statedVariant(identity));
+		return opened.ok && opened.variant.id === state ? paneBoardAddress(identity) : undefined;
+	} catch {
+		return undefined;
+	}
 }
 /**
  * Preserve the original current designation or one unambiguous planning root.
@@ -84,7 +111,13 @@ function selectBookmark(model: ArchitectureModelRead, selector?: string): Archit
 	const bookmarks = importedBookmarks(model);
 	const selected = bookmarkOf(bookmarks, selector);
 	if ("success" in selected) return selected;
-	return withBookmark(model, selected);
+	const diagnostics = [
+		...selected.diagnostics,
+		...readingDiagnostics(model, selected.reading, selected.file, selected.id, "BOOKMARK").filter(
+			(entry) => !selected.diagnostics.some((known) => known.code === entry.code),
+		),
+	];
+	return withBookmark(model, { ...selected, diagnostics });
 }
 export { legacyAddresses, legacyAddressOf, selectBookmark };
 

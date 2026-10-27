@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T13:53:00Z'
+updated_date: '2026-10-27T14:12:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -88,4 +88,8 @@ Signing restoration blocks the final source checkpoint. The configured SSH agent
 Backend implementation is staged but not yet committed because the configured hardware signer is unavailable. The parent preserved its staged snapshot in task-549.23-staged-backup.patch. The smart-card service is active but reports USB timeouts while initializing the connected YubiKey. The parent requested reconnection and continues independent frontend work. No signing requirement is weakened. Existing backend evidence and the remaining final runtime case are recorded in task-549.23-backend.md. Keep the backend index unchanged until the signed checkpoint can be made.
 
 The owner restored signing. The final blocked runtime case passes with 18 assertions. The exact staged backend is saved as signed commit 4977bbf48c8fa917ab35ed362808e16e807305d8. Parent browser work continues. Installed bookmarks and exact former-address navigation pass the focused browser case with five assertions. The previous signing blocker is resolved.
+
+Fixed the confirmed installed-bookmark gap at signed source 4977bbf48. The public real-file/Git regression first reproduced empty diagnostics after valid external removal of Db. Bookmarks now share the existing playback readiness rules and report missing subjects, flows, scope, or filters through existing diagnostics. Exact reading intent, retained originals, and canonical authority stay intact. Focused runtime evidence: 17 cases, 103 assertions. Focused source/test lint and source types pass. Existing .23 drafts still describe this shared runtime behavior, so no extra proposal is needed. Status, assignee, acceptance criteria, and proposals remain unchanged for the parent.
+
+Fixed the second confirmed cutover gap: installed addresses now capture exact legacy pane keys through the existing parser, serializer, and original-state resolver. Public RED reproduced LEGACY_ADDRESS_NOT_FOUND for shop after installation. Focused GREEN proves shop, shop@Old, and shop@Past reopen their exact original states and checkpoint, while uncaptured spellings refuse and colliding captured keys remain ambiguous. Two focused cases pass with nine assertions. Source types, focused lint, and formatting pass. The final simplification removes duplicate archive reads without changing deadlines. Source b94f8c3e6 remains an ancestor. Existing .23 runtime drafts stay accurate, with no extra proposal. Parent status, assignee, acceptance, frontend, and browser ownership remain unchanged.
 <!-- SECTION:NOTES:END -->
