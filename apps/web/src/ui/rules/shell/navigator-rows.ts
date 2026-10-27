@@ -1,5 +1,6 @@
 import { shownRepository } from "@archboard/ui-kit/components";
 import { matchIn, type TextRange } from "#ui/rules/shell/text-match.ts";
+import type { ShellRepository } from "#ui/rules/shell/contracts.ts";
 import type { NavigatorInputs, NavigatorRow } from "#ui/rules/shell/navigator-row-types.ts";
 
 /**
@@ -38,13 +39,24 @@ function navigatorRows(inputs: NavigatorInputs): NavigatorRow[] {
 			match,
 			position: index + 1,
 			siblings: matched.length,
-			innerActivity: Object.keys(shell.activity).length > 0,
+			activity: activityOf(shell),
 			error: shell.error,
 			loading: shell.loading,
 			selected: panes.some((pane) => pane.active),
 			onScreen: inputs.panes.length > 1 ? panes.map((pane) => pane.letter) : [],
 		};
 	});
+}
+
+/**
+ * A repository lamp aggregates subject claims without naming an exclusive owner.
+ * @param shell The repository and its model activity.
+ * @returns Active claims, a recent write, or no activity.
+ */
+function activityOf(shell: ShellRepository): NavigatorRow["activity"] {
+	const entries = Object.values(shell.activity);
+	if (entries.length === 0) return null;
+	return entries.some((entry) => entry.claims.length > 0) ? "claimed" : "wrote";
 }
 
 export { navigatorRows };

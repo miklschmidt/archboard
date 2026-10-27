@@ -6,7 +6,7 @@ import { readArchitectureModel } from "@archboard/board/store-read";
 import { claimArchitectureSubjects, editArchitectureModule } from "@archboard/board/store-write";
 import { CLAIM_MS } from "@archboard/timing";
 import { ArchitectureClaimResultSchema } from "@archboard/board/model";
-import type { AgentActivityMessage } from "@archboard/server-lifecycle/panes";
+import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { createJsonRequester } from "../support/http.ts";
 import { openTestPane, type TestPane } from "../support/pane-websocket.ts";

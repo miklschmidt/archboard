@@ -154,6 +154,40 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 		"the claim naming its draft state",
 		WAIT,
 	);
+	const parallelClaim = await request<ArchitectureClaimResult>("/api/architecture/claims", {
+		method: "POST",
+		body: {
+			vault,
+			target,
+			writer: "parallel-agent",
+			reason: "Explaining the handler",
+			subjects: ["Shop#Handler"],
+		},
+	});
+	if (!parallelClaim.body.success) throw new Error(JSON.stringify(parallelClaim.body));
+	const parallelId = parallelClaim.body.claim.id;
+	await pollUntil(
+		() =>
+			browser.eval<string[]>(
+				`[...document.querySelectorAll('[data-slot="working-now"] [data-claim-id]')].map(node => node.getAttribute('data-claim-id'))`,
+			),
+		(ids) => ids.includes(draftClaimId) && ids.includes(parallelId),
+		"concurrent subject claims in the repository activity",
+		WAIT,
+	);
+	await request("/api/architecture/claims/release", {
+		method: "POST",
+		body: { vault, claim: parallelId, writer: "parallel-agent" },
+	});
+	await pollUntil(
+		() =>
+			browser.eval<string[]>(
+				`[...document.querySelectorAll('[data-slot="working-now"] [data-claim-id]')].map(node => node.getAttribute('data-claim-id'))`,
+			),
+		(ids) => ids.includes(draftClaimId) && !ids.includes(parallelId),
+		"the remaining writer after one subject claim ends",
+		WAIT,
+	);
 	const edited = await request<ArchitectureModuleEditResult>("/api/architecture/module", {
 		method: "POST",
 		body: {

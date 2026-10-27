@@ -2,7 +2,7 @@ import type { BrowserConnectionInstance } from "#runtime/protocol/voice/extensio
 import type { BrowserLeaseLedger } from "#runtime/protocol/voice/extension.ts";
 import { WebSocket } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
-import type { WebSocketMessage } from "@archboard/server-lifecycle/panes";
+import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
 import { addressablePanes, panesInOrder, resolvePane } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { readArchitectureModel } from "@archboard/board/store-read";

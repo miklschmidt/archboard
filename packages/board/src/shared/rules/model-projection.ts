@@ -1,10 +1,11 @@
 import type { z } from "zod";
 import type { ArchitectureRenderRequestSchema } from "#shared/schemas/model-operations.ts";
 import type { ArchitectureModelRead } from "#shared/schemas/model.ts";
-import { drawingOf, type ChangeKind } from "#shared/api/comparison.ts";
+import { drawingOf } from "#shared/rules/compare/drawing.ts";
+import type { ChangeKind } from "#shared/rules/compare/variants.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
-import { overviewLines } from "#shared/api/views.ts";
-import { inspectContainer } from "#shared/api/container-interface.ts";
+import { overviewLines } from "#shared/rules/scope.ts";
+import { inspectContainer } from "#shared/rules/inspect/container-interface.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 type ModelFlow = Model["collections"][number]["flows"][number];

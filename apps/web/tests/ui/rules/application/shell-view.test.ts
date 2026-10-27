@@ -154,8 +154,16 @@ test("a board stops being shown when the last pane showing it in its vault lets 
 
 test("what an agent does in a vault is shown whether or not a pane of the tab is in it", () => {
 	const since = "2026-10-15T00:00:00.000Z";
-	const claim = { id: "agent-1", kind: "agent", since, until: since, process: "codex" } as const;
-	const entry = { board: "Checkout", claim, doing: null };
+	const claim = {
+		id: "Claim",
+		target: { model: "Checkout", state: "Current" },
+		writer: "agent-1",
+		reason: "Planning checkout",
+		subjects: ["Checkout#Queue"],
+		since,
+		until: since,
+	};
+	const entry = { board: "model:Checkout", model: "Checkout", claims: [claim], doing: null };
 	/**
 	 * The view while the tab's one pane is in a vault.
 	 * @param vault The vault.

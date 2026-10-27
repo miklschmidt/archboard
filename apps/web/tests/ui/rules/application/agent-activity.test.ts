@@ -5,26 +5,26 @@ import {
 	agentBoardChange,
 	replaceAgentActivity,
 } from "#ui/rules/application/agent-activity.ts";
-import type { AgentActivityEntry, LockHolder } from "#ui/rules/pane-session/session-types.ts";
+import type { AgentActivityEntry } from "#ui/rules/pane-session/session-types.ts";
 
-const CLAIM: LockHolder = {
+const CLAIM: AgentActivityEntry["claims"][number] = {
 	id: "agent-1",
-	kind: "agent",
 	since: "2026-09-06T10:00:00.000Z",
 	until: "2026-09-06T10:10:00.000Z",
-	process: "codex",
+	target: { model: "Checkout", state: "Current" },
+	writer: "agent-1",
+	subjects: ["Checkout#Queue"],
 	reason: "redrawing the payment path",
-	claimed: true,
 };
 
 const WORKING: AgentActivityEntry = {
 	board: "Checkout",
-	claim: CLAIM,
+	model: "Checkout",
+	claims: [CLAIM],
 	doing: {
 		doing: "moving the queue",
 		at: "2026-09-06T10:01:00.000Z",
-		by: "agent-1",
-		kind: "agent",
+		writer: "agent-1",
 	},
 };
 

@@ -9,13 +9,12 @@ import type { JSX } from "react";
 import { cn } from "@archboard/ui-kit/components";
 
 /** What the lamp says. */
-type LampState = "claimed" | "wrote" | "inside";
+type LampState = "claimed" | "wrote";
 
 /** The lamp's look for each state. */
 const LAMP_CLASSES: Readonly<Record<LampState, string>> = {
 	claimed: "bg-status size-1.5 motion-safe:animate-pulse",
 	wrote: "ring-status size-1.5 ring-[1.5px]",
-	inside: "ring-status/70 size-[5px] ring-1",
 };
 
 /** Where a lamp sits on a tree row: the top right corner of its marker. */
@@ -57,18 +56,4 @@ function MarkerLamp(props: Omit<ActivityLampProps, "className">): JSX.Element {
 	return <ActivityLamp {...props} className={MARKER_CORNER} />;
 }
 
-/**
- * Say on a closed folder or board that an agent works on a board inside it.
- * @returns The faint lamp, on the marker's corner.
- */
-function InsideLamp(): JSX.Element {
-	return (
-		<MarkerLamp
-			state="inside"
-			title="An agent works on a board inside"
-			slot="agent-activity-inside"
-		/>
-	);
-}
-
-export { ActivityLamp, InsideLamp, MarkerLamp, type LampState };
+export { ActivityLamp, MarkerLamp, type LampState };

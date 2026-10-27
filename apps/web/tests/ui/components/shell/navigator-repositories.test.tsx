@@ -46,9 +46,10 @@ test("repository rows open each canonical model and mark the panes that read it"
  */
 function writing(said: string): AgentActivityEntry {
 	return {
-		board: "payments",
-		claim: null,
-		doing: { doing: said, at: new Date().toISOString(), by: "agent", kind: "agent" },
+		board: "model:Shop",
+		model: "Shop",
+		claims: [],
+		doing: { doing: said, at: new Date().toISOString(), writer: "agent" },
 	};
 }
 

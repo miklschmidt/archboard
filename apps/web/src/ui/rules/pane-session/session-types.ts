@@ -1,3 +1,4 @@
+import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
 // Shapes shared between the shell and the panes it hosts.
 //
 // Everything here describes a *session*: which board a pane is showing, who is
@@ -84,19 +85,8 @@ export interface WebSocketMessage {
 	activity?: AgentActivityEntry[];
 }
 
-/**
- * What an agent is doing to one board, as every pane is shown it (ADR 0022).
- * Sent whole on connect and whenever an agent's lock or `doing` line changes;
- * an entry lingers a few seconds after an unclaimed write.
- */
-export interface AgentActivityEntry {
-	/** The board key. */
-	board: string;
-	/** The agent's claim, or null when it holds no claim. */
-	claim: LockHolder | null;
-	/** The latest thing the agent said it was doing, or null. */
-	doing: DoingEntry | null;
-}
+/** Every active canonical subject claim and the latest durable operation in one model. */
+export type AgentActivityEntry = AgentActivityMessage["activity"][number];
 
 /**
  * One thing an agent said it was doing to this board (TASK-095).

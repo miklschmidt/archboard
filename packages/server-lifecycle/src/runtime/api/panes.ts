@@ -8,4 +8,3 @@ export {
 export { panesInOrder } from "#runtime/rules/panes-layout.ts";
 export type { PaneRegistration } from "#runtime/rules/panes-layout.ts";
 export { buildPanesReport } from "#runtime/rules/panes.ts";
-export type { AgentActivityMessage, WebSocketMessage } from "#runtime/protocol/pane-messages.ts";

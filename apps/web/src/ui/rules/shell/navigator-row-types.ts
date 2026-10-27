@@ -13,7 +13,7 @@ interface RepositoryRow {
 	readonly match: TextRange | null;
 	readonly position: number;
 	readonly siblings: number;
-	readonly innerActivity: boolean;
+	readonly activity: "claimed" | "wrote" | null;
 	readonly error: string | null;
 	readonly loading: boolean;
 	readonly onScreen: readonly string[];

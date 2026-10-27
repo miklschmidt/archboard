@@ -100,7 +100,7 @@ const READ_ACTIVITY = `(() => {
 	const nav = document.querySelector('${NAVIGATOR}');
 	const section = nav?.querySelector('[data-slot="working-now"]');
 	const entries = [...(section?.querySelectorAll('li') ?? [])];
-	const line = entries[0]?.querySelector('button > span:last-child');
+	const line = entries[0]?.querySelector('[data-slot="activity-doing"]');
 	const own = line ? [...line.childNodes].filter(child => child.nodeType === 3)
 		.map(child => child.textContent).join('').trim() : null;
 	const row = nav?.querySelector('[role="treeitem"][aria-selected="true"]');

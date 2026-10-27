@@ -121,7 +121,7 @@ split by behavior.
   code outside the package imports stays private, and so does a piece that callers only connect.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
-  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `shared/`, `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process`, `skills` and `server-lifecycle` for `runtime/`, `codex-realtime-voice` and `workbench` for `shared/`, `runtime/`, `server/` and `ui/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
+  `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `shared/`, `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process` and `skills` for `runtime/`, `server-lifecycle` for `shared/` and `runtime/`, `codex-realtime-voice` and `workbench` for `shared/`, `runtime/`, `server/` and `ui/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
   is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, an app, a script or a test imports only exported files.** Oxlint refuses a subpath that
@@ -541,13 +541,15 @@ interface.
 - The tests are in `tests/`, in the folder of the file they test. `runtime/support/` holds the fake `claude` and `codex`
   executables and the fixtures. Their end-to-end owner is `bun run eval:skill`, which a person runs.
 
-The fifteenth is `server-lifecycle` (`@archboard/server-lifecycle`). It starts, finds, restarts and stops the
-Archboard server, and holds the one identity-gated request that the CLI sends it. It adopts the `api/` role for
-`runtime/` and exposes 5 subpaths with 29 names. Each job is one operation: a caller never assembles the health
-probe, the pid file, the port and the readiness wait itself. It imports `board`, `codex-app-server`, `workspace`,
-`process`, `timing` and `diagnostics`. Every file is Node-bound and runs only in Bun, and nothing in it is safe for
-the browser. The CLI's route clients are not here: the CLI is their only caller, so they live in
-`apps/cli/src/cli/clients/server/`.
+The fifteenth is `server-lifecycle` (`@archboard/server-lifecycle`).
+It starts, finds, restarts, and stops the Archboard server and owns the identity-gated CLI request.
+Runtime operations keep their `runtime/api` entries and remain Node-bound.
+The browser and server share socket message types through `./pane-messages` in `shared/api`.
+Those types have one definition in `shared/protocol` and import no runtime code.
+The runtime pane entry no longer exports these message types.
+Moving the existing exports adds no public names or interface allowance.
+Each lifecycle job remains one operation, so callers never assemble process readiness or shutdown steps.
+CLI route clients remain in `apps/cli/src/cli/clients/server/`.
 
 - `./server` is what a command does to the server of its checkout. `ensureServerRunning` reaches the server at the
   URL, or starts one when it may and waits for its readiness, and answers its URL, whether it started it and its pid

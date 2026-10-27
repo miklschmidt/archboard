@@ -16,7 +16,7 @@ import {
 
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import { DropdownMenu, RepositoryName, shownRepository } from "@archboard/ui-kit/components";
-import { InsideLamp } from "#ui/components/shell/ActivityLamp.tsx";
+import { MarkerLamp } from "#ui/components/shell/ActivityLamp.tsx";
 import {
 	TreeRow,
 	TreeRowFacts,
@@ -134,7 +134,13 @@ function RepositoryLine(props: RowHandlers & { readonly row: RepositoryRow }): J
 			hasMenu={hasMenu}
 		>
 			<TreeRowMarker icon={look.icon} title={look.marker}>
-				{row.innerActivity && <InsideLamp />}
+				{row.activity !== null && (
+					<MarkerLamp
+						state={row.activity}
+						title="Activity in this repository"
+						slot="agent-activity"
+					/>
+				)}
 			</TreeRowMarker>
 			<TreeRowName
 				text={look.text}

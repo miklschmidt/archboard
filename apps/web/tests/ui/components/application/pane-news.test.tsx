@@ -156,7 +156,24 @@ test("a claim, an agent's doing, its activity and a pane status reach the shell 
 		socket.say({
 			type: "agent_activity",
 			vault: SERVED.vault,
-			activity: [{ board: "pipeline", claim: CLAIM, doing: DOING }],
+			activity: [
+				{
+					board: "model:Pipeline",
+					model: "Pipeline",
+					claims: [
+						{
+							id: "Claim",
+							target: { model: "Pipeline", state: "Current" },
+							writer: "agent-1",
+							reason: CLAIM.reason,
+							since: CLAIM.since,
+							until: CLAIM.until,
+							subjects: ["Pipeline#Queue"],
+						},
+					],
+					doing: { writer: "agent-1", doing: DOING.doing, at: DOING.at },
+				},
+			],
 		}),
 	);
 	await settle();
@@ -237,7 +254,24 @@ test("a socket that comes back forgets the agent work it heard, since the server
 		socket.say({
 			type: "agent_activity",
 			vault: SERVED.vault,
-			activity: [{ board: "pipeline", claim: CLAIM, doing: DOING }],
+			activity: [
+				{
+					board: "model:Pipeline",
+					model: "Pipeline",
+					claims: [
+						{
+							id: "Claim",
+							target: { model: "Pipeline", state: "Current" },
+							writer: "agent-1",
+							reason: CLAIM.reason,
+							since: CLAIM.since,
+							until: CLAIM.until,
+							subjects: ["Pipeline#Queue"],
+						},
+					],
+					doing: { writer: "agent-1", doing: DOING.doing, at: DOING.at },
+				},
+			],
 		}),
 	);
 	await settle();
@@ -268,7 +302,24 @@ test("a socket that comes back forgets the agent work it heard, since the server
 		returned.say({
 			type: "agent_activity",
 			vault: SERVED.vault,
-			activity: [{ board: "pipeline", claim: CLAIM, doing: DOING }],
+			activity: [
+				{
+					board: "model:Pipeline",
+					model: "Pipeline",
+					claims: [
+						{
+							id: "Claim",
+							target: { model: "Pipeline", state: "Current" },
+							writer: "agent-1",
+							reason: CLAIM.reason,
+							since: CLAIM.since,
+							until: CLAIM.until,
+							subjects: ["Pipeline#Queue"],
+						},
+					],
+					doing: { writer: "agent-1", doing: DOING.doing, at: DOING.at },
+				},
+			],
 		}),
 	);
 	await settle();

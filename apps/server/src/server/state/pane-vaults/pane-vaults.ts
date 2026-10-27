@@ -5,7 +5,7 @@
 
 import { WebSocket } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
-import type { WebSocketMessage } from "@archboard/server-lifecycle/panes";
+import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
 import {
 	clientIds,
 	clients,
