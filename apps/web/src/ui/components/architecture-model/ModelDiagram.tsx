@@ -7,7 +7,7 @@ import {
 	useState,
 	type JSX,
 } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { everyStep } from "@archboard/board/flow";
 import type { DiagramGrammar } from "@archboard/board/views";
 import type { DiagramBox } from "@archboard/board/render-reply";
@@ -19,6 +19,7 @@ import {
 } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import { useDiagramGestures } from "#ui/hooks/semantic-board-canvas/use-diagram-gestures.ts";
 import { stagePicture } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
+import { clockOf } from "#ui/clients/semantic-board-canvas/picture/picture-clock.ts";
 import { stopTraffic } from "#ui/clients/semantic-board-canvas/picture/picture-traffic.ts";
 import { markSubjects } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 import type { projectModel, Model } from "@archboard/board/content";
@@ -52,7 +53,10 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		() => modelDrawingQuery(model, projection, props.grammar),
 		[model, projection, props.grammar],
 	);
-	const drawing = useQuery(drawingOptions);
+	const drawing = useQuery({
+		...drawingOptions,
+		...(props.presentation === undefined ? { placeholderData: keepPreviousData } : {}),
+	});
 	const camera = useBoardCamera(props.reducedMotion);
 	const { reserve: reserveBottom } = camera;
 	useLayoutEffect(() => reserveBottom(props.reserve ?? 0), [reserveBottom, props.reserve]);
@@ -69,7 +73,14 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 				{drawing.error.message}
 			</output>
 		);
-	return <ModelScene {...props} drawing={drawing.data} camera={camera} />;
+	return (
+		<ModelScene
+			{...props}
+			drawing={drawing.data}
+			camera={camera}
+			updating={drawing.isPlaceholderData}
+		/>
+	);
 }
 
 /**
@@ -95,6 +106,7 @@ function EmptyDiagram({ presentation, onPresentation }: ModelDiagramProps): JSX.
 interface ModelSceneProps extends ModelDiagramProps {
 	drawing: RenderedDiagram;
 	camera: BoardCamera;
+	updating: boolean;
 }
 
 /**
@@ -162,7 +174,7 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		const root = surface.current;
 		if (root === null) return;
 		if (installed.current !== drawing.svg) {
-			stagePicture(root, drawing.svg);
+			stagePicture(root, drawing.svg, clockOf(root.querySelector("svg")) ?? 0);
 			installed.current = drawing.svg;
 		}
 		const marked = new Set(selected);
@@ -194,6 +206,7 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 	return (
 		<section
 			data-slot="model-diagram"
+			aria-busy={props.updating}
 			tabIndex={-1}
 			aria-label="Module diagram"
 			data-revision={props.model.revision.digest}
@@ -210,6 +223,11 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 				reducedMotion={props.reducedMotion}
 				marks=""
 			/>
+			{props.updating && (
+				<output className="text-body text-muted-foreground bg-background absolute top-2 right-2 rounded px-2 py-1">
+					Updating diagram…
+				</output>
+			)}
 			{rectangle !== null && <ModelSelectionRectangle rectangle={rectangle} />}
 		</section>
 	);

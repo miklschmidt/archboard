@@ -758,3 +758,8 @@ Canonical navigation, proposal, and walkthrough browser owners retain visible ar
 `browser-drawn-pictures.test.ts` retains local rendering, icons, persistent scene reuse, theme recoloring, and invalidation after a public module edit.
 Canonical drawings use the existing IndexedDB picture store and the public render schema for cached geometry.
 Their cache identity includes the renderer build and the exact prepared scene.
+
+`semantic-traffic.test.ts` uses canonical relationships and an independent sequence flow.
+It retains the SMIL comparison and the animation clock continuity assertion after a public module edit.
+Ordinary readers keep their drawing surface while local layout runs and show progress.
+Captured walkthroughs retain their existing picture-readiness contract.
