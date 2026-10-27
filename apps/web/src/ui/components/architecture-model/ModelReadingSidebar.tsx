@@ -1,3 +1,4 @@
+import { ModelSearch } from "#ui/components/architecture-model/ModelSearch.tsx";
 import { useMemo, type ComponentProps, type JSX, type ReactNode } from "react";
 import {
 	SemanticSidebar,
@@ -20,6 +21,7 @@ interface ReadingSidebarProps extends ComponentProps<typeof ModelSelectionDetail
 	overview?: ReactNode;
 	grammar: string;
 	onReveal: () => void;
+	onSearch: (id: string) => void;
 	code: ReturnType<typeof useModelCodeFindings>;
 }
 
@@ -31,6 +33,10 @@ interface ReadingSidebarProps extends ComponentProps<typeof ModelSelectionDetail
 function ModelReadingSidebar(props: ReadingSidebarProps): JSX.Element {
 	const available =
 		props.grammar === "architecture" ? !props.projection.missing : props.projection.flow !== null;
+	const search = useMemo(
+		() => <ModelSearch model={props.model} onChoose={props.onSearch} />,
+		[props.model, props.onSearch],
+	);
 	const evidence = useMemo(
 		() => (
 			<ModelCodeDetails
@@ -47,6 +53,7 @@ function ModelReadingSidebar(props: ReadingSidebarProps): JSX.Element {
 			overviewLabel="Architecture"
 			onClearSelection={props.selection.ids.size > 0 ? props.selection.clear : null}
 			controls={props.controls}
+			search={search}
 		>
 			<SidebarPanel tab="board">
 				{props.overview}

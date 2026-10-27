@@ -349,3 +349,8 @@ Healthy immutable readings keep their cached data without another read.
 A fresh selected set represents another pick, including a repeated choice of the same module.
 The existing sidebar opens Selection for that pick.
 Module navigation labels comparison context with its standing, including removed reference modules.
+
+The sidebar search reads the complete selected model, including modules outside the visible scope.
+It searches names, responsibilities, descriptions, and code bindings without another server read.
+Choosing a result opens its containing scope and selects its canonical identity.
+The existing sidebar shortcut, combobox, Escape behavior, and focus handoff remain shared.

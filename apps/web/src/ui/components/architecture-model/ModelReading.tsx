@@ -86,6 +86,16 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 			? projection
 			: projectFlow(projection, selectedFlow);
 	}, [projection, grammar, flow]);
+	const { select } = selection;
+	const chooseSearch = useCallback(
+		(id: string): void => {
+			const module = model.modules.find((entry) => entry.id === id);
+			if (module === undefined) return;
+			open(modelId, module.parent ?? null);
+			select(id);
+		},
+		[model.modules, modelId, open, select],
+	);
 	const code = useModelCodeFindings(props.vault, model);
 	const explanation = useModelExplanation(props.vault, model, location, selection.ids);
 	const { clear } = selection;
@@ -220,6 +230,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				sidebar={sidebar}
 				scope={scope}
 				onOpen={onOpen}
+				onSearch={chooseSearch}
 				onReveal={revealSelection}
 				onRevealFlow={openFlow}
 				grammar={grammar}

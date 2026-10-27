@@ -129,8 +129,14 @@ test("module search restores the sidebar and finds hidden modules without writin
 	);
 	expect(await searching()).toMatchObject({ listed: false, controls: null });
 	expect(
-		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Handler"].is-selected') !== null`,
+		await pollUntil(
+			() =>
+				browser.eval<boolean>(
+					`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Handler"].is-selected') !== null`,
+				),
+			Boolean,
+			"the chosen hidden module in the new scope drawing",
+			WAIT,
 		),
 	).toBe(true);
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");

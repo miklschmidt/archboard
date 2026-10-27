@@ -773,3 +773,8 @@ Its underline probe now inspects the actual sidebar tab row.
 Its control probe excludes hidden disclosure content through browser visibility.
 Canonical selection, navigation, comparison, and walkthrough owners cover the sidebar transition.
 Browser helpers open the appropriate tab before acting on its visible content.
+
+`canonical-model-inspection.test.ts` replaces `semantic-board-inspection.test.ts`.
+It retains trusted keyboard input and the visible module-search shortcut, focus, Escape, selection, and read-only behavior.
+Existing canonical navigation, code, and reference owners cover containment and source navigation.
+The existing sidebar placement owner now uses the canonical search field.

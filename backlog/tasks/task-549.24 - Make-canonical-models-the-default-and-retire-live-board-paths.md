@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T20:33:00Z'
+updated_date: '2026-10-27T20:39:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -156,4 +156,6 @@ Migration preparation retained all 18 untouched legacy inputs at signed checkpoi
 Canonical module-search browser owner now reproduces missing search UI: the existing shortcut opens the sidebar but no field receives focus. The old inspection owner becomes canonical-model-inspection with the trusted keyboard case unchanged. Existing canonical owners retain containment, source actions and recursive navigation. Search implementation follows this RED checkpoint.
 
 Bounded narration/news repair: the existing model watcher labeled external file observations as agent writes, and pane-news marked all settled writes as speech. Model-key matching then interrupted an immutable captured narration. Settled changes now update quiet voice/coordinator/workhorse context while explicit selection, view, focus, and agent navigation retain their existing rules. Durable operation receipts supply writer and doing; external observations carry origin external and no fabricated writer or doing. The existing Live panes/server .24 proposals cover this intent; no source-vault inputs or claims changed. The public runtime/HTTP/socket owner reproduces RED after a walkthrough edit, then passes captured text and subject names across external source edits and durable target edits. It also proves ordinary external browsing news after the durable writer. Narration owner: 7 cases/47 assertions; final live case after simplification: 1 case/18 assertions. Generic news/feed/publisher/presentation owners: 33 cases/193 assertions. Source/test types, focused source/test lint, formatting, and diff checks pass. Exact contract and limits are external in task-549.24-narration-news-contract.md and task-549.24-narration-news-backend.md. Keep parent assignee, In Progress, and all acceptance unchanged. Parent retains browser acceptance, migration, adoption, and full integration validation.
+
+Canonical module search passes the ported inspection browser owner and the existing sidebar placement/focus owner. It reuses the combobox, shortcut, result focus and Escape behavior over the complete selected model, with no extra board or model fetch. A hidden Handler opens in its containing Gateway scope, keeps exact selection and changes no architecture bytes. Removed the old board-document search loader and unused application host. Full types and focused source/test lint pass. The integrated canonical narration browser owner also passes after signed backend merge faaf275fc.
 <!-- SECTION:NOTES:END -->
