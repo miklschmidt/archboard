@@ -665,3 +665,7 @@ Original migration history has one browser owner in `canonical-preview-history.t
 It covers paired state/checkpoint navigation, original coverage, lifecycle and standing evidence, and exact original inspection after live files disappear.
 Public architecture operations create its retained fixtures in real temporary Git repositories.
 The existing `canonical-model-preview.test.ts` retains current-preview navigation, code-opening, source-preservation, and recovery ownership.
+
+The portability runtime owners cover complete data, history, signing, refusal, and recovery.
+`canonical-model-import.test.ts` owns the browser behavior for imported planning-only checkpoints in reading and comparison selectors.
+It uses real public export/import operations and does not repeat persistence assertions through the browser.

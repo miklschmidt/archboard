@@ -105,7 +105,7 @@ function savedChoices(history: ComparisonSelectorProps["history"]["data"]): Map<
 			.toSorted((a, b) => b.createdAt.localeCompare(a.createdAt))
 			.map((checkpoint) => [
 				checkpoint.id,
-				`${checkpoint.state.name} · ${checkpointTime(checkpoint.createdAt)} · ${checkpoint.id.slice(0, 8)}`,
+				`${checkpoint.state?.name ?? "Planning model"} · ${checkpointTime(checkpoint.createdAt)} · ${checkpoint.id.slice(0, 8)}`,
 			]),
 	);
 }

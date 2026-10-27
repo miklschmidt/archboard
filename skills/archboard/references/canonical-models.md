@@ -1080,6 +1080,7 @@ Import accepts empty inputs or byte-identical inputs whose archive needs restora
 It refuses replacement of different authored content.
 Malformed paths, changed fingerprints, corrupt objects, and missing dependencies refuse before imported content becomes visible.
 A planning-only model keeps no current designation, and its installation checkpoint records `state:null`.
+The browser labels that checkpoint as a planning model in both reading and comparison choices.
 
 Import uses the normal installation journal, signing policy, atomic writer, and recovery operation.
 If interruption leaves an unfinished installation, run `model recover` in the same destination.

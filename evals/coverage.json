@@ -1216,7 +1216,7 @@
 					"expectedUse": "Export a complete bundle. Import into empty or identical inputs through the existing journal. Refuse missing history before exposing imported content. Keep source evidence separate from repository source files.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/history/portable*.test.ts; tests/system/semantic-boards/model-portable.test.ts"
+					"owner": "packages/board/tests/runtime/operations/history/portable*.test.ts; tests/system/semantic-boards/model-portable.test.ts; tests/system/browser/canonical-model-import.test.ts"
 				}
 			]
 		},
