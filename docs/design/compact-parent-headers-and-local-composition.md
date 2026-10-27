@@ -152,3 +152,156 @@ It finds no header crossing, card crossing, detached endpoint, detached label, h
 The Blocks scan records one optional lane-spacing count at 11.5 units in Board rasterizer's fan-in to Video encoder.
 The existing hard lane-spacing assertion applies to Track.
 The Track scan finds no lane-spacing or wall-spacing count.
+
+## Retained milestone
+
+Commit `9a6d1c147` implements this round.
+It builds core `bcef85a5dd93aa25`.
+The affected Rust crates pass their tests and Clippy.
+The matching-core renderer suite passes 653 tests, skips one platform-only test, and fails none.
+The complete `bun run check` gate passes all 20 tasks and all 19 browser files.
+Its log is `/tmp/548-08/round-3/retained-full-check.log`.
+The proposal code check retains the same 41 finding identities, with no new finding.
+Those findings predate this round.
+The manual source reading also covers the layout and painter descriptions that the code check cannot assess.
+The proposals remain unadopted until the council decides.
+The consumer skill needs no change because its commands and authoring contract remain the same.
+
+The final simplification removes the old caller-entry constraints and ancestor header bypass margins.
+It also removes unused experimental frame fields and the unrelated flow-row adjustment from the rejected ranking probe.
+The retained implementation uses the existing block layout and Solver port.
+It adds no old/new switch or board-name exception.
+
+## Fresh performance evidence
+
+The original parent remains at `5f36973df`, with core `ce42bd12e4ee9ccb`.
+Its Rust and build inputs match `f06fa5317`, which supplied the saved original native binary.
+The previous candidate uses the saved `after-7-critical-path` binary.
+The new binary is `/tmp/548-08/round-3/retained-critical-path`.
+All three read the same captured requests in `/tmp/548-08/post-553/requests`.
+No build, test, corpus render, or owned server runs beside these measurements.
+The process audit finds no Git owner before measurement.
+
+The instruction counter draws each of the three target boards once.
+Each run uses `perf stat -e instructions:u` with `taskset -c 2` inside `nix develop` and `nix shell nixpkgs#perf`.
+The pin keeps the count on one performance core.
+Unpinned counters on this hybrid CPU report separately scaled core and atom values, so those counts are excluded.
+
+| Source             | User instructions, three boards |
+| ------------------ | ------------------------------: |
+| Original parent    |                 152,743,987,463 |
+| Previous candidate |                   9,663,930,648 |
+| This round         |                   9,206,551,892 |
+
+This round uses 94.0% fewer instructions than the original and 4.7% fewer than the previous candidate.
+The counter logs end in `-pinned-instructions.txt` under `/tmp/548-08/round-3`.
+
+The native timing uses the shortest critical path from three renders per board.
+The critical path is the longest dependent chain of layout solves.
+The following times exclude measurement, painting, and other work beside those solves.
+The one-minute load is 1.82 for the original, 1.17 for the previous candidate, and 1.31 for this round.
+
+| Board                   | Original solves / ms | Previous candidate solves / ms | This round solves / ms |
+| ----------------------- | -------------------: | -----------------------------: | ---------------------: |
+| Board viewer            |            24 / 1053 |                        1 / 215 |                 1 / 80 |
+| Board persistence       |            25 / 1089 |                        1 / 100 |                 1 / 83 |
+| Archboard server routes |             27 / 325 |                         1 / 73 |                 1 / 72 |
+
+The sum of those paths falls from 2,467 to 235 ms.
+The previous candidate totals 388 ms.
+Work beside the solves takes 64, 150, and 29 ms this round, in the table's board order.
+The previous candidate takes 69, 71, and 32 ms beside its solves.
+Board persistence therefore spends more time outside layout, despite its shorter solve.
+That cost remains visible in the pool's cached rendering time.
+
+The pool runs alternate parent, candidate, parent, candidate with `timing.ts 7`.
+The recorded one-minute load ranges from 1.81 to 3.51.
+Each cell below gives both first-render measurements, with the cached medians in parentheses.
+The full logs include every current vault board and the fixed wide fixtures.
+
+| Board                   | Original first, cached ms | This round first, cached ms |
+| ----------------------- | ------------------------- | --------------------------- |
+| Board viewer            | 1422, 1517 (39, 42)       | 200, 202 (48, 48)           |
+| Board persistence       | 1486, 1546 (36, 36)       | 295, 299 (72, 72)           |
+| Archboard server routes | 665, 626 (28, 28)         | 148, 151 (30, 29)           |
+
+Board persistence is the slowest first render in both candidate runs, at 295 and 299 ms.
+Every current vault board and fixed fixture stays below 500 ms in those runs.
+
+The growing-edit harness runs in three fresh processes per checkout, with a one-card core warm-up.
+It appends two responsibility lines to the first leaf and requires a real height change.
+Parent and candidate runs alternate.
+Each result below is the median of three measurements from that harness.
+The recorded one-minute load ranges from 2.97 to 3.39.
+The harness records each checkout's source hash and renderer path, so the parent cannot use the candidate's modules.
+
+| Board                   | Original first / growth ms | This round first / growth ms |
+| ----------------------- | -------------------------: | ---------------------------: |
+| Board viewer            |                1560 / 1447 |                    280 / 203 |
+| Board persistence       |                1473 / 1472 |                    299 / 289 |
+| Archboard server routes |                  588 / 581 |                    140 / 134 |
+
+All measured candidate first renders and growing edits stay below 500 ms.
+The earlier quiet parent measurements remain the previous candidate's reference, rather than a matched run in this alternation.
+In particular, Board persistence's earlier 229/224 ms is faster than this round's 299/289 ms.
+The new round improves Board viewer and retains the owner's threshold on all three targets.
+Raw results, load records, and source hashes are in `pool-and-growth-runs.json` and `pool-and-growth-summary.json` under `/tmp/548-08/round-3`.
+The scratch `measure-growth.ts` and `measure-pool.py` files preserve the measurement procedure.
+
+## Corpus and council delivery
+
+The before corpus is `/tmp/548-08/round-3/base`, from the previous candidate after merge `3f573f10a`.
+The after corpus is `/tmp/548-08/round-3/after-1`, from implementation `9a6d1c147`.
+Both keep every SVG beside `corpus.json`.
+Each contains 2,452 drawings from 2,508 jobs.
+Each includes 76 whole-board drawings: both engines and themes for all 17 vault boards and both example boards.
+The corpus comparison changes 1,204 drawings across 19 boards, including 72 whole-board drawings.
+Its elapsed render times overlap other validation work and are not speed evidence.
+
+| Board                   | Changed drawings |
+| ----------------------- | ---------------: |
+| Archboard               |               28 |
+| Archboard server        |               80 |
+| Archboard server routes |               68 |
+| Board persistence       |               48 |
+| Board rasterizer        |               76 |
+| Board viewer            |              124 |
+| Browser application     |               52 |
+| Codex realtime voice    |              140 |
+| Codex session           |               24 |
+| Codex workhorse         |              100 |
+| Command dispatch        |               44 |
+| Command interface       |               76 |
+| Inventory service       |               36 |
+| Live panes              |               48 |
+| Renderer layout         |               60 |
+| Semantic renderer       |               68 |
+| Skill evaluation        |               60 |
+| Voice coordinator       |               68 |
+| Web shop                |                4 |
+
+`/tmp/548-08/round-3/changed-svg-pairs.json` names both SVGs for every changed drawing.
+`whole-board-svg-pairs.json` names all 76 whole-board pairs, including unchanged pictures.
+`acceptance-svg/manifest.json` names the four failed council pairs and the extra feedback tradeoff.
+Their after pictures come from the matching Bun core and match the retained native geometry.
+The four failed pairs contain no measured hard defect.
+The extra feedback example records the ordinary crossing described above.
+All earlier probe and render directories remain available.
+
+The final visual inspection also covers dark Browser application and Board viewer whole boards in both engines.
+The PNGs remain under `/tmp/548-08/round-3/inspection`.
+Board viewer's area falls 28.7% in Track and 14.1% in Blocks.
+Browser application's area falls 22.6% in Track but grows 93.2% in Blocks.
+That Blocks picture spreads the top-level families more widely, despite tighter compact headers inside each family.
+It is a fresh council tradeoff, not evidence that every composition improves.
+Voice coordinator's Track area falls 26.4%, but some outer routes remain long.
+No hard defect appears in the inspected pictures or the measured whole-board scan.
+
+The parent must grade the four failed pairs and a fresh sample before acceptance.
+Browser application in Blocks and the extra feedback pair are explicit candidates for that sample.
+If the council accepts the design, the next performance lever is Board persistence's work beside its single solve.
+If the council rejects a composition, its graph-level placement needs revision before adoption.
+TASK-548.08 and TASK-548.11 remain In Progress.
+
+The final delivery audit finds no Git owner process, and the owned server is stopped.
+No branch is pushed.
