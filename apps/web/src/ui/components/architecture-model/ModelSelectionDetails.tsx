@@ -116,6 +116,15 @@ function inspectedCollection(props: ModelSelectionDetailsProps, id: string | und
  * @returns Focused identities or the complete scope introduction and interface.
  */
 function UnselectedDetails(props: ModelSelectionDetailsProps): JSX.Element {
+	if (props.projection.flow !== null)
+		return (
+			<ModelFlowDetails
+				model={props.model}
+				flow={props.projection.flow}
+				reference={props.projection.reference}
+				selection={props.selection}
+			/>
+		);
 	if (props.projection.focused !== null)
 		return (
 			<SelectedSubjects

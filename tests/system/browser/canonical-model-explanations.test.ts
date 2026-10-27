@@ -1,3 +1,4 @@
+import { openModelSidebar } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -18,6 +19,7 @@ const WAIT = { timeoutMs: 10_000 } as const;
 test("an explanation keeps its captured selection after scope navigation", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { fixture, server, browser } = await openReader(resources);
+	await openModelSidebar(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-explain"]') !== null`),
@@ -198,8 +200,11 @@ test("keyboard and context actions expose unavailable agents, captured retry, an
 	).toBe(original);
 	await browser.run(["click", '[data-slot="explanation-cancel"]']);
 	await actionStatus(browser, "cancelled");
+	await openModelSidebar(browser);
 	await browser.run(["scrollintoview", '[data-slot="module-list"] [data-module-id="Shop#Worker"]']);
+	await openModelSidebar(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Worker"]']);
+	await openModelSidebar(browser);
 	const point = await browser.eval<{ x: number; y: number }>(
 		`(() => { const r = document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Worker"]').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`,
 	);

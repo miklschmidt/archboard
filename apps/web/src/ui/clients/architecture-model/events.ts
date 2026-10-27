@@ -5,7 +5,10 @@ import {
 	type ArchitectureModelRead,
 } from "@archboard/board/model";
 import { inVault } from "@archboard/server-requests";
-import { architectureModelKeys } from "#ui/clients/architecture-model/queries.ts";
+import {
+	ArchitectureReadError,
+	architectureModelKeys,
+} from "#ui/clients/architecture-model/queries.ts";
 
 interface FeedState {
 	connection: "connecting" | "live" | "unavailable";
@@ -93,8 +96,9 @@ function createFeed(client: QueryClient, vault: string) {
 		const accepted = ++generation;
 		await client.cancelQueries({ queryKey: mutableKey });
 		if (!isCurrent(accepted)) return;
-		if (event.type === "architecture_snapshot" && event.reading.success) {
-			client.setQueryData(currentKey, event.reading);
+		const snapshot = coherentSnapshot(event);
+		if (snapshot !== null) {
+			client.setQueryData(currentKey, snapshot);
 			await client.invalidateQueries({
 				queryKey: mutableKey,
 				/**
@@ -107,6 +111,8 @@ function createFeed(client: QueryClient, vault: string) {
 		} else {
 			await client.invalidateQueries({ queryKey: mutableKey });
 		}
+		if (!isCurrent(accepted)) return;
+		await resumeInterruptedHistory(client, vault, event);
 		if (isCurrent(accepted)) publish({ ...state, refreshing: false });
 	}
 	/**
@@ -169,6 +175,53 @@ function createFeed(client: QueryClient, vault: string) {
 		 */
 		getSnapshot: (): FeedState => state,
 	};
+}
+
+/**
+ * Only a successful full snapshot can replace the default current query.
+ * @param event The addressed architecture event.
+ * @returns Its coherent model, or no replacement content.
+ */
+function coherentSnapshot(event: ArchitectureEvent) {
+	return event.type === "architecture_snapshot" && event.reading.success ? event.reading : null;
+}
+
+/**
+ * A completed write releases the read barrier for interrupted exact history.
+ * @param client The existing query cache.
+ * @param vault The vault that now reports coherent architecture.
+ * @param event The current model availability.
+ * @returns After active interrupted reads retry their original selectors.
+ */
+async function resumeInterruptedHistory(
+	client: QueryClient,
+	vault: string,
+	event: Exclude<ArchitectureEvent, { type: "architecture_claims" }>,
+): Promise<void> {
+	if (failureOf(event) !== null) return;
+	const interrupted = client
+		.getQueryCache()
+		.findAll({ queryKey: architectureModelKeys.vault(vault) })
+		.filter((query) => {
+			if (query.queryKey[2] !== "reading" || query.queryKey[3] === null) return false;
+			const error = query.state.error;
+			const blocked =
+				error instanceof ArchitectureReadError &&
+				(error.failure.code === "MODEL_BUSY" || error.failure.code === "RECOVERY_REQUIRED");
+			return blocked || query.state.fetchStatus === "fetching";
+		});
+	if (interrupted.length === 0) return;
+	const keys = new Set(interrupted.map((query) => query.queryHash));
+	const filter = {
+		/**
+		 * Keep the same interrupted query set after cancellation resets its status.
+		 * @param query A cached reading.
+		 * @returns Whether this completion resumes it.
+		 */
+		predicate: (query: (typeof interrupted)[number]) => keys.has(query.queryHash),
+	};
+	await client.cancelQueries(filter);
+	await client.invalidateQueries(filter);
 }
 
 /**

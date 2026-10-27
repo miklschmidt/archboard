@@ -24,7 +24,7 @@ import {
 	selectReading,
 	selectState,
 } from "./support/canonical-model.ts";
-import { editCanonicalModel } from "./support/canonical-page.ts";
+import { openModelSidebar, editCanonicalModel } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -165,12 +165,14 @@ test("canonical code controls follow current draft and exact readings while miss
 		"the proposed module",
 		WAIT,
 	);
+	await openModelSidebar(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await openCode(browser, capture, join(root, "src/planned.ts"));
 	expect(
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('stateA')`),
 	).toBe(created.body.target.state);
 	await selectReading(browser, "current");
+	await openModelSidebar(browser);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -180,6 +182,7 @@ test("canonical code controls follow current draft and exact readings while miss
 		"the current architecture",
 		WAIT,
 	);
+	await openModelSidebar(browser, "selection");
 	await openCode(browser, capture, join(root, "src/gateway.ts"));
 	await pollUntil(
 		() =>
@@ -191,6 +194,7 @@ test("canonical code controls follow current draft and exact readings while miss
 		WAIT,
 	);
 	await selectReading(browser, created.body.checkpoint.id);
+	await openModelSidebar(browser);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -200,6 +204,7 @@ test("canonical code controls follow current draft and exact readings while miss
 		"the exact retained draft",
 		WAIT,
 	);
+	await openModelSidebar(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await openCode(browser, capture, join(root, "src/planned.ts"));
 	rmSync(join(root, "src/planned.ts"));
@@ -213,6 +218,7 @@ test("canonical code controls follow current draft and exact readings while miss
 		"the retained architecture without its source file",
 		WAIT,
 	);
+	await openModelSidebar(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await pollUntil(
 		() =>
@@ -253,6 +259,7 @@ test("canonical code controls follow current draft and exact readings while miss
 		"warnings for the exact canonical reading",
 		WAIT,
 	);
+	await openModelSidebar(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await pollUntil(
 		() =>

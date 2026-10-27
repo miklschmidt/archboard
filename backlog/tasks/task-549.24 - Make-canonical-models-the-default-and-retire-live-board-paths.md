@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T20:09:00Z'
+updated_date: '2026-10-27T20:27:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -80,6 +80,8 @@ Restore canonical agent activity through the existing server publication owner w
 Restore the approved pane composition while porting the shell matrix: one existing 280 px sidebar per pane, with canonical module navigation and selection details. Preserve its docked/floating/hidden behavior, full canvas geometry, focus and keyboard actions, and captured walkthrough behavior. Keep authored meaning before code/comparison evidence. Adapt browser interaction helpers to deliberate sidebar navigation, while retaining generic shell geometry, accessibility, theme, motion, activity and notice assertions.
 
 Repair the existing canonical narration/change-news boundary: an external edit during captured playback must not add ordinary change speech between authored beats. Preserve ordinary browsing news and durable attribution. Delegate backend diagnosis and public runtime/socket regression ownership; parent retains the existing browser owner and all frontend changes.
+
+Use the existing Archboard family identity vKEsyHFk as the stable repository migration namespace. Retain the untouched legacy source set and absent mapping plan through the signed public archive operation before any source preparation. Parent retains all explicit identity mappings, hierarchy choices, draft dispositions, authored view preparation and cutover. Preserve unrelated drafts and original historical bytes.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -142,4 +144,8 @@ Backend activity gap: signed 21bd25646 connects the existing agent_activity snap
 Parent activity acceptance: Working now shows every concurrent subject claim and the durable writer doing line. Releasing one claim preserves the other in the existing proposal browser owner. Browser and focused navigator owners pass. Full types, source/test lint and interface limits pass. The existing socket message types now live in a shared package entry, so the browser imports no Node runtime surface. Public export counts remain unchanged. Package policy also found and fixed private projection imports through public barrels. All 67 package API cases pass. TASK-549.24 remains In Progress with migration, sidebar restoration and final acceptance open.
 
 Parent sidebar restoration: canonical browsing now uses the approved single 280 px sidebar with Architecture and Selection tabs. Existing dock, float, pin, hide and selection behavior remains. Ordinary selection survives pending reads; captured playback owns its separate selection. Module meaning precedes code and comparison evidence. Direct narrative buttons replace a popup that remained visible after playback began. Existing selection, navigation, comparison and walkthrough browser owners pass. The full 12-cell shell layout owner passes, including geometry, typography, focus, target sizes, pane layout and activity. Full types and focused source/test lint pass. Root inspected the generated desktop screenshot. Remaining consumer ports, source-vault migration and final acceptance stay open.
+
+Parent consumer follow-up: exact checkpoint reads now resume through coherent model events after MODEL_BUSY or RECOVERY_REQUIRED, without refreshing healthy immutable reads or substituting current content. The structure browser owner reproduced the stalled error and now passes. Selecting an already selected module after opening Architecture now reopens Selection through the existing sidebar owner, using the stable selected set as pick identity. Navigation rows show comparison standing with the existing renderer pin and a readable label; the structure owner distinguishes removed Cache context from actual historical roots. Viewer, structure, code, focus, modes, explanation and proposal-walkthrough owners pass. Full types and focused lint pass. The separate captured-narration backend repair remains active.
+
+Migration preparation retained all 18 untouched legacy inputs at signed checkpoint 5c732a3853a575ba954c5abfc08584bb37a03f84 under existing model identity vKEsyHFk. Public reopening confirms every retained file matches the source bytes, source digest 133d908e0d01d19014dcb362522032c838c54479ad4a43060d633cc411ea523b, and no saved mapping plan. Signature verification passes. Publication remains saved-locally. No original file, mapping, adoption or cutover changed. External receipts and evidence use task-549.24-original-retention-*.
 <!-- SECTION:NOTES:END -->

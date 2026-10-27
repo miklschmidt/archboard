@@ -1,5 +1,7 @@
 import type { JSX } from "react";
 import type { Model, projectModel } from "@archboard/board/content";
+import type { ChangeKind } from "@archboard/board/comparison";
+import { StandingSample } from "#ui/components/semantic-board-canvas/SemanticTypeSamples.tsx";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import { ModelConnections } from "#ui/components/architecture-model/ModelConnections.tsx";
@@ -40,6 +42,7 @@ function ModelModuleList(props: {
 						key={entry.id}
 						module={entry}
 						selected={selected.has(entry.id)}
+						standing={props.projection.standing?.[entry.id]}
 						onSelect={select}
 					/>
 				))}
@@ -53,6 +56,7 @@ function ModelModuleList(props: {
 								key={entry.id}
 								module={entry}
 								selected={selected.has(entry.id)}
+								standing={props.projection.standing?.[entry.id]}
 								onSelect={select}
 							/>
 						))}
@@ -73,6 +77,7 @@ function ModelModuleList(props: {
 interface ModuleRowProps {
 	module: ReturnType<typeof projectModel>["children"][number];
 	selected: boolean;
+	standing: ChangeKind | undefined;
 	onSelect: ModelSelection["select"];
 }
 
@@ -90,11 +95,24 @@ function ModuleRow(props: ModuleRowProps): JSX.Element {
 			<button
 				type="button"
 				data-module-id={id}
+				data-standing={props.standing}
 				aria-pressed={props.selected}
 				{...pick}
 				className="hover:bg-muted aria-pressed:bg-muted aria-pressed:shadow-raised rounded-control w-full space-y-1 px-3 py-3 text-left"
 			>
-				<span className="text-control block font-semibold">{module.name}</span>
+				<span className="text-control flex items-center gap-2 font-semibold">
+					<span data-slot="model-module-name" className="min-w-0 flex-1">
+						{module.name}
+					</span>
+					{props.standing !== undefined && props.standing !== "unchanged" && (
+						<>
+							<StandingSample standing={props.standing} />
+							<span className="text-body text-muted-foreground font-normal capitalize">
+								{props.standing}
+							</span>
+						</>
+					)}
+				</span>
 				{module.responsibility && (
 					<span className="text-body text-muted-foreground block">{module.responsibility}</span>
 				)}

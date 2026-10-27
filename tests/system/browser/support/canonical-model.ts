@@ -1,3 +1,4 @@
+import { openModelSidebar } from "./canonical-page.ts";
 import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
 
 const WAIT = { timeoutMs: 6_000 } as const;
@@ -45,6 +46,7 @@ async function selectReading(browser: AgentBrowserSession, id: string): Promise<
 }
 
 async function gatewayDetails(browser: AgentBrowserSession): Promise<string> {
+	await openModelSidebar(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	return browser.eval<string>(`document.querySelector('[data-slot="module-details"]').textContent`);
 }
@@ -61,6 +63,7 @@ async function selectState(browser: AgentBrowserSession, id: string): Promise<vo
 		WAIT,
 	);
 	await browser.run(["click", `[data-state-id="${id}"]`]);
+	await openModelSidebar(browser);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

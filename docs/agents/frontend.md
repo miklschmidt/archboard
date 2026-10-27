@@ -343,3 +343,9 @@ ModelPane owns ordinary selection across asynchronous reads.
 The drawing projection translates aggregate lines into canonical relationship identities without owning another selection.
 Captured walkthroughs keep their own selection and suspend the ordinary reader.
 Narrative buttons start playback directly and create no popup outside the suspended reader.
+
+A coherent model event resumes exact reads interrupted by an installation barrier.
+Healthy immutable readings keep their cached data without another read.
+A fresh selected set represents another pick, including a repeated choice of the same module.
+The existing sidebar opens Selection for that pick.
+Module navigation labels comparison context with its standing, including removed reference modules.

@@ -15,7 +15,7 @@ function ModelPane(props: { subject: string | null; children: ReactNode }): JSX.
 	const initial = useMemo(() => (props.subject === null ? [] : [props.subject]), [props.subject]);
 	const selection = useSubjectSelection(initial);
 	const chrome = usePaneChrome();
-	const identity = selection.ids.size === 0 ? null : JSON.stringify([...selection.ids]);
+	const identity = selection.ids.size === 0 ? null : selection.ids;
 	const sidebar = useSidebar(identity, chrome.shared, false, false);
 	const value = useMemo(() => ({ selection, sidebar }), [selection, sidebar]);
 	return <ModelPaneContext value={value}>{props.children}</ModelPaneContext>;
