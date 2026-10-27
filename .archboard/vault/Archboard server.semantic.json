@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 297,
+	"version": 300,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-27T04:04:04.534Z",
+	"updatedAt": "2026-10-27T04:56:45.598Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -118565,7 +118565,7 @@
 		{
 			"id": "zNzcVKXg",
 			"name": "TASK-532",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "ExVvgeF6",
 			"summary": "Archboard HTTP and pane services composed with the voice agent through createVoiceAgent",
 			"documents": [
@@ -122159,7 +122159,7 @@
 		{
 			"id": "KTfzFVnN",
 			"name": "TASK-549.20",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "zNzcVKXg",
 			"documents": [
 				{
@@ -123400,6 +123400,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/wiring/application/application.ts",
 							"symbol": "mountVoiceStartTraceRoute"
+						}
+					},
+					{
+						"id": "HlVF0G3N",
+						"order": 125000,
+						"from": "Eh7icS73",
+						"to": "xP18j2Co",
+						"kind": "call",
+						"label": "Start local layout workers",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/main.tsx",
+							"symbol": "renderer"
 						}
 					}
 				],
@@ -125751,7 +125765,7 @@
 			}
 		}
 	],
-	"current": "zNzcVKXg",
+	"current": "KTfzFVnN",
 	"adoptions": [
 		{
 			"variant": "82cs8TFY",
@@ -126058,6 +126072,12 @@
 			"from": "ExVvgeF6",
 			"at": "2026-10-25T05:29:49.542Z",
 			"reason": "The server hosts the voice agent through createVoiceAgent, the code check is one run call, and a rename and a take-back are board operations (TASK-529, TASK-530, TASK-532)"
+		},
+		{
+			"variant": "KTfzFVnN",
+			"from": "zNzcVKXg",
+			"at": "2026-10-27T04:56:45.598Z",
+			"reason": "TASK-549.20 is implemented with coherent preview reads, exact source preservation, visible navigation, and passing affected evidence."
 		}
 	],
 	"shelvings": [

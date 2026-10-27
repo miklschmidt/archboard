@@ -33,7 +33,7 @@ const ModelDiagram = lazy(async () => {
 });
 
 const LOADING_DIAGRAM = (
-	<output className="text-body text-muted-foreground p-8">Loading diagram…</output>
+	<output className="text-body text-muted-foreground min-w-0 flex-1 p-8">Loading diagram…</output>
 );
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;

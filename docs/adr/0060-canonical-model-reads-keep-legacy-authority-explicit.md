@@ -287,3 +287,16 @@ Preview refuses missing plans, stale source, unanswered choices, contradictory c
 State, checkpoint, comparison, and explanation selectors cannot combine with preview.
 The CLI and HTTP adapters pass this selection through the same public reader.
 Installation, historical proposal migration, walkthroughs, and bookmarks remain outside this slice.
+
+The browser addresses migration previews with `modelX` and `previewX`.
+The existing reading projects their modules and flows, and a disclosure shows source fingerprints and planned-state mappings.
+Preview failures expose recovery without showing a cached candidate as current architecture.
+The preview has no state, checkpoint, claim, publication, or explanation controls.
+Code navigation retains the mapping origin and uses the existing local opener.
+
+Canonical pane startup opens no legacy board.
+Browser board listings, snapshots, and vault diagnostics normalize older schemas in memory.
+They preserve the exact source bytes that the saved mapping plan names.
+Ordinary legacy CLI reads keep their existing automatic schema migration behavior.
+The workspace keeps explicit canonical intent until a deliberate legacy open succeeds.
+Browser history records the visible origin, even when the server remembers an earlier legacy board.

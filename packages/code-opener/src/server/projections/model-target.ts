@@ -19,6 +19,7 @@ async function canonicalModelTarget(
 		code: true,
 		state: request.state,
 		checkpoint: request.checkpoint,
+		preview: request.preview,
 	});
 	if (!reading.success)
 		return {

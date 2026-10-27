@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 82,
+	"version": 83,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-27T04:04:03.668Z",
+	"updatedAt": "2026-10-27T04:56:45.954Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -23495,7 +23495,7 @@
 		{
 			"id": "4kUjYSbo",
 			"name": "TASK-549.13",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "AiVALJQa",
 			"summary": "Report exact canonical reading intent and keep shown-conversation assembly with its workbench owner",
 			"content": {
@@ -26596,7 +26596,7 @@
 		{
 			"id": "rjx0hffN",
 			"name": "TASK-549.20",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "4kUjYSbo",
 			"content": {
 				"nodes": [
@@ -29695,7 +29695,7 @@
 			}
 		}
 	],
-	"current": "4kUjYSbo",
+	"current": "rjx0hffN",
 	"adoptions": [
 		{
 			"variant": "8dYrGdIf",
@@ -29779,6 +29779,12 @@
 			"from": "AiVALJQa",
 			"at": "2026-10-27T00:56:41.107Z",
 			"reason": "Shared local explanations preserve the captured reading across navigation and expose tested progress and recovery"
+		},
+		{
+			"variant": "rjx0hffN",
+			"from": "4kUjYSbo",
+			"at": "2026-10-27T04:56:45.954Z",
+			"reason": "TASK-549.20 is implemented with coherent preview reads, exact source preservation, visible navigation, and passing affected evidence."
 		}
 	]
 }

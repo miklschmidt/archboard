@@ -186,7 +186,12 @@ function finishOperation(state: Reconciliation, operation: Operation): void {
 		return;
 	}
 	if (intent !== null && answer === "opened" && operationMovedPane(operation, state.displayed)) {
-		state.deliberate.expect(intent);
+		// The visible origin can be canonical while the server remembers a legacy board.
+		state.deliberate.expect(
+			intent.kind === "board"
+				? { ...intent, from: operation.from, repository: operation.fromRepository }
+				: intent,
+		);
 	}
 }
 

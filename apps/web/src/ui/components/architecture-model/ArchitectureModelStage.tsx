@@ -83,9 +83,9 @@ function ArchitectureModelStage(props: ModelStageProps): JSX.Element {
 function LocatedModelStage(props: ModelStageProps): JSX.Element {
 	const boards = useQuery(semanticBoardListQuery(props.vault));
 	const { model, preview } = useModelLocation(props.paneId);
-	if (preview !== null) return <ModelPreviewReader {...props} />;
+	if (preview !== null) return <ModelPreviewReader key={props.vault} {...props} />;
 	if (model === null && boards.data?.boards.length !== 0) return <>{props.children}</>;
-	return <CanonicalModelReader {...props} />;
+	return <CanonicalModelReader key={props.vault} {...props} />;
 }
 
 /**

@@ -1125,7 +1125,7 @@
 					"expectedUse": "Read one coherent candidate from a saved plan. Resolve explicit identity, reference and conflict choices without installation.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/legacy-preview/preview.test.ts; tests/system/semantic-boards/migration-planning.test.ts; guidance skills/archboard/references/legacy-migration.md#preview-the-current-model"
+					"owner": "packages/board/tests/runtime/operations/legacy-preview/preview.test.ts; tests/system/semantic-boards/migration-planning.test.ts; tests/system/browser/canonical-model-preview.test.ts; guidance skills/archboard/references/legacy-migration.md#preview-the-current-model"
 				},
 				{
 					"path": "canonical recursive readings: scopes, exact checkpoint addresses, direct context, complete interfaces and connection aggregation",

@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 200,
+	"version": 203,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-27T03:48:26.023Z",
+	"updatedAt": "2026-10-27T04:56:45.213Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -86908,7 +86908,7 @@
 		{
 			"id": "TCCgpLCm",
 			"name": "TASK-549.08",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "KsXdL7AS",
 			"summary": "Read adopted and shelved architecture with explicit decision history and coherent comparisons.",
 			"documents": [
@@ -90703,7 +90703,7 @@
 		{
 			"id": "UNCNBRh9",
 			"name": "TASK-549.20",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "TCCgpLCm",
 			"documents": [
 				{
@@ -90769,7 +90769,7 @@
 						"name": "Workspace routing",
 						"kind": "module",
 						"responsibility": "Restores pane display intent",
-						"description": "One TanStack Router route at /, whose search parameters paneA, paneB and pane are the workspace, with repoA and repoB beside them naming each pane's repository by its identity or an untracked vault's registry name, never by a path. The address follows what the panes report; on a first load and on Back or Forward it leads, restoring through the workspace port with the same command the navigator runs, once the repositories are known. It is never board authority. Canonical model, scope, and checkpoint parameters describe each open pane directly, including unavailable readings. Pane closure removes those parameters. Back and reload restore them without altering legacy board command ownership. Canonical focus, hidden relationship kinds, and hidden group regions also belong to each pane address. Back, Forward, and reload restore them. Transient selection and camera state remain outside browser history. Each canonical pane also preserves diagram grammar and the explicitly selected flow. Grammar changes retain the preceding architecture scope, focus, and filters. Unavailable flow identities remain explicit. Canonical state and comparison selectors coexist with scope, focus, filters, grammar, and flow. Exact checkpoint and mutable state selection are mutually exclusive. History restores unavailable requested states without silently selecting Current.",
+						"description": "One TanStack Router route at /, whose search parameters paneA, paneB and pane are the workspace, with repoA and repoB beside them naming each pane's repository by its identity or an untracked vault's registry name, never by a path. The address follows what the panes report; on a first load and on Back or Forward it leads, restoring through the workspace port with the same command the navigator runs, once the repositories are known. It is never board authority. Canonical model, scope, and checkpoint parameters describe each open pane directly, including unavailable readings. Pane closure removes those parameters. Back and reload restore them without altering legacy board command ownership. Canonical focus, hidden relationship kinds, and hidden group regions also belong to each pane address. Back, Forward, and reload restore them. Transient selection and camera state remain outside browser history. Each canonical pane also preserves diagram grammar and the explicitly selected flow. Grammar changes retain the preceding architecture scope, focus, and filters. Unavailable flow identities remain explicit. Canonical state and comparison selectors coexist with scope, focus, filters, grammar, and flow. Exact checkpoint and mutable state selection are mutually exclusive. History restores unavailable requested states without silently selecting Current. Explicit canonical addresses remain visible when the server remembers a legacy board. The existing operation owner reveals a deliberately opened legacy board. Navigation history uses the visible origin so repeated visits preserve the preview entry.",
 						"parent": "wlbLOPSH",
 						"groups": [
 							"panes"
@@ -91436,7 +91436,7 @@
 						"name": "Model reading",
 						"kind": "module",
 						"responsibility": "Shows recursive modules, interfaces, connection evidence, and exact reading history",
-						"description": "Reads current, draft, historical, shelved, and exact retained architecture with explicit unavailable states. One state catalogue supplies reading and comparison choices, including completed states. Current follows the explicit designation. Scope navigation exposes complete interfaces and relationship evidence. The router owns deliberate scope, state, checkpoint, focus, filters, grammar, flow, comparison, and foreign destinations. Temporary selection preserves canonical identities through renames, hidden subjects, and comparison removals. Pointer modifiers, keyboard actions, and area selection share the same owner. Focus opens required containment paths. Visual filters preserve complete interfaces. Behavioral readings include every participant and step. Code and foreign navigation retain exact historical pins. Unresolved issues and blocked ancestry remain explicit, while exact readings preserve original standing. Explanation commands capture the exact visible reading through one shared local action. Completed state details show decision reasons, lifecycle dates, predecessor, prior current state, and document evidence. The browser authors no adoption or shelving. Migration previews use the same recursive scope, selection, filters, and flow modes. An explicit preview address shows source and mapping fingerprints. Failed previews show recovery without stale candidate content. Current-state controls and agent explanations do not claim authority for a preview.",
+						"description": "Reads current, draft, historical, shelved, and exact retained architecture with explicit unavailable states. One state catalogue supplies reading and comparison choices, including completed states. Current follows the explicit designation. Scope navigation exposes complete interfaces and relationship evidence. The router owns deliberate scope, state, checkpoint, focus, filters, grammar, flow, comparison, and foreign destinations. Temporary selection preserves canonical identities through renames, hidden subjects, and comparison removals. Pointer modifiers, keyboard actions, and area selection share the same owner. Focus opens required containment paths. Visual filters preserve complete interfaces. Behavioral readings include every participant and step. Code and foreign navigation retain exact historical pins. Unresolved issues and blocked ancestry remain explicit, while exact readings preserve original standing. Explanation commands capture the exact visible reading through one shared local action. Completed state details show decision reasons, lifecycle dates, predecessor, prior current state, and document evidence. The browser authors no adoption or shelving. Migration previews use the same recursive scope, selection, filters, and flow modes. An explicit preview address shows source and mapping fingerprints. Failed previews show recovery without stale candidate content. Current-state controls and agent explanations do not claim authority for a preview. The reader instance belongs to its resolved vault. Foreign navigation replaces its reading controls so a previous catalogue cannot reset an exact checkpoint.",
 						"parent": "TLCeNkdh",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -94495,7 +94495,7 @@
 			}
 		}
 	],
-	"current": "TCCgpLCm",
+	"current": "UNCNBRh9",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -94676,6 +94676,12 @@
 			"from": "KsXdL7AS",
 			"at": "2026-10-27T03:29:50.939Z",
 			"reason": "Implemented TASK-549.08 with explicit lifecycle decisions, retained completed readings, bounded current-file history, and passing public and browser evidence."
+		},
+		{
+			"variant": "UNCNBRh9",
+			"from": "TCCgpLCm",
+			"at": "2026-10-27T04:56:45.213Z",
+			"reason": "TASK-549.20 is implemented with coherent preview reads, exact source preservation, visible navigation, and passing affected evidence."
 		}
 	],
 	"shelvings": [

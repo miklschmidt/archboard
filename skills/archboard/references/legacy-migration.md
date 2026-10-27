@@ -113,6 +113,8 @@ For a different repository, add its registered identity as `repoA`.
 The preview uses the existing module navigation, selection, filters, and flow modes.
 Its source disclosure shows both fingerprints, original board coverage, and proposed state mappings.
 Reload and browser history retain the preview origin and selected scope or flow.
+Code actions keep the preview origin and open its binding through the existing local opener.
+A planned-only preview shows no implemented modules and retains its explicit proposed state mappings.
 If the source changes, Refresh refuses the stale candidate until the plan matches the source again.
 
 Browser snapshots and diagnostics normalize old board schemas in memory.
