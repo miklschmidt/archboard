@@ -112,7 +112,7 @@ function emptyCurrent(model: Model): boolean {
  * @returns The source disclosure label.
  */
 function sourceHeading(preview: NonNullable<Model["migrationPreview"]>): string {
-	if (preview.originalInputs !== undefined)
-		return `Retained originals · ${preview.originalInputs.length} files`;
-	return `Legacy files remain authoritative · ${preview.coverage.length} source ${preview.coverage.length === 1 ? "board" : "boards"}`;
+	return preview.originalInputs === undefined
+		? "Source details · legacy files"
+		: "Source details · retained snapshot";
 }

@@ -56,6 +56,7 @@ function ModelPreviewReader(props: PreviewProps): JSX.Element {
 			>
 				<ModelPreviewSelector
 					preview={query.data?.migrationPreview}
+					pending={query.isPending}
 					state={location.state}
 					onState={location.selectState}
 				/>

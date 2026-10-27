@@ -18,6 +18,15 @@ import { legacyHistory } from "./support/legacy-history.ts";
 const WAIT = { timeoutMs: 10_000 } as const;
 
 async function chooseOriginal(browser: AgentBrowserSession, id: string): Promise<void> {
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="preview-reading-selector"]')?.disabled === false`,
+			),
+		Boolean,
+		"the original catalogue to finish loading",
+		WAIT,
+	);
 	await browser.run(["click", '[data-slot="preview-reading-selector"]']);
 	await pollUntil(
 		() =>
@@ -195,12 +204,27 @@ async function inspectOriginal(browser: AgentBrowserSession, file: string): Prom
 	await browser.run(["click", '[data-slot="preview-original-selector"]']);
 	await pollUntil(
 		() =>
-			browser.eval<boolean>(`document.querySelector('[data-original-file="${file}"]') !== null`),
+			browser.eval<boolean>(
+				`(() => { const option = document.querySelector('[data-original-file="${file}"]'); if (!option) return false; const r = option.getBoundingClientRect(); return r.height > 0 && option.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })()`,
+			),
 		Boolean,
 		"the original input choice",
 		WAIT,
 	);
 	await browser.run(["click", `[data-original-file="${file}"]`]);
+	await pollUntil(
+		() =>
+			browser.eval<{ expanded: string | null; visible: boolean }>(`(() => {
+			const expanded = document.querySelector('[data-slot="preview-original-selector"]')?.getAttribute('aria-expanded') ?? null;
+			const popup = document.querySelector('[data-original-file]')?.closest('[data-slot="select-content"]');
+			if (!popup) return {expanded, visible: false};
+			const style = getComputedStyle(popup);
+			return {expanded, visible: popup.getBoundingClientRect().height > 0 && style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) > 0};
+		})()`),
+		(value) => value.expanded === "false" && !value.visible,
+		"the original choice menu to close",
+		WAIT,
+	);
 	return pollUntil(
 		() =>
 			browser.eval<string | null>(

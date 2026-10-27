@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 216,
+	"version": 217,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-27T09:22:22.746Z",
+	"updatedAt": "2026-10-27T10:17:22.573Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -102135,7 +102135,7 @@
 		{
 			"id": "OmKyQJWc",
 			"name": "TASK-549.14-complete",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "68vCSWPg",
 			"documents": [
 				{
@@ -106042,7 +106042,7 @@
 		{
 			"id": "ZOrrpWv9",
 			"name": "TASK-549.21",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "OmKyQJWc",
 			"documents": [
 				{
@@ -109951,7 +109951,7 @@
 			}
 		}
 	],
-	"current": "OmKyQJWc",
+	"current": "ZOrrpWv9",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -110150,6 +110150,12 @@
 			"from": "68vCSWPg",
 			"at": "2026-10-27T09:01:52.003Z",
 			"reason": "Canonical playback, recording, replay and narration pass the approved public runtime and browser evidence."
+		},
+		{
+			"variant": "ZOrrpWv9",
+			"from": "OmKyQJWc",
+			"at": "2026-10-27T10:17:22.573Z",
+			"reason": "Original-state navigation, lifecycle evidence, draft baselines and retained inputs pass public runtime and browser acceptance."
 		}
 	],
 	"shelvings": [

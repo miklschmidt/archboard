@@ -61,7 +61,7 @@ function OriginalFiles({ inputs }: { inputs: Inputs }): JSX.Element {
 						<textarea
 							data-slot="preview-original-text"
 							aria-label="Original file contents"
-							className="border-border bg-muted h-64 w-full overflow-auto rounded border p-3 font-mono text-xs"
+							className="border-border bg-muted h-64 w-full resize-none overflow-auto rounded border p-3 font-mono text-xs"
 							readOnly
 							wrap="off"
 							spellCheck={false}

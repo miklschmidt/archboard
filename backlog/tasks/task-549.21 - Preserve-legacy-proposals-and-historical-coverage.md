@@ -1,11 +1,11 @@
 ---
 id: TASK-549.21
 title: Preserve legacy proposals and historical coverage
-status: In Progress
+status: Done
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T09:55:00Z'
+updated_date: '2026-10-27T10:18:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -46,16 +46,16 @@ TASK-549.09, TASK-549.20
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Extend the migration preview with drafts, baselines, standing conflicts, adoption, shelving, corrections, and lifecycle metadata.
-- [ ] #2 Readers can inspect retained original documents with their original coverage. No legacy reading borrows current surrounding modules or invents a complete historical repository model.
-- [ ] #3 Convert each draft through an explicit predecessor and baseline mapping. Matching task IDs or proposal names never combine independent proposals automatically.
-- [ ] #4 Planning-only boards become proposals. An immutable checkpoint retains complete originals, including unresolved data, before any later cutover.
+- [x] #1 Extend the migration preview with drafts, baselines, standing conflicts, adoption, shelving, corrections, and lifecycle metadata.
+- [x] #2 Readers can inspect retained original documents with their original coverage. No legacy reading borrows current surrounding modules or invents a complete historical repository model.
+- [x] #3 Convert each draft through an explicit predecessor and baseline mapping. Matching task IDs or proposal names never combine independent proposals automatically.
+- [x] #4 Planning-only boards become proposals. An immutable checkpoint retains complete originals, including unresolved data, before any later cutover.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -85,4 +85,15 @@ The first parent browser slice passes one case with four assertions. The existin
 The second browser slice passes one case with ten assertions. A bounded original-state disclosure shows lifecycle reasons, correction source revisions, explicit predecessor and baseline choices, baseline fingerprints, distinct compact changes, competing original values, and blocked ancestry. Equal display names never combine independent drafts. Every distinct original record remains visible; exact duplicate evidence rows share one display key. Types and lint pass. The parent removed an empty summary element when original metadata supplies no summary. Retained-original inspection and degraded composition recovery remain pending.
 
 Retained-original inspection now passes one browser case with five assertions. It shows the exact saved source after live files disappear and keeps unresolved originals inspectable when no complete candidate or mapping plan exists. The reader shows diagnostics instead of an empty current system. One selected file decodes on demand; unsupported UTF-8 retains its base64 representation. A native read-only text area supports keyboard scrolling and copying. Types and lint pass. Consumer guidance, frontend contracts, test ownership and evaluation coverage now include the three browser workflows. Final regression and visual acceptance, architecture restatement and adoption, and closure remain.
+
+Final parent acceptance passes eight browser cases with46 assertions: three original-history cases, four existing preview cases, and one canonical proposal case. A later visual pass catches an initially enabled state picker before its history arrives. The picker now disables during initial loading, and the browser helper waits for actual readiness. All three history cases then pass19 assertions. Source and browser types, lint, formatting, evaluation inputs and git diff --check pass. The parent inspected the conflict and stable originals screenshots. Temporary capture calls are removed.
+The completed UI keeps paired original state/checkpoint addresses, explicit one-board coverage, lifecycle and correction evidence, distinct draft baseline choices, conflicting values, blocked ancestry, exact original text and lossless unsupported bytes. Incoherent retained input shows Originals only and recovery, without a current diagram. The reader decodes one selected file, and a native read-only text area supports keyboard scrolling/copying with bounded height. Source provenance and original-file controls have distinct labels.
+All four accepted architecture descriptions are adopted and warning-free. Persistence, command interface and server routes use TASK-549.21-integration; Browser application uses TASK-549.21. Their earlier backend drafts remain shelved with exact content and parents. All prior decisions and views remain exact. Eight unrelated Archboard warnings remain. The inherited interface-width work remains owned by TASK-549.24. Consumer guidance, frontend contracts, test ownership and evaluation coverage match the delivered behavior. The simplification pass keeps the existing query/router/report owners and separates readable coverage, original evidence and exact source inspection without adding another authority.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Migration previews now preserve independent original states, explicit draft ancestry and baselines, standing conflicts, lifecycle decisions and correction evidence. Retention preserves complete original inputs before cutover without changing legacy authority. The browser keeps exact state/checkpoint addresses and exposes one-board coverage and original files even when composition is unavailable.
+Focused public runtime and adapter evidence, eight browser cases, types, lint, formatting, evaluation inputs and the four accepted architecture scopes pass. The existing eight unrelated Archboard warnings and interface-width transition remain outside this slice. TASK-549 remains In Progress.
+<!-- SECTION:FINAL_SUMMARY:END -->
