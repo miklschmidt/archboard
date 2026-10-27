@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-backend'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T11:09:00Z'
+updated_date: '2026-10-27T11:18:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -79,4 +79,6 @@ Extended thin CLI and HTTP selectors for exact legacy addresses and optional boo
 Merged signed integration 9d19307d41d33b328916a9a3ebe6c3bca309a21c through signed merge 4b6ced182. All accepted .18 variants, views, and lifecycle decisions remain exact. Preserved .22 draft identities and parents, then composed accepted .18 content into those drafts through claimed CLI edits with explicit identity restoration. The portable closure validator now accepts only the migration checkpoint envelope through the existing originals reader. A focused RED/GREEN export/import case preserves exact original playback, bookmarks, and former addresses. No current portable input validation rule changed.
 
 Owner correction supersedes the prior view inheritance plan. Every converted beat now requires an explicit original view. Removed activeView inheritance and implicit overview selection. Old original bytes and omitted fields remain decodable and retained. Missing views produce WALKTHROUGH_VIEW_REQUIRED on only their affected beats. Overview fixtures now name an explicit all-scope architecture view. Canonical beats retain their existing required complete reading, with no legacy view ID added. Focused RED/GREEN missing-view evidence is 42-required-view-red.log and 43-required-view-green.log. Parent has no UI edits yet.
+
+Backend acceptance evidence is complete at the approved real-file/Git runtime seam. Final explicit-view migration suite passes 34 cases and 173 assertions. Reused unchanged passing evidence covers seven canonical narrative cases, ten reference cases, three adapter/portable cases, and 73 package/skill cases. Source and browser types, full lint with zero warnings, formatting, evaluation input validation, and diff whitespace pass. New missing-view behavior has focused RED/GREEN evidence and an explicit all-scope view fixture. Final .22 draft code checks have zero warnings; eight unrelated Archboard warnings remain. Two semantic warnings reproduce on the exact accepted .18 current variants, which this task preserves as requested. The inherited 250/188 interface transition remains with .24. No full gate or browser acceptance is claimed. Simplification removes inherited view state and duplicate retained reads, keeps one playback owner, and reuses the portable archive validator. Parent UI and .23 installation remain outstanding. TASK-549.22 stays In Progress, all acceptance items stay with the parent, and all .22 proposals remain draft. The shared contract and task-549.22-backend.md contain exact source, fixture, evidence, and recovery details.
 <!-- SECTION:NOTES:END -->
