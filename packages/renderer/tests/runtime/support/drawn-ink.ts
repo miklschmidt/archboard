@@ -80,7 +80,7 @@ const CORNER = 16;
  * @param drawing The rendered board.
  * @returns The runs.
  */
-function runsOf(drawing: RenderedDiagram): Run[] {
+function runsOf(drawing: Pick<RenderedDiagram, "svg">): Run[] {
 	return [...corridorPoints(drawing.svg)].flatMap(([id, points]) =>
 		points.slice(1).map((end, index): Run => [points[index]!, end, id]),
 	);
@@ -392,7 +392,7 @@ function overdrawnRun(drawing: RenderedDiagram, ids: readonly string[]): number 
  * @param content The relationships whose ends a reader must distinguish.
  * @returns The unrelated relationship pairs drawn on one trunk.
  */
-function ambiguousTrunks(drawing: RenderedDiagram, content: VariantContent): string[] {
+function ambiguousTrunks(drawing: Pick<RenderedDiagram, "svg">, content: VariantContent): string[] {
 	const edges = new Map(content.edges.map((edge) => [edge.id, edge]));
 	const runs = runsOf(drawing);
 	const found = new Set<string>();
@@ -402,7 +402,8 @@ function ambiguousTrunks(drawing: RenderedDiagram, content: VariantContent): str
 		if (edge === undefined) continue;
 		for (const other of runs.slice(index + 1)) {
 			const next = edges.get(other[2]);
-			if (next === undefined || edge.from === next.from || edge.to === next.to) continue;
+			if (next === undefined) continue;
+			if (edge.kind === next.kind && (edge.from === next.from || edge.to === next.to)) continue;
 			const shared = besideRun(run, other, OVERDRAWN);
 			if (shared !== undefined && shared[1] - shared[0] > CORNER)
 				found.add([edge.id, next.id].toSorted().join(" / "));

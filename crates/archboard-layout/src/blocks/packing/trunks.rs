@@ -330,16 +330,25 @@ impl TrunkRouter<'_> {
             .enumerate()
             .map(|(index, &id)| (id, index))
             .collect();
-        let mut subjects: Map<&str, usize> = Map::default();
-        for line in lines {
-            for id in [line.source.as_deref(), line.target.as_deref()]
-                .into_iter()
-                .flatten()
-            {
-                let next = subjects.len();
-                subjects.entry(id).or_insert(next);
-            }
-        }
+        let mut subjects: Map<(String, String), usize> = Map::default();
+        let identities: Vec<_> = lines
+            .iter()
+            .map(|line| {
+                let kind = crate::track::route::trunk_kind(&line.edge);
+                let mut identify = |id: Option<&str>| {
+                    id.map(|id| {
+                        let next = subjects.len();
+                        *subjects
+                            .entry((id.to_owned(), kind.clone()))
+                            .or_insert(next)
+                    })
+                };
+                (
+                    identify(line.source.as_deref()),
+                    identify(line.target.as_deref()),
+                )
+            })
+            .collect();
         let scene = Scene {
             minimum: Some(archboard_router::Point {
                 x: if self.block.kind == super::super::tree::Kind::Root {
@@ -367,15 +376,13 @@ impl TrunkRouter<'_> {
                 .collect(),
             connectors: lines
                 .iter()
-                .map(|line| Connector {
+                .zip(identities)
+                .map(|(line, subjects)| Connector {
                     ends: (
                         self.end_of(&line.from, &obstacles, directed),
                         self.end_of(&line.to, &obstacles, directed),
                     ),
-                    subjects: (
-                        line.source.as_ref().map(|source| subjects[source.as_str()]),
-                        line.target.as_ref().map(|target| subjects[target.as_str()]),
-                    ),
+                    subjects,
                 })
                 .collect(),
             params: Params {
