@@ -817,3 +817,9 @@ The agent-navigation owner proves that a completed remote presentation cannot re
 `apps/web/tests/ui/clients/architecture-model/history-on-selection.test.tsx` replaces the old locality query owner.
 It exercises canonical HTTP reads and preserves on-demand behavior, pending-read sharing, and isolation between vaults.
 The legacy locality endpoint adapter, query key, and retained-replay placeholder retire.
+
+`apps/web/tests/ui/components/architecture-model/model-history.test.tsx` replaces the legacy history component fixture.
+It mounts the actual canonical consumer and retains commit expansion, coupled-subject callbacks, evidence distinctions, and explicit retry.
+A new architecture revision hides the prior revision's evidence while the request runs.
+The old blanket refusal for historical variants retires because canonical history supports explicit states and checkpoints.
+The retained board harness no longer simulates a live locality route.

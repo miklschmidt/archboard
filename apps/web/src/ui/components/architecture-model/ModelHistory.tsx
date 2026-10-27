@@ -9,7 +9,16 @@ import { modelHistoryQuery } from "#ui/clients/architecture-model/history.ts";
 
 interface HistoryProps {
 	vault: string;
-	model: Model;
+	model: Pick<
+		Model,
+		| "manifest"
+		| "revision"
+		| "selectedState"
+		| "checkpoint"
+		| "modules"
+		| "policy"
+		| "migrationPreview"
+	>;
 	module: Model["modules"][number];
 	onSelect: (id: string) => void;
 }
