@@ -70,6 +70,7 @@ interface MessageContext {
 		| ((vault: string, activity: readonly AgentActivityEntry[]) => void)
 		| undefined;
 	readonly onRepositoriesChanged: (() => void) | undefined;
+	readonly onExplanationsChanged: (() => void) | undefined;
 }
 
 type Handler = (context: MessageContext, data: WebSocketMessage) => void;
@@ -218,6 +219,13 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
 	pane_close: paneClose,
 	pane_present: panePresent,
 	repositories_changed: repositoriesChanged,
+	/**
+	 * Refresh the tab answer through the existing query owner.
+	 * @param context The current pane callbacks.
+	 */
+	architecture_explanations_changed: (context): void => {
+		context.onExplanationsChanged?.();
+	},
 };
 
 /**

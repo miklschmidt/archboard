@@ -1,3 +1,7 @@
+import {
+	ExplanationRequestSchema,
+	ReadingSelectionSchema,
+} from "#shared/schemas/model-explanation.ts";
 import { z } from "zod";
 import { CodeBindingSchema } from "@archboard/code-binding/bindings";
 import { SemanticIdSchema } from "#shared/schemas/primitives.ts";
@@ -130,6 +134,18 @@ const ArchitectureModelSchema = z
 			.array(SelectedStateSchema.extend({ checkpoint: GitObjectIdSchema.optional() }))
 			.optional(),
 		comparison: ComparisonSchema.optional(),
+		explanation: z
+			.strictObject({
+				request: ExplanationRequestSchema,
+				modelName: ArchitectureManifestSchema.shape.name,
+				selection: ReadingSelectionSchema,
+				comparison: ComparisonSchema.optional(),
+				state: SelectedStateSchema.nullable(),
+				checkpoint: GitObjectIdSchema.optional(),
+				revision: ModelRevisionSchema,
+				investigate: z.boolean(),
+			})
+			.optional(),
 		selectedModule: QualifiedSubjectIdSchema.optional(),
 		selectedSubject: QualifiedSubjectIdSchema.optional(),
 		selectedFlow: QualifiedSubjectIdSchema.optional(),

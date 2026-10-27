@@ -165,6 +165,46 @@ test("a larger worktree family is registered completely without replacing the ch
 	expect(orders().chosen).toEqual([clone]);
 });
 
+test("a worktree whose own config names an origin is another repository", async () => {
+	const base = join(scratch, "forked");
+	mkdirSync(base);
+	git(base, "init", "-q", "-b", "main");
+	git(base, "commit", "-q", "--allow-empty", "-m", "init");
+	const same = addWorktree(base, "forked-same");
+	const own = addWorktree(base, "forked-own");
+	git(base, "config", "extensions.worktreeConfig", "true");
+	git(own, "config", "--worktree", "remote.origin.url", "https://github.com/test/fork.git");
+	await declareDirectory(base);
+	expect(listRegistry().checkouts.map((each) => [each.repo, each.root])).toEqual([
+		["forked", realpathSync.native(base)],
+		["forked", same],
+	]);
+	// Asked from the worktree with its own origin, the others are another repository.
+	expect(await declareDirectory(own)).toMatchObject({
+		checkout: { repo: "github.com/test/fork" },
+		worktrees: [],
+	});
+});
+
+test("a worktree whose own config moves its root is recorded where Git says it is", async () => {
+	const base = repository(join(scratch, "moved"));
+	const side = addWorktree(base, "moved-side");
+	git(base, "config", "extensions.worktreeConfig", "true");
+	git(side, "config", "--worktree", "core.worktree", base);
+	expect(await declareDirectory(base)).toMatchObject({ worktrees: [] });
+	expect(orders().roots).toEqual([base]);
+});
+
+test("a listed worktree whose .git names another repository is that repository", async () => {
+	const base = repository(join(scratch, "reused"));
+	const side = addWorktree(base, "reused-side");
+	const other = repository(join(scratch, "reused-other"));
+	git(other, "remote", "set-url", "origin", "https://github.com/test/other.git");
+	writeFileSync(join(side, ".git"), `gitdir: ${join(other, ".git")}\n`);
+	expect(await declareDirectory(base)).toMatchObject({ worktrees: [] });
+	expect(orders().roots).toEqual([base]);
+});
+
 test("a repository with no remote is named by its main checkout, and so is every worktree of it", async () => {
 	const local = join(scratch, "local");
 	mkdirSync(local);

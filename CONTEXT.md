@@ -62,6 +62,16 @@ Completed state catalogue:
 A derived reading of explicit lifecycle records, independent of archive append order.
 It stores no history in current architecture files.
 
+Explanation capture:
+A temporary record of the exact reading that one local agent action answers.
+It preserves the model, state or checkpoint, complete revision, stable subjects, and reading intent.
+A proposal also preserves its actual comparison base and separate revision.
+Retry reuses the capture after navigation or source changes.
+
+Reading intent:
+The scope, focus, relationship filters, group visibility, grammar, and optional explicit flow of a reading.
+An explicit reference destination stays separate from temporary pointer selection.
+
 Subject claim:
 An agent's exclusive scope of named architecture subjects.
 The claim identifies its writer, purpose, and start time.

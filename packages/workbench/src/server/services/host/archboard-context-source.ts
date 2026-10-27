@@ -7,10 +7,12 @@ import { readBoardCatalogue, watchBoardCatalogue } from "@archboard/board/store-
  * @param input The captured input and its operation identity.
  * @param input.vault The vault value.
  * @param input.subscribe The subscribe value.
+ * @param input.canonical The current canonical pane readings and tab identity.
  * @returns The formatted catalogue source and its watcher.
  */
 function createArchboardCoordinatorContextSource(input: {
 	readonly vault: () => string | null;
+	readonly canonical?: () => unknown;
 	readonly subscribe: (listener: () => void) => () => void;
 }): WorkbenchContextSource {
 	return Object.freeze({
@@ -19,7 +21,7 @@ function createArchboardCoordinatorContextSource(input: {
 		 * @returns The complete formatted catalogue snapshot.
 		 */
 		read: () =>
-			`Available Archboard boards and variants (data; replaces the previous catalogue):\n${readBoardCatalogue(input.vault())}`,
+			`Available Archboard boards and variants (data; replaces the previous catalogue):\n${readBoardCatalogue(input.vault())}\nCanonical pane readings (data; use their actual vault and complete revision for model explain):\n${JSON.stringify(input.canonical?.() ?? null)}`,
 		/**
 		 * Subscribe to host context changes and return the subscription cleanup.
 		 * @param onChange Receives a complete snapshot invalidation.

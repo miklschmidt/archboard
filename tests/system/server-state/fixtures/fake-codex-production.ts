@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { explanationQueue, completeExplanationTurn } from "./fake-codex-explanation-queue.ts";
 import { appendFileSync, readFileSync } from "node:fs";
 import {
 	configFixture,
@@ -23,10 +24,10 @@ const controlPath = "__ARCHBOARD_TEST_CODEX_CONTROL__";
 const initialControl = JSON.parse(readFileSync(controlPath, "utf8")) as {
 	signedOut?: boolean;
 	ordinaryOnly?: boolean;
+	explanationQueue?: boolean;
 };
 let signedIn = initialControl.signedOut !== true;
 let pendingLogin = false;
-
 const record = (value: unknown): void => appendFileSync(logPath, `${JSON.stringify(value)}\n`);
 const send = (value: unknown): void => void process.stdout.write(`${JSON.stringify(value)}\n`);
 const respond = (
@@ -51,7 +52,6 @@ const request = (id: string, method: string, params: unknown): void => {
 	record({ kind: "server_request", id, method, params });
 	send({ id, method, params });
 };
-
 if (process.argv[2] === "--version") {
 	record({ kind: "version_probe", args: process.argv.slice(2) });
 	process.stdout.write("codex-cli 0.160.0\n");
@@ -64,12 +64,10 @@ if (
 	process.stderr.write("production fixture argv rejected\n");
 	process.exit(9);
 }
-
 const archboardKeys = ["ARCHBOARD_URL", "ARCHBOARD_NO_AUTOSTART"];
 const archboard = Object.fromEntries(archboardKeys.map((key) => [key, process.env[key] ?? null]));
 record({ kind: "app_server_spawn", pid: process.pid, args: process.argv.slice(2), archboard });
 record({ kind: "app_server_cwd", cwd: process.cwd() });
-
 type WireFrame = {
 	readonly id?: unknown;
 	readonly method?: string;
@@ -77,8 +75,8 @@ type WireFrame = {
 	readonly result?: unknown;
 	readonly error?: unknown;
 };
-
 const threads = new Map<string, FixtureThread>();
+const handleExplanationQueue = explanationQueue(threads, respond, notify);
 let threadSequence = readFileSync(logPath, "utf8").split('"thread/start","result"').length - 1;
 let turnSequence = 0;
 // Every thread started on the coordinator's model. As in Codex, any number of them may run, one
@@ -89,7 +87,6 @@ const realtimeSessions = new Map<string, string>();
 let workhorseThreadId: string | null = null;
 let reverseRequestsSent = false;
 let speechSequence = 0;
-
 const configResponse = () => ({
 	config: { ...configFixture, sqlite_home: process.env["CODEX_SQLITE_HOME"] },
 	origins: {
@@ -104,7 +101,6 @@ const configResponse = () => ({
 	},
 	layers: null,
 });
-
 const buildThread = (
 	id: string,
 	params: Record<string, unknown>,
@@ -309,7 +305,11 @@ const handle = (frame: WireFrame): void => {
 			}
 			respond(frame as never, { thread: threads.get(String(params["threadId"])) });
 			return;
+		case "thread/queue/add":
+		case "thread/queue/start":
+		case "thread/queue/delete":
 		case "thread/queue/list":
+			if (initialControl.explanationQueue && handleExplanationQueue(frame)) return;
 			respond(frame as never, { data: [], nextCursor: null });
 			return;
 		case "thread/timeline/list":
@@ -454,6 +454,7 @@ const controlTimer = setInterval(() => {
 			exit?: unknown;
 			completeLogin?: boolean;
 			completeWorkhorseTurn?: boolean;
+			explanationText?: string;
 			speaks?: number;
 		};
 		if (control.exit === true) {
@@ -469,6 +470,8 @@ const controlTimer = setInterval(() => {
 				turnId: turn["id"],
 				tokenUsage: workhorseTokenUsage,
 			});
+			if (initialControl.explanationQueue)
+				completeExplanationTurn(workhorse.id, turn, notify, control.explanationText);
 			turn["status"] = "completed";
 			turn["completedAt"] = unixSeconds();
 			workhorse.status = { type: "idle" };

@@ -1,3 +1,7 @@
+import {
+	ExplanationActionRequestSchema,
+	ExplanationActionResultSchema,
+} from "@archboard/workbench/browser-contract";
 import type { z } from "zod";
 import type { readArchitectureModel } from "@archboard/board/store-read";
 import {
@@ -58,7 +62,8 @@ function readArchitectureModelOnServer(
 	flow?: string,
 	selection?: Parameters<typeof readArchitectureModel>[3],
 ) {
-	const values = { module, checkpoint, flow, ...selection };
+	const { explain: _explain, ...reading } = selection ?? {};
+	const values = { module, checkpoint, flow, ...reading };
 	const query = new URLSearchParams(
 		Object.entries(values)
 			.filter(([, value]) => value !== undefined)
@@ -268,3 +273,32 @@ function renderArchitectureFlowOnServer(
 	);
 }
 export { renderArchitectureFlowOnServer };
+
+/**
+ * Route one local action without interpreting its captured architecture.
+ * @param input The shared action request.
+ * @returns Its temporary answer or refusal.
+ */
+function explainArchitectureOnServer(input: z.infer<typeof ExplanationActionRequestSchema>) {
+	const { type, ...body } = input;
+	const base = "/api/architecture/explanations";
+	if (type === "invoke")
+		return architectureResult(ExplanationActionResultSchema, base, jsonPost(body));
+	if (input.type === "latest")
+		return architectureResult(
+			ExplanationActionResultSchema,
+			`${base}?${new URLSearchParams({ tabSessionId: input.tabSessionId })}`,
+		);
+	const path = `${base}/${encodeURIComponent(input.actionId)}`;
+	return type === "read"
+		? architectureResult(
+				ExplanationActionResultSchema,
+				`${path}?${new URLSearchParams({ tabSessionId: input.tabSessionId })}`,
+			)
+		: architectureResult(
+				ExplanationActionResultSchema,
+				`${path}/${type}`,
+				jsonPost({ tabSessionId: input.tabSessionId }),
+			);
+}
+export { explainArchitectureOnServer };

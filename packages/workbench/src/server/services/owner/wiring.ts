@@ -1,3 +1,7 @@
+import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
+import { semanticPaneContextFor, onSemanticPaneContext } from "#server/services/panes/context.ts";
+import { createExplanationActions } from "#server/services/explanations/actions.ts";
+import { installExplanationActions } from "#server/services/explanations/dispatch.ts";
 import { basename } from "node:path";
 import type {
 	CodexWorkbenchDomainScope as CodexWorkbenchComponents,
@@ -53,6 +57,7 @@ import {
 	openPaneOf,
 	operationPane,
 	pinnedCheckoutOf,
+	panesOfTabSession,
 	presentingPaneOf,
 	requireWorkhorse,
 	semanticOwners,
@@ -300,6 +305,18 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			coordinatorContextFor: (tabSessionId) =>
 				createArchboardCoordinatorContextSource({
 					/**
+					 * Read this tab's explicit canonical readings without consulting its legacy board.
+					 * @returns The tab identity and current canonical pane reports.
+					 */
+					canonical: () => ({
+						tabSessionId,
+						panes: panesOfTabSession(tabSessionId).map((pane) => ({
+							paneId: pane.paneId,
+							focused: pane.focused,
+							architecture: semanticPaneContextFor(pane.clientId)?.architecture ?? null,
+						})),
+					}),
+					/**
 					 * Read the vault of the pane that presents this session.
 					 * @returns The presenting vault, or null with no open pane.
 					 */
@@ -315,6 +332,9 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 					subscribe: (listener) => {
 						const publisher = announcements.publisherFor(tabSessionId);
 						const stops = [
+							onSemanticPaneContext((clientId) => {
+								if (tabSessionOf(clientId) === tabSessionId) listener();
+							}),
 							publisher.subscribePaneFocus(listener),
 							publisher.subscribePaneSelection(listener),
 						];
@@ -393,6 +413,8 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 		 */
 		installLifecycleSignals: (components) => {
 			active = components;
+			const explanations = createExplanationActions(components);
+			const stopExplanations = installExplanationActions(explanations);
 			/** Give every tab session of the graph its publisher, and dispose of the rest. */
 			const reconcile = (): void => {
 				const ids = components.sessions.list().map(({ id }) => id);
@@ -411,7 +433,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			codexWiring.codex.publishPaneContext = (clientId, kind, userChanged, agentSwitch) => {
 				const pane = panes.get(clientId);
 				const session = boundSessionOf(components, clientId);
-				if (pane === undefined || session === null) return;
+				if (!legacyContextPane(pane) || session === null) return;
 				const semanticPublisher = announcements.publisherFor(session.id);
 				try {
 					const owners = semanticOwners(components, session, session.voiceWorkhorse());
@@ -435,6 +457,8 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			};
 			return () => {
 				stopReconciling();
+				stopExplanations();
+				explanations.dispose();
 				announcements.dispose();
 				if (active === components) {
 					active = null;
@@ -494,3 +518,16 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 	}
 }
 export { prepareCodexWorkbench, stopCodexWorkbench };
+
+/**
+ * Canonical reports reach the coordinator through their own existing context subscription.
+ * @param pane The registered pane, when present.
+ * @returns Whether a legacy board context can be read for this pane.
+ */
+function legacyContextPane(pane: PaneRegistration | undefined): pane is PaneRegistration {
+	return (
+		pane !== undefined &&
+		pane.board !== null &&
+		semanticPaneContextFor(pane.clientId)?.architecture === undefined
+	);
+}

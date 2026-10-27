@@ -14,7 +14,6 @@ type NavigationOptions = z.input<typeof StateSelectionSchema> & {
 	code?: boolean | undefined;
 	references?: boolean | undefined;
 	reference?: number | undefined;
-	checkpoint?: string | undefined;
 	model?: string | undefined;
 };
 

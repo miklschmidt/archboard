@@ -1150,7 +1150,7 @@
 				},
 				{
 					"path": "canonical compact proposals: retained baselines, identity changes, draft metadata, siblings, named predecessors, planning roots, exact materialization, comparison defaults and safe predecessor refusal",
-					"expectedUse": "Create and edit a selected draft through the normal claimed batch. Keep current files unchanged and use selectedState lifecycle. Compare against current, retained predecessor, or an explicit coherent state. Preserve unsupported predecessor changes for later reconciliation.",
+					"expectedUse": "Create and edit a selected draft through the normal claimed batch. Keep current files unchanged and use selectedState lifecycle. Compare against current, retained predecessor, or an explicit coherent state. Use explicit reconciliation after external predecessor changes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/board/tests/runtime/operations/proposals/; tests/system/semantic-boards/model-proposals.test.ts; visible state, comparison, and planning behavior: tests/system/browser/canonical-model-proposals.test.ts, canonical-model-comparison.test.ts, canonical-model-planning.test.ts; guidance skills/archboard/references/canonical-models.md"
@@ -1163,11 +1163,18 @@
 					"owner": "tests/system/browser/canonical-model-modes.test.ts; guidance skills/archboard/references/canonical-models.md"
 				},
 				{
+					"path": "canonical explanations: exact reading capture, shared local actions, one text answer, cancellation, unavailable agents, and explicit captured retry",
+					"expectedUse": "Resolve the actual canonical vault, model, selected state or checkpoint, complete revision, stable subjects, reading intent, and action identity before delivery. Preserve the comparison base revision. Keep answers temporary and use normal claimed writes only after an explicit save request.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/model-edit/explanations.test.ts; packages/board/tests/runtime/operations/proposals/proposals.test.ts; tests/system/server-state/canonical-explanations.test.ts; tests/system/browser/canonical-model-explanations.test.ts; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
 					"path": "canonical family reconciliation: retained conflict baselines, safe inheritance, blocked descendants, complete settlement, claims and exact family recovery",
 					"expectedUse": "Claim affected descendant states and existing subjects. Read durable standing. Resolve every issue explicitly in one settlement. Preserve continuing identities and retry the exact operation after interruption.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/proposals/reconcile*.test.ts; existing semantic rules packages/board/tests/shared/rules/reconcile/; adapter parity tests/system/semantic-boards/model-proposals.test.ts; browser acceptance remains with TASK-549.07 parent; guidance skills/archboard/references/canonical-models.md"
+					"owner": "packages/board/tests/runtime/operations/proposals/reconcile*.test.ts; existing semantic rules packages/board/tests/shared/rules/reconcile/; adapter parity tests/system/semantic-boards/model-proposals.test.ts; visible acceptance tests/system/browser/canonical-model-reconciliation.test.ts; guidance skills/archboard/references/canonical-models.md"
 				},
 				{
 					"path": "canonical proposal completion: explicit adoption, shelving, superseded refusal, fresh forced comparison, retained logical states, exact retry, recovery and bounded current-file churn",

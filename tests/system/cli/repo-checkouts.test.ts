@@ -4,7 +4,7 @@
 // registry is a file.
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, realpathSync } from "node:fs";
+import { mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { packageBin } from "./support/package-cli.ts";
@@ -40,14 +40,15 @@ afterAll(() => fixture.dispose());
  * Run a `repo` command and read its JSON answer.
  * @param args The arguments after `repo`.
  * @param cwd Where it runs; the directory with no checkout when absent.
+ * @param env Its environment.
  * @returns The exit status and the parsed answer.
  */
-function repo(args: readonly string[], cwd?: string) {
+function repo(args: readonly string[], cwd?: string, env = fixture.serverEnvironment) {
 	const command = [packageBin, "repo", ...args];
 	const result = spawnSync(command[0]!, command.slice(1), {
 		cwd: cwd ?? fixture.nowhere,
 		encoding: "utf8",
-		env: fixture.serverEnvironment,
+		env,
 	});
 	const answer: unknown = result.stdout.trim() === "" ? undefined : JSON.parse(result.stdout);
 	const failure = `${command.join(" ")}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`;
@@ -74,8 +75,21 @@ function listed() {
 }
 
 test("add registers a checkout with its worktrees and chooses the first one only", () => {
-	const first = repo(["add", main]);
+	// A `git` first on the PATH writes down where each Git command runs.
+	const bin = join(fixture.root, "bin");
+	const ran = join(fixture.root, "git-directories.log");
+	mkdirSync(bin);
+	const script = `#!/bin/sh\npwd -P >> '${ran}'\nexec '${Bun.which("git")}' "$@"\n`;
+	writeFileSync(join(bin, "git"), script, { mode: 0o755 });
+	const first = repo(["add", main], undefined, {
+		...fixture.serverEnvironment,
+		PATH: `${bin}:${process.env["PATH"]}`,
+	});
 	expect(first.status, first.failure).toBe(0);
+	// The worktrees are read from the checkout: a checkout with many never runs Git in each of them.
+	const directories = readFileSync(ran, "utf8").split("\n");
+	expect(directories).toContain(main);
+	expect(directories).not.toContain(worktree);
 	expect(first.answer).toMatchObject({
 		kind: "checkout",
 		repo: IDENTITY,
