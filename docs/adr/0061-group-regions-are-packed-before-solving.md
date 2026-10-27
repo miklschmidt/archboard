@@ -64,11 +64,8 @@ It includes routed lines in each child's bounds because its parent treats that c
 A route keeps its body inside those bounds, apart from the fixed stub that crosses a face.
 The clearance includes a complete bend and arrow approach.
 
-The next port-plan candidate keeps the positions from each block's first local layout.
-Its parent routes to those actual positions.
-The core omits the later pass that moves child ports and routes the hierarchy again.
-The existing header and lane reservations remain mandatory.
-This candidate needs new corpus, integrity, timing, and council evidence before retention.
+Ports settle after both ends are known.
+The parent reads each child's final port positions after that child reroutes.
 A bundle retains only the original source and target common to every relationship it represents.
 Coincident boundary ports do not establish that two routes share a card.
 
