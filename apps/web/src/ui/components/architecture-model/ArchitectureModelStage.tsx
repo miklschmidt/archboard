@@ -11,7 +11,7 @@ import { ModelOriginalDestination } from "#ui/components/architecture-model/Mode
 import { ModelBookmarkReading } from "#ui/components/architecture-model/ModelBookmarkReading.tsx";
 import { importedReadings } from "#ui/rules/architecture-model/imported-readings.ts";
 import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
-import { useCallback, useEffect, type ComponentProps, type JSX } from "react";
+import { useCallback, useEffect, type ComponentProps, type JSX, type ReactNode } from "react";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import type { ArchitectureModelRead } from "@archboard/board/model";
 import {
@@ -21,7 +21,10 @@ import {
 	architectureCheckpointsQuery,
 } from "#ui/clients/architecture-model/queries.ts";
 import { ModelStateDetails } from "#ui/components/architecture-model/ModelStateDetails.tsx";
-import { ModelWalkthroughReader } from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
+import {
+	ModelWalkthroughReader,
+	ModelWalkthroughFrame,
+} from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
 import { ModelReadingSelector } from "#ui/components/architecture-model/ModelReadingSelector.tsx";
 import { ModelComparisonSelector } from "#ui/components/architecture-model/ModelComparisonSelector.tsx";
@@ -146,17 +149,8 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 		);
 	}
 	if (isOriginalModel(data)) return <ModelOriginalDestination model={data} paneId={props.paneId} />;
-	return (
-		<section
-			data-slot="architecture-model-stage"
-			data-state={readingState(query, stale)}
-			data-stale={stale}
-			data-connection={feed.connection}
-			data-reading={readingIdentity(checkpoint, state)}
-			aria-busy={query.isFetching}
-			aria-label="Architecture"
-			className="bg-background flex min-h-0 flex-1 flex-col"
-		>
+	const header = (
+		<>
 			<ModelHeader name={modelName(data)} refresh={refresh} refreshing={query.isFetching}>
 				<ModelReadingSelector
 					checkpoint={checkpoint}
@@ -187,7 +181,21 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				/>
 			</ModelHeader>
 			<ModelControls vault={vault} checkpoint={checkpoint} model={data} />
+		</>
+	);
+	return (
+		<section
+			data-slot="architecture-model-stage"
+			data-state={readingState(query, stale)}
+			data-stale={stale}
+			data-connection={feed.connection}
+			data-reading={readingIdentity(checkpoint, state)}
+			aria-busy={query.isFetching}
+			aria-label="Architecture"
+			className="bg-background flex min-h-0 flex-1 flex-col"
+		>
 			<ModelResponse
+				header={header}
 				subject={subject}
 				paneId={props.paneId}
 				vault={props.vault}
@@ -355,6 +363,7 @@ interface ModelResponseProps extends Pick<
 	current: boolean;
 	stale: boolean;
 	failure: Extract<ArchitectureModelRead, { success: false }> | null;
+	header: ReactNode;
 }
 
 /**
@@ -365,10 +374,15 @@ interface ModelResponseProps extends Pick<
 function ModelResponse(props: ModelResponseProps): JSX.Element {
 	const { query, stale } = props;
 	if (query.isPending)
-		return <output className="text-body text-muted-foreground p-10">Reading architecture…</output>;
+		return (
+			<>
+				{props.header}
+				<output className="text-body text-muted-foreground p-10">Reading architecture…</output>
+			</>
+		);
 	const problem = readingProblem(query.error, props.current ? props.failure : null);
 	const model = visibleModel(query, props.current);
-	return (
+	const content = (
 		<>
 			{stale && (
 				<output
@@ -382,49 +396,50 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			{problem !== null && <ModelError {...problem} compact={stale} />}
 			{model !== undefined && (
 				<ModelBookmarkReading model={model}>
-					<ModelWalkthroughReader
-						key={readingSessionKey(model, props.subject)}
+					<ModelReading
+						overview={
+							<>
+								<ModelStateDetails model={model} paneId={props.paneId} states={props.states} />
+								<CheckpointEvidence model={model} />
+							</>
+						}
+						overlay={props.overlay}
+						subject={props.subject}
 						vault={props.vault}
 						model={model}
 						paneId={props.paneId}
 						reducedMotion={props.reducedMotion}
-						driven={props.driven}
-						narration={props.narration}
-						overlay={props.overlay}
-					>
-						<ModelReading
-							overview={
-								<>
-									<ModelStateDetails model={model} paneId={props.paneId} states={props.states} />
-									<CheckpointEvidence model={model} />
-								</>
-							}
-							overlay={props.overlay}
-							subject={props.subject}
-							vault={props.vault}
-							model={model}
-							paneId={props.paneId}
-							reducedMotion={props.reducedMotion}
-							onCodeTargetNotice={props.onCodeTargetNotice}
-						/>
-					</ModelWalkthroughReader>
+						onCodeTargetNotice={props.onCodeTargetNotice}
+					/>
 				</ModelBookmarkReading>
 			)}
 		</>
 	);
+	return (
+		<ModelWalkthroughFrame
+			key={readingSessionKey(model, props.subject)}
+			vault={props.vault}
+			model={model}
+			paneId={props.paneId}
+			reducedMotion={props.reducedMotion}
+			driven={props.driven}
+			narration={props.narration}
+			overlay={props.overlay}
+			chrome={props.header}
+		>
+			{content}
+		</ModelWalkthroughFrame>
+	);
 }
 
 /**
- * Preserve selected module identities across states of the same model.
- * @param model The selected architecture.
- * @param subject The explicit navigation destination.
- * @returns The identity of this reader session.
+ * Preserve a model's reader identity across states while resetting explicit subject destinations.
+ * @param model The optional coherent model.
+ * @param subject The explicit selected destination.
+ * @returns The presentation owner identity.
  */
-function readingSessionKey(
-	model: Extract<ArchitectureModelRead, { success: true }>,
-	subject: string | null,
-): string {
-	return JSON.stringify([model.manifest.id, subject]);
+function readingSessionKey(model: ModelQuery["data"], subject: string | null): string {
+	return JSON.stringify([model?.manifest.id, subject]);
 }
 
 /**

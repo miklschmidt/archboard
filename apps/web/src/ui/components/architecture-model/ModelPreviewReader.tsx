@@ -1,4 +1,4 @@
-import { useCallback, type ComponentProps, type JSX } from "react";
+import { useCallback, useMemo, type ComponentProps, type JSX } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	ArchitectureReadError,
@@ -15,7 +15,10 @@ import { ModelPreviewCoverage } from "#ui/components/architecture-model/ModelPre
 import { ModelPreviewDetails } from "#ui/components/architecture-model/ModelPreviewDetails.tsx";
 import { ModelBookmarks } from "#ui/components/architecture-model/ModelBookmarks.tsx";
 import { ModelBookmarkReading } from "#ui/components/architecture-model/ModelBookmarkReading.tsx";
-import { ModelWalkthroughReader } from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
+import {
+	ModelWalkthroughReader,
+	ModelWalkthroughFrame,
+} from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
 import { ModelLegacyAddresses } from "#ui/components/architecture-model/ModelLegacyAddresses.tsx";
 
 type PreviewProps = Pick<
@@ -48,15 +51,8 @@ function ModelPreviewReader(props: PreviewProps): JSX.Element {
 	const model = query.isError ? undefined : query.data;
 	const problem = previewProblem(query.error, model?.manifest.id, location.model);
 	const preview = model?.migrationPreview;
-	return (
-		<section
-			data-slot="architecture-model-stage"
-			data-preview={location.preview}
-			data-state={previewState(query.isPending, problem)}
-			aria-busy={query.isFetching}
-			aria-label="Migration preview"
-			className="bg-background flex min-h-0 flex-1 flex-col"
-		>
+	const header = useMemo(
+		() => (
 			<ModelHeader
 				name={`Migration preview · ${location.preview}`}
 				refresh={refresh}
@@ -81,6 +77,23 @@ function ModelPreviewReader(props: PreviewProps): JSX.Element {
 					onSelect={location.selectLegacyAddress}
 				/>
 			</ModelHeader>
+		),
+		[
+			location.preview,
+			preview,
+			query.isFetching,
+			query.isPending,
+			location.state,
+			location.selectState,
+			location.bookmark,
+			location.selectBookmark,
+			location.legacyAddress,
+			location.selectLegacyAddress,
+			refresh,
+		],
+	);
+	const content = (
+		<>
 			{query.isPending && (
 				<output className="text-body text-muted-foreground p-10">Reading migration preview…</output>
 			)}
@@ -89,6 +102,26 @@ function ModelPreviewReader(props: PreviewProps): JSX.Element {
 			) : (
 				<ModelError {...problem} />
 			)}
+		</>
+	);
+	return (
+		<section
+			data-slot="architecture-model-stage"
+			data-preview={location.preview}
+			data-state={previewState(query.isPending, problem)}
+			aria-busy={query.isFetching}
+			aria-label="Migration preview"
+			className="bg-background flex min-h-0 flex-1 flex-col"
+		>
+			<ModelWalkthroughFrame
+				key={previewReadingKey(model)}
+				{...props}
+				model={model}
+				refused={problem !== null}
+				chrome={header}
+			>
+				{content}
+			</ModelWalkthroughFrame>
 		</section>
 	);
 }
@@ -192,9 +225,7 @@ function PreviewReading(
 	const bookmark = props.model.migrationPreview?.bookmark;
 	return (
 		<ModelBookmarkReading model={props.model}>
-			<ModelWalkthroughReader key={previewReadingKey(props.model)} {...props}>
-				<ModelReading {...props} key={JSON.stringify([props.subject, bookmark?.id])} />
-			</ModelWalkthroughReader>
+			<ModelReading {...props} key={JSON.stringify([props.subject, bookmark?.id])} />
 		</ModelBookmarkReading>
 	);
 }
@@ -204,11 +235,13 @@ function PreviewReading(
  * @param model The complete selected preview.
  * @returns The source identity of the presentation session.
  */
-function previewReadingKey(model: ComponentProps<typeof ModelReading>["model"]): string {
+function previewReadingKey(
+	model: ComponentProps<typeof ModelReading>["model"] | undefined,
+): string {
 	return JSON.stringify([
-		model.manifest.id,
-		previewOriginal(model.migrationPreview, null),
-		model.checkpoint?.id,
+		model?.manifest.id,
+		previewOriginal(model?.migrationPreview, null),
+		model?.checkpoint?.id,
 	]);
 }
 

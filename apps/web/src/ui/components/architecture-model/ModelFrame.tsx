@@ -1,5 +1,8 @@
-import { useContext } from "react";
-import { ModelPaneContext } from "#ui/state/architecture-model/presentation.ts";
+import { useContext, useMemo } from "react";
+import {
+	ModelPaneContext,
+	ModelWalkthroughContext,
+} from "#ui/state/architecture-model/presentation.ts";
 import { SidebarToggle } from "#ui/components/semantic-board-canvas/SidebarToggle.tsx";
 import type { JSX, ReactNode } from "react";
 import { ModelMigrationRequired } from "#ui/components/architecture-model/ModelMigrationRequired.tsx";
@@ -67,6 +70,19 @@ interface ModelHeaderProps {
 function ModelHeader(props: ModelHeaderProps): JSX.Element {
 	const { controls } = usePaneChrome();
 	const pane = useContext(ModelPaneContext);
+	const presentation = useContext(ModelWalkthroughContext);
+	const active = presentation?.active ?? false;
+	const sidebar = useMemo(
+		() =>
+			pane === null
+				? null
+				: {
+						...pane.sidebar,
+						steppedAside: pane.sidebar.steppedAside || active,
+						shown: pane.sidebar.shown && !active,
+					},
+		[pane, active],
+	);
 	return (
 		<PaneHeaderRow>
 			<PaneHeaderStart>
@@ -85,7 +101,7 @@ function ModelHeader(props: ModelHeaderProps): JSX.Element {
 					<RiRefreshLine aria-hidden="true" className="size-4" />
 					Refresh
 				</Button>
-				{pane !== null && <SidebarToggle sidebar={pane.sidebar} />}
+				{sidebar !== null && <SidebarToggle sidebar={sidebar} />}
 				{controls}
 			</PaneHeaderEnd>
 		</PaneHeaderRow>

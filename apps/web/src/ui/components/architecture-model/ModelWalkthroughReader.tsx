@@ -25,6 +25,25 @@ interface ReaderProps extends Pick<
 	paneId: string;
 	reducedMotion: boolean;
 	children: ReactNode;
+	chrome?: ReactNode;
+}
+
+/**
+ * Keep header and recovery available when a source cannot offer a presentation.
+ * @param props The optional coherent model and composed pane contents.
+ * @returns Ordinary recovery or the existing captured-reading owner.
+ */
+function ModelWalkthroughFrame(
+	props: Omit<ReaderProps, "model"> & { model: Model | undefined; refused?: boolean },
+): JSX.Element {
+	if (props.model === undefined || props.refused === true)
+		return (
+			<>
+				{props.chrome}
+				{props.children}
+			</>
+		);
+	return <ModelWalkthroughReader {...props} model={props.model} />;
 }
 
 /**
@@ -67,6 +86,7 @@ function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
 	const context = useMemo(() => ({ select, active }), [select, active]);
 	return (
 		<ModelWalkthroughContext value={context}>
+			{props.chrome}
 			<Activity mode={request === null ? "visible" : "hidden"}>{props.children}</Activity>
 			{request !== null && (
 				<CapturedWalkthrough
@@ -158,7 +178,7 @@ function PlaybackFailure(props: {
 	);
 }
 
-export { ModelWalkthroughReader };
+export { ModelWalkthroughReader, ModelWalkthroughFrame };
 
 /**
  * Preserve original coverage when an alias selected it without a state URL field.
