@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex-orchestrator'
 created_date: '2026-10-26T04:11:00Z'
-updated_date: '2026-10-27T01:04:00Z'
+updated_date: '2026-10-27T02:24:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -352,4 +352,6 @@ Integrated TASK-549.13 from signed source fde0cc3fb1e95430feb967e985ce9f52613ae2
 TASK-549.13 is Done with all acceptance and completion criteria checked, and all eight proposals adopted. TASK-549 remains In Progress. Reused the signed source evidence because the merge tree matches; no tests or checks were rerun. Evidence records 23 runtime tests / 8,864 assertions, two explanation browser cases / 11 assertions, one legacy browser case / 38 assertions, passing source/frontend types, full lint, formatting, and evaluation input validation covering 21 scenarios, 21 fixtures, and 14 coverage parts. Semantics has zero findings; all eight affected boards have zero code warnings; nine unrelated warnings remain. No live model evaluation or full-gate pass is claimed.
 
 The current dependency-ready incomplete frontier is TASK-549.08, TASK-549.14, and TASK-549.20. TASK-549.08 and .20 are eligible for backend work. TASK-549.14 is dependency-ready with its backend complete; parent frontend work remains. The parent-reported .14 T3 delegate has completed and no implementation delegate is active. No other task status changed.
+
+The owner merged PR23 and requested another main rebase. Fetched origin/main a98f28811 and rebased the integration plus both active source worktrees with signed commits and preserved merge topology. Integration is ebb36ed324, TASK-549.14 is cae8148cdc, and TASK-549.08 is 53f6715442. Complete-tree comparisons against protected originals contain only the eight upstream PR20/23 paths. Vault histories and narrative merge fixes remain exact. The Git owner keeps canonical stdin support and now ends its group when its parent disconnects. Focused process, worktree registry, and narrative archive evidence passes 34 tests and 138 assertions. No live Git owners remain after the run. The owner killed the earlier spinning processes. All future delegates must include a98f28811 before tests or servers start. TASK-549 remains In Progress. No push, PR readiness change, or merge to main occurred. Evidence: /home/msc/.local/state/archboard-implementation/task-549/task-549-pr23-rebase.md and task-549-pr23-process-regression.log.
 <!-- SECTION:NOTES:END -->
