@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex-orchestrator'
 created_date: '2026-10-26T04:11:00Z'
-updated_date: '2026-10-27T09:08:00Z'
+updated_date: '2026-10-27T10:21:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -364,4 +364,6 @@ Integrated TASK-549.09 from signed source 1bd68f6353e31fdee1f99525adf7dc0b9f94a2
 Integrated TASK-549.14 from signed source 98450d246d78bc93e3ca1893e479b1fdc8e85d21 with signed no-fast-forward merge b36db07e8bb5b7338cc4aac07ddce5f7eac9a00b. Merge parents: integration 2c04f606e2c1419c9695e5ae3b1902156936dda4 and source 98450d246d78bc93e3ca1893e479b1fdc8e85d21. Merge tree 1deb24abf3d1c9f33934cbb213e4e90bbff31eae exactly matches the validated source tree. Source, integration, and merge signatures verify; both checkouts were clean before merge; source claims are released and server 10367 is stopped. Reused the recorded source evidence because tree equality holds; no tests or checks were rerun. TASK-549.14 is Done with four acceptance and two completion criteria satisfied; TASK-549 remains In Progress. Integration now covers 19/24 tickets. Ready frontier: TASK-549.18 is newly dependency-ready. TASK-549.21 is also dependency-ready after .09 and .20, with signed backend handoff b9bf39c427d2057d0768a0bf1fa0f5ebcb9b3dbf already delivered and parent UI still pending; continue its existing work rather than redispatching. The current integration Backlog snapshot still shows .21 as To Do, so parent may reconcile that status if needed. TASK-549.22 still waits on .21. No other task status changed.
 
 Correction on the .21 frontier: TASK-549.21 remains To Do in integration by design because its In Progress metadata is on the delivered but not yet integrated backend source. The parent owns that source and will compose it after .18 dispatch; no integration status change is needed now.
+
+Integrated TASK-549.21 from signed source 4b5af565270bff4579b30e9a20ea5ad0344b87fe using signed no-fast-forward merge 7dc7d5cdc3d193bca7d880af4859b719e26a7bdc. Merge parents: integration 5d2f45465332b84c59d19c3a7c21ee2b8abd8aae and source 4b5af565270bff4579b30e9a20ea5ad0344b87fe. Merge tree 76156236a2cc40b9258362d1fdde7498e4d8b789 exactly matches the validated source tree. Source, integration, and merge signatures verify; both checkouts were clean before merge; source claims are released and server 14295 is stopped. Reused recorded source evidence because tree equality holds; no checks or tests were rerun. TASK-549.21 is Done with four acceptance and two completion criteria satisfied; TASK-549 remains In Progress. Integration now covers 20/24 tickets. TASK-549.22 is newly dependency-ready after .14 and .21. TASK-549.18 backend is delivered at signed source 0e278719c8c34fa572332d3f899175ce8d6114eb in feat/portable-export-dependencies, but parent acceptance remains pending in that separate source; integration metadata remains To Do. Do not prepare .18 in this merger step. No other task status changed.
 <!-- SECTION:NOTES:END -->
