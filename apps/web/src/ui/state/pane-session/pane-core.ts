@@ -82,6 +82,8 @@ interface PaneCore<Transport extends WorkbenchTransportPort> {
 	 * @param reading The board, variant, view and selection.
 	 */
 	readonly readingChanged: (reading: PaneReading) => void;
+	/** Await the latest reading before starting an action that consumes it. */
+	readonly flushReading: () => Promise<boolean>;
 	/**
 	 * The user asked, by hand, for a part of this pane's reading to change (ADR 0034).
 	 * @param part The part their gesture was about.
@@ -575,6 +577,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		facetsChanged,
 		paneElementChanged: facetsChanged,
 		readingChanged,
+		flushReading: reading.flush,
 		userChanged: reading.userChanged,
 		userChangeFailed: reading.userChangeFailed,
 		takeBack,

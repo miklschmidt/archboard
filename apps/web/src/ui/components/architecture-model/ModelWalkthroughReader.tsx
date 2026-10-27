@@ -1,4 +1,11 @@
-import { Activity, useCallback, useState, type JSX, type ReactNode } from "react";
+import {
+	Activity,
+	useCallback,
+	useState,
+	type ComponentProps,
+	type JSX,
+	type ReactNode,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button, DropdownMenu } from "@archboard/ui-kit/components";
 import type { Model } from "#ui/rules/architecture-model/projection.ts";
@@ -7,7 +14,10 @@ import { modelWalkthroughQuery } from "#ui/clients/architecture-model/walkthroug
 import { ModelWalkthrough } from "#ui/components/architecture-model/ModelWalkthrough.tsx";
 
 type PlaybackRequest = Parameters<typeof modelWalkthroughQuery>[1];
-interface ReaderProps {
+interface ReaderProps extends Pick<
+	ComponentProps<typeof ModelWalkthrough>,
+	"driven" | "narration" | "overlay"
+> {
 	vault: string;
 	model: Model;
 	paneId: string;
@@ -134,6 +144,9 @@ function CapturedWalkthrough(
 				model={query.data}
 				reducedMotion={props.reducedMotion}
 				onLeave={props.onLeave}
+				driven={props.driven ?? undefined}
+				narration={props.narration}
+				overlay={props.overlay}
 			/>
 		</>
 	);

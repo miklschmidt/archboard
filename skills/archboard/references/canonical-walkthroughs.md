@@ -88,6 +88,8 @@ It reads no mutable model and starts no live voice session.
 
 Voice narration reads the narrative source separately from its target.
 The pane reports `playback.source`, `expectedSourceRevision`, and `expectedRevision` before voice starts.
+Narration waits until the server accepts that report.
+The browser keeps Narrate unavailable while the picture draws.
 The server resolves that source through the public architecture reader and compares both revision guards.
 A narrative can name a target checkpoint that predates its definition.
 The server keeps the complete capture for later beats, even when authored files change.

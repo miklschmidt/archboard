@@ -33,7 +33,10 @@ import { useArchitectureFeed } from "#ui/hooks/architecture-model/use-architectu
 
 type ModelQuery = UseQueryResult<Extract<ArchitectureModelRead, { success: true }>>;
 
-interface ModelStageProps extends Pick<ComponentProps<typeof ModelReading>, "onCodeTargetNotice"> {
+interface ModelStageProps
+	extends
+		Pick<ComponentProps<typeof ModelReading>, "onCodeTargetNotice">,
+		Pick<ComponentProps<typeof ModelWalkthroughReader>, "driven" | "narration" | "overlay"> {
 	vault: string;
 	paneId: string;
 	reducedMotion: boolean;
@@ -174,6 +177,9 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				stale={stale}
 				failure={feed.failure}
 				onCodeTargetNotice={props.onCodeTargetNotice}
+				driven={props.driven}
+				narration={props.narration}
+				overlay={props.overlay}
 			/>
 		</section>
 	);
@@ -322,7 +328,7 @@ function readingState(query: ModelQuery, stale: boolean): "loading" | "error" | 
 
 interface ModelResponseProps extends Pick<
 	ModelStageProps,
-	"vault" | "paneId" | "reducedMotion" | "onCodeTargetNotice"
+	"vault" | "paneId" | "reducedMotion" | "onCodeTargetNotice" | "driven" | "narration" | "overlay"
 > {
 	subject: string | null;
 	query: ModelQuery;
@@ -365,6 +371,9 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 						model={model}
 						paneId={props.paneId}
 						reducedMotion={props.reducedMotion}
+						driven={props.driven}
+						narration={props.narration}
+						overlay={props.overlay}
 					>
 						<ModelReading
 							subject={props.subject}

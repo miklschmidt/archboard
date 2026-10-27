@@ -629,3 +629,7 @@ The existing `productionServer` preload supplies the controlled provider without
 The existing voice action owner covers cancellation and replacement during asynchronous narrative preparation.
 The existing pane presentation owner covers settled arrivals and exact beat acknowledgements.
 Legacy narration and recording owners retain their existing regression coverage.
+
+Canonical narration has one controlled browser owner in `canonical-model-narration.test.ts`.
+It covers report delivery before voice starts, matching pane requests, manual steps, pinned narrative text, and departure.
+The external media and Codex substitutes remain in the existing production voice fixture.

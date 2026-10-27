@@ -142,7 +142,7 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 					onLeave={props.onLeave}
 					reserve={setReserve}
 					overlay={props.overlay}
-					narration={props.narration}
+					narration={drawnNarration(props.narration, reporting.ready && available)}
 				/>
 			)}
 		</div>
@@ -193,3 +193,17 @@ function UnavailableBeat({ status }: { status: Playback["beats"][number] }): JSX
 }
 
 export { ModelWalkthrough };
+
+/**
+ * Offer narration only when the pane can publish its captured architecture.
+ * @param narration The existing voice action and availability.
+ * @param ready Whether the current beat has a complete picture.
+ * @returns The same action with a visible drawing hold when needed.
+ */
+function drawnNarration(
+	narration: WalkthroughProps["narration"],
+	ready: boolean,
+): WalkthroughProps["narration"] {
+	if (narration === undefined || ready) return narration;
+	return { ...narration, held: "Wait for this step to finish drawing." };
+}

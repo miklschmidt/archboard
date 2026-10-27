@@ -1,3 +1,4 @@
+import { usePublishedNarration } from "#ui/hooks/application/use-published-narration.ts";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 // One pane as the application mounts it: its session with the server, and the
 // semantic board it is showing drawn inside it.
@@ -220,6 +221,11 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	);
 	const session = usePaneSession(options);
 	const { attachPaneElement, openedKey, readingChanged, vault } = session;
+	const narration = usePublishedNarration(
+		props.narration,
+		session.flushReading,
+		bound.onBoardError,
+	);
 	// The pictures of the vault this pane is in follow that vault's policy.
 	useVaultPolicyRefresh(vault);
 	// Registration and departure are two different events, and they are two
@@ -287,6 +293,9 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 						paneId={paneId}
 						reducedMotion={props.reducedMotion}
 						onCodeTargetNotice={callbacks.onCodeTargetNotice}
+						driven={asked}
+						narration={narration}
+						overlay={props.overlay}
 					>
 						<NoBoard />
 					</ArchitectureModelStage>

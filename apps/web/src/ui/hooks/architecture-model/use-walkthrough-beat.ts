@@ -37,10 +37,14 @@ function useWalkthroughBeat(
 		}),
 		[playback.walkthrough.id],
 	);
+	const matching =
+		driven?.walkthrough === playback.walkthrough.id && driven.beat < caption.beats.length
+			? driven
+			: null;
 	const position = useWalkthrough(
 		{ board: model.manifest.id, variant: model.checkpoint?.id },
 		offered,
-		driven === undefined ? initial : driven,
+		driven === undefined ? initial : matching,
 	);
 	const beat = readingAt(playback, position.beatIndex);
 	return { ...beat, key: `${model.revision.digest}:${beat.id}`, caption, position };

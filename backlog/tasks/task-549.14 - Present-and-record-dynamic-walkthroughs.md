@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-27T08:19:00Z'
+updated_date: '2026-10-27T08:38:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -112,4 +112,6 @@ Voice delegate started on feat/voice-delegate-backend from signed 14ea6e71d7f250
 Voice backend implementation passes controlled production evidence on feat/voice-delegate-backend. The existing public reader resolves current, exact, and proposal narrative sources separately from targets. Captures remain pinned after source edits. Stale and unavailable source/target reads refuse voice before provider start. The existing serialized voice operation awaits preparation and rejects canceled or replaced starts. Canonical pane requests use no legacy board key and acknowledge only the exact arrived beat. A RED exposed an old live first-beat acknowledgement leaking into its replacement recording; the narration identity now gates delivery. Focused evidence: 8 system tests with 62 assertions and 24 legacy/voice cases with 121 assertions pass. Types and lint pass with unchanged limits. The two affected draft boards have zero warnings after ownership edges and anchors were corrected. Fifteen warnings remain outside these two boards, including parent-owned TASK-549.14 diagrams. No frontend, browser tests, packages/walkthrough, review, push, PR, adoption, or task closure belongs to this delegate. Criteria stay unchecked and proposals stay draft.
 
 The final frozen production run passes 8 cases and 62 assertions within existing case budgets. Separate exact-source and proposal-source cases replace one over-budget combined case. Proposal authoring now happens in the shared fixture first write, which reduces that case to 9.7 seconds. The focused canonical recording owner also makes sure that the server sends no first-beat request. A simplification pass kept one capture in the existing narrated map, reused existing subject naming and comparison data, and removed unused fixture returns. No extra runtime owner, public package export, explanation action, test limit, or rule exception was added.
+
+Signed voice merge9b90e5944 composes the canonical backend with recording-page consumption. Types pass, and public recording passes one case with seven assertions. The live browser RED exposed a real ordering race: voice started before the debounced capture report reached the server. The existing reading publisher now offers an acknowledged flush, and canonical narration waits for that delivery. Narrate remains unavailable while the picture draws. The controlled browser owner now passes one case with seven assertions across first-beat requests, manual steps, a pinned source after edits, an unaffected second pane, and departure. All temporary diagnostics are removed. Types pass, and lint reported only the removed diagnostic console call. Proposal playback lifetime and final architecture restatement remain.
 <!-- SECTION:NOTES:END -->
