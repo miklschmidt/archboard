@@ -47,6 +47,18 @@ async function navigationReading(
 	flow: string | undefined,
 	options: NavigationOptions,
 ) {
+	if (
+		options.preview === undefined &&
+		(options.legacyAddress !== undefined || options.bookmark !== undefined)
+	)
+		return failure("MODEL_INVALID", [
+			{
+				code: "MODEL_INVALID",
+				file: "model.json",
+				message: "Legacy addresses and imported bookmarks require an explicit migration preview.",
+				recovery: "Name the preview origin with this selector.",
+			},
+		]);
 	const model =
 		options.preview !== undefined
 			? await (
@@ -58,6 +70,7 @@ async function navigationReading(
 					flow,
 					options.state,
 					options.checkpoint,
+					options,
 				)
 			: await localReading(vault, module, flow, options);
 	if (!model.success) return model;

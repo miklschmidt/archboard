@@ -59,6 +59,11 @@ function missingSubjects(model: ArchitectureModel, beat: Beat): string[] {
 		...new Set([
 			...[...scope, ...reading.focus].filter((id) => !modules.has(id)),
 			...reading.selection.filter((id) => !subjects.has(id)),
+			...(reading.visibility?.modules ?? []).filter((id) => !modules.has(id)),
+			...(reading.visibility?.relationships ?? []).filter(
+				(id) => !model.relationships.some((edge) => edge.id === id),
+			),
+			...(reading.visibility?.flows ?? []).filter((id) => !flows.some((entry) => entry.id === id)),
 			...flow.filter((id) => !flows.some((entry) => entry.id === id)),
 		]),
 	];
@@ -194,7 +199,15 @@ function attachPlayback(
 			},
 		]);
 	const beats = walk.beats.map((beat) => {
-		const diagnostics = beatDiagnostics(target, walk, beat);
+		const extra =
+			target.migrationPreview?.readingDiagnostics?.find((entry) => entry.id === beat.id)
+				?.diagnostics ?? [];
+		const diagnostics = [
+			...extra,
+			...beatDiagnostics(target, walk, beat).filter(
+				(entry) => !extra.some((known) => known.code === entry.code),
+			),
+		];
 		return {
 			id: beat.id,
 			status: diagnostics.length === 0 ? ("ready" as const) : ("unavailable" as const),
@@ -223,7 +236,13 @@ function attachPlayback(
 function capturedSource(model: ArchitectureModel, walk: Walk, selection: Selection) {
 	return {
 		walkthrough: walk.id,
-		...(selection.state === undefined ? {} : { state: model.selectedState?.id ?? selection.state }),
+		...(selection.preview === undefined ? {} : { preview: selection.preview }),
+		...(selection.state === undefined
+			? {}
+			: {
+					state:
+						model.migrationPreview?.selected?.legacy ?? model.selectedState?.id ?? selection.state,
+				}),
 		...(selection.checkpoint === undefined ? {} : { checkpoint: selection.checkpoint }),
 		...(selection.shared === undefined ? {} : { shared: selection.shared }),
 	};
@@ -289,4 +308,4 @@ async function readPlayback(
 		return resolvePlayback(vault, source, selection.walkthrough, selection);
 	});
 }
-export { readPlayback };
+export { readPlayback, walkthroughOf, attachPlayback };

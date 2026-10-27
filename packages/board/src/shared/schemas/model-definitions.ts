@@ -1,3 +1,4 @@
+import { MigrationReadingsSchema } from "#shared/schemas/migration-readings.ts";
 import { z } from "zod";
 import { LegacyOriginalInputsSchema } from "#shared/schemas/migration-inputs.ts";
 import { ModelDiagnosticSchema } from "#shared/schemas/model-diagnostic.ts";
@@ -49,7 +50,7 @@ const LegacyCoverageSchema = z.strictObject({
 	file: z.string(),
 	completeModel: z.literal(false),
 });
-const MigrationPreviewSchema = z.strictObject({
+const MigrationPreviewSchema = MigrationReadingsSchema.extend({
 	selected: LegacyCoverageSchema.optional(),
 	diagnostics: z.array(ModelDiagnosticSchema).optional(),
 	history: z

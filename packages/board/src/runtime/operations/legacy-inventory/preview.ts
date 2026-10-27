@@ -1,3 +1,11 @@
+import {
+	legacyAddresses,
+	legacyAddressOf,
+	selectBookmark,
+} from "#runtime/operations/legacy-inventory/addresses.ts";
+import type { z } from "zod";
+import type { StateSelectionSchema } from "#shared/schemas/model-proposals.ts";
+import { walkthroughOf, attachPlayback } from "#runtime/operations/read/playback.ts";
 import type { ArchitectureModelRead } from "#shared/schemas/model.ts";
 import type { LegacyInventory } from "#shared/schemas/migration.ts";
 import { GitObjectIdSchema } from "#shared/schemas/model.ts";
@@ -69,14 +77,37 @@ async function readMigrationPreview(
 	flow?: string,
 	state?: string,
 	checkpoint?: string,
+	selection: z.infer<typeof StateSelectionSchema> = {},
 ): Promise<ArchitectureModelRead> {
-	if (checkpoint !== undefined)
-		return retainedPreview(vault, origin, checkpoint, state, module, flow);
+	if (checkpoint !== undefined) {
+		const source = await retainedPreview(vault, origin, checkpoint, state, module, flow);
+		if (!source.success || selection.legacyAddress === undefined)
+			return previewPlayback(selectBookmark(source, selection.bookmark), selection);
+		const address = legacyAddressOf(
+			source.migrationPreview?.addresses ?? [],
+			selection.legacyAddress,
+			state,
+		);
+		if ("success" in address) return address;
+		const target = await retainedPreview(vault, origin, checkpoint, address.state, module, flow);
+		return previewPlayback(selectBookmark(withAddress(target, address), selection.bookmark), {
+			...selection,
+			state: address.state,
+		});
+	}
 	const inventory = readLegacyInventory(vault, origin);
 	if (!inventory.success) return failure("MAPPING_INVALID", inventory.diagnostics);
 	const refused = previewEligibility(inventory) ?? previewReferenceFailure(inventory);
 	if (refused !== undefined) return refused;
-	const result = previewFromInventory(inventory, state, module, flow);
+	const address =
+		selection.legacyAddress === undefined
+			? undefined
+			: legacyAddressOf(legacyAddresses(inventory), selection.legacyAddress, state);
+	if (address !== undefined && "success" in address) return address;
+	const result = withAddress(
+		previewFromInventory(inventory, address?.state ?? state, module, flow),
+		address,
+	);
 	if (previewChanged(vault, inventory))
 		return failure("MODEL_CHANGED", [
 			{
@@ -86,7 +117,10 @@ async function readMigrationPreview(
 				recovery: "Finish external edits and preview the fresh mapping plan again.",
 			},
 		]);
-	return result;
+	return previewPlayback(selectBookmark(result, selection.bookmark), {
+		...selection,
+		state: address?.state ?? state,
+	});
 }
 /**
  * Compose captured sources and attach their explicit draft conversion evidence.
@@ -188,3 +222,34 @@ function previewChanged(vault: string, inventory: LegacyInventory): boolean {
 }
 
 export { readMigrationPreview, previewFromInventory };
+
+/**
+ * Attach the existing immutable playback contract to one captured preview.
+ * @param model The complete captured current or original reading.
+ * @param selection Its explicit narrative source selectors.
+ * @returns The existing playback result without another source read.
+ */
+function previewPlayback(
+	model: ArchitectureModelRead,
+	selection: z.infer<typeof StateSelectionSchema>,
+): ArchitectureModelRead {
+	if (!model.success || selection.walkthrough === undefined) return model;
+	const walk = walkthroughOf(model, selection.walkthrough);
+	if ("success" in walk) return walk;
+	return attachPlayback(model, model, walk, selection);
+}
+
+/**
+ * Report the exact address that selected this original coverage.
+ * @param model The selected original reading.
+ * @param address The captured explicit address, when requested.
+ * @returns The same reading and its inspectable address.
+ */
+function withAddress(
+	model: ArchitectureModelRead,
+	address: Extract<ReturnType<typeof legacyAddressOf>, { address: string }> | undefined,
+): ArchitectureModelRead {
+	return !model.success || address === undefined
+		? model
+		: { ...model, migrationPreview: { ...model.migrationPreview!, resolvedAddress: address } };
+}

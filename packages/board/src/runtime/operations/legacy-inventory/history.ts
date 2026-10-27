@@ -1,3 +1,5 @@
+import { legacyAddresses } from "#runtime/operations/legacy-inventory/addresses.ts";
+import { convertedReadings } from "#runtime/operations/legacy-inventory/readings.ts";
 import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
 import type { LegacyInventory } from "#shared/schemas/migration.ts";
 import type { SemanticVariant } from "#shared/schemas/board-document.ts";
@@ -30,6 +32,8 @@ function previewCoverage(inventory: LegacyInventory): Preview {
 		origin: inventory.plan.origin,
 		source: inventory.source,
 		planRevision: inventory.planRevision!,
+		...readingMetadata(inventory),
+		addresses: legacyAddresses(inventory),
 		coverage: [],
 		plannedBoards: [],
 		history: inventory.boards.flatMap(({ document, file }) =>
@@ -137,6 +141,7 @@ function scopedPreview(
 			{
 				...model,
 				manifest: { ...model.manifest, current: null },
+				walkthroughs: model.walkthroughs.map((walk) => ({ ...walk, target: { state: legacy } })),
 				selectedState: {
 					id: state.id,
 					name: state.name,
@@ -148,6 +153,7 @@ function scopedPreview(
 				},
 				migrationPreview: {
 					...previewCoverage(inventory),
+					...readingMetadata(scoped),
 					selected: { legacy, board: document.id, file, completeModel: false },
 				},
 			},
@@ -158,3 +164,13 @@ function scopedPreview(
 }
 
 export { previewCoverage, scopedPreview };
+
+/**
+ * Keep converted narrative inputs separate from optional reading catalogues.
+ * @param inventory Captured original coverage.
+ * @returns Content-free reading metadata.
+ */
+function readingMetadata(inventory: LegacyInventory) {
+	const { bookmarks, readingDiagnostics } = convertedReadings(inventory);
+	return { bookmarks, readingDiagnostics };
+}

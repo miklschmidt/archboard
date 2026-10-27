@@ -237,6 +237,10 @@ const ArchitectureModelFailureSchema = z
 		success: z.literal(false),
 		code: z.enum([
 			"WALKTHROUGH_NOT_FOUND",
+			"BOOKMARK_NOT_FOUND",
+			"BOOKMARK_AMBIGUOUS",
+			"LEGACY_ADDRESS_NOT_FOUND",
+			"LEGACY_ADDRESS_AMBIGUOUS",
 			"WALKTHROUGH_AMBIGUOUS",
 			"STATE_NOT_FOUND",
 			"STATE_AMBIGUOUS",
