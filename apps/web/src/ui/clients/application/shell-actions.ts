@@ -11,7 +11,7 @@ import type { Panes } from "#ui/hooks/application/use-panes.ts";
 import type { ConversationActivation } from "#ui/clients/application/shown-conversation.ts";
 import { userMoves, type UserMove } from "#ui/rules/application/user-moves.ts";
 import { chooseCheckout } from "#ui/clients/board-catalog/repositories.ts";
-import { type BoardCatalog } from "#ui/hooks/board-catalog/use-board-catalog.ts";
+import { type ModelCatalog } from "#ui/hooks/architecture-model/use-model-catalog.ts";
 import { showModel } from "#ui/clients/pane-session/pane-requests.ts";
 import type {
 	SettingsSurface,
@@ -33,7 +33,7 @@ interface ShellActionDeps {
 	/** Where a person's own move is announced, so the address bar records it. */
 	readonly addressing: WorkspaceAddressing;
 	readonly panes: Panes;
-	readonly catalog: BoardCatalog;
+	readonly catalog: ModelCatalog;
 	readonly notices: NoticeStack;
 	readonly fullscreen: Fullscreen;
 	readonly openSettings: (surface: SettingsSurface) => void;
@@ -220,7 +220,7 @@ async function choose(deps: ShellActionDeps, repository: string, root: string): 
  * @returns The vault, or the notice that says why there is none.
  */
 function placeFor(
-	catalog: BoardCatalog,
+	catalog: ModelCatalog,
 	status: PaneStatus,
 	repository: string | undefined,
 ): string | ShellNotice {
@@ -254,7 +254,7 @@ function placeFor(
  * @param repository The repository's name.
  * @returns Its chosen checkout's vault, or null when it has none to read.
  */
-function vaultOf(catalog: Pick<BoardCatalog, "repositories">, repository: string): string | null {
+function vaultOf(catalog: Pick<ModelCatalog, "repositories">, repository: string): string | null {
 	return (
 		catalog.repositories.find((each) => each.repository.name === repository)?.repository.vault ??
 		null

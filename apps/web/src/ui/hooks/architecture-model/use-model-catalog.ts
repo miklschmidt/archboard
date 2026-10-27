@@ -16,28 +16,24 @@ import {
 } from "#ui/clients/architecture-model/queries.ts";
 import { boardCatalogKeys, repositoriesQuery } from "#ui/clients/board-catalog/queries.ts";
 import type { Model } from "@archboard/board/content";
-import { EMPTY_LISTING } from "#ui/rules/board-catalog/listing.ts";
-import type { BoardListing } from "#ui/rules/pane-session/session-types.ts";
 
 /** One repository and its current architecture authority. */
-interface RepositoryBoards {
+interface RepositoryModel {
 	readonly repository: RepositoryEntry;
 	readonly model?: Model["manifest"] | undefined;
 	readonly migrationRequired?: boolean;
-	readonly listing: BoardListing;
 	readonly error: string | null;
 	readonly loading: boolean;
 }
 
 /** Repository discovery and invalidation share the existing content cache. */
-interface BoardCatalog {
-	readonly repositories: readonly RepositoryBoards[];
+interface ModelCatalog {
+	readonly repositories: readonly RepositoryModel[];
 	readonly served: string | null;
 	readonly error: string | null;
 	readonly loading: boolean;
 	readonly refresh: () => void;
 	readonly reload: () => void;
-	readonly boardsChanged: (vault: string, boards: readonly string[]) => void;
 	readonly reconnected: () => void;
 	readonly repositoriesChanged: () => void;
 }
@@ -57,19 +53,11 @@ function catalogCommands(client: QueryClient) {
 		void client.invalidateQueries({ queryKey: boardCatalogKeys.repositories });
 		refresh();
 	}
-	/**
-	 * Existing pane news names the affected vault.
-	 * @param vault The explicit architecture vault.
-	 */
-	function changed(vault: string): void {
-		void client.invalidateQueries({ queryKey: architectureModelKeys.vault(vault) });
-	}
 	return {
 		refresh,
 		reload,
 		reconnected: reload,
 		repositoriesChanged: reload,
-		boardsChanged: changed,
 	};
 }
 
@@ -93,7 +81,7 @@ function readModels(results: readonly UseQueryResult<Model>[]) {
  * Read canonical repository summaries through the same queries and feed as open panes.
  * @returns Repository discovery and refresh actions without legacy board reads.
  */
-function useBoardCatalog(): BoardCatalog {
+function useModelCatalog(): ModelCatalog {
 	const client = useQueryClient();
 	const listed = useQuery(repositoriesQuery());
 	const commands = useMemo(() => catalogCommands(client), [client]);
@@ -116,10 +104,9 @@ function useBoardCatalog(): BoardCatalog {
 	});
 	const repositories = useMemo(
 		() =>
-			(entries ?? []).map((repository): RepositoryBoards => {
+			(entries ?? []).map((repository): RepositoryModel => {
 				const empty = {
 					repository,
-					listing: EMPTY_LISTING,
 					migrationRequired: false,
 					error: null,
 					loading: false,
@@ -148,17 +135,4 @@ function useBoardCatalog(): BoardCatalog {
 	);
 }
 
-/**
- * Canonical modules have no board catalogue projection.
- * @param _catalog The application catalogue.
- * @param _vault The pane's vault.
- * @returns The empty compatibility listing for remaining shared shell contracts.
- */
-function boardsIn(
-	_catalog: Pick<BoardCatalog, "repositories">,
-	_vault: string | null,
-): BoardListing {
-	return EMPTY_LISTING;
-}
-
-export { boardsIn, useBoardCatalog, type BoardCatalog, type RepositoryBoards };
+export { useModelCatalog, type ModelCatalog, type RepositoryModel };

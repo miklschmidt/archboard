@@ -17,7 +17,7 @@ import {
 } from "#ui/rules/application/notices.ts";
 import { OpenerSettings } from "@archboard/code-opener/opener-settings";
 import { paneEvents } from "#ui/rules/application/pane-events.ts";
-import { heldBoards, recordFor, type PaneRecords } from "#ui/rules/application/pane-records.ts";
+import { recordFor, type PaneRecords } from "#ui/rules/application/pane-records.ts";
 import { createShellActions, vaultOf } from "#ui/clients/application/shell-actions.ts";
 import {
 	addressingOver,
@@ -29,7 +29,6 @@ import { applyTheme, initialTheme } from "#ui/clients/application/theme.ts";
 import { usePaneReadings } from "#ui/hooks/application/use-pane-reading.ts";
 import { usePaneViews } from "#ui/hooks/application/use-pane-views.ts";
 import { useSubtitleOverlay } from "#ui/hooks/application/use-subtitle-overlay.ts";
-import { useReleasedBoards } from "#ui/hooks/application/use-released-boards.ts";
 import {
 	shellPresentationOf,
 	useFullscreen,
@@ -53,7 +52,10 @@ import { useWorkbench, type Workbench } from "#ui/hooks/application/use-workbenc
 import { useWorkspaceAddressing } from "#ui/hooks/application/use-workspace-addressing.ts";
 import { useBesideOpening } from "#ui/hooks/application/use-beside-opening.ts";
 import { BoardCatalogProvider } from "#ui/components/board-catalog/BoardCatalogProvider.tsx";
-import { useBoardCatalog, type BoardCatalog } from "#ui/hooks/board-catalog/use-board-catalog.ts";
+import {
+	useModelCatalog,
+	type ModelCatalog,
+} from "#ui/hooks/architecture-model/use-model-catalog.ts";
 import { useOpeningAddress } from "#ui/hooks/board-routing/use-opening-address.ts";
 import { type WorkspaceAddressing } from "#ui/hooks/board-routing/use-workspace-address.ts";
 import { Tooltip } from "@archboard/ui-kit/components";
@@ -158,7 +160,7 @@ function useAgentSlots(sources: AgentSlotSources): AgentSlots {
 interface ShellViewSources {
 	readonly theme: ThemeChoice;
 	readonly panes: Panes;
-	readonly catalog: BoardCatalog;
+	readonly catalog: ModelCatalog;
 	/** The mounted pane per pane id. */
 	readonly mounted: Readonly<Record<string, ReactNode>>;
 	readonly fullscreen: Fullscreen;
@@ -241,7 +243,7 @@ function SettingsHosts(props: SettingsHostsProps): JSX.Element | null {
  * @param catalog The catalog.
  * @returns The lookup, or null.
  */
-function useVaultOf(catalog: BoardCatalog): ((repository: string) => string | null) | null {
+function useVaultOf(catalog: ModelCatalog): ((repository: string) => string | null) | null {
 	const { repositories, loading } = catalog;
 	return useMemo(
 		() =>
@@ -278,16 +280,7 @@ function ApplicationBody(): JSX.Element {
 		() => announcingViews(paneReadings, addressing),
 		[paneReadings, addressing],
 	);
-	const held = useMemo(
-		() =>
-			heldBoards(
-				panes.records,
-				panes.list.panes.map((entry) => entry.paneId),
-			),
-		[panes.records, panes.list],
-	);
-	const catalog = useBoardCatalog();
-	useReleasedBoards(held, catalog);
+	const catalog = useModelCatalog();
 	const agentActivity = useAgentActivity();
 	const workbench = useWorkbench(panes.handles, panes.list.activePaneId);
 	const { vault: activeVault } = panes.active.status;

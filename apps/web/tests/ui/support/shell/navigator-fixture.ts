@@ -254,7 +254,6 @@ function pane(
 		},
 		stage: null,
 		holder: null,
-		boardName: null,
 	};
 }
 

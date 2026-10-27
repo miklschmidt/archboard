@@ -827,3 +827,8 @@ The retained board harness no longer simulates a live locality route.
 The unused board take-back client and its shell/session state retire.
 The old pane-connection take-back race case retires with that endpoint.
 Generic connection and registration cases remain, while canonical subject-claim runtime and browser owners cover the shipped control.
+
+The repository catalogue owner now uses canonical model responses and the shared event stream.
+It covers explicit migration requirements, unreadable repository discovery, and model updates without a second read.
+Board release tracking, board-name lookup, activity-triggered content refreshes, and their obsolete assertions retire.
+Pane reports retain registration and stale-build handling without board-list invalidation callbacks.

@@ -384,18 +384,10 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 
 	/**
 	 * A socket closed, current or not; the workbench must release it either way.
-	 *
-	 * For a pane that has been disposed this is also where its retirement is
-	 * said, because it is the first moment the socket is actually gone — the
-	 * shell learns a pane has left the layout earlier, and the server still has
-	 * it registered until here (TASK-167).
 	 * @param socket The socket.
 	 */
 	function socketRetired(socket: WebSocket): void {
 		void ports.workbenchSockets?.detach(socket).catch(() => undefined);
-		if (disposed) {
-			ports.options().onPaneRetired?.(paneId);
-		}
 	}
 
 	/**

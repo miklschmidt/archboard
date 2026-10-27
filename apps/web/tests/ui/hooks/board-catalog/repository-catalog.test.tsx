@@ -1,25 +1,20 @@
-// The catalog over the repositories the server lists (ADR 0050): one board
-// listing for each repository with a vault to read, each with its own failure,
-// and nothing read for a repository whose chosen checkout has no vault.
-
+// Repository discovery reads canonical models through the shared cache and event feed.
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
-import { afterAll, expect, spyOn, test } from "bun:test";
+import { afterAll, afterEach, expect, test } from "bun:test";
 import type { ReactNode } from "react";
+import type { ArchitectureModelRead } from "@archboard/board/model";
 
 GlobalRegistrator.register({ url: "http://127.0.0.1:3000/" });
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
 
-// React's renderer is loaded once the page's globals are there.
-const { cleanup, renderHook, waitFor } = await import("@testing-library/react");
+const { act, cleanup, renderHook, waitFor } = await import("@testing-library/react");
 const { createElement } = await import("react");
 const { BoardCatalogProvider } =
 	await import("#ui/components/board-catalog/BoardCatalogProvider.tsx");
-const { useBoardCatalog } = await import("#ui/hooks/board-catalog/use-board-catalog.ts");
+const { useModelCatalog } = await import("#ui/hooks/architecture-model/use-model-catalog.ts");
 
 const SHOP = "/work/shop/.archboard/vault";
 const BILLING = "/work/billing/.archboard/vault";
-
-/** Two readable repositories, and two whose chosen checkout has no vault to read. */
 const REPOSITORIES = {
 	success: true,
 	served: SHOP,
@@ -42,149 +37,144 @@ const REPOSITORIES = {
 		},
 	],
 };
-
-/** The shop vault's one board. */
-const SHOP_BOARDS = {
+const MODEL: Extract<ArchitectureModelRead, { success: true }> = {
 	success: true,
-	levels: [],
-	boards: [
+	manifest: { schemaVersion: 1, id: "Shop", name: "Shop", current: null },
+	policy: {
+		levels: [],
+		groups: {},
+		nodeKinds: { service: { name: "Service", icon: "RiServerLine" } },
+		relationshipKinds: { calls: { name: "Calls", dash: "solid", arrowhead: "filled" } },
+	},
+	modules: [],
+	collections: [],
+	walkthroughs: [],
+	relationships: [],
+	roots: [],
+	selectedState: null,
+	proposals: [],
+	revision: { digest: "a".repeat(64), files: [] },
+};
+const LEGACY: ArchitectureModelRead = {
+	success: false,
+	code: "LEGACY_AUTHORITY",
+	error: "Explicit migration is required.",
+	diagnostics: [
 		{
-			name: "Checkout",
-			key: "checkout",
-			opens: "v1",
-			links: [],
-			description: null,
-			variants: [{ id: "v1", name: "Initial", lifecycle: "current", parentId: null }],
+			code: "LEGACY_AUTHORITY",
+			file: BILLING,
+			message: "Legacy inputs remain.",
+			recovery: "Plan migration.",
 		},
 	],
 };
-
-/** The vaults each listing was asked of, in order. */
 const listed: string[] = [];
+let repositoriesRefused = false;
+const streams = new Map<string, ModelEvents>();
 
-/**
- * A JSON answer.
- * @param body The body.
- * @param status The status.
- * @returns The response.
- */
-function answer(body: unknown, status = 200): Response {
-	return new Response(JSON.stringify(body), {
-		status,
-		headers: { "content-type": "application/json" },
-	});
+/** Controlled network stream for the existing architecture event protocol. */
+class ModelEvents extends EventTarget {
+	/**
+	 * Keep the connection addressed by the production subscriber.
+	 * @param url The requested event URL.
+	 */
+	constructor(url: string) {
+		super();
+		streams.set(new URL(url, "http://localhost").searchParams.get("vault")!, this);
+	}
+	/** No external connection exists in this transport fixture. */
+	close(): void {}
 }
+const realEvents = Object.getOwnPropertyDescriptor(globalThis, "EventSource");
+Object.defineProperty(globalThis, "EventSource", { value: ModelEvents, configurable: true });
+const realFetch = globalThis.fetch;
 
 /**
- * One vault's listing: shop's boards, and a failure for any other vault.
- * @param asked The request.
- * @returns The answer.
+ * Answer actual discovery and model HTTP requests.
+ * @param input The requested resource.
+ * @returns Its public response.
  */
-function listingOf(asked: URL): Response {
-	const vault = asked.searchParams.get("vault") ?? "";
+async function fakeFetch(input: RequestInfo | URL): Promise<Response> {
+	const asked = new URL(input instanceof Request ? input.url : String(input), "http://localhost");
+	if (asked.pathname === "/api/repositories") {
+		return repositoriesRefused
+			? Response.json(
+					{ success: false, error: "Repository discovery is unavailable." },
+					{ status: 500 },
+				)
+			: Response.json(REPOSITORIES);
+	}
+	if (asked.pathname !== "/api/architecture/model")
+		throw new Error(`Unexpected route: ${asked.pathname}`);
+	const vault = asked.searchParams.get("vault")!;
 	listed.push(vault);
-	return vault === SHOP
-		? answer(SHOP_BOARDS)
-		: answer({ success: false, error: "The vault could not be read." }, 500);
+	return Response.json(vault === SHOP ? MODEL : LEGACY);
 }
-
-/** Whether the server refuses to say which pane holds what. */
-let panesRefused = false;
+globalThis.fetch = Object.assign(fakeFetch, { preconnect: realFetch.preconnect });
 
 /**
- * Which pane holds what: nothing, or a refusal.
- * @returns The answer.
- */
-function panesOf(): Response {
-	return panesRefused
-		? answer({ success: false, error: "The panes could not be read." }, 500)
-		: answer({ panes: [] });
-}
-
-/** The faked routes, by path. */
-const ROUTES: Readonly<Record<string, (asked: URL) => Response>> = {
-	"/api/repositories": answer.bind(null, REPOSITORIES, 200),
-	"/api/panes": panesOf,
-	"/api/semantic-boards": listingOf,
-};
-
-/**
- * The faked server: the repositories, the panes, and each vault's listing.
- * @param input The request.
- * @returns The answer.
- */
-function fakeFetch(input: RequestInfo | URL): Promise<Response> {
-	const asked = new URL(
-		input instanceof Request ? input.url : String(input),
-		"http://127.0.0.1:3000/",
-	);
-	const route = ROUTES[asked.pathname];
-	return Promise.resolve(route === undefined ? answer({ success: false }, 404) : route(asked));
-}
-
-/**
- * The cache the catalog reads through, as the page provides it.
- * @param props The children.
- * @param props.children The hook under test.
- * @returns The provider.
+ * Use the same query lifetime as the application.
+ * @param props The mounted consumer.
+ * @param props.children The consumer.
+ * @returns Its cache provider.
  */
 function Provided(props: { children: ReactNode }): ReactNode {
 	return createElement(BoardCatalogProvider, null, props.children);
 }
 
-const realFetch = globalThis.fetch;
-globalThis.fetch = Object.assign(fakeFetch, { preconnect: realFetch.preconnect });
-
-afterAll(async () => {
+afterEach(() => {
 	cleanup();
+	listed.length = 0;
+	streams.clear();
+	repositoriesRefused = false;
+});
+afterAll(async () => {
 	globalThis.fetch = realFetch;
+	if (realEvents) Object.defineProperty(globalThis, "EventSource", realEvents);
+	else Reflect.deleteProperty(globalThis, "EventSource");
 	await GlobalRegistrator.unregister();
 });
 
-test("each repository with a vault lists its own boards or its own failure, and one without reads nothing", async () => {
-	const warned = spyOn(console, "warn");
-	const { result } = renderHook(() => useBoardCatalog(), { wrapper: Provided });
-	/**
-	 * What the navigator shows of each repository.
-	 * @returns Each one's boards, whether it failed and whether it is loading.
-	 */
-	const shown = () =>
-		result.current.repositories.map((each) => ({
-			boards: each.listing.boards.map((board) => board.name),
-			failed: each.error !== null,
-			loading: each.loading,
-		}));
-	// A repository with no vault to read is neither loading nor failed: its row
-	// says why from its state, and no listing is asked for it.
+test("each readable repository exposes its model or migration requirement and follows canonical news", async () => {
+	const { result } = renderHook(() => useModelCatalog(), { wrapper: Provided });
 	await waitFor(() =>
-		expect(shown()).toEqual([
-			{ boards: ["Checkout"], failed: false, loading: false },
-			{ boards: [], failed: true, loading: false },
-			{ boards: [], failed: false, loading: false },
-			{ boards: [], failed: false, loading: false },
+		expect(
+			result.current.repositories.map((each) => ({
+				model: each.model?.name ?? null,
+				migration: each.migrationRequired,
+				failed: each.error !== null,
+				loading: each.loading,
+			})),
+		).toEqual([
+			{ model: "Shop", migration: false, failed: false, loading: false },
+			{ model: null, migration: true, failed: false, loading: false },
+			{ model: null, migration: false, failed: false, loading: false },
+			{ model: null, migration: false, failed: false, loading: false },
 		]),
 	);
 	expect(listed.toSorted()).toEqual([BILLING, SHOP]);
-	// Two repositories with no vault are not one query asked twice.
-	expect(warned.mock.calls.flat().some((said) => String(said).includes("Duplicate"))).toBe(false);
-	warned.mockRestore();
+	expect([...streams.keys()].toSorted()).toEqual([BILLING, SHOP]);
+	await act(async () => {
+		streams.get(SHOP)!.dispatchEvent(
+			new MessageEvent("message", {
+				data: JSON.stringify({
+					type: "architecture_snapshot",
+					vault: SHOP,
+					reading: { ...MODEL, manifest: { ...MODEL.manifest, name: "Renamed shop" } },
+					claims: { success: true, claims: [] },
+				}),
+			}),
+		);
+	});
+	await waitFor(() => expect(result.current.repositories[0]?.model?.name).toBe("Renamed shop"));
+	expect(listed.toSorted()).toEqual([BILLING, SHOP]);
 });
 
-test("a failed read of which pane holds what is the navigator's failure, not each repository's", async () => {
-	panesRefused = true;
-	const { result } = renderHook(() => useBoardCatalog(), { wrapper: Provided });
+test("a failed repository discovery remains explicit and starts no model read", async () => {
+	repositoriesRefused = true;
+	const { result } = renderHook(() => useModelCatalog(), { wrapper: Provided });
 	await waitFor(() => expect(result.current.error).not.toBeNull());
-	await waitFor(() =>
-		expect(result.current.repositories.map((each) => each.listing.boards.length)).toEqual([
-			1, 0, 0, 0,
-		]),
-	);
-	// Only the billing vault's own failure is a repository's.
-	expect(result.current.repositories.map((each) => each.error !== null)).toEqual([
-		false,
-		true,
-		false,
-		false,
-	]);
-	panesRefused = false;
+	expect(result.current.repositories).toEqual([]);
+	expect(listed).toEqual([]);
+	expect(streams.size).toBe(0);
 });

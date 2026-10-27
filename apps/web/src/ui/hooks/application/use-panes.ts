@@ -38,11 +38,8 @@ interface PaneEvents {
 	readonly onRepositoriesChanged: () => void;
 	readonly onStaleFrontend: (message: string) => void;
 	readonly onCodeTargetNotice: (notice: CodeTargetNotice) => void;
-	readonly onPaneStateAccepted: () => void;
 	/** A pane's socket came back after being lost; nothing it cached is trustworthy. */
 	readonly onPaneReconnected: (paneId: string) => void;
-	/** A pane has gone and the server has dropped it; the inventory has moved. */
-	readonly onPaneRetired: (paneId: string) => void;
 	/** A pane's status was published; the workbench re-reads its transport. */
 	readonly onStatusPublished: (paneId: string) => void;
 	/** The server moved a pane onto a board, which the address bar records. */
@@ -59,9 +56,7 @@ type PaneCallbacks = Required<
 		PaneSessionOptions<BrowserWorkbenchTransport>,
 		| "onStatus"
 		| "onHolder"
-		| "onPaneStateAccepted"
 		| "onPaneReconnected"
-		| "onPaneRetired"
 		| "onStaleFrontend"
 		| "onCodeTargetNotice"
 		| "onAgentActivity"
@@ -161,23 +156,12 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 		onStatus,
 		onHolder,
 		onLayoutRequest,
-		/** The server accepted a changed pane report. */
-		onPaneStateAccepted: (): void => {
-			events.read().onPaneStateAccepted();
-		},
 		/**
 		 * A pane's socket came back.
 		 * @param paneId The pane.
 		 */
 		onPaneReconnected: (paneId: string): void => {
 			events.read().onPaneReconnected(paneId);
-		},
-		/**
-		 * A pane has gone and the server has dropped it.
-		 * @param paneId The pane.
-		 */
-		onPaneRetired: (paneId: string): void => {
-			events.read().onPaneRetired(paneId);
 		},
 		/**
 		 * A board could not be shown.

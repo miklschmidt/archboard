@@ -86,19 +86,12 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	onPresentRequest?: (request: PanePresentRequest) => void;
 	/** Open the canonical reading resolved for this pane. */
 	onModelRequest?: (request: PaneModelRequest) => void;
-	/** The server accepted this pane's report, so the pane inventory has moved. */
-	onPaneStateAccepted?: () => void;
 	/**
 	 * This pane's socket came back after a drop, so anything cached from this
 	 * server while it was down may be stale (TASK-167).
 	 * @param paneId The pane.
 	 */
 	onPaneReconnected?: (paneId: string) => void;
-	/**
-	 * This pane's socket has actually closed, so the server has dropped it.
-	 * @param paneId The pane.
-	 */
-	onPaneRetired?: (paneId: string) => void;
 	/**
 	 * The board could not be shown.
 	 * @param error What the server said, in words a person can act on.

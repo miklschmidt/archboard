@@ -9,12 +9,9 @@ import { NO_AGENT_ACTIVITY } from "#ui/rules/application/agent-activity.ts";
 import type { PaneList } from "#ui/rules/application/pane-list.ts";
 import { recordFor, type PaneRecords } from "#ui/rules/application/pane-records.ts";
 import {
-	boardsIn,
-	type BoardCatalog,
-	type RepositoryBoards,
-} from "#ui/hooks/board-catalog/use-board-catalog.ts";
-import { listedBoard } from "#ui/rules/board-catalog/listing.ts";
-import { boardAddressOf } from "#ui/rules/semantic-board-canvas/board/address.ts";
+	type ModelCatalog,
+	type RepositoryModel,
+} from "#ui/hooks/architecture-model/use-model-catalog.ts";
 import type {
 	ShellNotice,
 	ShellPane,
@@ -31,7 +28,7 @@ interface ShellViewInputs {
 	readonly records: PaneRecords;
 	/** The mounted pane per pane id. */
 	readonly panes: Readonly<Record<string, ReactNode>>;
-	readonly catalog: Pick<BoardCatalog, "repositories" | "error" | "loading">;
+	readonly catalog: Pick<ModelCatalog, "repositories" | "error" | "loading">;
 	readonly presentation: ShellPresentation | null;
 	readonly notices: readonly ShellNotice[];
 	readonly agentActivity: AgentActivityByVault;
@@ -43,7 +40,7 @@ interface ShellViewInputs {
  * @param activity What agents are doing, by vault.
  * @returns The shell's repository.
  */
-function shellRepository(entry: RepositoryBoards, activity: AgentActivityByVault): ShellRepository {
+function shellRepository(entry: RepositoryModel, activity: AgentActivityByVault): ShellRepository {
 	const { vault } = entry.repository;
 	const current = vault === null ? undefined : activity[vault];
 	return {
@@ -68,7 +65,7 @@ interface MadeRepositories {
  * changes none of them, so the navigator keeps the same list and makes no row
  * again for it (TASK-385.04).
  */
-const madeRepositories = new WeakMap<readonly RepositoryBoards[], MadeRepositories>();
+const madeRepositories = new WeakMap<readonly RepositoryModel[], MadeRepositories>();
 
 /**
  * Every repository as the shell lists it, the same list while nothing it is
@@ -88,23 +85,6 @@ function shellRepositories(inputs: ShellViewInputs): readonly ShellRepository[] 
 }
 
 /**
- * The name a pane's board is listed under in the pane's own repository.
- * @param inputs The view's inputs.
- * @param vault The pane's vault.
- * @param boardKey The pane's board key.
- * @returns The listed name, or null when it is not listed.
- */
-function listedName(
-	inputs: ShellViewInputs,
-	vault: string | null,
-	boardKey: string | null,
-): string | null {
-	const board = boardAddressOf(boardKey)?.board;
-	if (board === undefined) return null;
-	return listedBoard(boardsIn(inputs.catalog, vault), board)?.name ?? null;
-}
-
-/**
  * Each pane as the shell draws it.
  * @param inputs The view's inputs.
  * @returns The panes, in reading order.
@@ -116,7 +96,6 @@ function shellPanes(inputs: ShellViewInputs): ShellPane[] {
 			status: record.status,
 			stage: inputs.panes[entry.paneId] ?? null,
 			holder: record.holder,
-			boardName: listedName(inputs, record.status.vault, record.status.boardKey),
 		};
 	});
 }

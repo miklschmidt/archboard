@@ -105,67 +105,13 @@ function dropRecord(records: PaneRecords, paneId: string): PaneRecords {
 	return dropped === undefined ? records : rest;
 }
 
-/** A board one pane holds, and the vault it is a board of. */
-interface HeldBoard {
-	readonly vault: string;
-	readonly key: string;
-}
-
-/**
- * The boards the panes hold, deduplicated, in pane order. Two repositories can
- * each have a board of the same name, so a board is held in its vault.
- * @param records The records.
- * @param paneIds The panes, in reading order.
- * @returns The boards.
- */
-function heldBoards(records: PaneRecords, paneIds: readonly string[]): readonly HeldBoard[] {
-	const held: HeldBoard[] = [];
-	for (const paneId of paneIds) {
-		const { boardKey: key, vault } = recordFor(records, paneId).status;
-		if (key !== null && vault !== null && !held.some((each) => sameHeld(each, { vault, key }))) {
-			held.push({ vault, key });
-		}
-	}
-	return held;
-}
-
-/**
- * Whether two held boards are one.
- * @param a One.
- * @param b The other.
- * @returns True when both name one board of one vault.
- */
-function sameHeld(a: HeldBoard, b: HeldBoard): boolean {
-	return a.vault === b.vault && a.key === b.key;
-}
-
-/**
- * The boards that were held and are not held any more.
- *
- * Letting go of a board is the moment what the server holds for it matters
- * again: a board no pane is showing may have been written since anybody
- * looked, and nothing announces a change to a board this tab is not on.
- * @param before The boards held at the last check.
- * @param now The boards held now.
- * @returns The released boards, in the order they were held.
- */
-function releasedBoards(
-	before: readonly HeldBoard[],
-	now: readonly HeldBoard[],
-): readonly HeldBoard[] {
-	return before.filter((held) => !now.some((each) => sameHeld(each, held)));
-}
-
 export {
 	dropRecord,
 	emptyPaneStatus,
-	heldBoards,
 	initialPaneRecord,
 	patchRecord,
 	paneReady,
 	recordFor,
-	releasedBoards,
-	type HeldBoard,
 	type PaneRecord,
 	type PaneRecords,
 };

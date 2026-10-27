@@ -125,7 +125,6 @@ function picker() {
 			/** A successful board open invalidates its listing. */
 			refresh: (): void => {},
 			reload: unrelated,
-			boardsChanged: unrelated,
 			reconnected: unrelated,
 			repositoriesChanged: unrelated,
 		},

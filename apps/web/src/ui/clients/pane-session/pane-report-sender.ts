@@ -18,14 +18,9 @@ import {
 } from "#ui/clients/pane-session/workbench-socket.ts";
 
 /**
- * The two things the sender has to say beyond the pane's connection health,
- * taken from the session options rather than forwarded one at a time: both are
- * answers to a pane report, and this is the only place either is raised.
+ * A stale-build refusal belongs to the existing session listener.
  */
-type PaneReportListeners = Pick<
-	PaneSessionOptions<never>,
-	"onPaneStateAccepted" | "onStaleFrontend"
->;
+type PaneReportListeners = Pick<PaneSessionOptions<never>, "onStaleFrontend">;
 
 /** What the sender reads and tells. */
 interface PaneReportSenderParts {
@@ -87,7 +82,6 @@ function staleBuildOf(result: PaneReply | null): StaleBuild | null {
 function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender {
 	const sequencer = createPaneReportSequencer();
 	let publishedKey = "";
-	let acceptedListingKey = "";
 	let staleBuild = "";
 
 	/**
@@ -127,61 +121,35 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 	}
 
 	/**
-	 * The navigator only depends on which board this accepted pane contributes,
-	 * not on where it sits; say so once per board rather than per resize. A pane
-	 * going away is not visible here at all: it is the retiring pane that says
-	 * so, when its socket has actually closed (TASK-167).
-	 * @param report The accepted report.
-	 */
-	function acceptListing(report: PaneReport): void {
-		const listingKey = JSON.stringify([report.clientId, report.board]);
-		if (listingKey !== acceptedListingKey) {
-			acceptedListingKey = listingKey;
-			parts.listeners().onPaneStateAccepted?.();
-		}
-	}
-
-	/**
 	 * Apply what a pane-report answer may change.
 	 * @param effects What the sequencer permits.
 	 * @param dispatch The identity the report was dispatched under.
-	 * @param report The report.
 	 * @param result The answer, when the request settled.
 	 */
 	function apply(
 		effects: PaneReportEffects,
 		dispatch: PaneReportDispatch,
-		report: PaneReport,
 		result: PaneReply | null,
 	): void {
 		if (effects.superseded) {
 			return;
 		}
-		applyRegistration(effects, dispatch, report);
+		applyRegistration(effects, dispatch);
 		applyFreshness(effects, result);
 	}
 
 	/**
-	 * Apply the registration half of an answer: the acknowledgement, the pane's
-	 * connection health, and the listing this pane contributes to.
+	 * Apply registration acknowledgement and connection health.
 	 * @param effects What the sequencer permits.
 	 * @param dispatch The identity the report was dispatched under.
-	 * @param report The report.
 	 */
-	function applyRegistration(
-		effects: PaneReportEffects,
-		dispatch: PaneReportDispatch,
-		report: PaneReport,
-	): void {
+	function applyRegistration(effects: PaneReportEffects, dispatch: PaneReportDispatch): void {
 		if (effects.acknowledgeRegistration) {
 			dispatch.registration?.acknowledge(true);
 		}
 		if (effects.connectionHealth !== null) {
 			parts.setConnected(effects.connectionHealth);
 			parts.setRegistered(effects.connectionHealth);
-		}
-		if (effects.acceptPaneListing) {
-			acceptListing(report);
 		}
 	}
 
@@ -203,7 +171,7 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 	/**
 	 * Put a report on the wire under the identity the pane holds now.
 	 * @param vault The vault the pane is in, which the report names.
-	 * @param report The report.
+	 * @param report The captured pane report.
 	 */
 	function dispatchReport(vault: string, report: PaneReport): void {
 		const now = current();
@@ -221,11 +189,11 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 					return result;
 				}
 				const outcome = { settled: true, registered: result.registered } as const;
-				apply(sequencer.settle(dispatch, current(), outcome), dispatch, report, result);
+				apply(sequencer.settle(dispatch, current(), outcome), dispatch, result);
 				return result;
 			})
 			.catch(() => {
-				apply(sequencer.settle(dispatch, current(), { settled: false }), dispatch, report, null);
+				apply(sequencer.settle(dispatch, current(), { settled: false }), dispatch, null);
 			});
 	}
 

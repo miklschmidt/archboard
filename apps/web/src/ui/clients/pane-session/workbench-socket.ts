@@ -57,7 +57,6 @@ interface PaneReportEffects {
 	/** null leaves connection health exactly as it was. */
 	readonly connectionHealth: boolean | null;
 	readonly clearPublishedReport: boolean;
-	readonly acceptPaneListing: boolean;
 	readonly applyStaleBuild: boolean;
 }
 
@@ -66,7 +65,6 @@ const SUPERSEDED: PaneReportEffects = Object.freeze({
 	acknowledgeRegistration: false,
 	connectionHealth: null,
 	clearPublishedReport: false,
-	acceptPaneListing: false,
 	applyStaleBuild: false,
 });
 
@@ -190,7 +188,6 @@ function permittedEffects(standing: ReportStanding): PaneReportEffects {
 		// and the next change resends, but only if this one is not remembered
 		// as sent. That is the recovery path; there is no private retry loop.
 		clearPublishedReport: currentReport && !registered,
-		acceptPaneListing: currentRegistration && registered,
 		applyStaleBuild: currentReport && settled,
 	});
 }

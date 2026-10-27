@@ -23,8 +23,6 @@ interface ShellPane {
 	stage: ReactNode;
 	/** The board's current lock holder, or null when nobody is writing it. */
 	holder: LockHolder | null;
-	/** The name the vault lists the pane's board under, or null when it lists none. */
-	boardName: string | null;
 }
 
 /** A recovery action a notice offers, reported back by id when chosen. */
