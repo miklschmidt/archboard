@@ -115,3 +115,65 @@ test("migration retention refuses changed source, changed plans, and unavailable
 			.exitCode,
 	).not.toBe(0);
 });
+
+test("an incoherent composed candidate still reopens every exact retained original input", async () => {
+	const { home, vault } = previewFixture();
+	homes.push(home);
+	git(home, "config", "user.name", "Fixture");
+	git(home, "config", "user.email", "fixture@example.com");
+	git(home, "config", "commit.gpgsign", "false");
+	const first = await savePreviewPlan(vault);
+	const mapped = await savePreviewPlan(vault, {
+		...first.plan,
+		mappings: [
+			{
+				legacy: "Shop/System#Shop",
+				canonical: "Shop/System#Api",
+				reason: "Expose an invalid composed containment",
+			},
+		],
+	});
+	const saved = await savePreviewPlan(vault, {
+		...mapped.plan,
+		choices: mapped.conflicts.map((conflict) => ({
+			conflict: conflict.key,
+			reason: "Select the explicit incoherent candidate",
+			resolution: {
+				kind: "select",
+				option: conflict.options.findIndex((option) =>
+					conflict.kind === "parent"
+						? option.value === "Shop/System#Api"
+						: option.subject === "Shop/System#Api",
+				),
+			},
+		})),
+	});
+	expect(
+		await readArchitectureModel(vault, undefined, undefined, { preview: "Shop" }),
+	).toMatchObject({ success: false, code: "MODEL_INVALID" });
+	const retained = await retainArchitectureCheckpoint(vault, {
+		target: "migration",
+		origin: "Shop",
+		expectedPlan: saved.planRevision,
+		expectedRevision: saved.source.digest,
+		operationId: "incoherent-originals",
+		writer: "fixture",
+		doing: "Preserve originals before correction",
+		dependencies: [],
+	});
+	if (!retained.success) throw new Error(JSON.stringify(retained));
+	const original = await readArchitectureModel(vault, undefined, undefined, {
+		preview: "Shop",
+		checkpoint: retained.checkpoint.id,
+	});
+	if (!original.success) throw new Error(JSON.stringify(original));
+	expect(original.modules).toEqual([]);
+	expect(original.migrationPreview?.diagnostics).toContainEqual(
+		expect.objectContaining({ code: "CONTAINMENT_CYCLE" }),
+	);
+	expect(original.migrationPreview?.originalInputs?.map((input) => input.file)).toContain(
+		".archboard/migration-plan.json",
+	);
+	for (const input of original.migrationPreview!.originalInputs!)
+		expect(Buffer.from(input.base64, "base64")).toEqual(readFileSync(join(vault, input.file)));
+});

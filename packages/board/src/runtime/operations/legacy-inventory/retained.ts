@@ -155,41 +155,39 @@ function unresolvedDiagnostics(diagnostics: ModelDiagnostic[]) {
 	];
 }
 /**
+ * Capture the complete immutable evidence needed by one original reading.
+ * @param captured Exact archive inputs.
+ * @param record Their immutable checkpoint metadata.
+ * @returns The original bytes, supported inventory, and explicit diagnostics.
+ */
+function migrationContext(captured: Captured, record: Record) {
+	const snapshot = migrationInputs(captured, record),
+		diagnostics: ModelDiagnostic[] = [];
+	const originals = originalDocuments(snapshot.inputs, diagnostics);
+	const inventory = retainedInventory(snapshot, record, diagnostics);
+	return { captured, record, originals, inventory, diagnostics, original: snapshot.original };
+}
+type MigrationContext = ReturnType<typeof migrationContext>;
+/**
  * Reopen immutable originals without consulting present-day source or plan files.
  * @param captured Exact archive inputs.
  * @param record Their immutable checkpoint metadata.
  * @param selector An optional qualified original state.
- * @param module An optional original module selector.
- * @param flow An optional original flow selector.
  * @returns Scoped architecture or an explicit originals-only reading.
  */
 function retainedMigrationPreview(
 	captured: Captured,
 	record: Record,
 	selector?: string,
-	module?: string,
-	flow?: string,
 ): ArchitectureModelRead {
-	const snapshot = migrationInputs(captured, record),
-		diagnostics: ModelDiagnostic[] = [];
-	const originals = originalDocuments(snapshot.inputs, diagnostics);
-	const inventory = retainedInventory(snapshot, record, diagnostics);
-	if (convertibleInventory(inventory)) {
-		const result = previewFromInventory(inventory, selector, module, flow);
-		return convertedReading(
-			captured,
-			record,
-			originals,
-			snapshot.original,
-			inventory,
-			result,
-			selector,
-		);
-	}
-	if (selector !== undefined)
-		return failure("MAPPING_UNRESOLVED", unresolvedDiagnostics(diagnostics));
-	const result = unconvertedReading(captured, record, originals, diagnostics, inventory);
-	return withOriginalInputs(result, snapshot.original);
+	const context = migrationContext(captured, record);
+	const result = materializeOriginals(context, selector);
+	return result.success
+		? {
+				...result,
+				migrationPreview: { ...result.migrationPreview!, originalInputs: context.original },
+			}
+		: result;
 }
 /**
  * Distinguish a complete retained conversion plan from inspectable unresolved originals.
@@ -207,21 +205,38 @@ function convertibleInventory(
 	);
 }
 /**
+ * Materialize supported coverage while keeping failed conversions inspectable as originals.
+ * @param context Complete original checkpoint evidence.
+ * @param selector The optional explicit original state.
+ * @returns Original coverage or diagnostic evidence without a fabricated model.
+ */
+function materializeOriginals(
+	context: MigrationContext,
+	selector: string | undefined,
+): ArchitectureModelRead {
+	const { inventory, diagnostics, originals } = context;
+	if (convertibleInventory(inventory)) {
+		const result = previewFromInventory(inventory, selector);
+		if (result.success)
+			return { ...result, migrationPreview: { ...result.migrationPreview!, originals } };
+		if (selector !== undefined) return result;
+		return unconvertedReading(context, result.diagnostics);
+	}
+	if (selector !== undefined)
+		return failure("MAPPING_UNRESOLVED", unresolvedDiagnostics(diagnostics));
+	return unconvertedReading(context, diagnostics);
+}
+/**
  * Preserve all original evidence when canonical conversion remains unavailable.
- * @param captured The archive inputs.
- * @param record The original retention metadata.
- * @param originals Lossless original documents.
- * @param diagnostics Unsupported source evidence.
- * @param inventory The captured inventory, when readable.
+ * @param context The complete original checkpoint evidence.
+ * @param diagnostics Unsupported source or conversion evidence.
  * @returns An explicitly empty canonical reading with retained originals.
  */
 function unconvertedReading(
-	captured: Captured,
-	record: Record,
-	originals: ReturnType<typeof originalDocuments>,
+	context: MigrationContext,
 	diagnostics: ModelDiagnostic[],
-	inventory: ReturnType<typeof retainedInventory>,
 ): ArchitectureModelRead {
+	const { captured, record, originals, inventory } = context;
 	const result = originalsOnly(
 		captured,
 		record,
@@ -233,50 +248,3 @@ function unconvertedReading(
 	return result;
 }
 export { retainedMigrationPreview };
-
-/**
- * Expose every retained input byte, including the original policy and saved plan.
- * @param result The immutable migration reading.
- * @param original The exact retained source envelope.
- * @returns Complete original evidence without another storage owner.
- */
-function withOriginalInputs(
-	result: ArchitectureModelRead,
-	original: z.infer<typeof LegacyOriginalInputsSchema>,
-): ArchitectureModelRead {
-	return result.success
-		? { ...result, migrationPreview: { ...result.migrationPreview!, originalInputs: original } }
-		: result;
-}
-/**
- * Keep originals inspectable when canonical materialization fails after inventory succeeds.
- * @param captured The retained archive inputs.
- * @param record The immutable migration metadata.
- * @param originals Original document readings.
- * @param original The exact retained input envelope.
- * @param inventory The supported original inventory.
- * @param result The attempted canonical materialization.
- * @param selector Optional explicit original state coverage.
- * @returns The requested state, or an originals-only reading with diagnostics.
- */
-function convertedReading(
-	captured: Captured,
-	record: Record,
-	originals: ReturnType<typeof originalDocuments>,
-	original: z.infer<typeof LegacyOriginalInputsSchema>,
-	inventory: Extract<NonNullable<ReturnType<typeof retainedInventory>>, { success: true }>,
-	result: ArchitectureModelRead,
-	selector: string | undefined,
-): ArchitectureModelRead {
-	if (!result.success)
-		return selector === undefined
-			? withOriginalInputs(
-					unconvertedReading(captured, record, originals, result.diagnostics, inventory),
-					original,
-				)
-			: result;
-	return withOriginalInputs(
-		{ ...result, migrationPreview: { ...result.migrationPreview!, originals } },
-		original,
-	);
-}

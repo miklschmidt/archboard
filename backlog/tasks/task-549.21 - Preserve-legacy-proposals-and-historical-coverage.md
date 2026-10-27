@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-backend'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T06:26:00Z'
+updated_date: '2026-10-27T06:31:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -73,4 +73,6 @@ TASK-549.09, TASK-549.20
 
 <!-- SECTION:NOTES:BEGIN -->
 Backend implementation adds scoped original history, explicit draft predecessor and exact baseline choices, canonical compact conversion evidence, original standing and lifecycle records, and lossless original retention through the existing signed archive. No live migration or second history store exists. Draft proposals remain Board persistence@TASK-549.21, Command interface@TASK-549.21, and Archboard server routes@TASK-549.21. Parent-owned browser acceptance, adoption, and task closure remain pending. The early contract and concrete signed fixture are under /home/msc/.local/state/archboard-implementation/task-549. A nullable retained plan revision needs a parent type adjustment at tests/system/browser/canonical-model-preview.test.ts:87. Full type-check reports only that caller error. Backend compilation with that browser fixture excluded passes with every compiler rule unchanged. Full lint and evaluation inputs pass. Runtime evidence includes 20 migration cases, the additional original evidence case, 17 canonical history and correction regression cases, two migration adapter cases, and one correction adapter case. Final logs and source provenance will be recorded in task-549.21-backend.md.
+
+Accepted backend evidence covers 22 migration cases with 127 assertions across reused unchanged owners plus the final history and retention runs. Canonical history and correction regressions pass 17 cases/81 assertions. Canonical reference regressions pass 10 cases/40 assertions. Migration CLI/HTTP parity passes two cases/21 assertions, and correction parity passes one case/10 assertions. Full lint and formatting pass; the added retained-input test also passes its focused lint owner. Evaluation inputs pass 21 scenarios, 21 fixtures, and 14 coverage parts without a model call. Backend compilation passes with the one parent-owned nullable-plan browser assertion excluded and all compiler rules retained. Three draft architecture scopes have zero code warnings, semantics has zero diagnostics, and eight inherited warnings remain on Archboard. Exact original variants, designations, decisions, and views remain unchanged against 2c04f606e. The simplification pass groups immutable read evidence and removes an eight-argument helper. No frontend edit, browser test, review, adoption, push, PR, migration installation, or task closure occurred. The latest integration merge reports already up to date. Parent acceptance remains pending.
 <!-- SECTION:NOTES:END -->
