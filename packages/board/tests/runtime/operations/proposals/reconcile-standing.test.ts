@@ -1,5 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { readArchitectureModel } from "@archboard/board/store-read";
+import { projectModel, projectFlow } from "@archboard/board/content";
+import { behaviorFixture } from "#tests/runtime/operations/model-edit/flow-fixture.ts";
 import { editArchitectureModule } from "@archboard/board/store-write";
 import { fixture, disposeFixtures } from "#tests/runtime/operations/model-edit/fixture.ts";
 import { request, selected, proposal } from "#tests/runtime/operations/proposals/fixture.ts";
@@ -90,4 +92,53 @@ test("a draft created from an unsettled proposal starts blocked rather than appe
 	expect((await selected(vault, child.target.state!)).selectedState).toMatchObject({
 		standing: { blockedBy: parent.target.state, issues: [] },
 	});
+});
+
+test("projected connections retain unresolved joined identities and behavioral participants retain their issues", async () => {
+	const { vault } = behaviorFixture();
+	const added = await editArchitectureModule(vault, {
+		...(await request(vault)),
+		changes: [
+			{
+				type: "add-relationship",
+				source: "Shop#Gateway",
+				relationship: {
+					to: "Shop#Worker",
+					kind: "call",
+					order: 20,
+					label: "Second route",
+				},
+			},
+		],
+	});
+	if (!added.success) throw new Error(JSON.stringify(added));
+	const second = readArchitectureModel(vault);
+	if (!second.success) throw new Error(JSON.stringify(second));
+	const edge = second.relationships.find((entry) => entry.label === "Second route")!.id;
+	const draft = await proposal(vault, "Unresolved reading", "Current", [
+		{ type: "edit-module", subject: "Shop#Gateway", set: { responsibility: "Draft gateway" } },
+		{ type: "edit-relationship", subject: edge, set: { label: "Draft route" } },
+		{ type: "edit-step", subject: "Shop#Send", set: { label: "Draft message" } },
+	]);
+	const changed = await editArchitectureModule(vault, {
+		...(await request(vault)),
+		changes: [
+			{ type: "edit-module", subject: "Shop#Gateway", set: { responsibility: "Current gateway" } },
+			{ type: "edit-relationship", subject: edge, set: { label: "Current route" } },
+			{ type: "edit-step", subject: "Shop#Send", set: { label: "Current message" } },
+		],
+	});
+	if (!changed.success) throw new Error(JSON.stringify(changed));
+	const reading = await selected(vault, draft.target.state!);
+	const projection = projectModel(reading);
+	expect(projection.connections[0]!.joins.map((entry) => entry.id)).toEqual([
+		"Shop#Dispatch",
+		edge,
+	]);
+	expect(projection.unsettled).toEqual(
+		expect.arrayContaining(["Shop#Gateway", edge, "Shop#Send", "Shop#Dispatch"]),
+	);
+	const flow = projectFlow(projection, reading.collections[0]!.flows[0]!);
+	expect(flow.unsettled).toEqual(expect.arrayContaining(["Shop#Gateway", "Shop#Send"]));
+	expect(projectModel(second).unsettled).toEqual([]);
 });

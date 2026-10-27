@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T21:55:00Z'
+updated_date: '2026-10-27T21:57:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -104,6 +104,8 @@ Delegate the bounded canonical render-context repair to gpt-6.1-sol in an isolat
 Restore walkthrough ownership of the existing sidebar control. First extend the canonical walkthrough browser owner to prove that the header control is held while captured playback hides the ordinary reader, then that its prior sidebar choice returns on leave. Move the existing header into the current playback context through a composition slot; add no mirrored presentation state.
 
 Extend the existing agent-navigation browser owner to leave a requested walkthrough and open an uncached proposal. A completed remote presentation request must not restart when the ordinary reader remounts. Clear that request at the existing leave event through the pane arrival owner, without a second handled-request store or effect that mirrors state.
+
+Bounded render-context repair: extend the shared model projection with unsettled identities from selected-state issues and represented aggregate connections, then carry that field through flow projection and existing render exports. Preserve default comparison selection, exact identified base checks, existing request schemas, complete structural and behavioral interface meaning, and recipe replay. Parent owns frontend wiring, mapping, adoption, migration, and final acceptance.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -192,4 +194,6 @@ The canonical legibility browser port passes the first 15 computed-color and tra
 The canonical walkthrough owner reproduced an active sidebar toggle while captured playback hid its ordinary panel. The existing reader now receives the header as a composition slot inside its presentation context. ModelHeader derives the existing sidebar control state from that context; no mirrored presentation state or second sidebar owner was added. A shared frame preserves headers and recovery when no coherent model exists. The toggle is held and collapsed during playback, then restores its previous expanded state on leave. Canonical walkthrough and preview-navigation browsers, full types and focused source/test lint pass.
 
 The existing agent-navigation browser owner reproduced a completed remote walkthrough reopening after an uncached proposal read remounted the reader. Leaving now closes the captured session and clears the original driven request through useModelArrival, its existing owner. This is one event callback, without a mirrored effect or second handled-request store. The proposal remains ordinary after leave. Agent-navigation and walkthrough browser owners, full types and focused source/test lint pass.
+
+Render-context repair is implemented in the shared projection and HTTP render adapter. Public runtime and real-Git HTTP/CLI evidence proves module and aggregate warnings, default comparison with removed subjects, complete behavioral exchanges, exact retained recipe replay after later edits, CLI artifact equality, and scoped entry-point meaning after visual filters. Consumer rendering guidance describes these semantics; source-vault inputs remain unchanged. Focused tests pass 6 cases / 44 assertions. Both TypeScript projects, focused source/test lint with zero warnings, touched-file formatting, and git diff --check pass. Signed source 25157a31544c2128a0146ac889887091a824017c is based on integration 86ad139a453420768f321cb6ee8e7b1c13457e1a and includes required main a98f28811f4fa74233ae4a55e52b90d75defd93b. Full contract/evidence is in task-549.24-render-context-contract.md and task-549.24-render-context-backend.md under /home/msc/.local/state/archboard-implementation/task-549. Parent status, assignee, acceptance, frontend work, and architecture migration remain unchanged.
 <!-- SECTION:NOTES:END -->
