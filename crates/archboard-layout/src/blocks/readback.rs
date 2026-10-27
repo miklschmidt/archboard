@@ -138,6 +138,7 @@ impl Clusters<'_> {
     ) -> PlacedNode {
         let bounds = boxes[cluster.id.as_str()];
         let head = Head {
+            width: cluster.header.width,
             centre: centres[title_of(&cluster.id).as_str()].y,
             height: cluster.header.height,
             words: cluster.header.width - ARCHITECTURE_HEADER_PADDING,

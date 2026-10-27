@@ -31,12 +31,17 @@ A faster layout cannot justify a missing frame, an ambiguous trunk, or a line th
 Track treats each multi-member group region as one block before it asks for a solve.
 A region is the boundary around parts that share a configured group.
 The graph's containment and group membership decide the nesting, without a card-count cutoff.
-A graph without such a region keeps its inline nesting.
+A graph without such a region keeps its inline nesting, apart from the local parent rule below.
 A region with one member keeps the existing compact representation.
 Blocks continues to pack containers and group regions.
 
 A packed region retains its inline enclosing parent and its containment depth.
-A group-level caller precedes the header of a container that it enters when that ordering closes no cycle.
+A parent uses local ranks when a path between different member cards leaves that parent and returns through outside cards.
+The rule reads containment and relationships before the solve.
+Paths through parent interface names do not stand for paths through their members.
+The parent keeps the existing block layout and ports.
+Other parents remain inline.
+This prevents an outside path from stretching a frame between distant member ranks.
 
 The core omits the competing whole-board inline solve for a graph with regions.
 Every fan-in keeps its labels beside its sources before the shared trunk.
@@ -45,7 +50,7 @@ Incoming ports identify the original target card.
 A label before a fan-in join also distinguishes its target at the outgoing port.
 Relationship kind and direction remain part of each port identity.
 The core removes the competing label positions and wall-facing solves.
-Every card block keeps the acyclic entry constraints that hold a caller above the container header it enters.
+The layout removes the entry constraints that put every caller above an entered header.
 The core omits partial stacking solves and speculative whole-board solves.
 Each architecture graph uses one Solver call.
 Dropping its future cancels pending work through the host.
@@ -82,8 +87,10 @@ No later axis pass can move a shared turn onto another line.
 The layout keeps its joined-line simplifier, with painted title bounds from the fitted frames.
 A parent header reserves its entire painted face, including blank space beside its words.
 An arrow to that parent meets its header card rather than the surrounding frame.
-Traffic to descendants enters below that header through a side face.
-The graph reserves lanes beside nested headers inside their common ancestor before ranking.
+ADR 0062 gives that header normal card sizing.
+Traffic to descendants can pass through the free top edge beside it.
+A relationship naming a packed parent reaches its header through the parent's own routed layout.
+The layout removes the extra ancestor margins once reserved for full-width header bypass lanes.
 Known obstacle edges remain routing candidates regardless of their distance from the initial lane.
 Physical clearance takes precedence over fewer crossings when the initial lane crosses an obstacle.
 The drawing helpers reject missing frames, detached endpoints, header strikes, and ambiguous shared strokes.

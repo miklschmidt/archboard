@@ -104,7 +104,7 @@ pub(crate) fn let_ports_slide(scene: &mut Placement, block: &Block) {
         let Some(&item) = scene.cards.get(port) else {
             continue;
         };
-        if matches!(side, Side::Left | Side::Right) {
+        if block.header_entry(port) || matches!(side, Side::Left | Side::Right) {
             continue;
         }
         let low = if side == Side::Top { clear } else { left };
@@ -131,7 +131,7 @@ pub(crate) fn mark_regions(scene: &mut Placement, block: &Block, tree: &BlockTre
         }
         let region = tree
             .block_of(item)
-            .is_some_and(|inner| tree.get(inner).kind == Kind::Region);
+            .is_some_and(|inner| matches!(tree.get(inner).kind, Kind::Region | Kind::Frame));
         if (inline && tree.lone.contains_key(item)) || region {
             scene
                 .region_blocks
@@ -153,18 +153,13 @@ pub(crate) fn pinned_leaf(
     let at = inner.boxes[held.port.as_str()];
     let centre = centres[child.id.as_str()];
     let x = centre.x - inner.width / 2.0 + at.x + at.width / 2.0;
-    let top = if child.kind == Kind::Frame && child.ports.get(&held.port) == Some(&Side::Top) {
-        at.y + at.height / 2.0
-    } else {
-        0.0
-    };
-    let y = centre.y - inner.height / 2.0 + top;
+    let y = centre.y - inner.height / 2.0;
     PlacedNode {
         id: pin.to_owned(),
         x: x - PORT / 2.0,
         y,
         width: PORT,
-        height: inner.height - top,
+        height: inner.height,
         children: None,
         frame: None,
     }
@@ -240,7 +235,6 @@ pub(crate) fn hold_resized_children(nodes: &mut [PlacedNode]) {
         node.width = high - low;
         let row = node.frame.as_mut().expect("a frame");
         row.title[0] = low;
-        row.title[2] = node.width;
     }
 }
 

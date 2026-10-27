@@ -159,6 +159,9 @@ impl Settling<'_> {
     /// that is narrower.
     fn span_of(&self, block: &Block, port: &str) -> Span {
         let inner = self.laid_of(block);
+        if block.header_entry(port) {
+            return super::headers::header_reach(block, inner);
+        }
         let side = insets_of(block).side;
         let header = inner.boxes.get(&header_of(block));
         let top = block.ports.get(port) == Some(&Side::Top);

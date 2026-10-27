@@ -28,6 +28,10 @@ pub const PILL_FONT: DiagramFont = DiagramFont {
 pub(crate) const BAND_RADIUS: f64 = 10.0;
 /// The size of a measured part's name: a card's, and a container's or a flow's on its header slab.
 pub(crate) const PART_TITLE_SIZE: f64 = 14.0;
+/// A parent name is slightly stronger within a normal card-sized header.
+pub(crate) const PARENT_TITLE_SIZE: f64 = 15.0;
+/// The parent icon keeps the same chip with a slightly larger glyph.
+pub(crate) const PARENT_ICON_SIZE: f64 = 20.0;
 /// The room one line of such a name takes.
 pub const PART_TITLE_LINE: f64 = 20.0;
 /// The size of a measured part's responsibility, set on the same card or header slab.

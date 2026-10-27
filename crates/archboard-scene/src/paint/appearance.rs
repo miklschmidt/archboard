@@ -160,6 +160,7 @@ pub(super) fn type_chip(
     palette: &Palette,
     standing: Option<Standing>,
     icons: &BTreeMap<String, Vec<String>>,
+    icon_size: f64,
 ) -> Items {
     let ink = semantic_ink(appearance.type_color).unwrap_or_else(|| palette.glyph.clone());
     let rect = Rect {
@@ -174,6 +175,7 @@ pub(super) fn type_chip(
         (ICON_CHIP_SIZE - CHIP_THICKNESS) / 2.0,
         &ink,
         icons,
+        icon_size,
     );
     if standing == Some(Standing::Removed) {
         return concat(vec![

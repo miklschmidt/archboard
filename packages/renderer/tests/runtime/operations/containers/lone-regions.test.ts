@@ -7,6 +7,7 @@ import { routesThroughGroupHeaders } from "#tests/runtime/support/drawn-checks.t
 import foldedCaption from "#tests/runtime/support/fixtures/folded-caption.json";
 import { routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import { bodyShift, routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
+import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import legacyRouting from "#tests/runtime/support/fixtures/legacy-routing.json";
 import liveServerState from "#tests/runtime/support/fixtures/live-server-state.json";
@@ -378,7 +379,13 @@ test.each(["track", "blocks"].flatMap((by) => ["card", "container"].map((round) 
 		const [lone] = loneNodes(content);
 		const own = drawing!.atlas.nodes[lone!]!;
 		expect(caption.x + caption.width).toBeLessThanOrEqual(region.x + region.width);
-		expect(own.width).toBe(plain!.atlas.nodes[lone!]!.width);
+		if (round === "card") {
+			expect(own.width).toBe(plain!.atlas.nodes[lone!]!.width);
+		} else {
+			// A wide caption changes the entry face, while the frame stays tight.
+			expect(own.width).toBeLessThanOrEqual(plain!.atlas.nodes[lone!]!.width);
+			expect(headerCards(drawing!).get(lone!)!.width).toBe(headerCards(plain!).get(lone!)!.width);
+		}
 		expect(Math.abs(own.x + own.width / 2 - region.x - region.width / 2)).toBeLessThan(1);
 		expect(endsOffNode(content, drawing!)).toEqual([]);
 	},

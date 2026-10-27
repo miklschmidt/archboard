@@ -194,9 +194,7 @@ fn title_row(node: &PlacedNode) -> Option<(Item, f64, Vec<TitleStep>, f64)> {
         NO_BAND,
     );
     item.face_top = frame.above + crate::constants::HEADER_SLAB_INSET;
-    if inset > 0.0 {
-        item.inset = Some(inset);
-    }
+    item.inset = Some(inset + crate::constants::HEADER_SLAB_INSET);
     let steps = frame
         .steps
         .as_ref()
@@ -395,14 +393,22 @@ impl Placement {
 
     /// Every parent header face and region caption.
     pub(crate) fn headings(&self) -> Vec<Heading> {
-        let titles = self.titles.iter().map(|(id, &item)| {
-            let frame = &self.frames[id];
+        let titles = self.titles.values().map(|&item| {
             let row = self.item(item);
             Heading {
                 band: row.band,
-                left: frame.x,
-                end: frame.x + frame.width,
+                left: row.bx.x,
+                end: row.bx.x + row.bx.width,
             }
+        });
+        let folded = self.frames.iter().filter_map(|(id, frame)| {
+            let width = frame.wide?;
+            let left = frame.x - (width.max(frame.width) - frame.width) / 2.0;
+            Some(Heading {
+                band: self.item(self.titles[id]).band,
+                left,
+                end: left + width,
+            })
         });
         let captions = self.regions.iter().map(|region| {
             let caption = self.item(region.caption);
@@ -412,7 +418,7 @@ impl Placement {
                 end: caption.bx.x + caption.bx.width,
             }
         });
-        titles.chain(captions).collect()
+        titles.chain(folded).chain(captions).collect()
     }
 
     /// What a label box keeps clear of on its band for each group region

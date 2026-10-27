@@ -29,7 +29,7 @@ impl PackLayout<'_> {
         self.block
             .ports
             .iter()
-            .filter(|&(_, &at)| at == side)
+            .filter(|&(port, &at)| at == side && !self.block.header_entry(port))
             .map(|(port, _)| port.clone())
             .collect()
     }
@@ -68,17 +68,6 @@ impl PackLayout<'_> {
             &wanted.iter().map(|(_, x)| *x).collect::<Vec<_>>(),
         );
         for ((port, _), x) in wanted.into_iter().zip(xs) {
-            let y = if self.block.kind == super::super::tree::Kind::Frame && side == Side::Top {
-                y + self
-                    .block
-                    .lone
-                    .as_ref()
-                    .map_or(0.0, super::super::lone::band_of)
-                    + crate::constants::HEADER_SLAB_INSET
-                    - PORT / 2.0
-            } else {
-                y
-            };
             let x = self.settled.get(&port).copied().unwrap_or(x);
             self.boxes.insert(
                 port,
@@ -157,7 +146,7 @@ impl PackLayout<'_> {
                 .block
                 .ports
                 .iter()
-                .filter(|&(_, &at)| at == side)
+                .filter(|&(port, &at)| at == side && !self.block.header_entry(port))
                 .map(|(port, _)| (port.clone(), self.level_of(port, side)))
                 .collect();
             sort_by(&mut wanted, |one, other| one.1 - other.1);

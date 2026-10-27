@@ -18,7 +18,7 @@ pub const FLOW_ICON: &str = "RiFlowChart";
 pub const OWN_ICONS: [&str; 2] = [FALLBACK_ICON, FLOW_ICON];
 
 /// The side of the square an icon is drawn into on its chip.
-const ICON_SIZE: f64 = 18.0;
+pub(super) const ICON_SIZE: f64 = 18.0;
 
 /// The move that centres an icon on a point.
 pub(super) fn centred_on(cx: f64, cy: f64) -> Transform {
@@ -36,6 +36,7 @@ pub(super) fn glyph_group(
     cy: f64,
     ink: &Colour,
     icons: &BTreeMap<String, Vec<String>>,
+    size: f64,
 ) -> Items {
     let name = if icons.contains_key(asked) {
         asked
@@ -44,11 +45,12 @@ pub(super) fn glyph_group(
     };
     let icon = Icon {
         name: name.to_owned(),
-        size: ICON_SIZE,
+        size,
         ink: ink.clone(),
     };
     grouped(
-        Group::new(Role::Icon(Some(asked.to_owned())), vec![Item::Icon(icon)])
-            .moved(centred_on(cx, cy)),
+        Group::new(Role::Icon(Some(asked.to_owned())), vec![Item::Icon(icon)]).moved(
+            Transform::translate(round_coord(cx - size / 2.0), round_coord(cy - size / 2.0)),
+        ),
     )
 }

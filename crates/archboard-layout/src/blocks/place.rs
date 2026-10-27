@@ -156,7 +156,12 @@ fn lay_block(
 ) -> Result<Rc<Laid>, String> {
     let tree = &board.tree;
     let packs = tree.nesting == Nesting::Blocks
-        && tree.get(block).items.iter().any(|item| tree.is_block(item));
+        && tree.get(block).items.iter().any(|item| tree.is_block(item))
+        && !tree
+            .get(block)
+            .lines
+            .values()
+            .any(|line| line.labelled && line.edge.label_count() > 0);
     if !packs {
         return lay_cards(gv, &mut board.tree, block, &mut board.laid);
     }

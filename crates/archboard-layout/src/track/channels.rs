@@ -234,16 +234,11 @@ impl Track<'_> {
         item.is_some_and(|item| self.scene.item(item).bx.width <= 1.0)
     }
 
-    /// Whether two end items stand for one place.
-    fn same_place(&self, one: Option<ItemId>, other: Option<ItemId>) -> bool {
-        one == other || (self.one_point(one) && self.one_point(other))
-    }
-
     /// Whether two nets belong to different lines between the same two places.
     fn twins(&self, one: NetId, other: NetId, ends: &Map<Rc<str>, Ends>) -> bool {
         let (one, other) = (self.net(one), self.net(other));
         let (a, b) = (ends[&one.edge], ends[&other.edge]);
-        one.edge != other.edge && self.same_place(a.0, b.0) && self.same_place(a.1, b.1)
+        one.edge != other.edge && a == b
     }
 
     /// A card face's trunk without the lines that run between the same two items as another of its lines.

@@ -50,7 +50,9 @@ impl CardLayout<'_> {
         let links = self.links();
         let ordered = self.clusters.board_order(|end| self.vendor_of(end));
         for line in ordered {
-            self.connect(line);
+            if !block.header_line(line) {
+                self.connect(line);
+            }
         }
         self.arrange(&links);
     }
@@ -109,7 +111,9 @@ impl CardLayout<'_> {
             .get(&key)
             .into_iter()
             .flatten()
-            .filter(|port| block.ports.get(port.as_str()) == Some(&face))
+            .filter(|port| {
+                block.ports.get(port.as_str()) == Some(&face) && !block.header_entry(port)
+            })
             .collect();
         held.windows(2)
             .map(|pair| {
@@ -154,11 +158,9 @@ impl CardLayout<'_> {
         };
         let lower: Set<String> = grid.iter().map(|edge| edge.head.clone()).collect();
         let titles = self.clusters.title_edges(&lower, links);
-        let entering = self.clusters.entering_edges(links);
         let holds = self.wrap_holds();
         self.edges.extend(grid);
         self.edges.extend(titles);
-        self.edges.extend(entering);
         self.edges.extend(holds);
         let entries = self.entry_row_edges();
         self.edges.extend(entries);

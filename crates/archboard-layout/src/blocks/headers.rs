@@ -115,6 +115,86 @@ pub(crate) fn header_within(header: &Header, room: &Room<'_>) -> Taken {
     }
 }
 
+/// The visible slab's horizontal reach for lines naming the parent itself.
+pub(crate) fn header_reach(block: &super::tree::Block, laid: &super::laid::Laid) -> (f64, f64) {
+    let at = laid.boxes[super::tree::header_of(block).as_str()];
+    let inset = crate::constants::HEADER_SLAB_INSET;
+    let (low, high) = crate::track::channels::port_reach(&crate::geometry::Rect {
+        x: at.x + inset,
+        width: (at.width - 2.0 * inset).max(0.0),
+        ..at
+    });
+    (
+        block.lone.as_ref().map_or(low, |lone| {
+            low.max(super::lone::caption_width(lone) + crate::track::chains::LANE)
+        }),
+        high,
+    )
+}
+
+/// Direct parent relationships meet its compact card. Boundary ports for
+/// members remain on the enclosing frame and can pass beside that card.
+pub(crate) fn place_header_entries(
+    block: &super::tree::Block,
+    laid: &mut super::laid::Laid,
+    settled: &crate::track::scene::Map<String, f64>,
+) {
+    use crate::geometry::{Rect, Side};
+    if !block.ports.keys().any(|port| block.header_entry(port)) {
+        return;
+    }
+    let at = laid.boxes[super::tree::header_of(block).as_str()];
+    let reach = header_reach(block, laid);
+    let face = Side::Top;
+    let ports: Vec<&String> = block
+        .ports
+        .iter()
+        .filter(|(port, side)| **side == face && block.header_entry(port))
+        .map(|(port, _)| port)
+        .collect();
+    let wanted: Vec<f64> = ports
+        .iter()
+        .map(|port| {
+            settled
+                .get(port.as_str())
+                .copied()
+                .unwrap_or(at.x + at.width / 2.0)
+        })
+        .collect();
+    let xs = crate::track::channels::spread_along(reach, &wanted);
+    let y = at.y
+        + block.lone.as_ref().map_or(0.0, super::lone::band_of)
+        + crate::constants::HEADER_SLAB_INSET;
+    for (port, x) in ports.into_iter().zip(xs) {
+        let size = super::leaves::PORT;
+        laid.boxes.insert(
+            port.clone(),
+            Rect {
+                x: x - size / 2.0,
+                y: -size / 2.0,
+                width: size,
+                height: size,
+            },
+        );
+        let header = crate::geometry::Point { x, y };
+        let boundary = crate::geometry::Point { x, y: 0.0 };
+        for line in block
+            .lines
+            .values()
+            .filter(|line| line.from == *port || line.to == *port)
+        {
+            laid.lines.insert(
+                line.key.clone(),
+                if line.from == *port {
+                    vec![boundary, header]
+                } else {
+                    vec![header, boundary]
+                },
+            );
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

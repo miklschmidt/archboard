@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T16:24:00Z'
-updated_date: '2026-10-27T04:29:00Z'
+updated_date: '2026-10-27T06:40:00Z'
 labels:
   - renderer
   - performance
@@ -93,4 +93,10 @@ The owner correction supersedes the preceding soft-header instruction. Header cr
 2026-10-27: the owner sides with the Opus grader's weighting. A compact picture, short direct lines and related cards close together count more than avoiding a header crossing; a header crossing is a flaw weighed against its cost, not a defect. Recorded in docs/design/grading-council.md (The owner's weighting); Codex was told to stop failing expectDrawingIntact on header crossings and to stop paying for header avoidance with detours.
 
 2026-10-27, correction by the owner: a line through a group's or a parent's header is a defect and stays a hard check. Among pictures without defects, tight composition with no dead space reads better. The fix for the failed pairs must come from placement, not from detours and not from crossings. docs/design/grading-council.md updated; Codex told.
+
+Round 3 implementation: compact parent headers use normal card sizing in both engines and all themes. Names use 15 px versus 14 px, icons use 20 px versus 18 px, and the far view adds 1 px to fitted name sizes. The retained graph rule gives a parent local ranks only when a path between different leaf members exits and returns through outside cards. Other parents stay inline. Caller-before-header constraints and the ancestor header bypass margins are removed. Headers are fitted before routing. Named parent arrivals reach their real header, and labelled parent departures reserve word room. Distinct boundary points retain their original source and target identities. Child blocks keep their exact dimensions.
+
+Core bcef85a5dd93aa25 builds. The affected Rust crates pass their tests and Clippy. The matching-core renderer run passes 653 tests, skips one platform-only test, and fails none. Both hard header assertions remain unchanged. The four council acceptance requests pass all hard geometry checks. Code evidence route length falls 5296 to 3163, Startup handoff 887 to 702, Run checks selected routes 7206 to 4697, and Voice callback separation 4425.5 to 1728.5. Voice frame heights fall 3100 to 847 and 2728 to 967. The full native scan of 23 current boards in both engines finds no hard geometry defect. One Blocks-only optional Track lane-spacing count remains in Board rasterizer. Voice outer routes and one feedback example with an added ordinary crossing remain council tradeoffs.
+
+Renderer layout@TASK-548.08 and Semantic renderer@TASK-548.08 describe the implementation. Their code check returns the same 41 finding identities as before, with no new finding. The header sizing flow now cites measure_node. The proposals remain unadopted until the parent council decides. ADR 0062 and docs/design/compact-parent-headers-and-local-composition.md record the design, rejected probes, visual evidence, and pending final corpus/performance evidence. TASK-548.08 remains In Progress.
 <!-- SECTION:NOTES:END -->

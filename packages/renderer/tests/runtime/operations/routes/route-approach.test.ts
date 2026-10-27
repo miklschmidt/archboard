@@ -119,7 +119,7 @@ test("a self-loop meets its own card squarely and stays outside its interior", a
 // arrival's quarter-slot inside the IIS title band. Its eight-unit final leg
 // was shorter than the visible arrowhead and left no room for the bend.
 test.each(LayoutEngineSchema.options)(
-	"an incoming header arrow has a whole head and rounded bend before its endpoint (%s)",
+	"an incoming header arrow has a whole head and room for any bend before its endpoint (%s)",
 	async (layout) => {
 		const content = orderedFixture(frameApproach);
 		const drawing = await renderArchitecture({
@@ -149,10 +149,14 @@ test.each(LayoutEngineSchema.options)(
 		const end = steps.at(-1)!;
 		const corner = steps.at(-2)!;
 		expect(end.kind).toBe("L");
-		expect(corner.kind, "the incoming bend stays rounded").toBe("C");
 		const tip = end.values;
 		const beside = corner.values.slice(-2);
 		expect(Math.hypot(tip[0]! - beside[0]!, tip[1]! - beside[1]!)).toBeGreaterThan(headReach);
+		if (corner.kind === "M") {
+			expect(steps, "a direct header entry needs no bend").toHaveLength(2);
+			return;
+		}
+		expect(corner.kind, "the incoming bend stays rounded").toBe("C");
 		// The last turn, past any hop the approach carries over a line it crosses:
 		// a turn's quarter circle is wider than a hop's.
 		const radii = steps.slice(1).map((step, index) => {
