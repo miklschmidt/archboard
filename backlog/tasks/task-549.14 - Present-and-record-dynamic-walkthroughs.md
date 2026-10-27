@@ -1,11 +1,11 @@
 ---
 id: TASK-549.14
 title: Present and record dynamic walkthroughs
-status: In Progress
+status: Done
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-27T08:42:00Z'
+updated_date: '2026-10-27T09:03:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -46,16 +46,16 @@ TASK-549.06, TASK-549.12
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An agent authors narrative beats that change scope, selection, filters, grammar, and flow. A reader plays them without saved geometry or architecture copies.
-- [ ] #2 Playback resolves current, a named proposal, or an exact checkpoint once. The entire presentation retains that revision.
-- [ ] #3 Changes offer restart against a newer state. Missing subjects or history stop the affected beat with a recovery explanation.
-- [ ] #4 Recording and shared playback use an exact retained revision. Existing local recording and rendering remain the execution owners.
+- [x] #1 An agent authors narrative beats that change scope, selection, filters, grammar, and flow. A reader plays them without saved geometry or architecture copies.
+- [x] #2 Playback resolves current, a named proposal, or an exact checkpoint once. The entire presentation retains that revision.
+- [x] #3 Changes offer restart against a newer state. Missing subjects or history stop the affected beat with a recovery explanation.
+- [x] #4 Recording and shared playback use an exact retained revision. Existing local recording and rendering remain the execution owners.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -116,4 +116,15 @@ The final frozen production run passes 8 cases and 62 assertions within existing
 Signed voice merge9b90e5944 composes the canonical backend with recording-page consumption. Types pass, and public recording passes one case with seven assertions. The live browser RED exposed a real ordering race: voice started before the debounced capture report reached the server. The existing reading publisher now offers an acknowledged flush, and canonical narration waits for that delivery. Narrate remains unavailable while the picture draws. The controlled browser owner now passes one case with seven assertions across first-beat requests, manual steps, a pinned source after edits, an unaffected second pane, and departure. All temporary diagnostics are removed. Types pass, and lint reported only the removed diagnostic console call. Proposal playback lifetime and final architecture restatement remain.
 
 The proposal lifetime concern did not reproduce. A new controlled browser case edits the selected proposal through the public runtime while its second beat remains open. It passes three assertions: the beat and captured revision remain unchanged, and explicit restart reads the revised narrative. No production lifetime change was needed. Full types pass. Canonical recording and live narration each pass seven assertions, offline replay passes its frame comparisons, and manual grammar/selection/recovery playback passes fourteen assertions. Final architecture restatement, scoped validation and adoption remain.
+
+The complete walkthrough slice passes current, proposal, and exact capture evidence. Public recording passes1 case7 assertions, canonical replay passes1 case4 assertions twice with all33 frames across one and two pages, legacy replay passes3 cases24 assertions, manual browser playback passes14 assertions, proposal restart passes3 assertions, and live narration passes7 assertions. The voice backend adds8 controlled system cases62 assertions and24 legacy cases121 assertions. Earlier shared runtime and adapter evidence remains recorded without redundant repeats.
+Source and browser types, lint, formatting, and evaluation input validation pass. No rule, interface ceiling, or existing test deadline changed. Seven accepted architecture variants have zero code warnings and all final comparisons pass. Semantics has zero diagnostics. Eight unrelated Archboard code warnings remain, and TASK-549.24 retains the inherited interface-width work. The parent inspected both walkthrough architecture images. Final accepted scopes are TASK-549.14-complete on persistence, command interface, server routes, browser application, and live panes, plus TASK-549.14 on rasterizer and voice. Earlier drafts remain as shelved provenance. All previous variant contents and parents remain exact except the explicitly completed rasterizer draft. All earlier decisions and views remain exact.
+Simplification retained one captured walkthrough renderer and the existing position, arrival, reporting, voice, clock, talk, and encoder owners. Acknowledged publication lives in the existing reading publisher. A proposal lifetime concern did not reproduce, so no speculative key change was made. Consumer guidance, ADR0041, frontend guidance, test ownership, and evaluation coverage match the delivered behavior.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Canonical walkthroughs now author stable narrative beats and present complete readings against one captured revision. Current, proposal, and exact targets retain their source and target evidence, offer explicit restart, and expose unavailable beats. Recording and offline replay reuse the existing local pipeline. Live narration waits for accepted pane context and narrates only matching arrived beats.
+Public runtime, recording/replay, controlled voice, and browser evidence pass. Types, lint, formatting, evaluation inputs, and all seven adopted architecture scopes pass. Eight unrelated Archboard warnings and the inherited interface-width work remain for the integration finish. TASK-549 remains In Progress.
+<!-- SECTION:FINAL_SUMMARY:END -->

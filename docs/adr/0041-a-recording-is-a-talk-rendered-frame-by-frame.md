@@ -428,7 +428,7 @@ The talk reader refuses a different revision before replay starts.
 The page driver, audio timeline, talk store, frame renderer, and encoder remain the execution owners.
 Replay loads the stored payload and uses the existing frame clock.
 It reads no current vault and starts no voice model.
-Canonical recording and replay page acceptance remain with the parent frontend implementation.
+The public recording operation and offline replay both use this captured payload through the existing pages.
 
 Canonical replay draws the captured model through the same walkthrough component as live playback.
 It uses the existing presentation controls, picture loader, and frame clock.
@@ -444,6 +444,8 @@ Legacy replay keeps the same owner and also passes its frame comparisons.
 
 The canonical voice bridge resolves one server-owned capture before the voice offer starts.
 A pane report supplies the source selection and separate source and target revision guards.
+Live narration waits for the existing publisher to receive acceptance of that report.
+A changed or failed report refuses the pending start.
 The report supplies no authored narration text.
 The public architecture reader resolves the narrative source, including definitions newer than their exact targets.
 The bridge refuses changed or unavailable captures and keeps accepted captures for later beats.

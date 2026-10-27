@@ -142,7 +142,7 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 					onLeave={props.onLeave}
 					reserve={setReserve}
 					overlay={props.overlay}
-					narration={drawnNarration(props.narration, reporting.ready && available)}
+					narration={drawnNarration(props.narration, presentation, available)}
 				/>
 			)}
 		</div>
@@ -197,13 +197,15 @@ export { ModelWalkthrough };
 /**
  * Offer narration only when the pane can publish its captured architecture.
  * @param narration The existing voice action and availability.
- * @param ready Whether the current beat has a complete picture.
+ * @param presentation The reported beat and its arrival.
+ * @param available Whether the authored beat can be drawn.
  * @returns The same action with a visible drawing hold when needed.
  */
 function drawnNarration(
 	narration: WalkthroughProps["narration"],
-	ready: boolean,
+	presentation: PaneReading["presentation"],
+	available: boolean,
 ): WalkthroughProps["narration"] {
-	if (narration === undefined || ready) return narration;
+	if (narration === undefined || (presentation?.arrived === true && available)) return narration;
 	return { ...narration, held: "Wait for this step to finish drawing." };
 }

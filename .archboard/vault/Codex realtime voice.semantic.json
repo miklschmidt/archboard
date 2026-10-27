@@ -7,9 +7,9 @@
 		"Agent workbench"
 	],
 	"level": "service",
-	"version": 141,
+	"version": 142,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-27T07:59:56.048Z",
+	"updatedAt": "2026-10-27T09:01:55.406Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -45860,7 +45860,7 @@
 		{
 			"id": "HT2rOL6a",
 			"name": "TASK-549.13",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "KQtKiYDn",
 			"summary": "Keep captured local explanations and conversation selection behind the existing host owner",
 			"documents": [
@@ -50095,7 +50095,7 @@
 		{
 			"id": "erb2Chuw",
 			"name": "TASK-549.14",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "HT2rOL6a",
 			"summary": "Narrate canonical walkthroughs through the existing voice session with one exact captured source and target.",
 			"documents": [
@@ -54460,7 +54460,7 @@
 			}
 		}
 	],
-	"current": "HT2rOL6a",
+	"current": "erb2Chuw",
 	"adoptions": [
 		{
 			"variant": "kUF7buv6",
@@ -54551,6 +54551,12 @@
 			"from": "KQtKiYDn",
 			"at": "2026-10-27T00:56:41.498Z",
 			"reason": "Shared local explanations preserve the captured reading across navigation and expose tested progress and recovery"
+		},
+		{
+			"variant": "erb2Chuw",
+			"from": "HT2rOL6a",
+			"at": "2026-10-27T09:01:55.406Z",
+			"reason": "Canonical playback, recording, replay and narration pass the approved public runtime and browser evidence."
 		}
 	],
 	"shelvings": [

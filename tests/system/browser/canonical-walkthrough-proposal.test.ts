@@ -27,6 +27,11 @@ async function revise(vault: string, state?: string) {
 		state === undefined ? {} : { state },
 	);
 	if (!model.success || model.selectedState === null) throw new Error(JSON.stringify(model));
+	const beats = structuredClone(
+		model.walkthroughs.find((walkthrough) => walkthrough.id === "Shop#Tour")!.beats,
+	);
+	beats.find((beat) => beat.id === "Shop#Outside")!.title =
+		state === undefined ? "The proposed services" : "Revised proposal";
 	const target = { model: "Shop", state: model.selectedState.id };
 	const writer = "walkthrough-fixture";
 	const claim = await claimArchitectureSubjects(vault, {
@@ -50,17 +55,7 @@ async function revise(vault: string, state?: string) {
 				{
 					type: "edit-walkthrough",
 					subject: "Shop#Tour",
-					beats: model.walkthroughs
-						.find((walkthrough) => walkthrough.id === "Shop#Tour")!
-						.beats.map((beat) => ({
-							...beat,
-							title:
-								beat.id === "Shop#Outside"
-									? state === undefined
-										? "The proposed services"
-										: "Revised proposal"
-									: beat.title,
-						})),
+					beats,
 				},
 			],
 		});

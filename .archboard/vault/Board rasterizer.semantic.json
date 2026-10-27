@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 82,
+	"version": 86,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-10-26T22:56:39.831Z",
+	"updatedAt": "2026-10-27T09:01:54.440Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -21603,7 +21603,7 @@
 		{
 			"id": "LA43vys3",
 			"name": "TASK-526.02",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "4lZZiZuM",
 			"summary": "Bitmaps and videos drawn headlessly from a board, and the recipe a PNG carries",
 			"content": {
@@ -24179,7 +24179,7 @@
 		{
 			"id": "fFECebqp",
 			"name": "TASK-549.14",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "LA43vys3",
 			"summary": "The local talk pipeline accepts retained canonical playback alongside legacy boards and keeps one timeline, encoder, and frame renderer.",
 			"content": {
@@ -24444,7 +24444,7 @@
 						"name": "Recording page",
 						"kind": "ui",
 						"responsibility": "The server's own page on one board: shows the pane alone, paces each step by the voice, and records the talk, never the picture",
-						"description": "The voice plays through a muted audio element, so nobody hears a recording, and talk capture taps the same stream. The page hands over the voice as a 16-bit mono 48 kHz WAV and the talk's events by value. It captures no picture: the replay page draws every frame again from the talk.",
+						"description": "The voice plays through a muted audio element, so nobody hears a recording, and talk capture taps the same stream. The page hands over the voice as a 16-bit mono 48 kHz WAV and the talk's events by value. It captures no picture: the replay page draws every frame again from the talk.\n\nThe existing page.load contract accepts one validated canonical model. The recorder keeps that payload with the driven step and waits for the exact source and target revisions before starting voice.",
 						"parent": "44gQ5gUw",
 						"groups": [
 							"walkthrough"
@@ -24482,7 +24482,7 @@
 						"name": "Frame renderer",
 						"kind": "function",
 						"responsibility": "Draws a talk frame by frame on several replay pages at once, each in its own Chromium: every page steps through every frame, and each captures its own seconds for the encoder",
-						"description": "One frame is 1/30 s of talk, exactly 1600 samples of the voice, so frame n and sample 1600n are the same moment. Chromium draws in software (--disable-gpu) and without partial raster, so two renders of a talk are identical, and without the frame-rate limit, so a screenshot does not wait for the display. A screenshot costs several times what drawing a frame does, so the talk is drawn by up to six pages at once, a quarter of the machine's threads and one for every 300 frames: page k captures seconds k, k + n and so on, and draws the frames between without capturing them, since a frame depends on the ones before it. A frame is the same whichever page draws it. Before the first frame each page proves it counts the talk's frames and its window is 1920x1080. A frame is taken as JPEG at quality 92, since the picture is encoded again as 4:2:0 anyway. Handed no ffmpeg, as semantic replay hands none, it finds and proves one first. The file moves into place only once the browsers have stopped and ffmpeg has exited. A render that fails on any page stops the others, keeps the talk and names the replay command that renders it again.",
+						"description": "One frame is 1/30 s of talk, exactly 1600 samples of the voice, so frame n and sample 1600n are the same moment. Chromium draws in software (--disable-gpu) and without partial raster, so two renders of a talk are identical, and without the frame-rate limit, so a screenshot does not wait for the display. A screenshot costs several times what drawing a frame does, so the talk is drawn by up to six pages at once, a quarter of the machine's threads and one for every 300 frames: page k captures seconds k, k + n and so on, and draws the frames between without capturing them, since a frame depends on the ones before it. A frame is the same whichever page draws it. Before the first frame each page proves it counts the talk's frames and its window is 1920x1080. A frame is taken as JPEG at quality 92, since the picture is encoded again as 4:2:0 anyway. Handed no ffmpeg, as semantic replay hands none, it finds and proves one first. The file moves into place only once the browsers have stopped and ffmpeg has exited. A render that fails on any page stops the others, keeps the talk and names the replay command that renders it again.\n\nChromium also disables threaded animation so the stepped replay clock owns compositor animation timing. Canonical frame readiness requires its exact drawn revision and requested beat. The clock advances motion without waiting for a future arrival.",
 						"parent": "ZAj4RMzN",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -24511,7 +24511,7 @@
 						"name": "Talk capture",
 						"kind": "function",
 						"responsibility": "Taps the voice through an AudioWorklet and stamps each step, subtitle line and drawn version on the audio's own 48 kHz clock",
-						"description": "The origin is the moment the voice goes live, where the video begins. A stamp is late by at most one audio buffer, about 10 to 21 ms on Linux, which is under one frame. Only the voice's own lines of the transcript are kept. At the end the audio is cut to the origin and the end, so it is exact to the sample against the stamps. The worklet writes silence while nothing plays.",
+						"description": "The origin is the moment the voice goes live, where the video begins. A stamp is late by at most one audio buffer, about 10 to 21 ms on Linux, which is under one frame. Only the voice's own lines of the transcript are kept. At the end the audio is cut to the origin and the end, so it is exact to the sample against the stamps. The worklet writes silence while nothing plays.\n\nCanonical drawn events also stamp the exact model revision. Legacy drawn events keep their existing shape.",
 						"parent": "44gQ5gUw",
 						"groups": [
 							"walkthrough"
@@ -24527,7 +24527,7 @@
 						"name": "Replay page",
 						"kind": "ui",
 						"responsibility": "The server's page asked for with ?replay=1: draws a talk's board from the talk alone, one frame at a time on a stepped clock",
-						"description": "It mounts the recording page's stage, viewer and subtitles, and no workbench, pane session or socket, so no Codex is involved. Loading a talk plays the board's entrance through first, uncaptured, so frame 0 shows the board at rest. A frame is ready once the fonts are loaded, no read is in flight, the step's picture is drawn and the page has not changed for two turns of its event loop, within RECORDING_FRAME_READY_MS. The stepped clock runs even the frames a library asks of the browser, and stands every animation at the frame's time, a picture's traffic at where its picture's clock stands. An animation on another timeline, or a read of another board, fails the render and names the frame.",
+						"description": "It mounts the recording page's stage, viewer and subtitles, and no workbench, pane session or socket, so no Codex is involved. Loading a talk plays the board's entrance through first, uncaptured, so frame 0 shows the board at rest. A frame is ready once the fonts are loaded, no read is in flight, the step's picture is drawn and the page has not changed for two turns of its event loop, within RECORDING_FRAME_READY_MS. The stepped clock runs even the frames a library asks of the browser, and stands every animation at the frame's time, a picture's traffic at where its picture's clock stands. An animation on another timeline, or a read of another board, fails the render and names the frame.\n\nA canonical talk draws its captured model and narrative through the shared walkthrough presentation. It reads no mutable vault and needs no source repository for replay.",
 						"parent": "44gQ5gUw",
 						"groups": [
 							"walkthrough"
@@ -24709,6 +24709,18 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/renderer/src/runtime/operations/recipe/png-recipe.ts"
+						}
+					},
+					{
+						"id": "Vs2LoKMH",
+						"order": 40000,
+						"name": "Talk destination",
+						"kind": "module",
+						"responsibility": "Resolves the video container and output destination, and reserves a fresh talk directory before recording",
+						"parent": "gTwVYQo9",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/rules/semantic/draw/recording-output.ts"
 						}
 					}
 				],
@@ -25310,15 +25322,14 @@
 						"id": "eJdDQjo5",
 						"order": 42000,
 						"from": "QSI6gCrL",
-						"to": "XtzfRQkG",
+						"to": "Vs2LoKMH",
 						"kind": "call",
-						"label": "where the talk is kept, proven free first",
-						"description": "The caller imports the walkthrough-recorder root, which re-exports readTalk, freshTalkPlace and renderTalk from these implementing children. freshTalkPlace chooses the place and refuses one that is not free before anything starts.",
+						"label": "resolve the talk destination",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
-							"symbol": "freshTalkPlace"
+							"symbol": "talkPlaceOf"
 						}
 					},
 					{
@@ -25488,6 +25499,48 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/renderer/src/runtime/operations/recipe/png-recipe.ts",
 							"symbol": "readPngDimensions"
+						}
+					},
+					{
+						"id": "83qFfI7k",
+						"order": 55000,
+						"from": "Vs2LoKMH",
+						"to": "XtzfRQkG",
+						"kind": "call",
+						"label": "reserve a fresh talk directory",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/rules/semantic/draw/recording-output.ts",
+							"symbol": "freshTalkPlace"
+						}
+					},
+					{
+						"id": "Z09ZRbfn",
+						"order": 56000,
+						"from": "kpWAp83p",
+						"to": "Vs2LoKMH",
+						"kind": "call",
+						"label": "resolve the replay container",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts",
+							"symbol": "containerOf"
+						}
+					},
+					{
+						"id": "VXPf7fBP",
+						"order": 57000,
+						"from": "Vs2LoKMH",
+						"to": "L1cYIenF",
+						"kind": "call",
+						"label": "resolve a supported video container",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/rules/semantic/draw/recording-output.ts",
+							"symbol": "recordingContainerOf"
 						}
 					}
 				],
@@ -25921,6 +25974,7 @@
 						"name": "One recording",
 						"participants": [
 							"QSI6gCrL",
+							"Vs2LoKMH",
 							"ZAj4RMzN",
 							"peB5Bs5R",
 							"R9St060W",
@@ -25953,12 +26007,24 @@
 							{
 								"id": "pGLHZ6HU",
 								"from": "QSI6gCrL",
-								"to": "XtzfRQkG",
-								"label": "Prove the place for the talk is free",
+								"to": "Vs2LoKMH",
+								"label": "Resolve the talk destination",
 								"kind": "sync",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
 									"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+									"symbol": "talkPlaceOf"
+								}
+							},
+							{
+								"id": "LngnxTuy",
+								"from": "Vs2LoKMH",
+								"to": "XtzfRQkG",
+								"label": "Reserve a fresh talk directory",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/rules/semantic/draw/recording-output.ts",
 									"symbol": "freshTalkPlace"
 								}
 							},
@@ -26753,7 +26819,7 @@
 			}
 		}
 	],
-	"current": "LA43vys3",
+	"current": "fFECebqp",
 	"adoptions": [
 		{
 			"variant": "PfFN8kCs",
@@ -26832,6 +26898,12 @@
 			"from": "4lZZiZuM",
 			"at": "2026-10-24T17:14:14.281Z",
 			"reason": "A board render carries its render recipe, and standalone renders default to a legend (TASK-526.02)"
+		},
+		{
+			"variant": "fFECebqp",
+			"from": "LA43vys3",
+			"at": "2026-10-27T09:01:54.440Z",
+			"reason": "Canonical playback, recording, replay and narration pass the approved public runtime and browser evidence."
 		}
 	],
 	"shelvings": [

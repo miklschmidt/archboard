@@ -32,6 +32,7 @@ function usePublishedNarration(
 						onError(
 							"The reading changed or could not reach the server. Reopen the walkthrough and try narration again.",
 						);
+					return undefined;
 				});
 			},
 		};
