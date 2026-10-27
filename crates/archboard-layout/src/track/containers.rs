@@ -149,13 +149,28 @@ impl<'a> Containers<'a> {
     ) -> Container {
         let inside: Set<&str> = members.iter().map(String::as_str).collect();
         let scene = self.scene;
+        let held = members.iter().filter_map(|id| scene.member(id));
+        let mut items: Vec<ItemId> = std::iter::once(head).chain(held).collect();
+        let first_band = scene.item(head).band;
+        let last_member_band = items
+            .iter()
+            .map(|&item| scene.item(item).band)
+            .max()
+            .unwrap_or(first_band);
         let labels = scene.labels.iter().filter_map(|(edge, &item)| {
             let placed = edges[edge.as_str()];
-            (inside.contains(placed.source.as_str()) && inside.contains(placed.target.as_str()))
+            let label = scene.item(item);
+            // A leaving label can share the last member's band and extend
+            // below its card. Keep that whole label inside the frame inset.
+            // Labels on later bands remain outside instead of stretching it.
+            let occupies = (first_band..=last_member_band).contains(&label.band)
+                && label.bx.x >= walls.0
+                && label.bx.x + label.bx.width <= walls.1;
+            ((inside.contains(placed.source.as_str()) && inside.contains(placed.target.as_str()))
+                || occupies)
                 .then_some(item)
         });
-        let held = members.iter().filter_map(|id| scene.member(id));
-        let items: Vec<ItemId> = std::iter::once(head).chain(held).chain(labels).collect();
+        items.extend(labels);
         let last_band = items
             .iter()
             .map(|&item| scene.item(item).band)
