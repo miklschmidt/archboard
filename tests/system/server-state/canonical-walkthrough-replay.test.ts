@@ -1,11 +1,10 @@
 import { expect, test } from "bun:test";
-import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { readArchitectureModel } from "@archboard/board/store-read";
-import { retainArchitectureCheckpoint } from "@archboard/board/store-write";
 import { keepTalk, readTalk, renderTalk } from "@archboard/walkthrough/recorder";
 import { startOwnedServer } from "../support/owned-server.ts";
+import { captureCanonicalWalkthrough } from "../support/canonical-walkthrough.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import { TEST_RECORDING_CASE_MS } from "../support/timing.ts";
 import { frameManifest, prepareFakeFfmpeg } from "./support/fake-ffmpeg.ts";
@@ -13,75 +12,13 @@ import { frameManifest, prepareFakeFfmpeg } from "./support/fake-ffmpeg.ts";
 const repoRoot = resolve(import.meta.dir, "../../..");
 const FRAMES = 33;
 
-/** Keep one public captured reading before its source repository disappears. */
-async function captured(root: string) {
-	const source = join(root, "source");
-	const vault = vaultIn(source);
-	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
-	writeFileSync(
-		join(vault, "tour.walkthrough.json"),
-		JSON.stringify({
-			schemaVersion: 1,
-			id: "Shop#Tour",
-			name: "Request tour",
-			target: { state: "current" },
-			beats: [
-				{
-					id: "Shop#Outside",
-					title: "The services",
-					narrative: "The gateway accepts requests.",
-					reading: { grammar: "architecture", selection: ["Shop#Gateway"] },
-				},
-				{
-					id: "Shop#Inside",
-					title: "The handler",
-					narrative: "The handler dispatches the request.",
-					reading: { grammar: "architecture", scope: "Shop#Gateway", selection: ["Shop#Handler"] },
-				},
-			],
-		}),
-	);
-	for (const args of [
-		["init", "--quiet"],
-		["config", "user.name", "Replay fixture"],
-		["config", "user.email", "replay@example.test"],
-		["config", "commit.gpgsign", "false"],
-		["remote", "add", "origin", "https://github.com/acme/shop.git"],
-		["add", "."],
-		["commit", "--quiet", "-m", "test: seed replay source"],
-	]) {
-		const result = Bun.spawnSync(["git", "-C", source, ...args], {
-			env: { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" },
-		});
-		if (result.exitCode !== 0) throw new Error(result.stderr.toString());
-	}
-	const current = readArchitectureModel(vault);
-	if (!current.success) throw new Error(current.error);
-	const retained = await retainArchitectureCheckpoint(vault, {
-		target: "current",
-		operationId: "replay-capture",
-		writer: "fixture",
-		doing: "Retain the recorded narrative",
-		expectedRevision: current.revision.digest,
-		dependencies: [],
-	});
-	if (!retained.success) throw new Error(retained.error);
-	const model = await readArchitectureModel(vault, undefined, undefined, {
-		checkpoint: retained.checkpoint.id,
-		walkthrough: "Shop#Tour",
-		shared: true,
-	});
-	if (!model.success || model.playback === undefined) throw new Error(JSON.stringify(model));
-	return model;
-}
-
 test(
 	"canonical replay uses only its captured talk and preserves frames across page counts",
 	async () => {
 		await using resources = new AsyncDisposableStack();
 		const root = mkdtempSync(join(tmpdir(), "archboard-canonical-replay-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
-		const architecture = await captured(root);
+		const { architecture } = await captureCanonicalWalkthrough(join(root, "source"));
 		const directory = join(root, "talk");
 		const samples = FRAMES * 1600;
 		keepTalk({

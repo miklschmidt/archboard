@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-27T07:35:00Z'
+updated_date: '2026-10-27T08:13:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -102,4 +102,8 @@ The signed integration merge f253e7aff composes lifecycle, correction and migrat
 Captured walkthroughs now publish the architecture that they show through the existing explanation/report owner. The report preserves the narrative source selector, source revision, target revision, and selected subjects while legacy board identity stays null. The browser RED/GREEN owner passes14 assertions. Types and lint pass after one shared capture-source helper and removal of a redundant await introduced by merge composition. Presentation arrival, recording payload consumption, replay and canonical voice remain unfinished.
 
 Canonical replay now uses the captured model through the existing walkthrough, picture loader, frame clock and encoder. The public replay owner deletes the source repository and compares all33 frames across one-page and two-page rendering. It passes twice with4 assertions each. Legacy replay passes3 cases with24 assertions. A first-frame SVG traffic mismatch was isolated to compositor-thread animation; the existing replay browser flags now keep animation on the main thread. All failed timing and animation experiments and temporary diagnostics are removed. Types, lint, formatting and diff checks pass. Manual walkthrough behavior passes14 assertions, and the existing picture traffic lifetime owner passes4 assertions. Parent inspected the final replay frame. Recording-page payload loading and the canonical voice bridge remain unfinished.
+
+The recording fixture now follows the documented selector contract: an explicit checkpoint pins both narrative and target. The older-target case uses current narrative capture with shared:true and the existing public recordWalkthrough operation. Its first product RED reaches the missing recording-page load handshake. Parent implements one loaded payload in the existing recorder store, shared PaneReading readiness for both model and legacy board, and exact canonical drawn revision events. The voice backend is delegated separately from signed14ea6e71d; parent owns every frontend change.
+
+The recording page now accepts one validated captured model through its existing published load contract. The existing recorder view stores capture and step together, and the same PaneReading feeds legacy and canonical readiness. Canonical drawn events carry the exact revision. The record stage reads no live architecture. Pending picture reports preserve presentation position with architecture:null until drawing completes. Formatting, types, lint and frontend build pass. The corrected older-target recording case now passes the load/readiness boundary and reaches the expected unmerged voice negotiation refusal. The voice delegate delivered signed930c0ce770dff4ea5ee048764c113ad4d7c6f4e7 and will merge into this source before recording acceptance. No task criterion or architecture adoption is claimed.
 <!-- SECTION:NOTES:END -->

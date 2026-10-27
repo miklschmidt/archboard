@@ -11,6 +11,8 @@ import { useModelLocation } from "#ui/hooks/architecture-model/use-model-locatio
 import { memo, useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
+import { RecordedModelStage } from "#ui/components/walkthrough-recording/RecordedModelStage.tsx";
+import type { Model } from "#ui/rules/architecture-model/projection.ts";
 import { ModelExplanationHost } from "#ui/components/architecture-model/ModelExplanationHost.tsx";
 import { explanationKey } from "#ui/clients/architecture-model/explanations.ts";
 import { tabSessionId } from "#ui/clients/pane-session/tab-session.ts";
@@ -112,7 +114,9 @@ interface ApplicationPaneProps {
 	 * Hear what this pane is reading, as well as reporting it (a recording, TASK-304).
 	 * @param reading The board, variant, view, selection and presentation on screen.
 	 */
-	onSemanticReading?: ((reading: SemanticPaneReading) => void) | undefined;
+	onRecordedReading?: ((reading: PaneReading) => void) | undefined;
+	/** Undefined for ordinary reading, null until a canonical capture loads. */
+	recordedArchitecture?: Model | null | undefined;
 }
 
 /** The pane-bound callbacks the shared ones cannot supply. */
@@ -191,16 +195,9 @@ function useBoundCallbacks(props: ApplicationPaneProps): BoundCallbacks {
  * @returns The mounted pane.
  */
 function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
-	const { paneId, callbacks, picked, onSemanticReading } = props;
+	const { paneId, callbacks, picked, onRecordedReading } = props;
 	// What the stage says is on screen, which is the only place it is known.
 	const [onScreen, setOnScreen] = useState<SemanticPaneReading | null>(null);
-	const showReading = useCallback(
-		(shown: SemanticPaneReading): void => {
-			setOnScreen(shown);
-			onSemanticReading?.(shown);
-		},
-		[onSemanticReading],
-	);
 	const bound = useBoundCallbacks(props);
 	const { model: requestedModel } = useModelLocation(paneId);
 	// A step somebody narrating a walkthrough asked for (TASK-251). Kept with the
@@ -259,7 +256,8 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	);
 	useEffect(() => {
 		readingChanged(reading);
-	}, [reading, readingChanged]);
+		onRecordedReading?.(reading);
+	}, [reading, readingChanged, onRecordedReading]);
 
 	return (
 		<div
@@ -274,7 +272,15 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 				focused={props.focused}
 				onReading={reportCanonicalReading}
 			>
-				{address === null ? (
+				{props.recordedArchitecture !== undefined ? (
+					<RecordedModelStage
+						model={props.recordedArchitecture}
+						vault={vault}
+						driven={props.step}
+						reducedMotion={props.reducedMotion}
+						overlay={props.overlay}
+					/>
+				) : address === null ? (
 					<ArchitectureModelStage
 						key={vault}
 						vault={vault}
@@ -291,7 +297,7 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 							address={address}
 							arrival={session.arrivals}
 							openCode={session.openCode}
-							onReading={showReading}
+							onReading={setOnScreen}
 							onUserChanged={session.userChanged}
 							driven={props.step ?? asked}
 							shown={onScreen?.board ?? null}

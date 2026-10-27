@@ -1,3 +1,4 @@
+import { canonicalRecordingModel } from "#shared/protocol/canonical.ts";
 import type { ArchitectureModelRead } from "@archboard/board/model";
 // A recording of one walkthrough, as the page that records it and the command
 // that drives the page agree on it (TASK-304, TASK-381).
@@ -116,7 +117,21 @@ interface RecordingPage {
  * @returns Withdraws it from the page.
  */
 function publishRecordingPage(page: RecordingPage): () => void {
-	Reflect.set(globalThis, RECORDING_PAGE_GLOBAL, page);
+	const { load } = page;
+	const published =
+		load === undefined
+			? page
+			: {
+					...page,
+					/**
+					 * Validate and copy one exact payload at the published recording boundary.
+					 * @param input The driver-supplied canonical capture.
+					 * @returns The page's completion after it accepts the immutable input.
+					 */
+					load: (input: Parameters<NonNullable<RecordingPage["load"]>>[0]) =>
+						load(canonicalRecordingModel(input)),
+				};
+	Reflect.set(globalThis, RECORDING_PAGE_GLOBAL, published);
 	return () => {
 		Reflect.deleteProperty(globalThis, RECORDING_PAGE_GLOBAL);
 	};

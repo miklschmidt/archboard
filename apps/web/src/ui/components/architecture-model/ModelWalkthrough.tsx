@@ -35,7 +35,7 @@ interface WalkthroughProps {
 	model: Model;
 	reducedMotion: boolean;
 	onLeave: () => void;
-	driven?: DrivenPlace | null;
+	driven?: DrivenPlace | null | undefined;
 	onReading?: (reading: PaneReading | null) => void;
 	overlay?: SemanticPresentationProps["overlay"];
 	narration?: SemanticPresentationProps["narration"];

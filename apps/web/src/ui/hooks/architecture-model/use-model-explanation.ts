@@ -123,7 +123,9 @@ function useModelReadingReport(
 	const report = onReading ?? host?.report;
 	useEffect(() => {
 		report?.(
-			capture !== null && ready ? { ...NOTHING_READ, architecture: capture, presentation } : null,
+			capture === null
+				? null
+				: { ...NOTHING_READ, architecture: ready ? capture : null, presentation },
 		);
 		return () => report?.(null);
 	}, [report, capture, ready, presentation]);
