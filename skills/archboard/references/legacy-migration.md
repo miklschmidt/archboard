@@ -198,7 +198,8 @@ The public runtime uses `readArchitectureModel(vault, module, flow, {preview: "S
 All requests continue to name their vault explicitly.
 Preview reads save no model, checkpoint, plan, timestamp, or current designation.
 Ordinary model reads still return `LEGACY_AUTHORITY`.
-Continue to use legacy board commands for active architecture.
+Use the explicit migration route before active canonical authoring.
+Retired live board commands remain unavailable.
 
 ## Preserve original history
 
