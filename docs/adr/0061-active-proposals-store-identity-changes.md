@@ -45,6 +45,10 @@ Proposal writes use the existing claim, complete stale token, durable journal, f
 They introduce no second writer, recovery log, or history store.
 Signing failure refuses installation before authored inputs change.
 
+Claim admission validates live state identity and known subject scopes from the coherent authored catalog.
+The writer materializes selected architecture after it validates the exact token and writable standing.
+Exact input revisions and complete claims remain mandatory before installation.
+
 A current read exposes the active proposal catalogue and explicit selected state metadata.
 A selected draft always reports lifecycle `draft`, even when its retained manifest still names an implemented state.
 Its read token covers the addressed vault's exact input paths and bytes, including active proposals.
@@ -67,7 +71,7 @@ If that predecessor changes, ordinary draft reads and edits return `PREDECESSOR_
 Exact retained proposal revisions remain readable against their own retained catalogue.
 This refusal prevents an unreconciled draft from appearing settled.
 TASK-549.07 adds family reconciliation and explicit settlement through the same operation.
-Adoption and shelving belong to TASK-549.08.
+TASK-549.08 completes adoption and shelving through that same writer.
 
 CLI and HTTP adapt the existing architecture operations.
 The public package interface gains no names.
@@ -123,3 +127,24 @@ Write and recovery receipts report unsettled family states from the same signed 
 CLI and HTTP interpret neither conflicts nor recovery progress.
 An explicit reconcile intent follows deliberate external predecessor edits.
 Until then, the existing predecessor refusal preserves the requested draft and its retained history.
+
+Adoption requires a coherent settled proposal and settled ancestry.
+A superseded current predecessor refuses adoption by default.
+Forced adoption requires the complete explicit comparison against the observed current revision.
+The runtime compares that captured result before it installs the proposal's complete materialized architecture.
+It never applies a compact patch blindly to another baseline.
+
+The current designation retains the adopted state's stable identity, names, documents, predecessor, baseline, reason, and lifecycle time.
+The signed checkpoint retains the final compact proposal and the exact prior current reading.
+Shelving retains the same proposal evidence without changing current architecture.
+Both intents remove the active proposal through the existing recoverable installation.
+Following drafts retain their predecessor identities and reconcile against the completed reading in that same transaction.
+An exact retry returns one retained event.
+
+Completed history never enters current model files or active proposal files.
+The shared reader derives completed state metadata from explicit lifecycle records in the existing archive.
+Displacement records identify the final reading of a former current state.
+Archive append order supplies no architecture ancestry or current designation.
+Ambiguous retained identities require an exact checkpoint.
+Logical and exact historical readings preserve source associations, foreign pins, and comparison behavior.
+Historical correction remains TASK-549.09.

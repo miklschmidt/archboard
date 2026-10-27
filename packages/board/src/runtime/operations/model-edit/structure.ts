@@ -15,18 +15,34 @@ type Change = Extract<ArchitectureModuleEdit, { changes: unknown }>["changes"][n
 type Structure = ReturnType<typeof openStructure>;
 
 /**
+ * Identify operations that can allocate through this candidate's existing mint.
+ * @param request The complete model intent.
+ * @returns Whether retained identity reservations are needed.
+ */
+function allocatesIdentity(request: ArchitectureModuleEdit): boolean {
+	if ("proposal" in request && request.proposal.type === "create") return true;
+	return statements(request).some((change) => change.type.startsWith("add-"));
+}
+
+/**
  * Keep one in-memory candidate and its complete identity reservations.
  * @param model The coherent starting model.
  * @param paths The discovered authored paths.
+ * @param reservations The identities retained by completed lifecycle records.
  * @returns The private candidate state.
  */
-function openStructure(model: ArchitectureModel, paths: Iterable<string>) {
+function openStructure(
+	model: ArchitectureModel,
+	paths: Iterable<string>,
+	reservations: Iterable<string>,
+) {
 	return {
 		before: model,
 		modules: structuredClone(model.modules),
 
 		lookup: [...model.modules],
 		used: new Set([
+			...reservations,
 			...model.proposals.flatMap((proposal) => [
 				...proposal.changes.flatMap((change) => (change.type === "add" ? [change.subject] : [])),
 				...(proposal.retiredIds ?? []),
@@ -368,14 +384,16 @@ function changesStructure(
  * @param model The coherent starting model.
  * @param request The original intent.
  * @param paths The recognized input paths.
+ * @param reservations The retained historical identities.
  * @returns The candidate definitions and affected scopes.
  */
 function applyStructure(
 	model: ArchitectureModel,
 	request: ArchitectureModuleEdit,
 	paths: Iterable<string>,
+	reservations: Iterable<string> = [],
 ) {
-	const state = openStructure(model, paths);
+	const state = openStructure(model, paths, reservations);
 	const changes = statements(request);
 	for (const change of changes.filter((statement) => statement.type === "add-module"))
 		addModule(state, change);
@@ -408,4 +426,4 @@ function applyStructure(
 	const manifest = candidateManifest(state);
 	return { modules: state.modules, collections, manifest, subjects: [...state.subjects], scopes };
 }
-export { applyStructure };
+export { applyStructure, allocatesIdentity };

@@ -1,3 +1,4 @@
+import { ModelStateHistory } from "#ui/components/architecture-model/ModelStateHistory.tsx";
 import { useMemo, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import { Standing } from "#ui/components/semantic-board-canvas/SemanticInspectorStanding.tsx";
@@ -11,9 +12,18 @@ import { ModelReconciliation } from "#ui/components/architecture-model/ModelReco
  * @param props The coherent materialized reading.
  * @param props.model Its state metadata and semantic comparison.
  * @param props.paneId The pane that owns deliberate ancestor navigation.
+ * @param props.states The catalogue that names retained ancestors.
  * @returns Explicit lifecycle and comparison context above the diagram.
  */
-function ModelStateDetails({ model, paneId }: { model: Model; paneId: string }): JSX.Element {
+function ModelStateDetails({
+	model,
+	paneId,
+	states,
+}: {
+	model: Model;
+	paneId: string;
+	states: Readonly<NonNullable<Model["states"]>>;
+}): JSX.Element {
 	const state = model.selectedState;
 	if (state === null)
 		return (
@@ -40,6 +50,7 @@ function ModelStateDetails({ model, paneId }: { model: Model; paneId: string }):
 				{lifecycleName(state.lifecycle)} · {state.name}
 			</p>
 			{state.summary && <p className="text-body">{state.summary}</p>}
+			<ModelStateHistory state={state} paneId={paneId} states={states} />
 			{model.comparison && <ComparisonSummary comparison={model.comparison} />}
 			<ModelReconciliation model={model} paneId={paneId} />
 		</section>

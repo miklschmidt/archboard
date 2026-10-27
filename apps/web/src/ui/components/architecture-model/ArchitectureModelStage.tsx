@@ -1,3 +1,4 @@
+import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
 import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
 import { useCallback, useEffect, type ComponentProps, type JSX, type ReactNode } from "react";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
@@ -168,6 +169,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				vault={props.vault}
 				reducedMotion={props.reducedMotion}
 				query={query}
+				states={stateCatalogue(catalogue.data)}
 				current={current}
 				stale={stale}
 				failure={feed.failure}
@@ -324,6 +326,7 @@ interface ModelResponseProps extends Pick<
 > {
 	subject: string | null;
 	query: ModelQuery;
+	states: ReturnType<typeof stateCatalogue>;
 	current: boolean;
 	stale: boolean;
 	failure: Extract<ArchitectureModelRead, { success: false }> | null;
@@ -354,7 +357,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			{problem !== null && <ModelError {...problem} compact={stale} />}
 			{model !== undefined && (
 				<>
-					<ModelStateDetails model={model} paneId={props.paneId} />
+					<ModelStateDetails model={model} paneId={props.paneId} states={props.states} />
 					<CheckpointEvidence model={model} />
 					<ModelReading
 						key={JSON.stringify([model.manifest.id, props.subject])}

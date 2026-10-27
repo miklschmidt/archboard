@@ -111,6 +111,25 @@ function retainedSelection(record: Awaited<ReturnType<typeof checkpointRecord>>)
 	return record.selection;
 }
 /**
+ * Materialize a completed shelved proposal from its own final patch and baseline.
+ * @param context The archive owner.
+ * @param model The exact checkpoint catalogue.
+ * @param record The retained lifecycle record.
+ * @returns Its complete final proposal side.
+ */
+async function shelvedSelection(
+	context: ArchiveContext,
+	model: Extract<ArchitectureModelRead, { success: true }>,
+	record: Awaited<ReturnType<typeof checkpointRecord>>,
+) {
+	const { decodeProposal } = await import("#runtime/operations/proposals/read.ts");
+	const proposal = record.lifecycle!.proposal;
+	const baseline = await exactReading(context, proposal.baseline, undefined, undefined, false);
+	if (!baseline.success) return baseline;
+	const draft = decodeProposal(baseline, proposal, model);
+	return draft.success ? { ...draft, selectedState: retainedSelection(record) } : draft;
+}
+/**
  * Resolve a retained draft against only its checkpoint's own catalogue.
  * @param context The archive owner.
  * @param model The decoded checkpoint inputs.
@@ -123,6 +142,7 @@ async function recordedSelection(
 	record: Awaited<ReturnType<typeof checkpointRecord>>,
 ): Promise<ArchitectureModelRead> {
 	const selection = retainedSelection(record);
+	if (record.lifecycle?.type === "shelve") return shelvedSelection(context, model, record);
 	const proposal = model.proposals.find((entry) => entry.id === selection?.id);
 	if (proposal === undefined) return { ...model, selectedState: selection };
 	const { materializeProposal } = await import("#runtime/operations/proposals/read.ts");

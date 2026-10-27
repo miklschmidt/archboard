@@ -139,6 +139,10 @@ not add imports or a second state path before that work.
   Other mutable readings refresh through the same public reader. Exact checkpoints keep distinct keys.
   The selected state metadata supplies lifecycle labels, including retained drafts.
   It also supplies unresolved issues and blocked ancestry, independently of comparison changes.
+  The current catalogue also supplies adopted and shelved logical states.
+  Reading and comparison controls share those identities and keep exact checkpoints distinct.
+  Selected state details expose recorded decisions, dates, ancestry, and document references.
+  Lineage actions use the existing router and preserve explicit unavailable history.
   The state picker and selected reading expose that standing. The shared issue component shows both values and repair instructions.
   A blocked reading can open its live ancestor through the same router.
   Exact checkpoints preserve their original standing after live settlement. The browser authors no settlement.
