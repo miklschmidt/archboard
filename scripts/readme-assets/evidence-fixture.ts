@@ -199,6 +199,14 @@ async function prepareEvidenceFixture(server: TakeServer, name: string) {
 		"--doing",
 		"Initialize the synthetic architecture",
 	]);
+	/**
+	 * Bind one sample module to its real source file.
+	 * @param partName The module name.
+	 * @param path The relative source path.
+	 * @param responsibility The authored purpose.
+	 * @param parent The containing module name.
+	 * @returns Input whose identity the runtime mints.
+	 */
 	const part = (
 		partName: string,
 		path: string,
@@ -212,6 +220,14 @@ async function prepareEvidenceFixture(server: TakeServer, name: string) {
 		binding: { repo: REPO, path },
 		...(parent === undefined ? {} : { parent }),
 	});
+	/**
+	 * Author a call with its real source anchor.
+	 * @param source The caller.
+	 * @param to The called module.
+	 * @param path The file that contains the call.
+	 * @param symbol The called function.
+	 * @returns The relationship creation request.
+	 */
 	const call = (source: string, to: string, path: string, symbol: string): RelationshipInput => ({
 		type: "add-relationship",
 		source,
@@ -301,6 +317,11 @@ async function prepareEvidenceFixture(server: TakeServer, name: string) {
 		await editModel(server, name, null, changes, { type: "create", name: proposal });
 	});
 	const model = await readModel(server);
+	/**
+	 * Resolve a module identity from the completed public reading.
+	 * @param partName The authored module name.
+	 * @returns Its runtime identity.
+	 */
 	const node = (partName: string): string => {
 		const found = model.modules.find((saved) => saved.name === partName);
 		if (found === undefined) throw new Error(`The evidence fixture has no ${partName}`);

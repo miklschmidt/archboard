@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T16:45:00Z'
+updated_date: '2026-10-27T16:51:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -92,4 +92,6 @@ Merged signed backend contract checkpoint949d23ecf through merger4d340e40, witho
 Parent ports the generic voice-box and text-workbench fixtures to real canonical files read through the public model interface. The sign-in, held-message, and approval workflow passes. Ordinary canonical readings now mount the existing voice overlay. The voice-box owner exposed a remaining startup flight failure; its assertions remain intact, and diagnosis is recorded externally. This signed checkpoint permits integration of the next backend voice-context checkpoint and does not claim browser acceptance.
 
 Merged backend checkpoint56447f6f through signed mergee351f4e7. The canonical voice-box owner still catches startup flight, while the same owner passes against signed .23. Parent moved the ordinary overlay into the canvas area; diagnosis remains open. README evidence fixtures now use canonical initialization, claims, edits, adoption, and two independent proposals over their own real source repository. The first CLI smoke exposed model init rejecting its documented --doing option. Backend delegate supplied a focused RED/GREEN fix at e52aa826; the parent will integrate it before continuing the real consumer smoke. No final acceptance is claimed.
+
+The README evidence smoke now succeeds through shipped model init, model claim/edit/release, adoption, and two independent proposals. Locality reads nine real Git commits. Footprint reads two branch commits and returns all three comparison categories. Fixed the temporary input path and all four README lint findings without rule changes. Focused recipe lint passes. The film selectors and remaining visual recipes still need transition, so this does not claim visual acceptance. Voice diagnosis identifies preparation before a pane transport exists; the frontend now supplies its ordinary overlay during preparation, with an empty transcript until transport arrives. The unchanged browser owner is running against this repair.
 <!-- SECTION:NOTES:END -->
