@@ -60,6 +60,7 @@ async function prepareEdit(vault: string, request: ArchitectureModuleEdit) {
 			candidate.selection ?? candidate.current.manifest.current,
 		),
 		selection: candidate.selection,
+		lifecycle: "lifecycle" in candidate ? candidate.lifecycle : undefined,
 		revision: candidate.revision,
 		createdAt: new Date().toISOString(),
 		request: {

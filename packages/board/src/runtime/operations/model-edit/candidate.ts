@@ -51,7 +51,7 @@ function writeDefinitions<T extends { id: string; file: string }>(
 function candidateInputs(
 	captured: ReturnType<typeof readModelFiles>,
 	current: ArchitectureModel,
-	candidate: ReturnType<typeof applyStructure>,
+	candidate: Pick<ReturnType<typeof applyStructure>, "modules" | "collections" | "manifest">,
 ) {
 	const inputs = new Map(captured.inputs);
 	writeDefinitions(inputs, current.modules, candidate.modules);

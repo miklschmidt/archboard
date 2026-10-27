@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
+import { sameSemanticValue } from "#shared/rules/semantic-value.ts";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { writeFileAtomic, unlinkDurably } from "@archboard/workspace/atomic-write";
@@ -105,7 +106,7 @@ async function requirePrepared(context: ArchiveContext, journal: ModelJournal) {
 		subjects: journal.subjects,
 	};
 	if (
-		!isDeepStrictEqual(
+		!sameSemanticValue(
 			{
 				vault: record.vault,
 				edit: record.edit,

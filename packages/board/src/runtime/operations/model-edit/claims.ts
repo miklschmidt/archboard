@@ -1,5 +1,5 @@
 import { subjectsOf } from "#runtime/operations/proposals/subjects.ts";
-import type { ArchitectureModel } from "#shared/schemas/model.ts";
+import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
 import { notifyArchitecture } from "#runtime/store/model-news.ts";
 import { isDeepStrictEqual } from "node:util";
 import { CLAIM_MS } from "@archboard/timing";
@@ -152,6 +152,15 @@ function claimableSubjects(model: ArchitectureModel): Set<string> {
 	]);
 }
 /**
+ * Include claim scopes from a coherent current or retained reading.
+ * @param known The accumulating existing scopes.
+ * @param model The complete public reading or refusal.
+ */
+function includeClaimScopes(known: Set<string>, model: ArchitectureModelRead): void {
+	if (!model.success) return;
+	for (const id of claimableSubjects(model)) known.add(id);
+}
+/**
  * Include retained subjects after an external predecessor deletion.
  * @param vault The explicitly addressed vault.
  * @param model The coherent catalogue.
@@ -161,6 +170,8 @@ function claimableSubjects(model: ArchitectureModel): Set<string> {
 async function knownClaimScopes(vault: string, model: ArchitectureModel, subjects: string[]) {
 	const known = claimableSubjects(model);
 	if (subjects.every((subject) => known.has(subject))) return known;
+	includeClaimScopes(known, readCurrentModel(vault));
+	if (subjects.every((subject) => known.has(subject))) return known;
 	if (model.proposals.length === 0) return known;
 	const { exactReading } = await import("#runtime/operations/history/read.ts");
 	const context = await archiveContext(vault);
@@ -169,8 +180,7 @@ async function knownClaimScopes(vault: string, model: ArchitectureModel, subject
 			exactReading(context, proposal.baseline, undefined, undefined, false),
 		),
 	);
-	for (const baseline of baselines)
-		if (baseline.success) for (const id of subjectsOf(baseline).keys()) known.add(id);
+	for (const baseline of baselines) includeClaimScopes(known, baseline);
 	return known;
 }
 /**

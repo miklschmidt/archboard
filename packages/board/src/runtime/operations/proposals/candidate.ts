@@ -121,6 +121,7 @@ function proposalFor(request: Request, model: ArchitectureModel) {
 				schemaVersion: 1,
 				id: freshState(model),
 				lifecycle: "draft",
+				createdAt: new Date().toISOString(),
 				predecessor: request.target.state,
 				predecessorRevision: predecessorRevision(model),
 				baseline: "0".repeat(40),
@@ -367,6 +368,10 @@ async function proposalIntentCandidate(
 	if (request.proposal.type === "settle") {
 		const { settleCandidate } = await import("#runtime/operations/proposals/settle.ts");
 		return settleCandidate(vault, { ...request, proposal: request.proposal }, current, captured);
+	}
+	if (request.proposal.type === "adopt" || request.proposal.type === "shelve") {
+		const { lifecycleCandidate } = await import("#runtime/operations/proposals/lifecycle.ts");
+		return lifecycleCandidate(vault, { ...request, proposal: request.proposal }, current, captured);
 	}
 	return proposalCandidate(vault, { ...request, proposal: request.proposal }, current, captured);
 }

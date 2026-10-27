@@ -1,6 +1,10 @@
 import { ReconciliationIssueSchema } from "#shared/schemas/reconciliation.ts";
 import { z } from "zod";
-import { StateMetadataSchema, ModelRevisionSchema } from "#shared/schemas/model-definitions.ts";
+import {
+	StateMetadataSchema,
+	StateLineageSchema,
+	ModelRevisionSchema,
+} from "#shared/schemas/model-definitions.ts";
 import { QualifiedSubjectIdSchema, SemanticIdSchema } from "#shared/schemas/primitives.ts";
 const StateSelectionSchema = z.strictObject({
 	state: z.string().min(1).optional(),
@@ -66,6 +70,7 @@ const FamilyStandingSchema = z.array(
 const ProposalSchema = StateMetadataSchema.extend({
 	schemaVersion: z.literal(1),
 	lifecycle: z.literal("draft"),
+	createdAt: z.iso.datetime().optional(),
 	predecessor: SemanticIdSchema.nullable(),
 	predecessorRevision: z.string().regex(/^[a-f0-9]{64}$/u),
 	baseline: CheckpointIdSchema,
@@ -76,12 +81,21 @@ const ProposalSchema = StateMetadataSchema.extend({
 		.array(z.strictObject({ subject: QualifiedSubjectIdSchema, checkpoint: CheckpointIdSchema }))
 		.optional(),
 }).strict();
-const SelectedStateSchema = StateMetadataSchema.extend({
+const SelectedStateSchema = StateLineageSchema.extend({
 	lifecycle: z.enum(["current", "draft", "historical", "shelved"]),
 	predecessor: SemanticIdSchema.nullable().optional(),
 	baseline: CheckpointIdSchema.optional(),
 	standing: ModelStandingSchema.optional(),
 }).strict();
+const LifecycleSchema = z.strictObject({
+	type: z.enum(["adopt", "shelve"]),
+	at: z.iso.datetime(),
+	reason: z.string().min(1),
+	proposal: ProposalSchema,
+	previous: z
+		.strictObject({ state: SelectedStateSchema, checkpoint: CheckpointIdSchema })
+		.nullable(),
+});
 const ComparisonSchema = z.strictObject({
 	reason: z.enum(["explicit", "current", "predecessor"]),
 	against: SelectedStateSchema.nullable(),
@@ -109,6 +123,7 @@ export {
 	FamilyStandingSchema,
 	ProposalSchema,
 	SelectedStateSchema,
+	LifecycleSchema,
 	ComparisonSchema,
 	ProposalChangeSchema,
 	SubjectKindSchema,
