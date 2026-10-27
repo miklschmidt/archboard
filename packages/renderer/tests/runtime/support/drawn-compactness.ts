@@ -111,7 +111,7 @@ export function compactnessOf(svg: string, width: number, height: number): Compa
 	});
 	let longestRoute = { id: "", length: 0, detour: 0 };
 	const routes: Compactness["routes"][number][] = [];
-	for (const [id, points] of corridorPoints(svg)) {
+	for (const [id, points] of [...corridorPoints(svg), ...corridorPoints(svg, "step")]) {
 		const length = points
 			.slice(1)
 			.reduce(
