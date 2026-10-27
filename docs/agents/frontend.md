@@ -354,3 +354,8 @@ The sidebar search reads the complete selected model, including modules outside 
 It searches names, responsibilities, descriptions, and code bindings without another server read.
 Choosing a result opens its containing scope and selects its canonical identity.
 The existing sidebar shortcut, combobox, Escape behavior, and focus handoff remain shared.
+
+Group choices use membership from the complete selected model, independently of scope and group-region filters.
+The canonical selected set determines which group choices are active.
+Selecting a group chooses all its members, including hidden descendants.
+Focus reveals those members through the existing reading controls.

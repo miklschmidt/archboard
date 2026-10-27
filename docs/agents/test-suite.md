@@ -778,3 +778,8 @@ Browser helpers open the appropriate tab before acting on its visible content.
 It retains trusted keyboard input and the visible module-search shortcut, focus, Escape, selection, and read-only behavior.
 Existing canonical navigation, code, and reference owners cover containment and source navigation.
 The existing sidebar placement owner now uses the canonical search field.
+
+`canonical-model-groups.test.ts` replaces the legacy board group browser fixture.
+It retains computed selection-ring and read-only assertions.
+It also covers membership across recursive scopes, hidden selection counts, and explicit Focus.
+The existing group UI owner continues to cover shared chips and controls used by retained replay.

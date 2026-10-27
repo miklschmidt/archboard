@@ -33,7 +33,7 @@ const BROWSER_TEST_PATHS = [
 	"tests/system/browser/canonical-model-publication.test.ts",
 	"tests/system/browser/semantic-status-legibility.test.ts",
 	"tests/system/browser/canonical-model-inspection.test.ts",
-	"tests/system/browser/semantic-board-groups.test.ts",
+	"tests/system/browser/canonical-model-groups.test.ts",
 	"tests/system/browser/semantic-walkthrough-presentation.test.ts",
 	"tests/system/browser/semantic-drill-boundary.test.ts",
 	"tests/system/browser/semantic-drill-address.test.ts",

@@ -1,3 +1,4 @@
+import { ModelGroups } from "#ui/components/architecture-model/ModelGroups.tsx";
 import { ModelSearch } from "#ui/components/architecture-model/ModelSearch.tsx";
 import { useMemo, type ComponentProps, type JSX, type ReactNode } from "react";
 import {
@@ -66,6 +67,7 @@ function ModelReadingSidebar(props: ReadingSidebarProps): JSX.Element {
 						<ModelModuleList {...props} />
 					</>
 				)}
+				<ModelGroups model={props.model} selection={props.selection} />
 				<details className="text-body border-border border-t px-4 py-4">
 					<summary>Model ownership</summary>
 					<p data-slot="model-transfer-unavailable" className="text-muted-foreground mt-3">
