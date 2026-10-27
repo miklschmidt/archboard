@@ -783,3 +783,9 @@ The existing sidebar placement owner now uses the canonical search field.
 It retains computed selection-ring and read-only assertions.
 It also covers membership across recursive scopes, hidden selection counts, and explicit Focus.
 The existing group UI owner continues to cover shared chips and controls used by retained replay.
+
+`canonical-model-attention.test.ts` replaces `semantic-board-exploring.test.ts`.
+It retains neighbor lighting, readable relationship labels at actual far zoom, and complete selected ink across shared routes.
+The canonical canvas reuses the retained viewer's camera commands and lighting rules.
+Board-card flights retire with board ownership.
+Canonical scope and gesture owners retain navigation and camera behavior.

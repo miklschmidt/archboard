@@ -1,3 +1,7 @@
+import { moveCameraByKey } from "#ui/clients/semantic-board-canvas/picture/camera-keys.ts";
+import { useLighting } from "#ui/hooks/semantic-board-canvas/use-lighting.ts";
+import { NOTHING_PEEKED } from "#ui/components/semantic-board-canvas/Peek.tsx";
+import { lightInk } from "#ui/clients/semantic-board-canvas/subjects/lit-ink.ts";
 import {
 	useCallback,
 	useEffect,
@@ -6,6 +10,7 @@ import {
 	useRef,
 	useState,
 	type JSX,
+	type KeyboardEvent,
 } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { everyStep } from "@archboard/board/flow";
@@ -22,7 +27,11 @@ import { stagePicture } from "#ui/clients/semantic-board-canvas/picture/picture-
 import { clockOf } from "#ui/clients/semantic-board-canvas/picture/picture-clock.ts";
 import { stopTraffic } from "#ui/clients/semantic-board-canvas/picture/picture-traffic.ts";
 import { markCodeWarnings } from "#ui/clients/semantic-board-canvas/subjects/code-marks.ts";
-import { markSubjects } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
+import {
+	markSubjects,
+	markVeil,
+	surfaceMarks,
+} from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 import type { projectModel, Model } from "@archboard/board/content";
 import { usePresentationArrival } from "#ui/hooks/semantic-board-canvas/use-presentation-arrival.ts";
 import { modelDrawingQuery } from "#ui/clients/architecture-model/drawing.ts";
@@ -138,7 +147,19 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		},
 		[model.modules, onOpen],
 	);
-	const ignore = useCallback((): void => {}, []);
+	const lightingInput = useMemo(
+		() => ({
+			content: props.projection.content,
+			atlas: drawing.atlas,
+			selection: selected.size === 1 ? ([...selected][0] ?? null) : null,
+			peeked: NOTHING_PEEKED,
+			veil: null,
+			enabled:
+				props.presentation === undefined && selected.size <= 1 && props.grammar === "architecture",
+		}),
+		[props.projection.content, drawing.atlas, selected, props.presentation, props.grammar],
+	);
+	const lighting = useLighting(lightingInput);
 	const selectArea = useCallback(
 		(rectangle: DiagramBox, toggle: boolean): void => {
 			const pose = camera.view().camera;
@@ -168,10 +189,21 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		atlas: drawing.atlas,
 		onSelect,
 		onSelectArea: selectArea,
-		onHover: ignore,
-		dismissTip: ignore,
+		onHover: lighting.onHover,
+		dismissTip: lighting.release,
 		openDown: open,
 	});
+	const onKeyDown = useCallback(
+		(event: KeyboardEvent<HTMLElement>): void => {
+			keyboard.onKeyDown?.(event);
+			if (event.defaultPrevented) return;
+			if (moveCameraByKey(event.key, camera, drawing, props.reducedMotion)) {
+				event.preventDefault();
+				lighting.release();
+			}
+		},
+		[keyboard, camera, drawing, props.reducedMotion, lighting],
+	);
 	useLayoutEffect(() => {
 		const root = surface.current;
 		if (root === null) return;
@@ -183,7 +215,9 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		const warned = projectedMarks(props.warnings, props.projection.connections);
 		markSubjects(root, marked);
 		markCodeWarnings(root, warned);
-	}, [selected, drawing.svg, props.projection.connections, props.warnings]);
+		markVeil(root, lighting.standing);
+		lightInk(root);
+	}, [selected, drawing.svg, props.projection.connections, props.warnings, lighting.standing]);
 	useLayoutEffect(() => {
 		if (camera.room === null) return;
 		if (!camera.handled() || shownBeat.current !== props.presentation) {
@@ -204,17 +238,21 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		onPresentation?.({ key: presentation, arrived: settled === presentation });
 		return () => onPresentation?.(null);
 	}, [onPresentation, presentation, settled, arrivalSurface]);
+	// Like the retained diagram, this pan-and-zoom surface needs a tab stop and
+	// camera keys. No interactive ARIA role describes it. Keep its section name
+	// without falsely declaring a button, grid, or other standard widget.
+	/* oxlint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */
 	return (
 		<section
 			data-slot="model-diagram"
 			aria-busy={props.updating}
-			tabIndex={-1}
+			tabIndex={0}
 			aria-label="Module diagram"
 			data-revision={props.model.revision.digest}
 			className="relative min-h-0 min-w-0 flex-1 overflow-hidden"
 			ref={attachViewport}
 			{...pointer}
-			{...keyboard}
+			onKeyDown={onKeyDown}
 		>
 			<CameraSurface
 				camera={camera}
@@ -222,7 +260,11 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 				attach={attach}
 				gesture={gesture}
 				reducedMotion={props.reducedMotion}
-				marks=""
+				marks={surfaceMarks({
+					veiled: false,
+					far: false,
+					probing: lighting.mode,
+				})}
 			/>
 			{props.updating && (
 				<output className="text-body text-muted-foreground bg-background absolute top-2 right-2 rounded px-2 py-1">
@@ -232,6 +274,7 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 			{rectangle !== null && <ModelSelectionRectangle rectangle={rectangle} />}
 		</section>
 	);
+	/* oxlint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */
 }
 
 /**

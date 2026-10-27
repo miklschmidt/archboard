@@ -37,7 +37,7 @@ const BROWSER_TEST_PATHS = [
 	"tests/system/browser/semantic-walkthrough-presentation.test.ts",
 	"tests/system/browser/semantic-drill-boundary.test.ts",
 	"tests/system/browser/semantic-drill-address.test.ts",
-	"tests/system/browser/semantic-board-exploring.test.ts",
+	"tests/system/browser/canonical-model-attention.test.ts",
 	"tests/system/browser/semantic-claim.test.ts",
 	"tests/system/browser/voice-box.test.ts",
 	"tests/system/browser/voice-box-presented.test.ts",

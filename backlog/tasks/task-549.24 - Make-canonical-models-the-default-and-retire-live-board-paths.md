@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T20:48:00Z'
+updated_date: '2026-10-27T21:13:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -86,6 +86,8 @@ Use the existing Archboard family identity vKEsyHFk as the stable repository mig
 Preserve the existing sidebar search and group-selection workflows before retiring legacy browser owners. Reuse the existing search combobox, focus shortcut and sidebar behavior over the selected canonical model; remove board catalogue/document reads and the unused search host. Keep these visible behaviors in the existing browser seam, with exact architecture bytes unchanged.
 
 Bounded narration repair: reproduce live external-change speech in the existing public runtime/HTTP/socket narration owner, keep captured source and target revisions fixed, repair settled news without changing explicit selection/focus behavior, and preserve durable writer evidence. Use the existing Live panes/server proposals. Leave parent status, assignee, acceptance, repository migration, browser acceptance, and final gate unchanged.
+
+Preserve selected-neighbor lighting and readable relationship labels before retiring the old board-exploration browser owner. Reuse the existing lighting and line-mask owners for canonical projected content. Board-to-board card flights retire with board ownership; recursive scope navigation remains covered by canonical navigation and gesture owners.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -160,4 +162,6 @@ Bounded narration/news repair: the existing model watcher labeled external file 
 Canonical module search passes the ported inspection browser owner and the existing sidebar placement/focus owner. It reuses the combobox, shortcut, result focus and Escape behavior over the complete selected model, with no extra board or model fetch. A hidden Handler opens in its containing Gateway scope, keeps exact selection and changes no architecture bytes. Removed the old board-document search loader and unused application host. Full types and focused source/test lint pass. The integrated canonical narration browser owner also passes after signed backend merge faaf275fc.
 
 Canonical group selection now reuses the existing color chips, list and membership rules over selected model content. Canonical selected identities remain the only selection state; matching member sets determine group marks. The ported browser owner selects three members across recursive scopes, exposes two hidden members, focuses them, verifies actual selection rings, and clears the group without changing architecture bytes. Browser, retained group UI owner, full types and focused source/test lint pass. The initial fixture refusal required sorted group memberships before the real missing-choice RED; no product validation rule changed.
+
+Canonical attention now reuses the existing lighting and camera commands. The replacement browser owner reproduced absent neighbor lighting and missing keyboard zoom, then passed actual far-zoom label visibility and complete shared-route ink. Existing lighting and reach UI owners, full types and focused lint pass. The canvas keeps the retained viewer’s documented keyboard-surface accessibility exception, with a named section and reachable tab stop. Board-card flights retire with board ownership; canonical scope and gesture owners retain navigation behavior.
 <!-- SECTION:NOTES:END -->
