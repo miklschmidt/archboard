@@ -165,10 +165,12 @@ function readVault(vault: string): { boards: SemanticBoard[]; policy: Policy } {
  * @returns Its record and its SVG, or nothing when the board draws nothing there.
  */
 async function draw(job: Job): Promise<{ drawn: Drawn; svg: string } | undefined> {
+	const content = job.board.variants.find(({ id }) => id === job.variant)!.content;
+	if (job.whole && content.nodes.length === 0) return undefined;
 	const started = performance.now();
 	const reply = job.whole
 		? await renderArchitecture({
-				content: job.board.variants.find(({ id }) => id === job.variant)!.content,
+				content,
 				policy: job.policy,
 				theme: job.theme,
 				layout: job.engine,
