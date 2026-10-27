@@ -122,6 +122,25 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 			`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(node => node.getAttribute('data-module-id'))`,
 		),
 	).toEqual(["Shop/System#Api"]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="repository-model-open"]') !== null`,
+			),
+		Boolean,
+		"the installed model in the repository navigator",
+		WAIT,
+	);
+	await browser.run(["click", '[data-slot="repository-model-open"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop/System#Shop"]') !== null && !new URLSearchParams(location.search).has('previewA')`,
+			),
+		Boolean,
+		"the current model from its repository",
+		WAIT,
+	);
 }, 60_000);
 
 test("an open legacy pane follows interrupted migration through recovery to canonical authority", async () => {

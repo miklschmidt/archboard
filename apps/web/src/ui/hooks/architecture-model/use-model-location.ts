@@ -136,7 +136,32 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		[navigate, preview, checkpoint],
 	);
 	const openOriginal = useCallback(
-		(address: ModelAddress): void => navigate(address, true),
+		(destination: ModelAddress): void => navigate(destination, true),
+		[navigate],
+	);
+	const openRepository = useCallback(
+		(id: string, repository: string): void => {
+			navigate(
+				{
+					id,
+					scope: null,
+					checkpoint: null,
+					state: undefined,
+					preview: undefined,
+					bookmark: undefined,
+					legacyAddress: undefined,
+					against: undefined,
+					subject: undefined,
+					grammar: undefined,
+					flow: undefined,
+					focus: undefined,
+					hideKinds: undefined,
+					hideGroups: undefined,
+				},
+				false,
+				repository,
+			);
+		},
 		[navigate],
 	);
 	const open = useCallback(
@@ -228,9 +253,10 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		[navigate],
 	);
 	return {
+		openRepository,
 		board,
 		openOriginal,
-		legacyAddress,
+		legacyAddress: legacyAddress ?? (model === null ? board : null),
 		selectLegacyAddress,
 		bookmark,
 		selectBookmark,

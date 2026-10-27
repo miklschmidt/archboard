@@ -7,6 +7,7 @@ import { ModelPreviewReader } from "#ui/components/architecture-model/ModelPrevi
 import { ModelBookmarks } from "#ui/components/architecture-model/ModelBookmarks.tsx";
 import { ModelLegacyAddresses } from "#ui/components/architecture-model/ModelLegacyAddresses.tsx";
 import { ModelOriginalDestination } from "#ui/components/architecture-model/ModelOriginalDestination.tsx";
+import { ModelBookmarkReading } from "#ui/components/architecture-model/ModelBookmarkReading.tsx";
 import { importedReadings } from "#ui/rules/architecture-model/imported-readings.ts";
 import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
 import { useCallback, useEffect, type ComponentProps, type JSX, type ReactNode } from "react";
@@ -121,14 +122,14 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 			state,
 			against,
 			bookmark,
-			legacyAddress: legacyAddress ?? (requestedModel === null ? board : null),
+			legacyAddress,
 		}),
 	);
 	const catalogue = useQuery(architectureModelQuery(props.vault));
 	const history = useQuery(architectureCheckpointsQuery(props.vault));
 	const { data } = query;
-	const resolvedId = data?.manifest.id;
-	const original = data?.migrationPreview !== undefined;
+	const resolvedId = modelIdentity(data);
+	const original = isOriginalModel(data);
 	useEffect(() => {
 		if (resolvedId !== undefined && !original) identify(resolvedId);
 	}, [identify, resolvedId, original]);
@@ -139,16 +140,14 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const refresh = useCallback((): void => {
 		void client.invalidateQueries({ queryKey: architectureModelKeys.vault(vault) });
 	}, [client, vault]);
-	if (requestedModel === null && legacyAuthority(query, feed)) return <>{props.children}</>;
-	if (requestedModel === null && board === null && hasNoReadings(query, history, checkpoint))
+	if (requestedModel === null && automaticFallback(query, history, checkpoint, board, feed))
 		return <>{props.children}</>;
 	if (differentModel(resolvedId, requestedModel)) {
 		return (
 			<ModelIdentityFailure id={requestedModel} refresh={refresh} refreshing={query.isFetching} />
 		);
 	}
-	if (data?.migrationPreview !== undefined)
-		return <ModelOriginalDestination model={data} paneId={props.paneId} />;
+	if (isOriginalModel(data)) return <ModelOriginalDestination model={data} paneId={props.paneId} />;
 	return (
 		<section
 			data-slot="architecture-model-stage"
@@ -217,6 +216,49 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
  */
 function differentModel(actual: string | undefined, requested: string | null): requested is string {
 	return actual !== undefined && requested !== null && actual !== requested;
+}
+
+/**
+ * Keep exact original responses distinct from current canonical authority.
+ * @param model The selected query result.
+ * @returns Whether the response carries retained original coverage.
+ */
+function isOriginalModel(
+	model: ModelQuery["data"],
+): model is NonNullable<ModelQuery["data"]> & {
+	migrationPreview: NonNullable<NonNullable<ModelQuery["data"]>["migrationPreview"]>;
+} {
+	return model?.migrationPreview !== undefined;
+}
+
+/**
+ * Read the identity only from coherent returned content.
+ * @param model The selected query result.
+ * @returns Its identity, when available.
+ */
+function modelIdentity(model: ModelQuery["data"]): string | undefined {
+	return model?.manifest.id;
+}
+
+/**
+ * Automatic discovery preserves confirmed legacy content or genuinely empty guidance.
+ * @param query The selected public read.
+ * @param history The retained history catalogue.
+ * @param checkpoint The requested checkpoint.
+ * @param board An existing legacy address, when present.
+ * @param feed The ordered current status.
+ * @returns Whether the caller's legacy or empty surface remains appropriate.
+ */
+function automaticFallback(
+	query: ModelQuery,
+	history: UseQueryResult<ArchitectureCheckpointList>,
+	checkpoint: string | null,
+	board: string | null,
+	feed: ReturnType<typeof useArchitectureFeed>,
+): boolean {
+	return (
+		legacyAuthority(query, feed) || (board === null && hasNoReadings(query, history, checkpoint))
+	);
 }
 
 /**
@@ -389,15 +431,6 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 		return <output className="text-body text-muted-foreground p-10">Reading architecture…</output>;
 	const problem = readingProblem(query.error, props.current ? props.failure : null);
 	const model = visibleModel(query, props.current);
-	const bookmarkProblems = importedReadings(model)?.bookmark?.diagnostics;
-	if (bookmarkProblems !== undefined && bookmarkProblems.length > 0)
-		return (
-			<ModelError
-				code="BOOKMARK_UNAVAILABLE"
-				message="This bookmark cannot be drawn. Select another reading or update the bookmark."
-				diagnostics={bookmarkProblems}
-			/>
-		);
 	return (
 		<>
 			{stale && (
@@ -411,7 +444,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			)}
 			{problem !== null && <ModelError {...problem} compact={stale} />}
 			{model !== undefined && (
-				<>
+				<ModelBookmarkReading model={model}>
 					<ModelStateDetails model={model} paneId={props.paneId} states={props.states} />
 					<CheckpointEvidence model={model} />
 					<ModelWalkthroughReader
@@ -433,7 +466,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 							onCodeTargetNotice={props.onCodeTargetNotice}
 						/>
 					</ModelWalkthroughReader>
-				</>
+				</ModelBookmarkReading>
 			)}
 		</>
 	);

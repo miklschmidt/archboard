@@ -3,6 +3,7 @@
 // `ShellActions`. The shell keeps only presentation state of its own.
 
 import type { ReactNode } from "react";
+import type { Model } from "#ui/rules/architecture-model/projection.ts";
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
@@ -86,6 +87,7 @@ type SettingsSurface = "opener";
 
 /** One repository as the navigator lists it, with the boards of its chosen checkout (ADR 0050). */
 interface ShellRepository {
+	readonly model?: Model["manifest"] | undefined;
 	readonly repository: RepositoryEntry;
 	readonly boards: BoardListing;
 	/** Its boards as the navigator places them, built once by the caller. */

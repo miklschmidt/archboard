@@ -14,6 +14,7 @@ import { ModelPreviewSelector } from "#ui/components/architecture-model/ModelPre
 import { ModelPreviewCoverage } from "#ui/components/architecture-model/ModelPreviewCoverage.tsx";
 import { ModelPreviewDetails } from "#ui/components/architecture-model/ModelPreviewDetails.tsx";
 import { ModelBookmarks } from "#ui/components/architecture-model/ModelBookmarks.tsx";
+import { ModelBookmarkReading } from "#ui/components/architecture-model/ModelBookmarkReading.tsx";
 import { ModelWalkthroughReader } from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
 import { ModelLegacyAddresses } from "#ui/components/architecture-model/ModelLegacyAddresses.tsx";
 
@@ -189,19 +190,12 @@ function PreviewReading(
 	props: PreviewProps & Pick<ComponentProps<typeof ModelReading>, "model" | "subject">,
 ): JSX.Element {
 	const bookmark = props.model.migrationPreview?.bookmark;
-	const bookmarkProblems = bookmark?.diagnostics;
-	if (bookmarkProblems !== undefined && bookmarkProblems.length > 0)
-		return (
-			<ModelError
-				code="BOOKMARK_UNAVAILABLE"
-				message="This bookmark cannot be drawn. Select another reading or correct its original view."
-				diagnostics={bookmarkProblems}
-			/>
-		);
 	return (
-		<ModelWalkthroughReader key={previewReadingKey(props.model)} {...props}>
-			<ModelReading {...props} key={JSON.stringify([props.subject, bookmark?.id])} />
-		</ModelWalkthroughReader>
+		<ModelBookmarkReading model={props.model}>
+			<ModelWalkthroughReader key={previewReadingKey(props.model)} {...props}>
+				<ModelReading {...props} key={JSON.stringify([props.subject, bookmark?.id])} />
+			</ModelWalkthroughReader>
+		</ModelBookmarkReading>
 	);
 }
 

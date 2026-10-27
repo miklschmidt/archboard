@@ -418,6 +418,7 @@ function repositoryRow(
 	const match = inputs.query.length > 0 ? repositoryMatch(name, inputs.query) : null;
 	return {
 		kind: "repository",
+		model: shell.model,
 		id: repositoryRowId(name),
 		depth: 0,
 		parentId: null,
