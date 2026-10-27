@@ -1062,3 +1062,6 @@ It also passes all 285 system tests, 161 repository tests, and 19 serial browser
 The real Rust server case passes in that complete retry.
 The full log is `/tmp/548-08/post-553/delivery-gate-retry.log`.
 This supersedes the incomplete-gate limitation for delivery without removing the earlier failure record.
+
+The third council round uses compact parent headers and local member ranks.
+[Compact parent headers and local composition](compact-parent-headers-and-local-composition.md) records its implementation, fresh measurements, complete SVG pairs, and remaining council tradeoffs.

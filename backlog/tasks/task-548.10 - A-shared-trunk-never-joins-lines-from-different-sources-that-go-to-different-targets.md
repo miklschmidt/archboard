@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T17:03:00Z'
-updated_date: '2026-10-27T06:40:00Z'
+updated_date: '2026-10-27T06:56:00Z'
 labels:
   - renderer
   - layout
@@ -52,4 +52,6 @@ Milestone de398584a removes the unrelated shared trunks but does not yet satisfy
 The full header-face probe now clears all 23 native whole Track boards and all 23 Blocks boards for the strict integrity criteria. Blocks reports two 15.1-unit near-lane diagnostics on persistence under the stricter Track-only spacing rule. Direct parent arrows meet the header card; descendant traffic enters below the header through side ports. Graph-derived ancestor and left-face space replaces illegal fallback lanes. The two-container Rust endpoint contract exposed an upward side-route endpoint bug; selecting its wall end by route direction restores that contract. Full validation and corpus rendering are in progress.
 
 Round 3 of TASK-548.08 reaches routing through the compact headers of TASK-548.11. The layout now keeps different boundary point ports distinct and preserves exact child block dimensions. Original source and target card identities still control shared trunks. The native scan of all 23 current architecture boards in both engines finds no ambiguous trunk and no header, card, endpoint, label, or parent-frame defect. The four council acceptance cases also pass those checks. Header checks remain hard assertions. The matching-core renderer suite passes 653 tests with one platform skip. The Blocks scan retains one optional Track-only lane-spacing count at 11.5 units in Board rasterizer fan-in to Video encoder. Track has no lane or wall count. The final corpus and quiet timing evidence will follow in docs/design/compact-parent-headers-and-local-composition.md. Council acceptance remains pending.
+
+Round 3 delivery 9a6d1c147 keeps different boundary point ports distinct and preserves exact child block dimensions. The matching-core renderer suite passes 653 tests with one platform skip. The complete repository gate passes, including 19 browser files. Correction to earlier shorthand: the native scan covers 17 current vault boards plus six fixtures in each engine, rather than 23 vault boards. Those pictures and the four exact council cases contain no hard geometry defect or ambiguous trunk. One optional Blocks lane count remains under a Track-only rule. The complete before/after SVGs are /tmp/548-08/round-3/base and /tmp/548-08/round-3/after-1. The changed-svg-pairs.json and acceptance-svg/manifest.json files under that directory name both sides. docs/design/compact-parent-headers-and-local-composition.md records route lengths, all probes, whole-board tradeoffs, and fresh performance. The parent council must judge the four failed pairs and a fresh sample. Council acceptance remains pending.
 <!-- SECTION:NOTES:END -->

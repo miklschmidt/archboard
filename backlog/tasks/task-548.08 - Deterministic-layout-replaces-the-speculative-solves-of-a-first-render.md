@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T16:24:00Z'
-updated_date: '2026-10-27T06:40:00Z'
+updated_date: '2026-10-27T06:57:00Z'
 labels:
   - renderer
   - performance
@@ -22,9 +22,9 @@ The owner's goal is real-time scene changes, with complex boards (Board viewer, 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 First renders of the slowest vault boards are measured before and after on a quiet box, and recorded in docs/design
+- [x] #1 First renders of the slowest vault boards are measured before and after on a quiet box, and recorded in docs/design
 - [ ] #2 Every changed drawing passes the grading council of TASK-548.09, and the council's verdicts are recorded
-- [ ] #3 The design and the levers tried, kept or dropped are recorded in docs/design, with ADRs for any decision that replaces ADR 0059 or ADR 0060
+- [x] #3 The design and the levers tried, kept or dropped are recorded in docs/design, with ADRs for any decision that replaces ADR 0059 or ADR 0060
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -99,4 +99,22 @@ Round 3 implementation: compact parent headers use normal card sizing in both en
 Core bcef85a5dd93aa25 builds. The affected Rust crates pass their tests and Clippy. The matching-core renderer run passes 653 tests, skips one platform-only test, and fails none. Both hard header assertions remain unchanged. The four council acceptance requests pass all hard geometry checks. Code evidence route length falls 5296 to 3163, Startup handoff 887 to 702, Run checks selected routes 7206 to 4697, and Voice callback separation 4425.5 to 1728.5. Voice frame heights fall 3100 to 847 and 2728 to 967. The full native scan of 23 current boards in both engines finds no hard geometry defect. One Blocks-only optional Track lane-spacing count remains in Board rasterizer. Voice outer routes and one feedback example with an added ordinary crossing remain council tradeoffs.
 
 Renderer layout@TASK-548.08 and Semantic renderer@TASK-548.08 describe the implementation. Their code check returns the same 41 finding identities as before, with no new finding. The header sizing flow now cites measure_node. The proposals remain unadopted until the parent council decides. ADR 0062 and docs/design/compact-parent-headers-and-local-composition.md record the design, rejected probes, visual evidence, and pending final corpus/performance evidence. TASK-548.08 remains In Progress.
+
+Round 3 delivery follows implementation 9a6d1c147, with core bcef85a5dd93aa25. The complete bun run check gate passes all 20 tasks and 19 browser files. The focused renderer run passes 653 tests with one platform skip. Affected Rust tests and Clippy pass. The hard group and parent header assertions remain unchanged. Correction to earlier shorthand: the native whole-board scan covers all 17 current vault boards plus six fixed fixtures, in each engine, rather than 23 vault boards. The four exact council cases also have no hard geometry finding. One optional Blocks spacing count remains in Board rasterizer under a Track-only rule.
+
+Fresh pinned instruction counts for one render of each target board are 152743987463 for the original, 9663930648 for the previous candidate, and 9206551892 for this round. Native critical paths (Viewer/Persistence/Routes) are 1053/1089/325 ms original, 215/100/73 previous, and 80/83/72 new, with 24/25/27 solves reduced to 1/1/1. Pool timing.ts 7 runs alternate parent and candidate twice. Target first times are 1422-1517/1486-1546/626-665 ms original and 200-202/295-299/148-151 ms new, at recorded one-minute loads 1.81 to 3.51. Three fresh growing-edit runs per checkout alternate too. Median first/growth times are 1560/1447, 1473/1472, 588/581 ms original and 280/203, 299/289, 140/134 ms new. Every card edit changes its measured height. The source hashes and module paths prove that the parent uses its own core. All current vault boards and wide fixtures stay below 500 ms in both candidate pool runs. The prior parent quiet references 442/380, 229/224, and 150/142 ms remain recorded. Persistence is slower than that prior reference, with more work beside its solve, but stays below the threshold.
+
+Before corpus: /tmp/548-08/round-3/base. After corpus: /tmp/548-08/round-3/after-1. Each keeps 2452 SVGs, including 76 whole-board drawings of every vault and example board in both engines and themes. The comparison changes 1204 drawings across all 17 vault boards and both example boards, including 72 whole-board drawings. Both SVG paths for every change are in /tmp/548-08/round-3/changed-svg-pairs.json. All whole-board pairs are in whole-board-svg-pairs.json. The four acceptance pairs and the extra ordinary-crossing feedback example are in acceptance-svg/manifest.json. The exact four after cases use the matching Bun core and reproduce the native geometry. Their route lengths and frame improvements remain as recorded in the checkpoint notes.
+
+Dark whole-board samples were rasterized and inspected. Viewer area falls 28.7% in Track and 14.1% in Blocks. Browser area falls 22.6% in Track but grows 93.2% in Blocks, which spreads its top-level families more widely. Voice Track area falls 26.4% but retains some long outer routes. Browser Blocks and the feedback example with one added ordinary crossing are explicit fresh-sample tradeoffs for the parent council. They are not claimed as accepted. The design note records all 20 probes, decisions kept or dropped, test changes, measurements, changed-board counts, and SVG paths. ADR 0062 remains proposed. Both architecture proposals remain unadopted pending the council. The final simplification removes obsolete entry constraints, bypass margins, and experimental fields. There is one layout implementation, with no board-name or card-count exception. No consumer skill change is needed.
+
+TASK-548.08 and TASK-548.11 remain In Progress. The parent must grade the four failed pairs and a fresh sample. The next performance lever after acceptance is Persistence work beside its single solve. No push is performed.
+
+Final delivery audit: the owned server is stopped, no Git owner process remains, and formatting passes after the evidence update. The source milestone passes the complete repository gate. No branch is pushed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Round 3 is ready for the parent council. Compact parent headers and graph-based local member ranks replace full-width barriers and their placement constraints. The four acceptance cases pass hard geometry checks. Median first/growth times are 280/203, 299/289, and 140/134 ms for Viewer, Persistence, and Routes. The complete gate passes. Before/after SVG corpora and the four exact pairs are under /tmp/548-08/round-3. The comparison changes 1204 drawings across 19 boards. Browser Blocks growth, long outer Voice routes, and one added ordinary crossing remain council tradeoffs. See docs/design/compact-parent-headers-and-local-composition.md. The task remains In Progress until that verdict.
+<!-- SECTION:FINAL_SUMMARY:END -->
