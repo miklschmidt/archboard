@@ -18,8 +18,9 @@ use super::super::laid::{Insets, Laid, LaidMap, Size, moved};
 use super::super::lone::frame_width;
 use super::super::tree::{Block, BlockTree, Kind, header_of};
 use super::super::walls::inner_points;
+use super::capacity::room_needed;
 use super::packings::{Packing, extent_of, packings_of};
-use super::trunks::{TRUNK_CLEARANCE, TrunkRouter, room_needed};
+use super::trunks::{TRUNK_CLEARANCE, TrunkRouter};
 
 /// Room between two packed blocks, for the trunks that pass between them.
 pub(crate) const PACK_GAP: f64 = 72.0;

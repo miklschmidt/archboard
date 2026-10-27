@@ -1,12 +1,25 @@
-// Measure the pictures themselves, including historical corpora whose JSON
-// records carry no atlas. Run: bun scripts/layout-compactness.ts <before> <after> <out>.
+// Read saved corpus SVGs without a matching renderer core or atlas.
+// Run: bun packages/renderer/tests/runtime/support/compare-compactness.ts <before> <after> <out>.
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { drawingOf, runOf, svgFileOf } from "./render-corpus.ts";
-import {
-	compactnessOf,
-	type Compactness,
-} from "../packages/renderer/tests/runtime/support/drawn-compactness.ts";
+import type { DiagramBox } from "@archboard/board/render-reply";
+import { compactnessOf, type Compactness } from "#tests/runtime/support/drawn-compactness.ts";
+
+/** The dimensions and key convention written by scripts/render-corpus.ts. */
+function runOf(dir: string): Record<string, Pick<DiagramBox, "width" | "height">> {
+	return JSON.parse(readFileSync(join(dir, "corpus.json"), "utf8"));
+}
+
+/** The corpus key fields used by the report. */
+function drawingOf(key: string) {
+	const [, board, , view, engine] = key.split(" | ");
+	return { board: board!, view: view!, engine: engine! };
+}
+
+/** The filename convention of a saved corpus SVG. */
+function svgFileOf(key: string): string {
+	return `${key.replaceAll(/[^\w-]+/gu, "_")}.svg`;
+}
 
 /** Every SVG is measured, including unchanged drawings and whole boards. */
 function measureCorpus(dir: string): Record<string, Compactness> {

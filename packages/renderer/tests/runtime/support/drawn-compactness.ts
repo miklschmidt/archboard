@@ -3,6 +3,7 @@ import { corridorPoints } from "#tests/runtime/support/drawn-routes.ts";
 
 interface FrameMeasure {
 	readonly id: string;
+	readonly kind: "parent" | "group";
 	readonly area: number;
 	readonly members: number;
 	readonly emptyShare: number;
@@ -50,16 +51,17 @@ function unionArea(boxes: readonly DiagramBox[]): number {
 /** Painted card and frame faces, rather than shadows, glyphs, or selection halos. */
 function faces(svg: string) {
 	const cards: DiagramBox[] = [],
-		frames: { id: string; box: DiagramBox }[] = [];
+		frames: { id: string; kind: "parent" | "group"; box: DiagramBox }[] = [];
 	for (const chunk of svg.split(/(?=<g data-semantic-kind=)/u)) {
 		const tag = /^<g[^>]*>/u.exec(chunk)?.[0];
 		if (tag === undefined || tag.includes("data-semantic-part=")) continue;
 		const kind = /data-semantic-kind="([^"]+)"/u.exec(tag)?.[1];
-		if (kind !== "node" && kind !== "region") continue;
-		const rect =
-			/<rect x="(-?[\d.]+)" y="(-?[\d.]+)" width="([\d.]+)" height="([\d.]+)"[^>]*pointer-events="all"/u.exec(
-				chunk,
-			);
+		if (kind !== "node" && kind !== "region" && kind !== "group-region") continue;
+		const rect = (
+			kind === "group-region"
+				? /<rect x="(-?[\d.]+)" y="(-?[\d.]+)" width="([\d.]+)" height="([\d.]+)"/u
+				: /<rect x="(-?[\d.]+)" y="(-?[\d.]+)" width="([\d.]+)" height="([\d.]+)"[^>]*pointer-events="all"/u
+		).exec(chunk);
 		if (rect === null) continue;
 		const box = {
 			x: Number(rect[1]),
@@ -68,7 +70,13 @@ function faces(svg: string) {
 			height: Number(rect[4]),
 		};
 		if (kind === "node") cards.push(box);
-		else frames.push({ id: /data-semantic-id="([^"]+)"/u.exec(tag)![1]!, box });
+		else {
+			const id =
+				kind === "group-region"
+					? `group:${/data-group="([^"]+)"/u.exec(tag)![1]}:${(/data-members="([^"]*)"/u.exec(tag)?.[1] ?? "").split(" ").toSorted().join(" ")}`
+					: /data-semantic-id="([^"]+)"/u.exec(tag)![1]!;
+			frames.push({ id, kind: kind === "region" ? "parent" : "group", box });
+		}
 	}
 	return { cards, frames };
 }
@@ -76,7 +84,7 @@ function faces(svg: string) {
 /** Geometry measures, with empty frame area defined by visible member cards. */
 export function compactnessOf(svg: string, width: number, height: number): Compactness {
 	const { cards, frames } = faces(svg);
-	const measured = frames.map(({ id, box }) => {
+	const measured = frames.map(({ id, kind, box }) => {
 		const members = cards.filter(
 			(card) =>
 				card.x >= box.x - 1 &&
@@ -94,6 +102,7 @@ export function compactnessOf(svg: string, width: number, height: number): Compa
 						Math.min(...members.map((card) => card.y)));
 		return {
 			id,
+			kind,
 			area,
 			members: members.length,
 			emptyShare: 1 - unionArea(members) / area,

@@ -26,6 +26,7 @@ pub(crate) mod lone;
 pub(crate) mod nested;
 pub(crate) mod orders;
 pub(crate) mod packing;
+pub(crate) mod peers;
 pub(crate) mod place;
 pub(crate) mod projection;
 pub(crate) mod readback;

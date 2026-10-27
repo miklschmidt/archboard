@@ -303,7 +303,8 @@ pub(crate) struct BlockTree {
     /// The wall each port moves to, keyed by `exit_key`.
     pub exits: Map<String, Side>,
     pub nesting: Nesting,
-    /// Parents whose member relationships leave and return through outside cards.
+    feedback: Set<String>,
+    /// Parents whose graph calls for a local composition.
     pub local_frames: Set<String>,
     /// The ports each block holds in an order on a face, keyed `block|face` (`orders.rs`).
     pub orders: Map<String, Vec<String>>,
@@ -319,6 +320,69 @@ pub(crate) struct Kept {
 }
 
 impl BlockTree {
+    /// A loose sink served only from one parent belongs beside its caller.
+    fn loose_owner(&self, id: &str) -> Option<BlockId> {
+        self.cards.contains_key(id).then_some(())?;
+        let owner = *self.holder.get(id)?;
+        let outer = self.get(owner);
+        outer
+            .frame_around(outer.cluster_of.get(id).map(String::as_str))
+            .is_none()
+            .then_some(owner)
+    }
+
+    fn peer_candidate(&self, id: &str) -> Option<(BlockId, String)> {
+        let owner = self.loose_owner(id)?;
+        let mut peer: Option<String> = None;
+        let mut caller = None;
+        for projection in &self.projections {
+            if projection.edge.source() == id {
+                return None;
+            }
+            if projection.edge.target() != id {
+                continue;
+            }
+            if projection.at != owner || !projection.into.is_empty() {
+                return None;
+            }
+            let parent = self.block_of(&projection.from).is_some_and(|neighbor| {
+                self.get(neighbor).parent == Some(owner) && self.get(neighbor).kind == Kind::Frame
+            });
+            if !parent || peer.is_some() {
+                return None;
+            }
+            peer = Some(projection.from.clone());
+            caller = Some(projection.edge.source());
+        }
+        let peer = peer?;
+        let caller = caller?;
+        let another = self.projections.iter().any(|projection| {
+            projection.at == owner
+                && projection.edge.source() == caller
+                && projection.edge.target() != id
+                && !self.feedback.contains(&projection.edge.id)
+        });
+        (!another).then_some((owner, peer))
+    }
+
+    /// A matched pair has one leaf partner at each end of the composition.
+    pub(crate) fn peer_of(&self, id: &str) -> Option<(BlockId, String)> {
+        let peer = self.peer_candidate(id)?;
+        let another = self
+            .projections
+            .iter()
+            .filter(|projection| {
+                projection.at == peer.0
+                    && projection.from == peer.1
+                    && projection.edge.target() != id
+            })
+            .any(|projection| {
+                self.peer_candidate(projection.edge.target())
+                    .is_some_and(|other| other == peer)
+            });
+        (!another).then_some(peer)
+    }
+
     /// Read the blocks of a measured hierarchy and project its relationships.
     ///
     /// # Errors
@@ -340,6 +404,7 @@ impl BlockTree {
             pins: Map::default(),
             exits: kept.exits,
             nesting,
+            feedback: Set::default(),
             local_frames: super::composition::local_frames(graph),
             orders: kept.orders,
         };
@@ -355,6 +420,7 @@ impl BlockTree {
             .map(|edge| tree.project(edge))
             .collect::<Result<_, _>>()?;
         let back = tree.back_edges();
+        tree.feedback.clone_from(&back);
         let before = labels_before_joins(&tree.projections, &back);
         for index in 0..tree.projections.len() {
             let projection = tree.projections[index].clone();

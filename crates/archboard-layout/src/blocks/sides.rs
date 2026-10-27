@@ -67,11 +67,19 @@ fn facing_of(
     upward: bool,
     tree: &BlockTree,
 ) -> Option<(Side, Side)> {
-    let (&leaves, &enters) = (projection.out.last()?, projection.into.last()?);
+    let leaves = projection.out.last().copied();
+    let enters = projection.into.last().copied();
+    if leaves.is_none() && enters.is_none()
+        || (leaves.is_none() || enters.is_none())
+            && tree.peer_of(projection.edge.target()).is_none()
+    {
+        return None;
+    }
     let boxes = &laid.get(tree.get(projection.at).id.as_str())?.boxes;
-    let one = *boxes.get(&tree.get(leaves).id)?;
-    let other = *boxes.get(&tree.get(enters).id)?;
-    let room = grown_in(tree, leaves) + grown_in(tree, enters);
+    let one = *boxes.get(leaves.map_or(projection.from.as_str(), |id| tree.get(id).id.as_str()))?;
+    let other = *boxes.get(enters.map_or(projection.to.as_str(), |id| tree.get(id).id.as_str()))?;
+    let room =
+        leaves.map_or(0.0, |id| grown_in(tree, id)) + enters.map_or(0.0, |id| grown_in(tree, id));
     let stands = if upward {
         other.y + other.height <= one.y + room
     } else {

@@ -219,7 +219,7 @@ impl<'t> CardLayout<'t> {
             if name == header_of(self.block) {
                 PORT
             } else {
-                width
+                width + super::peers::room(self.tree, name)
             },
             height,
         )
@@ -310,6 +310,7 @@ impl<'t> CardLayout<'t> {
         let (laid, left) = routed(
             self.tree,
             self.id,
+            self.laid,
             self.insets,
             &placed,
             0.0,
@@ -392,6 +393,7 @@ impl<'t> CardLayout<'t> {
             },
         );
         self.arranged.lowered = lowered;
+        super::peers::arrange(self.tree, self.block, self.laid, &mut centres, &mut boxes);
         let placed = self.placed(&graph, &centres, &polylines, &clusters);
         Ok(Lined {
             placed,
@@ -415,7 +417,7 @@ impl<'t> CardLayout<'t> {
             .map(|node| {
                 let id = &node.name;
                 let size = self.size_of(id);
-                let width = if self.tree.is_block(id) {
+                let width = if self.tree.is_block(id) || self.tree.peer_of(id).is_some() {
                     size.width
                 } else {
                     self.clusters.widths.get(id).copied().unwrap_or(size.width)
@@ -543,6 +545,15 @@ impl Reroute {
             }
         }
         hold_resized_children(&mut placed.children);
-        routed(tree, self.block, self.insets, &placed, self.held, ports).0
+        routed(
+            tree,
+            self.block,
+            laid,
+            self.insets,
+            &placed,
+            self.held,
+            ports,
+        )
+        .0
     }
 }
