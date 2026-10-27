@@ -122,6 +122,8 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	onAgentActivity?: (vault: string, activity: readonly AgentActivityEntry[]) => void;
 	/** A checkout was chosen somewhere, so the repositories are worth reading again. */
 	onRepositoriesChanged?: () => void;
+	/** Temporary explanation progress changed in this tab. */
+	onExplanationsChanged?: () => void;
 	/**
 	 * The board the server says this pane is showing, which is how a pane learns
 	 * that `browser show` moved it.

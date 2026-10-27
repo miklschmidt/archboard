@@ -527,6 +527,37 @@ These adapters do not repeat the domain matrix.
 These browser owners use real temporary files and Git through the normal public HTTP writes.
 No renderer algorithm test or model evaluation belongs to this slice.
 
+## Canonical explanation actions
+
+`packages/board/tests/runtime/operations/model-edit/explanations.test.ts` owns capture through the public architecture reader with real files and Git.
+It covers stale revisions, stable subjects, relationship intent, and missing-flow investigation.
+The existing retained-comparison case in `packages/board/tests/runtime/operations/proposals/proposals.test.ts` also owns explanation capture of exact checkpoints and independent comparison revisions.
+`tests/system/server-state/canonical-explanations.test.ts` owns normal CLI and HTTP actions through the controlled production provider.
+It covers concurrent invocation identity, canonical pane reports, tab action discovery, change notices, queue cancellation, exact turn interruption, captured retries, final text, empty answers, and unavailable sign-in.
+`tests/system/server-state/shown-conversation.test.ts` retains ownership of browser activation and tab checkout rules through the same HTTP contract.
+`tests/system/browser/canonical-model-explanations.test.ts` owns visible toolbar, context-menu, and keyboard actions through the same controlled provider.
+It covers navigation during a request, pane metadata, unavailable agents, captured retry, cancellation, and externally invoked actions in the same answer panel.
+No live model evaluation or extra renderer owner belongs to this slice.
+
+## Canonical proposal reconciliation
+
+The public architecture operations own reconciliation tests under `packages/board/tests/runtime/operations/proposals/`.
+The cases use real temporary files and Git through the same reader and writer as CLI and HTTP.
+They reuse the canonical model and independent-flow fixtures beside the existing semantic reconciliation regressions.
+Coverage includes safe inheritance, standing baselines, blocked descendants, and complete settlement.
+Other cases cover retired identities, alternative renames, empty holders, claim closure, and step moves across flows.
+The recovery case uses the existing crash fixture after a real atomic file installation.
+It proves that readers block until the exact family installation finishes.
+
+`tests/system/semantic-boards/model-proposals.test.ts` owns CLI and HTTP parity for standing, refusal status, and settlement.
+No model evaluation runs as part of these tests.
+
+`canonical-model-reconciliation.test.ts` owns visible inherited content, unresolved values, blocked ancestry, agent settlement refresh, external predecessor refusal, and retained standing.
+It uses the existing browser adapter with real temporary files and Git through the shared public writer.
+The proposal and reconciliation owners share the same browser state selector helper.
+The reference owner also covers exact foreign pins across external reconciliation and settlement.
+The shared model-edit fixture names the repository used by its authored code bindings, so source capture does not inspect unrelated checkouts.
+
 ## Canonical narrative playback
 
 `packages/board/tests/runtime/operations/model-edit/walkthroughs.test.ts` owns narrative authoring and target resolution through public architecture operations with real files and Git.

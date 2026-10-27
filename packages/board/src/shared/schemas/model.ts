@@ -1,4 +1,8 @@
 import { WalkthroughSchema } from "#shared/schemas/model-walkthroughs.ts";
+import {
+	ExplanationRequestSchema,
+	ReadingSelectionSchema,
+} from "#shared/schemas/model-explanation.ts";
 import { z } from "zod";
 import { CodeBindingSchema } from "@archboard/code-binding/bindings";
 import { SemanticIdSchema } from "#shared/schemas/primitives.ts";
@@ -142,6 +146,18 @@ const ArchitectureModelSchema = z
 				),
 			})
 			.optional(),
+		explanation: z
+			.strictObject({
+				request: ExplanationRequestSchema,
+				modelName: ArchitectureManifestSchema.shape.name,
+				selection: ReadingSelectionSchema,
+				comparison: ComparisonSchema.optional(),
+				state: SelectedStateSchema.nullable(),
+				checkpoint: GitObjectIdSchema.optional(),
+				revision: ModelRevisionSchema,
+				investigate: z.boolean(),
+			})
+			.optional(),
 		selectedModule: QualifiedSubjectIdSchema.optional(),
 		selectedSubject: QualifiedSubjectIdSchema.optional(),
 		selectedFlow: QualifiedSubjectIdSchema.optional(),
@@ -198,6 +214,7 @@ const ArchitectureModelFailureSchema = z
 			"STATE_NOT_FOUND",
 			"STATE_AMBIGUOUS",
 			"PREDECESSOR_CHANGED",
+			"PROPOSAL_BLOCKED",
 			"MODEL_INVALID",
 			"MODEL_NOT_FOUND",
 			"MODEL_UNREADABLE",

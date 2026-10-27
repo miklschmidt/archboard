@@ -304,7 +304,7 @@ archboard model edit --input edit.json -C <directory> \
 
 The result names the before and after revisions, affected subjects, and retained checkpoint.
 `applied: true` identifies durable completion.
-`reconciliation: false` means that this narrow edit requires no proposal reconciliation.
+`reconciliation: false` means that the affected family has no unresolved decisions.
 A `cleanup: pending` result remains applied.
 Repeat the exact request to finish its remaining cleanup.
 If a response is lost, repeat the same request and operation identity.
@@ -681,7 +681,8 @@ Use `proposal.set` for its name, summary, or documents.
 Use `proposal.clear:["summary","documents"]` for explicit metadata removal.
 A rename preserves the previous name.
 A metadata-only edit uses `changes:[]`.
-Every edit keeps the original immutable baseline.
+An ordinary draft edit keeps its immutable baseline.
+A settled reconciliation retains the updated predecessor as its new baseline.
 
 Stored changes distinguish `add`, `remove`, `assign`, `clear`, and `place`.
 Agents continue to submit the normal module and flow operations.
@@ -705,10 +706,10 @@ Presentation order and emphasis retain the existing semantic comparison rules.
 
 `PREDECESSOR_CHANGED` means that the proposal's starting state changed after baseline retention.
 Preserve the baseline and proposal changes.
-Ordinary reads and edits refuse until the reconciliation delivery exists.
+Ordinary reads and edits refuse until an explicit reconciliation follows that external edit.
 An exact retained proposal checkpoint remains readable against its own inputs.
 Neither a code merge nor an approval adopts a draft.
-Reconciliation, adoption, and shelving remain later delivery slices.
+Adoption and shelving remain separate lifecycle actions.
 
 An explicit comparison against an empty planning baseline returns `comparison.against:null` and the baseline's exact `comparison.checkpoint`.
 Its subject changes still identify the planning additions.
@@ -728,8 +729,168 @@ It never substitutes current definitions for another requested base.
 
 Active draft readings follow accepted edits through the architecture change feed.
 Saved draft readings keep their original content and draft identity.
-If a mutable predecessor changes, the browser preserves the requested state and shows the refusal.
+If an external file edit changes a predecessor, the browser preserves the requested state and shows the refusal.
 Select an available saved reading to inspect the retained proposal.
+
+## Temporary explanations
+
+An explanation capture preserves the architecture reading that a local agent answers.
+Reading intent names the scope, focus, relationship filters, group visibility, grammar, and optional flow.
+`reading.groups` accepts exact visible group IDs, or `true` and `false` for all and no groups.
+The capture includes stable subjects, the complete revision, and the selected state or exact checkpoint.
+A proposal capture also preserves its actual comparison base and that base's separate revision.
+Later navigation cannot change the capture.
+
+Use `browser panes` to read the canonical `architecture` report and `tabSessionId` for the selected pane.
+If the report is absent, ask the person to open the canonical reading before resolving a pointing request.
+Use its actual `architecture.vault`, including after navigation to another repository.
+Keep `reading.referenceSubject` separate from the temporary pointer selection.
+Do not infer canonical architecture from the pane's legacy board field.
+
+Pass the action to the existing local workhorse with `model explain`.
+Use `-C` with the directory that holds the reported vault.
+Read the model before an invocation and use its complete revision digest.
+Use the report's state or checkpoint selector when reading it.
+
+```json
+{
+	"type": "invoke",
+	"tabSessionId": "<reported-tab-session>",
+	"selection": { "state": "current" },
+	"request": {
+		"actionId": "<new-action-identity>",
+		"action": "explain-selection",
+		"model": "Shop",
+		"expectedRevision": "<complete-observed-revision-digest>",
+		"subjects": ["Shop#Gateway"],
+		"reading": {
+			"scope": "Shop#Gateway",
+			"focus": [],
+			"relationshipKinds": ["call"],
+			"groups": true,
+			"grammar": "architecture"
+		}
+	}
+}
+```
+
+```bash
+archboard model explain --input explanation.json -C <directory>
+```
+
+Use `explain-relationship`, `trace-flow`, or `explain-proposal` for the other actions.
+A missing explicit flow lets `trace-flow` request investigation without authoring a flow.
+An explicit unavailable flow refuses rather than selecting another flow.
+A proposal explanation requires the selected draft and its comparison.
+State and checkpoint selectors are exclusive.
+
+Read progress with the same command and this input:
+
+```json
+{
+	"type": "read",
+	"tabSessionId": "<reported-tab-session>",
+	"actionId": "<original-action-identity>"
+}
+```
+
+The result reports captured, queued, running, completed, failed, cancelled, or unavailable.
+The browser and voice consume the same `action.text` answer.
+The toolbar, context menu, and keyboard invoke that same action.
+The visible answer names its original model, state, subjects, and revision after navigation.
+The coordinator speaks that answer without requesting a second explanation.
+Normal workhorse news tells the coordinator when the turn finishes.
+The existing pane socket announces answer changes to panes in the same tab.
+The browser refreshes its answer query after that notice and after reconnecting.
+No extra connection or polling loop owns explanation progress.
+
+To discover the last invocation or retry in a tab, send `type:"latest"` with its `tabSessionId`.
+The result includes `action.vault`, which names the original captured vault.
+Use that vault for later reads, cancellation, and retries, even after navigation.
+If this action queues on your own workhorse, end your turn so that its queue can start it.
+If `action.retryable` is true, send `type:"retry"` with the original tab and action identity.
+Retry preserves the captured request and content after navigation or source changes.
+If delivery is uncertain, retry remains unavailable to prevent duplicate work.
+Send `type:"cancel"` to remove the captured queue item or request interruption of its exact turn.
+Read again until the provider reports the final outcome.
+
+An explanation writes no architecture and takes no subject claim.
+Answers remain temporary within the local agent generation and tab lifetime.
+An explicit request to save an answer uses the ordinary claimed edit with a fresh complete revision.
+
+## Reconcile dependent proposals
+
+A standing is a durable record of unresolved issues.
+Read `selectedState.standing` and each proposal catalogue entry before editing a family.
+An absent standing means that the state is settled.
+Each issue names its subject, kind, disputed field, both values, and repair action.
+A blocked descendant names its unsettled ancestor through `standing.blockedBy`.
+Its last coherent architecture remains readable.
+A child created from an unsettled proposal starts blocked.
+
+Claim the affected descendant state IDs beside the existing subjects and model structure scope.
+Use the complete vault revision from the current read.
+Submit the predecessor edit through `model edit`.
+Archboard reconciles parents before children through the same durable installation.
+Safe changes reach following proposals together.
+Disputed subjects keep the proposal side, and unsettled ancestors block their descendants.
+The baseline that established each conflict remains retained until settlement.
+
+If external files change a predecessor, ordinary reads return `PREDECESSOR_CHANGED`.
+Read the current catalogue and claim the affected family.
+Target the changed predecessor and submit this intent through `model edit`:
+
+```json
+{ "proposal": { "type": "reconcile" }, "changes": [] }
+```
+
+Reconciliation changes following proposals without another predecessor edit.
+It preserves the existing current designation.
+A saved checkpoint remains an exact reading of its retained content and standing.
+The browser identifies unresolved and blocked proposals in the state picker and selected reading.
+Open the decision disclosure to read both values and the repair instructions.
+A blocked reading links to its live ancestor. A saved reading keeps its original standing until the reader leaves it.
+Agents settle decisions through the shared writer. The browser reflects the completed family result without authoring a settlement.
+
+To settle a proposal, read its issues and claim its state and affected family subjects.
+Use its stable identity as `target.state`.
+Submit one choice for every issue in the same request:
+
+```json
+{
+	"proposal": {
+		"type": "settle",
+		"resolutions": [{ "subject": "Shop#Gateway", "field": "description", "take": "mine" }]
+	},
+	"changes": []
+}
+```
+
+`mine` explicitly accepts the proposal side.
+`theirs` takes the predecessor side.
+`edited` accepts the accompanying ordinary batch as a third answer.
+A resolution without `field` covers every issue of that subject.
+Give each issue exactly one choice.
+For order issues under one holder, use the same choice throughout.
+Use `edited` with an ordinary movement batch for a third order.
+Incomplete or overlapping choices refuse with `MODEL_INVALID` and install nothing.
+Ordinary edits preserve standing until an explicit settlement clears it.
+A blocked draft refuses edits and settlement with `PROPOSAL_BLOCKED`.
+Settle its named ancestor first.
+
+A complete settlement reconciles following drafts in the same transaction.
+A continuing subject that the predecessor deleted keeps its original qualified identity.
+Archboard retains proof of that subject in the existing archive.
+This proof never permits a fresh allocation from retired identities.
+Agents author through operations and leave proof storage to Archboard.
+
+The receipt reports `applied:true` and `reconciliation` as a boolean.
+True means that affected family states still need settlement.
+`reconciliations` identifies those changed states and their standing when present.
+The selected proposal also exposes its standing through `selectedState`.
+Retry an identical request with the same operation ID after a lost response.
+If installation stops, use `model recover` in the original checkout.
+Recovery completes the same family and returns its retained receipt.
 
 ## Dynamic walkthroughs
 

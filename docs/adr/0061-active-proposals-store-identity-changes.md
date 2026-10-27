@@ -66,9 +66,8 @@ A predecessor fingerprint identifies complete meaning, metadata, policy, and ide
 If that predecessor changes, ordinary draft reads and edits return `PREDECESSOR_CHANGED`.
 Exact retained proposal revisions remain readable against their own retained catalogue.
 This refusal prevents an unreconciled draft from appearing settled.
-Reconciliation belongs to TASK-549.07.
+TASK-549.07 adds family reconciliation and explicit settlement through the same operation.
 Adoption and shelving belong to TASK-549.08.
-This delivery adds none of those lifecycle actions.
 
 CLI and HTTP adapt the existing architecture operations.
 The public package interface gains no names.
@@ -89,6 +88,41 @@ An unavailable or changed base supplies no removed definitions.
 The diagram explains its incomplete comparison and offers a refresh action.
 The inspector uses the runtime's changed fields rather than inferring changes from placement.
 Scope, focus, and filters affect depiction without changing the selected architecture or its complete interfaces.
+
+TASK-549.07 publishes a predecessor edit, safe inherited changes, and durable standing through one existing journal.
+The existing semantic reconciliation engine applies the canonical decoder as its coherence authority.
+Canonical module metadata, collection ownership, qualified identities, and reference rules remain part of that complete result.
+Serialization refuses an unowned relationship or flow before it can disappear.
+Automatically assigned arrival positions use the existing semantic rule.
+Step identity spans flows before each flow receives its reconciled order.
+A step placement keeps its flow and nested holder together, so competing moves cannot compose an unwritten location.
+
+Reconciliation visits parents before children.
+An unsettled parent blocks its descendants while their last coherent content stays readable.
+A conflict retains the original proposal baseline and keeps its side of disputed subjects.
+Further predecessor edits preserve that baseline and refresh the issues against the new predecessor.
+Ordinary edits preserve standing.
+Claims include every changed descendant state and its existing affected subjects.
+Inherited additions require the existing structure scope rather than a claim on an identity that does not exist yet.
+
+Settlement supplies one explicit choice for every standing issue in the same intent.
+Choices accept the proposal side, the predecessor side, or the accompanying ordinary batch as a third answer.
+Incomplete and overlapping choices refuse before installation.
+A complete settlement retains the new predecessor baseline and reconciles following drafts in the same transaction.
+A deleted subject that the chosen answer keeps requires proof of its original identity from an exact retained checkpoint.
+The proposal records that proof, and actual archive dependencies retain it.
+The reader requires the original subject before it permits that continuing identity beside retired reservations.
+No new identity authority or history store exists.
+
+Shared readers expose standing on proposal catalogue entries and selected state metadata.
+The browser uses that standing for state choices, unresolved values, and blocked ancestry.
+Comparison differences never establish whether a proposal needs settlement.
+Readers can open the live blocking ancestor. Exact retained readings keep their original standing after a live settlement.
+Agents author settlements through the shared writer, and the browser reflects the durable family result.
+Write and recovery receipts report unsettled family states from the same signed record.
+CLI and HTTP interpret neither conflicts nor recovery progress.
+An explicit reconcile intent follows deliberate external predecessor edits.
+Until then, the existing predecessor refusal preserves the requested draft and its retained history.
 
 ## Narrative subjects
 

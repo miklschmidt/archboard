@@ -31,7 +31,12 @@ import {
 	CheckpointRecordSchema,
 } from "#runtime/store/model-archive.ts";
 
-type Request = Extract<ArchitectureModuleEdit, { proposal: unknown }>;
+type Request = Extract<ArchitectureModuleEdit, { proposal: unknown }> & {
+	proposal: Extract<
+		Extract<ArchitectureModuleEdit, { proposal: unknown }>["proposal"],
+		{ type: "create" | "edit" }
+	>;
+};
 /**
  * Retain a complete immutable predecessor before installing a compact draft.
  * @param vault The explicit vault.
@@ -42,9 +47,9 @@ type Request = Extract<ArchitectureModuleEdit, { proposal: unknown }>;
  */
 async function retainBaseline(
 	vault: string,
-	request: Request,
+	request: ArchitectureModuleEdit,
 	predecessor: ArchitectureModel,
-	state: z.infer<typeof ProposalSchema>,
+	state: Pick<z.infer<typeof ProposalSchema>, "id" | "name">,
 ) {
 	const context = await archiveContext(vault);
 	await assertArchiveWritable(context);
@@ -275,8 +280,10 @@ async function proposalCandidate(
 	const scopes = proposalScopes(structure.scopes, predecessor.manifest.id, existing);
 	requireSubjectClaim(vault, request, scopes);
 	updateChanges(proposal, baseline, draft);
-	if (existing === undefined)
+	if (existing === undefined) {
 		proposal.baseline = await retainBaseline(vault, request, predecessor, proposal);
+		blockNewProposal(proposal, predecessor, request);
+	}
 	const candidate = proposalInputs(captured, proposal, existing);
 	if (!candidate.raw.success) return candidate.raw;
 	return {
@@ -291,10 +298,96 @@ async function proposalCandidate(
 		selection: SelectedStateSchema.strip().parse(proposal),
 		dependencies: [
 			...new Set([
-				proposal.baseline,
+				...proposalDependencies(proposal),
 				...(await walkthroughDependencies(await archiveContext(vault), draft)),
 			]),
 		],
 	};
 }
-export { proposalCandidate };
+/**
+ * Expose inherited waiting as soon as a dependent draft exists.
+ * @param proposal The newly retained compact draft.
+ * @param predecessor The coherent but possibly unsettled predecessor.
+ * @param request The complete creation intent.
+ */
+function blockNewProposal(
+	proposal: Proposal,
+	predecessor: ArchitectureModel,
+	request: Request,
+): void {
+	const parent = predecessor.selectedState;
+	if (parent?.standing === undefined) return;
+	proposal.standing = {
+		against: parent.id,
+		baseline: proposal.baseline,
+		atRevision: request.expectedRevision.digest,
+		issues: [],
+		blockedBy: parent.standing.blockedBy ?? parent.id,
+	};
+}
+/**
+ * Name all immutable inputs required to materialize this proposal.
+ * @param proposal The continuing compact document.
+ * @returns Retained dependency identities.
+ */
+function proposalDependencies(proposal: Proposal) {
+	return [proposal.baseline, ...(proposal.restorations ?? []).map((proof) => proof.checkpoint)];
+}
+/**
+ * Start an explicit external-edit reconciliation without another predecessor edit.
+ * @param current The coherent predecessor.
+ * @param captured The exact before images.
+ * @param changes The number of accompanying statements.
+ * @returns The unchanged predecessor candidate for family propagation.
+ */
+function reconciliationCandidate(
+	current: ArchitectureModel,
+	captured: ReturnType<typeof readModelFiles>,
+	changes: number,
+) {
+	if (changes > 0)
+		throw new ArchiveError("MODEL_INVALID", "Reconcile accepts no accompanying changes.");
+	return {
+		success: true as const,
+		current,
+		model: current,
+		inputs: captured.inputs,
+		revision: captured.revision,
+		files: [],
+		subjects: [],
+		scopes: [current.manifest.id],
+		selection: current.selectedState ?? undefined,
+		dependencies: [],
+	};
+}
+/**
+ * Adapt proposal intent inside the existing candidate owner.
+ * @param vault The addressed vault.
+ * @param request The complete proposal intent.
+ * @param current The coherent target.
+ * @param captured The complete before images.
+ * @returns One predecessor candidate.
+ */
+async function proposalIntentCandidate(
+	vault: string,
+	request: Extract<ArchitectureModuleEdit, { proposal: unknown }>,
+	current: ArchitectureModel,
+	captured: ReturnType<typeof readModelFiles>,
+) {
+	if (request.proposal.type === "reconcile")
+		return reconciliationCandidate(current, captured, request.changes.length);
+	if (request.proposal.type === "settle") {
+		const { settleCandidate } = await import("#runtime/operations/proposals/settle.ts");
+		return settleCandidate(vault, { ...request, proposal: request.proposal }, current, captured);
+	}
+	return proposalCandidate(vault, { ...request, proposal: request.proposal }, current, captured);
+}
+export {
+	proposalDependencies,
+	proposalIntentCandidate,
+	proposalCandidate,
+	retainBaseline,
+	updateChanges,
+	decodedDraft,
+	proposalInputs,
+};

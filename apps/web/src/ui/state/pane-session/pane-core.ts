@@ -10,11 +10,7 @@ import { boardAddressOf } from "#ui/rules/semantic-board-canvas/board/address.ts
 import { takeBoardBack } from "#ui/clients/pane-session/pane-requests.ts";
 import { createPaneArrival } from "#ui/rules/pane-session/pane-arrival.ts";
 import { createPaneReportDeadline } from "#ui/state/pane-session/pane-deadline.ts";
-import {
-	createReadingPublisher,
-	NOTHING_READ,
-	type PaneReading,
-} from "#ui/state/pane-session/pane-reading.ts";
+import { createReadingPublisher, type PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import { createPaneReportSender } from "#ui/clients/pane-session/pane-report-sender.ts";
 import {
 	createPaneSocketConnector,
@@ -330,6 +326,13 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		 * Where news of a chosen checkout goes; read live.
 		 * @returns The listener, or undefined when the shell wants none.
 		 */
+		get onExplanationsChanged() {
+			return ports.options().onExplanationsChanged;
+		},
+		/**
+		 * Read the current repository change callback.
+		 * @returns The current listener, when installed.
+		 */
 		get onRepositoriesChanged() {
 			return ports.options().onRepositoriesChanged;
 		},
@@ -492,7 +495,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	function readingChanged(next: PaneReading): void {
 		if (next.board === null) {
 			readingThrough(null);
-			reading.publish(NOTHING_READ);
+			reading.publish(next);
 			return;
 		}
 		showing(next.board.key);

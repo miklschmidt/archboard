@@ -9,6 +9,11 @@
 
 import { memo, useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
+import { useQueryClient } from "@tanstack/react-query";
+import { ModelExplanationHost } from "#ui/components/architecture-model/ModelExplanationHost.tsx";
+import { explanationKey } from "#ui/clients/architecture-model/explanations.ts";
+import { tabSessionId } from "#ui/clients/pane-session/tab-session.ts";
+import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import { boardAncestors } from "#ui/rules/board-catalog/outline.ts";
 import { useVaultBoards } from "#ui/hooks/board-catalog/use-vault-boards.ts";
 import { useVaultPolicyRefresh } from "#ui/hooks/vault-diagnostics/use-vault-check.ts";
@@ -200,9 +205,18 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	// pane because it is about this pane's picture, and handed to the stage, which
 	// owns where the pane is in a walkthrough and answers through its reading.
 	const [asked, onPresentRequest] = useState<PanePresentRequest | null>(null);
+	const [canonicalReading, reportCanonicalReading] = useState<PaneReading | null>(null);
+	const client = useQueryClient();
+	const refreshExplanations = useCallback((): void => {
+		void client.invalidateQueries({ queryKey: explanationKey(tabSessionId()) });
+	}, [client]);
 	const options = useMemo(
-		() => ({ ...optionsFor(props, bound), onPresentRequest }),
-		[props, bound],
+		() => ({
+			...optionsFor(props, bound),
+			onPresentRequest,
+			onExplanationsChanged: refreshExplanations,
+		}),
+		[props, bound, refreshExplanations],
 	);
 	const session = usePaneSession(options);
 	const { attachPaneElement, openedKey, readingChanged, vault } = session;
@@ -234,8 +248,8 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	// A pane on no board is reading nothing, and says so: the stage is not
 	// mounted to report it.
 	const reading = useMemo(
-		() => (address === null ? NOTHING_READ : readingOf(onScreen, picked)),
-		[address, onScreen, picked],
+		() => (address === null ? (canonicalReading ?? NOTHING_READ) : readingOf(onScreen, picked)),
+		[address, onScreen, picked, canonicalReading],
 	);
 	useEffect(() => {
 		readingChanged(reading);
@@ -248,31 +262,38 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 			ref={attachStage}
 			className="relative flex min-h-0 min-w-0 flex-1 flex-col"
 		>
-			{address === null ? (
-				<ArchitectureModelStage
-					key={vault}
-					vault={vault}
-					paneId={paneId}
-					reducedMotion={props.reducedMotion}
-					onCodeTargetNotice={callbacks.onCodeTargetNotice}
-				>
-					<NoBoard />
-				</ArchitectureModelStage>
-			) : (
-				// Every read the picture makes names the vault this pane is in (ADR 0050).
-				<PaneVaultContext value={vault}>
-					<PaneDiagram
-						address={address}
-						arrival={session.arrivals}
-						openCode={session.openCode}
-						onReading={showReading}
-						onUserChanged={session.userChanged}
-						driven={props.step ?? asked}
-						shown={onScreen?.board ?? null}
-						{...props}
-					/>
-				</PaneVaultContext>
-			)}
+			<ModelExplanationHost
+				vault={vault}
+				connected={session.connected}
+				focused={props.focused}
+				onReading={reportCanonicalReading}
+			>
+				{address === null ? (
+					<ArchitectureModelStage
+						key={vault}
+						vault={vault}
+						paneId={paneId}
+						reducedMotion={props.reducedMotion}
+						onCodeTargetNotice={callbacks.onCodeTargetNotice}
+					>
+						<NoBoard />
+					</ArchitectureModelStage>
+				) : (
+					// Every read the picture makes names the vault this pane is in (ADR 0050).
+					<PaneVaultContext value={vault}>
+						<PaneDiagram
+							address={address}
+							arrival={session.arrivals}
+							openCode={session.openCode}
+							onReading={showReading}
+							onUserChanged={session.userChanged}
+							driven={props.step ?? asked}
+							shown={onScreen?.board ?? null}
+							{...props}
+						/>
+					</PaneVaultContext>
+				)}
+			</ModelExplanationHost>
 		</div>
 	);
 }

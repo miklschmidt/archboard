@@ -13,7 +13,11 @@ import { exactReading } from "#runtime/operations/history/read.ts";
 import { archiveContext, ArchiveError, type ArchiveContext } from "#runtime/store/model-archive.ts";
 import { historyResult } from "#runtime/operations/history/result.ts";
 import { modelRevision } from "#runtime/store/model-files.ts";
-import { applyCompactChanges, subjectsOf } from "#runtime/operations/proposals/subjects.ts";
+import {
+	applyCompactChanges,
+	subjectsOf,
+	type Subjects,
+} from "#runtime/operations/proposals/subjects.ts";
 import { materializedDefinitions } from "#runtime/operations/proposals/materialize.ts";
 import { comparisonOf } from "#runtime/operations/proposals/compare.ts";
 
@@ -83,15 +87,57 @@ async function proposalBaseline(
 			proposal.baseline,
 			[proposal.id],
 		);
-	const retired = new Set(baseline.manifest.retiredIds);
-	if (proposal.changes.some((change) => change.type === "add" && retired.has(change.subject)))
+	await Promise.all(
+		proposal.changes
+			.filter(
+				(change) => change.type === "add" && baseline.manifest.retiredIds?.includes(change.subject),
+			)
+			.map((change) => requireRestoration(context, proposal, change.subject)),
+	);
+
+	return baseline;
+}
+/**
+ * Require original retained identity evidence before restoring a retired subject.
+ * @param context The archive owner.
+ * @param proposal The selected compact draft.
+ * @param subject The continuing identity.
+ */
+async function requireRestoration(
+	context: ArchiveContext,
+	proposal: Proposal,
+	subject: string,
+): Promise<void> {
+	const proof = proposal.restorations?.find((entry) => entry.subject === subject);
+	if (proof === undefined)
 		throw new ArchiveError(
 			"MODEL_INVALID",
 			"A proposal cannot allocate a retired identity.",
 			proposal.file,
-			[proposal.id],
+			[subject],
 		);
-	return baseline;
+	const origin = requireModel(
+		await exactReading(context, proof.checkpoint, undefined, undefined, false),
+	);
+	if (!subjectsOf(origin).has(subject))
+		throw new ArchiveError(
+			"CHECKPOINT_INVALID",
+			"Restoration requires the original retained subject.",
+			proof.checkpoint,
+			[subject],
+		);
+}
+/**
+ * Preserve structured diagnostics when a candidate needs a coherent reading.
+ * @param reading The shared reader result.
+ * @returns The coherent model.
+ */
+function requireModel(reading: ArchitectureModelRead): ArchitectureModel {
+	if (!reading.success) {
+		const diagnostic = reading.diagnostics[0]!;
+		throw new ArchiveError(reading.code, diagnostic.message, diagnostic.file, diagnostic.subjects);
+	}
+	return reading;
 }
 /**
  * Refuse changed predecessors until explicit reconciliation exists.
@@ -113,7 +159,7 @@ async function requirePredecessor(
 	if (predecessorRevision(predecessor) !== proposal.predecessorRevision)
 		throw new ArchiveError(
 			"PREDECESSOR_CHANGED",
-			"The predecessor changed after this immutable baseline. Reconciliation is unavailable until TASK-549.07.",
+			"The predecessor changed after this immutable baseline. Submit an explicit reconcile intent against the predecessor.",
 			proposal.file,
 			[proposal.id, proposal.predecessor],
 		);
@@ -128,7 +174,9 @@ async function requirePredecessor(
 function proposalManifest(manifest: ArchitectureModel["manifest"], proposal: Proposal) {
 	return {
 		...manifest,
-		retiredIds: [...new Set([...(manifest.retiredIds ?? []), ...(proposal.retiredIds ?? [])])],
+		retiredIds: [
+			...new Set([...(manifest.retiredIds ?? []), ...(proposal.retiredIds ?? [])]),
+		].filter((id) => !proposal.restorations?.some((proof) => proof.subject === id)),
 	};
 }
 /**
@@ -143,29 +191,37 @@ function decodeProposal(
 	proposal: Proposal,
 	catalogue: ArchitectureModel,
 ): ArchitectureModelRead {
-	const definitions = materializedDefinitions(
-		baseline,
+	const decoded = decodeSubjects(
+		{ ...baseline, manifest: proposalManifest(baseline.manifest, proposal) },
 		applyCompactChanges(subjectsOf(baseline), proposal.changes),
-	);
-	const inputs = materializedInputs(baseline, Buffer.from(Bun.YAML.stringify(baseline.policy)));
-	for (const file of inputs.keys())
-		if (/\.(module|flows|walkthrough)\.json$/u.test(file)) inputs.delete(file);
-	for (const value of [
-		...definitions.modules,
-		...definitions.collections,
-		...definitions.walkthroughs,
-	]) {
-		const { file, ...definition } = value;
-		inputs.set(file, Buffer.from(JSON.stringify(definition)));
-	}
-	const manifest = proposalManifest(baseline.manifest, proposal);
-	inputs.set("model.json", Buffer.from(JSON.stringify(manifest)));
-	const decoded = decodeModel(
-		{ inputs, revision: modelRevision(inputs), diagnostics: [] },
 		SelectedStateSchema.strip().parse(proposal),
 	);
 	if (!decoded.success) return decoded;
 	return { ...decoded, revision: catalogue.revision, proposals: catalogue.proposals };
+}
+/**
+ * Decode resolved subjects through the canonical file authority.
+ * @param baseline The complete materialization context.
+ * @param subjects The resolved subject graph.
+ * @param selection The explicit selected state.
+ * @returns The complete coherent reading or its diagnostics.
+ */
+function decodeSubjects(
+	baseline: ArchitectureModel,
+	subjects: Subjects,
+	selection: ArchitectureModel["selectedState"],
+): ArchitectureModelRead {
+	const definitions = materializedDefinitions(baseline, subjects);
+	const inputs = materializedInputs(baseline, Buffer.from(Bun.YAML.stringify(baseline.policy)));
+	for (const file of inputs.keys())
+		if (/\.(module|flows|walkthrough)\.json$/u.test(file)) inputs.delete(file);
+	for (const { file, ...definition } of [
+		...definitions.modules,
+		...definitions.collections,
+		...definitions.walkthroughs,
+	])
+		inputs.set(file, Buffer.from(JSON.stringify(definition)));
+	return decodeModel({ inputs, revision: modelRevision(inputs), diagnostics: [] }, selection);
 }
 /**
  * Materialize one draft from its retained baseline with safe ancestry checks.
@@ -185,12 +241,10 @@ async function materializeProposal(
 		throw new ArchiveError("MODEL_INVALID", "Proposal ancestry contains a cycle.");
 	const baseline = await proposalBaseline(context, catalogue, proposal);
 	if (!baseline.success) return baseline;
-	const blocked = await requirePredecessor(
-		context,
-		catalogue,
-		proposal,
-		new Set([...visited, proposal.id]),
-	);
+	const blocked =
+		proposal.standing === undefined
+			? await requirePredecessor(context, catalogue, proposal, new Set([...visited, proposal.id]))
+			: undefined;
 	return blocked ?? decodeProposal(baseline, proposal, catalogue);
 }
 /**
@@ -384,4 +438,7 @@ export {
 	resolveState,
 	readSelectedState,
 	decodeProposal,
+	proposalBaseline,
+	decodeSubjects,
+	requireModel,
 };

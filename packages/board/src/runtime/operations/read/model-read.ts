@@ -1,4 +1,5 @@
 import { WalkthroughSchema } from "#shared/schemas/model-walkthroughs.ts";
+import { readRequestedArchitecture } from "#runtime/operations/read/model-explanation.ts";
 import { ProposalSchema } from "#shared/schemas/model-proposals.ts";
 
 import { FlowCollectionSchema } from "#shared/schemas/model-flows.ts";
@@ -16,10 +17,7 @@ import { readModelFiles } from "#runtime/store/model-files.ts";
 import { modelDiagnostics, compareModelSubjects } from "#shared/rules/coherence/model.ts";
 
 import { modelBoundaryFailure } from "#runtime/store/model-state.ts";
-import {
-	readModelNavigation,
-	type NavigationOptions,
-} from "#runtime/operations/read/model-navigation.ts";
+import type { NavigationOptions } from "#runtime/operations/read/model-navigation.ts";
 
 type CapturedModel = ReturnType<typeof readModelFiles>;
 
@@ -368,9 +366,8 @@ function readArchitectureModel(
 	if (options !== undefined)
 		return (async () => {
 			if (blocked !== undefined) return blocked;
-			const result = await readModelNavigation(vault, module, flow, options);
-
-			return modelBoundaryFailure(vault) ?? result;
+			const captured = await readRequestedArchitecture(vault, module, flow, options);
+			return modelBoundaryFailure(vault) ?? captured;
 		})();
 	if (blocked !== undefined) return blocked;
 	const reading = readCurrentModel(vault, module, flow);

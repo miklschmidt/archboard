@@ -50,6 +50,16 @@ Selected state:
 The explicit state metadata and lifecycle of the returned reading.
 A selected draft remains draft even when its retained manifest names a current state.
 
+Explanation capture:
+A temporary record of the exact reading that one local agent action answers.
+It preserves the model, state or checkpoint, complete revision, stable subjects, and reading intent.
+A proposal also preserves its actual comparison base and separate revision.
+Retry reuses the capture after navigation or source changes.
+
+Reading intent:
+The scope, focus, relationship filters, group visibility, grammar, and optional explicit flow of a reading.
+An explicit reference destination stays separate from temporary pointer selection.
+
 Canonical walkthrough:
 An ordered narrative that selects readings of one architectural state.
 

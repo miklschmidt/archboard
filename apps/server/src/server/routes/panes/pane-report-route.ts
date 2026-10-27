@@ -1,3 +1,4 @@
+import { tabSessionOf } from "@archboard/workbench/server";
 // What every pane on screen is showing and reading: the answer `browser panes`
 // is read from, every turn, so it is built from what the panes reported and the
 // registry, and never reads a board.
@@ -84,7 +85,15 @@ function getPanesRoute(req: Request, res: Response): void {
 		},
 		serverUrl: serverUrl(),
 	});
-	res.json({ success: true, ...report });
+	res.json({
+		success: true,
+		...report,
+		panes: report.panes.map((pane) => ({
+			...pane,
+			tabSessionId: tabSessionOf(pane.clientId),
+			architecture: semanticPaneContextFor(pane.clientId)?.architecture ?? null,
+		})),
+	});
 }
 
 export { getPanesRoute };

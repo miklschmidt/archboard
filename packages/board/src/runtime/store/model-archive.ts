@@ -1,3 +1,4 @@
+import { FamilyStandingSchema } from "#shared/schemas/model-proposals.ts";
 import { modelRevision } from "#runtime/store/model-files.ts";
 import {
 	archiveContext,
@@ -30,6 +31,7 @@ const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, pub
 		vault: z.string(),
 		narrativeDependencies: z.array(ArchitectureCheckpointSchema.shape.id).optional(),
 		edit: ArchitectureModuleEditSchema.optional(),
+		reconciliations: FamilyStandingSchema.optional(),
 		subjects: z.array(QualifiedSubjectIdSchema).optional(),
 	})
 	.strict();

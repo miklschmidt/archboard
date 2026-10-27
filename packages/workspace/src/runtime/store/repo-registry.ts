@@ -34,7 +34,7 @@ import path from "path";
 import {
 	inspectCheckout,
 	repoRootOf,
-	worktreePaths,
+	worktreesOf,
 	type CheckoutGitInspection,
 } from "#runtime/clients/git.ts";
 import {
@@ -221,43 +221,6 @@ function recordCheckout(
 		entry,
 	];
 	return { entry, added: found === undefined };
-}
-
-/**
- * The worktrees of a checkout other than the checkout itself, as Git reports
- * them for it, that are checkouts of its identity. Every worktree has the
- * identity of the main checkout, so this leaves out only one that overrides
- * `origin` for itself (`extensions.worktreeConfig`): it is another repository.
- * @param checkout The checkout.
- * @param options Cancellation.
- * @returns Each worktree's root and identity.
- */
-async function worktreesOf(
-	checkout: Pick<CheckoutGitInspection, "root" | "identity">,
-	options: DeclareOptions,
-): Promise<Readonly<CheckoutGitInspection>[]> {
-	const paths = (await worktreePaths(checkout.root, options)).filter(
-		(each) => path.resolve(each) !== checkout.root && isDirectory(each),
-	);
-	const inspected: (CheckoutGitInspection | undefined)[] = [];
-	// Each inspection owns several Git processes. A large worktree family must not
-	// exhaust the command deadlines before Git starts. Settle each bounded group
-	// before returning a refusal, so its other inspections do not outlive this call.
-	for (let start = 0; start < paths.length; start += 8) {
-		// oxlint-disable-next-line no-await-in-loop -- each batch must settle before the next can own Git processes
-		const results = await Promise.allSettled(
-			paths.slice(start, start + 8).map((each) => inspectCheckout(each, options)),
-		);
-		for (const result of results) {
-			if (result.status === "rejected") throw result.reason;
-			inspected.push(result.value);
-		}
-	}
-	return inspected.flatMap((each) =>
-		each === undefined || each.root === checkout.root || each.identity !== checkout.identity
-			? []
-			: each,
-	);
 }
 
 /**

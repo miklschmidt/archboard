@@ -28,6 +28,8 @@ interface WebSocketMessage {
 }
 
 type WebSocketMessageType =
+	// Temporary explanations changed in this tab, independently of the shown vault.
+	| "architecture_explanations_changed"
 	// Which board this pane is showing, and in which repository's vault: on
 	// connect, whenever a show moves it, and when the repository's chosen checkout
 	// changes. It carries no picture — the board is a file the server draws, and

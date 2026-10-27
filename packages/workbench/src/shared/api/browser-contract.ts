@@ -10,3 +10,7 @@ export type {
 } from "#shared/protocol/shown-conversation.ts";
 export { ArchboardVoicePresentationSchema } from "#shared/schemas/voice-presentation.ts";
 export type { BrowserVoicePresentation } from "#shared/schemas/voice-presentation.ts";
+export {
+	ExplanationActionRequestSchema,
+	ExplanationActionResultSchema,
+} from "#shared/schemas/architecture-explanation.ts";

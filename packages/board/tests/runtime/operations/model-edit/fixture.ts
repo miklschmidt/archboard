@@ -21,6 +21,7 @@ function fixture() {
 	git(root, "config", "user.name", "Edit Author");
 	git(root, "config", "user.email", "edit@example.test");
 	git(root, "config", "commit.gpgsign", "false");
+	git(root, "remote", "add", "origin", "https://github.com/acme/shop.git");
 	writeFileSync(join(root, "code.ts"), "export const value = 1;\n");
 	git(root, "add", ".");
 	git(root, "commit", "--quiet", "-m", "test: seed architecture");

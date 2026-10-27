@@ -28,6 +28,18 @@ type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 /** The latest report from each pane, by the client id that sent it. */
 const reports = new Map<string, SemanticPaneContext>();
+const listeners = new Set<(clientId: string) => void>();
+/**
+ * Hear accepted reading reports without reconstructing a legacy board.
+ * @param listener Receives the exact reporting pane.
+ * @returns The subscription cleanup.
+ */
+function onSemanticPaneContext(listener: (clientId: string) => void) {
+	listeners.add(listener);
+	return () => {
+		listeners.delete(listener);
+	};
+}
 
 /**
  * Drop every report whose socket has gone.
@@ -68,6 +80,7 @@ function recordSemanticPaneContext(report: SemanticPaneContext): boolean {
 		return false;
 	}
 	reports.set(report.clientId, report);
+	for (const listener of listeners) listener(report.clientId);
 	return true;
 }
 
@@ -178,3 +191,5 @@ export {
 	semanticPaneContextFor,
 	semanticPaneContexts,
 };
+
+export { onSemanticPaneContext };

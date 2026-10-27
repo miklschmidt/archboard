@@ -72,6 +72,7 @@ async function prepareEdit(vault: string, request: ArchitectureModuleEdit) {
 		},
 		edit: request,
 		subjects: candidate.subjects,
+		reconciliations: candidate.reconciliations,
 		sources: await captureSource(context, candidate.model, vault),
 		...(await captureReferencePins(vault, candidate.model)),
 	});
