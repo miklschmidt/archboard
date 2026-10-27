@@ -26,6 +26,7 @@ pub(super) fn routed(
     insets: Insets,
     placed: &PlacedBlock,
     held: f64,
+    ports: &Map<String, f64>,
 ) -> (Laid, f64) {
     let block = tree.get(id);
     let mut scene = Placement::new(placed);
@@ -35,6 +36,7 @@ pub(super) fn routed(
             let one = scene.item_mut(item);
             one.bx.x = block.lone.as_ref().map_or(0.0, super::lone::room_of) - insets.side;
             one.bx.width = header.painted(placed.header).width;
+            one.inset = Some(crate::constants::HEADER_SLAB_INSET);
             one.face_top = block.lone.as_ref().map_or(0.0, super::lone::band_of)
                 + crate::constants::HEADER_SLAB_INSET;
         }
@@ -46,6 +48,12 @@ pub(super) fn routed(
     if inline {
         let_ports_slide(&mut scene, block);
     }
+    let edges: Edges<'_> = placed
+        .edges
+        .iter()
+        .map(|edge| (edge.id.as_str(), edge))
+        .collect();
+    crate::track::sides::place_headers(&mut scene, &edges);
     let beside = beside_walls(block, tree, &scene);
     let straight: Set<&str> = beside.iter().map(|one| one.key.as_str()).collect();
     mark_besides(&mut scene, &beside);
@@ -76,28 +84,17 @@ pub(super) fn routed(
     for (key, points) in beside_points(&scene, &beside, insets.side) {
         routes.insert(key, points);
     }
-    let edges: Edges<'_> = placed
-        .edges
-        .iter()
-        .map(|edge| (edge.id.as_str(), edge))
-        .collect();
     let (mut laid, left) = read(block, insets, &scene, routes, &edges, held);
     laid.header = placed.header;
+    super::headers::place_header_entries(block, &mut laid, ports);
     (laid, left)
 }
 
 /// Cards, labels, and the physical header ports of a routed scene.
-fn boxes_of(block: &Block, side: f64, scene: &Placement) -> Map<String, Rect> {
+fn boxes_of(side: f64, scene: &Placement) -> Map<String, Rect> {
     let mut boxes: Map<String, Rect> = Map::default();
     for (id, &item) in &scene.cards {
-        let mut at = scene.moved_id(item, side);
-        if block.kind == Kind::Frame && block.ports.get(id) == Some(&crate::geometry::Side::Top) {
-            let header = scene.cards[super::tree::header_of(block).as_str()];
-            at.y = scene.moved_id(header, side).y
-                + block.lone.as_ref().map_or(0.0, super::lone::band_of)
-                + crate::constants::HEADER_SLAB_INSET
-                - at.height / 2.0;
-        }
+        let at = scene.moved_id(item, side);
         boxes.insert(id.clone(), at);
     }
     for (id, &item) in &scene.labels {
@@ -116,7 +113,7 @@ fn read(
     held: f64,
 ) -> (Laid, f64) {
     let Insets { side, bottom, .. } = insets;
-    let mut boxes = boxes_of(block, side, scene);
+    let mut boxes = boxes_of(side, scene);
     let bands: Vec<Band> = scene
         .bands
         .iter()
@@ -150,7 +147,6 @@ fn read(
             format!("title:{}", frame.id),
             Rect {
                 x: frame.bx.x,
-                width: frame.bx.width,
                 ..row
             },
         );

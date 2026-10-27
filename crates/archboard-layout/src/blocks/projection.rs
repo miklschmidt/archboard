@@ -19,48 +19,28 @@ use super::tree::{
 };
 
 impl BlockTree {
-    /// The blocks between a node and a block around it, innermost first, or
-    /// nothing when the block does not hold the node.
-    fn inside(&self, id: &str, frame: &str) -> Option<Vec<BlockId>> {
-        let block = self.blocks.get(frame)?;
-        let chain = self.above(id);
-        let index = chain.iter().position(|one| one == block)?;
-        Some(chain[..index].to_vec())
+    /// A parent is its measured header inside its own block, like a member card.
+    fn endpoint_of(&self, id: &str, inside: bool) -> (String, Vec<BlockId>) {
+        let mut chain = self.above(id);
+        if let Some(block) = self
+            .block_of(id)
+            .filter(|_| inside)
+            .filter(|&block| self.get(block).kind == Kind::Frame)
+        {
+            chain.insert(0, block);
+            (header_of(self.get(block)), chain)
+        } else {
+            (id.to_owned(), chain)
+        }
     }
 
-    /// Where a relationship is drawn: in the block it leaves from or goes to
-    /// when that block holds its other end, else in the lowest block holding both.
+    /// Project both visible cards through the lowest block that holds them.
     pub(super) fn project(&self, edge: Rc<Edge>) -> Result<Projection, String> {
-        let (source, target) = (edge.source().to_owned(), edge.target().to_owned());
-        if let Some(into) = self.inside(&target, &source) {
-            let at = self.blocks[source.as_str()];
-            let to = into
-                .last()
-                .map_or(target, |&outer| self.get(outer).id.clone());
-            return Ok(Projection {
-                edge,
-                at,
-                out: Vec::new(),
-                into,
-                from: header_of(self.get(at)),
-                to,
-            });
-        }
-        if let Some(out) = self.inside(&source, &target) {
-            let at = self.blocks[target.as_str()];
-            let from = out
-                .last()
-                .map_or(source, |&outer| self.get(outer).id.clone());
-            return Ok(Projection {
-                edge,
-                at,
-                out,
-                into: Vec::new(),
-                from,
-                to: header_of(self.get(at)),
-            });
-        }
-        let (from_chain, to_chain) = (self.above(&source), self.above(&target));
+        let source_inside = self.block_of(edge.source()).is_some_and(|block| {
+            self.above(edge.target()).contains(&block) || edge.label_count() > 0
+        });
+        let (source, from_chain) = self.endpoint_of(edge.source(), source_inside);
+        let (target, to_chain) = self.endpoint_of(edge.target(), true);
         let at = *from_chain
             .iter()
             .find(|block| to_chain.contains(block))
@@ -184,17 +164,20 @@ impl BlockTree {
         let edge = &projection.edge;
         let face = if upward { Side::Top } else { Side::Bottom };
         let mut pieces = Vec::new();
-        let start = if projection.out.is_empty() {
-            projection.from.clone()
-        } else {
-            edge.source().to_owned()
-        };
-        let key = format!("from|{}|{}|{}", face.name(), source, trunk_kind(edge));
-        let mut from = self.on_edge(start, &key, face);
+        let mut from = self.leaving_end(projection, face, source);
         for &block in &projection.out {
             let kind = trunk_kind(edge);
             let along = format!("{}|{kind}", edge.target());
             let side = self.exit_of(block, "out", face, &along, Some(label_at));
+            let side = if side == Side::Top
+                && block == label_at
+                && from == header_of(self.get(block))
+                && edge.label_count() > 0
+            {
+                Side::Right
+            } else {
+                side
+            };
             // A line that carries its label to a wall reaches it under the label,
             // not under its card, so it shares no wall port.
             let inner = if block == label_at {
@@ -235,6 +218,28 @@ impl BlockTree {
         (pieces, from)
     }
 
+    /// The visible source, or an external unlabelled frame boundary.
+    fn leaving_end(&mut self, projection: &Projection, face: Side, source: &str) -> String {
+        let edge = &projection.edge;
+        let start = if projection.out.is_empty() {
+            projection.from.clone()
+        } else {
+            let own = self.block_of(edge.source());
+            self.endpoint_of(edge.source(), own == projection.out.first().copied())
+                .0
+        };
+        if let Some(block) = self
+            .block_of(&start)
+            .filter(|&block| self.get(block).kind == Kind::Frame)
+        {
+            let key = format!("from|{}|{}|{}", face.name(), source, trunk_kind(edge));
+            let port = self.port(block, &key, face);
+            self.pin(block, &port)
+        } else {
+            start
+        }
+    }
+
     /// A relationship's lines in the blocks it enters, outermost first, and
     /// the end they enter from in the block that holds both ends.
     fn enter(
@@ -250,10 +255,9 @@ impl BlockTree {
         let end = if projection.into.is_empty() {
             projection.to.clone()
         } else {
-            edge.target().to_owned()
+            self.endpoint_of(edge.target(), true).0
         };
-        let key = format!("to|{}|{}|{}", face.name(), edge.target(), trunk_kind(edge));
-        let mut to = self.on_edge(end, &key, face);
+        let mut to = end;
         for &block in &projection.into {
             let kind = trunk_kind(edge);
             let along = format!("{}|{kind}", edge.source());
@@ -295,7 +299,28 @@ impl BlockTree {
     /// its target that can hold one, or with the label before a join its
     /// source's, else the block that holds both ends.
     fn label_holder(&self, projection: &Projection, before: bool) -> BlockId {
+        if projection.edge.label_count() > 0
+            && let Some(frame) = self
+                .block_of(projection.edge.source())
+                .filter(|&frame| self.get(frame).kind == Kind::Frame)
+        {
+            return frame;
+        }
         let own = projection.out.first().copied().unwrap_or(projection.at);
+        if [projection.edge.source(), projection.edge.target()]
+            .into_iter()
+            .any(|end| {
+                self.block_of(end)
+                    .is_some_and(|block| self.get(block).kind == Kind::Frame)
+            })
+        {
+            if self.holds_labels(projection.at) {
+                return projection.at;
+            }
+            if self.holds_labels(own) {
+                return own;
+            }
+        }
         if before {
             return own;
         }
@@ -313,24 +338,6 @@ impl BlockTree {
     fn holds_labels(&self, block: BlockId) -> bool {
         self.nesting != Nesting::Blocks
             || !self.get(block).items.iter().any(|item| self.is_block(item))
-    }
-
-    /// Where a line meets a container the relationship names as its end: a
-    /// port on the container's own edge, so the line stops at the box the
-    /// reader sees instead of running in to its middle; else the end itself.
-    fn on_edge(&mut self, end: String, key: &str, face: Side) -> String {
-        match self.block_of(&end) {
-            Some(block) if self.get(block).kind == Kind::Frame => {
-                let side = if key.starts_with("to|") {
-                    Side::Top
-                } else {
-                    face
-                };
-                let port = self.port(block, key, side);
-                self.pin(block, &port)
-            }
-            _ => end,
-        }
     }
 
     /// The edge a port crosses: the wall an earlier layout moved it to, or its
@@ -352,8 +359,21 @@ impl BlockTree {
                 .copied()
                 .unwrap_or(face)
         };
-        if side == Side::Top && self.get(block).kind == Kind::Frame {
-            if way == "in" { Side::Left } else { Side::Right }
+        let own = self.get(block);
+        if side == Side::Top
+            && own.kind == Kind::Frame
+            && own.lone.as_ref().is_some_and(|lone| {
+                own.header.as_ref().is_some_and(|header| {
+                    super::lone::caption_width(lone) + 2.0 * crate::track::chains::LANE
+                        >= header.width
+                })
+            })
+        {
+            if way == "out" {
+                Side::Right
+            } else {
+                Side::Left
+            }
         } else {
             side
         }

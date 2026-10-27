@@ -7,8 +7,8 @@ use crate::drawing::{DiagramFont, MeasuredNode, TextRole, TextRun};
 use crate::measure::paragraph;
 use crate::paint::design::{
     ARCHITECTURE_CARD_PADDING, ARCHITECTURE_ICON_GAP, ARCHITECTURE_NOTE_GAP, CARD_NOTE_FONT,
-    CARD_TITLE_FONT, DRILL_MARK_ROOM, HEADER_SLAB_INSET, ICON_CHIP_SIZE, PART_NOTE_LINE,
-    PART_NOTE_SIZE, PART_TITLE_LINE, PART_TITLE_SIZE,
+    CARD_TITLE_FONT, DRILL_MARK_ROOM, HEADER_SLAB_INSET, ICON_CHIP_SIZE, PARENT_TITLE_SIZE,
+    PART_NOTE_LINE, PART_NOTE_SIZE, PART_TITLE_LINE, PART_TITLE_SIZE,
 };
 
 /// A face, a size, the room a line takes and what the line is.
@@ -92,68 +92,31 @@ struct Size {
     height: f64,
 }
 
-/// Reserve all title and responsibility lines before a card gains neighbours.
-///
-/// A container's header is a slab measured as a card is, standing in the
-/// container's well a small gap inside its walls; it is as tall as its words
-/// need and no taller. Its width is the box's least width, between a card's
-/// least and most, and its words are placed relative to the box, on the slab.
-/// A container laid out wider than that wraps its header's words wider and
-/// stands its header shorter: its `headers` are each width at which the header
-/// takes a line fewer.
+/// Measure a card or a parent's compact header before layout. A parent keeps
+/// the normal card width rules and one measured box, regardless of frame size.
 pub fn measure_node<N: Clone>(node: N, words: &CardWords<'_>, container: bool) -> MeasuredNode<N> {
-    if !container {
-        return slab(
-            node,
-            words,
-            Size {
-                least: CARD_LEAST,
-                most: CARD_MOST,
-                height: CARD_HEIGHT,
-            },
-        );
-    }
-    let inset = 2.0 * HEADER_SLAB_INSET;
-    let least = header(node.clone(), words, CARD_LEAST - inset, CARD_MOST - inset);
-    let mut headers = vec![least.clone()];
-    let mut wider = next_break(words, &least);
-    while let Some(width) = wider {
-        let next = header(node.clone(), words, width, width);
-        if headers
-            .last()
-            .is_some_and(|last| next.height >= last.height)
-        {
-            break;
+    let size = Size {
+        least: CARD_LEAST,
+        most: CARD_MOST,
+        height: CARD_HEIGHT,
+    };
+    let title = if container {
+        Style {
+            size: PARENT_TITLE_SIZE,
+            ..TITLE
         }
-        wider = next_break(words, &next);
-        headers.push(next);
-    }
-    if headers.len() == 1 {
-        least
     } else {
-        MeasuredNode {
-            headers: Some(headers),
-            ..least
-        }
+        TITLE
+    };
+    let slab = slab(node, words, size, title);
+    if !container {
+        return slab;
     }
-}
-
-/// A container's header slab at a width, and the header row it stands in.
-fn header<N>(node: N, words: &CardWords<'_>, least: f64, most: f64) -> MeasuredNode<N> {
-    let slab = slab(
-        node,
-        words,
-        Size {
-            least,
-            most,
-            height: ICON_CHIP_SIZE + 2.0 * ARCHITECTURE_CARD_PADDING,
-        },
-    );
-    let header_height = HEADER_SLAB_INSET + slab.height;
+    let height = HEADER_SLAB_INSET + slab.height;
     MeasuredNode {
         width: slab.width + 2.0 * HEADER_SLAB_INSET,
-        height: header_height,
-        header_height,
+        height,
+        header_height: height,
         runs: slab
             .runs
             .into_iter()
@@ -167,28 +130,9 @@ fn header<N>(node: N, words: &CardWords<'_>, least: f64, most: f64) -> MeasuredN
     }
 }
 
-/// The next width a container's header slab takes a line fewer at: the
-/// narrowest at which its name or its responsibility wraps into fewer lines
-/// than in a header; nothing when both already take one line.
-fn next_break<N>(words: &CardWords<'_>, header: &MeasuredNode<N>) -> Option<f64> {
-    let slab = header.width - 2.0 * HEADER_SLAB_INSET;
-    let inner = ARCHITECTURE_CARD_PADDING * 2.0 + ICON_CHIP_SIZE + ARCHITECTURE_ICON_GAP;
-    let marked = words.marked();
-    let title = paragraph(words.name, TITLE.font, TITLE.size)
-        .fewer_lines_at(slab - inner - marked)
-        .map(|room| room + inner + marked);
-    let note = paragraph(words.responsibility.unwrap_or(""), NOTE.font, NOTE.size)
-        .fewer_lines_at(slab - inner)
-        .map(|room| room + inner);
-    match (title, note) {
-        (Some(title), Some(note)) => Some(crate::js::js_min(title, note)),
-        (one, other) => one.or(other),
-    }
-}
-
 /// A card's slab, or a container's header slab: its words set inside the
 /// card's padding, beside its type chip, relative to its top left.
-fn slab<N>(node: N, words: &CardWords<'_>, size: Size) -> MeasuredNode<N> {
+fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> MeasuredNode<N> {
     use crate::js::js_max;
 
     let padding = ARCHITECTURE_CARD_PADDING;
@@ -196,16 +140,16 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size) -> MeasuredNode<N> {
     // A part that opens another board keeps its name clear of the mark in its
     // top-right corner; the words under the name run beneath the mark.
     let marked = words.marked();
-    let title = paragraph(words.name, TITLE.font, TITLE.size);
+    let title = paragraph(words.name, title_style.font, title_style.size);
     let note = paragraph(words.responsibility.unwrap_or(""), NOTE.font, NOTE.size);
     let natural = js_max(title.natural_width() + marked, note.natural_width());
     let width = crate::js::js_min(size.most, js_max(size.least, natural + left + padding));
     let available = width - left - padding;
-    let titles = runs_for(&title, TITLE, available - marked, left, padding);
-    let note_top = padding + titles.len() as f64 * TITLE.line + ARCHITECTURE_NOTE_GAP;
+    let titles = runs_for(&title, title_style, available - marked, left, padding);
+    let note_top = padding + titles.len() as f64 * title_style.line + ARCHITECTURE_NOTE_GAP;
     let notes = runs_for(&note, NOTE, available, left, note_top);
     let bottom = if notes.is_empty() {
-        padding + titles.len() as f64 * TITLE.line
+        padding + titles.len() as f64 * title_style.line
     } else {
         note_top + notes.len() as f64 * NOTE.line
     };
@@ -225,5 +169,33 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size) -> MeasuredNode<N> {
         runs: titles.into_iter().chain(notes).collect(),
         headers: None,
         pointed: None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parents_use_normal_card_width_and_one_measured_header() {
+        let words = CardWords {
+            name: "Run checks",
+            responsibility: Some(
+                "Checks the rules, outcomes, captures, and commands from one author run.",
+            ),
+            drills: false,
+        };
+        let card = measure_node((), &words, false);
+        let parent = measure_node((), &words, true);
+        assert_eq!(parent.width - 2.0 * HEADER_SLAB_INSET, card.width);
+        assert!(parent.headers.is_none());
+        let title_size = |node: &MeasuredNode<()>| {
+            node.runs
+                .iter()
+                .find(|run| run.role == TextRole::Title)
+                .expect("a name")
+                .font_size
+        };
+        assert!(title_size(&parent) > title_size(&card));
     }
 }

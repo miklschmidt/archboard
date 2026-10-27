@@ -138,6 +138,17 @@ impl BlockTree {
     ) -> Result<(), String> {
         let lone = self.lone.get(&node.id).cloned();
         let header = frame_header(node, lone.as_ref().map_or(0.0, band_of))?;
+        if self.local_frames.contains(&node.id) {
+            let frame = self.block(
+                node.id.clone(),
+                Kind::Frame,
+                Some(block),
+                None,
+                Some(header),
+            );
+            self.get_mut(frame).lone = lone;
+            return self.fill(frame, node.kids());
+        }
         self.get_mut(block).clusters.insert(
             node.id.clone(),
             Cluster {

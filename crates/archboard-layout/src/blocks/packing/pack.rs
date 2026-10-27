@@ -508,7 +508,7 @@ impl<'t> PackLayout<'t> {
                 + self.margin,
             self.held,
         );
-        let ended = self.block.ports.values().any(|&at| at == Side::Bottom);
+        let ended = self.block.has_bottom_port();
         let items = top + self.head_room();
         let low = items
             + size.height
@@ -550,14 +550,16 @@ impl<'t> PackLayout<'t> {
         } else {
             foot + self.insets.bottom
         };
-        Laid {
+        let mut laid = Laid {
             width: right,
             height,
             boxes: self.boxes.clone(),
             lines: self.lines.clone(),
             header: self.header.and_then(|header| header.index),
             ..Laid::default()
-        }
+        };
+        super::super::headers::place_header_entries(self.block, &mut laid, &self.settled);
+        laid
     }
 
     /// The id of the block's header item.

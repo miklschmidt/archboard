@@ -10,15 +10,13 @@
 
 use crate::constants::{CONTAINER_INSET, REGION_INSET};
 use crate::ecma::{js_min, or, sorted_by};
-use crate::track::chains::{LANE, REGION_CLEARANCE};
 use crate::track::graphviz::Join;
 use crate::track::scene::{Map, Set};
 use crate::viz::{Attrs, Edge, Node, Value, box_node};
 
-use super::cycles::Below;
 use super::laid::Size;
 use super::lone::title_width;
-use super::tree::{Block, BlockTree, Cluster, ClusterKind, Kind, Line};
+use super::tree::{Block, Cluster, ClusterKind, Line};
 
 /// How strongly a title row holds each member below it.
 const TITLE_WEIGHT: f64 = 10.0;
@@ -59,8 +57,6 @@ pub(crate) fn is_title(name: &str) -> bool {
 pub(crate) struct Link {
     pub tail: String,
     pub head: String,
-    /// Whether a label sits between.
-    pub labelled: bool,
     pub label: String,
     /// The ids of the Graphviz edges that draw it.
     pub legs: [String; 3],
@@ -111,7 +107,7 @@ pub(crate) struct Clusters<'t> {
 
 impl<'t> Clusters<'t> {
     /// Make every cluster of a block, each headed by its title.
-    pub(crate) fn new(tree: &BlockTree, block: &'t Block) -> Clusters<'t> {
+    pub(crate) fn new(block: &'t Block) -> Clusters<'t> {
         let mut clusters = Clusters {
             block,
             graphs: Vec::new(),
@@ -144,58 +140,7 @@ impl<'t> Clusters<'t> {
                 }
             }
         }
-        for (index, cluster) in block.clusters.values().enumerate() {
-            let room = clusters.header_room(tree, &cluster.id);
-            clusters.graphs[index].margin = clusters.graphs[index].margin.max(room);
-        }
         clusters
-    }
-
-    /// Lanes inside a shared ancestor that must pass beside a nested header.
-    fn header_room(&self, tree: &BlockTree, ancestor: &str) -> f64 {
-        let lines: Vec<_> = self
-            .block
-            .lines
-            .values()
-            .filter(|line| {
-                let vendor = |end: &str| {
-                    let child = tree
-                        .pins
-                        .get(end)
-                        .map(|pin| tree.get(pin.block).id.as_str());
-                    self.vendor_of(child.unwrap_or(end))
-                };
-                let tail = vendor(&line.tail);
-                let head = vendor(&line.head);
-                let from = self.around(&tail);
-                let to = self.around(&head);
-                from.contains(&ancestor)
-                    && to.contains(&ancestor)
-                    && from.iter().chain(&to).any(|id| {
-                        self.block.clusters[*id].kind == ClusterKind::Frame
-                            && from.contains(id) != to.contains(id)
-                            && tail != title_of(id)
-                            && head != title_of(id)
-                    })
-            })
-            .collect();
-        if lines.is_empty() {
-            return 0.0;
-        }
-        let identities = |source: bool| -> Set<String> {
-            lines
-                .iter()
-                .map(|line| {
-                    let end = if source { &line.source } else { &line.target };
-                    format!(
-                        "{}|{}",
-                        end.as_deref().unwrap_or(&line.key),
-                        crate::track::route::trunk_kind(&line.edge)
-                    )
-                })
-                .collect()
-        };
-        identities(true).len().min(identities(false).len()) as f64 * LANE + REGION_CLEARANCE
     }
 
     /// Where a cluster's nodes go.
@@ -342,65 +287,6 @@ impl<'t> Clusters<'t> {
                     ]),
                 )
             })
-            .collect()
-    }
-
-    /// Group-level callers precede the header of a container they enter.
-    /// Callers inside other inline containers precede it too.
-    /// Neither ordering can close a cycle.
-    pub(crate) fn entering_edges(&self, links: &[Link]) -> Vec<Edge> {
-        let mut below = Below::default();
-        for link in links {
-            below.add(&link.tail, &link.head);
-        }
-        for (member, around) in &self.block.cluster_of {
-            below.add(&title_of(around), &self.vendor_of(member));
-        }
-        let mut edges = Vec::new();
-        // Establish group-level order before the constraints inside containers.
-        for group_level in [true, false] {
-            for link in links {
-                let at_root = self.block.kind == Kind::Region && self.around(&link.tail).is_empty();
-                if at_root != group_level {
-                    continue;
-                }
-                self.hold_entry(link, &mut below, &mut edges);
-            }
-        }
-        edges
-    }
-
-    /// Hold a caller above each entered header without closing a cycle.
-    fn hold_entry(&self, link: &Link, below: &mut Below, edges: &mut Vec<Edge>) {
-        let entered: Vec<&str> = self
-            .entered(&link.tail, &link.head)
-            .into_iter()
-            .filter(|cluster| !below.reaches(&title_of(cluster), &link.tail))
-            .collect();
-        for cluster in entered {
-            below.add(&link.tail, &title_of(cluster));
-            let minlen = if link.labelled { 2.0 } else { 1.0 };
-            edges.push(Edge::new(
-                link.tail.clone(),
-                title_of(cluster),
-                Attrs::of([
-                    ("style", Value::from("invis")),
-                    ("minlen", Value::Num(minlen)),
-                    ("weight", Value::Num(0.0)),
-                ]),
-            ));
-        }
-    }
-
-    /// The clusters a line from inside another cluster enters.
-    fn entered<'a>(&'a self, tail: &'a str, head: &'a str) -> Vec<&'a str> {
-        let theirs = self.around(tail);
-        if theirs.is_empty() && self.block.kind != Kind::Region {
-            return Vec::new();
-        }
-        self.around(head)
-            .into_iter()
-            .filter(|cluster| !theirs.contains(cluster))
             .collect()
     }
 }

@@ -26,7 +26,7 @@ use std::rc::Rc;
 use crate::geometry::Side;
 use crate::graph::{Edge, Node};
 use crate::track::chains::LANE;
-use crate::track::scene::Map;
+use crate::track::scene::{Map, Set};
 
 use super::headers::Header;
 use super::laid::Size;
@@ -159,12 +159,37 @@ pub(crate) struct Block {
 }
 
 impl Block {
+    /// A short entry from the top frame boundary to its visible header.
+    pub(crate) fn header_entry(&self, port: &str) -> bool {
+        self.kind == Kind::Frame
+            && self.ports.get(port) == Some(&Side::Top)
+            && self.lone.as_ref().is_none_or(|lone| {
+                self.header.as_ref().is_some_and(|header| {
+                    super::lone::caption_width(lone) + 2.0 * LANE < header.width
+                })
+            })
+            && self.lines.values().any(|line| {
+                !line.labelled
+                    && ((line.from == port && line.to == header_of(self))
+                        || (line.to == port && line.from == header_of(self)))
+            })
+    }
+
+    /// A direct header entry is drawn after layout, without a ranked port row.
+    pub(crate) fn header_line(&self, line: &Line) -> bool {
+        self.header_entry(&line.from) || self.header_entry(&line.to)
+    }
+
     /// The face width that leaves every port its own lane beside the header.
     pub(crate) fn port_width(&self, header: f64) -> f64 {
         [Side::Top, Side::Bottom]
             .into_iter()
             .map(|side| {
-                let count = self.ports.values().filter(|&&one| one == side).count();
+                let count = self
+                    .ports
+                    .iter()
+                    .filter(|(id, on)| **on == side && !self.header_entry(id))
+                    .count();
                 if count == 0 {
                     0.0
                 } else if side == Side::Top {
@@ -178,7 +203,9 @@ impl Block {
 
     /// Whether one of its ports stands on its bottom.
     pub(crate) fn has_bottom_port(&self) -> bool {
-        self.ports.values().any(|&side| side == Side::Bottom)
+        self.ports
+            .iter()
+            .any(|(id, &side)| side == Side::Bottom && !self.header_entry(id))
     }
 
     /// The innermost container a block draws inline around one of its items,
@@ -276,6 +303,8 @@ pub(crate) struct BlockTree {
     /// The wall each port moves to, keyed by `exit_key`.
     pub exits: Map<String, Side>,
     pub nesting: Nesting,
+    /// Parents whose member relationships leave and return through outside cards.
+    pub local_frames: Set<String>,
     /// The ports each block holds in an order on a face, keyed `block|face` (`orders.rs`).
     pub orders: Map<String, Vec<String>>,
 }
@@ -311,6 +340,7 @@ impl BlockTree {
             pins: Map::default(),
             exits: kept.exits,
             nesting,
+            local_frames: super::composition::local_frames(graph),
             orders: kept.orders,
         };
         tree.root = tree.block(":root".to_owned(), Kind::Root, None, None, None);

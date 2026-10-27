@@ -117,7 +117,7 @@ impl<'t> CardLayout<'t> {
         arranged: Arrangement,
     ) -> CardLayout<'t> {
         let block = tree.get(id);
-        let clusters = Clusters::new(tree, block);
+        let clusters = Clusters::new(block);
         let subgraphs = clusters
             .top
             .iter()
@@ -238,7 +238,7 @@ impl<'t> CardLayout<'t> {
         self.block
             .ports
             .iter()
-            .filter(|&(_, &at)| at == side)
+            .filter(|&(port, &at)| at == side && !self.block.header_entry(port))
             .map(|(port, _)| port.clone())
             .collect()
     }
@@ -253,11 +253,10 @@ impl<'t> CardLayout<'t> {
         self.block
             .lines
             .values()
-            .filter(|line| ranks(self.block, line))
+            .filter(|line| ranks(self.block, line) && !self.block.header_line(line))
             .map(|line| Link {
                 tail: end_of(&line.tail),
                 head: end_of(&line.head),
-                labelled: line.labelled && line.edge.label_count() > 0,
                 label: format!("label:{}", line.edge.id),
                 legs: [
                     line.key.clone(),
@@ -308,7 +307,14 @@ impl<'t> CardLayout<'t> {
         let Lined {
             placed, centres, ..
         } = lined;
-        let (laid, left) = routed(self.tree, self.id, self.insets, &placed, 0.0);
+        let (laid, left) = routed(
+            self.tree,
+            self.id,
+            self.insets,
+            &placed,
+            0.0,
+            &Map::default(),
+        );
         let reroute = Reroute {
             block: self.id,
             insets: self.insets,
@@ -409,7 +415,11 @@ impl<'t> CardLayout<'t> {
             .map(|node| {
                 let id = &node.name;
                 let size = self.size_of(id);
-                let width = self.clusters.widths.get(id).copied().unwrap_or(size.width);
+                let width = if self.tree.is_block(id) {
+                    size.width
+                } else {
+                    self.clusters.widths.get(id).copied().unwrap_or(size.width)
+                };
                 let centre = centres[id.as_str()];
                 PlacedNode {
                     id: id.clone(),
@@ -430,6 +440,7 @@ impl<'t> CardLayout<'t> {
             .block
             .lines
             .values()
+            .filter(|line| !self.block.header_line(line))
             .map(|line| self.placed_line(line, centres, polylines))
             .collect();
         let (children, regions) = self.clusters.nest(leaves, centres, clusters);
@@ -532,6 +543,6 @@ impl Reroute {
             }
         }
         hold_resized_children(&mut placed.children);
-        routed(tree, self.block, self.insets, &placed, self.held).0
+        routed(tree, self.block, self.insets, &placed, self.held, ports).0
     }
 }

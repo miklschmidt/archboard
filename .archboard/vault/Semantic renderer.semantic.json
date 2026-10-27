@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 152,
+	"version": 155,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-27T03:21:10.411Z",
+	"updatedAt": "2026-10-27T06:42:11.902Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -66704,7 +66704,7 @@
 						"name": "Layout engines",
 						"kind": "module",
 						"responsibility": "Settles the cards, frames, routes and labels of one graph plan",
-						"description": "archboard_layout::draw lays out architectures and flowchart graphs. Track packs multi-member regions before solving. Graph links and containment fix acyclic container order. Fan-in labels stay beside their sources. Each architecture graph uses one host solve, and wraps stay inside it. The core retains parent frames, fits the page, and settles crossings. Flowcharts can still compare their decision orders.",
+						"description": "crates/archboard-layout implements draw and lay_out_board. Track packs multi-member group regions before solving. A parent gets local ranks when a path between different member cards leaves it and returns through outside cards. Other parents stay inline. Each architecture graph uses one Solver call. Local rank wraps and port settling stay inside that solve. Headers use one normal card measurement. Header placement precedes routing, and frames fit their members independently of header width. Incoming parent relationships reach the visible header card through the parent layout. Labelled parent sources reserve room for their words. Routes retain original card identities. Different point ports remain different places, and child blocks keep their exact measured dimensions. Header crossings and ambiguous trunks remain hard defects. Flowcharts can still compare their decision orders.",
 						"parent": "ld6jjHND",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -66774,7 +66774,7 @@
 						"name": "Architecture painter",
 						"kind": "function",
 						"responsibility": "Paints a settled drawing into the scene: marks, standing and traffic",
-						"description": "Paints neutral container wells, unfilled group frames, member-tagged shadows, lines and port interiors, traffic, card bodies, labels and header content in that order. Ports clip a card in its own box coordinates and traffic runs to the lid. Every card shadow lies below every line and card.",
+						"description": "Parent headers use a normal card width instead of spanning their frame. The painter uses the measured compact card in both engines and every theme. The name uses 15 px instead of 14 px, and the icon uses 20 px instead of 18 px in the existing chip. The far view adds 1 px to its fitted name size. The responsibility and neutral header face keep their existing treatment.",
 						"parent": "m6HOX0lf",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -66881,7 +66881,7 @@
 						"name": "Tray surfaces",
 						"kind": "function",
 						"responsibility": "Draws a neutral recessed well with a header slab made of what the well is cut into",
-						"description": "A container and a sequence frame use the same top-lit tray. Its floor is neutral and a nested tray is deeper. The header is a slab two units from the top and side walls, eight units from the outer edges. Its face is the ground the well is cut into: the page, or the floor of the tray around it. No group tints it; kind color stays on its icon.",
+						"description": "A container and a sequence frame use the same top-lit tray. Its floor is neutral and a nested tray is deeper. A parent header uses its normal card measurement at the top left, eight units from the frame edges. It leaves the remaining top edge clear. Its face is the page or the floor of the enclosing tray. Kind color stays on its icon.",
 						"parent": "m6HOX0lf",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",

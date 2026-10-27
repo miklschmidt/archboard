@@ -66,8 +66,8 @@ fn blocks_of(graph: &str, nesting: Nesting) -> Result<BlockTree, String> {
 pub(crate) fn has_regions(graph: &str) -> Result<bool, String> {
     let tree = blocks_of(graph, Nesting::Inline)?;
     Ok(tree
-        .get(tree.root)
-        .clusters
-        .values()
+        .arena
+        .iter()
+        .flat_map(|block| block.clusters.values())
         .any(|cluster| cluster.kind == ClusterKind::Region))
 }

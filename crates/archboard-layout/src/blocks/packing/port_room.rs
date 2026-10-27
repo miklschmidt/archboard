@@ -10,7 +10,12 @@ use crate::track::scene::Set;
 impl PackLayout<'_> {
     /// Space for the distinct trunks between an own face and the packed items.
     pub(super) fn port_room(&self, side: Side) -> f64 {
-        let ports = self.block.ports.values().filter(|&&on| on == side).count();
+        let ports = self
+            .block
+            .ports
+            .iter()
+            .filter(|(port, on)| **on == side && !self.block.header_entry(port))
+            .count();
         let headed = if side == Side::Top {
             let header = self.header_id();
             self.block

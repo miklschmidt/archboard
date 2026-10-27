@@ -4,9 +4,9 @@
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 110,
+	"version": 114,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-10-27T03:21:37.943Z",
+	"updatedAt": "2026-10-27T06:42:10.989Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -23500,6 +23500,7 @@
 						"name": "Architecture painter",
 						"kind": "function",
 						"responsibility": "Paints the settled drawing into a scene in the renderer core, and decides no geometry of its own",
+						"description": "Parent headers use a normal card width instead of spanning their frame. The painter uses the measured compact card in both engines and every theme. The name uses 15 px instead of 14 px, and the icon uses 20 px instead of 18 px in the existing chip. The far view adds 1 px to its fitted name size. The responsibility and neutral header face keep their existing treatment.",
 						"parent": "5UnSr8ZQ",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -23564,7 +23565,7 @@
 						"name": "Layout plan",
 						"kind": "function",
 						"responsibility": "Fixes group nesting, container order, and fan-in labels before one solve",
-						"description": "Track packs each multi-member group region. Graphs without one stay inline. Links and containment hold callers above the headers of containers they enter when this closes no cycle. Each fan-in keeps its labels beside its sources. One Solver call draws the plan. Wrap candidates remain inside the solve.",
+						"description": "Track packs each multi-member group region. A parent uses local ranks when a path between different member cards leaves it and returns through outside cards. Other parents stay inline. Each fan-in keeps its labels beside its sources. One Solver call draws the plan. Wrap candidates remain inside the solve. Compact headers leave clear passages beside their measured boxes.",
 						"parent": "H0PF4BhI",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -23618,7 +23619,7 @@
 						"name": "Board layout",
 						"kind": "module",
 						"responsibility": "Draws one graph plan in the core, routes it, fits its page, and settles crossings",
-						"description": "crates/archboard-layout implements draw and lay_out_board. Group membership, acyclic entry constraints, and fan-in labels fix the architecture plan before one Solver call. Each card block keeps one graph. Packing compares measured geometry before routing one arrangement. Assembly retains parent frames and their containment depths. Routing carries original card identities and painted header bounds. The wasm binding ranks through archboard_graphviz::InCore. The graph reserves lanes beside nested headers inside their shared ancestor. Direct parent arrows meet the visible header card. Descendant traffic enters through a side below it. Full painted headers remain obstacles during final line simplification.",
+						"description": "crates/archboard-layout implements draw and lay_out_board. Track packs multi-member group regions before solving. A parent gets local ranks when a path between different member cards leaves it and returns through outside cards. Other parents stay inline. Each architecture graph uses one Solver call. Local rank wraps and port settling stay inside that solve. Headers use one normal card measurement. Header placement precedes routing, and frames fit their members independently of header width. Incoming parent relationships reach the visible header card through the parent layout. Labelled parent sources reserve room for their words. Routes retain original card identities. Different point ports remain different places, and child blocks keep their exact measured dimensions. Header crossings and ambiguous trunks remain hard defects.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-layout/src"
@@ -24131,12 +24132,12 @@
 												"id": "2leWQWCZ",
 												"from": "kHpIix5b",
 												"to": "kHpIix5b",
-												"label": "Size a header slab, narrower by its inset each side",
+												"label": "Size a compact header with a stronger name and outer inset",
 												"kind": "self",
 												"anchor": {
 													"repo": "github.com/miklschmidt/archboard",
 													"path": "crates/archboard-scene/src/measure/cards.rs",
-													"symbol": "header"
+													"symbol": "measure_node"
 												}
 											}
 										]
@@ -24259,7 +24260,7 @@
 								"id": "mY1hDmn2",
 								"from": "kHpIix5b",
 								"to": "kHpIix5b",
-								"label": "Clamp the width: cards 260 to 340",
+								"label": "Clamp card and header widths: 260 to 340",
 								"kind": "self",
 								"note": "a relationship label is clamped the same way, 40 to 200 wide",
 								"anchor": {

@@ -183,7 +183,6 @@ impl TrunkRouter<'_> {
         let x = (port.x + port.width / 2.0) / inner.width;
         let y = (port.y + port.height / 2.0) / inner.height;
         let (x, y) = match side {
-            Side::Top if child.kind == super::super::tree::Kind::Frame => (x, y),
             Side::Top => (x, 0.0),
             Side::Bottom => (x, 1.0),
             Side::Left => (0.0, y),
@@ -251,6 +250,7 @@ impl TrunkRouter<'_> {
             .block
             .lines
             .values()
+            .filter(|line| !self.block.header_line(line))
             .map(|line| {
                 let (from, side) = self.pin_point(&line.from);
                 let (to, _) = self.pin_point(&line.to);
@@ -275,7 +275,12 @@ impl TrunkRouter<'_> {
     /// every trunk to them as free points, and a trunk it still finds none for
     /// as a plain dogleg. Answers each line's points, by key, from its source end.
     pub(crate) fn route(&self) -> Map<String, Vec<Point>> {
-        let lines: Vec<&Line> = self.block.lines.values().collect();
+        let lines: Vec<&Line> = self
+            .block
+            .lines
+            .values()
+            .filter(|line| !self.block.header_line(line))
+            .collect();
         let pinned = self.routed(&lines, true);
         let routes = if pinned.iter().any(Vec::is_empty) {
             self.routed(&lines, false)
@@ -304,7 +309,11 @@ impl TrunkRouter<'_> {
     fn routed(&self, lines: &[&Line], directed: bool) -> Vec<Vec<Point>> {
         let header = self.block.header.as_ref().map(|_| header_of(self.block));
         let owned: Vec<&String> = if directed {
-            self.block.ports.keys().collect()
+            self.block
+                .ports
+                .keys()
+                .filter(|port| !self.block.header_entry(port))
+                .collect()
         } else {
             Vec::new()
         };
