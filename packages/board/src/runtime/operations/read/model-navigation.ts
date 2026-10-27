@@ -49,12 +49,19 @@ async function navigationReading(
 	const { readSelectedState } = await import("#runtime/operations/proposals/read.ts");
 	const selection = { state: options.state, against: options.against, compare: options.compare };
 	const model =
-		options.checkpoint === undefined
-			? await readSelectedState(vault, module, flow, selection)
-			: await readCheckpointModel(vault, options.checkpoint, module, flow, {
-					against: options.against,
-					compare: options.compare,
-				});
+		options.preview !== undefined
+			? (await import("#runtime/operations/legacy-inventory/preview.ts")).readMigrationPreview(
+					vault,
+					options.preview,
+					module,
+					flow,
+				)
+			: options.checkpoint === undefined
+				? await readSelectedState(vault, module, flow, selection)
+				: await readCheckpointModel(vault, options.checkpoint, module, flow, {
+						against: options.against,
+						compare: options.compare,
+					});
 	if (!model.success) return model;
 	if (options.model === undefined) return model;
 	return options.model === model.manifest.id

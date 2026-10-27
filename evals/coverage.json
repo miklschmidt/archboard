@@ -1121,6 +1121,13 @@
 					"owner": "packages/board/tests/runtime/operations/legacy-inventory/legacy-inventory.test.ts; guidance skills/archboard/references/legacy-migration.md"
 				},
 				{
+					"path": "model read --preview: explicit composition, source provenance, planned-only exclusion and unchanged legacy authority",
+					"expectedUse": "Read one coherent candidate from a saved plan. Resolve explicit identity, reference and conflict choices without installation.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/legacy-preview/preview.test.ts; tests/system/semantic-boards/migration-planning.test.ts; tests/system/browser/canonical-model-preview.test.ts; guidance skills/archboard/references/legacy-migration.md#preview-the-current-model"
+				},
+				{
 					"path": "canonical recursive readings: scopes, exact checkpoint addresses, direct context, complete interfaces and connection aggregation",
 					"expectedUse": "Open immediate module children without creating boards. Preserve exact readings through navigation and inspect every authored relationship behind a projected line.",
 					"scenarios": [],

@@ -9,9 +9,17 @@ const modelReadContract = defineCommand({
 	shared: ["url", "directory"],
 	summary: "Read an authored canonical module model",
 	description:
-		"Returns ordered root modules, authored details, source-owned relationships and the exact input revision. A module selector accepts a qualified id or a unique name. Legacy vaults require explicit migration.",
+		"Returns ordered root modules, authored details, source-owned relationships and the exact input revision. A module selector accepts a qualified id or a unique name. Use --preview <origin> to inspect a saved legacy mapping plan without replacing legacy authority.",
 	examples: ["archboard model read", "archboard model read 'Shop#Gateway' -C /tmp/shop"],
 	parameters: [
+		{
+			kind: "option",
+			key: "preview",
+			spellings: ["--preview"],
+			value: "required",
+			placeholder: "origin",
+			description: "Preview the saved legacy mapping plan for this import namespace",
+		},
 		{
 			kind: "option",
 			key: "references",
@@ -90,6 +98,7 @@ const modelReadContract = defineCommand({
 	],
 	input: {
 		ingress: z.object({
+			preview: z.string().optional(),
 			module: z.string().optional(),
 			state: z.string().optional(),
 			against: z.string().optional(),

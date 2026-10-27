@@ -116,7 +116,8 @@ function listRoute(req: Request, res: Response): void {
 		const vault = vaultOfRequest(req);
 		const configured = readSemanticBoardConfiguration(vault);
 		const read = listSemanticBoards(vault).map(
-			(location) => [location, readSemanticBoard(vault, location.name)] as const,
+			(location) =>
+				[location, readSemanticBoard(vault, location.name, { migrate: false })] as const,
 		);
 		// A drill-down written before a rename names the board as it was then;
 		// the listing names it as it is now, so the navigator places the board
@@ -149,7 +150,7 @@ function readRoute(req: Request, res: Response): void {
 		return;
 	}
 	try {
-		const read = readSemanticBoard(vaultOfRequest(req), asked);
+		const read = readSemanticBoard(vaultOfRequest(req), asked, { migrate: false });
 		if (!read.ok) {
 			res.status(read.code === "BOARD_MISSING" ? 404 : 422).json({
 				success: false,
