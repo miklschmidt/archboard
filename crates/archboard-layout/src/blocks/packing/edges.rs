@@ -42,7 +42,7 @@ impl PackLayout<'_> {
         let low = self.insets.side
             + match header {
                 Some(header) if side == Side::Top => {
-                    header.x + header.width + LANE - self.insets.side
+                    header.x + header.width + TRUNK_CLEARANCE - self.insets.side
                 }
                 _ => 0.0,
             };

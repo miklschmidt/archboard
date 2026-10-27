@@ -14,6 +14,7 @@ pub(crate) mod choosing;
 pub(crate) mod clusters;
 pub(crate) mod composition;
 pub(crate) mod cycles;
+pub(crate) mod fanouts;
 pub(crate) mod fold;
 pub(crate) mod fold_layout;
 pub(crate) mod headers;

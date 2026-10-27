@@ -34,6 +34,10 @@ The graph's containment and group membership decide the nesting, without a card-
 A graph without such a region keeps its inline nesting, apart from the local parent rule below.
 A region with one member keeps the existing compact representation.
 Blocks continues to pack containers and group regions.
+A named parent interface packs disconnected member sets as separate units beside its nested frames and regions.
+Direct member relationships define those sets, regardless of direction.
+A connected set retains its shared ranks.
+The board and unnamed scopes retain their shared collaborator context.
 
 A packed region retains its inline enclosing parent and its containment depth.
 A parent uses local ranks when a path between different member cards leaves that parent and returns through outside cards.
@@ -67,6 +71,15 @@ The core omits the competing whole-board inline solve for a graph with regions.
 Every fan-in keeps its labels beside its sources before the shared trunk.
 Outgoing ports identify the original source card.
 Incoming ports identify the original target card.
+In Blocks, a same-source fork can share an incoming port when its branch labels remain beyond that boundary.
+All of that source's traffic into the parent must share its relationship treatment, direction, and label ownership.
+Its destinations can call each other within that local entry work.
+A destination called by other member work keeps its own incoming port.
+Different relationship treatments keep separate ports.
+Direct parent-header entries and fixed side-wall ports keep their existing identities.
+Other incoming relationships retain their target joins.
+Inline Track ranks retain their target-based entries.
+A packed header and its settled top ports keep the trunk router's full clearance.
 A label before a fan-in join also distinguishes its target at the outgoing port.
 Relationship kind and direction remain part of each port identity.
 The core removes the competing label positions and wall-facing solves.

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T16:24:00Z'
-updated_date: '2026-10-27T12:51:00Z'
+updated_date: '2026-10-27T14:01:00Z'
 labels:
   - renderer
   - performance
@@ -35,6 +35,12 @@ The owner's goal is real-time scene changes, with complex boards (Board viewer, 
 Round 4: preserve the four unanimously accepted cases and the compact headers. Reproduce and reduce Voice coordinator Blocks mixed-kind shared ink, correct the checker exemption, and retain a regression at the real packed-routing seam. Measure every corpus drawing and every whole board for area, aspect ratio, card occupancy inside frames, and longest route. Save complete per-drawing data and per-board before/after summaries, with comparisons to round 3 and the earlier council reference. Use these measurements to test packing scores, boundary-port frame stretch, and related-block ordering. Keep one routed plan, inspect rasterized regressions, and drop changes that clearly read worse. Run crate, renderer, integrity, and full repository gates, rebuild the core after Rust changes, and deliver both SVG sides with fresh quiet timings. Update Renderer layout@TASK-548.08 and Semantic renderer@TASK-548.08 if their meaning changes. Both task statuses remain In Progress pending council.
 
 Test containment rules without a size threshold: keep an independent roster local, keep closed work without an outgoing dependency local, and keep a nested one-member parent tight. Keep each rule only if the complete corpus and whole-board measures support it. Keep an exclusive loose collaborator and its words in one measured row beside its opaque caller, with a route on the caller's physical port level.
+
+Checkpoint 2 is committed as 2f01e7dcd, with complete after-6 SVGs and measurements. Next, decide safe shared-source incoming ports before drawing: group a source and relationship treatment only when multiple distinct targets lie beyond the same boundary and their labels remain after the fork. Keep direct header entries and fixed wall point ports distinct. Keep target joins for other relationships. Test this routing change against the two unchanged Blocks acceptance cases, all prior cases, every corpus drawing, and every whole board. Weighted-perimeter packing remains an independent hypothesis.
+
+Round four next probe: split the loose cards in a mixed Blocks parent by their undirected internal connectivity. Keep a connected set together and pack independent sets as separate units. Test the two remaining composition cases and the entire saved integrity corpus before retaining it. Drop the shared-source entry probe because it exposes two header crossings and Track lane defects.
+
+Retain coherent entry work in Blocks: branch labels follow the entry, all incoming traffic from that source shares treatment and direction, and calls from other member work keep later destinations separate. Keep disconnected member sets separate only at a named parent interface. Packed header ports use the router clearance. The full compactness scan also exposes a Workbench reuse route regression from the earlier composition checkpoint; diagnose it before final delivery.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -133,6 +139,8 @@ The renderer suite passes 660 tests with one platform skip. Layout tests and str
 Fresh instruction counts on the same three captured requests are 152.717 billion for the original baseline, 9.198 billion for round three, and 9.205 billion here. Native critical paths, best of three on P-core 2, are Viewer 80 ms, Persistence 84 ms, and Routes 72 ms, against original 1052/1099/326 ms. Three alternating growth runs give median first/growth times of 283/206, 302/290, and 145/134 ms, against original 1591/1473, 1497/1476, and 599/586 ms. Two alternating seven-render pool runs and every load reading are in /tmp/548-08/round-4/after-6-measurements/summary.json. Native measurement starts at load 0.64. Pool starts range 1.55-2.38 and growth starts range 3.52-4.04. Keep the owner's round-three references 265/201, 302/290, and 142/134 ms. The load-40 wall times are not evidence.
 
 Code evidence in Blocks and What the CLI can be asked in Blocks remain almost unchanged, so this checkpoint is not the council delivery. Continue with source fan-outs at parent entries, retaining branch labels after the fork and preserving distinct header and point ports. A weighted-perimeter packing objective is a separate hypothesis. The two architecture proposals remain drafts. The consumer skill does not change because the agent workflow does not change. Both TASK-548.08 and TASK-548.11 remain In Progress, with their council criteria unchecked.
+
+Round four third checkpoint: core d4eb944a12850ce4 passes 666 renderer tests with one platform skip, the layout Rust tests and strict clippy. The saved corpus is /tmp/548-08/round-4/after-11: 2452 SVGs, including 76 whole-board drawings. Compared with round three, 252 drawings change across 18 boards. Paired SVGs are in /tmp/548-08/round-4/milestone-3-after-11. Per-board area, aspect, frame occupancy, total relationship length and longest routes are in after-11-vs-round-3/per-board.md and its JSON files. Native scans of 23 current boards and fixtures per engine, 13 selected cases, nine prior regression probes and Working with an agent have no hard findings. Code evidence Blocks area falls 16.6%; the Blocks command-family view falls 29.4%. All six new focused regressions pass. The full scan rejects the mixed-traffic probe that grew Working with an agent 13.6%; the retained rule reduces it 4.0%. A new concern remains before delivery: Workbench reuse Track is 22.6% smaller but its total route length grows 53.5%, with a full-height return. Next: diagnose that route, then collect final quiet measurements and run the complete repository gate. Proposals describe the retained implementation, remain drafts, and add no new code finding against the previous 41 identities. No council files are read after the parent forbids them.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
