@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-10-27T04:28:00Z'
-updated_date: '2026-10-27T12:51:00Z'
+updated_date: '2026-10-27T14:01:00Z'
 labels:
   - renderer
   - layout
@@ -50,6 +50,8 @@ TASK-548.11 delivery 9a6d1c147 uses compact normal-card width rules in both engi
 Both SVG sides are saved in /tmp/548-08/round-3/base and /tmp/548-08/round-3/after-1, with 2452 drawings and 76 whole-board views each. The comparison changes 1204 drawings across 19 boards. changed-svg-pairs.json, whole-board-svg-pairs.json, and acceptance-svg/manifest.json name the pairs. The design note docs/design/compact-parent-headers-and-local-composition.md records the modest emphasis, all 20 probes, exact acceptance geometry, fresh performance, changed boards, and remaining tradeoffs. Median first/growth times are 280/203, 299/289, and 140/134 ms for Viewer, Persistence, and Routes. Browser Blocks grows 93.2% in area, Voice retains some long outer routes, and the feedback example adds an ordinary crossing. The parent must grade those tradeoffs. Criteria 1 to 3 are supported by measurement, rendered tests, and visual inspection. Criterion 4 remains unchecked, and TASK-548.11 stays In Progress.
 
 Round 4 checkpoint 2 preserves the compact header sizing and emphasis without another header design change. Core a444102b6641c731 passes all 660 renderer tests, including light, dark, and inherited-theme header coverage. The native board and fixture scans have no header crossing or hidden frame. Both hard header assertions remain enabled. The complete before/after SVG corpus, including all 76 whole boards, is in /tmp/548-08/round-4/after-6 and /tmp/548-08/round-3/after-1. The report is docs/design/corpus-compactness-and-typed-trunks.md. The task remains In Progress and council criterion 4 remains unchecked.
+
+Round four checkpoint d4eb944a12850ce4 keeps the compact header painter and both engines. Packed top ports and settlement now reserve the trunk router clearance of 20 points instead of the 16-point lane. A reduced 19-card Archboard server fixture reproduces the former header crossings and passes expectDrawingIntact after the fix. Header crossings stay hard checks. The renderer suite passes 666 tests with one platform skip. All 2452 SVGs and 76 whole boards are saved in /tmp/548-08/round-4/after-11. The task stays In Progress pending the parent council.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

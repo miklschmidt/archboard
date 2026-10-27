@@ -35,6 +35,11 @@ function measureCorpus(dir: string): Record<string, Compactness> {
 	);
 }
 
+/** Total route length counts every relationship that a reader must follow. */
+function routeLength(page: Compactness): number {
+	return page.routes.reduce((sum, route) => sum + route.length, 0);
+}
+
 function main() {
 	const [before, after, out] = process.argv.slice(2);
 	if (before === undefined || after === undefined || out === undefined)
@@ -67,6 +72,9 @@ function main() {
 					before: a.routes.find((old) => old.id === route.id),
 					after: route,
 				})),
+				routeLengthBefore: routeLength(a),
+				routeLengthAfter: routeLength(b),
+				routeLengthRatio: routeLength(a) === 0 ? 1 : routeLength(b) / routeLength(a),
 				longestRouteBefore: a.longestRoute,
 				longestRouteAfter: b.longestRoute,
 				longestRouteRatio:
@@ -81,8 +89,8 @@ function main() {
 		"Frame empty share measures area not covered by visible member cards. It excludes headers, labels, routes, and clearance.",
 		"Nested frames are measured separately. These measures identify candidates for visual inspection, rather than replace it.",
 		"",
-		"| Board | Engine | Drawings | Total area ratio | Worst area ratio | Aspect growth | Frame empty share before / after | Longest route before / after | Worst area reading |",
-		"| --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- |",
+		"| Board | Engine | Drawings | Total area ratio | Worst area ratio | Aspect growth | Frame empty share before / after | Total route ratio | Longest route before / after | Worst area reading |",
+		"| --- | --- | ---: | ---: | ---: | ---: | --- | ---: | --- | --- |",
 	];
 	const groups = new Map<string, typeof comparisons>();
 	for (const row of comparisons) {
@@ -104,10 +112,13 @@ function main() {
 				? 0
 				: frames.reduce((sum, frame) => sum + frame.emptyShare * frame.area, 0) / area;
 		};
+		const lengthRatio =
+			rows.reduce((sum, row) => sum + row.routeLengthAfter, 0) /
+			rows.reduce((sum, row) => sum + row.routeLengthBefore, 0);
 		const longest = (measured: typeof one) =>
 			Math.round(Math.max(...rows.map((row) => measured[row.key]!.longestRoute.length)));
 		report.push(
-			`| ${group} | ${rows.length} | ${ratio.toFixed(3)} | ${worst.areaRatio.toFixed(3)} | ${Math.max(...rows.map((row) => row.elongationRatio)).toFixed(3)} | ${occupancy(one).toFixed(3)} / ${occupancy(other).toFixed(3)} | ${longest(one)} / ${longest(other)} | ${drawingOf(worst.key).view} |`,
+			`| ${group} | ${rows.length} | ${ratio.toFixed(3)} | ${worst.areaRatio.toFixed(3)} | ${Math.max(...rows.map((row) => row.elongationRatio)).toFixed(3)} | ${occupancy(one).toFixed(3)} / ${occupancy(other).toFixed(3)} | ${(Number.isNaN(lengthRatio) ? 1 : lengthRatio).toFixed(3)} | ${longest(one)} / ${longest(other)} | ${drawingOf(worst.key).view} |`,
 		);
 	}
 	writeFileSync(join(out, "per-board.md"), report.join("\n") + "\n");

@@ -243,3 +243,47 @@ Its `summary.json` also keeps both seven-render pool runs for every measured boa
 The native instruction run starts at load 0.64.
 The alternating pool runs start at loads 1.55 to 2.38, and the growth runs start at 3.52 to 4.04.
 These runs follow the orphan-process repair and do not use the earlier load-40 wall times.
+
+## Third checkpoint: compose independent work and share coherent entries
+
+A named parent interface can contain independent member work beside nested frames or regions.
+Blocks now packs each disconnected member set as one unit.
+A direct member relationship keeps its two cards in the same unit, regardless of direction.
+The board and unnamed scopes keep their shared collaborator context.
+This rule removes empty bands from the Commands frame without a board name or card-count threshold.
+
+Entry work means destinations reached together by one caller.
+Blocks can share an incoming port for that source's coherent entry work.
+The branch labels must follow that boundary.
+Every relationship from that source into this parent must share its treatment, direction, and label ownership.
+Entry destinations can call each other.
+A destination called by other member work keeps its own port.
+Direct header entries, fixed side ports, inline Track entries, and target joins retain their existing identities.
+The core makes these choices from containment and relationships before it creates ports.
+It asks for no speculative solve.
+
+The first shared-entry probe exposes a real packed-header clearance error.
+A settled top port stands 16 points beside its header, but the trunk router requires 20 points.
+The overlapping clearance triggers the free-port fallback and crosses the header.
+Packed port placement and settlement now use the router's actual clearance.
+A reduced 19-card Archboard server fixture reproduces both old header crossings.
+The renderer regression keeps header crossings as hard failures.
+
+Broadly splitting loose cards grows Board persistence by 60% and Voice coordinator by 25%.
+That probe is dropped.
+The retained rule applies to a named parent interface, which gives independent member work an explicit boundary.
+The first shared-entry rule also grows the Rasterizing Blocks view by 38% and the Workhorse operations responsibilities view by 27%.
+Visual inspection finds a new empty left pocket in each picture.
+Keeping later destinations on their own ports reduces those increases to 0.5% and 3.4%.
+
+The first full-corpus pass finds another regression outside the named acceptance cases.
+Working with an agent in Blocks grows by 13.6%, and its longest route grows by 10%.
+The mixed-traffic entry probe is dropped after visual inspection.
+The complete-entry rule reduces that picture's area by 4.0% and its longest route by 2.0% in the native probe.
+
+A weighted-perimeter packing probe reduces several large pictures but creates ambiguous trunks and detached labels.
+It is dropped.
+The existing packing score and crossing cost remain unchanged.
+The report now includes total relationship length as well as the longest route.
+This separates a single route tradeoff from an increase across all of the picture's relationships.
+The owner's shared composition criteria guide inspection, and defects remain an independent gate.

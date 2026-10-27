@@ -3,12 +3,15 @@
 //! on its own. A block of blocks gathers the cards it holds outside every block
 //! into a cluster, so every block holds cards alone or blocks alone.
 
-use crate::graph::Node;
+use std::rc::Rc;
+
+use crate::graph::{Edge, Node};
+use crate::track::scene::Set;
 
 use super::headers::Header;
 use super::laid::tab_of;
 use super::lone::{band_of, card_as, frame_header, placing_group};
-use super::tree::{BlockId, BlockTree, Kind};
+use super::tree::{Block, BlockId, BlockTree, Kind};
 
 impl BlockTree {
     /// Fill a block drawn as blocks with nodes, gathering each group's members
@@ -63,37 +66,92 @@ impl BlockTree {
         )
     }
 
-    /// Gather the cards a block of blocks holds outside every block into one
-    /// cluster, in this block and every block inside it, so every block holds
-    /// cards alone or blocks alone. Drawn inline, a block of cards keeps its
-    /// packed regions among its cards.
-    pub(super) fn gather(&mut self, block: BlockId) {
+    /// Gather loose cards into compact units beside the blocks a parent holds.
+    /// A named parent interface keeps disconnected member work independent.
+    /// The board's loose collaborators retain their shared rank context.
+    pub(super) fn gather(&mut self, block: BlockId, edges: &[Rc<Edge>]) {
         let items = self.get(block).items.clone();
         let inner: Vec<&String> = items.iter().filter(|item| self.is_block(item)).collect();
         for item in &inner {
-            self.gather(self.blocks[item.as_str()]);
+            self.gather(self.blocks[item.as_str()], edges);
         }
         let loose: Vec<&String> = items.iter().filter(|item| !self.is_block(item)).collect();
         if self.nesting != super::tree::Nesting::Blocks || inner.is_empty() || loose.is_empty() {
             return;
         }
-        let at = items
-            .iter()
-            .position(|item| item == loose[0])
-            .expect("a loose card is an item");
-        let before = inner
-            .iter()
-            .filter(|item| items.iter().position(|one| one == **item) < Some(at))
-            .count();
-        let id = format!("cluster:{}", self.get(block).id);
-        self.get_mut(block).items = inner[..before].iter().map(|&item| item.clone()).collect();
+        let groups = card_groups(self.get(block), &loose, edges);
+        self.get_mut(block).items.clear();
+        for item in &items {
+            if self.is_block(item) {
+                self.get_mut(block).items.push(item.clone());
+            } else if let Some(cards) = groups.iter().find(|cards| cards.first() == Some(item)) {
+                self.cluster_cards(block, cards, groups.len() > 1);
+            }
+        }
+    }
+
+    /// Put one related card set into a private layout unit.
+    fn cluster_cards(&mut self, block: BlockId, cards: &[String], separate: bool) {
+        let suffix = if separate {
+            format!(":{}", cards[0])
+        } else {
+            String::new()
+        };
+        let id = format!("cluster:{}{suffix}", self.get(block).id);
         let cluster = self.block(id, Kind::Cluster, Some(block), None, None);
-        let rest: Vec<String> = inner[before..].iter().map(|&item| item.clone()).collect();
-        self.get_mut(block).items.extend(rest);
-        let cards: Vec<String> = loose.iter().map(|&card| card.clone()).collect();
-        for card in &cards {
+        for card in cards {
             self.holder.insert(card.clone(), cluster);
         }
-        self.get_mut(cluster).items.extend(cards);
+        self.get_mut(cluster).items = cards.to_vec();
     }
+}
+
+/// Named parent interfaces can compose unrelated member work independently.
+fn card_groups(block: &Block, cards: &[&String], edges: &[Rc<Edge>]) -> Vec<Vec<String>> {
+    let interface = block.kind == Kind::Frame
+        && edges
+            .iter()
+            .any(|edge| edge.source() == block.id || edge.target() == block.id);
+    if !interface {
+        return vec![cards.iter().map(|&card| card.clone()).collect()];
+    }
+    let mut remaining: Set<String> = cards.iter().map(|&card| card.clone()).collect();
+    cards
+        .iter()
+        .filter_map(|&card| {
+            if !remaining.swap_remove(card) {
+                return None;
+            }
+            let members = connected(card, &mut remaining, edges);
+            Some(
+                cards
+                    .iter()
+                    .filter(|card| members.contains(card.as_str()))
+                    .map(|&card| card.clone())
+                    .collect(),
+            )
+        })
+        .collect()
+}
+
+/// One undirected component of the remaining loose cards.
+fn connected(card: &str, remaining: &mut Set<String>, edges: &[Rc<Edge>]) -> Set<String> {
+    let mut members = Set::from_iter([card.to_owned()]);
+    let mut at = 0;
+    while at < members.len() {
+        for edge in edges {
+            let next = if edge.source() == members[at] {
+                edge.target()
+            } else if edge.target() == members[at] {
+                edge.source()
+            } else {
+                continue;
+            };
+            if remaining.swap_remove(next) {
+                members.insert(next.to_owned());
+            }
+        }
+        at += 1;
+    }
+    members
 }

@@ -240,6 +240,17 @@ impl BlockTree {
         }
     }
 
+    /// A safe source fork shares one entry; wall and target ports stay distinct.
+    fn entry_subject(&self, block: BlockId, edge: &Edge, side: Side, to: &str) -> String {
+        if matches!(side, Side::Top | Side::Bottom)
+            && self.fanouts.contains(&(block, edge.id.clone()))
+        {
+            format!("fork:{}", edge.source())
+        } else {
+            format!("{}{}", walled(side, to), edge.target())
+        }
+    }
+
     /// A relationship's lines in the blocks it enters, outermost first, and
     /// the end they enter from in the block that holds both ends.
     fn enter(
@@ -262,16 +273,8 @@ impl BlockTree {
             let kind = trunk_kind(edge);
             let along = format!("{}|{kind}", edge.source());
             let side = self.exit_of(block, "in", face, &along, None);
-            let port = self.port(
-                block,
-                &format!(
-                    "in|{}|{}{}|{kind}",
-                    side.name(),
-                    walled(side, &to),
-                    edge.target()
-                ),
-                side,
-            );
+            let target = self.entry_subject(block, edge, side, &to);
+            let port = self.port(block, &format!("in|{}|{target}|{kind}", side.name()), side);
             let (tail, head) = if side == Side::Bottom {
                 (to.clone(), port.clone())
             } else {
@@ -298,7 +301,7 @@ impl BlockTree {
     /// The block that holds a relationship's label: the innermost block around
     /// its target that can hold one, or with the label before a join its
     /// source's, else the block that holds both ends.
-    fn label_holder(&self, projection: &Projection, before: bool) -> BlockId {
+    pub(super) fn label_holder(&self, projection: &Projection, before: bool) -> BlockId {
         if self.nesting != Nesting::Blocks && self.peer_of(projection.edge.target()).is_some() {
             return projection.at;
         }

@@ -304,6 +304,8 @@ pub(crate) struct BlockTree {
     pub exits: Map<String, Side>,
     pub nesting: Nesting,
     feedback: Set<String>,
+    /// A shared-source fork whose labels follow its incoming boundary.
+    pub(super) fanouts: Set<(BlockId, String)>,
     /// Parents whose graph calls for a local composition.
     pub local_frames: Set<String>,
     /// The ports each block holds in an order on a face, keyed `block|face` (`orders.rs`).
@@ -405,12 +407,13 @@ impl BlockTree {
             exits: kept.exits,
             nesting,
             feedback: Set::default(),
+            fanouts: Set::default(),
             local_frames: super::composition::local_frames(graph),
             orders: kept.orders,
         };
         tree.root = tree.block(":root".to_owned(), Kind::Root, None, None, None);
         tree.fill(tree.root, graph.kids())?;
-        tree.gather(tree.root);
+        tree.gather(tree.root, graph.edges.as_deref().unwrap_or(&[]));
         tree.projections = graph
             .edges
             .iter()
@@ -422,6 +425,7 @@ impl BlockTree {
         let back = tree.back_edges();
         tree.feedback.clone_from(&back);
         let before = labels_before_joins(&tree.projections, &back);
+        tree.fanouts = super::fanouts::entry_fanouts(&tree, &before, &back);
         for index in 0..tree.projections.len() {
             let projection = tree.projections[index].clone();
             let before = before.contains(&projection.edge.id);

@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 158,
+	"version": 161,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-27T12:50:41.504Z",
+	"updatedAt": "2026-10-27T13:55:14.167Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -66704,7 +66704,7 @@
 						"name": "Layout engines",
 						"kind": "module",
 						"responsibility": "Settles the cards, frames, routes and labels of one graph plan",
-						"description": "crates/archboard-layout implements draw and lay_out_board. Track packs multi-member group regions before solving. A parent keeps local ranks when member work leaves it and returns through outside cards. A flat sink uses local ranks when it contains internal work, all outside calls come from one parent and its members, and no dependency leaves. A nested one-member wrapper gets local ranks only when work leaves it. Parents with one exclusive outside leaf collaborator also get local ranks when no relationship names their interface. Isolated work and mixed caller contexts keep shared ranks. Track composes a one-to-one loose collaborator beside its opaque caller when that caller has no other forward relationship. Its normal card and words share one measured row at the internal caller port. Each gutter reserves concurrent routes and their bend approaches, then reuses room at other heights. The existing packing score, crossing cost, and port settlement stay unchanged. Each architecture graph uses one Solver call. Local rank wraps and port settling stay inside it. Headers keep normal card sizing and modest name and icon emphasis. Parent relationships meet visible header cards. Routing identities keep original endpoints, relationship kind, standing, emphasis, and traffic. Header crossings and ambiguous trunks remain hard defects. Flowcharts retain their decision-order comparison.",
+						"description": "crates/archboard-layout implements draw and lay_out_board. Track packs multi-member regions before one Solver call. Containment and relationships choose the graph plan without a card-count threshold. Parents keep local ranks for member paths through outside work, coherent sink scopes, active one-member wrappers, and one exclusive outside collaborator. Other parents retain shared ranks. A loose one-to-one collaborator stands beside its opaque caller, which has no other forward relationship. Its normal card and label reserve one obstacle at the actual caller port. Concurrent gutter traffic reserves bend room and reuses space at other heights. Blocks composes disconnected member sets separately inside a named parent interface. Connected members, unnamed scopes, and the board's loose collaborators retain shared ranks. A source can share a Blocks entry when its labels follow that boundary. All of its traffic into that parent must share treatment, direction, and label ownership. Entry destinations can call each other, but a step called from other member work keeps its own port. Header entries, side-wall ports, inline Track entries, and target joins retain their identities. Packed top ports keep the router's full header clearance. Parent cards keep normal sizing and modest name and icon emphasis. Lines naming a parent meet its visible header card. Original endpoints and relationship treatment keep routing identities distinct. Header crossings and ambiguous trunks remain hard defects. Local wraps and settlement stay inside the solve. The packing score and crossing cost stay unchanged. Flowcharts retain their decision-order comparison.",
 						"parent": "ld6jjHND",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
