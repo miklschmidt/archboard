@@ -1181,7 +1181,7 @@
 					"expectedUse": "Complete a coherent settled proposal through the existing claimed writer. Preserve the final patch, baseline, ancestry, prior current, documents, reasons and timestamps in retained history. Keep current files free of completed history.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/proposals/lifecycle*.test.ts and adoption-safety.test.ts; foreign pins packages/board/tests/runtime/operations/model-edit/references.test.ts; CLI and HTTP tests/system/semantic-boards/model-proposals.test.ts; parent owns browser acceptance; guidance skills/archboard/references/canonical-models.md#complete-a-proposal"
+					"owner": "packages/board/tests/runtime/operations/proposals/lifecycle*.test.ts and adoption-safety.test.ts; foreign pins packages/board/tests/runtime/operations/model-edit/references.test.ts; CLI and HTTP tests/system/semantic-boards/model-proposals.test.ts; visible lifecycle tests/system/browser/canonical-model-lifecycle.test.ts; guidance skills/archboard/references/canonical-models.md#complete-a-proposal"
 				}
 			]
 		},

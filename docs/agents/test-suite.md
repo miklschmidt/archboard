@@ -573,4 +573,5 @@ It publishes to a disposable local remote and reopens exact completed architectu
 It measures changed authored bytes and lines separately from archive object growth.
 The existing canonical reference owner keeps foreign pins through adoption.
 The existing CLI and HTTP proposal owner covers completed state selection, structured refusal, and exact retry.
-The parent owns visible lifecycle acceptance at the existing browser seam.
+`tests/system/browser/canonical-model-lifecycle.test.ts` owns completed state discovery, decisions, lineage, comparisons, exact readings, and missing-history recovery.
+It uses real temporary Git repositories and the public HTTP writer for agent decisions.

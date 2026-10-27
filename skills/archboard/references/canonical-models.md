@@ -951,6 +951,14 @@ Use an exact checkpoint when retained logical identities are ambiguous.
 Exact checkpoints preserve their original reading after later adoption or shelving.
 Non-current readings keep the existing comparison defaults.
 
+The browser reading selector lists current, draft, historical, and shelved states.
+The comparison selector includes the same logical states and exact checkpoints.
+Current follows the explicit designation; a named historical state keeps its identity.
+Open Decision and history to inspect dates, predecessor, prior implementation, baseline, and document evidence.
+Use its state or baseline controls to open the referenced reading.
+If retained history is unavailable, restore it through [Publish and fetch history](#publish-and-fetch-history).
+Then use Refresh to reopen the selected reading.
+
 The receipt's `selectedState` identifies the completed lifecycle.
 Its checkpoint retains `lifecycle`, including the final proposal and the exact previous current reading.
 New drafts record `createdAt`.
