@@ -48,7 +48,7 @@ import {
 	PANE_LETTERS,
 	PANE_SECTIONS,
 	STAGE_ROOT,
-	tabLineBelowHeader,
+	sidebarTabLineOverhang,
 } from "./support/shell-dom.ts";
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
@@ -232,8 +232,6 @@ test(
 		// closed: the navigator's column, the chrome row at the top of every
 		// column, and a lone pane's picture beside its docked sidebar, whose width
 		// less the fit margin is the width a drawing's fit is measured against.
-		// The reference pane's height is the renderer's page shape, not the
-		// shell's (ADR 0043).
 		for (const cell of matrix.cells.filter(({ viewport }) => viewport === "desktop")) {
 			const { column, header, picture } = cell.geometry;
 			expect(column?.width, "navigator column width").toBe(NAVIGATOR_WIDTH);
@@ -242,8 +240,11 @@ test(
 				REFERENCE_PANE.width,
 			);
 		}
-		// Below the header's edge the docked sidebar is drawn over the open tab's line (TASK-476).
-		expect(await tabLineBelowHeader(browser), "the open tab's line below the header").toBe(0);
+		// The active sidebar underline stays inside its own tab row.
+		expect(
+			await sidebarTabLineOverhang(browser),
+			"the sidebar tab underline stays inside its row",
+		).toBe(0);
 		// With its sidebar put away, the picture has the whole stage.
 		await roleAction(browser, "button", "Sidebar");
 		const stage = await pollUntil(

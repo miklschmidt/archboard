@@ -12,6 +12,16 @@ type Projection = ReturnType<typeof projectModel>;
  * @returns The selection and immediate pointer, keyboard, and clearing actions.
  */
 function useModelSelection(projection: Projection, initial: readonly string[], readingKey = "") {
+	return useProjectedSelection(projection, useSubjectSelection(initial, readingKey));
+}
+
+/**
+ * Keep ordinary selection alive while another reading loads.
+ * @param initial The explicit starting identities.
+ * @param readingKey A captured beat identity, when selection belongs to playback.
+ * @returns Canonical selection and its immediate actions.
+ */
+function useSubjectSelection(initial: readonly string[], readingKey = "") {
 	const host = useContext(ModelExplanationContext);
 	const userChanged = host?.userChanged;
 	const baseline = useMemo(() => new Set(initial), [initial]);
@@ -22,17 +32,13 @@ function useModelSelection(projection: Projection, initial: readonly string[], r
 	const ids = choice.key === readingKey ? choice.ids : baseline;
 	const selectMany = useCallback(
 		(subjects: readonly string[], toggle = false): void => {
-			const authored = subjects.flatMap((id) => {
-				const connection = projection.connections.find(({ line }) => line.id === id);
-				return connection === undefined ? [id] : connection.joins.map((edge) => edge.id);
-			});
 			userChanged?.("selection");
 			setChoice((current) => ({
 				key: readingKey,
-				ids: selectedAfter(current.key === readingKey ? current.ids : baseline, authored, toggle),
+				ids: selectedAfter(current.key === readingKey ? current.ids : baseline, subjects, toggle),
 			}));
 		},
-		[projection.connections, readingKey, baseline, userChanged],
+		[readingKey, baseline, userChanged],
 	);
 	const select = useCallback(
 		(id: string | null, toggle = false): void => {
@@ -42,6 +48,33 @@ function useModelSelection(projection: Projection, initial: readonly string[], r
 	);
 	const clear = useCallback((): void => selectMany([]), [selectMany]);
 	return { ids, select, selectMany, clear };
+}
+
+/**
+ * Translate visible aggregate lines into the authored relationships they represent.
+ * @param projection The current drawing projection.
+ * @param selection The canonical selection owner.
+ * @returns The same selected identities with drawing-aware input actions.
+ */
+function useProjectedSelection(projection: Projection, selection: SubjectSelection) {
+	const { selectMany: choose } = selection;
+	const selectMany = useCallback(
+		(subjects: readonly string[], toggle = false): void => {
+			choose(
+				subjects.flatMap((id) => {
+					const connection = projection.connections.find(({ line }) => line.id === id);
+					return connection === undefined ? [id] : connection.joins.map((edge) => edge.id);
+				}),
+				toggle,
+			);
+		},
+		[projection.connections, choose],
+	);
+	const select = useCallback(
+		(id: string | null, toggle = false): void => selectMany(id === null ? [] : [id], toggle),
+		[selectMany],
+	);
+	return { ...selection, select, selectMany };
 }
 
 /**
@@ -67,4 +100,5 @@ function selectedAfter(
 }
 
 type ModelSelection = ReturnType<typeof useModelSelection>;
-export { useModelSelection, type ModelSelection };
+type SubjectSelection = ReturnType<typeof useSubjectSelection>;
+export { useModelSelection, useSubjectSelection, useProjectedSelection, type ModelSelection };

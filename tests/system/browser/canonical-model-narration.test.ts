@@ -1,3 +1,4 @@
+import { openModelSidebar } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -44,13 +45,13 @@ test("canonical narration follows the captured walkthrough in its own pane", asy
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelectorAll('[data-slot="model-walkthrough-selector"]').length === 2`,
+				`document.querySelectorAll('[data-slot="architecture-model-stage"]').length === 2`,
 			),
 		Boolean,
 		"both canonical panes",
 		WAIT,
 	);
-	await browser.run(["click", `${PANE} [data-slot="model-walkthrough-selector"]`]);
+	await openModelSidebar(browser, "board", PANE);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -60,7 +61,7 @@ test("canonical narration follows the captured walkthrough in its own pane", asy
 		"the authored walkthrough choice",
 		WAIT,
 	);
-	await browser.run(["click", '[data-walkthrough-id="Shop#Tour"]']);
+	await browser.run(["click", `${PANE} [data-walkthrough-id="Shop#Tour"]`]);
 	const atBeat = (index: number) =>
 		pollUntil(
 			() =>

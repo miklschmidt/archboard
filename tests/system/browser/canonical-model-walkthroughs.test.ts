@@ -1,3 +1,4 @@
+import { openModelSidebar } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -146,9 +147,7 @@ test("walkthrough beats change readings while one revision stays captured until 
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-walkthrough-selector"]') !== null`,
-			),
+			browser.eval<boolean>(`document.querySelector('[data-slot="model-walkthroughs"]') !== null`),
 		Boolean,
 		"available walkthroughs",
 		WAIT,
@@ -162,8 +161,9 @@ test("walkthrough beats change readings while one revision stays captured until 
 		"the original handler selection",
 		WAIT,
 	);
+	await openModelSidebar(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Handler"]']);
-	await browser.run(["click", '[data-slot="model-walkthrough-selector"]']);
+	await openModelSidebar(browser);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -177,7 +177,9 @@ test("walkthrough beats change readings while one revision stays captured until 
 	await beat(browser, 0, "architecture");
 	expect(await selected(browser)).toContain("Shop#Gateway");
 	expect(
-		await browser.eval<number>(`document.querySelectorAll('[data-walkthrough-id]').length`),
+		await browser.eval<number>(
+			`[...document.querySelectorAll('[data-walkthrough-id]')].filter(node => node.checkVisibility()).length`,
+		),
 	).toBe(0);
 	const revision = await browser.eval<string>(
 		`document.querySelector('[data-slot="model-walkthrough"]').getAttribute('data-revision')`,

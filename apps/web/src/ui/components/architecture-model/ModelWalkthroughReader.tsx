@@ -1,5 +1,7 @@
+import { ModelWalkthroughContext } from "#ui/state/architecture-model/presentation.ts";
 import {
 	Activity,
+	useMemo,
 	useCallback,
 	useState,
 	type ComponentProps,
@@ -7,7 +9,7 @@ import {
 	type ReactNode,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Button, DropdownMenu } from "@archboard/ui-kit/components";
+import { Button } from "@archboard/ui-kit/components";
 import type { Model } from "@archboard/board/content";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import { modelWalkthroughQuery } from "#ui/clients/architecture-model/walkthroughs.ts";
@@ -61,29 +63,10 @@ function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
 		[source, checkpoint, state, preview],
 	);
 	const leave = useCallback((): void => setSession({ source, request: null }), [source]);
+	const active = request !== null;
+	const context = useMemo(() => ({ select, active }), [select, active]);
 	return (
-		<>
-			{request === null && props.model.walkthroughs.length > 0 && (
-				<div className="border-border shrink-0 border-b px-4 py-1 in-data-presenting:hidden">
-					<DropdownMenu>
-						<DropdownMenu.Trigger
-							data-slot="model-walkthrough-selector"
-							className="text-control hover:bg-muted rounded-control px-3 py-2"
-						>
-							Walkthroughs
-						</DropdownMenu.Trigger>
-						<DropdownMenu.Content align="start">
-							{props.model.walkthroughs.map((walkthrough) => (
-								<WalkthroughChoice
-									key={walkthrough.id}
-									walkthrough={walkthrough}
-									onSelect={select}
-								/>
-							))}
-						</DropdownMenu.Content>
-					</DropdownMenu>
-				</div>
-			)}
+		<ModelWalkthroughContext value={context}>
 			<Activity mode={request === null ? "visible" : "hidden"}>{props.children}</Activity>
 			{request !== null && (
 				<CapturedWalkthrough
@@ -94,27 +77,7 @@ function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
 					onRestart={select}
 				/>
 			)}
-		</>
-	);
-}
-
-/**
- * Open one authored narrative by its stable identity.
- * @param props The narrative and the capture action.
- * @param props.walkthrough The authored choice.
- * @param props.onSelect Starts its presentation.
- * @returns A keyboard-accessible narrative choice.
- */
-function WalkthroughChoice(props: {
-	walkthrough: Model["walkthroughs"][number];
-	onSelect: (id: string) => void;
-}): JSX.Element {
-	const { walkthrough, onSelect } = props;
-	const select = useCallback(() => onSelect(walkthrough.id), [walkthrough.id, onSelect]);
-	return (
-		<DropdownMenu.Item data-walkthrough-id={walkthrough.id} onClick={select}>
-			{walkthrough.name}
-		</DropdownMenu.Item>
+		</ModelWalkthroughContext>
 	);
 }
 

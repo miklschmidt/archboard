@@ -83,14 +83,11 @@ test("a live proposal update preserves its open walkthrough until explicit resta
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-walkthrough-selector"]') !== null`,
-			),
+			browser.eval<boolean>(`document.querySelector('[data-slot="model-walkthroughs"]') !== null`),
 		Boolean,
 		"the proposed narrative",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="model-walkthrough-selector"]']);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

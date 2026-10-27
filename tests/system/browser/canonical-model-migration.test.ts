@@ -1,3 +1,4 @@
+import { startModelWalkthrough } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -149,11 +150,7 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 		"the current model drawing",
 		WAIT,
 	);
-	await pick(
-		browser,
-		'[data-slot="model-walkthrough-selector"]',
-		'[data-walkthrough-id="Shop/System#Tour"]',
-	);
+	await startModelWalkthrough(browser, "Shop/System#Tour");
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

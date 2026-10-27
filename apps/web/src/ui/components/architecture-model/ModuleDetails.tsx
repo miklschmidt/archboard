@@ -8,6 +8,7 @@ interface ModuleDetailsProps {
 	module: Module;
 	model: Model;
 	children?: ReactNode;
+	standing?: ReactNode;
 }
 
 /**
@@ -24,6 +25,7 @@ function ModuleDetails(props: ModuleDetailsProps): JSX.Element {
 			className="max-w-prose space-y-8"
 		>
 			<ModuleIntroduction {...props} />
+			{props.standing}
 			<ModuleEvidence {...props} />
 			{props.children}
 			<Connections {...props} />

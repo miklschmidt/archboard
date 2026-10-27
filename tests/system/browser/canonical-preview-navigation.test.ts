@@ -1,3 +1,4 @@
+import { startModelWalkthrough } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -72,11 +73,7 @@ test("converted preview bookmarks and walkthroughs preserve exact original view 
 		"the exact bookmark after reload",
 		WAIT,
 	);
-	await pick(
-		browser,
-		'[data-slot="model-walkthrough-selector"]',
-		'[data-walkthrough-id="Shop/System#Tour"]',
-	);
+	await startModelWalkthrough(browser, "Shop/System#Tour");
 	await beat(browser, 0, "architecture");
 	const entry = await drawn(browser, '[data-slot="model-walkthrough"]');
 	expect(entry).toContain("Shop/System#Save");
@@ -141,11 +138,7 @@ test("a former address reopens exact retained original coverage and its walkthro
 	expect(
 		await browser.eval<string>(`new URLSearchParams(location.search).get('checkpointA')`),
 	).toBe(fixture.checkpoint);
-	await pick(
-		browser,
-		'[data-slot="model-walkthrough-selector"]',
-		'[data-walkthrough-id="Shop/System#OldTour"]',
-	);
+	await startModelWalkthrough(browser, "Shop/System#OldTour");
 	await beat(browser, 0, "architecture");
 	expect(await drawn(browser, '[data-slot="model-walkthrough"]')).toContain("Shop/System#Api");
 	expect(await drawn(browser, '[data-slot="model-walkthrough"]')).not.toContain("Shop/System#Db");

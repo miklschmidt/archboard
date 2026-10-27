@@ -1,6 +1,6 @@
 import { ModelHistory } from "#ui/components/architecture-model/ModelHistory.tsx";
 import { modelSubjects, subjectName } from "#ui/rules/architecture-model/flow-reading.ts";
-import { useCallback, type ComponentProps, type JSX } from "react";
+import { useCallback, type ComponentProps, type JSX, type ReactNode } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import type { Model, projectModel } from "@archboard/board/content";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
@@ -13,6 +13,7 @@ import { ConnectionDetails } from "#ui/components/architecture-model/ModelConnec
 import { ModelInterface } from "#ui/components/architecture-model/ModelInterface.tsx";
 
 interface ModelSelectionDetailsProps {
+	evidence?: ReactNode;
 	vault: string;
 	paneId: string;
 	onCodeTargetNotice: ComponentProps<typeof ModuleNavigation>["onNotice"];
@@ -127,8 +128,8 @@ function UnselectedDetails(props: ModelSelectionDetailsProps): JSX.Element {
 		);
 	return (
 		<>
-			<ModelSubjectStanding model={props.model} subject={props.scope} />
 			<ScopeIntroduction model={scopeModel(props)} scope={props.scope} />
+			<ModelSubjectStanding model={props.model} subject={props.scope} />
 			<ModelInterface
 				model={props.model}
 				projection={props.projection}
@@ -174,44 +175,12 @@ function SelectedModule(
 	const source =
 		removed && props.projection.reference !== undefined ? props.projection.reference : props.model;
 	return (
-		<>
-			<ModelSubjectStanding model={props.model} subject={props.module.id} />
-			<SelectedModuleContent {...props} model={source} removed={removed} />
-		</>
-	);
-}
-
-/**
- * A selected open scope keeps its complete interface beside its authored details.
- * @param props The selected module and reading actions.
- * @returns Module details and, for the open scope, its complete interface.
- */
-function SelectedModuleContent(
-	props: ModelSelectionDetailsProps & { module: Model["modules"][number]; removed: boolean },
-): JSX.Element {
-	if (props.removed) return <SelectedModuleDetails {...props} />;
-	if (props.module.id === props.scope)
-		return (
-			<>
-				<ScopeIntroduction model={props.model} scope={props.scope} />
-				<ModelInterface
-					model={props.model}
-					projection={props.projection}
-					onSelect={props.selection.select}
-				/>
-				<details className="text-body mt-6">
-					<summary>Module details</summary>
-					<div className="mt-4">
-						<SelectedModuleDetails {...props} />
-					</div>
-				</details>
-			</>
-		);
-	return (
-		<>
-			<OpenModule id={props.module.id} onOpen={props.onOpen} />
-			<SelectedModuleDetails {...props} />
-		</>
+		<SelectedModuleDetails
+			{...props}
+			model={source}
+			comparisonModel={props.model}
+			removed={removed}
+		/>
 	);
 }
 
@@ -221,10 +190,33 @@ function SelectedModuleContent(
  * @returns Authored details with the shared navigation controls.
  */
 function SelectedModuleDetails(
-	props: ModelSelectionDetailsProps & { module: Model["modules"][number] },
+	props: ModelSelectionDetailsProps & {
+		module: Model["modules"][number];
+		comparisonModel: Model;
+		removed: boolean;
+	},
 ): JSX.Element {
 	return (
-		<ModuleDetails module={props.module} model={props.model}>
+		<ModuleDetails
+			module={props.module}
+			model={props.model}
+			standing={
+				<>
+					{props.evidence}
+					<ModelSubjectStanding model={props.comparisonModel} subject={props.module.id} />
+				</>
+			}
+		>
+			{!props.removed && props.module.id !== props.scope && (
+				<OpenModule id={props.module.id} onOpen={props.onOpen} />
+			)}
+			{props.module.id === props.scope && (
+				<ModelInterface
+					model={props.model}
+					projection={props.projection}
+					onSelect={props.selection.select}
+				/>
+			)}
 			<ModuleNavigation
 				paneId={props.paneId}
 				vault={props.vault}
@@ -340,4 +332,4 @@ function OpenModule(props: { id: string; onOpen: (scope: string | null) => void 
 	);
 }
 
-export { ModelSelectionDetails };
+export { ModelSelectionDetails, UnselectedDetails as ModelScopeDetails };

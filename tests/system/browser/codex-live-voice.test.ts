@@ -18,8 +18,12 @@ import {
 	productionFixtureRecords,
 	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
-import { MODEL_STAGE, seedCanonicalModel, VOICE_PIPELINE } from "./support/canonical-page.ts";
-import { pickModelChoice } from "./support/model-choice.ts";
+import {
+	startModelWalkthrough,
+	MODEL_STAGE,
+	seedCanonicalModel,
+	VOICE_PIPELINE,
+} from "./support/canonical-page.ts";
 import { drawnId } from "./support/drilling.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import {
@@ -374,11 +378,7 @@ test(
 			pollUntil(speeches, (spoken) => spoken.length === count, what, {
 				timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS,
 			});
-		await pickModelChoice(
-			browser,
-			'[data-slot="model-walkthrough-selector"]',
-			`[data-walkthrough-id="${model.walkthroughs[0]!.id}"]`,
-		);
+		await startModelWalkthrough(browser, model.walkthroughs[0]!.id);
 		await pollUntil(
 			() => presentedStep(browser),
 			(step) => step.index === "0" && !step.moving,

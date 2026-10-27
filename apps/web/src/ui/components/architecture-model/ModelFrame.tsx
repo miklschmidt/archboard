@@ -1,3 +1,6 @@
+import { useContext } from "react";
+import { ModelPaneContext } from "#ui/state/architecture-model/presentation.ts";
+import { SidebarToggle } from "#ui/components/semantic-board-canvas/SidebarToggle.tsx";
 import type { JSX, ReactNode } from "react";
 import { ModelMigrationRequired } from "#ui/components/architecture-model/ModelMigrationRequired.tsx";
 import type { ArchitectureModelRead } from "@archboard/board/model";
@@ -63,30 +66,26 @@ interface ModelHeaderProps {
  */
 function ModelHeader(props: ModelHeaderProps): JSX.Element {
 	const { controls } = usePaneChrome();
+	const pane = useContext(ModelPaneContext);
 	return (
 		<PaneHeaderRow>
 			<PaneHeaderStart>
-				<h2 className="text-control truncate font-semibold">{props.name}</h2>
+				<h2 className="text-control truncate font-[650]">{props.name}</h2>
 				{props.children}
 			</PaneHeaderStart>
 			<PaneHeaderEnd>
-				<span
-					data-slot="model-transfer-unavailable"
-					className="text-caption text-muted-foreground"
-					title="Moving architecture ownership to another repository is unavailable. Export a portable model to share an exact reading."
-				>
-					Ownership transfer unavailable
-				</span>
 				<Button
 					variant="ghost"
 					size="sm"
 					data-slot="model-refresh"
 					onClick={props.refresh}
 					disabled={props.refreshing}
+					aria-busy={props.refreshing}
 				>
 					<RiRefreshLine aria-hidden="true" className="size-4" />
-					{props.refreshing ? "Reading…" : "Refresh"}
+					Refresh
 				</Button>
+				{pane !== null && <SidebarToggle sidebar={pane.sidebar} />}
 				{controls}
 			</PaneHeaderEnd>
 		</PaneHeaderRow>

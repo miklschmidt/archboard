@@ -22,7 +22,7 @@ function ModelBreadcrumbs(props: {
 		<nav
 			aria-label="Module path"
 			data-slot="model-breadcrumbs"
-			className="border-border flex shrink-0 items-center gap-1 border-b px-4 py-2 in-data-presenting:hidden"
+			className="border-border flex shrink-0 flex-wrap items-center gap-1 border-b px-2 py-2"
 		>
 			{items.map((item) => (
 				<Crumb

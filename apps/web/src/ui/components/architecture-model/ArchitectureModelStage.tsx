@@ -3,6 +3,7 @@ import {
 	ModelError,
 	type ModelErrorProps,
 } from "#ui/components/architecture-model/ModelFrame.tsx";
+import { ModelPane } from "#ui/components/architecture-model/ModelPane.tsx";
 import { ModelPreviewReader } from "#ui/components/architecture-model/ModelPreviewReader.tsx";
 import { ModelBookmarks } from "#ui/components/architecture-model/ModelBookmarks.tsx";
 import { ModelLegacyAddresses } from "#ui/components/architecture-model/ModelLegacyAddresses.tsx";
@@ -86,9 +87,12 @@ function ArchitectureModelStage(props: ModelStageProps): JSX.Element {
  * @returns Its canonical reader or the existing empty-board surface.
  */
 function LocatedModelStage(props: ModelStageProps): JSX.Element {
-	const { preview } = useModelLocation(props.paneId);
-	if (preview !== null) return <ModelPreviewReader key={props.vault} {...props} />;
-	return <CanonicalModelReader key={props.vault} {...props} />;
+	const { preview, subject } = useModelLocation(props.paneId);
+	return (
+		<ModelPane key={JSON.stringify([props.vault, subject])} subject={subject}>
+			{preview !== null ? <ModelPreviewReader {...props} /> : <CanonicalModelReader {...props} />}
+		</ModelPane>
+	);
 }
 
 /**
@@ -378,8 +382,6 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			{problem !== null && <ModelError {...problem} compact={stale} />}
 			{model !== undefined && (
 				<ModelBookmarkReading model={model}>
-					<ModelStateDetails model={model} paneId={props.paneId} states={props.states} />
-					<CheckpointEvidence model={model} />
 					<ModelWalkthroughReader
 						key={readingSessionKey(model, props.subject)}
 						vault={props.vault}
@@ -391,6 +393,12 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 						overlay={props.overlay}
 					>
 						<ModelReading
+							overview={
+								<>
+									<ModelStateDetails model={model} paneId={props.paneId} states={props.states} />
+									<CheckpointEvidence model={model} />
+								</>
+							}
 							overlay={props.overlay}
 							subject={props.subject}
 							vault={props.vault}

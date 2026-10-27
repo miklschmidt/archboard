@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T19:41:00Z'
+updated_date: '2026-10-27T20:04:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -138,4 +138,6 @@ Parent shell fixture port reaches all 12 render-matrix cells through canonical s
 Backend activity gap: signed 21bd25646 connects the existing agent_activity snapshot tracker to canonical watchArchitectureModel events for registered, explicitly addressed, and connected vaults. Each model entry preserves all concurrent subject claims and attributes its latest doing line only from a durable operation receipt. Temporary MODEL_BUSY reads keep live claims. Real signed temporary Git repositories and existing server/socket interfaces cover startup/reconnect, off-screen vault identity, cross-process durable writes, release, take-back, expiry, failed signatures, stale writes, and idle cleanup. The focused owner passes 2 cases and 25 assertions; source types and touched source/test lint pass. The minimal public contract and handoff are external in task-549.24-activity-contract.md and task-549.24-activity-backend.md. Existing Live panes draft SGrr8NFb and server drafts cover this publication meaning; the parent owns their source mapping, update, migration, and adoption. No frontend changes, source-vault writes, status changes, assignee changes, or acceptance changes. Integration 9a95481c2 is merged with the parent task notes preserved.
 
 Parent activity acceptance: Working now shows every concurrent subject claim and the durable writer doing line. Releasing one claim preserves the other in the existing proposal browser owner. Browser and focused navigator owners pass. Full types, source/test lint and interface limits pass. The existing socket message types now live in a shared package entry, so the browser imports no Node runtime surface. Public export counts remain unchanged. Package policy also found and fixed private projection imports through public barrels. All 67 package API cases pass. TASK-549.24 remains In Progress with migration, sidebar restoration and final acceptance open.
+
+Parent sidebar restoration: canonical browsing now uses the approved single 280 px sidebar with Architecture and Selection tabs. Existing dock, float, pin, hide and selection behavior remains. Ordinary selection survives pending reads; captured playback owns its separate selection. Module meaning precedes code and comparison evidence. Direct narrative buttons replace a popup that remained visible after playback began. Existing selection, navigation, comparison and walkthrough browser owners pass. The full 12-cell shell layout owner passes, including geometry, typography, focus, target sizes, pane layout and activity. Full types and focused source/test lint pass. Root inspected the generated desktop screenshot. Remaining consumer ports, source-vault migration and final acceptance stay open.
 <!-- SECTION:NOTES:END -->

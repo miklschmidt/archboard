@@ -9,8 +9,8 @@ import type { ProductionFixture } from "../server-state/support/codex-production
 import { askToSpeak, lineSaid, voiceStarts } from "./support/codex-live-voice.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import { stepBrowserMotion } from "./support/motion-clock.ts";
-import { pickModelChoice } from "./support/model-choice.ts";
 import {
+	startModelWalkthrough,
 	SMALL_PIPELINE,
 	modelAddress,
 	seedCanonicalModel,
@@ -158,11 +158,7 @@ test("a presented walkthrough carries the voice at the foot of its box, in the p
 	);
 
 	// Presenting while the voice box floats over the picture: the orb flies into the foot of the box.
-	await pickModelChoice(
-		browser,
-		'[data-slot="model-walkthrough-selector"]',
-		`[data-walkthrough-id="${model.walkthroughs[0]!.id}"]`,
-	);
+	await startModelWalkthrough(browser, model.walkthroughs[0]!.id);
 	const inFoot = await pollUntil(
 		() => presentedNow(browser),
 		(now) => now.place === "foot" && now.orbInBox,

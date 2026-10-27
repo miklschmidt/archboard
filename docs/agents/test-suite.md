@@ -766,3 +766,10 @@ Their cache identity includes the renderer build and the exact prepared scene.
 It retains the SMIL comparison and the animation clock continuity assertion after a public module edit.
 Ordinary readers keep their drawing surface while local layout runs and show progress.
 Captured walkthroughs retain their existing picture-readiness contract.
+
+The canonical sidebar reuses the existing shell layout owner.
+`shell-layout.test.ts` retains the 12-cell render matrix, shared geometry, typography, focus, control sizes, pane layout, and activity assertions.
+Its underline probe now inspects the actual sidebar tab row.
+Its control probe excludes hidden disclosure content through browser visibility.
+Canonical selection, navigation, comparison, and walkthrough owners cover the sidebar transition.
+Browser helpers open the appropriate tab before acting on its visible content.

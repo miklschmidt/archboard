@@ -1,3 +1,4 @@
+import { openModelSidebar } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -26,6 +27,7 @@ async function scopeOf(browser: AgentBrowserSession): Promise<string | null> {
 }
 
 async function openModule(browser: AgentBrowserSession, id: string): Promise<void> {
+	await openModelSidebar(browser);
 	await browser.run(["click", `[data-slot="module-list"] [data-module-id="${id}"]`]);
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('[data-slot="module-open"]') !== null`),

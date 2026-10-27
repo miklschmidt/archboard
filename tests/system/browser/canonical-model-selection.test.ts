@@ -1,3 +1,4 @@
+import { openModelSidebar } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -25,6 +26,7 @@ async function selectedCount(browser: AgentBrowserSession): Promise<number> {
 }
 
 async function toggleModule(browser: AgentBrowserSession, id: string): Promise<void> {
+	await openModelSidebar(browser);
 	await browser.eval(
 		`document.querySelector('[data-slot="module-list"] [data-module-id="${id}"]').dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true }))`,
 	);
@@ -57,6 +59,7 @@ test("module selection supports modifiers and keyboard without layout or history
 	await browser.eval(
 		`document.querySelector('[data-slot="model-diagram"] svg').setAttribute('data-test-scene', 'kept')`,
 	);
+	await openModelSidebar(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await toggleModule(browser, "Shop#Worker");
 	await pollUntil(
@@ -82,6 +85,7 @@ test("module selection supports modifiers and keyboard without layout or history
 		"the toggled selection",
 		WAIT,
 	);
+	await openModelSidebar(browser);
 	await browser.run(["focus", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await browser.run(["press", `${editingModifier}+Enter`]);
 	await pollUntil(
@@ -90,6 +94,7 @@ test("module selection supports modifiers and keyboard without layout or history
 		"the keyboard selection",
 		WAIT,
 	);
+	await openModelSidebar(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Worker"]']);
 	await pollUntil(
 		() => selectedCount(browser),

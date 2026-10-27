@@ -30,7 +30,7 @@ function ModelSelectionBar(props: {
 	return (
 		<div
 			data-slot="model-selection-bar"
-			className="border-border flex items-center gap-4 border-b px-6 py-2 in-data-presenting:hidden"
+			className="border-border flex flex-wrap items-center gap-2 border-b px-4 py-2"
 		>
 			<output
 				data-slot="model-selection-count"

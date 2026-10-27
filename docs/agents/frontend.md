@@ -135,13 +135,13 @@ not add imports or a second state path before that work.
 
   Installed bookmarks come from `migration`, while `migrationPreview` identifies retained original coverage.
   Both readers show explicit bookmark diagnostics before drawing unavailable intent.
-  Existing legacy panes subscribe to the architecture feed before cutover.
-  Only `LEGACY_AUTHORITY` permits their legacy diagram.
+  `LEGACY_AUTHORITY` directs ordinary panes to explicit migration.
+  Retained original readings use the preview reader.
   Interrupted installation exposes recovery, and durable completion refreshes the shared queries.
   Existing pane keys resolve through captured aliases into paired original state and checkpoint addresses.
   The repository navigator reads the same authority and opens current canonical architecture through the router.
   Its model action targets the active pane, including a workspace that keeps only pane B.
-  Model headers explain that ownership transfer is unavailable.
+  The sidebar explains unavailable ownership transfer under Model ownership.
 
   Scope, focus, or grammar changes leave the bookmark and retain the displayed reading fields.
   Filters narrow the bookmark without changing its original membership.
@@ -335,3 +335,11 @@ server, because the server reads the file only once, at start.
 `tests/system/browser/measured-text.test.ts` compares every color that
 `theme.css` sets with the color the built page has, in both themes. So no other
 stylesheet may set a theme token.
+
+Canonical panes share the existing 280-pixel sidebar and its dock, float, and hide behavior.
+The Architecture tab holds scope navigation, reading evidence, narratives, modules, and connections.
+The Selection tab starts with the selected module meaning, then its evidence and relationships.
+ModelPane owns ordinary selection across asynchronous reads.
+The drawing projection translates aggregate lines into canonical relationship identities without owning another selection.
+Captured walkthroughs keep their own selection and suspend the ordinary reader.
+Narrative buttons start playback directly and create no popup outside the suspended reader.

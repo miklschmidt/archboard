@@ -1,3 +1,4 @@
+import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
 import type { z } from "zod";
 import type {
 	ArchitectureModelRead,
@@ -198,3 +199,37 @@ export {
 	SMALL_PIPELINE,
 	VOICE_PIPELINE,
 };
+
+/** Open an existing sidebar tab through its visible controls. */
+async function openModelSidebar(
+	browser: AgentBrowserSession,
+	tab = "board",
+	scope = "",
+): Promise<void> {
+	const toggle = `${scope} [data-slot="semantic-sidebar-toggle"]`;
+	const expanded = await browser.eval<boolean>(
+		`document.querySelector(${JSON.stringify(toggle)})?.getAttribute('aria-expanded') === 'true'`,
+	);
+	if (!expanded) await browser.run(["click", toggle]);
+	const choice = `${scope} [data-slot="semantic-sidebar-tab"][data-tab="${tab}"]`;
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector(${JSON.stringify(choice)}) !== null`),
+		Boolean,
+		"the requested model sidebar tab",
+	);
+	await browser.run(["click", choice]);
+}
+
+export { openModelSidebar };
+
+/** Start an authored narrative through the ordinary sidebar. */
+async function startModelWalkthrough(
+	browser: AgentBrowserSession,
+	id: string,
+	scope = "",
+): Promise<void> {
+	await openModelSidebar(browser, "board", scope);
+	await browser.run(["click", `${scope} [data-walkthrough-id=${JSON.stringify(id)}]`]);
+}
+
+export { startModelWalkthrough };

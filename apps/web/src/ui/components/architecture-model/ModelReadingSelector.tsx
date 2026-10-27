@@ -43,6 +43,7 @@ function ModelReadingSelector(props: ModelReadingSelectorProps): JSX.Element {
 	return (
 		<Select value={readingChoice(checkpoint, state)} onValueChange={choose} onOpenChange={opened}>
 			<Select.Trigger
+				className="font-medium"
 				size="sm"
 				data-slot="model-reading-selector"
 				aria-label="Architecture reading"
