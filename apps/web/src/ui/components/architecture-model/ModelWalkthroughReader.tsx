@@ -33,18 +33,34 @@ interface ReaderProps extends Pick<
 function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
 	const { checkpoint, state: requestedState, preview } = useModelLocation(props.paneId);
 	const state = walkthroughState(props.model, requestedState);
-	const [request, setRequest] = useState<PlaybackRequest | null>(() => {
+	const source = JSON.stringify([checkpoint, state, preview]);
+	const [session, setSession] = useState(() => {
 		const asked = props.driven;
-		if (asked === null || asked === undefined) return null;
-		return { id: crypto.randomUUID(), walkthrough: asked.walkthrough, checkpoint, state, preview };
+		const request: PlaybackRequest | null =
+			asked == null
+				? null
+				: {
+						id: crypto.randomUUID(),
+						walkthrough: asked.walkthrough,
+						checkpoint,
+						state,
+						preview,
+					};
+		return { source, request };
 	});
+	// A new source closes only playback. The ordinary reader retains its selection.
+	if (session.source !== source) setSession({ source, request: null });
+	const { request } = session;
 	const select = useCallback(
 		(walkthrough: string): void => {
-			setRequest({ id: crypto.randomUUID(), walkthrough, checkpoint, state, preview });
+			setSession({
+				source,
+				request: { id: crypto.randomUUID(), walkthrough, checkpoint, state, preview },
+			});
 		},
-		[checkpoint, state, preview],
+		[source, checkpoint, state, preview],
 	);
-	const leave = useCallback((): void => setRequest(null), []);
+	const leave = useCallback((): void => setSession({ source, request: null }), [source]);
 	return (
 		<>
 			{request === null && props.model.walkthroughs.length > 0 && (

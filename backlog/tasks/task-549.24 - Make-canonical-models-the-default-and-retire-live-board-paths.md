@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T18:21:00Z'
+updated_date: '2026-10-27T18:25:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -120,4 +120,6 @@ Parent navigator retirement: replaced the unused board/folder/variant hierarchy 
 Parent renderer consumer port: measured-text keeps all browser/Bun font and theme assertions on canonical inputs. Browser-drawn-pictures exposed missing persistent cache reuse before the fix and now passes local layout, icons, reload reuse, theme, and public edit invalidation. Canonical scenes use the existing IndexedDB store with exact render input and build identity. Full types and touched lint pass. The shared structural edit fixture moved unchanged to canonical-page. Its broader structure owner exposes a separate existing selection loss when changing from a checkpoint to current; parent is fixing that next and does not claim complete browser acceptance.
 
 Repository-guidance slice: signed b60cd5eb4 replaces obsolete live board ownership, levels, storage, and PR instructions with canonical modules, flows, compact proposals, subject claims, exact checkpoints, signing, retention, and explicit migration. Signed merge 96ae4242d includes local integration a70a38c39. Existing deterministic validation passes: 8 scenarios, 8 fixtures, 14 coverage parts; skill links pass 3 cases/5 assertions; schema distribution passes 1 case/8 assertions; focused formatting and diff checks pass. The only consumer skill correction removes a stale ordinary-legacy-read instruction. Documentation describes already-implemented proposals, so it creates no new architectural meaning and needs no second proposal. ADR supersession pointers keep ADR0062 proposed. The parent retains all mappings, draft dispositions, migration, adoption, frontend assets, integration validation, and acceptance. Task remains In Progress with the parent assignee and all acceptance unchanged. External handoff: /home/msc/.local/state/archboard-implementation/task-549/task-549.24-guidance.md.
+
+Parent selection repair: the existing structural browser owner reproduced a selected module disappearing when switching from a retained checkpoint to current. Reader identity now stays with its model and explicit subject. Only the captured walkthrough session resets when its source selectors change. Ordinary selected identities survive the checkpoint/current transition. Structural and walkthrough browser owners, full source/test types, and focused source lint pass. The playback reset uses its existing state owner and adds no content cache or navigation path.
 <!-- SECTION:NOTES:END -->

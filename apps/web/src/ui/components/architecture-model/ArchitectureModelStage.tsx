@@ -407,7 +407,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 }
 
 /**
- * Changing architecture selection closes its presentation while live updates preserve it.
+ * Preserve selected module identities across states of the same model.
  * @param model The selected architecture.
  * @param subject The explicit navigation destination.
  * @returns The identity of this reader session.
@@ -416,12 +416,7 @@ function readingSessionKey(
 	model: Extract<ArchitectureModelRead, { success: true }>,
 	subject: string | null,
 ): string {
-	return JSON.stringify([
-		model.manifest.id,
-		model.selectedState?.id,
-		model.checkpoint?.id,
-		subject,
-	]);
+	return JSON.stringify([model.manifest.id, subject]);
 }
 
 /**
