@@ -1,7 +1,7 @@
 import {
 	ArchitectureExportResultSchema,
 	ArchitectureImportRequestSchema,
- ArchitectureInitializationRequestSchema,
+	ArchitectureInitializationRequestSchema,
 	ArchitectureMigrationRequestSchema,
 } from "@archboard/board/model";
 import {
@@ -269,17 +269,14 @@ export { initializeArchitectureArchiveOnServer };
  */
 function renderArchitectureFlowOnServer(
 	input: z.infer<typeof ArchitectureRenderRequestSchema>,
- vault?:string,
+	vault?: string,
 ) {
- const query = new URLSearchParams(vault===undefined?undefined:{vault});
- for (const [key,value] of Object.entries(input)) {
-  if (value === undefined) continue;
-  for (const entry of Array.isArray(value) ? value : [value]) query.append(key,entry);
- }
-	return architectureResult(
-		ArchitectureRenderResultSchema,
-		`/api/architecture/render?${query}`,
-	);
+	const query = new URLSearchParams(vault === undefined ? undefined : { vault });
+	for (const [key, value] of Object.entries(input)) {
+		if (value === undefined) continue;
+		for (const entry of Array.isArray(value) ? value : [value]) query.append(key, entry);
+	}
+	return architectureResult(ArchitectureRenderResultSchema, `/api/architecture/render?${query}`);
 }
 export { renderArchitectureFlowOnServer };
 
@@ -358,7 +355,15 @@ export { migrateArchitectureModelOnServer };
  * @param input The stable initialization intent.
  * @returns The durable installation receipt.
  */
-function initializeArchitectureModelOnServer(input: z.infer<typeof ArchitectureInitializationRequestSchema>) {
- return architectureResult(ArchitectureModuleEditResultSchema,"/api/architecture/init",jsonPost(input));
+function initializeArchitectureModelOnServer(
+	input: z.infer<typeof ArchitectureInitializationRequestSchema>,
+) {
+	return architectureResult(
+		ArchitectureModuleEditResultSchema,
+		"/api/architecture/init",
+		jsonPost(input),
+	);
 }
 export { initializeArchitectureModelOnServer };
+
+export { architectureResult };

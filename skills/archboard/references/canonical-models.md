@@ -1093,3 +1093,54 @@ Use the current reader's complete revision for that restoration request.
 Archive deletion remains possible, so keep the bundle as a backup.
 Import does not copy publication destinations, publication receipts, standing claims, or private recovery files.
 Configure and publish destination history explicitly when collaboration requires it.
+
+## Initialize and consume one live model
+
+An empty vault starts with `archboard model init --name <name> --operation-id <id> --writer <writer> --doing <intent>`.
+The existing `install-skill` setup calls that same initialization operation for new vaults.
+The result has a generated stable model identity, no current state, and no fixed levels.
+Retry the exact operation identity after an interrupted response.
+A different intent requires another operation identity.
+An occupied vault refuses initialization.
+A legacy vault returns `LEGACY_AUTHORITY` without an automatic rewrite.
+Use the explicit inventory, preview, and migration route from [legacy migration](legacy-migration.md).
+
+`model render --out picture.svg` draws the structural reading by default.
+Select a module with `--module`, an exact scope with `--scope`, or repeated identities with `--focus`.
+Use `--hide-kind` and `--hide-group` for presentation filters.
+Use `--state` or `--checkpoint` for explicit architecture selection.
+Use `--flow` with `--grammar sequence` or `--grammar flowchart` for a complete behavioral exchange.
+`model rasterize --out picture.png` accepts the same reading selectors, plus `--scale` and `--region`.
+Both artifacts carry a canonical recipe with model identity, reading, revision, and picture digest.
+Track exported artifacts through Git when other files embed them.
+`check embeds` finds those recipes and `check embeds --fix` redraws changed local sources.
+It preserves legacy recipes until explicit migration and a new canonical export.
+It never chooses a replacement model by name.
+
+`check code --state <state>` reads one canonical state through the existing inspection engine.
+`--every-draft` reads independent proposals by identity.
+The result's `models` list carries model identity, state identity, and complete revision.
+Findings carry `model` and `state` beside stable subject identities.
+Remembered findings use that same revision and remain empty until a code pass completes.
+
+## Navigate a local agent pane
+
+`browser show [model] --pane <pane>` opens a canonical model in an existing pane.
+The optional model argument must match the addressed vault's model identity or exact name.
+Use `--module`, `--scope`, `--focus`, `--hide-kind`, `--hide-group`, `--grammar`, and `--flow` for its reading.
+Use `--state`, `--checkpoint`, `--preview`, `--bookmark`, or `--legacy-address` for explicit selection.
+Use `--walkthrough <id> --beat <index>` to request an authored narrative at its zero-based beat.
+Pass `--input <file>` for the complete reading JSON.
+
+The HTTP route is `POST /api/panes/show`, also available through `/api/browser/show`.
+Its request is `{vault,pane,agent,session,reading}`.
+`reading` follows the same canonical selectors and includes optional `model` and `beat`.
+The server resolves the reading before it changes a pane or chosen checkout.
+It sends `pane_model` with `{model,reading,revision,vault,repository}` through the existing pane router.
+It returns `{success,model,reading,revision,repository,checkout,paneId}` and the existing pane address fields.
+
+`browser panes` reports the exact canonical capture in `panes[].architecture` and the tab's `tabSessionId`.
+Use that capture for explanations and narrative guards.
+Agent navigation can choose the addressed checkout, but it cannot activate the tab's shown conversation.
+The browser's existing activation action focuses that checkout's workhorse.
+Rendering stays in the client, and agents execute locally.

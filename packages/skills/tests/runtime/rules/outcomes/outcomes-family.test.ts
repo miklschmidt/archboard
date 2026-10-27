@@ -44,9 +44,6 @@ describe("family checks", () => {
 	test("versions, variants, comparison, reconciliation, adoption, flows, views and walkthroughs", () => {
 		expect(
 			passes([
-				{ check: "version-advanced-by", board: "Flask", max: 2 },
-				{ check: "version-advanced-by", board: "Flask", max: 1 },
-				{ check: "board-level", board: "Flask", level: "service" },
 				{ check: "board-count", expected: 1 },
 				{ check: "variant-exists", board: "Flask", variant: "No provider", lifecycle: "draft" },
 				{

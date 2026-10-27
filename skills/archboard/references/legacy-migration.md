@@ -1,7 +1,7 @@
 # Inventory legacy boards
 
 Use this workflow when an owner requests legacy migration planning.
-Legacy boards remain authoritative throughout this workflow.
+Legacy bytes remain authoritative until explicit cutover. Live board commands are retired.
 A mapping plan records intended identities and conflict choices.
 It contains no active architecture.
 
@@ -431,7 +431,9 @@ A different request requires a different operation identity and a fresh preview.
 Signing failure changes no live input and requires repair of the configured signer.
 
 Ordinary `model read` discovers authority.
-`LEGACY_AUTHORITY` keeps an unmigrated vault on its existing board workflow.
+`LEGACY_AUTHORITY` refuses ordinary live use of an unmigrated vault.
+Use `model inventory`, `model preview`, and an owner-approved `model migrate` request.
+The runtime preserves original bytes until explicit installation.
 `RECOVERY_REQUIRED` and `MODEL_BUSY` block format selection during installation.
 A successful ordinary read identifies canonical authority.
 The existing architecture event feed announces the new model only after durable completion.

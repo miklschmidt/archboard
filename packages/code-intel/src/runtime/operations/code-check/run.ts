@@ -54,7 +54,10 @@ interface CodeCheck {
  * @returns The refusal.
  */
 function noSuchDraft(refused: NoSuchDraft): CodeCheckRefusal {
- return {code:refused.code,error:refused.diagnostics.map((item)=>`${item.message} ${item.recovery}`).join(" ")};
+	return {
+		code: refused.code,
+		error: refused.diagnostics.map((item) => `${item.message} ${item.recovery}`).join(" "),
+	};
 }
 
 /**
@@ -87,16 +90,46 @@ function createCodeCheck(): CodeCheck {
 		 */
 		async run(request) {
 			const { vault } = request;
-			const read = await (request.everyDraft ? readEveryDraftToCheck(vault) : readBoardsToCheck(vault, request.variant));
+			const read = await (request.everyDraft
+				? readEveryDraftToCheck(vault)
+				: readBoardsToCheck(vault, request.variant));
 			if (!("ok" in read)) return noSuchDraft(read);
 			const plans = await readPlans(vault, request.plans, request.signal);
 			if (!plans.ok) return planRefused(plans);
-   const code=await checkCode(vault,read.boards,request.signal,plans.plans);
+			const code = await checkCode(vault, read.boards, request.signal, plans.plans);
 			return CodeCheckAnswerSchema.parse({
 				timings: code.timings,
 				boards: [],
- models:read.boards.flatMap(({model})=>model===undefined?[]:[{model:model.manifest.id,state:model.selectedState?.id ?? null,revision:model.revision}]),
-				findings: code.findings,
+				models: read.boards.flatMap(({ model }) =>
+					model === undefined
+						? []
+						: [
+								{
+									model: model.manifest.id,
+									state: model.selectedState?.id ?? null,
+									revision: model.revision,
+								},
+							],
+				),
+				findings: code.findings.map((finding) => {
+					const model = read.boards.find(
+						(reading) =>
+							reading.board.name === finding.board && reading.variant.id === finding.variant,
+					)?.model;
+					if (model === undefined) return finding;
+					const { board: _board, variant: _variant, path: _path, ...content } = finding;
+					const owner = model.modules.find(
+						(module) =>
+							module.id === finding.subject?.id ||
+							module.outgoing.some((edge) => edge.id === finding.subject?.id),
+					);
+					return {
+						...content,
+						file: owner?.file ?? "model.json",
+						model: model.manifest.id,
+						state: model.selectedState?.id ?? null,
+					};
+				}),
 				skipped: [...read.skipped, ...code.skipped],
 				behind: [],
 			});

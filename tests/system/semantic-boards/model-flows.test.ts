@@ -1,3 +1,4 @@
+import { readRenderRecipe } from "@archboard/renderer/recipe";
 import { everyStep } from "@archboard/board/flow";
 import { z } from "zod";
 import { afterAll, beforeAll, expect, test } from "bun:test";
@@ -24,6 +25,7 @@ beforeAll(async () => {
 		["config", "user.name", "Flow Author"],
 		["config", "user.email", "flow@example.test"],
 		["config", "commit.gpgsign", "false"],
+		["remote", "add", "origin", "https://github.com/acme/shop.git"],
 		["add", "."],
 		["commit", "--quiet", "-m", "test: seed flows"],
 	]) {
@@ -209,24 +211,119 @@ function answer(stdout: string) {
 }
 
 test("structural exports use canonical recursive scope and preserve reproducible selectors", async () => {
- const out = join(home,"architecture.svg");
- const rendered=cli(["model","render","--module","Gateway","--out",out]);
- expect(rendered.status,rendered.stderr).toBe(0);
- const receipt=answer(rendered.stdout);
- expect(receipt).toMatchObject({success:true,model:"Shop",grammar:"architecture"});
- expect(readFileSync(out,"utf8")).toContain("Shop#Handler");
- const request=await fetch(`${server!.base}/api/architecture/render?${new URLSearchParams({vault,module:"Gateway"})}`);
- expect(request.status).toBe(200);
- expect(await request.json()).toMatchObject({success:true,grammar:"architecture",placed:expect.arrayContaining(["Shop#Handler"])});
+	const out = join(home, "architecture.svg");
+	const rendered = cli(["model", "render", "--module", "Gateway", "--out", out]);
+	expect(rendered.status, rendered.stderr).toBe(0);
+	const receipt = answer(rendered.stdout);
+	expect(receipt).toMatchObject({ success: true, model: "Shop", grammar: "architecture" });
+	expect(readFileSync(out, "utf8")).toContain("Shop#Handler");
+	const recipe = readRenderRecipe(readFileSync(out));
+	expect(recipe).toMatchObject({
+		kind: "recipe",
+		recipe: {
+			recipe: 2,
+			model: { id: "Shop" },
+			reading: { module: "Shop#Gateway", grammar: "architecture" },
+			vault: { repo: "github.com/acme/shop" },
+		},
+	});
+	const png = join(home, "architecture.png");
+	const rasterized = cli(["model", "rasterize", "--module", "Gateway", "--out", png]);
+	expect(rasterized.status, rasterized.stderr).toBe(0);
+	expect(answer(rasterized.stdout)).toMatchObject({
+		success: true,
+		model: "Shop",
+		state: "Current",
+		grammar: "architecture",
+		source: { renderer: "semantic-renderer", motion: "paused-at-start" },
+	});
+	expect(readRenderRecipe(readFileSync(png))).toMatchObject({
+		kind: "recipe",
+		recipe: { recipe: 2, model: { id: "Shop" } },
+	});
+	Bun.spawnSync(["git", "-C", home, "add", "architecture.svg", "architecture.png"]);
+	const embeds = cli(["check", "embeds"]);
+	expect(embeds.status, embeds.stderr).toBe(0);
+	expect(answer(embeds.stdout)).toMatchObject({ embeds: { findings: [], fixed: [] } });
+	const inspected = cli(["check", "code"]);
+	expect(inspected.status).not.toBeNull();
+	expect([0, 1]).toContain(inspected.status!);
+	expect(answer(inspected.stdout)).toMatchObject({
+		code: {
+			models: [{ model: "Shop", state: "Current", revision: expect.any(Object) }],
+			findings: expect.arrayContaining([
+				expect.objectContaining({
+					code: "ANCHOR_PATH_MISSING",
+					model: "Shop",
+					state: "Current",
+					file: "gateway.module.json",
+				}),
+			]),
+		},
+	});
+	const request = await fetch(
+		`${server!.base}/api/architecture/render?${new URLSearchParams({ vault, module: "Gateway" })}`,
+	);
+	expect(request.status).toBe(200);
+	expect(await request.json()).toMatchObject({
+		success: true,
+		grammar: "architecture",
+		placed: expect.arrayContaining(["Shop#Handler"]),
+	});
 });
 
 test("retired board writers and claims cannot change a vault through HTTP or CLI", async () => {
- const before=cli(["model","read"]);
- for(const route of ["create","edit","branch","adopt","shelve","resolve","rename","discard","move","track-embed","correct"]){
-  const response=await fetch(`${server!.base}/api/semantic-boards/${route}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({vault,board:"retired",doing:"Try retired authoring"})});
-  expect([404,410]).toContain(response.status);
- }
- const old=cli(["semantic","new","retired","--level","module","--doing","Try retired authoring"]);
- expect(old.status).toBe(2);
- expect(cli(["model","read"]).stdout).toBe(before.stdout);
+	const before = cli(["model", "read"]);
+	for (const route of [
+		"create",
+		"edit",
+		"branch",
+		"adopt",
+		"shelve",
+		"resolve",
+		"rename",
+		"discard",
+		"move",
+		"track-embed",
+		"correct",
+	]) {
+		const response = await fetch(`${server!.base}/api/semantic-boards/${route}`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ vault, board: "retired", doing: "Try retired authoring" }),
+		});
+		expect([404, 410]).toContain(response.status);
+	}
+	const old = cli([
+		"semantic",
+		"new",
+		"retired",
+		"--level",
+		"module",
+		"--doing",
+		"Try retired authoring",
+	]);
+	expect(old.status).toBe(2);
+	expect(cli(["model", "read"]).stdout).toBe(before.stdout);
+});
+
+test("canonical locality and branch footprint retain source analysis without a live board reader", () => {
+	const locality = cli(["model", "locality"]);
+	expect(locality.status, locality.stderr).toBe(0);
+	expect(answer(locality.stdout)).toMatchObject({
+		success: true,
+		model: "Shop",
+		state: { id: "Current" },
+		revision: expect.any(Object),
+		hotspots: expect.any(Array),
+	});
+	const footprint = cli(["model", "footprint", "--base", "HEAD"]);
+	expect(footprint.status, footprint.stderr).toBe(0);
+	expect(answer(footprint.stdout)).toMatchObject({
+		success: true,
+		model: "Shop",
+		state: { id: "Current" },
+		base: "HEAD",
+		repositories: expect.any(Array),
+	});
 });

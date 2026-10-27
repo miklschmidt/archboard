@@ -4,3 +4,10 @@ export { HistoryRefusalCode } from "#shared/protocol/history-refusal.ts";
 export { LocalityReplySchema, PeriodStartSchema } from "#shared/protocol/locality.ts";
 export type { LocalityAnswer } from "#shared/protocol/locality.ts";
 export { historyAttributionLabel } from "#shared/schemas/history-attribution.ts";
+
+export {
+	ArchitectureLocalityRequestSchema,
+	ArchitectureFootprintRequestSchema,
+	ArchitectureLocalityResultSchema,
+	ArchitectureFootprintResultSchema,
+} from "#shared/protocol/canonical-history.ts";

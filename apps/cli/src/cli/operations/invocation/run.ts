@@ -1,4 +1,6 @@
-import {modelReplayContract} from "#cli/operations/model/replay.ts";
+import { modelLocalityContract, modelFootprintContract } from "#cli/operations/model/history.ts";
+import { modelRasterizeContract } from "#cli/operations/model/rasterize.ts";
+import { modelReplayContract } from "#cli/operations/model/replay.ts";
 import { modelInitContract } from "#cli/operations/model/initialize.ts";
 import { modelExportContract, modelImportContract } from "#cli/operations/model/portable.ts";
 import { modelRecordContract } from "#cli/operations/model/record.ts";
@@ -74,9 +76,12 @@ const COMMANDS: Record<string, CommandRoute> = {
 	model: {
 		owner: contract(modelContract, "apps/cli/src/cli/operations/model/read.ts"),
 		children: {
- replay:child(contract(modelReplayContract,"apps/cli/src/cli/operations/model/replay.ts")),
- config: child(contract(semanticConfigContract,"apps/cli/src/cli/operations/vault/vault.ts")),
- init: child(contract(modelInitContract,"apps/cli/src/cli/operations/model/initialize.ts")),
+			rasterize: child(
+				contract(modelRasterizeContract, "apps/cli/src/cli/operations/model/rasterize.ts"),
+			),
+			replay: child(contract(modelReplayContract, "apps/cli/src/cli/operations/model/replay.ts")),
+			config: child(contract(semanticConfigContract, "apps/cli/src/cli/operations/vault/vault.ts")),
+			init: child(contract(modelInitContract, "apps/cli/src/cli/operations/model/initialize.ts")),
 			"archive-init": child(
 				contract(modelArchiveInitContract, "apps/cli/src/cli/operations/model/archive.ts"),
 			),
@@ -89,6 +94,12 @@ const COMMANDS: Record<string, CommandRoute> = {
 			recover: child(contract(modelRecoverContract, "apps/cli/src/cli/operations/model/edit.ts")),
 			record: child(contract(modelRecordContract, "apps/cli/src/cli/operations/model/record.ts")),
 			render: child(contract(modelRenderContract, "apps/cli/src/cli/operations/model/render.ts")),
+			locality: child(
+				contract(modelLocalityContract, "apps/cli/src/cli/operations/model/history.ts"),
+			),
+			footprint: child(
+				contract(modelFootprintContract, "apps/cli/src/cli/operations/model/history.ts"),
+			),
 			explain: child(
 				contract(modelExplainContract, "apps/cli/src/cli/operations/model/explain.ts"),
 			),

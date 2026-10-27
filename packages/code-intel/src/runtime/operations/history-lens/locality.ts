@@ -218,20 +218,19 @@ function rank(split: readonly (CountedPart & PartCommits)[]): Ranking {
 /**
  * Read locality: every part the lens reads, ranked by the commits of the
  * period that changed its bound files, and the pairs those commits couple.
- * @param board The board.
  * @param variant The variant to read.
  * @param snapshot The registered checkouts and what each has out.
  * @param since The start of the period, or undefined for the year before each HEAD.
  * @param options The caller's signal.
  * @returns The answer.
  */
+type LocalityEvidence = Omit<LocalityAnswer, "board" | "version" | "variant">;
 async function readLocality(
-	board: SemanticBoard,
 	variant: SemanticVariant,
 	snapshot: CheckoutSnapshot,
 	since: Date | undefined,
 	options: GitRunOptions,
-): Promise<LocalityAnswer> {
+): Promise<LocalityEvidence> {
 	const reading = partReading(variant.content, snapshot);
 	const { repositories, skipped } = repositoriesOf(reading.read, snapshot);
 	const walks = new Map(
@@ -261,9 +260,6 @@ async function readLocality(
 	});
 	const ranking = rank(split);
 	return {
-		board: board.name,
-		version: board.version,
-		variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
 		periods: [...walks.values()].map((walk) => walk.period),
 		commits: ranking.commits,
 		hotspots: ranking.hotspots,
@@ -299,19 +295,25 @@ interface VariantLocality {
  * period, and each checkout with its HEAD.
  * @returns The reading.
  */
-function createVariantLocality(): VariantLocality {
-	const memory = createAnswerMemory<LocalityAnswer>(KEPT_ANSWERS);
+function createLocalityEvidence() {
+	const memory = createAnswerMemory<LocalityEvidence>(KEPT_ANSWERS);
 	return {
 		/**
 		 * Read, or answer from memory.
 		 * @param vault The vault directory.
-		 * @param board The board.
+		 * @param architecture The exact architecture identity and revision.
 		 * @param variant The variant.
 		 * @param since The start of the period.
 		 * @param signal Cancels the reading.
 		 * @returns The answer.
 		 */
-		async read(vault, board, variant, since, signal) {
+		async read(
+			vault: string,
+			architecture: string,
+			variant: SemanticVariant,
+			since: Date | undefined,
+			signal?: AbortSignal,
+		) {
 			const bindings = variant.content.nodes.flatMap((node) =>
 				node.binding === undefined ? [] : [node.binding],
 			);
@@ -327,19 +329,42 @@ function createVariantLocality(): VariantLocality {
 			// worktrees of one repository hold copies that can each have moved on.
 			const key = JSON.stringify({
 				vault,
-				board: board.id,
-				version: board.version,
+				architecture,
 				variant: variant.id,
 				since: since?.toISOString() ?? null,
 				checkouts: repos.map((repo) => [repo, snapshot.inspection(repo) ?? null]),
 			});
 			return await memory.answer(
 				key,
-				(stop) => readLocality(board, variant, snapshot, since, { signal: stop }),
+				(stop) => readLocality(variant, snapshot, since, { signal: stop }),
 				signal,
 			);
 		},
 	};
 }
 
-export { type VariantLocality, createVariantLocality };
+/**
+ * Read immutable legacy analysis inputs through the shared evidence engine.
+ * @returns The retained semantic analysis adapter.
+ */
+function createVariantLocality(): VariantLocality {
+	const evidence = createLocalityEvidence();
+	return {
+		/** Read retained evidence. @param vault The vault. @param board The retained document. @param variant The selected state. @param since The period start. @param signal Cancellation. @returns The original semantic receipt. */
+		async read(vault, board, variant, since, signal) {
+			return {
+				board: board.name,
+				version: board.version,
+				variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
+				...(await evidence.read(
+					vault,
+					JSON.stringify([board.id, board.version]),
+					variant,
+					since,
+					signal,
+				)),
+			};
+		},
+	};
+}
+export { type VariantLocality, createVariantLocality, createLocalityEvidence };

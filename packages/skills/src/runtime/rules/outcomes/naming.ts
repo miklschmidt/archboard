@@ -1,3 +1,4 @@
+import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
 // Finding the subject a check names by the name a person would call it. A
 // scenario quotes a symbol out of the source and an author writes a display
 // name for the same thing: `run_simple` is drawn as `Werkzeug run_simple` and
@@ -10,11 +11,7 @@
 // addressing is the contract this wraps and never replaces, and a fixture's
 // `$node(...)` placeholder names a node the fixture itself wrote.
 
-import {
-	resolveVariant,
-	type SemanticBoard,
-	type SemanticVariant,
-} from "@archboard/board/document";
+import { resolveVariant, type SemanticVariant } from "@archboard/board/document";
 
 /** How well a candidate name answers the name a check asked for. */
 const NO_MATCH = 0;

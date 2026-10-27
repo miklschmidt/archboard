@@ -23,10 +23,12 @@ import path from "path";
 import type { Express, Request, Response } from "express";
 
 import { logger } from "@archboard/diagnostics/logger";
+import { readArchitectureModel } from "@archboard/board/store-read";
 import { parseBoardKey } from "@archboard/board/address";
 import { chooseKnownCheckout, listRegistry, registryPath } from "@archboard/workspace/checkouts";
 import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 import {
+	semanticPaneContextFor,
 	paneBoardOf,
 	paneVaults,
 	sendBoardlessToPane,
@@ -178,8 +180,31 @@ function followRegistry(): void {
  * @param repository The name of the repository it is in.
  */
 function movePane(clientId: string, to: string, repository: string | null): void {
-	movePaneVault(clientId, to);
+	const captured = semanticPaneContextFor(clientId)?.architecture;
 	const key = paneBoardOf(clientId);
+	movePaneVault(clientId, to);
+	if (key?.startsWith("model:")) {
+		const reading = {
+			...captured?.selection,
+			model: key.slice(6),
+			grammar: "architecture" as const,
+		};
+		const model = readArchitectureModel(to);
+		sendToPane(
+			clientId,
+			{
+				type: "pane_model",
+				model: key.slice(6),
+				reading,
+				...(model.success ? { revision: model.revision } : {}),
+				vault: to,
+				repository,
+			},
+			key,
+		);
+		arrivedOnBoard(clientId, key);
+		return;
+	}
 	if (key === null) {
 		sendBoardlessToPane(clientId, {
 			type: "pane_board",

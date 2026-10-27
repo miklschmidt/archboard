@@ -6,8 +6,8 @@ import {
 	type ArchitectureModelRead,
 } from "@archboard/board/model";
 import { projectModel, projectFlow } from "@archboard/board/content";
-import {recordArchitectureRecipe} from "@archboard/renderer/recipe";
-import {vaultIdentity} from "@archboard/code-binding/resolution";
+import { recordArchitectureRecipe } from "@archboard/renderer/recipe";
+import { vaultIdentity } from "@archboard/code-binding/resolution";
 import { renderArchitecture } from "@archboard/renderer/bun";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { respond } from "#server/routes/architecture/model-response.ts";
@@ -34,7 +34,10 @@ function flowReading(vault: string, input: Reading) {
 				},
 			],
 		};
-	return readArchitectureModel(vault,input.module,input.flow,{state:input.state,checkpoint:input.checkpoint});
+	return readArchitectureModel(vault, input.module, input.flow, {
+		state: input.state,
+		checkpoint: input.checkpoint,
+	});
 }
 /**
  * Adapt complete selected meaning to the existing renderer operation.
@@ -45,11 +48,19 @@ function flowReading(vault: string, input: Reading) {
 async function flowPicture(
 	model: Extract<ArchitectureModelRead, { success: true }>,
 	input: Reading,
- vault:string,
+	vault: string,
 ) {
- const architecture = projectModel(model,input.scope ?? model.selectedModule ?? null,input.focus ?? null,{hideKinds:input.hideKinds,hideGroups:input.hideGroups});
- const flow = model.collections.flatMap((collection)=>collection.flows).find((value)=>value.id===model.selectedFlow);
- const {content} = input.grammar === "architecture" ? architecture : projectFlow(architecture,flow!);
+	const architecture = projectModel(
+		model,
+		input.scope ?? model.selectedModule ?? null,
+		input.focus ?? null,
+		{ hideKinds: input.hideKinds, hideGroups: input.hideGroups },
+	);
+	const flow = model.collections
+		.flatMap((collection) => collection.flows)
+		.find((value) => value.id === model.selectedFlow);
+	const { content } =
+		input.grammar === "architecture" ? architecture : projectFlow(architecture, flow!);
 	const drawn = await renderArchitecture({
 		content,
 		grammar: input.grammar,
@@ -60,12 +71,17 @@ async function flowPicture(
 	return {
 		success: true as const,
 		model: model.manifest.id,
-		...(input.grammar === "architecture" ? {} : {flow:flow!.id}),
+		state: model.selectedState?.id ?? null,
+		...(input.grammar === "architecture" ? {} : { flow: flow!.id }),
 		grammar: input.grammar,
 		revision: model.revision,
 		checkpoint: model.checkpoint?.id,
-		...Object.fromEntries(Object.entries(drawn).filter(([key])=>key!=="readingDirection")),
- svg:recordArchitectureRecipe(drawn.svg,model,input,vaultIdentity(vault)??null), width:drawn.width,height:drawn.height,placed:drawn.placed,atlas:drawn.atlas,
+		...Object.fromEntries(Object.entries(drawn).filter(([key]) => key !== "readingDirection")),
+		svg: recordArchitectureRecipe(drawn.svg, model, input, vaultIdentity(vault) ?? null),
+		width: drawn.width,
+		height: drawn.height,
+		placed: drawn.placed,
+		atlas: drawn.atlas,
 	};
 }
 /**
@@ -74,21 +90,27 @@ async function flowPicture(
  */
 function mountArchitectureFlowRoutes(app: Express): void {
 	app.get("/api/architecture/render", requireVault, async (req, res) => {
-		const query = ArchitectureRenderRequestSchema.extend({ vault: z.string() }).safeParse(
- {...req.query, ...Object.fromEntries(["focus","hideKinds","hideGroups"].filter((key)=>typeof req.query[key] === "string").map((key)=>[key,[req.query[key]]]))},
-		);
+		const query = ArchitectureRenderRequestSchema.extend({ vault: z.string() }).safeParse({
+			...req.query,
+			...Object.fromEntries(
+				["focus", "hideKinds", "hideGroups"]
+					.filter((key) => typeof req.query[key] === "string")
+					.map((key) => [key, [req.query[key]]]),
+			),
+		});
 		if (!query.success) {
 			res
 				.status(400)
 				.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(query.error) });
 			return;
 		}
-		const model = await flowReading(vaultOfRequest(req), query.data);
+		const { vault: _vault, ...reading } = query.data;
+		const model = await flowReading(vaultOfRequest(req), reading);
 		if (!model.success) {
 			respond(res, model);
 			return;
 		}
-		respond(res, await flowPicture(model, query.data,vaultOfRequest(req)));
+		respond(res, await flowPicture(model, reading, vaultOfRequest(req)));
 	});
 }
 export { mountArchitectureFlowRoutes };

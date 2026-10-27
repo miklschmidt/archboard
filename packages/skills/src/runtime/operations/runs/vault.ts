@@ -1,51 +1,29 @@
-// The run's vault as the harness lays it and reads it: the configuration the
-// fixture asks for, the fixture's boards written through the CLI so every id
-// is one the product minted, the talk a recording kept of one of them, and the
-// reads the checks are made from.
-
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import {
-	addressedVariant,
-	SemanticBoardSchema,
-	type SemanticBoard,
-} from "@archboard/board/document";
+import { ArchitectureModelReadSchema } from "@archboard/board/model";
+import { modelContent, inspectGroup as inspectSemanticGroup } from "@archboard/board/content";
 import {
 	DEFAULT_SEMANTIC_POLICY,
 	SemanticPolicySchema,
-	VaultCheckSchema,
 	VaultDiagnosticSchema,
 	type SemanticPolicy,
 } from "@archboard/board/policy";
-import { keepTalk } from "@archboard/walkthrough/recorder";
+import type { SemanticVariant } from "@archboard/board/document";
+import type {
+	EvaluationArchitecture as SemanticBoard,
+	InspectionAttempt,
+	RenderAttempt,
+} from "#runtime/rules/outcomes/reading.ts";
 import { archboard, archboardOk, type CliContext } from "#runtime/processes/archboard.ts";
+import type { Fixture } from "#runtime/schemas/fixture.ts";
 import type { InspectionRequest, RenderRequest } from "#runtime/rules/outcomes/outcomes.ts";
-import { sequentially } from "#runtime/processes/process.ts";
-import type { InspectionAttempt, RenderAttempt } from "#runtime/rules/outcomes/reading.ts";
-import { inHome, talkOfFixture } from "#runtime/operations/runs/replay.ts";
-import {
-	FixtureStepSchema,
-	type Fixture,
-	type FixtureStep,
-	type RawFixtureStep,
-	type TalkFixture,
-} from "#runtime/schemas/fixture.ts";
-
+type Model = Extract<z.infer<typeof ArchitectureModelReadSchema>, { success: true }>;
 type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
-
-const FIXTURE_DOING = "laying the evaluation fixture";
-const PLACEHOLDER = /^\$node\((.+)\)$/u;
-
-/**
- * The policy a fixture asks for: the bundled defaults with the fixture's
- * records merged over them.
- * @param policy The fixture's partial policy, if any.
- * @returns The policy the fixture's vault is configured with.
- */
 function fixturePolicy(policy: Fixture["policy"]): SemanticPolicy {
 	return SemanticPolicySchema.parse({
-		levels: policy?.levels ?? DEFAULT_SEMANTIC_POLICY.levels,
+		...DEFAULT_SEMANTIC_POLICY,
+		...policy,
 		nodeKinds: { ...DEFAULT_SEMANTIC_POLICY.nodeKinds, ...policy?.nodeKinds },
 		relationshipKinds: {
 			...DEFAULT_SEMANTIC_POLICY.relationshipKinds,
@@ -54,466 +32,159 @@ function fixturePolicy(policy: Fixture["policy"]): SemanticPolicy {
 		groups: { ...DEFAULT_SEMANTIC_POLICY.groups, ...policy?.groups },
 	});
 }
-
-/**
- * The configuration file a fixture asks for.
- * @param vault The vault.
- * @param policy The fixture's partial policy, if any.
- * @returns The YAML written.
- */
 function writeVaultConfiguration(vault: string, policy: Fixture["policy"]): string {
-	const directory = path.join(vault, ".archboard");
-	fs.mkdirSync(directory, { recursive: true });
+	const file = path.join(vault, ".archboard/config.yaml");
+	fs.mkdirSync(path.dirname(file), { recursive: true });
 	const text = Bun.YAML.stringify(fixturePolicy(policy));
-	fs.writeFileSync(path.join(directory, "config.yaml"), text);
+	fs.writeFileSync(file, text);
 	return text;
 }
-
-/**
- * The configuration file's text as it stands.
- * @param vault The vault.
- * @returns The text, or empty when there is none.
- */
 function readConfigurationText(vault: string): string {
-	const file = path.join(vault, ".archboard", "config.yaml");
+	const file = path.join(vault, ".archboard/config.yaml");
 	return fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
 }
-
-/**
- * The policy the configuration file states; the defaults when it cannot be read.
- * @param vault The vault.
- * @returns The policy.
- */
 function readPolicy(vault: string): SemanticPolicy {
-	const parsed = SemanticPolicySchema.safeParse(
-		Bun.YAML.parse(readConfigurationText(vault) || "{}"),
-	);
-	return parsed.success ? parsed.data : DEFAULT_SEMANTIC_POLICY;
+	return SemanticPolicySchema.parse(Bun.YAML.parse(readConfigurationText(vault)));
 }
-
-const ListingSchema = z
-	.object({ boards: z.array(z.object({ name: z.string() }).passthrough()) })
-	.passthrough();
-const ReadSchema = z.object({ board: SemanticBoardSchema }).passthrough();
-const RegisteredSchema = z.object({ repo: z.string() }).passthrough();
-const CheckSchema = z
-	.object({
-		semantics: z.object({ diagnostics: z.array(VaultDiagnosticSchema) }).passthrough(),
-	})
-	.passthrough();
-const InspectionSchema = z
-	.object({
-		members: z.array(z.object({ name: z.string() }).passthrough()),
-		internalEdges: z.array(z.unknown()),
-		boundaryEdges: z.array(z.object({ direction: z.string() }).passthrough()),
-		neighbors: z.array(z.object({ name: z.string() }).passthrough()),
-	})
-	.passthrough();
-
 /**
- * One board, read through the CLI.
- * @param cli How to reach the CLI.
- * @param name The board.
- * @returns The family.
+ * Read complete canonical meaning through the same CLI that the author uses.
+ * @param cli The isolated invocation context.
+ * @param state An optional exact state selector.
+ * @returns The coherent canonical reading.
  */
-async function readBoard(cli: CliContext, name: string): Promise<SemanticBoard> {
-	return ReadSchema.parse(await archboardOk(cli, ["semantic", "show", name])).board;
+async function readModel(cli: CliContext, state?: string): Promise<Model> {
+	const model = ArchitectureModelReadSchema.parse(
+		await archboardOk(cli, ["model", "read", ...(state === undefined ? [] : ["--state", state])]),
+	);
+	if (!model.success) throw new Error(JSON.stringify(model));
+	return model;
 }
-
 /**
- * Every board in the vault, read through the CLI.
- * @param cli How to reach the CLI.
- * @returns Boards by name.
+ * Adapt canonical semantic content to existing evaluation comparisons, without a board document or level.
+ * @param model The coherent public model.
+ * @returns Its exact state and semantic content.
+ */
+function evaluationState(model: Model): SemanticVariant {
+	const state = model.selectedState;
+	return {
+		id: state?.id ?? model.manifest.id,
+		name: state?.name ?? model.manifest.name,
+		lifecycle: state?.lifecycle ?? "draft",
+		...(state?.predecessor == null ? {} : { parent: state.predecessor }),
+		summary: state?.summary,
+		documents: state?.documents,
+		content: modelContent(model),
+	};
+}
+/**
+ * Capture current architecture and independent proposals for deterministic outcomes.
+ * @param cli The isolated command context.
+ * @returns One derived evaluation record for the one live model.
  */
 async function readVault(cli: CliContext): Promise<Map<string, SemanticBoard>> {
-	const listing = ListingSchema.parse(await archboardOk(cli, ["semantic"]));
-	const boards = await Promise.all(
-		listing.boards.map(async (entry) => [entry.name, await readBoard(cli, entry.name)] as const),
+	const model = await readModel(cli);
+	const proposals = await Promise.all(
+		model.proposals.map((proposal) => readModel(cli, proposal.id)),
 	);
-	return new Map(boards);
+	const variants = [
+		...(model.manifest.current === null ? [] : [evaluationState(model)]),
+		...proposals.map(evaluationState),
+	];
+	const board: SemanticBoard = {
+		id: model.manifest.id,
+		name: model.manifest.name,
+		current: model.manifest.current?.id,
+		variants,
+		views: [],
+		revision: model.revision.digest,
+		architecture: model,
+	};
+	return new Map([[board.name, board]]);
 }
-
-/**
- * What `archboard check semantics` reports, whatever it exits with.
- * @param cli How to reach the CLI.
- * @returns The diagnostics.
- */
+async function readBoard(cli: CliContext, name: string): Promise<SemanticBoard> {
+	const vault = await readVault(cli);
+	const model = vault.get(name);
+	if (model === undefined) throw new Error(`The model ${name} is unavailable.`);
+	return model;
+}
 async function vaultDiagnostics(cli: CliContext): Promise<VaultDiagnostic[]> {
 	const answer = await archboard(cli, ["check", "semantics"]);
-	const parsed = CheckSchema.safeParse(answer.json);
-	if (parsed.success) return parsed.data.semantics.diagnostics;
-	return [
-		{
-			severity: "error",
-			code: "CHECK_UNREADABLE",
-			file: "-",
-			message: `archboard check semantics answered nothing readable (exit ${answer.exitCode}): ${answer.stderr.trim()}`,
-		},
-	];
+	return z
+		.object({ semantics: z.object({ diagnostics: z.array(VaultDiagnosticSchema) }) })
+		.parse(answer.json).semantics.diagnostics;
 }
-
-/**
- * The last line of a failure's stderr, for a one-line detail.
- * @param stderr The stderr.
- * @returns The line.
- */
-function lastLine(stderr: string): string {
-	return stderr.trim().split("\n").at(-1) ?? "";
-}
-
-/**
- * Draws one render a check asked for.
- * @param cli How to reach the CLI.
- * @param request What to draw.
- * @param file Where the SVG goes.
- * @returns The attempt.
- */
 async function renderBoard(
 	cli: CliContext,
 	request: RenderRequest,
-	file: string,
+	directory: string,
 ): Promise<RenderAttempt> {
-	const selectors = [
-		...(request.variant === undefined ? [] : ["--variant", request.variant]),
-		...(request.view === undefined ? [] : ["--view", request.view]),
-	];
+	const file = path.join(directory, `${request.board.replaceAll(/[^A-Za-z0-9._-]+/gu, "_")}.svg`);
+	fs.mkdirSync(directory, { recursive: true });
 	const answer = await archboard(cli, [
-		"semantic",
+		"model",
 		"render",
-		request.board,
+		...(request.variant === undefined ? [] : ["--state", request.variant]),
 		"--out",
 		file,
-		...selectors,
 	]);
-	const ok = answer.exitCode === 0 && fs.existsSync(file);
 	return {
 		...request,
-		ok,
-		detail: ok
-			? `drawn to ${path.basename(file)}`
-			: `render failed (exit ${answer.exitCode}): ${lastLine(answer.stderr)}`,
-		file: ok ? file : undefined,
+		ok: answer.exitCode === 0,
+		detail: answer.exitCode === 0 ? "Rendered the canonical reading." : answer.stderr,
+		file,
 	};
 }
-
-/**
- * Runs one group inspection a check asked for.
- * @param cli How to reach the CLI.
- * @param request What to inspect.
- * @returns The attempt.
- */
 async function inspectGroup(
 	cli: CliContext,
 	request: InspectionRequest,
 ): Promise<InspectionAttempt> {
-	const selectors = request.variant === undefined ? [] : ["--variant", request.variant];
-	const answer = await archboard(cli, [
-		"semantic",
-		"inspect",
-		request.board,
-		"--group",
-		request.group,
-		...selectors,
-	]);
-	const parsed = InspectionSchema.safeParse(answer.json);
-	return {
-		...request,
-		result: parsed.success ? parsed.data : null,
-		detail: parsed.success
-			? "inspected"
-			: `inspect failed (exit ${answer.exitCode}): ${lastLine(answer.stderr)}`,
-	};
+	const model = await readModel(cli, request.variant);
+	const group = inspectSemanticGroup(modelContent(model), request.group);
+	return { ...request, result: group, detail: "Inspected canonical group membership." };
 }
-
-/** What a placeholder resolves against. */
-interface PlaceholderScope {
-	readonly repo: string | null;
-	readonly board: SemanticBoard | null;
-	readonly variant: string | undefined;
-}
-
 /**
- * A node's id on the targeted variant, by name: the variant the fixture step
- * names, or the one its write lands on when it names none.
- * @param name The node's name.
- * @param scope What to resolve against.
- * @returns The id.
- */
-function nodeId(name: string, scope: PlaceholderScope): string {
-	const addressed = scope.board === null ? null : addressedVariant(scope.board, scope.variant);
-	const variant = addressed?.ok === true ? addressed.variant : undefined;
-	const node = variant?.content.nodes.find((candidate) => candidate.name === name);
-	if (node === undefined)
-		throw new Error(`the fixture names $node(${name}) which is not on the board`);
-	return node.id;
-}
-
-/**
- * One string placeholder resolved: `$FLASK` to the registered identity,
- * `$node(Name)` to that node's id on the targeted variant.
- * @param text The string.
- * @param scope What to resolve against.
- * @returns The resolved string.
- */
-function resolveString(text: string, scope: PlaceholderScope): string {
-	if (text === "$FLASK") {
-		if (scope.repo === null)
-			throw new Error("the fixture binds to $FLASK but did not register the checkout");
-		return scope.repo;
-	}
-	const match = PLACEHOLDER.exec(text);
-	return match?.[1] === undefined ? text : nodeId(match[1], scope);
-}
-
-/**
- * A fixture value with every placeholder resolved.
- * @param value The value.
- * @param scope What to resolve against.
- * @returns The resolved value.
- */
-function resolvePlaceholders(value: unknown, scope: PlaceholderScope): unknown {
-	if (typeof value === "string") return resolveString(value, scope);
-	if (Array.isArray(value)) return value.map((entry) => resolvePlaceholders(entry, scope));
-	if (typeof value === "object" && value !== null) {
-		return Object.fromEntries(
-			Object.entries(value).map(([key, entry]) => [key, resolvePlaceholders(entry, scope)]),
-		);
-	}
-	return value;
-}
-
-/** The CLI call for one step. */
-interface StepCall {
-	readonly args: string[];
-	readonly stdin?: string | undefined;
-}
-
-/**
- * `--flag value` when the value is stated.
- * @param flag The flag.
- * @param value The value, if any.
- * @returns The pair, or nothing.
- */
-function flagged(flag: string, value: string | undefined): string[] {
-	return value === undefined ? [] : [flag, value];
-}
-
-type StepOf<K extends FixtureStep["op"]> = Extract<FixtureStep, { op: K }>;
-
-/**
- * The semantic new call.
- * @param step The step.
- * @returns The call.
- */
-function newCall(step: StepOf<"new">): StepCall {
-	return {
-		args: ["semantic", "new", step.board, "--doing", FIXTURE_DOING],
-		stdin: JSON.stringify(step.input),
-	};
-}
-
-/**
- * The semantic edit call.
- * @param step The step.
- * @param expect The --expect-version pair.
- * @returns The call.
- */
-function editCall(step: StepOf<"edit">, expect: readonly string[]): StepCall {
-	return {
-		args: ["semantic", "edit", step.board, "--doing", FIXTURE_DOING, ...expect],
-		stdin: JSON.stringify(step.input),
-	};
-}
-
-/**
- * The semantic branch call.
- * @param step The step.
- * @param expect The --expect-version pair.
- * @returns The call.
- */
-function branchCall(step: StepOf<"branch">, expect: readonly string[]): StepCall {
-	return {
-		args: [
-			"semantic",
-			"branch",
-			step.board,
-			"--as",
-			step.as,
-			...flagged("--from", step.from),
-			...flagged("--summary", step.summary),
-			"--doing",
-			FIXTURE_DOING,
-			...expect,
-		],
-	};
-}
-
-/**
- * The semantic resolve call.
- * @param step The step.
- * @param expect The --expect-version pair.
- * @returns The call.
- */
-function resolveCall(step: StepOf<"resolve">, expect: readonly string[]): StepCall {
-	return {
-		args: [
-			"semantic",
-			"resolve",
-			step.board,
-			"--variant",
-			step.variant,
-			"--doing",
-			FIXTURE_DOING,
-			...expect,
-		],
-		stdin: JSON.stringify(step.input),
-	};
-}
-
-/**
- * The semantic adopt call.
- * @param step The step.
- * @param expect The --expect-version pair.
- * @returns The call.
- */
-function adoptCall(step: StepOf<"adopt">, expect: readonly string[]): StepCall {
-	return {
-		args: [
-			"semantic",
-			"adopt",
-			step.board,
-			"--variant",
-			step.variant,
-			...flagged("--reason", step.reason),
-			"--doing",
-			FIXTURE_DOING,
-			...expect,
-		],
-	};
-}
-
-/**
- * The CLI call of one fixture step, against the version it was read at.
- * @param step The step.
- * @param version The board's version, when the board exists.
- * @returns The arguments and the JSON to send, if any.
- */
-function stepCommand(step: FixtureStep, version: number | null): StepCall {
-	const expect = version === null ? [] : ["--expect-version", String(version)];
-	switch (step.op) {
-		case "new":
-			return newCall(step);
-		case "edit":
-			return editCall(step, expect);
-		case "branch":
-			return branchCall(step, expect);
-		case "resolve":
-			return resolveCall(step, expect);
-		default:
-			return adoptCall(step, expect);
-	}
-}
-
-/**
- * The variant a step targets, for placeholder resolution.
- * @param step The step.
- * @returns The variant selector, or undefined for the current one.
- */
-function targetVariant(step: RawFixtureStep): string | undefined {
-	if (step.op === "edit")
-		return typeof step.input["variant"] === "string" ? step.input["variant"] : undefined;
-	return step.op === "resolve" ? step.variant : undefined;
-}
-
-/**
- * Lays one step: reads the board it targets, resolves the placeholders, and
- * writes against the version it read.
- * @param cli How to reach the CLI.
- * @param step The step.
- * @param repo The registered identity, if any.
- */
-async function layStep(cli: CliContext, step: RawFixtureStep, repo: string | null): Promise<void> {
-	const board = step.op === "new" ? null : await readBoard(cli, step.board);
-	const resolved = FixtureStepSchema.parse(
-		resolvePlaceholders(step, { repo, board, variant: targetVariant(step) }),
-	);
-	const call = stepCommand(resolved, board?.version ?? null);
-	await archboardOk(cli, call.args, call.stdin);
-}
-
-/**
- * Keeps the talk a fixture asks for where a recording's `--talk` would have: of the board and
- * vault check the CLI serves, as `semantic record` reads them from the server, written by the
- * recorder's own writer.
- * @param cli How to reach the CLI.
- * @param talk The talk.
- * @param home The run's home, where the talk's directory is.
- */
-async function layTalk(cli: CliContext, talk: TalkFixture, home: string): Promise<void> {
-	const board = await readBoard(cli, talk.board);
-	// `check` exits 1 on a warning; `semantic record` keeps the warnings in the talk's policy too.
-	const policy = z
-		.object({ semantics: VaultCheckSchema })
-		.parse((await archboard(cli, ["check", "semantics"])).json).semantics;
-	keepTalk({
-		...talkOfFixture(talk, board, policy),
-		directory: inHome(home, talk.directory),
-	});
-}
-
-/**
- * Lays one fixture: the registered checkout, then each step in order, each
- * against the version the previous one left, then the talk it keeps. Every
- * step finds the vault from the checkout it runs in, and the first command in
- * a checkout registers it, so a fixture that registers none is made
- * unregistered again by the caller once it has read the laid vault.
- * @param cli How to reach the CLI.
- * @param fixture The fixture.
- * @param flask The checkout to register.
- * @param home The run's home.
- * @returns The registered identity, or null when the fixture registers none.
+ * Seed authored canonical fixture inputs before the local author starts.
+ * @param cli The isolated CLI context.
+ * @param fixture The authored fixture inputs.
+ * @param flask The disposable source checkout.
+ * @param _home The disposable author home.
+ * @returns The registered repository identity when requested.
  */
 async function layFixture(
 	cli: CliContext,
 	fixture: Fixture,
 	flask: string,
-	home: string,
+	_home: string,
 ): Promise<string | null> {
+	if (fixture.steps.length !== 0 || fixture.talk !== undefined)
+		throw new Error("Legacy fixture authoring is retired. Supply canonical inputs.");
 	const repo = fixture.registerRepo
-		? RegisteredSchema.parse(await archboardOk(cli, ["repo", "add", flask])).repo
+		? z.object({ repo: z.string() }).parse(await archboardOk(cli, ["repo", "add", flask])).repo
 		: null;
-	await sequentially(fixture.steps, (step) => layStep(cli, step, repo));
-	if (fixture.talk !== undefined) await layTalk(cli, fixture.talk, home);
+	const vault = path.join(flask, ".archboard/vault");
+	for (const [file, text] of Object.entries(fixture.inputs)) {
+		if (path.isAbsolute(file) || file.split(/[\\/]/u).some((part) => part === ".."))
+			throw new Error("A fixture input must remain in its vault.");
+		fs.mkdirSync(path.dirname(path.join(vault, file)), { recursive: true });
+		fs.writeFileSync(
+			path.join(vault, file),
+			text.replaceAll("$FLASK", repo ?? "github.com/pallets/flask"),
+		);
+	}
+	await readModel(cli);
 	return repo;
 }
-
-/**
- * Makes the registry forget the run's checkout. The first command in a checkout
- * registers it, so every fixture is laid into a registered checkout. A fixture
- * that says it registers none is then returned to what it says, and the author's
- * own first command registers the checkout, as it would for anybody.
- * @param cli How to reach the CLI.
- * @param flask The checkout.
- */
 async function forgetCheckout(cli: CliContext, flask: string): Promise<void> {
 	await archboardOk(cli, ["repo", "forget", flask]);
 }
-
-/**
- * Writes every board of a vault reading to a directory, one file per board.
- * @param boards The boards.
- * @param directory Where.
- */
 function writeBoards(boards: ReadonlyMap<string, SemanticBoard>, directory: string): void {
 	fs.mkdirSync(directory, { recursive: true });
-	for (const [name, board] of boards) {
+	for (const [name, record] of boards)
 		fs.writeFileSync(
 			path.join(directory, `${name.replaceAll(/[^A-Za-z0-9._-]+/gu, "_")}.json`),
-			`${JSON.stringify(board, null, "\t")}\n`,
+			JSON.stringify(record, null, 2) + "\n",
 		);
-	}
 }
-
 export {
 	forgetCheckout,
 	inspectGroup,
@@ -523,12 +194,8 @@ export {
 	readPolicy,
 	readVault,
 	renderBoard,
-	resolvePlaceholders,
-	stepCommand,
-	targetVariant,
 	vaultDiagnostics,
 	writeBoards,
 	fixturePolicy,
 	writeVaultConfiguration,
-	type PlaceholderScope,
 };

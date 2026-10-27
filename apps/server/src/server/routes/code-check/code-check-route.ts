@@ -72,7 +72,7 @@ function callerGone(request: Request, response: Response): boolean {
  * @returns Its `variant`, or undefined when it is absent or blank.
  */
 function variantOf(request: Request): string | undefined {
-	const asked = queryString(request, "variant")?.trim();
+	const asked = queryString(request, "state")?.trim();
 	return asked === "" ? undefined : asked;
 }
 

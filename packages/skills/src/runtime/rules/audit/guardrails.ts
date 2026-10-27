@@ -1,10 +1,11 @@
+import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
 // The rules every scenario holds an author to regardless of what it was asked:
 // identities stay, the vault configuration is not rewritten unless the task is
 // about it, nothing is adopted unasked, every write says what it is doing, and
 // a read-only task writes nothing.
 
 import path from "node:path";
-import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
+import type { SemanticVariant } from "@archboard/board/document";
 import {
 	checkoutOf,
 	namesVault,
@@ -96,9 +97,11 @@ const configUntouched: Guardrail = (context) => ({
  */
 const adoptOnlyWhenAsked: Guardrail = (context) => {
 	const adopted = [...context.boards]
-		.filter(
-			([name, board]) =>
-				(board.adoptions?.length ?? 0) > (context.snapshot.get(name)?.adoptions?.length ?? 0),
+		.filter(([name, board]) =>
+			board.architecture !== undefined
+				? board.architecture.manifest.current?.id !==
+					context.snapshot.get(name)?.architecture?.manifest.current?.id
+				: (board.adoptions?.length ?? 0) > (context.snapshot.get(name)?.adoptions?.length ?? 0),
 		)
 		.map(([name]) => name);
 	return {
@@ -165,7 +168,10 @@ function isBoardFile(file: string, vault: string, from = checkoutOf(vault)): boo
 		relative !== "" &&
 		!relative.startsWith("..") &&
 		!path.isAbsolute(relative) &&
-		file.endsWith(".semantic.json")
+		(/\.(?:module|flows|proposal|walkthrough)\.json$/u.test(file) ||
+			["model.json", "migration.json", "migration-plan.json", "config.yaml"].includes(
+				path.basename(file),
+			))
 	);
 }
 
@@ -238,7 +244,9 @@ function writesBoardFile(simple: string, vault: string, from: string): boolean {
 function opensBoardFileForWriting(script: string, vault: string): boolean {
 	return (
 		namesVault(script, vault) &&
-		script.includes(".semantic.json") &&
+		/(?:\.(?:semantic|module|flows|proposal|walkthrough)\.json|model\.json|migration\.json)/u.test(
+			script,
+		) &&
 		/\b(?:writeFileSync|writeFile)\b|\bopen\([^)]*,\s*['"][wax]|\bjson\.dump\(|\bsed\s+-i\b/u.test(
 			script,
 		)
@@ -288,7 +296,9 @@ function writesNamedFile(simple: string, vault: string, from: string): boolean {
  */
 const noWrites: Guardrail = (context) => {
 	const moved = [...new Set([...context.boards.keys(), ...context.snapshot.keys()])].filter(
-		(name) => context.boards.get(name)?.version !== context.snapshot.get(name)?.version,
+		(name) =>
+			(context.boards.get(name)?.revision ?? context.boards.get(name)?.version) !==
+			(context.snapshot.get(name)?.revision ?? context.snapshot.get(name)?.version),
 	);
 	return {
 		passed: moved.length === 0,

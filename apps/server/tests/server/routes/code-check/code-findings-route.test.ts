@@ -183,3 +183,36 @@ test("what a pass found in one vault is not shown for a board of the same name i
 		rmSync(other, { recursive: true, force: true });
 	}
 });
+
+test("canonical findings keep the exact model revision and replace only the selected state", () => {
+	const memory = createCodeFindingsMemory();
+	const revision = { digest: "a".repeat(64), files: [] };
+	const answer: CodeCheckAnswer = {
+		timings: [],
+		boards: [],
+		models: [{ model: "Shop", state: "Now", revision }],
+		findings: [
+			{
+				code: "BINDING_PATH_MISSING",
+				severity: "warning",
+				file: "shop.module.json",
+				model: "Shop",
+				state: "Now",
+				message: "Missing path",
+			},
+		],
+		skipped: [],
+		behind: [],
+	};
+	memory.remember(ownVault, answer, new Date("2026-10-27T00:00:00Z"));
+	expect(memory.recall(ownVault)).toMatchObject({
+		models: [{ model: "Shop", state: "Now", revision, findings: answer.findings }],
+	});
+	memory.remember(
+		ownVault,
+		{ ...answer, models: [{ model: "Shop", state: "Draft", revision }], findings: [] },
+		new Date("2026-10-27T00:00:01Z"),
+	);
+	expect(memory.recall(ownVault).models).toHaveLength(2);
+	expect(memory.recall(vaultIn(join(scratch, "other"))).models).toEqual([]);
+});
