@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 202,
+	"version": 203,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-27T00:07:08.081Z",
+	"updatedAt": "2026-10-27T00:56:39.025Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -152850,7 +152850,7 @@
 		{
 			"id": "T2GzB51A",
 			"name": "TASK-549.07-integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "88bBHFNP",
 			"summary": "Reconcile complete proposal families while preserving source and foreign reference navigation.",
 			"documents": [
@@ -156959,7 +156959,7 @@
 		{
 			"id": "3ekEUyjN",
 			"name": "TASK-549.13-integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "T2GzB51A",
 			"summary": "Capture the exact canonical reading and explain it through one local workhorse action.",
 			"documents": [
@@ -161105,7 +161105,7 @@
 			}
 		}
 	],
-	"current": "T2GzB51A",
+	"current": "3ekEUyjN",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -161383,6 +161383,12 @@
 			"from": "88bBHFNP",
 			"at": "2026-10-26T23:35:29.185Z",
 			"reason": "Canonical families inherit safe changes and retain explicit conflicts until complete agent settlement"
+		},
+		{
+			"variant": "3ekEUyjN",
+			"from": "T2GzB51A",
+			"at": "2026-10-27T00:56:39.025Z",
+			"reason": "Shared local explanations preserve the captured reading across navigation and expose tested progress and recovery"
 		}
 	],
 	"shelvings": [

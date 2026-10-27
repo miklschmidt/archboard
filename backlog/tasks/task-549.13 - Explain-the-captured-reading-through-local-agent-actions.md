@@ -1,11 +1,11 @@
 ---
 id: TASK-549.13
 title: Explain the captured reading through local agent actions
-status: In Progress
+status: Done
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-27T00:37:00Z'
+updated_date: '2026-10-27T01:03:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -46,16 +46,16 @@ TASK-549.06, TASK-549.12
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Toolbar, context-menu, keyboard, and voice actions explain selections, relationships, flows, and proposals through the same local workhorse contract.
-- [ ] #2 Each request captures its model, revision, identities, reading, and action at invocation. Later navigation never retargets it.
-- [ ] #3 The interface and voice use one textual answer. Unavailable agents, progress, failure, and retry remain visible. Missing-flow requests can trigger investigation.
-- [ ] #4 Answers remain temporary until an explicit agent edit records them through normal claims and stale-write protection.
+- [x] #1 Toolbar, context-menu, keyboard, and voice actions explain selections, relationships, flows, and proposals through the same local workhorse contract.
+- [x] #2 Each request captures its model, revision, identities, reading, and action at invocation. Later navigation never retargets it.
+- [x] #3 The interface and voice use one textual answer. Unavailable agents, progress, failure, and retry remain visible. Missing-flow requests can trigger investigation.
+- [x] #4 Answers remain temporary until an explicit agent edit records them through normal claims and stale-write protection.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -100,4 +100,12 @@ Signed merge checkpoint 17ea315113dde39a48c20be495680e7e89d0e5f6 contains the te
 Parent browser RED exposed that an explanation required a prior conversation connection. Invocation now opens the existing generation-owned tab session for an admitted browser tab. Read-only discovery starts no agent work. Unknown tab identities remain refused. The toolbar capture, canonical pane report, temporary result panel, and navigation-preserving query owner are implemented; browser acceptance is still running.
 
 First browser slice passes: a toolbar action captures the selected module, survives scope navigation, receives the same workhorse answer, and reports canonical pane metadata through the existing publisher. Six browser assertions pass. Both type projects and lint pass. The existing pane connection announces answer changes, and actions wait for pane registration. Canonical reports bypass the legacy board-context builder and retain direct coordinator updates. Context-menu and keyboard invocation plus visible cancellation/retry remain for the next slice.
+
+Completed the parent browser slice with one menu and one action contract for toolbar, Shift+F10, context-menu, typed, and voice requests. The context menu uses the visible selection and leaves diagram gestures in their existing owner. The query cache owns answers across navigation, and every control keeps the captured vault and identity. The backend latest read discovers external invocations. Final browser owner passes 2 cases with 11 assertions. Targeted reader, action, context, instruction, CLI contract, and help tests pass 23 cases with 8864 assertions. The existing signed-out conversation and approval browser case passes 38 assertions. Both type projects, lint, formatting, and eval input validation pass. Two visual captures were inspected, and temporary capture calls were removed. All eight architecture proposals are adopted. Current semantics reports zero warnings, and current code reports zero warnings on all eight affected boards. Nine existing warnings remain on Archboard and Archboard server. Simplification retained one dropdown, one pane report sequence, one temporary backend action owner, and one query cache. Correct ownership groups place explanation actions inside the workbench and the lease inside the board runtime, which removes the crowded overview without changing budgets. No live model evaluation ran.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Readers can explain a captured selection, relationship, flow, or proposal through the shared local workhorse action. Toolbar, context-menu, keyboard, typed, and voice invocations share temporary answers, exact captured retry, and cancellation. Answers identify their original reading after navigation. Public runtime and controlled browser evidence pass. Architecture descriptions and consumer guidance match the delivered behavior. Final integration review remains with the parent TASK-549 workflow.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 191,
+	"version": 193,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-27T00:23:22.197Z",
+	"updatedAt": "2026-10-27T00:56:38.491Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -79436,7 +79436,7 @@
 		{
 			"id": "5TS6RQ6W",
 			"name": "TASK-549.07-integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "lGZBoeX1",
 			"summary": "Show unresolved proposals and their blocked descendants without changing coherent architecture",
 			"documents": [
@@ -83125,7 +83125,7 @@
 		{
 			"id": "KsXdL7AS",
 			"name": "TASK-549.13-integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "5TS6RQ6W",
 			"summary": "Explain the selected canonical reading through one local workhorse and show its captured answer.",
 			"documents": [
@@ -85113,11 +85113,16 @@
 					{
 						"id": "ZV5gxAfu",
 						"order": 82000,
-						"from": "n2ONtqdt",
-						"to": "YLoD5SNo",
+						"from": "YLoD5SNo",
+						"to": "n2ONtqdt",
 						"kind": "call",
-						"label": "explain the captured reading",
-						"emphasis": "normal"
+						"label": "show the captured answer",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/architecture-model/ModelExplanationHost.tsx",
+							"symbol": "ModelExplanationResult"
+						}
 					},
 					{
 						"id": "RaEm0Enu",
@@ -85129,13 +85134,60 @@
 						"emphasis": "normal"
 					},
 					{
-						"id": "kYf4Xpeu",
+						"id": "VA9yIxx0",
 						"order": 84000,
-						"from": "n2ONtqdt",
-						"to": "zkDth8gp",
+						"from": "zkDth8gp",
+						"to": "aG0rP4SX",
 						"kind": "call",
-						"label": "report canonical reading intent",
-						"emphasis": "normal"
+						"label": "identify the tab answer",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+							"symbol": "tabSessionId"
+						}
+					},
+					{
+						"id": "FmzPTTiB",
+						"order": 85000,
+						"from": "YLoD5SNo",
+						"to": "aG0rP4SX",
+						"kind": "call",
+						"label": "address the existing tab",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/architecture-model/ModelExplanationHost.tsx",
+							"symbol": "tabSessionId"
+						}
+					},
+					{
+						"id": "ponUuQbD",
+						"order": 86000,
+						"from": "zkDth8gp",
+						"to": "AIp6YN1P",
+						"kind": "call",
+						"label": "refresh the changed tab answer",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+							"symbol": "explanationKey"
+						}
+					},
+					{
+						"id": "TWI66Wjf",
+						"order": 87000,
+						"from": "zkDth8gp",
+						"to": "YLoD5SNo",
+						"kind": "call",
+						"label": "keep answers above the changing reading",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+							"symbol": "ModelExplanationHost"
+						}
 					}
 				],
 				"flows": [
@@ -86853,7 +86905,7 @@
 			}
 		}
 	],
-	"current": "5TS6RQ6W",
+	"current": "KsXdL7AS",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -87022,6 +87074,12 @@
 			"from": "lGZBoeX1",
 			"at": "2026-10-26T23:35:30.215Z",
 			"reason": "Canonical families inherit safe changes and retain explicit conflicts until complete agent settlement"
+		},
+		{
+			"variant": "KsXdL7AS",
+			"from": "5TS6RQ6W",
+			"at": "2026-10-27T00:56:38.491Z",
+			"reason": "Shared local explanations preserve the captured reading across navigation and expose tested progress and recovery"
 		}
 	],
 	"shelvings": [

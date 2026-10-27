@@ -4,9 +4,9 @@
 	"id": "SJ2JMVyz",
 	"name": "Codex workhorse",
 	"level": "module",
-	"version": 98,
+	"version": 99,
 	"createdAt": "2026-09-17T21:06:43.257Z",
-	"updatedAt": "2026-10-26T22:39:39.106Z",
+	"updatedAt": "2026-10-27T00:56:40.384Z",
 	"views": [
 		{
 			"id": "TX1Vzuu7",
@@ -20224,7 +20224,7 @@
 		{
 			"id": "Lbr1X2ea",
 			"name": "TASK-530.05",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "0nKAHLWg",
 			"summary": "Checkout workhorse creation, commands, queues, approvals, and coordinator reporting",
 			"documents": [
@@ -22667,7 +22667,7 @@
 		{
 			"id": "T32rGIFX",
 			"name": "TASK-549.13",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "Lbr1X2ea",
 			"summary": "Capture exact canonical readings for one temporary local workhorse answer",
 			"documents": [
@@ -25160,7 +25160,7 @@
 			}
 		}
 	],
-	"current": "Lbr1X2ea",
+	"current": "T32rGIFX",
 	"adoptions": [
 		{
 			"variant": "7MQ3CPWJ",
@@ -25239,6 +25239,12 @@
 			"from": "0nKAHLWg",
 			"at": "2026-10-25T17:30:21.113Z",
 			"reason": "TASK-530.05: a pane became a chat, a workhorse's board news became its context delivery, the coordinator callbacks take a host's announced changes and encode canonical JSON, and a checkout is any directory the host admits"
+		},
+		{
+			"variant": "T32rGIFX",
+			"from": "Lbr1X2ea",
+			"at": "2026-10-27T00:56:40.384Z",
+			"reason": "Shared local explanations preserve the captured reading across navigation and expose tested progress and recovery"
 		}
 	],
 	"shelvings": [

@@ -4,9 +4,9 @@
 	"id": "qKGcB6vZ",
 	"name": "Voice coordinator",
 	"level": "module",
-	"version": 98,
+	"version": 99,
 	"createdAt": "2026-09-17T21:07:17.695Z",
-	"updatedAt": "2026-10-26T22:18:23.278Z",
+	"updatedAt": "2026-10-27T00:56:40.753Z",
 	"views": [
 		{
 			"id": "kRgJIGTY",
@@ -26564,7 +26564,7 @@
 		{
 			"id": "VNJBNtWe",
 			"name": "TASK-530.05",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "isObiJDh",
 			"summary": "Voice session identity, coordinator lifecycle, ordered workhorse news and announced context changes, and spoken approvals",
 			"documents": [
@@ -29552,7 +29552,7 @@
 		{
 			"id": "HuslmanB",
 			"name": "TASK-549.13",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "VNJBNtWe",
 			"summary": "Capture exact canonical readings for one temporary local workhorse answer",
 			"documents": [
@@ -32539,7 +32539,7 @@
 			}
 		}
 	],
-	"current": "VNJBNtWe",
+	"current": "HuslmanB",
 	"adoptions": [
 		{
 			"variant": "H3TW6CJC",
@@ -32636,6 +32636,12 @@
 			"from": "isObiJDh",
 			"at": "2026-10-25T17:30:20.818Z",
 			"reason": "TASK-530.05: the coordinator and the voice hear a host's announced context changes through the callback queue, the voice start's brief is the host's coordinator context, the outcome report sends nothing while the session is unattended, and the callbacks encode canonical JSON"
+		},
+		{
+			"variant": "HuslmanB",
+			"from": "VNJBNtWe",
+			"at": "2026-10-27T00:56:40.753Z",
+			"reason": "Shared local explanations preserve the captured reading across navigation and expose tested progress and recovery"
 		}
 	],
 	"shelvings": [

@@ -7,9 +7,9 @@
 		"Agent workbench"
 	],
 	"level": "service",
-	"version": 136,
+	"version": 137,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-26T22:40:26.719Z",
+	"updatedAt": "2026-10-27T00:56:41.498Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -41625,7 +41625,7 @@
 		{
 			"id": "KQtKiYDn",
 			"name": "TASK-530.05",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "5ou4Zp5Y",
 			"summary": "The codex-realtime-voice package as a host uses it: its entry point and browser client, the shared Codex child, tab sessions and the context changes announced to them, checkout workhorses and voice, and the Archboard and example hosts",
 			"documents": [
@@ -45860,7 +45860,7 @@
 		{
 			"id": "HT2rOL6a",
 			"name": "TASK-549.13",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "KQtKiYDn",
 			"summary": "Keep captured local explanations and conversation selection behind the existing host owner",
 			"documents": [
@@ -50093,7 +50093,7 @@
 			}
 		}
 	],
-	"current": "KQtKiYDn",
+	"current": "HT2rOL6a",
 	"adoptions": [
 		{
 			"variant": "kUF7buv6",
@@ -50178,6 +50178,12 @@
 			"from": "5ou4Zp5Y",
 			"at": "2026-10-25T17:30:25.051Z",
 			"reason": "TASK-530.05: board news became context announcements (agent.announce), with Archboard's changes as one adapter; the workhorse's delivery became its context delivery; a pane became a chat, a presentation a narrative, a recording an unattended session; checkouts list by label"
+		},
+		{
+			"variant": "HT2rOL6a",
+			"from": "KQtKiYDn",
+			"at": "2026-10-27T00:56:41.498Z",
+			"reason": "Shared local explanations preserve the captured reading across navigation and expose tested progress and recovery"
 		}
 	],
 	"shelvings": [

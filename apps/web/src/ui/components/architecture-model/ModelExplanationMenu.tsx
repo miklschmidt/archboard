@@ -12,6 +12,8 @@ const ACTIONS = {
 } satisfies Record<Action, string>;
 
 interface MenuProps {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
 	model: Model;
 	selected: ReadonlySet<string>;
 	unavailable: boolean;
@@ -44,7 +46,7 @@ function ModelExplanationMenu(props: MenuProps): JSX.Element {
 			props.model.selectedState?.lifecycle === "draft" && props.model.comparison !== undefined,
 	};
 	return (
-		<DropdownMenu>
+		<DropdownMenu open={props.open} onOpenChange={props.onOpenChange}>
 			<DropdownMenu.Trigger
 				data-slot="model-explain"
 				className="text-control hover:bg-muted rounded-control px-3 py-2"

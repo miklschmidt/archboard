@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 183,
+	"version": 186,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-27T00:07:05.750Z",
+	"updatedAt": "2026-10-27T00:56:37.753Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -176456,7 +176456,7 @@
 		{
 			"id": "8sdo0DeV",
 			"name": "TASK-549.07-integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "WjtKLTV6",
 			"summary": "Reconcile complete proposal families while preserving source and foreign reference navigation.",
 			"documents": [
@@ -183436,7 +183436,7 @@
 		{
 			"id": "fyaT026V",
 			"name": "TASK-549.13-integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "8sdo0DeV",
 			"summary": "Capture the exact canonical reading and explain it through one local workhorse action.",
 			"documents": [
@@ -187232,14 +187232,14 @@
 					{
 						"id": "PA8QWoMK",
 						"order": 202000,
-						"from": "cNaEpWjJ",
+						"from": "FlAxCoeb",
 						"to": "vvxDSZoQ",
 						"kind": "call",
-						"label": "readModelNavigation",
+						"label": "read one selected state with navigation",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/read/model-read.ts",
+							"path": "packages/board/src/runtime/operations/read/model-explanation.ts",
 							"symbol": "readModelNavigation"
 						}
 					},
@@ -187467,29 +187467,31 @@
 						}
 					},
 					{
-						"id": "sz0cVTkg",
-						"order": 220000,
-						"from": "FlAxCoeb",
-						"to": "Bd4GPG6d",
-						"kind": "call",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/read/model-explanation.ts",
-							"symbol": "readArchitectureCheckpoint"
-						}
-					},
-					{
 						"id": "FheDJtzv",
 						"order": 221000,
 						"from": "FlAxCoeb",
 						"to": "KJy5yYuq",
 						"kind": "call",
+						"label": "resolve captured canonical subjects",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/read/model-explanation.ts",
-							"symbol": "readSelectedState"
+							"symbol": "subjectsOf"
+						}
+					},
+					{
+						"id": "WdOzlOvq",
+						"order": 222000,
+						"from": "vvxDSZoQ",
+						"to": "cNaEpWjJ",
+						"kind": "call",
+						"label": "build read diagnostics",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-navigation.ts",
+							"symbol": "failure"
 						}
 					}
 				],
@@ -190466,7 +190468,7 @@
 			}
 		}
 	],
-	"current": "8sdo0DeV",
+	"current": "fyaT026V",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -190678,6 +190680,12 @@
 			"from": "WjtKLTV6",
 			"at": "2026-10-26T23:35:28.682Z",
 			"reason": "Canonical families inherit safe changes and retain explicit conflicts until complete agent settlement"
+		},
+		{
+			"variant": "fyaT026V",
+			"from": "8sdo0DeV",
+			"at": "2026-10-27T00:56:37.753Z",
+			"reason": "Shared local explanations preserve the captured reading across navigation and expose tested progress and recovery"
 		}
 	],
 	"shelvings": [

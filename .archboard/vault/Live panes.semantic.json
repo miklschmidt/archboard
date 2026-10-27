@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 78,
+	"version": 80,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-26T22:41:55.150Z",
+	"updatedAt": "2026-10-27T00:56:41.107Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -20464,7 +20464,7 @@
 		{
 			"id": "AiVALJQa",
 			"name": "TASK-532",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "csyD8fmQ",
 			"summary": "Archboard pane sockets, vault routing, and their adapter to shared tab sessions",
 			"content": {
@@ -23495,7 +23495,7 @@
 		{
 			"id": "4kUjYSbo",
 			"name": "TASK-549.13",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "AiVALJQa",
 			"summary": "Report exact canonical reading intent and keep shown-conversation assembly with its workbench owner",
 			"content": {
@@ -23550,6 +23550,7 @@
 						"name": "Pane registry",
 						"kind": "module",
 						"responsibility": "The sockets and the vault each belongs to, what each pane is showing, which pane a show names in any vault, and the news broadcast to the sockets of one vault",
+						"description": "The registry delivers temporary explanation change notices only to panes registered in the action tab. These notices use each existing pane socket and carry no architecture or answer content.",
 						"parent": "UvFpXmwp",
 						"groups": [
 							"panes"
@@ -23580,6 +23581,7 @@
 						"name": "Codex workbench",
 						"kind": "service",
 						"responsibility": "Owns the private Codex child and bridges it to the panes",
+						"description": "Canonical reading reports reach the coordinator through its existing direct context subscription. The legacy board context builder handles only legacy panes. Explanation invocation opens the existing session for a registered tab and uses its checkout workhorse. Latest-action discovery starts no agent work.",
 						"groups": [
 							"agent"
 						],
@@ -23773,7 +23775,7 @@
 						"name": "Pane session",
 						"kind": "module",
 						"responsibility": "One pane's contact with the server: holds the vault and repository the server put it in, and names that vault on its socket, reports, readings and calls",
-						"description": "pane-arrival adopts the vault and repository that a pane_board message names, and pane-core keeps them as a mirror of the server. pane-socket opens the socket with ?vault= and socket-messages routes each message. A report is keyed by its vault, so the server answers one naming a vault the pane left with registered:false.",
+						"description": "pane-arrival adopts the vault and repository that a pane_board message names, and pane-core keeps them as a mirror of the server. pane-socket opens the socket with ?vault= and socket-messages routes each message. A report is keyed by its vault, so the server answers one naming a vault the pane left with registered:false. Canonical reports preserve architecture metadata when the legacy board is null. The request names the admitted pane vault, while architecture names the actual reading vault. Explanation controls wait for pane registration. A tab-scoped explanation notice invalidates the existing answer query.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web/src/ui/clients/pane-session"
@@ -26592,7 +26594,7 @@
 			}
 		}
 	],
-	"current": "AiVALJQa",
+	"current": "4kUjYSbo",
 	"adoptions": [
 		{
 			"variant": "8dYrGdIf",
@@ -26670,6 +26672,12 @@
 			"from": "csyD8fmQ",
 			"at": "2026-10-25T05:26:21.863Z",
 			"reason": "Pane show and the pane registry open a board through readBoardVariant, the shared tab sessions and the Codex workbench moved to Codex realtime voice (TASK-529.01, TASK-530)"
+		},
+		{
+			"variant": "4kUjYSbo",
+			"from": "AiVALJQa",
+			"at": "2026-10-27T00:56:41.107Z",
+			"reason": "Shared local explanations preserve the captured reading across navigation and expose tested progress and recovery"
 		}
 	]
 }

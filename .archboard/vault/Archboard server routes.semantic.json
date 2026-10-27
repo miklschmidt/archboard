@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 168,
+	"version": 171,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-27T00:07:10.289Z",
+	"updatedAt": "2026-10-27T01:01:30.258Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -353,6 +353,22 @@
 					"bB2IRV9I",
 					"fs2ehN0i",
 					"8vCjLQ0W"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "YNDydm3w",
+			"name": "Canonical explanations",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"nn1ec9Tw",
+					"QboPNrzG",
+					"YRHoGRbV",
+					"bB2IRV9I"
 				],
 				"edges": [],
 				"flows": []
@@ -161192,7 +161208,7 @@
 		{
 			"id": "FT3kmhlr",
 			"name": "TASK-549.07-integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "RW4E0EaH",
 			"summary": "Reconcile complete proposal families while preserving source and foreign reference navigation.",
 			"documents": [
@@ -166295,7 +166311,7 @@
 		{
 			"id": "3vItWRYV",
 			"name": "TASK-549.13-integration",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "FT3kmhlr",
 			"summary": "Capture the exact canonical reading and explain it through one local workhorse action.",
 			"documents": [
@@ -166581,6 +166597,7 @@
 						"kind": "module",
 						"responsibility": "One writer at a time per board: the lease file in the vault, an agent's claim, and news when the holder changes",
 						"description": "ADR 0016. The lease lives beside the board, so every server on the vault sees the same exclusion.",
+						"parent": "bB2IRV9I",
 						"groups": [
 							"writes"
 						],
@@ -166857,7 +166874,8 @@
 						"name": "Canonical explanation actions",
 						"kind": "module",
 						"responsibility": "Captures and runs temporary architecture explanations on existing local workhorses",
-						"description": "The latest action in a tab is discoverable without a known action ID, so voice and typed requests fill the same visible answer. Existing workbench publication announces action changes. Reads keep the actual captured vault.",
+						"description": "The latest action in a tab is discoverable without a known action ID, so voice and typed requests fill the same visible answer. The existing pane socket announces action changes only to panes in the same tab. Reads keep the actual captured vault.",
+						"parent": "3LoKNA2g",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/workbench/src/server/services/explanations"
@@ -167109,20 +167127,6 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
 							"symbol": "sendToPane"
-						}
-					},
-					{
-						"id": "HAEts0QI",
-						"order": 18000,
-						"from": "bB2IRV9I",
-						"to": "kHACcD1X",
-						"kind": "call",
-						"label": "carry the claim to the new name",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/rename/carry.ts",
-							"symbol": "claimBoard"
 						}
 					},
 					{
@@ -167417,20 +167421,6 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/service/service-routes.ts",
 							"symbol": "clients"
-						}
-					},
-					{
-						"id": "Dk5UKVkb",
-						"order": 42000,
-						"from": "bB2IRV9I",
-						"to": "kHACcD1X",
-						"kind": "call",
-						"label": "hold the board for each write",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/write/write.ts",
-							"symbol": "withBoardLock"
 						}
 					},
 					{
@@ -168485,19 +168475,6 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/architecture/explanation-routes.ts",
 							"symbol": "requireVault"
-						}
-					},
-					{
-						"id": "pN2j4pnv",
-						"order": 128000,
-						"from": "3LoKNA2g",
-						"to": "YRHoGRbV",
-						"kind": "call",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/workbench/src/server/services/owner/wiring.ts",
-							"symbol": "createExplanationActions"
 						}
 					}
 				],
@@ -171487,7 +171464,7 @@
 			}
 		}
 	],
-	"current": "FT3kmhlr",
+	"current": "3vItWRYV",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -171705,6 +171682,12 @@
 			"from": "RW4E0EaH",
 			"at": "2026-10-26T23:35:29.652Z",
 			"reason": "Canonical families inherit safe changes and retain explicit conflicts until complete agent settlement"
+		},
+		{
+			"variant": "3vItWRYV",
+			"from": "FT3kmhlr",
+			"at": "2026-10-27T00:56:39.687Z",
+			"reason": "Shared local explanations preserve the captured reading across navigation and expose tested progress and recovery"
 		}
 	],
 	"shelvings": [

@@ -1,6 +1,6 @@
 import { ModelExplanationMenu } from "#ui/components/architecture-model/ModelExplanationMenu.tsx";
 import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
-import { lazy, Suspense, useCallback, useMemo, type JSX } from "react";
+import { lazy, Suspense, useCallback, useMemo, useState, type JSX } from "react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { DiagramGrammarSchema, type DiagramGrammar } from "@archboard/board/views";
@@ -78,6 +78,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 	const selection = useModelSelection(projection, props.subject);
 	const explanation = useModelExplanation(props.vault, model, location, selection.ids);
 	const { clear } = selection;
+	const [explanationOpen, setExplanationOpen] = useState(false);
 	const behavioralIds = useMemo(() => {
 		const collections = [model, comparison.reference].flatMap((reading) =>
 			reading === undefined ? [] : collectionSubjects(reading),
@@ -88,9 +89,9 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 	}, [model, projection.depicted.flows, comparison.reference]);
 	const canFocus = ![...selection.ids].some((id) => behavioralIds.has(id));
 	const subjects = useMemo(() => {
-		const selected =
+		const traced =
 			selection.ids.size > 0 ? selection.ids : new Set(focus ?? (scope === null ? [] : [scope]));
-		const expanded = withCollectionFlows(model, selected);
+		const expanded = withCollectionFlows(model, traced);
 		return comparison.reference === undefined
 			? expanded
 			: withCollectionFlows(comparison.reference, expanded);
@@ -112,10 +113,27 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 			 * @param event The key pressed within the reading.
 			 */
 			function keyDown(event: KeyboardEvent): void {
+				if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
+					event.preventDefault();
+					setExplanationOpen(true);
+					return;
+				}
 				if (event.key === "Escape" && !event.defaultPrevented) clear();
 			}
+			/**
+			 * Open the shared action menu for the selection already visible in this reading.
+			 * @param event The context request inside this reading.
+			 */
+			function contextMenu(event: MouseEvent): void {
+				event.preventDefault();
+				setExplanationOpen(true);
+			}
 			element.addEventListener("keydown", keyDown);
-			return (): void => element.removeEventListener("keydown", keyDown);
+			element.addEventListener("contextmenu", contextMenu);
+			return (): void => {
+				element.removeEventListener("keydown", keyDown);
+				element.removeEventListener("contextmenu", contextMenu);
+			};
 		},
 		[clear],
 	);
@@ -142,6 +160,8 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				canFocus={canFocus}
 			>
 				<ModelExplanationMenu
+					open={explanationOpen}
+					onOpenChange={setExplanationOpen}
 					model={model}
 					selected={selection.ids}
 					unavailable={explanation.unavailable}
