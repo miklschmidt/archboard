@@ -1,10 +1,11 @@
+import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
 // The rules every scenario holds an author to regardless of what it was asked:
 // identities stay, the vault configuration is not rewritten unless the task is
 // about it, nothing is adopted unasked, every write says what it is doing, and
 // a read-only task writes nothing.
 
 import path from "node:path";
-import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
+import type { SemanticVariant } from "@archboard/board/document";
 import {
 	checkoutOf,
 	namesVault,
@@ -90,16 +91,49 @@ const configUntouched: Guardrail = (context) => ({
 });
 
 /**
+ * Detect an adoption in canonical authority or an exact retained report.
+ * @param board The resulting evaluation evidence.
+ * @param before The original evaluation evidence.
+ * @returns Whether the run changes the current designation.
+ */
+function gainedAdoption(board: SemanticBoard, before: SemanticBoard | undefined): boolean {
+	if (board.architecture !== undefined)
+		return currentDesignation(board) !== currentDesignation(before);
+	return adoptionCount(board) > adoptionCount(before);
+}
+/**
+ * Read the actual canonical designation from evaluation evidence.
+ * @param board The optional evaluation record.
+ * @returns Its current state identity.
+ */
+function currentDesignation(board: SemanticBoard | undefined) {
+	return board?.architecture?.manifest.current?.id;
+}
+/**
+ * Count exact adoptions from a retained historical report.
+ * @param board The optional retained report.
+ * @returns Its recorded adoption count.
+ */
+function adoptionCount(board: SemanticBoard | undefined): number {
+	return board?.adoptions?.length ?? 0;
+}
+
+/**
+ * Read the revision of canonical evidence or a retained report.
+ * @param board The optional evaluation record.
+ * @returns Its actual revision or historical version.
+ */
+function evidenceRevision(board: SemanticBoard | undefined) {
+	return board?.revision ?? board?.version;
+}
+/**
  * Whether no board gained an adoption.
  * @param context The context.
  * @returns The verdict.
  */
 const adoptOnlyWhenAsked: Guardrail = (context) => {
 	const adopted = [...context.boards]
-		.filter(
-			([name, board]) =>
-				(board.adoptions?.length ?? 0) > (context.snapshot.get(name)?.adoptions?.length ?? 0),
-		)
+		.filter(([name, board]) => gainedAdoption(board, context.snapshot.get(name)))
 		.map(([name]) => name);
 	return {
 		passed: adopted.length === 0,
@@ -165,7 +199,10 @@ function isBoardFile(file: string, vault: string, from = checkoutOf(vault)): boo
 		relative !== "" &&
 		!relative.startsWith("..") &&
 		!path.isAbsolute(relative) &&
-		file.endsWith(".semantic.json")
+		(/\.(?:module|flows|proposal|walkthrough)\.json$/u.test(file) ||
+			["model.json", "migration.json", "migration-plan.json", "config.yaml"].includes(
+				path.basename(file),
+			))
 	);
 }
 
@@ -238,7 +275,9 @@ function writesBoardFile(simple: string, vault: string, from: string): boolean {
 function opensBoardFileForWriting(script: string, vault: string): boolean {
 	return (
 		namesVault(script, vault) &&
-		script.includes(".semantic.json") &&
+		/(?:\.(?:semantic|module|flows|proposal|walkthrough)\.json|model\.json|migration\.json)/u.test(
+			script,
+		) &&
 		/\b(?:writeFileSync|writeFile)\b|\bopen\([^)]*,\s*['"][wax]|\bjson\.dump\(|\bsed\s+-i\b/u.test(
 			script,
 		)
@@ -288,7 +327,8 @@ function writesNamedFile(simple: string, vault: string, from: string): boolean {
  */
 const noWrites: Guardrail = (context) => {
 	const moved = [...new Set([...context.boards.keys(), ...context.snapshot.keys()])].filter(
-		(name) => context.boards.get(name)?.version !== context.snapshot.get(name)?.version,
+		(name) =>
+			evidenceRevision(context.boards.get(name)) !== evidenceRevision(context.snapshot.get(name)),
 	);
 	return {
 		passed: moved.length === 0,

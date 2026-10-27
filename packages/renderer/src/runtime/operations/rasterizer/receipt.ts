@@ -1,3 +1,5 @@
+import { ArchitectureRenderResultSchema } from "@archboard/board/model";
+import { StandaloneThemeSchema } from "@archboard/board/render-reply";
 // The public receipt for one semantic rasterization: the saved board picture,
 // its selectors and dimensions, and the renderer document that produced it.
 // The CLI writes this shape and evaluation tooling parses the same authority.
@@ -70,3 +72,15 @@ type SemanticRasterReceipt = z.infer<typeof SemanticRasterReceiptSchema>;
 type SemanticRasterPageSize = SemanticRasterReceipt["diagram"];
 
 export { SemanticRasterReceiptSchema, type SemanticRasterPageSize, type SemanticRasterReceipt };
+
+const ArchitectureRasterReceiptSchema = ArchitectureRenderResultSchema.options[0]
+	.omit({ svg: true, atlas: true })
+	.extend({
+		theme: StandaloneThemeSchema,
+		file: z.string(),
+		scale: z.number(),
+		diagram: SemanticRasterPageSizeSchema,
+		region: SemanticRasterRegionSchema.nullable(),
+		source: SemanticRasterReceiptSchema.shape.source,
+	});
+export { ArchitectureRasterReceiptSchema };

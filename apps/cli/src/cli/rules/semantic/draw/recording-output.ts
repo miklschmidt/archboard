@@ -1,4 +1,4 @@
-// What `semantic record` and `semantic replay` share about the video file they write, and the
+// What `model record` and `model replay` share about the video file they write, and the
 // refusals of the browser and ffmpeg that write it.
 
 import { accessSync, constants, statSync } from "node:fs";
@@ -30,7 +30,7 @@ const renderFailedRefusal = {
 	exit: 1,
 	stream: "stderr" as const,
 	description:
-		"The picture could not be rendered to a file: the page did not draw a frame in time, the browser stopped, or ffmpeg failed. No video was written and the talk was kept, to render again with semantic replay.",
+		"The picture could not be rendered to a file: the page did not draw a frame in time, the browser stopped, or ffmpeg failed. No video was written and the talk was kept, to render again with model replay.",
 };
 
 /**

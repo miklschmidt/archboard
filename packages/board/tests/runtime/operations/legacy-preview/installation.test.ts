@@ -1,8 +1,11 @@
 import { afterEach, expect, test } from "bun:test";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { makeIdentity, paneBoardAddress } from "@archboard/board/address";
-import { readArchitectureModel, readBoardVariant } from "@archboard/board/store-read";
+import { makeIdentity } from "#runtime/store/address.ts";
+import { SemanticBoardSchema } from "@archboard/board/document";
+import { paneBoardAddress } from "@archboard/board/address";
+import { addressedVariant } from "@archboard/board/document";
+import { readArchitectureModel } from "@archboard/board/store-read";
 import * as writes from "@archboard/board/store-write";
 import { narrativeFixture } from "#tests/runtime/operations/legacy-preview/readings-fixture.ts";
 import { savePreviewPlan } from "#tests/runtime/operations/legacy-preview/fixture.ts";
@@ -26,11 +29,8 @@ test("installed original addresses reopen the exact readings emitted by the lega
 	fixture.original.variants = [historical, current];
 	writeFileSync(join(fixture.vault, "Shop.semantic.json"), JSON.stringify(fixture.original));
 	const selections = ["current", "Old", "Past"].map((variant) => {
-		const identity = makeIdentity({
-			board: fixture.original.name,
-			variant,
-		});
-		const legacy = readBoardVariant(fixture.vault, identity.board, identity.variant);
+		const identity = makeIdentity({ board: fixture.original.name, variant });
+		const legacy = addressedVariant(SemanticBoardSchema.parse(fixture.original), identity.variant);
 		if (!legacy.ok) throw new Error(JSON.stringify(legacy));
 		return { address: paneBoardAddress(identity), state: legacy.variant };
 	});

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { readLegacyInventory } from "@archboard/board/store-read";
 import { saveLegacyMappingPlan } from "@archboard/board/store-write";
-import type { LegacyMappingPlan } from "@archboard/board/migration";
+import type { LegacyMappingPlan } from "#shared/schemas/migration.ts";
 
 function previewFixture() {
 	const home = mkdtempSync(join(tmpdir(), "archboard-migration-preview-"));

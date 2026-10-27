@@ -11,7 +11,6 @@ import {
 	forgetDisplay,
 	rejectPendingLayouts,
 } from "@archboard/workbench/panes";
-import { forgetSemanticBoardFiles } from "#server/watchers/semantic-boards/semantic-disk-watch.ts";
 import { codexWiring, forgetTabSessions } from "@archboard/workbench/server";
 import {
 	formatHostForUrl,
@@ -26,7 +25,6 @@ import {
  */
 function forgetEngineState(): void {
 	forgetBoardMemory();
-	forgetSemanticBoardFiles();
 	forgetSemanticPaneContexts();
 	panePresentations.forget();
 }

@@ -6,8 +6,8 @@ import {
 	type ArchitectureModelRead,
 } from "@archboard/board/model";
 import { projectModel, projectFlow } from "@archboard/board/content";
-import {recordArchitectureRecipe} from "@archboard/renderer/recipe";
-import {vaultIdentity} from "@archboard/code-binding/resolution";
+import { recordArchitectureRecipe } from "@archboard/renderer/recipe";
+import { vaultIdentity } from "@archboard/code-binding/resolution";
 import { renderArchitecture } from "@archboard/renderer/bun";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { respond } from "#server/routes/architecture/model-response.ts";
@@ -34,22 +34,38 @@ function flowReading(vault: string, input: Reading) {
 				},
 			],
 		};
-	return readArchitectureModel(vault,input.module,input.flow,{state:input.state,checkpoint:input.checkpoint});
+	return readArchitectureModel(vault, input.module, input.flow, {
+		state: input.state,
+		checkpoint: input.checkpoint,
+	});
 }
 /**
  * Adapt complete selected meaning to the existing renderer operation.
  * @param model The coherent selected architecture reading.
  * @param input The explicit grammar and export theme.
+ * @param vault The addressed vault.
  * @returns The SVG and exact reading receipt.
  */
 async function flowPicture(
 	model: Extract<ArchitectureModelRead, { success: true }>,
 	input: Reading,
- vault:string,
+	vault: string,
 ) {
- const architecture = projectModel(model,input.scope ?? model.selectedModule ?? null,input.focus ?? null,{hideKinds:input.hideKinds,hideGroups:input.hideGroups});
- const flow = model.collections.flatMap((collection)=>collection.flows).find((value)=>value.id===model.selectedFlow);
- const {content} = input.grammar === "architecture" ? architecture : projectFlow(architecture,flow!);
+	const { architecture, flow, content } = renderProjection(model, input);
+	if (architecture.missing || architecture.missingFocus.length !== 0)
+		return {
+			success: false as const,
+			code: "MODULE_NOT_FOUND" as const,
+			error: "The requested scope or focus is unavailable.",
+			diagnostics: [
+				{
+					code: "MODULE_NOT_FOUND",
+					file: "model.json",
+					message: "The requested scope or focus is unavailable.",
+					recovery: "Read the model and select existing qualified module identities.",
+				},
+			],
+		};
 	const drawn = await renderArchitecture({
 		content,
 		grammar: input.grammar,
@@ -57,15 +73,65 @@ async function flowPicture(
 		fonts: "embedded",
 		theme: input.theme,
 	});
+	return renderReceipt(model, input, vault, drawn, flow);
+}
+/**
+ * Project structural scope and complete behavioral meaning through shared rules.
+ * @param model The coherent reading.
+ * @param input The requested presentation.
+ * @returns The structural projection, selected flow, and complete content.
+ */
+function renderProjection(
+	model: Extract<ArchitectureModelRead, { success: true }>,
+	input: Reading,
+) {
+	const architecture = projectModel(
+		model,
+		input.scope ?? model.selectedModule ?? null,
+		input.focus ?? null,
+		{ hideKinds: input.hideKinds, hideGroups: input.hideGroups },
+	);
+	const flow = model.collections
+		.flatMap((collection) => collection.flows)
+		.find((value) => value.id === model.selectedFlow);
+	return {
+		architecture,
+		flow,
+		content:
+			input.grammar === "architecture"
+				? architecture.content
+				: projectFlow(architecture, flow!).content,
+	};
+}
+/**
+ * Attach exact reading evidence through the existing recipe owner.
+ * @param model The coherent architecture.
+ * @param input The public selectors.
+ * @param vault The addressed vault.
+ * @param drawn The existing renderer result.
+ * @param flow The selected authored flow.
+ * @returns The canonical rendering receipt.
+ */
+function renderReceipt(
+	model: Extract<ArchitectureModelRead, { success: true }>,
+	input: Reading,
+	vault: string,
+	drawn: Awaited<ReturnType<typeof renderArchitecture>>,
+	flow: ReturnType<typeof renderProjection>["flow"],
+) {
 	return {
 		success: true as const,
 		model: model.manifest.id,
-		...(input.grammar === "architecture" ? {} : {flow:flow!.id}),
+		state: model.selectedState?.id ?? null,
+		...(input.grammar === "architecture" ? {} : { flow: flow!.id }),
 		grammar: input.grammar,
 		revision: model.revision,
 		checkpoint: model.checkpoint?.id,
-		...Object.fromEntries(Object.entries(drawn).filter(([key])=>key!=="readingDirection")),
- svg:recordArchitectureRecipe(drawn.svg,model,input,vaultIdentity(vault)??null), width:drawn.width,height:drawn.height,placed:drawn.placed,atlas:drawn.atlas,
+		svg: recordArchitectureRecipe(drawn.svg, model, input, vaultIdentity(vault) ?? null),
+		width: drawn.width,
+		height: drawn.height,
+		placed: drawn.placed,
+		atlas: drawn.atlas,
 	};
 }
 /**
@@ -74,21 +140,27 @@ async function flowPicture(
  */
 function mountArchitectureFlowRoutes(app: Express): void {
 	app.get("/api/architecture/render", requireVault, async (req, res) => {
-		const query = ArchitectureRenderRequestSchema.extend({ vault: z.string() }).safeParse(
- {...req.query, ...Object.fromEntries(["focus","hideKinds","hideGroups"].filter((key)=>typeof req.query[key] === "string").map((key)=>[key,[req.query[key]]]))},
-		);
+		const query = ArchitectureRenderRequestSchema.extend({ vault: z.string() }).safeParse({
+			...req.query,
+			...Object.fromEntries(
+				["focus", "hideKinds", "hideGroups"]
+					.filter((key) => typeof req.query[key] === "string")
+					.map((key) => [key, [req.query[key]]]),
+			),
+		});
 		if (!query.success) {
 			res
 				.status(400)
 				.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(query.error) });
 			return;
 		}
-		const model = await flowReading(vaultOfRequest(req), query.data);
+		const { vault: _vault, ...reading } = query.data;
+		const model = await flowReading(vaultOfRequest(req), reading);
 		if (!model.success) {
 			respond(res, model);
 			return;
 		}
-		respond(res, await flowPicture(model, query.data,vaultOfRequest(req)));
+		respond(res, await flowPicture(model, reading, vaultOfRequest(req)));
 	});
 }
 export { mountArchitectureFlowRoutes };

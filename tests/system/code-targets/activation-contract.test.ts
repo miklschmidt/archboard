@@ -169,7 +169,7 @@ describe("public code-target activation contract", () => {
 		const beforeMtime = statSync(note, { bigint: true }).mtimeNs;
 		await saveSelection(fixture, invocation);
 
-		const result = await activate(fixture, { board: key, element: board.node });
+		const result = await activate(fixture, { model: key, subject: board.node });
 		expect(result.status).toBe(200);
 		expect(CodeTargetOpenReplySchema.parse(result.body)).toMatchObject({
 			success: true,
@@ -389,7 +389,7 @@ describe("public code-target activation contract", () => {
 		const stateBytes = readFileSync(fixture.configFile);
 		const stateMtime = statSync(fixture.configFile, { bigint: true }).mtimeNs;
 
-		const result = await activate(fixture, { board: key, element: board.node });
+		const result = await activate(fixture, { model: key, subject: board.node });
 		expect(result.status).toBe(500);
 		const reply = CodeTargetOpenReplySchema.parse(result.body);
 		expect(reply).toMatchObject({

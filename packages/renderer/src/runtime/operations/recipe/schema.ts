@@ -1,4 +1,4 @@
-import {ArchitectureRenderRequestSchema} from "@archboard/board/model";
+import { ArchitectureRenderRequestSchema } from "@archboard/board/model";
 // What a board render records about how it was drawn (ADR 0057, TASK-526.02).
 //
 // The recipe is what draws the picture again and what tells whether it is
@@ -90,19 +90,21 @@ const RenderRecipeSchema = z
 	});
 type RenderRecipe = z.infer<typeof RenderRecipeSchema>;
 const ArchitectureRecipeSchema = z.strictObject({
- recipe:z.literal(2),
- model:z.strictObject({id:z.string(),name:z.string()}),
- vault:z.strictObject({repo:z.string().nullable()}),
- reading:ArchitectureRenderRequestSchema,
- fingerprint:DigestSchema,
- picture:DigestSchema,
- raster:RenderRecipeSchema.shape.raster,
+	recipe: z.literal(2),
+	model: z.strictObject({ id: z.string(), name: z.string() }),
+	vault: z.strictObject({ repo: z.string().nullable() }),
+	reading: ArchitectureRenderRequestSchema,
+	fingerprint: DigestSchema,
+	picture: DigestSchema,
+	raster: RenderRecipeSchema.shape.raster,
 });
-const AnyRenderRecipeSchema=z.union([RenderRecipeSchema,ArchitectureRecipeSchema]);
-type AnyRenderRecipe=z.infer<typeof AnyRenderRecipeSchema>;
+const AnyRenderRecipeSchema = z.union([RenderRecipeSchema, ArchitectureRecipeSchema]);
+type AnyRenderRecipe = z.infer<typeof AnyRenderRecipeSchema>;
 
 export {
- ArchitectureRecipeSchema,AnyRenderRecipeSchema,type AnyRenderRecipe,
+	ArchitectureRecipeSchema,
+	AnyRenderRecipeSchema,
+	type AnyRenderRecipe,
 	RENDER_RECIPE_MARK,
 	RENDER_RECIPE_NAMESPACE,
 	RENDER_RECIPE_VERSION,

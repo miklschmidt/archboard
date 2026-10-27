@@ -1,3 +1,5 @@
+import { readFileSync, writeFileSync } from "node:fs";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -43,11 +45,18 @@ beforeAll(async () => {
 		serverPath: join(repoRoot, "apps/server/src/server.ts"),
 		vault,
 	});
-	const created = cli(["semantic", "new", "Shop", "--doing", "Describe implemented architecture"], {
-		level: "service",
-		nodes: [{ name: "API", kind: "module", responsibility: "Accept requests" }],
-	});
-	if (created.status !== 0) throw new Error(created.stderr);
+	const original = JSON.parse(
+		readFileSync(
+			join(repoRoot, "examples/legacy-migration/originals/System.semantic.json"),
+			"utf8",
+		),
+	);
+	original.id = "Shop";
+	original.name = "Shop";
+	original.variants[0].content.nodes[0].responsibility = "Accept requests";
+	mkdirSync(join(vault, ".archboard"), { recursive: true });
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
+	writeFileSync(join(vault, "Shop.semantic.json"), JSON.stringify(original));
 	const inventory = LegacyInventoryReadSchema.parse(
 		answer(cli(["model", "inventory", "--origin", "Shop"]).stdout),
 	);

@@ -9,7 +9,7 @@
 // nearest enclosing directory that holds a vault is an untracked vault.
 //
 // A checkout with no vault of its own can have its architecture in another
-// repository's vault, whose boards bind its code. A command can give the search
+// repository's vault, whose canonical models bind its code. A command can give the search
 // a lookup of those vaults, and the refusal then names each one as the `-C` to
 // give (TASK-480). The lookup reads boards, which this module cannot import:
 // the registry imports it, and the board store imports the registry.
@@ -38,18 +38,18 @@ interface VaultSearch {
 	/** The working directory, which a relative `-C` resolves against. */
 	readonly cwd: string;
 	/**
-	 * The known vaults whose boards bind a repository, asked when the search
+	 * The known vaults whose canonical models bind a repository, asked when the search
 	 * stops in a checkout with no vault. Without it, the refusal names none.
 	 */
-	readonly vaultsBoundTo?: (repo: string) => readonly BoundVault[];
+	readonly vaultsBoundTo?: (repo: string) => readonly BoundVault[] | Promise<readonly BoundVault[]>;
 }
 
-/** A known vault whose boards bind a repository's code. */
+/** A known vault whose canonical models bind a repository's code. */
 interface BoundVault {
 	/** The directory that holds the vault: what `-C` names. */
 	readonly holder: string;
-	/** The names of its boards that bind the repository. */
-	readonly boards: readonly string[];
+	/** The names of its models that bind the repository. */
+	readonly models: readonly string[];
 }
 
 /** The vault a command addresses. */
@@ -229,13 +229,13 @@ const NAMED_BOARDS = 5;
  * @returns The phrase.
  */
 function holdsPhrase(vault: BoundVault): string {
-	const named = vault.boards.slice(0, NAMED_BOARDS).map((board) => JSON.stringify(board));
-	const more = vault.boards.length - named.length;
+	const named = vault.models.slice(0, NAMED_BOARDS).map((board) => JSON.stringify(board));
+	const more = vault.models.length - named.length;
 	return `${vault.holder} holds ${named.join(", ")}${more > 0 ? ` and ${String(more)} more` : ""}.`;
 }
 
 /**
- * The known vaults whose boards bind a checkout's repository.
+ * The known vaults whose canonical models bind a checkout's repository.
  * @param root The checkout root.
  * @param lookup The lookup the search was given.
  * @returns The repository and its vaults, or undefined when there are none or the lookup failed.
@@ -247,7 +247,7 @@ async function boundElsewhereOf(
 	if (lookup === undefined) return undefined;
 	try {
 		const repository = await repoIdentityAt(root);
-		const vaults = lookup(repository);
+		const vaults = await lookup(repository);
 		return vaults.length === 0 ? undefined : { repository, vaults };
 	} catch {
 		// The vaults are a hint on a refusal. A lookup that cannot read leaves the refusal as it was.

@@ -62,7 +62,10 @@ interface DrawnProposal {
  * variant itself and for a draft that came from nothing on a board with no
  * current variant.
  */
-function comparedWith(board: SemanticBoard, variant: SemanticVariant): SemanticVariant | undefined {
+function comparedWith(
+	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	variant: SemanticVariant,
+): SemanticVariant | undefined {
 	const current = currentVariant(board);
 	if (current !== undefined) {
 		return current.id === variant.id ? undefined : current;
@@ -91,13 +94,13 @@ function drawingOf(
 	scope?: ReadingScope,
 ): ComparedContent;
 function drawingOf(
-	board: SemanticBoard,
+	board: Pick<SemanticBoard, "name" | "current" | "variants">,
 	variant: SemanticVariant,
 	scope?: ReadingScope,
 	named?: SemanticVariant,
 ): DrawnProposal;
 function drawingOf(
-	source: SemanticBoard | VariantContent,
+	source: Pick<SemanticBoard, "name" | "current" | "variants"> | VariantContent,
 	reading: SemanticVariant | VariantContent,
 	scope: ReadingScope = { kind: "all" },
 	named?: SemanticVariant,
@@ -141,7 +144,7 @@ function comparedContent(
  * @returns The content to draw and the changes to mark on it.
  */
 function boardDrawing(
-	board: SemanticBoard,
+	board: Pick<SemanticBoard, "name" | "current" | "variants">,
 	variant: SemanticVariant,
 	scope: ReadingScope = { kind: "all" },
 	named?: SemanticVariant,

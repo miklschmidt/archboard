@@ -18,7 +18,7 @@ import { type ArchitectureModelRead } from "@archboard/board/model";
 //
 // Pass two renders the picture from the kept talk frame by frame (`render-talk.ts`), with no
 // voice at all. A render that fails keeps the talk, so it can be rendered again with
-// `archboard semantic replay`. An interrupt tears either browser down at once, so every call
+// `archboard model replay`. An interrupt tears either browser down at once, so every call
 // still waiting on it fails and no file is written.
 
 import { mkdtempSync, rmSync } from "node:fs";

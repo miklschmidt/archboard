@@ -8,7 +8,10 @@ import { inspectContainer } from "#shared/api/container-interface.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 type ModelFlow = Model["collections"][number]["flows"][number];
-type ModelFilters = Pick<z.infer<typeof ArchitectureRenderRequestSchema>, "hideKinds" | "hideGroups">;
+type ModelFilters = Pick<
+	z.infer<typeof ArchitectureRenderRequestSchema>,
+	"hideKinds" | "hideGroups"
+>;
 type Visibility = Model["walkthroughs"][number]["beats"][number]["reading"]["visibility"];
 
 /**

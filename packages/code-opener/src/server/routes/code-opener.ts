@@ -123,13 +123,18 @@ export interface CodeOpenerRouteDependencies {
  * proposal's binding is read off the proposal rather than off whatever is
  * current: a person following code from a draft lands in the code that draft
  * names (ADR 0023).
- * @param vault The vault root the board lives in.
- * @param boardKey The board the node is on, variant and all.
- * @param subjectId The node whose binding is wanted.
+ * @param _vault The vault root the board lives in.
+ * @param _boardKey The board the node is on, variant and all.
+ * @param _subjectId The node whose binding is wanted.
  * @returns The binding, or which of board, node or binding was missing.
  */
-function canonicalBinding(_vault:string,_boardKey:string,_subjectId:string):BindingLookup {
- return {ok:false,code:"BINDING_UNAVAILABLE",error:"Open code from a canonical model and stable module identity. Migrate legacy architecture explicitly first."};
+function canonicalBinding(_vault: string, _boardKey: string, _subjectId: string): BindingLookup {
+	return {
+		ok: false,
+		code: "BINDING_UNAVAILABLE",
+		error:
+			"Open code from a canonical model and stable module identity. Migrate legacy architecture explicitly first.",
+	};
 }
 
 const DEFAULT_DEPENDENCIES: Omit<CodeOpenerRouteDependencies, "bindingForElement"> = {

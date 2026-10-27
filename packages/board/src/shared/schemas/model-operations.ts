@@ -22,12 +22,12 @@ import {
 const ArchitectureRenderRequestSchema = z.strictObject({
 	flow: z.string().min(1).optional(),
 	grammar: DiagramGrammarSchema.default("architecture"),
- module: z.string().min(1).optional(),
- state: z.string().min(1).optional(),
- scope: QualifiedSubjectIdSchema.optional(),
- focus: z.array(QualifiedSubjectIdSchema).optional(),
- hideKinds: z.array(z.string()).optional(),
- hideGroups: z.array(z.string()).optional(),
+	module: z.string().min(1).optional(),
+	state: z.string().min(1).optional(),
+	scope: QualifiedSubjectIdSchema.optional(),
+	focus: z.array(QualifiedSubjectIdSchema).optional(),
+	hideKinds: z.array(z.string()).optional(),
+	hideGroups: z.array(z.string()).optional(),
 	checkpoint: z.string().min(1).optional(),
 	theme: StandaloneThemeSchema.optional(),
 });
@@ -35,6 +35,7 @@ const ArchitectureRenderResultSchema = z.discriminatedUnion("success", [
 	z.strictObject({
 		success: z.literal(true),
 		model: SemanticIdSchema,
+		state: z.string().nullable().optional(),
 		flow: QualifiedSubjectIdSchema.optional(),
 		grammar: ArchitectureRenderRequestSchema.shape.grammar,
 		revision: ModelRevisionSchema,

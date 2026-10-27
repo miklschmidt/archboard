@@ -1,3 +1,4 @@
+import { seedCanonicalFixture, canonicalCapture } from "../support/canonical-fixture.ts";
 import { expect, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -101,17 +102,10 @@ test("panes of one tab session share a conversation; another tab session holds i
 		});
 		resources.defer(() => server.dispose());
 		const request = createRequester(server);
-		for (const [board, node] of [
-			["scratch", "Gateway"],
-			["payments", "Ledger"],
-		] as const) {
-			const created = await request("/api/semantic-boards/create", {
-				method: "POST",
-				doing: `starting ${board}`,
-				body: { board, create: { level: "system", nodes: [{ name: node, kind: "service" }] } },
-			});
-			expect(created.status).toBe(200);
-		}
+		const model = seedCanonicalFixture(fixture.vault, "payments", [
+			{ name: "Gateway", kind: "service" },
+			{ name: "Ledger", kind: "service" },
+		]);
 		const register = async (body: Record<string, unknown>) =>
 			(await request("/api/panes", { method: "POST", doing: false, body })).status;
 		// Tab one shows two panes: A first in reading order, B focused on another board. Tab two
@@ -227,18 +221,8 @@ test("panes of one tab session share a conversation; another tab session holds i
 		const voice = await leased(b, "realtimeStart", { threadId: tabOne["threadId"], sdp: "v=0" });
 		expect(voice.result).toMatchObject({ ok: true, value: { outcome: "delivered" } });
 		const handle = (voice.result.value as Record<string, unknown>)["realtimeSessionHandle"];
-		const board = await request<{
-			board: {
-				version: number;
-				variants: Array<{
-					id: string;
-					name: string;
-					lifecycle: string;
-					content: { nodes: Array<{ id: string }> };
-				}>;
-			};
-		}>("/api/semantic-boards/board?board=payments");
-		const variant = board.body.board.variants[0]!;
+		const variant = model.selectedState!;
+		const selected = model.modules.find((module) => module.name === "Ledger")!.id;
 		const picked = await request(SEMANTIC_PANE_CONTEXT_ROUTE, {
 			method: "POST",
 			doing: false,
@@ -248,8 +232,9 @@ test("panes of one tab session share a conversation; another tab session holds i
 				board: { name: "payments", key: "payments" },
 				variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
 				view: null,
-				selection: [{ id: variant.content.nodes[0]!.id }],
-				version: board.body.board.version,
+				selection: [{ id: selected }],
+				architecture: canonicalCapture(fixture.vault, model, [selected]),
+				version: null,
 				byUser: ["selection"],
 				at: new Date().toISOString(),
 				sequence: 0,
@@ -309,7 +294,7 @@ test("panes of one tab session share a conversation; another tab session holds i
 		const workhorses = records(fixture.logPath)
 			.filter((entry) => entry.kind === "response" && entry.method === "thread/start")
 			.map((entry) => entry.result as { thread: { id: string }; model: string })
-			.filter(({ model }) => model !== coordinatorModelFixture.model)
+			.filter(({ model: selectedModel }) => selectedModel !== coordinatorModelFixture.model)
 			.map(({ thread }) => thread.id);
 		expect(workhorses).toHaveLength(3);
 		expect(turnStarts().at(-1)?.params?.["threadId"]).toBe(workhorses.at(-1));

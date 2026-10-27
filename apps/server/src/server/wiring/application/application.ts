@@ -1,3 +1,4 @@
+import { mountArchitectureHistoryRoutes } from "#server/routes/architecture/history-routes.ts";
 import express from "express";
 import type { NextFunction, Request, Response } from "express";
 import dotenv from "dotenv";
@@ -14,7 +15,6 @@ import { FRONTEND_DIRECTORY } from "#server/store/frontend/frontend-directory.ts
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { checkoutWork } from "#server/wiring/owners/server-owners.ts";
 import { mountCodeCheckRoute } from "#server/routes/code-check/code-check-route.ts";
-import { mountFootprintRoute } from "#server/routes/footprint/footprint-route.ts";
 import { startServer } from "#server/lifecycle/startup/server-startup.ts";
 import {
 	mountMutationAdmission,
@@ -23,7 +23,6 @@ import {
 import { mountPaneRoutes } from "#server/routes/panes/pane-routes.ts";
 import { mountRepositoryRoutes } from "#server/routes/repositories/repository-routes.ts";
 import { mountArchitectureConfigurationRoutes } from "#server/routes/architecture/configuration-routes.ts";
-import { mountLocalityRoute } from "#server/routes/locality/locality-route.ts";
 import { mountVoiceStartTraceRoute } from "@archboard/codex-realtime-voice/server";
 
 import { mountSemanticPaneContextRoutes } from "@archboard/workbench/panes";
@@ -114,22 +113,19 @@ app.use(
 	}),
 );
 
-
 mountPaneRoutes(app);
 mountRepositoryRoutes(app);
 mountArchitectureConfigurationRoutes(app);
 mountArchitectureModelRoutes(app);
+mountArchitectureHistoryRoutes(app);
 mountLegacyMigrationRoutes(app);
-mountLocalityRoute(app);
 mountCodeCheckRoute(app);
-mountFootprintRoute(app);
 mountSemanticPaneContextRoutes(app);
 mountVoiceStartTraceRoute(app);
 
 // A vault can be open in more than one server, and the lease says who may write
 // rather than who has been told. Watching the boards on screen is what keeps a
 // pane from reading a board another writer replaced under it.
-
 
 mountServiceRoutes(app);
 

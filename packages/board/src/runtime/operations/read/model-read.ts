@@ -97,7 +97,8 @@ function discoveryFailure(captured: CapturedModel): ArchitectureModelRead | unde
 				code: "LEGACY_AUTHORITY",
 				file,
 				message: "Legacy board files still own this vault.",
-				recovery: "Run model inventory, save model plan choices, read model read --preview, then request explicit owner-authorized model migrate.",
+				recovery:
+					"Run model inventory, save model plan choices, read model read --preview, then request explicit owner-authorized model migrate.",
 			})),
 		);
 	if (captured.diagnostics.length > 0) return failure("MODEL_UNREADABLE", captured.diagnostics);

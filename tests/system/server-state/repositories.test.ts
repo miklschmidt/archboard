@@ -1,3 +1,4 @@
+import { seedCanonicalFixture } from "../support/canonical-fixture.ts";
 // The repositories the navigator lists, and choosing a checkout from the page
 // (ADR 0050, TASK-472.05). One owned server with a registry of its own knows a
 // repository with two checkouts, each with a vault. A pane shows a board of the
@@ -105,20 +106,13 @@ describe.serial("the repositories of the navigator", () => {
 		const mainVault = vaultOf(main);
 		const worktreeVault = vaultOf(worktree);
 		const inMain = createRequester({ ...server, vault: mainVault });
-		const inWorktree = createRequester({ ...server, vault: worktreeVault });
 		const inServed = createRequester(server);
-		for (const [request, board] of [
-			[inMain, "payments"],
-			[inWorktree, "ledger"],
-			[inServed, "notes"],
-		] as const) {
-			const made = await request("/api/semantic-boards/create", {
-				method: "POST",
-				doing: "starting a board",
-				body: { board, create: { level: "system", nodes: [] } },
-			});
-			expect(made.status).toBe(200);
-		}
+		for (const [vault, name] of [
+			[mainVault, "payments"],
+			[worktreeVault, "ledger"],
+			[fixture.vault, "notes"],
+		] as const)
+			seedCanonicalFixture(vault, name, []);
 
 		// The repository is listed once, read from its chosen main checkout, beside the
 		// untracked vault, which is in no checkout.
@@ -154,10 +148,6 @@ describe.serial("the repositories of the navigator", () => {
 		expect(chose.status).toBe(200);
 		const moved = await pane.waitFor("pane_board", mark);
 		expect(moved).toMatchObject({ board: "payments", vault: worktreeVault, repository: ORDERS });
-		// The pane reads who holds its board as news of the vault it is in, so it
-		// comes after the move that put it there.
-		const told = await pane.waitFor("board_lock", mark);
-		expect(pane.events.indexOf(told!)).toBeGreaterThan(pane.events.indexOf(moved!));
 		await pane.waitFor("repositories_changed", mark);
 		expect(await elsewhere.waitFor("repositories_changed", elsewhereMark)).toBeDefined();
 		expect((await listed()).find((each) => each.name === ORDERS)?.vault).toBe(worktreeVault);
@@ -168,11 +158,11 @@ describe.serial("the repositories of the navigator", () => {
 		const shown = await inServed<{ board: string; repository: string | null }>("/api/panes/show", {
 			method: "POST",
 			doing: false,
-			body: { board: "notes", pane: pane.clientId },
+			body: { reading: { model: "Fixture" }, pane: pane.clientId },
 		});
 		expect(shown.status).toBe(200);
-		const arrived = await pane.waitFor("pane_board", beforeShow);
-		expect(arrived).toMatchObject({ board: "notes", vault: realpathSync(fixture.vault) });
+		const arrived = await pane.waitFor("pane_model", beforeShow);
+		expect(arrived).toMatchObject({ model: "Fixture", vault: realpathSync(fixture.vault) });
 		// The answer and the pane name the repository the navigator lists the vault under.
 		const servedName = (await listed()).find(
 			(each) => each.vault === realpathSync(fixture.vault),
@@ -192,14 +182,8 @@ describe.serial("the repositories of the navigator", () => {
 	test("a pane whose socket was down when its checkout was chosen comes back in the chosen checkout", async () => {
 		await using resources = new AsyncDisposableStack();
 		const mainVault = vaultOf(main);
-		const inMain = createRequester({ ...server, vault: mainVault });
 		const inWorktree = createRequester({ ...server, vault: vaultOf(worktree) });
-		const made = await inMain("/api/semantic-boards/create", {
-			method: "POST",
-			doing: "starting a board",
-			body: { board: "ledger", create: { level: "system", nodes: [] } },
-		});
-		expect(made.status).toBe(200);
+		seedCanonicalFixture(mainVault, "ledger", []);
 		const away = await openPaneSession(server.base, inWorktree, {
 			clientId: "pane-away",
 			board: "ledger",

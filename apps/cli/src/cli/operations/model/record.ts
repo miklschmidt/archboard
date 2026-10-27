@@ -11,8 +11,8 @@ import {
 } from "@archboard/walkthrough/recording";
 import { recordWalkthrough } from "@archboard/walkthrough/recorder";
 import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
-import {serverRefusal} from "#cli/protocol/contract/refusals.ts";
-import type {CommandContext} from "#cli/protocol/contract/contract.ts";
+import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
+import type { CommandContext } from "#cli/protocol/contract/contract.ts";
 import { readArchitectureModelOnServer } from "#cli/clients/server/architecture-model.ts";
 import { defineCommand, CliUsageError } from "#cli/protocol/contract/contract.ts";
 import {
@@ -98,8 +98,8 @@ function recordingRequest(
 }
 
 const modelRecordContract = defineCommand({
-	prerequisites:["server"],
-	refusals:[serverRefusal],
+	prerequisites: ["server"],
+	refusals: [serverRefusal],
 	output: {
 		cases: [
 			{
@@ -122,7 +122,15 @@ const modelRecordContract = defineCommand({
 		"Uses the existing local voice, talk storage, and frame renderer. Every beat reads the same retained checkpoint. Missing subjects refuse recording before voice starts.",
 	examples: ["archboard model record --checkpoint <id> --walkthrough Tour --out tour.mp4"],
 	parameters: [
- ...(["out","theme","layout","language","talk"] as const).map((key)=>({kind:"option" as const,key,spellings:[`--${key}`] as const,value:"required" as const,required:key==="out",placeholder:"value",description:`The recording ${key}`})),
+		...(["out", "theme", "layout", "language", "talk"] as const).map((key) => ({
+			kind: "option" as const,
+			key,
+			spellings: [`--${key}`] as const,
+			value: "required" as const,
+			required: key === "out",
+			placeholder: "value",
+			description: `The recording ${key}`,
+		})),
 		{
 			kind: "option",
 			key: "checkpoint",

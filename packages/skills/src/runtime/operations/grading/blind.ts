@@ -1,3 +1,4 @@
+import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
 // What the grader is shown about one run, and nothing that says which skill
 // version produced it: anonymous ids, the request and its sources, the saved
 // boards before and after, the renders, the deterministic verdicts, and the
@@ -7,7 +8,7 @@
 import { createHash } from "node:crypto";
 import path from "node:path";
 import type { DiagramGrammar } from "@archboard/board/views";
-import type { SemanticBoard } from "@archboard/board/document";
+
 import {
 	exposureCounts,
 	type ClassifiedCommand,

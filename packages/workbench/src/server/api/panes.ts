@@ -1,6 +1,5 @@
 // The panes that are open on this server: their sockets, the boards they show and what is sent to them, the broadcast that every write announces through, and what the panes say as the workbench reads it. Bun only.
 export { aggregateOf } from "#server/rules/pane/board-key.ts";
-export { settledChangeFields } from "#server/services/panes/change-feed.ts";
 export {
 	forgetSemanticPaneContext,
 	forgetSemanticPaneContexts,

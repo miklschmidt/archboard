@@ -54,7 +54,10 @@ interface CodeCheck {
  * @returns The refusal.
  */
 function noSuchDraft(refused: NoSuchDraft): CodeCheckRefusal {
- return {code:refused.code,error:refused.diagnostics.map((item)=>`${item.message} ${item.recovery}`).join(" ")};
+	return {
+		code: refused.code,
+		error: refused.diagnostics.map((item) => `${item.message} ${item.recovery}`).join(" "),
+	};
 }
 
 /**
@@ -74,6 +77,48 @@ function planRefused(refused: PlanRefused): CodeCheckRefusal {
 }
 
 /**
+ * Address analyzer findings with their real canonical model, state, and source file.
+ * @param readings The complete inspected semantic readings.
+ * @param finding The analyzer finding.
+ * @returns The canonical finding or retained semantic evidence.
+ */
+function canonicalFinding(
+	readings: readonly import("#runtime/operations/code-check/boards.ts").BoardToCheck[],
+	finding: import("#shared/protocol/code-check.ts").CodeFinding,
+) {
+	const model = readings.find(
+		(reading) => reading.board.name === finding.board && reading.variant.id === finding.variant,
+	)?.model;
+	if (model === undefined) return finding;
+	const { board: _board, variant: _variant, path: _path, ...content } = finding;
+	const owner = findingOwner(model, finding.subject?.id);
+	return { ...content, file: owner ?? "model.json", ...findingIdentity(model) };
+}
+/**
+ * Identify the exact canonical state described by a finding.
+ * @param model The actual inspected reading.
+ * @returns Its model and state identities.
+ */
+function findingIdentity(
+	model: NonNullable<import("#runtime/operations/code-check/boards.ts").BoardToCheck["model"]>,
+) {
+	return { model: model.manifest.id, state: model.selectedState?.id ?? null };
+}
+/**
+ * Locate the authored definition of a module or source-owned relationship.
+ * @param model The actual inspected architecture.
+ * @param subject The stable subject identity.
+ * @returns Its authored input path.
+ */
+function findingOwner(
+	model: NonNullable<import("#runtime/operations/code-check/boards.ts").BoardToCheck["model"]>,
+	subject: string | undefined,
+) {
+	return model.modules.find(
+		(module) => module.id === subject || module.outgoing.some((edge) => edge.id === subject),
+	)?.file;
+}
+/**
  * Create the code check. Its reading of behind keeps what it read, so one
  * check serves every run of a process.
  * @returns The code check.
@@ -87,16 +132,28 @@ function createCodeCheck(): CodeCheck {
 		 */
 		async run(request) {
 			const { vault } = request;
-			const read = await (request.everyDraft ? readEveryDraftToCheck(vault) : readBoardsToCheck(vault, request.variant));
+			const read = await (request.everyDraft
+				? readEveryDraftToCheck(vault)
+				: readBoardsToCheck(vault, request.variant));
 			if (!("ok" in read)) return noSuchDraft(read);
 			const plans = await readPlans(vault, request.plans, request.signal);
 			if (!plans.ok) return planRefused(plans);
-   const code=await checkCode(vault,read.boards,request.signal,plans.plans);
+			const code = await checkCode(vault, read.boards, request.signal, plans.plans);
 			return CodeCheckAnswerSchema.parse({
 				timings: code.timings,
 				boards: [],
- models:read.boards.flatMap(({model})=>model===undefined?[]:[{model:model.manifest.id,state:model.selectedState?.id ?? null,revision:model.revision}]),
-				findings: code.findings,
+				models: read.boards.flatMap(({ model }) =>
+					model === undefined
+						? []
+						: [
+								{
+									model: model.manifest.id,
+									state: model.selectedState?.id ?? null,
+									revision: model.revision,
+								},
+							],
+				),
+				findings: code.findings.map((finding) => canonicalFinding(read.boards, finding)),
 				skipped: [...read.skipped, ...code.skipped],
 				behind: [],
 			});

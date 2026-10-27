@@ -1,19 +1,14 @@
 # Plan legacy identities
 
-This example creates two independent legacy boards and inventories their overlapping descriptions.
+This example copies two immutable original board fixtures and inventories their overlapping descriptions.
 Use a temporary directory outside another Git checkout.
 The commands require Archboard on PATH and Bun.
 
 ```bash
 example_dir=$(mktemp -d)
 git init --quiet "$example_dir"
-archboard install-skill --dir "$example_dir/.agents/skills" --repo "$example_dir"
-archboard semantic new System -C "$example_dir" --doing "Describe the public API" <<'JSON'
-{"level":"system","nodes":[{"name":"API","kind":"module","responsibility":"Accepts requests","binding":{"repo":"github.com/acme/shop","path":"src/api.ts"}}]}
-JSON
-archboard semantic new Detail -C "$example_dir" --doing "Describe request processing" <<'JSON'
-{"level":"module","nodes":[{"name":"API","kind":"module","responsibility":"Processes accepted requests","binding":{"repo":"github.com/acme/shop","path":"src/api.ts"}}]}
-JSON
+mkdir -p "$example_dir/.archboard/vault"
+cp examples/legacy-migration/originals/*.semantic.json "$example_dir/.archboard/vault/"
 archboard model inventory --origin Shop -C "$example_dir" > "$example_dir/inventory.json"
 ```
 
@@ -36,7 +31,7 @@ archboard model plan --input "$example_dir/choices.json" --doing "Record the own
 archboard model inventory --origin Shop -C "$example_dir"
 ```
 
-The saved plan remains separate from the live boards.
+The saved plan remains separate from the original bytes.
 After every conflict has an explicit choice, read the candidate:
 
 ```bash
@@ -44,7 +39,7 @@ archboard model read --preview Shop -C "$example_dir"
 ```
 
 The preview preserves source fingerprints, semantic details, and explicit identity choices.
-It installs no canonical files and changes no live board.
+It installs no canonical files and changes no original input.
 An unresolved choice returns a structured refusal.
 A source change requires a fresh inventory and revised plan.
 The [consumer recipe](../../skills/archboard/references/legacy-migration.md#preview-the-current-model) describes reference and policy choices.

@@ -32,7 +32,6 @@ import {
 	canonicalNarrationChange,
 } from "#server/projections/semantic-context/canonical-narration.ts";
 
-
 type CanonicalCapture = {
 	readonly vault: string;
 	readonly model: Awaited<ReturnType<typeof captureNarration>>;
@@ -128,7 +127,9 @@ function narrationChangeOf(change: UserPresentationChange): RealtimePresentation
 	const narration = narrated.get(change.clientId);
 	if (narration === undefined) return null;
 	if (!said.arrived || said.walkthrough !== narration.walkthrough) return null;
-	return narration.capture === undefined ? null : capturedNarrationChange(change.clientId,narration.capture,said.beat);
+	return narration.capture === undefined
+		? null
+		: capturedNarrationChange(change.clientId, narration.capture, said.beat);
 }
 
 /**
@@ -219,9 +220,10 @@ function narrationChangesOf(
  * @returns The board's aggregate key, or null when no pane of that tab is narrated.
  */
 function narratedBoardOf(tabSessionId: TabSessionId): string | null {
- for (const [clientId,narration] of narrated){
-  if(tabSessionOf(clientId)===tabSessionId&&narration.capture!==undefined) return `model:${narration.capture.model.manifest.id}`;
- }
+	for (const [clientId, narration] of narrated) {
+		if (tabSessionOf(clientId) === tabSessionId && narration.capture !== undefined)
+			return `model:${narration.capture.model.manifest.id}`;
+	}
 	return null;
 }
 

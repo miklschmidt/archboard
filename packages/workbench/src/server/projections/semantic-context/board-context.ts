@@ -8,5 +8,12 @@ const NOTHING_READ: SemanticArchitectureInput = Object.freeze({
 });
 export { NOTHING_READ };
 
-function aggregateKey(key:string):string{return key.split("@",1)[0]!;}
-export {aggregateKey};
+/**
+ * Read the aggregate portion of a retained presentation key.
+ * @param key The opaque pane key.
+ * @returns The aggregate address.
+ */
+function aggregateKey(key: string): string {
+	return key.split("@", 1)[0]!;
+}
+export { aggregateKey };

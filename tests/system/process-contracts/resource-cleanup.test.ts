@@ -232,7 +232,10 @@ test("TERM-resistant peer is killed through its handle and its lease is recovera
 		port = await availablePort();
 		const env = sanitizedEnvironment(root);
 		const stubborn = await startOwnedPeer({
-			argv: [process.execPath, fixture],
+			argv: [
+				process.execPath,
+				join(repoRoot, "packages/board/tests/runtime/support/process-lock.ts"),
+			],
 			env: {
 				...env,
 				ARCHBOARD_TEST_RESOURCE_MODE: "lock",
@@ -261,7 +264,10 @@ test("TERM-resistant peer is killed through its handle and its lease is recovera
 		writeFileSync(stubborn.ready.lockFile, JSON.stringify(staleLock));
 
 		const recovery = await startOwnedPeer({
-			argv: [process.execPath, fixture],
+			argv: [
+				process.execPath,
+				join(repoRoot, "packages/board/tests/runtime/support/process-lock.ts"),
+			],
 			env: {
 				...env,
 				ARCHBOARD_TEST_RESOURCE_MODE: "lock",

@@ -413,3 +413,9 @@ Original histories never gain present-day surrounding modules.
 Canonical local agent context reads the model runtime and stops consulting former board claims.
 A different reported state requires the existing exact capture action before the agent describes its selected subjects.
 Ownership transfer remains unavailable for canonical models.
+
+## Canonical default transition
+
+TASK-549.24 retires live legacy authoring and consumers.
+See [the proposed consumer transition](0062-one-live-canonical-model-and-consumer-path.md) for its backend contract and parent acceptance boundary.
+Legacy bytes remain available for explicit migration and exact retained history.

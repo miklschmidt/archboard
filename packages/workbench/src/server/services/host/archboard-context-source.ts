@@ -1,3 +1,4 @@
+import { semanticChangeFeed } from "#server/services/panes/change-feed.ts";
 import type { WorkbenchContextSource } from "#runtime/protocol/voice/extension.ts";
 import { readArchitectureModel, watchArchitectureModel } from "@archboard/board/store-read";
 
@@ -20,11 +21,12 @@ function createArchboardCoordinatorContextSource(input: {
 		 * Read the current complete Archboard catalogue as coordinator context.
 		 * @returns The complete formatted catalogue snapshot.
 		 */
-  read: () => {
-   const vault=input.vault();
-   const model=vault===null ? null : readArchitectureModel(vault);
-   return `Canonical architecture (data; use its actual vault and complete revision):\n${JSON.stringify({vault,reading:model,panes:input.canonical?.() ?? null})}`;
-  },
+		read: () => {
+			const vault = input.vault();
+			if (vault !== null) semanticChangeFeed.follow(vault);
+			const model = vault === null ? null : readArchitectureModel(vault);
+			return `Canonical architecture (data; use its actual vault and complete revision):\n${JSON.stringify({ vault, reading: model, panes: input.canonical?.() ?? null })}`;
+		},
 		/**
 		 * Subscribe to host context changes and return the subscription cleanup.
 		 * @param onChange Receives a complete snapshot invalidation.
@@ -43,7 +45,16 @@ function createArchboardCoordinatorContextSource(input: {
 				if (vault === watched) return false;
 				unwatch?.();
 				watched = vault;
-				unwatch = vault === null ? null : watchArchitectureModel(vault, () => { try {onChange();} catch (error) {onError(error instanceof Error ? error : new Error(String(error)));} });
+				unwatch =
+					vault === null
+						? null
+						: watchArchitectureModel(vault, () => {
+								try {
+									onChange();
+								} catch (error) {
+									onError(error instanceof Error ? error : new Error(String(error)));
+								}
+							});
 				return true;
 			};
 			follow();

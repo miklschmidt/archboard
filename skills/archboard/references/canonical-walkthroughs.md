@@ -64,7 +64,7 @@ Compact proposals store beat fields and placements independently.
 archboard model read --walkthrough 'Request tour' -C <directory>
 archboard model read --walkthrough 'Request tour' --checkpoint <checkpoint.id> --shared -C <directory>
 archboard model record --walkthrough 'Request tour' --checkpoint <checkpoint.id> --out tour.mp4 -C <directory>
-archboard semantic replay <talk-directory> --out tour-again.mp4
+archboard model replay <talk-directory> --out tour-again.mp4
 ```
 
 The first command reads without retaining history or changing inputs.

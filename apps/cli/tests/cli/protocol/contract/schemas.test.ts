@@ -21,13 +21,15 @@ describe("command-contract schemas", () => {
 		).toMatchObject({ paneCount: 2 });
 		const shown = {
 			success: true as const,
-			model:"Payments",reading:{grammar:"architecture"},revision:{digest:"revision",files:[]},
+			model: "Payments",
+			reading: { grammar: "architecture" },
+			revision: { digest: "revision", files: [] },
 			repository: "github.com/acme/payments",
 			checkout: "/work/payments",
 			paneId: "pane-2",
 		};
 		expect(ShowResultSchema.parse(shown)).toMatchObject(shown);
-		expect(ShowResultSchema.safeParse({ ...shown, reading:undefined }).success).toBeFalse();
+		expect(ShowResultSchema.safeParse({ ...shown, reading: undefined }).success).toBeFalse();
 	});
 
 	test("construction rejects token keys absent from the Zod ingress", () => {

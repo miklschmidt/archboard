@@ -1,27 +1,24 @@
 // Every drawing of a vault under every layout engine, side by side (TASK-348).
 //
-// Draws each board's current variant, whole and through each of its views,
+// Draws the canonical model, recursive module scopes, and independent flows,
 // with every registered engine, and writes the SVGs, a JSON summary of each
 // drawing's layout time, page size and fit to the reference pane, and one page
-// that shows the engines next to each other. It reads a copy of the vault, so
+// that shows the engines next to each other. It uses the public coherent reader, so
 // the vault is never touched.
 //
 // Run from the repository root:
 //   bun scripts/engine-gallery.ts [vault] [out] [engine,engine]
 // The vault defaults to the tracked dogfood vault, the output to a temporary
 // folder, and the engines to every registered one.
-import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import type { SemanticBoard } from "@archboard/board/document";
+import { readArchitectureModel } from "@archboard/board/store-read";
+import { projectModel, projectFlow } from "@archboard/board/content";
+import { renderArchitecture } from "@archboard/renderer/bun";
 import { fitIn } from "@archboard/renderer/shell-geometry";
-import { locateSemanticBoard } from "@archboard/board/address";
-import { readSemanticBoardAt } from "@archboard/board/store-read";
-import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
-import { renderBoard } from "@archboard/renderer/bun";
-
 /** One drawing under one engine. */
 interface Drawn {
 	readonly engine: string;
@@ -47,37 +44,6 @@ const engines = z
 mkdirSync(out, { recursive: true });
 
 /**
- * Every board of the vault, read from a copy of it, and the vault's policy.
- * @returns The boards and the policy.
- */
-function readVault(): {
-	boards: SemanticBoard[];
-	policy: ReturnType<typeof readSemanticBoardConfiguration>["configuration"];
-} {
-	const copy = mkdtempSync(join(tmpdir(), "archboard-gallery-vault-"));
-	try {
-		mkdirSync(join(copy, ".archboard"), { recursive: true });
-		copyFileSync(join(vault, ".archboard", "config.yaml"), join(copy, ".archboard", "config.yaml"));
-		const configured = readSemanticBoardConfiguration(copy);
-		const boards = readdirSync(vault)
-			.filter((file) => file.endsWith(".semantic.json"))
-			.toSorted()
-			.flatMap((file) => {
-				copyFileSync(join(vault, file), join(copy, file));
-				const read = readSemanticBoardAt(
-					copy,
-					locateSemanticBoard(file.slice(0, -".semantic.json".length), copy),
-					configured,
-				);
-				return read.ok ? [read.board] : [];
-			});
-		return { boards, policy: configured.configuration };
-	} finally {
-		rmSync(copy, { recursive: true, force: true });
-	}
-}
-
-/**
  * A file name for one drawing under one engine.
  * @param board The board.
  * @param view The view, if any.
@@ -88,36 +54,54 @@ function fileOf(board: string, view: string | undefined, engine: string): string
 	return `${[board, view ?? "whole", engine].join("--").replaceAll(/[^\w-]+/gu, "_")}.svg`;
 }
 
-const { boards, policy } = readVault();
+const model = readArchitectureModel(vault);
+if (!model.success) throw new Error(JSON.stringify(model));
+const scopes = [
+	null,
+	...model.modules
+		.filter((module) => model.modules.some((child) => child.parent === module.id))
+		.map((module) => module.id),
+];
+const readings: {
+	name: string;
+	grammar: "architecture" | "sequence" | "flowchart";
+	content: ReturnType<typeof projectModel>["content"];
+}[] = scopes.map((scope) => ({
+	name: scope ?? "whole",
+	grammar: "architecture" as const,
+	content: projectModel(model, scope, null).content,
+}));
+for (const flow of model.collections.flatMap((collection) => collection.flows)) {
+	const projected = projectFlow(projectModel(model, null, null), flow);
+	for (const grammar of ["sequence", "flowchart"] as const)
+		readings.push({ name: `${flow.id}-${grammar}`, grammar, content: projected.content });
+}
 const drawings: Drawing[] = [];
-for (const board of boards) {
-	for (const view of [undefined, ...board.views.map(({ name }) => name)]) {
-		const drawn: Drawn[] = [];
-		for (const engine of engines) {
-			const started = performance.now();
-			// oxlint-disable-next-line no-await-in-loop -- one drawing at a time, so each time is its own
-			const outcome = await renderBoard(
-				board,
-				{
-					...(view === undefined ? {} : { view }),
-					theme: "light",
-					fonts: "embedded",
-					layout: engine,
-				},
-				policy,
-			);
-			const ms = Math.round(performance.now() - started);
-			if (!outcome.ok || !("svg" in outcome.reply)) continue;
-			const { svg, width, height } = outcome.reply;
-			const file = fileOf(board.name, view, engine);
-			writeFileSync(join(out, file), svg);
-			drawn.push({ engine, file, ms, width, height, fit: fitIn({ width, height }) });
-		}
-		drawings.push({ board: board.name, view, drawn });
-		console.log(
-			[board.name, view ?? "whole", ...drawn.map((one) => `${one.engine} ${one.ms} ms`)].join("  "),
-		);
+for (const reading of readings) {
+	const drawn: Drawn[] = [];
+	for (const engine of engines) {
+		const started = performance.now();
+		// oxlint-disable-next-line no-await-in-loop -- each engine measurement owns its complete draw
+		const { svg, width, height } = await renderArchitecture({
+			content: reading.content,
+			grammar: reading.grammar,
+			policy: model.policy,
+			fonts: "embedded",
+			theme: "light",
+			layout: engine,
+		});
+		const file = fileOf(model.manifest.name, reading.name, engine);
+		writeFileSync(join(out, file), svg);
+		drawn.push({
+			engine,
+			file,
+			ms: Math.round(performance.now() - started),
+			width,
+			height,
+			fit: fitIn({ width, height }),
+		});
 	}
+	drawings.push({ board: model.manifest.name, view: reading.name, drawn });
 }
 writeFileSync(join(out, "gallery.json"), JSON.stringify(drawings, null, "\t"));
 const rows = drawings.map(

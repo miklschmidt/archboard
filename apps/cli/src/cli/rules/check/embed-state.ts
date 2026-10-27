@@ -11,8 +11,8 @@
 // the embed is current, and `--fix` only writes its new recipe.
 
 import type { EmbedFix, EmbedsPart, EmbedVault } from "#cli/protocol/check/embeds-answer.ts";
-import {readRenderRecipe} from "@archboard/renderer/recipe";
-type RenderRecipe=Extract<ReturnType<typeof readRenderRecipe>,{kind:"recipe"}>["recipe"];
+import { readRenderRecipe } from "@archboard/renderer/recipe";
+type RenderRecipe = Extract<ReturnType<typeof readRenderRecipe>, { kind: "recipe" }>["recipe"];
 
 /**
  * How a kept embed stands against the same recipe drawn now.

@@ -1,3 +1,5 @@
+import { modelContent, subjectsOf } from "@archboard/board/content";
+import { canonicalNarratedSubjects } from "#server/rules/semantic-context/narrated-subjects.ts";
 import { readArchitectureModel } from "@archboard/board/store-read";
 import type { ArchitectureModelRead } from "@archboard/board/model";
 import type { SemanticContextInput } from "#runtime/schemas/semantic-context-types.ts";
@@ -73,6 +75,27 @@ function unavailableCanonical(
 	};
 }
 /**
+ * Resolve the pane's stable selection against the actual canonical semantic content.
+ * @param model The coherent canonical reading.
+ * @param report The pane's exact captured report.
+ * @returns The complete selected count and available named subjects.
+ */
+function canonicalSelection(model: ArchitectureModel, report: Report) {
+	const selected =
+		report?.architecture?.subjects ?? report?.selection.map((subject) => subject.id) ?? [];
+	const subjects = new Map(
+		[...subjectsOf(modelContent(model))].map((subject) => [subject.id, subject]),
+	);
+	return {
+		count: selected.length,
+		subjects: selected.flatMap((id) => {
+			const subject = subjects.get(id);
+			if (subject === undefined) return [];
+			return [{ ...subject, name: canonicalNarratedSubjects(model, [id])[0]?.name ?? null }];
+		}),
+	};
+}
+/**
  * Project canonical facts into the existing bounded agent brief.
  * @param vault The addressed vault.
  * @param model The coherent runtime reading.
@@ -107,6 +130,7 @@ function availableCanonical(vault: string, model: ArchitectureModel, report: Rep
 		board,
 		architecture: {
 			...NOTHING_READ,
+			selection: canonicalSelection(model, report),
 			variant:
 				state === null
 					? null

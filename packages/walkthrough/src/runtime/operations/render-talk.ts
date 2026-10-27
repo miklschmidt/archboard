@@ -473,7 +473,7 @@ function renderFailed(
 		leftBehind.length === 0 ? "" : ` Stopping the browser also failed: ${leftBehind.join("; ")}`;
 	return new WalkthroughRecordingError(
 		"RENDER_FAILED",
-		`Rendering the talk failed: ${why}${also} The talk is kept in ${request.directory}; render it again with: archboard semantic replay ${request.directory} --out <file>`,
+		`Rendering the talk failed: ${why}${also} The talk is kept in ${request.directory}; render it again with: archboard model replay ${request.directory} --out <file>`,
 		error,
 	);
 }

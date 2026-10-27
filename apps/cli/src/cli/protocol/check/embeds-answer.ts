@@ -72,7 +72,7 @@ const EmbedFindingSchema = z.object({
 	embedRepo: z.string().optional(),
 	/** The board as the recipe names it; absent when the recipe cannot be read. */
 	board: EmbedBoardSchema.optional(),
- model:EmbedBoardSchema.optional(),
+	model: EmbedBoardSchema.optional(),
 	message: z.string(),
 	/** For `EMBED_SOURCE_MISSING`: what is gone. */
 	missing: MissingSourceSchema.optional(),

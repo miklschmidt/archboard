@@ -1,3 +1,4 @@
+import { seedCanonicalFixture } from "../support/canonical-fixture.ts";
 import { describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -102,18 +103,7 @@ describe.serial("production server Codex WebSocket ownership", () => {
 		let first: ApplicationSocket | null = null;
 		let replacement: ApplicationSocket | null = null;
 		try {
-			expect(
-				(
-					await request("/api/semantic-boards/create", {
-						method: "POST",
-						doing: "starting the board this pane shows",
-						body: {
-							board: "scratch",
-							create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
-						},
-					})
-				).status,
-			).toBe(200);
+			seedCanonicalFixture(server.vault, "scratch", [{ name: "Gateway", kind: "service" }]);
 			first = await openApplicationSocket(server.base, clientId);
 			await request("/api/panes", {
 				method: "POST",
@@ -192,13 +182,9 @@ describe.serial("production server Codex WebSocket ownership", () => {
 			);
 			expect(reports.status).toBe(200);
 			expect(reports.body.panes.some((report) => report.clientId === clientId)).toBeFalse();
-			// And the board is free: nothing the retired transport did holds it.
-			const claimed = await request<{ claim?: { holder?: { claimed?: boolean } } }>(
-				"/api/semantic-boards/claim?board=scratch",
-				{ method: "POST", doing: false, body: { reason: "checking the board is free" } },
-			);
-			expect(claimed.status).toBe(200);
-			expect(claimed.body.claim?.holder?.claimed).toBeTrue();
+			const claims = await request<{ claims: unknown[] }>("/api/architecture/claims");
+			expect(claims.status).toBe(200);
+			expect(claims.body.claims).toEqual([]);
 		} finally {
 			await first?.close();
 			await replacement?.close();

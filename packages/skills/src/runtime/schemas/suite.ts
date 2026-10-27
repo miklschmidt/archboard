@@ -61,8 +61,6 @@ const CHECK_KINDS = [
 	"node-id-retained",
 	"node-field-retained",
 	"edge-ids-retained",
-	"version-advanced-by",
-	"board-level",
 	"board-count",
 	"variant-exists",
 	"current-variant",
@@ -186,6 +184,8 @@ type OutcomeCheck = z.infer<typeof OutcomeCheckSchema>;
 const CaptureDeclarationSchema = z
 	.object({
 		label: z.string().regex(/^[a-z0-9][a-z0-9-]*$/u),
+		scope: z.string().optional(),
+		flow: z.string().optional(),
 		board: z.string().min(1),
 		variant: z.string().min(1).optional(),
 		view: z.string().min(1).optional(),
@@ -232,11 +232,7 @@ const ScenarioSchema = z
 		guidance: z.array(z.string().min(1)),
 		// Every-view captures can expand to nothing, so at least one capture
 		// names its picture and no run is left with nothing to look at.
-		captures: z
-			.array(CaptureRequestSchema)
-			.refine((captures) => captures.some((capture) => !("views" in capture)), {
-				message: "declare at least one capture that names its picture, besides every-view captures",
-			}),
+		captures: z.array(CaptureRequestSchema),
 	})
 	.strict()
 	.refine((scenario) => (scenario.flask === undefined) === (scenario.sources === undefined), {

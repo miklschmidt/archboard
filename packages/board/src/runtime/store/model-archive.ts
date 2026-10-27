@@ -26,7 +26,10 @@ import {
 import { ArchitectureModuleEditSchema } from "#shared/schemas/model-operations.ts";
 import { captureBoundSources } from "#runtime/store/model-source.ts";
 
-import { PortableInstallationSchema, InitializationInstallationSchema } from "#shared/schemas/model-portable.ts";
+import {
+	PortableInstallationSchema,
+	InitializationInstallationSchema,
+} from "#shared/schemas/model-portable.ts";
 
 const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, publication: true })
 	.extend({
@@ -35,7 +38,13 @@ const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, pub
 		vault: z.string(),
 		narrativeDependencies: z.array(ArchitectureCheckpointSchema.shape.id).optional(),
 		edit: ArchitectureModuleEditSchema.optional(),
-		installation: z.union([PortableInstallationSchema, InitializationInstallationSchema, MigrationInstallationSchema]).optional(),
+		installation: z
+			.union([
+				PortableInstallationSchema,
+				InitializationInstallationSchema,
+				MigrationInstallationSchema,
+			])
+			.optional(),
 		reconciliations: FamilyStandingSchema.optional(),
 		subjects: z.array(QualifiedSubjectIdSchema).optional(),
 	})

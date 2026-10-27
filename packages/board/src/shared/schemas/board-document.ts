@@ -301,7 +301,7 @@ type SemanticBoard = z.infer<typeof SemanticBoardSchema>;
  * @param board The board as it stands, or null before there is one.
  * @returns The version the write in flight will produce.
  */
-function nextVersion(board: SemanticBoard | null): number {
+function nextVersion(board: Pick<SemanticBoard, "version"> | null): number {
 	return (board?.version ?? 0) + 1;
 }
 
@@ -310,7 +310,9 @@ function nextVersion(board: SemanticBoard | null): number {
  * @param board The board.
  * @returns The current variant, or undefined when the board has none.
  */
-function currentVariant(board: SemanticBoard): SemanticVariant | undefined {
+function currentVariant(
+	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+): SemanticVariant | undefined {
 	return board.variants.find((variant) => variant.id === board.current);
 }
 
@@ -371,7 +373,10 @@ function variantNamed(
  * @param asked The id or name asked for.
  * @returns The variant, or undefined when nothing answers to it.
  */
-function findVariant(board: SemanticBoard, asked: string): SemanticVariant | undefined {
+function findVariant(
+	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	asked: string,
+): SemanticVariant | undefined {
 	return board.variants.find((variant) => variant.id === asked) ?? variantNamed(board, asked);
 }
 
@@ -387,7 +392,10 @@ function findVariant(board: SemanticBoard, asked: string): SemanticVariant | und
  * @param asked The address, or undefined to ask for the designation.
  * @returns The variant, or undefined when nothing answers to it.
  */
-function resolveVariant(board: SemanticBoard, asked?: string): SemanticVariant | undefined {
+function resolveVariant(
+	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	asked?: string,
+): SemanticVariant | undefined {
 	if (asked === undefined || asked === "" || asksForDesignation(asked)) {
 		return currentVariant(board);
 	}
@@ -418,7 +426,10 @@ type VariantAddress =
  * @param asked The variant's id or name, `current`, or undefined when the address names none.
  * @returns The variant, or why the address opens nothing.
  */
-function addressedVariant(board: SemanticBoard, asked?: string): VariantAddress {
+function addressedVariant(
+	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	asked?: string,
+): VariantAddress {
 	const stated = asked?.trim() ?? "";
 	return stated === "" ? bareAddress(board) : statedAddress(board, stated);
 }
@@ -429,7 +440,10 @@ function addressedVariant(board: SemanticBoard, asked?: string): VariantAddress 
  * @param stated The variant's id or name, or `current`.
  * @returns The variant, or why there is none.
  */
-function statedAddress(board: SemanticBoard, stated: string): VariantAddress {
+function statedAddress(
+	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	stated: string,
+): VariantAddress {
 	const variant = resolveVariant(board, stated);
 	if (variant !== undefined) {
 		return { ok: true, variant };
@@ -450,7 +464,7 @@ function statedAddress(board: SemanticBoard, stated: string): VariantAddress {
  * @param board The board.
  * @returns The variant, or why there is no single one.
  */
-function bareAddress(board: SemanticBoard): VariantAddress {
+function bareAddress(board: Pick<SemanticBoard, "name" | "current" | "variants">): VariantAddress {
 	const roots = board.variants.filter(
 		(variant) => variant.lifecycle === "draft" && !hasDraftAbove(variant, board.variants),
 	);
