@@ -4,9 +4,9 @@
 	"id": "vKEsyHFk",
 	"name": "Archboard",
 	"level": "system",
-	"version": 92,
+	"version": 93,
 	"createdAt": "2026-09-12T22:27:06.204Z",
-	"updatedAt": "2026-10-26T05:42:16.992Z",
+	"updatedAt": "2026-10-27T21:35:00.299Z",
 	"views": [
 		{
 			"id": "BtsFlK0s",
@@ -116,6 +116,14 @@
 				],
 				"edges": [],
 				"flows": []
+			}
+		},
+		{
+			"id": "0wxylZ52",
+			"name": "All modules",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "all"
 			}
 		}
 	],
@@ -14955,7 +14963,8 @@
 									"9m47dJzG",
 									"cPOdAA3f",
 									"8XKRkSHl"
-								]
+								],
+								"view": "0wxylZ52"
 							},
 							{
 								"id": "coggGU2D",
@@ -14965,7 +14974,8 @@
 									"6nZjwK9W",
 									"iF6W48DS",
 									"4p2LMrOt"
-								]
+								],
+								"view": "0wxylZ52"
 							},
 							{
 								"id": "JuKj0ZMA",
@@ -14979,7 +14989,8 @@
 									"VgzgNAGW",
 									"FCRYdY4h",
 									"OPwTCiKt"
-								]
+								],
+								"view": "0wxylZ52"
 							},
 							{
 								"id": "FlAhpGUe",
@@ -14991,7 +15002,8 @@
 									"zs8yTQLI",
 									"t3P6jc5T",
 									"DcdR8rPv"
-								]
+								],
+								"view": "0wxylZ52"
 							},
 							{
 								"id": "bnH63t0c",
@@ -14999,7 +15011,8 @@
 								"body": "The guidance an agent in another repository reads is held to real runs: two versions of the package, the same CLI and fixtures, real authors, and a blinded grading session. A person starts it; the gate never does.",
 								"subjects": [
 									"PxnjFfV3"
-								]
+								],
+								"view": "0wxylZ52"
 							}
 						]
 					}

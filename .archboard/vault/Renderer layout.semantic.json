@@ -4,9 +4,9 @@
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 51,
+	"version": 52,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-10-22T03:42:55.928Z",
+	"updatedAt": "2026-10-27T21:35:23.014Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -8129,7 +8129,8 @@
 									"kHpIix5b",
 									"RvOyWmEb",
 									"dYxhsEhY"
-								]
+								],
+								"view": "lHmaM9Zg"
 							},
 							{
 								"id": "rNW1w4av",
@@ -8138,7 +8139,8 @@
 								"subjects": [
 									"RvOyWmEb",
 									"kHpIix5b"
-								]
+								],
+								"view": "lHmaM9Zg"
 							},
 							{
 								"id": "FWMgjXxD",
@@ -8150,7 +8152,8 @@
 									"T4hTbGVM",
 									"Wp2usbe5",
 									"skrvk25Y"
-								]
+								],
+								"view": "lHmaM9Zg"
 							},
 							{
 								"id": "AOPSXwkc",
@@ -8159,7 +8162,8 @@
 								"subjects": [
 									"oycxx6G2",
 									"qtwaBhit"
-								]
+								],
+								"view": "lHmaM9Zg"
 							},
 							{
 								"id": "xfpajsvv",
@@ -8167,7 +8171,8 @@
 								"body": "By the time the painter runs, every box, port, route and label box is settled. It paints what it is given, so the picture a reader points at and the atlas the inspector reads are the same geometry.",
 								"subjects": [
 									"H0xU45vp"
-								]
+								],
+								"view": "lHmaM9Zg"
 							}
 						]
 					}

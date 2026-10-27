@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 98,
+	"version": 99,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-27T14:42:46.888Z",
+	"updatedAt": "2026-10-27T21:35:24.215Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -219,6 +219,14 @@
 				"flows": [
 					"VbVMzrrT"
 				]
+			}
+		},
+		{
+			"id": "tALPvbc0",
+			"name": "All modules",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "all"
 			}
 		}
 	],
@@ -33483,7 +33491,8 @@
 									"wskEBeIy",
 									"yOV8Znnv",
 									"gUN928v4"
-								]
+								],
+								"view": "tALPvbc0"
 							},
 							{
 								"id": "2XXwjrOX",
@@ -33496,7 +33505,8 @@
 									"Y0smyqtZ",
 									"BzVsPvqY",
 									"gUN928v4"
-								]
+								],
+								"view": "tALPvbc0"
 							},
 							{
 								"id": "u7etZu06",
@@ -33506,7 +33516,8 @@
 									"Y0smyqtZ",
 									"eJO5yog2",
 									"F5mgUBCT"
-								]
+								],
+								"view": "tALPvbc0"
 							},
 							{
 								"id": "g5qAhKaY",
@@ -33518,7 +33529,8 @@
 									"WMtzvSOO",
 									"y8vuJJKu",
 									"rZknAbkb"
-								]
+								],
+								"view": "tALPvbc0"
 							}
 						]
 					}
@@ -36097,7 +36109,8 @@
 									"wskEBeIy",
 									"yOV8Znnv",
 									"gUN928v4"
-								]
+								],
+								"view": "tALPvbc0"
 							},
 							{
 								"id": "2XXwjrOX",
@@ -36110,7 +36123,8 @@
 									"Y0smyqtZ",
 									"BzVsPvqY",
 									"gUN928v4"
-								]
+								],
+								"view": "tALPvbc0"
 							},
 							{
 								"id": "u7etZu06",
@@ -36120,7 +36134,8 @@
 									"Y0smyqtZ",
 									"eJO5yog2",
 									"F5mgUBCT"
-								]
+								],
+								"view": "tALPvbc0"
 							},
 							{
 								"id": "g5qAhKaY",
@@ -36132,7 +36147,8 @@
 									"WMtzvSOO",
 									"y8vuJJKu",
 									"rZknAbkb"
-								]
+								],
+								"view": "tALPvbc0"
 							}
 						]
 					}

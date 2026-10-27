@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 226,
+	"version": 228,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-27T14:43:39.028Z",
+	"updatedAt": "2026-10-27T21:35:20.207Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -273,6 +273,14 @@
 				],
 				"edges": [],
 				"flows": []
+			}
+		},
+		{
+			"id": "O2urJ58g",
+			"name": "All modules",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "all"
 			}
 		}
 	],
@@ -22655,7 +22663,8 @@
 									"HCghQa6I",
 									"HggZR41l",
 									"xsn0RvSi"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "tHpt14lf",
@@ -22665,7 +22674,8 @@
 									"dtYjWvlf",
 									"hDWpDois",
 									"G4NHQC25"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "y2YVfOOs",
@@ -22676,7 +22686,8 @@
 									"941UBxya",
 									"4LDuKQvq",
 									"6uWT4mUj"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "TVrlXIEC",
@@ -22688,7 +22699,8 @@
 									"0SRnYXnC",
 									"0yb2VbKc",
 									"aG0rP4SX"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "WHOtxYjT",
@@ -22699,7 +22711,8 @@
 									"zs2QxCu7",
 									"0SRnYXnC",
 									"dtYjWvlf"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "kLkXLnI4",
@@ -22709,7 +22722,8 @@
 									"aixSjfNe",
 									"rouptSyK",
 									"dtYjWvlf"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "sQ12FZsK",
@@ -117715,7 +117729,8 @@
 									"HCghQa6I",
 									"HggZR41l",
 									"xsn0RvSi"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "tHpt14lf",
@@ -117725,7 +117740,8 @@
 									"dtYjWvlf",
 									"hDWpDois",
 									"G4NHQC25"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "y2YVfOOs",
@@ -117736,7 +117752,8 @@
 									"941UBxya",
 									"4LDuKQvq",
 									"6uWT4mUj"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "TVrlXIEC",
@@ -117748,7 +117765,8 @@
 									"0SRnYXnC",
 									"0yb2VbKc",
 									"aG0rP4SX"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "WHOtxYjT",
@@ -117759,7 +117777,8 @@
 									"zs2QxCu7",
 									"0SRnYXnC",
 									"dtYjWvlf"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "kLkXLnI4",
@@ -117769,7 +117788,8 @@
 									"aixSjfNe",
 									"rouptSyK",
 									"dtYjWvlf"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "sQ12FZsK",
@@ -121642,7 +121662,8 @@
 									"HCghQa6I",
 									"HggZR41l",
 									"xsn0RvSi"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "tHpt14lf",
@@ -121652,7 +121673,8 @@
 									"dtYjWvlf",
 									"hDWpDois",
 									"G4NHQC25"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "y2YVfOOs",
@@ -121663,7 +121685,8 @@
 									"941UBxya",
 									"4LDuKQvq",
 									"6uWT4mUj"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "TVrlXIEC",
@@ -121675,7 +121698,8 @@
 									"0SRnYXnC",
 									"0yb2VbKc",
 									"aG0rP4SX"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "WHOtxYjT",
@@ -121686,7 +121710,8 @@
 									"zs2QxCu7",
 									"0SRnYXnC",
 									"dtYjWvlf"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "kLkXLnI4",
@@ -121696,7 +121721,8 @@
 									"aixSjfNe",
 									"rouptSyK",
 									"dtYjWvlf"
-								]
+								],
+								"view": "O2urJ58g"
 							},
 							{
 								"id": "sQ12FZsK",

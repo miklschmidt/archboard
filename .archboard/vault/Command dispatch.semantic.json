@@ -4,9 +4,9 @@
 	"id": "nAmiQ3Vc",
 	"name": "Command dispatch",
 	"level": "module",
-	"version": 60,
+	"version": 61,
 	"createdAt": "2026-09-12T22:28:19.604Z",
-	"updatedAt": "2026-10-26T17:53:13.868Z",
+	"updatedAt": "2026-10-27T21:35:21.838Z",
 	"views": [
 		{
 			"id": "MTm8t3yK",
@@ -135,6 +135,14 @@
 				],
 				"edges": [],
 				"flows": []
+			}
+		},
+		{
+			"id": "ok3th1bR",
+			"name": "All modules",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "all"
 			}
 		}
 	],
@@ -11537,7 +11545,8 @@
 									"ogSW3Rjt",
 									"0R2ysy3p",
 									"45uNvMac"
-								]
+								],
+								"view": "ok3th1bR"
 							},
 							{
 								"id": "n5fln7Yb",
@@ -11547,7 +11556,8 @@
 									"zs4XwBa9",
 									"0R2ysy3p",
 									"EUV7iaLt"
-								]
+								],
+								"view": "ok3th1bR"
 							},
 							{
 								"id": "2cENlO7N",
@@ -11557,7 +11567,8 @@
 									"ZXGh0YmG",
 									"MmMnif7e",
 									"bV1RPiKW"
-								]
+								],
+								"view": "ok3th1bR"
 							}
 						]
 					}

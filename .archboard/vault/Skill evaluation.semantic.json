@@ -4,9 +4,9 @@
 	"id": "IbGtfJE2",
 	"name": "Skill evaluation",
 	"level": "service",
-	"version": 42,
+	"version": 43,
 	"createdAt": "2026-09-17T21:09:15.501Z",
-	"updatedAt": "2026-10-25T05:09:40.357Z",
+	"updatedAt": "2026-10-27T21:35:25.689Z",
 	"views": [
 		{
 			"id": "pth4q0ZY",
@@ -229,6 +229,14 @@
 				"flows": [
 					"4JiqqpnZ"
 				]
+			}
+		},
+		{
+			"id": "sFKzOCRU",
+			"name": "All modules",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "all"
 			}
 		}
 	],
@@ -13242,7 +13250,8 @@
 									"7A4Joh1m",
 									"IFhUy8C6",
 									"wOZsx1lS"
-								]
+								],
+								"view": "sFKzOCRU"
 							},
 							{
 								"id": "0oIkDlI0",
@@ -13252,7 +13261,8 @@
 									"IsMHIzoa",
 									"8NS6WwkH",
 									"PEfE7dCL"
-								]
+								],
+								"view": "sFKzOCRU"
 							},
 							{
 								"id": "rAuf3IXQ",
@@ -13264,7 +13274,8 @@
 									"xzOQOY33",
 									"TJmrdpKj",
 									"zZTYX1sf"
-								]
+								],
+								"view": "sFKzOCRU"
 							},
 							{
 								"id": "Rm1S3buq",
@@ -13273,7 +13284,8 @@
 								"subjects": [
 									"RqoYaLTK",
 									"JDTuIZQZ"
-								]
+								],
+								"view": "sFKzOCRU"
 							},
 							{
 								"id": "wlpFYeya",
@@ -13284,7 +13296,8 @@
 									"gwU9cyGm",
 									"bgEcePXZ",
 									"LcKROPw0"
-								]
+								],
+								"view": "sFKzOCRU"
 							},
 							{
 								"id": "KhsZufqO",
@@ -13293,7 +13306,8 @@
 								"subjects": [
 									"m7s6sgLI",
 									"PwYiE0Hr"
-								]
+								],
+								"view": "sFKzOCRU"
 							},
 							{
 								"id": "d2JIMNm6",
@@ -13302,7 +13316,8 @@
 								"subjects": [
 									"mwlOEUS8",
 									"LcKROPw0"
-								]
+								],
+								"view": "sFKzOCRU"
 							}
 						]
 					}

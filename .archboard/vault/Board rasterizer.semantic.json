@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 86,
+	"version": 87,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-10-27T09:01:54.440Z",
+	"updatedAt": "2026-10-27T21:35:18.065Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -211,6 +211,14 @@
 				"flows": [
 					"cMM9n1WR"
 				]
+			}
+		},
+		{
+			"id": "j0aObK2q",
+			"name": "All modules",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "all"
 			}
 		}
 	],
@@ -26702,7 +26710,8 @@
 									"KyQxypRC",
 									"8c0zvhQW",
 									"6uHnaygd"
-								]
+								],
+								"view": "j0aObK2q"
 							},
 							{
 								"id": "BnjBLsWM",
@@ -26710,7 +26719,8 @@
 								"body": "Before anything is photographed the page is asked whether the diagram faces are loaded, the animation is paused at its first frame, and the SVG is the size the job named. A picture taken before that would differ run to run.",
 								"subjects": [
 									"FXGZhgKo"
-								]
+								],
+								"view": "j0aObK2q"
 							},
 							{
 								"id": "cA04qJSt",
@@ -26720,7 +26730,8 @@
 									"FXGZhgKo",
 									"ctgF3OPk",
 									"7N0JLb2b"
-								]
+								],
+								"view": "j0aObK2q"
 							}
 						]
 					},
