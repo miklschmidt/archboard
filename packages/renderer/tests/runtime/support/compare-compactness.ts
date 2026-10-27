@@ -44,43 +44,47 @@ function main() {
 	const [before, after, out] = process.argv.slice(2);
 	if (before === undefined || after === undefined || out === undefined)
 		throw new Error("Name the before corpus, after corpus, and output directory.");
-	mkdirSync(out, { recursive: true });
 	const one = measureCorpus(before),
 		other = measureCorpus(after);
+	const onlyBefore = Object.keys(one).filter((key) => other[key] === undefined);
+	const onlyAfter = Object.keys(other).filter((key) => one[key] === undefined);
+	if (onlyBefore.length > 0 || onlyAfter.length > 0)
+		throw new Error(
+			`Corpus drawings differ. Render both corpora with the same boards and axes.\nOnly before:\n${onlyBefore.join("\n")}\nOnly after:\n${onlyAfter.join("\n")}`,
+		);
+	mkdirSync(out, { recursive: true });
 	writeFileSync(join(out, "before.json"), JSON.stringify(one));
 	writeFileSync(join(out, "after.json"), JSON.stringify(other));
-	const comparisons = Object.keys(one)
-		.filter((key) => other[key] !== undefined)
-		.map((key) => {
-			const a = one[key]!,
-				b = other[key]!;
-			return {
-				key,
-				areaRatio: b.area / a.area,
-				aspectBefore: a.aspect,
-				aspectAfter: b.aspect,
-				elongationRatio: b.elongation / a.elongation,
-				frameEmptyBefore: a.frameEmptyShare,
-				frameEmptyAfter: b.frameEmptyShare,
-				frames: b.frames.map((frame) => ({
-					id: frame.id,
-					before: a.frames.find((old) => old.id === frame.id),
-					after: frame,
-				})),
-				routes: b.routes.map((route) => ({
-					id: route.id,
-					before: a.routes.find((old) => old.id === route.id),
-					after: route,
-				})),
-				routeLengthBefore: routeLength(a),
-				routeLengthAfter: routeLength(b),
-				routeLengthRatio: routeLength(a) === 0 ? 1 : routeLength(b) / routeLength(a),
-				longestRouteBefore: a.longestRoute,
-				longestRouteAfter: b.longestRoute,
-				longestRouteRatio:
-					a.longestRoute.length === 0 ? 1 : b.longestRoute.length / a.longestRoute.length,
-			};
-		});
+	const comparisons = Object.keys(one).map((key) => {
+		const a = one[key]!,
+			b = other[key]!;
+		return {
+			key,
+			areaRatio: b.area / a.area,
+			aspectBefore: a.aspect,
+			aspectAfter: b.aspect,
+			elongationRatio: b.elongation / a.elongation,
+			frameEmptyBefore: a.frameEmptyShare,
+			frameEmptyAfter: b.frameEmptyShare,
+			frames: b.frames.map((frame) => ({
+				id: frame.id,
+				before: a.frames.find((old) => old.id === frame.id),
+				after: frame,
+			})),
+			routes: b.routes.map((route) => ({
+				id: route.id,
+				before: a.routes.find((old) => old.id === route.id),
+				after: route,
+			})),
+			routeLengthBefore: routeLength(a),
+			routeLengthAfter: routeLength(b),
+			routeLengthRatio: routeLength(a) === 0 ? 1 : routeLength(b) / routeLength(a),
+			longestRouteBefore: a.longestRoute,
+			longestRouteAfter: b.longestRoute,
+			longestRouteRatio:
+				a.longestRoute.length === 0 ? 1 : b.longestRoute.length / a.longestRoute.length,
+		};
+	});
 	writeFileSync(join(out, "comparisons.json"), JSON.stringify(comparisons, null, 2));
 	const report = [
 		"# Compactness by board and engine",
@@ -124,8 +128,8 @@ function main() {
 	writeFileSync(join(out, "per-board.md"), report.join("\n") + "\n");
 	const whole = comparisons.filter((row) => drawingOf(row.key).view === "(whole board)");
 	writeFileSync(join(out, "whole-boards.json"), JSON.stringify(whole, null, 2));
-	console.log(
-		`${comparisons.length} drawings, ${whole.length} whole boards, ${groups.size} board/engine groups`,
+	process.stdout.write(
+		`${comparisons.length} drawings, ${whole.length} whole boards, ${groups.size} board/engine groups\n`,
 	);
 }
 
