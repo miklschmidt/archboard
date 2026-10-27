@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T23:24:00Z'
+updated_date: '2026-10-27T23:26:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -238,4 +238,6 @@ Bounded local-reference repair reproduces the reported writer-lease refusal thro
 The local reference owner passes four cases and 16 assertions. It proves exact revisions, later-edit independence, signed ancestry, foreign preservation, retention retries, and shallow-history refusal. The three existing owners pass 33 cases in total in the first isolated run. A later repeat hits existing deadlines during heavy shared-machine CPU activity. No test deadline is raised in an existing owner. Both TypeScript projects and focused source/test lint and formatting pass. Full gate and model evaluations remain with parent integration.
 
 Parent-owned Board persistence proposal NyesaQPQ under board 0T9enjhi remains unchanged. Affected subjects are Mv3r4IsX, QDE2xctM, Bd4GPG6d, 8Uq1mtzw, KJy5yYuq, and ZRq51Ecz. Final source mapping and authoring remain with the parent. No frontend, example, README asset, source-vault, or parent scratch inputs change. No source-vault claims or servers are created. Parent status, assignee, acceptance criteria, migration, and adoption remain unchanged. Exact contract and backend evidence use task-549.24-local-reference-contract.md and task-549.24-local-reference-backend.md in the external task-549 state directory.
+
+Final timing follow-up: all four reference cases that hit deadlines pass the focused retry with unchanged source and existing deadlines. That retry passes four cases and 22 assertions. Together with the final local owner and the other existing cases, all 37 affected cases have passing evidence. No source changes follow signed implementation cfc057aba89099ec1ec992973e8ae34bcfe545e7. Final local integration remains signed d95f79c58 and includes required main a98f28811. The branch is fix/same-model-reference-repair. Parent status, assignee, and acceptance remain unchanged.
 <!-- SECTION:NOTES:END -->
