@@ -813,3 +813,7 @@ The canonical reader reuses the existing beat-focus and auto-fit rules with cont
 Retained camera and presentation-box UI owners keep their existing behavior assertions.
 The walkthrough header owner also proves that sidebar controls remain held during playback and restore afterward.
 The agent-navigation owner proves that a completed remote presentation cannot reopen after an uncached state read.
+
+`apps/web/tests/ui/clients/architecture-model/history-on-selection.test.tsx` replaces the old locality query owner.
+It exercises canonical HTTP reads and preserves on-demand behavior, pending-read sharing, and isolation between vaults.
+The legacy locality endpoint adapter, query key, and retained-replay placeholder retire.

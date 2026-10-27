@@ -18,7 +18,6 @@ import {
 	RememberedFindingsSchema,
 	type RememberedFindings,
 } from "@archboard/code-intel/code-check";
-import { LocalityReplySchema, type LocalityAnswer } from "@archboard/code-intel/history";
 import { VaultCheckSchema } from "@archboard/board/policy";
 import { inVault } from "@archboard/server-requests";
 import { BoardListingSchema } from "@archboard/board/board-listing";
@@ -358,41 +357,9 @@ async function fetchCodeFindings(vault: string, signal?: AbortSignal): Promise<R
 	return parsed.data;
 }
 
-/** The route the server answers a board's hotspots and change coupling on (ADR 0045). */
-const LOCALITY_URL = "/api/semantic-boards/locality";
-
-/**
- * Where change concentrates in one variant of one board: every part's commits
- * in the period, and the parts that change together. The server walks Git for
- * the first request at a HEAD and answers later ones from its memory, so a pane
- * asks only when somebody picks a part out (ADR 0045).
- * @param vault The vault the board is in.
- * @param board The board's name.
- * @param variant The variant's id: the current one or a draft.
- * @returns The answer, about every part of the variant.
- */
-async function fetchLocality(
-	vault: string,
-	board: string,
-	variant: string,
-): Promise<LocalityAnswer> {
-	const search = new URLSearchParams({ board, variant });
-	const parsed = LocalityReplySchema.safeParse(
-		await readRoute(`${LOCALITY_URL}?${search.toString()}`, vault),
-	);
-	if (!parsed.success) {
-		throw new SemanticBoardError(
-			"REPLY_INVALID",
-			"The Archboard server sent no history of this board's code.",
-		);
-	}
-	return parsed.data;
-}
-
 export {
 	SemanticBoardError,
 	fetchCodeFindings,
-	fetchLocality,
 	fetchSemanticBoardDocument,
 	fetchSemanticBoards,
 	comparisonKey,

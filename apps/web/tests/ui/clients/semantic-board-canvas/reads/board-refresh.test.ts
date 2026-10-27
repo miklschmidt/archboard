@@ -67,7 +67,6 @@ beforeEach(() => {
 		document: readDocument,
 		vaultCheck: notReadHere,
 		codeFindings: notReadHere,
-		locality: notReadHere,
 	});
 	takePicturesFrom({ draw: drawFromDocument });
 	globalThis.fetch = Object.assign(answerRoute, { preconnect: realFetch.preconnect });

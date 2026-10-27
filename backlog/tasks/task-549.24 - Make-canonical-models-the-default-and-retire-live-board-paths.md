@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T22:07:00Z'
+updated_date: '2026-10-27T22:15:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -108,6 +108,8 @@ Extend the existing agent-navigation browser owner to leave a requested walkthro
 Bounded render-context repair: extend the shared model projection with unsettled identities from selected-state issues and represented aggregate connections, then carry that field through flow projection and existing render exports. Preserve default comparison selection, exact identified base checks, existing request schemas, complete structural and behavioral interface meaning, and recipe replay. Parent owns frontend wiring, mapping, adoption, migration, and final acceptance.
 
 Port the final legacy walkthrough-presentation browser owner to canonical authored readings. Preserve actual caption transitions, keyboard stepping, camera arrival, selected-subject emphasis, readable narration controls, read-only behavior and return to the ordinary camera/sidebar. Reuse existing presentation and camera rules for any reproduced gap; retain the existing motion clock and timing constants.
+
+Retire the unused legacy locality HTTP/query adapter. Port its existing cheap query owner to canonical history, preserving on-demand reads, pending-read sharing and foreign-vault isolation through the actual client request. Keep the existing canonical code/history browser as the visible owner and the real Git runtime owner for persistence evidence.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -204,4 +206,6 @@ Parent wired the merged shared projection.unsettled field into the existing brow
 The canonical presentation browser port reaches the intended RED: its second authored selection leaves the camera at the whole-picture transform. Types and focused test lint pass. Reuse the existing beat-focus arithmetic and auto-fit hook with narrow content, dimensions and explicit picture identity; keep the ordinary reader camera owner unchanged.
 
 The final legacy presentation browser owner now uses explicit canonical walkthrough readings. Its RED showed the camera remaining at the whole-picture transform between authored selections. Canonical playback now reuses beatFocus and useAutoFit with narrow content/dimensions and explicit picture identity, plus the existing emphasis marks and timing. Ordinary camera ownership remains unchanged. The browser proves caption cross-fades, progress motion, keyboard stepping, camera arrival, receded unrelated subjects and return to the prior camera/sidebar without writes. Presentation, walkthrough, narration and gesture browsers, canonical offline replay, retained camera/presentation UI owners, full types and focused lint pass. The retirement ledger names the replacement owner.
+
+Removed the unused legacy locality HTTP adapter, query, cache key, BoardReads member and replay placeholder. Its existing query owner now exercises the actual canonical history client and preserves on-demand reads, shared pending work and foreign-vault isolation. The history query takes only the existing model metadata it uses. New canonical query and existing board-refresh UI owners pass; full types and scoped source/test lint pass. The old semantic-board-history component owner still needs its separate canonical consumer transition.
 <!-- SECTION:NOTES:END -->

@@ -11,10 +11,8 @@ import {
 	fetchSemanticBoards,
 	type SemanticRenderRequest,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
-import type { ReadingOnScreen } from "#ui/hooks/semantic-board-canvas/use-code-findings.ts";
 import {
 	sameBoardAsked,
-	sameVaultAsked,
 	semanticBoardKeys,
 } from "#ui/clients/semantic-board-canvas/reads/board-keys.ts";
 import { boardsListed } from "#ui/clients/semantic-board-canvas/reads/board-refresh.ts";
@@ -201,60 +199,8 @@ function codeFindingsQuery(vault: string) {
 	});
 }
 
-/**
- * Where change concentrates in one variant of one board (ADR 0045): asked when
- * somebody picks a part out, and never on a timer.
- *
- * The selection tab is drawn again for each pick, so each pick subscribes
- * anew, and an answer is stale at once: every pick asks the server, which
- * answers from its memory unless a checkout's HEAD moved, so a pick after a
- * commit reads the new history. Nothing else asks again: no interval, no
- * return to the tab and no reconnect, because each of those is a request
- * nobody made. A failed read is not tried again by itself; the region offers
- * that to the person.
- *
- * The read is not cancelled when the person picks another part. The old pick's
- * subscription goes before the new one comes, so a read that a pick cancelled
- * would be asked again by the next, and the server would start its walk of Git
- * again for each pick. Instead a pick made while the read runs waits for it,
- * and a series of picks asks once (ADR 0045: a request that arrives during the
- * walk waits for it).
- *
- * A new version of the board is a new key, so the part on screen is read again
- * as the board now stands, which is what says whether a relationship joins two
- * parts. Its last answer stays on screen while that read runs, so a write by an
- * agent does not empty the region. An answer about another vault does not stay.
- * @param on The board, the variant by id and the version on screen.
- * @returns The query options.
- */
-function localityQuery(on: ReadingOnScreen) {
-	return queryOptions({
-		queryKey: semanticBoardKeys.locality(on),
-		/**
-		 * Ask the server for the board's locality.
-		 * @returns The answer.
-		 */
-		queryFn: () => boardReads().locality(on.vault, on.board, on.variant),
-		/**
-		 * The last answer, while this one is on its way, when it was of this
-		 * vault: another checkout's history is not this one's.
-		 * @param previous What the last query held, if anything.
-		 * @param previousQuery The query that held it.
-		 * @returns That, when it was of this vault.
-		 */
-		placeholderData: (previous, previousQuery) =>
-			sameVaultAsked(previousQuery?.queryKey, on.vault) ? previous : undefined,
-		staleTime: 0,
-		refetchOnMount: true,
-		refetchOnWindowFocus: false,
-		refetchOnReconnect: false,
-		retry: false,
-	});
-}
-
 export {
 	codeFindingsQuery,
-	localityQuery,
 	semanticBoardDocumentQuery,
 	semanticBoardListQuery,
 	semanticRenderQuery,

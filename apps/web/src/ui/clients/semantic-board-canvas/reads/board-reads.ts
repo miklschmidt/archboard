@@ -1,5 +1,4 @@
-// Where a pane reads a board's document, the vault's policy, the findings of
-// the last code check and the locality of a board's code from.
+// Where retained board documents, vault policy, and remembered code findings come from.
 //
 // A page reads them from the Archboard server. A page rendering a recording
 // frame by frame reads them from the talk it recorded instead, so the picture
@@ -7,10 +6,8 @@
 // page chooses once, at start, before anything is read.
 
 import type { RememberedFindings } from "@archboard/code-intel/code-check";
-import type { LocalityAnswer } from "@archboard/code-intel/history";
 import {
 	fetchCodeFindings,
-	fetchLocality,
 	fetchSemanticBoardDocument,
 	fetchVaultCheck,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
@@ -43,22 +40,12 @@ interface BoardReads {
 	 * @returns The remembered readings.
 	 */
 	readonly codeFindings: (vault: string, signal?: AbortSignal) => Promise<RememberedFindings>;
-	/**
-	 * Where change concentrates in one variant of one board, read from Git. It
-	 * takes no cancellation: a pick made while it runs waits for it.
-	 * @param vault The vault the board is in.
-	 * @param board The board, by name.
-	 * @param variant The variant, by id: the current one or a draft.
-	 * @returns The answer.
-	 */
-	readonly locality: (vault: string, board: string, variant: string) => Promise<LocalityAnswer>;
 }
 
 const fromServer: BoardReads = {
 	document: fetchSemanticBoardDocument,
 	vaultCheck: fetchVaultCheck,
 	codeFindings: fetchCodeFindings,
-	locality: fetchLocality,
 };
 
 let current: BoardReads = fromServer;

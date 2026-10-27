@@ -3,7 +3,7 @@
 // on a return to the tab or on a reconnect. A walk of a year of Git is work for
 // the server, and only somebody picking a part out asks for it. The selection
 // tab is drawn again for each pick, so each pick is a new subscription; the
-// stage test `semantic-board-history.test.tsx` holds that each pick asks once.
+// canonical code/history browser owner covers visible selection and real Git evidence.
 // A pick made while a read runs waits for it, so a person who steps through
 // the parts during the first walk does not start the walk again at each part.
 //
@@ -15,7 +15,12 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, expect, jest, test } from "bun:test";
 import { createElement, type JSX } from "react";
 
-import type { LocalityAnswer } from "@archboard/code-intel/history";
+import type { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
+import type { z } from "zod";
+type LocalityAnswer = Extract<
+	z.infer<typeof ArchitectureHistoryResultSchema>,
+	{ success: true; analysis: "locality" }
+>;
 import { BOARD_CACHE_MS } from "@archboard/timing";
 
 GlobalRegistrator.register();
@@ -24,11 +29,12 @@ Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, wri
 const { QueryClient, QueryClientProvider, QueryObserver, focusManager, onlineManager, useQuery } =
 	await import("@tanstack/react-query");
 const { act, cleanup, render } = await import("@testing-library/react");
-const { localityQuery, vaultCheckQuery } =
-	await import("#ui/clients/semantic-board-canvas/reads/queries.ts");
+const { vaultCheckQuery } = await import("#ui/clients/semantic-board-canvas/reads/queries.ts");
+const { modelHistoryQuery } = await import("#ui/clients/architecture-model/history.ts");
 const { readBoardsFrom } = await import("#ui/clients/semantic-board-canvas/reads/board-reads.ts");
 
 afterAll(async () => {
+	globalThis.fetch = realFetch;
 	cleanup();
 	jest.useRealTimers();
 	await GlobalRegistrator.unregister();
@@ -39,9 +45,11 @@ const VAULT = "/work/archboard/.archboard/vault";
 
 /** The answer: one part read, which no commit changed. */
 const ANSWER: LocalityAnswer = {
-	board: "pipeline",
-	version: 1,
-	variant: { id: "v1", name: "as it is", lifecycle: "current" },
+	success: true,
+	analysis: "locality",
+	model: "Pipeline",
+	state: { id: "Current", name: "As it is", lifecycle: "current" },
+	revision: { digest: "a".repeat(64), files: [] },
 	periods: [],
 	commits: [],
 	hotspots: [
@@ -57,6 +65,33 @@ const ANSWER: LocalityAnswer = {
 	leftOut: { largeCommits: 0 },
 	skipped: [],
 };
+
+/** The exact canonical architecture whose code history is requested. */
+const MODEL: Parameters<typeof modelHistoryQuery>[1] = {
+	manifest: {
+		schemaVersion: 1,
+		id: "Pipeline",
+		name: "Pipeline",
+		current: { id: "Current", name: "As it is" },
+	},
+	selectedState: ANSWER.state,
+	revision: ANSWER.revision,
+};
+const realFetch = globalThis.fetch;
+
+/**
+ * Answer the actual canonical history transport without a Git process in this query owner.
+ * @param input The canonical HTTP URL.
+ * @returns The bounded history response.
+ */
+async function answerHistory(input: Parameters<typeof fetch>[0]): Promise<Response> {
+	const address = new URL(input instanceof Request ? input.url : input, "http://localhost");
+	if (address.pathname !== "/api/architecture/locality")
+		throw new Error(`Unexpected history route ${address.pathname}`);
+	asked.locality += 1;
+	return Response.json(walking === undefined ? ANSWER : await walking.promise);
+}
+globalThis.fetch = Object.assign(answerHistory, { preconnect: realFetch.preconnect });
 
 /** How many times each read was asked. */
 const asked = { locality: 0, vaultCheck: 0 };
@@ -83,14 +118,6 @@ readBoardsFrom({
 		asked.vaultCheck += 1;
 		throw new Error("no checker");
 	},
-	/**
-	 * The locality, counted.
-	 * @returns The answer.
-	 */
-	locality: async () => {
-		asked.locality += 1;
-		return walking === undefined ? ANSWER : await walking.promise;
-	},
 });
 
 /**
@@ -107,7 +134,7 @@ function Poll(): null {
  * @returns Nothing visible.
  */
 function Picked(): null {
-	useQuery(localityQuery({ vault: VAULT, board: "pipeline", variant: "v1", version: 1 }));
+	useQuery(modelHistoryQuery(VAULT, MODEL));
 	return null;
 }
 
@@ -231,15 +258,14 @@ test("picks made while the locality is read wait for that read and ask nothing m
 test("a pane that moves to another repository shows none of the last one's history while it reads", async () => {
 	jest.useFakeTimers();
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-	const on = { board: "pipeline", variant: "v1", version: 1 } as const;
-	const observer = new QueryObserver(client, localityQuery({ vault: VAULT, ...on }));
+	const observer = new QueryObserver(client, modelHistoryQuery(VAULT, MODEL));
 	const unsubscribe = observer.subscribe(() => undefined);
 	await pass(0);
 	expect(observer.getCurrentResult().data).toEqual(ANSWER);
 
 	// The same board in another checkout, whose history is its own.
 	walking = Promise.withResolvers<LocalityAnswer>();
-	observer.setOptions(localityQuery({ vault: "/work/archboard-next/.archboard/vault", ...on }));
+	observer.setOptions(modelHistoryQuery("/work/archboard-next/.archboard/vault", MODEL));
 	expect(observer.getCurrentResult().data).toBeUndefined();
 
 	walking.resolve(ANSWER);

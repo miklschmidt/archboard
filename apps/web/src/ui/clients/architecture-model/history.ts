@@ -14,7 +14,10 @@ import {
  * @param model The coherent model, state, and optional checkpoint.
  * @returns One cached locality request, refreshed on demand rather than on a timer.
  */
-function modelHistoryQuery(vault: string, model: Model) {
+function modelHistoryQuery(
+	vault: string,
+	model: Pick<Model, "manifest" | "selectedState" | "checkpoint" | "revision">,
+) {
 	const state = model.selectedState?.id;
 	const checkpoint = model.checkpoint?.id;
 	const expected = JSON.stringify([model.manifest.id, model.revision.digest, state, checkpoint]);
