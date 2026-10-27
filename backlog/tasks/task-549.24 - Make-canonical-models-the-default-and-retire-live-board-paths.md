@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T20:04:00Z'
+updated_date: '2026-10-27T20:09:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -78,6 +78,8 @@ Parent browser proposal Browser application@TASK-549.24 is VaQkKiQf. The shared 
 Restore canonical agent activity through the existing server publication owner while the parent ports the shell render matrix. Preserve model identity, concurrent subject claims, durable doing attribution, idle cleanup, and per-vault routing. Keep all frontend work and final architecture adoption with the parent.
 
 Restore the approved pane composition while porting the shell matrix: one existing 280 px sidebar per pane, with canonical module navigation and selection details. Preserve its docked/floating/hidden behavior, full canvas geometry, focus and keyboard actions, and captured walkthrough behavior. Keep authored meaning before code/comparison evidence. Adapt browser interaction helpers to deliberate sidebar navigation, while retaining generic shell geometry, accessibility, theme, motion, activity and notice assertions.
+
+Repair the existing canonical narration/change-news boundary: an external edit during captured playback must not add ordinary change speech between authored beats. Preserve ordinary browsing news and durable attribution. Delegate backend diagnosis and public runtime/socket regression ownership; parent retains the existing browser owner and all frontend changes.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
