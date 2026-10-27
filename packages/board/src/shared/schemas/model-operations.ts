@@ -167,22 +167,23 @@ const ProposalIntentSchema = z.discriminatedUnion("type", [
 		clear: z.array(z.enum(["summary", "documents"])).optional(),
 	}),
 ]);
+const ArchitectureChangesSchema = z.array(z.union([StructureChangeSchema, FlowChangeSchema]));
 const ArchitectureModuleEditSchema = z.union([
 	DescriptionEditSchema.omit({ subject: true, description: true })
 		.extend({
 			correction: CorrectionIntentSchema,
-			changes: z.array(z.union([StructureChangeSchema, FlowChangeSchema])).min(1),
+			changes: ArchitectureChangesSchema.min(1),
 		})
 		.strict(),
 	DescriptionEditSchema.omit({ subject: true, description: true })
 		.extend({
 			proposal: ProposalIntentSchema,
-			changes: z.array(z.union([StructureChangeSchema, FlowChangeSchema])),
+			changes: ArchitectureChangesSchema,
 		})
 		.strict(),
 	DescriptionEditSchema,
 	DescriptionEditSchema.omit({ subject: true, description: true })
-		.extend({ changes: z.array(z.union([StructureChangeSchema, FlowChangeSchema])).min(1) })
+		.extend({ changes: ArchitectureChangesSchema.min(1) })
 		.strict(),
 ]);
 const ArchitectureEditSuccessSchema = z
