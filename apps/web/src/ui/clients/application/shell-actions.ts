@@ -262,36 +262,15 @@ function vaultOf(catalog: Pick<BoardCatalog, "repositories">, repository: string
 }
 
 /** The pane actions. */
-type PaneActions = Pick<
-	ShellActions,
-	"selectPane" | "addPane" | "closePane" | "present" | "takeBackControl"
->;
+type PaneActions = Pick<ShellActions, "selectPane" | "addPane" | "closePane" | "present">;
 
 /**
- * The pane actions: focus, add, close, present and take back.
+ * The pane actions: focus, add, close and present.
  * @param deps The owners.
  * @returns Those actions.
  */
 function paneActions(deps: ShellActionDeps): PaneActions {
 	const { panes, fullscreen } = deps;
-	/**
-	 * Take a claimed board back from the agent (ADR 0022).
-	 * @param paneId The pane.
-	 */
-	async function takeBackControl(paneId: string): Promise<void> {
-		const session = panes.handles.session(paneId);
-		if (session === null) {
-			return;
-		}
-		panes.patch(paneId, { takeBack: { kind: "pending" } });
-		const result = await session.takeBack();
-		panes.patch(paneId, {
-			takeBack:
-				result.outcome === "success"
-					? { kind: "idle" }
-					: { kind: "failed", message: "The board could not be taken back. Try again." },
-		});
-	}
 	return {
 		/**
 		 * Focus a pane.
@@ -323,13 +302,6 @@ function paneActions(deps: ShellActionDeps): PaneActions {
 			} else {
 				fullscreen.present(presentation.paneId);
 			}
-		},
-		/**
-		 * Take a claimed board back; the pane's take-back state shows the outcome.
-		 * @param paneId The pane.
-		 */
-		takeBackControl: (paneId: string): void => {
-			void takeBackControl(paneId);
 		},
 	};
 }

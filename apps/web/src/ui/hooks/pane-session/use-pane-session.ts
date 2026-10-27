@@ -12,7 +12,6 @@ import {
 	UNKNOWN_HOLDER,
 	type PaneSession,
 	type PaneSessionOptions,
-	type TakeBackResult,
 } from "#ui/rules/pane-session/session-contracts.ts";
 import type { WorkbenchTransportPort } from "#ui/rules/pane-session/workbench-port.ts";
 import type {
@@ -191,7 +190,6 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 		},
 		[box, core],
 	);
-	const takeBack = useCallback((): Promise<TakeBackResult> => core.takeBack(), [core]);
 	const openCode = useCallback((subjectId: string): void => core.openCode(subjectId), [core]);
 	const readingChanged = useCallback(
 		(reading: PaneReading): void => core.readingChanged(reading),
@@ -215,7 +213,6 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 		connected: state.contact.connected,
 		heldBy: state.heldBy,
 		doing: state.doing,
-		takeBack,
 		openCode,
 		readingChanged,
 		flushReading,

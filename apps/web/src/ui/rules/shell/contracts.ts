@@ -16,16 +16,6 @@ import type {
 /** The theme a person chose, stored on the root element. */
 type ThemeChoice = "light" | "dark";
 
-/** Where the take-back operation for one pane's board stands. */
-type TakeBackState =
-	| { kind: "idle" }
-	| { kind: "pending" }
-	| {
-			kind: "failed";
-			/** Plain words for why the board could not be taken back. */
-			message: string;
-	  };
-
 /** One pane: what it reports about itself, who holds its board, and its mounted stage. */
 interface ShellPane {
 	status: PaneStatus;
@@ -33,7 +23,6 @@ interface ShellPane {
 	stage: ReactNode;
 	/** The board's current lock holder, or null when nobody is writing it. */
 	holder: LockHolder | null;
-	takeBack: TakeBackState;
 	/** The name the vault lists the pane's board under, or null when it lists none. */
 	boardName: string | null;
 }
@@ -159,7 +148,6 @@ interface ShellActions {
 	closePane(paneId: string): void;
 	/** Present one pane fullscreen, or null to return to the workspace. */
 	present(presentation: ShellPresentation | null): void;
-	takeBackControl(paneId: string): void;
 	openSettings(surface: SettingsSurface): void;
 	selectNoticeAction(noticeId: string, actionId: string): void;
 	dismissNotice(noticeId: string): void;
@@ -167,7 +155,6 @@ interface ShellActions {
 
 export type {
 	ThemeChoice,
-	TakeBackState,
 	ShellPane,
 	SelectableNoticeAction,
 	ShellNoticeAction,

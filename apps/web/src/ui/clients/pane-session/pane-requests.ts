@@ -1,11 +1,4 @@
-// What a pane says to the Archboard server over HTTP: what it is showing, which
-// board it should show, and the one control a person has over an agent's claim.
-//
-// Everything else a pane needs arrives over its socket or through the semantic
-// board cache. There is no write here, because a person does not author a
-// semantic board (ADR 0023); `takeBoardBack` is not a write to a board, it is
-// the release of somebody else's lease. Nor is `showConversation`: it says which
-// checkout's conversation the person activated, and the dock follows it.
+// Requests for pane registration, canonical navigation, and conversation activation.
 
 import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts";
 import type { z } from "zod";
@@ -16,7 +9,7 @@ import {
 	type ShownConversationRequest,
 } from "@archboard/workbench/browser-contract";
 import { inVault, requestJson } from "@archboard/server-requests";
-import type { BrowserPaneListing, LockHolder } from "#ui/rules/pane-session/session-types.ts";
+import type { BrowserPaneListing } from "#ui/rules/pane-session/session-types.ts";
 
 /** What one pane tells the server it has in front of the human. */
 interface PaneReport {
@@ -108,34 +101,6 @@ function showModel(
 	});
 }
 
-/** The answer to a take-back: whether a claim was released, and which. */
-interface TakeBackReply {
-	success: true;
-	released: boolean;
-	claim?: LockHolder;
-}
-
-/**
- * Release an agent's claim on a board: the one explicit control a person has
- * over a claimed board (ADR 0022). The board goes to nobody, the agent is told
- * once that it lost the board, and nothing already written is undone.
- * @param vault The vault the board is in.
- * @param board The board key.
- * @param clientId This pane.
- * @returns Whether a claim was released.
- */
-function takeBoardBack(
-	vault: string,
-	board: string | null,
-	clientId: string,
-): Promise<TakeBackReply> {
-	const query = board === null || board === "" ? "" : `?board=${encodeURIComponent(board)}`;
-	return requestJson(inVault(`/api/semantic-boards/take-back${query}`, vault), {
-		method: "POST",
-		payload: { clientId },
-	});
-}
-
 /**
  * Say that the person activated a checkout in this tab: the checkout of the
  * pane they focused or opened a board in, or one they picked from the dock's
@@ -160,8 +125,6 @@ export {
 	reportPane,
 	showModel,
 	showConversation,
-	takeBoardBack,
 	type PaneReply,
 	type PaneReport,
-	type TakeBackReply,
 };

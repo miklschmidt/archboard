@@ -116,7 +116,6 @@ function shellPanes(inputs: ShellViewInputs): ShellPane[] {
 			status: record.status,
 			stage: inputs.panes[entry.paneId] ?? null,
 			holder: record.holder,
-			takeBack: record.takeBack,
 			boardName: listedName(inputs, record.status.vault, record.status.boardKey),
 		};
 	});

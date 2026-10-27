@@ -40,11 +40,6 @@ const UNKNOWN_HOLDER: LockHolder = Object.freeze({
 	process: "",
 });
 
-/** Whether a take-back released the claim it was aimed at. */
-interface TakeBackResult {
-	outcome: "success" | "failure";
-}
-
 /** What the shell tells one pane, and what it wants to hear back. */
 interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	paneId: string;
@@ -177,8 +172,6 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	/** Who holds the board, or null when nobody does. */
 	readonly heldBy: LockHolder | null;
 	readonly doing: readonly DoingEntry[];
-	/** Release an agent's claim on this pane's board (ADR 0022). */
-	readonly takeBack: () => Promise<TakeBackResult>;
 	/**
 	 * Open the file a node's binding names, in the person's editor.
 	 *
@@ -217,10 +210,4 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	readonly workbenchTransport: () => Transport | null;
 }
 
-export {
-	UNKNOWN_HOLDER,
-	type PaneSession,
-	type PaneSessionOptions,
-	type PaneTheme,
-	type TakeBackResult,
-};
+export { UNKNOWN_HOLDER, type PaneSession, type PaneSessionOptions, type PaneTheme };

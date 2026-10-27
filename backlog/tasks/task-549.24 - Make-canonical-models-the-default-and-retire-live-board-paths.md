@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T22:21:00Z'
+updated_date: '2026-10-27T22:24:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -112,6 +112,8 @@ Port the final legacy walkthrough-presentation browser owner to canonical author
 Retire the unused legacy locality HTTP/query adapter. Port its existing cheap query owner to canonical history, preserving on-demand reads, pending-read sharing and foreign-vault isolation through the actual client request. Keep the existing canonical code/history browser as the visible owner and the real Git runtime owner for persistence evidence.
 
 Port the remaining legacy history component owner to the real canonical ModelHistory component. Preserve commit expansion, coupled-subject callbacks, unbound/skipped/empty evidence, and explicit retry. A new model revision must hide the previous revision’s evidence while it reads. Retire the old blanket historical-variant refusal because the canonical runtime supports selected states and checkpoints.
+
+Remove the unreachable legacy board take-back client and its unused shell/session state. Canonical subject claims already own the visible take-back action and pass the browser/runtime owners. Preserve generic pane connection, vault movement and registration behavior; retire only the obsolete board-claim race test and fixture fields.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -212,4 +214,6 @@ The final legacy presentation browser owner now uses explicit canonical walkthro
 Removed the unused legacy locality HTTP adapter, query, cache key, BoardReads member and replay placeholder. Its existing query owner now exercises the actual canonical history client and preserves on-demand reads, shared pending work and foreign-vault isolation. The history query takes only the existing model metadata it uses. New canonical query and existing board-refresh UI owners pass; full types and scoped source/test lint pass. The old semantic-board-history component owner still needs its separate canonical consumer transition.
 
 The remaining history component owner now mounts the actual canonical ModelHistory consumer with canonical HTTP replies. Four cheap cases preserve commit expansion, coupled-subject callbacks, unbound/skipped/empty distinctions, explicit retry and exact-revision evidence. A new architecture revision hides prior evidence while it reads. The obsolete historical-variant refusal and legacy stage locality fixture retire. The new component owner, full types and scoped source/test lint pass.
+
+Removed the unreachable legacy board take-back HTTP request and its unused session method, result types, shell action, record state and fixture fields. The canonical subject-claim control remains the sole visible take-back path. Generic pane connection and board-action owners, full types and scoped source/test lint pass. Only the old board-claim race assertion retires; connection, registration and vault movement behavior remains covered.
 <!-- SECTION:NOTES:END -->

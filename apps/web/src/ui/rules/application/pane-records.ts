@@ -1,23 +1,17 @@
 // What the application has collected from each pane's session: its status,
-// who holds its board, and where a take-back stands. Pure: keyed by pane id,
+// and its reported holder. Pure: keyed by pane id,
 // replaced rather than mutated.
 
-import type { TakeBackState } from "#ui/rules/shell/contracts.ts";
 import type { LockHolder, PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 
 /** Everything the application has heard from one pane. */
 interface PaneRecord {
 	readonly status: PaneStatus;
 	readonly holder: LockHolder | null;
-	readonly takeBack: TakeBackState;
 }
 
 /** Every field a patch may carry; `patchRecord` compares them one by one. */
-const RECORD_FIELDS = [
-	"status",
-	"holder",
-	"takeBack",
-] as const satisfies readonly (keyof PaneRecord)[];
+const RECORD_FIELDS = ["status", "holder"] as const satisfies readonly (keyof PaneRecord)[];
 
 /** The records by pane id. */
 type PaneRecords = Readonly<Record<string, PaneRecord>>;
@@ -30,8 +24,6 @@ type PaneRecords = Readonly<Record<string, PaneRecord>>;
 function paneReady(status: PaneStatus): boolean {
 	return status.connected && status.registered && status.clientId !== "";
 }
-
-const IDLE_TAKE_BACK: TakeBackState = Object.freeze({ kind: "idle" });
 
 /**
  * The status of a pane nothing has been heard from.
@@ -65,7 +57,6 @@ function initialPaneRecord(paneId: string): PaneRecord {
 	return Object.freeze({
 		status: emptyPaneStatus(paneId),
 		holder: null,
-		takeBack: IDLE_TAKE_BACK,
 	});
 }
 

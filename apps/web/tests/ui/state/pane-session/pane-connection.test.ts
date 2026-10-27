@@ -351,25 +351,6 @@ test("an answer from the vault a pane left that comes back before the move leave
 	}
 });
 
-test("a take-back answered after the pane moved to another checkout does not free the board it shows now", async () => {
-	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
-	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
-	const pane = await paneOnPayments();
-	try {
-		const taken = pane.core.takeBack();
-		const takeBack = pane.calls.at(-1)!;
-		expect(takeBack).toMatchObject({ path: "/api/semantic-boards/take-back", vault: LEFT_VAULT });
-		chooseOtherCheckout(pane.socket);
-		takeBack.answer.resolve(Response.json({ success: true, released: true }));
-		expect(await taken).toEqual({ outcome: "failure" });
-		// The board of the new checkout is somebody else's until the server says it is not.
-		expect(pane.holders.at(-1)).not.toBeNull();
-	} finally {
-		pane.restore();
-		Object.defineProperty(globalThis, "WebSocket", socketDescriptor);
-	}
-});
-
 test("news of a board is news of the vault the pane is in, before and after the server moves it", async () => {
 	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
 	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });

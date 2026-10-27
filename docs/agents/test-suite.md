@@ -823,3 +823,7 @@ It mounts the actual canonical consumer and retains commit expansion, coupled-su
 A new architecture revision hides the prior revision's evidence while the request runs.
 The old blanket refusal for historical variants retires because canonical history supports explicit states and checkpoints.
 The retained board harness no longer simulates a live locality route.
+
+The unused board take-back client and its shell/session state retire.
+The old pane-connection take-back race case retires with that endpoint.
+Generic connection and registration cases remain, while canonical subject-claim runtime and browser owners cover the shipped control.

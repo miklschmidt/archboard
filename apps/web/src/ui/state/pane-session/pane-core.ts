@@ -7,7 +7,6 @@
 // separate read, made by the viewer through the query cache.
 
 import { boardAddressOf } from "#ui/rules/semantic-board-canvas/board/address.ts";
-import { takeBoardBack } from "#ui/clients/pane-session/pane-requests.ts";
 import { createPaneArrival } from "#ui/rules/pane-session/pane-arrival.ts";
 import { createPaneReportDeadline } from "#ui/state/pane-session/pane-deadline.ts";
 import { createReadingPublisher, type PaneReading } from "#ui/state/pane-session/pane-reading.ts";
@@ -25,7 +24,6 @@ import {
 import {
 	UNKNOWN_HOLDER,
 	type PaneSessionOptions,
-	type TakeBackResult,
 } from "#ui/rules/pane-session/session-contracts.ts";
 import type { PaneWorkbenchSocketOwner } from "#ui/clients/pane-session/workbench-socket.ts";
 import type { WorkbenchTransportPort } from "#ui/rules/pane-session/workbench-port.ts";
@@ -94,7 +92,6 @@ interface PaneCore<Transport extends WorkbenchTransportPort> {
 	 * @param part The part that is not going to change after all.
 	 */
 	readonly userChangeFailed: (part: SemanticPanePart) => void;
-	readonly takeBack: () => Promise<TakeBackResult>;
 	/**
 	 * Open the file a subject's binding names.
 	 * @param subjectId The semantic id.
@@ -438,30 +435,6 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	});
 
 	/**
-	 * The person releases an agent's claim on their board: the one explicit
-	 * control over a claimed board (ADR 0022). Nothing is undone; the board goes
-	 * to nobody, and the agent is told once that it lost the board.
-	 * @returns Whether the claim was released.
-	 */
-	async function takeBack(): Promise<TakeBackResult> {
-		const target = status.boardKey;
-		const vault = status.vault;
-		try {
-			await takeBoardBack(vault, target, clientId);
-			// The same board of another checkout is another board, with its own claim.
-			if (status.boardKey !== target || status.vault !== vault) {
-				return { outcome: "failure" };
-			}
-			// Released, or nobody claimed it any more: the board is free either
-			// way, and the broadcast says so too.
-			setHolder(null);
-			return { outcome: "success" };
-		} catch {
-			return { outcome: "failure" };
-		}
-	}
-
-	/**
 	 * Say what happened, where the person is.
 	 * @param notice The notice and whatever it offers.
 	 */
@@ -587,7 +560,6 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		flushReading: reading.flush,
 		userChanged: reading.userChanged,
 		userChangeFailed: reading.userChangeFailed,
-		takeBack,
 		openCode,
 		workbenchTransport,
 		dispose,

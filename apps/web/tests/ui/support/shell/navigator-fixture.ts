@@ -183,7 +183,6 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 		addPane: ignore,
 		closePane: ignore,
 		present: ignore,
-		takeBackControl: ignore,
 		openSettings: ignore,
 		selectNoticeAction: ignore,
 		dismissNotice: ignore,
@@ -255,7 +254,6 @@ function pane(
 		},
 		stage: null,
 		holder: null,
-		takeBack: { kind: "idle" },
 		boardName: null,
 	};
 }
