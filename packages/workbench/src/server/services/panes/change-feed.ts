@@ -14,26 +14,11 @@
 import { mintId } from "@archboard/board/ids";
 import { watchArchitectureModel } from "@archboard/board/store-read";
 import type { ArchitectureEvent } from "@archboard/board/model";
+import type { SettledChangeSourceEvent } from "#runtime/schemas/semantic-context-types.ts";
 /** One settled change, as a context consumer reads it. */
-interface SettledBoardChange {
-	/** Monotonic within this feed: what a reader says it has read up to. */
-	readonly cursor: number;
-	/** The vault the board lives in: a board name alone does not say which board changed. */
-	readonly vault: string;
-	readonly board: string;
-	readonly at: string;
-	readonly origin: "agent";
-	readonly significance: "structural";
-	readonly text: string;
-	/**
-	 * The agent session that made the change, or null when nobody said.
-	 *
-	 * What a reader uses to skip its own writes and nothing else. A surface used
-	 * to be here instead — the pane a write said it was for — and it was read to
-	 * decide who should NOT be told, which made what a person had open decide
-	 * who heard about an architecture.
-	 */
+interface SettledBoardChange extends SettledChangeSourceEvent {
 	readonly by: string | null;
+	readonly doing: string | null;
 }
 
 /** Hears settled changes until the returned function is called. */
@@ -58,15 +43,17 @@ const watched = new Map<string, () => void>();
 function changed(message: ArchitectureEvent): void {
 	if (message.type !== "architecture_changed") return;
 	cursor += 1;
+	const request = message.operation?.checkpoint.request;
 	const event: SettledBoardChange = {
 		cursor,
 		vault: message.vault,
 		board: `model:${message.model}`,
 		at: new Date().toISOString(),
-		origin: "agent",
 		significance: "structural",
 		text: `Architecture ${message.model} changed at revision ${message.revision.digest}`,
-		by: message.operation?.checkpoint.request.writer ?? null,
+		...(request === undefined
+			? { origin: "external", by: null, doing: null }
+			: { origin: "agent", by: request.writer, doing: request.doing }),
 	};
 	for (const listener of listeners) listener(event);
 }

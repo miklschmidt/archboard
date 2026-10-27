@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T20:09:00Z'
+updated_date: '2026-10-27T20:17:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -80,6 +80,8 @@ Restore canonical agent activity through the existing server publication owner w
 Restore the approved pane composition while porting the shell matrix: one existing 280 px sidebar per pane, with canonical module navigation and selection details. Preserve its docked/floating/hidden behavior, full canvas geometry, focus and keyboard actions, and captured walkthrough behavior. Keep authored meaning before code/comparison evidence. Adapt browser interaction helpers to deliberate sidebar navigation, while retaining generic shell geometry, accessibility, theme, motion, activity and notice assertions.
 
 Repair the existing canonical narration/change-news boundary: an external edit during captured playback must not add ordinary change speech between authored beats. Preserve ordinary browsing news and durable attribution. Delegate backend diagnosis and public runtime/socket regression ownership; parent retains the existing browser owner and all frontend changes.
+
+Bounded narration repair: reproduce live external-change speech in the existing public runtime/HTTP/socket narration owner, keep captured source and target revisions fixed, repair settled news without changing explicit selection/focus behavior, and preserve durable writer evidence. Use the existing Live panes/server proposals. Leave parent status, assignee, acceptance, repository migration, browser acceptance, and final gate unchanged.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -142,4 +144,6 @@ Backend activity gap: signed 21bd25646 connects the existing agent_activity snap
 Parent activity acceptance: Working now shows every concurrent subject claim and the durable writer doing line. Releasing one claim preserves the other in the existing proposal browser owner. Browser and focused navigator owners pass. Full types, source/test lint and interface limits pass. The existing socket message types now live in a shared package entry, so the browser imports no Node runtime surface. Public export counts remain unchanged. Package policy also found and fixed private projection imports through public barrels. All 67 package API cases pass. TASK-549.24 remains In Progress with migration, sidebar restoration and final acceptance open.
 
 Parent sidebar restoration: canonical browsing now uses the approved single 280 px sidebar with Architecture and Selection tabs. Existing dock, float, pin, hide and selection behavior remains. Ordinary selection survives pending reads; captured playback owns its separate selection. Module meaning precedes code and comparison evidence. Direct narrative buttons replace a popup that remained visible after playback began. Existing selection, navigation, comparison and walkthrough browser owners pass. The full 12-cell shell layout owner passes, including geometry, typography, focus, target sizes, pane layout and activity. Full types and focused source/test lint pass. Root inspected the generated desktop screenshot. Remaining consumer ports, source-vault migration and final acceptance stay open.
+
+Bounded narration/news repair: the existing model watcher labeled external file observations as agent writes, and pane-news marked all settled writes as speech. Model-key matching then interrupted an immutable captured narration. Settled changes now update quiet voice/coordinator/workhorse context while explicit selection, view, focus, and agent navigation retain their existing rules. Durable operation receipts supply writer and doing; external observations carry origin external and no fabricated writer or doing. The existing Live panes/server .24 proposals cover this intent; no source-vault inputs or claims changed. The public runtime/HTTP/socket owner reproduces RED after a walkthrough edit, then passes captured text and subject names across external source edits and durable target edits. It also proves ordinary external browsing news after the durable writer. Narration owner: 7 cases/47 assertions; final live case after simplification: 1 case/18 assertions. Generic news/feed/publisher/presentation owners: 33 cases/193 assertions. Source/test types, focused source/test lint, formatting, and diff checks pass. Exact contract and limits are external in task-549.24-narration-news-contract.md and task-549.24-narration-news-backend.md. Keep parent assignee, In Progress, and all acceptance unchanged. Parent retains browser acceptance, migration, adoption, and full integration validation.
 <!-- SECTION:NOTES:END -->

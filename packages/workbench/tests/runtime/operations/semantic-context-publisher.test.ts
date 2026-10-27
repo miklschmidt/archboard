@@ -45,6 +45,7 @@ describe("semantic context publisher", () => {
 		h.emitFeed(change(h.state.now));
 		h.emitFeed(change(h.state.now, { origin: "mixed" }));
 		h.emitFeed(change(h.state.now, { origin: "agent" }));
+		h.emitFeed(change(h.state.now, { origin: "external" }));
 		h.emitFeed(change(h.state.now, { significance: "cosmetic" }));
 
 		// An agent change is published like any other, and nothing about who wrote
@@ -52,8 +53,8 @@ describe("semantic context publisher", () => {
 		// carry the pane a write was running for so that a per-thread delivery
 		// could drop it as an echo. Dropping anything on that basis made a
 		// presentation surface decide who hears about an architecture.
-		expect(settled).toEqual(["human", "mixed", "agent"]);
-		expect(h.state.changeReads).toBe(3);
+		expect(settled).toEqual(["human", "mixed", "agent", "external"]);
+		expect(h.state.changeReads).toBe(4);
 	});
 
 	test("includes identity fields and freezes the exact current-feed cursor", () => {

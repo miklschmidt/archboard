@@ -67,6 +67,7 @@ test("the existing agent feed attributes durable canonical edits without legacy 
 				board: `model:${model.manifest.id}`,
 				by: "thread-42",
 				origin: "agent",
+				doing: "Plan the initial state",
 			}),
 		]),
 	);
