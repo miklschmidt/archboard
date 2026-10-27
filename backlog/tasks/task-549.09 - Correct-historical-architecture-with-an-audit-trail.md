@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-implementation'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-27T03:40:00Z'
+updated_date: '2026-10-27T04:11:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -72,4 +72,7 @@ Implement the approved backend/shared contract/CLI/server slice only.
 
 <!-- SECTION:NOTES:BEGIN -->
 Confirmed signed bd3566cadd9478ac749393d711e5f730fb722744 includes source 4e8320d1b and main a98f28811 before tests or servers. Claimed and authored draft proposals Board persistence@TASK-549.09 (7XP2HHCT), Command interface@TASK-549.09 (7Dr76nZE), and Archboard server routes@TASK-549.09 (Mt2loqNM). Early contract and parent fixture: /home/msc/.local/state/archboard-implementation/task-549/task-549.09-contract.md. Public real-file/Git architecture operations are the approved primary seam. Parent owns frontend acceptance.
+
+Backend/shared contract/CLI/server slice is ready for parent browser acceptance. The shared writer accepts correction with previous exact checkpoint, reason and immutable source revisions. Retained identity changes preserve original checkpoints, lasting state identity and an explicit audit chain. Existing family reconciliation handles safe inheritance, conflicts and blocked descendants without changing adopted successors or current content. Completed-state claims, fetched logical history, source associations and live identity reservations use existing owners. The completion observer now detects archive-only writes from other processes.
+Evidence: 24 runtime tests /161 assertions across11 owners pass on frozen source, plus the final structural correction case /5 assertions. CLI/HTTP parity passes1 case /10 assertions. Source/browser types, warning-free lint, formatting and21 evaluation scenarios /21 fixtures /14 coverage parts pass. Exact logs and early contract are in /home/msc/.local/state/archboard-implementation/task-549. The known board interface width remains245/188 under TASK-549.24; no rule or ceiling changes. Three draft architecture proposals remain unadopted. Parent owns every browser change and all acceptance criteria. No children, review, push, PR or task closure.
 <!-- SECTION:NOTES:END -->

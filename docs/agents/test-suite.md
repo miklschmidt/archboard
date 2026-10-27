@@ -575,3 +575,18 @@ The existing canonical reference owner keeps foreign pins through adoption.
 The existing CLI and HTTP proposal owner covers completed state selection, structured refusal, and exact retry.
 `tests/system/browser/canonical-model-lifecycle.test.ts` owns completed state discovery, decisions, lineage, comparisons, exact readings, and missing-history recovery.
 It uses real temporary Git repositories and the public HTTP writer for agent decisions.
+
+## Canonical historical corrections
+
+The public architecture operations own correction tests under `packages/board/tests/runtime/operations/proposals/`.
+`corrections.test.ts` owns lasting identity, exact originals, comparison audit, unchanged current content, and adopted successor isolation.
+`correction-family.test.ts` owns repeated audit chains, retained baselines, conflicting following drafts, and blocked descendants.
+`correction-safety.test.ts` owns explicit targets, immutable evidence, empty-change refusal, stale correction checkpoints, and retry identity.
+`correction-recovery.test.ts` interrupts real durable journal writes before and after installation.
+`correction-retention.test.ts` owns signing refusal, unchanged source HEAD and index, publication, fetched logical lookup, and collection of unreachable Git objects.
+`correction-news.test.ts` uses a second process because an archive-only correction changes no current input file.
+The existing news owner keeps its claims, current writes, and external-file observation cases.
+
+`tests/system/semantic-boards/model-corrections.test.ts` owns CLI and HTTP parity for correction, exact retry, comparison audit, and refusal status.
+The parent TASK-549.09 delivery owns browser acceptance through the existing canonical model seam.
+No browser acceptance or model evaluation is implied by backend evidence.

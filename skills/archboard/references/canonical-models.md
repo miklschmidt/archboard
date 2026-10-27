@@ -966,3 +966,63 @@ Completed metadata records `adoptedAt` or `shelvedAt`, plus `reason` and `previo
 Current files hold only their current designation and its own lineage.
 Completed history stays in the independent archive with actual Git ancestry for every required baseline.
 Archive append order never selects current architecture.
+
+## Correct a recorded state
+
+Use an explicit correction for a factual error in a historical or shelved state.
+Create a new proposal for a new design.
+Ordinary edits to completed states still refuse.
+
+Read the logical state and save its returned `checkpoint.id`.
+Read the current catalogue again and save its complete `revision`.
+Claim the model, completed state, affected existing subjects, and following drafts that the correction changes.
+Inspect the source commits that support the corrected facts.
+Supply one available full Git commit ID for every repository referenced by the corrected reading.
+Uncommitted files cannot supply historical evidence.
+
+Submit the existing `model edit` request with a `correction` intent and ordinary module or flow changes:
+
+```json
+{
+	"target": { "model": "Shop", "state": "Parked" },
+	"expectedRevision": { "digest": "<current catalogue digest>", "files": [] },
+	"operationId": "correct-routing-1",
+	"writer": "agent",
+	"claim": "<claim id>",
+	"correction": {
+		"previous": "<latest logical checkpoint id>",
+		"reason": "The recorded source already routed these requests.",
+		"revisions": [{ "repo": "github.com/acme/shop", "commit": "<full source commit id>" }]
+	},
+	"changes": [
+		{
+			"type": "edit-module",
+			"subject": "Shop#Gateway",
+			"set": { "description": "Routes authenticated requests." }
+		}
+	]
+}
+```
+
+Copy the complete revision from the reader, including its actual files.
+Replace the example state and claim with their stable IDs.
+Supply the doing line through `--doing`.
+POST `/api/architecture/module` accepts the same shared request with its explicit vault and doing line.
+
+The writer refuses current or draft targets, unavailable source evidence, empty factual changes, and a stale `correction.previous`.
+A correction changes no current designation, state name, ancestry, or adoption decision.
+Its retained checkpoint links the previous reading through actual Git ancestry.
+Current files contain no completed correction history.
+
+Logical state reads expose the latest correction and `selectedState.corrections`.
+Each audit entry identifies its checkpoint, previous checkpoint, time, reason, and source revisions.
+An exact original checkpoint still returns its original facts.
+Comparison results include both audit trails under `comparison.corrections` beside the existing semantic differences.
+Divergent corrections require an exact checkpoint instead of selecting by archive order.
+
+Following local drafts reconcile through the existing family operation.
+Competing changes retain explicit standing and block descendants until settlement.
+Adopted successors and unrelated current architecture keep their content.
+Recovery and exact retries use the existing journal and return the same retained correction.
+Publication and fetch retain the complete correction dependency chain.
+Source history remains separate and can become unavailable.

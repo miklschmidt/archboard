@@ -1182,6 +1182,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/board/tests/runtime/operations/proposals/lifecycle*.test.ts and adoption-safety.test.ts; foreign pins packages/board/tests/runtime/operations/model-edit/references.test.ts; CLI and HTTP tests/system/semantic-boards/model-proposals.test.ts; visible lifecycle tests/system/browser/canonical-model-lifecycle.test.ts; guidance skills/archboard/references/canonical-models.md#complete-a-proposal"
+				},
+				{
+					"path": "canonical historical correction: explicit evidence, exact original checkpoints, logical audit trails, following draft reconciliation, recovery, signing, publication and archive-only news",
+					"expectedUse": "Claim the completed logical state and its affected family. Supply its latest checkpoint, a reason and available immutable source commits. Keep exact originals and adopted successors unchanged. Resolve conflicts through existing settlement.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/proposals/correction*.test.ts; CLI and HTTP tests/system/semantic-boards/model-corrections.test.ts; parent TASK-549.09 owns browser acceptance; guidance skills/archboard/references/canonical-models.md#correct-a-recorded-state"
 				}
 			]
 		},

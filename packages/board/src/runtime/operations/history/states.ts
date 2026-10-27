@@ -2,9 +2,11 @@ import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import { SelectedStateSchema } from "#shared/schemas/model-proposals.ts";
 import {
 	archiveRecords,
+	archiveTip,
 	type ArchiveContext,
 	type CheckpointRecordSchema,
 } from "#runtime/store/model-archive.ts";
+import { retainedPublicationTips } from "#runtime/store/model-publication.ts";
 
 type Record = ReturnType<typeof CheckpointRecordSchema.parse>;
 type States = NonNullable<ArchitectureModel["states"]>;
@@ -45,7 +47,11 @@ function displacedStates(record: Record): States {
  * @returns Their retained record identities and metadata.
  */
 async function modelRecords(context: ArchiveContext, model?: string) {
-	return (await archiveRecords(context)).flatMap(({ id, record }) => {
+	const tip = await archiveTip(context);
+	const roots = [
+		...new Set([...(tip === undefined ? [] : [tip]), ...(await retainedPublicationTips(context))]),
+	];
+	return (await archiveRecords(context, roots)).flatMap(({ id, record }) => {
 		if (record.kind !== "checkpoint") return [];
 		if (record.vault !== context.vault) return [];
 		if (model !== undefined && record.model !== model) return [];
@@ -64,16 +70,21 @@ async function retainedStates(context: ArchiveContext, model?: string) {
 	const completed = records.flatMap(({ id, record }) => completedStates(record, id));
 	const previous = records.flatMap(({ record }) => displacedStates(record));
 	const displaced = new Set(previous.map((state) => state.id));
-	const corrections = records.flatMap(({ id, record }) => record.correction === undefined || record.selection == null
-		? [] : [{ ...record.selection, checkpoint: id }]);
-	const replaced = new Set(records.flatMap(({ record }) => record.correction === undefined ? [] : [record.correction.previous]));
+	const corrections = records.flatMap(({ id, record }) =>
+		record.correction === undefined || record.selection == null
+			? []
+			: [{ ...record.selection, checkpoint: id }],
+	);
+	const replaced = new Set(
+		records.flatMap(({ record }) =>
+			record.correction === undefined ? [] : [record.correction.previous],
+		),
+	);
 	return [
 		...new Map(
 			[...completed.filter((state) => !displaced.has(state.id)), ...previous, ...corrections]
-			.filter((state) => !replaced.has(state.checkpoint!)).map((state) => [
-				JSON.stringify([state.id, state.checkpoint]),
-				state,
-			]),
+				.filter((state) => !replaced.has(state.checkpoint!))
+				.map((state) => [JSON.stringify([state.id, state.checkpoint]), state]),
 		).values(),
 	].toSorted((a, b) => a.id.localeCompare(b.id) || a.checkpoint!.localeCompare(b.checkpoint!));
 }
@@ -89,7 +100,12 @@ async function retainedReservations(context: ArchiveContext, model: string) {
 	return new Set(
 		records.flatMap(({ record }) => {
 			const lifecycle = record.lifecycle;
-			if (record.correction !== undefined) return [record.state.id, ...record.correction.changes.map((change) => change.subject), ...(record.correction.retiredIds ?? [])];
+			if (record.correction !== undefined)
+				return [
+					record.state.id,
+					...record.correction.changes.map((change) => change.subject),
+					...(record.correction.retiredIds ?? []),
+				];
 			if (lifecycle === undefined) return [];
 			return [
 				lifecycle.proposal.id,

@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 212,
+	"version": 214,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-27T03:39:39.165Z",
+	"updatedAt": "2026-10-27T04:11:19.337Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -170188,7 +170188,7 @@
 						"name": "Canonical model client",
 						"kind": "module",
 						"responsibility": "Translates state selection, comparison, navigation, and durable proposal intents through shared server schemas",
-						"description": "The shared model edit request accepts an explicit historical correction with a reason and immutable source revisions. The runtime owns claims, retained records, family reconciliation and exact retries. Logical reads expose correction provenance while exact checkpoints preserve original content.",
+						"description": "Translates the shared canonical model requests without interpreting patches or history. model edit --input accepts an explicit historical correction with a prior checkpoint, reason and immutable source revisions. model read, compare and proposals expose corrected logical readings and exact original checkpoints.",
 						"parent": "dHZeNcMs",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -170224,7 +170224,7 @@
 						"order": 60000,
 						"name": "Model edit commands",
 						"kind": "module",
-						"responsibility": "Translates current edits and proposal creation, reconciliation, settlement, adoption and shelving through one shared writer.",
+						"responsibility": "Translates canonical edits, proposals and factual corrections through the shared writer",
 						"description": "Forced adoption carries an explicit comparison against current. Requests name their target, revision, claim and operation identity. CLI adapters interpret neither patches nor lifecycle history.",
 						"parent": "bLpk2XKU",
 						"groups": [

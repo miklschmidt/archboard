@@ -1,10 +1,12 @@
 import { isDeepStrictEqual } from "node:util";
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts";
-import { decodeModel } from "#runtime/operations/read/model-read.ts";
+import { decodeModel, readCurrentModel } from "#runtime/operations/read/model-read.ts";
+import { requireModel } from "#runtime/operations/proposals/read.ts";
 import {
 	requireSubjectClaim,
 	requireTargetCatalogue,
+	claimableSubjects,
 } from "#runtime/operations/model-edit/claims.ts";
 import { readModelFiles, modelRevision } from "#runtime/store/model-files.ts";
 import { ArchiveError, archiveContext } from "#runtime/store/model-archive.ts";
@@ -25,9 +27,17 @@ async function applyCandidateStructure(
 	request: ArchitectureModuleEdit,
 	paths: Iterable<string>,
 ) {
-	const reservations = allocatesIdentity(request)
-		? await retainedReservations(await archiveContext(vault), model.manifest.id)
-		: new Set<string>();
+	const reservations = new Set<string>();
+	if (allocatesIdentity(request)) {
+		const current = requireModel(readCurrentModel(vault));
+		const retained = await retainedReservations(await archiveContext(vault), model.manifest.id);
+		for (const identity of [
+			...claimableSubjects(current),
+			...(current.manifest.retiredIds ?? []),
+			...retained,
+		])
+			reservations.add(identity);
+	}
 	return { ...applyStructure(model, request, paths, reservations), reservations };
 }
 
@@ -202,6 +212,23 @@ async function initialCandidate(vault: string, request: ArchitectureModuleEdit) 
 	requireWritableTarget(state, request);
 	const current = await selectedTarget(vault, request.target, catalogue);
 	if (!current.success) return current;
+	return targetCandidate(vault, request, current, captured);
+}
+
+/**
+ * Dispatch an admitted intent to the existing candidate owners.
+ * @param vault The addressed vault.
+ * @param request The complete architectural intent.
+ * @param current The admitted complete selected state.
+ * @param captured The exact live inputs.
+ * @returns Its complete checked predecessor candidate.
+ */
+async function targetCandidate(
+	vault: string,
+	request: ArchitectureModuleEdit,
+	current: ArchitectureModel,
+	captured: ReturnType<typeof readModelFiles>,
+) {
 	if ("correction" in request) {
 		const { correctionCandidate } = await import("#runtime/operations/history/correction.ts");
 		return correctionCandidate(vault, request, current, captured);

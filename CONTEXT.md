@@ -62,6 +62,15 @@ Completed state catalogue:
 A derived reading of explicit lifecycle records, independent of archive append order.
 It stores no history in current architecture files.
 
+Canonical correction:
+An explicit repair of factual content in a historical or shelved logical state.
+It preserves the original checkpoint and records its reason and immutable source revisions.
+The lasting state identity resolves corrected facts, while exact checkpoints remain exact.
+
+Correction audit:
+The derived chain of correction checkpoints and their explicit previous readings.
+Archive append order establishes no correction precedence.
+
 Explanation capture:
 A temporary record of the exact reading that one local agent action answers.
 It preserves the model, state or checkpoint, complete revision, stable subjects, and reading intent.

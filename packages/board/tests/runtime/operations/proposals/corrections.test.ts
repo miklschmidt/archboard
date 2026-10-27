@@ -5,7 +5,9 @@ import {
 	readArchitectureCheckpoint,
 	readArchitectureModel,
 	listArchitectureCheckpoints,
+	watchArchitectureModel,
 } from "@archboard/board/store-read";
+import type { ArchitectureEvent } from "@archboard/board/model";
 import { editArchitectureModule } from "@archboard/board/store-write";
 import { fixture, disposeFixtures, git } from "#tests/runtime/operations/model-edit/fixture.ts";
 import { request, proposal, selected } from "#tests/runtime/operations/proposals/fixture.ts";
@@ -41,6 +43,8 @@ test("a shelved correction follows lasting identity while original checkpoints a
 			},
 		],
 	};
+	const events: ArchitectureEvent[] = [];
+	const stop = watchArchitectureModel(vault, (event) => events.push(event));
 	const corrected = await editArchitectureModule(vault, intent);
 	expect(corrected).toMatchObject({
 		success: true,
@@ -54,13 +58,17 @@ test("a shelved correction follows lasting identity while original checkpoints a
 	);
 	expect(logical.selectedState).toMatchObject({
 		...original.selectedState,
-		corrections: [
-			{ checkpoint: corrected.checkpoint.id, ...intent.correction },
-		],
+		corrections: [{ checkpoint: corrected.checkpoint.id, ...intent.correction }],
 	});
-	const exact = await readArchitectureCheckpoint(vault, shelved.checkpoint.id, undefined, undefined, {
-		compare: false,
-	});
+	const exact = await readArchitectureCheckpoint(
+		vault,
+		shelved.checkpoint.id,
+		undefined,
+		undefined,
+		{
+			compare: false,
+		},
+	);
 	expect(exact).toMatchObject({ success: true, modules: original.modules });
 	const compared = await readArchitectureModel(vault, undefined, undefined, {
 		state: created.target.state!,
@@ -75,11 +83,24 @@ test("a shelved correction follows lasting identity while original checkpoints a
 	});
 	expect(readFileSync(join(vault, "gateway.module.json"))).toEqual(currentBytes);
 	expect(readFileSync(join(vault, "model.json"))).toEqual(manifestBytes);
-	expect(await editArchitectureModule(vault, intent)).toEqual(corrected);
+	const retried = await editArchitectureModule(vault, intent);
+	stop();
+	expect(retried).toEqual(corrected);
+	expect(events.filter((event) => event.type === "architecture_changed")).toMatchObject([
+		{
+			state: created.target.state,
+			reason: "completed",
+			operation: { checkpoint: { id: corrected.checkpoint.id } },
+		},
+	]);
 	const history = await listArchitectureCheckpoints(vault);
 	if (!history.success) throw new Error(JSON.stringify(history));
-	expect(history.checkpoints.filter((checkpoint) => checkpoint.correction !== undefined)).toHaveLength(1);
-	expect(git(root, "merge-base", "--is-ancestor", shelved.checkpoint.id, corrected.checkpoint.id)).toBe("");
+	expect(
+		history.checkpoints.filter((checkpoint) => checkpoint.correction !== undefined),
+	).toHaveLength(1);
+	expect(
+		git(root, "merge-base", "--is-ancestor", shelved.checkpoint.id, corrected.checkpoint.id),
+	).toBe("");
 }, 20_000);
 
 test("a historical correction reconciles following drafts and stops at adopted successors", async () => {
@@ -94,7 +115,11 @@ test("a historical correction reconciles following drafts and stops at adopted s
 	});
 	if (!adopted.success) throw new Error(JSON.stringify(adopted));
 	const following = await proposal(vault, "Historical follow-up", "Current", [
-		{ type: "edit-module", subject: "Shop#Gateway", set: { responsibility: "Keeps its own plan." } },
+		{
+			type: "edit-module",
+			subject: "Shop#Gateway",
+			set: { responsibility: "Keeps its own plan." },
+		},
 	]);
 	const before = await selected(vault, "Current");
 	const current = readArchitectureModel(vault);
@@ -106,7 +131,13 @@ test("a historical correction reconciles following drafts and stops at adopted s
 			reason: "The original gateway already described this routing.",
 			revisions: [{ repo: "github.com/acme/shop", commit: git(root, "rev-parse", "HEAD") }],
 		},
-		changes: [{ type: "edit-module", subject: "Shop#Gateway", set: { description: "Correct original routing." } }],
+		changes: [
+			{
+				type: "edit-module",
+				subject: "Shop#Gateway",
+				set: { description: "Correct original routing." },
+			},
+		],
 	});
 	expect(changed).toMatchObject({ success: true, reconciliation: false });
 	if (!changed.success) throw new Error(JSON.stringify(changed));
@@ -120,5 +151,48 @@ test("a historical correction reconciles following drafts and stops at adopted s
 	expect(now.modules).toEqual(current.modules);
 	expect(now.manifest).toEqual(current.manifest);
 	expect((await selected(vault, successor.target.state!)).modules).toEqual(current.modules);
-	expect(git(root, "merge-base", "--is-ancestor", before.checkpoint!.id, changed.checkpoint.id)).toBe("");
+	expect(
+		git(root, "merge-base", "--is-ancestor", before.checkpoint!.id, changed.checkpoint.id),
+	).toBe("");
 }, 25_000);
+
+test("structural corrections retire historical subjects without removing their current counterparts", async () => {
+	const { root, vault } = fixture();
+	const before = readArchitectureModel(vault);
+	if (!before.success) throw new Error(JSON.stringify(before));
+	const parent = await proposal(vault, "Recorded topology");
+	const shelved = await editArchitectureModule(vault, {
+		...(await request(vault, parent.target.state!)),
+		proposal: { type: "shelve", reason: "Keep the old topology." },
+		changes: [],
+	});
+	if (!shelved.success) throw new Error(JSON.stringify(shelved));
+	const corrected = await editArchitectureModule(vault, {
+		...(await request(vault, parent.target.state!)),
+		correction: {
+			previous: shelved.checkpoint.id,
+			reason: "The worker was not part of this recorded topology.",
+			revisions: [{ repo: "github.com/acme/shop", commit: git(root, "rev-parse", "HEAD") }],
+		},
+		changes: [
+			{ type: "remove-relationship", subject: "Shop#Dispatch" },
+			{ type: "remove-module", subject: "Shop#Worker" },
+			{ type: "add-module", module: { name: "Historical helper", kind: "service", order: 40 } },
+		],
+	});
+	if (!corrected.success) throw new Error(JSON.stringify(corrected));
+	const historical = await selected(vault, parent.target.state!);
+	expect(historical.modules.map((module) => module.name)).toEqual([
+		"Gateway",
+		"Handler",
+		"Historical helper",
+	]);
+	expect(historical.relationships).toEqual([]);
+	expect(historical.manifest.retiredIds).toEqual(
+		expect.arrayContaining(["Shop#Worker", "Shop#Dispatch"]),
+	);
+	const current = readArchitectureModel(vault);
+	if (!current.success) throw new Error(JSON.stringify(current));
+	expect(current.modules).toEqual(before.modules);
+	expect(current.relationships.map((relationship) => relationship.id)).toEqual(["Shop#Dispatch"]);
+}, 15_000);

@@ -119,10 +119,12 @@ const ComparisonSchema = z.strictObject({
 	against: SelectedStateSchema.nullable(),
 	revision: ModelRevisionSchema,
 	checkpoint: CheckpointIdSchema.optional(),
-	corrections: z.strictObject({
-		selected: z.array(CorrectionAuditSchema),
-		against: z.array(CorrectionAuditSchema),
-	}).optional(),
+	corrections: z
+		.strictObject({
+			selected: z.array(CorrectionAuditSchema),
+			against: z.array(CorrectionAuditSchema),
+		})
+		.optional(),
 	subjects: z.array(
 		z.strictObject({
 			id: QualifiedSubjectIdSchema,

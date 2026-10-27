@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 195,
+	"version": 198,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-27T03:39:38.657Z",
+	"updatedAt": "2026-10-27T04:09:49.719Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -421,6 +421,28 @@
 					"VCoMuJnP",
 					"0z23E66v",
 					"IbkA2Se8"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "th4VTQu2",
+			"name": "Historical corrections",
+			"grammar": "architecture",
+			"summary": "The shared writer retains corrected facts and refreshes readers without replacing current architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"e0GTqv1k",
+					"8Uq1mtzw",
+					"Bd4GPG6d",
+					"ZRq51Ecz",
+					"KJy5yYuq",
+					"hLWF9OC5",
+					"MI2LKBji",
+					"ov7pPg21",
+					"W6wFcSQz"
 				],
 				"edges": [],
 				"flows": []
@@ -205287,8 +205309,8 @@
 						"order": 44000,
 						"name": "Canonical checkpoint operations",
 						"kind": "module",
-						"responsibility": "Retains exact checkpoints and resolves corrected logical history with an explicit audit trail",
-						"description": "Historical and shelved corrections link the previous checkpoint through retained records and actual Git ancestry. Exact checkpoints keep their original content. Logical state lookup follows explicit correction links, never archive append order. Current authored files hold no completed correction history.",
+						"responsibility": "Retains, reopens and shares exact architecture with audited logical corrections",
+						"description": "Retained correction records link their previous exact checkpoints through actual Git ancestry. Logical reads follow explicit correction links and report the audit trail. Exact checkpoints remain unchanged. Fetched publication refs participate in the logical catalogue. The existing subject and comparison engines interpret the corrected facts.",
 						"parent": "1VHRyajb",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -205445,7 +205467,7 @@
 						"name": "Canonical model subscription",
 						"kind": "module",
 						"responsibility": "Sends a fresh coherent snapshot and observes valid external changes without adoption",
-						"description": "Each connection receives current reading and claims. Completion, external observations, unavailable reads and claim changes use shared public event payloads. Historical reads stay independent.",
+						"description": "Each connection receives current content and claims. The existing completion feed also observes retained operations from other processes. Archive-only corrections refresh their addressed logical state even when no current input changes. Exact retries produce no duplicate completion event.",
 						"parent": "1VHRyajb",
 						"groups": [
 							"panes"
@@ -205677,6 +205699,22 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/store/model-archive-blobs.ts"
+						}
+					},
+					{
+						"id": "MI2LKBji",
+						"order": 57500,
+						"name": "Archive news",
+						"kind": "module",
+						"responsibility": "Reports retained operations from other processes in this vault",
+						"description": "Idle observations read loose-ref content and packed-ref metadata. A changed archive ref asks the existing archive owner for newly reachable records. Only accepted operations of the addressed vault reach the completion feed. The coherent reader keeps incomplete installation behind recovery.",
+						"parent": "1VHRyajb",
+						"groups": [
+							"panes"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-history-news.ts"
 						}
 					}
 				],
@@ -208768,6 +208806,90 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/store/model-archive-blobs.ts",
 							"symbol": "git"
+						}
+					},
+					{
+						"id": "OkD6iLu5",
+						"order": 227000,
+						"from": "8Uq1mtzw",
+						"to": "KJy5yYuq",
+						"kind": "call",
+						"label": "Recheck the corrected logical checkpoint",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
+							"symbol": "requireUnchanged"
+						}
+					},
+					{
+						"id": "GnhBsOl1",
+						"order": 228000,
+						"from": "hLWF9OC5",
+						"to": "MI2LKBji",
+						"kind": "call",
+						"label": "Observe retained writes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-watch.ts",
+							"symbol": "watchArchitectureModel"
+						}
+					},
+					{
+						"id": "E7MfWknr",
+						"order": 229000,
+						"from": "MI2LKBji",
+						"to": "ZRq51Ecz",
+						"kind": "call",
+						"label": "Read newly retained operations",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-history-news.ts",
+							"symbol": "advanceObservation"
+						}
+					},
+					{
+						"id": "1H1Ks46q",
+						"order": 230000,
+						"from": "MI2LKBji",
+						"to": "Bd4GPG6d",
+						"kind": "call",
+						"label": "Read durable completion receipts",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-history-news.ts",
+							"symbol": "completions"
+						}
+					},
+					{
+						"id": "zRILT0vc",
+						"order": 231000,
+						"from": "MI2LKBji",
+						"to": "RfwX9gsx",
+						"kind": "call",
+						"label": "Locate the common Git directory",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-history-news.ts",
+							"symbol": "openObservation"
+						}
+					},
+					{
+						"id": "iKreIhYm",
+						"order": 232000,
+						"from": "MI2LKBji",
+						"to": "nqi2h0Ku",
+						"kind": "call",
+						"label": "Resolve the addressed archive",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-history-news.ts",
+							"symbol": "openObservation"
 						}
 					}
 				],

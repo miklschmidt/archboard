@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 179,
+	"version": 181,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-27T03:39:39.597Z",
+	"updatedAt": "2026-10-27T04:11:20.125Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -182278,8 +182278,8 @@
 						"order": 38000,
 						"name": "Canonical edit routes",
 						"kind": "module",
-						"responsibility": "Adapts edits, reconciliation, settlement, adoption, shelving, claims and recovery through one durable runtime.",
-						"description": "The shared model edit request accepts an explicit historical correction with a reason and immutable source revisions. The runtime owns claims, retained records, family reconciliation and exact retries. Logical reads expose correction provenance while exact checkpoints preserve original content.",
+						"responsibility": "Adapts edits, proposal decisions, audited corrections, claims and recovery through one durable runtime",
+						"description": "POST /api/architecture/module accepts the shared explicit correction intent. The runtime owns evidence availability, complete claims and stale tokens, signing, retained correction records, family reconciliation, recovery and exact retries. The existing read routes expose logical audit trails and original exact checkpoints. Source evidence refusal uses HTTP 409.",
 						"parent": "I6MrfGUg",
 						"groups": [
 							"writes"

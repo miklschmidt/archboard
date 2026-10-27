@@ -69,7 +69,10 @@ async function requireTargetCatalogue(vault: string, target: ArchitectureClaim["
 		const { stateMetadata } = await import("#runtime/operations/proposals/read.ts");
 		const metadata = await stateMetadata(await archiveContext(vault), current, target.state!);
 		if (metadata.id !== target.state)
-			throw new ArchiveError("TARGET_CHANGED", "Use the selected state's stable identity before writing.");
+			throw new ArchiveError(
+				"TARGET_CHANGED",
+				"Use the selected state's stable identity before writing.",
+			);
 	}
 	return current;
 }
@@ -202,7 +205,10 @@ async function claimArchitectureSubjects(
 			const known = await knownClaimScopes(vault, current, request.subjects);
 			if (request.target.state !== null && !known.has(request.target.state)) {
 				const { resolveState } = await import("#runtime/operations/proposals/read.ts");
-				includeClaimScopes(known, await resolveState(await archiveContext(vault), current, request.target.state));
+				includeClaimScopes(
+					known,
+					await resolveState(await archiveContext(vault), current, request.target.state),
+				);
 			}
 			if (request.subjects.some((subject) => !known.has(subject)))
 				throw new ArchiveError(
