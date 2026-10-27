@@ -182,6 +182,23 @@ test("walkthrough beats change readings while one revision stays captured until 
 	const revision = await browser.eval<string>(
 		`document.querySelector('[data-slot="model-walkthrough"]').getAttribute('data-revision')`,
 	);
+	const reported = await pollUntil(
+		async () => (await (await fetch(`${server.base}/api/panes`)).json()).panes[0],
+		(pane) => pane?.architecture?.selection?.walkthrough === "Shop#Tour",
+		"the captured walkthrough in the pane report",
+		WAIT,
+	);
+	expect(reported).toMatchObject({
+		board: null,
+		architecture: {
+			model: "Shop",
+			expectedRevision: revision,
+			expectedSourceRevision: revision,
+			subjects: ["Shop#Gateway"],
+			selection: { walkthrough: "Shop#Tour" },
+			reading: { grammar: "architecture" },
+		},
+	});
 	const gatewayFile = join(vault, "gateway.module.json");
 	const gateway = JSON.parse(readFileSync(gatewayFile, "utf8")) as Record<string, unknown>;
 	writeFileSync(gatewayFile, JSON.stringify({ ...gateway, name: "Updated gateway" }));

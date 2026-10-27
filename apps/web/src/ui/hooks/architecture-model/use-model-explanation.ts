@@ -19,18 +19,30 @@ type Action = ExplanationInvocation["request"]["action"];
 function useModelExplanation(
 	vault: string,
 	model: Model,
-	location: ReturnType<typeof useModelLocation>,
+	location: Pick<
+		ReturnType<typeof useModelLocation>,
+		| "scope"
+		| "focus"
+		| "filters"
+		| "grammar"
+		| "flow"
+		| "subject"
+		| "state"
+		| "checkpoint"
+		| "against"
+	>,
 	selected: ReadonlySet<string>,
 ) {
 	const host = useContext(ModelExplanationContext);
 	const { scope, focus, filters, grammar, flow, subject, state, checkpoint, against } = location;
-	const selection = useMemo(
-		() => ({
-			state: state ?? undefined,
-			checkpoint: checkpoint ?? undefined,
-			against: against ?? undefined,
-		}),
-		[state, checkpoint, against],
+	const source = useMemo(
+		() =>
+			captureSource(model, {
+				state: state ?? undefined,
+				checkpoint: checkpoint ?? undefined,
+				against: against ?? undefined,
+			}),
+		[state, checkpoint, against, model],
 	);
 	const referenceSubject = subject ?? undefined;
 	const capture = useMemo(() => {
@@ -41,7 +53,7 @@ function useModelExplanation(
 			model: model.manifest.id,
 			expectedRevision: model.revision.digest,
 			subjects: [...selected],
-			selection,
+			...source,
 			reading: {
 				scope: scope ?? undefined,
 				focus: focus ?? [],
@@ -56,7 +68,7 @@ function useModelExplanation(
 				referenceSubject,
 			},
 		};
-	}, [vault, model, selected, scope, focus, filters, grammar, flow, referenceSubject, selection]);
+	}, [vault, model, selected, scope, focus, filters, grammar, flow, referenceSubject, source]);
 	const report = host?.report;
 	useEffect(() => {
 		report?.(capture === null ? null : { ...NOTHING_READ, architecture: capture });
@@ -75,6 +87,21 @@ function useModelExplanation(
 		[capture, invoke],
 	);
 	return { act, unavailable: host === null || host.pending || capture === null };
+}
+
+/**
+ * Keep a narrative source distinct from the architecture that it explains.
+ * @param model The captured target and optional narrative source.
+ * @param selection The ordinary reader address.
+ * @returns Source selection and its revision guard when playback supplies one.
+ */
+function captureSource(model: Model, selection: NonNullable<ExplanationInvocation["selection"]>) {
+	const playback = model.playback;
+	if (playback === undefined) return { selection };
+	return {
+		selection: playback.source ?? { ...selection, walkthrough: playback.walkthrough.id },
+		expectedSourceRevision: playback.sourceRevision.digest,
+	};
 }
 
 export { useModelExplanation };

@@ -4,6 +4,7 @@ import {
 	type SemanticPresentationProps,
 } from "#ui/components/semantic-board-canvas/SemanticPresentation.tsx";
 import { projectModel, type Model } from "#ui/rules/architecture-model/projection.ts";
+import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
 import { projectFlow } from "#ui/rules/architecture-model/flow-reading.ts";
 
 const ModelDiagram = lazy(async () => {
@@ -17,6 +18,7 @@ const LOADING_DIAGRAM = (
 const NO_MISSING_SUBJECTS: readonly string[] = Object.freeze([]);
 
 interface WalkthroughProps {
+	vault: string;
 	model: Model;
 	reducedMotion: boolean;
 	onLeave: () => void;
@@ -50,6 +52,21 @@ function NarrativePresentation(
 	const beat = playback.walkthrough.beats[index]!;
 	const reading = beat.reading;
 	const selected = useMemo(() => new Set(reading.selection), [reading.selection]);
+	const location = useMemo(
+		() => ({
+			state: null,
+			checkpoint: model.checkpoint?.id ?? null,
+			against: null,
+			subject: null,
+			scope: reading.scope ?? null,
+			focus: reading.focus,
+			filters: { hideKinds: reading.filters.relationships, hideGroups: reading.filters.groups },
+			grammar: reading.grammar,
+			flow: reading.flow ?? null,
+		}),
+		[reading, model.checkpoint?.id],
+	);
+	useModelExplanation(props.vault, model, location, selected);
 	const projection = useMemo(() => {
 		const structural = projectModel(
 			model,

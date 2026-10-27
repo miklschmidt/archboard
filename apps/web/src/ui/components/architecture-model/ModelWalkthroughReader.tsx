@@ -130,6 +130,7 @@ function CapturedWalkthrough(
 				</div>
 			)}
 			<ModelWalkthrough
+				vault={props.vault}
 				model={query.data}
 				reducedMotion={props.reducedMotion}
 				onLeave={props.onLeave}
