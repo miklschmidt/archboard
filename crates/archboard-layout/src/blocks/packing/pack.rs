@@ -1,13 +1,13 @@
 //! A block of blocks: its items are blocks alone (`nested.rs` gathers its
-//! loose cards into a cluster), packed in rows or columns in the order their
-//! lines run, scored by fit, crossings and detours (`score_of`). The router
-//! (`trunks.rs`) routes the unlabelled trunks around them. Labels stay inside
+//! loose cards into a cluster). Measured boxes and estimated routes choose
+//! rows or columns before one packing is routed. The router (`trunks.rs`)
+//! routes the unlabelled trunks around them. Labels stay inside
 //! the child blocks beside their cards. The block's header, own ports and
 //! strips are placed in `edges.rs`, and the blocks slid in line with their
 //! trunks in `slides.rs`.
 
 use crate::constants::BEND_RADIUS;
-use crate::ecma::{abs, js_max, js_min, max, min, or, sorted_by};
+use crate::ecma::{abs, js_max, max, min, or, sorted_by};
 use crate::geometry::{Point, Rect, Side};
 use crate::track::chains::LANE;
 use crate::track::scene::{Map, Set};
@@ -16,10 +16,11 @@ use crate::track::score::scores_better;
 use super::super::headers::{Header, Room, Taken, header_within};
 use super::super::laid::{Insets, Laid, LaidMap, Size, moved};
 use super::super::lone::frame_width;
-use super::super::tree::{Block, BlockTree, header_of};
-use super::away::nearest_away;
+use super::super::tree::{Block, BlockTree, Kind, header_of};
+use super::super::walls::inner_points;
+use super::capacity::room_needed;
 use super::packings::{Packing, extent_of, packings_of};
-use super::trunks::{TRUNK_CLEARANCE, packed_weighed, room_needed};
+use super::trunks::{TRUNK_CLEARANCE, TrunkRouter};
 
 /// Room between two packed blocks, for the trunks that pass between them.
 pub(crate) const PACK_GAP: f64 = 72.0;
@@ -34,15 +35,6 @@ pub(super) struct Facing {
     pub one: Point,
     pub other: Point,
     pub upright: bool,
-}
-
-/// How much nearer than a block's inset a line runs to its left wall, round
-/// the block's leftmost items; a line ending on a port on that wall does not
-/// count. The block's width keeps a line round its rightmost items the inset
-/// from its right wall already.
-fn left_short_of<'a>(lines: impl Iterator<Item = &'a Vec<Point>>, inset: f64) -> f64 {
-    let xs = lines.flatten().map(|point| point.x).filter(|&x| x >= 1.0);
-    js_max(0.0, inset - js_min(inset, min(xs)))
 }
 
 /// A block of blocks laid out: packed, and its trunks routed.
@@ -61,6 +53,8 @@ pub(crate) struct PackLayout<'t> {
     pub(super) gap: f64,
     /// Room left of the packed blocks, for trunks that run round the leftmost.
     pub(super) margin: f64,
+    /// Space for routes that reach the first row through its top faces.
+    outer_top: f64,
     /// The block's header as laid out: at its least size until a packing says how wide the block is.
     pub(super) header: Option<Taken>,
 }
@@ -83,13 +77,17 @@ impl<'t> PackLayout<'t> {
         block: &'t Block,
         insets: Insets,
     ) -> PackLayout<'t> {
-        let walled = block
-            .ports
-            .values()
-            .any(|side| matches!(side, Side::Left | Side::Right));
-        let insets = if walled {
+        let ports = [Side::Left, Side::Right]
+            .into_iter()
+            .map(|side| block.ports.values().filter(|&&at| at == side).count())
+            .max()
+            .unwrap_or(0);
+        let insets = if ports > 0 {
             Insets {
-                side: js_max(insets.side, 2.0 * TRUNK_CLEARANCE + LANE),
+                side: js_max(
+                    insets.side,
+                    (ports + 1) as f64 * LANE + 2.0 * TRUNK_CLEARANCE,
+                ),
                 ..insets
             }
         } else {
@@ -105,7 +103,8 @@ impl<'t> PackLayout<'t> {
             settled: Map::default(),
             held: 0.0,
             gap: PACK_GAP,
-            margin: 0.0,
+            margin: TRUNK_CLEARANCE,
+            outer_top: 0.0,
             header: least_header(block),
         }
     }
@@ -206,8 +205,8 @@ impl<'t> PackLayout<'t> {
         } else {
             0.0
         };
-        if header > 0.0 || ports > 0.0 {
-            js_max(header, ports) + HEAD_GAP
+        if header > 0.0 || ports > 0.0 || self.outer_top > 0.0 {
+            js_max(header, ports) + js_max(self.port_room(Side::Top), self.outer_top)
         } else {
             0.0
         }
@@ -218,8 +217,12 @@ impl<'t> PackLayout<'t> {
     /// columns on one left edge, so their ports line up.
     fn place(&mut self, packing: &Packing) {
         self.gap = packing.gap.unwrap_or(PACK_GAP);
-        self.margin = packing.margin.unwrap_or(0.0);
+        self.margin = js_max(
+            packing.margin.unwrap_or(TRUNK_CLEARANCE),
+            self.left_room(packing),
+        );
         self.header = least_header(self.block);
+        self.outer_top = self.top_room(packing);
         let top = self.insets.top + self.head_room();
         let size = self.size_of(packing);
         let length = if packing.across {
@@ -289,7 +292,7 @@ impl<'t> PackLayout<'t> {
             least,
             &Room {
                 frame: frame_width(self.block.lone.as_ref(), width),
-                content: width - 2.0 * side,
+                content: frame_width(self.block.lone.as_ref(), width),
                 beside: &beside,
             },
         ));
@@ -410,45 +413,36 @@ impl<'t> PackLayout<'t> {
             })
     }
 
-    /// Lay the block of blocks out: packed the way an earlier layout chose, or
-    /// each promising way, keeping the one that scores best once its trunks
-    /// are routed of those whose lines run away from their ends least. An
-    /// estimate of the packed size cannot tell a compact packing from one
-    /// whose trunks run round the page. Answers the laid-out block and the
-    /// packing it used.
+    /// Estimate each packing from its measured boxes, pins and connections.
+    /// Route only the packing with the best estimated cost and page fit.
+    /// A parent that keeps a packing reuses that arrangement.
     pub(crate) fn lay(mut self, kept: Option<&Packing>) -> (Laid, Packing) {
         if let Some(kept) = kept {
             let laid = self.lay_out(kept);
             return self.widened(laid, kept);
         }
-        let mut tried: Vec<(PackLayout<'t>, Laid, Packing)> = Vec::new();
-        for packing in self.packings() {
-            let aligned = self.slid(&packing).then(|| Packing {
-                aligned: true,
-                ..packing.clone()
-            });
-            for one in std::iter::once(packing).chain(aligned) {
-                let mut layout = self.again();
-                let laid = layout.lay_out(&one);
-                tried.push((layout, laid, one));
+        let mut best = None;
+        for mut packing in self.packings() {
+            packing.aligned = true;
+            let mut layout = self.again();
+            let (width, _, low, _) = layout.prepare(&packing);
+            let estimate = TrunkRouter {
+                block: layout.block,
+                laid: layout.laid,
+                tree: layout.tree,
+                boxes: &layout.boxes,
+            }
+            .estimate(width, low + layout.insets.bottom);
+            if best
+                .as_ref()
+                .is_none_or(|(_, weighed)| scores_better(&estimate, weighed))
+            {
+                best = Some((packing, estimate));
             }
         }
-        let laids: Vec<&Laid> = tried.iter().map(|(_, laid, _)| laid).collect();
-        let near = nearest_away(self.tree, self.laid, self.block, &laids);
-        let mut best: Option<usize> = None;
-        for index in near {
-            let better = best.is_none_or(|one| {
-                scores_better(
-                    &packed_weighed(&tried[index].1),
-                    &packed_weighed(&tried[one].1),
-                )
-            });
-            if better {
-                best = Some(index);
-            }
-        }
-        let (layout, laid, packing) = tried.swap_remove(best.expect("a packing is laid out"));
-        layout.widened(laid, &packing)
+        let (packing, _) = best.expect("a packing is estimated");
+        let laid = self.lay_out(&packing);
+        self.widened(laid, &packing)
     }
 
     /// Where the packed items stand, packed one way.
@@ -460,16 +454,6 @@ impl<'t> PackLayout<'t> {
             width,
             height,
         }
-    }
-
-    /// Whether some block of a packing would slide in line with the blocks its
-    /// lines reach: only then is the packing laid out that way as well.
-    fn slid(&self, packing: &Packing) -> bool {
-        let mut probe = self.again();
-        probe.place(packing);
-        probe.align_pins();
-        let extent = probe.extent_of(packing);
-        probe.slide_to_trunks(packing.across, extent)
     }
 
     /// Route the chosen packing with enough room between its trunks: widen
@@ -484,7 +468,15 @@ impl<'t> PackLayout<'t> {
             .collect();
         let lines: Vec<&[Point]> = self.lines.values().map(Vec::as_slice).collect();
         let room = room_needed(&boxes, &lines, self.gap);
-        let short = left_short_of(self.lines.values(), self.insets.side);
+        let inner = if self.block.kind == Kind::Root {
+            self.lines.values().flatten().copied().collect()
+        } else {
+            inner_points(self.block, &self.lines)
+        };
+        let short = js_max(
+            0.0,
+            self.insets.side - min(inner.iter().map(|point| point.x)),
+        );
         if room <= self.gap && short == 0.0 {
             return (laid, packing.clone());
         }
@@ -493,15 +485,15 @@ impl<'t> PackLayout<'t> {
         again.held = self.held;
         let wider = Packing {
             gap: Some(js_max(room, self.gap)),
-            margin: Some(packing.margin.unwrap_or(0.0) + short),
+            margin: Some(packing.margin.unwrap_or(TRUNK_CLEARANCE) + short),
             ..packing.clone()
         };
         let laid = again.lay_out(&wider);
         (laid, wider)
     }
 
-    /// Lay the block of blocks out packed one way.
-    fn lay_out(&mut self, packing: &Packing) -> Laid {
+    /// Place the measured boxes and graph pins before routing.
+    fn prepare(&mut self, packing: &Packing) -> (f64, f64, f64, bool) {
         self.place(packing);
         self.align_pins();
         if packing.aligned {
@@ -512,13 +504,28 @@ impl<'t> PackLayout<'t> {
         let Insets { side, top, .. } = self.insets;
         let header = self.header.map_or(0.0, |header| header.size.width);
         let width = js_max(
-            js_max(size.width, header) + 2.0 * side + self.margin,
+            js_max(js_max(size.width, header), self.block.port_width(header))
+                + 2.0 * side
+                + self.margin,
             self.held,
         );
-        let ended = self.block.ports.values().any(|&at| at == Side::Bottom);
+        let ended = self.block.has_bottom_port();
         let items = top + self.head_room();
-        let low = items + size.height + if ended { HEAD_GAP } else { 0.0 };
+        let low = items
+            + size.height
+            + if ended {
+                self.port_room(Side::Bottom)
+            } else {
+                0.0
+            };
         self.place_edges(width, top, low);
+        (width, items, low, ended)
+    }
+
+    /// Route the one chosen arrangement.
+    fn lay_out(&mut self, packing: &Packing) -> Laid {
+        let (width, items, low, ended) = self.prepare(packing);
+        let side = self.insets.side;
         self.route();
         let bottom = self.close_strips(items, low, ended);
         let reach = self
@@ -532,14 +539,28 @@ impl<'t> PackLayout<'t> {
         let (right, foot) = reach.fold((width, bottom), |(right, foot), point| {
             (js_max(right, point.x + side), js_max(foot, point.y))
         });
-        Laid {
+        let height = if ended {
+            let boxes = self
+                .boxes
+                .iter()
+                .filter(|(id, _)| self.block.ports.get(id.as_str()) != Some(&Side::Bottom))
+                .map(|(_, one)| one.y + one.height);
+            let points = inner_points(self.block, &self.lines);
+            let body = max(boxes.chain(points.iter().map(|point| point.y)));
+            js_max(foot, body + super::super::place::insets_of(self.block).side)
+        } else {
+            foot + self.insets.bottom
+        };
+        let mut laid = Laid {
             width: right,
-            height: foot + if ended { 0.0 } else { self.insets.bottom },
+            height,
             boxes: self.boxes.clone(),
             lines: self.lines.clone(),
             header: self.header.and_then(|header| header.index),
             ..Laid::default()
-        }
+        };
+        super::super::headers::place_header_entries(self.block, &mut laid, &self.settled);
+        laid
     }
 
     /// The id of the block's header item.

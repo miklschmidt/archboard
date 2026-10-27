@@ -61,11 +61,9 @@ fn folded_size(laid: &Laid, runs: &[Vec<&Band>], insets: Insets) -> (f64, f64) {
     (width, height)
 }
 
-/// A fold of a block: its items, column by column, and what the fold is
-/// estimated to be weighed on.
+/// A fold of a block: its items, column by column.
 pub(crate) struct FoldPlan {
     pub items: Vec<Vec<String>>,
-    pub weighed: Weighed,
 }
 
 /// The columns a block of cards would better fold into, if any: the cut of
@@ -85,7 +83,7 @@ pub(crate) fn fold_plan(
     if !matches!(block.kind, Kind::Root | Kind::Frame) || bands.len() < 3 {
         return None;
     }
-    let (runs, weighed) = best_runs(block, laid, &bands, insets, unfolded)?;
+    let (runs, _) = best_runs(block, laid, &bands, insets, unfolded)?;
     Some(FoldPlan {
         items: runs
             .iter()
@@ -95,7 +93,6 @@ pub(crate) fn fold_plan(
                     .collect()
             })
             .collect(),
-        weighed,
     })
 }
 
@@ -193,7 +190,6 @@ fn best_runs<'b>(
             height,
             crossings,
             bus: Some(bus_lines(block, &runs)),
-            ..Weighed::default()
         };
         if best
             .as_ref()
@@ -428,6 +424,8 @@ fn part(
             tail: tail.to_owned(),
             head: head.to_owned(),
             labelled: carries,
+            source: line.source.clone(),
+            target: line.target.clone(),
         },
     );
     key

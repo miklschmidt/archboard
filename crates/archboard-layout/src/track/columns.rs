@@ -1,7 +1,6 @@
 //! Columns a line's lanes take either side of straightening each run of them
-//! on its own (TASK-349). Before, lanes that cross a heading move clear of its
-//! words. After, and after lines lapping the drawing are relayed through it, a
-//! stepping line with a label is tried on one column from card to card, its
+//! on its own (TASK-349). After lines lapping the drawing are relayed through it,
+//! a stepping line with a label is tried on one column from card to card, its
 //! label moving with it, on a column no other line holds. It moves only to
 //! step fewer times, and never to cross more lines.
 
@@ -42,34 +41,6 @@ impl Stretch {
 }
 
 impl Track<'_> {
-    /// Move the lanes that cross a title row or caption clear of its words, in their order.
-    pub(crate) fn clear_headings(&mut self, chains: &[ChainId]) {
-        let lanes: Vec<StationId> = chains
-            .iter()
-            .flat_map(|&chain| self.chain(chain).stations.iter().copied())
-            .filter(|&station| self.station(station).kind == Kind::Lane)
-            .collect();
-        for heading in self.scene.headings() {
-            let (low, high) = heading.walls;
-            let crossing: Vec<StationId> = lanes
-                .iter()
-                .copied()
-                .filter(|&lane| {
-                    self.station(lane).band == heading.band
-                        && self.x(lane) > low
-                        && self.x(lane) < high
-                })
-                .collect();
-            let crossing = sorted_by(&crossing, |&one, &other| self.x(one) - self.x(other));
-            let mut next = heading.end + LANE;
-            for lane in crossing {
-                let x = js_max(self.x(lane), next);
-                self.set_x(lane, x);
-                next = x + LANE;
-            }
-        }
-    }
-
     /// Stand every line that has a label on one column from card to card,
     /// where one is free, the one that crosses fewest other lines and then
     /// steps fewest times. Longer lines choose first.

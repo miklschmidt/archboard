@@ -1,21 +1,22 @@
 //! The trunks of a block of blocks, routed by the orthogonal router
-//! (`archboard-router`, ADR 0059) around the blocks it packs: each between two
+//! (`archboard-router`, ADR 0061) around the blocks it packs: each between two
 //! pins on its blocks' edges, or the block's own port or header, and how much
 //! room the routes spend running round the blocks.
 
-use archboard_router::{Dir, End, Params, Route, Scene, route};
+use archboard_router::{Connector, Dir, End, Params, Route, Scene, route};
 
-use crate::ecma::{abs, js_max, number_key, round};
+use crate::ecma::abs;
 use crate::geometry::{Point, Rect, Side};
 use crate::track::chains::LANE;
-use crate::track::scene::{Map, Set};
+use crate::track::scene::Map;
 use crate::track::score::{Weighed, crossings_of};
 
-use super::super::laid::{Laid, LaidMap, SAME};
+use super::super::laid::LaidMap;
 use super::super::tree::{Block, BlockTree, Line, header_of};
 
 /// How far a trunk keeps from a block it passes.
-pub(crate) const TRUNK_CLEARANCE: f64 = 16.0;
+pub(crate) const TRUNK_CLEARANCE: f64 =
+    crate::constants::BEND_RADIUS + crate::constants::APPROACH_STRAIGHT;
 /// How much a trunk pays for each turn, in diagram points.
 const TRUNK_TURN: f64 = 60.0;
 /// How much a trunk pays for crossing another, in diagram points.
@@ -82,7 +83,7 @@ fn detour_of(points: &[Point]) -> f64 {
 /// What a layout is weighed on, as every layout choice weighs it, with the
 /// room its lines spend running round what they pass counted as crossings at
 /// the trunk router's own rate.
-pub(crate) fn routed_weighed(width: f64, height: f64, lines: &[&[Point]]) -> Weighed {
+fn routed_weighed(width: f64, height: f64, lines: &[&[Point]]) -> Weighed {
     let detour = lines
         .iter()
         .fold(0.0, |sum, points| sum + detour_of(points));
@@ -92,58 +93,6 @@ pub(crate) fn routed_weighed(width: f64, height: f64, lines: &[&[Point]]) -> Wei
         crossings: crossings_of(lines.iter().copied()) + detour / TRUNK_CROSSING,
         ..Weighed::default()
     }
-}
-
-/// What a block of blocks is weighed on laid out, its trunks' detours counted.
-pub(crate) fn packed_weighed(laid: &Laid) -> Weighed {
-    let lines: Vec<&[Point]> = laid.lines.values().map(Vec::as_slice).collect();
-    routed_weighed(laid.width, laid.height, &lines)
-}
-
-/// Whether a value lies strictly between two others.
-fn between(low: f64, high: f64, at: f64) -> bool {
-    at > low && at < high
-}
-
-/// How many different rounded places some coordinates stand at.
-fn places(values: impl Iterator<Item = f64>) -> usize {
-    values
-        .map(|value| number_key(round(value)))
-        .collect::<Set<u64>>()
-        .len()
-}
-
-/// The room the trunks running between two neighbouring blocks need: a lane
-/// either side of each, where the router squeezed more into a gap than it
-/// holds a lane apart. Answers the room the most crowded gap needs.
-pub(crate) fn room_needed(items: &[Rect], lines: &[&[Point]], gap: f64) -> f64 {
-    let runs: Vec<(Point, Point)> = lines
-        .iter()
-        .flat_map(|points| points.windows(2).map(|pair| (pair[0], pair[1])))
-        .collect();
-    let mut most = 0.0;
-    for one in items {
-        for other in items {
-            let across = (one.x + one.width, other.x);
-            let down = (one.y + one.height, other.y);
-            let beside = across.1 - across.0 > 0.0 && across.1 - across.0 <= gap + SAME;
-            let under = down.1 - down.0 > 0.0 && down.1 - down.0 <= gap + SAME;
-            let columns = places(
-                runs.iter()
-                    .filter(|(from, to)| beside && abs(from.x - to.x) < SAME)
-                    .filter(|(from, _)| between(across.0, across.1, from.x))
-                    .map(|(from, _)| from.x),
-            );
-            let rows = places(
-                runs.iter()
-                    .filter(|(from, to)| under && abs(from.y - to.y) < SAME)
-                    .filter(|(from, _)| between(down.0, down.1, from.y))
-                    .map(|(from, _)| from.y),
-            );
-            most = js_max(most, columns.max(rows) as f64);
-        }
-    }
-    (most + 1.0) * LANE
 }
 
 /// Where on its obstacle a pinned end stands, and which way it leaves.
@@ -252,12 +201,43 @@ impl TrunkRouter<'_> {
         }
     }
 
+    /// Estimate a packing from its graph pins before routing.
+    pub(super) fn estimate(&self, width: f64, height: f64) -> Weighed {
+        let paths: Vec<Vec<Point>> = self
+            .block
+            .lines
+            .values()
+            .filter(|line| !self.block.header_line(line))
+            .map(|line| {
+                let (from, side) = self.pin_point(&line.from);
+                let (to, _) = self.pin_point(&line.to);
+                dogleg(from, side, to)
+            })
+            .collect();
+        let lines: Vec<&[Point]> = paths.iter().map(Vec::as_slice).collect();
+        let mut estimate = routed_weighed(width, height, &lines);
+        estimate.crossings += paths
+            .iter()
+            .map(|points| {
+                let (a, b) = (points[0], points[points.len() - 1]);
+                abs(a.x - b.x) + abs(a.y - b.y)
+            })
+            .sum::<f64>()
+            / TRUNK_CROSSING;
+        estimate
+    }
+
     /// Route every trunk around the packed blocks: into the block's own ports
     /// as pins, or, where the router finds no route that way for some trunk,
     /// every trunk to them as free points, and a trunk it still finds none for
     /// as a plain dogleg. Answers each line's points, by key, from its source end.
     pub(crate) fn route(&self) -> Map<String, Vec<Point>> {
-        let lines: Vec<&Line> = self.block.lines.values().collect();
+        let lines: Vec<&Line> = self
+            .block
+            .lines
+            .values()
+            .filter(|line| !self.block.header_line(line))
+            .collect();
         let pinned = self.routed(&lines, true);
         let routes = if pinned.iter().any(Vec::is_empty) {
             self.routed(&lines, false)
@@ -268,15 +248,12 @@ impl TrunkRouter<'_> {
             .iter()
             .zip(routes)
             .map(|(line, routed)| {
-                let mut points = if routed.is_empty() {
-                    let (from, side) = self.pin_point(&line.tail);
-                    dogleg(from, side, self.pin_point(&line.head).0)
+                let points = if routed.is_empty() {
+                    let (from, side) = self.pin_point(&line.from);
+                    dogleg(from, side, self.pin_point(&line.to).0)
                 } else {
                     routed
                 };
-                if line.from != line.tail {
-                    points.reverse();
-                }
                 (line.key.clone(), points)
             })
             .collect()
@@ -289,7 +266,11 @@ impl TrunkRouter<'_> {
     fn routed(&self, lines: &[&Line], directed: bool) -> Vec<Vec<Point>> {
         let header = self.block.header.as_ref().map(|_| header_of(self.block));
         let owned: Vec<&String> = if directed {
-            self.block.ports.keys().collect()
+            self.block
+                .ports
+                .keys()
+                .filter(|port| !self.block.header_entry(port))
+                .collect()
         } else {
             Vec::new()
         };
@@ -306,7 +287,38 @@ impl TrunkRouter<'_> {
             .enumerate()
             .map(|(index, &id)| (id, index))
             .collect();
+        let mut subjects: Map<(String, String), usize> = Map::default();
+        let identities: Vec<_> = lines
+            .iter()
+            .map(|line| {
+                let kind = crate::track::route::trunk_kind(&line.edge);
+                let mut identify = |id: Option<&str>| {
+                    id.map(|id| {
+                        let next = subjects.len();
+                        *subjects
+                            .entry((id.to_owned(), kind.clone()))
+                            .or_insert(next)
+                    })
+                };
+                (
+                    identify(line.source.as_deref()),
+                    identify(line.target.as_deref()),
+                )
+            })
+            .collect();
         let scene = Scene {
+            minimum: Some(archboard_router::Point {
+                x: if self.block.kind == super::super::tree::Kind::Root {
+                    0.0
+                } else {
+                    TRUNK_CLEARANCE
+                },
+                y: if self.block.kind == super::super::tree::Kind::Root {
+                    0.0
+                } else {
+                    TRUNK_CLEARANCE
+                },
+            }),
             obstacles: ids
                 .iter()
                 .map(|&id| {
@@ -321,11 +333,13 @@ impl TrunkRouter<'_> {
                 .collect(),
             connectors: lines
                 .iter()
-                .map(|line| {
-                    (
-                        self.end_of(&line.tail, &obstacles, directed),
-                        self.end_of(&line.head, &obstacles, directed),
-                    )
+                .zip(identities)
+                .map(|(line, subjects)| Connector {
+                    ends: (
+                        self.end_of(&line.from, &obstacles, directed),
+                        self.end_of(&line.to, &obstacles, directed),
+                    ),
+                    subjects,
                 })
                 .collect(),
             params: Params {
@@ -335,7 +349,8 @@ impl TrunkRouter<'_> {
                 crossing: TRUNK_CROSSING,
             },
         };
-        route(&scene)
+        let routed = route(&scene);
+        routed
             .into_iter()
             .map(|one| match one {
                 Route::Routed(points) => points

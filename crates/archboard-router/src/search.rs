@@ -1,15 +1,12 @@
-//! The search for one connector's route: A* over the grid, each state a
-//! vertex and the direction the route arrived in, as \[W09\] §4 searches. A
-//! route pays its length, a penalty for each turn, and a penalty each time it
-//! runs straight through a vertex that a route found earlier runs straight
-//! through the other way. \[W09\] leaves crossings with earlier routes to future
-//! work; counting them where both run straight is this router's own rule.
+//! A* over grid vertices and arrival directions. Parallel lane reuse is the
+//! first cost. Distance, bends and perpendicular crossings break ties.
+//! Fixed pins reserve an exit before earlier paths can occupy it.
 
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
 use crate::grid::{Grid, SAME, close, stub_end};
-use crate::{Dir, End, Point, Scene};
+use crate::{Connector, Dir, End, Point, Scene};
 
 /// Every direction, each at the index of its discriminant.
 const DIRS: [Dir; 4] = [Dir::Up, Dir::Right, Dir::Down, Dir::Left];
@@ -18,6 +15,13 @@ const DIRS: [Dir; 4] = [Dir::Up, Dir::Right, Dir::Down, Dir::Left];
 pub(crate) struct Taken {
     /// Bit 1: a route runs straight through across; bit 2: down.
     through: Vec<u8>,
+    routes: Vec<TakenRoute>,
+}
+
+/// One earlier path and the semantic ends that its complete bundle preserves.
+struct TakenRoute {
+    points: Vec<Point>,
+    subjects: (Option<usize>, Option<usize>),
 }
 
 impl Taken {
@@ -25,11 +29,21 @@ impl Taken {
     pub(crate) fn new(grid: &Grid) -> Taken {
         Taken {
             through: vec![0; grid.len()],
+            routes: Vec::new(),
         }
     }
 
     /// Mark where a route runs straight through.
-    pub(crate) fn add(&mut self, grid: &Grid, points: &[Point]) {
+    pub(crate) fn add(
+        &mut self,
+        grid: &Grid,
+        points: &[Point],
+        subjects: (Option<usize>, Option<usize>),
+    ) {
+        self.routes.push(TakenRoute {
+            points: points.to_vec(),
+            subjects,
+        });
         let width = grid.xs.len();
         for pair in points.windows(2) {
             let (Some(i0), Some(j0), Some(i1), Some(j1)) = (
@@ -52,6 +66,22 @@ impl Taken {
         }
     }
 
+    /// The parallel edges reserved by routes with different original ends.
+    fn reserved(&self, grid: &Grid, connector: &Connector, scene: &Scene) -> Vec<u8> {
+        let lane = scene.params.lane;
+        let mut edges = vec![0; grid.len()];
+        reserve_pins(grid, &mut edges, connector, scene);
+        for route in &self.routes {
+            if shares(route.subjects, connector.subjects) {
+                continue;
+            }
+            for pair in route.points.windows(2) {
+                reserve_run(grid, &mut edges, pair[0], pair[1], lane);
+            }
+        }
+        edges
+    }
+
     /// Whether moving through a vertex in a direction would cross a route that already runs straight through it the other way.
     fn crosses(&self, vertex: usize, dir: Dir) -> bool {
         let other = if dir.horizontal() { 2 } else { 1 };
@@ -59,11 +89,77 @@ impl Taken {
     }
 }
 
+/// A pin's fixed prefix and one lane of room beyond its turn.
+fn protected_pin(grid: &Grid, end: End, lane: f64) -> Option<(Point, Point)> {
+    let End::Pin {
+        obstacle,
+        at,
+        leaves,
+    } = end
+    else {
+        return None;
+    };
+    let mut stub = stub_end(&grid.buffers[obstacle], at, leaves);
+    match leaves {
+        Dir::Up => stub.y -= lane,
+        Dir::Right => stub.x += lane,
+        Dir::Down => stub.y += lane,
+        Dir::Left => stub.x -= lane,
+    }
+    Some((at, stub))
+}
+
+/// Leave room for later pins before an earlier route occupies their exits.
+fn reserve_pins(grid: &Grid, edges: &mut [u8], connector: &Connector, scene: &Scene) {
+    for (at, stub) in scene
+        .connectors
+        .iter()
+        .filter(|other| !shares(other.subjects, connector.subjects))
+        .flat_map(|other| [other.ends.0, other.ends.1])
+        .filter_map(|end| protected_pin(grid, end, scene.params.lane))
+    {
+        reserve_run(grid, edges, at, stub, scene.params.lane);
+    }
+}
+
+/// Whether two connectors preserve one original end across their whole bundle.
+fn shares(one: (Option<usize>, Option<usize>), other: (Option<usize>, Option<usize>)) -> bool {
+    one.0.is_some() && one.0 == other.0 || one.1.is_some() && one.1 == other.1
+}
+
+/// Reserve parallel grid edges within a lane of one earlier run.
+fn reserve_run(grid: &Grid, edges: &mut [u8], a: Point, b: Point, lane: f64) {
+    let horizontal = (a.y - b.y).abs() < SAME;
+    let (along, across, low, high, at, bit) = if horizontal {
+        (&grid.xs, &grid.ys, a.x.min(b.x), a.x.max(b.x), a.y, 1)
+    } else {
+        (&grid.ys, &grid.xs, a.y.min(b.y), a.y.max(b.y), a.x, 2)
+    };
+    let start = along
+        .partition_point(|&x| x <= low + SAME)
+        .saturating_sub(1);
+    let end = along
+        .partition_point(|&x| x < high - SAME)
+        .min(along.len().saturating_sub(1));
+    let near = across.partition_point(|&x| x <= at - lane + SAME);
+    let far = across.partition_point(|&x| x < at + lane - SAME);
+    for side in near..far {
+        for step in start..end {
+            let vertex = if horizontal {
+                side * grid.xs.len() + step
+            } else {
+                step * grid.xs.len() + side
+            };
+            edges[vertex] |= bit;
+        }
+    }
+}
+
 /// One item of the search's queue: a state, or the finished route through
 /// the goal state that it names.
 #[derive(Clone, Copy)]
 struct Item {
-    estimate: f64,
+    estimate: (f64, f64),
     seq: u64,
     state: usize,
     done: bool,
@@ -86,7 +182,9 @@ impl Ord for Item {
     fn cmp(&self, other: &Self) -> Ordering {
         other
             .estimate
-            .total_cmp(&self.estimate)
+            .0
+            .total_cmp(&self.estimate.0)
+            .then(other.estimate.1.total_cmp(&self.estimate.1))
             .then(other.seq.cmp(&self.seq))
     }
 }
@@ -182,9 +280,10 @@ struct Search<'s> {
     grid: &'s Grid,
     scene: &'s Scene,
     taken: &'s Taken,
+    reserved: Vec<u8>,
     start: Start,
     target: Point,
-    cost: Vec<f64>,
+    cost: Vec<(f64, f64)>,
     prev: Vec<usize>,
     queue: BinaryHeap<Item>,
     seq: u64,
@@ -192,7 +291,7 @@ struct Search<'s> {
 
 impl Search<'_> {
     /// Queue a state at an estimate, behind every state queued before it at the same estimate.
-    fn push(&mut self, estimate: f64, state: usize, done: bool) {
+    fn push(&mut self, estimate: (f64, f64), state: usize, done: bool) {
         self.queue.push(Item {
             estimate,
             seq: self.seq,
@@ -212,8 +311,8 @@ impl Search<'_> {
         let (vertex, paid) = (self.start.vertex, self.start.paid);
         for index in 0..self.start.dirs.len() {
             let state = vertex * 4 + self.start.dirs[index] as usize;
-            self.cost[state] = paid;
-            self.push(paid + self.heuristic(vertex), state, false);
+            self.cost[state] = (0.0, paid);
+            self.push((0.0, paid + self.heuristic(vertex)), state, false);
         }
     }
 
@@ -232,7 +331,7 @@ impl Search<'_> {
 
     /// Queue every state one step on from a settled one that it reaches more
     /// cheaply than any route before.
-    fn step_on(&mut self, state: usize, here: f64) {
+    fn step_on(&mut self, state: usize, here: (f64, f64)) {
         let (vertex, arrived) = (state / 4, DIRS[state % 4]);
         for dir in DIRS {
             let next = self
@@ -242,12 +341,21 @@ impl Search<'_> {
             let Some(next) = next else {
                 continue;
             };
-            let reached = here + self.step_cost(vertex, next, dir, arrived);
+            let bit = if dir.horizontal() { 1 } else { 2 };
+            let reused = if self.reserved[vertex.min(next)] & bit != 0 {
+                distance(self.grid.point(vertex), self.grid.point(next))
+            } else {
+                0.0
+            };
+            let reached = (
+                here.0 + reused,
+                here.1 + self.step_cost(vertex, next, dir, arrived),
+            );
             let onward = next * 4 + dir as usize;
             if reached < self.cost[onward] {
                 self.cost[onward] = reached;
                 self.prev[onward] = state;
-                self.push(reached + self.heuristic(next), onward, false);
+                self.push((reached.0, reached.1 + self.heuristic(next)), onward, false);
             }
         }
     }
@@ -258,10 +366,10 @@ impl Search<'_> {
 pub(crate) fn shortest(
     grid: &Grid,
     scene: &Scene,
-    tail: End,
-    head: End,
+    connector: &Connector,
     taken: &Taken,
 ) -> Option<Vec<Point>> {
+    let (tail, head) = connector.ends;
     let start = start_of(grid, tail)?;
     let goal = goal_of(grid, head)?;
     let states = grid.len() * 4;
@@ -269,9 +377,10 @@ pub(crate) fn shortest(
         grid,
         scene,
         taken,
+        reserved: taken.reserved(grid, connector, scene),
         start,
         target: grid.point(goal.vertex),
-        cost: vec![f64::INFINITY; states],
+        cost: vec![(f64::INFINITY, f64::INFINITY); states],
         prev: vec![usize::MAX; states],
         queue: BinaryHeap::new(),
         seq: 0,
@@ -289,7 +398,7 @@ pub(crate) fn shortest(
                 .then(|| goal.turn(DIRS[item.state % 4], scene.params.bend))
                 .flatten();
             if let Some(turn) = turn {
-                search.push(here + turn + goal.paid, item.state, true);
+                search.push((here.0, here.1 + turn + goal.paid), item.state, true);
             }
             search.step_on(item.state, here);
         }

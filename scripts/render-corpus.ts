@@ -1,6 +1,8 @@
 // The corpus every renderer port step is held to (ADR 0059): every board of
 // the dogfood vault and of the vaults under examples/, every variant, every
-// view, under each engine, theme and comparison setting asked for. `render`
+// view, and the complete architecture without a default view's filter.
+// Each engine, theme and comparison setting applies to the authored views.
+// Whole boards are drawn without comparison. `render`
 // writes the hash, size and time of each drawing; `compare` says which
 // drawings differ between two runs and how their times moved.
 //
@@ -34,7 +36,7 @@ import type { SemanticBoard } from "@archboard/board/document";
 import { locateSemanticBoard } from "@archboard/board/address";
 import { readSemanticBoardAt } from "@archboard/board/store-read";
 import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
-import { renderBoard } from "@archboard/renderer/bun";
+import { renderArchitecture, renderBoard } from "@archboard/renderer/bun";
 
 /** One drawing of the corpus, as a run recorded it. */
 export interface Drawn {
@@ -52,6 +54,7 @@ interface Job {
 	readonly policy: Policy;
 	readonly variant: string;
 	readonly view: string | undefined;
+	readonly whole: boolean;
 	readonly engine: z.infer<typeof LayoutEngineSchema>;
 	readonly theme: "light" | "dark";
 	readonly comparison: boolean;
@@ -65,7 +68,7 @@ export interface DrawingKey {
 	readonly board: string;
 	/** The variant's name. */
 	readonly variant: string;
-	/** The view's name, or `overview`. */
+	/** The view's name, `overview`, or the synthetic `(whole board)`. */
 	readonly view: string;
 	readonly engine: string;
 	readonly theme: string;
@@ -162,21 +165,30 @@ function readVault(vault: string): { boards: SemanticBoard[]; policy: Policy } {
  * @returns Its record and its SVG, or nothing when the board draws nothing there.
  */
 async function draw(job: Job): Promise<{ drawn: Drawn; svg: string } | undefined> {
+	const content = job.board.variants.find(({ id }) => id === job.variant)!.content;
+	if (job.whole && content.nodes.length === 0) return undefined;
 	const started = performance.now();
-	const outcome = await renderBoard(
-		job.board,
-		{
-			variant: job.variant,
-			...(job.view === undefined ? {} : { view: job.view }),
-			comparison: job.comparison,
-			theme: job.theme,
-			layout: job.engine,
-		},
-		job.policy,
-	);
+	const reply = job.whole
+		? await renderArchitecture({
+				content,
+				policy: job.policy,
+				theme: job.theme,
+				layout: job.engine,
+			})
+		: await renderBoard(
+				job.board,
+				{
+					variant: job.variant,
+					...(job.view === undefined ? {} : { view: job.view }),
+					comparison: job.comparison,
+					theme: job.theme,
+					layout: job.engine,
+				},
+				job.policy,
+			).then((outcome) => (outcome.ok && "svg" in outcome.reply ? outcome.reply : undefined));
 	const ms = Math.round(performance.now() - started);
-	if (!outcome.ok || !("svg" in outcome.reply)) return undefined;
-	const { svg, width, height } = outcome.reply;
+	if (reply === undefined) return undefined;
+	const { svg, width, height } = reply;
 	const sha256 = createHash("sha256").update(svg).digest("hex");
 	return { drawn: { sha256, ms, width, height }, svg };
 }
@@ -233,17 +245,21 @@ function axesOf(options: Record<string, string | boolean | undefined>): Axes {
  */
 function jobsOfBoard(vault: string, board: SemanticBoard, policy: Policy, axes: Axes): Job[] {
 	const variants = board.variants.filter(({ id }) => axes.every || id === board.current);
-	const views = [undefined, ...board.views.map(({ name }) => name)];
+	const views = [
+		{ view: undefined, whole: true },
+		{ view: undefined, whole: false },
+		...board.views.map(({ name }) => ({ view: name, whole: false })),
+	];
 	return variants.flatMap((variant) =>
-		views.flatMap((view) =>
+		views.flatMap(({ view, whole }) =>
 			axes.engines.flatMap((engine) =>
 				axes.themes.flatMap((theme) =>
-					axes.comparisons.map((comparison) => ({
+					(whole ? [false] : axes.comparisons).map((comparison) => ({
 						key: keyOf({
 							vault,
 							board: board.name,
 							variant: variant.name,
-							view: view ?? "overview",
+							view: whole ? "(whole board)" : (view ?? "overview"),
 							engine,
 							theme,
 							comparison,
@@ -253,6 +269,7 @@ function jobsOfBoard(vault: string, board: SemanticBoard, policy: Policy, axes: 
 						policy,
 						variant: variant.id,
 						view,
+						whole,
 						engine,
 						theme,
 						comparison,

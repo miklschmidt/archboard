@@ -126,15 +126,7 @@ describe("a picture nobody stated a standing for", () => {
 		}
 	});
 
-	test("keeps this simple fixture's cards stable while comparison channels change", async () => {
-		// This fixture needs separate comparison channels without additional card
-		// space. More crowded boards may need new layout reservations as routes change.
-		// A pin on a subject at the page's edge may move the whole drawing in to
-		// keep the margin; the arrangement is what must hold still. The gateway
-		// also calls the legacy bridge, so it is an entry point of the runtime
-		// beside board-io (ADR 0044), and the lines of both into the vault share
-		// a trunk only while they stand and look alike, so every line here is
-		// normal: a difference in emphasis would part them as well.
+	test("keeps this simple fixture's cards stable with comparison marks", async () => {
 		const shared = orderedFixture({
 			...PROPOSAL,
 			edges: [
@@ -154,7 +146,6 @@ describe("a picture nobody stated a standing for", () => {
 		);
 		expect(compared.atlas.nodes).toEqual(plain.atlas.nodes);
 		expect(compared.atlas.regions).toEqual(plain.atlas.regions);
-		expect(compared.atlas.edges).not.toEqual(plain.atlas.edges);
 
 		const sequence = arrangementOf(await drawnSequence());
 		const comparedSequence = arrangementOf(await drawnSequence(SEQUENCE_STANDING));
@@ -198,11 +189,6 @@ describe("a stated standing on an architecture", () => {
 		const gone = subject(rendered, "node", "legacy");
 		const kept = subject(rendered, "node", "gw");
 
-		// Ghosted, so it reads as context rather than as part of the design, and
-		// only it is. A removed card has lost its block: a flat face in a dashed
-		// footprint where it stood, its words faded but drawn at full strength so
-		// they still read. A removed line is ghosted whole. Everything the
-		// proposal actually holds stays as it is.
 		expect(gone.opacity).toBeUndefined();
 		expect(gone.markup).toContain("stroke-dasharray");
 		expect(kept.markup).not.toContain("stroke-dasharray");

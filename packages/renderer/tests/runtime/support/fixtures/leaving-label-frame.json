@@ -1,0 +1,122 @@
+{
+	"nodes": [
+		{
+			"id": "p0",
+			"order": 1000,
+			"name": "Subsystem 0",
+			"kind": "module"
+		},
+		{
+			"id": "p1",
+			"order": 2000,
+			"name": "Subsystem 1",
+			"kind": "module"
+		},
+		{
+			"id": "p2",
+			"order": 3000,
+			"name": "Subsystem 2",
+			"kind": "module",
+			"parent": "p0"
+		},
+		{
+			"id": "p3",
+			"order": 4000,
+			"name": "Subsystem 3",
+			"kind": "module"
+		},
+		{
+			"id": "n0",
+			"order": 5000,
+			"name": "Member 0",
+			"kind": "module",
+			"responsibility": "Owns the data and passes requests to the next operation",
+			"parent": "p0",
+			"groups": ["h"]
+		},
+		{
+			"id": "n1",
+			"order": 6000,
+			"name": "Member 1",
+			"kind": "module",
+			"parent": "p3"
+		},
+		{
+			"id": "n4",
+			"order": 9000,
+			"name": "Member 4",
+			"kind": "module",
+			"responsibility": "Owns the data and passes requests to the next operation",
+			"groups": ["h"]
+		},
+		{
+			"id": "n5",
+			"order": 10000,
+			"name": "Member 5",
+			"kind": "module",
+			"responsibility": "Owns the data and passes requests to the next operation",
+			"parent": "p3"
+		},
+		{
+			"id": "n6",
+			"order": 11000,
+			"name": "Member 6",
+			"kind": "module",
+			"parent": "p3"
+		},
+		{
+			"id": "n7",
+			"order": 12000,
+			"name": "Member 7",
+			"kind": "module",
+			"parent": "p3"
+		}
+	],
+	"edges": [
+		{
+			"id": "e3",
+			"order": 4000,
+			"from": "n5",
+			"to": "n4",
+			"kind": "call",
+			"emphasis": "normal"
+		},
+		{
+			"id": "e4",
+			"order": 5000,
+			"from": "p3",
+			"to": "p2",
+			"kind": "call",
+			"label": "named operation",
+			"emphasis": "normal"
+		},
+		{
+			"id": "e5",
+			"order": 6000,
+			"from": "n1",
+			"to": "p0",
+			"kind": "call",
+			"label": "named operation",
+			"emphasis": "normal"
+		},
+		{
+			"id": "e6",
+			"order": 7000,
+			"from": "n7",
+			"to": "n6",
+			"kind": "call",
+			"emphasis": "normal"
+		},
+		{
+			"id": "e7",
+			"order": 8000,
+			"from": "p1",
+			"to": "n0",
+			"kind": "call",
+			"label": "named operation",
+			"emphasis": "normal"
+		}
+	],
+	"flows": [],
+	"walkthroughs": []
+}

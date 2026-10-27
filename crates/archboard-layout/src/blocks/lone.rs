@@ -230,6 +230,7 @@ pub(crate) fn room_of(lone: &Lone) -> f64 {
 
 /// What a container's title's centre, height and words are, as its title row reads them.
 pub(crate) struct Head<'a> {
+    pub width: f64,
     pub centre: f64,
     pub height: f64,
     pub words: f64,
@@ -244,9 +245,9 @@ pub(crate) fn title_row(bounds: Rect, head: &Head<'_>, lone: Option<&Lone>) -> F
         title: [
             bounds.x,
             head.centre - head.height / 2.0,
-            bounds.width,
+            head.width + 2.0 * lone.map_or(0.0, room_of),
             head.height,
-            head.words,
+            head.words + 2.0 * lone.map_or(0.0, room_of),
         ],
         steps: head.steps.map(|steps| {
             steps
@@ -254,6 +255,7 @@ pub(crate) fn title_row(bounds: Rect, head: &Head<'_>, lone: Option<&Lone>) -> F
                 .map(|step| (step.width - ARCHITECTURE_HEADER_PADDING, step.height))
                 .collect()
         }),
+        above: lone.map_or(0.0, band_of),
         below: lone.map(|_| REGION_INSET),
         wide: lone.map(caption_width),
     }

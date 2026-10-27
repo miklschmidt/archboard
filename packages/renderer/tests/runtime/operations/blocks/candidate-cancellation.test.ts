@@ -1,5 +1,4 @@
-// The block chooser's cancellation must reach the installed host. A failed
-// required solve releases its speculative candidates through that same signal.
+// Blocks asks one required solve. Its host failures reach the render caller.
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { installBunHost } from "#runtime/services/bun-host.ts";
@@ -8,7 +7,7 @@ import { installRendererHost, rendererHost } from "#shared/rules/render/host.ts"
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 test.each(["rejected", "thrown"] as const)(
-	"a %s required block solve cancels the speculative solves through the host",
+	"a %s block solve fails the render without speculative work",
 	async (failureMode) => {
 		installBunHost();
 		const host = rendererHost();
@@ -41,13 +40,8 @@ test.each(["rejected", "thrown"] as const)(
 			...host,
 			solve: (_graph, signal) => {
 				signals.push(signal);
-				if (signals.length === 1) {
-					if (failureMode === "thrown") throw failure;
-					return Promise.reject(failure);
-				}
-				return new Promise((_resolve, reject) => {
-					signal?.addEventListener("abort", () => reject(signal.reason), { once: true });
-				});
+				if (failureMode === "thrown") throw failure;
+				return Promise.reject(failure);
 			},
 		});
 		try {
@@ -59,11 +53,8 @@ test.each(["rejected", "thrown"] as const)(
 			}).catch((error: unknown) => error);
 			// The core carries the host's failure out by its words.
 			expect(outcome).toHaveProperty("message", failure.message);
-			// Two joining source blocks produce several candidates before the first
-			// failure is observed. Passing no signal would leave these jobs queued.
-			expect(signals.length).toBeGreaterThan(2);
-			expect(signals.every((signal) => signal instanceof AbortSignal)).toBe(true);
-			expect(signals.slice(1).every((signal) => signal?.aborted === true)).toBe(true);
+			expect(signals).toHaveLength(1);
+			expect(signals[0]).toBeInstanceOf(AbortSignal);
 		} finally {
 			installRendererHost(host);
 		}

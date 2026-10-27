@@ -14,7 +14,7 @@
 
 use std::rc::Rc;
 
-use crate::ecma::{js_max, js_min, max, min, number_key, sorted_by, unique};
+use crate::ecma::{abs, js_max, js_min, max, min, number_key, sign, sorted_by, unique};
 use crate::geometry::Rect;
 use crate::track::chains::{Kind, LANE, StationId, Track};
 use crate::track::scene::{ItemId, Map, Set};
@@ -78,6 +78,13 @@ pub(crate) struct Net {
 }
 
 impl Net {
+    /// A fixed short step takes two complete bends on separate tracks.
+    pub(crate) fn detour_x(&self) -> Option<f64> {
+        let step = abs(self.top_x - self.bottom_x);
+        (self.wall.is_none() && step > 0.5 && step < LANE)
+            .then(|| self.bottom_x + sign(self.bottom_x - self.top_x) * LANE)
+    }
+
     /// The station at one end.
     pub(crate) fn at(&self, end: End) -> StationId {
         match end {
@@ -227,16 +234,11 @@ impl Track<'_> {
         item.is_some_and(|item| self.scene.item(item).bx.width <= 1.0)
     }
 
-    /// Whether two end items stand for one place.
-    fn same_place(&self, one: Option<ItemId>, other: Option<ItemId>) -> bool {
-        one == other || (self.one_point(one) && self.one_point(other))
-    }
-
     /// Whether two nets belong to different lines between the same two places.
     fn twins(&self, one: NetId, other: NetId, ends: &Map<Rc<str>, Ends>) -> bool {
         let (one, other) = (self.net(one), self.net(other));
         let (a, b) = (ends[&one.edge], ends[&other.edge]);
-        one.edge != other.edge && self.same_place(a.0, b.0) && self.same_place(a.1, b.1)
+        one.edge != other.edge && a == b
     }
 
     /// A card face's trunk without the lines that run between the same two items as another of its lines.
@@ -411,8 +413,19 @@ impl Track<'_> {
                 None => None,
             })
             .collect();
-        let low = min(tops.iter().chain(&bottoms).chain(&walls).copied());
-        let high = max(tops.iter().chain(&bottoms).chain(&walls).copied());
+        let detours: Vec<f64> = nets.iter().filter_map(|net| net.detour_x()).collect();
+        let low = min(tops
+            .iter()
+            .chain(&bottoms)
+            .chain(&walls)
+            .chain(&detours)
+            .copied());
+        let high = max(tops
+            .iter()
+            .chain(&bottoms)
+            .chain(&walls)
+            .chain(&detours)
+            .copied());
         Unit {
             tops,
             bottoms,
@@ -427,14 +440,25 @@ impl Track<'_> {
         let units = self.units_of(nets);
         let plain: Vec<Unit> = units.iter().map(|(unit, _)| unit.clone()).collect();
         let tracks = stack_units(&plain);
+        let detours = nets.iter().any(|&id| self.net(id).detour_x().is_some());
+        let handed = nets
+            .iter()
+            .any(|&one| nets.iter().any(|&other| self.collinear(one, other)));
+        let spacing = if handed {
+            4
+        } else if detours {
+            3
+        } else {
+            1
+        };
         for &(unit, track) in &tracks {
             for &net in &units[unit].1 {
-                self.net_mut(net).track = track;
+                self.net_mut(net).track = track * spacing;
             }
         }
         tracks
             .iter()
-            .map(|&(_, track)| track + 1)
+            .map(|&(_, track)| track * spacing + if detours { 2 } else { 1 })
             .max()
             .unwrap_or(0)
     }

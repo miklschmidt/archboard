@@ -34,6 +34,8 @@ pub(crate) struct FrameRow {
     pub title: [f64; 5],
     /// Each size its title row can take, as `[words, height]`, narrowest first.
     pub steps: Option<Vec<(f64, f64)>>,
+    /// Caption room above the visible header card.
+    pub above: f64,
     /// The region's inset it keeps below what it holds, laid out as its lone region.
     pub below: Option<f64>,
     /// How wide its lone region's caption needs it.

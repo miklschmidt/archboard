@@ -10,7 +10,7 @@ use crate::measure;
 use crate::paint::Ctx;
 use crate::paint::appearance::type_chip;
 use crate::paint::build::{Items, concat, lines};
-use crate::paint::design::{CARD_NOTE_FONT, CARD_TITLE_FONT, ICON_CHIP_SIZE};
+use crate::paint::design::{CARD_NOTE_FONT, CARD_TITLE_FONT, ICON_CHIP_SIZE, PARENT_ICON_SIZE};
 use crate::paint::drill_mark::{DRILL_MARK_ROOM, corner_drill_mark};
 use crate::paint::far_view::{Place, far_layer, moving_words, near_layer, shared_chip};
 use crate::paint::palette::Palette;
@@ -142,18 +142,18 @@ fn stack_at(name: &str, gist: Option<&str>, size: f64, gist_lines: usize, room: 
 }
 
 /// A card's name and gist sized to the room its box holds.
-fn settle(name: &str, gist: Option<&str>, room: f64, height: f64) -> Stack {
+fn settle(name: &str, gist: Option<&str>, room: f64, height: f64, emphasis: f64) -> Stack {
     let whole = words_of(name).join(" ");
     for (size, gist_lines) in attempts() {
         if gist.is_none() && gist_lines > 0 {
             continue;
         }
-        let stack = stack_at(&whole, gist, size, gist_lines, room);
+        let stack = stack_at(&whole, gist, size + emphasis, gist_lines, room);
         if stack.kept && stack.height <= height {
             return stack;
         }
     }
-    stack_at(&whole, None, f64::from(NAME_MIN), 0, room)
+    stack_at(&whole, None, f64::from(NAME_MIN) + emphasis, 0, room)
 }
 
 /// One line of words as a run, from the left of the line's top: its baseline
@@ -283,6 +283,11 @@ pub(super) fn paint_card_views(
         gist_of(part.node.responsibility.as_deref()),
         room,
         rect.height - PAD_Y * 2.0,
+        if part.kind == SubjectKind::Region {
+            1.0
+        } else {
+            0.0
+        },
     );
     let top = EDGE + js::js_max(0.0, (tile - stack.height) / 2.0);
     let far = words_in(&runs_of(&stack, x, top), rect, &words);
@@ -298,7 +303,17 @@ pub(super) fn paint_card_views(
     };
     lines(vec![
         shared_chip(
-            type_chip(part.appearance, palette, part.standing, ctx.icons),
+            type_chip(
+                part.appearance,
+                palette,
+                part.standing,
+                ctx.icons,
+                if part.kind == SubjectKind::Region {
+                    PARENT_ICON_SIZE
+                } else {
+                    super::icons::ICON_SIZE
+                },
+            ),
             near_chip,
             far_chip,
         ),
@@ -326,6 +341,7 @@ pub(super) fn paint_heading_views(
         gist_of(summary),
         rect.width,
         rect.height - PAD_Y * 2.0,
+        0.0,
     );
     let far = words_in(
         &runs_of(&stack, 0.0, (rect.height - stack.height) / 2.0),

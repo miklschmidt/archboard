@@ -12,7 +12,7 @@ use std::pin::Pin;
 use std::rc::Rc;
 use std::task::{Context, Poll};
 
-use archboard_layout::{Calling, Solver, Unsolved};
+use archboard_layout::{Solver, Unsolved};
 use archboard_render::request::RenderRequest;
 use archboard_render::{Host, Renderer};
 use wasm_bindgen::prelude::*;
@@ -129,7 +129,7 @@ impl Drop for Solving {
 impl Solver for RenderHost {
     type Solve<'s> = Solving;
 
-    fn solve(&self, graph: String, called: &Calling) -> Solving {
+    fn solve(&self, graph: String) -> Solving {
         let calling = AbortController::new();
         let signal = calling.signal();
         let answer = self.solve_on(graph, &signal).map_or_else(
@@ -137,8 +137,6 @@ impl Solver for RenderHost {
             |value| js_sys::Promise::resolve(&value),
         );
         let answer = JsFuture::from(answer);
-        let aborting = calling.clone();
-        called.on_call_off(move || aborting.abort());
         Solving {
             answer,
             calling,

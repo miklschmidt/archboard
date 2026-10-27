@@ -3,7 +3,7 @@
 
 pub(crate) use archboard_scene::geometry::BEND_RADIUS;
 pub(crate) use archboard_scene::paint::design::{
-    ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, REGION_INSET,
+    ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, HEADER_SLAB_INSET, REGION_INSET,
 };
 
 /// Equal space below a container title and at its sides and bottom.

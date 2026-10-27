@@ -29,6 +29,8 @@ struct Fitting {
     /// For a frame laid out as the region round it: how wide the region's
     /// caption needs it, and its box fitted before it widened for that.
     wide: Option<(f64, Option<Rect>)>,
+    /// Routed endpoints fix the header in place after composition.
+    fixed: bool,
 }
 
 /// Whether two boxes share some area.
@@ -59,8 +61,8 @@ fn ends_on(lines: &[&[Point]], bx: &Rect) -> Vec<f64> {
         .iter()
         .flat_map(|points| [points[0], points[points.len() - 1]])
         .filter(|point| {
-            point.x > bx.x
-                && point.x < bx.x + bx.width
+            point.x >= bx.x
+                && point.x <= bx.x + bx.width
                 && (abs(point.y - bx.y) < 0.5 || abs(point.y - bx.y - bx.height) < 0.5)
         })
         .map(|point| point.x)
@@ -69,10 +71,9 @@ fn ends_on(lines: &[&[Point]], bx: &Rect) -> Vec<f64> {
 
 /// A frame laid out as the region round it, fitted, widened for its region's
 /// caption: round the middle of the frame, inside the box its layout kept.
-fn widened_in(fitted: Rect, width: f64, kept: Rect) -> Rect {
-    let wide = js_max(fitted.width, js_min(kept.width, width));
-    let centred = fitted.x - (wide - fitted.width) / 2.0;
-    let x = js_max(kept.x, js_min(centred, kept.x + kept.width - wide));
+fn widened_in(fitted: Rect, width: f64) -> Rect {
+    let wide = js_max(fitted.width, width);
+    let x = fitted.x - (wide - fitted.width) / 2.0;
     Rect {
         x,
         width: wide,
@@ -118,9 +119,7 @@ fn fit_side(
         .chain(inner.iter().map(|&one| fittings[one].bx))
         .collect();
     let mut uprights = uprights_in(lines, &bx);
-    if fitting.wide.is_some() {
-        uprights.extend(ends_on(lines, &bx));
-    }
+    uprights.extend(ends_on(lines, &bx));
     if held.len() + uprights.len() == 0 {
         return;
     }
@@ -146,6 +145,11 @@ fn fit_side(
         bx.x,
         min(lows.chain(crossing.iter().map(|x| x - LANE - words))),
     );
+    // A compact header keeps its routed endpoints when the frame tightens.
+    // Its slab is content too, so the left wall cannot move past it.
+    if fitting.fixed {
+        low = js_min(low, heading.x);
+    }
     let mut high = js_min(right, max(highs.iter().copied()));
     if high - low < narrowest {
         high = js_min(right, low + narrowest);
@@ -160,7 +164,7 @@ fn fit_side(
     fitting.bx = fitted;
     if let Some((width, ref mut before)) = fitting.wide {
         *before = Some(fitted);
-        fitting.bx = widened_in(fitted, width, bx);
+        fitting.bx = widened_in(fitted, width);
     }
 }
 
@@ -214,7 +218,7 @@ pub(crate) fn fit_sides(
             let narrowest = words + ARCHITECTURE_HEADER_PADDING;
             let heading = scene.moved_id(title, left);
             // A frame laid out as the region round it keeps the region's inset too.
-            let inset = CONTAINER_INSET + scene.item(title).inset.unwrap_or(0.0);
+            let inset = CONTAINER_INSET + scene.frames[frame.id.as_str()].below.unwrap_or(0.0);
             let wide = scene.frames[frame.id.as_str()]
                 .wide
                 .map(|width| (width, None));
@@ -226,6 +230,7 @@ pub(crate) fn fit_sides(
                 heading,
                 words,
                 wide,
+                fixed: !lines.is_empty(),
             }
         })
         .collect();
@@ -239,6 +244,7 @@ pub(crate) fn fit_sides(
             heading: region.caption,
             words,
             wide: None,
+            fixed: false,
         }
     }));
     fit_all(&mut fittings, &items, lines);
@@ -278,4 +284,47 @@ pub(crate) fn fit_sides(
         })
         .collect();
     (framed, banded)
+}
+
+/// Tighten member frames and place their compact headers before routing.
+/// A wider lone caption keeps its original reserved envelope independently.
+pub(crate) fn place_headers(scene: &mut Placement, edges: &Edges<'_>) {
+    if scene.frames.is_empty() && scene.regions.is_empty() {
+        return;
+    }
+    let tops: Vec<f64> = scene.bands.iter().map(|band| band.new_top).collect();
+    for band in &mut scene.bands {
+        band.new_top = band.top;
+    }
+    let (frames, regions) = fit_sides(scene, edges, &[], 0.0);
+    for frame in frames {
+        let title = scene.titles[frame.id.as_str()];
+        scene.item_mut(title).bx.x = frame.bx.x;
+        let own = scene
+            .frames
+            .get_mut(frame.id.as_str())
+            .expect("a placed frame");
+        own.x = frame.bx.x;
+        own.width = frame.bx.width;
+    }
+    place_regions(scene, regions);
+    for (band, top) in scene.bands.iter_mut().zip(tops) {
+        band.new_top = top;
+    }
+}
+
+/// Keep each group caption at its tightened region before routing.
+fn place_regions(scene: &mut Placement, regions: Vec<RegionShape>) {
+    for region in regions {
+        let own = scene
+            .regions
+            .iter_mut()
+            .find(|own| own.group == region.group && own.parent == region.parent);
+        if let Some(own) = own {
+            own.x = region.bx.x;
+            own.width = region.bx.width;
+            let caption = own.caption;
+            scene.item_mut(caption).bx.x = region.caption.x;
+        }
+    }
 }

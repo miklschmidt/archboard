@@ -12,7 +12,7 @@ use super::card_layout::{CardLayout, Sub};
 use super::clusters::{Link, title_of};
 use super::leaves::PORT;
 use super::tree::{Line, header_of};
-use super::walls::{enters_by, items_of, labelled_out};
+use super::walls::{enters_by, labelled_out};
 
 impl CardLayout<'_> {
     /// Build the block's Graphviz graph: its items, its header and top ports
@@ -20,7 +20,7 @@ impl CardLayout<'_> {
     /// on the last, and every line through its label's box.
     pub(super) fn build(&mut self) {
         let block = self.block;
-        for item in &items_of(self.tree, block) {
+        for item in &block.items {
             let node = self.node_of(item);
             self.push(self.clusters.holder_of(item), node);
         }
@@ -50,7 +50,9 @@ impl CardLayout<'_> {
         let links = self.links();
         let ordered = self.clusters.board_order(|end| self.vendor_of(end));
         for line in ordered {
-            self.connect(line, &links);
+            if !block.header_line(line) {
+                self.connect(line);
+            }
         }
         self.arrange(&links);
     }
@@ -109,7 +111,9 @@ impl CardLayout<'_> {
             .get(&key)
             .into_iter()
             .flatten()
-            .filter(|port| block.ports.get(port.as_str()) == Some(&face))
+            .filter(|port| {
+                block.ports.get(port.as_str()) == Some(&face) && !block.header_entry(port)
+            })
             .collect();
         held.windows(2)
             .map(|pair| {
@@ -154,25 +158,18 @@ impl CardLayout<'_> {
         };
         let lower: Set<String> = grid.iter().map(|edge| edge.head.clone()).collect();
         let titles = self.clusters.title_edges(&lower, links);
-        let entering = if self.arranged.stacked {
-            self.clusters.entering_edges(links)
-        } else {
-            Vec::new()
-        };
         let holds = self.wrap_holds();
         self.edges.extend(grid);
         self.edges.extend(titles);
-        self.edges.extend(entering);
         self.edges.extend(holds);
         let entries = self.entry_row_edges();
         self.edges.extend(entries);
-        self.clusters.untie(&mut self.edges);
         self.hold_sources();
         self.hold_sinks();
     }
 
     /// Connect one line, through its label's box when it carries the label here.
-    fn connect(&mut self, line: &Line, links: &[Link]) {
+    fn connect(&mut self, line: &Line) {
         let tail = self.vendor_of(&line.tail);
         let head = self.vendor_of(&line.head);
         let label = if line.labelled {
@@ -180,6 +177,9 @@ impl CardLayout<'_> {
         } else {
             None
         };
+        if self.peer_line(line, &tail, &head) {
+            return;
+        }
         let id = &line.key;
         // A wrapped item sits a row of cards and its labels lower for each row it is lowered.
         let minlen = 1.0 + 2.0 * self.arranged.lowered.get(&head).copied().unwrap_or(0) as f64;
@@ -206,7 +206,7 @@ impl CardLayout<'_> {
         };
         let name = format!("label:{}", line.edge.id);
         let down = weight + self.clusters.leaving_pull(&tail, &head);
-        let (holder, holds) = self.clusters.hold_label(&tail, &head, &name, links);
+        let (holder, holds) = self.clusters.hold_label(&tail, &head, &name);
         let node = box_node(
             name.as_str(),
             label.width.unwrap_or(f64::NAN),
@@ -221,6 +221,41 @@ impl CardLayout<'_> {
             ("weight", Value::Num(down)),
         ]);
         self.edges.push(Edge::new(name, head, attributes));
+    }
+
+    /// One indivisible row keeps an exclusive peer beside its parent caller.
+    fn peer_line(&mut self, line: &Line, tail: &str, head: &str) -> bool {
+        let peers = self.tree.nesting != super::tree::Nesting::Blocks
+            && self
+                .tree
+                .peer_of(line.edge.target())
+                .is_some_and(|(owner, peer)| {
+                    self.tree.get(owner).id == self.block.id
+                        && peer == tail
+                        && line.edge.target() == head
+                });
+        if !peers {
+            return false;
+        }
+        self.subgraphs.push(Sub::Plain(Subgraph {
+            name: Some(format!("cluster:peer:{}", line.edge.target())),
+            graph_attributes: Some(Attrs::of([("margin", Value::Num(0.0))])),
+            subgraphs: Some(vec![Subgraph {
+                graph_attributes: Some(Attrs::of([("rank", Value::from("same"))])),
+                nodes: Some(vec![self.node_of(tail), self.node_of(head)]),
+                ..Subgraph::default()
+            }]),
+            ..Subgraph::default()
+        }));
+        self.edges.push(Edge::new(
+            tail,
+            head,
+            Attrs::of([
+                ("id", Value::from(line.key.clone())),
+                ("constraint", Value::Bool(false)),
+            ]),
+        ));
+        true
     }
 
     /// The block's Graphviz graph, as built.

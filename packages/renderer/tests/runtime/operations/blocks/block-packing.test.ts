@@ -1,9 +1,3 @@
-// A block of blocks packs its blocks in rows or columns in the order their
-// lines run, and tries each packing with a late small block moved up into an
-// earlier row or column that has room for it. Moving one to the head of a
-// column stood it over the blocks that lead to it, and moving one only within
-// a row read that row against its lines, neither filling any room, and a
-// move that packs the blocks hardly smaller only reshaped the page.
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@archboard/board/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
@@ -54,10 +48,11 @@ test("a block moved up into a column stands below the blocks that lead to it", a
 	expect(chromium.y).toBeGreaterThan(command.y + command.height);
 });
 
-test("a row of blocks reads in the order their lines run", async () => {
+test("blocks read forward across a row or down the page", async () => {
 	const content = orderedFixture(voiceCoordinator);
 	const { atlas } = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	expect(atlas.nodes["LHBPlItu"]!.x).toBeLessThan(atlas.nodes["5uPyMgoI"]!.x);
+	const [source, target] = [atlas.nodes["LHBPlItu"]!, atlas.nodes["5uPyMgoI"]!];
+	expect(target.y >= source.y + source.height || target.x >= source.x + source.width).toBe(true);
 });
 
 test("a block moves up beside an earlier one only to fill real room", async () => {

@@ -145,7 +145,7 @@ impl Occupancy {
             };
             taken[one.band].push((one.bx.x - clearance, one.bx.x + one.bx.width + clearance));
         }
-        // A title row or caption takes only the room its words are painted in.
+        // A parent header takes its full face; a region caption takes its words.
         for heading in scene.headings() {
             taken[heading.band].push((heading.left - LANE, heading.end + LANE));
         }
@@ -256,7 +256,7 @@ impl Occupancy {
 }
 
 /// The nearest x to one that passes a test, searched outward a quarter lane at
-/// a time and at some exact edges within the same reach; on a tie the step comes first.
+/// a time and at every known obstacle edge; on a tie the step comes first.
 pub(crate) fn nearest(
     from: f64,
     mut passes: impl FnMut(f64) -> bool,
@@ -269,11 +269,8 @@ pub(crate) fn nearest(
         candidates.push((from - by, candidates.len()));
         candidates.push((from + by, candidates.len()));
     }
-    let reach = (SEARCH_STEPS as f64 * LANE) / 4.0;
     for &x in edges {
-        if abs(x - from) <= reach {
-            candidates.push((x, candidates.len()));
-        }
+        candidates.push((x, candidates.len()));
     }
     let ordered = sorted_by(&candidates, |one, other| {
         or(

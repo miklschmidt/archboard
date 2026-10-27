@@ -25,12 +25,13 @@ use std::rc::Rc;
 
 use crate::geometry::Side;
 use crate::graph::{Edge, Node};
+use crate::track::chains::LANE;
 use crate::track::scene::{Map, Set};
 
 use super::headers::Header;
 use super::laid::Size;
 use super::lone::{Card, Lone, captions_of};
-use super::projection::join_ways;
+use super::projection::labels_before_joins;
 
 /// How a board's containers and group regions are drawn: each packed as a
 /// block of its own, every one inline as a cluster of the board's layout, or
@@ -117,6 +118,10 @@ pub(crate) struct Line {
     pub head: String,
     /// Whether the relationship's label is drawn on it.
     pub labelled: bool,
+    /// The routing identities common to every relationship on this line.
+    /// A source with a label before its exit also distinguishes the target.
+    pub source: Option<String>,
+    pub target: Option<String>,
 }
 
 /// A line's ends: where it comes from and goes to, and which Graphviz ranks above the other.
@@ -154,9 +159,53 @@ pub(crate) struct Block {
 }
 
 impl Block {
+    /// A short entry from the top frame boundary to its visible header.
+    pub(crate) fn header_entry(&self, port: &str) -> bool {
+        self.kind == Kind::Frame
+            && self.ports.get(port) == Some(&Side::Top)
+            && self.lone.as_ref().is_none_or(|lone| {
+                self.header.as_ref().is_some_and(|header| {
+                    super::lone::caption_width(lone) + 2.0 * LANE < header.width
+                })
+            })
+            && self.lines.values().any(|line| {
+                !line.labelled
+                    && ((line.from == port && line.to == header_of(self))
+                        || (line.to == port && line.from == header_of(self)))
+            })
+    }
+
+    /// A direct header entry is drawn after layout, without a ranked port row.
+    pub(crate) fn header_line(&self, line: &Line) -> bool {
+        self.header_entry(&line.from) || self.header_entry(&line.to)
+    }
+
+    /// The face width that leaves every port its own lane beside the header.
+    pub(crate) fn port_width(&self, header: f64) -> f64 {
+        [Side::Top, Side::Bottom]
+            .into_iter()
+            .map(|side| {
+                let count = self
+                    .ports
+                    .iter()
+                    .filter(|(id, on)| **on == side && !self.header_entry(id))
+                    .count();
+                if count == 0 {
+                    0.0
+                } else if side == Side::Top {
+                    header + count as f64 * LANE
+                } else {
+                    count.saturating_sub(1) as f64 * LANE
+                }
+            })
+            .fold(0.0, f64::max)
+    }
+
     /// Whether one of its ports stands on its bottom.
     pub(crate) fn has_bottom_port(&self) -> bool {
-        self.ports.values().any(|&side| side == Side::Bottom)
+        self.ports
+            .iter()
+            .any(|(id, &side)| side == Side::Bottom && !self.header_entry(id))
     }
 
     /// The innermost container a block draws inline around one of its items,
@@ -251,17 +300,16 @@ pub(crate) struct BlockTree {
     pub routes: Map<String, Route>,
     /// Where each pin meets its child block.
     pub pins: Map<String, Pin>,
-    /// The blocks that joins of lines on the way to one card move labels to, by id.
-    pub joining: Set<String>,
-    /// The relationships that keep ports of their own rather than join others, by id.
-    pub apart: Set<String>,
     /// The wall each port moves to, keyed by `exit_key`.
     pub exits: Map<String, Side>,
     pub nesting: Nesting,
+    feedback: Set<String>,
+    /// A shared-source fork whose labels follow its incoming boundary.
+    pub(super) fanouts: Set<(BlockId, String)>,
+    /// Parents whose graph calls for a local composition.
+    pub local_frames: Set<String>,
     /// The ports each block holds in an order on a face, keyed `block|face` (`orders.rs`).
     pub orders: Map<String, Vec<String>>,
-    /// Whether every block faces its walls (`exit_of`, `walls.rs`).
-    pub facing: bool,
 }
 
 /// What an earlier layout of a board decided, which laying it out again keeps.
@@ -271,23 +319,79 @@ pub(crate) struct Kept {
     pub exits: Map<String, Side>,
     /// The ports each block holds in an order on a face, keyed `block|face`.
     pub orders: Map<String, Vec<String>>,
-    /// Whether every block faces its walls.
-    pub facing: bool,
 }
 
 impl BlockTree {
+    /// A loose sink served only from one parent belongs beside its caller.
+    fn loose_owner(&self, id: &str) -> Option<BlockId> {
+        self.cards.contains_key(id).then_some(())?;
+        let owner = *self.holder.get(id)?;
+        let outer = self.get(owner);
+        outer
+            .frame_around(outer.cluster_of.get(id).map(String::as_str))
+            .is_none()
+            .then_some(owner)
+    }
+
+    fn peer_candidate(&self, id: &str) -> Option<(BlockId, String)> {
+        let owner = self.loose_owner(id)?;
+        let mut peer: Option<String> = None;
+        let mut caller = None;
+        for projection in &self.projections {
+            if projection.edge.source() == id {
+                return None;
+            }
+            if projection.edge.target() != id {
+                continue;
+            }
+            if projection.at != owner || !projection.into.is_empty() {
+                return None;
+            }
+            let parent = self.block_of(&projection.from).is_some_and(|neighbor| {
+                self.get(neighbor).parent == Some(owner) && self.get(neighbor).kind == Kind::Frame
+            });
+            if !parent || peer.is_some() {
+                return None;
+            }
+            peer = Some(projection.from.clone());
+            caller = Some(projection.edge.source());
+        }
+        let peer = peer?;
+        let caller = caller?;
+        let another = self.projections.iter().any(|projection| {
+            projection.at == owner
+                && projection.edge.source() == caller
+                && projection.edge.target() != id
+                && !self.feedback.contains(&projection.edge.id)
+        });
+        (!another).then_some((owner, peer))
+    }
+
+    /// A matched pair has one leaf partner at each end of the composition.
+    pub(crate) fn peer_of(&self, id: &str) -> Option<(BlockId, String)> {
+        let peer = self.peer_candidate(id)?;
+        let another = self
+            .projections
+            .iter()
+            .filter(|projection| {
+                projection.at == peer.0
+                    && projection.from == peer.1
+                    && projection.edge.target() != id
+            })
+            .any(|projection| {
+                self.peer_candidate(projection.edge.target())
+                    .is_some_and(|other| other == peer)
+            });
+        (!another).then_some(peer)
+    }
+
     /// Read the blocks of a measured hierarchy and project its relationships.
     ///
     /// # Errors
     ///
     /// When the hierarchy's measured options are unreadable, or a relationship
     /// names a node the hierarchy does not hold.
-    pub(crate) fn new(
-        graph: &Node,
-        kept: Kept,
-        nesting: Nesting,
-        apart: &Set<String>,
-    ) -> Result<BlockTree, String> {
+    pub(crate) fn new(graph: &Node, kept: Kept, nesting: Nesting) -> Result<BlockTree, String> {
         let mut tree = BlockTree {
             arena: Vec::new(),
             blocks: Map::default(),
@@ -300,16 +404,16 @@ impl BlockTree {
             projections: Vec::new(),
             routes: Map::default(),
             pins: Map::default(),
-            joining: Set::default(),
-            apart: Set::default(),
             exits: kept.exits,
             nesting,
+            feedback: Set::default(),
+            fanouts: Set::default(),
+            local_frames: super::composition::local_frames(graph),
             orders: kept.orders,
-            facing: kept.facing,
         };
         tree.root = tree.block(":root".to_owned(), Kind::Root, None, None, None);
         tree.fill(tree.root, graph.kids())?;
-        tree.gather(tree.root);
+        tree.gather(tree.root, graph.edges.as_deref().unwrap_or(&[]));
         tree.projections = graph
             .edges
             .iter()
@@ -319,9 +423,9 @@ impl BlockTree {
             .map(|edge| tree.project(edge))
             .collect::<Result<_, _>>()?;
         let back = tree.back_edges();
-        let (joining, before, own) = join_ways(&tree.projections, &tree.arena, &back, apart);
-        tree.joining = joining;
-        tree.apart = own;
+        tree.feedback.clone_from(&back);
+        let before = labels_before_joins(&tree.projections, &back);
+        tree.fanouts = super::fanouts::entry_fanouts(&tree, &before, &back);
         for index in 0..tree.projections.len() {
             let projection = tree.projections[index].clone();
             let before = before.contains(&projection.edge.id);
