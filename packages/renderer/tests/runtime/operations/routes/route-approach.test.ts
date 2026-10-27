@@ -8,7 +8,12 @@ import sideApproach from "#tests/runtime/support/fixtures/side-head-approach.jso
 import type { VariantContent } from "@archboard/board/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { LayoutEngineSchema, type DiagramBox } from "@archboard/board/render-reply";
-import { routeCrosses, routePoints, type DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
+import {
+	corridorPoints,
+	routeCrosses,
+	routePoints,
+	type DrawnPoint,
+} from "#tests/runtime/support/drawn-routes.ts";
 import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
@@ -152,8 +157,12 @@ test.each(LayoutEngineSchema.options)(
 		const tip = end.values;
 		const beside = corner.values.slice(-2);
 		expect(Math.hypot(tip[0]! - beside[0]!, tip[1]! - beside[1]!)).toBeGreaterThan(headReach);
-		if (corner.kind === "M") {
-			expect(steps, "a direct header entry needs no bend").toHaveLength(2);
+		const corridor = corridorPoints(drawing.svg).get("g1zvz5QO")!;
+		if (
+			corridor.every((point) => point.x === corridor[0]!.x) ||
+			corridor.every((point) => point.y === corridor[0]!.y)
+		) {
+			// Crossing hops can curve along a straight approach without a turn.
 			return;
 		}
 		expect(corner.kind, "the incoming bend stays rounded").toBe("C");
