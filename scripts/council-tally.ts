@@ -200,8 +200,8 @@ function tally(
 		return graded ? [weighted(graded[after]) - weighted(graded[before])] : [];
 	});
 	if (margins.length === 0) refuse(`No grader scored pair ${pair}.`);
-	const ruling = { A: false, B: false, ...rulings[pair] };
-	const defective = { before: ruling[before], after: ruling[after] };
+	const ruling = rulings[pair] ?? {};
+	const defective = { before: ruling[before] === true, after: ruling[after] === true };
 	return { pair, verdict: decide(defective, median(margins)), margins, defective };
 }
 
