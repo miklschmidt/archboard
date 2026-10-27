@@ -1,13 +1,3 @@
-// A repository's row: the repository identity, or an untracked vault's
-// registry name, with the boards of its chosen checkout under it (ADR 0050).
-// A repository on GitHub shows its owner and name beside GitHub's mark, and
-// its whole identity on hover and to assistive technology (TASK-477).
-// A click opens or closes it, as a folder's does. Its facts say how many
-// boards it holds, or why it holds none: its chosen checkout has no vault, is
-// gone, or none is chosen. Its menu lists the repository's known checkouts,
-// and choosing one chooses it for the whole machine. Shift+F10 or the
-// context-menu key opens the menu from the row.
-
 import {
 	RiErrorWarningLine,
 	RiGitRepositoryLine,
@@ -15,6 +5,7 @@ import {
 	type RemixiconComponentType,
 } from "@remixicon/react";
 import {
+	memo,
 	useCallback,
 	useRef,
 	useState,
@@ -28,13 +19,14 @@ import { DropdownMenu, RepositoryName, shownRepository } from "@archboard/ui-kit
 import { InsideLamp } from "#ui/components/shell/ActivityLamp.tsx";
 import {
 	TreeRow,
-	TreeRowDisclosure,
 	TreeRowFacts,
 	TreeRowMarker,
 	TreeRowName,
 	type RowHandlers,
 } from "#ui/components/shell/TreeRow.tsx";
 import type { RepositoryRow } from "#ui/rules/shell/navigator-row-types.ts";
+import { PaneChips } from "#ui/components/shell/PaneChips.tsx";
+import { sameData } from "#ui/rules/shell/same-data.ts";
 import { RepositoryModelLink } from "#ui/components/architecture-model/RepositoryModelLink.tsx";
 
 /** What a repository's facts say while it holds no boards to count. */
@@ -53,7 +45,7 @@ function repositoryFacts(row: RepositoryRow): string {
 	if (row.entry.state !== "ready") return STATE_WORDS[row.entry.state];
 	if (row.migrationRequired === true) return "migration required";
 	if (row.model !== undefined) return "architecture";
-	return row.loading ? "…" : String(row.count);
+	return row.loading ? "…" : "no model";
 }
 
 /**
@@ -69,8 +61,8 @@ function repositoryLabel(row: RepositoryRow, facts: string): string {
 		row.entry.state !== "ready" || row.model !== undefined
 			? facts
 			: row.loading
-				? "reading its boards"
-				: `${facts} boards`;
+				? "reading its architecture"
+				: facts;
 	return [row.entry.name, "repository", holds, row.error].filter(Boolean).join(", ");
 }
 
@@ -115,9 +107,7 @@ function asksForMenu(event: KeyboardEvent<HTMLElement>): boolean {
  * @param props The row and the tree's handlers.
  * @returns The row.
  */
-function RepositoryLine(
-	props: RowHandlers & { readonly row: RepositoryRow; readonly guides?: string | undefined },
-): JSX.Element {
+function RepositoryLine(props: RowHandlers & { readonly row: RepositoryRow }): JSX.Element {
 	const { row, onRowKeyDown, onOpen } = props;
 	const open = useCallback((): void => onOpen(row, false), [onOpen, row]);
 	const name = row.entry.name;
@@ -143,7 +133,6 @@ function RepositoryLine(
 			label={repositoryLabel(row, facts)}
 			hasMenu={hasMenu}
 		>
-			<TreeRowDisclosure row={row} name={name} onExpand={props.onExpand} />
 			<TreeRowMarker icon={look.icon} title={look.marker}>
 				{row.innerActivity && <InsideLamp />}
 			</TreeRowMarker>
@@ -151,9 +140,10 @@ function RepositoryLine(
 				text={look.text}
 				match={row.match}
 				title={look.whole}
-				className={`text-nav font-medium ${row.dimmed ? "text-muted-foreground" : ""}`}
+				className="text-nav font-medium"
 			/>
 			<TreeRowFacts>
+				<PaneChips letters={row.onScreen} />
 				{row.error !== null && (
 					<span title={row.error} className="flex">
 						<RiErrorWarningLine aria-hidden="true" className="text-destructive size-3.5" />
@@ -265,4 +255,6 @@ function checkoutNote(checkout: RepositoryEntry["checkouts"][number]): JSX.Eleme
 	);
 }
 
-export { RepositoryLine };
+const MemoRepositoryLine = memo(RepositoryLine, sameData);
+
+export { MemoRepositoryLine as RepositoryLine };

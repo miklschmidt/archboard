@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T17:53:00Z'
+updated_date: '2026-10-27T18:10:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -112,4 +112,8 @@ A human repository Open now goes through the existing shell action and canonical
 The controlled two-repository workbench case exposed a reload mismatch: pane A displayed shop architecture but remained connected to the orders vault. The existing workspace restore planner now compares actual pane repository placement with URL intent and carries complete canonical selectors through its existing operation slot and pane-show route. Human repository opens now use that same command slot. Model addresses remain intact when the socket confirms a canonical move. Canonical state attribution includes model identity so state IDs from different models do not leave a stale human mark. Reload, all three existing routing UI owners, and agent navigation pass. Full source/test types and focused source/UI/browser lint pass. No new restoration pipeline, deadline change, or lint exception was added; temporary probes are removed.
 
 The repository keyboard owner first reproduced stale board-based filter counts (0/0 for one match among two repositories). Counts now describe repositories. Filter Enter, repository row Enter/Space, and pointer opens use canonical models. Alt+Enter uses the existing adjacent-pane owner, waits for a new pane registration, and preserves the original active pane. The real browser case covers opening current roots, creating a neighbor, and reusing that neighbor from the filtered tree. It passes, as do full source/test types and focused lint after memoizing the count object. No legacy view or board is created.
+
+Parent canonical pane follow-up: removed the retired board-show HTTP request shape. Existing pane URLs now resolve captured legacy addresses through canonical navigation. The installed bookmark browser owner starts from a retained original pane URL, opens current, and preserves bookmarks, walkthroughs, reload, and unavailable-content behavior. Focused browser owner, full source/test types, and touched lint pass. The initial preview capture assertion was discarded because retained originals intentionally disable agent explanation captures.
+
+Parent navigator retirement: replaced the unused board/folder/variant hierarchy with canonical repository rows. Active repository selection and A/B markers failed through the existing browser owner before the change and pass afterward. Repository menus, activity, filtering, failure feedback, keyboard opens, and adjacent pane behavior pass. Full source/test types and focused lint pass. Removed unused hierarchy, expansion, timeline, and guide code plus the obsolete tree-only owner. The replacement ownership ledger is in docs/agents/test-suite.md. Model scope and proposal navigation remain inside the canonical reader.
 <!-- SECTION:NOTES:END -->

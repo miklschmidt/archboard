@@ -14,7 +14,6 @@ import {
 	type RepositoryBoards,
 } from "#ui/hooks/board-catalog/use-board-catalog.ts";
 import { listedBoard } from "#ui/rules/board-catalog/listing.ts";
-import { outlineOf } from "#ui/rules/board-catalog/vault-boards.ts";
 import { boardAddressOf } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import type {
 	ShellNotice,
@@ -51,8 +50,6 @@ function shellRepository(entry: RepositoryBoards, activity: AgentActivityByVault
 		repository: entry.repository,
 		model: entry.model,
 		migrationRequired: entry.migrationRequired,
-		boards: entry.listing,
-		outline: outlineOf(entry.listing),
 		error: entry.error,
 		loading: entry.loading,
 		activity: current ?? NO_AGENT_ACTIVITY,

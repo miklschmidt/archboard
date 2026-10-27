@@ -7,11 +7,8 @@ import type { Model } from "@archboard/board/content";
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import type { OutlineNode } from "#ui/rules/board-catalog/outline.ts";
 import type {
 	AgentActivityEntry,
-	BoardListing,
-	CatalogBoard,
 	LockHolder,
 	PaneStatus,
 } from "#ui/rules/pane-session/session-types.ts";
@@ -85,15 +82,12 @@ type ShellPresentation = LivePresentation | RecoveryPresentation;
 /** The settings surfaces the header's menu reaches. */
 type SettingsSurface = "opener";
 
-/** One repository as the navigator lists it, with the boards of its chosen checkout (ADR 0050). */
+/** One repository and the canonical model of its chosen checkout (ADR 0050). */
 interface ShellRepository {
 	readonly migrationRequired?: boolean | undefined;
 	readonly model?: Model["manifest"] | undefined;
 	readonly repository: RepositoryEntry;
-	readonly boards: BoardListing;
-	/** Its boards as the navigator places them, built once by the caller. */
-	readonly outline: readonly OutlineNode<CatalogBoard>[];
-	/** Why its boards could not be read, or null. */
+	/** Why its model could not be read, or null. */
 	readonly error: string | null;
 	/** Its vault has not answered yet and nothing of it is in hand. */
 	readonly loading: boolean;

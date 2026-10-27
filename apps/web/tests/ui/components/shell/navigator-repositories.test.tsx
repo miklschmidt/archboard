@@ -6,10 +6,9 @@ import { expect, test } from "bun:test";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import {
 	SHOP,
-	SHOP_BOARDS,
+	SHOP_MODEL,
 	SHOP_VAULT,
 	act,
-	board,
 	carrying,
 	mountNavigator,
 	pane,
@@ -17,37 +16,27 @@ import {
 	repositoryOf,
 	row,
 } from "#tests/ui/support/shell/navigator-fixture.ts";
-import type { AgentActivityEntry, BoardListing } from "#ui/rules/pane-session/session-types.ts";
+import type { AgentActivityEntry } from "#ui/rules/pane-session/session-types.ts";
 
 /** A second repository, with a board of the same name as one of the shop's. */
 const BILLING = "github.com/acme/billing";
 const BILLING_VAULT = "/work/billing/.archboard/vault";
-const BILLING_BOARDS: BoardListing = {
-	boards: [board("Payments", "service")],
-	levels: ["system", "service", "module"],
-	onScreen: [],
-};
+const BILLING_MODEL = { ...SHOP_MODEL, id: "Billing", name: "Billing" };
 
-test("every repository is a row with its own boards, and a board of one name in two repositories is two rows a pane opens by repository", () => {
+test("repository rows open each canonical model and mark the panes that read it", () => {
 	const asked = mountNavigator({
 		repositories: [
-			repositoryOf(ready(SHOP, SHOP_VAULT), SHOP_BOARDS),
-			repositoryOf(ready(BILLING, BILLING_VAULT), BILLING_BOARDS),
+			repositoryOf(ready(SHOP, SHOP_VAULT), SHOP_MODEL),
+			repositoryOf(ready(BILLING, BILLING_VAULT), BILLING_MODEL),
 		],
-		panes: [pane("A", "payments"), pane("B", "payments", BILLING, BILLING_VAULT)],
+		panes: [pane("A", null), pane("B", null, BILLING, BILLING_VAULT)],
 	});
-	const inBilling = `repository:${BILLING}|board:payments`;
-	expect(row(`repository:${SHOP}`).getAttribute("aria-level")).toBe("1");
-	// The repository's row says how many boards it holds.
-	expect(row(`repository:${BILLING}`).getAttribute("aria-label")).toMatch(/\b1\b/);
-	expect(row(inBilling).getAttribute("aria-level")).toBe("2");
-	// Each pane's letter is on its own repository's board.
+	const inBilling = `repository:${BILLING}`;
+	expect(row(inBilling).getAttribute("aria-level")).toBe("1");
 	expect(carrying("B")).toEqual([inBilling]);
 	act(() => row(inBilling).click());
-	expect(asked.opened).toEqual([`${BILLING}|payments`]);
-	// A repository row opens and closes what it holds, as a folder's does.
-	act(() => row(`repository:${BILLING}`).click());
-	expect(document.querySelector(`[data-row-id="${CSS.escape(inBilling)}"]`)).toBeNull();
+	expect(asked.opened).toEqual([`${BILLING}|Billing`]);
+	expect(row(inBilling).hasAttribute("aria-expanded")).toBe(false);
 });
 
 /**
@@ -63,11 +52,11 @@ function writing(said: string): AgentActivityEntry {
 	};
 }
 
-test("agent work on a board of one name in two repositories is two entries, each naming its repository", () => {
+test("agent work stays with its repository and opens its canonical model", () => {
 	const asked = mountNavigator({
 		repositories: [
-			repositoryOf(ready(SHOP, SHOP_VAULT), SHOP_BOARDS, { payments: writing("adding a queue") }),
-			repositoryOf(ready(BILLING, BILLING_VAULT), BILLING_BOARDS, {
+			repositoryOf(ready(SHOP, SHOP_VAULT), SHOP_MODEL, { payments: writing("adding a queue") }),
+			repositoryOf(ready(BILLING, BILLING_VAULT), BILLING_MODEL, {
 				payments: writing("adding a ledger"),
 			}),
 		],
@@ -78,7 +67,7 @@ test("agent work on a board of one name in two repositories is two entries, each
 	expect(entries.map((entry) => entry.textContent.includes(BILLING))).toEqual([false, true]);
 	expect(entries.map((entry) => entry.textContent.includes(SHOP))).toEqual([true, false]);
 	act(() => entries[1]?.click());
-	expect(asked.opened).toEqual([`${BILLING}|payments`]);
+	expect(asked.opened).toEqual([`${BILLING}|Billing`]);
 });
 
 test("a repository whose chosen checkout has no vault says so, and its menu chooses another checkout from the keyboard", async () => {
@@ -94,7 +83,7 @@ test("a repository whose chosen checkout has no vault says so, and its menu choo
 		],
 	};
 	const asked = mountNavigator({
-		repositories: [repositoryOf(stale, { boards: [], levels: [], onScreen: [] })],
+		repositories: [repositoryOf(stale, undefined)],
 	});
 	const line = row(`repository:${BILLING}`);
 	// The row says why, so the navigator gives no advice for an empty vault over it.
@@ -145,10 +134,9 @@ test("a repository whose chosen checkout has no vault says so, and its menu choo
 	expect(document.activeElement).toBe(row(`repository:${BILLING}`));
 });
 
-test("a repository whose boards cannot be read offers to read them again, and the navigator does not call it empty", () => {
-	const empty: BoardListing = { boards: [], levels: [], onScreen: [] };
+test("a repository whose model cannot be read offers to read them again, and the navigator does not call it empty", () => {
 	const failed = {
-		...repositoryOf(ready(BILLING, BILLING_VAULT), empty),
+		...repositoryOf(ready(BILLING, BILLING_VAULT), undefined),
 		error: "The board listing could not be read: offline",
 	};
 	const { show } = mountNavigator({ repositories: [failed], panes: [] });
@@ -156,9 +144,11 @@ test("a repository whose boards cannot be read offers to read them again, and th
 	expect(alert?.querySelector("button")).not.toBeNull();
 	expect(document.querySelector('[data-slot="navigator-empty"]')).toBeNull();
 	// Read again and empty, it says so and offers nothing to retry.
-	show({ repositories: [repositoryOf(ready(BILLING, BILLING_VAULT), empty)], panes: [] });
+	show({ repositories: [repositoryOf(ready(BILLING, BILLING_VAULT), undefined)], panes: [] });
 	expect(document.querySelector('[data-slot="navigator"] [role="alert"]')).toBeNull();
-	expect(document.querySelector('[data-slot="navigator-empty"]')).not.toBeNull();
+	expect(
+		row(`repository:${BILLING}`).querySelector('[data-slot="repository-model-open"]'),
+	).toBeNull();
 });
 
 test("a pane is marked in the repository the server says it is in, before the repositories are read again", () => {
@@ -166,15 +156,15 @@ test("a pane is marked in the repository the server says it is in, before the re
 	// the repositories as last read do not name yet.
 	mountNavigator({
 		repositories: [
-			repositoryOf(ready(SHOP, SHOP_VAULT), SHOP_BOARDS),
-			repositoryOf(ready(BILLING, BILLING_VAULT), BILLING_BOARDS),
+			repositoryOf(ready(SHOP, SHOP_VAULT), SHOP_MODEL),
+			repositoryOf(ready(BILLING, BILLING_VAULT), BILLING_MODEL),
 		],
 		panes: [
 			pane("A", "payments"),
 			pane("B", "payments", BILLING, "/work/billing-next/.archboard/vault"),
 		],
 	});
-	expect(carrying("B")).toEqual([`repository:${BILLING}|board:payments`]);
+	expect(carrying("B")).toEqual([`repository:${BILLING}`]);
 });
 
 /**
@@ -197,8 +187,8 @@ test("a GitHub repository is named by its owner and name beside GitHub's mark, a
 	};
 	mountNavigator({
 		repositories: [
-			repositoryOf(scratch, SHOP_BOARDS),
-			repositoryOf(ready(BILLING, BILLING_VAULT), BILLING_BOARDS),
+			repositoryOf(scratch, SHOP_MODEL),
+			repositoryOf(ready(BILLING, BILLING_VAULT), BILLING_MODEL),
 		],
 	});
 	const billing = `[data-row-id="${CSS.escape(`repository:${BILLING}`)}"]`;

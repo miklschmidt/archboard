@@ -745,3 +745,11 @@ Canonical flow inputs use the existing model schema owner.
 Semantic content owners retain traffic, responsibility, label, comparison, and reconciliation coverage.
 `HistoricalRevisionSchema` remains under `@archboard/board/model` for exact source evidence.
 The board interface narrows to 184 exports, and its ceiling drops to 184.
+
+The repository navigator lists one canonical model per repository.
+It no longer contains folders, boards, variant rows, or a second architecture hierarchy.
+`apps/web/tests/ui/components/shell/navigator-repositories.test.tsx` retains repository identity, activity, checkout menus, failure recovery, and filter behavior.
+`canonical-model-agent-navigation.test.ts` owns keyboard opens, adjacent panes, active repository selection, and pane letters through the browser.
+The old `navigator-tree.test.tsx` retires with board hierarchy and variant expansion.
+Its private React-prop inspection also retires because it tests implementation details.
+Canonical navigation, proposal, and walkthrough browser owners retain visible architecture and presentation behavior.

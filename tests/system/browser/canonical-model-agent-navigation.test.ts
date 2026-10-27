@@ -180,6 +180,15 @@ test("repository filtering opens canonical roots by keyboard and in the other pa
 		"the first matching repository opened by Enter",
 		WAIT,
 	);
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[role="treeitem"][aria-selected="true"]')?.getAttribute('data-row-id') ?? null`,
+			),
+		(id) => id === "repository:orders",
+		"the active repository selected in the navigator",
+		WAIT,
+	);
 	await browser.run(["fill", 'input[aria-label="Find a repository"]', "shop"]);
 	await browser.run(["press", "Alt+Enter"]);
 	await pollUntil(
@@ -203,5 +212,10 @@ test("repository filtering opens canonical roots by keyboard and in the other pa
 		"the focused repository row opened beside",
 		WAIT,
 	);
+	expect(
+		await browser.eval<string[]>(
+			`[...document.querySelectorAll('[data-row-id="repository:orders"] [data-pane-letter]')].map(node => node.getAttribute('data-pane-letter'))`,
+		),
+	).toEqual(["A", "B"]);
 	expect(await browser.run(["errors"])).toBe("");
 }, 60_000);
