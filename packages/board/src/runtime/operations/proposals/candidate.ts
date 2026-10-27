@@ -98,6 +98,7 @@ async function retainBaseline(
 		predecessor,
 		Buffer.from(Bun.YAML.stringify(predecessor.policy)),
 	);
+	const references = await captureReferencePins(vault, predecessor, request);
 	const dependencies = [
 		...new Set([
 			...baselineDependencies(request, predecessor),
@@ -124,7 +125,7 @@ async function retainBaseline(
 			dependencies,
 		},
 		sources: await baselineSources(context, vault, predecessor, request),
-		...(await captureReferencePins(vault, predecessor)),
+		...references,
 	});
 	const files = new Map([...inputs].map(([file, bytes]) => [`inputs/${file}`, bytes]));
 	files.set("record.json", Buffer.from(JSON.stringify(record)));
@@ -132,7 +133,13 @@ async function retainBaseline(
 	return archiveCommit(
 		context,
 		await tree(context, files),
-		[...new Set([...(tip === undefined ? [] : [tip]), ...dependencies])],
+		[
+			...new Set([
+				...(tip === undefined ? [] : [tip]),
+				...dependencies,
+				...references.referenceDependencies,
+			]),
+		],
 		"archboard: retain proposal baseline",
 	);
 }

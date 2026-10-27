@@ -69,12 +69,14 @@ function unavailableReference(
 
 /**
  * Read a foreign target through existing checkout and architecture authorities.
+ * @param vault The source vault whose public reader owns the boundary.
  * @param snapshot The source vault's existing checkout snapshot.
  * @param reference The explicit target identity and state.
  * @param checkpoint The optional exact retained revision.
  * @returns The chosen target vault and its reading, or checkout diagnostics.
  */
 async function foreignReading(
+	vault: string,
 	snapshot: CheckoutSnapshot,
 	reference: ReferenceEntry["reference"],
 	checkpoint: string | undefined,
@@ -95,10 +97,7 @@ async function foreignReading(
 	const targetVault = join(checkout.root, ".archboard/vault");
 	const reading =
 		checkpoint === undefined
-			? await readArchitectureModel(targetVault, undefined, undefined, {
-					state: reference.state,
-					compare: false,
-				})
+			? await readReferenceState(vault, targetVault, reference.state)
 			: await readCheckpointModel(targetVault, checkpoint, undefined, undefined, {
 					compare: false,
 				});
@@ -207,7 +206,9 @@ async function resolveReference(
 	model: ArchitectureModel,
 	entry: ReferenceEntry,
 ): Promise<Resolution> {
-	const local = await localPreviewReference(vault, snapshot, model, entry);
+	const local =
+		(await localPreviewReference(vault, snapshot, model, entry)) ??
+		localCapturedReference(vault, snapshot, model, entry);
 	if (local !== undefined) return local;
 	const checkpoint = referencePin(model, entry);
 	if (checkpoint === null)
@@ -216,7 +217,7 @@ async function resolveReference(
 			"This retained reading has no exact foreign revision pin.",
 			"Restore the original retained pin. Historical navigation never substitutes current architecture.",
 		);
-	const target = await foreignReading(snapshot, entry.reference, checkpoint);
+	const target = await foreignReading(vault, snapshot, entry.reference, checkpoint);
 	if (target.reading === undefined)
 		return { ...entry, status: "unavailable", diagnostics: target.diagnostics };
 	return resolvedReference(entry, target.vault, target.reading, checkpoint);
@@ -255,7 +256,63 @@ async function resolveModelReferences(
 	return { ...model, resolvedReferences };
 }
 
-export { resolveModelReferences, referenceState, matchesReference };
+export { resolveModelReferences, referenceState, matchesReference, readReferenceState };
+
+/**
+ * Read local state within the enclosing boundary and preserve foreign installation barriers.
+ * @param vault The source vault whose reader or writer owns that boundary.
+ * @param targetVault The target vault proven by repository resolution.
+ * @param state The explicit target state.
+ * @returns Its coherent selected reading.
+ */
+async function readReferenceState(vault: string, targetVault: string, state: string) {
+	const selection = { state, compare: false };
+	if (resolve(vault) !== resolve(targetVault))
+		return readArchitectureModel(targetVault, undefined, undefined, selection);
+	const { readSelectedState } = await import("#runtime/operations/proposals/read.ts");
+	return readSelectedState(targetVault, undefined, undefined, selection);
+}
+
+/**
+ * Resolve same-state local references within the captured snapshot, without a circular Git pin.
+ * @param vault The source vault.
+ * @param snapshot The existing repository lookup evidence.
+ * @param model The complete captured architecture.
+ * @param entry The authored reference.
+ * @returns Its exact local address, or absence for separately retained targets.
+ */
+function localCapturedReference(
+	vault: string,
+	snapshot: CheckoutSnapshot,
+	model: ArchitectureModel,
+	entry: ReferenceEntry,
+) {
+	if (
+		referencePin(model, entry) != null ||
+		!sameReferenceVault(vault, snapshot, entry) ||
+		!matchesLocalState(model, entry)
+	)
+		return undefined;
+	return resolvedReference(
+		entry,
+		vault,
+		selectReferenceSubject(model, entry.reference.subject),
+		model.checkpoint?.id,
+	);
+}
+
+/**
+ * Keep a same-state reference inside the complete captured local architecture.
+ * @param model The current, proposed, or retained reading.
+ * @param entry The authored reference.
+ * @returns Whether this reading contains the explicit target state.
+ */
+function matchesLocalState(model: ArchitectureModel, entry: ReferenceEntry) {
+	if (entry.reference.model !== model.manifest.id || model.selectedState == null) return false;
+	return entry.reference.state === "current"
+		? model.selectedState.id === model.manifest.current?.id
+		: entry.reference.state === model.selectedState.id;
+}
 
 /**
  * Read an explicit same-vault migration target without passing through live legacy authority.
