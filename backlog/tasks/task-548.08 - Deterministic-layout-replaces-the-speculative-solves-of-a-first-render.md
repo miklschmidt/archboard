@@ -4,7 +4,7 @@ title: Deterministic layout replaces the speculative solves of a first render
 status: To Do
 assignee: []
 created_date: '2026-10-26T16:24:00Z'
-updated_date: '2026-10-27T04:26:00Z'
+updated_date: '2026-10-27T07:30:00Z'
 labels:
   - renderer
   - performance
@@ -36,4 +36,6 @@ Council round 2, 2026-10-27, on 71b949d87 against feat/faster-first-render (layo
 2026-10-27: the owner sides with the Opus grader's weighting. A compact picture, short direct lines and related cards close together count more than avoiding a header crossing; a header crossing is a flaw weighed against its cost, not a defect. Recorded in docs/design/grading-council.md (The owner's weighting); Codex was told to stop failing expectDrawingIntact on header crossings and to stop paying for header avoidance with detours.
 
 2026-10-27, correction by the owner: a line through a group's or a parent's header is a defect and stays a hard check. Among pictures without defects, tight composition with no dead space reads better. The fix for the failed pairs must come from placement, not from detours and not from crossings. docs/design/grading-council.md updated; Codex told.
+
+Council round 3, 2026-10-27, on 111d531c6 (with TASK-548.11's compact headers), graded under the owner's weighting. 44 blind pairs from Codex's paired SVGs (/tmp/548-08/round-3/changed-svg-pairs.json): the four round-2 failures, 30 views and 10 whole boards (seed 31); verdicts and key in /tmp/548-08/council-r3. The four acceptance pairs: better, unanimous. Overall: better 13, same 23, worse 8 (Command interface What the CLI can be asked, track and blocks; Archboard server Code evidence, blocks; Voice coordinator Tools and work, track; Board rasterizer Rasterizing, track; whole boards of Browser application blocks, Command interface blocks, Archboard track). The graders now agree on most pairs. One new defect, confirmed by the parent at full size: on the Voice coordinator whole board (blocks), a dashed magenta line and a gray line share one horizontal run with junction dots above Tools and work before they part to different targets. A reported blank region on Browser application's full-size picture came from rasterizing a 12,094 px picture, not from the layout. Pattern of the worse pairs: stretched strips (5.6:1 against 2.3:1), frames much larger than their members, clients across an empty span from their callers, and full-height routes to cards that sat beside their source. Quiet-box timing (load 1.0): Board viewer 265 ms first and 201 ms growing edit, Board persistence 302/290, Archboard server routes 142/134, Browser application 165/155, Live panes 106/103. By the procedure the change does not pass yet.
 <!-- SECTION:NOTES:END -->
