@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
-import { rmSync, writeFileSync } from "node:fs";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import type { ArchitectureModelRead, ArchitectureRecoveryResult } from "@archboard/board/model";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
@@ -173,7 +173,7 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 	).toBe(true);
 }, 60_000);
 
-test("an open legacy pane follows interrupted migration through recovery to canonical authority", async () => {
+test("an unmigrated repository exposes migration and follows durable recovery to canonical authority", async () => {
 	await using resources = new AsyncDisposableStack();
 	const fixture = await migrationNavigation(
 		join(browserTestRoots().ownerRoot, "migration-cutover"),
@@ -192,12 +192,18 @@ test("an open legacy pane follows interrupted migration through recovery to cano
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="semantic-board-stage"][data-board="Shop"]') !== null`,
+				`document.querySelector('[data-slot="model-migration-required"]') !== null`,
 			),
 		Boolean,
-		"the existing legacy reading",
+		"the explicit migration route",
 		WAIT,
 	);
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="semantic-board-stage"]') === null`,
+		),
+	).toBe(true);
+	expect(readFileSync(join(fixture.vault, "Shop.semantic.json"), "utf8")).toBe(fixture.original);
 	const input = join(fixture.root, "migration-request.json");
 	writeFileSync(input, JSON.stringify(fixture.request));
 	const child = Bun.spawn(

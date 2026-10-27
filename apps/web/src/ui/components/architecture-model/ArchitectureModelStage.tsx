@@ -10,16 +10,14 @@ import { ModelOriginalDestination } from "#ui/components/architecture-model/Mode
 import { ModelBookmarkReading } from "#ui/components/architecture-model/ModelBookmarkReading.tsx";
 import { importedReadings } from "#ui/rules/architecture-model/imported-readings.ts";
 import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
-import { useCallback, useEffect, type ComponentProps, type JSX, type ReactNode } from "react";
+import { useCallback, useEffect, type ComponentProps, type JSX } from "react";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import type { ArchitectureModelRead, ArchitectureCheckpointList } from "@archboard/board/model";
+import type { ArchitectureModelRead } from "@archboard/board/model";
 import {
 	ArchitectureReadError,
 	architectureModelQuery,
 	architectureModelKeys,
 	architectureCheckpointsQuery,
-	hasNoCanonicalModel,
-	hasNoCheckpoints,
 } from "#ui/clients/architecture-model/queries.ts";
 import { ModelStateDetails } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { ModelWalkthroughReader } from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
@@ -44,7 +42,6 @@ interface ModelStageProps
 	vault: string;
 	paneId: string;
 	reducedMotion: boolean;
-	children: ReactNode;
 }
 
 /**
@@ -101,7 +98,6 @@ function LocatedModelStage(props: ModelStageProps): JSX.Element {
  */
 function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const {
-		board,
 		bookmark,
 		legacyAddress,
 		selectBookmark,
@@ -140,8 +136,6 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const refresh = useCallback((): void => {
 		void client.invalidateQueries({ queryKey: architectureModelKeys.vault(vault) });
 	}, [client, vault]);
-	if (requestedModel === null && automaticFallback(query, history, checkpoint, board, feed))
-		return <>{props.children}</>;
 	if (differentModel(resolvedId, requestedModel)) {
 		return (
 			<ModelIdentityFailure id={requestedModel} refresh={refresh} refreshing={query.isFetching} />
@@ -239,27 +233,6 @@ function modelIdentity(model: ModelQuery["data"]): string | undefined {
 }
 
 /**
- * Automatic discovery preserves confirmed legacy content or genuinely empty guidance.
- * @param query The selected public read.
- * @param history The retained history catalogue.
- * @param checkpoint The requested checkpoint.
- * @param board An existing legacy address, when present.
- * @param feed The ordered current status.
- * @returns Whether the caller's legacy or empty surface remains appropriate.
- */
-function automaticFallback(
-	query: ModelQuery,
-	history: UseQueryResult<ArchitectureCheckpointList>,
-	checkpoint: string | null,
-	board: string | null,
-	feed: ReturnType<typeof useArchitectureFeed>,
-): boolean {
-	return (
-		legacyAuthority(query, feed) || (board === null && hasNoReadings(query, history, checkpoint))
-	);
-}
-
-/**
  * Current ownership and exact-history publication have separate controls.
  * @param props The selected reading and its coherent content.
  * @param props.vault The addressed vault.
@@ -337,22 +310,6 @@ function currentIsStale(
 }
 
 /**
- * Only the public reader can authorize the legacy surface.
- * @param query The requested reading and its exact refusal.
- * @param feed The latest ordered authority status.
- * @returns Whether live legacy content remains authoritative.
- */
-function legacyAuthority(query: ModelQuery, feed: ReturnType<typeof useArchitectureFeed>): boolean {
-	return (
-		query.isError &&
-		!query.isFetching &&
-		query.error instanceof ArchitectureReadError &&
-		query.error.failure.code === "LEGACY_AUTHORITY" &&
-		(feed.failure === null || feed.failure.code === "LEGACY_AUTHORITY")
-	);
-}
-
-/**
  * Historical failures never substitute another reading or silently reuse an unavailable checkpoint.
  * @param query The selected read.
  * @param current Whether stale current content can remain visible.
@@ -361,28 +318,6 @@ function legacyAuthority(query: ModelQuery, feed: ReturnType<typeof useArchitect
 function visibleModel(query: ModelQuery, current: boolean): ModelQuery["data"] {
 	if (!current && query.isError) return undefined;
 	return query.data;
-}
-
-/**
- * Keep saved readings reachable even when current inputs disappear.
- * @param query The explicitly selected reading.
- * @param history Retained metadata, independent of current inputs.
- * @param checkpoint The selected identity, or null for current.
- * @returns True only when both current and retained architecture are absent.
- */
-function hasNoReadings(
-	query: ModelQuery,
-	history: UseQueryResult<ArchitectureCheckpointList>,
-	checkpoint: string | null,
-): boolean {
-	return (
-		checkpoint === null &&
-		query.data === undefined &&
-		query.isError &&
-		history.isSuccess &&
-		hasNoCanonicalModel(query.error) &&
-		hasNoCheckpoints(history.data)
-	);
 }
 
 /**

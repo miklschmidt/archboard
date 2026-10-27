@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T14:36:00Z'
+updated_date: '2026-10-27T14:52:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -72,10 +72,14 @@ TASK-549.13, TASK-549.16, TASK-549.18, TASK-549.23
 6. Complete the consumer skill, command contracts, examples, glossary, ADRs, AGENTS.md, and architecture acceptance. Retire obsolete exports and behavior tests with clear replacement ownership. Preserve lint and type rules and the existing interface ceiling.
 7. Demonstrate the local workflow from discovery through proposal, adoption, retained history, and walkthrough. Reuse focused evidence from completed tickets, run remaining integration gates, and simplify the final system before acceptance.
 8. Merge completed source through a merger. Then perform the final code-review phase, fix findings, publish and ready the single integration PR against main, and clean implementer worktrees. Do not merge main.
+
+Parent browser proposal Browser application@TASK-549.24 is VaQkKiQf. The shared projection contract moves unchanged to @archboard/board/content. LEGACY_AUTHORITY remains stable. Parent browser test first proves explicit migration guidance without drawing or rewriting legacy content, then reuses durable recovery and installed navigation acceptance. Parent removes live legacy pane mounting, legacy catalogue reads, and ownership/level controls while preserving exact original addresses through canonical migration selectors.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 TASK-549.23 is integrated in signed e7672f62 with parent note32021ec7. All 23 dependencies are complete. The owner already approved the full task graph, public runtime and browser test seams, gpt-6.1-sol worktree delegates, signed commits, and one integration PR. Read-only repository evidence lives in external task-549.24-live-readings.json and task-549.24-conflict-evidence.json. Their Archbrd origin is only a probe until the parent records the deliberate migration plan.
+
+Parent browser RED/GREEN proves that an unmigrated repository receives explicit migration guidance without drawing or changing the legacy file. The same browser owner then exercises interrupted migration and durable recovery. Live legacy pane mounting and the legacy authority fallback are removed; pane sessions always report canonical readings. The retained preview reader remains available. The focused case passes with six assertions, and source types and full lint pass. The shared projection transition awaits the backend source merge.
 <!-- SECTION:NOTES:END -->
