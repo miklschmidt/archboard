@@ -4,10 +4,12 @@ import type { Model } from "#ui/rules/architecture-model/projection.ts";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import { checkpointTime } from "#ui/rules/architecture-model/history-time.ts";
 import { AuthoredReference } from "#ui/components/architecture-model/AuthoredReference.tsx";
+import { ModelCorrections } from "#ui/components/architecture-model/ModelCorrections.tsx";
 
 type State = NonNullable<Model["selectedState"]>;
 interface HistoryProps {
-	state: State;
+	state: Model["selectedState"];
+	comparison: Model["comparison"];
 	paneId: string;
 	states: Readonly<NonNullable<Model["states"]>>;
 }
@@ -20,29 +22,33 @@ interface HistoryProps {
 function ModelStateHistory(props: HistoryProps): JSX.Element {
 	const { state } = props;
 	const location = useModelLocation(props.paneId);
+	const trails = correctionTrails(props);
+	const reason = state?.reason;
+	const visible = hasHistory(state) || Boolean(trails.against?.length);
 	return (
 		<>
-			{state.reason && (
+			{reason && (
 				<p data-slot="model-state-reason" className="text-body whitespace-pre-wrap">
-					{state.reason}
+					{reason}
 				</p>
 			)}
-			{hasHistory(state) && (
+			{visible && (
 				<details data-slot="model-state-history" className="text-body">
-					<summary className="text-muted-foreground cursor-pointer">Decision and history</summary>
-					<dl className="mt-3 grid max-h-64 max-w-prose grid-cols-[auto_1fr] gap-x-6 gap-y-2 overflow-y-auto">
-						<StateDates state={state} />
-						<StateLineage state={state} states={props.states} onSelect={location.selectState} />
-						{state.baseline && (
-							<HistoryLink
-								label="Baseline"
-								id={state.baseline}
-								onSelect={location.selectCheckpoint}
-								exact
-							/>
-						)}
-						<StateDocuments state={state} />
-					</dl>
+					<summary className="text-muted-foreground cursor-pointer">{historyLabel(state)}</summary>
+					<div className="mt-3 max-h-64 max-w-prose space-y-4 overflow-y-auto">
+						<StateFacts
+							state={state}
+							states={props.states}
+							onState={location.selectState}
+							onCheckpoint={location.selectCheckpoint}
+						/>
+						<ModelCorrections corrections={trails.selected} onRead={location.selectCheckpoint} />
+						<ModelCorrections
+							corrections={trails.against}
+							onRead={location.selectCheckpoint}
+							comparison
+						/>
+					</div>
 				</details>
 			)}
 		</>
@@ -54,7 +60,8 @@ function ModelStateHistory(props: HistoryProps): JSX.Element {
  * @param state The selected state metadata.
  * @returns Whether at least one authored or retained fact exists.
  */
-function hasHistory(state: State): boolean {
+function hasHistory(state: HistoryProps["state"]): boolean {
+	if (state === null) return false;
 	return [
 		state.createdAt,
 		state.adoptedAt,
@@ -63,7 +70,57 @@ function hasHistory(state: State): boolean {
 		state.previousCurrent,
 		state.baseline,
 		state.documents?.length,
+		state.corrections?.length,
 	].some(Boolean);
+}
+
+/**
+ * A collapsed disclosure still identifies corrected facts.
+ * @param state The selected retained metadata.
+ * @returns Its history label with the recorded correction count.
+ */
+function historyLabel(state: HistoryProps["state"]): string {
+	const count = state?.corrections?.length ?? 0;
+	if (count === 0) return "Decision and history";
+	return `Decision and history · ${count} ${count === 1 ? "correction" : "corrections"}`;
+}
+
+/**
+ * Keep the selected audit and comparison audit distinct, including an empty selected model.
+ * @param props The complete state and comparison metadata.
+ * @returns Both authoritative correction trails without inventing entries.
+ */
+function correctionTrails(props: Pick<HistoryProps, "state" | "comparison">) {
+	return { selected: props.state?.corrections, against: props.comparison?.corrections?.against };
+}
+
+/**
+ * An empty selected model has no lifecycle facts, but its comparison can still have corrections.
+ * @param props The selected metadata and existing lineage actions.
+ * @param props.state The selected state, or no implemented architecture.
+ * @param props.states The named state catalogue.
+ * @param props.onState Open a logical state.
+ * @param props.onCheckpoint Open exact retained facts.
+ * @returns Recorded lifecycle facts only when a selected state exists.
+ */
+function StateFacts(
+	props: Pick<HistoryProps, "state" | "states"> & {
+		onState: ReturnType<typeof useModelLocation>["selectState"];
+		onCheckpoint: ReturnType<typeof useModelLocation>["selectCheckpoint"];
+	},
+): JSX.Element | null {
+	const { state } = props;
+	if (state === null) return null;
+	return (
+		<dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
+			<StateDates state={state} />
+			<StateLineage state={state} states={props.states} onSelect={props.onState} />
+			{state.baseline && (
+				<HistoryLink label="Baseline" id={state.baseline} onSelect={props.onCheckpoint} exact />
+			)}
+			<StateDocuments state={state} />
+		</dl>
+	);
 }
 
 const DATES = [
@@ -124,7 +181,7 @@ function StateLineage({
 	state,
 	states,
 	onSelect,
-}: Pick<HistoryProps, "state" | "states"> & { onSelect: (id: string) => void }): JSX.Element {
+}: Pick<HistoryProps, "states"> & { state: State; onSelect: (id: string) => void }): JSX.Element {
 	const predecessor = state.predecessor;
 	const previous = state.previousCurrent;
 	return (

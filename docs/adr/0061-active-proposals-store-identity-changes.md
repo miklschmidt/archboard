@@ -147,4 +147,38 @@ Displacement records identify the final reading of a former current state.
 Archive append order supplies no architecture ancestry or current designation.
 Ambiguous retained identities require an exact checkpoint.
 Logical and exact historical readings preserve source associations, foreign pins, and comparison behavior.
-Historical correction remains TASK-549.09.
+
+TASK-549.09 adds explicit factual corrections to completed logical states through the same writer.
+The request names the latest exact checkpoint, a reason, and immutable source revisions.
+The live input token and complete affected claims remain mandatory.
+Current and draft states refuse correction intents, and ordinary historical edits still refuse.
+The runtime requires available source commits for every referenced repository.
+The author remains responsible for the factual interpretation of that evidence.
+
+The retained correction stores normalized identity changes and an explicit link to the prior checkpoint.
+Actual Git parents retain that checkpoint and all required proposal baselines.
+The existing subject engine materializes the corrected reading and the existing comparison engine describes its differences.
+Logical lookup follows correction links and exposes the audit chain.
+Exact checkpoint lookup preserves the original record.
+Concurrent correction tips remain ambiguous instead of selecting by archive append order.
+Fetched publication refs participate in the same derived logical catalogue.
+
+The existing family operation reconciles local following drafts against corrected facts.
+It preserves conflict baselines and blocks descendants of unsettled drafts.
+Propagation stops at adopted, historical, and shelved successors.
+The correction changes no current designation or unrelated current content.
+Current authored files gain no correction ledger or copied history.
+
+Archive-only writes still use the durable journal, configured signer, exact retry, and completion feed.
+The observer reads newly retained operations after the archive ref changes.
+Idle observations read the loose ref and packed-ref metadata without starting Git.
+Only records for the addressed vault produce completion events.
+
+The browser reads correction evidence through its existing state history disclosure.
+The selected and comparison audits remain distinct inside one bounded region.
+Each entry shows its reason, date, source commits, and links to exact prior and corrected readings.
+
+Logical readers refresh after archive-only completion events, even when the current file digest is unchanged.
+Exact original checkpoints keep their original facts and audit coverage.
+A missing archive leaves the exact requested address intact for explicit recovery.
+The browser submits no correction writes.

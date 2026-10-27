@@ -33,6 +33,7 @@ async function request(
 	const target = { model: model.manifest.id, state };
 	const scopes = [
 		model.manifest.id,
+		...(state === null ? [] : [state]),
 		...model.modules.map((m) => m.id),
 		...model.relationships.map((e) => e.id),
 		...model.collections.flatMap((collection) => [

@@ -382,6 +382,20 @@ function comparisonReference(
 	if (selected.selectedState?.lifecycle === "current") return undefined;
 	return defaultComparisonReference(selected, current);
 }
+
+/**
+ * Expose both correction trails alongside the existing semantic comparison.
+ * @param selected The selected complete state.
+ * @param against Its complete comparison base.
+ * @returns Audit metadata when either reading carries corrections.
+ */
+function comparisonCorrections(selected: ArchitectureModel, against: ArchitectureModel) {
+	const left = selected.selectedState?.corrections ?? [];
+	const right = against.selectedState?.corrections ?? [];
+	return left.length + right.length === 0
+		? {}
+		: { corrections: { selected: left, against: right } };
+}
 /**
  * Add serializable semantic comparison to a complete selected reading.
  * @param context The archive owner.
@@ -406,6 +420,7 @@ async function compareSelected(
 		revision: against.revision,
 		subjects: comparisonOf(against, selected),
 		...(against.checkpoint === undefined ? {} : { checkpoint: against.checkpoint.id }),
+		...comparisonCorrections(selected, against),
 	};
 	return selected;
 }
@@ -491,4 +506,5 @@ export {
 	proposalBaseline,
 	decodeSubjects,
 	requireModel,
+	stateMetadata,
 };

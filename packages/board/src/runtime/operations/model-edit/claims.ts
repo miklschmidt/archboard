@@ -55,7 +55,7 @@ function readArchitectureClaims(vault: string): ArchitectureClaimList {
  * @param target The explicitly selected model and current state.
  * @returns Its coherent authored catalogue or a structured refusal.
  */
-function requireTargetCatalogue(vault: string, target: ArchitectureClaim["target"]) {
+async function requireTargetCatalogue(vault: string, target: ArchitectureClaim["target"]) {
 	const current = readCurrentModel(vault);
 	if (!current.success) return current;
 	if (current.manifest.id !== target.model)
@@ -65,11 +65,15 @@ function requireTargetCatalogue(vault: string, target: ArchitectureClaim["target
 		);
 	if (currentStateId(current.manifest) === target.state) return current;
 	const proposal = current.proposals.find((entry) => entry.id === target.state);
-	if (proposal === undefined)
-		throw new ArchiveError(
-			"TARGET_CHANGED",
-			"The selected state changed. Read it again and use its stable identity before writing.",
-		);
+	if (proposal === undefined) {
+		const { stateMetadata } = await import("#runtime/operations/proposals/read.ts");
+		const metadata = await stateMetadata(await archiveContext(vault), current, target.state!);
+		if (metadata.id !== target.state)
+			throw new ArchiveError(
+				"TARGET_CHANGED",
+				"Use the selected state's stable identity before writing.",
+			);
+	}
 	return current;
 }
 /**
@@ -196,9 +200,16 @@ async function claimArchitectureSubjects(
 	const result = await historyResult("MODEL_WRITE_FAILED", () =>
 		withModelLock(vault, async () => {
 			requireNoPending(vault);
-			const current = requireTargetCatalogue(vault, request.target);
+			const current = await requireTargetCatalogue(vault, request.target);
 			if (!current.success) return current;
 			const known = await knownClaimScopes(vault, current, request.subjects);
+			if (request.target.state !== null && !known.has(request.target.state)) {
+				const { resolveState } = await import("#runtime/operations/proposals/read.ts");
+				includeClaimScopes(
+					known,
+					await resolveState(await archiveContext(vault), current, request.target.state),
+				);
+			}
 			if (request.subjects.some((subject) => !known.has(subject)))
 				throw new ArchiveError(
 					"MODULE_NOT_FOUND",

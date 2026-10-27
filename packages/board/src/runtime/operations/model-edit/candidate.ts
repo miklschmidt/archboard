@@ -1,10 +1,12 @@
 import { isDeepStrictEqual } from "node:util";
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts";
-import { decodeModel } from "#runtime/operations/read/model-read.ts";
+import { decodeModel, readCurrentModel } from "#runtime/operations/read/model-read.ts";
+import { requireModel } from "#runtime/operations/proposals/read.ts";
 import {
 	requireSubjectClaim,
 	requireTargetCatalogue,
+	claimableSubjects,
 } from "#runtime/operations/model-edit/claims.ts";
 import { readModelFiles, modelRevision } from "#runtime/store/model-files.ts";
 import { ArchiveError, archiveContext } from "#runtime/store/model-archive.ts";
@@ -25,9 +27,17 @@ async function applyCandidateStructure(
 	request: ArchitectureModuleEdit,
 	paths: Iterable<string>,
 ) {
-	const reservations = allocatesIdentity(request)
-		? await retainedReservations(await archiveContext(vault), model.manifest.id)
-		: new Set<string>();
+	const reservations = new Set<string>();
+	if (allocatesIdentity(request)) {
+		const current = requireModel(readCurrentModel(vault));
+		const retained = await retainedReservations(await archiveContext(vault), model.manifest.id);
+		for (const identity of [
+			...claimableSubjects(current),
+			...(current.manifest.retiredIds ?? []),
+			...retained,
+		])
+			reservations.add(identity);
+	}
 	return { ...applyStructure(model, request, paths, reservations), reservations };
 }
 
@@ -181,7 +191,8 @@ async function selectedTarget(
 ) {
 	if ((catalogue.selectedState?.id ?? null) === target.state) return catalogue;
 	const { resolveState } = await import("#runtime/operations/proposals/read.ts");
-	return resolveState(await archiveContext(vault), catalogue, target.state!);
+	const selected = await resolveState(await archiveContext(vault), catalogue, target.state!);
+	return selected.success ? { ...selected, proposals: catalogue.proposals } : selected;
 }
 /**
  * Capture one checked predecessor candidate before family reconciliation.
@@ -190,7 +201,7 @@ async function selectedTarget(
  * @returns The predecessor candidate or its refusal.
  */
 async function initialCandidate(vault: string, request: ArchitectureModuleEdit) {
-	const catalogue = requireTargetCatalogue(vault, request.target);
+	const catalogue = await requireTargetCatalogue(vault, request.target);
 	if (!catalogue.success) return catalogue;
 	if (!isDeepStrictEqual(catalogue.revision, request.expectedRevision))
 		throw new ArchiveError("STALE_REVISION", "Read the complete model again before a new edit.");
@@ -201,6 +212,27 @@ async function initialCandidate(vault: string, request: ArchitectureModuleEdit) 
 	requireWritableTarget(state, request);
 	const current = await selectedTarget(vault, request.target, catalogue);
 	if (!current.success) return current;
+	return targetCandidate(vault, request, current, captured);
+}
+
+/**
+ * Dispatch an admitted intent to the existing candidate owners.
+ * @param vault The addressed vault.
+ * @param request The complete architectural intent.
+ * @param current The admitted complete selected state.
+ * @param captured The exact live inputs.
+ * @returns Its complete checked predecessor candidate.
+ */
+async function targetCandidate(
+	vault: string,
+	request: ArchitectureModuleEdit,
+	current: ArchitectureModel,
+	captured: ReturnType<typeof readModelFiles>,
+) {
+	if ("correction" in request) {
+		const { correctionCandidate } = await import("#runtime/operations/history/correction.ts");
+		return correctionCandidate(vault, request, current, captured);
+	}
 	if ("proposal" in request) {
 		const { proposalIntentCandidate } = await import("#runtime/operations/proposals/candidate.ts");
 		return proposalIntentCandidate(vault, request, current, captured);

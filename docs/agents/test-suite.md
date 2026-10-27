@@ -584,6 +584,24 @@ The existing CLI and HTTP proposal owner covers completed state selection, struc
 `tests/system/browser/canonical-model-lifecycle.test.ts` owns completed state discovery, decisions, lineage, comparisons, exact readings, and missing-history recovery.
 It uses real temporary Git repositories and the public HTTP writer for agent decisions.
 
+## Canonical historical corrections
+
+The public architecture operations own correction tests under `packages/board/tests/runtime/operations/proposals/`.
+`corrections.test.ts` owns lasting identity, exact originals, comparison audit, unchanged current content, and adopted successor isolation.
+`correction-family.test.ts` owns repeated audit chains, retained baselines, conflicting following drafts, and blocked descendants.
+`correction-safety.test.ts` owns explicit targets, immutable evidence, empty-change refusal, stale correction checkpoints, and retry identity.
+`correction-recovery.test.ts` interrupts real durable journal writes before and after installation.
+`correction-retention.test.ts` owns signing refusal, unchanged source HEAD and index, publication, fetched logical lookup, and collection of unreachable Git objects.
+`correction-news.test.ts` uses a second process because an archive-only correction changes no current input file.
+The existing news owner keeps its claims, current writes, and external-file observation cases.
+
+`tests/system/semantic-boards/model-corrections.test.ts` owns CLI and HTTP parity for correction, exact retry, comparison audit, and refusal status.
+`tests/system/browser/canonical-model-corrections.test.ts` owns visible correction history through the existing canonical model seam.
+It uses public HTTP fixture edits with real files and Git to prove archive-only live refresh, source evidence, exact original links, comparison audit, and missing-history recovery.
+The existing runtime family owner covers inherited draft facts and unchanged adopted successors.
+The existing browser reconciliation owner covers their shared visible standing contract.
+No model evaluation is implied by this evidence.
+
 `tests/system/browser/canonical-model-preview.test.ts` owns visible migration preview behavior.
 It uses real legacy files, saved mapping choices, temporary Git repositories, and the existing browser adapter.
 It covers recursive navigation, flow rendering, fingerprints, unchanged source bytes, stale refusal, and recovery.

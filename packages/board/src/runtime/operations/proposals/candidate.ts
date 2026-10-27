@@ -40,6 +40,43 @@ type Request = Extract<ArchitectureModuleEdit, { proposal: unknown }> & {
 		{ type: "create" | "edit" }
 	>;
 };
+
+/**
+ * Preserve the exact ancestry behind a materialized predecessor.
+ * @param request The complete architectural intent.
+ * @param predecessor The selected complete reading.
+ * @returns Every required baseline parent.
+ */
+function baselineDependencies(request: ArchitectureModuleEdit, predecessor: ArchitectureModel) {
+	return [
+		...new Set([
+			...(predecessor.selectedState?.baseline === undefined
+				? []
+				: [predecessor.selectedState.baseline]),
+			...(predecessor.checkpoint === undefined ? [] : [predecessor.checkpoint.id]),
+			...("correction" in request ? [request.correction.previous] : []),
+		]),
+	];
+}
+
+/**
+ * Preserve retained source evidence rather than replacing it with today's source HEAD.
+ * @param context The archive owner.
+ * @param vault The addressed vault.
+ * @param predecessor The complete retained or live predecessor.
+ * @param request The complete architectural intent.
+ * @returns The source associations behind these facts.
+ */
+function baselineSources(
+	context: Awaited<ReturnType<typeof archiveContext>>,
+	vault: string,
+	predecessor: ArchitectureModel,
+	request: ArchitectureModuleEdit,
+) {
+	if ("correction" in request)
+		return request.correction.revisions.map((revision) => ({ ...revision, uncommitted: false }));
+	return predecessor.checkpoint?.sources ?? captureSource(context, predecessor, vault);
+}
 /**
  * Retain a complete immutable predecessor before installing a compact draft.
  * @param vault The explicit vault.
@@ -60,8 +97,7 @@ async function retainBaseline(
 		predecessor,
 		Buffer.from(Bun.YAML.stringify(predecessor.policy)),
 	);
-	const dependencies =
-		predecessor.selectedState?.baseline === undefined ? [] : [predecessor.selectedState.baseline];
+	const dependencies = baselineDependencies(request, predecessor);
 	const record = CheckpointRecordSchema.parse({
 		schemaVersion: 1,
 		kind: "checkpoint",
@@ -81,7 +117,7 @@ async function retainBaseline(
 			expectedRevision: request.expectedRevision.digest,
 			dependencies,
 		},
-		sources: await captureSource(context, predecessor, vault),
+		sources: await baselineSources(context, vault, predecessor, request),
 		...(await captureReferencePins(vault, predecessor)),
 	});
 	const files = new Map([...inputs].map(([file, bytes]) => [`inputs/${file}`, bytes]));
