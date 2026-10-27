@@ -123,6 +123,14 @@ interface ShellView {
 
 /** Everything a person can do from the shell. */
 interface ShellActions {
+	/**
+	 * Open a repository model and activate that checkout's conversation.
+	 * @param model The stable model identity.
+	 * @param repository Its registered repository identity.
+	 * @param paneId The addressed pane, or the active pane when absent.
+	 * @returns Whether the server accepted the destination.
+	 */
+	openModel(model: string, repository: string, paneId?: string): Promise<boolean>;
 	setTheme(theme: ThemeChoice): void;
 	/**
 	 * Show a board in one pane.

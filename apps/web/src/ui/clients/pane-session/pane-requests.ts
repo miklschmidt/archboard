@@ -7,6 +7,8 @@
 // the release of somebody else's lease. Nor is `showConversation`: it says which
 // checkout's conversation the person activated, and the dock follows it.
 
+import type { z } from "zod";
+import type { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
 import {
 	SHOWN_CONVERSATION_ROUTE,
 	type ShownConversationReply,
@@ -125,6 +127,24 @@ function showBoard(request: ShowBoardRequest): Promise<ShowBoardReply> {
 	return requestJson(inVault("/api/panes/show", vault), { method: "POST", payload: shown });
 }
 
+/**
+ * Open a canonical reading through the same addressed route used by local agents.
+ * @param vault The destination vault.
+ * @param pane The registered client identity.
+ * @param reading The complete canonical navigation intent.
+ * @returns The server receipt after it accepts the destination.
+ */
+function showModel(
+	vault: string,
+	pane: string,
+	reading: z.input<typeof ArchitecturePaneReadingSchema>,
+): Promise<unknown> {
+	return requestJson(inVault("/api/panes/show", vault), {
+		method: "POST",
+		payload: { pane, reading },
+	});
+}
+
 /** The answer to a take-back: whether a claim was released, and which. */
 interface TakeBackReply {
 	success: true;
@@ -175,6 +195,7 @@ export {
 	fetchPaneInventory,
 	loadedBundle,
 	reportPane,
+	showModel,
 	showBoard,
 	showConversation,
 	takeBoardBack,

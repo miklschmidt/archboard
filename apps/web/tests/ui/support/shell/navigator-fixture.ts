@@ -231,6 +231,17 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 	const actions: ShellActions = {
 		setTheme: ignore,
 		/**
+		 * Record a current model opened from its repository.
+		 * @param model The stable model identity.
+		 * @param repository Its registered repository.
+		 * @returns That the pane accepted the reading.
+		 */
+		openModel: (model, repository) => {
+			asked.selected.push(model);
+			asked.opened.push(`${repository}|${model}`);
+			return Promise.resolve(true);
+		},
+		/**
 		 * Record a board opened in the active pane.
 		 * @param key The board key.
 		 * @param _paneId The pane, which the navigator never names.

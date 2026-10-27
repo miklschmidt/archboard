@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T17:18:00Z'
+updated_date: '2026-10-27T17:30:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -106,4 +106,6 @@ Backend handoff boundary: examples/canonical-model and the pipeline builder/gall
 Final backend47c7d1c is integrated through signed dcb0e552 with parent notes preserved. Canonical fullscreen now hides the existing navigation, inspection, selection, and state controls through the shared presentation convention. The updated live-voice owner first reproduced the visible chrome failure, then passed that section. It next reproduced missing user-selection speech during captured narration. Captured playback now uses the existing canonical selection hook, with authored selection restored for each beat and temporary human selection kept separately. The existing pane user-marks path recognizes canonical captures and credits human selection through ModelExplanationHost, without a second publisher. Live voice and selection/walkthrough regressions pass. Frontend types, focused source lint, and focused browser lint pass. The large voice fixture moved to existing canonical-page support without changing its behavior or weakening the line limit. Scope/filter gesture marks and remaining shell/replay/asset/migration acceptance remain open.
 
 The focus browser owner reproduced missing human view attribution through the existing pane context route. Explicit scope, focus, mode, filter, bookmark, state, and comparison gestures now mark their existing context fields; automatic identity normalization and agent arrivals keep the raw unmarked navigation path. Preview readings do not queue these marks. Focus-origin and agent-navigation owners pass, along with frontend types and focused source/test lint. Canonical replay also passes against the current frontend build, resolving the backend handoff stale-build limit. No passing replay or voice owner was repeated without a relevant change.
+
+A human repository Open now goes through the existing shell action and canonical pane-show route, then activates the destination checkout through the existing conversation action. RepositoryModelLink no longer writes the router independently. The controlled text-workbench owner proves the destination conversation and pane B capture/vault agree while pane A stays unchanged; prior agent navigation still leaves the shown conversation unchanged. Full source/test types, frontend types, and focused lint pass after adapting the existing navigator fixture. The shared visible workbench reader moved to its existing support module to keep the test file bounded. URL restoration, keyboard repository opening, and removal of retired shell compatibility paths still remain open.
 <!-- SECTION:NOTES:END -->

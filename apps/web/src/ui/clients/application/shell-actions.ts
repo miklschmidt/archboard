@@ -12,7 +12,7 @@ import type { ConversationActivation } from "#ui/clients/application/shown-conve
 import { userMoves, type UserMove } from "#ui/rules/application/user-moves.ts";
 import { chooseCheckout } from "#ui/clients/board-catalog/repositories.ts";
 import { type BoardCatalog } from "#ui/hooks/board-catalog/use-board-catalog.ts";
-import { showBoard } from "#ui/clients/pane-session/pane-requests.ts";
+import { showBoard, showModel } from "#ui/clients/pane-session/pane-requests.ts";
 import type {
 	SettingsSurface,
 	ShellActions,
@@ -136,6 +136,45 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 			void choose(deps, repository, root);
 		},
 	};
+}
+
+/**
+ * A human repository open moves the pane before activating its conversation.
+ * @param deps The existing pane, registry, notice and activation owners.
+ * @param model The destination model identity.
+ * @param repository The destination repository identity.
+ * @param paneId The pane the reader chose.
+ * @returns Whether the addressed route accepted the reading.
+ */
+async function openModel(
+	deps: ShellActionDeps,
+	model: string,
+	repository: string,
+	paneId: string,
+): Promise<boolean> {
+	const { status } = recordFor(deps.panes.records, paneId);
+	const vault = placeFor(deps.catalog, status, repository);
+	if (typeof vault !== "string") {
+		deps.notices.raise(vault);
+		return false;
+	}
+	const move = userMoves(deps.panes.handles, paneId);
+	try {
+		await showModel(vault, status.clientId, { model });
+		await deps.activate(paneId, { vault });
+		deps.notices.dismiss("architecture-command");
+		return true;
+	} catch (error) {
+		move.failed();
+		deps.notices.raise(
+			failureNotice(
+				"architecture-command",
+				"Open architecture",
+				error instanceof Error ? error.message : String(error),
+			),
+		);
+		return false;
+	}
 }
 
 /**
@@ -305,6 +344,15 @@ function answerNotice(deps: ShellActionDeps, actionId: string): void {
 function createShellActions(deps: ShellActionDeps): ComposedShellActions {
 	return {
 		setTheme: deps.setTheme,
+		/**
+		 * Open a current model in the explicitly addressed pane.
+		 * @param model The destination model.
+		 * @param repository Its registered repository.
+		 * @param paneId The target pane, or the active pane when absent.
+		 * @returns Whether the move succeeded.
+		 */
+		openModel: (model, repository, paneId) =>
+			openModel(deps, model, repository, paneId ?? deps.panes.active.status.paneId),
 		...boardActions(deps),
 		...paneActions(deps),
 		/**

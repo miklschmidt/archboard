@@ -192,6 +192,10 @@ function Navigator(props: NavigatorProps): JSX.Element {
 	);
 	const open = useCallback(
 		(row: NavigatorRow, beside: boolean): void => {
+			if (row.kind === "repository" && row.model !== undefined) {
+				void actions.openModel(row.model.id, row.repository);
+				return;
+			}
 			const key = rowKey(row);
 			if (key !== null) openKey(actions, key, beside, row.repository);
 		},

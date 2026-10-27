@@ -19,6 +19,7 @@ import {
 	runServerCli,
 } from "./support/agent-browser.ts";
 import {
+	agentSurface,
 	productionFixtureRecords,
 	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
@@ -51,53 +52,6 @@ interface FixtureRecord {
 }
 
 type Browser = Awaited<ReturnType<typeof createAgentBrowser>>;
-
-/** What the agent dock and the conversation show, read through their hooks. */
-interface AgentSurface {
-	/** How the dock lights the agent's state: quiet, working, attention or failed. */
-	readonly tone: string | null;
-	readonly panelOpen: boolean;
-	readonly held: { readonly state: string | null; readonly text: string }[];
-	readonly prompts: string[];
-	/** Links and buttons the dock offers, by href or accessible name. */
-	readonly dockLinks: (string | null)[];
-	readonly dockButtons: string[];
-	readonly cards: {
-		readonly busy: boolean;
-		readonly details: string;
-		readonly decisions: string[];
-		readonly top: number;
-	}[];
-	/** The bottom edge of the conversation's last prompt, for the cards' place. */
-	readonly promptBottom: number | null;
-}
-
-function agentSurface(browser: Browser): Promise<AgentSurface> {
-	return browser.eval<AgentSurface>(`(() => {
-		const panel = document.querySelector('${AGENT_PANEL}');
-		const dock = document.querySelector('${AGENT_DOCK}');
-		const named = node => (node.getAttribute('aria-label') ?? node.textContent ?? '').trim();
-		const prompts = [...(panel?.querySelectorAll('[data-slot="prompt"]') ?? [])];
-		return {
-			tone: dock?.getAttribute('data-agent-tone') ?? null,
-			panelOpen: panel !== null,
-			held: [...(panel?.querySelectorAll('[data-slot="held-prompt"]') ?? [])].map(node => ({
-				state: node.getAttribute('data-state'),
-				text: node.textContent ?? '',
-			})),
-			prompts: prompts.map(node => node.textContent ?? ''),
-			dockLinks: [...(dock?.querySelectorAll('a') ?? [])].map(node => node.getAttribute('href')),
-			dockButtons: [...(dock?.querySelectorAll('button') ?? [])].map(named),
-			cards: [...(panel?.querySelectorAll('article[data-slot="approval"]') ?? [])].map(card => ({
-				busy: card.getAttribute('aria-busy') === 'true',
-				details: [...card.querySelectorAll('dd')].map(node => node.textContent).join('\\n'),
-				decisions: [...card.querySelectorAll('button')].map(named),
-				top: card.getBoundingClientRect().top,
-			})),
-			promptBottom: prompts.at(-1)?.getBoundingClientRect().bottom ?? null,
-		};
-	})()`);
-}
 
 /** The pane's canvas, remembered once drawn (the loading stage is replaced) so its identity can be checked at the end. */
 function paneCanvas(
@@ -483,6 +437,28 @@ test(
 			"the pick to show the shop conversation",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
+		// Opening a repository is the person's act. Its pane, capture and conversation move together.
+		await browser.run(["click", '[data-slot="repository-model-open"][title="Open ledger"]']);
+		await pollUntil(
+			() => conversationList(browser),
+			(list) => list.some(({ checkout, shown }) => checkout === orders && shown),
+			"the human repository open to activate its conversation",
+			{ timeoutMs: 10_000 },
+		);
+		const placed = await pollUntil(
+			() =>
+				createJsonRequester(server)<{
+					panes: { paneId: string; vault: string; architecture?: { vault: string } }[];
+				}>("/api/panes"),
+			(result) =>
+				result.body.panes.some(
+					(pane) => pane.paneId === "B" && pane.architecture?.vault === ordersVault,
+				),
+			"the foreign model capture in the addressed pane",
+			{ timeoutMs: 10_000 },
+		);
+		expect(placed.body.panes.find((pane) => pane.paneId === "B")?.vault).toBe(ordersVault);
+		expect(placed.body.panes.find((pane) => pane.paneId === "A")?.vault).toBe(shopVault);
 		expect(await browser.run(["errors"])).toBe("");
 	},
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,

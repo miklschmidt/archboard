@@ -118,7 +118,8 @@ function asksForMenu(event: KeyboardEvent<HTMLElement>): boolean {
 function RepositoryLine(
 	props: RowHandlers & { readonly row: RepositoryRow; readonly guides?: string | undefined },
 ): JSX.Element {
-	const { row, onRowKeyDown } = props;
+	const { row, onRowKeyDown, onOpen } = props;
+	const open = useCallback((): void => onOpen(row, false), [onOpen, row]);
 	const name = row.entry.name;
 	const [menuOpen, setMenuOpen] = useState(false);
 	const handleKeyDown = useCallback(
@@ -158,11 +159,7 @@ function RepositoryLine(
 						<RiErrorWarningLine aria-hidden="true" className="text-destructive size-3.5" />
 					</span>
 				)}
-				{row.model === undefined ? (
-					facts
-				) : (
-					<RepositoryModelLink model={row.model} repository={row.repository} />
-				)}
+				{row.model === undefined ? facts : <RepositoryModelLink model={row.model} onOpen={open} />}
 				{hasMenu && (
 					<CheckoutMenu
 						entry={row.entry}
