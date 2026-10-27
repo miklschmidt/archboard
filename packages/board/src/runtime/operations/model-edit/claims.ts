@@ -50,12 +50,12 @@ function readArchitectureClaims(vault: string): ArchitectureClaimList {
 	}
 }
 /**
- * Require the exact architectural state that the agent selected.
+ * Require the named live state without materializing architecture for a claim.
  * @param vault The explicitly addressed vault.
  * @param target The explicitly selected model and current state.
- * @returns The coherent selected state or a structured refusal.
+ * @returns Its coherent authored catalogue or a structured refusal.
  */
-async function requireTarget(vault: string, target: ArchitectureClaim["target"]) {
+function requireTargetCatalogue(vault: string, target: ArchitectureClaim["target"]) {
 	const current = readCurrentModel(vault);
 	if (!current.success) return current;
 	if (current.manifest.id !== target.model)
@@ -70,8 +70,7 @@ async function requireTarget(vault: string, target: ArchitectureClaim["target"])
 			"TARGET_CHANGED",
 			"The selected state changed. Read it again and use its stable identity before writing.",
 		);
-	const { resolveState } = await import("#runtime/operations/proposals/read.ts");
-	return resolveState(await archiveContext(vault), current, proposal.id);
+	return current;
 }
 /**
  * Read the designated state without inventing one for a planning model.
@@ -197,7 +196,7 @@ async function claimArchitectureSubjects(
 	const result = await historyResult("MODEL_WRITE_FAILED", () =>
 		withModelLock(vault, async () => {
 			requireNoPending(vault);
-			const current = await requireTarget(vault, request.target);
+			const current = requireTargetCatalogue(vault, request.target);
 			if (!current.success) return current;
 			const known = await knownClaimScopes(vault, current, request.subjects);
 			if (request.subjects.some((subject) => !known.has(subject)))
@@ -336,5 +335,5 @@ export {
 	releaseArchitectureClaim,
 	takeBackArchitectureClaim,
 	requireSubjectClaim,
-	requireTarget,
+	requireTargetCatalogue,
 };

@@ -2,7 +2,10 @@ import { isDeepStrictEqual } from "node:util";
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts";
 import { decodeModel } from "#runtime/operations/read/model-read.ts";
-import { requireSubjectClaim, requireTarget } from "#runtime/operations/model-edit/claims.ts";
+import {
+	requireSubjectClaim,
+	requireTargetCatalogue,
+} from "#runtime/operations/model-edit/claims.ts";
 import { readModelFiles, modelRevision } from "#runtime/store/model-files.ts";
 import { ArchiveError, archiveContext } from "#runtime/store/model-archive.ts";
 import { retainedReservations } from "#runtime/operations/history/states.ts";
@@ -108,7 +111,7 @@ function requireCurrentEdit(model: ArchitectureModel): void {
 	if (model.selectedState?.lifecycle !== "current")
 		throw new ArchiveError(
 			"TARGET_CHANGED",
-			"Draft edits require an explicit proposal intent. Lifecycle changes remain unavailable.",
+			"Ordinary edits require current architecture. Submit an explicit proposal intent for a draft or planning model.",
 		);
 }
 /**
@@ -147,12 +150,15 @@ async function currentCandidate(
 }
 /**
  * Reject a descendant that waits on an unsettled ancestor.
- * @param current The explicitly selected reading.
+ * @param state The explicitly selected live state metadata.
  * @param request The complete intent, including an explicit shelving decision.
  */
-function requireWritableTarget(current: ArchitectureModel, request: ArchitectureModuleEdit): void {
+function requireWritableTarget(
+	state: ArchitectureModel["selectedState"],
+	request: ArchitectureModuleEdit,
+): void {
 	if ("proposal" in request && request.proposal.type === "shelve") return;
-	const ancestor = current.selectedState?.standing?.blockedBy;
+	const ancestor = state?.standing?.blockedBy;
 	if (ancestor !== undefined)
 		throw new ArchiveError(
 			"PROPOSAL_BLOCKED",
@@ -162,18 +168,39 @@ function requireWritableTarget(current: ArchitectureModel, request: Architecture
 		);
 }
 /**
+ * Materialize a draft only after its exact token and writable standing pass.
+ * @param vault The addressed vault.
+ * @param target The caller's explicit live state.
+ * @param catalogue The coherent authored inputs already captured for this intent.
+ * @returns The complete selected architecture.
+ */
+async function selectedTarget(
+	vault: string,
+	target: ArchitectureModuleEdit["target"],
+	catalogue: ArchitectureModel,
+) {
+	if ((catalogue.selectedState?.id ?? null) === target.state) return catalogue;
+	const { resolveState } = await import("#runtime/operations/proposals/read.ts");
+	return resolveState(await archiveContext(vault), catalogue, target.state!);
+}
+/**
  * Capture one checked predecessor candidate before family reconciliation.
  * @param vault The explicit vault.
  * @param request The complete original intent.
  * @returns The predecessor candidate or its refusal.
  */
 async function initialCandidate(vault: string, request: ArchitectureModuleEdit) {
-	const current = await requireTarget(vault, request.target);
-	if (!current.success) return current;
-	if (!isDeepStrictEqual(current.revision, request.expectedRevision))
+	const catalogue = requireTargetCatalogue(vault, request.target);
+	if (!catalogue.success) return catalogue;
+	if (!isDeepStrictEqual(catalogue.revision, request.expectedRevision))
 		throw new ArchiveError("STALE_REVISION", "Read the complete model again before a new edit.");
-	const captured = captureRevision(vault, current.revision);
-	requireWritableTarget(current, request);
+	const captured = captureRevision(vault, catalogue.revision);
+	const state =
+		catalogue.proposals.find((proposal) => proposal.id === request.target.state) ??
+		catalogue.selectedState;
+	requireWritableTarget(state, request);
+	const current = await selectedTarget(vault, request.target, catalogue);
+	if (!current.success) return current;
 	if ("proposal" in request) {
 		const { proposalIntentCandidate } = await import("#runtime/operations/proposals/candidate.ts");
 		return proposalIntentCandidate(vault, request, current, captured);

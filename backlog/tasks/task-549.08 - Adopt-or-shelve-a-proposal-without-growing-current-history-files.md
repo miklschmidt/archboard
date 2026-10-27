@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-backend'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-27T00:34:00Z'
+updated_date: '2026-10-27T01:34:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -77,4 +77,6 @@ Created draft architecture proposals before source changes: Board persistence@TA
 Signed checkpoint64e528a2a records the backend lifecycle implementation and three draft architecture proposals. The host renamed this same supplied checkout branch to feat/proposal-lifecycle-backend. Public red-green evidence covers absent lifecycle protocol, incorrect shelved materialization, superseded adoption, renamed current-file installation, retaining adopted current metadata, and reused completed subject identity. CLI/HTTP parity passes3 cases/34 assertions. Signed lifecycle publication and reopening through a local remote passes2 cases/24 assertions. Current-file churn compares zero and two completed proposals within the original30-second deadline. Archive-derived identity reservations feed the existing mint. Completed history enters neither current files nor active proposal files. Broad affected runtime evidence is running. No frontend, browser, review, push, PR, adoption, or closure work occurs.
 
 The initial broad diagnostic omitted the normal --isolate flag and failed on Bun default deadlines. It is retained as task-549.08-runtime-unisolated-diagnostic.log and is not acceptance evidence. The corrected serial isolated run is underway with unchanged repository deadlines. Shared reads now derive states only for the default current catalogue request. Selected and exact reads avoid unrelated archive scans. Non-allocating edits avoid historical identity discovery. The public blocked-descendant shelving case first failed, then passed without requiring ancestor settlement. The inherited interface-width gate remains exactly245/188 and belongs to TASK-549.24. No ceiling changes or new public names occur.
+
+Backend simplification preserves all existing admission and install guards. Claims read live state metadata without resolving a draft. Writers materialize only after token and standing admission. Exact archive inputs use one length-delimited Git blob batch through the existing process owner. The public Git-sensitive filename, signing, local publication, recovery, family, and CLI/HTTP owners pass in focused runs with unchanged deadlines. Types and lint pass. Frozen broad runtime evidence and later corrected owners cover all 117 cases across runs. The single broad run was 114 pass/3 deadline failures, so it is not claimed as a full gate pass. Final backend handoff will give each log and the remaining parent browser work. Latest integration now includes completed TASK-549.13 and will be merged before handoff. Criteria and architecture proposals remain unchecked and draft.
 <!-- SECTION:NOTES:END -->

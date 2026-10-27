@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 183,
+	"version": 187,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-27T00:28:39.237Z",
+	"updatedAt": "2026-10-27T01:33:44.238Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -295,7 +295,8 @@
 					"jQ671Dxs",
 					"D5PpXrVK",
 					"ZRq51Ecz",
-					"RfwX9gsx"
+					"RfwX9gsx",
+					"DQ99hH5l"
 				],
 				"edges": [],
 				"flows": []
@@ -332,7 +333,8 @@
 					"RfwX9gsx",
 					"4P7YZdnj",
 					"yEqHs86l",
-					"ffFYC0XR"
+					"ffFYC0XR",
+					"DQ99hH5l"
 				],
 				"edges": [],
 				"flows": []
@@ -354,7 +356,8 @@
 					"4P7YZdnj",
 					"qTv7HuBw",
 					"RfwX9gsx",
-					"e0GTqv1k"
+					"e0GTqv1k",
+					"DQ99hH5l"
 				],
 				"edges": [],
 				"flows": []
@@ -400,7 +403,8 @@
 					"8Uq1mtzw",
 					"CLdaoYy3",
 					"llmZ5fau",
-					"nqi2h0Ku"
+					"nqi2h0Ku",
+					"DQ99hH5l"
 				],
 				"edges": [],
 				"flows": []
@@ -177349,7 +177353,7 @@
 						"name": "Canonical archive objects",
 						"kind": "module",
 						"responsibility": "Stores architecture-only Git objects, joins concurrent ancestry, and retains exact foreign pins",
-						"description": "Configured identity and signing govern checkpoints and marked synchronization commits. Required checkpoints remain actual Git parents. Retention refs preserve operations before conditional archive appends. Common Git objects and refs serve linked worktrees without changing current files, index or HEAD.",
+						"description": "Configured identity and signing govern checkpoints and marked synchronization commits. Required checkpoints remain actual Git parents. Retention refs preserve operations before conditional archive appends. Common Git objects and refs serve linked worktrees without changing current files, index or HEAD. Reads retained input blobs in one Git batch with exact object identity and length framing.",
 						"parent": "1VHRyajb",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -177560,7 +177564,7 @@
 						"name": "Canonical structure candidate",
 						"kind": "module",
 						"responsibility": "Builds module and flow candidates, then stores only identity additions, removals, assignments, clears and placements for a selected draft.",
-						"description": "Builds one complete module and flow candidate with identities reserved by retained lifecycle records. The existing mint owns allocation. Non-allocating edits read no archive catalogue. Serialization preserves unrelated bytes and removes superseded file locations.",
+						"description": "Builds one complete module and flow candidate with identities reserved by retained lifecycle records. Loads identity reservations only for allocation. Checks exact tokens and writable standing before materializing a draft. Serialization preserves unrelated bytes and removes superseded file locations.",
 						"parent": "1VHRyajb",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -177700,6 +177704,18 @@
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/shared/rules/reconcile"
+						}
+					},
+					{
+						"id": "DQ99hH5l",
+						"order": 46050,
+						"name": "Retained blob reads",
+						"kind": "module",
+						"responsibility": "Reads discovered immutable blobs in one Git process and preserves exact byte boundaries.",
+						"parent": "1VHRyajb",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-archive-blobs.ts"
 						}
 					}
 				],
@@ -180333,26 +180349,12 @@
 						}
 					},
 					{
-						"id": "GoFHOClD",
-						"order": 191000,
-						"from": "ov7pPg21",
-						"to": "KJy5yYuq",
-						"kind": "call",
-						"label": "claim selected state",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/model-edit/claims.ts",
-							"symbol": "requireTarget"
-						}
-					},
-					{
 						"id": "5EqQZzLi",
 						"order": 192000,
 						"from": "e0GTqv1k",
 						"to": "KJy5yYuq",
 						"kind": "call",
-						"label": "compact candidate",
+						"label": "materialize target and prepare proposals",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -180722,6 +180724,48 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
 							"symbol": "readCurrentModel"
+						}
+					},
+					{
+						"id": "108U3Rhl",
+						"order": 221000,
+						"from": "ZRq51Ecz",
+						"to": "DQ99hH5l",
+						"kind": "call",
+						"label": "read exact input blobs",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-archive.ts",
+							"symbol": "checkpointBlobs"
+						}
+					},
+					{
+						"id": "jBpM272B",
+						"order": 222000,
+						"from": "DQ99hH5l",
+						"to": "nqi2h0Ku",
+						"kind": "call",
+						"label": "shared archive refusal",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-archive-blobs.ts",
+							"symbol": "ArchiveError"
+						}
+					},
+					{
+						"id": "zlSipRtX",
+						"order": 223000,
+						"from": "DQ99hH5l",
+						"to": "RfwX9gsx",
+						"kind": "call",
+						"label": "read blobs in one Git command",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/store/model-archive-blobs.ts",
+							"symbol": "git"
 						}
 					}
 				],

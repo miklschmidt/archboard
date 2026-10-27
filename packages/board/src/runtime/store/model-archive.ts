@@ -1,3 +1,4 @@
+import { checkpointBlobs } from "#runtime/store/model-archive-blobs.ts";
 import { FamilyStandingSchema } from "#shared/schemas/model-proposals.ts";
 import { modelRevision } from "#runtime/store/model-files.ts";
 import {
@@ -467,20 +468,16 @@ async function sourceEvidence(
 }
 
 /**
- * Read a regular checkpoint input from one tree entry.
- * @param context The caller's checkout.
+ * Read a regular checkpoint input address from one tree entry.
  * @param entry One NUL-delimited Git tree entry.
- * @returns Its relative path and exact authored bytes.
+ * @returns Its relative path and immutable blob identity.
  */
-async function checkpointInput(context: ArchiveContext, entry: string): Promise<[string, Buffer]> {
+function checkpointInput(entry: string) {
 	const tab = entry.indexOf("\t");
 	const [mode, kind, object] = entry.slice(0, tab).split(" ");
 	if (mode !== "100644" || kind !== "blob" || object === undefined)
 		throw new ArchiveError("CHECKPOINT_INVALID", "A checkpoint input is not a regular blob.");
-	return [
-		entry.slice(tab + 1).slice("inputs/".length),
-		Buffer.from(await readBlob(context, object)),
-	];
+	return { path: entry.slice(tab + 1).slice("inputs/".length), object };
 }
 
 /**
@@ -494,10 +491,12 @@ async function readCheckpointInputs(context: ArchiveContext, checkpoint: string)
 		trimOutput: false,
 		maxOutputBytes: Infinity,
 	});
-	const entries = (listing ?? "").split("\0").filter(Boolean);
-	const inputs = new Map(
-		await settledValues(entries.map((entry) => checkpointInput(context, entry))),
+	const entries = (listing ?? "").split("\0").filter(Boolean).map(checkpointInput);
+	const blobs = await checkpointBlobs(
+		context,
+		entries.map((entry) => entry.object),
 	);
+	const inputs = new Map(entries.map((entry, index) => [entry.path, blobs[index]!]));
 	return { inputs, revision: modelRevision(inputs), diagnostics: [] };
 }
 

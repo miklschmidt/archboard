@@ -45,6 +45,10 @@ Proposal writes use the existing claim, complete stale token, durable journal, f
 They introduce no second writer, recovery log, or history store.
 Signing failure refuses installation before authored inputs change.
 
+Claim admission validates live state identity and known subject scopes from the coherent authored catalog.
+The writer materializes selected architecture after it validates the exact token and writable standing.
+Exact input revisions and complete claims remain mandatory before installation.
+
 A current read exposes the active proposal catalogue and explicit selected state metadata.
 A selected draft always reports lifecycle `draft`, even when its retained manifest still names an implemented state.
 Its read token covers the addressed vault's exact input paths and bytes, including active proposals.

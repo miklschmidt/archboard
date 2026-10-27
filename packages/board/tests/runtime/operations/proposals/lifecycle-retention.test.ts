@@ -59,6 +59,7 @@ test.each(["adopt", "shelve"] as const)(
 		).toMatchObject({ success: true, publication: "published" });
 		const clone = join(home, "reader");
 		git(root, "clone", "--quiet", "--no-checkout", `file://${remote}`, clone);
+		git(clone, "remote", "set-url", "origin", "https://github.com/acme/shop.git");
 		const copiedVault = join(clone, ".archboard/vault");
 		cpSync(vault, copiedVault, { recursive: true });
 		signing(clone, key);
