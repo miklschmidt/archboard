@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T22:24:00Z'
+updated_date: '2026-10-27T22:29:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -114,6 +114,8 @@ Retire the unused legacy locality HTTP/query adapter. Port its existing cheap qu
 Port the remaining legacy history component owner to the real canonical ModelHistory component. Preserve commit expansion, coupled-subject callbacks, unbound/skipped/empty evidence, and explicit retry. A new model revision must hide the previous revision’s evidence while it reads. Retire the old blanket historical-variant refusal because the canonical runtime supports selected states and checkpoints.
 
 Remove the unreachable legacy board take-back client and its unused shell/session state. Canonical subject claims already own the visible take-back action and pass the browser/runtime owners. Preserve generic pane connection, vault movement and registration behavior; retire only the obsolete board-claim race test and fixture fields.
+
+Remove the obsolete board-only context object from the agent surfaces. It now comes from an always-empty board catalogue and only supplies placeholder text. Keep canonical agent context with the existing pane reports and local workhorse owner. Use reading-based empty-state suggestions without a second UI context projection, and update the shared surface interface and consumers.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -216,4 +218,6 @@ Removed the unused legacy locality HTTP adapter, query, cache key, BoardReads me
 The remaining history component owner now mounts the actual canonical ModelHistory consumer with canonical HTTP replies. Four cheap cases preserve commit expansion, coupled-subject callbacks, unbound/skipped/empty distinctions, explicit retry and exact-revision evidence. A new architecture revision hides prior evidence while it reads. The obsolete historical-variant refusal and legacy stage locality fixture retire. The new component owner, full types and scoped source/test lint pass.
 
 Removed the unreachable legacy board take-back HTTP request and its unused session method, result types, shell action, record state and fixture fields. The canonical subject-claim control remains the sole visible take-back path. Generic pane connection and board-action owners, full types and scoped source/test lint pass. Only the old board-claim race assertion retires; connection, registration and vault movement behavior remains covered.
+
+Removed AgentContext from the shared agent view and its app consumers. This object only supplied board-name placeholder copy from an empty catalogue; canonical pane reports remain the actual agent context owner. Empty-state suggestions now refer to the reading and architecture. Agent status/dock UI owners, full types and scoped source/test lint pass. Interface-width reports 135 Workbench names, and its ceiling is lowered from138 to135 as the boundary policy requires.
 <!-- SECTION:NOTES:END -->

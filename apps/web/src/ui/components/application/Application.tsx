@@ -53,23 +53,16 @@ import { useWorkbench, type Workbench } from "#ui/hooks/application/use-workbenc
 import { useWorkspaceAddressing } from "#ui/hooks/application/use-workspace-addressing.ts";
 import { useBesideOpening } from "#ui/hooks/application/use-beside-opening.ts";
 import { BoardCatalogProvider } from "#ui/components/board-catalog/BoardCatalogProvider.tsx";
-import {
-	boardsIn,
-	useBoardCatalog,
-	type BoardCatalog,
-} from "#ui/hooks/board-catalog/use-board-catalog.ts";
-import { listedBoard, listedBoardKey } from "#ui/rules/board-catalog/listing.ts";
+import { useBoardCatalog, type BoardCatalog } from "#ui/hooks/board-catalog/use-board-catalog.ts";
 import { useOpeningAddress } from "#ui/hooks/board-routing/use-opening-address.ts";
 import { type WorkspaceAddressing } from "#ui/hooks/board-routing/use-workspace-address.ts";
 import { Tooltip } from "@archboard/ui-kit/components";
 import { boardAddressOf, boardKeyFor } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import { servedVault } from "@archboard/server-requests";
-import type { BoardListing } from "#ui/rules/pane-session/session-types.ts";
 import { RecordingStage } from "#ui/components/walkthrough-recording/RecordingStage.tsx";
 import { OrbStageProvider, VoiceSurfaceProvider } from "@archboard/workbench/voice";
 import { AgentDockSlot, AgentPanelSlot } from "#ui/components/application/AgentSurfaceSlots.tsx";
 import { PresentationVoiceKey } from "#ui/components/application/PresentationVoiceKey.tsx";
-import type { AgentContext } from "@archboard/workbench/agent";
 import { SETTINGS_TRIGGER_ID } from "#ui/components/shell/BrandBar.tsx";
 import { Shell } from "#ui/components/shell/Shell.tsx";
 import {
@@ -118,27 +111,6 @@ function usePresentationTransfer(panes: Panes, fullscreen: Fullscreen): void {
 	}, [list, target, paneRemoved]);
 }
 
-/**
- * What the agent reads with the next message: the board in the focused pane,
- * by the name the vault lists it under, and the state shown when it is not
- * the one the board's name opens.
- * @param listing The listing of the focused pane's repository.
- * @param boardKey The focused pane's board key, or null.
- * @returns The context.
- */
-function agentContextOf(listing: BoardListing, boardKey: string | null): AgentContext {
-	const address = boardAddressOf(boardKey);
-	if (address === null) return { board: null, state: null };
-	const board = listedBoard(listing, address.board);
-	if (board === undefined) return { board: address.board, state: address.variant ?? null };
-	const key = listedBoardKey(listing, boardKey);
-	const variant = board.variants.find((entry) => entry.key === key);
-	return {
-		board: board.name,
-		state: variant === undefined || variant.id === board.opens ? null : variant.name,
-	};
-}
-
 /** The agent's surfaces as the shell places them. */
 interface AgentSlots {
 	readonly dock: ReactNode;
@@ -150,8 +122,6 @@ interface AgentSlots {
 interface AgentSlotSources {
 	readonly agent: AgentSurfaces;
 	readonly workbench: Workbench;
-	/** The board the agent sees with the next message. */
-	readonly context: AgentContext;
 	readonly reducedMotion: boolean;
 	/** Whether the agent dock is off screen, as while a pane is presented fullscreen. */
 	readonly dockless: boolean;
@@ -162,26 +132,25 @@ interface AgentSlotSources {
  * voice key a presentation's bar carries. The dock and the panel read what changes
  * while the agent works themselves, so these elements are made again only when
  * the person acts.
- * @param sources The agent, the workbench, the context, the motion preference and whether the dock is off screen.
+ * @param sources The agent, the workbench, the motion preference and whether the dock is off screen.
  * @returns The slots.
  */
 function useAgentSlots(sources: AgentSlotSources): AgentSlots {
-	const { agent, workbench, context, reducedMotion, dockless } = sources;
+	const { agent, workbench, reducedMotion, dockless } = sources;
 	return useMemo(
 		() => ({
 			dock: (
 				<AgentDockSlot
 					agent={agent}
 					workbench={workbench}
-					context={context}
 					reducedMotion={reducedMotion}
 					dockless={dockless}
 				/>
 			),
-			panel: <AgentPanelSlot agent={agent} workbench={workbench} context={context} />,
+			panel: <AgentPanelSlot agent={agent} workbench={workbench} />,
 			voiceControls: <PresentationVoiceKey />,
 		}),
-		[agent, workbench, context, reducedMotion, dockless],
+		[agent, workbench, reducedMotion, dockless],
 	);
 }
 
@@ -321,11 +290,7 @@ function ApplicationBody(): JSX.Element {
 	useReleasedBoards(held, catalog);
 	const agentActivity = useAgentActivity();
 	const workbench = useWorkbench(panes.handles, panes.list.activePaneId);
-	const { vault: activeVault, boardKey: activeKey } = panes.active.status;
-	const context = useMemo(
-		() => agentContextOf(boardsIn(catalog, activeVault), activeKey),
-		[catalog, activeVault, activeKey],
-	);
+	const { vault: activeVault } = panes.active.status;
 	// The actions read the panes as they are when somebody acts, so a pane's news
 	// does not make them, and every control holding one, again.
 	const [panesNow] = useState(() => new LiveBinding<Panes>());
@@ -353,7 +318,7 @@ function ApplicationBody(): JSX.Element {
 	const fullscreen = useFullscreen({ onRefused });
 	// The agent dock is off screen while a pane is presented fullscreen.
 	const dockless = fullscreen.snapshot.paneId !== null;
-	const slots = useAgentSlots({ agent, workbench, context, reducedMotion, dockless });
+	const slots = useAgentSlots({ agent, workbench, reducedMotion, dockless });
 	// The address bar over the panes the shell already owns: it writes down what
 	// they show, and restores what a direct load or a Back/Forward asks for.
 	const repositoryVaults = useVaultOf(catalog);
