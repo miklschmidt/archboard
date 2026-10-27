@@ -1,6 +1,6 @@
 # Deterministic choices for a first layout
 
-Milestone 6 uses one Solver call for each architecture graph.
+Milestone 7 uses one Solver call for each architecture graph.
 It replaces speculative nesting, stacking, join, card-graph, and routed-packing choices with decisions before their expensive work.
 It repairs Groups parent frames and removes the 32-card cutoff.
 Semantic lane reservations replace the later nudge phase.
@@ -8,9 +8,10 @@ The renderer and Rust tests pass at checkpoint `de398584a`.
 Later raster inspection finds header-card defects that those tests miss.
 That checkpoint is not ready for adoption, and the parent council still decides whether changed drawings can land.
 
-The alternating warmed workload places all three target boards and their growing edits below 500 ms.
-A cold viewer render still takes 716 ms, so the target lacks headroom.
-The instruction count falls by 93.2% against the fresh parent baseline.
+The latest alternating workload places persistence and routes below 500 ms.
+Viewer takes 594 ms for its warmed first render and 683 ms after a card grows.
+The cold viewer takes 1158 ms, so the target remains unmet.
+The instruction count falls by 93.68% against the fresh parent baseline.
 The detailed measurements and corpus inventory follow at the end of this note.
 
 TASK-548.08 starts at `764d3b9ca` on `task-548.08`.
@@ -212,7 +213,7 @@ The example vaults contribute the other eight.
 The frame-fix corpus is `/tmp/548-08/round-2/after-4`.
 Its core source hash is `eafa399121717f42`.
 It changes 22 of 2452 pictures against the expanded parent baseline.
-Eighteen changes are complete Track diagrams, with two themes each.
+Eighteen changes are whole-board Track drawings from nine boards in two themes.
 The changed boards are Archboard server, Archboard server routes, Board persistence, Board rasterizer, Board viewer, Browser application, Codex realtime voice, Codex workhorse, and Command interface.
 The other four changes are authored Codex realtime voice views.
 Every changed picture has its SVG on both sides.
@@ -376,6 +377,10 @@ The paired load files preserve the remaining runs.
 The size-changing edits take 2957, 3842, and 2289 ms in viewer/persistence/routes order.
 The baseline edits take 4586, 3722, and 2227 ms, respectively.
 These edits also need repetition on a quiet machine.
+
+The row-support prefilter is not retained in the final candidate.
+Its first experiment saves 1.47% of native instructions without a consistent pool gain.
+The retained path keeps the geometric sink test and reuses ranked geometry for that decision.
 
 ## Dropped: unconditional group packing
 
@@ -771,3 +776,101 @@ Only the spans of moved routes change after a slide.
 The previous implementation rebuilds every box, label, and route span for each line and every accepted slide.
 The new implementation updates the moved route spans and retains the static geometry.
 Drawing equivalence and fresh measurements decide whether this optimization stays.
+
+The header checkpoint is `66dcc7dd4`, with core source hash `0a514cf2226b1689`.
+All 149 affected Rust tests and strict Clippy pass.
+All 648 renderer tests pass, with one platform skip.
+The endpoint tests now measure the painted header card and retain their square approach, bend, and arrowhead requirements.
+
+The complete corpus is `/tmp/548-08/post-553/after-7`.
+It contains 2452 SVGs, including all 76 whole-board drawings.
+Against the fresh parent, 744 drawings change: 364 Track and 380 Blocks.
+The 18-board inventory stays the same as milestone 6.
+The complete changed SVG pairs and their key manifest stay in `/tmp/548-08/post-553/changed-7-svg`.
+All prior corpus directories remain available.
+
+Fresh pinned native instructions fall from 152.729 billion to 9.654 billion, a 93.68% reduction.
+The combined header repair and static-obstacle cache use 7.2% fewer instructions than checkpoint `de398584a`.
+This comparison does not isolate the cache's effect.
+The completed native and pool results follow below.
+
+The final Browser application, Command interface, and Board rasterizer whole-board SVGs match the inspected native samples byte for byte.
+The new reduced Command routing raster shows descendant traffic beside its header and the parent arrow on the visible card.
+The broader Browser picture still contains large empty spans, as its parent picture does.
+The council decides whether that changed reading is acceptable.
+
+Renderer layout@TASK-548.08 version 107 records header endpoints and side capacity.
+Semantic renderer@TASK-548.08 version 150 pins the retained decision.
+Their comparisons change no container interface.
+Code analysis reports the same 41 finding identities as the preceding proposal check.
+Existing crossing-pass and Scene relationship warnings remain outside the changed responsibilities.
+The consumer skill needs no change because the agent workflow and command contract stay the same.
+The proposals remain drafts pending the parent's council verdict.
+
+### Milestone 7 measurements and validation
+
+The parent remains `f06fa5317`.
+The final core source hash is `cba5643b6e09f19f` after a comment-only correction to the source length limit.
+The route file now contains 599 lines.
+The final corpus is `/tmp/548-08/post-553/after-7-final`.
+It changes zero of 2452 drawings against the header checkpoint corpus.
+Both directories retain all SVGs, including the 76 whole-board drawings.
+The changed pair directory therefore remains valid for this final core.
+
+| Board                   | Native path before/after, ms | Warmed first before/after, ms | Growing edit before/after, ms | Cold first before/after, ms |
+| ----------------------- | ---------------------------: | ----------------------------: | ----------------------------: | --------------------------: |
+| Board viewer            |                   1426 / 298 |                    2160 / 594 |                    2258 / 683 |                 2783 / 1158 |
+| Board persistence       |                   1473 / 139 |                    2128 / 358 |                    2455 / 412 |                  2209 / 520 |
+| Archboard server routes |                    452 / 106 |                    1148 / 295 |                     964 / 237 |                  1090 / 328 |
+
+The native paths use the best of three rounds.
+Their unrounded totals fall from 3351 to 542 ms.
+Solves fall from 27/25/24 to 1/1/1 in routes/persistence/viewer order.
+Render time beside those solves is 49/69/92 ms before and 55/111/117 ms after.
+The pinned instruction counts are 152729195427 before and 9654477077 after.
+Their baseline solve counts match the earlier instruction run.
+
+The canonical pool script runs seven repetitions and alternates parent sources with the final candidate.
+The edit harness starts a fresh process and asserts the changed card heights.
+Viewer grows from 72 to 105 units.
+The other two cards grow from 105 to 139 units.
+The cold column records each board's first render in that separate edit harness.
+Only Viewer is also the first board of the fresh process.
+
+Parent pool load is 22.74 to 23.47, and candidate load is 23.32 to 23.78.
+Native load is 22.94 to 22.64.
+A later process audit finds 20 orphan Git owners under systemd in other checkouts.
+They use about 1979% CPU, and none belongs to this worktree.
+The user authorizes cleanup only for this worktree, so these processes remain untouched.
+These wall times describe this loaded box and do not satisfy the quiet-box criterion.
+The instruction counts establish the work reduction independently of scheduling.
+
+The relevant logs use the `base-7`, `after-7`, and `native-7` prefixes under `/tmp/548-08/post-553`.
+A host-phase diagnostic separately records a cold viewer at 1134 ms and its growing edit at 489 ms.
+Its first solve occupies 693 ms, versus 379 ms for the edit, and painting afterward occupies 280 versus 103 ms.
+This diagnostic illustrates startup and scheduling variation, not a replacement for the alternating timing pair.
+The native profile records 28 thousand instruction samples with no lost samples.
+Route search and repeated pair counts remain significant costs, alongside allocation and painting geometry.
+Their profile stays in `after-7-perf-report.txt`.
+
+All required renderer and changed-crate tests pass.
+The full normal gate passes lint, formatting, both TypeScript projects, 4936 module tests, and 285 system tests.
+Its repository lane reports 160 passes and one failure because the route file contains 604 lines.
+The comment correction fixes that failure, and both focused Rust repository contracts pass afterward.
+The remaining serial browser stage then passes all 19 files with the final matching core and frontend build.
+A separate TypeScript run also passes after the endpoint helper becomes shared by the arrow tests.
+The full gate is not reported as one successful command because its original invocation stops at the line limit.
+All its stages now have passing evidence for the retained code.
+
+The changed inventory is Archboard 36, Archboard server 44, and Archboard server routes 20.
+Board persistence changes 52, Board rasterizer 64, and Board viewer 52.
+Browser application changes 36, Codex realtime voice 108, and Codex workhorse 52.
+Command dispatch changes 28, Command interface 60, and Inventory service 20.
+Live panes changes 28, Renderer layout 28, and Semantic renderer 36.
+Skill evaluation changes 40, Voice coordinator 28, and Web shop 12.
+Of these 744 changed drawings, 72 are whole-board drawings.
+
+The next speed probe must retain the repaired header and trunk contracts.
+The profile supports removing repeated pair scans or deciding port order before another whole hierarchy pass.
+A future worker or Graphviz port change needs separate evidence for cold startup and text serialization costs.
+The parent still convenes the council, and TASK-548.08 remains In Progress.
