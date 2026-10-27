@@ -32,7 +32,7 @@ function ModelStateDetails({
 				data-selected-state=""
 				data-lifecycle="none"
 				data-standing="unavailable"
-				className="border-border shrink-0 space-y-2 border-b px-6 py-3"
+				className="border-border shrink-0 space-y-2 border-b px-6 py-3 in-data-presenting:hidden"
 			>
 				<p className="text-control font-semibold">No implemented state</p>
 				<ModelStateHistory
@@ -50,7 +50,7 @@ function ModelStateDetails({
 			data-selected-state={state.id}
 			data-lifecycle={state.lifecycle}
 			data-standing={proposalStanding(state)}
-			className="border-border shrink-0 space-y-2 border-b px-6 py-3"
+			className="border-border shrink-0 space-y-2 border-b px-6 py-3 in-data-presenting:hidden"
 		>
 			<p className="text-control font-semibold">
 				{lifecycleName(state.lifecycle)} · {state.name}

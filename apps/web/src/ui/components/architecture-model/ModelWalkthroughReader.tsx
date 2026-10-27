@@ -48,7 +48,7 @@ function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
 	return (
 		<>
 			{request === null && props.model.walkthroughs.length > 0 && (
-				<div className="border-border shrink-0 border-b px-4 py-1">
+				<div className="border-border shrink-0 border-b px-4 py-1 in-data-presenting:hidden">
 					<DropdownMenu>
 						<DropdownMenu.Trigger
 							data-slot="model-walkthrough-selector"

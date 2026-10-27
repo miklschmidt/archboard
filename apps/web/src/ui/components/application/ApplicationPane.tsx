@@ -209,6 +209,7 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 				connected={session.connected}
 				focused={props.focused}
 				onReading={reportCanonicalReading}
+				onUserChange={session.userChanged}
 			>
 				{props.recordedArchitecture !== undefined ? (
 					<RecordedModelStage

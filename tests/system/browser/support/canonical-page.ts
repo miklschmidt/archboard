@@ -27,6 +27,24 @@ const SMALL_PIPELINE: Scene = {
 	edges: [{ from: "Ingest", to: "Warehouse", kind: "data", label: "rows" }],
 };
 
+/** The authored reading used by the generic local voice workflow. */
+const VOICE_PIPELINE: Scene = {
+	nodes: [
+		{ name: "Ingest", kind: "service" },
+		{ name: "Warehouse", kind: "datastore" },
+	],
+	edges: [{ from: "Ingest", to: "Warehouse", kind: "data" }],
+	walkthroughs: [
+		{
+			name: "Where rows go",
+			beats: [
+				{ heading: "All of it", body: "Two parts, one direction." },
+				{ heading: "The warehouse", body: "Where the rows land." },
+			],
+		},
+	],
+};
+
 /** Arrange authored files for a visible workflow, then read them through the public model interface. */
 async function seedCanonicalModel(vault: string, name: string, scene: Scene = SMALL_PIPELINE) {
 	if (existsSync(join(vault, "model.json")))
@@ -103,4 +121,11 @@ async function modelDrawn(evaluate: <T>(expression: string) => Promise<T>): Prom
 	);
 }
 
-export { seedCanonicalModel, modelAddress, modelDrawn, MODEL_STAGE, SMALL_PIPELINE };
+export {
+	seedCanonicalModel,
+	modelAddress,
+	modelDrawn,
+	MODEL_STAGE,
+	SMALL_PIPELINE,
+	VOICE_PIPELINE,
+};

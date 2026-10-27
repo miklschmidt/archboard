@@ -13,7 +13,10 @@ type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["b
 type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 /** The parts of a reading the marks are compared by. */
-type MarkedReading = Pick<SemanticPaneContext, "board" | "variant" | "view" | "selection">;
+type MarkedReading = Pick<
+	SemanticPaneContext,
+	"board" | "variant" | "view" | "selection" | "architecture"
+>;
 
 /** One pane's marks. */
 interface UserMarks {
@@ -44,25 +47,28 @@ const READ: Readonly<Record<SemanticPanePart, (reading: MarkedReading) => unknow
 	 * @param reading The reading.
 	 * @returns The name, or undefined.
 	 */
-	board: (reading) => reading.board?.name,
+	board: (reading) =>
+		reading.architecture
+			? [reading.architecture.vault, reading.architecture.model]
+			: reading.board?.name,
 	/**
 	 * The variant's identity.
 	 * @param reading The reading.
 	 * @returns The id, or undefined.
 	 */
-	variant: (reading) => reading.variant?.id,
+	variant: (reading) => reading.architecture?.selection ?? reading.variant?.id,
 	/**
 	 * The view's identity.
 	 * @param reading The reading.
 	 * @returns The id, or undefined for the whole variant.
 	 */
-	view: (reading) => reading.view?.id,
+	view: (reading) => reading.architecture?.reading ?? reading.view?.id,
 	/**
 	 * Everything picked out.
 	 * @param reading The reading.
 	 * @returns The selection.
 	 */
-	selection: (reading) => reading.selection,
+	selection: (reading) => reading.architecture?.subjects ?? reading.selection,
 };
 
 /**
@@ -103,7 +109,7 @@ function createUserMarks(): UserMarks {
 	function take(reading: MarkedReading): readonly SemanticPanePart[] {
 		// A pane between two boards reads nothing for a moment. That is not where the user
 		// was going, so it neither tells anybody nor uses a mark up.
-		if (reading.board === null) {
+		if (reading.board === null && !reading.architecture) {
 			return [];
 		}
 		const told = PARTS.filter((part) => marked.has(part) && changed(reading, part));

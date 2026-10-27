@@ -18,14 +18,13 @@ import {
 	productionFixtureRecords,
 	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
-import { MODEL_STAGE, seedCanonicalModel } from "./support/canonical-page.ts";
+import { MODEL_STAGE, seedCanonicalModel, VOICE_PIPELINE } from "./support/canonical-page.ts";
 import { pickModelChoice } from "./support/model-choice.ts";
 import { drawnId } from "./support/drilling.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import {
 	AGENT_PANEL,
 	MODEL_NAME_EXPRESSION,
-	PANE_HEADER,
 	PANE_SECTIONS,
 	openConversation,
 	stageIsFullscreen,
@@ -65,22 +64,7 @@ test(
 				.slice(from)
 				.filter((record) => record.kind === "frame" && record.method === method);
 
-		const model = await seedCanonicalModel(server.vault, "workbench", {
-			nodes: [
-				{ name: "Ingest", kind: "service" },
-				{ name: "Warehouse", kind: "datastore" },
-			],
-			edges: [{ from: "Ingest", to: "Warehouse", kind: "data" }],
-			walkthroughs: [
-				{
-					name: "Where rows go",
-					beats: [
-						{ heading: "All of it", body: "Two parts, one direction." },
-						{ heading: "The warehouse", body: "Where the rows land." },
-					],
-				},
-			],
-		});
+		const model = await seedCanonicalModel(server.vault, "workbench", VOICE_PIPELINE);
 		await openForVoice(browser, server.base);
 		// This person turned subtitles off on an earlier visit, and the page keeps that choice.
 		await browser.eval<boolean>(`(localStorage.setItem('${SUBTITLES_KEY}', 'false'), true)`);
@@ -261,13 +245,15 @@ test(
 		expect(await stageIsFullscreen(browser)).toBe(true);
 		expect(presented.box).toMatchObject({ place: "free", state: "muted" });
 		expect(presented.orb).toBe("box");
-		// The presented pane is the picture alone: its header and its sidebar step out of it.
+		// Fullscreen keeps the picture and hides the reader's navigation and inspection controls.
 		expect(
-			await browser.eval<readonly [number, number]>(`(() => {
-				const chrome = [...document.querySelectorAll('${PANE_SECTIONS} ${PANE_HEADER}, ${PANE_SECTIONS} [data-slot="semantic-sidebar"]')];
-				return [chrome.length, chrome.filter(node => node.checkVisibility()).length];
-			})()`),
-		).toEqual([2, 0]);
+			await browser.eval<
+				boolean[]
+			>(`['pane-header', 'model-navigation', 'model-inspector', 'model-breadcrumbs', 'model-selection-bar', 'model-state-details'].map(slot => {
+				const element = document.querySelector('${PANE_SECTIONS} [data-slot="' + slot + '"]');
+				return element !== null && !element.checkVisibility();
+			})`),
+		).toEqual([true, true, true, true, true, true]);
 		// The bar's key and the keys at the end of the voice box over the picture can be pressed.
 		for (const scale of ["1", "2"]) {
 			await browser.run(["set", "viewport", "1920", "1080", scale]);
@@ -393,6 +379,11 @@ test(
 			'[data-slot="model-walkthrough-selector"]',
 			`[data-walkthrough-id="${model.walkthroughs[0]!.id}"]`,
 		);
+		await pollUntil(
+			() => presentedStep(browser),
+			(step) => step.index === "0" && !step.moving,
+			"the captured walkthrough to draw before narration",
+		);
 		await browser.run(["click", "[data-slot='semantic-presentation-narrate']"]);
 		await pollUntil(
 			() => presentedStep(browser),
@@ -426,7 +417,10 @@ test(
 		// A pick by hand mid-talk is speech too, naming what is now selected and never its id: the
 		// voice is asked to stop and check in (TASK-293.05).
 		const ingest = await drawnId(browser, "Ingest");
-		await browser.run(["click", `[data-slot="model-diagram"] [data-semantic-id="${ingest}"]`]);
+		await browser.run([
+			"click",
+			`[data-slot="model-walkthrough"] [data-slot="model-diagram"] [data-semantic-id="${ingest}"]`,
+		]);
 		const [, , picked] = await spokenBy(
 			3,
 			"the user's pick during the narration to be handed to the voice model as speech",

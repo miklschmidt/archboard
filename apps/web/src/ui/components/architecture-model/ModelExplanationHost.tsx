@@ -11,6 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@archboard/ui-kit/components";
 import { tabSessionId } from "#ui/clients/pane-session/tab-session.ts";
 import { ModelExplanationContext } from "#ui/state/architecture-model/explanations.ts";
+import type { UserMarks } from "#ui/state/pane-session/user-marks.ts";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import {
 	explanationKey,
@@ -26,6 +27,7 @@ interface HostProps {
 	connected: boolean;
 	focused: boolean;
 	onReading: (reading: PaneReading | null) => void;
+	onUserChange: UserMarks["mark"];
 	children: ReactNode;
 }
 
@@ -69,8 +71,13 @@ function ModelExplanationHost(props: HostProps): JSX.Element {
 		[mutate, tab],
 	);
 	const value = useMemo(
-		() => ({ invoke, report: props.onReading, pending: isPending || !props.connected }),
-		[invoke, props.onReading, isPending, props.connected],
+		() => ({
+			invoke,
+			userChanged: props.onUserChange,
+			report: props.onReading,
+			pending: isPending || !props.connected,
+		}),
+		[invoke, props.onUserChange, props.onReading, isPending, props.connected],
 	);
 	const action = query.data?.success ? query.data.action : null;
 	const control = useCallback(

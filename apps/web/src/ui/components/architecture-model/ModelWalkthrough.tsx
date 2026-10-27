@@ -13,6 +13,7 @@ import {
 } from "#ui/components/semantic-board-canvas/SemanticPresentation.tsx";
 import { projectModel, type Model } from "@archboard/board/content";
 import { projectFlow } from "#ui/rules/architecture-model/flow-reading.ts";
+import { useModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
 import type { DrivenPlace } from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";
 import { useWalkthroughBeat } from "#ui/hooks/architecture-model/use-walkthrough-beat.ts";
@@ -71,8 +72,9 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 	);
 	const index = position.beatIndex;
 	const available = unavailable === null;
-	const selected = useMemo(() => new Set(reading.selection), [reading.selection]);
 	const projection = useMemo(() => projectionOf(model, reading), [model, reading]);
+	const selection = useModelSelection(projection, reading.selection, key);
+	const selected = selection.ids;
 	const location = useMemo(
 		() => ({
 			state: null,
@@ -121,8 +123,8 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 						grammar={reading.grammar}
 						projection={projection}
 						selected={selected}
-						onSelect={ignore}
-						onSelectMany={ignore}
+						onSelect={selection.select}
+						onSelectMany={selection.selectMany}
 						onOpen={ignore}
 						reducedMotion={props.reducedMotion}
 						reserve={index < 0 ? 0 : reserve}

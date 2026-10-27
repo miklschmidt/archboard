@@ -79,7 +79,11 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 			projectModel(model, scope, focus, filters, comparison.reference, bookmarkReading?.visibility),
 		[model, scope, focus, filters, comparison.reference, bookmarkReading?.visibility],
 	);
-	const selection = useModelSelection(projection, props.subject);
+	const initialSelection = useMemo(
+		() => (props.subject === null ? [] : [props.subject]),
+		[props.subject],
+	);
+	const selection = useModelSelection(projection, initialSelection);
 	const explanation = useModelExplanation(props.vault, model, location, selection.ids);
 	const { clear } = selection;
 	const [explanationOpen, setExplanationOpen] = useState(false);
@@ -298,8 +302,9 @@ function ScopedModelReading(
 	return (
 		<div className="flex min-h-0 flex-1">
 			<nav
+				data-slot="model-navigation"
 				aria-label={props.grammar === "architecture" ? "Modules" : "Participants"}
-				className="border-border w-80 shrink-0 overflow-y-auto border-r px-6 py-8"
+				className="border-border w-80 shrink-0 overflow-y-auto border-r px-6 py-8 in-data-presenting:hidden"
 			>
 				<h3 className="text-title mb-4 font-semibold">
 					{props.grammar === "architecture" ? "Modules" : "Participants"}
@@ -360,7 +365,10 @@ function ScopedModelReading(
 					{props.overlay}
 				</div>
 			</div>
-			<div className="border-border w-80 shrink-0 overflow-y-auto border-l px-6 py-8">
+			<div
+				data-slot="model-inspector"
+				className="border-border w-80 shrink-0 overflow-y-auto border-l px-6 py-8 in-data-presenting:hidden"
+			>
 				<ModelHiddenSelection
 					projection={props.projection}
 					selected={selected}

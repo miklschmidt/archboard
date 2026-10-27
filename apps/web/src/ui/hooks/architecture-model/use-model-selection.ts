@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react";
+import { useCallback, useContext, useMemo, useState } from "react";
+import { ModelExplanationContext } from "#ui/state/architecture-model/explanations.ts";
 import type { projectModel } from "@archboard/board/content";
 
 type Projection = ReturnType<typeof projectModel>;
@@ -6,23 +7,32 @@ type Projection = ReturnType<typeof projectModel>;
 /**
  * Selection holds canonical identities independently from navigation and layout.
  * @param projection The current visible lines and their authored relationships.
- * @param initialSubject An explicit reference destination, separate from later pointer selection.
+ * @param initial Authored selection or an explicit reference destination.
+ * @param readingKey A captured beat identity that resets transient selection when it changes.
  * @returns The selection and immediate pointer, keyboard, and clearing actions.
  */
-function useModelSelection(projection: Projection, initialSubject: string | null) {
-	const [ids, setIds] = useState<ReadonlySet<string>>(
-		() => new Set(initialSubject === null ? [] : [initialSubject]),
-	);
-	const clear = useCallback((): void => setIds(new Set()), []);
+function useModelSelection(projection: Projection, initial: readonly string[], readingKey = "") {
+	const host = useContext(ModelExplanationContext);
+	const userChanged = host?.userChanged;
+	const baseline = useMemo(() => new Set(initial), [initial]);
+	const [choice, setChoice] = useState<{ key: string; ids: ReadonlySet<string> }>(() => ({
+		key: readingKey,
+		ids: baseline,
+	}));
+	const ids = choice.key === readingKey ? choice.ids : baseline;
 	const selectMany = useCallback(
 		(subjects: readonly string[], toggle = false): void => {
 			const authored = subjects.flatMap((id) => {
 				const connection = projection.connections.find(({ line }) => line.id === id);
 				return connection === undefined ? [id] : connection.joins.map((edge) => edge.id);
 			});
-			setIds((current) => selectedAfter(current, authored, toggle));
+			userChanged?.("selection");
+			setChoice((current) => ({
+				key: readingKey,
+				ids: selectedAfter(current.key === readingKey ? current.ids : baseline, authored, toggle),
+			}));
 		},
-		[projection.connections],
+		[projection.connections, readingKey, baseline, userChanged],
 	);
 	const select = useCallback(
 		(id: string | null, toggle = false): void => {
@@ -30,7 +40,7 @@ function useModelSelection(projection: Projection, initialSubject: string | null
 		},
 		[selectMany],
 	);
-
+	const clear = useCallback((): void => selectMany([]), [selectMany]);
 	return { ids, select, selectMany, clear };
 }
 
