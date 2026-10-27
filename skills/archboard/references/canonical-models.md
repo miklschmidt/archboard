@@ -1038,3 +1038,57 @@ Adopted successors and unrelated current architecture keep their content.
 Recovery and exact retries use the existing journal and return the same retained correction.
 Publication and fetch retain the complete correction dependency chain.
 Source history remains separate and can become unavailable.
+
+## Export and restore a model
+
+A portable bundle contains authored inputs and their complete archive.
+It preserves model and subject identities, active proposals, decisions, corrections, standing conflicts, and walkthrough targets.
+Repository source files remain separate from retained source evidence.
+Foreign model references keep their exact pins and require their separately available models.
+
+With the source vault available, export its complete architecture:
+
+```bash
+archboard model export --out architecture.json -C <source-directory>
+```
+
+Create an empty `.archboard/vault` in the destination directory.
+If the destination is outside a source repository, initialize private history with `model archive-init`.
+Configure Git identity and signing in the returned archive directory before import.
+For a source checkout, its existing Git configuration governs import.
+
+Create a request with the exported envelope and the complete destination revision.
+An empty vault uses this revision:
+
+```json
+{
+	"digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+	"files": []
+}
+```
+
+The complete request contains `bundle`, `expectedRevision`, `operationId`, `writer`, and `doing`.
+Put the exported JSON object in `bundle`.
+Use a new operation identity for each new intent.
+Submit the request:
+
+```bash
+archboard model import --input import-request.json -C <destination-directory>
+```
+
+Import accepts empty inputs or byte-identical inputs whose archive needs restoration.
+It refuses replacement of different authored content.
+Malformed paths, changed fingerprints, corrupt objects, and missing dependencies refuse before imported content becomes visible.
+A planning-only model keeps no current designation, and its installation checkpoint records `state:null`.
+
+Import uses the normal installation journal, signing policy, atomic writer, and recovery operation.
+If interruption leaves an unfinished installation, run `model recover` in the same destination.
+Preserve foreign bytes and restore the recorded branch before recovery when its diagnostic requires them.
+An identical import retry returns the same receipt.
+Another request with that operation identity refuses.
+
+A complete bundle can restore deleted local history behind unchanged current inputs.
+Use the current reader's complete revision for that restoration request.
+Archive deletion remains possible, so keep the bundle as a backup.
+Import does not copy publication destinations, publication receipts, standing claims, or private recovery files.
+Configure and publish destination history explicitly when collaboration requires it.

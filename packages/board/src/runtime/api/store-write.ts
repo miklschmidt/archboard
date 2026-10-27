@@ -31,3 +31,7 @@ export {
 } from "#runtime/operations/model-edit/claims.ts";
 
 export { initializeArchitectureArchive } from "#runtime/operations/history/initialize.ts";
+export {
+	exportArchitectureModel,
+	importArchitectureModel,
+} from "#runtime/operations/history/portable.ts";

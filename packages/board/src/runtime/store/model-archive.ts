@@ -25,6 +25,8 @@ import {
 import { ArchitectureModuleEditSchema } from "#shared/schemas/model-operations.ts";
 import { captureBoundSources } from "#runtime/store/model-source.ts";
 
+import { PortableInstallationSchema } from "#shared/schemas/model-portable.ts";
+
 const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, publication: true })
 	.extend({
 		schemaVersion: z.literal(1),
@@ -32,10 +34,15 @@ const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, pub
 		vault: z.string(),
 		narrativeDependencies: z.array(ArchitectureCheckpointSchema.shape.id).optional(),
 		edit: ArchitectureModuleEditSchema.optional(),
+		installation: PortableInstallationSchema.optional(),
 		reconciliations: FamilyStandingSchema.optional(),
 		subjects: z.array(QualifiedSubjectIdSchema).optional(),
 	})
-	.strict();
+	.strict()
+	.refine(
+		(record) => record.correction === undefined || record.state !== null,
+		"A correction requires an existing state identity.",
+	);
 const ArchiveRecordSchema = z.discriminatedUnion("kind", [
 	CheckpointRecordSchema,
 	z.object({ schemaVersion: z.literal(1), kind: z.literal("synchronization") }).strict(),

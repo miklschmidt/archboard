@@ -90,6 +90,14 @@ function requireFileImage(
 		);
 }
 /**
+ * Read the signed intent for either an edit or portable installation.
+ * @param record The immutable operation record.
+ * @returns The retained request.
+ */
+function retainedIntent(record: Awaited<ReturnType<typeof readRecord>>) {
+	return record.kind === "checkpoint" ? (record.edit ?? record.installation) : undefined;
+}
+/**
  * Prove that private recovery data describes its immutable signed checkpoint.
  * @param context The caller checkout or invocation context.
  * @param journal The durable installation record.
@@ -109,7 +117,7 @@ async function requirePrepared(context: ArchiveContext, journal: ModelJournal) {
 		!sameSemanticValue(
 			{
 				vault: record.vault,
-				edit: record.edit,
+				edit: retainedIntent(record),
 				revision: record.revision,
 				subjects: record.subjects,
 			},
@@ -184,7 +192,8 @@ function installFile(vault: string, file: FileImage): void {
 		return;
 	}
 	const bytes = Buffer.from(file.after, "base64");
-	if (!existsSync(path) || !readFileSync(path).equals(bytes)) writeFileAtomic(path, bytes);
+	if (!existsSync(path) || !readFileSync(path).equals(bytes))
+		writeFileAtomic(path, bytes, { createParents: true });
 }
 /**
  * Record durable progress without treating a failed record write as completion.

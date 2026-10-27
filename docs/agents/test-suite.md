@@ -633,3 +633,16 @@ Legacy narration and recording owners retain their existing regression coverage.
 Canonical narration has one controlled browser owner in `canonical-model-narration.test.ts`.
 It covers report delivery before voice starts, matching pane requests, manual steps, pinned narrative text, and departure.
 The external media and Codex substitutes remain in the existing production voice fixture.
+
+## Portable canonical models
+
+`packages/board/tests/runtime/operations/history/portable*.test.ts` owns portable architecture behavior.
+The public architecture operations use real temporary files and disposable Git repositories.
+Coverage includes exact identities, completed decisions, corrections, standing conflicts, narrative targets, private archives, and lost-history restoration.
+The same owner covers incomplete closure, destination refusal, signing, interruption, foreign bytes, and exact retry.
+The existing durable crash fixture supplies real interruption points.
+No second installer or history implementation belongs to these tests.
+
+`tests/system/semantic-boards/model-portable.test.ts` owns strict CLI and HTTP routing and refused output preservation.
+The parent owns any visible integration in checkpoint selectors, including a planning checkpoint with no state designation.
+No browser test or model evaluation belongs to the backend slice.

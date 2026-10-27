@@ -32,7 +32,7 @@ import { notifyArchitecture, type Completion } from "#runtime/store/model-news.t
  * @param request The original operation intent.
  */
 function requireSameRequest(
-	original: ArchitectureModuleEdit | undefined,
+	original: ModelJournal["request"] | undefined,
 	request: ArchitectureModuleEdit,
 ): void {
 	if (!sameSemanticValue(original, request))

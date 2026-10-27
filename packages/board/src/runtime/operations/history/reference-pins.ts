@@ -33,7 +33,7 @@ async function retainedReference(address: Address) {
 		.filter(
 			(candidate) =>
 				candidate.model === address.model &&
-				candidate.state.id === address.state &&
+				candidate.state?.id === address.state &&
 				candidate.revision.digest === current.revision.digest,
 		)
 		.map((candidate) => candidate.id)

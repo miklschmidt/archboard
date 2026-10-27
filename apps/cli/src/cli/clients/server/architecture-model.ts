@@ -1,4 +1,8 @@
 import {
+	ArchitectureExportResultSchema,
+	ArchitectureImportRequestSchema,
+} from "@archboard/board/model";
+import {
 	ExplanationActionRequestSchema,
 	ExplanationActionResultSchema,
 } from "@archboard/workbench/browser-contract";
@@ -302,3 +306,28 @@ function explainArchitectureOnServer(input: z.infer<typeof ExplanationActionRequ
 			);
 }
 export { explainArchitectureOnServer };
+
+/**
+ * Export complete canonical inputs and history through the shared runtime.
+ * @returns The portable envelope or refusal.
+ */
+function exportArchitectureModelOnServer() {
+	return architectureResult(
+		ArchitectureExportResultSchema,
+		"/api/architecture/export",
+		jsonPost({}),
+	);
+}
+/**
+ * Install a portable model through the shared runtime.
+ * @param input The complete installation request.
+ * @returns The durable installation receipt or refusal.
+ */
+function importArchitectureModelOnServer(input: z.infer<typeof ArchitectureImportRequestSchema>) {
+	return architectureResult(
+		ArchitectureModuleEditResultSchema,
+		"/api/architecture/import",
+		jsonPost(input),
+	);
+}
+export { exportArchitectureModelOnServer, importArchitectureModelOnServer };

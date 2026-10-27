@@ -91,7 +91,7 @@ const ArchitectureCheckpointSchema = z
 	.object({
 		id: GitObjectIdSchema,
 		model: SemanticIdSchema,
-		state: StateMetadataSchema,
+		state: StateMetadataSchema.nullable(),
 		selection: SelectedStateSchema.nullable().optional(),
 		lifecycle: LifecycleSchema.optional(),
 		correction: CorrectionSchema.optional(),

@@ -138,6 +138,7 @@ function checkpointMetadata(
 		kind: _kind,
 		vault: _vault,
 		edit: _edit,
+		installation: _installation,
 		subjects: _subjects,
 		reconciliations: _reconciliations,
 		...metadata
@@ -179,7 +180,7 @@ function editResult(
 	id: string,
 	record: ReturnType<typeof CheckpointRecordSchema.parse>,
 ): Extract<ArchitectureModuleEditResult, { success: true }> {
-	const request = record.edit;
+	const request = record.edit ?? record.installation;
 	if (request === undefined)
 		throw new ArchiveError(
 			"CHECKPOINT_INVALID",
