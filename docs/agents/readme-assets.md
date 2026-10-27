@@ -177,3 +177,17 @@ quiet machine. The command makes one asset at a time.
 Add a producer to `scripts/readme-assets/assets.ts` and an entry to the
 manifest with `"hash": null`. The kit refuses to run, and the repository lane's
 test fails, while the two disagree about an asset's kind, Codex need or files.
+
+The web-shop fixture now stores canonical inputs and `history.import.json`.
+That file is a public model import request with a portable archive.
+It preserves original readings and proposal baselines that current inputs cannot reproduce.
+The archive is a tracked dependency of this historical example, not a render artifact.
+
+The take harness copies the tracked inputs into its disposable repository.
+It keeps the configured Git identity and signer, then restores history through the public importer.
+The importer refuses different authored inputs.
+A changed fixture needs a fresh public export and a matching import request.
+Keep the store serializer for these exact inputs, including the policy.
+General formatting must not change the bytes that the archive request names.
+The synthetic origin `https://example.invalid/web-shop.git` identifies local references and is never fetched.
+Takes of the repository architecture export its complete live archive through the same public interface.

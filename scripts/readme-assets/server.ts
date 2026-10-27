@@ -20,6 +20,8 @@ import { parseSemanticBoard, type SemanticBoard } from "@archboard/board/documen
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { ROOT, attempt, run, scratch, type Ran } from "./tools.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
+import { restoreFixtureHistory } from "./fixture-history.ts";
 
 /** The tracked vaults a take can be filmed over. */
 type TrackedVault = "examples/web-shop" | ".archboard/vault";
@@ -91,7 +93,11 @@ async function copyTracked(vault: TrackedVault, into: string): Promise<void> {
 async function startServer(name: string, vault: TakeSource, codex: boolean): Promise<TakeServer> {
 	const home = scratch("takes", name);
 	const holder = typeof vault === "string" ? join(home, "repository") : vault.directory;
-	if (typeof vault === "string") await copyTracked(vault, join(holder, ".archboard", "vault"));
+	if (typeof vault === "string") {
+		rmSync(holder, { recursive: true, force: true });
+		await copyTracked(vault, join(holder, ".archboard", "vault"));
+		await restoreFixtureHistory(vault, holder);
+	}
 	return launch(home, holder, codex);
 }
 

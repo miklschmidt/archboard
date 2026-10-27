@@ -1,0 +1,249 @@
+{
+  "id": "ud0cQDB9",
+  "name": "Starting point",
+  "summary": "What every option shares: the storefront asks for suggestions and sold-out products are dropped. How the lists are made is still open.",
+  "migration": {
+    "legacy": "Shop/gsfCCrqV#ud0cQDB9",
+    "predecessor": null,
+    "baseline": {
+      "kind": "empty",
+      "state": null
+    },
+    "reason": "Preserve the independent planning root.",
+    "checkpoint": "b1fad19fdf97ddc8c4d3826032a1ce5b20d3170c"
+  },
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "predecessor": null,
+  "predecessorRevision": "32bb5070904076faa5d23359aa5c91dcc72cbd827cd465de377268fa6ee7c6fb",
+  "baseline": "b38ef58caabf2453e364af0a41da7caac1912e9f",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "Shop/MKhTEYqf#cgbB3aQp",
+      "kind": "module",
+      "value": {
+        "order": 1000,
+        "name": "Storefront",
+        "kind": "ui",
+        "responsibility": "Shows up to 8 suggestions under each product",
+        "schemaVersion": 1,
+        "id": "Shop/MKhTEYqf#cgbB3aQp"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/MKhTEYqf#cgbB3aQp",
+      "placement": {
+        "holder": "Shop"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#e9VEPxk0",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "http",
+        "label": "GET /recommendations/{product}",
+        "emphasis": "hero",
+        "traffic": {
+          "speed": 80,
+          "volume": 1
+        },
+        "id": "Shop/gsfCCrqV#e9VEPxk0",
+        "to": "Shop/gsfCCrqV#6F35VHCd"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#e9VEPxk0",
+      "placement": {
+        "holder": "Shop/MKhTEYqf#cgbB3aQp"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#pehY1Vt2",
+      "kind": "module",
+      "value": {
+        "order": 2000,
+        "name": "Recommendations API",
+        "kind": "module",
+        "responsibility": "Answers which products to show beside a product",
+        "schemaVersion": 1,
+        "id": "Shop/gsfCCrqV#pehY1Vt2"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#pehY1Vt2",
+      "placement": {
+        "holder": "Shop"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#6F35VHCd",
+      "kind": "module",
+      "value": {
+        "order": 3000,
+        "name": "Suggest route",
+        "kind": "route",
+        "responsibility": "GET /recommendations/{product}: up to 8 products to show beside it",
+        "schemaVersion": 1,
+        "id": "Shop/gsfCCrqV#6F35VHCd"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#6F35VHCd",
+      "placement": {
+        "holder": "Shop/gsfCCrqV#pehY1Vt2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#QgAzuExP",
+      "kind": "relationship",
+      "value": {
+        "order": 2000,
+        "kind": "data",
+        "label": "read the list for a product",
+        "emphasis": "hero",
+        "traffic": {
+          "speed": 80,
+          "volume": 1
+        },
+        "id": "Shop/gsfCCrqV#QgAzuExP",
+        "to": "Shop/gsfCCrqV#2YPq2CN8"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#QgAzuExP",
+      "placement": {
+        "holder": "Shop/gsfCCrqV#6F35VHCd"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#n7hOZngs",
+      "kind": "relationship",
+      "value": {
+        "order": 3000,
+        "kind": "call",
+        "label": "drop sold-out products",
+        "emphasis": "normal",
+        "traffic": {
+          "speed": 80,
+          "volume": 1
+        },
+        "id": "Shop/gsfCCrqV#n7hOZngs",
+        "to": "Shop/gsfCCrqV#Fu665Uqs"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#n7hOZngs",
+      "placement": {
+        "holder": "Shop/gsfCCrqV#6F35VHCd"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#Fu665Uqs",
+      "kind": "module",
+      "value": {
+        "order": 4000,
+        "name": "Sold-out filter",
+        "kind": "function",
+        "responsibility": "Drops suggestions nobody can buy right now",
+        "schemaVersion": 1,
+        "id": "Shop/gsfCCrqV#Fu665Uqs"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#Fu665Uqs",
+      "placement": {
+        "holder": "Shop/gsfCCrqV#pehY1Vt2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#XhQXwtRB",
+      "kind": "relationship",
+      "value": {
+        "order": 4000,
+        "kind": "http",
+        "label": "how many are left",
+        "emphasis": "normal",
+        "traffic": {
+          "speed": 80,
+          "volume": 1
+        },
+        "id": "Shop/gsfCCrqV#XhQXwtRB",
+        "to": "Shop/MKhTEYqf#HYDbL5fE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#XhQXwtRB",
+      "placement": {
+        "holder": "Shop/gsfCCrqV#Fu665Uqs"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#2YPq2CN8",
+      "kind": "module",
+      "value": {
+        "order": 5000,
+        "name": "Suggestions",
+        "kind": "datastore",
+        "responsibility": "The products to suggest for each product",
+        "schemaVersion": 1,
+        "id": "Shop/gsfCCrqV#2YPq2CN8"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#2YPq2CN8",
+      "placement": {
+        "holder": "Shop"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/MKhTEYqf#HYDbL5fE",
+      "kind": "module",
+      "value": {
+        "order": 6000,
+        "name": "Inventory service",
+        "kind": "service",
+        "responsibility": "Knows the stock and sets it aside for an order",
+        "groups": [
+          "fulfilment"
+        ],
+        "schemaVersion": 1,
+        "id": "Shop/MKhTEYqf#HYDbL5fE",
+        "references": [
+          {
+            "repo": "example.invalid/web-shop",
+            "model": "Shop",
+            "subject": "Shop/MKhTEYqf#HYDbL5fE",
+            "state": "current"
+          }
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/MKhTEYqf#HYDbL5fE",
+      "placement": {
+        "holder": "Shop"
+      }
+    }
+  ]
+}

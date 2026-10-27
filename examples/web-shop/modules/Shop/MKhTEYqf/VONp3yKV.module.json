@@ -1,0 +1,28 @@
+{
+  "order": 8000,
+  "name": "Timeout guard",
+  "kind": "function",
+  "responsibility": "Cancels an order still running after 10 seconds",
+  "description": "Started by Place order for every order. When it fires it releases the reserved stock and refunds a charge that went through; the shopper sees an error page.",
+  "schemaVersion": 1,
+  "id": "Shop/MKhTEYqf#VONp3yKV",
+  "parent": "Shop/MKhTEYqf#lwmpnaVU",
+  "outgoing": [
+    {
+      "order": 10000,
+      "kind": "http",
+      "label": "release the stock",
+      "emphasis": "muted",
+      "id": "Shop/MKhTEYqf#C2JNdx5s",
+      "to": "Shop/MKhTEYqf#HYDbL5fE"
+    },
+    {
+      "order": 11000,
+      "kind": "http",
+      "label": "refund the charge",
+      "emphasis": "muted",
+      "id": "Shop/MKhTEYqf#dkNRueI0",
+      "to": "Shop/MKhTEYqf#ZaOafnWt"
+    }
+  ]
+}

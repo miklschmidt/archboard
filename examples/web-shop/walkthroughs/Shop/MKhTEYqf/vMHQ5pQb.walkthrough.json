@@ -1,0 +1,237 @@
+{
+  "schemaVersion": 1,
+  "id": "Shop/MKhTEYqf#vMHQ5pQb",
+  "name": "How an order is placed today",
+  "target": {
+    "state": "current"
+  },
+  "beats": [
+    {
+      "id": "Shop/MKhTEYqf#L5E53LtJ",
+      "title": "The shopper waits for everything",
+      "narrative": "When a shopper presses Pay, Place order reserves stock, charges the card, saves the order and sends the receipt before it answers. Every one of those calls runs while the shopper watches a spinner.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "Shop/MKhTEYqf#cgbB3aQp",
+            "Shop/MKhTEYqf#lwmpnaVU",
+            "Shop/MKhTEYqf#wlyh3hT6",
+            "Shop/MKhTEYqf#ZaOafnWt",
+            "Shop/MKhTEYqf#lXgq75bO",
+            "Shop/MKhTEYqf#kZjjfq1m",
+            "Shop/MKhTEYqf#4M4pdgk0",
+            "Shop/MKhTEYqf#VONp3yKV",
+            "Shop/MKhTEYqf#Q2XClLOC",
+            "Shop/MKhTEYqf#HYDbL5fE"
+          ],
+          "relationships": [
+            "Shop/MKhTEYqf#LrbGsGwG",
+            "Shop/MKhTEYqf#6EKtMmuD",
+            "Shop/MKhTEYqf#tLHGTzaf",
+            "Shop/MKhTEYqf#mOCWkDAa",
+            "Shop/MKhTEYqf#YeYYgWtm",
+            "Shop/MKhTEYqf#3PN9WBRn",
+            "Shop/MKhTEYqf#AdNRbD8D",
+            "Shop/MKhTEYqf#ywGKHoBq",
+            "Shop/MKhTEYqf#ys6hWCoY",
+            "Shop/MKhTEYqf#C2JNdx5s",
+            "Shop/MKhTEYqf#dkNRueI0"
+          ],
+          "flows": [
+            "Shop/MKhTEYqf#yRuuRooQ"
+          ]
+        },
+        "selection": [
+          "Shop/MKhTEYqf#kZjjfq1m",
+          "Shop/MKhTEYqf#LrbGsGwG"
+        ],
+        "focus": [
+          "Shop/MKhTEYqf#cgbB3aQp",
+          "Shop/MKhTEYqf#lwmpnaVU",
+          "Shop/MKhTEYqf#wlyh3hT6",
+          "Shop/MKhTEYqf#ZaOafnWt",
+          "Shop/MKhTEYqf#lXgq75bO",
+          "Shop/MKhTEYqf#kZjjfq1m",
+          "Shop/MKhTEYqf#4M4pdgk0",
+          "Shop/MKhTEYqf#VONp3yKV",
+          "Shop/MKhTEYqf#Q2XClLOC",
+          "Shop/MKhTEYqf#HYDbL5fE"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "Shop/MKhTEYqf#awUQqUri",
+      "title": "Stock is held while the card is charged",
+      "narrative": "Place order reserves the items first and only then charges the card. While the bank takes its time, nobody else can buy those items.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "Shop/MKhTEYqf#cgbB3aQp",
+            "Shop/MKhTEYqf#lwmpnaVU",
+            "Shop/MKhTEYqf#wlyh3hT6",
+            "Shop/MKhTEYqf#ZaOafnWt",
+            "Shop/MKhTEYqf#lXgq75bO",
+            "Shop/MKhTEYqf#kZjjfq1m",
+            "Shop/MKhTEYqf#VONp3yKV",
+            "Shop/MKhTEYqf#HYDbL5fE"
+          ],
+          "relationships": [
+            "Shop/MKhTEYqf#LrbGsGwG",
+            "Shop/MKhTEYqf#6EKtMmuD",
+            "Shop/MKhTEYqf#tLHGTzaf",
+            "Shop/MKhTEYqf#mOCWkDAa",
+            "Shop/MKhTEYqf#YeYYgWtm",
+            "Shop/MKhTEYqf#ys6hWCoY",
+            "Shop/MKhTEYqf#C2JNdx5s",
+            "Shop/MKhTEYqf#dkNRueI0"
+          ],
+          "flows": [
+            "Shop/MKhTEYqf#yRuuRooQ"
+          ]
+        },
+        "selection": [
+          "Shop/MKhTEYqf#3uClgO14",
+          "Shop/MKhTEYqf#eEjCrF7z"
+        ],
+        "focus": [
+          "Shop/MKhTEYqf#cgbB3aQp",
+          "Shop/MKhTEYqf#lwmpnaVU",
+          "Shop/MKhTEYqf#wlyh3hT6",
+          "Shop/MKhTEYqf#ZaOafnWt",
+          "Shop/MKhTEYqf#lXgq75bO",
+          "Shop/MKhTEYqf#kZjjfq1m",
+          "Shop/MKhTEYqf#VONp3yKV",
+          "Shop/MKhTEYqf#HYDbL5fE"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "Shop/MKhTEYqf#yRuuRooQ"
+      }
+    },
+    {
+      "id": "Shop/MKhTEYqf#pCnCU5hG",
+      "title": "A slow email makes a slow checkout",
+      "narrative": "The confirmation page waits until Email provider accepts the receipt, and the email is tried up to 3 times. When the email service is slow, so is every checkout.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "Shop/MKhTEYqf#cgbB3aQp",
+            "Shop/MKhTEYqf#lwmpnaVU",
+            "Shop/MKhTEYqf#wlyh3hT6",
+            "Shop/MKhTEYqf#ZaOafnWt",
+            "Shop/MKhTEYqf#lXgq75bO",
+            "Shop/MKhTEYqf#kZjjfq1m",
+            "Shop/MKhTEYqf#4M4pdgk0",
+            "Shop/MKhTEYqf#VONp3yKV",
+            "Shop/MKhTEYqf#Q2XClLOC",
+            "Shop/MKhTEYqf#HYDbL5fE"
+          ],
+          "relationships": [
+            "Shop/MKhTEYqf#LrbGsGwG",
+            "Shop/MKhTEYqf#6EKtMmuD",
+            "Shop/MKhTEYqf#tLHGTzaf",
+            "Shop/MKhTEYqf#mOCWkDAa",
+            "Shop/MKhTEYqf#YeYYgWtm",
+            "Shop/MKhTEYqf#3PN9WBRn",
+            "Shop/MKhTEYqf#AdNRbD8D",
+            "Shop/MKhTEYqf#ywGKHoBq",
+            "Shop/MKhTEYqf#ys6hWCoY",
+            "Shop/MKhTEYqf#C2JNdx5s",
+            "Shop/MKhTEYqf#dkNRueI0"
+          ],
+          "flows": [
+            "Shop/MKhTEYqf#yRuuRooQ"
+          ]
+        },
+        "selection": [
+          "Shop/MKhTEYqf#lXgq75bO",
+          "Shop/MKhTEYqf#mOCWkDAa"
+        ],
+        "focus": [
+          "Shop/MKhTEYqf#cgbB3aQp",
+          "Shop/MKhTEYqf#lwmpnaVU",
+          "Shop/MKhTEYqf#wlyh3hT6",
+          "Shop/MKhTEYqf#ZaOafnWt",
+          "Shop/MKhTEYqf#lXgq75bO",
+          "Shop/MKhTEYqf#kZjjfq1m",
+          "Shop/MKhTEYqf#4M4pdgk0",
+          "Shop/MKhTEYqf#VONp3yKV",
+          "Shop/MKhTEYqf#Q2XClLOC",
+          "Shop/MKhTEYqf#HYDbL5fE"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "Shop/MKhTEYqf#tYvFPbbC",
+      "title": "After 10 seconds, the order is undone",
+      "narrative": "Timeout guard cancels any order still running after 10 seconds. It gives the stock back and refunds the card, even when the payment went through a moment later.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "Shop/MKhTEYqf#cgbB3aQp",
+            "Shop/MKhTEYqf#lwmpnaVU",
+            "Shop/MKhTEYqf#wlyh3hT6",
+            "Shop/MKhTEYqf#ZaOafnWt",
+            "Shop/MKhTEYqf#lXgq75bO",
+            "Shop/MKhTEYqf#kZjjfq1m",
+            "Shop/MKhTEYqf#4M4pdgk0",
+            "Shop/MKhTEYqf#VONp3yKV",
+            "Shop/MKhTEYqf#Q2XClLOC",
+            "Shop/MKhTEYqf#HYDbL5fE"
+          ],
+          "relationships": [
+            "Shop/MKhTEYqf#LrbGsGwG",
+            "Shop/MKhTEYqf#6EKtMmuD",
+            "Shop/MKhTEYqf#tLHGTzaf",
+            "Shop/MKhTEYqf#mOCWkDAa",
+            "Shop/MKhTEYqf#YeYYgWtm",
+            "Shop/MKhTEYqf#3PN9WBRn",
+            "Shop/MKhTEYqf#AdNRbD8D",
+            "Shop/MKhTEYqf#ywGKHoBq",
+            "Shop/MKhTEYqf#ys6hWCoY",
+            "Shop/MKhTEYqf#C2JNdx5s",
+            "Shop/MKhTEYqf#dkNRueI0"
+          ],
+          "flows": [
+            "Shop/MKhTEYqf#yRuuRooQ"
+          ]
+        },
+        "selection": [
+          "Shop/MKhTEYqf#VONp3yKV",
+          "Shop/MKhTEYqf#C2JNdx5s",
+          "Shop/MKhTEYqf#dkNRueI0"
+        ],
+        "focus": [
+          "Shop/MKhTEYqf#cgbB3aQp",
+          "Shop/MKhTEYqf#lwmpnaVU",
+          "Shop/MKhTEYqf#wlyh3hT6",
+          "Shop/MKhTEYqf#ZaOafnWt",
+          "Shop/MKhTEYqf#lXgq75bO",
+          "Shop/MKhTEYqf#kZjjfq1m",
+          "Shop/MKhTEYqf#4M4pdgk0",
+          "Shop/MKhTEYqf#VONp3yKV",
+          "Shop/MKhTEYqf#Q2XClLOC",
+          "Shop/MKhTEYqf#HYDbL5fE"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    }
+  ]
+}

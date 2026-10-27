@@ -1,0 +1,12 @@
+{
+  "order": 4000,
+  "name": "Payment provider",
+  "kind": "external",
+  "responsibility": "Charges the card and reports the outcome",
+  "groups": [
+    "payments"
+  ],
+  "schemaVersion": 1,
+  "id": "Shop/MKhTEYqf#ZaOafnWt",
+  "outgoing": []
+}

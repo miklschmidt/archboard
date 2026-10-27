@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T23:26:00Z'
+updated_date: '2026-10-27T23:48:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -124,6 +124,8 @@ Retire remaining live board list/document/render HTTP adapters. Keep exact origi
 Repair the observed same-model reference failure during canonical edits after migration. A migrated local drill-down points into the same model, but settlement currently refuses REFERENCE_UNAVAILABLE because reference retention reads its own active installation. Delegate a bounded public-runtime RED/GREEN repair with real files and Git; preserve exact capture, dependency closure, foreign-vault barriers, and signing. Parent retains all frontend, example meaning, root mapping, adoption and cutover.
 
 Bounded local-reference repair: reproduce at the approved public runtime owner with signed temporary Git repositories. Keep same-state local references inside their complete captured snapshot. Retain exact local current targets for proposal references through the existing archive and dependency closure. Preserve foreign references, barriers, signing, claims, and recovery. Use focused reference/history owners and types, lint, and formatting. Parent owns NyesaQPQ and final authoring, status, assignee, and acceptance.
+
+Complete the web-shop fixture transition from the public scratch migration and proposal workflow. Track canonical inputs plus a public history.import.json request because original history cannot be reconstructed from current inputs. Make the existing README take harness initialize a disposable Git repository and restore that exact archive through importArchitectureModel. Keep the fixture serializer authoritative and refuse mismatched authored inputs. Port visual recipes to canonical addresses, selectors, claims, proposals, exports and history.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -240,4 +242,6 @@ The local reference owner passes four cases and 16 assertions. It proves exact r
 Parent-owned Board persistence proposal NyesaQPQ under board 0T9enjhi remains unchanged. Affected subjects are Mv3r4IsX, QDE2xctM, Bd4GPG6d, 8Uq1mtzw, KJy5yYuq, and ZRq51Ecz. Final source mapping and authoring remain with the parent. No frontend, example, README asset, source-vault, or parent scratch inputs change. No source-vault claims or servers are created. Parent status, assignee, acceptance criteria, migration, and adoption remain unchanged. Exact contract and backend evidence use task-549.24-local-reference-contract.md and task-549.24-local-reference-backend.md in the external task-549 state directory.
 
 Final timing follow-up: all four reference cases that hit deadlines pass the focused retry with unchanged source and existing deadlines. That retry passes four cases and 22 assertions. Together with the final local owner and the other existing cases, all 37 affected cases have passing evidence. No source changes follow signed implementation cfc057aba89099ec1ec992973e8ae34bcfe545e7. Final local integration remains signed d95f79c58 and includes required main a98f28811. The branch is fix/same-model-reference-repair. Parent status, assignee, and acceptance remain unchanged.
+
+Merged signed local-reference repair c0566e62b through signed 9e01df6d3. The previously refused real shop settlement now passes. The shop example migrated through public inventory, plan, migration, claim, settlement, proposal and adoption operations in an isolated Git repository. Current architecture has 8 roots and recursive inventory internals; four independent proposals and exact original readings remain. Canonical inputs and a 217 kB public import request replace the legacy fixture files. The archive is a tracked historical dependency because current inputs cannot reconstruct it. The README take harness restores that archive through the public importer with configured Git identity/signing. Actual bootstrap and all five state reads plus an exact original alias pass; its server stopped in finally. Full types and focused lint/format pass. TESTING now describes canonical discovery, proposals, exports and navigation. Asset recipe ports, root migration, bundle warning, final gate/review and PR publication remain open.
 <!-- SECTION:NOTES:END -->

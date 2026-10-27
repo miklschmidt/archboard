@@ -1,0 +1,12 @@
+{
+  "order": 3000,
+  "name": "Orders DB",
+  "kind": "datastore",
+  "responsibility": "One row per order, with its payment state",
+  "schemaVersion": 1,
+  "id": "Shop/MKhTEYqf#wlyh3hT6",
+  "formerNames": [
+    "Shop DB"
+  ],
+  "outgoing": []
+}

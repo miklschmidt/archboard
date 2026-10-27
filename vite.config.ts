@@ -339,11 +339,13 @@ export default defineConfig({
 			},
 		},
 	},
-	// Board files retain their store serializer. Agent and generated files retain their owners.
+	// Architecture inputs retain their store serializer and exact portable fingerprints.
 	fmt: {
 		ignorePatterns: [
-			".archboard/vault/**/*.semantic.json",
+			".archboard/vault/**",
 			"examples/**/*.semantic.json",
+			"examples/web-shop/**/*.json",
+			"examples/web-shop/.archboard/config.yaml",
 			// Third-party agent skills keep their upstream formatting, so they diff cleanly
 			// against a later upstream version: those in .agents/skills here, and those in
 			// .claude/skills through .claude/**. The skills this repository distributes are
