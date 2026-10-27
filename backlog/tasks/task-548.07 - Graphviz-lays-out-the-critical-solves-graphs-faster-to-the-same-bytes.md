@@ -1,11 +1,11 @@
 ---
 id: TASK-548.07
 title: Graphviz lays out the critical solve's graphs faster, to the same bytes
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-26T10:51:00Z'
-updated_date: '2026-10-26T15:39:00Z'
+updated_date: '2026-10-27T23:33:00Z'
 labels:
   - renderer
   - performance
@@ -22,9 +22,9 @@ Graphviz is 56% of Agent workbench's critical solve and 69% of Board viewer's (n
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Graphviz time of the critical solves of Agent workbench and Board viewer falls, measured with the critical_path example before and after
-- [ ] #2 Every Graphviz answer is the same as before: the corpus is unchanged and a test compares answers
-- [ ] #3 crates/vendor/README.md lists every change made to the vendored crates
+- [x] #1 Graphviz time of the critical solves of Agent workbench and Board viewer falls, measured with the critical_path example before and after
+- [x] #2 Every Graphviz answer is the same as before: the corpus is unchanged and a test compares answers
+- [x] #3 crates/vendor/README.md lists every change made to the vendored crates
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -62,3 +62,9 @@ Graphviz is 56% of Agent workbench's critical solve and 69% of Board viewer's (n
 
 Gate at a39e080a6, which only formats two Rust files after da3a6f016: `bun run check` passed every lane up to `test:repository`. There, one UI lint-policy test timed out at 15 s at load 45. Run again alone, `test:repository` passed 150 of 150. `test:serial-browser` passed 27 of 27. In the gate run, cargo workspace tests passed 186, `test:modules` passed 4,820 and `test:system` passed 257.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+graphviz-pure lays out the critical graphs faster to the same answers: reorder sorts cluster segments, transpose counts both directions in one pass, routing finds orientations once, limit_boxes reads only the run of samples it needs, and medians sorts with sort_unstable. Graphviz time of the critical solves fell 22% on Agent workbench and 20% on Board viewer (critical_path example, alternated four times). The corpus and 2,354 recorded Graphviz answers are unchanged, natively and as WebAssembly, and crates/archboard-graphviz/tests/critical_graphs.rs holds two critical graphs to their answers. crates/vendor/README.md item 4 lists the changed files. A typed port, simd128, wasm-opt and the dense network simplex were measured and not kept; the answer-changing options are recorded for the owner in docs/design/graphviz-pure-speed.md.
+<!-- SECTION:FINAL_SUMMARY:END -->
