@@ -40,6 +40,7 @@ interface RowBase {
  * under it and a menu of its checkouts (ADR 0050).
  */
 interface RepositoryRow extends RowBase {
+	readonly migrationRequired?: boolean | undefined;
 	readonly model?: ShellRepository["model"];
 	readonly kind: "repository";
 	readonly entry: RepositoryEntry;

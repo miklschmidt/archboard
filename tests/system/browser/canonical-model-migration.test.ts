@@ -191,10 +191,10 @@ test("an unmigrated repository exposes migration and follows durable recovery to
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-migration-required"]') !== null`,
+			browser.eval<{ migration: boolean; content: string; address: string }>(
+				`({ migration: document.querySelector('[data-slot="model-migration-required"]') !== null, content: document.body.innerText.slice(0, 1800), address: location.search })`,
 			),
-		Boolean,
+		(result) => result.migration,
 		"the explicit migration route",
 		WAIT,
 	);
@@ -204,6 +204,11 @@ test("an unmigrated repository exposes migration and follows durable recovery to
 		),
 	).toBe(true);
 	expect(readFileSync(join(fixture.vault, "Shop.semantic.json"), "utf8")).toBe(fixture.original);
+	expect(
+		await browser.eval<string[]>(
+			`performance.getEntriesByType('resource').map(entry => new URL(entry.name).pathname).filter(path => path.startsWith('/api/semantic-boards') || path.startsWith('/api/lock'))`,
+		),
+	).toEqual([]);
 	const input = join(fixture.root, "migration-request.json");
 	writeFileSync(input, JSON.stringify(fixture.request));
 	const child = Bun.spawn(

@@ -103,8 +103,8 @@ function NavigatorFilter(props: NavigatorFilterProps): JSX.Element {
 				value={query}
 				onChange={handleChange}
 				onKeyDown={handleKeyDown}
-				placeholder="Find a board"
-				aria-label="Find a board"
+				placeholder="Find a repository"
+				aria-label="Find a repository"
 				spellCheck={false}
 				autoComplete="off"
 				className="text-control placeholder:text-muted-foreground h-full min-w-0 flex-1 bg-transparent outline-none [&::-webkit-search-cancel-button]:hidden"
