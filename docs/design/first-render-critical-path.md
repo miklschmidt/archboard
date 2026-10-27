@@ -405,6 +405,26 @@ The boards that the rebase onto main left (889af5401, 3194b3b2e) ask for
 solves two to four times longer. The work on the core's layout and on
 Graphviz must take those solves on.
 
+### The ceiling again, after deterministic layout (2026-10-28)
+
+The ceiling of six was chosen at load 25 to 34. Since TASK-548.08, a render
+asks for one solve, so it was measured again on a quiet machine (load 2.4
+to 4.1) on 25b0662fd. Each run is a new process. It renders the 23 items of
+`timing.ts` cold, with a temporary override of the ceiling. The ceilings
+alternated six times. Medians in ms:
+
+| ceiling | all 23 at once | one after another |
+| ------- | -------------- | ----------------- |
+| 6       | 1107           | 2280              |
+| 7       | 1114           | 2268              |
+| 12      | 1135           | 2289              |
+| 23      | 1141           | 2281              |
+
+One after another, a render uses one worker, so the ceiling does not
+matter. All at once, more workers do not help: past six they are slightly
+slower, which fits the slower memories of the workers past Bun's limit. The
+ceiling stays at six.
+
 ## The wrap search split between solves (TASK-548.06)
 
 ### What the critical solve did
