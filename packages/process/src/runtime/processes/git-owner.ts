@@ -1,3 +1,5 @@
+import { captureDetachedProcessGroup, signalOwnedProcessGroup } from "#runtime/processes/group.ts";
+
 interface GitOwnerResult {
 	readonly kind: "result";
 	readonly exitCode?: number;
@@ -49,6 +51,14 @@ const onMessage = (message: unknown): void => {
 	}
 };
 process.on("message", onMessage);
+/**
+ * End the detached group when its parent disappears at any stage.
+ * Bun spins on closed IPC, and no parent remains to release this owner.
+ */
+const onDisconnect = (): void => {
+	signalOwnedProcessGroup(captureDetachedProcessGroup(process.pid), "SIGKILL");
+};
+process.once("disconnect", onDisconnect);
 
 /**
  * Send the command's outcome to the parent over IPC.
@@ -91,6 +101,7 @@ try {
 report(result);
 await Promise.all([released, output]);
 process.off("message", onMessage);
+process.off("disconnect", onDisconnect);
 if (process.connected) {
 	if (!process.disconnect) {
 		throw new Error("Git process owner cannot close its Bun IPC channel.");
