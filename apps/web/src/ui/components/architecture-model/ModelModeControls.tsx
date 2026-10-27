@@ -2,7 +2,7 @@ import { useCallback, useMemo, type JSX } from "react";
 import { Select } from "@archboard/ui-kit/components";
 import { DiagramGrammarSchema } from "@archboard/board/views";
 import type { VariantContent } from "@archboard/board/content";
-import type { ModelFlow } from "#ui/rules/architecture-model/projection.ts";
+import type { ModelFlow } from "@archboard/board/content";
 import { relevantFlows } from "#ui/rules/architecture-model/flow-reading.ts";
 
 interface ModelModeControlsProps {

@@ -3,7 +3,7 @@ import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts"
 import { useCallback, type JSX } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { ArchitectureCheckpointList } from "@archboard/board/model";
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
 import { Select } from "@archboard/ui-kit/components";
 import { proposalStanding, standingSuffix } from "#ui/rules/architecture-model/standing.ts";
 

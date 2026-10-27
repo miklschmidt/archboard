@@ -1,7 +1,7 @@
 import { prepareContentHere } from "@archboard/renderer/browser";
 import type { DiagramGrammar } from "@archboard/board/views";
 import { queryOptions } from "@tanstack/react-query";
-import type { projectModel, Model } from "#ui/rules/architecture-model/projection.ts";
+import type { projectModel, Model } from "@archboard/board/content";
 
 /**
  * Each reading revision accepts only the scene key derived from its content and interfaces.

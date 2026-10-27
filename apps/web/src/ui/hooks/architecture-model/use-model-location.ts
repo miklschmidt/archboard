@@ -2,7 +2,8 @@ import { useCallback, useMemo } from "react";
 import { useRouter, useRouterState } from "@tanstack/react-router";
 import { validateWorkspaceSearch } from "#ui/rules/board-routing/search.ts";
 import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
+import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts";
 
 type Reading = Model["walkthroughs"][number]["beats"][number]["reading"];
 
@@ -50,8 +51,8 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		[focused],
 	);
 	const navigate = useCallback(
-		(patch: Partial<ModelAddress>, replace = false, repository?: string): void => {
-			void router.navigate({
+		(patch: Partial<ModelAddress>, replace = false, repository?: string): Promise<void> => {
+			return router.navigate({
 				to: "/",
 				replace,
 				/**
@@ -78,7 +79,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	);
 	const explore = useCallback(
 		(patch: Partial<ModelAddress>): void => {
-			navigate({
+			void navigate({
 				...(bookmarkReading === undefined
 					? {}
 					: {
@@ -97,7 +98,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	);
 	const selectBookmark = useCallback(
 		(next: string | null): void => {
-			navigate({
+			void navigate({
 				bookmark: next ?? undefined,
 				scope: null,
 				focus: undefined,
@@ -112,13 +113,13 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	);
 	const identify = useCallback(
 		(id: string): void => {
-			if (model === null) navigate({ id }, true);
+			if (model === null) void navigate({ id }, true);
 		},
 		[model, navigate],
 	);
 	const selectLegacyAddress = useCallback(
 		(next: string): void => {
-			navigate({
+			void navigate({
 				legacyAddress: next,
 				checkpoint: preview === null ? null : checkpoint,
 				state: undefined,
@@ -136,12 +137,14 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		[navigate, preview, checkpoint],
 	);
 	const openOriginal = useCallback(
-		(destination: ModelAddress): void => navigate(destination, true),
+		(destination: ModelAddress): void => {
+			void navigate(destination, true);
+		},
 		[navigate],
 	);
 	const openRepository = useCallback(
 		(id: string, repository: string): void => {
-			navigate(
+			void navigate(
 				{
 					id,
 					scope: null,
@@ -164,6 +167,31 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		},
 		[navigate],
 	);
+	const openRequested = useCallback(
+		({ reading, repository }: PaneModelRequest): Promise<void> => {
+			return navigate(
+				{
+					id: reading.model,
+					scope: reading.scope ?? null,
+					checkpoint: reading.checkpoint ?? null,
+					state: reading.state,
+					preview: reading.preview,
+					bookmark: reading.bookmark,
+					legacyAddress: reading.legacyAddress,
+					against: reading.against,
+					subject: reading.module,
+					grammar: reading.grammar,
+					flow: reading.flow,
+					focus: reading.focus,
+					hideKinds: reading.hideKinds,
+					hideGroups: reading.hideGroups,
+				},
+				false,
+				repository ?? undefined,
+			);
+		},
+		[navigate],
+	);
 	const open = useCallback(
 		(id: string, next: string | null): void => {
 			explore({ id, scope: next, focus: undefined, grammar: undefined });
@@ -172,7 +200,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	);
 	const selectCheckpoint = useCallback(
 		(next: string | null): void => {
-			navigate({
+			void navigate({
 				checkpoint: next,
 				bookmark: undefined,
 				state: preview === null ? undefined : (state ?? undefined),
@@ -195,7 +223,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 			const next = current.includes(id)
 				? current.filter((value) => value !== id)
 				: [...current, id];
-			navigate({ [field]: next.length === 0 ? undefined : next.toSorted() });
+			void navigate({ [field]: next.length === 0 ? undefined : next.toSorted() });
 		},
 		[filters, navigate],
 	);
@@ -230,7 +258,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	);
 	const selectState = useCallback(
 		(next: string | null): void => {
-			navigate({
+			void navigate({
 				state: next ?? undefined,
 				legacyAddress: undefined,
 				bookmark: undefined,
@@ -242,17 +270,18 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	);
 	const compareAgainst = useCallback(
 		(next: string | null): void => {
-			navigate({ against: next ?? undefined });
+			void navigate({ against: next ?? undefined });
 		},
 		[navigate],
 	);
 	const openReference = useCallback(
 		(repository: string, reading: Model): void => {
-			navigate(referenceAddress(reading), false, repository);
+			void navigate(referenceAddress(reading), false, repository);
 		},
 		[navigate],
 	);
 	return {
+		openRequested,
 		openRepository,
 		board,
 		openOriginal,

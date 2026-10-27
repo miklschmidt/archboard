@@ -11,7 +11,7 @@ import {
 	SemanticPresentation,
 	type SemanticPresentationProps,
 } from "#ui/components/semantic-board-canvas/SemanticPresentation.tsx";
-import { projectModel, type Model } from "#ui/rules/architecture-model/projection.ts";
+import { projectModel, type Model } from "@archboard/board/content";
 import { projectFlow } from "#ui/rules/architecture-model/flow-reading.ts";
 import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
 import type { DrivenPlace } from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";

@@ -1,7 +1,7 @@
 import { modelSubjects, subjectName } from "#ui/rules/architecture-model/flow-reading.ts";
 import { useCallback, type ComponentProps, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
-import type { Model, projectModel } from "#ui/rules/architecture-model/projection.ts";
+import type { Model, projectModel } from "@archboard/board/content";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { ModelFlowDetails } from "#ui/components/architecture-model/ModelFlowDetails.tsx";

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
 import { architectureModelQuery, readModel } from "#ui/clients/architecture-model/queries.ts";
 
 /**

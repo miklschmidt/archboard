@@ -1,6 +1,6 @@
 import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { type JSX } from "react";
-import type { Model, projectModel } from "#ui/rules/architecture-model/projection.ts";
+import type { Model, projectModel } from "@archboard/board/content";
 
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";

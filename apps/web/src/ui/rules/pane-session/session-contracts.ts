@@ -5,6 +5,7 @@
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
+import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts";
 import type {
 	AgentActivityEntry,
 	BoardIdentity,
@@ -88,6 +89,8 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 * @param request Which walkthrough and beat, and the request's name.
 	 */
 	onPresentRequest?: (request: PanePresentRequest) => void;
+	/** Open the canonical reading resolved for this pane. */
+	onModelRequest?: (request: PaneModelRequest) => void;
 	/** The server accepted this pane's report, so the pane inventory has moved. */
 	onPaneStateAccepted?: () => void;
 	/**

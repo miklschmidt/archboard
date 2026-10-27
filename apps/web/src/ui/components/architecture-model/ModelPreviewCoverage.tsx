@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
 
 /**
  * Keep a selected original distinct from a complete historical repository.

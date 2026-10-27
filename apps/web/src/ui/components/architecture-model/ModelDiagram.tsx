@@ -21,7 +21,7 @@ import { useDiagramGestures } from "#ui/hooks/semantic-board-canvas/use-diagram-
 import { stagePicture } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
 import { stopTraffic } from "#ui/clients/semantic-board-canvas/picture/picture-traffic.ts";
 import { markSubjects } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
-import type { projectModel, Model } from "#ui/rules/architecture-model/projection.ts";
+import type { projectModel, Model } from "@archboard/board/content";
 import { usePresentationArrival } from "#ui/hooks/semantic-board-canvas/use-presentation-arrival.ts";
 import { modelDrawingQuery } from "#ui/clients/architecture-model/drawing.ts";
 

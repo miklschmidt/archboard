@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import type { projectModel } from "#ui/rules/architecture-model/projection.ts";
+import type { projectModel } from "@archboard/board/content";
 
 type Projection = ReturnType<typeof projectModel>;
 

@@ -1,4 +1,5 @@
 import { usePublishedNarration } from "#ui/hooks/application/use-published-narration.ts";
+import { useModelArrival } from "#ui/hooks/architecture-model/use-model-arrival.ts";
 import {
 	useCallback,
 	useEffect,
@@ -11,7 +12,7 @@ import {
 
 import { useQueryClient } from "@tanstack/react-query";
 import { RecordedModelStage } from "#ui/components/walkthrough-recording/RecordedModelStage.tsx";
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
 import { ModelExplanationHost } from "#ui/components/architecture-model/ModelExplanationHost.tsx";
 import { explanationKey } from "#ui/clients/architecture-model/explanations.ts";
 import { tabSessionId } from "#ui/clients/pane-session/tab-session.ts";
@@ -36,10 +37,6 @@ import {
 	createBrowserWorkbenchTransport,
 	type BrowserWorkbenchTransport,
 } from "@archboard/codex-realtime-voice/controllers";
-import type { PanePresentRequestSchema } from "@archboard/board/pane-context";
-import type { z } from "zod";
-
-type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
 
 /** Inputs for one application pane. */
 interface ApplicationPaneProps {
@@ -148,10 +145,10 @@ function useBoundCallbacks(props: ApplicationPaneProps): BoundCallbacks {
 function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	const { paneId, callbacks, onRecordedReading } = props;
 	const bound = useBoundCallbacks(props);
-	// A step somebody narrating a walkthrough asked for (TASK-251). Kept with the
-	// pane because it is about this pane's picture, and handed to the stage, which
-	// owns where the pane is in a walkthrough and answers through its reading.
-	const [asked, onPresentRequest] = useState<PanePresentRequest | null>(null);
+	const { arrival, driven, onModelRequest, onPresentRequest } = useModelArrival(
+		paneId,
+		bound.onBoardError,
+	);
 	const [canonicalReading, reportCanonicalReading] = useState<PaneReading | null>(null);
 	const client = useQueryClient();
 	const refreshExplanations = useCallback((): void => {
@@ -161,10 +158,11 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 		() => ({
 			...optionsFor(props, bound),
 			canonical: true,
+			onModelRequest,
 			onPresentRequest,
 			onExplanationsChanged: refreshExplanations,
 		}),
-		[props, bound, refreshExplanations],
+		[props, bound, refreshExplanations, onModelRequest, onPresentRequest],
 	);
 	const session = usePaneSession(options);
 	const { attachPaneElement, readingChanged, vault } = session;
@@ -222,12 +220,12 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 					/>
 				) : (
 					<ArchitectureModelStage
-						key={vault}
+						key={`${vault}:${arrival}`}
 						vault={vault}
 						paneId={paneId}
 						reducedMotion={props.reducedMotion}
 						onCodeTargetNotice={callbacks.onCodeTargetNotice}
-						driven={asked}
+						driven={driven}
 						narration={narration}
 						overlay={props.overlay}
 					/>

@@ -311,6 +311,13 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 			return ports.options().onPresentRequest;
 		},
 		/**
+		 * Read the current canonical navigation listener.
+		 * @returns The router-owned arrival listener.
+		 */
+		get onModelRequest() {
+			return ports.options().onModelRequest;
+		},
+		/**
 		 * Where a board refusal goes; read live.
 		 * @returns The listener, or undefined when the shell wants none.
 		 */

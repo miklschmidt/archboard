@@ -15,7 +15,7 @@ import {
 	hasNoCanonicalModel,
 } from "#ui/clients/architecture-model/queries.ts";
 import { boardCatalogKeys, repositoriesQuery } from "#ui/clients/board-catalog/queries.ts";
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
 import { EMPTY_LISTING } from "#ui/rules/board-catalog/listing.ts";
 import type { BoardListing } from "#ui/rules/pane-session/session-types.ts";
 

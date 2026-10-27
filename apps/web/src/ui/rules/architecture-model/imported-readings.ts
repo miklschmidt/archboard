@@ -1,4 +1,4 @@
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
 import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
 
 /**

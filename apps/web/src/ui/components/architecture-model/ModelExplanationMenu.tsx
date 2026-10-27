@@ -1,7 +1,7 @@
 import { useCallback, type JSX } from "react";
 import { DropdownMenu } from "@archboard/ui-kit/components";
 import type { ExplanationInvocation } from "#ui/clients/architecture-model/explanations.ts";
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
 
 type Action = ExplanationInvocation["request"]["action"];
 const ACTIONS = {

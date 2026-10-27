@@ -3,7 +3,7 @@ import { useMemo, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import { Standing } from "#ui/components/semantic-board-canvas/SemanticInspectorStanding.tsx";
 import type { useModelComparison } from "#ui/hooks/architecture-model/use-model-comparison.ts";
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
 import { proposalStanding } from "#ui/rules/architecture-model/standing.ts";
 import { ModelReconciliation } from "#ui/components/architecture-model/ModelReconciliation.tsx";
 

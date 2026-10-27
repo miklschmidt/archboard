@@ -1,6 +1,6 @@
 import { useCallback, type JSX } from "react";
 import { DropdownMenu } from "@archboard/ui-kit/components";
-import type { Model, ModelFilters as Filters } from "#ui/rules/architecture-model/projection.ts";
+import type { Model, ModelFilters as Filters } from "@archboard/board/content";
 
 type Field = keyof Filters;
 interface ModelFiltersProps {

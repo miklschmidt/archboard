@@ -25,7 +25,7 @@ import {
 	type ModelSelection,
 } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
-import { projectModel } from "#ui/rules/architecture-model/projection.ts";
+import { projectModel } from "@archboard/board/content";
 import { importedReadings } from "#ui/rules/architecture-model/imported-readings.ts";
 
 const ModelDiagram = lazy(async () => {
