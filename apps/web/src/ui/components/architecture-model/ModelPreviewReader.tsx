@@ -68,13 +68,13 @@ function ModelPreviewReader(props: PreviewProps): JSX.Element {
 					onState={location.selectState}
 				/>
 				<ModelBookmarks
-					preview={preview}
+					catalogue={preview}
 					selected={location.bookmark}
 					pending={query.isPending}
 					onSelect={location.selectBookmark}
 				/>
 				<ModelLegacyAddresses
-					preview={preview}
+					catalogue={preview}
 					selected={location.legacyAddress}
 					pending={query.isPending}
 					onSelect={location.selectLegacyAddress}

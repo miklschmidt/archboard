@@ -3,9 +3,9 @@ id: TASK-549.23
 title: Install and recover an explicit vault migration
 status: In Progress
 assignee:
-  - '@codex-backend'
+  - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T13:10:00Z'
+updated_date: '2026-10-27T13:53:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -70,6 +70,8 @@ TASK-549.17, TASK-549.22
 Architecture drafts: Board persistence@TASK-549.23, Command interface@TASK-549.23, Archboard server routes@TASK-549.23. Keep each draft for parent acceptance.
 
 Additional affected architecture: Live panes@TASK-549.23 and Archboard server@TASK-549.23 describe the delivered canonical local-agent context. Their existing context-to-runtime relationships remain valid. Keep both proposals draft.
+
+Parent completes browser acceptance at the approved existing browser seam. Create Browser application@TASK-549.23. Subscribe already-open panes to the existing architecture feed and use the public reader for authority. Show legacy content only under confirmed LEGACY_AUTHORITY. Preserve explicit recovery and unavailable states. Reuse bookmark, former-address, model, and walkthrough owners for installed metadata. Preserve exact original coverage after old-address resolution. Show that model ownership transfer is unavailable. Prove durable cutover, installed navigation, and recovery with real files and Git. Inspect the resulting UI, update consumer instructions, and adopt complete architecture only after acceptance.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -82,4 +84,8 @@ Implemented owner-authorized complete migration through the existing installer a
 Installed canonical reads expose migration.bookmarks, migration.addresses, and migration.states. A selected bookmark uses migration.bookmark. Ordinary reads omit migrationPreview and the original envelope. Exact former addresses reopen retained original coverage through the existing selector. Local context uses the canonical runtime and requires exact capture for another state, checkpoint, or stale revision. Source and browser types, full lint, formatting, architecture semantics, 76 contract cases with 156 assertions, portable/proposal regressions, and the existing local explanation owner pass. The inherited package-width transition remains: board exports 252 names against the unchanged 188 ceiling. Architecture code evidence has eight inherited warnings on Archboard and none on the five affected draft scopes. Parent browser acceptance and TASK-549.24 retirement remain separate.
 
 Signing restoration blocks the final source checkpoint. The configured SSH agent has no identities. A signed commit attempt returned No private key found and created no commit. The private PIN request timed out. Keep signing requirements unchanged. Source changes remain staged in feat/canonical-migration-backend. All five claims are released and only worktree server 19089 stopped. The latest integration merge reports Already up to date at 4aed11f76a960af4cbd22cb1515f1c1228712d68. The external backend handoff records the exact contract, signed real fixtures, evidence, and remaining parent work.
+
+Backend implementation is staged but not yet committed because the configured hardware signer is unavailable. The parent preserved its staged snapshot in task-549.23-staged-backup.patch. The smart-card service is active but reports USB timeouts while initializing the connected YubiKey. The parent requested reconnection and continues independent frontend work. No signing requirement is weakened. Existing backend evidence and the remaining final runtime case are recorded in task-549.23-backend.md. Keep the backend index unchanged until the signed checkpoint can be made.
+
+The owner restored signing. The final blocked runtime case passes with 18 assertions. The exact staged backend is saved as signed commit 4977bbf48c8fa917ab35ed362808e16e807305d8. Parent browser work continues. Installed bookmarks and exact former-address navigation pass the focused browser case with five assertions. The previous signing blocker is resolved.
 <!-- SECTION:NOTES:END -->

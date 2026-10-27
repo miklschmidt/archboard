@@ -24,6 +24,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	});
 	const search = { ...bookmarkSearch(bookmarkReading, paneId), ...address };
 	const model = nullableParameter(search[`model${paneId}`]);
+	const board = nullableParameter(search[`pane${paneId}`]);
 	const scope = nullableParameter(search[`scope${paneId}`]);
 	const checkpoint = nullableParameter(search[`checkpoint${paneId}`]);
 	const state = nullableParameter(search[`state${paneId}`]);
@@ -119,6 +120,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		(next: string): void => {
 			navigate({
 				legacyAddress: next,
+				checkpoint: preview === null ? null : checkpoint,
 				state: undefined,
 				bookmark: undefined,
 				scope: null,
@@ -131,6 +133,10 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				against: undefined,
 			});
 		},
+		[navigate, preview, checkpoint],
+	);
+	const openOriginal = useCallback(
+		(address: ModelAddress): void => navigate(address, true),
 		[navigate],
 	);
 	const open = useCallback(
@@ -222,6 +228,8 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		[navigate],
 	);
 	return {
+		board,
+		openOriginal,
 		legacyAddress,
 		selectLegacyAddress,
 		bookmark,

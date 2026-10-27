@@ -4,6 +4,10 @@ import {
 	type ModelErrorProps,
 } from "#ui/components/architecture-model/ModelFrame.tsx";
 import { ModelPreviewReader } from "#ui/components/architecture-model/ModelPreviewReader.tsx";
+import { ModelBookmarks } from "#ui/components/architecture-model/ModelBookmarks.tsx";
+import { ModelLegacyAddresses } from "#ui/components/architecture-model/ModelLegacyAddresses.tsx";
+import { ModelOriginalDestination } from "#ui/components/architecture-model/ModelOriginalDestination.tsx";
+import { importedReadings } from "#ui/rules/architecture-model/imported-readings.ts";
 import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
 import { useCallback, useEffect, type ComponentProps, type JSX, type ReactNode } from "react";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
@@ -16,7 +20,6 @@ import {
 	hasNoCanonicalModel,
 	hasNoCheckpoints,
 } from "#ui/clients/architecture-model/queries.ts";
-import { semanticBoardListQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import { ModelStateDetails } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { ModelWalkthroughReader } from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
@@ -85,10 +88,8 @@ function ArchitectureModelStage(props: ModelStageProps): JSX.Element {
  * @returns Its canonical reader or the existing empty-board surface.
  */
 function LocatedModelStage(props: ModelStageProps): JSX.Element {
-	const boards = useQuery(semanticBoardListQuery(props.vault));
-	const { model, preview } = useModelLocation(props.paneId);
+	const { preview } = useModelLocation(props.paneId);
 	if (preview !== null) return <ModelPreviewReader key={props.vault} {...props} />;
-	if (model === null && boards.data?.boards.length !== 0) return <>{props.children}</>;
 	return <CanonicalModelReader key={props.vault} {...props} />;
 }
 
@@ -99,6 +100,11 @@ function LocatedModelStage(props: ModelStageProps): JSX.Element {
  */
 function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const {
+		board,
+		bookmark,
+		legacyAddress,
+		selectBookmark,
+		selectLegacyAddress,
 		checkpoint,
 		state,
 		against,
@@ -114,15 +120,18 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 		architectureModelQuery(props.vault, checkpoint, {
 			state,
 			against,
+			bookmark,
+			legacyAddress: legacyAddress ?? (requestedModel === null ? board : null),
 		}),
 	);
 	const catalogue = useQuery(architectureModelQuery(props.vault));
 	const history = useQuery(architectureCheckpointsQuery(props.vault));
 	const { data } = query;
 	const resolvedId = data?.manifest.id;
+	const original = data?.migrationPreview !== undefined;
 	useEffect(() => {
-		if (resolvedId !== undefined) identify(resolvedId);
-	}, [identify, resolvedId]);
+		if (resolvedId !== undefined && !original) identify(resolvedId);
+	}, [identify, resolvedId, original]);
 	const client = useQueryClient();
 	const { vault } = props;
 	const current = checkpoint === null;
@@ -130,13 +139,16 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const refresh = useCallback((): void => {
 		void client.invalidateQueries({ queryKey: architectureModelKeys.vault(vault) });
 	}, [client, vault]);
-	if (requestedModel === null && hasNoReadings(query, history, checkpoint))
+	if (requestedModel === null && legacyAuthority(query, feed)) return <>{props.children}</>;
+	if (requestedModel === null && board === null && hasNoReadings(query, history, checkpoint))
 		return <>{props.children}</>;
 	if (differentModel(resolvedId, requestedModel)) {
 		return (
 			<ModelIdentityFailure id={requestedModel} refresh={refresh} refreshing={query.isFetching} />
 		);
 	}
+	if (data?.migrationPreview !== undefined)
+		return <ModelOriginalDestination model={data} paneId={props.paneId} />;
 	return (
 		<section
 			data-slot="architecture-model-stage"
@@ -163,6 +175,18 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 					onSelect={compareAgainst}
 					catalogue={catalogue}
 					history={history}
+				/>
+				<ModelBookmarks
+					catalogue={importedReadings(data)}
+					selected={bookmark}
+					pending={query.isPending}
+					onSelect={selectBookmark}
+				/>
+				<ModelLegacyAddresses
+					catalogue={importedReadings(data)}
+					selected={legacyAddress}
+					pending={query.isPending}
+					onSelect={selectLegacyAddress}
 				/>
 			</ModelHeader>
 			<ModelControls vault={vault} checkpoint={checkpoint} model={data} />
@@ -273,6 +297,22 @@ function currentIsStale(
 }
 
 /**
+ * Only the public reader can authorize the legacy surface.
+ * @param query The requested reading and its exact refusal.
+ * @param feed The latest ordered authority status.
+ * @returns Whether live legacy content remains authoritative.
+ */
+function legacyAuthority(query: ModelQuery, feed: ReturnType<typeof useArchitectureFeed>): boolean {
+	return (
+		query.isError &&
+		!query.isFetching &&
+		query.error instanceof ArchitectureReadError &&
+		query.error.failure.code === "LEGACY_AUTHORITY" &&
+		(feed.failure === null || feed.failure.code === "LEGACY_AUTHORITY")
+	);
+}
+
+/**
  * Historical failures never substitute another reading or silently reuse an unavailable checkpoint.
  * @param query The selected read.
  * @param current Whether stale current content can remain visible.
@@ -349,6 +389,15 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 		return <output className="text-body text-muted-foreground p-10">Reading architecture…</output>;
 	const problem = readingProblem(query.error, props.current ? props.failure : null);
 	const model = visibleModel(query, props.current);
+	const bookmarkProblems = importedReadings(model)?.bookmark?.diagnostics;
+	if (bookmarkProblems !== undefined && bookmarkProblems.length > 0)
+		return (
+			<ModelError
+				code="BOOKMARK_UNAVAILABLE"
+				message="This bookmark cannot be drawn. Select another reading or update the bookmark."
+				diagnostics={bookmarkProblems}
+			/>
+		);
 	return (
 		<>
 			{stale && (
