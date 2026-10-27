@@ -1,11 +1,11 @@
 ---
 id: TASK-548.05
 title: Every solve of a render gets a ready layout worker at once
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-26T10:51:00Z'
-updated_date: '2026-10-26T14:01:00Z'
+updated_date: '2026-10-27T23:33:00Z'
 labels:
   - renderer
   - performance
@@ -22,10 +22,10 @@ Measured on feat/faster-first-render 4a2d4d0b4 with a temporary trace in engine-
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every solve a render asks is sent to a worker without waiting for another solve's answer, while the pool is below its ceiling
-- [ ] #2 Under Bun, no solve pays the slow memory growth of a WebAssembly instance past the fast-memory limit, measured on the tenth worker
-- [ ] #3 First renders of the timing.ts boards are measured on a cold and on a warm pool, alternating with the parent commit, and recorded in docs/design/first-render-critical-path.md
-- [ ] #4 Every drawing of the corpus is unchanged, and bun test packages/renderer passes
+- [x] #1 Every solve a render asks is sent to a worker without waiting for another solve's answer, while the pool is below its ceiling
+- [x] #2 Under Bun, no solve pays the slow memory growth of a WebAssembly instance past the fast-memory limit, measured on the tenth worker
+- [x] #3 First renders of the timing.ts boards are measured on a cold and on a warm pool, alternating with the parent commit, and recorded in docs/design/first-render-critical-path.md
+- [x] #4 Every drawing of the corpus is unchanged, and bun test packages/renderer passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -68,4 +68,12 @@ Cold first render of all 17 vault boards plus Agent workbench (pre-6cae688bb), o
 bun test packages/renderer at load 28, two runs each: parent fails the 3 s first-layout bound of wide-boards.test.ts on Archboard server routes, Board persistence and Board viewer; this task on Board persistence and Board viewer (660 pass, 2 fail). The test:modules lane (--isolate) passed 4949/0, test:system 285/0, test:repository 161/0; types, lint:tests, lint:policy and format:check passed. Criterion 4's 'bun test packages/renderer passes' is therefore not met at this load, under the parent either.
 
 Boards: the Semantic renderer board's current variant (zZV4las8) states no worker ceiling (Engine pool, Bun host installation, Bun layout worker); only historical variants said 'one fewer than the cores'. The boards stay accurate, so no proposal.
+
+2026-10-28: on a quiet machine after TASK-548.08 (one solve per render), the ceiling was measured again on 25b0662fd, alternated six times: 23 cold renders at once took a median 1107 ms at six workers, 1114 at seven, 1135 at twelve and 1141 at 23; one after another, about 2280 ms at every ceiling. The ceiling stays at six (docs/design/first-render-critical-path.md, 'The ceiling again, after deterministic layout'). Criterion 4: the renderer tests that failed at load 28 under the parent and this task alike pass in the complete gate on the merged feat/faster-first-render (032285d0b, 20 of 20 tasks).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Every solve a render asks is sent to a worker at once while the pool is below its ceiling (the ported TASK-527 ready signal, owned by engine-pool.test.ts). The Bun host caps its pool at six workers, so every worker keeps one of Bun's eight fast WebAssembly memories after the main thread's core and tree-sitter (bun-host.ts bunWorkerCeiling). At load 25 to 34 the cap removed the slow memory growth of workers 8 to 11; on a quiet machine after TASK-548.08 more workers still do not help. A memory reserve and stopping called-off workers were measured and not kept. The corpus was unchanged (0 of 2,376) and the renderer tests pass in the complete gate.
+<!-- SECTION:FINAL_SUMMARY:END -->

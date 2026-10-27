@@ -1,11 +1,11 @@
 ---
 id: TASK-548.06
 title: A whole solve tries its wrap candidates side by side
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-26T10:51:00Z'
-updated_date: '2026-10-26T13:27:00Z'
+updated_date: '2026-10-27T23:34:00Z'
 labels:
   - renderer
   - performance
@@ -22,10 +22,10 @@ The critical path of Agent workbench and Board viewer is one whole solve (native
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The native critical path of Agent workbench and Board viewer falls, measured with the critical_path example before and after
-- [ ] #2 The order of the asks, the call-off of unneeded candidates and the failure paths are held by tests in crates/archboard-layout
-- [ ] #3 Every drawing of the corpus is unchanged
-- [ ] #4 timing.ts first renders and a re-render after a card grows are measured through the pool, alternating with the parent commit
+- [x] #1 The native critical path of Agent workbench and Board viewer falls, measured with the critical_path example before and after
+- [x] #2 The order of the asks, the call-off of unneeded candidates and the failure paths are held by tests in crates/archboard-layout
+- [x] #3 Every drawing of the corpus is unchanged
+- [x] #4 timing.ts first renders and a re-render after a card grows are measured through the pool, alternating with the parent commit
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -102,4 +102,12 @@ Gate, one lane at a time, at load 29 to 35 (core 6e1a5ec587b32904 for the last l
 - test:serial-browser: pass.
 - test:system: 256 of 257 in each of three runs. Each run failed a different timing-sensitive process test: resource-cleanup (TERM-resistant peer), semantic-move (pane follows a moved board), board-lock-api. Each file passed alone at load 30 to 33. None of them touch layout.
 Corpus on core ca77570fd7af78d7, built from the final layout sources (only the test file changed after it): 0 of 2,344 drawings differ.
+
+2026-10-28: TASK-548.08 replaced this mechanism. Its refactor de398584a (plan one solve) removed architecture/stacking.rs, blocks/stacking.rs and the wrap candidate solves, with the async_solves.rs tests that held them, because a render now asks for one solve. The criteria were met when this work landed (e0f161073); the code and its tests are gone from feat/faster-first-render.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A whole solve's wrap search was split into one solve per wrap candidate, asked side by side once the partial solve of its stacking way had answered. The native critical path fell from 496 to 367-394 ms on Agent workbench and from 557 to 430-435 ms on Board viewer, with the corpus unchanged (0 of 2,344) and the order of asks, call-off and failure paths held by tests. TASK-548.08 later replaced the speculative solves with one deterministic solve per render (de398584a), which removed this mechanism and its tests.
+<!-- SECTION:FINAL_SUMMARY:END -->
