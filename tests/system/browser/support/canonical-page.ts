@@ -129,16 +129,15 @@ async function modelDrawn(evaluate: <T>(expression: string) => Promise<T>): Prom
 	);
 }
 
-type Changes = Extract<
-	z.input<typeof ArchitectureModuleEditSchema>,
-	{ changes: unknown }
->["changes"];
+type StructuralEdit = Extract<z.input<typeof ArchitectureModuleEditSchema>, { changes: unknown }>;
+type Changes = StructuralEdit["changes"];
 /**
  * Apply a claimed structural edit through the shared public HTTP interface.
  * @param request The fixture server request client.
  * @param vault The explicit fixture vault.
  * @param operationId The retry identity.
  * @param changes The intended module and relationship changes.
+ * @param intent Optional proposal intent and its doing line.
  * @returns The durable write receipt.
  */
 async function editCanonicalModel(
@@ -146,6 +145,7 @@ async function editCanonicalModel(
 	vault: string,
 	operationId: string,
 	changes: Changes,
+	intent: Partial<Pick<Extract<StructuralEdit, { proposal: unknown }>, "proposal" | "doing">> = {},
 ) {
 	const current = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!current.body.success || current.body.manifest.current === null)
@@ -175,7 +175,8 @@ async function editCanonicalModel(
 			expectedRevision: current.body.revision,
 			operationId,
 			writer: "fixture-agent",
-			doing: "Changing module structure",
+			...intent,
+			doing: intent.doing ?? "Changing module structure",
 			claim: claimed.body.claim.id,
 			changes,
 		},

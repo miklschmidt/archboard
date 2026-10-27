@@ -126,6 +126,7 @@ function TreeRowName(props: {
 }): JSX.Element {
 	return (
 		<span
+			data-slot="repository-name"
 			title={props.title}
 			style={NAME_STYLE}
 			className={`line-clamp-2 min-w-0 flex-1 leading-(--row-line) wrap-break-word ${props.className}`}

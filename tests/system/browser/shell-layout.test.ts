@@ -30,12 +30,18 @@ import { PERSISTENT_NOTICE_TEXT, publishActionableNotice } from "./support/shell
 import type { DesktopShell, NoticeLayout, PaneLetters } from "./support/shell-contract-types.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import { captureShellRenderMatrix } from "./support/shell-render-matrix.ts";
-import { addressShowing, seedSemanticBoard, stageState } from "./support/semantic-page.ts";
+import {
+	seedCanonicalModel,
+	modelAddress,
+	modelDrawn,
+	editCanonicalModel,
+} from "./support/canonical-page.ts";
+import { initializeSource } from "./support/canonical-model.ts";
+import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import {
 	AGENT_DOCK,
 	AGENT_PANEL,
-	BOARD_BREADCRUMB,
-	BOARD_NAME_EXPRESSION,
+	MODEL_NAME_EXPRESSION,
 	COMPOSER,
 	NAVIGATOR,
 	NAVIGATOR_COLUMN,
@@ -75,7 +81,7 @@ const READ_DESKTOP = `(() => {
 /** The lone pane's width, and the size of its window on the picture. */
 const READ_PICTURE = `(() => {
 	const pane = document.querySelector('${PANE_SECTIONS}');
-	const picture = pane?.querySelector('[data-slot="semantic-board-viewport"]')?.getBoundingClientRect();
+	const picture = pane?.querySelector('[data-slot="model-diagram"]')?.getBoundingClientRect();
 	return { pane: pane?.getBoundingClientRect().width ?? 0, width: picture?.width ?? -1,
 		height: picture?.height ?? -1 };
 })()`;
@@ -97,7 +103,7 @@ const READ_ACTIVITY = `(() => {
 	const line = entries[0]?.querySelector('button > span:last-child');
 	const own = line ? [...line.childNodes].filter(child => child.nodeType === 3)
 		.map(child => child.textContent).join('').trim() : null;
-	const row = nav?.querySelector('[role="treeitem"][data-row-kind="board"]:has([data-board-key="fixedpoint"])');
+	const row = nav?.querySelector('[role="treeitem"][aria-selected="true"]');
 	return { entries: entries.length, doing: own, lamp: !!row?.querySelector('[data-slot="agent-activity"]') };
 })()`;
 
@@ -106,37 +112,48 @@ test(
 	async () => {
 		await using resources = new AsyncDisposableStack();
 		const { ownerRoot } = browserTestRoots();
-		const vault = vaultIn(join(ownerRoot, "vault"));
+		const root = join(ownerRoot, "vault");
+		const vault = vaultIn(root);
+		const model = await seedCanonicalModel(vault, "fixedpoint");
+		initializeSource(root);
 		const server = await startOwnedServer({
 			serverPath,
 			vault,
-			env: serverTestEnvironment({ LOG_FILE_PATH: join(ownerRoot, "server.log") }),
+			env: serverTestEnvironment({
+				LOG_FILE_PATH: join(ownerRoot, "server.log"),
+				GIT_CONFIG_GLOBAL: "/dev/null",
+				GIT_CONFIG_NOSYSTEM: "1",
+			}),
 		});
 		resources.defer(() => server.dispose());
 		registerServerBase(server.base);
 		const browser = resources.use(await createAgentBrowser());
 		const api = createJsonRequester(server);
-		await seedSemanticBoard(api, "fixedpoint");
-		// Shown on a proposal rather than on what is current, so the header has a
-		// variant to name: a board read through the variant its name opens has
-		// nothing there to check.
-		const branched = await api<{ board: { variants: Array<{ id: string; name: string }> } }>(
-			"/api/semantic-boards/branch?expectVersion=1",
-			{
-				method: "POST",
-				doing: "proposing the queued ingest",
-				body: { board: "fixedpoint", branch: { from: "current", name: "Queued ingest" } },
-			},
+		const created = await editCanonicalModel(
+			api,
+			vault,
+			"shell-proposal",
+			[
+				{
+					type: "edit-module",
+					subject: model.modules[0]!.id,
+					set: { description: "Queues incoming records" },
+				},
+			],
+			{ proposal: { type: "create", name: "Queued ingest" }, doing: "Proposing queued ingest" },
 		);
-		expect(branched.status).toBe(200);
-		const proposal = branched.body.board.variants.find((one) => one.name === "Queued ingest")!;
-		expect(proposal).toBeDefined();
+		const proposal = { id: created.target.state!, name: "Queued ingest" };
 		// The agent's activity row outlives its write by a product linger
 		// (CLAIM_MS.activityLinger). A restart drops it, so the shell matrix captures the
 		// idle navigator without waiting that linger out.
 		await server.restart();
 
-		await browser.run(["open", addressShowing(server.base, `fixedpoint@${proposal.id}`)]);
+		await browser.run(["open", `${modelAddress(server.base, model)}&stateA=${proposal.id}`]);
+		const listed = await browser.eval<{ repositories: RepositoryEntry[] }>(
+			`fetch('/api/repositories').then(response => response.json())`,
+		);
+		const repository = listed.repositories.find((entry) => entry.vault === vault)?.name;
+		if (repository === undefined) throw new Error("The fixture repository was not registered.");
 		expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		await pollUntil(
@@ -146,26 +163,23 @@ test(
 			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		await pollUntil(
-			() => browser.eval<string | null>(BOARD_NAME_EXPRESSION),
+			() => browser.eval<string | null>(MODEL_NAME_EXPRESSION),
 			(board) => board === "fixedpoint",
 			"fixedpoint to become the visible board",
 			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
-		// And on the proposal, not merely on the board: the header names the
-		// variant beside it, and a poll that stopped at the board name would run
-		// the matrix against a header the show had not reached yet.
 		await pollUntil(
 			() =>
 				browser.eval<string | null>(
-					`document.querySelector('${BOARD_BREADCRUMB} [data-slot="board-state"] > span:last-child')?.textContent?.trim() ?? null`,
+					`document.querySelector('[data-slot="model-state-details"]')?.getAttribute('data-selected-state') ?? null`,
 				),
-			(variant) => variant === proposal.name,
+			(state) => state === proposal.id,
 			"the header to name the proposal being read",
 			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		await pollUntil(
-			() => stageState(browser.eval.bind(browser)),
-			(state) => state === "drawn",
+			() => modelDrawn(browser.eval.bind(browser)),
+			Boolean,
 			"the board to be drawn in its pane",
 			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
@@ -255,10 +269,10 @@ test(
 			expect(snapshot.inkContrast).toBeGreaterThanOrEqual(4.5);
 			expect(snapshot.flatSurfaces).toBe(true);
 			expect(snapshot.visibleFocus).toBe(true);
-			expect(snapshot.boardIdentity).toBe("fixedpoint");
-			expect(snapshot.variant).toBe(proposal.name);
+			expect(snapshot.modelIdentity).toBe("fixedpoint");
+			expect(snapshot.stateName).toContain(proposal.name);
 			// The navigator marks the board the one focused pane reads.
-			expect(snapshot.selectedBoard).toBe("fixedpoint");
+			expect(snapshot.selectedRepository).toBe(repository);
 			expect(snapshot.focusedPaneCount).toBe(1);
 			// A live socket says nothing in the pane header.
 			expect(snapshot.connectionTrouble).toBe(0);
@@ -283,10 +297,6 @@ test(
 						family.includes("archboard onest") && transform === "none" && weight >= 500,
 				),
 			).toBe(true);
-			// The type roles (DESIGN.md): the board in the pane's breadcrumb 650,
-			// body 400, the state and controls 500, technical tokens in the mono face
-			// at 400 or 500, and a sidebar section heading 600 at the body size,
-			// never uppercase (TASK-383).
 			expect(snapshot.titleType).toMatchObject({ weight: 650 });
 			expect(snapshot.sectionHeading).toMatchObject({
 				weight: 600,
@@ -326,9 +336,6 @@ test(
 		}
 		expect(themes[0]?.background).not.toBe(themes[1]?.background);
 
-		// The columns: the navigator's column at the left edge, top to bottom,
-		// with the agent dock at its foot; the pane centre beside it to the
-		// viewport's edge; the conversation closed.
 		const closed = await browser.eval<DesktopShell>(READ_DESKTOP);
 		expect(closed.viewport).toEqual(SHELL_VIEWPORT);
 		expect(closed.column).toMatchObject({ left: 0, top: 0, bottom: closed.viewport.height });
@@ -401,32 +408,24 @@ test(
 		);
 		await pollUntil(readPaneLetters, (letters) => letters.count === 0, "the pane letters to go");
 
-		// An agent at work shows in the navigator, which is where the tree never
-		// moves for it: the latest thing it said under "Working now" and a lamp
-		// on the board's row. The pane never gives up room for it.
 		const paneHeight = () =>
 			browser.eval<number>(
 				`document.querySelector('${PANE_SECTIONS}').getBoundingClientRect().height`,
 			);
 		const restingPaneHeight = await paneHeight();
-		// The board is at 2 already: it was branched so the header would have a
-		// variant to name.
-		let version = 2;
 		for (const [index, doing] of activityLines.entries()) {
-			const wrote = await api<{ success: boolean; version: number }>(
-				`/api/semantic-boards/edit?expectVersion=${version}`,
-				{
-					method: "POST",
-					doing,
-					body: {
-						board: "fixedpoint",
-						origin: "agent",
-						edit: { nodes: [{ name: `Step ${index + 1}`, kind: "service" }] },
+			await editCanonicalModel(
+				api,
+				vault,
+				`shell-activity-${index}`,
+				[
+					{
+						type: "add-module",
+						module: { name: `Step ${index + 1}`, kind: "service", order: index + 10 },
 					},
-				},
+				],
+				{ doing },
 			);
-			expect(wrote.status).toBe(200);
-			version = wrote.body.version;
 		}
 		const activity = await pollUntil(
 			() => browser.eval<{ entries: number; doing: string | null; lamp: boolean }>(READ_ACTIVITY),
