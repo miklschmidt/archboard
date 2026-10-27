@@ -22,23 +22,28 @@ function mountArchitectureExplanationRoutes(app: Express): void {
 		const result = await explainArchitecture(vaultOfRequest(req), parsed.data);
 		res.status(result.success ? 200 : result.code === "AGENT_UNAVAILABLE" ? 503 : 409).json(result);
 	});
-	app.get("/api/architecture/explanations/:actionId", requireVault, async (req, res) => {
-		const parsed = ExplanationActionRequestSchema.safeParse({
-			type: "read",
-			actionId: req.params["actionId"],
-			tabSessionId: req.query["tabSessionId"],
-		});
-		if (!parsed.success) {
-			res.status(400).json({
-				success: false,
-				code: "INVALID_REQUEST",
-				error: "Name the action and its tab session.",
+	app.get(
+		["/api/architecture/explanations", "/api/architecture/explanations/:actionId"],
+		requireVault,
+		async (req, res) => {
+			const parsed = ExplanationActionRequestSchema.safeParse({
+				...(req.params["actionId"] === undefined
+					? { type: "latest" }
+					: { type: "read", actionId: req.params["actionId"] }),
+				tabSessionId: req.query["tabSessionId"],
 			});
-			return;
-		}
-		const result = await explainArchitecture(vaultOfRequest(req), parsed.data);
-		res.status(result.success ? 200 : 404).json(result);
-	});
+			if (!parsed.success) {
+				res.status(400).json({
+					success: false,
+					code: "INVALID_REQUEST",
+					error: "Name the action and its tab session.",
+				});
+				return;
+			}
+			const result = await explainArchitecture(vaultOfRequest(req), parsed.data);
+			res.status(result.success ? 200 : 404).json(result);
+		},
+	);
 	for (const type of ["retry", "cancel"] as const)
 		app.post(`/api/architecture/explanations/:actionId/${type}`, requireVault, async (req, res) => {
 			const parsed = ExplanationActionRequestSchema.safeParse({

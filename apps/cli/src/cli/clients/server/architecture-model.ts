@@ -284,6 +284,11 @@ function explainArchitectureOnServer(input: z.infer<typeof ExplanationActionRequ
 	const base = "/api/architecture/explanations";
 	if (type === "invoke")
 		return architectureResult(ExplanationActionResultSchema, base, jsonPost(body));
+	if (input.type === "latest")
+		return architectureResult(
+			ExplanationActionResultSchema,
+			`${base}?${new URLSearchParams({ tabSessionId: input.tabSessionId })}`,
+		);
 	const path = `${base}/${encodeURIComponent(input.actionId)}`;
 	return type === "read"
 		? architectureResult(

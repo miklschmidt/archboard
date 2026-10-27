@@ -1,3 +1,4 @@
+import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { semanticPaneContextFor, onSemanticPaneContext } from "#server/services/panes/context.ts";
 import { createExplanationActions } from "#server/services/explanations/actions.ts";
 import { installExplanationActions } from "#server/services/explanations/dispatch.ts";
@@ -432,7 +433,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			codexWiring.codex.publishPaneContext = (clientId, kind, userChanged, agentSwitch) => {
 				const pane = panes.get(clientId);
 				const session = boundSessionOf(components, clientId);
-				if (pane === undefined || session === null) return;
+				if (!legacyContextPane(pane) || session === null) return;
 				const semanticPublisher = announcements.publisherFor(session.id);
 				try {
 					const owners = semanticOwners(components, session, session.voiceWorkhorse());
@@ -517,3 +518,16 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 	}
 }
 export { prepareCodexWorkbench, stopCodexWorkbench };
+
+/**
+ * Canonical reports reach the coordinator through their own existing context subscription.
+ * @param pane The registered pane, when present.
+ * @returns Whether a legacy board context can be read for this pane.
+ */
+function legacyContextPane(pane: PaneRegistration | undefined): pane is PaneRegistration {
+	return (
+		pane !== undefined &&
+		pane.board !== null &&
+		semanticPaneContextFor(pane.clientId)?.architecture === undefined
+	);
+}

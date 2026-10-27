@@ -42,12 +42,16 @@ test("local explanations share captured text, cancellation, and retry through th
 		tabSession: "explain-tab",
 	});
 	resources.defer(() => socket.close());
+	const announcements: unknown[] = [];
+	socket.socket.on("message", (raw) => {
+		const message = JSON.parse(raw.toString());
+		if (message.type === "architecture_explanations_changed") announcements.push(message);
+	});
 	await fetch(`${server.base}/api/panes?vault=${encodeURIComponent(fixture.vault)}`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(productionPane("explain-client", "explain-pane", true, true)),
 	});
-	expect(await socket.request("connect")).toMatchObject({ ok: true });
 	const model = readArchitectureModel(fixture.vault);
 	if (!model.success) throw new Error(JSON.stringify(model));
 	const request = {
@@ -103,11 +107,27 @@ test("local explanations share captured text, cancellation, and retry through th
 				`${server.base}/api/architecture/explanations/${encodeURIComponent(actionId)}?${new URLSearchParams({ vault: fixture.vault, tabSessionId: "explain-tab" })}`,
 			)
 		).json();
+	const latestAction = async () =>
+		(
+			await fetch(
+				`${server.base}/api/architecture/explanations?${new URLSearchParams({ vault: fixture.vault, tabSessionId: "explain-tab" })}`,
+			)
+		).json();
+	expect(await latestAction()).toMatchObject({ success: false, code: "ACTION_NOT_FOUND" });
 	const [started, duplicate] = await Promise.all([
 		invoke("", { request }),
 		invoke("", { request }),
 	]);
 	expect(duplicate).toEqual(started);
+	expect(announcements).toContainEqual({ type: "architecture_explanations_changed" });
+	expect(await latestAction()).toMatchObject({
+		success: true,
+		action: {
+			actionId: "capture-1",
+			vault: fixture.vault,
+			capture: { modelName: model.manifest.name },
+		},
+	});
 	expect(
 		productionRecords(fixture.logPath).filter(
 			(record) => record.kind === "frame" && record.method === "thread/queue/add",
@@ -146,6 +166,10 @@ test("local explanations share captured text, cancellation, and retry through th
 		success: true,
 		action: { attempt: 2, status: "running", capture: { revision: model.revision } },
 	});
+	expect(await latestAction()).toMatchObject({
+		success: true,
+		action: { actionId: "capture-1", attempt: 2, capture: { revision: model.revision } },
+	});
 	writeFileSync(
 		fixture.controlPath,
 		JSON.stringify({ ordinaryOnly: true, explanationQueue: true, completeWorkhorseTurn: true }),
@@ -167,7 +191,7 @@ test("local explanations share captured text, cancellation, and retry through th
 		repoRoot: join(import.meta.dir, "../../.."),
 		server,
 		args: ["model", "explain"],
-		input: JSON.stringify({ type: "read", tabSessionId: "explain-tab", actionId: "capture-1" }),
+		input: JSON.stringify({ type: "latest", tabSessionId: "explain-tab" }),
 	});
 	expect(cli.status, cli.stderr).toBe(0);
 	expect(JSON.parse(cli.stdout).action).toEqual((await read()).action);

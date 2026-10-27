@@ -13,7 +13,7 @@ const modelExplainContract = defineCommand({
 	shared: ["url", "directory"],
 	summary: "Explain a captured architecture reading through the local agent",
 	description:
-		"Reads an invocation with its tab session, exact revision, subjects, and reading intent. Read, retry, and cancel actions use the original action identity. Answers stay temporary.",
+		"Reads an invocation with its tab session, exact revision, subjects, and reading intent. Latest discovers the last action in the tab. Read, retry, and cancel actions use the original action identity and vault. Answers stay temporary.",
 	examples: ["archboard model explain --input explanation.json -C /tmp/shop"],
 	parameters: [
 		{

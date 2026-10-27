@@ -1,0 +1,140 @@
+import { expect, test } from "bun:test";
+import { cpSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { startOwnedServer } from "../support/owned-server.ts";
+import { prepareProductionFixture } from "../server-state/support/codex-production.ts";
+import { productionServer } from "../server-state/support/production-server.ts";
+import {
+	createAgentBrowser,
+	pollUntil,
+	registerServerBase,
+	serverTestEnvironment,
+} from "./support/agent-browser.ts";
+import { initializeSource } from "./support/canonical-model.ts";
+
+const WAIT = { timeoutMs: 10_000 } as const;
+
+test("an explanation keeps its captured selection after scope navigation", async () => {
+	await using resources = new AsyncDisposableStack();
+	const fixture = prepareProductionFixture(
+		resources,
+		resolve(import.meta.dir, "../server-state/fixtures/fake-codex-production.ts"),
+	);
+	cpSync(
+		resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"),
+		fixture.vault,
+		{ recursive: true },
+	);
+	initializeSource(fixture.root);
+	writeFileSync(
+		fixture.controlPath,
+		JSON.stringify({ ordinaryOnly: true, explanationQueue: true }),
+	);
+	const server = await startOwnedServer({
+		...productionServer,
+		vault: fixture.vault,
+		env: serverTestEnvironment({
+			ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
+			ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
+			ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
+			XDG_STATE_HOME: join(fixture.root, "state"),
+			GIT_CONFIG_GLOBAL: "/dev/null",
+			GIT_CONFIG_NOSYSTEM: "1",
+		}),
+	});
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const browser = resources.use(await createAgentBrowser());
+
+	await browser.run(["open", `${server.base}/?modelA=Shop`]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(`document.querySelector('[data-module-id="Shop#Gateway"]') !== null`),
+		Boolean,
+		"the canonical selection",
+		WAIT,
+	);
+	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-explain"]') !== null`),
+		Boolean,
+		"the explanation actions",
+		WAIT,
+	);
+	await browser.run(["click", '[data-slot="model-explain"]']);
+
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`(() => { const item = document.querySelector('[data-explanation-action="explain-selection"]'); return item !== null && item.getBoundingClientRect().height > 0 && item.getAttribute("aria-disabled") !== "true" && !item.hasAttribute("disabled"); })()`,
+			),
+		Boolean,
+		"the explanation menu",
+		WAIT,
+	);
+	await browser.run(["click", '[data-explanation-action="explain-selection"]']);
+	await pollUntil(
+		() =>
+			browser.eval<{ status: string | null; alerts: string[] }>(
+				`({status: document.querySelector('[data-slot="model-explanation"]')?.getAttribute('data-status') ?? null, alerts: [...document.querySelectorAll('[role="alert"]')].map(e => e.textContent)})`,
+			),
+		(result) => result.status === "running",
+		"the running explanation",
+		WAIT,
+	);
+	const captured = await browser.eval<string | null>(
+		`document.querySelector('[data-slot="model-explanation"]')?.getAttribute('data-action-id') ?? null`,
+	);
+	expect(captured).not.toBeNull();
+	await browser.run(["click", '[data-slot="module-open"]']);
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-slot="model-reading"]')?.getAttribute('data-scope') ?? null`,
+			),
+		(scope) => scope === "Shop#Gateway",
+		"navigation during the explanation",
+		WAIT,
+	);
+	writeFileSync(
+		fixture.controlPath,
+		JSON.stringify({ ordinaryOnly: true, explanationQueue: true, completeWorkhorseTurn: true }),
+	);
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-slot="model-explanation"]')?.getAttribute('data-status') ?? null`,
+			),
+		(status) => status === "completed",
+		"the captured answer",
+		WAIT,
+	);
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('[data-slot="model-explanation"]')?.getAttribute('data-action-id') ?? null`,
+		),
+	).toBe(captured);
+	expect(
+		await browser.eval<string>(
+			`document.querySelector('[data-slot="model-explanation-text"]')?.textContent ?? ''`,
+		),
+	).toBe("The gateway accepts shopping requests.");
+	expect(
+		await browser.eval<string>(
+			`document.querySelector('[data-slot="model-explanation-context"]')?.textContent ?? ''`,
+		),
+	).toContain("Shop#Gateway");
+	const paneContext = await pollUntil(
+		async () => (await (await fetch(`${server.base}/api/panes`)).json()).panes[0]?.architecture,
+		(architecture) => architecture?.reading.scope === "Shop#Gateway",
+		"the canonical pane context after navigation",
+		WAIT,
+	);
+	expect(paneContext).toMatchObject({
+		model: "Shop",
+		vault: fixture.vault,
+		reading: { scope: "Shop#Gateway", groups: ["public"] },
+	});
+	expect(await browser.run(["errors"])).toBe("");
+}, 60_000);

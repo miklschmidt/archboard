@@ -37,8 +37,13 @@ function ownsTurn(entry: Entry, turn: Turn) {
  * Project provider notifications into one temporary answer.
  * @param entry The captured action on the notification's thread.
  * @param notification The existing provider event.
+ * @returns Whether the event changed the answer.
  */
 function noteExplanation(entry: Entry, notification: Notification) {
+	const before = entry.action;
+	const status = before.status;
+	const text = before.text;
+	const error = before.error;
 	switch (notification.method) {
 		case "turn/started":
 		case "turn/completed":
@@ -50,6 +55,11 @@ function noteExplanation(entry: Entry, notification: Notification) {
 		default:
 			break;
 	}
+	return [
+		status !== entry.action.status,
+		text !== entry.action.text,
+		error !== entry.action.error,
+	].some(Boolean);
 }
 /**
  * Keep the provider's final textual item for a partial completion notification.

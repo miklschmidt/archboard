@@ -204,6 +204,7 @@ function attachCapture(
 			...model,
 			explanation: {
 				request: explain,
+				modelName: model.manifest.name,
 				selection,
 				comparison: model.comparison,
 				state: model.selectedState,

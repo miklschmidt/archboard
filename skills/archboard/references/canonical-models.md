@@ -796,8 +796,17 @@ Read progress with the same command and this input:
 
 The result reports captured, queued, running, completed, failed, cancelled, or unavailable.
 The browser and voice consume the same `action.text` answer.
+The toolbar, context menu, and keyboard invoke that same action.
+The visible answer names its original model, state, subjects, and revision after navigation.
 The coordinator speaks that answer without requesting a second explanation.
 Normal workhorse news tells the coordinator when the turn finishes.
+The existing pane socket announces answer changes to panes in the same tab.
+The browser refreshes its answer query after that notice and after reconnecting.
+No extra connection or polling loop owns explanation progress.
+
+To discover the last invocation or retry in a tab, send `type:"latest"` with its `tabSessionId`.
+The result includes `action.vault`, which names the original captured vault.
+Use that vault for later reads, cancellation, and retries, even after navigation.
 If this action queues on your own workhorse, end your turn so that its queue can start it.
 If `action.retryable` is true, send `type:"retry"` with the original tab and action identity.
 Retry preserves the captured request and content after navigation or source changes.

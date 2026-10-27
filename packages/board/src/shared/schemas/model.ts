@@ -132,6 +132,7 @@ const ArchitectureModelSchema = z
 		explanation: z
 			.strictObject({
 				request: ExplanationRequestSchema,
+				modelName: ArchitectureManifestSchema.shape.name,
 				selection: ReadingSelectionSchema,
 				comparison: ComparisonSchema.optional(),
 				state: SelectedStateSchema.nullable(),

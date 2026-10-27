@@ -1,3 +1,5 @@
+import { ModelExplanationMenu } from "#ui/components/architecture-model/ModelExplanationMenu.tsx";
+import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
 import { lazy, Suspense, useCallback, useMemo, type JSX } from "react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
@@ -52,6 +54,7 @@ interface ModelReadingProps {
 function ModelReading(props: ModelReadingProps): JSX.Element {
 	const { model } = props;
 	const comparison = useModelComparison(props.vault, model);
+	const location = useModelLocation(props.paneId);
 	const {
 		scope,
 		open,
@@ -65,7 +68,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 		selectGrammar,
 		selectFlow,
 		openFlow,
-	} = useModelLocation(props.paneId);
+	} = location;
 	const { id: modelId } = model.manifest;
 	const onOpen = useCallback((next: string | null): void => open(modelId, next), [modelId, open]);
 	const projection = useMemo(
@@ -73,6 +76,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 		[model, scope, focus, filters, comparison.reference],
 	);
 	const selection = useModelSelection(projection, props.subject);
+	const explanation = useModelExplanation(props.vault, model, location, selection.ids);
 	const { clear } = selection;
 	const behavioralIds = useMemo(() => {
 		const collections = [model, comparison.reference].flatMap((reading) =>
@@ -137,6 +141,12 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				architectural={grammar === "architecture"}
 				canFocus={canFocus}
 			>
+				<ModelExplanationMenu
+					model={model}
+					selected={selection.ids}
+					unavailable={explanation.unavailable}
+					onAction={explanation.act}
+				/>
 				<ModelModeControls
 					content={projection.depicted}
 					subjects={subjects}

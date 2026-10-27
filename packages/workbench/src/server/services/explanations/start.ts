@@ -15,7 +15,7 @@ async function readyWorkhorse(scope: CodexWorkbenchDomainScope, entry: Entry) {
 	await requireAccount(scope);
 	const tabId = parseTabSessionId(entry.invocation.tabSessionId);
 	if (tabId === null) throw new Error("The tab session is unavailable.");
-	const tab = scope.sessions.require(tabId);
+	const tab = scope.sessions.open(tabId);
 	const coordinator = await tab.components.coordinator.ensure({
 		operationId: scope.identity.operation.issuer.mintOperationId(),
 	});

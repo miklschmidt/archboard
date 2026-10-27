@@ -3,6 +3,7 @@ import { ArchitectureModelReadSchema } from "@archboard/board/model";
 
 const CaptureSchema = ArchitectureModelReadSchema.options[0].shape.explanation.unwrap();
 const ExplanationActionRequestSchema = z.discriminatedUnion("type", [
+	z.strictObject({ type: z.literal("latest"), tabSessionId: z.string().min(1) }),
 	z.strictObject({
 		type: z.literal("invoke"),
 		tabSessionId: z.string().min(1),
@@ -19,6 +20,7 @@ const ExplanationActionResultSchema = z.discriminatedUnion("success", [
 	z.strictObject({
 		success: z.literal(true),
 		action: z.strictObject({
+			vault: z.string(),
 			actionId: z.string(),
 			status: z.enum([
 				"captured",

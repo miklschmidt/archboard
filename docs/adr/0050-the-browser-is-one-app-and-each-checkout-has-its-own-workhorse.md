@@ -136,6 +136,11 @@ It never infers that address from the initial legacy pane.
 The existing tab coordinator and checkout workhorse own execution.
 The workhorse queue holds captured input and existing provider notifications supply one textual answer.
 The browser and voice consume that same answer.
+The existing pane socket announces temporary answer changes only to panes in the same tab.
+The browser reads the latest deliberate invocation or retry through its existing query cache.
+That result names its captured vault, so later controls stay attached after foreign navigation.
+The answer panel keeps its original model, state, subjects, and revision visible.
+It owns dismissal and no architecture content.
 Explicit retry reuses the capture, even after navigation or source changes.
 Uncertain delivery prevents retry until its outcome is known.
 Cancellation uses queue deletion or interruption of the exact correlated turn.

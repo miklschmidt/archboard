@@ -1,3 +1,5 @@
+import { panes, sendBoardlessToPane } from "#server/services/panes/registry.ts";
+import { tabSessionOf } from "#server/services/panes/tab-sessions.ts";
 import { isDeepStrictEqual } from "node:util";
 import { readArchitectureModel } from "@archboard/board/store-read";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
@@ -31,6 +33,7 @@ function capturedEntry(vault: string, invocation: Invocation, model: Reading): E
 		invocation: structuredClone(invocation),
 		model,
 		action: {
+			vault,
 			actionId: invocation.request.actionId,
 			status: "captured",
 			attempt: 0,
@@ -70,8 +73,10 @@ function createExplanationActions(scope: CodexWorkbenchDomainScope) {
 	 */
 	const start = async (entry: Entry) => {
 		entry.pending = startExplanation(scope, entry);
+		announce(entry);
 		await entry.pending;
 		delete entry.pending;
+		announce(entry);
 	};
 	/**
 	 * Capture once and preserve concurrent invocations under one action identity.
@@ -102,14 +107,17 @@ function createExplanationActions(scope: CodexWorkbenchDomainScope) {
 	/**
 	 * Retry only a settled failure or confirmed cancellation.
 	 * @param entry The original capture.
+	 * @param entries The tab actions ordered by last invocation or retry.
 	 * @returns The new attempt or explicit refusal.
 	 */
-	const retry = async (entry: Entry): Promise<Result> => {
+	const retry = async (entry: Entry, entries: Map<string, Entry>): Promise<Result> => {
 		if (!entry.action.retryable || entry.pending !== undefined)
 			return refuse(
 				"RETRY_UNAVAILABLE",
 				"This action cannot be retried while its outcome is pending or complete.",
 			);
+		entries.delete(entry.action.actionId);
+		entries.set(entry.action.actionId, entry);
 		await start(entry);
 		return reply(entry);
 	};
@@ -129,14 +137,21 @@ function createExplanationActions(scope: CodexWorkbenchDomainScope) {
 	 * Apply one operation to an existing temporary action.
 	 * @param entry The original action.
 	 * @param input The operation.
+	 * @param entries The tab actions in invocation order.
 	 * @returns Its current result.
 	 */
-	const operate = (entry: Entry, input: Exclude<Request, Invocation>) => {
+	const operate = async (
+		entry: Entry,
+		input: Exclude<Request, Invocation>,
+		entries: Map<string, Entry>,
+	) => {
 		switch (input.type) {
 			case "retry":
-				return retry(entry);
+				return retry(entry, entries);
 			case "cancel":
-				return cancel(entry);
+				const result = await cancel(entry);
+				announce(entry);
+				return result;
 			default:
 				return reply(entry);
 		}
@@ -150,15 +165,15 @@ function createExplanationActions(scope: CodexWorkbenchDomainScope) {
 		notification,
 	}) => {
 		if (!("threadId" in notification.params)) return;
-		for (const entries of tabs.values())
-			for (const entry of entries.values()) {
-				if (
-					entry.threadId !== undefined &&
-					scope.identity.identity.decoder.serializeCodexIdentity(entry.threadId) ===
-						notification.params.threadId
-				)
-					noteExplanation(entry, notification);
+		for (const entry of [...tabs.values()].flatMap((entries) => [...entries.values()])) {
+			if (
+				entry.threadId !== undefined &&
+				scope.identity.identity.decoder.serializeCodexIdentity(entry.threadId) ===
+					notification.params.threadId
+			) {
+				if (noteExplanation(entry, notification)) announce(entry);
 			}
+		}
 	};
 	const stopTabs = scope.sessions.onChange(() => {
 		const live = new Set(scope.sessions.list().map((tab) => String(tab.id)));
@@ -171,22 +186,23 @@ function createExplanationActions(scope: CodexWorkbenchDomainScope) {
 	 * @returns The temporary result or actionable refusal.
 	 */
 	const dispatch = async (vault: string, input: Request): Promise<Result> => {
-		const tabId = parseTabSessionId(input.tabSessionId);
-		if (!scope.sessions.list().some((tab) => tab.id === tabId))
+		if (!availableTab(scope, input.tabSessionId))
 			return refuse(
 				"AGENT_UNAVAILABLE",
-				"Open a conversation in this tab before asking for an explanation.",
+				"Open an architecture pane in this tab before asking for an explanation.",
 			);
-		const entries = tabs.get(input.tabSessionId) ?? new Map<string, Entry>();
-		tabs.set(input.tabSessionId, entries);
+		const entries = entriesFor(tabs, input.tabSessionId);
 		if (input.type === "invoke") return invoke(vault, input, entries);
+		if (input.type === "latest") return latestAction(entries);
 		const entry = entries.get(input.actionId);
 		if (entry === undefined)
 			return refuse(
 				"ACTION_NOT_FOUND",
 				"This temporary answer is unavailable. Start a new explanation.",
 			);
-		return mismatch(entry, vault, input) ?? operate(entry, input);
+		const refused = mismatch(entry, vault, input);
+		if (refused !== undefined) return refused;
+		return operate(entry, input, entries);
 	};
 	return {
 		dispatch,
@@ -247,3 +263,56 @@ async function interrupt(scope: CodexWorkbenchDomainScope, entry: Entry) {
 		});
 }
 export { createExplanationActions };
+
+/**
+ * Read the last deliberate invocation or retry in this tab, across navigation.
+ * @param entries The tab's existing temporary action owner.
+ * @returns The newest action with its actual captured vault, or an empty refusal.
+ */
+function latestAction(entries: Map<string, Entry>): Result {
+	const entry = [...entries.values()].at(-1);
+	return entry === undefined
+		? refuse("ACTION_NOT_FOUND", "This tab has no temporary answer. Start an explanation.")
+		: reply(entry);
+}
+
+/**
+ * Invalidate temporary answers on the tab's existing pane connections.
+ * @param entry The action whose progress changed.
+ */
+function announce(entry: Entry): void {
+	for (const pane of panes.values()) {
+		if (tabSessionOf(pane.clientId) === entry.invocation.tabSessionId)
+			sendBoardlessToPane(pane.clientId, { type: "architecture_explanations_changed" });
+	}
+}
+
+/**
+ * Share one action map for every request in the tab.
+ * @param tabs The generation-owned tab actions.
+ * @param tab The existing tab identity.
+ * @returns Its existing or newly empty action map.
+ */
+function entriesFor(tabs: Map<string, Map<string, Entry>>, tab: string): Map<string, Entry> {
+	let entries = tabs.get(tab);
+	if (entries === undefined) {
+		entries = new Map();
+		tabs.set(tab, entries);
+	}
+	return entries;
+}
+
+/**
+ * Require a registered browser tab or its existing conversation before accepting an action.
+ * @param scope The existing generation sessions.
+ * @param id The explicit tab identity.
+ * @returns Whether this generation can serve the addressed tab.
+ */
+function availableTab(scope: CodexWorkbenchDomainScope, id: string): boolean {
+	const tabId = parseTabSessionId(id);
+	if (tabId === null) return false;
+	return (
+		scope.sessions.list().some((tab) => tab.id === tabId) ||
+		[...panes.values()].some((pane) => tabSessionOf(pane.clientId) === tabId)
+	);
+}
