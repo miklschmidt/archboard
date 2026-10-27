@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 228,
+	"version": 229,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-27T12:48:13.778Z",
+	"updatedAt": "2026-10-27T14:30:24.883Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -292236,7 +292236,7 @@
 		{
 			"id": "kkJC4XAM",
 			"name": "TASK-549.22-integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "mqHAoSBD",
 			"documents": [
 				{
@@ -299818,7 +299818,7 @@
 		{
 			"id": "LSsVMn3j",
 			"name": "TASK-549.23",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "kkJC4XAM",
 			"summary": "Install a complete owner-authorized preview through the shared journal and retain exact originals",
 			"documents": [
@@ -307479,7 +307479,7 @@
 			}
 		}
 	],
-	"current": "kkJC4XAM",
+	"current": "LSsVMn3j",
 	"adoptions": [
 		{
 			"variant": "Y8SHNDOe",
@@ -307739,6 +307739,12 @@
 			"from": "mqHAoSBD",
 			"at": "2026-10-27T11:55:25.620Z",
 			"reason": "Explicit original views, bookmarks, addresses, and retained references pass runtime and browser acceptance"
+		},
+		{
+			"variant": "LSsVMn3j",
+			"from": "kkJC4XAM",
+			"at": "2026-10-27T14:30:24.883Z",
+			"reason": "Public runtime and browser acceptance prove explicit recoverable migration with exact original navigation"
 		}
 	],
 	"shelvings": [

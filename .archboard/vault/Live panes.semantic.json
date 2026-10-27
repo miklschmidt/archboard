@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 93,
+	"version": 94,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-27T12:48:15.374Z",
+	"updatedAt": "2026-10-27T14:30:27.740Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -32825,7 +32825,7 @@
 		{
 			"id": "Gi0xj83D",
 			"name": "TASK-549.14-complete",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "rjx0hffN",
 			"content": {
 				"nodes": [
@@ -35953,7 +35953,7 @@
 		{
 			"id": "PDW2eHvg",
 			"name": "TASK-549.23",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "Gi0xj83D",
 			"summary": "Use canonical local agent context after durable migration and preserve explicit recovery",
 			"documents": [
@@ -39092,7 +39092,7 @@
 			}
 		}
 	],
-	"current": "Gi0xj83D",
+	"current": "PDW2eHvg",
 	"adoptions": [
 		{
 			"variant": "8dYrGdIf",
@@ -39188,6 +39188,12 @@
 			"from": "rjx0hffN",
 			"at": "2026-10-27T09:01:53.447Z",
 			"reason": "Canonical playback, recording, replay and narration pass the approved public runtime and browser evidence."
+		},
+		{
+			"variant": "PDW2eHvg",
+			"from": "Gi0xj83D",
+			"at": "2026-10-27T14:30:27.740Z",
+			"reason": "Public runtime and browser acceptance prove explicit recoverable migration with exact original navigation"
 		}
 	],
 	"shelvings": [

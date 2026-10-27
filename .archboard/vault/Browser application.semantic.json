@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 222,
+	"version": 224,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-27T13:24:57.428Z",
+	"updatedAt": "2026-10-27T14:30:29.128Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -109953,7 +109953,7 @@
 		{
 			"id": "yOURlznd",
 			"name": "TASK-549.22",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "ZOrrpWv9",
 			"documents": [
 				{
@@ -113865,7 +113865,7 @@
 		{
 			"id": "UxEQDTFg",
 			"name": "TASK-549.23",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "yOURlznd",
 			"documents": [
 				{
@@ -114042,7 +114042,7 @@
 						"name": "Shell",
 						"kind": "ui",
 						"responsibility": "The desktop frame in columns: the navigator with the agent dock at its foot, the conversation beside it while open, and the panes",
-						"description": "No row runs across the frame: each column has its own 40px top row (the brand bar over the navigator, a pane's header, the conversation's header), and the rows line up. The pane centre is the fullscreen root, so presenting a pane never remounts it, and a presented pane gets a slim bar with its exit and the one voice key. The navigator lists every repository with the boards of its chosen checkout under it, says in a repository's row when its checkout is gone or has no vault, and offers a menu of the repository's known checkouts.",
+						"description": "No row runs across the frame: each column has its own 40px top row (the brand bar over the navigator, a pane's header, the conversation's header), and the rows line up. The pane centre is the fullscreen root, so presenting a pane never remounts it, and a presented pane gets a slim bar with its exit and the one voice key. The navigator lists every repository with the boards of its chosen checkout under it, says in a repository's row when its checkout is gone or has no vault, and offers a menu of the repository's known checkouts. The migrated repository action opens its current canonical model in the active pane through the shared router.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/web/src/ui/components/shell"
@@ -116058,6 +116058,20 @@
 							"path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
 							"symbol": "RecordedModelStage"
 						}
+					},
+					{
+						"id": "tWVYo1RT",
+						"order": 93000,
+						"from": "c4LPnwh5",
+						"to": "n2ONtqdt",
+						"kind": "render",
+						"label": "opens current architecture",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/components/shell/RepositoryLine.tsx",
+							"symbol": "RepositoryModelLink"
+						}
 					}
 				],
 				"flows": [
@@ -117775,7 +117789,7 @@
 			}
 		}
 	],
-	"current": "yOURlznd",
+	"current": "UxEQDTFg",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -117986,6 +118000,12 @@
 			"from": "ZOrrpWv9",
 			"at": "2026-10-27T11:55:29.008Z",
 			"reason": "Explicit original views, bookmarks, addresses, and retained references pass runtime and browser acceptance"
+		},
+		{
+			"variant": "UxEQDTFg",
+			"from": "yOURlznd",
+			"at": "2026-10-27T14:30:29.128Z",
+			"reason": "Public runtime and browser acceptance prove explicit recoverable migration with exact original navigation"
 		}
 	],
 	"shelvings": [

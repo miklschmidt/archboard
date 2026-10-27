@@ -7,9 +7,9 @@
 		"Canvas server"
 	],
 	"level": "service",
-	"version": 304,
+	"version": 305,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-10-27T12:48:15.728Z",
+	"updatedAt": "2026-10-27T14:30:28.383Z",
 	"views": [
 		{
 			"id": "FawxUEKE",
@@ -122159,7 +122159,7 @@
 		{
 			"id": "KTfzFVnN",
 			"name": "TASK-549.20",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "zNzcVKXg",
 			"documents": [
 				{
@@ -125767,7 +125767,7 @@
 		{
 			"id": "bKG3RiFr",
 			"name": "TASK-549.23",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "KTfzFVnN",
 			"summary": "Read canonical context after cutover without former board claims or current-state substitution",
 			"documents": [
@@ -129384,7 +129384,7 @@
 			}
 		}
 	],
-	"current": "KTfzFVnN",
+	"current": "bKG3RiFr",
 	"adoptions": [
 		{
 			"variant": "82cs8TFY",
@@ -129697,6 +129697,12 @@
 			"from": "zNzcVKXg",
 			"at": "2026-10-27T04:56:45.598Z",
 			"reason": "TASK-549.20 is implemented with coherent preview reads, exact source preservation, visible navigation, and passing affected evidence."
+		},
+		{
+			"variant": "bKG3RiFr",
+			"from": "KTfzFVnN",
+			"at": "2026-10-27T14:30:28.383Z",
+			"reason": "Public runtime and browser acceptance prove explicit recoverable migration with exact original navigation"
 		}
 	],
 	"shelvings": [

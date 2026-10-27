@@ -396,7 +396,9 @@ Other canonical failures remain unavailable and do not select legacy content.
 An already-open legacy pane subscribes through the existing architecture feed.
 The feed starts with a fresh coherent snapshot.
 After durable completion, architecture_changed identifies the installed model, revision, subjects, and signed operation receipt.
-The parent browser owner connects its existing navigation and cache to that transition.
+The browser connects its existing navigation and cache to that transition.
+Its repository navigator discovers the same authority and opens the current model.
+Existing pane keys resolve through captured aliases into exact retained original addresses.
 No second authority endpoint, content cache, journal, or migration engine exists.
 
 Ordinary installed reads carry `migration.bookmarks`, `migration.addresses`, and `migration.states`.

@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 208,
+	"version": 209,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-27T12:48:14.850Z",
+	"updatedAt": "2026-10-27T14:30:26.852Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -243814,7 +243814,7 @@
 		{
 			"id": "iJahroer",
 			"name": "TASK-549.22-integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "2xd4wz6L",
 			"documents": [
 				{
@@ -249028,7 +249028,7 @@
 		{
 			"id": "yjZrsy0T",
 			"name": "TASK-549.23",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "iJahroer",
 			"summary": "Apply migration through the public runtime and announce durable completion through the existing feed",
 			"documents": [
@@ -254251,7 +254251,7 @@
 			}
 		}
 	],
-	"current": "iJahroer",
+	"current": "yjZrsy0T",
 	"adoptions": [
 		{
 			"variant": "OIsBTySc",
@@ -254517,6 +254517,12 @@
 			"from": "2xd4wz6L",
 			"at": "2026-10-27T11:55:28.250Z",
 			"reason": "Explicit original views, bookmarks, addresses, and retained references pass runtime and browser acceptance"
+		},
+		{
+			"variant": "yjZrsy0T",
+			"from": "iJahroer",
+			"at": "2026-10-27T14:30:26.852Z",
+			"reason": "Public runtime and browser acceptance prove explicit recoverable migration with exact original navigation"
 		}
 	],
 	"shelvings": [

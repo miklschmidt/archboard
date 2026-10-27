@@ -223,9 +223,7 @@ function differentModel(actual: string | undefined, requested: string | null): r
  * @param model The selected query result.
  * @returns Whether the response carries retained original coverage.
  */
-function isOriginalModel(
-	model: ModelQuery["data"],
-): model is NonNullable<ModelQuery["data"]> & {
+function isOriginalModel(model: ModelQuery["data"]): model is NonNullable<ModelQuery["data"]> & {
 	migrationPreview: NonNullable<NonNullable<ModelQuery["data"]>["migrationPreview"]>;
 } {
 	return model?.migrationPreview !== undefined;

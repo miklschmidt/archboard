@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
-import { writeFileSync } from "node:fs";
+import { rmSync, writeFileSync } from "node:fs";
 import type { ArchitectureModelRead, ArchitectureRecoveryResult } from "@archboard/board/model";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
@@ -10,42 +10,12 @@ import {
 	pollUntil,
 	registerServerBase,
 	serverTestEnvironment,
-	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
+import { pickModelChoice as pick } from "./support/model-choice.ts";
 import { serverPath } from "./support/navigator-support.ts";
 import { installedNavigation, migrationNavigation } from "./support/migrated-navigation.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
-
-async function pick(browser: AgentBrowserSession, trigger: string, option: string): Promise<void> {
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`(() => { const button = document.querySelector(${JSON.stringify(trigger)}); return button != null && !button.disabled; })()`,
-			),
-		Boolean,
-		"the installed navigation control",
-		WAIT,
-	);
-	await browser.run(["click", trigger]);
-	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector(${JSON.stringify(option)}) !== null`),
-		Boolean,
-		"the exact navigation choice",
-		WAIT,
-	);
-	await browser.run(["scrollintoview", option]);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`(() => { const item = document.querySelector(${JSON.stringify(option)}); if (!item) return false; const r = item.getBoundingClientRect(); return r.height > 0 && item.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })()`,
-			),
-		Boolean,
-		"the visible navigation choice",
-		WAIT,
-	);
-	await browser.run(["click", option]);
-}
 
 test("installed bookmarks keep canonical authority and old addresses reopen exact originals", async () => {
 	await using resources = new AsyncDisposableStack();
@@ -60,7 +30,7 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${server.base}/?modelA=Shop`]);
+	await browser.run(["open", `${server.base}/?modelB=Shop`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pick(
 		browser,
@@ -77,7 +47,7 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 		WAIT,
 	);
 	expect(
-		await browser.eval<string | null>(`new URLSearchParams(location.search).get('previewA')`),
+		await browser.eval<string | null>(`new URLSearchParams(location.search).get('previewB')`),
 	).toBeNull();
 	expect(
 		await browser.eval<boolean>(
@@ -102,11 +72,11 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 		`Object.fromEntries(new URLSearchParams(location.search))`,
 	);
 	expect(address).toMatchObject({
-		previewA: "Shop",
-		stateA: "Shop/System#Old",
-		checkpointA: fixture.migration.checkpoint,
+		previewB: "Shop",
+		stateB: "Shop/System#Old",
+		checkpointB: fixture.migration.checkpoint,
 	});
-	expect(address["bookmarkA"]).toBeUndefined();
+	expect(address["bookmarkB"]).toBeUndefined();
 	await browser.run(["reload"]);
 	await pollUntil(
 		() =>
@@ -135,12 +105,72 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop/System#Shop"]') !== null && !new URLSearchParams(location.search).has('previewA')`,
+				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop/System#Shop"]') !== null && !new URLSearchParams(location.search).has('previewB')`,
 			),
 		Boolean,
 		"the current model from its repository",
 		WAIT,
 	);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(`document.querySelector('[data-slot="model-diagram"] svg') !== null`),
+		Boolean,
+		"the current model drawing",
+		WAIT,
+	);
+	await pick(
+		browser,
+		'[data-slot="model-walkthrough-selector"]',
+		'[data-walkthrough-id="Shop/System#Tour"]',
+	);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-walkthrough"][data-grammar="architecture"] [data-semantic-id="Shop/System#Save"]') !== null`,
+			),
+		Boolean,
+		"installed narrative architecture",
+		WAIT,
+	);
+	await browser.run(["click", '[data-slot="semantic-presentation-next"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-walkthrough"][data-grammar="sequence"] [data-semantic-id="Shop/System#Ask"]') !== null`,
+			),
+		Boolean,
+		"installed narrative sequence",
+		WAIT,
+	);
+	await browser.run(["click", '[data-slot="semantic-presentation-leave"]']);
+	await pick(
+		browser,
+		'[data-slot="preview-bookmark-selector"]',
+		'[data-preview-bookmark="Shop/System#Storage"]',
+	);
+	const api = fixture.model.modules.find((module) => module.id === "Shop/System#Api")!;
+	const { file, ...content } = api;
+	writeFileSync(join(fixture.vault, file), JSON.stringify({ ...content, outgoing: [] }));
+	for (const module of fixture.model.modules.filter((entry) => entry.id === "Shop/System#Db"))
+		rmSync(join(fixture.vault, module.file));
+	for (const input of [...fixture.model.collections, ...fixture.model.walkthroughs])
+		rmSync(join(fixture.vault, input.file));
+	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-error"][data-code="BOOKMARK_UNAVAILABLE"]') !== null`,
+			),
+		Boolean,
+		"explicit missing bookmark content",
+		WAIT,
+	);
+	expect(
+		await browser.eval<string | null>(`new URLSearchParams(location.search).get('bookmarkB')`),
+	).toBe("Shop/System#Storage");
+	expect(
+		await browser.eval<boolean>(`document.querySelector('[data-slot="module-list"]') === null`),
+	).toBe(true);
 }, 60_000);
 
 test("an open legacy pane follows interrupted migration through recovery to canonical authority", async () => {

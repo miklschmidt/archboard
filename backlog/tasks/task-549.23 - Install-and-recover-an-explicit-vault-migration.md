@@ -1,11 +1,11 @@
 ---
 id: TASK-549.23
 title: Install and recover an explicit vault migration
-status: In Progress
+status: Done
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T14:12:00Z'
+updated_date: '2026-10-27T14:31:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -46,16 +46,16 @@ TASK-549.17, TASK-549.22
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An owner applies a complete migration preview. The operation retains original inputs before replacing the live format and switching every surface to the canonical model.
-- [ ] #2 Changed source or target inputs require a new preview or explicit recovery. Interrupted cutover resumes through the existing journal without losing either representation.
-- [ ] #3 A repeated completed migration is a no-op. Only one format remains authoritative. CLI, server, browser, and local agents use the new runtime afterward.
-- [ ] #4 The same workflow supports Git-backed and untracked vaults. Cache and subscription changes follow durable completion. Ownership transfer controls explain that transfer is unavailable.
+- [x] #1 An owner applies a complete migration preview. The operation retains original inputs before replacing the live format and switching every surface to the canonical model.
+- [x] #2 Changed source or target inputs require a new preview or explicit recovery. Interrupted cutover resumes through the existing journal without losing either representation.
+- [x] #3 A repeated completed migration is a no-op. Only one format remains authoritative. CLI, server, browser, and local agents use the new runtime afterward.
+- [x] #4 The same workflow supports Git-backed and untracked vaults. Cache and subscription changes follow durable completion. Ownership transfer controls explain that transfer is unavailable.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -92,4 +92,12 @@ The owner restored signing. The final blocked runtime case passes with 18 assert
 Fixed the confirmed installed-bookmark gap at signed source 4977bbf48. The public real-file/Git regression first reproduced empty diagnostics after valid external removal of Db. Bookmarks now share the existing playback readiness rules and report missing subjects, flows, scope, or filters through existing diagnostics. Exact reading intent, retained originals, and canonical authority stay intact. Focused runtime evidence: 17 cases, 103 assertions. Focused source/test lint and source types pass. Existing .23 drafts still describe this shared runtime behavior, so no extra proposal is needed. Status, assignee, acceptance criteria, and proposals remain unchanged for the parent.
 
 Fixed the second confirmed cutover gap: installed addresses now capture exact legacy pane keys through the existing parser, serializer, and original-state resolver. Public RED reproduced LEGACY_ADDRESS_NOT_FOUND for shop after installation. Focused GREEN proves shop, shop@Old, and shop@Past reopen their exact original states and checkpoint, while uncaptured spellings refuse and colliding captured keys remain ambiguous. Two focused cases pass with nine assertions. Source types, focused lint, and formatting pass. The final simplification removes duplicate archive reads without changing deadlines. Source b94f8c3e6 remains an ancestor. Existing .23 runtime drafts stay accurate, with no extra proposal. Parent status, assignee, acceptance, frontend, and browser ownership remain unchanged.
+
+Parent browser acceptance is complete. Installed bookmarks keep canonical authority, exact old addresses reopen paired original state and checkpoint, installed narratives switch architecture and sequence modes, and missing bookmark content remains explicitly unavailable. The existing public architecture query and event feed control both panes and repository navigation. A real interrupted installation becomes visible in an already-open legacy pane and durable recovery updates that pane. Former public pane keys are captured explicitly. No fuzzy alias or module substitution exists. Migration browser 2 cases/11 assertions, canonical navigation 3/19, preview navigation 3/15, and workspace address 4/14 pass. Types, full lint, formatting, diff checks, and deterministic skill evaluation pass. Parent inspected the completed UI at 1920x1080. All six TASK-549.23 architecture proposals are adopted after comparison and affected-scope code checks; only eight inherited Archboard warnings remain. Prior variant content, parents, documents, views, and existing decisions remain exact. Package width remains the inherited 252/188 transition for TASK-549.24. The final simplification shares bookmark refusal rendering and actual menu scrolling without a second architecture cache, observer, or installer.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Installed explicit owner-authorized migration through the existing journal, archive, lease, and recovery owner. Canonical runtime authority reaches CLI, HTTP, browser, and local agents after durable completion. Original history and compact proposals remain exact. Browser navigation preserves installed bookmarks, exact old links, and walkthroughs. Runtime, adapter, browser, type, lint, format, skill, and architecture evidence is recorded in the external TASK-549.23 handoffs. TASK-549.24 owns default canonical creation, vault migration, and retirement of live legacy paths.
+<!-- SECTION:FINAL_SUMMARY:END -->

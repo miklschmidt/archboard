@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 245,
+	"version": 246,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-27T12:48:14.361Z",
+	"updatedAt": "2026-10-27T14:30:25.922Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -220161,7 +220161,7 @@
 		{
 			"id": "DXgJJe7P",
 			"name": "TASK-549.22-integration",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "eM5I51qm",
 			"documents": [
 				{
@@ -224489,7 +224489,7 @@
 		{
 			"id": "bXuFopu0",
 			"name": "TASK-549.23",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "DXgJJe7P",
 			"summary": "Expose one explicit migration operation and coherent canonical authority",
 			"documents": [
@@ -228854,7 +228854,7 @@
 			}
 		}
 	],
-	"current": "DXgJJe7P",
+	"current": "bXuFopu0",
 	"adoptions": [
 		{
 			"variant": "hvQymc9q",
@@ -229180,6 +229180,12 @@
 			"from": "eM5I51qm",
 			"at": "2026-10-27T11:55:26.978Z",
 			"reason": "Explicit original views, bookmarks, addresses, and retained references pass runtime and browser acceptance"
+		},
+		{
+			"variant": "bXuFopu0",
+			"from": "DXgJJe7P",
+			"at": "2026-10-27T14:30:25.922Z",
+			"reason": "Public runtime and browser acceptance prove explicit recoverable migration with exact original navigation"
 		}
 	],
 	"shelvings": [

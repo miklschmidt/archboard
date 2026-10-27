@@ -3,6 +3,7 @@ import { useRouterState } from "@tanstack/react-router";
 import { Button } from "@archboard/ui-kit/components";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import { addressFromSearch, validateWorkspaceSearch } from "#ui/rules/board-routing/search.ts";
 
 /**
  * Open current architecture from its repository without inventing a board.
@@ -24,7 +25,8 @@ function RepositoryModelLink({
 		 * @param state The current route.
 		 * @returns Its pane identity or the initial pane.
 		 */
-		select: (state) => state.location.search["pane"] ?? "A",
+		select: (state) =>
+			addressFromSearch(validateWorkspaceSearch(state.location.search)).activePaneId ?? "A",
 	});
 	const { openRepository } = useModelLocation(pane);
 	const open = useCallback(

@@ -17,8 +17,8 @@ function ModelBookmarkReading({
 	model: Model;
 	children: ReactNode;
 }): JSX.Element {
-	const diagnostics = importedReadings(model)?.bookmark?.diagnostics ?? [];
-	if (diagnostics.length > 0)
+	const diagnostics = importedReadings(model)?.bookmark?.diagnostics;
+	if (diagnostics !== undefined && diagnostics.length > 0)
 		return (
 			<ModelError
 				code="BOOKMARK_UNAVAILABLE"

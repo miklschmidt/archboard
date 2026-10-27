@@ -693,6 +693,13 @@ It also follows a converted reference and reopens original playback after live o
 Original state and checkpoint selectors remain paired throughout those actions.
 The existing history, canonical reference, and walkthrough owners retain their broader behavior coverage.
 
+`canonical-model-migration.test.ts` owns visible installation behavior with real files and Git repositories.
+It covers installed bookmarks, exact original addresses, reload, repository navigation, and installed narrative modes.
+A valid later edit removes bookmarked content, and the browser preserves the unavailable bookmark address.
+A real interrupted installation exposes recovery in an already-open legacy pane.
+The recovery command retries only the explicit short-lease refusal before durable completion updates that pane.
+Runtime owners retain persistence, exact-byte, signing, and interruption-phase assertions.
+
 ## Explicit migration cutover
 
 The public architecture runtime owns migration installation under `legacy-preview/installation*.test.ts` and `proposal-installation.test.ts`.
