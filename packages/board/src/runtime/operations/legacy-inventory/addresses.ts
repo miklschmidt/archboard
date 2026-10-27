@@ -1,3 +1,4 @@
+import type { SemanticBoard } from "#shared/schemas/board-document.ts";
 import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
 import type { LegacyInventory } from "#shared/schemas/migration.ts";
 import { mappedIdentity } from "#shared/rules/legacy-inventory/plan.ts";
@@ -13,14 +14,25 @@ function legacyAddresses(inventory: LegacyInventory): Address[] {
 	return inventory.aliases.flatMap((alias) => {
 		const board = inventory.boards.find((entry) => entry.document?.id === alias.board)?.document;
 		if (board === undefined) return [];
-		const roots = board.variants.filter(
-			(state) => state.lifecycle === "draft" && state.parent === undefined,
-		);
-		const id = alias.state ?? board.current ?? (roots.length === 1 ? roots[0]!.id : undefined);
+		const id = originalAliasState(board, alias.state);
 		if (id === undefined) return [];
 		const state = `${inventory.plan.origin}/${board.id}#${id}`;
 		return [{ ...alias, state, canonical: mappedIdentity(inventory.plan, state) }];
 	});
+}
+/**
+ * Preserve the original current designation or one unambiguous planning root.
+ * @param board The complete original family.
+ * @param state Its explicit alias target, when present.
+ * @returns The exact original state identity or an unavailable bare address.
+ */
+function originalAliasState(board: SemanticBoard, state?: string) {
+	if (state !== undefined) return state;
+	if (board.current !== undefined) return board.current;
+	const roots = board.variants.filter(
+		(entry) => entry.lifecycle === "draft" && entry.parent === undefined,
+	);
+	return roots.length === 1 ? roots[0]!.id : undefined;
 }
 /**
  * Resolve only an exact captured alias and refuse conflicting state selectors.
@@ -70,6 +82,22 @@ function legacyAddressOf(addresses: Address[], selector: string, state?: string)
 function selectBookmark(model: ArchitectureModelRead, selector?: string): ArchitectureModelRead {
 	if (!model.success || selector === undefined) return model;
 	const bookmarks = model.migrationPreview?.bookmarks ?? [];
+	const selected = bookmarkOf(bookmarks, selector);
+	if ("success" in selected) return selected;
+	return { ...model, migrationPreview: { ...model.migrationPreview!, bookmark: selected } };
+}
+export { legacyAddresses, legacyAddressOf, selectBookmark };
+
+/**
+ * Resolve stable bookmark identities before exact unique names.
+ * @param bookmarks The captured optional reading catalogue.
+ * @param selector The deliberate bookmark selector.
+ * @returns One content-free reading or explicit ambiguity.
+ */
+function bookmarkOf(
+	bookmarks: NonNullable<NonNullable<ArchitectureModel["migrationPreview"]>["bookmarks"]>,
+	selector: string,
+) {
 	const exact = bookmarks.filter((entry) => entry.id === selector);
 	const matches = exact.length > 0 ? exact : bookmarks.filter((entry) => entry.name === selector);
 	if (matches.length !== 1) {
@@ -84,6 +112,5 @@ function selectBookmark(model: ArchitectureModelRead, selector?: string): Archit
 			},
 		]);
 	}
-	return { ...model, migrationPreview: { ...model.migrationPreview!, bookmark: matches[0]! } };
+	return matches[0]!;
 }
-export { legacyAddresses, legacyAddressOf, selectBookmark };

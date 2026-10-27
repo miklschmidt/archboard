@@ -87,6 +87,14 @@ An ordered narrative that selects readings of one architectural state.
 Narrative beat:
 One stable step that states its text and complete reading instructions.
 
+Imported bookmark:
+A named reading retained from an unused original view.
+It owns reading intent without architectural content or geometry.
+
+Legacy address:
+An explicit original alias that identifies one original state.
+Its canonical mapping preserves identity without expanding historical coverage.
+
 Pinned playback:
 A presentation that uses one resolved complete revision for every beat.
 A restart explicitly resolves a newer reading.

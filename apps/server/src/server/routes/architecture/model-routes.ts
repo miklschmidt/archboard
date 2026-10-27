@@ -17,6 +17,8 @@ const QuerySchema = z
 	.object({
 		vault: z.string(),
 		preview: z.string().min(1).optional(),
+		legacyAddress: z.string().min(1).optional(),
+		bookmark: z.string().min(1).optional(),
 		module: z.string().min(1).optional(),
 		flow: z.string().min(1).optional(),
 		walkthrough: z.string().min(1).optional(),

@@ -45,8 +45,9 @@ test("preview converts complete stable narrative readings and keeps only unused 
 			{
 				id: "Shop/System#End",
 				reading: {
-					grammar: "architecture",
-					focus: [],
+					grammar: "sequence",
+					flow: "Shop/System#Buy",
+					focus: ["Shop/System#Api", "Shop/System#Db"],
 					selection: [],
 					filters: { relationships: [], groups: [] },
 				},
@@ -237,4 +238,70 @@ test("mapped current readings retain former names while original state playback 
 			expect.anything(),
 		],
 	});
+});
+
+test("combining distinct original narratives never silently replaces one definition", async () => {
+	const { home, vault, original } = narrativeFixture();
+	homes.push(home);
+	const other = {
+		...structuredClone(original),
+		id: "Other",
+		name: "Other shop",
+		formerNames: ["Other store"],
+	};
+	for (const node of other.variants[0]!.content.nodes) {
+		node.name += " other";
+		if ("binding" in node) node.binding.path = "src/other.ts";
+	}
+	other.variants[0]!.content.walkthroughs[0]!.beats[0]!.body = "A different original explanation";
+	writeFileSync(join(vault, "Other.semantic.json"), JSON.stringify(other));
+	const initial = await savePreviewPlan(vault);
+	await savePreviewPlan(vault, {
+		...initial.plan,
+		mappings: [
+			{
+				legacy: "Shop/Other#Tour",
+				canonical: "Shop/System#Tour",
+				reason: "Test explicit narrative identity collision",
+			},
+		],
+	});
+	expect(
+		await readArchitectureModel(vault, undefined, undefined, { preview: "Shop" }),
+	).toMatchObject({ success: false, code: "MAPPING_INVALID" });
+});
+
+test("original current coverage retains its predecessor names without borrowing predecessor content", async () => {
+	const { home, vault, original } = narrativeFixture();
+	homes.push(home);
+	const old = {
+		...structuredClone(original.variants[0]!),
+		id: "Past",
+		name: "Before",
+		lifecycle: "historical",
+	};
+	old.content.nodes[1]!.name = "Former API";
+	old.content.nodes[1]!.responsibility = "Historical request handling";
+	const current = { ...original.variants[0]!, parent: "Past" };
+	const { view: _view, ...opening } = current.content.walkthroughs[0]!.beats[0]!;
+	current.content.walkthroughs[0]!.beats[0] = opening;
+	writeFileSync(
+		join(vault, "Shop.semantic.json"),
+		JSON.stringify({ ...original, variants: [old, current] }),
+	);
+	await savePreviewPlan(vault);
+	const result = await readArchitectureModel(vault, "Former API", undefined, {
+		preview: "Shop",
+		legacyAddress: "Store@Implemented",
+	});
+	if (!result.success) throw new Error(JSON.stringify(result));
+	expect(result.walkthroughs[0]?.beats[0]?.reading).toMatchObject({
+		grammar: "architecture",
+		focus: [],
+		filters: { relationships: [], groups: [] },
+	});
+	expect(result.selectedModule).toBe("Shop/System#Api");
+	expect(result.modules.find((entry) => entry.id === result.selectedModule)?.responsibility).toBe(
+		"Accepts requests",
+	);
 });

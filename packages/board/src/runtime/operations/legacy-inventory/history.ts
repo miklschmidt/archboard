@@ -1,3 +1,4 @@
+import { originalReferences } from "#runtime/operations/legacy-inventory/references.ts";
 import { legacyAddresses } from "#runtime/operations/legacy-inventory/addresses.ts";
 import { convertedReadings } from "#runtime/operations/legacy-inventory/readings.ts";
 import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
@@ -127,12 +128,18 @@ function scopedPreview(
 			},
 		]);
 	const { document, file, state, legacy } = selected;
+	const references = originalReferences(inventory, document, state);
 	const scoped: LegacyInventory = {
 		...inventory,
-		boards: [{ file, source: "", document: { ...document, current: state.id, variants: [state] } }],
+		boards: [{ file, source: "", document: { ...document, current: state.id } }],
 		conflicts: [],
 		unresolved: [],
-		plan: { ...inventory.plan, mappings: canonical ? inventory.plan.mappings : [], choices: [] },
+		plan: {
+			...inventory.plan,
+			references: references.references,
+			mappings: canonical ? inventory.plan.mappings : [],
+			choices: [],
+		},
 	};
 	const model = composeModel(scoped);
 	if (!model.success) return model;
@@ -154,6 +161,7 @@ function scopedPreview(
 				migrationPreview: {
 					...previewCoverage(inventory),
 					...readingMetadata(scoped),
+					diagnostics: references.diagnostics,
 					selected: { legacy, board: document.id, file, completeModel: false },
 				},
 			},

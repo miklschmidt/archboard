@@ -14,6 +14,7 @@ import {
 	resolvedValue,
 	definitionFields,
 	chosenValue,
+	choiceFailure,
 } from "#runtime/operations/legacy-inventory/preview-choices.ts";
 import { mappedIdentity } from "#shared/rules/legacy-inventory/plan.ts";
 import { composeModules } from "#runtime/operations/legacy-inventory/preview-subjects.ts";
@@ -83,7 +84,17 @@ function candidateInputs(
 	 * @param value Its complete schema input.
 	 */
 	function put(file: string, value: unknown) {
-		inputs.set(file, Buffer.from(JSON.stringify(value)));
+		const bytes = Buffer.from(JSON.stringify(value));
+		const previous = inputs.get(file);
+		if (previous !== undefined && !previous.equals(bytes)) {
+			choiceFailure(
+				diagnostics,
+				[],
+				"Combined original identities supply different narrative definitions. Keep them separate or resolve the originals explicitly.",
+			);
+			return;
+		}
+		inputs.set(file, bytes);
 	}
 	for (const walk of convertedReadings(inventory).walkthroughs)
 		put(`walkthroughs/${walk.id.replace("#", "/")}.walkthrough.json`, walk);

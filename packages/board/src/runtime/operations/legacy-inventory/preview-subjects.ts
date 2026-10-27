@@ -1,3 +1,4 @@
+import { originalReferences } from "#runtime/operations/legacy-inventory/references.ts";
 import { predecessorNames } from "#shared/rules/legacy-inventory/names.ts";
 import { z } from "zod";
 import { applySiblingOrder } from "#runtime/operations/legacy-inventory/preview-order.ts";
@@ -37,13 +38,15 @@ function moduleEvidence(inventory: LegacyInventory, entries: ReturnType<typeof c
 		),
 	);
 	const references = uniqueValues(
-		entries.flatMap((entry) =>
-			entry.node.drillDown === undefined
-				? []
-				: (inventory.plan.references
-						?.filter((reference) => reference.legacy === entry.subject)
-						.map((mapping) => mapping.reference) ?? []),
-		),
+		entries.flatMap((entry) => {
+			const document = inventory.boards.find(
+				(board) => board.document?.id === entry.board,
+			)!.document!;
+			const state = document.variants.find((candidate) => candidate.id === entry.state)!;
+			return originalReferences(inventory, document, state)
+				.references.filter((mapping) => mapping.legacy === entry.subject)
+				.map((mapping) => mapping.reference);
+		}),
 	);
 	return { documents, references };
 }

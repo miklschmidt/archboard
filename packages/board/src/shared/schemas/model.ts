@@ -30,7 +30,8 @@ const ModelReferenceAddressSchema = z.strictObject({
 	vault: z.string(),
 	model: SemanticIdSchema,
 	subject: QualifiedSubjectIdSchema,
-	state: SemanticIdSchema,
+	state: ModelReferenceSchema.shape.state,
+	preview: SemanticIdSchema.optional(),
 	checkpoint: GitObjectIdSchema.optional(),
 });
 

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-backend'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T10:34:00Z'
+updated_date: '2026-10-27T10:53:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -73,4 +73,6 @@ TASK-549.14, TASK-549.21
 Published task-549.22-contract.md in the shared context directory before implementation. Created Board persistence@TASK-549.22, Command interface@TASK-549.22, and Archboard server routes@TASK-549.22 through claimed CLI writes. Their planned descriptions extend existing readers and adapters without adding a persistence owner. The original vault remains authoritative. The approved primary test interface is the public runtime with real disk and Git.
 
 Focused RED/GREEN cases now pass for complete narrative conversion, unused bookmarks, exact legacy addresses, immutable playback metadata, and predecessor former names. The existing playback owner supplies readiness and retained-target refusal. Original files stay byte-identical and continue to own live reads. Added identity-only visibility selectors to preserve exact original relationship subsets.
+
+Extended thin CLI and HTTP selectors for exact legacy addresses and optional bookmarks. Historical drill-down choices now identify their original source state. Same-vault preview references use the existing reference owner, including explicit earlier checkpoint targets. Legacy omitted views expand to complete instructions: the original overview before the first explicit view, then the last explicit view. Parent contract records this behavior. Preparing the signed TASK-549.18 integration merge while preserving accepted diagrams and draft .22 provenance.
 <!-- SECTION:NOTES:END -->

@@ -42,6 +42,7 @@ const LegacyMappingPlanSchema = z.strictObject({
 		.array(
 			z.strictObject({
 				legacy: QualifiedSubjectIdSchema,
+				state: QualifiedSubjectIdSchema.optional(),
 				reference: ModelReferenceSchema,
 				reason: z.string().trim().min(1),
 			}),

@@ -53,18 +53,15 @@ function missingSubjects(model: ArchitectureModel, beat: Beat): string[] {
 		...model.collections.map((collection) => `${model.manifest.id}#${collection.id}`),
 	]);
 	const { reading } = beat;
+	const visible = reading.visibility ?? { modules: [], relationships: [], flows: [] };
 	const scope = reading.scope === undefined ? [] : [reading.scope];
 	const flow = reading.flow === undefined ? [] : [reading.flow];
 	return [
 		...new Set([
-			...[...scope, ...reading.focus].filter((id) => !modules.has(id)),
+			...[...scope, ...reading.focus, ...visible.modules].filter((id) => !modules.has(id)),
 			...reading.selection.filter((id) => !subjects.has(id)),
-			...(reading.visibility?.modules ?? []).filter((id) => !modules.has(id)),
-			...(reading.visibility?.relationships ?? []).filter(
-				(id) => !model.relationships.some((edge) => edge.id === id),
-			),
-			...(reading.visibility?.flows ?? []).filter((id) => !flows.some((entry) => entry.id === id)),
-			...flow.filter((id) => !flows.some((entry) => entry.id === id)),
+			...visible.relationships.filter((id) => !model.relationships.some((edge) => edge.id === id)),
+			...[...visible.flows, ...flow].filter((id) => !flows.some((entry) => entry.id === id)),
 		]),
 	];
 }
@@ -236,16 +233,20 @@ function attachPlayback(
 function capturedSource(model: ArchitectureModel, walk: Walk, selection: Selection) {
 	return {
 		walkthrough: walk.id,
-		...(selection.preview === undefined ? {} : { preview: selection.preview }),
-		...(selection.state === undefined
-			? {}
-			: {
-					state:
-						model.migrationPreview?.selected?.legacy ?? model.selectedState?.id ?? selection.state,
-				}),
-		...(selection.checkpoint === undefined ? {} : { checkpoint: selection.checkpoint }),
-		...(selection.shared === undefined ? {} : { shared: selection.shared }),
+		preview: selection.preview,
+		state: selection.state === undefined ? undefined : playbackSourceState(model, selection.state),
+		checkpoint: selection.checkpoint,
+		shared: selection.shared,
 	};
+}
+/**
+ * Preserve original coverage separately from its local legacy state ID.
+ * @param model The captured narrative source.
+ * @param fallback The deliberate state selector.
+ * @returns Its exact source address.
+ */
+function playbackSourceState(model: ArchitectureModel, fallback: string) {
+	return model.migrationPreview?.selected?.legacy ?? model.selectedState?.id ?? fallback;
 }
 /**
  * Resolve one narrative against the captured input set.

@@ -652,3 +652,15 @@ Original migration history has one browser owner in `canonical-preview-history.t
 It covers paired state/checkpoint navigation, original coverage, lifecycle and standing evidence, and exact original inspection after live files disappear.
 Public architecture operations create its retained fixtures in real temporary Git repositories.
 The existing `canonical-model-preview.test.ts` retains current-preview navigation, code-opening, source-preservation, and recovery ownership.
+
+## Converted original readings
+
+Public architecture operations own `legacy-preview/readings.test.ts`, `reading-history.test.ts`, and `reference-readings.test.ts`.
+Real files and Git prove complete beat conversion, exact relationship visibility, content-free bookmarks, former names, and explicit alias refusal.
+The same owners prove mapped current identities, original namespaces, immutable retained playback, and state-specific drill-down choices.
+The signed retention case reopens playback and former addresses after live inputs disappear.
+The existing reference owner retains foreign pin and unavailable-history coverage.
+
+`tests/system/semantic-boards/migration-planning.test.ts` owns CLI and HTTP selector agreement through retained original playback and bookmarks.
+The parent owns visible converted playback, exact visibility, bookmark navigation, and original address navigation through the existing browser interface.
+These backend cases imply no browser acceptance or migration installation.

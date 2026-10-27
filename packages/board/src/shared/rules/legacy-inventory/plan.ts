@@ -61,7 +61,10 @@ function duplicateProblem(plan: LegacyMappingPlan): string | undefined {
 		return "Each legacy identity must have at most one mapping.";
 	if (new Set(plan.choices.map((choice) => choice.conflict)).size !== plan.choices.length)
 		return "Each conflict must have at most one choice.";
-	if (new Set(references.map((reference) => reference.legacy)).size !== references.length)
+	if (
+		new Set(references.map((reference) => `${reference.legacy}@${reference.state ?? "current"}`))
+			.size !== references.length
+	)
 		return "Each legacy reference must have at most one target mapping.";
 	return undefined;
 }
@@ -78,7 +81,16 @@ function mappingProblem(inventory: LegacyInventory): string | undefined {
 		inventory.plan.references
 			?.map((reference) =>
 				inventory.identities.some(
-					(identity) => identity.id === reference.legacy && identity.kind === "node",
+					(identity) =>
+						identity.id === reference.legacy &&
+						identity.kind === "node" &&
+						(reference.state === undefined ||
+							inventory.identities.some(
+								(state) =>
+									state.id === reference.state &&
+									state.kind === "state" &&
+									state.board === identity.board,
+							)),
 				)
 					? undefined
 					: `Reference ${reference.legacy} must name an existing node identity.`,

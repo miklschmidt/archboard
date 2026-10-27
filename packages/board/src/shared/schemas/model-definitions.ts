@@ -19,7 +19,7 @@ const ModelReferenceSchema = z
 		repo: z.string().min(1),
 		model: SemanticIdSchema,
 		subject: QualifiedSubjectIdSchema,
-		state: SemanticIdSchema,
+		state: z.union([SemanticIdSchema, QualifiedSubjectIdSchema]),
 		checkpoint: GitObjectIdSchema.optional(),
 	})
 	.refine((reference) => reference.checkpoint === undefined || reference.state !== "current", {

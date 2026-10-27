@@ -16,20 +16,14 @@ type Bookmark = NonNullable<
  * @param state The original architectural content.
  * @param view The explicitly referenced original view, when present.
  * @param qualify The captured identity mapping.
- * @param overview Whether the original beat names no view.
  * @returns A complete reading and explicit conversion diagnostics.
  */
 function viewReading(
 	state: SemanticVariant,
 	view: SemanticView | undefined,
 	qualify: (id: string) => string,
-	overview = false,
 ) {
-	const diagnostics: ModelDiagnostic[] = [];
-	const content =
-		view === undefined && !overview
-			? { nodes: [], edges: [], flows: [] }
-			: scopedContent(state.content, view?.scope ?? { kind: "all" });
+	const content = scopedContent(state.content, view?.scope ?? { kind: "all" });
 	const visibility = {
 		modules: content.nodes.map((node) => qualify(node.id)),
 		relationships: content.edges.map((edge) => qualify(edge.id)),
@@ -38,31 +32,52 @@ function viewReading(
 	const reading: Reading = {
 		visibility,
 		selection: [],
-		focus: overview ? [] : visibility.modules,
+		focus: view === undefined ? [] : visibility.modules,
 		filters: { relationships: [], groups: [] },
 		grammar: view?.grammar ?? "architecture",
 	};
-	if (view === undefined && !overview)
-		diagnostics.push({
-			code: "WALKTHROUGH_VIEW_MISSING",
-			file: ".",
-			message: "The referenced original view is unavailable.",
-			recovery: "Restore that exact view in the originals and save a fresh mapping plan.",
-		});
-	if (reading.grammar !== "architecture") {
-		if (content.flows.length === 1) reading.flow = qualify(content.flows[0]!.id);
-		else
-			diagnostics.push({
-				code: content.flows.length === 0 ? "FLOW_REQUIRED" : "FLOW_AMBIGUOUS",
-				file: ".",
-				subjects: visibility.flows,
-				message: "This original behavioral view does not select one available flow.",
-				recovery: "Select one exact original flow in the view and save a fresh mapping plan.",
-			});
-	}
-	return { reading, diagnostics };
+	return { reading, diagnostics: behavioralReading(reading, content.flows, qualify) };
 }
 
+/**
+ * Select one authored behavioral flow without inferring execution order.
+ * @param reading The complete converted reading.
+ * @param flows Original flows selected through the original scope owner.
+ * @param qualify The saved identity mapping.
+ * @returns Any reason that this behavioral reading is unavailable.
+ */
+function behavioralReading(
+	reading: Reading,
+	flows: SemanticVariant["content"]["flows"],
+	qualify: (id: string) => string,
+): ModelDiagnostic[] {
+	if (reading.grammar === "architecture") return [];
+	if (flows.length === 1) {
+		reading.flow = qualify(flows[0]!.id);
+		return [];
+	}
+	return [
+		{
+			code: flows.length === 0 ? "FLOW_REQUIRED" : "FLOW_AMBIGUOUS",
+			file: ".",
+			subjects: flows.map((flow) => qualify(flow.id)),
+			message: "This original behavioral view does not select one available flow.",
+			recovery: "Select one exact original flow in the view and save a fresh mapping plan.",
+		},
+	];
+}
+/**
+ * Locate only explicitly designated original current coverage.
+ * @param inventory Captured original families.
+ * @returns Complete original states that contribute to this reading.
+ */
+function selectedBoards(inventory: LegacyInventory) {
+	return inventory.boards.flatMap(({ document, file }) => {
+		if (document === undefined) return [];
+		const state = document.variants.find((entry) => entry.id === document.current);
+		return state === undefined ? [] : [{ document, file, state }];
+	});
+}
 /**
  * Convert only the selected original states, preserving namespaces and complete reading intent.
  * @param inventory Captured original families and explicit mappings.
@@ -74,10 +89,18 @@ function convertedReadings(inventory: LegacyInventory) {
 	const readingDiagnostics: NonNullable<
 		NonNullable<ArchitectureModel["migrationPreview"]>["readingDiagnostics"]
 	> = [];
-	for (const { document, file } of inventory.boards) {
-		const state = document?.variants.find((entry) => entry.id === document.current);
-		if (document === undefined || state === undefined) continue;
+	for (const { document, file, state } of selectedBoards(inventory)) {
+		/**
+		 * Preserve one original local identity under its family namespace.
+		 * @param id The original local identity.
+		 * @returns Its qualified original identity.
+		 */
 		const legacy = (id: string) => `${inventory.plan.origin}/${document.id}#${id}`;
+		/**
+		 * Apply only the owner selected canonical identity.
+		 * @param id The original local identity.
+		 * @returns Its mapped or original identity.
+		 */
 		const qualify = (id: string) => mappedIdentity(inventory.plan, legacy(id));
 		const referenced = new Set(
 			state.content.walkthroughs.flatMap((walk) =>
@@ -87,13 +110,14 @@ function convertedReadings(inventory: LegacyInventory) {
 		for (const walk of state.content.walkthroughs) {
 			const formerNames = [
 				...new Set(
-					predecessorNames(inventory, document.id, state.id, (state) =>
-						state.content.walkthroughs
+					predecessorNames(inventory, document.id, state.id, (predecessor) =>
+						predecessor.content.walkthroughs
 							.filter((entry) => entry.id === walk.id)
 							.map((entry) => entry.name),
 					).filter((name) => name !== walk.name),
 				),
 			];
+			let activeView: SemanticView | undefined;
 			walkthroughs.push({
 				schemaVersion: 1,
 				id: qualify(walk.id),
@@ -102,12 +126,9 @@ function convertedReadings(inventory: LegacyInventory) {
 				...(formerNames.length === 0 ? {} : { formerNames }),
 				target: { state: "current" },
 				beats: walk.beats.map((beat) => {
-					const { reading, diagnostics } = viewReading(
-						state,
-						document.views.find((view) => view.id === beat.view),
-						qualify,
-						beat.view === undefined,
-					);
+					if (beat.view !== undefined)
+						activeView = document.views.find((view) => view.id === beat.view);
+					const { reading, diagnostics } = viewReading(state, activeView, qualify);
 					if (diagnostics.length > 0)
 						readingDiagnostics.push({
 							id: qualify(beat.id),

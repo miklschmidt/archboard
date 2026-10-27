@@ -53,7 +53,7 @@ function narrativeFixture() {
 									subjects: ["Ask"],
 									view: "Order",
 								},
-								{ id: "End", heading: "Overview", body: "Return to the whole shop", subjects: [] },
+								{ id: "End", heading: "Finish", body: "Keep the purchase in view", subjects: [] },
 							],
 						},
 					],
