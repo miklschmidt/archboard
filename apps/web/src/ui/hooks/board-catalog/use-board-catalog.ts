@@ -10,6 +10,13 @@ import {
 	type UseQueryResult,
 } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
+import { architectureFeed } from "#ui/clients/architecture-model/events.ts";
+import {
+	architectureModelQuery,
+	ArchitectureReadError,
+	hasNoCanonicalModel,
+} from "#ui/clients/architecture-model/queries.ts";
+import type { Model } from "#ui/rules/architecture-model/projection.ts";
 
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import {
@@ -33,6 +40,7 @@ import type { BoardListing, BrowserPaneListing } from "#ui/rules/pane-session/se
 
 /** One repository, and the boards of its chosen checkout's vault. */
 interface RepositoryBoards {
+	readonly model?: Model["manifest"] | undefined;
 	readonly repository: RepositoryEntry;
 	readonly listing: BoardListing;
 	/** Why its boards cannot be shown, or null. */
@@ -141,6 +149,22 @@ function readVaults(
 /** Stands for a pane inventory that is not read yet, as a key. */
 const UNREAD_PANES = {};
 
+/**
+ * Derive catalogue authority from the shared public architecture read.
+ * @param results The canonical reads in repository order.
+ * @returns Authority, metadata, and visible failures without copied architecture.
+ */
+function readModels(results: readonly UseQueryResult<Model>[]) {
+	return results.map((result) => ({
+		model: result.data?.manifest,
+		legacy:
+			result.error instanceof ArchitectureReadError &&
+			result.error.failure.code === "LEGACY_AUTHORITY",
+		error: hasNoCanonicalModel(result.error) ? null : result.error,
+		pending: result.isPending,
+	}));
+}
+
 /** Each listing, made once for each pair of halves, so a pane moving keeps the boards. */
 const listings = new WeakMap<object, WeakMap<object, BoardListing>>();
 
@@ -191,23 +215,53 @@ function useBoardCatalog(): BoardCatalog {
 		() => (entries ?? []).flatMap((entry) => (entry.vault === null ? [] : [entry.vault])),
 		[entries],
 	);
+	useEffect(() => {
+		const subscriptions = readable.map((vault) =>
+			architectureFeed(client, vault).subscribe(() => {}),
+		);
+		return () => {
+			for (const unsubscribe of subscriptions) unsubscribe();
+		};
+	}, [client, readable]);
+	const models = useQueries({
+		queries: readable.map((vault) => architectureModelQuery(vault)),
+		combine: readModels,
+	});
 	const vaults = useQueries({
-		queries: readable.map((vault) => semanticBoardListQuery(vault)),
+		queries: readable.map((vault, index) => ({
+			...semanticBoardListQuery(vault),
+			enabled: models[index]?.legacy === true,
+		})),
 		combine: readVaults,
 	});
 	const repositories = useMemo(
 		() =>
 			(entries ?? []).map((repository): RepositoryBoards => {
-				const vault =
-					repository.vault === null ? undefined : vaults[readable.indexOf(repository.vault)];
-				return {
+				const empty = {
 					repository,
-					listing: listingOf(vault?.half, panes.data),
-					error: listingError(vault?.error ?? null, null, true),
-					loading: vault?.pending === true,
+					listing: listingOf(undefined, panes.data),
+					error: null,
+					loading: false,
+				};
+				if (repository.vault === null) return empty;
+				const index = readable.indexOf(repository.vault);
+				const model = models[index]!;
+				if (!model.legacy)
+					return {
+						...empty,
+						model: model.model,
+						error: model.error?.message ?? null,
+						loading: model.pending,
+					};
+				const vault = vaults[index]!;
+				return {
+					...empty,
+					listing: listingOf(vault.half, panes.data),
+					error: listingError(vault.error, null, true),
+					loading: vault.pending,
 				};
 			}),
-		[entries, readable, vaults, panes.data],
+		[entries, readable, models, vaults, panes.data],
 	);
 	// Which pane holds what is one answer for every repository, so its failure
 	// is the navigator's and not each repository's.

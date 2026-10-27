@@ -1,3 +1,4 @@
+import { MigrationInstallationSchema } from "#shared/schemas/migration-installation.ts";
 import { privateArchivePath } from "#runtime/store/model-archive-location.ts";
 import { operationSubjects } from "#shared/rules/model-operation.ts";
 import { stateDir } from "@archboard/workspace/state-dir";
@@ -47,7 +48,11 @@ const JournalSchema = z
 	.object({
 		schemaVersion: z.literal(1),
 		context: CheckoutContextSchema,
-		request: z.union([ArchitectureModuleEditSchema, PortableInstallationSchema]),
+		request: z.union([
+			ArchitectureModuleEditSchema,
+			PortableInstallationSchema,
+			MigrationInstallationSchema,
+		]),
 		subjects: z.array(QualifiedSubjectIdSchema).optional(),
 		before: ModelRevisionSchema,
 		after: ModelRevisionSchema,

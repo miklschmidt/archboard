@@ -184,4 +184,4 @@ async function recoverArchitectureModel(vault: string): Promise<ArchitectureReco
 	notifyArchitecture(vault, result.operation);
 	return result;
 }
-export { editArchitectureModule, recoverArchitectureModel };
+export { editArchitectureModule, recoverArchitectureModel, resumeEdit };

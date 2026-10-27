@@ -45,7 +45,14 @@ function conversionBaseline(
 ): ArchitectureModelRead {
 	switch (mapping.baseline.kind) {
 		case "empty":
-			return { ...selected, modules: [], collections: [], relationships: [], roots: [] };
+			return {
+				...selected,
+				modules: [],
+				collections: [],
+				walkthroughs: [],
+				relationships: [],
+				roots: [],
+			};
 		case "content":
 			return scopedPreview(inventory, mapping.baseline.state, undefined, undefined, true);
 		default:
@@ -93,4 +100,4 @@ function withDraftConversions(
 		? convertDrafts(inventory, result)
 		: result;
 }
-export { withDraftConversions };
+export { withDraftConversions, conversionBaseline };

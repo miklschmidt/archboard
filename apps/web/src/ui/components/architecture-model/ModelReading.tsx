@@ -26,6 +26,7 @@ import {
 } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import { projectModel } from "#ui/rules/architecture-model/projection.ts";
+import { importedReadings } from "#ui/rules/architecture-model/imported-readings.ts";
 
 const ModelDiagram = lazy(async () => {
 	const module = await import("#ui/components/architecture-model/ModelDiagram.tsx");
@@ -419,5 +420,5 @@ export { ModelReading };
  * @returns Its selected bookmark reading, when present.
  */
 function importedReading(model: Model) {
-	return model.migrationPreview?.bookmark?.reading;
+	return importedReadings(model)?.bookmark?.reading;
 }

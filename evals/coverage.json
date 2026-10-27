@@ -1142,6 +1142,13 @@
 					"owner": "packages/board/tests/runtime/operations/legacy-preview/readings.test.ts, reading-history.test.ts, reference-readings.test.ts and portable-readings.test.ts; tests/system/semantic-boards/migration-planning.test.ts; guidance skills/archboard/references/legacy-migration.md#read-converted-narratives; tests/system/browser/canonical-preview-navigation.test.ts owns visible bookmarks, exact view membership, aliases, retained playback, and paired reference navigation"
 				},
 				{
+					"path": "model migrate: owner-authorized complete cutover, one authority, exact original and proposal retention, recovery, private archives, and portability",
+					"expectedUse": "Copy complete source, plan, candidate, destination and checkout fingerprints from the fresh live preview. Require explicit views on converted current and draft beats. Preserve exact historical originals and unavailable beat intent. Recover through the existing journal and retry the same operation identity.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/legacy-preview/installation*.test.ts and proposal-installation.test.ts; tests/system/semantic-boards/model-migration.test.ts; guidance skills/archboard/references/legacy-migration.md#install-an-approved-preview; parent browser acceptance remains TASK-549.23"
+				},
+				{
 					"path": "canonical recursive readings: scopes, exact checkpoint addresses, direct context, complete interfaces and connection aggregation",
 					"expectedUse": "Open immediate module children without creating boards. Preserve exact readings through navigation and inspect every authored relationship behind a projected line.",
 					"scenarios": [],

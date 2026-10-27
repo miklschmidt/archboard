@@ -1,3 +1,5 @@
+import { legacyAddressOf, selectBookmark } from "#runtime/operations/legacy-inventory/addresses.ts";
+import { readCurrentModel } from "#runtime/operations/read/model-read.ts";
 import { readPlayback } from "#runtime/operations/read/playback.ts";
 import { modelCodeTarget } from "#runtime/operations/read/model-code.ts";
 import { failure } from "#runtime/operations/read/model-read.ts";
@@ -47,8 +49,6 @@ async function navigationReading(
 	flow: string | undefined,
 	options: NavigationOptions,
 ) {
-	const invalid = previewSelectorFailure(options);
-	if (invalid !== undefined) return invalid;
 	const model =
 		options.preview !== undefined
 			? await (
@@ -67,23 +67,6 @@ async function navigationReading(
 }
 
 /**
- * Confine imported address selectors to explicit migration previews.
- * @param options The deliberate reader selectors.
- * @returns The invalid combination or absence.
- */
-function previewSelectorFailure(options: NavigationOptions) {
-	if (options.preview !== undefined || (options.legacyAddress ?? options.bookmark) === undefined)
-		return undefined;
-	return failure("MODEL_INVALID", [
-		{
-			code: "MODEL_INVALID",
-			file: "model.json",
-			message: "Legacy addresses and imported bookmarks require an explicit migration preview.",
-			recovery: "Name the preview origin with this selector.",
-		},
-	]);
-}
-/**
  * Resolve state, retained inputs, or narrative playback through their existing owners.
  * @param vault The explicit vault.
  * @param module The optional module selector.
@@ -97,15 +80,17 @@ async function localReading(
 	flow: string | undefined,
 	options: NavigationOptions,
 ): Promise<ArchitectureModelRead> {
+	if (options.legacyAddress !== undefined) return installedOriginal(vault, module, flow, options);
 	if (options.walkthrough !== undefined) return readPlayback(vault, module, flow, options);
 	const { readSelectedState } = await import("#runtime/operations/proposals/read.ts");
 	const selection = { state: options.state, against: options.against, compare: options.compare };
-	return options.checkpoint === undefined
+	const reading = await (options.checkpoint === undefined
 		? readSelectedState(vault, module, flow, selection)
 		: readCheckpointModel(vault, options.checkpoint, module, flow, {
 				against: options.against,
 				compare: options.compare,
-			});
+			}));
+	return selectBookmark(reading, options.bookmark);
 }
 
 /**
@@ -210,3 +195,58 @@ async function readModelNavigation(
 }
 
 export { readModelNavigation, type NavigationOptions };
+
+/**
+ * Resolve an installed former address through its retained original owner.
+ * @param vault The addressed vault.
+ * @param module The optional original module.
+ * @param flow The optional original flow.
+ * @param options The exact address and paired selectors.
+ * @returns Its exact original coverage or structured refusal.
+ */
+async function installedOriginal(
+	vault: string,
+	module: string | undefined,
+	flow: string | undefined,
+	options: NavigationOptions,
+): Promise<ArchitectureModelRead> {
+	const current = readCurrentModel(vault);
+	if (!current.success) return current;
+	const migration = current.migration;
+	if (migration === undefined)
+		return failure("LEGACY_ADDRESS_NOT_FOUND", [
+			{
+				code: "LEGACY_ADDRESS_NOT_FOUND",
+				file: "migration.json",
+				message: "This model has no installed former-address map.",
+				recovery: "Select a model with retained original migration evidence.",
+			},
+		]);
+	const address = legacyAddressOf(migration.addresses ?? [], options.legacyAddress!, options.state);
+	if ("success" in address) return address;
+	const mismatch = installedCheckpointFailure(options.checkpoint, migration.checkpoint);
+	if (mismatch !== undefined) return mismatch;
+	const { readMigrationPreview } = await import("#runtime/operations/legacy-inventory/preview.ts");
+	return readMigrationPreview(vault, migration.origin, module, flow, {
+		...options,
+		preview: migration.origin,
+		checkpoint: migration.checkpoint,
+		state: address.state,
+	});
+}
+
+/**
+ * Preserve the original checkpoint paired with an installed alias.
+ * @param selected The optional explicit checkpoint.
+ * @param expected The installed original checkpoint.
+ * @returns A conflicting selector refusal or absence.
+ */
+function installedCheckpointFailure(selected: string | undefined, expected: string) {
+	if (selected !== undefined && selected !== expected)
+		return navigationFailure(
+			"TARGET_CHANGED",
+			"The checkpoint differs from the installed original address.",
+			"Use the original checkpoint from the installed migration metadata.",
+		);
+	return undefined;
+}

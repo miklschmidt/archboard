@@ -132,6 +132,17 @@ not add imports or a second state path before that work.
   `bookmarkX` selects an imported reading. `legacyAddressX` resolves an exact original alias.
   Both remain router-owned intent through reload and browser history.
   Bookmarks supply default reading fields without copying model content.
+
+  Installed bookmarks come from `migration`, while `migrationPreview` identifies retained original coverage.
+  Both readers show explicit bookmark diagnostics before drawing unavailable intent.
+  Existing legacy panes subscribe to the architecture feed before cutover.
+  Only `LEGACY_AUTHORITY` permits their legacy diagram.
+  Interrupted installation exposes recovery, and durable completion refreshes the shared queries.
+  Existing pane keys resolve through captured aliases into paired original state and checkpoint addresses.
+  The repository navigator reads the same authority and opens current canonical architecture through the router.
+  Its model action targets the active pane, including a workspace that keeps only pane B.
+  Model headers explain that ownership transfer is unavailable.
+
   Scope, focus, or grammar changes leave the bookmark and retain the displayed reading fields.
   Filters narrow the bookmark without changing its original membership.
   Preview walkthroughs reuse the existing captured player and explicit restart.

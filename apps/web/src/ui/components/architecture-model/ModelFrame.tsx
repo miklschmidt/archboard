@@ -68,6 +68,13 @@ function ModelHeader(props: ModelHeaderProps): JSX.Element {
 				{props.children}
 			</PaneHeaderStart>
 			<PaneHeaderEnd>
+				<span
+					data-slot="model-transfer-unavailable"
+					className="text-caption text-muted-foreground"
+					title="Moving architecture ownership to another repository is unavailable. Export a portable model to share an exact reading."
+				>
+					Ownership transfer unavailable
+				</span>
 				<Button
 					variant="ghost"
 					size="sm"

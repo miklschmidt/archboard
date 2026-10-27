@@ -265,7 +265,11 @@ function Navigator(props: NavigatorProps): JSX.Element {
 						emptyNotice={props.emptyNotice}
 						loading={view.boardsLoading}
 						error={listingFailure(view)}
-						empty={total === 0 && view.repositories.every(readyAndRead)}
+						empty={
+							total === 0 &&
+							view.repositories.every(readyAndRead) &&
+							view.repositories.every((entry) => entry.model === undefined)
+						}
 						noMatch={folded.length > 0 && rows.length === 0}
 						query={query}
 						actions={actions}

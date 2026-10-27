@@ -1,3 +1,4 @@
+import { InstalledMigrationSchema } from "#shared/schemas/migration-installation.ts";
 import { WalkthroughSchema } from "#shared/schemas/model-walkthroughs.ts";
 import {
 	ExplanationRequestSchema,
@@ -144,6 +145,7 @@ const ArchitectureModelSchema = z
 		success: z.literal(true),
 		manifest: ArchitectureManifestSchema,
 		migrationPreview: MigrationPreviewSchema.optional(),
+		migration: InstalledMigrationSchema.optional(),
 		policy: SemanticPolicySchema,
 		modules: z.array(ArchitectureModuleSchema.extend({ file: z.string() })),
 		collections: z.array(FlowCollectionSchema.extend({ file: z.string() })),

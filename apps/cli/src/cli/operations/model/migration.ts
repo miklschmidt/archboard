@@ -1,3 +1,6 @@
+import { ArchitectureMigrationRequestSchema } from "@archboard/board/model";
+import { modelImportContract } from "#cli/operations/model/portable.ts";
+import { migrateArchitectureModelOnServer } from "#cli/clients/server/architecture-model.ts";
 import { z } from "zod";
 import {
 	LegacyInventoryReadSchema,
@@ -163,3 +166,42 @@ const modelPlanContract = defineCommand({
 	},
 });
 export { modelInventoryContract, modelPlanContract };
+
+const modelMigrateContract = defineCommand({
+	...modelImportContract,
+	path: ["model", "migrate"],
+	summary: "Install an owner-authorized complete migration preview",
+	description:
+		"Read a complete migration request with source, plan, candidate, destination and checkout fingerprints. Retain exact originals and install through the existing durable journal. Every converted current or draft beat requires an explicit original view.",
+	examples: ["archboard model migrate --input migration-request.json -C /tmp/shop"],
+	relationships: [
+		{
+			method: "POST",
+			path: "/api/architecture/migration/apply",
+			cardinality: "one",
+			description: "Install the explicitly authorized migration through the shared runtime",
+		},
+	],
+	/**
+	 * Submit complete owner intent to the shared runtime.
+	 * @param input The request file.
+	 * @param context The invocation capabilities.
+	 * @returns The shared receipt or refusal.
+	 */
+	async handler(input, context) {
+		await context.require("server", "model migrate");
+		const result = await migrateArchitectureModelOnServer(
+			context.parse(ArchitectureMigrationRequestSchema, await statedJson(input, context)),
+		);
+		return {
+			result,
+			...(result.success
+				? {}
+				: {
+						outcome: "unavailable",
+						diagnostics: result.diagnostics.map((d) => `${d.code}: ${d.message} ${d.recovery}`),
+					}),
+		};
+	},
+});
+export { modelMigrateContract };

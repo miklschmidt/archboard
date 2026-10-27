@@ -170,6 +170,16 @@ An explicit choice of an original draft, its predecessor, and its exact baseline
 The baseline is its parent content, its standing conflict base, or an empty planning root.
 The preview derives compact changes through the existing canonical subject engine.
 
+Migration cutover:
+An owner-authorized installation of a complete preview through the existing durable journal.
+It retains exact originals before removing their live copies.
+Only canonical inputs remain authoritative after completion.
+
+Installed migration map:
+Content-free state, bookmark, and former-address metadata that references retained originals.
+A former address opens its exact original state and checkpoint.
+It never guesses a current module from an old board name.
+
 **Board**:
 A semantically named description of one architectural subject or question at one
 abstraction level. A board owns its shared views and the tree of variants recording

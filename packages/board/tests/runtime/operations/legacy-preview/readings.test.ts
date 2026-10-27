@@ -176,7 +176,7 @@ test("explicit original addresses and optional bookmarks resolve exact captured 
 		await readArchitectureModel(vault, undefined, undefined, {
 			legacyAddress: "Store@Implemented",
 		}),
-	).toMatchObject({ success: false, code: "MODEL_INVALID" });
+	).toMatchObject({ success: false, code: "LEGACY_AUTHORITY" });
 });
 
 test("mapped current readings retain former names while original state playback keeps its own namespace and content", async () => {

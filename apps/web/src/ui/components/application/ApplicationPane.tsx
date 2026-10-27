@@ -286,7 +286,7 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 						reducedMotion={props.reducedMotion}
 						overlay={props.overlay}
 					/>
-				) : address === null ? (
+				) : (
 					<ArchitectureModelStage
 						key={vault}
 						vault={vault}
@@ -297,22 +297,24 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 						narration={narration}
 						overlay={props.overlay}
 					>
-						<NoBoard />
+						{address === null ? (
+							<NoBoard />
+						) : (
+							// Every read the picture makes names the vault this pane is in (ADR 0050).
+							<PaneVaultContext value={vault}>
+								<PaneDiagram
+									address={address}
+									arrival={session.arrivals}
+									openCode={session.openCode}
+									onReading={setOnScreen}
+									onUserChanged={session.userChanged}
+									driven={props.step ?? asked}
+									shown={onScreen?.board ?? null}
+									{...props}
+								/>
+							</PaneVaultContext>
+						)}
 					</ArchitectureModelStage>
-				) : (
-					// Every read the picture makes names the vault this pane is in (ADR 0050).
-					<PaneVaultContext value={vault}>
-						<PaneDiagram
-							address={address}
-							arrival={session.arrivals}
-							openCode={session.openCode}
-							onReading={setOnScreen}
-							onUserChanged={session.userChanged}
-							driven={props.step ?? asked}
-							shown={onScreen?.board ?? null}
-							{...props}
-						/>
-					</PaneVaultContext>
 				)}
 			</ModelExplanationHost>
 		</div>

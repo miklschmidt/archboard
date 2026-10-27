@@ -1,3 +1,4 @@
+import { MigrationInstallationSchema } from "#shared/schemas/migration-installation.ts";
 import { checkpointBlobs } from "#runtime/store/model-archive-blobs.ts";
 import { FamilyStandingSchema } from "#shared/schemas/model-proposals.ts";
 import { modelRevision } from "#runtime/store/model-files.ts";
@@ -34,7 +35,7 @@ const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, pub
 		vault: z.string(),
 		narrativeDependencies: z.array(ArchitectureCheckpointSchema.shape.id).optional(),
 		edit: ArchitectureModuleEditSchema.optional(),
-		installation: PortableInstallationSchema.optional(),
+		installation: z.union([PortableInstallationSchema, MigrationInstallationSchema]).optional(),
 		reconciliations: FamilyStandingSchema.optional(),
 		subjects: z.array(QualifiedSubjectIdSchema).optional(),
 	})

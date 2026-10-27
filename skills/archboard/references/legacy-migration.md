@@ -335,13 +335,15 @@ archboard model read --preview Shop --legacy-address 'Store@Before' -C /path/to/
 ```
 
 The selected bookmark appears as `migrationPreview.bookmark`.
-Its diagnostics identify an unavailable original flow.
+Its diagnostics identify unavailable subjects, flows, scope, or filters in the selected reading.
 The model remains complete and contains no bookmark-owned architecture.
 
 `migrationPreview.addresses` lists exact original aliases with original and canonical state identities.
 The `legacyAddress` selector opens its exact original state and one-board coverage.
 `migrationPreview.resolvedAddress` records that choice.
 Board names, former names, filenames, state names, former state names, and state IDs remain explicit aliases.
+The catalogue also captures serialized legacy pane addresses, such as `shop` and `shop@Old`.
+Resolution matches those captured strings exactly.
 Ambiguous addresses refuse rather than selecting a similarly named subject.
 A conflicting explicit state returns `TARGET_CHANGED`.
 Unknown addresses return `LEGACY_ADDRESS_NOT_FOUND`.
@@ -374,7 +376,7 @@ A missing choice leaves an explicit `REFERENCE_UNAVAILABLE` diagnostic beside re
 Same-vault references use qualified original states through the existing reference owner.
 Retained local references keep their source checkpoint and paired original state.
 Unpinned external history remains unavailable, even when a matching current model exists.
-Installation and portable live bookmark inputs remain with TASK-549.23.
+Use [Install an approved preview](#install-an-approved-preview) for persistent bookmark inputs and complete portable dependencies.
 Complete original checkpoints retain the source for every derived reading until cutover.
 
 ## Read converted navigation in the browser
@@ -395,3 +397,54 @@ A retained preview keeps `checkpointA` beside its original state or former addre
 Its original files can remain readable after the live copies disappear.
 Following a converted reference preserves the returned preview origin, original state, and exact checkpoint.
 The destination replaces the source bookmark and former address.
+
+## Install an approved preview
+
+Use this workflow only when the owner explicitly authorizes cutover.
+Read a complete live preview after you save all mapping choices.
+Map every draft and its exact original baseline.
+Give each converted current or draft beat an explicit original view.
+Historical and shelved originals keep their exact bytes and unavailable-beat diagnostics.
+
+The preview supplies `migrationPreview.installation` with complete destination and checkout fingerprints.
+An untracked vault requires explicit `model archive-init` before it can supply installation intent.
+Copy the complete revision objects, including their file lists.
+Use the preview origin, source, saved plan revision, and candidate revision unchanged.
+
+```bash
+archboard model read --preview Shop -C /path/to/checkout > preview.json
+bun -e 'const p = await Bun.file("preview.json").json(); console.log(JSON.stringify({origin:p.migrationPreview.origin, expectedSource:p.migrationPreview.source, expectedPlan:p.migrationPreview.planRevision, previewRevision:p.revision, ...p.migrationPreview.installation, authorization:"owner", operationId:"migrate-shop-1", writer:"owner", doing:"Install the approved migration"}));' > migration-request.json
+archboard model migrate --input migration-request.json -C /path/to/checkout
+```
+
+Cutover retains exact original files and saved choices before it removes their live copies.
+The existing signed archive, lease, journal, atomic writer, and recovery operation own installation.
+Converted proposals retain their original predecessor, baseline, reason, and original checkpoint in `proposal.migration`.
+Planning-only subjects remain proposed.
+Current content has one canonical representation after completion.
+
+If installation stops, run `model recover` in the original checkout.
+Preserve the journal and foreign bytes when recovery refuses.
+Restore the recorded checkout and a permitted input image before you retry recovery.
+Repeat the exact migration request after a lost response.
+A different request requires a different operation identity and a fresh preview.
+Signing failure changes no live input and requires repair of the configured signer.
+
+Ordinary `model read` discovers authority.
+`LEGACY_AUTHORITY` keeps an unmigrated vault on its existing board workflow.
+`RECOVERY_REQUIRED` and `MODEL_BUSY` block format selection during installation.
+A successful ordinary read identifies canonical authority.
+The existing architecture event feed announces the new model only after durable completion.
+
+The canonical result carries installed reading metadata in `migration`.
+Its catalogues are `migration.bookmarks`, `migration.addresses`, and `migration.states`.
+A selected bookmark appears as `migration.bookmark`.
+Read its diagnostics before applying its reading intent.
+Unavailable intent keeps its exact identities and the canonical model readable.
+Ordinary canonical reads omit `migrationPreview` and the retained original byte envelope.
+Use `--bookmark <id>` without preview for an installed current bookmark.
+Use `--legacy-address <address>` without preview to reopen exact original coverage.
+Keep the returned preview origin, original state, and original checkpoint together during further original navigation.
+Recursive canonical navigation requires neither bookmarks nor former addresses.
+Portable export includes the installed metadata, compact baselines, exact originals, and their actual archive ancestry.
+Ownership transfer is unavailable for canonical models.

@@ -48,7 +48,10 @@ const QuerySchema = z
 	.strict()
 	.refine(
 		(query) =>
-			query.preview !== undefined || query.checkpoint === undefined || query.state === undefined,
+			query.preview !== undefined ||
+			query.legacyAddress !== undefined ||
+			query.checkpoint === undefined ||
+			query.state === undefined,
 		"Select either state or checkpoint.",
 	);
 const InitializeBodySchema = z.object({ vault: z.string().optional() }).strict();

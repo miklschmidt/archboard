@@ -13,11 +13,12 @@ async function walkthroughDependencies(
 	model: ArchitectureModel,
 ): Promise<string[]> {
 	const dependencies = [
-		...new Set(
-			model.walkthroughs.flatMap((walk) =>
+		...new Set([
+			...(model.migration === undefined ? [] : [model.migration.checkpoint]),
+			...model.walkthroughs.flatMap((walk) =>
 				"checkpoint" in walk.target ? [walk.target.checkpoint] : [],
 			),
-		),
+		]),
 	];
 	await Promise.all(
 		dependencies.map(async (checkpoint) => {

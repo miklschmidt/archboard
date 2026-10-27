@@ -5,19 +5,19 @@ import type { Model } from "#ui/rules/architecture-model/projection.ts";
 /**
  * Follow an exact original alias through the captured migration catalogue.
  * @param props The catalogue and router action.
- * @param props.preview The public original address catalogue.
+ * @param props.catalogue The public original address catalogue.
  * @param props.selected The requested original address.
  * @param props.pending Whether the first read is pending.
  * @param props.onSelect Opens the exact address without guessing a state.
  * @returns A bounded original-address menu.
  */
 function ModelLegacyAddresses(props: {
-	preview: Model["migrationPreview"];
+	catalogue: Pick<NonNullable<Model["migrationPreview"]>, "addresses"> | undefined;
 	selected: string | null;
 	pending: boolean;
 	onSelect: (address: string) => void;
 }): JSX.Element | null {
-	const addresses = props.preview?.addresses ?? [];
+	const addresses = props.catalogue?.addresses ?? [];
 	if (addresses.length === 0) return null;
 	return (
 		<DropdownMenu>

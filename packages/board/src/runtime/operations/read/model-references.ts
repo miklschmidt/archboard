@@ -271,9 +271,9 @@ async function localPreviewReference(
 	model: ArchitectureModel,
 	entry: ReferenceEntry,
 ): Promise<Resolution | undefined> {
-	const preview = model.migrationPreview;
+	const preview = originalReferenceProvenance(model, entry);
 	if (preview === undefined || !sameReferenceVault(vault, snapshot, entry)) return undefined;
-	if (preview.selected !== undefined && entry.reference.state === "current")
+	if (unresolvedOriginalCurrent(model, entry))
 		return unavailableReference(
 			entry,
 			"This original historical reference does not identify an exact target state.",
@@ -316,7 +316,10 @@ function sameReferenceVault(vault: string, snapshot: CheckoutSnapshot, entry: Re
  * @returns Its exact retained pin, when present.
  */
 function localPreviewCheckpoint(model: ArchitectureModel, entry: ReferenceEntry) {
-	return entry.reference.checkpoint ?? model.checkpoint?.id;
+	return (
+		entry.reference.checkpoint ??
+		(model.migrationPreview === undefined ? model.migration?.checkpoint : model.checkpoint?.id)
+	);
 }
 /**
  * Translate only the explicit current designation into the composed preview selector.
@@ -340,8 +343,30 @@ function changedPreviewSource(
 ) {
 	if (entry.reference.checkpoint !== undefined) return false;
 	if (!target.success) return false;
+	const provenance = source.migrationPreview ?? source.migration;
 	return (
-		target.migrationPreview?.source.digest !== source.migrationPreview!.source.digest ||
-		target.migrationPreview.planRevision !== source.migrationPreview!.planRevision
+		target.migrationPreview?.source.digest !== provenance!.source.digest ||
+		target.migrationPreview.planRevision !== provenance!.planRevision
 	);
+}
+
+/**
+ * Resolve installed original references without retargeting ordinary canonical references.
+ * @param model The source reading.
+ * @param entry The explicit authored target.
+ * @returns Its original source provenance, when needed.
+ */
+function originalReferenceProvenance(model: ArchitectureModel, entry: ReferenceEntry) {
+	if (model.migrationPreview !== undefined) return model.migrationPreview;
+	return entry.reference.state.includes("#") ? model.migration : undefined;
+}
+
+/**
+ * Keep historical reference intent separate from a moving current designation.
+ * @param model The original reading.
+ * @param entry Its explicit reference.
+ * @returns Whether an exact original target is missing.
+ */
+function unresolvedOriginalCurrent(model: ArchitectureModel, entry: ReferenceEntry): boolean {
+	return model.migrationPreview?.selected !== undefined && entry.reference.state === "current";
 }

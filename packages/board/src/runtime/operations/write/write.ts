@@ -1,3 +1,4 @@
+import { legacyAuthorityProblem } from "#runtime/store/legacy-authority.ts";
 // The one place an authored semantic board change lands. Read-time schema
 // upgrades use the same lease and atomic writer in `read.ts`.
 //
@@ -34,6 +35,7 @@ import type { BoardOpener } from "#shared/protocol/board-discard.ts";
 import { type SemanticBoard } from "#shared/schemas/board-document.ts";
 import {
 	locateSemanticBoard,
+	semanticBoardAddress,
 	type SemanticBoardAddress,
 	type SemanticBoardLocation,
 } from "#runtime/store/location.ts";
@@ -330,6 +332,14 @@ async function underBoardLease<Done extends { readonly outcome: "applied" | "dis
 	// located again only once the lease is held, so two processes creating
 	// "Payments" and "payments" on a case-sensitive filesystem take one lease
 	// in turn rather than resolving two absent paths of their own (ADR 0010).
+	const authority = legacyAuthorityProblem(ask.vault);
+	if (authority !== undefined)
+		return rejected(
+			{ ...semanticBoardAddress(ask.board), file: "" },
+			null,
+			"BOARD_UNREADABLE",
+			authority,
+		);
 	const address = resolveSemanticBoard(ask.board, ask.vault);
 	const admission = admit(ask.vault, address.key, ask.writer);
 	if (!admission.ok) {
@@ -338,7 +348,14 @@ async function underBoardLease<Done extends { readonly outcome: "applied" | "dis
 	}
 	try {
 		const result = await withBoardLock(leaseRequest(address.key, ask, admission), () =>
-			pass(locateSemanticBoard(address.name, ask.vault), admission.id),
+			legacyAuthorityProblem(ask.vault) === undefined
+				? pass(locateSemanticBoard(address.name, ask.vault), admission.id)
+				: rejected(
+						locateSemanticBoard(address.name, ask.vault),
+						null,
+						"BOARD_UNREADABLE",
+						legacyAuthorityProblem(ask.vault)!,
+					),
 		);
 		// Said here rather than carried through the pass inside the lease: the pass
 		// reads, checks, applies and writes, and an identity it takes but never uses

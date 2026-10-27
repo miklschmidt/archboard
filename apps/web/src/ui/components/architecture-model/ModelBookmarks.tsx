@@ -5,14 +5,14 @@ import type { Model } from "#ui/rules/architecture-model/projection.ts";
 /**
  * Open a preserved reading without creating architecture content.
  * @param props The current catalogue and explicit bookmark selection.
- * @param props.preview The public migration reading.
+ * @param props.catalogue The public imported reading catalogue.
  * @param props.selected The requested bookmark identity.
  * @param props.pending Whether the first catalogue is loading.
  * @param props.onSelect Changes reading intent through the existing router.
  * @returns A bounded optional bookmark control.
  */
 function ModelBookmarks(props: {
-	preview: Model["migrationPreview"];
+	catalogue: Pick<NonNullable<Model["migrationPreview"]>, "bookmarks"> | undefined;
 	selected: string | null;
 	pending: boolean;
 	onSelect: (id: string | null) => void;
@@ -24,7 +24,7 @@ function ModelBookmarks(props: {
 		},
 		[onSelect],
 	);
-	const bookmarks = props.preview?.bookmarks ?? [];
+	const bookmarks = props.catalogue?.bookmarks ?? [];
 	if (bookmarks.length === 0 && props.selected === null) return null;
 	const label = bookmarkLabel(bookmarks, props.selected);
 	return (

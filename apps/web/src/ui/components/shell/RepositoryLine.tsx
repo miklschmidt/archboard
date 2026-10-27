@@ -35,6 +35,7 @@ import {
 	type RowHandlers,
 } from "#ui/components/shell/TreeRow.tsx";
 import type { RepositoryRow } from "#ui/rules/shell/navigator-row-types.ts";
+import { RepositoryModelLink } from "#ui/components/architecture-model/RepositoryModelLink.tsx";
 
 /** What a repository's facts say while it holds no boards to count. */
 const STATE_WORDS: Readonly<Record<Exclude<RepositoryEntry["state"], "ready">, string>> = {
@@ -50,6 +51,7 @@ const STATE_WORDS: Readonly<Record<Exclude<RepositoryEntry["state"], "ready">, s
  */
 function repositoryFacts(row: RepositoryRow): string {
 	if (row.entry.state !== "ready") return STATE_WORDS[row.entry.state];
+	if (row.model !== undefined) return "architecture";
 	return row.loading ? "…" : String(row.count);
 }
 
@@ -62,7 +64,11 @@ function repositoryFacts(row: RepositoryRow): string {
  */
 function repositoryLabel(row: RepositoryRow, facts: string): string {
 	const holds =
-		row.entry.state !== "ready" ? facts : row.loading ? "reading its boards" : `${facts} boards`;
+		row.entry.state !== "ready" || row.model !== undefined
+			? facts
+			: row.loading
+				? "reading its boards"
+				: `${facts} boards`;
 	return [row.entry.name, "repository", holds, row.error].filter(Boolean).join(", ");
 }
 
@@ -150,7 +156,11 @@ function RepositoryLine(
 						<RiErrorWarningLine aria-hidden="true" className="text-destructive size-3.5" />
 					</span>
 				)}
-				{facts}
+				{row.model === undefined ? (
+					facts
+				) : (
+					<RepositoryModelLink model={row.model} repository={row.repository} />
+				)}
 				{hasMenu && (
 					<CheckoutMenu
 						entry={row.entry}

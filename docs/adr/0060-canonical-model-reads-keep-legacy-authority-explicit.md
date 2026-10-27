@@ -384,3 +384,32 @@ The returned source selectors preserve paired state and checkpoint addressing fo
 Unavailable reading intent stops only its affected beat.
 The original files remain the sole live authority throughout preview.
 TASK-549.23 owns durable installation and the persistent form of imported bookmark and address inputs.
+
+## Authority after explicit cutover
+
+TASK-549.23 uses the ordinary architecture read for authority discovery.
+A successful ordinary read selects canonical authority.
+LEGACY_AUTHORITY preserves the existing reader for an unmigrated vault.
+RECOVERY_REQUIRED and MODEL_BUSY block format selection during installation.
+Other canonical failures remain unavailable and do not select legacy content.
+
+An already-open legacy pane subscribes through the existing architecture feed.
+The feed starts with a fresh coherent snapshot.
+After durable completion, architecture_changed identifies the installed model, revision, subjects, and signed operation receipt.
+The browser connects its existing navigation and cache to that transition.
+Its repository navigator discovers the same authority and opens the current model.
+Existing pane keys resolve through captured aliases into exact retained original addresses.
+No second authority endpoint, content cache, journal, or migration engine exists.
+
+Ordinary installed reads carry `migration.bookmarks`, `migration.addresses`, and `migration.states`.
+A selected bookmark appears as `migration.bookmark` and preserves canonical authority.
+These reads omit `migrationPreview` and the retained original byte envelope.
+The `migrationPreview` field identifies explicit original-preview authority.
+
+Installed bookmarks use the existing bookmark selector without preview.
+Installed former addresses resolve through their immutable originals checkpoint.
+The response keeps original state, checkpoint, and preview origin together.
+Original histories never gain present-day surrounding modules.
+Canonical local agent context reads the model runtime and stops consulting former board claims.
+A different reported state requires the existing exact capture action before the agent describes its selected subjects.
+Ownership transfer remains unavailable for canonical models.

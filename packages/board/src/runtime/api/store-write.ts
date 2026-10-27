@@ -35,3 +35,5 @@ export {
 	exportArchitectureModel,
 	importArchitectureModel,
 } from "#runtime/operations/history/portable.ts";
+
+export { migrateArchitectureModel } from "#runtime/operations/legacy-inventory/apply.ts";
