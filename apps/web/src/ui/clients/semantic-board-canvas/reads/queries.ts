@@ -7,10 +7,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import { BOARD_CACHE_MS } from "@archboard/timing";
-import {
-	fetchSemanticBoards,
-	type SemanticRenderRequest,
-} from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+import { type SemanticRenderRequest } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import {
 	sameBoardAsked,
 	semanticBoardKeys,
@@ -39,7 +36,7 @@ function semanticBoardListQuery(vault: string) {
 		 * @returns The listing.
 		 */
 		queryFn: async (context) => {
-			const listing = await fetchSemanticBoards(vault, context.signal);
+			const listing = await boardReads().listing(vault, context.signal);
 			boardsListed(context.client, vault, listing.boards);
 			pictureSource().listed?.(vault, listing.boards, context.client);
 			return listing;

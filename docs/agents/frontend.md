@@ -92,28 +92,20 @@ into a hook does not justify a move of its state up the tree.
 
 ## Router and server data
 
-TanStack Router (TASK-166) and TanStack Query (TASK-167) are approved migration
-targets. As those tasks introduce the dependencies, apply these contracts. Do
-not add imports or a second state path before that work.
+TanStack Router owns reading addresses, and TanStack Query owns server responses.
+Each behavior keeps its existing public boundary and one state owner.
 
-- Use code-based TanStack Router routes within the existing module boundaries.
-  Route composition stays thin and consumes interfaces that domains own. The
-  first navigation contract has two parts. A URL restores an open board or
-  comparison and its active pane, and Back/Forward follows deliberate board
-  navigation. The URL
-  represents browser display intent, and the board file remains the board
-  authority. Selection, pending edits and live voice remain session state.
-- The `board-routing` behavior of the web app delivers that contract (TASK-166) and owns it. The
-  workspace lives in search parameters on the one route at `/`: `paneA`, `paneB`,
-  `repoA`, `repoB`, `viewA`, `viewB` and `pane`. It uses search parameters because the Archboard server serves the
-  page only at `/`. With a path scheme, every direct load gets a 404 answer.
-  Each `paneX` parameter carries the
-  board key exactly as the pane reports it. Each `repoX` parameter names the
-  repository of that pane's board (ADR 0050): its identity, or an untracked
-  vault's registry name, and never a path. An address without `repoX` opens the
-  board in the repository the pane is in.
-
+- Use code-based routes within the existing module boundaries.
+  Route composition connects domain interfaces.
+  The URL restores each reading and the active pane.
+  Selection, the camera, and live voice remain session state.
+- The `board-routing` behavior owns search parameters on the one route at `/`.
   Canonical panes use `modelX`, `scopeX`, and `checkpointX` beside `repoX`.
+  Each `repoX` names a registered repository identity, never a filesystem path.
+  Without `repoX`, the pane uses its admitted vault.
+  Old `paneX` addresses resolve only through captured migration aliases.
+  They never open a live legacy board reader.
+
   `previewX` names a saved migration origin beside `modelX`.
   Preview queries keep their own identity and use no canonical event feed or state controls.
   Original-state and migration-checkpoint selectors remain paired through preview navigation.
@@ -150,10 +142,8 @@ not add imports or a second state path before that work.
   Explicit visibility narrows diagrams while complete model content supplies interface facts.
   Bookmarks and walkthrough beats use the same projection rule.
   Canonical sockets name `reading=canonical` and start without a legacy board.
-  Browser listings, board snapshots, and vault diagnostics normalize old schemas without persisting them.
-  Explicit canonical intent remains visible even when the server remembers a legacy board.
-  A deliberate legacy open replaces that pane through the existing operation owner.
-  Its history origin comes from the visible reading.
+  Original inspection decodes old schemas in memory without rewriting their source bytes.
+  Explicit canonical intent remains visible even when the server remembers an old address.
   Each reader instance belongs to its resolved vault. A foreign destination replaces that instance and its native reading controls.
   `stateX` names a mutable proposal, and `againstX` names an explicit comparison base.
   `subjectX` names an explicit reference destination and seeds selection when that reading opens.
@@ -222,42 +212,32 @@ not add imports or a second state path before that work.
   The existing position owner reports the request identity until a person chooses another step.
   Recording and replay pages use their supplied capture without reading mutable architecture.
 
-  The address follows the note, which is the persisted content of the board.
-  When a person opens a board, the open runs the command of the shell. Then the
-  pane reports its new board. Only after that report does the page write the
-  address. Thus a refused open changes no address.
+  A deliberate user navigation adds one history entry.
+  An agent navigation replaces the current entry.
+  The pending navigation operation identifies its matching canonical socket arrival once.
+  HTTP completion and socket arrival can occur in either order.
+  Unavailable destinations retain their address and expose recovery.
+  Closing or restoring a pane needs no content guard because the browser authors no architecture.
 
-  The address leads only on the first load and on a history navigation. There,
-  it issues that same open command. A move that the person asked for pushes a
-  history entry. Every other move replaces one. The gesture decides this, not
-  the socket.
+- Each request resource has one Query owner for its keys, transport, freshness, and recovery.
+  Keep subscriptions with the consuming behavior.
+  An unrelated request must not unmount a live canvas or voice owner.
+  Query holds server responses, while each pane owns its mounted scene and transient selection.
+  Edit acknowledgements, socket ordering, claims, workbench streams, and voice retain their existing owners.
+- The repository catalogue reads canonical models through the same queries and event feed as open panes.
+  Claim activity, pane registration, and pane departure do not trigger another architecture read.
+  A missing canonical model exposes initialization or explicit migration, according to the returned refusal.
+  Reconnect and repository changes refresh discovery through the existing catalogue owner.
+- Define freshness, cancellation, retry, and unavailable states for each resource.
+  Preserve healthy exact checkpoints when mutable architecture changes.
+  Retry interrupted reads only after a coherent completion event or an explicit reader action.
+  Browser controls never retry authoring or maintain optimistic architecture copies.
 
-  A pane holds no work of its own, because the browser edits no board (ADR
-  0023). Thus nothing guards a board that leaves a pane. A restore moves or
-  closes panes without a question first. There is no route loader. A restore
-  addresses the server by board key and by the vault of the repository's chosen
-  checkout, so it waits until the repositories are listed. It reads nothing
-  else, and routing shares no cache.
-
-- Where TanStack Query replaces manual loading, error, cache and refresh state,
-  use it for request/response resources. Start with board listings and server
-  previews. Each resource has one cache owner, and its domain module owns its
-  query keys/options and API adapters. Route loaders coordinate that same cache.
-
-  Keep subscriptions at the consuming UI. Where a bounded loading fallback
-  helps, use Suspense. An unrelated fetch must not unmount a live canvas or
-  voice owner.
-
-- Query owns server snapshots, not mounted canvas scenes. Mounted previews come
-  from the pane. Edit acknowledgements, socket ordering, claims, workbench
-  streams and voice keep their domain owners. During migration, resolve
-  explicitly the mix of persisted boards and live pane inventory in the existing
-  listing.
-- For each migrated resource, define freshness, event invalidation, reconnect,
-  cancellation and retry behavior. Query defaults are not the product contract.
-  Where it is appropriate, keep the last usable data visible. Provide explicit
-  recovery. Board writes keep version checks and existing command semantics. Do
-  not add automatic write retries or parallel optimistic models.
+Retained recording replay loads separately from the ordinary application.
+Its existing read provider supplies the captured original document, listing, policy, and empty code findings.
+Its picture provider uses the local renderer.
+No provider falls back to a live board HTTP route.
+Canonical recordings use their captured model and the same canonical walkthrough components as ordinary playback.
 
 The remaining stack stays as it is. Use the existing shadcn/Base UI primitives,
 Remix icons, Tailwind theme tokens and Bun validation. Other Platform libraries,

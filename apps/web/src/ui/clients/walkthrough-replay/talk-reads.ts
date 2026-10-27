@@ -5,6 +5,11 @@
 // snapshot, and a read of any other board is a failure of the rendering rather
 // than a quiet trip to the server.
 
+import { parseSemanticBoard } from "@archboard/board/document";
+import {
+	SemanticBoardError,
+	type SemanticBoardListing,
+} from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { Talk } from "@archboard/walkthrough/talk";
 import { sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import { type BoardReads } from "#ui/clients/semantic-board-canvas/reads/board-reads.ts";
@@ -17,6 +22,11 @@ import { type BoardReads } from "#ui/clients/semantic-board-canvas/reads/board-r
  */
 function talkReads(talk: Talk, foreign: (board: string) => void): BoardReads {
 	return {
+		/**
+		 * List the original document inside this capture.
+		 * @returns Only the document retained by this talk.
+		 */
+		listing: async () => retainedListing(talk),
 		/**
 		 * The talk's board, and no other, whichever vault the pane names.
 		 * @param _vault The pane's vault, which a talk has no use for.
@@ -40,6 +50,38 @@ function talkReads(talk: Talk, foreign: (board: string) => void): BoardReads {
 		 * @returns No readings.
 		 */
 		codeFindings: async () => ({ readings: [] }),
+	};
+}
+
+/**
+ * Describe the captured original without discovering live boards.
+ * @param talk The immutable recording.
+ * @returns The one available original document.
+ * @throws {SemanticBoardError} When the retained document is invalid.
+ */
+function retainedListing(talk: Talk): SemanticBoardListing {
+	const parsed = parseSemanticBoard(talk.document);
+	if (!parsed.ok) throw new SemanticBoardError("BOARD_UNREADABLE", parsed.problem);
+	const board = parsed.board;
+	return {
+		levels: [],
+		boards: [
+			{
+				id: board.id,
+				key: board.name,
+				name: board.name,
+				version: board.version,
+				opens: board.current ?? null,
+				links: [],
+				description: null,
+				variants: board.variants.map((variant) => ({
+					id: variant.id,
+					name: variant.name,
+					lifecycle: variant.lifecycle,
+					parentId: variant.parent ?? null,
+				})),
+			},
+		],
 	};
 }
 

@@ -1,14 +1,10 @@
-// Where retained board documents, vault policy, and remembered code findings come from.
-//
-// A page reads them from the Archboard server. A page rendering a recording
-// frame by frame reads them from the talk it recorded instead, so the picture
-// is the one the voice spoke over, whatever the board says now (TASK-381). The
-// page chooses once, at start, before anything is read.
+// Retained documents come from an explicit capture. Live panes read only canonical models.
 
 import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import {
 	fetchCodeFindings,
-	fetchSemanticBoardDocument,
+	SemanticBoardError,
+	type SemanticBoardListing,
 	fetchVaultCheck,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { VaultCheckSchema } from "@archboard/board/policy";
@@ -18,6 +14,8 @@ type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 /** Where boards are read from. */
 interface BoardReads {
+	/** List only the original documents supplied by the capture. */
+	readonly listing: (vault: string, signal?: AbortSignal) => Promise<SemanticBoardListing>;
 	/**
 	 * One board's whole document.
 	 * @param vault The vault the board is in.
@@ -42,13 +40,26 @@ interface BoardReads {
 	readonly codeFindings: (vault: string, signal?: AbortSignal) => Promise<RememberedFindings>;
 }
 
-const fromServer: BoardReads = {
-	document: fetchSemanticBoardDocument,
+/**
+ * Retained documents require a capture supplied by replay.
+ * @returns An explicit refusal without a live board request.
+ * @throws {SemanticBoardError} When no retained provider is installed.
+ */
+async function captureRequired(): Promise<never> {
+	throw new SemanticBoardError(
+		"BOARD_UNREADABLE",
+		"Open an exact retained recording to read original board content.",
+	);
+}
+
+const liveEvidence: BoardReads = {
+	document: captureRequired,
+	listing: captureRequired,
 	vaultCheck: fetchVaultCheck,
 	codeFindings: fetchCodeFindings,
 };
 
-let current: BoardReads = fromServer;
+let current: BoardReads = liveEvidence;
 
 /**
  * Where boards are read from now.

@@ -832,3 +832,9 @@ The repository catalogue owner now uses canonical model responses and the shared
 It covers explicit migration requirements, unreadable repository discovery, and model updates without a second read.
 Board release tracking, board-name lookup, activity-triggered content refreshes, and their obsolete assertions retire.
 Pane reports retain registration and stale-build handling without board-list invalidation callbacks.
+
+Retained-stage UI fixtures now supply captured documents and pictures through the existing reader providers.
+The DOM harness remains separate from those capture fixtures.
+Live legacy list, document, and render HTTP adapters retire.
+The recorded-playback owner also renders an original recording with its historical schema.
+Canonical playback retains the comparison between one and two rendering pages.

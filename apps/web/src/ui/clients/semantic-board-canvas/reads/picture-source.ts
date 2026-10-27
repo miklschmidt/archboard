@@ -1,14 +1,9 @@
-// Where a pane's pictures come from.
-//
-// A page that runs the renderer draws them itself, from the board it read
-// (TASK-247). Anything that has not started a renderer asks the Archboard
-// server's render route, which answers identically: both run `renderBoard`.
-// The page chooses once, at start, before anything is drawn.
+// Retained pictures require the local renderer installed by replay.
 
 import type { QueryClient } from "@tanstack/react-query";
 
 import {
-	fetchSemanticRender,
+	SemanticBoardError,
 	type SemanticBoardEntry,
 	type SemanticRender,
 	type SemanticRenderRequest,
@@ -41,24 +36,19 @@ interface PictureSource {
 	) => void;
 }
 
-const fromServer: PictureSource = {
-	/**
-	 * Ask the Archboard server's render route.
-	 * @param request The board, variant and view.
-	 * @param _client Unused: the server reads the board itself.
-	 * @param signal Cancels the request.
-	 * @returns The drawing, or the news that there is nothing to draw.
-	 */
-	draw: (request, _client, signal) => fetchSemanticRender(request, signal),
-};
-
-let current: PictureSource = fromServer;
+let current: PictureSource | null = null;
 
 /**
  * The source pictures come from now.
  * @returns The source.
+ * @throws {SemanticBoardError} When replay has not installed its local renderer.
  */
 function pictureSource(): PictureSource {
+	if (current === null)
+		throw new SemanticBoardError(
+			"BOARD_UNREADABLE",
+			"Start the local renderer before drawing a retained recording.",
+		);
 	return current;
 }
 

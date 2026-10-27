@@ -101,6 +101,11 @@ let walking: ReturnType<typeof Promise.withResolvers<LocalityAnswer>> | undefine
 
 readBoardsFrom({
 	/**
+	 * Keep original documents outside this history fixture.
+	 * @returns No original documents in this history-only fixture.
+	 */
+	listing: async () => ({ levels: [], boards: [] }),
+	/**
 	 * No board is read here.
 	 * @returns Nothing.
 	 */

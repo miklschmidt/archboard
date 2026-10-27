@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T22:38:00Z'
+updated_date: '2026-10-27T22:48:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -118,6 +118,8 @@ Remove the unreachable legacy board take-back client and its unused shell/sessio
 Remove the obsolete board-only context object from the agent surfaces. It now comes from an always-empty board catalogue and only supplies placeholder text. Keep canonical agent context with the existing pane reports and local workhorse owner. Use reading-based empty-state suggestions without a second UI context projection, and update the shared surface interface and consumers.
 
 Remove empty board catalogue compatibility and board-release/activity invalidation. Canonical model queries already subscribe to the shared vault event feed. Keep repository discovery, reconnect recovery, and agent activity. Retire board-name lookup and obsolete release assertions without adding a second model cache.
+
+Retire remaining live board list/document/render HTTP adapters. Keep exact original recording reads behind the existing BoardReads and PictureSource owners, with explicit captured providers and local rendering. Port retained UI fixtures to those existing providers, preserve shared geometry/meaning owners, and isolate retained replay startup from ordinary canonical browser startup.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -224,4 +226,6 @@ Removed the unreachable legacy board take-back HTTP request and its unused sessi
 Removed AgentContext from the shared agent view and its app consumers. This object only supplied board-name placeholder copy from an empty catalogue; canonical pane reports remain the actual agent context owner. Empty-state suggestions now refer to the reading and architecture. Agent status/dock UI owners, full types and scoped source/test lint pass. Interface-width reports 135 Workbench names, and its ceiling is lowered from138 to135 as the boundary policy requires.
 
 Removed the empty board catalogue projection, board-name shell lookup, board release tracking, activity-based content invalidation, and obsolete pane-list acceptance callbacks. useModelCatalog consumes canonical queries and their shared event feed. The ported repository catalogue owner proves model discovery, explicit migration, transport failure, and snapshot updates without another model fetch. Full types, focused source/test lint, catalogue, shell view, activity, actions, and pane connection owners pass. Retained replay and remaining legacy read adapters stay open work.
+
+Live legacy list, document, and render HTTP adapters now retire. Retained originals require the existing explicit capture provider and local renderer. Replay startup loads separately from ordinary model browsing. Both TypeScript projects, focused lint, seven retained UI owners, fresh-build browser drawing, canonical replay across page counts, and exact original-schema replay pass. Retained fixture transport now has its own support file. The existing 500 kB bundle warning remains open integration work; no threshold or lint/type rule changed. Repository migration, example conversion, asset recipes, final gate, and review remain open.
 <!-- SECTION:NOTES:END -->

@@ -65,6 +65,7 @@ beforeEach(() => {
 	server.set(BILLING, { name: "Payments", formerNames: [], version: 1 });
 	readBoardsFrom({
 		document: readDocument,
+		listing: readListing,
 		vaultCheck: notReadHere,
 		codeFindings: notReadHere,
 	});
@@ -171,6 +172,16 @@ function answerRoute(input: string | URL | Request): Promise<Response> {
 			headers: { "Content-Type": "application/json" },
 		}),
 	);
+}
+
+/**
+ * Supply the existing retained-list fixture through its capture provider.
+ * @param vault The fixture vault.
+ * @returns Its listed documents.
+ */
+async function readListing(vault: string) {
+	const response = await answerRoute(`retained-list?vault=${encodeURIComponent(vault)}`);
+	return response.json();
 }
 
 /**
@@ -339,8 +350,8 @@ test("a board let go under the server's spelling reads again what was asked by a
 	expect(elsewhere.versions()).toEqual([1, 1]);
 	expect(asked.filter((one) => one.startsWith(BILLING))).toEqual([]);
 	expect({
-		shop: timesAsked(`/api/semantic-boards|${SHOP}`),
-		billing: timesAsked(`/api/semantic-boards|${BILLING}`),
+		shop: timesAsked(`/retained-list|${SHOP}`),
+		billing: timesAsked(`/retained-list|${BILLING}`),
 		panes: timesAsked("/api/panes"),
 		repositories: timesAsked("/api/repositories"),
 	}).toEqual({ shop: 1, billing: 0, panes: 1, repositories: 0 });
@@ -359,7 +370,7 @@ test("a board command reads every listing and the panes again, not the repositor
 	await listingsChanged(client);
 	await settle();
 	expect(requested.toSorted()).toEqual(
-		["/api/panes", `/api/semantic-boards|${BILLING}`, `/api/semantic-boards|${SHOP}`].toSorted(),
+		["/api/panes", `/retained-list|${BILLING}`, `/retained-list|${SHOP}`].toSorted(),
 	);
 
 	requested.length = 0;
@@ -369,8 +380,8 @@ test("a board command reads every listing and the panes again, not the repositor
 		[
 			"/api/panes",
 			"/api/repositories",
-			`/api/semantic-boards|${BILLING}`,
-			`/api/semantic-boards|${SHOP}`,
+			`/retained-list|${BILLING}`,
+			`/retained-list|${SHOP}`,
 		].toSorted(),
 	);
 	stopNavigator();
