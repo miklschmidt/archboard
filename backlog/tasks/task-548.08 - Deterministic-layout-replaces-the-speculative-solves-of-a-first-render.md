@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T16:24:00Z'
-updated_date: '2026-10-27T04:27:00Z'
+updated_date: '2026-10-27T04:29:00Z'
 labels:
   - renderer
   - performance
@@ -89,4 +89,8 @@ Council round 2, 2026-10-27, on 71b949d87 against feat/faster-first-render (layo
 Owner decision for round 3: compactness, short direct routes, and close collaborators weigh more than avoiding a group or parent header. A header crossing is a measured flaw, not a hard defect. Long detours, stretched frames, and empty spans cost more. The two header-crossing assertions must leave expectDrawingIntact. The other integrity checks remain hard requirements. The merge onto 93cf730fc is 3f573f10a and keeps both task histories.
 
 The owner correction supersedes the preceding soft-header instruction. Header crossings remain hard defects. Both header assertions are unchanged in source. The four failing cases need a composition repair: a short route with no header in its way, tight frames, and nearby collaborators. No detour or crossing is an acceptable remedy.
+
+2026-10-27: the owner sides with the Opus grader's weighting. A compact picture, short direct lines and related cards close together count more than avoiding a header crossing; a header crossing is a flaw weighed against its cost, not a defect. Recorded in docs/design/grading-council.md (The owner's weighting); Codex was told to stop failing expectDrawingIntact on header crossings and to stop paying for header avoidance with detours.
+
+2026-10-27, correction by the owner: a line through a group's or a parent's header is a defect and stays a hard check. Among pictures without defects, tight composition with no dead space reads better. The fix for the failed pairs must come from placement, not from detours and not from crossings. docs/design/grading-council.md updated; Codex told.
 <!-- SECTION:NOTES:END -->

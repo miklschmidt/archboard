@@ -43,6 +43,20 @@ Give the graders a copy of `<out>/pairs` in a directory of its own, such as
 `cp -r <out>/pairs /tmp/grading-<run>/`, never `<out>` itself: `key.json` and
 `runs/` show which side is which.
 
+## The owner's weighting
+
+The owner decided this on 2026-10-27, after the second council run. Every
+grader applies it before its own weights:
+
+- Defects are defects. A line through a group's or a parent's header is
+  one, as are the defects listed under Grading. No other quality makes up
+  for a defect.
+- Among pictures without defects, a tightly composed board reads better
+  than one with dead space. Short, direct lines, frames tight around their
+  members and related cards close together count most. A line sent around
+  the picture or along a frame's full height, a frame much larger than its
+  members, or related cards split by an empty span read worse.
+
 ## Grading
 
 1. **Criteria first.** Before it sees any pair, each grader writes down what
@@ -50,12 +64,15 @@ Give the graders a copy of `<out>/pairs` in a directory of its own, such as
    the old scorecard metrics (`drawn-scorecard.ts` and the `drawn-*` checks).
    The council's criteria are in `grading-council/criteria-<grader>.md`
    (Opus, gpt-6.1-sol and gpt-6-astra, written on 2026-10-26). A grader
-   rereads its own file before each run, and only its own.
+   rereads its own file before each run, and only its own. It also reads
+   the owner's weighting below, which comes before its own weights.
 2. **One verdict per pair.** The grader looks at `A.png` and `B.png` (and may
    zoom into either) and records `A better`, `B better` or `same`, with a
    one-line reason that names what it saw. It also records every defect it
-   sees in either picture. A defect is a line that is missing, an arrow
-   through a card, or a label off its route. The verdicts go to a file per
+   sees in either picture. A defect is a line that is missing or ends away
+   from its card, an arrow through a card, a line through a group's or a
+   parent's header, a label off its route, a parent with no visible frame,
+   or a trunk that joins different sources toward different targets. The verdicts go to a file per
    grader in the grading copy, for example
    `/tmp/grading-<run>/verdicts/<grader>.json`, keyed by pair number.
    A grader does not see the verdicts of the other graders.
