@@ -9,7 +9,7 @@ import { CodeCheckAnswerSchema } from "@archboard/code-intel/code-check";
 import { FootprintReplySchema, LocalityReplySchema } from "@archboard/code-intel/history";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
-import { prepareEvidenceFixture } from "./evidence-fixture.ts";
+import { prepareEvidenceFixture, prepareEvidenceSource } from "./evidence-fixture.ts";
 import {
 	Terminal,
 	attachmentFile,
@@ -111,7 +111,7 @@ async function pinInspector(page: Page, pane = "A"): Promise<void> {
  */
 async function filmCode(server: TakeServer, browser: Browser, fixture: Fixture): Promise<void> {
 	const terminal = await Terminal.open(browser, "light", PANE.height);
-	const page = await openBoard(server, browser, fixture.board, PANE.width);
+	const page = await openBoard(server, browser, fixture.model, PANE.width);
 	await terminal.say(
 		"Find a call that the map leaves out.\nSynthetic checkout example. Live results.",
 	);
@@ -178,19 +178,19 @@ async function filmInterfaces(
 	browser: Browser,
 	fixture: Fixture,
 ): Promise<void> {
-	const page = await openBoard(server, browser, fixture.board, 1920);
+	const page = await openBoard(server, browser, fixture.model, 1920);
 	await server.cli(["browser", "open"]);
 	await server.cli([
 		"browser",
 		"show",
-		`${fixture.board}@${fixture.proposals.wide}`,
+		`${fixture.model}@${fixture.proposals.wide}`,
 		"--pane",
 		"left",
 	]);
 	await server.cli([
 		"browser",
 		"show",
-		`${fixture.board}@${fixture.proposals.narrow}`,
+		`${fixture.model}@${fixture.proposals.narrow}`,
 		"--pane",
 		"right",
 	]);
@@ -247,7 +247,7 @@ function withoutVaultMetadata(input: unknown) {
  */
 async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixture): Promise<void> {
 	const terminal = await Terminal.open(browser, "light", PANE.height);
-	const page = await openBoard(server, browser, fixture.board, PANE.width, "Everything");
+	const page = await openBoard(server, browser, fixture.model, PANE.width, "Everything");
 	await terminal.say(
 		"Read changes through the architecture.\nSynthetic checkout and example Git history.",
 	);
@@ -256,9 +256,9 @@ async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixtur
 		await selectPart(page, fixture.nodes.validate);
 		await reveal(page, PARTNERS);
 		await pinInspector(page);
-		await terminal.command(`archboard semantic locality "${fixture.board}"`);
+		await terminal.command(`archboard semantic locality "${fixture.model}"`);
 		const locality = LocalityReplySchema.parse(
-			withoutVaultMetadata(await server.cli(["semantic", "locality", fixture.board])),
+			withoutVaultMetadata(await server.cli(["semantic", "locality", fixture.model])),
 		);
 		const pair = locality.coupling.find(
 			(one) =>
@@ -285,14 +285,14 @@ async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixtur
 		await page.screenshot(join(scratch("takes", "git-history"), "history.png"));
 		const still = await moment(page, [PARTNERS], 720, { x: 600, y: 0 });
 		await terminal.command(
-			`archboard semantic footprint "${fixture.board}" --base ${fixture.base} --variant "${fixture.proposals.narrow}"`,
+			`archboard semantic footprint "${fixture.model}" --base ${fixture.base} --variant "${fixture.proposals.narrow}"`,
 		);
 		const footprint = FootprintReplySchema.parse(
 			withoutVaultMetadata(
 				await server.cli([
 					"semantic",
 					"footprint",
-					fixture.board,
+					fixture.model,
 					"--base",
 					fixture.base,
 					"--variant",
@@ -315,7 +315,7 @@ async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixtur
 		await server.cli([
 			"browser",
 			"show",
-			`${fixture.board}@${fixture.proposals.narrow}`,
+			`${fixture.model}@${fixture.proposals.narrow}`,
 			"--pane",
 			"primary",
 		]);
@@ -357,11 +357,13 @@ function evidenceProducer(name: string, description: string, scene: Scene): Prod
 		 * Run this take on isolated source and board files.
 		 * @returns Once its clip and still are written.
 		 */
-		make: async () =>
-			withTake(name, "examples/web-shop", false, async (server, browser) => {
+		make: async () => {
+			const directory = await prepareEvidenceSource(name);
+			await withTake(name, { directory }, false, async (server, browser) => {
 				const fixture = await prepareEvidenceFixture(server, name);
 				await scene(server, browser, fixture);
-			}),
+			});
+		},
 	};
 }
 

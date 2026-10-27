@@ -1,6 +1,6 @@
 import { ModelExplanationMenu } from "#ui/components/architecture-model/ModelExplanationMenu.tsx";
 import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
-import { lazy, Suspense, useCallback, useMemo, useState, type JSX } from "react";
+import { lazy, Suspense, useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { DiagramGrammarSchema, type DiagramGrammar } from "@archboard/board/views";
@@ -39,6 +39,7 @@ const LOADING_DIAGRAM = (
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 interface ModelReadingProps {
+	overlay?: ReactNode;
 	subject: string | null;
 	onCodeTargetNotice: Parameters<typeof activateCodeTarget>[0]["onNotice"];
 	vault: string;
@@ -185,6 +186,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				)}
 			</ModelSelectionBar>
 			<ModelReadingContent
+				overlay={props.overlay}
 				paneId={props.paneId}
 				vault={props.vault}
 				onCodeTargetNotice={props.onCodeTargetNotice}
@@ -205,7 +207,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 
 interface ScopedModelReadingProps extends Pick<
 	ModelReadingProps,
-	"vault" | "paneId" | "onCodeTargetNotice"
+	"vault" | "paneId" | "onCodeTargetNotice" | "overlay"
 > {
 	model: Model;
 	selection: ModelSelection;
@@ -338,18 +340,26 @@ function ScopedModelReading(
 					onSelect={select}
 				/>
 			</nav>
-			<Suspense fallback={LOADING_DIAGRAM}>
-				<ModelDiagram
-					grammar={props.grammar}
-					model={model}
-					projection={props.projection}
-					selected={selected}
-					onSelect={select}
-					onSelectMany={props.selection.selectMany}
-					onOpen={props.onOpen}
-					reducedMotion={props.reducedMotion}
-				/>
-			</Suspense>
+			<div className="relative flex min-h-0 min-w-0 flex-1">
+				<Suspense fallback={LOADING_DIAGRAM}>
+					<ModelDiagram
+						grammar={props.grammar}
+						model={model}
+						projection={props.projection}
+						selected={selected}
+						onSelect={select}
+						onSelectMany={props.selection.selectMany}
+						onOpen={props.onOpen}
+						reducedMotion={props.reducedMotion}
+					/>
+				</Suspense>
+				<div
+					data-slot="model-stage-overlay"
+					className="pointer-events-none absolute inset-x-0 bottom-6 z-25 flex justify-center px-8"
+				>
+					{props.overlay}
+				</div>
+			</div>
 			<div className="border-border w-80 shrink-0 overflow-y-auto border-l px-6 py-8">
 				<ModelHiddenSelection
 					projection={props.projection}

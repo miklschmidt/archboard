@@ -24,6 +24,9 @@ import { ROOT, attempt, run, scratch, type Ran } from "./tools.ts";
 /** The tracked vaults a take can be filmed over. */
 type TrackedVault = "examples/web-shop" | ".archboard/vault";
 
+/** A tracked example to copy, or a prepared synthetic repository to serve. */
+type TakeSource = TrackedVault | { readonly directory: string };
+
 /** A running take server. */
 interface TakeServer {
 	readonly url: string;
@@ -85,10 +88,10 @@ async function copyTracked(vault: TrackedVault, into: string): Promise<void> {
  * @param codex Whether the take needs the machine's Codex sign-in.
  * @returns The running server.
  */
-async function startServer(name: string, vault: TrackedVault, codex: boolean): Promise<TakeServer> {
+async function startServer(name: string, vault: TakeSource, codex: boolean): Promise<TakeServer> {
 	const home = scratch("takes", name);
-	const holder = join(home, "repository");
-	await copyTracked(vault, join(holder, ".archboard", "vault"));
+	const holder = typeof vault === "string" ? join(home, "repository") : vault.directory;
+	if (typeof vault === "string") await copyTracked(vault, join(holder, ".archboard", "vault"));
 	return launch(home, holder, codex);
 }
 
@@ -159,4 +162,11 @@ async function readBoard(server: TakeServer, name: string): Promise<SemanticBoar
 	return parsed.board;
 }
 
-export { readBoard, startCheckoutServer, startServer, type TakeServer, type TrackedVault };
+export {
+	readBoard,
+	startCheckoutServer,
+	startServer,
+	type TakeServer,
+	type TrackedVault,
+	type TakeSource,
+};

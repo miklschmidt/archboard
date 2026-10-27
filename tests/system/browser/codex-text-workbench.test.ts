@@ -22,11 +22,11 @@ import {
 	productionFixtureRecords,
 	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
-import { SEMANTIC_STAGE, seedSemanticBoard } from "./support/semantic-page.ts";
+import { MODEL_STAGE, seedCanonicalModel } from "./support/canonical-page.ts";
 import {
 	AGENT_DOCK,
 	AGENT_PANEL,
-	BOARD_NAME_EXPRESSION,
+	MODEL_NAME_EXPRESSION,
 	COMPOSER,
 	PANE_SECTIONS,
 	dockFocusOrder,
@@ -104,12 +104,12 @@ function paneCanvas(
 	browser: Browser,
 ): Promise<{ panes: number; board: string | null; drawn: boolean }> {
 	return browser.eval(`(() => {
-		const canvas = document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}');
-		const drawn = canvas?.getAttribute('data-state') === 'drawn';
+		const canvas = document.querySelector('${PANE_SECTIONS} ${MODEL_STAGE}');
+		const drawn = Boolean(canvas?.querySelector('[data-slot="model-diagram"] svg'));
 		if (canvas && drawn && !window.__codexTextWorkbenchCanvas) window.__codexTextWorkbenchCanvas = canvas;
 		return {
 			panes: document.querySelectorAll('${PANE_SECTIONS}').length,
-			board: ${BOARD_NAME_EXPRESSION},
+			board: ${MODEL_NAME_EXPRESSION},
 			drawn,
 		};
 	})()`);
@@ -160,10 +160,15 @@ test(
 		const api = createJsonRequester(server);
 		const records = () => productionFixtureRecords<FixtureRecord>(fixture);
 
-		await seedSemanticBoard(api, "workbench");
+		await seedCanonicalModel(server.vault, "workbench");
 		await browser.run(["open", server.base]);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		expect(await browser.eval<[number, number]>("[innerWidth, innerHeight]")).toEqual([1920, 1080]);
+		await pollUntil(
+			() => api<{ panes: { paneId: string }[] }>("/api/panes"),
+			(result) => result.body.panes.some((pane) => pane.paneId === "A"),
+			"the workbench pane registration",
+		);
 		runServerCli(server, ["browser", "show", "workbench", "--pane", "primary"]);
 		await pollUntil(
 			() => paneCanvas(browser),
@@ -322,9 +327,9 @@ test(
 		// The pane kept its canvas through the whole flow.
 		expect(
 			await browser.eval<boolean>(`(() => {
-				const canvas = document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}');
+				const canvas = document.querySelector('${PANE_SECTIONS} ${MODEL_STAGE}');
 				return canvas === window.__codexTextWorkbenchCanvas &&
-					canvas?.getAttribute('data-state') === 'drawn';
+					Boolean(canvas?.querySelector('[data-slot="model-diagram"] svg'));
 			})()`),
 		).toBe(true);
 
@@ -390,11 +395,16 @@ test(
 		});
 		resources.defer(() => server.dispose());
 		registerServerBase(server.base);
-		await seedSemanticBoard(createJsonRequester(server), "storefront");
-		await seedSemanticBoard(createJsonRequester({ ...server, vault: ordersVault }), "ledger");
+		await seedCanonicalModel(shopVault, "storefront");
+		await seedCanonicalModel(ordersVault, "ledger");
 		const browser = resources.use(await createAgentBrowser());
 		await browser.run(["open", server.base]);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
+		await pollUntil(
+			() => createJsonRequester(server)<{ panes: { paneId: string }[] }>("/api/panes"),
+			(result) => result.body.panes.some((pane) => pane.paneId === "A"),
+			"the first pane registration",
+		);
 		runServerCli(server, ["browser", "show", "storefront", "--pane", "primary"]);
 		expect(
 			await browser.eval<boolean>(
@@ -427,8 +437,8 @@ test(
 
 		// Opening the second pane focused it without activating it. Focusing the shop pane and then
 		// the orders pane shows the orders conversation, and the list offers both.
-		await browser.run(["click", `${PANE_SECTIONS}:first-of-type ${SEMANTIC_STAGE}`]);
-		await browser.run(["click", `${PANE_SECTIONS}:last-of-type ${SEMANTIC_STAGE}`]);
+		await browser.run(["click", `${PANE_SECTIONS}:first-of-type ${MODEL_STAGE}`]);
+		await browser.run(["click", `${PANE_SECTIONS}:last-of-type ${MODEL_STAGE}`]);
 		await pollUntil(
 			() => conversationList(browser),
 			(list) =>
@@ -443,7 +453,7 @@ test(
 		// An agent's show moves the focused pane into the shop, and the dock stays where the person put it.
 		runServerCli(server, ["browser", "show", "storefront", "--pane", "focused"]);
 		await pollUntil(
-			() => browser.eval<string | null>(BOARD_NAME_EXPRESSION),
+			() => browser.eval<string | null>(MODEL_NAME_EXPRESSION),
 			(name) => name === "storefront",
 			"the agent's show to reach the focused pane",
 		);

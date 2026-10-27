@@ -391,6 +391,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 						overlay={props.overlay}
 					>
 						<ModelReading
+							overlay={props.overlay}
 							subject={props.subject}
 							vault={props.vault}
 							model={model}
