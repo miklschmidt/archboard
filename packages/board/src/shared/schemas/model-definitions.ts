@@ -1,4 +1,9 @@
 import { z } from "zod";
+import { LegacyOriginalInputsSchema } from "#shared/schemas/migration-inputs.ts";
+import { ModelDiagnosticSchema } from "#shared/schemas/model-diagnostic.ts";
+import { ProposalChangeSchema } from "#shared/schemas/model-changes.ts";
+import { LegacyDraftMappingSchema } from "#shared/schemas/migration-drafts.ts";
+import { SemanticBoardSchema, SemanticVariantSchema } from "#shared/schemas/board-document.ts";
 import { DocumentReferenceSchema } from "@archboard/code-binding/bindings";
 import { SemanticEdgeSchema, SemanticNodeSchema } from "#shared/schemas/content.ts";
 import {
@@ -38,10 +43,43 @@ const StateMetadataSchema = z
 	})
 	.strict();
 
+const LegacyCoverageSchema = z.strictObject({
+	legacy: QualifiedSubjectIdSchema,
+	board: SemanticIdSchema,
+	file: z.string(),
+	completeModel: z.literal(false),
+});
 const MigrationPreviewSchema = z.strictObject({
+	selected: LegacyCoverageSchema.optional(),
+	diagnostics: z.array(ModelDiagnosticSchema).optional(),
+	history: z
+		.array(
+			LegacyCoverageSchema.extend({
+				conversion: LegacyDraftMappingSchema.extend({
+					baselineDigest: z.string(),
+					changes: z.array(ProposalChangeSchema),
+				}).optional(),
+				canonical: QualifiedSubjectIdSchema,
+				state: SemanticVariantSchema.omit({ content: true }),
+				adoptions: SemanticBoardSchema.shape.adoptions,
+				shelvings: SemanticBoardSchema.shape.shelvings,
+			}),
+		)
+		.optional(),
+	originalInputs: LegacyOriginalInputsSchema.optional(),
+	originals: z
+		.array(
+			z.strictObject({
+				file: z.string(),
+				source: z.string(),
+				sourceBase64: z.string().optional(),
+				document: SemanticBoardSchema.optional(),
+			}),
+		)
+		.optional(),
 	origin: SemanticIdSchema,
 	source: ModelRevisionSchema,
-	planRevision: z.string(),
+	planRevision: z.string().nullable(),
 	coverage: z.array(
 		z.strictObject({
 			board: SemanticIdSchema,

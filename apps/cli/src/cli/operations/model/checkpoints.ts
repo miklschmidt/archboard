@@ -83,13 +83,29 @@ const modelCheckpointsContract = defineCommand({
 const modelRetainContract = defineCommand({
 	path: ["model", "retain"],
 	shared: ["url", "directory", "doing"],
-	summary: "Retain exact current architecture inputs locally",
+	summary: "Retain exact current architecture or original migration inputs locally",
 	description:
-		"Uses configured Git identity and signing without changing current files, index or HEAD. Repeat the same operation identity and request to recover the same checkpoint. Required dependencies are complete checkpoint identities.",
+		"Uses configured Git identity and signing without changing current files, index or HEAD. Repeat the same operation identity and request to recover the same checkpoint. Required dependencies are complete checkpoint identities. Migration retention names --migration and --expected-plan. Use none for an absent plan. The expected source revision comes from model inventory.",
 	examples: [
 		"archboard model retain --operation-id capture-1 --writer agent --expect-revision <digest> --doing 'retaining the reviewed reading' -C /tmp/shop",
 	],
 	parameters: [
+		{
+			kind: "option",
+			key: "origin",
+			spellings: ["--migration"],
+			value: "required",
+			placeholder: "origin",
+			description: "Retain original legacy inputs under this import namespace",
+		},
+		{
+			kind: "option",
+			key: "expectedPlan",
+			spellings: ["--expected-plan"],
+			value: "required",
+			placeholder: "digest-or-none",
+			description: "The exact saved mapping revision, or none when no plan exists",
+		},
 		{
 			kind: "option",
 			key: "operationId",
@@ -128,11 +144,15 @@ const modelRetainContract = defineCommand({
 		},
 	],
 	input: {
-		ingress: ArchitectureCheckpointRequestSchema.pick({
-			operationId: true,
-			writer: true,
-			expectedRevision: true,
-			dependencies: true,
+		ingress: z.object({
+			operationId: ArchitectureCheckpointRequestSchema.shape.operationId,
+			writer: ArchitectureCheckpointRequestSchema.shape.writer,
+			expectedRevision: ArchitectureCheckpointRequestSchema.shape.expectedRevision,
+			dependencies: ArchitectureCheckpointRequestSchema.shape.dependencies,
+			origin: ArchitectureCheckpointRequestSchema.shape.origin,
+			expectedPlan: z
+				.union([z.literal("none"), ArchitectureCheckpointRequestSchema.shape.expectedPlan])
+				.transform((value) => (value === "none" ? null : value)),
 		}),
 	},
 	result: ArchitectureCheckpointRetainSchema,
@@ -181,7 +201,7 @@ const modelRetainContract = defineCommand({
 		await context.require("server", "model retain");
 		const request = context.parse(ArchitectureCheckpointRequestSchema, {
 			...input,
-			target: "current",
+			target: input.origin === undefined ? "current" : "migration",
 			doing: statedInvocation().doing,
 		});
 		const result = await retainArchitectureCheckpointOnServer(request);

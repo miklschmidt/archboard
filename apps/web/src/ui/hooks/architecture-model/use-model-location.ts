@@ -83,9 +83,13 @@ function useModelLocation(paneId: string) {
 	);
 	const selectCheckpoint = useCallback(
 		(next: string | null): void => {
-			navigate({ checkpoint: next, state: undefined, against: undefined });
+			navigate({
+				checkpoint: next,
+				state: preview === null ? undefined : (state ?? undefined),
+				against: undefined,
+			});
 		},
-		[navigate],
+		[navigate, preview, state],
 	);
 	const setFocus = useCallback(
 		(ids: readonly string[] | null): void => {
@@ -135,10 +139,14 @@ function useModelLocation(paneId: string) {
 		[grammar, navigate],
 	);
 	const selectState = useCallback(
-		(next: string): void => {
-			navigate({ state: next, checkpoint: null, against: undefined });
+		(next: string | null): void => {
+			navigate({
+				state: next ?? undefined,
+				checkpoint: preview === null ? null : checkpoint,
+				against: undefined,
+			});
 		},
-		[navigate],
+		[navigate, preview, checkpoint],
 	);
 	const compareAgainst = useCallback(
 		(next: string | null): void => {

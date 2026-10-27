@@ -66,6 +66,8 @@ test("migration preview preserves its source while readers navigate modules and 
 	if (!candidate.body.success || !candidate.body.migrationPreview)
 		throw new Error(JSON.stringify(candidate));
 	const preview = candidate.body.migrationPreview;
+	if (preview.planRevision === null)
+		throw new Error("This fixture requires its saved mapping plan.");
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", `${server.base}/?modelA=Shop&previewA=Shop`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);

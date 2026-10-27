@@ -1,5 +1,6 @@
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
@@ -91,4 +92,144 @@ test("CLI planning and preview share explicit vaults and preserve structured sta
 	const stale = cli(["model", "plan", "--doing", "Try an outdated plan"], request);
 	expect(stale.status).toBe(2);
 	expect(result(stale.stdout)).toMatchObject({ success: false, code: "MAPPING_STALE" });
+});
+
+test("CLI and HTTP retain original migration history and open its exact board coverage", async () => {
+	const root = mkdtempSync(join(tmpdir(), "archboard-migration-history-surface-"));
+	try {
+		const addressed = vaultIn(root);
+		mkdirSync(join(addressed, ".archboard"), { recursive: true });
+		writeFileSync(
+			join(addressed, ".archboard/config.yaml"),
+			Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY),
+		);
+		for (const args of [
+			["init", "--quiet"],
+			["config", "user.name", "Fixture"],
+			["config", "user.email", "fixture@example.com"],
+			["config", "commit.gpgsign", "false"],
+		]) {
+			const configured = Bun.spawnSync(["git", "-C", root, ...args]);
+			if (configured.exitCode !== 0) throw new Error(configured.stderr.toString());
+		}
+		const content = {
+			nodes: [
+				{ id: "Api", name: "API", kind: "module", responsibility: "Accepts requests", order: 10 },
+			],
+			edges: [],
+			flows: [],
+			walkthroughs: [],
+		};
+		const document = {
+			schemaVersion: "2.4.0",
+			kind: "semantic-board",
+			id: "Family",
+			name: "Shop",
+			level: "service",
+			version: 1,
+			createdAt: "2026-01-01T00:00:00.000Z",
+			updatedAt: "2026-01-01T00:00:00.000Z",
+			current: "Now",
+			views: [],
+			variants: [
+				{ id: "Old", name: "Before", lifecycle: "historical", content },
+				{ id: "Now", name: "Implemented", lifecycle: "current", parent: "Old", content },
+			],
+		};
+		writeFileSync(join(addressed, "Shop.semantic.json"), JSON.stringify(document));
+		const inventory = result(cli(["model", "inventory", "--origin", "Shop", "-C", root]).stdout);
+		if (!inventory.success) throw new Error(JSON.stringify(inventory));
+		const saved = result(
+			cli(["model", "plan", "--doing", "Record original mappings", "-C", root], {
+				plan: inventory.plan,
+				expectedPlan: null,
+			}).stdout,
+		);
+		if (!saved.success) throw new Error(JSON.stringify(saved));
+		const retained = cli([
+			"model",
+			"retain",
+			"--migration",
+			"Shop",
+			"--expected-plan",
+			saved.planRevision!,
+			"--expect-revision",
+			saved.source.digest,
+			"--operation-id",
+			"originals-1",
+			"--writer",
+			"fixture",
+			"--doing",
+			"Retain original history",
+			"-C",
+			root,
+		]);
+		expect(retained.status, retained.stderr).toBe(0);
+		const { vault: _vault, ...answer } = JSON.parse(retained.stdout);
+		const repeated = await fetch(`${server!.base}/api/architecture/checkpoints`, {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({
+				vault: addressed,
+				target: "migration",
+				origin: "Shop",
+				expectedPlan: saved.planRevision,
+				expectedRevision: saved.source.digest,
+				operationId: "originals-1",
+				writer: "fixture",
+				doing: "Retain original history",
+				dependencies: [],
+			}),
+		});
+		expect(repeated.status).toBe(200);
+		expect(await repeated.json()).toEqual(answer);
+		const selectors = {
+			vault: addressed,
+			preview: "Shop",
+			checkpoint: answer.checkpoint.id,
+			state: "Shop/Family#Old",
+		};
+		const response = await fetch(
+			`${server!.base}/api/architecture/model?${new URLSearchParams(selectors)}`,
+		);
+		expect(response.status).toBe(200);
+		const reading = ArchitectureModelReadSchema.parse(await response.json());
+		const command = cli([
+			"model",
+			"read",
+			"--preview",
+			"Shop",
+			"--checkpoint",
+			answer.checkpoint.id,
+			"--state",
+			"Shop/Family#Old",
+			"-C",
+			root,
+		]);
+		expect(command.status, command.stderr).toBe(0);
+		const { vault: _address, ...cliReading } = JSON.parse(command.stdout);
+		expect(cliReading).toEqual(reading);
+		expect(reading).toMatchObject({
+			selectedState: { id: "Old", lifecycle: "historical" },
+			migrationPreview: {
+				selected: { legacy: "Shop/Family#Old", board: "Family", completeModel: false },
+				originals: [{ source: JSON.stringify(document) }],
+			},
+		});
+		const invalid = await fetch(`${server!.base}/api/architecture/checkpoints`, {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({
+				vault: addressed,
+				target: "migration",
+				expectedRevision: saved.source.digest,
+				operationId: "missing-origin",
+				writer: "fixture",
+				doing: "Retain original history",
+			}),
+		});
+		expect(invalid.status).toBe(400);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
 });

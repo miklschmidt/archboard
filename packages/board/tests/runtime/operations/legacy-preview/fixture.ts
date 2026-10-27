@@ -148,7 +148,8 @@ async function savePreviewPlan(vault: string, plan?: LegacyMappingPlan) {
 		expectedPlan: inventory.planRevision,
 		doing: "Preview explicit migration choices",
 	});
-	if (!saved.success) throw new Error(JSON.stringify(saved));
+	if (!saved.success)
+		throw new Error(JSON.stringify({ saved, diagnostics: inventory.diagnostics }));
 	return saved;
 }
 export { previewFixture, savePreviewPlan };
