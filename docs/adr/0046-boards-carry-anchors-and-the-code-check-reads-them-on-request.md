@@ -4,6 +4,10 @@ status: accepted
 
 # Boards carry anchors, and the code check reads them on request
 
+Canonical modules and source-owned relationships supersede board-owned claims below. Existing code inspection algorithms retain binding and anchor evidence.
+[ADR 0062](0062-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
+
 Accepted on 2026-10-06 for TASK-367.02 after an independent review. It
 serves TASK-367 and its subtasks TASK-367.03 to TASK-367.27, TASK-368.10,
 TASK-368.11 and TASK-369.02, and Proposal 1 of the

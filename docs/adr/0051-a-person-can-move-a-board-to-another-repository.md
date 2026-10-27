@@ -4,6 +4,10 @@ status: accepted
 
 # A person can move a board to another repository
 
+Canonical models retire the live board-move operation below. Cross-model ownership transfer is unavailable. Portable export and import preserve complete model evidence.
+[ADR 0062](0062-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
+
 Decided with the owner on 2026-10-14, together with ADR 0049 and ADR 0050. The
 migration is planned in the Backlog document doc-002, "One Archboard server for
 every vault".

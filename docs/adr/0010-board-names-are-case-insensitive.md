@@ -4,6 +4,10 @@ status: accepted
 
 # Board names are case-insensitive, and case-preserving
 
+Canonical subjects use stable qualified identities and unique-name resolution. The live board-name contract below is superseded.
+[ADR 0062](0062-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
+
 A board name was a case-sensitive string. It mapped straight to a filename with
 no normalization, so what a name meant depended on the filesystem under the
 vault. On Linux, `board new casetest` and `board new CaseTest` made two boards

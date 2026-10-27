@@ -4,6 +4,10 @@ status: accepted
 
 # Canonical model reads keep legacy authority explicit
 
+The final canonical consumer path supersedes temporary live legacy compatibility below. Unmigrated authority remains explicit, but only migration and exact originals use legacy decoding.
+[ADR 0062](0062-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
+
 Overlapping boards can give one module several definitions.
 TASK-549 replaces that ownership with one canonical model per vault.
 Readers need the new model without losing legacy proposals, decisions, or history.

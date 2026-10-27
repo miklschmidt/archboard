@@ -119,7 +119,8 @@ If the source changes, Refresh refuses the stale candidate until the plan matche
 
 Browser snapshots and diagnostics normalize old board schemas in memory.
 Opening a preview does not persist those schema upgrades.
-Ordinary legacy CLI reads retain their existing schema migration behavior.
+Legacy decoding serves migration and exact retained originals without rewriting source files.
+No ordinary live legacy CLI reader remains.
 
 The existing canonical model result carries the composed current modules, source-owned relationships, and independent flows.
 The preview uses the origin as its model identity and composed current-state identity.

@@ -4,6 +4,10 @@ status: accepted
 
 # Existence is a fact about a variant, never about a node
 
+Canonical proposal states supersede board-owned variants below. Unbuilt subjects remain proposed, and a planning model can have no current designation.
+[ADR 0062](0062-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
+
 Archboard was scoped to code that exists. README.md:19-21 says it is for
 understanding an existing system, and the runbook in the `archboard` skill reads
 source at every step. ADR 0023 and the node schema contemplated planned nodes.

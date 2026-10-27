@@ -1,11 +1,9 @@
-# archboard — agent-authored architecture boards
+# archboard: agent-authored architecture models
 
-An architecture planning tool for software and cloud architects who work with
-coding agents, public on GitHub under the Business Source License 1.1 and run from a clone. Agents author
-the architecture of code and infrastructure as meaning, and the renderer draws
-it. There is no way to move a box, and that is deliberate. If somebody repairs
-the layout of a diagram by hand, a renderer improvement for every board at once
-cannot improve that diagram (ADR 0023).
+Archboard serves software and cloud architects who work with coding agents.
+It runs locally from a clone under the Business Source License 1.1.
+Agents author architectural meaning, and the renderer draws it.
+Repair incorrect geometry in the renderer so that every reading benefits.
 
 Where things are written down:
 
@@ -23,11 +21,11 @@ Where things are written down:
 - Changing tests or CI: [docs/agents/test-suite.md](docs/agents/test-suite.md)
 - Refreshing the README's diagrams, clips, banner and videos:
   [docs/agents/readme-assets.md](docs/agents/readme-assets.md)
-- Maintaining architecture boards and the consumer skill: the [archboard-dev skill](skills/archboard-dev/SKILL.md).
+- Maintaining the architecture model and consumer skill: the [archboard-dev skill](skills/archboard-dev/SKILL.md).
   Using archboard: the [archboard skill](skills/archboard/SKILL.md).
 - Upgrading Codex: read [docs/agents/codex-upgrades.md](docs/agents/codex-upgrades.md).
-- Reading or updating this repo's architecture: [.archboard/README.md](.archboard/README.md). Start at
-  `Archboard` with `archboard` and the tracked `.archboard/vault`.
+- Reading or updating this repo's architecture: [.archboard/README.md](.archboard/README.md). Use `archboard model read` in the tracked `.archboard/vault`.
+  If it returns `LEGACY_AUTHORITY`, follow the consumer skill's explicit migration reference.
 - Work tracking: Backlog.md through the `backlog` CLI, never by editing `backlog/`
 
 ## Environment facts you cannot derive
@@ -57,115 +55,83 @@ Where things are written down:
   in the skill catalog. Third-party skills are tracked under `.agents/skills/`
   and `.claude/skills/`.
 
-## Invariants nothing refuses
+## Architecture invariants
 
-The loud rules teach themselves (a call naming no board, an agent write without
-`--doing` and a stale version are all refused with the reason). These are the
-rules that will not stop you:
+[CONTEXT.md](CONTEXT.md) defines the model vocabulary.
+[The consumer skill](skills/archboard/SKILL.md) owns the authoring workflow and command recipes.
+[ADR 0062](docs/adr/0062-one-live-canonical-model-and-consumer-path.md) records the transition pending parent acceptance.
 
-- **The file is the board, and nothing holds a copy of it** (ADR 0015, ADR 0023).
-  One `.semantic.json` document per board holds every variant of it, and
-  `packages/board/src/runtime` (the `store` and `operations` folders of `@archboard/board`) is
-  the one place one is read or written.
-  Every write goes through `atomic-write.ts`, fsync included, and is committed
-  before it is answered.
-- **Agents author, users read.** The browser is a viewer and writes no board
-  content. It holds board content only as a read-only cache of what the server
-  said. When the server announces a new version, the browser reads that content
-  again (ADR 0023). It owns only presentation: the camera, the active view, the
-  walkthrough position and what somebody picked out. It also keeps its tab
-  session id in sessionStorage. That id tells the server which tab a pane
-  belongs to, and it is not board content. A user has two controls over a
-  board: taking back somebody else's claim, and moving the board to another
-  repository (ADR 0051). The move is the person's own act. It states the human
-  origin and the version the browser previewed, and it writes no doing line.
-- **Every call to the server names its vault** (ADR 0049). The vault on the wire
-  is the vault's own directory: `?vault=<directory>` on a request or a `vault`
-  field in its body, and `?vault=` on the pane socket's URL, which names it once
-  for that socket. A call that names none is refused with `VAULT_REQUIRED`
-  (400). A vault the server cannot read is refused with `VAULT_UNREADABLE` (404),
-  and nothing is created. A pane socket that names one goes to its repository's
-  chosen checkout, else to where a page opens, and is refused only with neither.
-  There is no default vault, and the server starts with
-  none. The server's process memory
-  is keyed by vault and board together (`boardMemoryKey`): claims, revocations,
-  announced lock state, doing lines, agent activity and the disk watch. Each
-  change on the change feed and each remembered code finding names its vault.
-  News of a write goes only to the panes of that vault. Agent activity is the one
-  exception. It names its vault and goes to every pane, because the navigator
-  marks the boards of every repository (ADR 0022). Each browser pane
-  names the vault the server put it in (ADR 0050). A pane opens in the vault the
-  server reports at `/api/served-vault`: the first ready repository by name, else
-  none, and then the page says how to make a repository known. The server serves
-  only a vault in the `<dir>/.archboard/vault` layout (`isVaultLayout`), because
-  a workhorse works in the directory that holds its vault. A call that names
-  another directory is refused with `VAULT_UNREADABLE`.
-- **The CLI finds its vault from the directory it runs in** (ADR 0049), as git
-  finds its repository: from `-C <dir>`, else the working directory. A set
-  `ARCHBOARD_VAULT`, also from `.env`, makes every command refuse (exit 2)
-  instead of being ignored. Inside a git
-  checkout only `<root>/.archboard/vault` counts. A checkout without one is
-  refused with `VAULT_NOT_FOUND` (exit 2), and nothing above the root is used.
-  The one exception is `check`, `check all` and `check embeds` (contract field
-  `runsWithoutVault`). In a checkout without a vault they run the embeds check
-  alone, and the answer names no vault. `check` and `check all` say in
-  `skipped` that the semantics and code checks did not run.
-  Outside any checkout the nearest enclosing `<dir>/.archboard/vault` counts.
-  `-C` is a shared option of the commands that call a vault. It stands before
-  or after the command name. It changes only where the vault is found:
-  `--input`, `--out` and other paths resolve against the working directory.
-  Every JSON answer of those commands that found a vault names
-  `vault: {path, origin}` (`-C` or `working-directory`). The registry can lack the checkout or untracked vault that a command finds.
-  That command then registers it, says so in `vault.registered` and writes one
-  line to stderr. The Codex child holds no vault setting: a thread's board
-  context names each board's vault, and a thread passes it as `-C`.
-- **One writer at a time per board** (ADR 0016), a lease file taken by one
-  write-boundary middleware, deny by default. Claim before substantial work.
-- **A claim is visible, and the one control is taking it back** (ADR 0022).
-  While an agent claims a board, every pane that shows the board says who has
-  it, why, and since when. The pane also offers the control that ends the claim.
-  The pane keeps drawing, because a claim never stops reading. An agent can
-  write any board, whether or not somebody is looking at it. If an agent lost a
-  claim, the server tells it once, on its next write.
-- **One thing somebody asked for is one write** (TASK-068). A board's whole
-  family lands together or not at all: a parent edit and every descendant's
-  answer to it are one version. A move to another repository's vault cannot be
-  one write, because two vaults are two files (ADR 0051). It writes the target
-  note first, then each drill-down it rewrites, and deletes the source note
-  last. A stopped move leaves the board in both vaults, never in neither, and
-  the same move run again finishes it.
-- **A board is addressed by name, and a variant is a reading of it.**
-  `payments` and `payments@<variant>` name the same document, split at the FIRST
-  `@`. A board name can never hold one, and a variant's name can. The file, the
-  lease, the claim and what an agent said it was doing are all facts about the
-  board. Only what is drawn depends on the variant.
-- **Never rename a subject id.** Every id comes from
-  `packages/board/src/shared/rules/ids.ts` (one to eight characters). No second
-  site mints an id. An id is what a proposal is compared by, so renaming one
-  makes a change look like a deletion and an addition.
-- **Text width is measured, not estimated**, by the canvas of the place that draws the
-  picture with the diagram fonts loaded: the browser's own, or `@napi-rs/canvas`
-  under Bun (TASK-247).
-  `tests/system/browser/measured-text.test.ts` holds the Bun canvas to what Chrome draws.
-- **Every duration lives in the `@archboard/timing` package** (`packages/timing`) with what it
-  pulls against written beside it.
-- **A node's code binding is part of its meaning**, not a presentation overlay:
-  it persists on the node as `binding: { repo, path }` and is what "open the
-  code" resolves.
-- **Codex runs as one private package-local app-server session over stdio**
-  with an archboard-only `CODEX_HOME` every Archboard server on the machine shares.
-  Each browser tab is a tab session with one coordinator, and voice belongs to
-  that coordinator. The app-server and the coordinator work in a directory of
-  their own under the state directory, which is no checkout and holds no
-  vault, so a coordinator command without `-C` is refused. A tab session has
-  one workhorse for each checkout it works in, built on first use. Each
-  workhorse works in its checkout (the directory that holds the vault) and
-  has its own thread link, queue and approvals. Every pane of a tab shows the
-  tab's shown conversation: the workhorse of the checkout that the person last
-  activated in the page. Only the browser's activation call changes it, never
-  an agent's `browser show` and never a new chosen checkout (ADR 0050). [ADR
-  0019](docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md)
-  records the app-server session.
+- One vault holds one canonical model. `model.json` identifies it and its optional current designation.
+  Each `.module.json` file owns one module and its outgoing relationships.
+  Derive incoming connections and assembled readings from those inputs.
+  Modules form a containment forest without fixed levels or numeric depth.
+- Independent `.flows.json` collections own complete behavioral exchanges across modules.
+  A reading selects scope, focus, filters, grammar, and optional flow without copying architecture.
+  Sequence and flowchart require an authored flow.
+- Active `.proposal.json` files store identity changes against retained baselines.
+  `.walkthrough.json` files hold narrative beats and complete reading instructions.
+  Completed states and decisions live in the independent Git archive.
+  A source merge, checkpoint, or approval never adopts a proposal.
+- `packages/board/src/runtime` owns coherent reads and durable writes through its public interface.
+  Submit one complete intent with its operation identity, writer, doing line, target, and full expected revision.
+  The shared installer prepares signed history, journals the operation, and installs affected files through durable atomic writes.
+  Only durable completion announces a change to readers.
+- Claim affected subjects, state, and structure scopes before substantial work.
+  Claims remain visible and permit reading.
+  The short vault installation lease stays free between operations.
+  A human can take back a claim. Stop the revoked intent when its next write reports that revocation.
+- If a write returns `RECOVERY_REQUIRED`, use `model recover` in the original checkout.
+  Preserve foreign edits and the journal when recovery refuses.
+  Retry a lost response with the exact original operation identity and request.
+  Use a new identity for a changed intent.
+- Keep continuing subject identities unchanged.
+  `packages/board/src/shared/rules/ids.ts` is the only allocator of short local IDs.
+  Qualified namespaces preserve imported provenance, not board ownership.
+  Names, paths, and matching bindings never establish shared identity.
+- Retain exact checkpoints before sharing history or recording walkthroughs.
+  Keep configured Git signing enabled for source commits and archive operations.
+  A normal source push does not publish the independent archive.
+  Use explicit publication and fetch operations for its complete dependency history.
+  Report unavailable source separately from unavailable architecture.
+- Legacy decoding serves explicit migration and exact retained originals only.
+  `LEGACY_AUTHORITY` requires inventory, deliberate identity mappings, preview, and owner-authorized migration.
+  Preserve originals through the migration archive before cutover.
+  Never infer mappings or combine independent proposals from matching names or task IDs.
+  Canonical ownership transfer between models is unavailable.
+- Agents author, users read. The browser caches server content and owns presentation, selection, and playback position.
+  It writes no architectural content.
+  Its sessionStorage tab identity identifies pane ownership, not model content.
+  Rendering and agent execution remain local or on the client.
+- Every server request names its vault (ADR 0049).
+  Requests use `?vault=<directory>` or a body `vault` field.
+  A pane socket names its vault in its URL.
+  Missing vaults return `VAULT_REQUIRED` (400), and unreadable vaults return `VAULT_UNREADABLE` (404).
+  The server starts without a vault and serves only the `<dir>/.archboard/vault` layout.
+  A page learns its initial vault from `/api/served-vault`.
+  Model changes name their vault and reach that vault's subscribers.
+- The CLI discovers its vault from `-C <dir>`, otherwise from its working directory.
+  Inside Git, only `<root>/.archboard/vault` counts.
+  Outside Git, the nearest enclosing vault counts.
+  A set `ARCHBOARD_VAULT`, including in `.env`, causes refusal with exit status 2.
+  `-C` changes discovery only. Other relative paths still resolve against the working directory.
+  Successful discovery names `vault: {path, origin}` and reports first-time registration.
+  Without a vault, `check`, `check all`, and `check embeds` can inspect embeds alone.
+  `check` and `check all` report skipped semantic and code work.
+- Text width uses the drawing host's canvas with diagram fonts loaded.
+  The browser uses its canvas, and Bun uses `@napi-rs/canvas`.
+  `tests/system/browser/measured-text.test.ts` owns their agreement.
+  Every duration lives in `@archboard/timing` with its purpose beside it.
+- A module's code binding is part of its meaning.
+  It names a repository and relative path, with optional source selectors.
+  Use the existing checkout resolver for local opening and exact source evidence.
+- Codex uses one private package-local app-server session over stdio per Archboard server.
+  Every server shares the Archboard-only `CODEX_HOME` and sign-in.
+  Each tab has one coordinator and one workhorse per addressed checkout.
+  The coordinator works outside checkouts and must pass `-C` for vault commands.
+  Each workhorse works in its checkout and keeps its own queue and approvals.
+  Only browser activation changes the tab's shown conversation (ADR 0050).
+  An agent's `browser show` and a new chosen checkout never activate another conversation.
+  [ADR 0019](docs/adr/0019-the-workbench-owns-one-codex-app-server-session.md) records session ownership.
 - The shell is desktop-only at 1920×1080. Do not add phone or narrow layouts.
 
 ## Test policy

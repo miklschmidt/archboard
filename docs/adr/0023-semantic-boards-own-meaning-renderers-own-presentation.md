@@ -4,8 +4,9 @@ status: accepted
 
 # Semantic boards own meaning, and renderers own presentation
 
-[ADR 0058](0060-canonical-model-reads-keep-legacy-authority-explicit.md) replaces independent board ownership for authored canonical models.
-Legacy vaults retain the board document and variant contracts below until explicit migration.
+One canonical model supersedes independent live boards and embedded variant families below. Authored meaning, local rendering, and renderer-owned geometry remain.
+[ADR 0062](0062-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
 
 Amended by [ADR 0051](0051-a-person-can-move-a-board-to-another-repository.md)
 (2026-10-14). The browser moves a board when a person asks it to. That is the

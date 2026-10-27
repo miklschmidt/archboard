@@ -4,6 +4,10 @@ status: accepted
 
 # Board work never depends on a browser session
 
+Canonical model operations supersede explicit live board addressing below. Explicit vault addressing and independence from browser sessions remain.
+[ADR 0062](0062-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
+
 Amended by [ADR
 0049](0049-one-server-serves-every-vault-and-every-call-names-its-vault.md)
 (2026-10-14). "The configured vault" below is now the vault that the call names.
