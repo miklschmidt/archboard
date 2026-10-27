@@ -417,6 +417,7 @@ function ApplicationBody(): JSX.Element {
 	const narration = useNarration(workbench, agent.voice, panes.list.activePaneId, selectPane);
 	const overlay = useSubtitleOverlay({
 		workbench,
+		activePaneId: panes.list.activePaneId,
 		reducedMotion,
 		recording: recorder !== null,
 		presentedPaneId: fullscreen.snapshot.paneId,

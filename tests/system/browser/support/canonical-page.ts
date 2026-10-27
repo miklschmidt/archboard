@@ -1,6 +1,7 @@
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { mintId } from "@archboard/board/ids";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import type { Model, VariantContent } from "@archboard/board/content";
 import { readArchitectureModel } from "@archboard/board/store-read";
 
@@ -30,6 +31,8 @@ const SMALL_PIPELINE: Scene = {
 async function seedCanonicalModel(vault: string, name: string, scene: Scene = SMALL_PIPELINE) {
 	if (existsSync(join(vault, "model.json")))
 		throw new Error("This fixture already contains a canonical model.");
+	mkdirSync(join(vault, ".archboard"), { recursive: true });
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
 	const id = mintId();
 	const ids = new Map(scene.nodes.map((node) => [node.name, `${id}#${mintId()}`]));
 	const subject = (label: string): string => {
@@ -44,8 +47,9 @@ async function seedCanonicalModel(vault: string, name: string, scene: Scene = SM
 	scene.nodes.forEach(({ parent, ...node }, index) => {
 		const outgoing = (scene.edges ?? [])
 			.filter((edge) => edge.from === node.name)
-			.map(({ from: _from, to, ...edge }, order) => ({
-				...edge,
+			.map(({ to, kind, label }, order) => ({
+				kind,
+				label,
 				id: `${id}#${mintId()}`,
 				to: subject(to),
 				order,
@@ -99,4 +103,4 @@ async function modelDrawn(evaluate: <T>(expression: string) => Promise<T>): Prom
 	);
 }
 
-export { seedCanonicalModel, modelAddress, modelDrawn, MODEL_STAGE };
+export { seedCanonicalModel, modelAddress, modelDrawn, MODEL_STAGE, SMALL_PIPELINE };

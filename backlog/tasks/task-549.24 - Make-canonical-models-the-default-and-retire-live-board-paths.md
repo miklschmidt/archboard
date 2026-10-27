@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T16:51:00Z'
+updated_date: '2026-10-27T16:58:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -94,4 +94,6 @@ Parent ports the generic voice-box and text-workbench fixtures to real canonical
 Merged backend checkpoint56447f6f through signed mergee351f4e7. The canonical voice-box owner still catches startup flight, while the same owner passes against signed .23. Parent moved the ordinary overlay into the canvas area; diagnosis remains open. README evidence fixtures now use canonical initialization, claims, edits, adoption, and two independent proposals over their own real source repository. The first CLI smoke exposed model init rejecting its documented --doing option. Backend delegate supplied a focused RED/GREEN fix at e52aa826; the parent will integrate it before continuing the real consumer smoke. No final acceptance is claimed.
 
 The README evidence smoke now succeeds through shipped model init, model claim/edit/release, adoption, and two independent proposals. Locality reads nine real Git commits. Footprint reads two branch commits and returns all three comparison categories. Fixed the temporary input path and all four README lint findings without rule changes. Focused recipe lint passes. The film selectors and remaining visual recipes still need transition, so this does not claim visual acceptance. Voice diagnosis identifies preparation before a pane transport exists; the frontend now supplies its ordinary overlay during preparation, with an empty transcript until transport arrives. The unchanged browser owner is running against this repair.
+
+The ordinary canonical voice-box owner now passes all25 assertions. The repair mounts the preparing overlay before a transport exists and switches to the real transcript feed when it arrives. Orb motion code and assertions remain unchanged, and all temporary probes are removed. The second text-workbench owner passes after waiting for actual pane registration; source types and focused source lint pass. Generic presentation and live-voice fixtures now use canonical narratives. Their continuing acceptance remains open. Presentation observations now select the visible box because the retained ordinary reader stays hidden during captured playback.
 <!-- SECTION:NOTES:END -->

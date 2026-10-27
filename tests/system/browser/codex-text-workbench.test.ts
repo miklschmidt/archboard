@@ -416,6 +416,11 @@ test(
 			(count) => count === 2,
 			"the second pane to open",
 		);
+		await pollUntil(
+			() => createJsonRequester(server)<{ panes: { paneId: string }[] }>("/api/panes"),
+			(result) => result.body.panes.some((pane) => pane.paneId === "B"),
+			"the second pane registration before addressing it",
+		);
 		runServerCli(server, [
 			"-C",
 			holderOf(ordersVault),

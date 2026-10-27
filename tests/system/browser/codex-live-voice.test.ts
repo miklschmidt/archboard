@@ -18,12 +18,13 @@ import {
 	productionFixtureRecords,
 	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
-import { SEMANTIC_STAGE, seedSemanticBoard } from "./support/semantic-page.ts";
-import { drawnId, pick } from "./support/drilling.ts";
+import { MODEL_STAGE, seedCanonicalModel } from "./support/canonical-page.ts";
+import { pickModelChoice } from "./support/model-choice.ts";
+import { drawnId } from "./support/drilling.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import {
 	AGENT_PANEL,
-	BOARD_NAME_EXPRESSION,
+	MODEL_NAME_EXPRESSION,
 	PANE_HEADER,
 	PANE_SECTIONS,
 	openConversation,
@@ -64,7 +65,7 @@ test(
 				.slice(from)
 				.filter((record) => record.kind === "frame" && record.method === method);
 
-		await seedSemanticBoard(api, "workbench", {
+		const model = await seedCanonicalModel(server.vault, "workbench", {
 			nodes: [
 				{ name: "Ingest", kind: "service" },
 				{ name: "Warehouse", kind: "datastore" },
@@ -97,19 +98,24 @@ test(
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(
-					`document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}') !== null && document.querySelectorAll('${PANE_SECTIONS}').length === 1`,
+					`document.querySelector('${PANE_SECTIONS} ${MODEL_STAGE}') !== null && document.querySelectorAll('${PANE_SECTIONS}').length === 1`,
 				),
 			Boolean,
 			"the production shell and its one canvas pane to mount",
+		);
+		await pollUntil(
+			() => api<{ panes: { paneId: string }[] }>("/api/panes"),
+			(result) => result.body.panes.some((pane) => pane.paneId === "A"),
+			"the canonical voice pane registration",
 		);
 		runServerCli(server, ["browser", "show", "workbench", "--pane", "primary"]);
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(`(() => {
-					const canvas = document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}');
-					if (!canvas || canvas.getAttribute('data-state') !== 'drawn') return false;
+					const canvas = document.querySelector('${PANE_SECTIONS} ${MODEL_STAGE}');
+					if (!canvas?.querySelector('[data-slot="model-diagram"] svg')) return false;
 					globalThis.__codexLiveVoiceCanvas = canvas;
-					return (${BOARD_NAME_EXPRESSION}) === 'workbench';
+					return (${MODEL_NAME_EXPRESSION}) === 'workbench';
 				})()`),
 			Boolean,
 			"the seeded board to render",
@@ -364,8 +370,8 @@ test(
 		expect(stopped.voice.lit).toBe(false);
 		expect(
 			await browser.eval<boolean>(`(() => {
-				const stage = document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}');
-				return stage === globalThis.__codexLiveVoiceCanvas && stage?.getAttribute('data-state') === 'drawn';
+				const stage = document.querySelector('${PANE_SECTIONS} ${MODEL_STAGE}');
+				return stage === globalThis.__codexLiveVoiceCanvas && Boolean(stage?.querySelector('[data-slot="model-diagram"] svg'));
 			})()`),
 		).toBe(true);
 
@@ -382,7 +388,12 @@ test(
 			pollUntil(speeches, (spoken) => spoken.length === count, what, {
 				timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS,
 			});
-		await browser.run(["click", "[data-slot='semantic-walkthrough-narrate']"]);
+		await pickModelChoice(
+			browser,
+			'[data-slot="model-walkthrough-selector"]',
+			`[data-walkthrough-id="${model.walkthroughs[0]!.id}"]`,
+		);
+		await browser.run(["click", "[data-slot='semantic-presentation-narrate']"]);
 		await pollUntil(
 			() => presentedStep(browser),
 			(step) => step.index === "0" && !step.moving,
@@ -415,7 +426,7 @@ test(
 		// A pick by hand mid-talk is speech too, naming what is now selected and never its id: the
 		// voice is asked to stop and check in (TASK-293.05).
 		const ingest = await drawnId(browser, "Ingest");
-		await pick(browser, ingest);
+		await browser.run(["click", `[data-slot="model-diagram"] [data-semantic-id="${ingest}"]`]);
 		const [, , picked] = await spokenBy(
 			3,
 			"the user's pick during the narration to be handed to the voice model as speech",
