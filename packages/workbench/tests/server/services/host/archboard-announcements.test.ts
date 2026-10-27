@@ -298,15 +298,33 @@ describe("a settled board change", () => {
 		expect(change.coordinator).toBeUndefined();
 	});
 
-	test("during a narration a write to the narrated board is speech, and one to another board on screen is quiet", () => {
+	test("live writes stay quiet during captured narration, including the narrated model", () => {
 		const narrating = tab("architecture", ["architecture", "ledger"]);
 
 		expect(boardChangeAnnouncement(sources().change, narrating).voice).toMatchObject({
-			speech: true,
+			speech: false,
 		});
 		expect(boardChangeAnnouncement(sources(null, "ledger").change, narrating).voice).toMatchObject({
 			speech: false,
 		});
+	});
+
+	test("an external edit updates both models without fabricated agent attribution", () => {
+		const { change: original } = sources();
+		const event: SettledSemanticChangeEvent = {
+			...original,
+			doing: null,
+			origin: "external",
+			change: { ...original.change, origin: "external", by: null },
+		};
+		const change = boardChangeAnnouncement(event, tab("architecture"));
+
+		expect(change.author).toBeNull();
+		expect(change.voice).toMatchObject({ speech: false });
+		expect(change.coordinator).toEqual({ text: voiceText(change) });
+		expect(voiceText(change)).toContain("Architecture");
+		expect(voiceText(change)).not.toMatch(/\bagent\b/u);
+		expect(voiceText(change)).not.toContain("mapping");
 	});
 
 	test("the workhorse of the board's checkout reads the same Archboard context bytes it always did", () => {

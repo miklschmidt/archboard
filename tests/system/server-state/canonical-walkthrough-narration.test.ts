@@ -1,6 +1,11 @@
 import { expect, test } from "bun:test";
 import { readFileSync, writeFileSync, rmSync } from "node:fs";
 import { readArchitectureModel } from "@archboard/board/store-read";
+import {
+	claimArchitectureSubjects,
+	editArchitectureModule,
+	releaseArchitectureClaim,
+} from "@archboard/board/store-write";
 
 import { join } from "node:path";
 import { canonicalNarration } from "./support/canonical-narration.ts";
@@ -37,7 +42,7 @@ test("canonical recording resolves a newer narrative source against its exact ol
 	await voice.report(null);
 });
 
-test("canonical live narration requests and acknowledges its first beat without a legacy board key", async () => {
+test("canonical live narration keeps captured beats while live edits update quiet context", async () => {
 	await using resources = new AsyncDisposableStack();
 	const voice = await canonicalNarration(resources);
 	const requested = Promise.withResolvers<Record<string, unknown>>();
@@ -59,8 +64,80 @@ test("canonical live narration requests and acknowledges its first beat without 
 	await voice.report(voice.beat(0, true, String(message["request"])));
 	await waitFor(() => voice.spoken().length === 1, "the requested canonical beat to arrive");
 	expect(voice.spoken()[0]).toContain("The gateway accepts the request.");
+	const appends = () => voice.frames("thread/realtime/appendText").length + voice.spoken().length;
+	const before = appends();
+	const walk = structuredClone(voice.model.playback!.walkthrough);
+	for (const beat of walk.beats) beat.narrative = "Foreign replacement narration.";
+	writeFileSync(join(voice.fixture.vault, walk.file), JSON.stringify({ ...walk, file: undefined }));
+	await waitFor(() => appends() > before, "the external edit to reach voice context");
+	expect(voice.spoken()).toHaveLength(1);
+	const external = voice.frames("thread/realtime/appendText").at(-1)?.params?.["text"];
+	expect(external).toContain(voice.model.manifest.name);
+	expect(external).not.toMatch(/\bagent\b/u);
+	const current = readArchitectureModel(voice.fixture.vault);
+	if (!current.success) throw new Error(JSON.stringify(current));
+	const target = { model: current.manifest.id, state: current.selectedState!.id };
+	const writer = "outside-narration-writer";
+	const doing = "Name the live worker after the capture";
+	const claim = await claimArchitectureSubjects(voice.fixture.vault, {
+		target,
+		writer,
+		reason: doing,
+		subjects: ["Shop#Worker"],
+	});
+	if (!claim.success) throw new Error(JSON.stringify(claim));
+	try {
+		const edited = await editArchitectureModule(voice.fixture.vault, {
+			target,
+			writer,
+			doing,
+			operationId: "rename-during-captured-narration",
+			claim: claim.claim.id,
+			expectedRevision: current.revision,
+			changes: [{ type: "edit-module", subject: "Shop#Worker", set: { name: "Live worker" } }],
+		});
+		expect(edited).toMatchObject({ success: true });
+	} finally {
+		await releaseArchitectureClaim(voice.fixture.vault, { claim: claim.claim.id, writer });
+	}
+	await waitFor(
+		() =>
+			voice
+				.frames("thread/realtime/appendText")
+				.some((frame) => String(frame.params?.["text"]).includes(doing)),
+		"the durable writer's doing line to reach quiet voice context",
+	);
+	expect(voice.spoken()).toHaveLength(1);
+	await voice.report(voice.beat(1));
+	await waitFor(() => voice.spoken().length === 2, "the next captured beat to reach live voice");
+	expect(voice.spoken()[1]).toContain("The worker handles the request.");
+	expect(voice.spoken()[1]).not.toContain("Foreign");
+	expect(voice.spoken()[1]).not.toContain("Live worker");
 	await voice.report(null);
-	await waitFor(() => voice.spoken().length === 2, "leaving to end live narration");
+	await waitFor(() => voice.spoken().length === 3, "leaving to end live narration");
+	const browsing = readArchitectureModel(voice.fixture.vault);
+	if (!browsing.success) throw new Error(JSON.stringify(browsing));
+	await voice.report(null, {
+		vault: voice.fixture.vault,
+		model: browsing.manifest.id,
+		expectedRevision: browsing.revision.digest,
+		selection: {},
+		subjects: [],
+		reading: voice.architecture.reading,
+	});
+	const quietBefore = voice.frames("thread/realtime/appendText").length;
+	const workerFile = join(voice.fixture.vault, "worker.module.json");
+	const worker = JSON.parse(readFileSync(workerFile, "utf8"));
+	writeFileSync(workerFile, JSON.stringify({ ...worker, name: "Outside worker" }));
+	await waitFor(
+		() => voice.frames("thread/realtime/appendText").length > quietBefore,
+		"ordinary browsing to hear external changes after a durable writer",
+	);
+	expect(voice.spoken()).toHaveLength(3);
+	const ordinary = voice.frames("thread/realtime/appendText").at(-1)?.params?.["text"];
+	expect(ordinary).toContain(voice.model.manifest.name);
+	expect(ordinary).not.toMatch(/\bagent\b/u);
+	expect(ordinary).not.toContain(doing);
 });
 
 test("changed canonical source and target guards refuse voice without a provider start", async () => {

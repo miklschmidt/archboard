@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T20:32:00Z'
+updated_date: '2026-10-27T20:33:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -84,6 +84,8 @@ Repair the existing canonical narration/change-news boundary: an external edit d
 Use the existing Archboard family identity vKEsyHFk as the stable repository migration namespace. Retain the untouched legacy source set and absent mapping plan through the signed public archive operation before any source preparation. Parent retains all explicit identity mappings, hierarchy choices, draft dispositions, authored view preparation and cutover. Preserve unrelated drafts and original historical bytes.
 
 Preserve the existing sidebar search and group-selection workflows before retiring legacy browser owners. Reuse the existing search combobox, focus shortcut and sidebar behavior over the selected canonical model; remove board catalogue/document reads and the unused search host. Keep these visible behaviors in the existing browser seam, with exact architecture bytes unchanged.
+
+Bounded narration repair: reproduce live external-change speech in the existing public runtime/HTTP/socket narration owner, keep captured source and target revisions fixed, repair settled news without changing explicit selection/focus behavior, and preserve durable writer evidence. Use the existing Live panes/server proposals. Leave parent status, assignee, acceptance, repository migration, browser acceptance, and final gate unchanged.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -152,4 +154,6 @@ Parent consumer follow-up: exact checkpoint reads now resume through coherent mo
 Migration preparation retained all 18 untouched legacy inputs at signed checkpoint 5c732a3853a575ba954c5abfc08584bb37a03f84 under existing model identity vKEsyHFk. Public reopening confirms every retained file matches the source bytes, source digest 133d908e0d01d19014dcb362522032c838c54479ad4a43060d633cc411ea523b, and no saved mapping plan. Signature verification passes. Publication remains saved-locally. No original file, mapping, adoption or cutover changed. External receipts and evidence use task-549.24-original-retention-*.
 
 Canonical module-search browser owner now reproduces missing search UI: the existing shortcut opens the sidebar but no field receives focus. The old inspection owner becomes canonical-model-inspection with the trusted keyboard case unchanged. Existing canonical owners retain containment, source actions and recursive navigation. Search implementation follows this RED checkpoint.
+
+Bounded narration/news repair: the existing model watcher labeled external file observations as agent writes, and pane-news marked all settled writes as speech. Model-key matching then interrupted an immutable captured narration. Settled changes now update quiet voice/coordinator/workhorse context while explicit selection, view, focus, and agent navigation retain their existing rules. Durable operation receipts supply writer and doing; external observations carry origin external and no fabricated writer or doing. The existing Live panes/server .24 proposals cover this intent; no source-vault inputs or claims changed. The public runtime/HTTP/socket owner reproduces RED after a walkthrough edit, then passes captured text and subject names across external source edits and durable target edits. It also proves ordinary external browsing news after the durable writer. Narration owner: 7 cases/47 assertions; final live case after simplification: 1 case/18 assertions. Generic news/feed/publisher/presentation owners: 33 cases/193 assertions. Source/test types, focused source/test lint, formatting, and diff checks pass. Exact contract and limits are external in task-549.24-narration-news-contract.md and task-549.24-narration-news-backend.md. Keep parent assignee, In Progress, and all acceptance unchanged. Parent retains browser acceptance, migration, adoption, and full integration validation.
 <!-- SECTION:NOTES:END -->
