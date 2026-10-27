@@ -20,6 +20,11 @@ import type { Fixture } from "#runtime/schemas/fixture.ts";
 import type { InspectionRequest, RenderRequest } from "#runtime/rules/outcomes/outcomes.ts";
 type Model = Extract<z.infer<typeof ArchitectureModelReadSchema>, { success: true }>;
 type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
+/**
+ * Merge authored fixture vocabulary with the shared defaults.
+ * @param policy The optional vocabulary patch.
+ * @returns The complete policy.
+ */
 function fixturePolicy(policy: Fixture["policy"]): SemanticPolicy {
 	return SemanticPolicySchema.parse({
 		...DEFAULT_SEMANTIC_POLICY,
@@ -32,6 +37,12 @@ function fixturePolicy(policy: Fixture["policy"]): SemanticPolicy {
 		groups: { ...DEFAULT_SEMANTIC_POLICY.groups, ...policy?.groups },
 	});
 }
+/**
+ * Write fixture vocabulary before the local author starts.
+ * @param vault The disposable vault.
+ * @param policy The optional vocabulary patch.
+ * @returns The exact configuration bytes.
+ */
 function writeVaultConfiguration(vault: string, policy: Fixture["policy"]): string {
 	const file = path.join(vault, ".archboard/config.yaml");
 	fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -39,10 +50,20 @@ function writeVaultConfiguration(vault: string, policy: Fixture["policy"]): stri
 	fs.writeFileSync(file, text);
 	return text;
 }
+/**
+ * Read exact configuration bytes for write guardrails.
+ * @param vault The disposable vault.
+ * @returns Its configuration text.
+ */
 function readConfigurationText(vault: string): string {
 	const file = path.join(vault, ".archboard/config.yaml");
 	return fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
 }
+/**
+ * Decode the fixture vocabulary through its shared schema.
+ * @param vault The disposable vault.
+ * @returns The validated policy.
+ */
 function readPolicy(vault: string): SemanticPolicy {
 	return SemanticPolicySchema.parse(Bun.YAML.parse(readConfigurationText(vault)));
 }
@@ -66,14 +87,17 @@ async function readModel(cli: CliContext, state?: string): Promise<Model> {
  */
 function evaluationState(model: Model): SemanticVariant {
 	const state = model.selectedState;
+	const content = modelContent(model);
+	if (state === null)
+		return { id: model.manifest.id, name: model.manifest.name, lifecycle: "draft", content };
 	return {
-		id: state?.id ?? model.manifest.id,
-		name: state?.name ?? model.manifest.name,
-		lifecycle: state?.lifecycle ?? "draft",
-		...(state?.predecessor == null ? {} : { parent: state.predecessor }),
-		summary: state?.summary,
-		documents: state?.documents,
-		content: modelContent(model),
+		id: state.id,
+		name: state.name,
+		lifecycle: state.lifecycle,
+		parent: state.predecessor ?? undefined,
+		summary: state.summary,
+		documents: state.documents,
+		content,
 	};
 }
 /**
@@ -101,18 +125,36 @@ async function readVault(cli: CliContext): Promise<Map<string, SemanticBoard>> {
 	};
 	return new Map([[board.name, board]]);
 }
+/**
+ * Read the one named canonical model for evaluation.
+ * @param cli The isolated CLI context.
+ * @param name The expected model name.
+ * @returns The derived evaluation evidence.
+ */
 async function readBoard(cli: CliContext, name: string): Promise<SemanticBoard> {
 	const vault = await readVault(cli);
 	const model = vault.get(name);
 	if (model === undefined) throw new Error(`The model ${name} is unavailable.`);
 	return model;
 }
+/**
+ * Read semantic findings through the public CLI adapter.
+ * @param cli The isolated CLI context.
+ * @returns The model diagnostics.
+ */
 async function vaultDiagnostics(cli: CliContext): Promise<VaultDiagnostic[]> {
 	const answer = await archboard(cli, ["check", "semantics"]);
 	return z
 		.object({ semantics: z.object({ diagnostics: z.array(VaultDiagnosticSchema) }) })
 		.parse(answer.json).semantics.diagnostics;
 }
+/**
+ * Render an evaluation reading through the public canonical command.
+ * @param cli The isolated CLI context.
+ * @param request The declared reading.
+ * @param directory The artifact directory.
+ * @returns The rendering attempt.
+ */
 async function renderBoard(
 	cli: CliContext,
 	request: RenderRequest,
@@ -134,6 +176,12 @@ async function renderBoard(
 		file,
 	};
 }
+/**
+ * Inspect actual canonical group membership through shared rules.
+ * @param cli The isolated CLI context.
+ * @param request The group selection.
+ * @returns The inspection evidence.
+ */
 async function inspectGroup(
 	cli: CliContext,
 	request: InspectionRequest,
@@ -141,6 +189,31 @@ async function inspectGroup(
 	const model = await readModel(cli, request.variant);
 	const group = inspectSemanticGroup(modelContent(model), request.group);
 	return { ...request, result: group, detail: "Inspected canonical group membership." };
+}
+/**
+ * Refuse retired live fixture authoring before starting an evaluation.
+ * @param fixture The authored scenario input.
+ */
+function assertCanonicalFixture(fixture: Fixture): void {
+	if (fixture.steps.length !== 0 || fixture.talk !== undefined)
+		throw new Error("Legacy fixture authoring is retired. Supply canonical inputs.");
+}
+/**
+ * Lay authored canonical fixture bytes inside their disposable vault.
+ * @param vault The disposable destination.
+ * @param inputs The authored relative paths and bytes.
+ * @param repo The registered fixture repository identity.
+ */
+function writeFixtureInputs(vault: string, inputs: Fixture["inputs"], repo: string | null): void {
+	for (const [file, text] of Object.entries(inputs)) {
+		if (path.isAbsolute(file) || file.split(/[\\/]/u).includes(".."))
+			throw new Error("A fixture input must remain in its vault.");
+		fs.mkdirSync(path.dirname(path.join(vault, file)), { recursive: true });
+		fs.writeFileSync(
+			path.join(vault, file),
+			text.replaceAll("$FLASK", repo ?? "github.com/pallets/flask"),
+		);
+	}
 }
 /**
  * Seed authored canonical fixture inputs before the local author starts.
@@ -156,27 +229,27 @@ async function layFixture(
 	flask: string,
 	_home: string,
 ): Promise<string | null> {
-	if (fixture.steps.length !== 0 || fixture.talk !== undefined)
-		throw new Error("Legacy fixture authoring is retired. Supply canonical inputs.");
+	assertCanonicalFixture(fixture);
 	const repo = fixture.registerRepo
 		? z.object({ repo: z.string() }).parse(await archboardOk(cli, ["repo", "add", flask])).repo
 		: null;
-	const vault = path.join(flask, ".archboard/vault");
-	for (const [file, text] of Object.entries(fixture.inputs)) {
-		if (path.isAbsolute(file) || file.split(/[\\/]/u).some((part) => part === ".."))
-			throw new Error("A fixture input must remain in its vault.");
-		fs.mkdirSync(path.dirname(path.join(vault, file)), { recursive: true });
-		fs.writeFileSync(
-			path.join(vault, file),
-			text.replaceAll("$FLASK", repo ?? "github.com/pallets/flask"),
-		);
-	}
+	writeFixtureInputs(path.join(flask, ".archboard/vault"), fixture.inputs, repo);
 	await readModel(cli);
 	return repo;
 }
+/**
+ * Remove only the disposable author checkout from its registry.
+ * @param cli The isolated CLI context.
+ * @param flask The disposable checkout.
+ */
 async function forgetCheckout(cli: CliContext, flask: string): Promise<void> {
 	await archboardOk(cli, ["repo", "forget", flask]);
 }
+/**
+ * Retain complete canonical readings and derived outcome evidence.
+ * @param boards The derived records.
+ * @param directory The evidence directory.
+ */
 function writeBoards(boards: ReadonlyMap<string, SemanticBoard>, directory: string): void {
 	fs.mkdirSync(directory, { recursive: true });
 	for (const [name, record] of boards)
@@ -186,6 +259,8 @@ function writeBoards(boards: ReadonlyMap<string, SemanticBoard>, directory: stri
 		);
 }
 export {
+	assertCanonicalFixture,
+	writeFixtureInputs,
 	forgetCheckout,
 	inspectGroup,
 	layFixture,

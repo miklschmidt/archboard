@@ -406,17 +406,17 @@ function namedBy(
 	);
 }
 
+type FootprintEvidence = FootprintAnswer extends infer T
+	? T extends unknown
+		? Omit<T, "board" | "version">
+		: never
+	: never;
 /**
  * Read the footprint of a range of commits against a board's current variant,
  * and against a proposal when one is named.
  * @param request What to read.
  * @returns The footprint.
  */
-type FootprintEvidence = FootprintAnswer extends infer T
-	? T extends unknown
-		? Omit<T, "board" | "version">
-		: never
-	: never;
 async function readFootprintEvidence(request: VariantFootprintRequest): Promise<FootprintEvidence> {
 	const { vault, against, proposal, base, head, signal } = request;
 	const all = partsOf(against, proposal);

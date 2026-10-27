@@ -43,12 +43,47 @@ function flowReading(vault: string, input: Reading) {
  * Adapt complete selected meaning to the existing renderer operation.
  * @param model The coherent selected architecture reading.
  * @param input The explicit grammar and export theme.
+ * @param vault The addressed vault.
  * @returns The SVG and exact reading receipt.
  */
 async function flowPicture(
 	model: Extract<ArchitectureModelRead, { success: true }>,
 	input: Reading,
 	vault: string,
+) {
+	const { architecture, flow, content } = renderProjection(model, input);
+	if (architecture.missing || architecture.missingFocus.length !== 0)
+		return {
+			success: false as const,
+			code: "MODULE_NOT_FOUND" as const,
+			error: "The requested scope or focus is unavailable.",
+			diagnostics: [
+				{
+					code: "MODULE_NOT_FOUND",
+					file: "model.json",
+					message: "The requested scope or focus is unavailable.",
+					recovery: "Read the model and select existing qualified module identities.",
+				},
+			],
+		};
+	const drawn = await renderArchitecture({
+		content,
+		grammar: input.grammar,
+		policy: model.policy,
+		fonts: "embedded",
+		theme: input.theme,
+	});
+	return renderReceipt(model, input, vault, drawn, flow);
+}
+/**
+ * Project structural scope and complete behavioral meaning through shared rules.
+ * @param model The coherent reading.
+ * @param input The requested presentation.
+ * @returns The structural projection, selected flow, and complete content.
+ */
+function renderProjection(
+	model: Extract<ArchitectureModelRead, { success: true }>,
+	input: Reading,
 ) {
 	const architecture = projectModel(
 		model,
@@ -59,15 +94,31 @@ async function flowPicture(
 	const flow = model.collections
 		.flatMap((collection) => collection.flows)
 		.find((value) => value.id === model.selectedFlow);
-	const { content } =
-		input.grammar === "architecture" ? architecture : projectFlow(architecture, flow!);
-	const drawn = await renderArchitecture({
-		content,
-		grammar: input.grammar,
-		policy: model.policy,
-		fonts: "embedded",
-		theme: input.theme,
-	});
+	return {
+		architecture,
+		flow,
+		content:
+			input.grammar === "architecture"
+				? architecture.content
+				: projectFlow(architecture, flow!).content,
+	};
+}
+/**
+ * Attach exact reading evidence through the existing recipe owner.
+ * @param model The coherent architecture.
+ * @param input The public selectors.
+ * @param vault The addressed vault.
+ * @param drawn The existing renderer result.
+ * @param flow The selected authored flow.
+ * @returns The canonical rendering receipt.
+ */
+function renderReceipt(
+	model: Extract<ArchitectureModelRead, { success: true }>,
+	input: Reading,
+	vault: string,
+	drawn: Awaited<ReturnType<typeof renderArchitecture>>,
+	flow: ReturnType<typeof renderProjection>["flow"],
+) {
 	return {
 		success: true as const,
 		model: model.manifest.id,
@@ -76,7 +127,6 @@ async function flowPicture(
 		grammar: input.grammar,
 		revision: model.revision,
 		checkpoint: model.checkpoint?.id,
-		...Object.fromEntries(Object.entries(drawn).filter(([key]) => key !== "readingDirection")),
 		svg: recordArchitectureRecipe(drawn.svg, model, input, vaultIdentity(vault) ?? null),
 		width: drawn.width,
 		height: drawn.height,

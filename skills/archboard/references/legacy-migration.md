@@ -432,7 +432,7 @@ Signing failure changes no live input and requires repair of the configured sign
 
 Ordinary `model read` discovers authority.
 `LEGACY_AUTHORITY` refuses ordinary live use of an unmigrated vault.
-Use `model inventory`, `model preview`, and an owner-approved `model migrate` request.
+Use `model inventory`, `model plan`, `model read --preview`, and an owner-approved `model migrate` request.
 The runtime preserves original bytes until explicit installation.
 `RECOVERY_REQUIRED` and `MODEL_BUSY` block format selection during installation.
 A successful ordinary read identifies canonical authority.

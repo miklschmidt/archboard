@@ -1,3 +1,4 @@
+import { prepareSkillArtifacts } from "@archboard/skills/distribution";
 import { spawnSync } from "node:child_process";
 import {
 	existsSync,
@@ -66,17 +67,12 @@ function installFailure(result: InstallSpawn): string {
 /** The skills an install ships, each into its own directory of the skills root. */
 const shippedSkills = ["archboard", "archboard-pr"] as const;
 
-/** The derived files the board skill's prepared copy carries beside the authored ones. */
-const generatedSkillFiles = [
-	"references/generated/semantic-board.schema.json",
-	"references/generated/vault-config.schema.json",
-	"references/generated/semantic-create-input.schema.json",
-	"references/generated/semantic-edit-input.schema.json",
-	"references/generated/INSTALL.md",
-] as const;
-
 function createInstallFixture(): InstallFixture {
 	const root = mkdtempSync(join(tmpdir(), "archboard-install-"));
+	const generatedSkillFiles = prepareSkillArtifacts(join(root, "expected-skill"), {
+		root: checkoutRoot,
+		revision: "fixture",
+	}).files;
 	const home = join(root, "home");
 	const state = join(root, "state");
 	const log = join(root, "logs", "archboard.log");

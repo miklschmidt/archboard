@@ -2,7 +2,6 @@
 
 import { requestJson, statedInvocation } from "@archboard/server-lifecycle/server-client";
 
-
 /**
  * The options for a POST carrying a JSON body.
  * @param payload The body.
@@ -33,7 +32,18 @@ interface PaneLayoutResponse {
 	onScreen: Array<{ paneId: string; place: string; board: string }>;
 }
 
-type ShowBoardResponse = {success:true;model:string;reading:import("zod").infer<typeof import("@archboard/board/pane-context").ArchitecturePaneReadingSchema>;revision:unknown;repository:string|null;checkout:string;chose?:{repository:string;checkout:string;replaced:string|null};paneId:string;};
+type ShowBoardResponse = {
+	success: true;
+	model: string;
+	reading: import("zod").infer<
+		typeof import("@archboard/board/pane-context").ArchitecturePaneReadingSchema
+	>;
+	revision: unknown;
+	repository: string | null;
+	checkout: string;
+	chose?: { repository: string; checkout: string; replaced: string | null };
+	paneId: string;
+};
 
 /**
  * What every pane on screen is showing and reading.
@@ -69,13 +79,24 @@ function closePane(spec: string): Promise<PaneLayoutResponse> {
  * from here says it is an agent's, and which agent session it is when the invocation named one.
  * The voice and its coordinator are told an agent moved the pane, unless it was their own
  * session (TASK-293.06).
- * @param board The board key.
+ * @param reading The canonical reading selectors.
  * @param pane The pane spec, when the caller named one.
  * @returns What the pane is showing now.
  */
-function showBoardInPane(reading:ShowBoardResponse["reading"],pane?:string):Promise<ShowBoardResponse>{
- const {session}=statedInvocation();
- return requestJson<ShowBoardResponse>("/api/panes/show",posting({reading,agent:true,...(pane===undefined?{}:{pane}),...(session===null?{}:{session})}));
+function showBoardInPane(
+	reading: ShowBoardResponse["reading"],
+	pane?: string,
+): Promise<ShowBoardResponse> {
+	const { session } = statedInvocation();
+	return requestJson<ShowBoardResponse>(
+		"/api/panes/show",
+		posting({
+			reading,
+			agent: true,
+			...(pane === undefined ? {} : { pane }),
+			...(session === null ? {} : { session }),
+		}),
+	);
 }
 
 export { type ShowBoardResponse, closePane, getPanes, openPane, showBoardInPane };

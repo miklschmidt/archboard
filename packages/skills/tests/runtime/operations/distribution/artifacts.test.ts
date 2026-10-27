@@ -37,7 +37,7 @@ test("installed canonical input schemas accept and refuse the same expressible i
 			},
 		];
 		for (const item of cases) {
-			const file = prepared.files.find((file) => file.endsWith(item.file));
+			const file = prepared.files.find((candidate) => candidate.endsWith(item.file));
 			if (file === undefined) throw new Error(item.file);
 			const validate = ajv.compile(JSON.parse(readFileSync(join(skill, file), "utf8")));
 			expect(item.schema.safeParse(item.input).success).toBe(true);

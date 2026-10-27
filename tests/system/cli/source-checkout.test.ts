@@ -97,15 +97,15 @@ test("a command in another archboard checkout runs its bin/archboard with the sa
 	);
 
 	const ran = await archboard(
-		["semantic", "show", "two words", "--url=http://x"],
+		["model", "read", "two words", "--url=http://x"],
 		join(standing, "docs"),
 		{ ARCHBOARD_PROBE: "given" },
 	);
 
 	expect(ran.status).toBe(7);
 	expect(ran.stdout.split("\n").slice(0, -1)).toEqual([
-		"semantic",
-		"show",
+		"model",
+		"read",
 		"two words",
 		"--url=http://x",
 		"given",
@@ -181,9 +181,14 @@ test("a command that finds a server of another checkout's source refuses and nam
 	expect(conflict).toContain(elsewhere);
 	expect(conflict).toContain(repoRoot);
 
-	const board = { level: "system", nodes: [{ name: "Orders", kind: "service" }] };
+	const intent = {
+		name: "Payments",
+		operationId: "initialize",
+		writer: "agent",
+		doing: "Initialize model",
+	};
 	for (const [args, input] of [
-		[["semantic", "new", "payments", "--doing", "drawing payments"], JSON.stringify(board)],
+		[["model", "read"], JSON.stringify(intent)],
 		[["start"], undefined],
 		[["stop"], undefined],
 		[["restart"], undefined],

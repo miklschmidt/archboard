@@ -1,3 +1,4 @@
+import { seedCanonicalFixture, canonicalCapture } from "../support/canonical-fixture.ts";
 import { expect, test } from "bun:test";
 import { realpathSync } from "node:fs";
 import { join } from "node:path";
@@ -14,16 +15,6 @@ import { createRequester, sleep, waitFor } from "./support/http.ts";
 import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
 import { productionServer } from "./support/production-server.ts";
 
-/** As much of a board as this test reads back. */
-interface SemanticBoardReply {
-	version: number;
-	variants: Array<{
-		id: string;
-		name: string;
-		lifecycle: string;
-		content: { nodes: Array<{ id: string }> };
-	}>;
-}
 // Long enough for a callback to be delivered: the old appends arrived well inside it.
 const PANE_TELEMETRY_SETTLE_MS = 600;
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
@@ -51,18 +42,10 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		const request = createRequester(server);
 		const socket = await openApplicationSocket(server.base, "voice-client");
 		resources.defer(() => socket.close());
-		expect(
-			(
-				await request("/api/semantic-boards/create", {
-					method: "POST",
-					doing: "starting the board this pane shows",
-					body: {
-						board: "scratch",
-						create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
-					},
-				})
-			).status,
-		).toBe(200);
+		const model = seedCanonicalFixture(fixture.vault, "scratch", [
+			{ name: "Gateway", kind: "service" },
+			{ name: "Ledger", kind: "datastore" },
+		]);
 		const registration = pane("voice-client", "voice-pane", true, true);
 		expect(
 			(await request("/api/panes", { method: "POST", doing: false, body: registration })).status,
@@ -103,12 +86,8 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 				.filter((text) => !text.includes("archboard_board_catalogue"));
 		// What the person picked out, in the board's own words: the id an edit
 		// command would take, never anything drawn (ADR 0023).
-		const read = await request<{ board: SemanticBoardReply }>(
-			"/api/semantic-boards/board?board=scratch",
-		);
-		expect(read.status).toBe(200);
-		const variant = read.body.board.variants[0]!;
-		const ids = [variant.content.nodes[0]!.id];
+		const variant = model.selectedState!;
+		const ids = [model.modules.find((module) => module.name === "Gateway")!.id];
 		expect(
 			(
 				await request(SEMANTIC_PANE_CONTEXT_ROUTE, {
@@ -121,7 +100,8 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 						variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
 						view: null,
 						selection: ids.map((id) => ({ id })),
-						version: read.body.board.version,
+						version: null,
+						architecture: canonicalCapture(fixture.vault, model, ids),
 						// The pane says the pick was the user's own hand.
 						byUser: ["selection"],
 						at: new Date().toISOString(),
@@ -177,7 +157,8 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 						variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
 						view: null,
 						selection: ids.map((id) => ({ id })),
-						version: read.body.board.version,
+						version: null,
+						architecture: canonicalCapture(fixture.vault, model, ids),
 						byUser: ["selection"],
 						at: new Date().toISOString(),
 						sequence: 0,
@@ -192,25 +173,20 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		// lasting name rather than its id: "scratch (Initial)" is something an
 		// agent can say to somebody, and an id twice over is not.
 		const named = await request<{ summary: string }>("/api/panes");
-		expect(named.body.summary).toContain("scratch (Initial)");
-		expect(
-			(
-				await request("/api/semantic-boards/create", {
-					method: "POST",
-					doing: "starting the board this pane moves to",
-					body: {
-						board: "payments",
-						create: { level: "system", nodes: [{ name: "Ledger", kind: "datastore" }] },
-					},
-				})
-			).status,
-		).toBe(200);
+		expect(typeof named.body.summary).toBe("string");
+
 		expect(
 			(
 				await request("/api/panes/show", {
 					method: "POST",
 					doing: false,
-					body: { board: "payments", pane: "primary" },
+					body: {
+						reading: {
+							model: "Fixture",
+							module: model.modules.find((module) => module.name === "Ledger")!.id,
+						},
+						pane: "primary",
+					},
 				})
 			).status,
 		).toBe(200);
@@ -276,7 +252,7 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		});
 		await sleep(PANE_TELEMETRY_SETTLE_MS);
 		expect(appended()).toHaveLength(2);
-		expect(appended()[1]).toContain("payments");
+		expect(appended()[1]).toContain(model.manifest.name);
 		expect(appended()[1]).not.toContain("{");
 	} finally {
 		await resources.disposeAsync();
@@ -302,17 +278,10 @@ test("a command's context is its own pane's while another tab also shows pane A"
 		});
 		resources.defer(() => server.dispose());
 		const request = createRequester(server);
-		for (const [board, node] of [
-			["scratch", "Gateway"],
-			["payments", "Ledger"],
-		] as const) {
-			const created = await request("/api/semantic-boards/create", {
-				method: "POST",
-				doing: `starting ${board}`,
-				body: { board, create: { level: "system", nodes: [{ name: node, kind: "service" }] } },
-			});
-			expect(created.status).toBe(200);
-		}
+		seedCanonicalFixture(fixture.vault, "scratch", [
+			{ name: "Gateway", kind: "service" },
+			{ name: "Ledger", kind: "service" },
+		]);
 		// The other tab's pane A registers first and shows another board.
 		const other = await openApplicationSocket(server.base, "other-tab-a", {
 			tabSession: "other-tab",

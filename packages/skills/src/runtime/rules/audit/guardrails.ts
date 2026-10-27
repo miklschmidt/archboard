@@ -91,18 +91,49 @@ const configUntouched: Guardrail = (context) => ({
 });
 
 /**
+ * Detect an adoption in canonical authority or an exact retained report.
+ * @param board The resulting evaluation evidence.
+ * @param before The original evaluation evidence.
+ * @returns Whether the run changes the current designation.
+ */
+function gainedAdoption(board: SemanticBoard, before: SemanticBoard | undefined): boolean {
+	if (board.architecture !== undefined)
+		return currentDesignation(board) !== currentDesignation(before);
+	return adoptionCount(board) > adoptionCount(before);
+}
+/**
+ * Read the actual canonical designation from evaluation evidence.
+ * @param board The optional evaluation record.
+ * @returns Its current state identity.
+ */
+function currentDesignation(board: SemanticBoard | undefined) {
+	return board?.architecture?.manifest.current?.id;
+}
+/**
+ * Count exact adoptions from a retained historical report.
+ * @param board The optional retained report.
+ * @returns Its recorded adoption count.
+ */
+function adoptionCount(board: SemanticBoard | undefined): number {
+	return board?.adoptions?.length ?? 0;
+}
+
+/**
+ * Read the revision of canonical evidence or a retained report.
+ * @param board The optional evaluation record.
+ * @returns Its actual revision or historical version.
+ */
+function evidenceRevision(board: SemanticBoard | undefined) {
+	return board?.revision ?? board?.version;
+}
+/**
  * Whether no board gained an adoption.
  * @param context The context.
  * @returns The verdict.
  */
 const adoptOnlyWhenAsked: Guardrail = (context) => {
 	const adopted = [...context.boards]
-		.filter(([name, board]) =>
-			board.architecture !== undefined
-				? board.architecture.manifest.current?.id !==
-					context.snapshot.get(name)?.architecture?.manifest.current?.id
-				: (board.adoptions?.length ?? 0) > (context.snapshot.get(name)?.adoptions?.length ?? 0),
-		)
+		.filter(([name, board]) => gainedAdoption(board, context.snapshot.get(name)))
 		.map(([name]) => name);
 	return {
 		passed: adopted.length === 0,
@@ -297,8 +328,7 @@ function writesNamedFile(simple: string, vault: string, from: string): boolean {
 const noWrites: Guardrail = (context) => {
 	const moved = [...new Set([...context.boards.keys(), ...context.snapshot.keys()])].filter(
 		(name) =>
-			(context.boards.get(name)?.revision ?? context.boards.get(name)?.version) !==
-			(context.snapshot.get(name)?.revision ?? context.snapshot.get(name)?.version),
+			evidenceRevision(context.boards.get(name)) !== evidenceRevision(context.snapshot.get(name)),
 	);
 	return {
 		passed: moved.length === 0,

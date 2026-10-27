@@ -162,6 +162,11 @@ describe("install targets", () => {
 			removedBlocks: [],
 		});
 		expect(existsSync(join(vault, ".archboard", "config.yaml")), firstDiagnostic).toBe(true);
+		expect(JSON.parse(readFileSync(join(vault, "model.json"), "utf8"))).toMatchObject({
+			schemaVersion: 1,
+			name: "fresh",
+			current: null,
+		});
 		expect(existsSync(join(repo, "AGENTS.md")), firstDiagnostic).toBe(false);
 		expect(existsSync(join(repo, "CLAUDE.md")), firstDiagnostic).toBe(false);
 		const before = filesBelow(repo);

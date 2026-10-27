@@ -1,3 +1,4 @@
+import { semanticChangeFeed } from "#server/services/panes/change-feed.ts";
 import { canonicalContext } from "#server/projections/semantic-context/canonical-context.ts";
 import type {
 	CodexWorkbenchSessionComponents,
@@ -91,7 +92,11 @@ function canonicalContextFromBrief(
 	});
 }
 
-interface ContextPane {readonly paneId:string;readonly clientId:string|null;}
+interface ContextPane {
+	readonly paneId: string;
+	readonly clientId: string | null;
+	readonly focused?: boolean;
+}
 type ThreadLinkOf = ReturnType<CodexWorkbenchComponents["threadLink"]["read"]>["link"];
 type ExecutableLink = Extract<ThreadLinkOf, { state: "executable" }>;
 type WorkhorseSnapshot = ReturnType<CodexWorkbenchWorkhorseComponents["workhorse"]["snapshot"]>;
@@ -247,9 +252,24 @@ function linkedIdentities(active: SemanticInputOwners | null): LinkedIdentities 
  * @param pane The reporting pane.
  * @returns Canonical facts and session identities.
  */
-function semanticInputFor(active: SemanticInputOwners | null,vault:string,_contextBoard:string,cursor:SemanticContextInput["cursor"],pane:ContextPane):SemanticContextInput {
- const reading=canonicalContext(vault,pane.clientId);
- return {repository:checkoutOfVault(vault),...linkedIdentities(active),...reading,pane:{paneId:pane.paneId,focused:reading.stale!==true},claim:{holder:"none",doing:null},doing:null,cursor};
+function semanticInputFor(
+	active: SemanticInputOwners | null,
+	vault: string,
+	_contextBoard: string,
+	cursor: SemanticContextInput["cursor"],
+	pane: ContextPane,
+): SemanticContextInput {
+	semanticChangeFeed.follow(vault);
+	const reading = canonicalContext(vault, pane.clientId);
+	return {
+		repository: checkoutOfVault(vault),
+		...linkedIdentities(active),
+		...reading,
+		pane: { paneId: pane.paneId, focused: pane.focused ?? false },
+		claim: { holder: "none", doing: null },
+		doing: null,
+		cursor,
+	};
 }
 /**
  * Read local agent context for the exact pane.
@@ -257,8 +277,11 @@ function semanticInputFor(active: SemanticInputOwners | null,vault:string,_conte
  * @param pane The reporting pane.
  * @returns Its canonical context or recovery route.
  */
-function fullInputFor(owners:SemanticInputOwners|null,pane:PaneRegistration):SemanticContextInput {
- return semanticInputFor(owners,pane.vault,"architecture",null,pane);
+function fullInputFor(
+	owners: SemanticInputOwners | null,
+	pane: PaneRegistration,
+): SemanticContextInput {
+	return semanticInputFor(owners, pane.vault, "architecture", null, pane);
 }
 export type { SemanticInputOwners };
-export {canonicalContextFromBrief,semanticInputFor,fullInputFor,type ContextPane};
+export { canonicalContextFromBrief, semanticInputFor, fullInputFor, type ContextPane };

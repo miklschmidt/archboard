@@ -25,7 +25,7 @@ async function save(fixture: OpenerFixture, selection: OpenerSelection): Promise
 }
 
 let boundNode = "";
-let boundModel="";
+let boundModel = "";
 
 async function activate(caller: ReturnType<OpenerFixture["caller"]>): Promise<void> {
 	const result = await caller("/api/code-targets/open", {
@@ -61,10 +61,11 @@ describe("machine-wide opener persistence", () => {
 				resources.defer(() => fixture.dispose());
 				// One board with one bound node, written through the store every other
 				// writer goes through, so the opener resolves a real binding.
-    const {boundBoard}=await import("./support/bound-board.ts");
-    const bound=await boundBoard(vault,fixture.repository,"src/index.ts");
-    boundNode=bound.node;boundModel=bound.key;
-    const note=bound.file;
+				const { boundBoard } = await import("./support/bound-board.ts");
+				const bound = await boundBoard(vault, fixture.repository, "src/index.ts");
+				boundNode = bound.node;
+				boundModel = bound.key;
+				const note = bound.file;
 				const noteBytes = readFileSync(note);
 				const noteMtime = statSync(note, { bigint: true }).mtimeNs;
 

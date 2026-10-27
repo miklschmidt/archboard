@@ -265,6 +265,7 @@ export { initializeArchitectureArchiveOnServer };
 /**
  * Ask the server for an explicitly selected flow picture.
  * @param input The explicit reading and standalone theme.
+ * @param vault The optional explicit source vault for reproducible embeds.
  * @returns The SVG receipt or structured diagnostics.
  */
 function renderArchitectureFlowOnServer(

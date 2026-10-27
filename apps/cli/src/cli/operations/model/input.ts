@@ -1,4 +1,11 @@
-import {CliUsageError,type CommandContext} from "#cli/protocol/contract/contract.ts";
+import { CliUsageError, type CommandContext } from "#cli/protocol/contract/contract.ts";
+/**
+ * Read one explicit JSON input from a file or standard input.
+ * @param input The optional input file.
+ * @param input.input The input file path.
+ * @param context The invocation capabilities.
+ * @returns The untrusted input for its authoritative schema.
+ */
 async function statedJson(
 	input: { readonly input?: string | undefined },
 	context: CommandContext,
@@ -18,4 +25,4 @@ async function statedJson(
 		);
 	}
 }
-export {statedJson};
+export { statedJson };

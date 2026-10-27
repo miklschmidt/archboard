@@ -7,12 +7,21 @@ import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
  * @param app The server application.
  */
 function mountArchitectureConfigurationRoutes(app: Express) {
- app.get("/api/vault/check",requireVault,(req,res)=>{
-  const vault=vaultOfRequest(req);
-  const model=readArchitectureModel(vault);
-  const policy=readSemanticBoardConfiguration(vault);
-  const diagnostics=model.success ? [] : model.diagnostics.map((item)=>({...item,severity:"error" as const}));
-  res.json({success:true,configurationFile:policy.file,configurationValid:policy.ok,policy:policy.configuration,fingerprint:policy.fingerprint,diagnostics});
- });
+	app.get("/api/vault/check", requireVault, (req, res) => {
+		const vault = vaultOfRequest(req);
+		const model = readArchitectureModel(vault);
+		const policy = readSemanticBoardConfiguration(vault);
+		const diagnostics = model.success
+			? []
+			: model.diagnostics.map((item) => ({ ...item, severity: "error" as const }));
+		res.json({
+			success: true,
+			configurationFile: policy.file,
+			configurationValid: policy.ok,
+			policy: policy.configuration,
+			fingerprint: policy.fingerprint,
+			diagnostics,
+		});
+	});
 }
-export {mountArchitectureConfigurationRoutes};
+export { mountArchitectureConfigurationRoutes };

@@ -426,7 +426,7 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 function mountPaneRoutes(app: Express): void {
 	app.post("/api/panes", requireVault, postPaneRoute);
 	app.get("/api/panes", getPanesRoute);
-	app.post(["/api/panes/show","/api/browser/show"], requireVault, showPaneRoute);
+	app.post(["/api/panes/show", "/api/browser/show"], requireVault, showPaneRoute);
 	// The person's own act in the page, so only the page reaches it (ADR 0050).
 	app.post(
 		SHOWN_CONVERSATION_ROUTE,
@@ -530,5 +530,4 @@ function focusChange(
  */
 function arrivedOnBoard(clientId: string, board: string): void {
 	paneBoards.set(clientId, board);
-
 }

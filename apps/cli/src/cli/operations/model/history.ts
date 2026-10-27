@@ -1,9 +1,8 @@
+import type { ArchitectureModelRead } from "@archboard/board/model";
 import { z } from "zod";
 import {
-	ArchitectureLocalityRequestSchema,
-	ArchitectureFootprintRequestSchema,
-	ArchitectureLocalityResultSchema,
-	ArchitectureFootprintResultSchema,
+	ArchitectureHistoryRequestSchema,
+	ArchitectureHistoryResultSchema,
 } from "@archboard/code-intel/history";
 import { architectureResult } from "#cli/clients/server/architecture-model.ts";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
@@ -15,11 +14,10 @@ import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
  * @param result The runtime result schema.
  * @returns The discoverable command contract.
  */
-function historyCommand<I extends z.ZodRawShape, O>(
-	name: "locality" | "footprint",
-	input: z.ZodObject<I>,
-	result: z.ZodType<O>,
-) {
+function historyCommand<
+	I extends z.ZodRawShape,
+	O extends { success: true } | Extract<ArchitectureModelRead, { success: false }>,
+>(name: "locality" | "footprint", input: z.ZodObject<I>, result: z.ZodType<O>) {
 	return defineCommand({
 		path: ["model", name],
 		shared: ["url", "directory"],
@@ -49,10 +47,23 @@ function historyCommand<I extends z.ZodRawShape, O>(
 					description: "Canonical revision and source analysis evidence",
 				},
 			],
+			/**
+			 * Select the json output case.
+			 * @returns The declared output identity.
+			 */
 			select: () => "json",
 		},
 		prerequisites: ["server"],
 		effects: ["read"],
+		outcomes: [
+			{
+				id: "unavailable",
+				exit: 2,
+				stream: "stdout-and-stderr",
+				presentation: ["diagnostics", "result"],
+				description: "The selected canonical architecture is unavailable",
+			},
+		],
 		refusals: [serverRefusal],
 		relationships: [
 			{
@@ -62,7 +73,12 @@ function historyCommand<I extends z.ZodRawShape, O>(
 				description: "Read canonical architecture and local source evidence",
 			},
 		],
-		/** Read the selected canonical analysis. @param request The public request. @param context The invocation. @returns The runtime result. */
+		/**
+		 * Read the selected canonical analysis.
+		 * @param request The public request.
+		 * @param context The invocation.
+		 * @returns The runtime result.
+		 */
 		async handler(request, context) {
 			await context.require("server", `model ${name}`);
 			const query = new URLSearchParams(
@@ -70,18 +86,29 @@ function historyCommand<I extends z.ZodRawShape, O>(
 					(entry): entry is [string, string] => typeof entry[1] === "string",
 				),
 			);
-			return { result: await architectureResult(result, `/api/architecture/${name}?${query}`) };
+			const answer = await architectureResult(result, `/api/architecture/${name}?${query}`);
+			return {
+				result: answer,
+				...(answer.success
+					? {}
+					: {
+							outcome: "unavailable" as const,
+							diagnostics: answer.diagnostics.map(
+								(item) => `${item.code}: ${item.message} ${item.recovery}`,
+							),
+						}),
+			};
 		},
 	});
 }
 const modelLocalityContract = historyCommand(
 	"locality",
-	ArchitectureLocalityRequestSchema,
-	ArchitectureLocalityResultSchema,
+	ArchitectureHistoryRequestSchema.options[0].omit({ analysis: true }),
+	ArchitectureHistoryResultSchema,
 );
 const modelFootprintContract = historyCommand(
 	"footprint",
-	ArchitectureFootprintRequestSchema,
-	ArchitectureFootprintResultSchema,
+	ArchitectureHistoryRequestSchema.options[1].omit({ analysis: true }),
+	ArchitectureHistoryResultSchema,
 );
 export { modelLocalityContract, modelFootprintContract };

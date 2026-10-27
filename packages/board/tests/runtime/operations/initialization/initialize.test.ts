@@ -1,11 +1,16 @@
+import { tmpdir } from "node:os";
 import { afterEach, expect, test } from "bun:test";
-import { rmSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { rmSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readArchitectureModel } from "@archboard/board/store-read";
 import { initializeArchitectureModel } from "@archboard/board/store-write";
 import { fixture, git, disposeFixtures } from "#tests/runtime/operations/model-edit/fixture.ts";
 
-afterEach(disposeFixtures);
+const untracked: string[] = [];
+afterEach(() => {
+	disposeFixtures();
+	for (const root of untracked.splice(0)) rmSync(root, { recursive: true, force: true });
+});
 
 test("initialization creates one canonical planning model, retains its identity on retry, and preserves source Git", async () => {
 	const { root, vault } = fixture();
@@ -62,10 +67,10 @@ test("initialization refuses legacy authority without rewriting its exact bytes"
 });
 
 test("initialization refuses an untracked legacy vault before it needs an archive", async () => {
-	const { root, vault } = fixture();
-	rmSync(join(root, ".git"), { recursive: true });
-	rmSync(vault, { recursive: true });
-	mkdirSync(vault);
+	const root = mkdtempSync(join(tmpdir(), "archboard-untracked-legacy-"));
+	untracked.push(root);
+	const vault = join(root, ".archboard/vault");
+	mkdirSync(vault, { recursive: true });
 	writeFileSync(join(vault, "old.semantic.json"), "legacy bytes");
 	expect(
 		await initializeArchitectureModel(vault, {

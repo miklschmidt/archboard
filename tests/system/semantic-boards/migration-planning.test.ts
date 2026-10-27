@@ -41,11 +41,18 @@ function result(stdout: string) {
 }
 
 test("CLI planning and preview share explicit vaults and preserve structured stale refusals", async () => {
-	const created = cli(["semantic", "new", "Shop", "--doing", "Describe the API"], {
-		level: "service",
-		nodes: [{ name: "API", kind: "module", responsibility: "Accepts requests" }],
-	});
-	expect(created.status, created.stderr).toBe(0);
+	const original = JSON.parse(
+		readFileSync(
+			join(repoRoot, "examples/legacy-migration/originals/System.semantic.json"),
+			"utf8",
+		),
+	);
+	original.id = "Shop";
+	original.name = "Shop";
+	original.variants[0].content.nodes[0].responsibility = "Accepts requests";
+	mkdirSync(join(vault, ".archboard"), { recursive: true });
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
+	writeFileSync(join(vault, "Shop.semantic.json"), JSON.stringify(original));
 	const listed = cli(["model", "inventory", "--origin", "Shop"]);
 	expect(listed.status, listed.stderr).toBe(0);
 	const inventory = result(listed.stdout);

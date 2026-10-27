@@ -1,5 +1,5 @@
-import {ArchitecturePaneReadingSchema} from "@archboard/board/pane-context";
-import {statedJson} from "#cli/operations/model/input.ts";
+import { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
+import { statedJson } from "#cli/operations/model/input.ts";
 import { z } from "zod";
 import {
 	closePane,
@@ -10,10 +10,7 @@ import {
 } from "#cli/clients/server/panes.ts";
 import { paneWords } from "@archboard/server-lifecycle/panes";
 import { findVault } from "@archboard/workspace/vault";
-import {
-	CliUsageError,
-	defineCommand,
-} from "#cli/protocol/contract/contract.ts";
+import { CliUsageError, defineCommand } from "#cli/protocol/contract/contract.ts";
 import { PaneRefSchema } from "#cli/protocol/contract/schemas.ts";
 import { serverBrowserRefusals } from "#cli/protocol/contract/refusals.ts";
 import { stagedTokens } from "#cli/rules/staged-tokens/staged-tokens.ts";
@@ -378,26 +375,97 @@ function choiceLine(result: Pick<ShowBoardResponse, "chose">): string[] {
 	];
 }
 
-const ShowInputSchema = ArchitecturePaneReadingSchema.extend({pane:z.string().optional(),input:z.string().optional()});
-type ShowInput=z.infer<typeof ShowInputSchema>;
-const ShowStageSchema=ShowInputSchema;
-type ShowStage=ShowInput;
-const ShowResultSchema=z.looseObject({success:z.literal(true),model:z.string(),reading:ArchitecturePaneReadingSchema,revision:z.unknown(),repository:z.string().nullable(),checkout:z.string(),chose:z.object({repository:z.string(),checkout:z.string(),replaced:z.string().nullable()}).optional(),paneId:z.string()});
-type ShowResult=z.infer<typeof ShowResultSchema>;
-const browserShowContract=defineCommand({
- path:["browser","show"],shared:["url","directory","as-session"],
- summary:"Show a canonical reading in one pane",
- description:"Resolves the exact model, module, state, flow, or walkthrough before moving the existing pane. An agent show preserves the browser's shown conversation.",
- examples:["archboard browser show --pane A --module Gateway","archboard browser show Shop --pane B --grammar sequence --flow Request"],
- parameters:[
- {kind:"positional",key:"model",name:"model",description:"The optional model identity or name"},
- ...(["pane","module","scope","state","checkpoint","flow","walkthrough","preview","bookmark","legacyAddress","input"] as const).map((key)=>({kind:"option" as const,key,spellings:[key==='legacyAddress'?'--legacy-address':`--${key}`] as const,value:"required" as const,placeholder:"value",description:`The explicit ${key} selector`})),
- {kind:"option",key:"grammar",spellings:["--grammar"],value:"required",choices:["architecture","sequence","flowchart"],description:"The diagram grammar"},
- {kind:"option",key:"beat",spellings:["--beat"],value:"required",placeholder:"index",description:"The zero-based walkthrough beat"},
- ...(["focus","hideKinds","hideGroups"] as const).map((key)=>({kind:"option" as const,key,spellings:[key==='focus'?'--focus':key==='hideKinds'?'--hide-kind':'--hide-group'] as const,value:"required" as const,occurrences:"append" as const,placeholder:"id",description:`The ${key} identities`})),
- ],
- input:{ingress:ShowInputSchema.extend({beat:z.coerce.number().int().nonnegative().optional()})},
- result:ShowResultSchema,
+const ShowInputSchema = ArchitecturePaneReadingSchema.extend({
+	pane: z.string().optional(),
+	input: z.string().optional(),
+});
+type ShowInput = z.infer<typeof ShowInputSchema>;
+const ShowStageSchema = ShowInputSchema;
+type ShowStage = ShowInput;
+const ShowResultSchema = z.looseObject({
+	success: z.literal(true),
+	model: z.string(),
+	reading: ArchitecturePaneReadingSchema,
+	revision: z.unknown(),
+	repository: z.string().nullable(),
+	checkout: z.string(),
+	chose: z
+		.object({ repository: z.string(), checkout: z.string(), replaced: z.string().nullable() })
+		.optional(),
+	paneId: z.string(),
+});
+type ShowResult = z.infer<typeof ShowResultSchema>;
+const browserShowContract = defineCommand({
+	path: ["browser", "show"],
+	shared: ["url", "directory", "as-session"],
+	summary: "Show a canonical reading in one pane",
+	description:
+		"Resolves the exact model, module, state, flow, or walkthrough before moving the existing pane. An agent show preserves the browser's shown conversation.",
+	examples: [
+		"archboard browser show --pane A --module Gateway",
+		"archboard browser show Shop --pane B --grammar sequence --flow Request",
+	],
+	parameters: [
+		{
+			kind: "positional",
+			key: "model",
+			name: "model",
+			description: "The optional model identity or name",
+		},
+		...(
+			[
+				"pane",
+				"module",
+				"scope",
+				"state",
+				"checkpoint",
+				"flow",
+				"walkthrough",
+				"preview",
+				"bookmark",
+				"legacyAddress",
+				"input",
+			] as const
+		).map((key) => ({
+			kind: "option" as const,
+			key,
+			spellings: [key === "legacyAddress" ? "--legacy-address" : `--${key}`] as const,
+			value: "required" as const,
+			placeholder: "value",
+			description: `The explicit ${key} selector`,
+		})),
+		{
+			kind: "option",
+			key: "grammar",
+			spellings: ["--grammar"],
+			value: "required",
+			choices: ["architecture", "sequence", "flowchart"],
+			description: "The diagram grammar",
+		},
+		{
+			kind: "option",
+			key: "beat",
+			spellings: ["--beat"],
+			value: "required",
+			placeholder: "index",
+			description: "The zero-based walkthrough beat",
+		},
+		...(["focus", "hideKinds", "hideGroups"] as const).map((key) => ({
+			kind: "option" as const,
+			key,
+			spellings: [
+				key === "focus" ? "--focus" : key === "hideKinds" ? "--hide-kind" : "--hide-group",
+			] as const,
+			value: "required" as const,
+			occurrences: "append" as const,
+			placeholder: "id",
+			description: `The ${key} identities`,
+		})),
+	],
+	input: {
+		ingress: ShowInputSchema.extend({ beat: z.coerce.number().int().nonnegative().optional() }),
+	},
+	result: ShowResultSchema,
 	output: {
 		cases: [
 			{
@@ -414,22 +482,34 @@ const browserShowContract=defineCommand({
 		 */
 		select: () => "json",
 	},
- prerequisites:["server","browser"],effects:["browser"],refusals:serverBrowserRefusals,
- relationships:[{method:"POST",path:"/api/panes/show",cardinality:"one",description:"Point the existing pane at a canonical reading"}],
- /**
-  * Show a resolved canonical reading in the named pane.
-  * @param input The complete reading and pane selector.
-  * @param context The invocation capabilities.
-  * @returns The navigation receipt.
-  */
- async handler(input,context){
-  await context.require("server","Show architecture");
-  const {pane,input:file,...flags}=input;
-  const reading=file===undefined?flags:ArchitecturePaneReadingSchema.parse(await statedJson({input:file},context));
-  await context.require("browser","Show architecture");
-  const result=await showBoardInPane(reading,pane);
-  return {result:ShowResultSchema.parse(result),diagnostics:choiceLine(result)};
- }
+	prerequisites: ["server", "browser"],
+	effects: ["browser"],
+	refusals: serverBrowserRefusals,
+	relationships: [
+		{
+			method: "POST",
+			path: "/api/panes/show",
+			cardinality: "one",
+			description: "Point the existing pane at a canonical reading",
+		},
+	],
+	/**
+	 * Show a resolved canonical reading in the named pane.
+	 * @param input The complete reading and pane selector.
+	 * @param context The invocation capabilities.
+	 * @returns The navigation receipt.
+	 */
+	async handler(input, context) {
+		await context.require("server", "Show architecture");
+		const { pane, input: file, ...flags } = input;
+		const reading =
+			file === undefined
+				? flags
+				: ArchitecturePaneReadingSchema.parse(await statedJson({ input: file }, context));
+		await context.require("browser", "Show architecture");
+		const result = await showBoardInPane(reading, pane);
+		return { result: ShowResultSchema.parse(result), diagnostics: choiceLine(result) };
+	},
 });
 
 export {

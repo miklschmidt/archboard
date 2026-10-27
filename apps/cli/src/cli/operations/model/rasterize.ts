@@ -39,40 +39,40 @@ async function captureArchitecture(
 	signal: AbortSignal,
 ) {
 	const rasterizer = createSemanticRasterizer();
-	try {
-		const capture = await rasterizer.rasterize(
-			{
-				svg: picture.svg,
-				width: picture.width,
-				height: picture.height,
-				scale,
-				region: regionWithin(region, picture),
-			},
-			signal,
-		);
-		const read = readRenderRecipe(Buffer.from(picture.svg));
-		if (read.kind !== "recipe" || !("model" in read.recipe))
-			throw new Error("The canonical picture carries no reproducible recipe.");
-		const recipe = { ...read.recipe, raster: { scale, region: region ?? null } };
-		return {
-			png: embedRecipeInPng(capture.png, recipe),
-			width: capture.width,
-			height: capture.height,
-			source: {
-				renderer: "semantic-renderer" as const,
-				fonts: "embedded" as const,
-				svgSha256: createHash("sha256").update(picture.svg).digest("hex"),
-				facesLoaded: capture.fonts,
-				motion: "paused-at-start" as const,
-			},
-		};
-	} finally {
+	await using lifetime = new AsyncDisposableStack();
+	lifetime.defer(async () => {
 		const cleanup = await rasterizer.stop();
 		if (!cleanup.clean)
 			throw new Error(
 				`The canonical rasterizer did not stop cleanly: ${cleanup.errors.join("; ")}`,
 			);
-	}
+	});
+	const capture = await rasterizer.rasterize(
+		{
+			svg: picture.svg,
+			width: picture.width,
+			height: picture.height,
+			scale,
+			region: regionWithin(region, picture),
+		},
+		signal,
+	);
+	const read = readRenderRecipe(Buffer.from(picture.svg));
+	if (read.kind !== "recipe" || !("model" in read.recipe))
+		throw new Error("The canonical picture carries no reproducible recipe.");
+	const recipe = { ...read.recipe, raster: { scale, region: region ?? null } };
+	return {
+		png: embedRecipeInPng(capture.png, recipe),
+		width: capture.width,
+		height: capture.height,
+		source: {
+			renderer: "semantic-renderer" as const,
+			fonts: "embedded" as const,
+			svgSha256: createHash("sha256").update(picture.svg).digest("hex"),
+			facesLoaded: capture.fonts,
+			motion: "paused-at-start" as const,
+		},
+	};
 }
 const modelRasterizeContract = defineCommand({
 	...modelRenderContract,
@@ -119,6 +119,10 @@ const modelRasterizeContract = defineCommand({
 				description: "The canonical PNG receipt",
 			},
 		],
+		/**
+		 * Select the file output case.
+		 * @returns The declared output identity.
+		 */
 		select: () => "file",
 	},
 	/**

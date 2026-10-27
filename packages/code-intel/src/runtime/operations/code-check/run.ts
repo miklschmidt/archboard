@@ -77,6 +77,48 @@ function planRefused(refused: PlanRefused): CodeCheckRefusal {
 }
 
 /**
+ * Address analyzer findings with their real canonical model, state, and source file.
+ * @param readings The complete inspected semantic readings.
+ * @param finding The analyzer finding.
+ * @returns The canonical finding or retained semantic evidence.
+ */
+function canonicalFinding(
+	readings: readonly import("#runtime/operations/code-check/boards.ts").BoardToCheck[],
+	finding: import("#shared/protocol/code-check.ts").CodeFinding,
+) {
+	const model = readings.find(
+		(reading) => reading.board.name === finding.board && reading.variant.id === finding.variant,
+	)?.model;
+	if (model === undefined) return finding;
+	const { board: _board, variant: _variant, path: _path, ...content } = finding;
+	const owner = findingOwner(model, finding.subject?.id);
+	return { ...content, file: owner ?? "model.json", ...findingIdentity(model) };
+}
+/**
+ * Identify the exact canonical state described by a finding.
+ * @param model The actual inspected reading.
+ * @returns Its model and state identities.
+ */
+function findingIdentity(
+	model: NonNullable<import("#runtime/operations/code-check/boards.ts").BoardToCheck["model"]>,
+) {
+	return { model: model.manifest.id, state: model.selectedState?.id ?? null };
+}
+/**
+ * Locate the authored definition of a module or source-owned relationship.
+ * @param model The actual inspected architecture.
+ * @param subject The stable subject identity.
+ * @returns Its authored input path.
+ */
+function findingOwner(
+	model: NonNullable<import("#runtime/operations/code-check/boards.ts").BoardToCheck["model"]>,
+	subject: string | undefined,
+) {
+	return model.modules.find(
+		(module) => module.id === subject || module.outgoing.some((edge) => edge.id === subject),
+	)?.file;
+}
+/**
  * Create the code check. Its reading of behind keeps what it read, so one
  * check serves every run of a process.
  * @returns The code check.
@@ -111,25 +153,7 @@ function createCodeCheck(): CodeCheck {
 								},
 							],
 				),
-				findings: code.findings.map((finding) => {
-					const model = read.boards.find(
-						(reading) =>
-							reading.board.name === finding.board && reading.variant.id === finding.variant,
-					)?.model;
-					if (model === undefined) return finding;
-					const { board: _board, variant: _variant, path: _path, ...content } = finding;
-					const owner = model.modules.find(
-						(module) =>
-							module.id === finding.subject?.id ||
-							module.outgoing.some((edge) => edge.id === finding.subject?.id),
-					);
-					return {
-						...content,
-						file: owner?.file ?? "model.json",
-						model: model.manifest.id,
-						state: model.selectedState?.id ?? null,
-					};
-				}),
+				findings: code.findings.map((finding) => canonicalFinding(read.boards, finding)),
 				skipped: [...read.skipped, ...code.skipped],
 				behind: [],
 			});

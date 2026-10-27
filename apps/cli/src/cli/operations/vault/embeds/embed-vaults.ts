@@ -1,14 +1,27 @@
 import fs from "node:fs";
 import path from "node:path";
-import {VAULT_DIRECTORY} from "@archboard/workspace/vault";
-import type {checkoutsReadFrom} from "@archboard/code-binding/resolution";
-import type {EmbedVault} from "#cli/protocol/check/embeds-answer.ts";
-import {fetchedVault} from "#cli/operations/vault/embeds/fetched-vaults.ts";
-interface VaultFailure {readonly ok:false;readonly code:"EMBED_VAULT_UNAVAILABLE"|"EMBED_VAULT_FETCH_FAILED";readonly reason:string;}
-type FoundVault={readonly ok:true;readonly vault:string;readonly read:EmbedVault}|VaultFailure;
-type VaultReading=FoundVault;
-type ReadCheckouts=ReturnType<typeof checkoutsReadFrom>;
-function unavailable(reason:string):VaultFailure{return {ok:false,code:"EMBED_VAULT_UNAVAILABLE",reason};}
+import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
+import type { checkoutsReadFrom } from "@archboard/code-binding/resolution";
+import type { EmbedVault } from "#cli/protocol/check/embeds-answer.ts";
+import { fetchedVault } from "#cli/operations/vault/embeds/fetched-vaults.ts";
+interface VaultFailure {
+	readonly ok: false;
+	readonly code: "EMBED_VAULT_UNAVAILABLE" | "EMBED_VAULT_FETCH_FAILED";
+	readonly reason: string;
+}
+type FoundVault =
+	| { readonly ok: true; readonly vault: string; readonly read: EmbedVault }
+	| VaultFailure;
+type VaultReading = FoundVault;
+type ReadCheckouts = ReturnType<typeof checkoutsReadFrom>;
+/**
+ * Refuse an unavailable source without creating a vault.
+ * @param reason The concrete source failure.
+ * @returns The existing source refusal.
+ */
+function unavailable(reason: string): VaultFailure {
+	return { ok: false, code: "EMBED_VAULT_UNAVAILABLE", reason };
+}
 /**
  * The vault of the default branch of a repository that no checkout on this
  * machine holds: fetched, or the newest cached copy when the fetch fails.
@@ -119,4 +132,4 @@ function vaultReader(checkouts: ReadCheckouts, signal: AbortSignal): VaultReader
 	return { read, vaults };
 }
 
-export {vaultReader,type VaultReading};
+export { vaultReader, type VaultReading };

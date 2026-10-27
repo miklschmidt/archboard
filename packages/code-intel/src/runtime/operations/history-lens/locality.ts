@@ -215,6 +215,7 @@ function rank(split: readonly (CountedPart & PartCommits)[]): Ranking {
 	};
 }
 
+type LocalityEvidence = Omit<LocalityAnswer, "board" | "version" | "variant">;
 /**
  * Read locality: every part the lens reads, ranked by the commits of the
  * period that changed its bound files, and the pairs those commits couple.
@@ -224,7 +225,6 @@ function rank(split: readonly (CountedPart & PartCommits)[]): Ranking {
  * @param options The caller's signal.
  * @returns The answer.
  */
-type LocalityEvidence = Omit<LocalityAnswer, "board" | "version" | "variant">;
 async function readLocality(
 	variant: SemanticVariant,
 	snapshot: CheckoutSnapshot,
@@ -350,7 +350,15 @@ function createLocalityEvidence() {
 function createVariantLocality(): VariantLocality {
 	const evidence = createLocalityEvidence();
 	return {
-		/** Read retained evidence. @param vault The vault. @param board The retained document. @param variant The selected state. @param since The period start. @param signal Cancellation. @returns The original semantic receipt. */
+		/**
+		 * Read retained evidence.
+		 * @param vault The vault.
+		 * @param board The retained document.
+		 * @param variant The selected state.
+		 * @param since The period start.
+		 * @param signal Cancellation.
+		 * @returns The original semantic receipt.
+		 */
 		async read(vault, board, variant, since, signal) {
 			return {
 				board: board.name,

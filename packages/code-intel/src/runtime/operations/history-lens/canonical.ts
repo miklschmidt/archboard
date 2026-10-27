@@ -33,6 +33,7 @@ async function readArchitectureLocality(
 	);
 	return {
 		success: true as const,
+		analysis: "locality" as const,
 		model: model.manifest.id,
 		state: model.selectedState,
 		revision: model.revision,
@@ -73,6 +74,7 @@ async function readArchitectureFootprint(
 	});
 	return {
 		success: true as const,
+		analysis: "footprint" as const,
 		model: model.manifest.id,
 		state: model.selectedState,
 		revision: model.revision,

@@ -5,7 +5,7 @@ import { logger } from "@archboard/diagnostics/logger";
 import type { WebSocketMessage } from "@archboard/server-lifecycle/panes";
 import { addressablePanes, panesInOrder, resolvePane } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
-import {readArchitectureModel} from "@archboard/board/store-read";
+import { readArchitectureModel } from "@archboard/board/store-read";
 import { aggregateOf } from "#server/rules/pane/board-key.ts";
 import { PANE_MS } from "@archboard/timing";
 import { createBrowserLeaseLedger } from "@archboard/codex-realtime-voice/server";
@@ -253,11 +253,11 @@ function boardForNewPane(clientId: string, vault: string): string | null {
  * the current variant of the first board in the vault: not what it was looking
  * at, and quietly so.
  * @param vault The vault the board lives in.
- * @param key The pane's board key.
+ * @param _key The opaque presentation key.
  * @returns True when that board is still there and has the variant the key states.
  */
-function stillThere(vault:string,_key:string):boolean {
- return readArchitectureModel(vault).success;
+function stillThere(vault: string, _key: string): boolean {
+	return readArchitectureModel(vault).success;
 }
 
 /**

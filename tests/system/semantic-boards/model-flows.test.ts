@@ -1,8 +1,9 @@
+import { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
 import { readRenderRecipe } from "@archboard/renderer/recipe";
 import { everyStep } from "@archboard/board/flow";
 import { z } from "zod";
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
@@ -308,6 +309,16 @@ test("retired board writers and claims cannot change a vault through HTTP or CLI
 });
 
 test("canonical locality and branch footprint retain source analysis without a live board reader", () => {
+	mkdirSync(join(home, "src"), { recursive: true });
+	writeFileSync(join(home, "src/gateway.ts"), "export function dispatch(){ return 1; }\n");
+	for (const args of [
+		["add", "src"],
+		["commit", "--quiet", "-m", "test: add bound source"],
+	]) {
+		const ran = Bun.spawnSync(["git", "-C", home, ...args]);
+		if (ran.exitCode !== 0) throw new Error(ran.stderr.toString());
+	}
+	const sourceHead = Bun.spawnSync(["git", "-C", home, "rev-parse", "HEAD"]).stdout.toString();
 	const locality = cli(["model", "locality"]);
 	expect(locality.status, locality.stderr).toBe(0);
 	expect(answer(locality.stdout)).toMatchObject({
@@ -317,13 +328,25 @@ test("canonical locality and branch footprint retain source analysis without a l
 		revision: expect.any(Object),
 		hotspots: expect.any(Array),
 	});
-	const footprint = cli(["model", "footprint", "--base", "HEAD"]);
+	const footprint = cli(["model", "footprint", "--base", "HEAD~1"]);
 	expect(footprint.status, footprint.stderr).toBe(0);
 	expect(answer(footprint.stdout)).toMatchObject({
 		success: true,
 		model: "Shop",
 		state: { id: "Current" },
-		base: "HEAD",
+		base: "HEAD~1",
 		repositories: expect.any(Array),
 	});
+	const local = ArchitectureHistoryResultSchema.parse(answer(locality.stdout));
+	const branch = ArchitectureHistoryResultSchema.parse(answer(footprint.stdout));
+	if (!local.success || local.analysis !== "locality" || !branch.success || !("changed" in branch))
+		throw new Error(JSON.stringify({ local, branch }));
+	expect(local.hotspots.map((part) => part.subject.id)).toContain("Shop#Gateway");
+	expect(branch.changed.map((part) => part.subject.id)).toContain("Shop#Gateway");
+	expect(Bun.spawnSync(["git", "-C", home, "rev-parse", "HEAD"]).stdout.toString()).toBe(
+		sourceHead,
+	);
+	const refused = cli(["model", "footprint", "--base", "HEAD", "--state", "Missing"]);
+	expect(refused.status, refused.stderr).toBe(2);
+	expect(answer(refused.stdout)).toMatchObject({ success: false, code: "STATE_NOT_FOUND" });
 });

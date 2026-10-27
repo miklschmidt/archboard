@@ -174,6 +174,61 @@ function followRegistry(): void {
 }
 
 /**
+ * Preserve the pane's reported canonical presentation when its checkout changes.
+ * @param key The canonical presentation key.
+ * @param captured The optional exact pane capture.
+ * @returns Its stable selectors or the initial structural reading.
+ */
+function followedReading(
+	key: string,
+	captured: NonNullable<ReturnType<typeof semanticPaneContextFor>>["architecture"],
+) {
+	if (captured == null) return { model: key.slice(6), grammar: "architecture" as const };
+	return {
+		...captured.selection,
+		model: key.slice(6),
+		grammar: captured.reading.grammar,
+		scope: captured.reading.scope,
+		focus: captured.reading.focus,
+		flow: captured.reading.flow,
+	};
+}
+/**
+ * Follow a chosen checkout with the pane's captured canonical reading.
+ * @param clientId The pane socket identity.
+ * @param to The chosen vault.
+ * @param repository The registered repository identity.
+ * @param key The canonical presentation key.
+ * @param captured The optional exact pane capture.
+ */
+function moveCanonicalPane(
+	clientId: string,
+	to: string,
+	repository: string | null,
+	key: string,
+	captured: ReturnType<typeof semanticPaneContextFor> extends infer T
+		? T extends { architecture?: infer A }
+			? A
+			: never
+		: never,
+): void {
+	const reading = followedReading(key, captured);
+	const model = readArchitectureModel(to);
+	sendToPane(
+		clientId,
+		{
+			type: "pane_model",
+			model: key.slice(6),
+			reading,
+			...(model.success ? { revision: model.revision } : {}),
+			vault: to,
+			repository,
+		},
+		key,
+	);
+	arrivedOnBoard(clientId, key);
+}
+/**
  * Move one pane into another checkout's vault, keeping its board.
  * @param clientId The pane.
  * @param to The vault it moves into.
@@ -184,25 +239,7 @@ function movePane(clientId: string, to: string, repository: string | null): void
 	const key = paneBoardOf(clientId);
 	movePaneVault(clientId, to);
 	if (key?.startsWith("model:")) {
-		const reading = {
-			...captured?.selection,
-			model: key.slice(6),
-			grammar: "architecture" as const,
-		};
-		const model = readArchitectureModel(to);
-		sendToPane(
-			clientId,
-			{
-				type: "pane_model",
-				model: key.slice(6),
-				reading,
-				...(model.success ? { revision: model.revision } : {}),
-				vault: to,
-				repository,
-			},
-			key,
-		);
-		arrivedOnBoard(clientId, key);
+		moveCanonicalPane(clientId, to, repository, key, captured);
 		return;
 	}
 	if (key === null) {

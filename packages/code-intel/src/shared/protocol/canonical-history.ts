@@ -2,15 +2,15 @@ import { z } from "zod";
 import { ArchitectureModelReadSchema } from "@archboard/board/model";
 import { LocalityAnswerSchema, PeriodStartSchema } from "#shared/protocol/locality.ts";
 import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
-const ArchitectureHistoryRequestSchema = z.strictObject({
+const SelectionSchema = z.strictObject({
 	state: z.string().optional(),
 	checkpoint: z.string().optional(),
 	against: z.string().optional(),
 });
-const ArchitectureLocalityRequestSchema = ArchitectureHistoryRequestSchema.extend({
+const ArchitectureLocalityRequestSchema = SelectionSchema.extend({
 	since: PeriodStartSchema.optional(),
 });
-const ArchitectureFootprintRequestSchema = ArchitectureHistoryRequestSchema.extend({
+const ArchitectureFootprintRequestSchema = SelectionSchema.extend({
 	base: z.string().min(1),
 	head: z.string().min(1).optional(),
 });
@@ -21,24 +21,26 @@ const IdentitySchema = z.strictObject({
 	revision: ArchitectureModelReadSchema.options[0].shape.revision,
 	checkpoint: z.string().optional(),
 });
-const ArchitectureLocalityResultSchema = z.union([
-	LocalityAnswerSchema.omit({ board: true, version: true, variant: true }).extend(
-		IdentitySchema.shape,
-	),
-	ArchitectureModelReadSchema.options[1],
+const ArchitectureHistoryRequestSchema = z.discriminatedUnion("analysis", [
+	ArchitectureLocalityRequestSchema.extend({ analysis: z.literal("locality") }),
+	ArchitectureFootprintRequestSchema.extend({ analysis: z.literal("footprint") }),
 ]);
-const ArchitectureFootprintResultSchema = z.union([
+const ArchitectureHistoryResultSchema = z.union([
+	LocalityAnswerSchema.omit({ board: true, version: true, variant: true }).extend({
+		...IdentitySchema.shape,
+		analysis: z.literal("locality"),
+	}),
 	FootprintAnswerSchema.options[0]
 		.omit({ board: true, version: true })
-		.extend(IdentitySchema.shape),
+		.extend({ ...IdentitySchema.shape, analysis: z.literal("footprint") }),
 	FootprintAnswerSchema.options[1]
 		.omit({ board: true, version: true })
-		.extend(IdentitySchema.shape),
+		.extend({ ...IdentitySchema.shape, analysis: z.literal("footprint") }),
 	ArchitectureModelReadSchema.options[1],
 ]);
 export {
 	ArchitectureLocalityRequestSchema,
 	ArchitectureFootprintRequestSchema,
-	ArchitectureLocalityResultSchema,
-	ArchitectureFootprintResultSchema,
+	ArchitectureHistoryRequestSchema,
+	ArchitectureHistoryResultSchema,
 };

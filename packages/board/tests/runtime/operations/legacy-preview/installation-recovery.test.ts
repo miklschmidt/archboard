@@ -1,11 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { chmodSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-	readArchitectureModel,
-	readSemanticBoard,
-	readLegacyInventory,
-} from "@archboard/board/store-read";
+import { readArchitectureModel, readLegacyInventory } from "@archboard/board/store-read";
 import { migrateArchitectureModel, recoverArchitectureModel } from "@archboard/board/store-write";
 import { BOARD_LOCK_MS } from "@archboard/timing";
 import { installationFixture } from "#tests/runtime/operations/legacy-preview/install-fixture.ts";
@@ -53,10 +49,6 @@ test.each(["prepared", "migration-file", "archive", "cleanup"])(
 			expect(readArchitectureModel(value.vault)).toMatchObject({
 				success: false,
 				code: "RECOVERY_REQUIRED",
-			});
-			expect(readSemanticBoard(value.vault, "Shop")).toMatchObject({
-				ok: false,
-				code: "BOARD_UNREADABLE",
 			});
 		}
 		if (point !== "cleanup")

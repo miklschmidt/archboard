@@ -13,7 +13,6 @@ export {
 } from "#shared/schemas/model.ts";
 export type {
 	ArchitectureCheckpointRequest,
-	ArchitectureCheckpointRetain,
 	ArchitectureCheckpointList,
 } from "#shared/schemas/model.ts";
 export {
@@ -23,7 +22,6 @@ export {
 	ArchitectureModuleEditResultSchema,
 	ArchitectureRecoveryResultSchema,
 	ArchitectureClaimRequestSchema,
-	ArchitectureClaimSchema,
 	ArchitectureClaimResultSchema,
 	ArchitectureClaimListSchema,
 	ArchitectureClaimReleaseSchema,
@@ -33,16 +31,13 @@ export {
 export type {
 	ArchitectureModuleEdit,
 	ArchitectureModuleEditResult,
-	ArchitectureRecoveryResult,
 	ArchitectureClaim,
-	ArchitectureClaimRequest,
 	ArchitectureClaimList,
 	ArchitectureClaimResult,
 	ArchitectureEvent,
 } from "#shared/schemas/model-operations.ts";
 
 export {
-	ArchitecturePortableBundleSchema,
 	ArchitectureImportRequestSchema,
 	ArchitectureExportResultSchema,
 } from "#shared/schemas/model-portable.ts";
@@ -50,3 +45,7 @@ export {
 export { ArchitectureMigrationRequestSchema } from "#shared/schemas/migration-installation.ts";
 
 export { ArchitectureInitializationRequestSchema } from "#shared/schemas/model-portable.ts";
+
+export type { ArchitectureRecoveryResult } from "#shared/schemas/model-operations.ts";
+
+export type { ArchitectureCheckpointRetain } from "#shared/schemas/model.ts";

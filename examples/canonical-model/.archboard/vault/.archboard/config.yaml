@@ -1,4 +1,3 @@
-levels: [system, service, module]
 nodeKinds:
   service: { name: Service, icon: RiServerLine }
   module: { name: Module, icon: RiCodeBoxLine }

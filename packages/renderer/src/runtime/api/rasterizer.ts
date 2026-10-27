@@ -10,4 +10,3 @@ export {
 	createSemanticRasterizer,
 	SemanticRasterError,
 } from "#runtime/services/rasterizer/rasterizer.ts";
-export type { Capture } from "#runtime/services/rasterizer/session.ts";

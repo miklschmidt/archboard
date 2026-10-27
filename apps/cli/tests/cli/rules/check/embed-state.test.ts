@@ -5,8 +5,11 @@
 // Everything, read against nothing, can follow a deleted board's name.
 
 import { expect, test } from "bun:test";
-import {readRenderRecipe} from "@archboard/renderer/recipe";
-type RenderRecipe=Extract<Extract<ReturnType<typeof readRenderRecipe>,{kind:"recipe"}>["recipe"],{board:unknown}>;
+import type { readRenderRecipe } from "@archboard/renderer/recipe";
+type RenderRecipe = Extract<
+	Extract<ReturnType<typeof readRenderRecipe>, { kind: "recipe" }>["recipe"],
+	{ board: unknown }
+>;
 import { embedStanding } from "#cli/rules/check/embed-state.ts";
 
 const digest = (digit: string) => `sha256:${digit.repeat(64)}`;

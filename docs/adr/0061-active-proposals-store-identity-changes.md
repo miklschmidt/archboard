@@ -192,3 +192,9 @@ Logical readers refresh after archive-only completion events, even when the curr
 Exact original checkpoints keep their original facts and audit coverage.
 A missing archive leaves the exact requested address intact for explicit recovery.
 The browser submits no correction writes.
+
+## Canonical default transition
+
+TASK-549.24 retires live legacy authoring and consumers.
+See [the proposed consumer transition](0062-one-live-canonical-model-and-consumer-path.md) for its backend contract and parent acceptance boundary.
+Legacy bytes remain available for explicit migration and exact retained history.

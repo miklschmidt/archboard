@@ -4,7 +4,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 // are reported by docs/design/wide-board-layout-fixtures/measure.ts.
 
 import { expect, test } from "bun:test";
-import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,8 +12,7 @@ import { DEFAULT_LAYOUT_ENGINE, LayoutEngineSchema } from "@archboard/board/rend
 import type { VariantContent } from "@archboard/board/content";
 import type { SemanticPolicy } from "@archboard/board/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { locateSemanticBoard } from "@archboard/board/address";
-import { readSemanticBoardAt } from "@archboard/board/store-read";
+import { decodeSemanticBoardDocument } from "@archboard/board/store-read";
 import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { declareTestWallClockBudget } from "../../../../../../tests/system/repository-policy/support/test-wall-clock.ts";
@@ -46,8 +45,9 @@ function vaultBoards(): {
 			.toSorted()
 			.map((file) => {
 				copyFileSync(join(vault, file), join(copy, file));
-				const name = file.slice(0, -".semantic.json".length);
-				const read = readSemanticBoardAt(copy, locateSemanticBoard(name, copy), configured);
+				const read = decodeSemanticBoardDocument(
+					JSON.parse(readFileSync(join(copy, file), "utf8")),
+				);
 				if (!read.ok) throw new Error(`the vault board ${file} does not parse`);
 				const current = read.board.variants.find(({ id }) => id === read.board.current);
 				if (current === undefined)
