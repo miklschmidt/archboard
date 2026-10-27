@@ -79,7 +79,7 @@ function ModelPreviewDetails({ model }: { model: Model }): JSX.Element | null {
 					)}
 				</div>
 			</details>
-			{model.manifest.current === null && (
+			{emptyCurrent(model) && (
 				<p
 					data-slot="preview-empty"
 					className="text-body border-border shrink-0 border-b px-4 py-3"
@@ -93,3 +93,12 @@ function ModelPreviewDetails({ model }: { model: Model }): JSX.Element | null {
 }
 
 export { ModelPreviewDetails };
+
+/**
+ * Original board coverage has no repository current designation.
+ * @param model The complete preview receipt.
+ * @returns Whether the composed current preview contains no implemented model.
+ */
+function emptyCurrent(model: Model): boolean {
+	return model.manifest.current === null && model.migrationPreview?.selected === undefined;
+}

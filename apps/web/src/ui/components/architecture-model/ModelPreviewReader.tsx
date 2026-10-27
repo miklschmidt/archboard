@@ -8,6 +8,8 @@ import {
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import { ModelHeader, ModelError } from "#ui/components/architecture-model/ModelFrame.tsx";
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
+import { ModelPreviewSelector } from "#ui/components/architecture-model/ModelPreviewSelector.tsx";
+import { ModelPreviewCoverage } from "#ui/components/architecture-model/ModelPreviewCoverage.tsx";
 import { ModelPreviewDetails } from "#ui/components/architecture-model/ModelPreviewDetails.tsx";
 
 type PreviewProps = Pick<
@@ -50,7 +52,11 @@ function ModelPreviewReader(props: PreviewProps): JSX.Element {
 				refresh={refresh}
 				refreshing={query.isFetching}
 			>
-				{null}
+				<ModelPreviewSelector
+					preview={query.data?.migrationPreview}
+					state={location.state}
+					onState={location.selectState}
+				/>
 			</ModelHeader>
 			{query.isPending && (
 				<output className="text-body text-muted-foreground p-10">Reading migration preview…</output>
@@ -116,6 +122,7 @@ function PreviewContent(
 	if (props.model === undefined) return null;
 	return (
 		<>
+			<ModelPreviewCoverage model={props.model} />
 			<ModelPreviewDetails model={props.model} />
 			<ModelReading
 				{...props}

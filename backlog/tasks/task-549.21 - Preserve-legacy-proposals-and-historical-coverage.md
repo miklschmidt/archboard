@@ -3,9 +3,9 @@ id: TASK-549.21
 title: Preserve legacy proposals and historical coverage
 status: In Progress
 assignee:
-  - '@codex-backend'
+  - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T06:36:00Z'
+updated_date: '2026-10-27T09:32:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -67,6 +67,8 @@ TASK-549.09, TASK-549.20
 4. Retain exact original inputs through the existing signed archive and retry owner without installing or changing legacy authority.
 5. Run focused RED/GREEN owners, affected structural checks, and draft architecture checks. Update consumer guidance and simplify.
 6. Merge latest integration, release claims, stop this worktree server, commit signed checkpoints, and publish backend handoff. Keep drafts and task In Progress for parent acceptance.
+
+7. Parent composes the completed .14 source, then extends the existing preview reader with original-state selection, explicit historical coverage, lifecycle and standing details, and retained original inspection. Preserve paired preview state/checkpoint selectors through the existing router. Add Browser application@TASK-549.21 before frontend changes. Use isolated real files/Git through public operations for fixtures and the approved browser seam for visible selection, recovery, and retained-original behavior. Restate the three backend proposals onto current architecture, simplify, validate, adopt, and close only after all four criteria are proven.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -75,4 +77,8 @@ TASK-549.09, TASK-549.20
 Backend implementation adds scoped original history, explicit draft predecessor and exact baseline choices, canonical compact conversion evidence, original standing and lifecycle records, and lossless original retention through the existing signed archive. No live migration or second history store exists. Draft proposals remain Board persistence@TASK-549.21, Command interface@TASK-549.21, and Archboard server routes@TASK-549.21. Parent-owned browser acceptance, adoption, and task closure remain pending. The early contract and concrete signed fixture are under /home/msc/.local/state/archboard-implementation/task-549. A nullable retained plan revision needs a parent type adjustment at tests/system/browser/canonical-model-preview.test.ts:87. Full type-check reports only that caller error. Backend compilation with that browser fixture excluded passes with every compiler rule unchanged. Full lint and evaluation inputs pass. Runtime evidence includes 20 migration cases, the additional original evidence case, 17 canonical history and correction regression cases, two migration adapter cases, and one correction adapter case. Final logs and source provenance will be recorded in task-549.21-backend.md.
 
 Accepted backend evidence covers 22 migration cases with 124 assertions across reused unchanged owners plus the final history and retention runs. Canonical history and correction regressions pass 17 cases/81 assertions. Canonical reference regressions pass 10 cases/40 assertions. Migration CLI/HTTP parity passes two cases/21 assertions, and correction parity passes one case/10 assertions. Full lint and formatting pass; the added retained-input test also passes its focused lint owner. Evaluation inputs pass 21 scenarios, 21 fixtures, and 14 coverage parts without a model call. Backend compilation passes with the one parent-owned nullable-plan browser assertion excluded and all compiler rules retained. Three draft architecture scopes have zero code warnings, semantics has zero diagnostics, and eight inherited warnings remain on Archboard. Exact original variants, designations, decisions, and views remain unchanged against 2c04f606e. The simplification pass groups immutable read evidence and removes an eight-argument helper. No frontend edit, browser test, review, adoption, push, PR, migration installation, or task closure occurred. The latest integration merge reports already up to date. Parent acceptance remains pending.
+
+Signed preparation merge d2d0a549112bf2511e9c45661affa966cbda1fd6 includes integration5d2f45465332b84c59d19c3a7c21ee2b8abd8aae. The merger preserved every authored variant, parent, decision and view, kept incoming .14 currents, and retained all three .21 drafts. No frontend conflict occurred. Five focused public runtime owners pass18 tests99 assertions. Full types have only the documented nullable preview.planRevision browser assertion; the frontend compiler passes. Parent now owns the source and all UI work.
+
+The first parent browser slice passes one case with four assertions. The existing preview header now selects independent original states. It preserves the paired migration checkpoint through selection, reload and Back, and shows only the original one-board coverage. Historical selections no longer display the empty-current message. The existing router keeps its ordinary canonical selector behavior. Public fixture setup uses real files, Git, inventory, mapping and retention. Types and lint pass. Browser application@TASK-549.21 is drafted before these changes. Lifecycle/standing details and retained-original inspection remain pending.
 <!-- SECTION:NOTES:END -->
