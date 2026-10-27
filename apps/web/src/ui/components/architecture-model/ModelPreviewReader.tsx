@@ -8,6 +8,7 @@ import {
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import { ModelHeader, ModelError } from "#ui/components/architecture-model/ModelFrame.tsx";
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
+import { ModelPreviewStateEvidence } from "#ui/components/architecture-model/ModelPreviewStateEvidence.tsx";
 import { ModelPreviewSelector } from "#ui/components/architecture-model/ModelPreviewSelector.tsx";
 import { ModelPreviewCoverage } from "#ui/components/architecture-model/ModelPreviewCoverage.tsx";
 import { ModelPreviewDetails } from "#ui/components/architecture-model/ModelPreviewDetails.tsx";
@@ -123,6 +124,7 @@ function PreviewContent(
 	return (
 		<>
 			<ModelPreviewCoverage model={props.model} />
+			<ModelPreviewStateEvidence model={props.model} />
 			<ModelPreviewDetails model={props.model} />
 			<ModelReading
 				{...props}

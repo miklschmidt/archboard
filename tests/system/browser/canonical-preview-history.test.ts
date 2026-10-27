@@ -104,3 +104,78 @@ test("original state selection keeps its retained checkpoint and one-board histo
 		WAIT,
 	);
 }, 60_000);
+
+async function openEvidence(browser: AgentBrowserSession): Promise<void> {
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="preview-state-evidence"]') !== null`,
+			),
+		Boolean,
+		"the original state evidence",
+		WAIT,
+	);
+	if (
+		await browser.eval<boolean>(
+			`!document.querySelector('[data-slot="preview-state-evidence"]').open`,
+		)
+	)
+		await browser.run(["click", '[data-slot="preview-state-evidence"] summary']);
+}
+
+async function evidenceText(browser: AgentBrowserSession, slot: string): Promise<string> {
+	return browser.eval<string>(`document.querySelector('[data-slot="${slot}"]').textContent`);
+}
+
+test("original history exposes lifecycle reasons, exact draft baselines, and unresolved standing", async () => {
+	await using resources = new AsyncDisposableStack();
+	const fixture = await legacyHistory(join(browserTestRoots().ownerRoot, "preview-standing"));
+	const server = await startOwnedServer({
+		serverPath,
+		vault: fixture.vault,
+		env: serverTestEnvironment(),
+	});
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const browser = resources.use(await createAgentBrowser());
+	await browser.run([
+		"open",
+		`${server.base}/?modelA=Shop&previewA=Shop&checkpointA=${fixture.checkpoint}&stateA=Shop%2FSystem%23Old`,
+	]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	await openEvidence(browser);
+	expect(await evidenceText(browser, "preview-corrections")).toContain(
+		"The early API already served requests",
+	);
+	await chooseOriginal(browser, "Shop/System#Now");
+	await openEvidence(browser);
+	expect(await evidenceText(browser, "preview-adoptions")).toContain("The current API is built");
+	await chooseOriginal(browser, "Shop/System#Shelf");
+	await openEvidence(browser);
+	expect(await evidenceText(browser, "preview-shelvings")).toContain(
+		"Keep the smaller implementation",
+	);
+	await chooseOriginal(browser, "Shop/System#Draft");
+	await openEvidence(browser);
+	expect(await evidenceText(browser, "preview-predecessor")).toBe("Shop/System#Now");
+	expect(
+		await browser.eval<string>(
+			`document.querySelector('[data-slot="preview-baseline"]').getAttribute('data-baseline-kind')`,
+		),
+	).toBe("reconciliation-base");
+	expect(await evidenceText(browser, "preview-issues")).toContain("Routes proposed requests");
+	expect(await evidenceText(browser, "preview-issues")).toContain("Routes current requests");
+	await chooseOriginal(browser, "Shop/System#Child");
+	await openEvidence(browser);
+	expect(await evidenceText(browser, "preview-blocked")).toContain("Shop/System#Draft");
+	await chooseOriginal(browser, "Shop/Future#Draft");
+	await openEvidence(browser);
+	expect(
+		await browser.eval<string>(
+			`document.querySelector('[data-slot="preview-baseline"]').getAttribute('data-baseline-kind')`,
+		),
+	).toBe("empty");
+	expect(await browser.eval<string>(`new URLSearchParams(location.search).get('stateA')`)).toBe(
+		"Shop/Future#Draft",
+	);
+}, 60_000);

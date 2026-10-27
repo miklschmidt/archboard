@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T09:32:00Z'
+updated_date: '2026-10-27T09:42:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -81,4 +81,6 @@ Accepted backend evidence covers 22 migration cases with 124 assertions across r
 Signed preparation merge d2d0a549112bf2511e9c45661affa966cbda1fd6 includes integration5d2f45465332b84c59d19c3a7c21ee2b8abd8aae. The merger preserved every authored variant, parent, decision and view, kept incoming .14 currents, and retained all three .21 drafts. No frontend conflict occurred. Five focused public runtime owners pass18 tests99 assertions. Full types have only the documented nullable preview.planRevision browser assertion; the frontend compiler passes. Parent now owns the source and all UI work.
 
 The first parent browser slice passes one case with four assertions. The existing preview header now selects independent original states. It preserves the paired migration checkpoint through selection, reload and Back, and shows only the original one-board coverage. Historical selections no longer display the empty-current message. The existing router keeps its ordinary canonical selector behavior. Public fixture setup uses real files, Git, inventory, mapping and retention. Types and lint pass. Browser application@TASK-549.21 is drafted before these changes. Lifecycle/standing details and retained-original inspection remain pending.
+
+The second browser slice passes one case with ten assertions. A bounded original-state disclosure shows lifecycle reasons, correction source revisions, explicit predecessor and baseline choices, baseline fingerprints, distinct compact changes, competing original values, and blocked ancestry. Equal display names never combine independent drafts. Every distinct original record remains visible; exact duplicate evidence rows share one display key. Types and lint pass. The parent removed an empty summary element when original metadata supplies no summary. Retained-original inspection and degraded composition recovery remain pending.
 <!-- SECTION:NOTES:END -->
