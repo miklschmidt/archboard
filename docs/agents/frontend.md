@@ -155,6 +155,13 @@ not add imports or a second state path before that work.
   The current catalogue also supplies adopted and shelved logical states.
   Reading and comparison controls share those identities and keep exact checkpoints distinct.
   Selected state details expose recorded decisions, dates, ancestry, and document references.
+
+  The same bounded history disclosure exposes correction reasons, source commits, and exact prior and corrected reading links.
+  Its summary identifies corrections even while collapsed.
+  Comparison-base audit remains distinct from the selected audit, including when the selected model has no current state.
+  Archive-only completion events refresh mutable logical states without a file-digest equality guard.
+  Exact checkpoints preserve their original audit coverage and remain explicit during unavailable-history recovery.
+
   Lineage actions use the existing router and preserve explicit unavailable history.
   The state picker and selected reading expose that standing. The shared issue component shows both values and repair instructions.
   A blocked reading can open its live ancestor through the same router.

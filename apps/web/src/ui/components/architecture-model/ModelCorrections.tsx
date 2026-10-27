@@ -9,6 +9,7 @@ type ReadCheckpoint = ReturnType<typeof useModelLocation>["selectCheckpoint"];
 interface CorrectionsProps {
 	corrections: Corrections;
 	onRead: ReadCheckpoint;
+	comparison?: boolean;
 }
 
 /**
@@ -19,8 +20,13 @@ interface CorrectionsProps {
 function ModelCorrections(props: CorrectionsProps): JSX.Element | null {
 	if (props.corrections === undefined || props.corrections.length === 0) return null;
 	return (
-		<section data-slot="model-corrections" className="space-y-3">
-			<h4 className="font-semibold">Corrections</h4>
+		<section
+			data-slot={props.comparison ? "model-comparison-corrections" : "model-corrections"}
+			className="space-y-3"
+		>
+			<h4 className="font-semibold">
+				{props.comparison ? "Corrections to the comparison reading" : "Corrections"}
+			</h4>
 			<ol className="space-y-4">
 				{props.corrections.map((correction) => (
 					<CorrectionEntry

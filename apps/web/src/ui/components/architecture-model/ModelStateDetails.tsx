@@ -35,6 +35,12 @@ function ModelStateDetails({
 				className="border-border shrink-0 space-y-2 border-b px-6 py-3"
 			>
 				<p className="text-control font-semibold">No implemented state</p>
+				<ModelStateHistory
+					state={state}
+					comparison={model.comparison}
+					paneId={paneId}
+					states={states}
+				/>
 				{model.comparison && <ComparisonSummary comparison={model.comparison} />}
 			</section>
 		);
@@ -50,7 +56,12 @@ function ModelStateDetails({
 				{lifecycleName(state.lifecycle)} · {state.name}
 			</p>
 			{state.summary && <p className="text-body">{state.summary}</p>}
-			<ModelStateHistory state={state} paneId={paneId} states={states} />
+			<ModelStateHistory
+				state={state}
+				comparison={model.comparison}
+				paneId={paneId}
+				states={states}
+			/>
 			{model.comparison && <ComparisonSummary comparison={model.comparison} />}
 			<ModelReconciliation model={model} paneId={paneId} />
 		</section>

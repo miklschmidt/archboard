@@ -596,8 +596,11 @@ The public architecture operations own correction tests under `packages/board/te
 The existing news owner keeps its claims, current writes, and external-file observation cases.
 
 `tests/system/semantic-boards/model-corrections.test.ts` owns CLI and HTTP parity for correction, exact retry, comparison audit, and refusal status.
-The parent TASK-549.09 delivery owns browser acceptance through the existing canonical model seam.
-No browser acceptance or model evaluation is implied by backend evidence.
+`tests/system/browser/canonical-model-corrections.test.ts` owns visible correction history through the existing canonical model seam.
+It uses public HTTP fixture edits with real files and Git to prove archive-only live refresh, source evidence, exact original links, comparison audit, and missing-history recovery.
+The existing runtime family owner covers inherited draft facts and unchanged adopted successors.
+The existing browser reconciliation owner covers their shared visible standing contract.
+No model evaluation is implied by this evidence.
 
 `tests/system/browser/canonical-model-preview.test.ts` owns visible migration preview behavior.
 It uses real legacy files, saved mapping choices, temporary Git repositories, and the existing browser adapter.

@@ -173,3 +173,12 @@ Archive-only writes still use the durable journal, configured signer, exact retr
 The observer reads newly retained operations after the archive ref changes.
 Idle observations read the loose ref and packed-ref metadata without starting Git.
 Only records for the addressed vault produce completion events.
+
+The browser reads correction evidence through its existing state history disclosure.
+The selected and comparison audits remain distinct inside one bounded region.
+Each entry shows its reason, date, source commits, and links to exact prior and corrected readings.
+
+Logical readers refresh after archive-only completion events, even when the current file digest is unchanged.
+Exact original checkpoints keep their original facts and audit coverage.
+A missing archive leaves the exact requested address intact for explicit recovery.
+The browser submits no correction writes.

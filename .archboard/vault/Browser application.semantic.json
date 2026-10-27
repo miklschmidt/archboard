@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 205,
+	"version": 207,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-27T05:12:18.334Z",
+	"updatedAt": "2026-10-27T05:54:20.702Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -90703,7 +90703,7 @@
 		{
 			"id": "UNCNBRh9",
 			"name": "TASK-549.20",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "TCCgpLCm",
 			"documents": [
 				{
@@ -94497,7 +94497,7 @@
 		{
 			"id": "68vCSWPg",
 			"name": "TASK-549.09",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "UNCNBRh9",
 			"documents": [
 				{
@@ -95367,8 +95367,8 @@
 						"order": 65000,
 						"name": "State history",
 						"kind": "module",
-						"responsibility": "Shows the selected state decision, lineage, dates, and document evidence",
-						"description": "Reads the public selected-state metadata. Prior states and exact baselines use existing router actions. Missing retained architecture stays explicit, with ordinary publication recovery. It writes no architecture. The same bounded history disclosure identifies factual corrections, their reasons, immutable source commits, and prior and corrected exact readings. It also exposes correction evidence for the comparison base. Archive-only events refresh logical readings without replacing exact originals.",
+						"responsibility": "Shows lifecycle and correction evidence with exact reading links",
+						"description": "Reads the public selected-state metadata. Prior states and exact baselines use existing router actions. Missing retained architecture stays explicit, with ordinary publication recovery. It writes no architecture. The same bounded history disclosure identifies factual corrections, their reasons, immutable source commits, and prior and corrected exact readings. It also exposes correction evidence for the comparison base. Archive-only events refresh logical readings without replacing exact originals. The selected audit and comparison audit remain separate, including an empty selected model. Exact unavailable readings retain their requested checkpoint for recovery.",
 						"parent": "n2ONtqdt",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -98289,7 +98289,7 @@
 			}
 		}
 	],
-	"current": "UNCNBRh9",
+	"current": "68vCSWPg",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -98476,6 +98476,12 @@
 			"from": "TCCgpLCm",
 			"at": "2026-10-27T04:56:45.213Z",
 			"reason": "TASK-549.20 is implemented with coherent preview reads, exact source preservation, visible navigation, and passing affected evidence."
+		},
+		{
+			"variant": "68vCSWPg",
+			"from": "UNCNBRh9",
+			"at": "2026-10-27T05:54:20.702Z",
+			"reason": "Historical corrections and their visible audit are implemented and verified through the public runtime and browser seams."
 		}
 	],
 	"shelvings": [

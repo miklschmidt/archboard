@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { cpSync, mkdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type {
 	ArchitectureModelRead,
@@ -107,6 +107,22 @@ async function openHistory(browser: AgentBrowserSession): Promise<void> {
 		await browser.run(["click", '[data-slot="model-state-history"] summary']);
 }
 
+async function fitted(browser: AgentBrowserSession): Promise<void> {
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(`(() => {
+		const stage = document.querySelector('[data-slot="model-diagram"]');
+		const svg = stage?.querySelector('svg');
+		if (!stage || !svg || document.querySelector('[data-slot="model-comparison-loading"]')) return false;
+		const room = stage.getBoundingClientRect(); const picture = svg.getBoundingClientRect();
+		return picture.top >= room.top - 1 && picture.bottom <= room.bottom + 1;
+	})()`),
+		Boolean,
+		"the diagram to fit below correction history",
+		WAIT,
+	);
+}
+
 test("historical corrections refresh the lasting reading and expose exact originals and source evidence", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "corrected-history");
@@ -187,6 +203,8 @@ test("historical corrections refresh the lasting reading and expose exact origin
 			`document.querySelector('${row} [data-source-commit]').getAttribute('data-source-commit')`,
 		),
 	).toBe(sourceCommit);
+	await browser.run(["scrollintoview", row]);
+	await fitted(browser);
 	const previous = `${row} [data-correction-previous="${original.checkpoint.id}"]`;
 	await browser.run(["scrollintoview", previous]);
 	await browser.run(["click", previous]);
@@ -198,9 +216,63 @@ test("historical corrections refresh the lasting reading and expose exact origin
 	expect(
 		await browser.eval<number>(`document.querySelectorAll('[data-correction-checkpoint]').length`),
 	).toBe(0);
+	await browser.run(["click", '[data-slot="model-comparison-selector"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`(() => { const node = document.querySelector('[data-against-id="${corrected.checkpoint.id}"]'); if (!node) return false; const r = node.getBoundingClientRect(); return r.height > 0 && node.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })()`,
+			),
+		Boolean,
+		"the retained comparison choice",
+		WAIT,
+	);
+	await browser.run(["click", `[data-against-id="${corrected.checkpoint.id}"]`]);
+	await description(browser, "An incorrect recorded description.");
+	await openHistory(browser);
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-comparison-corrections"] [data-correction-checkpoint="${corrected.checkpoint.id}"]') !== null`,
+		),
+	).toBe(true);
+	await browser.run(["scrollintoview", '[data-slot="model-comparison-corrections"]']);
+	await fitted(browser);
+	await browser.run(["back"]);
+	await visible(
+		browser,
+		`[data-slot="model-checkpoint"][data-checkpoint-id="${original.checkpoint.id}"]`,
+	);
 	await browser.run(["back"]);
 	await visible(browser, `[data-correction-checkpoint="${corrected.checkpoint.id}"]`);
 	expect(
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('stateA')`),
 	).toBe(state);
+	await openHistory(browser);
+	const exact = `[data-slot="model-corrections"] [data-correction-reading="${corrected.checkpoint.id}"]`;
+	await browser.run(["scrollintoview", exact]);
+	await browser.run(["click", exact]);
+	await visible(
+		browser,
+		`[data-slot="architecture-model-stage"][data-reading="${corrected.checkpoint.id}"][data-state="ready"]`,
+	);
+	const gitDirectory = join(root, ".git");
+	const heldHistory = join(root, "held-history");
+	renameSync(gitDirectory, heldHistory);
+	resources.defer(() => {
+		if (existsSync(heldHistory)) renameSync(heldHistory, gitDirectory);
+	});
+	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await visible(browser, '[data-slot="model-error"]');
+	expect(
+		await browser.eval<boolean>(`document.querySelector('[data-slot="model-reading"]') === null`),
+	).toBe(true);
+	expect(
+		await browser.eval<string | null>(`new URLSearchParams(location.search).get('checkpointA')`),
+	).toBe(corrected.checkpoint.id);
+	renameSync(heldHistory, gitDirectory);
+	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await visible(
+		browser,
+		`[data-slot="architecture-model-stage"][data-reading="${corrected.checkpoint.id}"][data-state="ready"]`,
+	);
+	await description(browser, "Routes authenticated requests.");
 }, 30_000);

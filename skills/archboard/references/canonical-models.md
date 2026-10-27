@@ -1020,6 +1020,13 @@ An exact original checkpoint still returns its original facts.
 Comparison results include both audit trails under `comparison.corrections` beside the existing semantic differences.
 Divergent corrections require an exact checkpoint instead of selecting by archive order.
 
+In the browser, open the lasting state identity to read its latest corrected facts.
+Open Decision and history to inspect correction reasons, dates, and source commits.
+The Previous and Corrected actions open exact architecture checkpoints.
+Comparisons show the selected audit and the comparison reading's audit in the same bounded history region.
+The open logical reading refreshes after a correction even when no current file changes.
+If retained history becomes unavailable, the browser preserves the requested checkpoint and offers Refresh after recovery.
+
 Following local drafts reconcile through the existing family operation.
 Competing changes retain explicit standing and block descendants until settlement.
 Adopted successors and unrelated current architecture keep their content.
