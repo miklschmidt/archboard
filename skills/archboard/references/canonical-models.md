@@ -265,7 +265,8 @@ This delivery supports module structure and relationship edits, retained checkpo
 Use existing board commands for legacy vaults.
 For legacy inventory and identity choices, use [legacy migration](legacy-migration.md).
 Compact proposals use the workflow below.
-Reconciliation, adoption, shelving, and cutover remain later TASK-549 slices.
+Reconciliation, adoption, and shelving use the shared model writer described below.
+Explicit migration and historical correction remain later TASK-549 slices.
 
 ## Edit one module description
 
@@ -628,7 +629,7 @@ archboard model compare --state '<proposal-name>' --against '<other-state-or-che
 
 State selectors resolve a stable identity before a unique current or former name.
 `current` explicitly requests the current designation.
-A planning model has no current designation until later explicit adoption.
+A planning model has no current designation until explicit adoption.
 Missing or ambiguous state selectors refuse rather than choose another reading.
 Exact checkpoint selectors use their complete immutable identities.
 
@@ -709,7 +710,7 @@ Preserve the baseline and proposal changes.
 Ordinary reads and edits refuse until an explicit reconciliation follows that external edit.
 An exact retained proposal checkpoint remains readable against its own inputs.
 Neither a code merge nor an approval adopts a draft.
-Adoption and shelving remain separate lifecycle actions.
+Adoption and shelving use the explicit lifecycle intents below.
 
 An explicit comparison against an empty planning baseline returns `comparison.against:null` and the baseline's exact `comparison.checkpoint`.
 Its subject changes still identify the planning additions.
@@ -891,3 +892,77 @@ The selected proposal also exposes its standing through `selectedState`.
 Retry an identical request with the same operation ID after a lost response.
 If installation stops, use `model recover` in the original checkout.
 Recovery completes the same family and returns its retained receipt.
+
+## Complete a proposal
+
+Adoption states that a settled proposal is implemented.
+Shelving states that an agent stopped pursuing a proposal.
+Neither a source commit, a merge, nor an approval performs either action.
+Readers never author these actions through the browser.
+
+Read the target draft and keep its complete revision object.
+Claim its state ID, model identity, and affected existing subjects.
+For adoption, include changed subjects from both current architecture and the complete draft.
+Include affected descendant states and subjects in the same claim.
+Use the existing `model edit` command with the common request fields and the doing line.
+
+```json
+{ "proposal": { "type": "adopt", "reason": "The queue is implemented." }, "changes": [] }
+```
+
+```json
+{ "proposal": { "type": "shelve", "reason": "The team chose direct dispatch." }, "changes": [] }
+```
+
+Lifecycle intents accept no accompanying content edits.
+Adoption requires a coherent draft with settled ancestry.
+An agent can shelve an unresolved or blocked draft without settling its ancestor.
+`PROPOSAL_BLOCKED` requires settlement before adoption.
+`PROPOSAL_SUPERSEDED` means that the proposal follows a former current state.
+Normal adoption refuses that replacement.
+
+If complete replacement is intended, read an explicit comparison against current.
+
+```bash
+archboard model compare --state '<draft-id>' --against current -C <directory>
+```
+
+Copy the complete returned `comparison` into `proposal.comparison`.
+Set `proposal.force` to true.
+Use that reading's complete revision in the common request.
+`COMPARISON_REQUIRED` means that the comparison is absent, incomplete, or stale.
+Archboard installs the complete resolved proposal, including removals.
+It never applies the proposal patch to another baseline.
+
+Adoption preserves the proposal ID, name, former names, documents, and predecessor.
+It records the prior current state, reason, and adoption time.
+A planning model receives its first current designation without inventing a previous state.
+Shelving preserves the final compact patch, immutable baseline, ancestry, documents, reason, and shelving time.
+Completed states refuse ordinary content edits.
+The existing transaction removes the active proposal file only after signed preparation.
+Recovery and exact retries retain one lifecycle event.
+
+An asynchronous current read without state or comparison selectors exposes `states` beside the active `proposals` catalogue.
+The CLI `model proposals` command requests this catalogue.
+`states` derives current, draft, historical, and shelved metadata from authored designations and retained lifecycle records.
+Completed entries include an exact `checkpoint`.
+Use a stable state ID or unique current or former name to reopen completed architecture.
+Use an exact checkpoint when retained logical identities are ambiguous.
+Exact checkpoints preserve their original reading after later adoption or shelving.
+Non-current readings keep the existing comparison defaults.
+
+The browser reading selector lists current, draft, historical, and shelved states.
+The comparison selector includes the same logical states and exact checkpoints.
+Current follows the explicit designation; a named historical state keeps its identity.
+Open Decision and history to inspect dates, predecessor, prior implementation, baseline, and document evidence.
+Use its state or baseline controls to open the referenced reading.
+If retained history is unavailable, restore it through [Publish and fetch history](#publish-and-fetch-history).
+Then use Refresh to reopen the selected reading.
+
+The receipt's `selectedState` identifies the completed lifecycle.
+Its checkpoint retains `lifecycle`, including the final proposal and the exact previous current reading.
+New drafts record `createdAt`.
+Completed metadata records `adoptedAt` or `shelvedAt`, plus `reason` and `previousCurrent`.
+Current files hold only their current designation and its own lineage.
+Completed history stays in the independent archive with actual Git ancestry for every required baseline.
+Archive append order never selects current architecture.

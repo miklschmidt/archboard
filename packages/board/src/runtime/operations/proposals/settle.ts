@@ -20,9 +20,8 @@ import {
 	decodedDraft,
 	proposalInputs,
 } from "#runtime/operations/proposals/candidate.ts";
-import { applyStructure } from "#runtime/operations/model-edit/structure.ts";
 import { claimableSubjects, requireSubjectClaim } from "#runtime/operations/model-edit/claims.ts";
-import { changedFiles } from "#runtime/operations/model-edit/candidate.ts";
+import { changedFiles, applyCandidateStructure } from "#runtime/operations/model-edit/candidate.ts";
 import { includeClosure, affectedSubjects } from "#runtime/operations/proposals/family.ts";
 import type { z } from "zod";
 type Issue = z.infer<typeof ModelIssueSchema>;
@@ -359,7 +358,7 @@ async function settleCandidate(
 ) {
 	const { existing, issues, proposal } = settlementProposal(current);
 	const predecessor = await settlementPredecessor(vault, proposal);
-	const structure = applyStructure(current, request, captured.inputs.keys());
+	const structure = await applyCandidateStructure(vault, current, request, captured.inputs.keys());
 	const edited = requireModel(decodedDraft(current, structure, proposal));
 	const subjects = subjectsOf(edited);
 	applyResolutions(subjects, predecessor, issues, request.proposal.resolutions);

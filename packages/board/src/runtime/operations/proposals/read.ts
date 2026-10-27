@@ -20,6 +20,7 @@ import {
 } from "#runtime/operations/proposals/subjects.ts";
 import { materializedDefinitions } from "#runtime/operations/proposals/materialize.ts";
 import { comparisonOf } from "#runtime/operations/proposals/compare.ts";
+import { retainedStates, stateCatalogue } from "#runtime/operations/history/states.ts";
 
 type Proposal = z.infer<typeof import("#shared/schemas/model-proposals.ts").ProposalSchema> & {
 	file?: string;
@@ -243,22 +244,20 @@ async function materializeProposal(
 }
 /**
  * Resolve stable identity before unique current or former state names.
- * @param catalogue The addressed coherent inputs.
+ * @param states The authored and retained state catalogue.
  * @param selector The explicit state selector.
  * @returns Stable state metadata.
  */
-function selectedMetadata(catalogue: ArchitectureModel, selector: string) {
-	const current = catalogue.manifest.current;
-	const states = [...catalogue.proposals, ...(current === null ? [] : [current])];
-	const exact = states.find((state) => state.id === selector);
+function selectedMetadata(states: NonNullable<ArchitectureModel["states"]>, selector: string) {
+	const exact = states.filter((state) => state.id === selector);
 	const matches =
-		exact === undefined
+		exact.length === 0
 			? states.filter((state) => state.name === selector || state.formerNames?.includes(selector))
-			: [exact];
+			: exact;
 	if (matches.length !== 1)
 		throw new ArchiveError(
 			matches.length === 0 ? "STATE_NOT_FOUND" : "STATE_AMBIGUOUS",
-			"Use one stable state identity from the model catalogue.",
+			"Use one unambiguous stable state identity or exact checkpoint from the model catalogue.",
 			"model.json",
 			matches.map((state) => state.id),
 		);
@@ -271,6 +270,38 @@ function selectedMetadata(catalogue: ArchitectureModel, selector: string) {
  */
 function isCheckpoint(selector: string | undefined): boolean {
 	return /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u.test(selector ?? "");
+}
+/**
+ * Use a supplied catalogue or derive completed metadata only when required.
+ * @param context The archive owner.
+ * @param catalogue The current coherent model.
+ * @param selector The requested identity or name.
+ * @returns Its unambiguous metadata.
+ */
+async function stateMetadata(
+	context: ArchiveContext,
+	catalogue: ArchitectureModel,
+	selector: string,
+) {
+	const live = stateCatalogue(catalogue, []);
+	if (live.some((state) => state.id === selector)) return selectedMetadata(live, selector);
+	const states =
+		catalogue.states ??
+		stateCatalogue(catalogue, await retainedStates(context, catalogue.manifest.id));
+	return selectedMetadata(states, selector);
+}
+/**
+ * Require an explicit current designation without substituting a planning draft.
+ * @param catalogue The addressed coherent inputs.
+ * @returns Their current reading.
+ */
+function currentDesignation(catalogue: ArchitectureModel) {
+	if (catalogue.manifest.current === null)
+		throw new ArchiveError(
+			"STATE_NOT_FOUND",
+			"This planning model has no current state. Select a named draft.",
+		);
+	return catalogue;
 }
 /**
  * Resolve one coherent state without substituting another reading.
@@ -287,16 +318,10 @@ async function resolveState(
 	visited = new Set<string>(),
 ): Promise<ArchitectureModelRead> {
 	if (isCheckpoint(selector)) return exactReading(context, selector);
-	if (selector === "current") {
-		if (catalogue.manifest.current === null)
-			throw new ArchiveError(
-				"STATE_NOT_FOUND",
-				"This planning model has no current state. Select a named draft.",
-			);
-		return catalogue;
-	}
-	const metadata = selectedMetadata(catalogue, selector);
+	if (selector === "current") return currentDesignation(catalogue);
+	const metadata = await stateMetadata(context, catalogue, selector);
 	const proposal = catalogue.proposals.find((entry) => entry.id === metadata.id);
+	if (metadata.checkpoint !== undefined) return exactReading(context, metadata.checkpoint);
 	return proposal === undefined
 		? catalogue
 		: materializeProposal(context, catalogue, proposal, visited);
@@ -315,7 +340,10 @@ async function requestedState(
 ) {
 	if (selector === undefined) return current;
 	if (isCheckpoint(selector)) return exactReading(context, selector);
-	if (!current.success) return current;
+	if (!current.success) {
+		const retained = selectedMetadata(await retainedStates(context), selector);
+		return exactReading(context, retained.checkpoint!);
+	}
 	return resolveState(context, current, selector);
 }
 /**
@@ -382,6 +410,33 @@ async function compareSelected(
 	return selected;
 }
 /**
+ * Keep an uninitialized private archive separate from readable current inputs.
+ * @param vault The addressed vault.
+ * @returns Its archive context, or absence before explicit initialization.
+ */
+async function readingArchive(vault: string) {
+	try {
+		return await archiveContext(vault);
+	} catch (error) {
+		if (error instanceof ArchiveError && error.code === "ARCHIVE_NOT_INITIALIZED") return undefined;
+		throw error;
+	}
+}
+
+/**
+ * Derive retained metadata only for the default current catalogue reading.
+ * @param vault The addressed vault.
+ * @param current The current complete reading or refusal.
+ * @returns The current architecture and complete state catalogue.
+ */
+async function readingCatalogue(vault: string, current: ArchitectureModelRead) {
+	if (!current.success) return current;
+	const context = await readingArchive(vault);
+	const retained = context === undefined ? [] : await retainedStates(context, current.manifest.id);
+	return { ...current, states: stateCatalogue(current, retained) };
+}
+
+/**
  * Read selected architecture without acquiring the installation lease.
  * @param vault The addressed vault.
  * @param selection The state and comparison intent.
@@ -392,7 +447,8 @@ async function selectedReading(
 	selection: Selection,
 ): Promise<ArchitectureModelRead> {
 	const current = readCurrentModel(vault);
-	if (selection.state === undefined && selection.against === undefined) return current;
+	if (selection.state === undefined && selection.against === undefined)
+		return readingCatalogue(vault, current);
 	const context = await archiveContext(vault);
 	const selected = await requestedState(context, current, selection.state);
 	if (!selected.success) return selected;

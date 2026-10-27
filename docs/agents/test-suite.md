@@ -565,3 +565,21 @@ Its real files and disposable Git repositories cover semantic preservation, expl
 The original inventory owner retains its coverage of source capture and plan persistence.
 `tests/system/semantic-boards/migration-planning.test.ts` owns CLI and HTTP agreement, explicit preview selection, and structured stale refusal.
 The parent owns visible preview behavior through the existing browser interface.
+
+## Completed canonical proposals
+
+The public proposal owners cover adoption and shelving with real files and Git.
+`lifecycle.test.ts` owns complete installation, lasting metadata, logical reopening, exact readings, and retries.
+`adoption-safety.test.ts` owns superseded refusal, explicit comparison, complete forced replacement, and renamed current inputs.
+`lifecycle-family.test.ts` owns dependent ancestry, unsettled refusal, and following drafts after completion.
+`lifecycle-recovery.test.ts` reuses the existing crash process after durable proposal removal and partial installation.
+Readers remain blocked until recovery completes one lifecycle event.
+
+`lifecycle-retention.test.ts` owns configured signing refusal and successful signatures without changing source HEAD or index.
+It publishes to a disposable local remote and reopens exact completed architecture after collection.
+`lifecycle-churn.test.ts` compares the same later draft edit after zero and two completed proposals.
+It measures changed authored bytes and lines separately from archive object growth.
+The existing canonical reference owner keeps foreign pins through adoption.
+The existing CLI and HTTP proposal owner covers completed state selection, structured refusal, and exact retry.
+`tests/system/browser/canonical-model-lifecycle.test.ts` owns completed state discovery, decisions, lineage, comparisons, exact readings, and missing-history recovery.
+It uses real temporary Git repositories and the public HTTP writer for agent decisions.

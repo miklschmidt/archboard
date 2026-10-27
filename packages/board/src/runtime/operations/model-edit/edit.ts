@@ -1,6 +1,6 @@
 import { operationSubjects } from "#shared/rules/model-operation.ts";
 import type { z } from "zod";
-import { isDeepStrictEqual } from "node:util";
+import { sameSemanticValue } from "#shared/rules/semantic-value.ts";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import {
 	ArchitectureModuleEditSchema,
@@ -35,7 +35,7 @@ function requireSameRequest(
 	original: ArchitectureModuleEdit | undefined,
 	request: ArchitectureModuleEdit,
 ): void {
-	if (!isDeepStrictEqual(original, request))
+	if (!sameSemanticValue(original, request))
 		throw new ArchiveError(
 			"OPERATION_REUSED",
 			"This operation identity already names another request. Retry the original request or use a new identity.",

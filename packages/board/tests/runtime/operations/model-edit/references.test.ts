@@ -1,67 +1,23 @@
 import { afterEach, expect, test } from "bun:test";
 import { join } from "node:path";
 import { readFileSync, writeFileSync, symlinkSync } from "node:fs";
-import { declareDirectory } from "@archboard/workspace/checkouts";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/board/store-read";
-import { editArchitectureModule, releaseArchitectureClaim } from "@archboard/board/store-write";
+import { editArchitectureModule } from "@archboard/board/store-write";
+import { git, retain } from "#tests/runtime/support/publication-fixture.ts";
 import {
-	publicationFixture,
-	cleanPublicationFixtures,
-	git,
-	retain,
-} from "#tests/runtime/support/publication-fixture.ts";
+	isolatedFixture,
+	referencedFixture,
+	disposeReferences,
+} from "#tests/runtime/operations/model-edit/reference-fixture.ts";
 import { structureIntent } from "#tests/runtime/operations/model-edit/fixture.ts";
 import {
 	request as familyRequest,
 	proposal as createProposal,
 } from "#tests/runtime/operations/proposals/fixture.ts";
 
-const originalState = process.env["XDG_STATE_HOME"];
-const originalRegistry = process.env["ARCHBOARD_REPOS"];
-afterEach(() => {
-	if (originalState === undefined) delete process.env["XDG_STATE_HOME"];
-	else process.env["XDG_STATE_HOME"] = originalState;
-	if (originalRegistry === undefined) delete process.env["ARCHBOARD_REPOS"];
-	else process.env["ARCHBOARD_REPOS"] = originalRegistry;
-	cleanPublicationFixtures();
-});
+afterEach(disposeReferences);
 
-function isolatedFixture() {
-	const fixture = publicationFixture();
-	process.env["XDG_STATE_HOME"] = join(fixture.home, "state");
-	process.env["ARCHBOARD_REPOS"] = join(fixture.home, "state", "repos.json");
-	return fixture;
-}
-
-async function referencedFixture() {
-	const local = isolatedFixture();
-	const foreign = publicationFixture();
-	git(foreign.root, "remote", "set-url", "origin", "https://github.com/acme/ledger.git");
-	const model = readArchitectureModel(foreign.vault);
-	if (!model.success) throw new Error(JSON.stringify(model));
-	for (const file of ["model.json", ...model.modules.map((module) => module.file)]) {
-		const path = join(foreign.vault, file);
-		writeFileSync(path, readFileSync(path, "utf8").replaceAll("Shop", "Ledger"));
-	}
-	await declareDirectory(foreign.root, { choose: true });
-	const checkpoint = await retain(foreign.vault);
-	const reference = {
-		repo: "github.com/acme/ledger",
-		model: "Ledger",
-		subject: "Ledger#Gateway",
-		state: "current",
-	};
-	const request = await structureIntent(local.vault, ["Shop#Gateway"]);
-	const edited = await editArchitectureModule(local.vault, {
-		...request,
-		changes: [{ type: "edit-module", subject: "Shop#Gateway", set: { references: [reference] } }],
-	});
-	if (!edited.success) throw new Error(JSON.stringify(edited));
-	await releaseArchitectureClaim(local.vault, { claim: request.claim, writer: request.writer });
-	return { local, foreign, reference, checkpoint, edited };
-}
-
-test("draft navigation composes state selection with code, comparisons, and exact foreign pins", async () => {
+test("draft navigation and adoption preserve code, comparisons, and exact foreign pins", async () => {
 	const { local, foreign, checkpoint, reference } = await referencedFixture();
 	const created = await editArchitectureModule(local.vault, {
 		...(await structureIntent(local.vault, ["Shop", "Shop#Gateway"])),
@@ -97,6 +53,19 @@ test("draft navigation composes state selection with code, comparisons, and exac
 			reference: 0,
 		}),
 	).toMatchObject({ success: true, manifest: { id: "Ledger" }, selectedModule: "Ledger#Gateway" });
+	const before = readArchitectureModel(local.vault);
+	if (!before.success) throw new Error(JSON.stringify(before));
+	expect(before.modules.find((module) => module.id === "Shop#Gateway")?.name).toBe("Gateway");
+	const adopted = await editArchitectureModule(local.vault, {
+		...(await familyRequest(local.vault, created.target.state)),
+		proposal: { type: "adopt", reason: "The linked gateway is implemented." },
+		changes: [],
+	});
+	expect(adopted).toMatchObject({
+		success: true,
+		checkpoint: { references: created.checkpoint.references },
+	});
+	if (!adopted.success) throw new Error(JSON.stringify(adopted));
 	writeFileSync(join(foreign.vault, "gateway.module.json"), "{");
 	expect(
 		await readArchitectureModel(local.vault, "Shop#Gateway", undefined, {
@@ -108,9 +77,21 @@ test("draft navigation composes state selection with code, comparisons, and exac
 		checkpoint: { id: checkpoint.id },
 		selectedModule: "Ledger#Gateway",
 	});
+	expect(
+		await readArchitectureModel(local.vault, "Shop#Gateway", undefined, {
+			checkpoint: adopted.checkpoint.id,
+			reference: 0,
+		}),
+	).toMatchObject({
+		success: true,
+		checkpoint: { id: checkpoint.id },
+		selectedModule: "Ledger#Gateway",
+	});
 	const current = readArchitectureModel(local.vault);
 	if (!current.success) throw new Error(JSON.stringify(current));
-	expect(current.modules.find((module) => module.id === "Shop#Gateway")?.name).toBe("Gateway");
+	expect(current.modules.find((module) => module.id === "Shop#Gateway")?.name).toBe(
+		"Draft gateway",
+	);
 }, 20_000);
 
 test("a foreign draft reference follows its explicit state and retains that draft for history", async () => {

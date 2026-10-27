@@ -1,4 +1,8 @@
-import { FamilyStandingSchema, SelectedStateSchema } from "#shared/schemas/model-proposals.ts";
+import {
+	ComparisonSchema,
+	FamilyStandingSchema,
+	SelectedStateSchema,
+} from "#shared/schemas/model-proposals.ts";
 import { DiagramGrammarSchema } from "#shared/schemas/vocabulary.ts";
 import { StandaloneThemeSchema, DiagramAtlasSchema } from "#shared/protocol/render-reply.ts";
 import { FlowChangeSchema } from "#shared/schemas/model-flows.ts";
@@ -132,6 +136,13 @@ const StructureChangeSchema = z.discriminatedUnion("type", [
 		.strict(),
 ]);
 const ProposalIntentSchema = z.discriminatedUnion("type", [
+	z.strictObject({
+		type: z.literal("adopt"),
+		reason: z.string().trim().min(1),
+		force: z.boolean().optional(),
+		comparison: ComparisonSchema.optional(),
+	}),
+	z.strictObject({ type: z.literal("shelve"), reason: z.string().trim().min(1) }),
 	z.strictObject({ type: z.literal("reconcile") }),
 	z.strictObject({
 		type: z.literal("settle"),
@@ -179,7 +190,7 @@ const ArchitectureEditSuccessSchema = z
 		before: ModelRevisionSchema,
 		after: ModelRevisionSchema,
 		checkpoint: ArchitectureCheckpointSchema,
-		selectedState: SelectedStateSchema.extend({ lifecycle: z.literal("draft") }).optional(),
+		selectedState: SelectedStateSchema.optional(),
 		cleanup: z.enum(["complete", "pending"]),
 	})
 	.strict();

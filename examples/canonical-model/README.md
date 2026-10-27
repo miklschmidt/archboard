@@ -3,6 +3,15 @@
 Copy this directory to a temporary directory before using it.
 Commands inside this repository discover its authoritative legacy vault.
 
+For proposal completion, use the existing `model edit` request with an active draft target and its complete revision.
+An adoption adds `proposal:{type:"adopt",reason:"The change is implemented."}` and `changes:[]`.
+A shelving adds `proposal:{type:"shelve",reason:"The team chose another design."}` and `changes:[]`.
+Both actions require the existing claim, writer, operation identity, and doing line.
+Read the returned state ID to reopen its retained architecture.
+Use `model compare --state <draft-id> --against current` before any forced adoption.
+Copy its complete comparison into `proposal.comparison` and set `proposal.force` to true.
+The consumer guide explains the complete [lifecycle contract](../../skills/archboard/references/canonical-models.md#complete-a-proposal).
+
 ```bash
 fixture_dir=$(mktemp -d)
 cp -R examples/canonical-model/.archboard "$fixture_dir/.archboard"

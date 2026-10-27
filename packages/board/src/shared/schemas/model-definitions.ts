@@ -65,12 +65,22 @@ const MigrationPreviewSchema = z.strictObject({
 	),
 });
 
+const StateLineageSchema = StateMetadataSchema.extend({
+	predecessor: SemanticIdSchema.nullable().optional(),
+	baseline: GitObjectIdSchema.optional(),
+	createdAt: z.iso.datetime().optional(),
+	adoptedAt: z.iso.datetime().optional(),
+	shelvedAt: z.iso.datetime().optional(),
+	reason: z.string().min(1).optional(),
+	previousCurrent: SemanticIdSchema.nullable().optional(),
+}).strict();
+
 const ArchitectureManifestSchema = z
 	.object({
 		schemaVersion: z.literal(1),
 		id: SemanticIdSchema,
 		name: DisplayNameSchema,
-		current: StateMetadataSchema.nullable(),
+		current: StateLineageSchema.nullable(),
 		retiredIds: z.array(QualifiedSubjectIdSchema).optional(),
 	})
 	.strict();
@@ -99,6 +109,7 @@ export {
 	ModelRevisionSchema,
 	StateMetadataSchema,
 	MigrationPreviewSchema,
+	StateLineageSchema,
 	ArchitectureManifestSchema,
 	ArchitectureModuleSchema,
 };

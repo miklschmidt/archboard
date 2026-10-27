@@ -1182,6 +1182,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/board/tests/runtime/operations/proposals/reconcile*.test.ts; existing semantic rules packages/board/tests/shared/rules/reconcile/; adapter parity tests/system/semantic-boards/model-proposals.test.ts; visible acceptance tests/system/browser/canonical-model-reconciliation.test.ts; guidance skills/archboard/references/canonical-models.md"
+				},
+				{
+					"path": "canonical proposal completion: explicit adoption, shelving, superseded refusal, fresh forced comparison, retained logical states, exact retry, recovery and bounded current-file churn",
+					"expectedUse": "Complete a coherent settled proposal through the existing claimed writer. Preserve the final patch, baseline, ancestry, prior current, documents, reasons and timestamps in retained history. Keep current files free of completed history.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/proposals/lifecycle*.test.ts and adoption-safety.test.ts; foreign pins packages/board/tests/runtime/operations/model-edit/references.test.ts; CLI and HTTP tests/system/semantic-boards/model-proposals.test.ts; visible lifecycle tests/system/browser/canonical-model-lifecycle.test.ts; guidance skills/archboard/references/canonical-models.md#complete-a-proposal"
 				}
 			]
 		},

@@ -14,6 +14,10 @@ const recovery: Partial<Record<Failure["code"], string>> = {
 	PREDECESSOR_CHANGED:
 		"Read current inputs, claim the following family, and submit an explicit reconcile intent against its predecessor.",
 	PROPOSAL_BLOCKED: "Settle the named ancestor before editing or settling this descendant.",
+	PROPOSAL_SUPERSEDED:
+		"Read the proposal with an explicit comparison against current. Submit that comparison with force only when complete replacement is intended.",
+	COMPARISON_REQUIRED:
+		"Read the proposal with against current. Copy its complete comparison into a new forced adoption intent with the same complete revision.",
 	MODEL_INVALID: "Repair the requested changes and read the model again before a new intent.",
 	MODULE_NOT_FOUND:
 		"Read the model and use an existing qualified module ID or a unique current or former name.",
@@ -146,10 +150,10 @@ function checkpointMetadata(
  */
 function selectedEdit(record: ReturnType<typeof CheckpointRecordSchema.parse>) {
 	const selection = record.selection;
-	if (selection?.lifecycle !== "draft") return {};
+	if (selection == null) return {};
 	return {
 		target: { model: record.model, state: selection.id },
-		selectedState: { ...selection, lifecycle: "draft" as const },
+		selectedState: selection,
 	};
 }
 /**

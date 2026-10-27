@@ -18,6 +18,7 @@ import {
 	ProposalSchema,
 	SelectedStateSchema,
 	ComparisonSchema,
+	LifecycleSchema,
 } from "#shared/schemas/model-proposals.ts";
 import { QualifiedSubjectIdSchema } from "#shared/schemas/primitives.ts";
 import { FlowCollectionSchema } from "#shared/schemas/model-flows.ts";
@@ -90,6 +91,7 @@ const ArchitectureCheckpointSchema = z
 		model: SemanticIdSchema,
 		state: StateMetadataSchema,
 		selection: SelectedStateSchema.nullable().optional(),
+		lifecycle: LifecycleSchema.optional(),
 		revision: ModelRevisionSchema,
 		createdAt: z.iso.datetime(),
 		request: ArchitectureCheckpointRequestSchema,
@@ -130,6 +132,9 @@ const ArchitectureModelSchema = z
 		roots: z.array(QualifiedSubjectIdSchema),
 		selectedState: SelectedStateSchema.nullable(),
 		proposals: z.array(ProposalSchema.extend({ file: z.string() })),
+		states: z
+			.array(SelectedStateSchema.extend({ checkpoint: GitObjectIdSchema.optional() }))
+			.optional(),
 		comparison: ComparisonSchema.optional(),
 		explanation: z
 			.strictObject({
@@ -202,6 +207,8 @@ const ArchitectureModelFailureSchema = z
 			"MAPPING_INVALID",
 			"MAPPING_STALE",
 			"MAPPING_UNRESOLVED",
+			"PROPOSAL_SUPERSEDED",
+			"COMPARISON_REQUIRED",
 			"MODEL_INVALID",
 			"MODEL_NOT_FOUND",
 			"MODEL_UNREADABLE",
