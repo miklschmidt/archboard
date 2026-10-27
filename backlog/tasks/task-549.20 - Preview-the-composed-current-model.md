@@ -1,9 +1,11 @@
 ---
 id: TASK-549.20
 title: Preview the composed current model
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex'
 created_date: '2026-10-26T05:26:00Z'
+updated_date: '2026-10-27T02:36:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -56,3 +58,13 @@ TASK-549.05, TASK-549.15, TASK-549.19
 - [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
 - [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Publish the shared preview contract and parent fixture recipe.
+2. Keep Board persistence@TASK-549.20, Command interface@TASK-549.20, and Archboard server routes@TASK-549.20 as draft architecture proposals.
+3. Use public architecture reads and writes with real files and Git in small red-green loops. Compose explicit identity and conflict choices through existing canonical validation.
+4. Expose the candidate through model read --preview and the existing model HTTP route. Update consumer guidance.
+5. Run affected checks, simplify, merge the latest integration, release claims, stop the server, and publish the backend handoff. Parent owns browser acceptance and closure.
+<!-- SECTION:PLAN:END -->
