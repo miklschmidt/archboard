@@ -152,11 +152,19 @@ test("sibling proposals mint separate additions and explicit comparison keeps bo
 
 test("retained comparisons identify the live base revision independently of the retained draft", async () => {
 	const { vault } = behaviorFixture();
-	const intent = await structureIntent(vault, ["Shop", "Shop#Gateway"]);
+	const intent = await structureIntent(vault, [
+		"Shop",
+		"Shop#Gateway",
+		"Shop#Dispatch",
+		"Shop#Worker",
+	]);
 	const created = await editArchitectureModule(vault, {
 		...intent,
 		proposal: { type: "create", name: "Queued delivery" },
-		changes: [{ type: "edit-module", subject: "Shop#Gateway", set: { name: "Queued API" } }],
+		changes: [
+			{ type: "edit-module", subject: "Shop#Gateway", set: { name: "Queued API" } },
+			{ type: "remove-relationship", subject: "Shop#Dispatch" },
+		],
 	});
 	if (!created.success) throw new Error(JSON.stringify(created));
 	const current = readArchitectureModel(vault);
@@ -179,4 +187,46 @@ test("retained comparisons identify the live base revision independently of the 
 	expect(retained.comparison?.revision).toEqual(advanced.after);
 	expect(retained.revision).toEqual(created.checkpoint.revision);
 	expect(retained.comparison?.revision.digest).not.toBe(retained.revision.digest);
+	const explain = {
+		actionId: "proposal-explanation",
+		action: "explain-proposal" as const,
+		model: current.manifest.id,
+		expectedRevision: created.checkpoint.revision.digest,
+		subjects: ["Shop#Gateway"],
+		reading: {
+			focus: [],
+			relationshipKinds: ["call"],
+			groups: true,
+			grammar: "sequence" as const,
+			flow: "Shop#Checkout",
+		},
+	};
+	expect(
+		await readArchitectureModel(vault, undefined, undefined, {
+			checkpoint: created.checkpoint.id,
+			explain,
+		}),
+	).toMatchObject({
+		success: true,
+		selectedFlow: "Shop#Checkout",
+		explanation: {
+			state: { id: created.target.state, lifecycle: "draft" },
+			checkpoint: created.checkpoint.id,
+			revision: created.checkpoint.revision,
+			comparison: { against: { id: "Current" }, revision: advanced.after },
+		},
+	});
+	expect(
+		await readArchitectureModel(vault, undefined, undefined, {
+			checkpoint: created.checkpoint.id,
+			explain: { ...explain, action: "explain-relationship", subjects: ["Shop#Dispatch"] },
+		}),
+	).toMatchObject({ success: true, explanation: { request: { subjects: ["Shop#Dispatch"] } } });
+	expect(
+		await readArchitectureModel(vault, undefined, undefined, {
+			checkpoint: created.checkpoint.id,
+			state: "current",
+			explain,
+		}),
+	).toMatchObject({ success: false, code: "MODEL_INVALID" });
 }, 20_000);

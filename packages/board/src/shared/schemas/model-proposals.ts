@@ -1,11 +1,14 @@
+import {
+	ExplanationRequestSchema,
+	ReadingSelectionSchema,
+} from "#shared/schemas/model-explanation.ts";
+
 import { ReconciliationIssueSchema } from "#shared/schemas/reconciliation.ts";
 import { z } from "zod";
 import { StateMetadataSchema, ModelRevisionSchema } from "#shared/schemas/model-definitions.ts";
 import { QualifiedSubjectIdSchema, SemanticIdSchema } from "#shared/schemas/primitives.ts";
-const StateSelectionSchema = z.strictObject({
-	state: z.string().min(1).optional(),
-	against: z.string().min(1).optional(),
-	compare: z.boolean().optional(),
+const StateSelectionSchema = ReadingSelectionSchema.extend({
+	explain: ExplanationRequestSchema.optional(),
 });
 const CheckpointIdSchema = z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u);
 const SubjectKindSchema = z.enum(["module", "relationship", "collection", "flow", "step"]);

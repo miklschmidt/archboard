@@ -699,6 +699,15 @@ The Codex SDK supplies none of those application values by default.
 Pane registration, board request context, semantic projections, and narration remain integration concerns.
 `apps/server` owns HTTP routes, sockets, and application lifetime.
 
+Canonical explanation actions use the existing `./server` operation and shared `./browser-contract` schemas.
+`server/services/explanations/` owns temporary requests, exact retries, queue cancellation, and correlated text results.
+The board runtime owns coherent capture through `readArchitectureModel` and its selected-reading argument.
+Adapters never reconstruct architecture or comparison bases.
+The existing coordinator, checkout workhorse, queues, and provider notifications own execution.
+The existing pane report owns canonical reading intent and notifies the coordinator context source.
+Shown-conversation request assembly stays inside the workbench's public `showConversation` operation.
+Its pane and checkout lookup helpers remain private.
+
 `./agent` and `./voice` expose the Archboard browser shell.
 The dock, the conversation panel, approval cards, sign-in, voice controls, orb, and subtitles remain here.
 The shell reads the conversation controllers, transport, and media owners from `codex-realtime-voice/controllers`.

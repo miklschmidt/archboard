@@ -149,6 +149,11 @@ not add imports or a second state path before that work.
   A foreign activation requires the returned address to match the resolved link the reader selected.
   A change of source context cancels its pending activation.
   An unavailable base stays explicit, and the selected reading supplies its own complete interface facts.
+  Toolbar, keyboard, and context-menu explanations use the same visible selection and captured reading.
+  One tab-scoped query reads temporary answers from the existing local action owner.
+  The pane socket announces changes, and reconnect refreshes the same query.
+  Answer controls use the captured vault after navigation. The result labels its original model, state, subjects, and revision.
+  Canonical metadata joins the existing pane report sequence, with the admitted vault on the request and actual reading vault inside architecture.
 
   The address follows the note, which is the persisted content of the board.
   When a person opens a board, the open runs the command of the shell. Then the
