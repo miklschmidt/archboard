@@ -5,7 +5,6 @@
 import {
 	useCallback,
 	useLayoutEffect,
-	useMemo,
 	useRef,
 	useState,
 	type CSSProperties,
@@ -13,75 +12,22 @@ import {
 	type KeyboardEvent,
 } from "react";
 
-import { OutlineRow } from "#ui/components/shell/OutlineRow.tsx";
+import { RepositoryLine } from "#ui/components/shell/RepositoryLine.tsx";
 import type { RowHandlers } from "#ui/components/shell/TreeRow.tsx";
-import type { EarlierRow, NavigatorRow, VariantRow } from "#ui/rules/shell/navigator-row-types.ts";
+import type { NavigatorRow } from "#ui/rules/shell/navigator-row-types.ts";
 import { outlineKey, type OutlineKeyAction } from "#ui/rules/shell/outline-keys.ts";
-import { rowSelected } from "#ui/rules/shell/navigator-rows.ts";
 import { ROW_GUTTER } from "#ui/rules/shell/tree-grid.ts";
-import { treeGuides } from "#ui/rules/shell/tree-guides.ts";
-import { timelineLanes, type Lane } from "#ui/rules/variant-lifecycle/timeline.ts";
-
-/**
- * The timeline lanes of every board's variants: each run of a board's variant
- * and Earlier rows is one line with branches, its first level the main line.
- * @param rows The rows, in order.
- * @returns Each such row's lane, by row id.
- */
-function variantLanes(rows: readonly NavigatorRow[]): ReadonlyMap<string, Lane> {
-	const lanes = new Map<string, Lane>();
-	for (const run of variantRuns(rows)) {
-		const base = Math.min(...run.map((row) => row.depth));
-		const found = timelineLanes(run.map((row) => row.depth - base));
-		run.forEach((row, index) => lanes.set(row.id, found[index]!));
-	}
-	return lanes;
-}
-
-/**
- * The runs of one board's variant and Earlier rows, in order.
- * @param rows The rows.
- * @returns The runs.
- */
-function variantRuns(rows: readonly NavigatorRow[]): (VariantRow | EarlierRow)[][] {
-	const runs: (VariantRow | EarlierRow)[][] = [];
-	let last: string | null = null;
-	for (const row of rows) {
-		if (row.kind !== "variant" && row.kind !== "earlier") {
-			last = null;
-			continue;
-		}
-		if (last !== row.board.key) runs.push([]);
-		runs.at(-1)!.push(row);
-		last = row.board.key;
-	}
-	return runs;
-}
-
-/**
- * The depth of the first level of the timeline each variant and Earlier row is
- * on, which is where the guides give way to the timeline.
- * @param rows The rows, in order.
- * @returns That depth, by row id.
- */
-function timelineDepths(rows: readonly NavigatorRow[]): ReadonlyMap<string, number> {
-	const depths = new Map<string, number>();
-	for (const run of variantRuns(rows)) {
-		const first = Math.min(...run.map((row) => row.depth));
-		for (const row of run) depths.set(row.id, first);
-	}
-	return depths;
-}
 
 /** Inputs for the tree. */
-interface BoardOutlineProps extends Omit<RowHandlers, "focusable" | "onFocusRow" | "onRowKeyDown"> {
+interface RepositoryListProps extends Omit<
+	RowHandlers,
+	"focusable" | "onFocusRow" | "onRowKeyDown"
+> {
 	readonly rows: readonly NavigatorRow[];
 	/** The row that holds the tab stop until the person moves it: the selected row. */
 	readonly homeId: string | null;
 	/** A printable key typed in the tree, handed to the filter. */
 	readonly onTypeAhead: (text: string) => void;
-	/** A filter is on: the tree lists what it found, and nothing opens or closes. */
-	readonly filtering: boolean;
 }
 
 /** The tree keeps the gutter a row's tone keeps from the column's edges. */
@@ -110,10 +56,8 @@ function typesCharacter(event: KeyboardEvent<HTMLElement>): boolean {
  * @param props The rows, the row that starts with the tab stop, and the handlers.
  * @returns The tree.
  */
-function BoardOutline(props: BoardOutlineProps): JSX.Element {
-	const { rows, homeId, onOpen, onExpand, onChooseCheckout, onTypeAhead, filtering } = props;
-	const lanes = useMemo(() => variantLanes(rows), [rows]);
-	const guides = useMemo(() => treeGuides(rows, rowSelected, timelineDepths(rows)), [rows]);
+function RepositoryList(props: RepositoryListProps): JSX.Element {
+	const { rows, homeId, onOpen, onChooseCheckout, onTypeAhead } = props;
 	const tree = useRef<HTMLDivElement>(null);
 	const [focusedId, setFocusedId] = useState<string | null>(null);
 	const stop = [focusedId, homeId, rows[0]?.id].find(
@@ -128,10 +72,9 @@ function BoardOutline(props: BoardOutlineProps): JSX.Element {
 	const perform = useCallback(
 		(action: OutlineKeyAction): void => {
 			if (action.kind === "focus") focusRow(action.id);
-			else if (action.kind === "expand") onExpand(action.id, action.open);
 			else onOpen(action.row, action.beside);
 		},
-		[focusRow, onExpand, onOpen],
+		[focusRow, onOpen],
 	);
 	// The rows as they are when a key is pressed: read then, so the handler every
 	// row holds keeps one identity while news changes one row (TASK-385.04).
@@ -150,33 +93,29 @@ function BoardOutline(props: BoardOutlineProps): JSX.Element {
 			const action = outlineKey(rowsNow.current, stop, {
 				key: event.key,
 				altKey: event.altKey,
-				filtering,
 			});
 			if (action === null) return;
 			event.preventDefault();
 			perform(action);
 		},
-		[stop, onTypeAhead, perform, filtering],
+		[stop, onTypeAhead, perform],
 	);
 	return (
 		<div
 			ref={tree}
 			role="tree"
-			aria-label="Boards"
+			aria-label="Repositories"
 			tabIndex={-1}
 			style={TREE_STYLE}
 			className="flex flex-col py-2 outline-none"
 		>
 			{rows.map((row) => (
-				<OutlineRow
+				<RepositoryLine
 					key={row.id}
 					row={row}
-					lane={lanes.get(row.id)}
-					guides={guides.get(row.id)}
 					focusable={row.id === stop}
 					onFocusRow={setFocusedId}
 					onOpen={onOpen}
-					onExpand={onExpand}
 					onChooseCheckout={onChooseCheckout}
 					onRowKeyDown={handleKeyDown}
 				/>
@@ -185,4 +124,4 @@ function BoardOutline(props: BoardOutlineProps): JSX.Element {
 	);
 }
 
-export { BoardOutline, type BoardOutlineProps };
+export { RepositoryList, type RepositoryListProps };
