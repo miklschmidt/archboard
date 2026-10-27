@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T21:38:00Z'
+updated_date: '2026-10-27T21:43:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -96,6 +96,10 @@ The ported workspace owner reproduces an origin bug: socket arrivals always push
 Prepare explicit current and preserved-draft walkthrough views through the old .23 public writer, using only its code and targeting the integration vault explicitly. All originals are already retained at signed5c732a3853a575ba954c5abfc08584bb37a03f84. Re-read each board before writing, preserve existing explicit views, skip propagated no-ops, and release each claim. Keep historical and shelved variant content unchanged. Do not install migration or adopt during this preparation.
 
 Retire the obsolete legacy board viewer, board-wide claim, and board drill browser fixtures after their canonical replacements passed. Preserve the remaining reduced-motion traffic contract in the existing semantic-traffic owner. Canonical navigation, references, source evidence, structure, claims and pane-report owners replace the old board-boundary behavior. Board ownership transfer is explicitly unavailable and its former move workflow retires.
+
+Port the existing status-legibility browser owner to canonical public proposals and flows. Retain computed theme colors, added/removed connection ink, traffic/label paint order, distinct kind chips, and simultaneous unresolved/selected marks. Keep authored text assertions only for actual architecture content; use structured issue fields for conflict behavior.
+
+Delegate the bounded canonical render-context repair to gpt-6.1-sol in an isolated worktree. Reuse shared projection and existing renderer inputs for exact unresolved subjects, aggregated connections and complete interface context in exports/recipes. Publish the shared field contract early. Parent wires browser drawing and owns the legibility browser acceptance. No new rendering engine, live board adapter, storage abstraction, export ceiling or lint waiver.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -178,4 +182,6 @@ Canonical workspace fixtures now preserve direct two-pane restoration, browser B
 Explicit-view preparation completed through the old .23 public CLI and its owned server, always targeting the integration vault with -C. Eight accepted writes added views to 33 current and 16 preserved-draft missing beat occurrences across seven boards; two propagated draft requests became no-ops. The writer minted six new view IDs and reused Renderer layout lHmaM9Zg. A caller-supplied new view ID was first refused without a write; the corrected atomic batch names the new view and lets the writer mint its ID. All 492 historical/shelved variant records remain exactly equal to the prior source. Fresh public inventory succeeds at source574e19f055b20022910ce5c4717f1fb0d81fc4ea54ccaccc22121c0207cff517. The obsolete Command interface TASK-549.03 draft alone retains four missing views pending its explicit disposition. All claims are released and owned server3677339 stopped. No mappings, migration, adoption or archive publication occurred.
 
 Retired four obsolete board browser fixtures and their lane entries after canonical viewer, claims, recursive/foreign navigation, source evidence and durable update replacements passed. The continuing traffic owner now proves reduced-motion visibility and restoration without replacing the SVG. That owner, full types and focused browser lint pass. The retirement ledger records each continuing contract and the explicit retirement of board ownership transfer.
+
+The canonical legibility browser port passes the first 15 computed-color and traffic assertions, then reproduces an absent unresolved-subject badge. Types and focused test lint pass. The browser rendering request omits the existing renderer unsettled input. The canonical export adapter also omits complete variant and unsettled context. Repair this shared rendering contract before final acceptance.
 <!-- SECTION:NOTES:END -->

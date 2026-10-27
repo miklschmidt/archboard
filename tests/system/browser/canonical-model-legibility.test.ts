@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
@@ -16,17 +16,23 @@ import {
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
 import { switchTheme } from "./support/shell-dom.ts";
-import { openSidebarTab, pictureAtRest } from "./support/semantic-page.ts";
+import {
+	seedCanonicalModel,
+	editCanonicalModel,
+	openModelSidebar,
+} from "./support/canonical-page.ts";
+import { initializeSource } from "./support/canonical-model.ts";
+import { mintId } from "@archboard/board/ids";
 import { OPAQUE_SRGB, edgeInks, sameHue, unresolvedPaints } from "./support/computed-colours.ts";
 
 /** How long any one thing here is waited for. */
 const WAIT = { timeoutMs: 6_000 } as const;
 
 /** The element the camera moves. */
-const SURFACE = "[data-slot='semantic-board-surface']";
+const SURFACE = "[data-slot='model-diagram'] [data-slot='semantic-board-surface']";
 
 /** The panel beside the diagram. */
-const INSPECTOR = "[data-slot='semantic-inspector']";
+const INSPECTOR = "[data-slot='module-details']";
 
 /**
  * The ink one card's icon tile is drawn in, or null while the card is not there.
@@ -99,7 +105,7 @@ const pick = (browser: AgentBrowserSession, id: string): Promise<unknown> =>
 	browser.eval(
 		`(() => {` +
 			` const card = document.querySelector("${SURFACE} [data-semantic-id='${id}']");` +
-			` const view = document.querySelector("[data-slot='semantic-board-viewport']");` +
+			` const view = document.querySelector("[data-slot='model-diagram']");` +
 			` const at = card.getBoundingClientRect();` +
 			` const where = { pointerId: 1, isPrimary: true, button: 0, bubbles: true,` +
 			`   clientX: Math.round(at.x + at.width / 2), clientY: Math.round(at.y + at.height / 2) };` +
@@ -146,9 +152,20 @@ const overThePill = (
 
 test("a reader sees what changed, what belongs together and what is unsettled", async () => {
 	await using resources = new AsyncDisposableStack();
-	const { ownerRoot } = browserTestRoots();
-	const vault = vaultIn(join(ownerRoot, "semantic-legibility-vault"));
-	mkdirSync(join(vault, ".archboard"), { recursive: true });
+	const root = join(browserTestRoots().ownerRoot, "model-legibility");
+	const vault = vaultIn(root);
+	const model = await seedCanonicalModel(vault, "Write path", {
+		nodes: [
+			{ name: "Gateway", kind: "route" },
+			{ name: "Writer", kind: "module", responsibility: "Takes the lease" },
+			{ name: "Ledger", kind: "datastore" },
+		],
+		edges: [
+			{ from: "Gateway", to: "Writer", kind: "call", label: "hands it over" },
+			{ from: "Writer", to: "Ledger", kind: "data", label: "writes" },
+		],
+	});
+	const id = (name: string): string => model.modules.find((module) => module.name === name)!.id;
 	const policy = structuredClone(DEFAULT_SEMANTIC_POLICY);
 	policy.nodeKinds["route"]!.color = "blue";
 	policy.nodeKinds["queue"]!.color = "green";
@@ -158,181 +175,94 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 		payments: { name: "payments", color: "amber" },
 	};
 	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(policy));
-	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	for (const index of [0, 1, 2]) {
+		const path = join(vault, `module-${index}.module.json`);
+		const module = JSON.parse(readFileSync(path, "utf8"));
+		module.groups = [index === 2 ? "payments" : "write-path"];
+		for (const edge of module.outgoing) edge.traffic = {};
+		if (index === 0) module.outgoing[0].emphasis = "hero";
+		writeFileSync(path, JSON.stringify(module));
+	}
+	const flow = `${model.manifest.id}#${mintId()}`;
+	writeFileSync(
+		join(vault, "write.flows.json"),
+		JSON.stringify({
+			schemaVersion: 1,
+			id: mintId(),
+			name: "Writes",
+			flows: [
+				{
+					id: flow,
+					name: "One write",
+					participants: [id("Gateway"), id("Writer")],
+					steps: [
+						{
+							id: `${model.manifest.id}#${mintId()}`,
+							from: id("Gateway"),
+							to: id("Writer"),
+							label: "asks",
+							kind: "sync",
+						},
+						{
+							id: `${model.manifest.id}#${mintId()}`,
+							from: id("Writer"),
+							to: id("Gateway"),
+							label: "the version",
+							kind: "return",
+						},
+					],
+				},
+			],
+		}),
+	);
+	initializeSource(root);
+	const server = await startOwnedServer({
+		serverPath,
+		vault,
+		env: serverTestEnvironment({ GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" }),
+	});
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
 	const request = createJsonRequester(server);
-
-	// The architecture as it stands: two parts of one effort, one of another,
-	// one relationship carrying traffic with words on it, and one exchange.
-	expect(
-		(
-			await request<{ success: boolean }>("/api/semantic-boards/create", {
-				method: "POST",
-				doing: "drawing the write path",
-				body: {
-					board: "legible",
-					origin: "agent",
-					create: {
-						level: "system",
-						variant: "As built",
-						nodes: [
-							{ name: "Gateway", kind: "route", groups: ["write-path"] },
-							{
-								name: "Writer",
-								kind: "module",
-								groups: ["write-path"],
-								responsibility: "Takes the lease",
-							},
-							{ name: "Ledger", kind: "datastore", groups: ["payments"] },
-						],
-						edges: [
-							{
-								from: "Gateway",
-								to: "Writer",
-								kind: "call",
-								label: "hands it over",
-								emphasis: "hero",
-								traffic: {},
-							},
-							{
-								from: "Writer",
-								to: "Ledger",
-								kind: "data",
-								label: "writes",
-								traffic: {},
-							},
-						],
-						flows: [
-							{
-								name: "One write",
-								participants: ["Gateway", "Writer"],
-								steps: [
-									{ from: "Gateway", to: "Writer", label: "asks", kind: "sync" },
-									{ from: "Writer", to: "Gateway", label: "the version", kind: "return" },
-								],
-							},
-						],
-						views: [
-							{ name: "The parts", grammar: "architecture" },
-							{ name: "In order", grammar: "sequence" },
-						],
-					},
-				},
-			})
-		).status,
-	).toBe(200);
-
-	/**
-	 * The board's version right now, which every write has to state.
-	 * @returns The version.
-	 */
-	const version = async (): Promise<number> => {
-		const read = await request<{ board: { version: number } }>(
-			"/api/semantic-boards/board?board=legible",
-		);
-		expect(read.status, "the board could not be read back").toBe(200);
-		return read.body.board.version;
-	};
-
-	/**
-	 * The id the board minted for the relationship carrying these words.
-	 *
-	 * Read back rather than assumed, which is what an agent does too: a write
-	 * that names a subject names it by the id the board gave it.
-	 * @param label What the relationship says.
-	 * @returns Its semantic id.
-	 */
-	const edgeCalled = async (label: string): Promise<string> => {
-		const read = await request<{
-			board: { variants: { content: { edges: { id: string; label?: string }[] } }[] };
-		}>("/api/semantic-boards/board?board=legible");
-		const found = read.body.board.variants
-			.flatMap((variant) => variant.content.edges)
-			.find((edge) => edge.label === label);
-		expect(found, `no relationship says "${label}"`).toBeDefined();
-		return found!.id;
-	};
-
-	// A proposal, and three different things done to it: a part reworded, a part
-	// added, a relationship dropped.
-	expect(
-		(
-			await request(`/api/semantic-boards/branch?expectVersion=${await version()}`, {
-				method: "POST",
-				doing: "proposing a queue",
-				body: { board: "legible", origin: "agent", branch: { from: "As built", name: "Proposed" } },
-			})
-		).status,
-	).toBe(200);
-	expect(
-		(
-			await request(`/api/semantic-boards/edit?expectVersion=${await version()}`, {
-				method: "POST",
-				doing: "putting a queue in front",
-				body: {
-					board: "legible",
-					origin: "agent",
-					edit: {
-						variant: "Proposed",
-						nodes: [
-							{
-								name: "Writer",
-								kind: "module",
-								groups: ["write-path"],
-								responsibility: "Drains the queue",
-							},
-							{ name: "Queue", kind: "queue", groups: ["write-path"] },
-						],
-						edges: [
-							{
-								from: "Gateway",
-								to: "Queue",
-								kind: "queue",
-								label: "enqueues",
-								traffic: {},
-							},
-						],
-						removeEdges: [await edgeCalled("writes")],
-					},
-				},
-			})
-		).status,
-	).toBe(200);
-
-	// And then the architecture it was derived from moves under it, in a way
-	// nobody can settle automatically: the same part, reworded differently.
-	expect(
-		(
-			await request(`/api/semantic-boards/edit?expectVersion=${await version()}`, {
-				method: "POST",
-				doing: "rewording the writer as built",
-				body: {
-					board: "legible",
-					origin: "agent",
-					edit: {
-						variant: "As built",
-						nodes: [
-							{
-								name: "Writer",
-								kind: "module",
-								groups: ["write-path"],
-								responsibility: "Writes the note",
-							},
-						],
-					},
-				},
-			})
-		).status,
-	).toBe(200);
+	const proposal = await editCanonicalModel(
+		request,
+		vault,
+		"legible-proposal",
+		[
+			{ type: "edit-module", subject: id("Writer"), set: { responsibility: "Drains the queue" } },
+			{
+				type: "add-module",
+				module: { name: "Queue", kind: "queue", groups: ["write-path"], order: 3 },
+			},
+			{
+				type: "add-relationship",
+				source: id("Gateway"),
+				relationship: { to: "Queue", kind: "queue", label: "enqueues", traffic: {}, order: 1 },
+			},
+			{
+				type: "remove-relationship",
+				subject: model.relationships.find((edge) => edge.label === "writes")!.id,
+			},
+		],
+		{ proposal: { type: "create", name: "Proposed queue" } },
+	);
+	await editCanonicalModel(request, vault, "legible-current", [
+		{ type: "edit-module", subject: id("Writer"), set: { responsibility: "Writes the note" } },
+	]);
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${server.base}/?paneA=legible@Proposed`]);
+	await browser.run([
+		"open",
+		`${server.base}/?modelA=${model.manifest.id}&stateA=${proposal.target.state}`,
+	]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	// At rest: an arriving picture draws its lines on and gives them their
 	// arrowheads last, and what is under test is the picture a reader reads.
 	await pollUntil(
-		() => pictureAtRest(browser.eval.bind(browser)),
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector("${SURFACE}:not([data-picture-motion]) svg") !== null`,
+			),
 		(atRest) => atRest,
 		"the proposal to be drawn in its pane",
 		WAIT,
@@ -408,19 +338,22 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	);
 	// And the badge is cashed in for words where the reader clicked.
 	await pollUntil(
-		() => browser.eval<string>(`document.querySelector("${INSPECTOR}")?.textContent ?? ""`),
-		(said) => said.includes("Nobody has decided this yet") && said.includes("the write path"),
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector("${INSPECTOR} [data-slot='semantic-inspector-waiting'] [data-field='responsibility']") !== null && document.querySelector("${INSPECTOR}")?.textContent.includes('the write path') === true`,
+			),
+		Boolean,
 		"the inspector to explain the warning and name the group",
 		WAIT,
 	);
 
 	// The other grammar, told in the same language: the plate is over the dots.
 	// The views are on the board tab, which the pick moved away from.
-	expect(await openSidebarTab(browser.eval.bind(browser), "board")).toBe(true);
-	await browser.eval(
-		`[...document.querySelectorAll("[data-slot='semantic-view-choice']")]` +
-			`.find((button) => button.textContent.trim() === "In order").click()`,
-	);
+	await openModelSidebar(browser);
+	await browser.run(["click", '[data-slot="model-grammar-selector"]']);
+	await browser.run(["click", '[role="option"][data-grammar="sequence"]']);
+	await browser.run(["click", '[data-slot="model-flow-selector"]']);
+	await browser.run(["click", `[role="option"][data-flow-id="${flow}"]`]);
 	await pollUntil(
 		() =>
 			browser.eval<number>(
@@ -453,10 +386,8 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 		"the picture to take the dark ground's colours",
 		WAIT,
 	);
-	await browser.eval(
-		`[...document.querySelectorAll("[data-slot='semantic-view-choice']")]` +
-			`.find((button) => button.textContent.trim() === "The parts").click()`,
-	);
+	await browser.run(["click", '[data-slot="model-grammar-selector"]']);
+	await browser.run(["click", '[role="option"][data-grammar="architecture"]']);
 	await pollUntil(
 		() =>
 			browser.eval<number>(
