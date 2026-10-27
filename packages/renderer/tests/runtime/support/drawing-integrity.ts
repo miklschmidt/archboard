@@ -2,6 +2,7 @@ import { expect } from "bun:test";
 import type { LayoutEngineName } from "@archboard/board/render-reply";
 import type { VariantContent } from "@archboard/board/content";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
+import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import {
 	ambiguousTrunks,
 	labelsOffRuns,
@@ -32,6 +33,9 @@ export function expectDrawingIntact(
 	content: VariantContent,
 	layout: LayoutEngineName,
 ) {
+	expect([...routePoints(drawing.svg).keys()].toSorted(), "painted relationships").toEqual(
+		content.edges.map(({ id }) => id).toSorted(),
+	);
 	expect(
 		ambiguousTrunks(drawing, content),
 		"trunks with unrelated source and target pairs",
