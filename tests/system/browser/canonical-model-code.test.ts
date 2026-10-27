@@ -72,6 +72,7 @@ test("canonical code controls follow current draft and exact readings while miss
 	initializeSource(root);
 	fixtureGit(root, "add", ".");
 	fixtureGit(root, "commit", "--quiet", "-m", "test: retain source fixtures");
+	const sourceCommit = fixtureGit(root, "rev-parse", "HEAD");
 	const capture = join(fixtureRoot, "opened-code.txt");
 	const opener = join(fixtureRoot, "capture-opener.ts");
 	writeFileSync(
@@ -180,6 +181,15 @@ test("canonical code controls follow current draft and exact readings while miss
 		WAIT,
 	);
 	await openCode(browser, capture, join(root, "src/gateway.ts"));
+	await pollUntil(
+		() =>
+			browser.eval<string[]>(
+				`[...document.querySelectorAll('[data-slot="semantic-inspector-commit-list"] [data-commit]')].map(node => node.getAttribute('data-commit'))`,
+			),
+		(commits) => commits.length === 1 && commits[0] === sourceCommit,
+		"the selected module's local source history",
+		WAIT,
+	);
 	await selectReading(browser, created.body.checkpoint.id);
 	await pollUntil(
 		() =>

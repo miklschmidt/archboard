@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T18:45:00Z'
+updated_date: '2026-10-27T18:56:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -126,4 +126,6 @@ Parent selection repair: the existing structural browser owner reproduced a sele
 Parent traffic consumer port: the existing browser owner now uses canonical relationships, an independent sequence flow, and public structural edits. All SMIL equivalence assertions remain. Its continuity assertion reproduced the animation clock resetting from more than nine seconds to nearly zero after an edit. Ordinary diagrams now retain their local surface during layout and carry the existing picture clock into replacement markup. Captured walkthrough readiness remains unchanged. Traffic, walkthrough, and camera/gesture owners pass, as do full types and focused source/test lint.
 
 Parent code evidence transition: the existing code browser owner reproduced absent canonical warning controls. Matching remembered model/state/revision results now feed the existing warning count, canvas warning marks, and source evidence panel. The owner proves real named-proposal findings, visible marks and selected evidence, and removal after the architecture revision changes. Full types and touched source/test lint pass. The shared fixture now claims active proposal IDs affected by current edits. Recovery guidance names the shipped --state flag. Parent inspected the 1920x1080 screenshot externally; final inspector hierarchy polish remains before acceptance.
+
+Parent source-history transition: selected canonical modules now use the existing locality analysis and commit/coupling presentation. The browser owner reproduced an absent history panel and now displays the exact source fixture Git commit. Query identity includes explicit vault, model, state, checkpoint and revision, and mismatched replies refuse. History reads remain on demand, with shared pending work across quick picks and explicit refresh or failure feedback. The old PartHistory HTTP adapter is retired; its pure evidence display remains. Browser code/history owner, full types, and touched source/test lint pass.
 <!-- SECTION:NOTES:END -->

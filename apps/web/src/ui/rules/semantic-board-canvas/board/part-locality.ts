@@ -56,7 +56,10 @@ type PartLocality =
  * @param part The part's id.
  * @returns What the answer says about it.
  */
-function partLocality(answer: LocalityAnswer, part: string): PartLocality {
+function partLocality(
+	answer: Omit<LocalityAnswer, "board" | "version" | "variant">,
+	part: string,
+): PartLocality {
 	const skip = answer.skipped.find((skipped) => skipped.subject.id === part);
 	if (skip !== undefined) {
 		return { kind: "skipped", skip };

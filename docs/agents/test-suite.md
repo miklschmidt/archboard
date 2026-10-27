@@ -511,6 +511,9 @@ It covers foreign navigation, immutable foreign pins, unavailable checkpoints, s
 `tests/system/semantic-boards/model-references.test.ts` owns agreement between the CLI and HTTP adapters.
 `tests/system/code-targets/canonical-model.test.ts` owns canonical activation through the existing opener and a real process.
 `canonical-model-code.test.ts` owns visible current, draft, and exact code activation with unavailable source.
+It also covers matching code warnings, diagram marks, selected evidence, and their removal after the architecture revision changes.
+The same owner compares the history panel with an actual source Git commit.
+Canonical history uses the existing commit and coupling display without synthetic board metadata.
 `canonical-model-references.test.ts` owns portable addresses for every canonical subject kind, reload, Back, unavailable targets, and pinned recovery.
 Both browser owners use real files and Git with the existing browser adapter and public architecture operations.
 

@@ -2,11 +2,12 @@ import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
 
 const WAIT = { timeoutMs: 6_000 } as const;
 
-function fixtureGit(root: string, ...args: string[]): void {
+function fixtureGit(root: string, ...args: string[]): string {
 	const result = Bun.spawnSync(["git", "-C", root, ...args], {
 		env: { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" },
 	});
 	if (result.exitCode !== 0) throw new Error(result.stderr.toString());
+	return result.stdout.toString().trim();
 }
 
 function initializeSource(root: string): void {

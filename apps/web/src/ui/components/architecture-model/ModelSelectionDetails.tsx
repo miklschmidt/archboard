@@ -1,3 +1,4 @@
+import { ModelHistory } from "#ui/components/architecture-model/ModelHistory.tsx";
 import { modelSubjects, subjectName } from "#ui/rules/architecture-model/flow-reading.ts";
 import { useCallback, type ComponentProps, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
@@ -230,6 +231,12 @@ function SelectedModuleDetails(
 				model={props.model}
 				module={props.module}
 				onNotice={props.onCodeTargetNotice}
+			/>
+			<ModelHistory
+				vault={props.vault}
+				model={props.model}
+				module={props.module}
+				onSelect={props.selection.select}
 			/>
 		</ModuleDetails>
 	);

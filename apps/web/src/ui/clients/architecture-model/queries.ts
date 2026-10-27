@@ -101,11 +101,18 @@ const architectureModelKeys = {
  * @param signal Cancels an obsolete request.
  * @returns The shared runtime answer.
  */
-async function readReply<T>(url: string, schema: ReplySchema<T>, signal: AbortSignal): Promise<T> {
-	const result = await strictReply<T, T | Error>(url, { signal }, schema, schema, (error) =>
-		error instanceof Error && "code" in error
-			? error
-			: new Error("The architecture could not be read. Retry when the local server is available."),
+async function readReply<T>(url: string, schema: ReplySchema<T>, signal?: AbortSignal): Promise<T> {
+	const result = await strictReply<T, T | Error>(
+		url,
+		signal === undefined ? {} : { signal },
+		schema,
+		schema,
+		(error) =>
+			error instanceof Error && "code" in error
+				? error
+				: new Error(
+						"The architecture could not be read. Retry when the local server is available.",
+					),
 	);
 	if (result instanceof Error) throw result;
 	return result;
@@ -246,6 +253,7 @@ function hasNoCanonicalModel(error: Error | null): boolean {
 }
 
 export {
+	readReply,
 	readModel,
 	architectureModelKeys,
 	architectureModelQuery,

@@ -198,6 +198,12 @@ not add imports or a second state path before that work.
   Only a coherent reference supplies removed subjects to the existing semantic comparison operation.
   Code and foreign navigation details use the same cache with module and action selectors.
   Their state, checkpoint, and revision must match the inspected architecture.
+  Remembered code findings also match the model identity, state, and exact revision.
+  The existing warning control, diagram marks, and evidence panel show only that matching pass.
+  Selecting a bound canonical module requests its local Git history through the existing analysis.
+  The response must match the inspected model, state, checkpoint, and revision.
+  Fast selections share a pending history read. No timer, focus change, or reconnect starts another analysis.
+  A source failure remains explicit, and the reader can refresh the history on demand.
   A foreign activation requires the returned address to match the resolved link the reader selected.
   A change of source context cancels its pending activation.
   An unavailable base stays explicit, and the selected reading supplies its own complete interface facts.
