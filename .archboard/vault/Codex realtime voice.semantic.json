@@ -7,9 +7,9 @@
 		"Agent workbench"
 	],
 	"level": "service",
-	"version": 139,
+	"version": 141,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-10-27T02:56:30.748Z",
+	"updatedAt": "2026-10-27T07:59:56.048Z",
 	"views": [
 		{
 			"id": "ASLOMTIS",
@@ -50844,7 +50844,7 @@
 						"order": 55000,
 						"name": "Narrative source",
 						"kind": "module",
-						"responsibility": "Keeps the captured narrative with its architecture and explains each arrived beat",
+						"responsibility": "Resolves one server-owned narrative capture, guards source and target revisions, and explains only available arrived beats from that capture",
 						"description": "Canonical narratives use the same source selection and revision checks as local explanation actions. One captured model supplies authored beat text and selected subject meaning throughout the narration. Missing or changed inputs refuse a fresh start.",
 						"parent": "SScV6EZR",
 						"binding": {
@@ -52181,7 +52181,12 @@
 						"to": "yt8fa9w3",
 						"kind": "call",
 						"label": "start admitted voice session",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-connections.ts",
+							"symbol": "onBrowserDisconnect"
+						}
 					},
 					{
 						"id": "a5ULzncp",
@@ -52190,7 +52195,12 @@
 						"to": "K53UIYaX",
 						"kind": "call",
 						"label": "await captured host narrative",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-realtime-voice/src/server/services/voice/realtime-actions.ts",
+							"symbol": "prepareNarrative"
+						}
 					},
 					{
 						"id": "iZim0JO9",
@@ -52208,7 +52218,54 @@
 						"to": "ZQxB1ZaK",
 						"kind": "call",
 						"label": "create the existing realtime offer",
-						"emphasis": "normal"
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-realtime-voice/src/server/services/voice/realtime-actions.ts",
+							"symbol": "createOffer"
+						}
+					},
+					{
+						"id": "FdocgDPR",
+						"order": 98000,
+						"from": "pZL0uxjI",
+						"to": "Q2sXZO7T",
+						"kind": "call",
+						"label": "resolve the narrated pane tab",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
+							"symbol": "tabSessionOf"
+						}
+					},
+					{
+						"id": "fa4FSkpO",
+						"order": 99000,
+						"from": "iay14AUl",
+						"to": "yt8fa9w3",
+						"kind": "call",
+						"label": "own the voice start trace",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+							"symbol": "sessionVoiceStartTrace"
+						}
+					},
+					{
+						"id": "8iYy7AoA",
+						"order": 100000,
+						"from": "yyFS6UVO",
+						"to": "pZL0uxjI",
+						"kind": "call",
+						"label": "subscribe to arrived narration changes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/owner/wiring.ts",
+							"symbol": "narrationChangesOf"
+						}
 					}
 				],
 				"flows": [

@@ -441,3 +441,20 @@ The first frame of a new SVG otherwise varied even when its markup and sampled a
 The existing picture loader converts SVG traffic into animations that the frame clock controls.
 The canonical replay owner compares every frame across one-page and two-page rendering.
 Legacy replay keeps the same owner and also passes its frame comparisons.
+
+The canonical voice bridge resolves one server-owned capture before the voice offer starts.
+A pane report supplies the source selection and separate source and target revision guards.
+The report supplies no authored narration text.
+The public architecture reader resolves the narrative source, including definitions newer than their exact targets.
+The bridge refuses changed or unavailable captures and keeps accepted captures for later beats.
+It reads subject names and standing from that retained reading and its existing comparison.
+
+Narrative preparation can be asynchronous within the existing serialized voice start.
+After preparation, the voice owner requires the same active start token before creating an offer.
+Disconnect, stop, or replacement cancels an unfinished start.
+
+Canonical live narration uses the existing pane presentation port without a legacy board key.
+The pane acknowledges the exact requested walkthrough and beat after arrival.
+The recording page drives its own first beat.
+Only arrived, available beats reach narration through either path.
+Leaving releases the capture through the existing narration lifecycle.

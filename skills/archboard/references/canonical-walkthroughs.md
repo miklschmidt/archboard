@@ -85,3 +85,17 @@ The recording artifact keeps one exact model and the narrative for offline repla
 That artifact is separate from authored walkthrough and proposal inputs.
 The existing replay command needs its talk directory and voice file.
 It reads no mutable model and starts no live voice session.
+
+Voice narration reads the narrative source separately from its target.
+The pane reports `playback.source`, `expectedSourceRevision`, and `expectedRevision` before voice starts.
+The server resolves that source through the public architecture reader and compares both revision guards.
+A narrative can name a target checkpoint that predates its definition.
+The server keeps the complete capture for later beats, even when authored files change.
+A changed or unavailable source or target refuses the start.
+Reopen the walkthrough before starting narration again.
+
+Live narration requests its first beat through the existing pane presentation port.
+Canonical requests name the pane and walkthrough without a legacy board key.
+The recording page drives its own steps and receives no first-beat request from the server.
+Both paths narrate only available beats after the pane reports arrival.
+Leaving the walkthrough ends its narration.

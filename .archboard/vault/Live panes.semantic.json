@@ -4,9 +4,9 @@
 	"id": "Oi6SBIAM",
 	"name": "Live panes",
 	"level": "module",
-	"version": 83,
+	"version": 85,
 	"createdAt": "2026-10-07T00:53:21.702Z",
-	"updatedAt": "2026-10-27T04:56:45.954Z",
+	"updatedAt": "2026-10-27T07:59:56.355Z",
 	"views": [
 		{
 			"id": "FHeGlSwG",
@@ -27038,7 +27038,7 @@
 						"order": 34000,
 						"name": "Presentation position",
 						"kind": "module",
-						"responsibility": "Reports arrived narrative beats and resolves existing presentation requests",
+						"responsibility": "Addresses legacy and canonical panes through the existing presentation request and acknowledges only the requested arrived beat",
 						"description": "Canonical and legacy panes use the same position contract and request acknowledgement. A missing beat never reports arrival. A recording advances its own beat and voice follows accepted positions.",
 						"parent": "UvFpXmwp",
 						"binding": {
@@ -28189,6 +28189,20 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/panes/pane-report-route.ts",
 							"symbol": "tabSessionOf"
+						}
+					},
+					{
+						"id": "cIfMjqFT",
+						"order": 86000,
+						"from": "74SVrhRe",
+						"to": "BL7LFThw",
+						"kind": "call",
+						"label": "address the exact pane socket",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/workbench/src/server/services/panes/presentation.ts",
+							"symbol": "sendBoardlessToPane"
 						}
 					}
 				],

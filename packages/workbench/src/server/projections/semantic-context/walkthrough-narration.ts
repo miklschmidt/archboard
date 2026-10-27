@@ -32,6 +32,12 @@ import { tabSessionOf } from "#server/services/panes/tab-sessions.ts";
 import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 import type { VariantContent } from "@archboard/board/content";
 
+import {
+	captureNarration,
+	matchesCapture,
+	canonicalNarrationChange,
+} from "#server/projections/semantic-context/canonical-narration.ts";
+
 type SemanticWalkthrough = VariantContent["walkthroughs"][number];
 
 /**
@@ -99,13 +105,22 @@ function walkthroughOnPane(clientId: string, walkthroughId: string): ShownWalkth
 		: { board: opened.board, variant: opened.variant, walkthrough };
 }
 
+type CanonicalCapture = {
+	readonly vault: string;
+	readonly model: Awaited<ReturnType<typeof captureNarration>>;
+};
+
 /**
  * The walkthrough each voice-linked pane is narrating, by the pane's client id, and for a
  * recording made with `--against` the id of the variant its frames are drawn against.
  */
 const narrated = new Map<
 	string,
-	{ readonly walkthrough: string; readonly against: string | null }
+	{
+		readonly walkthrough: string;
+		readonly against: string | null;
+		readonly capture?: CanonicalCapture;
+	}
 >();
 
 /** What the voice model is to be told of one narrated pane, and which pane, by client id. */
@@ -127,6 +142,51 @@ const listeners = new Set<NarrationListener>();
  * @throws {Error} When the pane is not showing a board that states that walkthrough.
  */
 function narrationFor(
+	clientId: string,
+	walkthroughId: string,
+	recording: RealtimePresentation["recording"],
+): RealtimePresentation | Promise<RealtimePresentation> {
+	const architecture = semanticPaneContextFor(clientId)?.architecture;
+	if (architecture != null) {
+		return capturedNarrationFor(clientId, architecture, walkthroughId, recording);
+	}
+	return legacyNarrationFor(clientId, walkthroughId, recording);
+}
+
+/**
+ * Capture a canonical narrative for the exact pane and vault that requested it.
+ * @param clientId The pane's client identity.
+ * @param architecture The reported address and revision guards.
+ * @param walkthroughId The chosen narrative.
+ * @param recording The existing recording mode.
+ * @returns The prepared voice presentation.
+ */
+async function capturedNarrationFor(
+	clientId: string,
+	architecture: Parameters<typeof captureNarration>[0],
+	walkthroughId: string,
+	recording: RealtimePresentation["recording"],
+): Promise<RealtimePresentation> {
+	if (panes.get(clientId)?.vault !== architecture.vault)
+		throw new Error("The pane no longer belongs to the narrative vault.");
+	const model = await captureNarration(architecture, walkthroughId);
+	const walkthrough = model.playback.walkthrough;
+	narrated.set(clientId, {
+		walkthrough: walkthrough.id,
+		against: null,
+		capture: { vault: architecture.vault, model },
+	});
+	return { walkthrough: walkthrough.id, name: walkthrough.name, recording };
+}
+
+/**
+ * Prepare the existing board-owned narration.
+ * @param clientId The pane's client identity.
+ * @param walkthroughId The chosen walkthrough.
+ * @param recording The existing recording mode.
+ * @returns The prepared voice presentation.
+ */
+function legacyNarrationFor(
 	clientId: string,
 	walkthroughId: string,
 	recording: RealtimePresentation["recording"],
@@ -166,7 +226,45 @@ function narrationChangeOf(change: UserPresentationChange): RealtimePresentation
 	if (said === null) {
 		return { kind: "left" };
 	}
-	const shown = walkthroughOnPane(change.clientId, said.walkthrough);
+	const narration = narrated.get(change.clientId);
+	if (narration === undefined) return null;
+	if (!said.arrived || said.walkthrough !== narration.walkthrough) return null;
+	return narration.capture === undefined
+		? legacyNarrationChange(change.clientId, said)
+		: capturedNarrationChange(change.clientId, narration.capture, said.beat);
+}
+
+/**
+ * Match an arrived pane to its server-owned canonical capture.
+ * @param clientId The reporting pane.
+ * @param capture The original vault and immutable model.
+ * @param beat The arrived beat.
+ * @returns Captured narration when the pane still shows that reading.
+ */
+function capturedNarrationChange(
+	clientId: string,
+	capture: CanonicalCapture,
+	beat: number,
+): RealtimePresentationChange | null {
+	const architecture = semanticPaneContextFor(clientId)?.architecture;
+	if (architecture == null) return null;
+	if (architecture.vault !== capture.vault) return null;
+	return matchesCapture(capture.model, architecture)
+		? canonicalNarrationChange(capture.model, beat)
+		: null;
+}
+
+/**
+ * Explain one arrived legacy beat through its existing board reader.
+ * @param clientId The reporting pane.
+ * @param said The arrived position.
+ * @returns The existing board narration or absence.
+ */
+function legacyNarrationChange(
+	clientId: string,
+	said: NonNullable<UserPresentationChange["presentation"]>,
+): RealtimePresentationChange | null {
+	const shown = walkthroughOnPane(clientId, said.walkthrough);
 	const beat = shown?.walkthrough.beats[said.beat];
 	if (shown === undefined || beat === undefined) {
 		return null;
@@ -177,7 +275,7 @@ function narrationChangeOf(change: UserPresentationChange): RealtimePresentation
 		of: shown.walkthrough.beats.length,
 		heading: beat.heading,
 		body: beat.body,
-		subjects: narratedSubjects(shown.board, shown.variant, beat, againstOf(change.clientId)),
+		subjects: narratedSubjects(shown.board, shown.variant, beat, againstOf(clientId)),
 	};
 }
 
@@ -211,13 +309,17 @@ panePresentations.onUserChange(tell);
  * @param clientId The narrated pane's client id.
  */
 async function openNarration(clientId: string): Promise<void> {
-	const walkthrough = narrated.get(clientId)?.walkthrough;
+	const narration = narrated.get(clientId);
 	const pane = panes.get(clientId);
-	if (walkthrough === undefined || pane === undefined) {
+	if (narration === undefined || pane === undefined) {
 		return;
 	}
-	const outcome = await panePresentations.present({ clientId, walkthrough, beat: 0 });
-	if (outcome.kind === "arrived") {
+	const outcome = await panePresentations.present({
+		clientId,
+		walkthrough: narration.walkthrough,
+		beat: 0,
+	});
+	if (outcome.kind === "arrived" && narrated.get(clientId) === narration) {
 		tell({ paneId: pane.paneId, clientId, presentation: outcome.presentation });
 	}
 }
@@ -245,7 +347,8 @@ function narrationChangesOf(
  * @returns The board's aggregate key, or null when no pane of that tab is narrated.
  */
 function narratedBoardOf(tabSessionId: TabSessionId): string | null {
-	for (const clientId of narrated.keys()) {
+	for (const [clientId, narration] of narrated) {
+		if (narration.capture !== undefined) continue;
 		const showing = tabSessionOf(clientId) === tabSessionId ? showingOf(clientId) : null;
 		if (showing !== null) {
 			return aggregateKey(showing.board);
