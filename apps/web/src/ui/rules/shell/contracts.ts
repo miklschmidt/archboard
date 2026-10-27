@@ -87,6 +87,7 @@ type SettingsSurface = "opener";
 
 /** One repository as the navigator lists it, with the boards of its chosen checkout (ADR 0050). */
 interface ShellRepository {
+	readonly migrationRequired?: boolean | undefined;
 	readonly model?: Model["manifest"] | undefined;
 	readonly repository: RepositoryEntry;
 	readonly boards: BoardListing;

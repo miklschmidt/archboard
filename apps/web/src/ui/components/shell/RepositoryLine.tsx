@@ -51,6 +51,7 @@ const STATE_WORDS: Readonly<Record<Exclude<RepositoryEntry["state"], "ready">, s
  */
 function repositoryFacts(row: RepositoryRow): string {
 	if (row.entry.state !== "ready") return STATE_WORDS[row.entry.state];
+	if (row.migrationRequired === true) return "migration required";
 	if (row.model !== undefined) return "architecture";
 	return row.loading ? "…" : String(row.count);
 }
@@ -63,6 +64,7 @@ function repositoryFacts(row: RepositoryRow): string {
  * @returns The label.
  */
 function repositoryLabel(row: RepositoryRow, facts: string): string {
+	if (row.migrationRequired === true) return `${row.entry.name}, repository, migration required`;
 	const holds =
 		row.entry.state !== "ready" || row.model !== undefined
 			? facts

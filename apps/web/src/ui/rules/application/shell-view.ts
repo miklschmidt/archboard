@@ -50,6 +50,7 @@ function shellRepository(entry: RepositoryBoards, activity: AgentActivityByVault
 	return {
 		repository: entry.repository,
 		model: entry.model,
+		migrationRequired: entry.migrationRequired,
 		boards: entry.listing,
 		outline: outlineOf(entry.listing),
 		error: entry.error,

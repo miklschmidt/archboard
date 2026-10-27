@@ -36,13 +36,12 @@ import { paneLetter } from "#ui/rules/shell/pane-letters.ts";
 import { foldQuery } from "#ui/rules/shell/text-match.ts";
 import { sameData } from "#ui/rules/shell/same-data.ts";
 import { nameX } from "#ui/rules/shell/tree-grid.ts";
-import type { ShellActions, ShellRepository, ShellView } from "#ui/rules/shell/contracts.ts";
+import type { ShellActions, ShellView } from "#ui/rules/shell/contracts.ts";
 import type { NavigatorRow, PaneMark } from "#ui/rules/shell/navigator-row-types.ts";
 
 /** Inputs for the navigator. */
 interface NavigatorProps {
 	/** The application can replace empty-board guidance when another model format is present. */
-	emptyNotice?: ReactNode;
 	view: ShellView;
 	actions: ShellActions;
 	/** The column's top row: the brand and the application's own controls. */
@@ -141,17 +140,6 @@ function homeRowId(rows: readonly NavigatorRow[], panes: readonly PaneMark[]): s
 function openKey(actions: ShellActions, key: string, beside: boolean, repository: string): void {
 	if (beside) actions.openBeside(key, repository);
 	else void actions.selectBoard(key, undefined, repository);
-}
-
-/**
- * Whether a repository's boards are read from its chosen checkout's vault. One
- * that is not says why in its own row, and the empty listing's advice would
- * not help it.
- * @param shell The repository.
- * @returns True when its vault has answered with its boards.
- */
-function readyAndRead(shell: ShellRepository): boolean {
-	return shell.repository.state === "ready" && !shell.loading && shell.error === null;
 }
 
 /**
@@ -262,14 +250,9 @@ function Navigator(props: NavigatorProps): JSX.Element {
 				/>
 				<div className="min-h-0 flex-1 overflow-y-auto">
 					<ListingState
-						emptyNotice={props.emptyNotice}
 						loading={view.boardsLoading}
 						error={listingFailure(view)}
-						empty={
-							total === 0 &&
-							view.repositories.every(readyAndRead) &&
-							view.repositories.every((entry) => entry.model === undefined)
-						}
+						empty={view.repositories.length === 0}
 						noMatch={folded.length > 0 && rows.length === 0}
 						query={query}
 						actions={actions}
@@ -325,7 +308,6 @@ function personIsIn(root: HTMLElement): boolean {
 
 /** Inputs for the line shown when the tree has nothing to show. */
 interface ListingStateProps {
-	readonly emptyNotice?: ReactNode;
 	readonly loading: boolean;
 	readonly error: string | null;
 	readonly empty: boolean;
@@ -370,7 +352,7 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 	if (props.noMatch) {
 		return (
 			<p style={MESSAGE_STYLE} className="text-body text-muted-foreground py-3 pr-4">
-				No board matches “{props.query.trim()}”.{" "}
+				No repository matches “{props.query.trim()}”.{" "}
 				<button
 					type="button"
 					onClick={clear}
@@ -383,22 +365,22 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 	}
 	if (!props.empty) return null;
 	if (props.loading) return <ListingSkeleton />;
-	return props.emptyNotice === undefined ? <EmptyBoardNotice /> : <>{props.emptyNotice}</>;
+	return <EmptyRepositoryNotice />;
 }
 
 /**
- * Guidance for an empty legacy vault.
- * @returns The existing board creation instruction.
+ * Guidance when no repository is registered.
+ * @returns The repository discovery instruction.
  */
-function EmptyBoardNotice(): JSX.Element {
+function EmptyRepositoryNotice(): JSX.Element {
 	return (
 		<p
 			data-slot="navigator-empty"
 			style={MESSAGE_STYLE}
 			className="text-body text-muted-foreground py-3 pr-4"
 		>
-			No boards yet. An agent makes one with{" "}
-			<code className="text-foreground font-mono">archboard semantic new</code>.
+			No repositories are registered. Ask your local agent to register a checkout or create a
+			canonical model.
 		</p>
 	);
 }
@@ -421,4 +403,4 @@ function ListingSkeleton(): JSX.Element {
 	);
 }
 
-export { Navigator, EmptyBoardNotice, type NavigatorProps };
+export { Navigator, type NavigatorProps };

@@ -1,4 +1,5 @@
 import type { JSX, ReactNode } from "react";
+import { ModelMigrationRequired } from "#ui/components/architecture-model/ModelMigrationRequired.tsx";
 import type { ArchitectureModelRead } from "@archboard/board/model";
 import { RiRefreshLine } from "@remixicon/react";
 import { Button } from "@archboard/ui-kit/components";
@@ -22,6 +23,7 @@ interface ModelErrorProps {
  * @returns A recoverable error beside the header's Refresh action.
  */
 function ModelError(props: ModelErrorProps): JSX.Element {
+	if (props.code === "LEGACY_AUTHORITY") return <ModelMigrationRequired />;
 	const diagnostics = new Map(props.diagnostics?.map((entry) => [JSON.stringify(entry), entry]));
 	return (
 		<div

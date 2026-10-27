@@ -419,6 +419,7 @@ function repositoryRow(
 	return {
 		kind: "repository",
 		model: shell.model,
+		migrationRequired: shell.migrationRequired,
 		id: repositoryRowId(name),
 		depth: 0,
 		parentId: null,
