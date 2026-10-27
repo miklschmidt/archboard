@@ -4,9 +4,9 @@
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 107,
+	"version": 109,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-10-27T01:21:57.705Z",
+	"updatedAt": "2026-10-27T02:50:26.899Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -23618,7 +23618,7 @@
 						"name": "Board layout",
 						"kind": "module",
 						"responsibility": "Draws one graph plan in the core, routes it, fits its page, and settles crossings",
-						"description": "crates/archboard-layout implements draw and lay_out_board. Group membership, acyclic entry constraints, and fan-in labels fix the architecture plan before one Solver call. Each card block keeps one graph. Packing compares measured geometry before routing one arrangement. Assembly retains parent frames and their containment depths. Routing carries original card identities and painted header bounds. The wasm binding ranks through archboard_graphviz::InCore. The graph reserves lanes beside nested headers inside their shared ancestor. Direct parent arrows meet the visible header card. Descendant traffic enters through a side below it. Full painted headers remain obstacles during final line simplification.",
+						"description": "crates/archboard-layout implements draw and lay_out_board. Group membership, acyclic entry constraints, and fan-in labels fix the architecture plan before one Solver call. Each card block keeps one graph. Packing compares measured geometry before routing one arrangement. Assembly retains parent frames and their containment depths. Routing carries original card identities and painted header bounds. The wasm binding ranks through archboard_graphviz::InCore. The graph reserves lanes beside nested headers inside their shared ancestor. Direct parent arrows meet the visible header card. Descendant traffic enters through a side below it. Full painted headers remain obstacles during final line simplification. The candidate fixes each block’s ports from its first local layout. A parent routes to those actual positions. It omits the later pass that moves child ports and routes the hierarchy again.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-layout/src"
@@ -24639,18 +24639,6 @@
 										]
 									}
 								]
-							},
-							{
-								"id": "d0DitITp",
-								"from": "H0PF4BhI",
-								"to": "H0PF4BhI",
-								"label": "Settle ports once both ends are known",
-								"kind": "self",
-								"anchor": {
-									"repo": "github.com/miklschmidt/archboard",
-									"path": "crates/archboard-layout/src/blocks/place.rs",
-									"symbol": "settled_board"
-								}
 							}
 						]
 					}
