@@ -566,6 +566,7 @@ export {
 	readBlob,
 	readRecord,
 	captureSource,
+	captureOwnSource,
 	sourceEvidence,
 	isArchiveAncestor,
 	settledValues,

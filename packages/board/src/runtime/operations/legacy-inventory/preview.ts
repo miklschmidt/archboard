@@ -1,187 +1,117 @@
-import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
+import type { ArchitectureModelRead } from "#shared/schemas/model.ts";
 import type { LegacyInventory } from "#shared/schemas/migration.ts";
-import type { SemanticVariant } from "#shared/schemas/board-document.ts";
-import { SemanticPolicySchema } from "#shared/schemas/semantic-policy.ts";
-import { sameSemanticValue } from "#shared/rules/semantic-value.ts";
-import { currentFlows } from "#shared/rules/legacy-inventory/flows.ts";
-import {
-	groupOccurrences,
-	resolvedValue,
-	definitionFields,
-	chosenValue,
-} from "#runtime/operations/legacy-inventory/preview-choices.ts";
+import { GitObjectIdSchema } from "#shared/schemas/model.ts";
 import { readLegacyInventory } from "#runtime/operations/legacy-inventory/inventory.ts";
-import { currentNodes } from "#shared/rules/legacy-inventory/evidence.ts";
-import { mappedIdentity } from "#shared/rules/legacy-inventory/plan.ts";
-import { composeModules } from "#runtime/operations/legacy-inventory/preview-subjects.ts";
-import type { ModelDiagnostic } from "#shared/schemas/model.ts";
 import { readMigrationPlan } from "#runtime/store/migration-plan.ts";
-import { readModelFiles, modelRevision } from "#runtime/store/model-files.ts";
-import {
-	decodeModel,
-	selectModule,
-	selectFlow,
-	failure,
-} from "#runtime/operations/read/model-read.ts";
-
-type Preview = NonNullable<ArchitectureModel["migrationPreview"]>;
-
+import { readModelFiles } from "#runtime/store/model-files.ts";
+import { currentNodes } from "#shared/rules/legacy-inventory/evidence.ts";
+import { composeModel } from "#runtime/operations/legacy-inventory/compose.ts";
+import { previewCoverage, scopedPreview } from "#runtime/operations/legacy-inventory/history.ts";
+import { withDraftConversions } from "#runtime/operations/legacy-inventory/drafts.ts";
+import { failure, selectModule, selectFlow } from "#runtime/operations/read/model-read.ts";
+import { historyResult } from "#runtime/operations/history/result.ts";
+import { archiveContext, readRecord, ArchiveError } from "#runtime/store/model-archive.ts";
+import { exactReading } from "#runtime/operations/history/read.ts";
 /**
- * Preserve original state metadata without importing its independent history.
- * @param state One original state.
- * @returns The supported descriptive metadata.
+ * Open captured migration originals through the existing archive reader.
+ * @param vault The explicitly addressed vault.
+ * @param origin The requested import namespace.
+ * @param checkpoint The exact migration checkpoint.
+ * @param state The optional original state identity.
+ * @param module The optional original subject.
+ * @param flow The optional original flow.
+ * @returns An immutable original reading without live source inputs.
  */
-function stateMetadata(state: SemanticVariant) {
-	return {
-		id: state.id,
-		name: state.name,
-		formerNames: state.formerNames,
-		summary: state.summary,
-		documents: state.documents,
-	};
-}
-
-/**
- * Retain original current metadata and explicit future proposal addresses.
- * @param inventory Exact original coverage and owner choices.
- * @returns Preview provenance without importing planned subjects.
- */
-function previewCoverage(inventory: LegacyInventory): Preview {
-	const preview: Preview = {
-		origin: inventory.plan.origin,
-		source: inventory.source,
-		planRevision: inventory.planRevision!,
-		coverage: [],
-		plannedBoards: [],
-	};
-	for (const { document, file } of inventory.boards) {
-		if (document === undefined) continue;
-		const state = document.variants.find((variant) => variant.id === document.current);
-		preview.coverage.push({
-			board: document.id,
-			file,
-			name: document.name,
-			formerNames: document.formerNames,
-			current:
-				state === undefined
-					? undefined
-					: {
-							...stateMetadata(state),
-							legacy: `${inventory.plan.origin}/${document.id}#${state.id}`,
-						},
-		});
-		if (state !== undefined) continue;
-		preview.plannedBoards.push({
-			board: document.id,
-			states: document.variants.map((variant) => {
-				const legacy = `${inventory.plan.origin}/${document.id}#${variant.id}`;
-				return {
-					...stateMetadata(variant),
-					legacy,
-					canonical: mappedIdentity(inventory.plan, legacy),
-					lifecycle: variant.lifecycle,
-				};
-			}),
-		});
-	}
-	return preview;
-}
-
-/**
- * Compose one selected definition for each mapped flow identity.
- * @param inventory Original current behavior and explicit choices.
- * @param diagnostics Contradictions that block this candidate.
- * @returns Independent synthetic collections.
- */
-function composeCollections(inventory: LegacyInventory, diagnostics: ModelDiagnostic[]) {
-	type CandidateCollection = Pick<
-		ArchitectureModel["collections"][number],
-		"schemaVersion" | "id" | "name"
-	> & { flows: unknown[] };
-	const collections = new Map<string, CandidateCollection>();
-	for (const [id, entries] of groupOccurrences(currentFlows(inventory), (entry) =>
-		mappedIdentity(inventory.plan, entry.subject),
-	)) {
-		const owner = entries.find((entry) => entry.subject === id) ?? entries[0]!;
-		const fields = definitionFields(
-			resolvedValue(inventory, "definition", entries, diagnostics),
-			diagnostics,
-		);
-		const formerNames = [
-			...new Set(entries.map((entry) => entry.flow.name).filter((name) => name !== fields["name"])),
-		];
-		const collection: CandidateCollection = collections.get(owner.board) ?? {
-			schemaVersion: 1,
-			id: owner.board,
-			name: owner.name,
-			flows: [],
-		};
-		collection.flows.push({ ...fields, id, ...(formerNames.length === 0 ? {} : { formerNames }) });
-		collections.set(owner.board, collection);
-	}
-	return collections.values();
-}
-
-/**
- * Encode canonical candidate inputs without writing any file.
- * @param inventory The exact sources and explicit mapping choices.
- * @param diagnostics Contradictions that block this candidate.
- * @param policy The complete selected vocabulary.
- * @returns Synthetic bytes and their source provenance.
- */
-function candidateInputs(
-	inventory: LegacyInventory,
-	diagnostics: ModelDiagnostic[],
-	policy: ArchitectureModel["policy"],
+function retainedPreview(
+	vault: string,
+	origin: string,
+	checkpoint: string,
+	state?: string,
+	module?: string,
+	flow?: string,
 ) {
-	const preview = previewCoverage(inventory);
-	const inputs = new Map<string, Buffer>();
-	/**
-	 * Encode one disposable candidate document.
-	 * @param file Its synthetic location.
-	 * @param value Its complete schema input.
-	 */
-	function put(file: string, value: unknown) {
-		inputs.set(file, Buffer.from(JSON.stringify(value)));
-	}
-	for (const collection of composeCollections(inventory, diagnostics))
-		put(`flows/${collection.id}.flows.json`, collection);
-	for (const { file, ...subject } of composeModules(inventory, diagnostics)) put(file, subject);
-	const current = preview.coverage.some((entry) => entry.current !== undefined)
-		? { id: inventory.plan.origin, name: "Migration baseline" }
-		: null;
-	put("model.json", {
-		schemaVersion: 1,
-		id: inventory.plan.origin,
-		name: inventory.plan.origin,
-		current,
-	});
-	inputs.set(".archboard/config.yaml", Buffer.from(Bun.YAML.stringify(policy)));
-	put("legacy-source.json", inventory.source);
-	put("migration-plan.json", { plan: inventory.plan, revision: inventory.planRevision });
-	return { inputs, preview };
+	return historyResult(
+		"ARCHIVE_UNREADABLE",
+		async () => {
+			if (!GitObjectIdSchema.safeParse(checkpoint).success)
+				throw new ArchiveError(
+					"CHECKPOINT_INVALID",
+					"Use a complete migration checkpoint identity.",
+					checkpoint,
+				);
+			const context = await archiveContext(vault);
+			const record = await readRecord(context, checkpoint);
+			if (record.kind !== "checkpoint" || record.migration?.origin !== origin)
+				throw new ArchiveError(
+					"CHECKPOINT_INVALID",
+					"Select the matching migration checkpoint and origin.",
+					checkpoint,
+				);
+			return exactReading(context, checkpoint, module, flow, true, state);
+		},
+		checkpoint,
+	);
 }
-
 /**
- * Read a saved mapping plan as a candidate through canonical validation.
+ * Preview current composition or one original board state without changing authority.
  * @param vault The explicitly addressed legacy vault.
  * @param origin The saved import namespace.
  * @param module The optional module selector.
  * @param flow The optional flow selector.
- * @returns The complete candidate without installing any input.
+ * @param state The optional qualified original state identity.
+ * @param checkpoint The optional immutable original checkpoint.
+ * @returns A complete scoped reading or an actionable refusal.
  */
-function readMigrationPreview(
+async function readMigrationPreview(
 	vault: string,
 	origin: string,
 	module?: string,
 	flow?: string,
-): ArchitectureModelRead {
+	state?: string,
+	checkpoint?: string,
+): Promise<ArchitectureModelRead> {
+	if (checkpoint !== undefined)
+		return retainedPreview(vault, origin, checkpoint, state, module, flow);
 	const inventory = readLegacyInventory(vault, origin);
 	if (!inventory.success) return failure("MAPPING_INVALID", inventory.diagnostics);
 	const refused = previewEligibility(inventory) ?? previewReferenceFailure(inventory);
-	return refused ?? composePreview(vault, inventory, module, flow);
+	if (refused !== undefined) return refused;
+	const result = previewFromInventory(inventory, state, module, flow);
+	if (previewChanged(vault, inventory))
+		return failure("MODEL_CHANGED", [
+			{
+				code: "MODEL_CHANGED",
+				file: ".archboard/migration-plan.json",
+				message: "The source or mapping choices changed during composition.",
+				recovery: "Finish external edits and preview the fresh mapping plan again.",
+			},
+		]);
+	return result;
 }
-
+/**
+ * Compose captured sources and attach their explicit draft conversion evidence.
+ * @param inventory Original inputs and saved mapping choices.
+ * @param state Optional original state coverage.
+ * @param module Optional original subject selection.
+ * @param flow Optional original flow selection.
+ * @returns One canonical candidate with original coverage metadata.
+ */
+function previewFromInventory(
+	inventory: LegacyInventory,
+	state?: string,
+	module?: string,
+	flow?: string,
+): ArchitectureModelRead {
+	const model = state === undefined ? composeModel(inventory) : scopedPreview(inventory, state);
+	if (!model.success) return model;
+	const result = {
+		...model,
+		migrationPreview: model.migrationPreview ?? previewCoverage(inventory),
+	};
+	const converted = withDraftConversions(inventory, result);
+	if (!converted.success) return converted;
+	return selectFlow(selectModule(converted, module), flow);
+}
 /**
  * Require a fresh saved plan and complete explicit decisions.
  * @param inventory Original coverage and exact plan revisions.
@@ -241,28 +171,6 @@ function previewReferenceFailure(inventory: LegacyInventory) {
 }
 
 /**
- * Resolve a complete policy from the explicit conflict decisions.
- * @param inventory Original authored policy and choices.
- * @returns A valid candidate policy or a complete refusal.
- */
-function previewPolicy(inventory: LegacyInventory) {
-	const policies = inventory.conflicts
-		.filter((conflict) => conflict.kind === "policy")
-		.map((conflict) => chosenValue(inventory, conflict));
-	const policy = SemanticPolicySchema.safeParse(policies[0] ?? inventory.policy);
-	if (!policy.success || policies.some((value) => !sameSemanticValue(value, policies[0])))
-		return failure("MAPPING_INVALID", [
-			{
-				code: "MAPPING_INVALID",
-				file: ".archboard/migration-plan.json",
-				message: "Policy choices must supply one complete, valid candidate policy.",
-				recovery: "Resolve every policy conflict with the same complete policy object.",
-			},
-		]);
-	return { success: true as const, policy: policy.data };
-}
-
-/**
  * Refuse interference with captured source or mapping bytes during composition.
  * @param vault The explicitly addressed legacy vault.
  * @param inventory The source and plan that supplied this candidate.
@@ -279,37 +187,4 @@ function previewChanged(vault: string, inventory: LegacyInventory): boolean {
 	);
 }
 
-/**
- * Validate and select the synthetic candidate through the existing canonical reader.
- * @param vault The explicitly addressed legacy vault.
- * @param inventory Exact source inputs and explicit choices.
- * @param module The optional module selector.
- * @param flow The optional flow selector.
- * @returns A complete candidate or actionable refusal.
- */
-function composePreview(
-	vault: string,
-	inventory: LegacyInventory,
-	module?: string,
-	flow?: string,
-): ArchitectureModelRead {
-	const policy = previewPolicy(inventory);
-	if (!policy.success) return policy;
-	const diagnostics: ModelDiagnostic[] = [];
-	const { inputs, preview } = candidateInputs(inventory, diagnostics, policy.policy);
-	if (diagnostics.length > 0) return failure("MAPPING_INVALID", diagnostics);
-	const model = decodeModel({ inputs, revision: modelRevision(inputs), diagnostics: [] });
-	if (previewChanged(vault, inventory))
-		return failure("MODEL_CHANGED", [
-			{
-				code: "MODEL_CHANGED",
-				file: ".archboard/migration-plan.json",
-				message: "The source or mapping choices changed during composition.",
-				recovery: "Finish external edits and preview the fresh mapping plan again.",
-			},
-		]);
-	return model.success
-		? selectFlow(selectModule({ ...model, migrationPreview: preview }, module), flow)
-		: model;
-}
-export { readMigrationPreview };
+export { readMigrationPreview, previewFromInventory };

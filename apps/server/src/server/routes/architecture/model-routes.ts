@@ -39,12 +39,13 @@ const QuerySchema = z
 	})
 	.strict()
 	.refine(
-		(query) => query.checkpoint === undefined || query.state === undefined,
+		(query) =>
+			query.preview !== undefined || query.checkpoint === undefined || query.state === undefined,
 		"Select either state or checkpoint.",
 	);
 const InitializeBodySchema = z.object({ vault: z.string().optional() }).strict();
 const ListQuerySchema = z.object({ vault: z.string() }).strict();
-const RetainBodySchema = ArchitectureCheckpointRequestSchema.extend({
+const RetainBodySchema = ArchitectureCheckpointRequestSchema.safeExtend({
 	vault: z.string().optional(),
 });
 /**

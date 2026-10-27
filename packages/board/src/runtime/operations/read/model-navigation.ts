@@ -50,11 +50,15 @@ async function navigationReading(
 	const selection = { state: options.state, against: options.against, compare: options.compare };
 	const model =
 		options.preview !== undefined
-			? (await import("#runtime/operations/legacy-inventory/preview.ts")).readMigrationPreview(
+			? await (
+					await import("#runtime/operations/legacy-inventory/preview.ts")
+				).readMigrationPreview(
 					vault,
 					options.preview,
 					module,
 					flow,
+					options.state,
+					options.checkpoint,
 				)
 			: options.checkpoint === undefined
 				? await readSelectedState(vault, module, flow, selection)

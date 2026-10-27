@@ -41,13 +41,29 @@ function captureInventory(
 			error: "The source inputs are unreadable.",
 			diagnostics: captured.diagnostics,
 		};
+	return inventoryFromInputs(captured, origin, readMigrationPlan(vault, origin), proposed);
+}
+
+/**
+ * Decode one captured source without reading mutable files or persisting upgrades.
+ * @param captured The exact original input set.
+ * @param origin The retained import namespace.
+ * @param stored The exact saved mapping record.
+ * @param proposed Optional explicit replacement choices.
+ * @returns Original coverage and diagnostics.
+ */
+function inventoryFromInputs(
+	captured: ReturnType<typeof readModelFiles>,
+	origin: string,
+	stored: ReturnType<typeof readMigrationPlan>,
+	proposed?: LegacyMappingPlan,
+): LegacyInventoryRead {
 	const diagnostics: LegacyInventory["diagnostics"] = [];
 	const boards = [...captured.inputs]
 		.filter(([file]) => file.endsWith(".semantic.json"))
 		.map(([file, bytes]) => decodeLegacyInput(file, bytes, diagnostics));
 	if (boards.length === 0)
 		return migrationFailure("LEGACY_NOT_FOUND", ".", "The vault contains no legacy boards.");
-	const stored = readMigrationPlan(vault, origin);
 	if (stored.problem !== undefined)
 		return migrationFailure("MAPPING_INVALID", MIGRATION_PLAN_PATH, stored.problem);
 	const plan = proposed ??
@@ -199,4 +215,4 @@ function migrationFailure(
 		],
 	};
 }
-export { readLegacyInventory, migrationFailure };
+export { readLegacyInventory, migrationFailure, inventoryFromInputs };

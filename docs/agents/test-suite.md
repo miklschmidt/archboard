@@ -607,3 +607,17 @@ It uses real legacy files, saved mapping choices, temporary Git repositories, an
 It covers recursive navigation, flow rendering, fingerprints, unchanged source bytes, stale refusal, and recovery.
 It also covers preview code opening, missing plans, planned-only empty states, and repeated navigation between preview and legacy readings.
 The unchanged-byte assertion includes old schema files and catches implicit upgrades during browser startup and background reads.
+
+## Legacy history preview and original retention
+
+The public architecture operations own `legacy-preview/history.test.ts`, `drafts.test.ts`, and `retention.test.ts` under `packages/board/tests/runtime/operations/`.
+Real legacy files prove original board coverage, independent same-name drafts, explicit predecessor and baseline choices, standing bases, and lifecycle evidence.
+The existing canonical subject engine owns compact changes.
+Original retention cases prove exact old-schema bytes, unresolved payloads, configured signing refusal, exact retries, source and plan guards, retained ancestry, and unchanged source HEAD and index.
+The signed case reopens original coverage after live files disappear and Git collects unreachable objects.
+The inventory and current preview owners retain their original coverage.
+
+`tests/system/semantic-boards/migration-planning.test.ts` owns CLI and HTTP agreement for migration retention and exact original state selection.
+It also owns malformed retention input at the HTTP adapter.
+The parent owns visible history acceptance through the existing browser seam.
+No browser evidence is implied by these backend cases.

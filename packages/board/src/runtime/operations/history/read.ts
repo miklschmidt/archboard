@@ -189,6 +189,7 @@ async function retainedDetails(
  * @param module The optional module selector.
  * @param flow The optional explicit flow selector.
  * @param details Whether the caller returns publication and source evidence.
+ * @param legacyState Optional qualified original state coverage for migration history.
  * @returns A coherent retained reading or model validation diagnostics.
  */
 async function exactReading(
@@ -197,6 +198,7 @@ async function exactReading(
 	module?: string,
 	flow?: string,
 	details?: boolean,
+	legacyState?: string,
 ): Promise<ArchitectureModelRead> {
 	const record = await checkpointRecord(context, checkpoint);
 	await requireDependencies(context, checkpoint, record, new Set());
@@ -207,17 +209,41 @@ async function exactReading(
 			"Retained input fingerprints disagree with the checkpoint.",
 			checkpoint,
 		);
-	const refused = discoveryFailure(captured);
-	if (refused !== undefined) return refused;
-	const decoded = decodeModel(captured, record.selection);
-	if (!decoded.success) return decoded;
-	const model = await recordedSelection(context, decoded, record, checkpoint);
+	const model = await decodeCheckpoint(context, captured, record, checkpoint, legacyState);
 	if (!model.success) return model;
 	const enriched =
 		details === false ? model : await retainedDetails(context, model, checkpoint, record);
 	return selectFlow(selectModule(enriched, module), flow);
 }
 
+/**
+ * Decode one retained format through its original runtime owner.
+ * @param context The caller's archive.
+ * @param captured Exact retained inputs.
+ * @param record The immutable checkpoint record.
+ * @param checkpoint Its exact identity.
+ * @param legacyState Optional original board coverage.
+ * @returns Complete canonical meaning or retained original evidence.
+ */
+async function decodeCheckpoint(
+	context: ArchiveContext,
+	captured: Awaited<ReturnType<typeof readCheckpointInputs>>,
+	record: Awaited<ReturnType<typeof checkpointRecord>>,
+	checkpoint: string,
+	legacyState?: string,
+): Promise<ArchitectureModelRead> {
+	if (record.migration !== undefined) {
+		const { retainedMigrationPreview } =
+			await import("#runtime/operations/legacy-inventory/retained.ts");
+		const model = retainedMigrationPreview(captured, record, legacyState);
+		return model;
+	}
+	const refused = discoveryFailure(captured);
+	if (refused !== undefined) return refused;
+	const decoded = decodeModel(captured, record.selection);
+	if (!decoded.success) return decoded;
+	return recordedSelection(context, decoded, record, checkpoint);
+}
 /**
  * Require a continuing identity before materializing retained correction changes.
  * @param record The immutable correction metadata.

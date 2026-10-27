@@ -133,7 +133,19 @@ The plan changes no active architecture.
 Migration preview:
 A composed current candidate read from an explicit saved mapping plan.
 It retains source provenance and leaves legacy authority unchanged.
-Planned-only states retain future proposal mappings outside current architecture.
+Planned-only states retain explicit draft mappings outside current architecture.
+A selected legacy state covers one original board and names its incomplete repository coverage.
+It never borrows current surrounding modules.
+
+Migration originals checkpoint:
+An immutable archive checkpoint that retains exact original bytes and mapping choices.
+Unsupported and unresolved records stay inspectable before later cutover.
+The checkpoint establishes no historical repository-wide state.
+
+Draft conversion mapping:
+An explicit choice of an original draft, its predecessor, and its exact baseline.
+The baseline is its parent content, its standing conflict base, or an empty planning root.
+The preview derives compact changes through the existing canonical subject engine.
 
 **Board**:
 A semantically named description of one architectural subject or question at one

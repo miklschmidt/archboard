@@ -1128,6 +1128,13 @@
 					"owner": "packages/board/tests/runtime/operations/legacy-preview/preview.test.ts; tests/system/semantic-boards/migration-planning.test.ts; tests/system/browser/canonical-model-preview.test.ts; guidance skills/archboard/references/legacy-migration.md#preview-the-current-model"
 				},
 				{
+					"path": "legacy history preview and original retention: scoped coverage, explicit draft baselines, standing and lifecycle evidence",
+					"expectedUse": "Keep independent histories separate. Map each draft explicitly. Retain exact originals through the existing archive before cutover without changing legacy authority.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/legacy-preview/history.test.ts, drafts.test.ts and retention.test.ts; tests/system/semantic-boards/migration-planning.test.ts; guidance skills/archboard/references/legacy-migration.md#preserve-original-history"
+				},
+				{
 					"path": "canonical recursive readings: scopes, exact checkpoint addresses, direct context, complete interfaces and connection aggregation",
 					"expectedUse": "Open immediate module children without creating boards. Preserve exact readings through navigation and inspect every authored relationship behind a projected line.",
 					"scenarios": [],

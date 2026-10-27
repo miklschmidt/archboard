@@ -1,9 +1,11 @@
 ---
 id: TASK-549.21
 title: Preserve legacy proposals and historical coverage
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@codex-backend'
 created_date: '2026-10-26T05:26:00Z'
+updated_date: '2026-10-27T06:26:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -55,3 +57,20 @@ TASK-549.09, TASK-549.20
 - [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
 - [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Confirm signed integration and main ancestry, then publish the early backend contract.
+2. Create claimed TASK-549.21 draft proposals on Board persistence, Command interface, and Archboard server routes.
+3. Extend the existing mapping plan and preview with explicit draft baselines, scoped legacy history, and lifecycle evidence through the public architecture seam.
+4. Retain exact original inputs through the existing signed archive and retry owner without installing or changing legacy authority.
+5. Run focused RED/GREEN owners, affected structural checks, and draft architecture checks. Update consumer guidance and simplify.
+6. Merge latest integration, release claims, stop this worktree server, commit signed checkpoints, and publish backend handoff. Keep drafts and task In Progress for parent acceptance.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Backend implementation adds scoped original history, explicit draft predecessor and exact baseline choices, canonical compact conversion evidence, original standing and lifecycle records, and lossless original retention through the existing signed archive. No live migration or second history store exists. Draft proposals remain Board persistence@TASK-549.21, Command interface@TASK-549.21, and Archboard server routes@TASK-549.21. Parent-owned browser acceptance, adoption, and task closure remain pending. The early contract and concrete signed fixture are under /home/msc/.local/state/archboard-implementation/task-549. A nullable retained plan revision needs a parent type adjustment at tests/system/browser/canonical-model-preview.test.ts:87. Full type-check reports only that caller error. Backend compilation with that browser fixture excluded passes with every compiler rule unchanged. Full lint and evaluation inputs pass. Runtime evidence includes 20 migration cases, the additional original evidence case, 17 canonical history and correction regression cases, two migration adapter cases, and one correction adapter case. Final logs and source provenance will be recorded in task-549.21-backend.md.
+<!-- SECTION:NOTES:END -->

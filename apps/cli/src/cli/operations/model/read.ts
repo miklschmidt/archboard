@@ -9,7 +9,7 @@ const modelReadContract = defineCommand({
 	shared: ["url", "directory"],
 	summary: "Read an authored canonical module model",
 	description:
-		"Returns ordered root modules, authored details, source-owned relationships and the exact input revision. A module selector accepts a qualified id or a unique name. Use --preview <origin> to inspect a saved legacy mapping plan without replacing legacy authority.",
+		"Returns ordered root modules, authored details, source-owned relationships and the exact input revision. A module selector accepts a qualified id or a unique name. Use --preview <origin> for the composed migration baseline. Add --state <qualified-original-id> for one original board state or --checkpoint <id> for retained originals. Legacy authority stays unchanged.",
 	examples: ["archboard model read", "archboard model read 'Shop#Gateway' -C /tmp/shop"],
 	parameters: [
 		{

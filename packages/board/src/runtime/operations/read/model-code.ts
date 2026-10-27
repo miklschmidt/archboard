@@ -94,7 +94,7 @@ async function modelCodeTarget(vault: string, model: ArchitectureModel) {
 				error: "Select a module with a code binding.",
 			},
 		};
-	const source = model.checkpoint === undefined ? { binding } : sourceBinding(model, binding);
+	const source = readingBinding(model, binding);
 	if (source.binding === undefined)
 		return {
 			codeBinding: binding,
@@ -121,7 +121,26 @@ async function availableCodeTarget(
 	target: ReturnType<typeof resolveLocalCodeTarget>,
 ) {
 	if (!target.ok) return target;
-	return model.checkpoint === undefined ? target : historicalTarget(binding, target);
+	const historical =
+		model.checkpoint !== undefined || model.migrationPreview?.selected !== undefined;
+	return historical ? historicalTarget(binding, target) : target;
 }
 
 export { modelCodeTarget };
+
+/**
+ * Keep unpinned legacy evidence unavailable rather than opening present-day source.
+ * @param model The requested original or canonical reading.
+ * @param binding Its authored code evidence.
+ * @returns Exact original evidence or the existing canonical source resolution.
+ */
+function readingBinding(model: ArchitectureModel, binding: CodeBinding) {
+	if (model.migrationPreview?.selected !== undefined)
+		return binding.commit === undefined
+			? {
+					error:
+						"This original legacy reading has no pinned source revision. Preserve its original binding and restore exact source evidence before opening code.",
+				}
+			: { binding };
+	return model.checkpoint === undefined ? { binding } : sourceBinding(model, binding);
+}

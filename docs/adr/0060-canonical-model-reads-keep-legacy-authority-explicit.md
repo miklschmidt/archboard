@@ -300,3 +300,33 @@ They preserve the exact source bytes that the saved mapping plan names.
 Ordinary legacy CLI reads keep their existing automatic schema migration behavior.
 The workspace keeps explicit canonical intent until a deliberate legacy open succeeds.
 Browser history records the visible origin, even when the server remembers an earlier legacy board.
+
+TASK-549.21 extends the same preview with original history coverage and explicit draft conversion choices.
+A qualified original state opens only its board's original modules and flows.
+The result names its original board and file and states that repository coverage is incomplete.
+It clears the current designation and never adds present-day surrounding modules.
+History metadata retains original ancestry, standing bases, corrections, adoption records, and shelving reasons.
+Unpinned original code and external architecture stay unavailable.
+
+Each mapped draft explicitly names its original predecessor and exact baseline content.
+Standing drafts select their retained reconciliation base.
+Parentless planning roots select an empty baseline.
+The existing canonical subject engine derives compact changes after explicit subject mappings.
+Names and task IDs establish no combined proposal identity.
+Planning-only subjects remain additions outside current architecture.
+A missing mapping remains visible as an unconverted draft.
+
+The existing checkpoint operation also accepts original migration retention.
+It fingerprints original sources separately from the saved mapping plan.
+The archive keeps a lossless byte envelope for every recognized input and the plan.
+This envelope preserves unsupported documents without depending on text decoding or normalization.
+Configured signing, retention refs, conditional append, dependency retention, publication, and exact retries keep their existing owners.
+The operation changes no live architecture file, source HEAD, or index.
+It needs no installation journal because it installs no authored input.
+
+A migration checkpoint carries explicit migration metadata and no selected canonical state.
+Its reader reconstructs originals from Git objects independently of live source and plan files.
+Incomplete conversion returns inspectable originals and diagnostics rather than a fabricated complete model.
+Exact original state materialization requires a complete retained plan.
+Original views, walkthroughs, bookmarks, addresses, and unresolved payloads remain available for TASK-549.22.
+TASK-549.23 owns conversion installation and cutover through the existing durable transaction.
