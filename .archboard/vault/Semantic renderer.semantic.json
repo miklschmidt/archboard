@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 150,
+	"version": 151,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-27T01:21:58.348Z",
+	"updatedAt": "2026-10-27T02:48:56.927Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -67082,7 +67082,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The WebAssembly build Bun and the browser load: one render call answers a picture and its key, and one solve lays a graph out in a layout worker",
-						"description": "scripts/build-core.ts records the source hash and writes the TypeScript contract from Rust types. render(request, host) asks the host for layout solves and icons. Dropping a pending solve future cancels its host request. layOutBoard(graph) runs the graph plan and the vendored Graphviz through archboard_graphviz::InCore. The core remembers layouts, and each solve depends on its graph alone.",
+						"description": "scripts/build-core.ts records the source hash and writes the TypeScript contract from Rust types. render(request, host) asks the host for layout solves and icons. Dropping a pending solve future cancels its host request. layOutBoard(graph) runs the graph plan and the vendored Graphviz through archboard_graphviz::InCore. The core remembers layouts, and each solve depends on its graph alone. The candidate fixes each block’s ports from its first local layout. A parent routes to those actual positions. It omits the later pass that moves child ports and routes the hierarchy again.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-renderer-wasm/src"

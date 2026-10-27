@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T16:24:00Z'
-updated_date: '2026-10-27T01:51:00Z'
+updated_date: '2026-10-27T02:47:00Z'
 labels:
   - renderer
   - performance
@@ -43,6 +43,12 @@ The unconditional Groups probe now reaches TASK-548.10. Preserve card endpoint i
 Next probe: the graph fixes all acyclic entry constraints in every card block, so each architecture graph asks one Solver call. Remove the two partial stacking solves, speculative whole solves, and wrap candidates sent as whole-board solves. Keep local wraps inside the one solve. Renderer layout@TASK-548.08 version 104 and Semantic renderer@TASK-548.08 version 147 state this plan before implementation. Drop the probe that suppresses geometric face selection for Blocks: its Browser application raster contains visibly more empty space and longer routes. Preserve source and target identities, caption reservation, and strip sizing as separate routing probes, subject to full integrity tests and the council.
 
 Profile-guided exact-work probe: restrict the Track pair counter to nets whose coordinates can satisfy its existing lane-distance predicate. Keep the predicate and scalar count unchanged, prove equivalence with its exhaustive reference, and require zero changed corpus SVGs. The Renderer layout and Semantic renderer proposals stay accurate because this changes neither phase ownership nor the Solver contract.
+
+Drop the coordinate-window counter probe: the unoptimized three-board path changes only from 2837 to 2811 ms, which does not establish material value. Instead, snapshot each channel score for one trial sequence and recount only channels whose net endpoint coordinates actually change. The existing exact predicates and accepted-move condition stay unchanged. Prove the cached delta against exhaustive scores and require zero changed SVGs.
+
+Drop both pair-cache probes after the shared version changes the debug aggregate only from 2840 to 2763 ms. Trace the hierarchy before changing its port policy: the target Track graphs have zero face changes and zero port-order retries, so those policy changes cannot speed them. Next retain each line’s static obstacle boxes for joined-line simplification and avoid constructing those boxes while computing route-only candidate cost. Keep all route decisions and require exact corpus equality.
+
+Drop the static-box and shared-span microprobes: their unoptimized aggregates stay near 2830 ms with no drawing changes. The detailed trace attributes 615 of 1614 ms of Viewer solve time to settling and routing again, including 604 ms in the root. Propose a graph-fixed port plan on the architecture drafts before implementation. Test the first local graph placement as the final port plan and omit the later port-settling reroute. Preserve header and trunk integrity, inspect whole-board rasters, and reject the rule if it reads obviously worse. Retain it only with a complete new corpus and measurements.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
