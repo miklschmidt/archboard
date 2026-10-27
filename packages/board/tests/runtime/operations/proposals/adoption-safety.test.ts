@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, renameSync } from "node:fs";
 import { join } from "node:path";
 import { readArchitectureModel } from "@archboard/board/store-read";
 import { editArchitectureModule } from "@archboard/board/store-write";
@@ -23,6 +23,7 @@ test("superseded adoption requires a fresh explicit current comparison and insta
 		changes: [],
 	});
 	if (!adopted.success) throw new Error(JSON.stringify(adopted));
+	renameSync(join(vault, "gateway.module.json"), join(vault, "renamed.module.json"));
 	const input = await request(vault, second.target.state!);
 	const manifest = readFileSync(join(vault, "model.json"));
 	expect(
@@ -78,6 +79,8 @@ test("superseded adoption requires a fresh explicit current comparison and insta
 	const current = readArchitectureModel(vault);
 	if (!current.success) throw new Error(JSON.stringify(current));
 	expect(current.modules.some((module) => module.name === "Cache")).toBe(false);
+	expect(existsSync(join(vault, "renamed.module.json"))).toBe(false);
+	expect(existsSync(join(vault, "gateway.module.json"))).toBe(true);
 	expect(current.modules.find((module) => module.id === "Shop#Worker")?.description).not.toBe(
 		"Uses the cache.",
 	);

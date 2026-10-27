@@ -1,12 +1,12 @@
 import { afterEach, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
 	readArchitectureModel,
 	readArchitectureCheckpoint,
 	listArchitectureCheckpoints,
 } from "@archboard/board/store-read";
-import { editArchitectureModule } from "@archboard/board/store-write";
+import { editArchitectureModule, retainArchitectureCheckpoint } from "@archboard/board/store-write";
 import { fixture, disposeFixtures } from "#tests/runtime/operations/model-edit/fixture.ts";
 import { request, proposal, selected } from "#tests/runtime/operations/proposals/fixture.ts";
 
@@ -60,11 +60,67 @@ test("adoption installs the settled complete draft and retains both lasting stat
 	const bytes = readFileSync(join(vault, "model.json"));
 	expect(await editArchitectureModule(vault, input)).toEqual(adopted);
 	expect(readFileSync(join(vault, "model.json"))).toEqual(bytes);
+	const retained = await retainArchitectureCheckpoint(vault, {
+		target: "current",
+		operationId: "retain-adopted-current",
+		writer: "agent",
+		doing: "retain implemented architecture",
+		expectedRevision: current.revision.digest,
+		dependencies: [],
+	});
+	expect(retained).toMatchObject({ success: true });
+	if (!retained.success) throw new Error(JSON.stringify(retained));
+	expect(
+		await readArchitectureCheckpoint(vault, retained.checkpoint.id, undefined, undefined, {
+			compare: false,
+		}),
+	).toMatchObject({
+		success: true,
+		selectedState: {
+			id: created.target.state,
+			lifecycle: "historical",
+			adoptedAt: adopted.selectedState!.adoptedAt,
+			reason: "The queue is implemented.",
+		},
+	});
 	const history = await listArchitectureCheckpoints(vault);
 	if (!history.success) throw new Error(JSON.stringify(history));
 	expect(
 		history.checkpoints.filter((checkpoint) => checkpoint.lifecycle?.type === "adopt"),
 	).toHaveLength(1);
+	rmSync(join(vault, "model.json"));
+	expect(
+		await readArchitectureModel(vault, undefined, undefined, { state: "Current", compare: false }),
+	).toMatchObject({ success: true, selectedState: { id: "Current", lifecycle: "historical" } });
+	expect(await editArchitectureModule(vault, input)).toEqual(adopted);
+}, 15_000);
+
+test("a planning root receives its first current designation without an invented prior state", async () => {
+	const { vault } = fixture();
+	const initial = readArchitectureModel(vault);
+	if (!initial.success) throw new Error(JSON.stringify(initial));
+	for (const module of initial.modules) rmSync(join(vault, module.file));
+	writeFileSync(join(vault, "model.json"), JSON.stringify({ ...initial.manifest, current: null }));
+	const created = await editArchitectureModule(vault, {
+		...(await request(vault, null)),
+		proposal: { type: "create", name: "First design" },
+		changes: [{ type: "add-module", module: { name: "First service", kind: "service", order: 0 } }],
+	});
+	if (!created.success) throw new Error(JSON.stringify(created));
+	const adopted = await editArchitectureModule(vault, {
+		...(await request(vault, created.target.state)),
+		proposal: { type: "adopt", reason: "The first service is implemented." },
+		changes: [],
+	});
+	expect(adopted).toMatchObject({
+		success: true,
+		selectedState: { id: created.target.state, lifecycle: "current", previousCurrent: null },
+		checkpoint: { lifecycle: { previous: null } },
+	});
+	const current = await readArchitectureModel(vault, undefined, undefined, {});
+	if (!current.success) throw new Error(JSON.stringify(current));
+	expect(current.modules.map((module) => module.name)).toEqual(["First service"]);
+	expect(current.states?.filter((state) => state.lifecycle === "historical")).toEqual([]);
 }, 15_000);
 
 test("shelving retains the final compact patch and metadata without changing current inputs", async () => {

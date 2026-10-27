@@ -359,8 +359,15 @@ test("CLI and HTTP preserve completed lifecycle states and forced comparison rec
 	expect(JSON.parse(reopened.stdout)).toMatchObject({
 		success: true,
 		selectedState: { id: child.id, lifecycle: "shelved" },
-		states: expect.arrayContaining([
-			expect.objectContaining({ id: "Current", lifecycle: "historical" }),
-		]),
 	});
+	const catalogue = runServerCli({
+		repoRoot,
+		server,
+		args: ["model", "proposals"],
+		input: undefined,
+	});
+	expect(catalogue.status, catalogue.stderr).toBe(0);
+	expect(JSON.parse(catalogue.stdout).states).toEqual(
+		expect.arrayContaining([expect.objectContaining({ id: "Current", lifecycle: "historical" })]),
+	);
 }, 20_000);

@@ -39,18 +39,28 @@ function displacedStates(record: Record): States {
 }
 
 /**
+ * Read only checkpoint records owned by the addressed vault and model.
+ * @param context The addressed archive.
+ * @param model The optional model identity guard.
+ * @returns Their retained record identities and metadata.
+ */
+async function modelRecords(context: ArchiveContext, model?: string) {
+	return (await archiveRecords(context)).flatMap(({ id, record }) => {
+		if (record.kind !== "checkpoint") return [];
+		if (record.vault !== context.vault) return [];
+		if (model !== undefined && record.model !== model) return [];
+		return [{ id, record }];
+	});
+}
+
+/**
  * Derive completed states from explicit lifecycle records rather than archive order.
  * @param context The addressed archive.
  * @param model The optional model identity guard.
  * @returns Retained logical states and their exact checkpoints.
  */
 async function retainedStates(context: ArchiveContext, model?: string) {
-	const records = (await archiveRecords(context)).flatMap(({ id, record }) => {
-		if (record.kind !== "checkpoint") return [];
-		if (record.vault !== context.vault) return [];
-		if (model !== undefined && record.model !== model) return [];
-		return [{ id, record }];
-	});
+	const records = await modelRecords(context, model);
 	const completed = records.flatMap(({ id, record }) => completedStates(record, id));
 	const previous = records.flatMap(({ record }) => displacedStates(record));
 	const displaced = new Set(previous.map((state) => state.id));
@@ -62,6 +72,28 @@ async function retainedStates(context: ArchiveContext, model?: string) {
 			]),
 		).values(),
 	].toSorted((a, b) => a.id.localeCompare(b.id) || a.checkpoint!.localeCompare(b.checkpoint!));
+}
+
+/**
+ * Keep completed state and subject identities reserved through the existing mint.
+ * @param context The addressed archive.
+ * @param model The stable model identity.
+ * @returns Derived reservations, never another identity authority or persisted ledger.
+ */
+async function retainedReservations(context: ArchiveContext, model: string) {
+	const records = await modelRecords(context, model);
+	return new Set(
+		records.flatMap(({ record }) => {
+			const lifecycle = record.lifecycle;
+			if (lifecycle === undefined) return [];
+			return [
+				lifecycle.proposal.id,
+				...lifecycle.proposal.changes.map((change) => change.subject),
+				...(lifecycle.proposal.retiredIds ?? []),
+				...(lifecycle.previous === null ? [] : [lifecycle.previous.state.id]),
+			];
+		}),
+	);
 }
 
 /**
@@ -84,4 +116,4 @@ function stateCatalogue(
 	return [...authored, ...retained.filter((state) => !live.has(state.id))];
 }
 
-export { retainedStates, stateCatalogue };
+export { retainedStates, retainedReservations, stateCatalogue };

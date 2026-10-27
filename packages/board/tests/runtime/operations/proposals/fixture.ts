@@ -20,7 +20,10 @@ function stepIds(
 				: []),
 	]);
 }
-async function request(vault: string, state = "Current") {
+async function request(
+	vault: string,
+	state: ArchitectureModuleEdit["target"]["state"] = "Current",
+) {
 	const model = readArchitectureModel(vault);
 	if (!model.success) throw new Error(JSON.stringify(model));
 	const claims = readArchitectureClaims(vault);

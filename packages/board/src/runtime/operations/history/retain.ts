@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { StateMetadataSchema } from "#shared/schemas/model-definitions.ts";
 import {
 	ArchitectureCheckpointRequestSchema,
 	type ArchitectureCheckpointRequest,
@@ -55,7 +56,8 @@ async function prepareCheckpoint(
 		kind: "checkpoint",
 		vault: context.vault,
 		model: current.manifest.id,
-		state: current.manifest.current,
+		state: StateMetadataSchema.strip().parse(current.manifest.current),
+		selection: current.selectedState,
 		revision: captured.revision,
 		createdAt: new Date().toISOString(),
 		request,

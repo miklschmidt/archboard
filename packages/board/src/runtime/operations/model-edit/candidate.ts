@@ -4,8 +4,29 @@ import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts
 import { decodeModel } from "#runtime/operations/read/model-read.ts";
 import { requireSubjectClaim, requireTarget } from "#runtime/operations/model-edit/claims.ts";
 import { readModelFiles, modelRevision } from "#runtime/store/model-files.ts";
-import { ArchiveError } from "#runtime/store/model-archive.ts";
-import { applyStructure } from "#runtime/operations/model-edit/structure.ts";
+import { ArchiveError, archiveContext } from "#runtime/store/model-archive.ts";
+import { retainedReservations } from "#runtime/operations/history/states.ts";
+import { applyStructure, allocatesIdentity } from "#runtime/operations/model-edit/structure.ts";
+
+/**
+ * Apply the existing structural rules with identities reserved by retained lifecycle events.
+ * @param vault The explicit vault.
+ * @param model The complete selected architecture.
+ * @param request The complete caller intent.
+ * @param paths The recognized input paths.
+ * @returns The complete structural candidate.
+ */
+async function applyCandidateStructure(
+	vault: string,
+	model: ArchitectureModel,
+	request: ArchitectureModuleEdit,
+	paths: Iterable<string>,
+) {
+	const reservations = allocatesIdentity(request)
+		? await retainedReservations(await archiveContext(vault), model.manifest.id)
+		: new Set<string>();
+	return { ...applyStructure(model, request, paths, reservations), reservations };
+}
 
 /**
  * Capture the exact complete revision before preparing a candidate.
@@ -32,7 +53,8 @@ function writeDefinitions<T extends { id: string; file: string }>(
 	after: T[],
 ): void {
 	const continuing = new Map(after.map((value) => [value.id, value]));
-	for (const value of before) if (!continuing.has(value.id)) inputs.delete(value.file);
+	for (const value of before)
+		if (continuing.get(value.id)?.file !== value.file) inputs.delete(value.file);
 	const originals = new Map(before.map((value) => [value.id, value]));
 	for (const value of after) {
 		if (isDeepStrictEqual(originals.get(value.id), value)) continue;
@@ -51,7 +73,10 @@ function writeDefinitions<T extends { id: string; file: string }>(
 function candidateInputs(
 	captured: ReturnType<typeof readModelFiles>,
 	current: ArchitectureModel,
-	candidate: Pick<ReturnType<typeof applyStructure>, "modules" | "collections" | "manifest">,
+	candidate: Pick<
+		ArchitectureModel,
+		keyof ReturnType<typeof applyStructure> & keyof ArchitectureModel
+	>,
 ) {
 	const inputs = new Map(captured.inputs);
 	writeDefinitions(inputs, current.modules, candidate.modules);
@@ -94,14 +119,14 @@ function requireCurrentEdit(model: ArchitectureModel): void {
  * @param captured The exact starting files.
  * @returns The checked candidate or refusal.
  */
-function currentCandidate(
+async function currentCandidate(
 	vault: string,
 	request: ArchitectureModuleEdit,
 	current: ArchitectureModel,
 	captured: ReturnType<typeof readModelFiles>,
 ) {
 	requireCurrentEdit(current);
-	const candidate = applyStructure(current, request, captured.inputs.keys());
+	const candidate = await applyCandidateStructure(vault, current, request, captured.inputs.keys());
 	const inputs = candidateInputs(captured, current, candidate);
 	const revision = modelRevision(inputs);
 	const checked = decodeModel({ inputs, revision, diagnostics: [] });
@@ -123,8 +148,10 @@ function currentCandidate(
 /**
  * Reject a descendant that waits on an unsettled ancestor.
  * @param current The explicitly selected reading.
+ * @param request The complete intent, including an explicit shelving decision.
  */
-function requireWritableTarget(current: ArchitectureModel): void {
+function requireWritableTarget(current: ArchitectureModel, request: ArchitectureModuleEdit): void {
+	if ("proposal" in request && request.proposal.type === "shelve") return;
 	const ancestor = current.selectedState?.standing?.blockedBy;
 	if (ancestor !== undefined)
 		throw new ArchiveError(
@@ -146,7 +173,7 @@ async function initialCandidate(vault: string, request: ArchitectureModuleEdit) 
 	if (!isDeepStrictEqual(current.revision, request.expectedRevision))
 		throw new ArchiveError("STALE_REVISION", "Read the complete model again before a new edit.");
 	const captured = captureRevision(vault, current.revision);
-	requireWritableTarget(current);
+	requireWritableTarget(current, request);
 	if ("proposal" in request) {
 		const { proposalIntentCandidate } = await import("#runtime/operations/proposals/candidate.ts");
 		return proposalIntentCandidate(vault, request, current, captured);
@@ -171,4 +198,4 @@ async function editCandidate(vault: string, request: ArchitectureModuleEdit) {
 		candidate,
 	);
 }
-export { initialCandidate, editCandidate, candidateInputs, changedFiles };
+export { initialCandidate, editCandidate, candidateInputs, changedFiles, applyCandidateStructure };

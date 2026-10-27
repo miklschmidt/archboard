@@ -424,19 +424,16 @@ async function readingArchive(vault: string) {
 }
 
 /**
- * Derive the complete state catalogue beside the current reading.
+ * Derive retained metadata only for the default current catalogue reading.
  * @param vault The addressed vault.
- * @returns Current authority, retained metadata, and their archive context.
+ * @param current The current complete reading or refusal.
+ * @returns The current architecture and complete state catalogue.
  */
-async function readingCatalogue(vault: string) {
-	const current = readCurrentModel(vault);
+async function readingCatalogue(vault: string, current: ArchitectureModelRead) {
+	if (!current.success) return current;
 	const context = await readingArchive(vault);
-	const retained =
-		context === undefined
-			? []
-			: await retainedStates(context, current.success ? current.manifest.id : undefined);
-	const states = current.success ? stateCatalogue(current, retained) : retained;
-	return { context, states, catalogue: current.success ? { ...current, states } : current };
+	const retained = context === undefined ? [] : await retainedStates(context, current.manifest.id);
+	return { ...current, states: stateCatalogue(current, retained) };
 }
 
 /**
@@ -449,16 +446,13 @@ async function selectedReading(
 	vault: string,
 	selection: Selection,
 ): Promise<ArchitectureModelRead> {
-	const { context, states, catalogue } = await readingCatalogue(vault);
-	if (selection.state === undefined && selection.against === undefined) return catalogue;
-	if (context === undefined)
-		throw new ArchiveError(
-			"ARCHIVE_NOT_INITIALIZED",
-			"Initialize the private archive before opening retained states.",
-		);
-	const selected = await requestedState(context, catalogue, selection.state);
+	const current = readCurrentModel(vault);
+	if (selection.state === undefined && selection.against === undefined)
+		return readingCatalogue(vault, current);
+	const context = await archiveContext(vault);
+	const selected = await requestedState(context, current, selection.state);
 	if (!selected.success) return selected;
-	return compareSelected(context, { ...selected, states }, catalogue, selection);
+	return compareSelected(context, selected, current, selection);
 }
 /**
  * Read a selected draft or retained state with explicit comparison metadata.

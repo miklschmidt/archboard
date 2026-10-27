@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 182,
+	"version": 183,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-26T23:50:03.949Z",
+	"updatedAt": "2026-10-27T00:28:39.237Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -177560,7 +177560,7 @@
 						"name": "Canonical structure candidate",
 						"kind": "module",
 						"responsibility": "Builds module and flow candidates, then stores only identity additions, removals, assignments, clears and placements for a selected draft.",
-						"description": "Uses the existing structure and flow operations to preserve authored order, continuing identities, exact unrelated bytes and the one durable transaction.",
+						"description": "Builds one complete module and flow candidate with identities reserved by retained lifecycle records. The existing mint owns allocation. Non-allocating edits read no archive catalogue. Serialization preserves unrelated bytes and removes superseded file locations.",
 						"parent": "1VHRyajb",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -179500,7 +179500,7 @@
 						"from": "8Uq1mtzw",
 						"to": "ov7pPg21",
 						"kind": "call",
-						"label": "require target and subject ownership",
+						"label": "require subject ownership",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -180394,12 +180394,12 @@
 						"from": "KJy5yYuq",
 						"to": "e0GTqv1k",
 						"kind": "call",
-						"label": "serialize changed definitions",
+						"label": "prepare and serialize complete definitions",
 						"emphasis": "normal",
 						"anchor": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/proposals/candidate.ts",
-							"symbol": "decodedDraft"
+							"symbol": "applyCandidateStructure"
 						}
 					},
 					{
@@ -180456,20 +180456,6 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/proposals/candidate.ts",
 							"symbol": "proposalCandidate"
-						}
-					},
-					{
-						"id": "J6sf7wpy",
-						"order": 200000,
-						"from": "KJy5yYuq",
-						"to": "llmZ5fau",
-						"kind": "call",
-						"label": "module and flow batch",
-						"emphasis": "normal",
-						"anchor": {
-							"repo": "github.com/miklschmidt/archboard",
-							"path": "packages/board/src/runtime/operations/proposals/candidate.ts",
-							"symbol": "applyStructure"
 						}
 					},
 					{
@@ -180708,6 +180694,34 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/settle/settle.ts",
 							"symbol": "caughtUp"
+						}
+					},
+					{
+						"id": "ZcLsTS33",
+						"order": 219000,
+						"from": "e0GTqv1k",
+						"to": "Bd4GPG6d",
+						"kind": "call",
+						"label": "retain identity reservations",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+							"symbol": "retainedReservations"
+						}
+					},
+					{
+						"id": "WIHdjwjn",
+						"order": 220000,
+						"from": "8Uq1mtzw",
+						"to": "cNaEpWjJ",
+						"kind": "call",
+						"label": "recheck exact current inputs after signing",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
+							"symbol": "readCurrentModel"
 						}
 					}
 				],

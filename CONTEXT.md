@@ -50,6 +50,18 @@ Selected state:
 The explicit state metadata and lifecycle of the returned reading.
 A selected draft remains draft even when its retained manifest names a current state.
 
+Canonical adoption:
+An explicit agent operation that designates a coherent settled proposal as current.
+It preserves the proposal identity and retains the exact prior current reading.
+
+Canonical shelving:
+An explicit agent operation that closes an active proposal with a reason.
+Its final patch, baseline, and ancestry remain readable through retained history.
+
+Completed state catalogue:
+A derived reading of explicit lifecycle records, independent of archive append order.
+It stores no history in current architecture files.
+
 Subject claim:
 An agent's exclusive scope of named architecture subjects.
 The claim identifies its writer, purpose, and start time.
