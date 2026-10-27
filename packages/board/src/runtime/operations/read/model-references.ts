@@ -150,8 +150,22 @@ function resolvedReference(
  * @returns An exact revision, a current selector, or explicit unavailable history.
  */
 function referencePin(model: ArchitectureModel, entry: ReferenceEntry): string | null | undefined {
+	if (model.migrationPreview?.selected !== undefined) return entry.reference.checkpoint ?? null;
 	if (model.checkpoint === undefined) return entry.reference.checkpoint;
-	const pin = model.checkpoint.references?.find(
+	return checkpointReferencePin(model.checkpoint, entry);
+}
+
+/**
+ * Resolve one retained foreign pin without falling back to current architecture.
+ * @param checkpoint The exact source checkpoint.
+ * @param entry The original authored reference.
+ * @returns An exact target checkpoint or explicit unavailable history.
+ */
+function checkpointReferencePin(
+	checkpoint: NonNullable<ArchitectureModel["checkpoint"]>,
+	entry: ReferenceEntry,
+) {
+	const pin = checkpoint.references?.find(
 		(candidate) =>
 			candidate.module === entry.module &&
 			candidate.index === entry.index &&
@@ -160,7 +174,6 @@ function referencePin(model: ArchitectureModel, entry: ReferenceEntry): string |
 	if (pin !== undefined) return pin.checkpoint;
 	return entry.reference.checkpoint ?? null;
 }
-
 /**
  * Resolve one direct reference without recursively expanding foreign ownership.
  * @param snapshot The source vault's existing checkout snapshot.

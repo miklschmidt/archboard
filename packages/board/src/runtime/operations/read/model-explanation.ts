@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import { QualifiedSubjectIdSchema } from "#shared/schemas/primitives.ts";
 import { StateSelectionSchema } from "#shared/schemas/model-proposals.ts";
 import type { ExplanationRequestSchema } from "#shared/schemas/model-explanation.ts";
 import type { ArchitectureModelRead, ArchitectureModel } from "#shared/schemas/model.ts";
@@ -241,20 +242,32 @@ async function readRequestedArchitecture(
  * @returns A structured refusal or no conflict.
  */
 function selectionFailure(selection: z.infer<typeof StateSelectionSchema>) {
-	const incompatible = [
-		selection.state,
-		selection.checkpoint,
-		selection.against,
-		selection.explain,
-	].some((value) => value !== undefined);
-	if (selection.preview !== undefined && (incompatible || selection.compare === true))
+	if (selection.preview !== undefined) return previewSelectionFailure(selection);
+	if (selection.state !== undefined && selection.checkpoint !== undefined)
+		return refuse("MODEL_INVALID", [], "Select one state or checkpoint.");
+	return undefined;
+}
+/**
+ * Keep legacy state coverage explicit and comparison or explanation unavailable.
+ * @param selection The requested migration reading.
+ * @returns A structured refusal or a valid preview selection.
+ */
+function previewSelectionFailure(selection: z.infer<typeof StateSelectionSchema>) {
+	if (selection.state !== undefined && !QualifiedSubjectIdSchema.safeParse(selection.state).success)
 		return refuse(
 			"MODEL_INVALID",
 			[],
-			"Select preview without state, checkpoint, comparison, or explanation.",
+			"Select an exact qualified legacy state identity from the migration history.",
 		);
-	if (selection.state !== undefined && selection.checkpoint !== undefined)
-		return refuse("MODEL_INVALID", [], "Select one state or checkpoint.");
+	if (
+		[selection.against, selection.explain].some((value) => value !== undefined) ||
+		selection.compare === true
+	)
+		return refuse(
+			"MODEL_INVALID",
+			[],
+			"Select a migration preview without comparison or explanation.",
+		);
 	return undefined;
 }
 /**

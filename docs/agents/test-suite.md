@@ -623,6 +623,20 @@ It covers recursive navigation, flow rendering, fingerprints, unchanged source b
 It also covers preview code opening, missing plans, planned-only empty states, and repeated navigation between preview and legacy readings.
 The unchanged-byte assertion includes old schema files and catches implicit upgrades during browser startup and background reads.
 
+## Legacy history preview and original retention
+
+The public architecture operations own `legacy-preview/history.test.ts`, `drafts.test.ts`, and `retention.test.ts` under `packages/board/tests/runtime/operations/`.
+Real legacy files prove original board coverage, independent same-name drafts, explicit predecessor and baseline choices, standing bases, and lifecycle evidence.
+The existing canonical subject engine owns compact changes.
+Original retention cases prove exact old-schema bytes, unresolved payloads, configured signing refusal, exact retries, source and plan guards, retained ancestry, and unchanged source HEAD and index.
+The signed case reopens original coverage after live files disappear and Git collects unreachable objects.
+The inventory and current preview owners retain their original coverage.
+
+`tests/system/semantic-boards/migration-planning.test.ts` owns CLI and HTTP agreement for migration retention and exact original state selection.
+It also owns malformed retention input at the HTTP adapter.
+The parent owns visible history acceptance through the existing browser seam.
+No browser evidence is implied by these backend cases.
+
 `tests/system/server-state/canonical-walkthrough-narration.test.ts` owns the canonical voice bridge through public architecture reads, HTTP reports, and application sockets.
 Its temporary files and Git repositories exercise separate source and target captures, pinned narration after edits, stale refusal, and unavailable history.
 The existing `productionServer` preload supplies the controlled provider without live voice calls.
@@ -646,3 +660,8 @@ No second installer or history implementation belongs to these tests.
 `tests/system/semantic-boards/model-portable.test.ts` owns strict CLI and HTTP routing and refused output preservation.
 The parent owns any visible integration in checkpoint selectors, including a planning checkpoint with no state designation.
 No browser test or model evaluation belongs to the backend slice.
+
+Original migration history has one browser owner in `canonical-preview-history.test.ts`.
+It covers paired state/checkpoint navigation, original coverage, lifecycle and standing evidence, and exact original inspection after live files disappear.
+Public architecture operations create its retained fixtures in real temporary Git repositories.
+The existing `canonical-model-preview.test.ts` retains current-preview navigation, code-opening, source-preservation, and recovery ownership.

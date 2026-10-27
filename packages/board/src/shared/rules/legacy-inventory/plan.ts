@@ -1,3 +1,4 @@
+import { draftMappingProblem } from "#shared/rules/legacy-inventory/drafts.ts";
 import type { LegacyInventory, LegacyMappingPlan } from "#shared/schemas/migration.ts";
 
 /**
@@ -73,6 +74,7 @@ function duplicateProblem(plan: LegacyMappingPlan): string | undefined {
 function mappingProblem(inventory: LegacyInventory): string | undefined {
 	return (
 		duplicateProblem(inventory.plan) ??
+		draftMappingProblem(inventory) ??
 		inventory.plan.references
 			?.map((reference) =>
 				inventory.identities.some(

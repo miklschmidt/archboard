@@ -1,3 +1,4 @@
+import { modelBoundaryFailure } from "#runtime/store/model-state.ts";
 import { walkthroughDependencies } from "#runtime/operations/history/walkthrough-targets.ts";
 import { createHash } from "node:crypto";
 import { StateMetadataSchema } from "#shared/schemas/model-definitions.ts";
@@ -131,24 +132,14 @@ async function retainArchitectureCheckpoint(
 ): Promise<ArchitectureCheckpointRetain> {
 	const request = ArchitectureCheckpointRequestSchema.parse(input);
 	return historyResult("ARCHIVE_WRITE_FAILED", async () => {
+		const blocked = modelBoundaryFailure(vault);
+		if (blocked !== undefined) return blocked;
 		const context = await archiveContext(vault);
 		const operationRef = `refs/archboard/retained/${createHash("sha256").update(`${context.vault}\0${request.operationId}`).digest("hex")}`;
 		const existing = await archiveTip(context, operationRef);
 		if (existing !== undefined) return resumeRetention(context, existing, request);
 		await assertArchiveWritable(context);
-		const current = readArchitectureModel(vault);
-		if (!current.success) return current;
-		if (current.revision.digest !== request.expectedRevision)
-			throw new ArchiveError(
-				"STALE_REVISION",
-				"The current input revision differs from the requested revision.",
-			);
-		const required = await settledValues(
-			request.dependencies.map((dependency) => readArchitectureCheckpoint(vault, dependency)),
-		);
-		const missing = required.find((result) => !result.success);
-		if (missing !== undefined) return missing;
-		const checkpoint = await prepareCheckpoint(context, vault, current, request);
+		const checkpoint = await prepareRetention(context, vault, request);
 		return resumeRetention(
 			context,
 			await retainOperation(context, operationRef, checkpoint),
@@ -157,4 +148,34 @@ async function retainArchitectureCheckpoint(
 	});
 }
 
+/**
+ * Prepare the selected retention format after proving its dependency closure.
+ * @param context The existing archive owner.
+ * @param vault The explicitly addressed vault.
+ * @param request The validated exact retention intent.
+ * @returns The prepared immutable checkpoint identity.
+ */
+async function prepareRetention(
+	context: ArchiveContext,
+	vault: string,
+	request: ArchitectureCheckpointRequest,
+) {
+	const required = await settledValues(
+		request.dependencies.map((dependency) => readArchitectureCheckpoint(vault, dependency)),
+	);
+	const missing = required.find((result) => !result.success);
+	if (missing !== undefined) throw new ArchiveError(missing.code, missing.error);
+	if (request.target === "migration")
+		return (
+			await import("#runtime/operations/legacy-inventory/retain.ts")
+		).prepareMigrationCheckpoint(context, vault, request);
+	const current = readArchitectureModel(vault);
+	if (!current.success) throw new ArchiveError(current.code, current.error);
+	if (current.revision.digest !== request.expectedRevision)
+		throw new ArchiveError(
+			"STALE_REVISION",
+			"The current input revision differs from the requested revision.",
+		);
+	return prepareCheckpoint(context, vault, current, request);
+}
 export { retainArchitectureCheckpoint };

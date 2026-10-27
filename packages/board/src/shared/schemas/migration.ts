@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { LegacyDraftMappingSchema } from "#shared/schemas/migration-drafts.ts";
 import { ModelReferenceSchema } from "#shared/schemas/model-definitions.ts";
 import { SemanticBoardSchema } from "#shared/schemas/board-document.ts";
 import { SemanticIdSchema } from "#shared/schemas/primitives.ts";
@@ -36,6 +37,7 @@ const LegacyMappingPlanSchema = z.strictObject({
 	schemaVersion: z.literal(1),
 	origin: SemanticIdSchema,
 	sourceDigest: z.string(),
+	drafts: z.array(LegacyDraftMappingSchema).optional(),
 	references: z
 		.array(
 			z.strictObject({

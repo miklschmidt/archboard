@@ -34,17 +34,7 @@ const ModelReferenceAddressSchema = z.strictObject({
 	checkpoint: GitObjectIdSchema.optional(),
 });
 
-const ModelDiagnosticSchema = z
-	.object({
-		code: z.string(),
-		file: z.string(),
-		path: z.string().optional(),
-		subjects: z.array(z.string()).optional(),
-		message: z.string(),
-		recovery: z.string(),
-	})
-	.strict();
-
+import { ModelDiagnosticSchema } from "#shared/schemas/model-diagnostic.ts";
 const PublicationStateSchema = z.enum([
 	"saved-locally",
 	"publication-pending",
@@ -79,14 +69,34 @@ const ModelRecoverySchema = z
 	.strict();
 const ArchitectureCheckpointRequestSchema = z
 	.object({
-		target: z.literal("current"),
+		target: z.enum(["current", "migration"]),
+		origin: SemanticIdSchema.optional(),
+		expectedPlan: z
+			.string()
+			.regex(/^[a-f0-9]{64}$/u)
+			.nullable()
+			.optional(),
 		operationId: z.string().min(1),
 		writer: z.string().min(1),
 		doing: z.string().min(1),
 		expectedRevision: z.string().regex(/^[a-f0-9]{64}$/u),
 		dependencies: z.array(GitObjectIdSchema).default([]),
 	})
-	.strict();
+	.strict()
+	.superRefine((request, ctx) => {
+		const migration = request.target === "migration";
+		const supplied = [request.origin, request.expectedPlan].filter(
+			(value) => value !== undefined,
+		).length;
+		if (migration ? supplied !== 2 : supplied !== 0)
+			ctx.addIssue({
+				code: "custom",
+				path: ["target"],
+				message: migration
+					? "Migration retention requires origin and expectedPlan, including null for an absent plan."
+					: "Current retention accepts no migration selectors.",
+			});
+	});
 const ArchitectureCheckpointSchema = z
 	.object({
 		id: GitObjectIdSchema,
@@ -108,6 +118,13 @@ const ArchitectureCheckpointSchema = z
 				.strict(),
 		),
 		publication: PublicationStateSchema,
+		migration: z
+			.strictObject({
+				origin: SemanticIdSchema,
+				source: ModelRevisionSchema,
+				planRevision: z.string().nullable(),
+			})
+			.optional(),
 		references: z
 			.array(
 				z.strictObject({

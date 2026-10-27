@@ -116,9 +116,16 @@ not add imports or a second state path before that work.
   Canonical panes use `modelX`, `scopeX`, and `checkpointX` beside `repoX`.
   `previewX` names a saved migration origin beside `modelX`.
   Preview queries keep their own identity and use no canonical event feed or state controls.
+  Original-state and migration-checkpoint selectors remain paired through preview navigation.
+  Ordinary canonical state and checkpoint choices remain mutually exclusive.
   They refresh on mount, focus, reconnect, and explicit Refresh.
   A failed preview hides cached candidate content and retains the requested address for recovery.
   Source details retain exact fingerprints, original board coverage, and proposed state mappings.
+  An original reading names its one-board coverage and retains lifecycle and standing evidence.
+  State evidence includes explicit draft predecessors, baseline fingerprints, conflicts, and blocked ancestry.
+  Retained original files load from the returned byte envelope, independently of canonical composition.
+  File inspection decodes one selected input and exposes unsupported UTF-8 as base64.
+  Failed composition keeps originals and recovery visible without drawing an empty current model.
   Planned-only sources expose an empty current reading with visible guidance.
   Code and reference reads preserve the preview origin. A foreign destination clears it.
   Canonical sockets name `reading=canonical` and start without a legacy board.
@@ -130,7 +137,7 @@ not add imports or a second state path before that work.
   `stateX` names a mutable proposal, and `againstX` names an explicit comparison base.
   `subjectX` names an explicit reference destination and seeds selection when that reading opens.
   Later pointer selection stays temporary and does not rewrite that destination.
-  Selecting a state clears the checkpoint. Selecting a checkpoint clears the state.
+  For canonical readings, selecting a state clears the checkpoint, and selecting a checkpoint clears the state.
   Either selection clears the prior explicit comparison.
   They use `focusX`, `hideKindsX`, and `hideGroupsX` for focused subjects and hidden visual features.
   `grammarX` selects the diagram mode, and `flowX` identifies one explicit authored flow.

@@ -140,7 +140,8 @@ Explicitly combined subjects retain their other source names as former names.
 An omitted state mapping preserves its original qualified identity.
 A planning-only vault returns no current modules or flows and a null current designation.
 It never substitutes a draft for implemented architecture.
-Historical proposals, walkthroughs, bookmarks, and installation remain separate delivery slices.
+Draft conversion and original history follow the steps below.
+Walkthrough conversion, bookmarks, and installation remain separate delivery slices.
 Read the inventory for their complete original coverage.
 
 Definition choices supply complete definition fields without identity or authored order.
@@ -188,7 +189,8 @@ Incoherent canonical output returns `MODEL_INVALID` with affected paths and iden
 The CLI returns exit status 2 for these refusals.
 A source or plan change during composition returns `MODEL_CHANGED`.
 
-Select preview independently of state, checkpoint, comparison, and explanation requests.
+A preview can select a qualified original state and an exact migration checkpoint.
+Comparison and explanation requests remain unavailable for previews.
 Module and flow selectors use the same canonical identities and unique names as ordinary reads.
 HTTP readers use `/api/architecture/model?vault=<vault>&preview=Shop` with the same result contract.
 The public runtime uses `readArchitectureModel(vault, module, flow, {preview: "Shop"})`.
@@ -196,3 +198,96 @@ All requests continue to name their vault explicitly.
 Preview reads save no model, checkpoint, plan, timestamp, or current designation.
 Ordinary model reads still return `LEGACY_AUTHORITY`.
 Continue to use legacy board commands for active architecture.
+
+## Preserve original history
+
+A legacy state covers one original board.
+It never establishes a complete historical repository model.
+Open its qualified identity from `migrationPreview.history`:
+
+```bash
+archboard model read --preview Shop --state 'Shop/System#Old' -C /path/to/checkout
+```
+
+The result contains only that original state's modules and flows.
+`migrationPreview.selected` names its board, file, and incomplete repository coverage.
+Its current designation is null.
+History entries retain original state metadata, corrections, standing bases, adoptions, and shelving reasons.
+Unpinned external history and code remain unavailable.
+The reader never substitutes present-day surroundings or source evidence.
+Original views, walkthroughs, and addresses stay in the complete originals for their later conversion.
+
+## Map each draft
+
+Add one `drafts` entry for each original draft that you intend to convert:
+
+```json
+{
+	"legacy": "Shop/System#Draft",
+	"predecessor": "Shop/System#Now",
+	"baseline": { "kind": "content", "state": "Shop/System#Now" },
+	"reason": "Preserve the original predecessor and its exact content"
+}
+```
+
+A settled draft selects its original parent through `content`.
+A draft with standing selects itself through `reconciliation-base`.
+That choice preserves the original conflict base instead of the changed parent.
+A parentless planning root uses `predecessor:null` and `baseline:{kind:"empty",state:null}`.
+The runtime refuses substituted predecessors and baselines.
+Each choice belongs to the plan's exact source digest.
+
+A history entry with `conversion` includes the explicit mapping, a baseline digest, and normalized canonical changes.
+The existing compact subject engine derives those changes after explicit subject mappings.
+A draft entry without `conversion` remains unmapped.
+Matching names or task IDs never combine independent proposals.
+Planning-only subjects appear as proposal additions and stay outside implemented current modules.
+Installation into active proposal files remains separate work.
+
+## Retain complete originals
+
+Before cutover, retain the exact original input set through the existing archive operation.
+Use the inventory's `source.digest` and `planRevision`.
+If no plan exists, pass `none` as the expected plan.
+
+```bash
+archboard model retain --migration Shop --expected-plan <plan-digest-or-none> --expect-revision <source-digest> --operation-id preserve-originals-1 --writer agent --doing 'Retain original migration evidence' -C /path/to/checkout
+```
+
+Retention preserves exact bytes, including old schemas, unresolved documents, conflict bases, and the saved plan.
+It uses the existing configured signer, durable operation ref, and archive append.
+It changes no original file, current model, source HEAD, or index.
+Repeat the exact request after a lost response.
+A changed source or plan refuses a new retention intent.
+A reused operation identity with different input also refuses.
+
+Open retained originals without consulting live source or planning files:
+
+```bash
+archboard model read --preview Shop --checkpoint <checkpoint> -C /path/to/checkout
+archboard model read --preview Shop --checkpoint <checkpoint> --state 'Shop/System#Old' -C /path/to/checkout
+```
+
+`migrationPreview.originals` exposes each exact original source and its supported in-memory document.
+Unsupported byte sequences also expose `sourceBase64` for lossless inspection.
+`migrationPreview.originalInputs` exposes every exact file as `{file,base64}`, including the original policy and saved mapping plan.
+A checkpoint without complete conversion choices returns an empty model with originals and explicit diagnostics.
+Its absent plan revision remains null.
+A qualified state selection requires a complete retained conversion plan.
+The checkpoint's `migration` metadata distinguishes original retention from a canonical architectural state.
+Archive append order never declares a historical repository reading or adopts a proposal.
+
+## Inspect migration history in the browser
+
+The preview reading selector keeps original histories separate, including drafts with equal names.
+An original-state selection keeps its migration checkpoint through navigation, reload, and Back.
+The coverage notice names the original board and does not claim a historical repository model.
+Open the state evidence to read lifecycle reasons, correction revisions, draft baselines, conflicts, and blocked ancestry.
+The browser authors no mapping or migration.
+
+A retained preview also offers Original files.
+Choose one file to inspect its exact source without reformatting.
+Unsupported UTF-8 appears as lossless base64.
+The viewer decodes only the file that the reader chooses.
+When the originals cannot form a model, the preview keeps their evidence and recovery instructions visible without drawing an empty current system.
+An absent mapping plan is explicit.

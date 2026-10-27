@@ -285,12 +285,7 @@ test("preview refuses absent plans, stale source, incompatible selectors and inc
 		await readArchitectureModel(vault, undefined, undefined, { preview: "Shop" }),
 	).toMatchObject({ success: false, code: "MAPPING_REQUIRED" });
 	const saved = await savePreviewPlan(vault);
-	for (const selection of [
-		{ state: "current" },
-		{ checkpoint: "a".repeat(40) },
-		{ compare: true },
-		{ against: "current" },
-	]) {
+	for (const selection of [{ state: "current" }, { compare: true }, { against: "current" }]) {
 		expect(
 			await readArchitectureModel(vault, undefined, undefined, { preview: "Shop", ...selection }),
 		).toMatchObject({ success: false, code: "MODEL_INVALID" });

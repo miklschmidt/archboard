@@ -8,6 +8,10 @@ import {
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import { ModelHeader, ModelError } from "#ui/components/architecture-model/ModelFrame.tsx";
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
+import { ModelPreviewOriginals } from "#ui/components/architecture-model/ModelPreviewOriginals.tsx";
+import { ModelPreviewStateEvidence } from "#ui/components/architecture-model/ModelPreviewStateEvidence.tsx";
+import { ModelPreviewSelector } from "#ui/components/architecture-model/ModelPreviewSelector.tsx";
+import { ModelPreviewCoverage } from "#ui/components/architecture-model/ModelPreviewCoverage.tsx";
 import { ModelPreviewDetails } from "#ui/components/architecture-model/ModelPreviewDetails.tsx";
 
 type PreviewProps = Pick<
@@ -50,7 +54,12 @@ function ModelPreviewReader(props: PreviewProps): JSX.Element {
 				refresh={refresh}
 				refreshing={query.isFetching}
 			>
-				{null}
+				<ModelPreviewSelector
+					preview={query.data?.migrationPreview}
+					pending={query.isPending}
+					state={location.state}
+					onState={location.selectState}
+				/>
 			</ModelHeader>
 			{query.isPending && (
 				<output className="text-body text-muted-foreground p-10">Reading migration preview…</output>
@@ -116,14 +125,38 @@ function PreviewContent(
 	if (props.model === undefined) return null;
 	return (
 		<>
+			<ModelPreviewCoverage model={props.model} />
+			<ModelPreviewStateEvidence model={props.model} />
 			<ModelPreviewDetails model={props.model} />
-			<ModelReading
-				{...props}
-				key={JSON.stringify([props.model.manifest.id, props.subject])}
-				model={props.model}
-			/>
+			<ModelPreviewOriginals model={props.model} />
+			<PreviewModel {...props} model={props.model} />
 		</>
 	);
 }
 
 export { ModelPreviewReader };
+
+/**
+ * Retained originals remain readable even when they cannot compose architecture.
+ * @param props The coherent response and existing reader inputs.
+ * @returns A complete candidate or an explicit conversion refusal beside its originals.
+ */
+function PreviewModel(
+	props: PreviewProps & {
+		model: ComponentProps<typeof ModelReading>["model"];
+		subject: string | null;
+	},
+): JSX.Element {
+	const diagnostics = props.model.migrationPreview?.diagnostics;
+	if (diagnostics !== undefined && diagnostics.length > 0)
+		return (
+			<div data-slot="preview-originals-only" className="min-h-0 flex-1 overflow-auto">
+				<ModelError
+					code="MAPPING_UNRESOLVED"
+					message="These retained originals cannot form a complete model. Inspect the original files and resolve the reported source or mapping problems before migration."
+					diagnostics={diagnostics}
+				/>
+			</div>
+		);
+	return <ModelReading {...props} key={JSON.stringify([props.model.manifest.id, props.subject])} />;
+}
