@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-backend'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T13:10:00Z'
+updated_date: '2026-10-27T13:50:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -82,4 +82,6 @@ Implemented owner-authorized complete migration through the existing installer a
 Installed canonical reads expose migration.bookmarks, migration.addresses, and migration.states. A selected bookmark uses migration.bookmark. Ordinary reads omit migrationPreview and the original envelope. Exact former addresses reopen retained original coverage through the existing selector. Local context uses the canonical runtime and requires exact capture for another state, checkpoint, or stale revision. Source and browser types, full lint, formatting, architecture semantics, 76 contract cases with 156 assertions, portable/proposal regressions, and the existing local explanation owner pass. The inherited package-width transition remains: board exports 252 names against the unchanged 188 ceiling. Architecture code evidence has eight inherited warnings on Archboard and none on the five affected draft scopes. Parent browser acceptance and TASK-549.24 retirement remain separate.
 
 Signing restoration blocks the final source checkpoint. The configured SSH agent has no identities. A signed commit attempt returned No private key found and created no commit. The private PIN request timed out. Keep signing requirements unchanged. Source changes remain staged in feat/canonical-migration-backend. All five claims are released and only worktree server 19089 stopped. The latest integration merge reports Already up to date at 4aed11f76a960af4cbd22cb1515f1c1228712d68. The external backend handoff records the exact contract, signed real fixtures, evidence, and remaining parent work.
+
+Fixed the confirmed installed-bookmark gap at signed source 4977bbf48. The public real-file/Git regression first reproduced empty diagnostics after valid external removal of Db. Bookmarks now share the existing playback readiness rules and report missing subjects, flows, scope, or filters through existing diagnostics. Exact reading intent, retained originals, and canonical authority stay intact. Focused runtime evidence: 17 cases, 103 assertions. Focused source/test lint and source types pass. Existing .23 drafts still describe this shared runtime behavior, so no extra proposal is needed. Status, assignee, acceptance criteria, and proposals remain unchanged for the parent.
 <!-- SECTION:NOTES:END -->

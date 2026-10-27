@@ -2,6 +2,7 @@ import type { SemanticBoard } from "#shared/schemas/board-document.ts";
 import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
 import type { LegacyInventory } from "#shared/schemas/migration.ts";
 import { mappedIdentity } from "#shared/rules/legacy-inventory/plan.ts";
+import { readingDiagnostics } from "#runtime/operations/read/reading-readiness.ts";
 import { failure } from "#runtime/operations/read/model-read.ts";
 
 type Address = NonNullable<NonNullable<ArchitectureModel["migrationPreview"]>["addresses"]>[number];
@@ -84,7 +85,13 @@ function selectBookmark(model: ArchitectureModelRead, selector?: string): Archit
 	const bookmarks = importedBookmarks(model);
 	const selected = bookmarkOf(bookmarks, selector);
 	if ("success" in selected) return selected;
-	return withBookmark(model, selected);
+	const diagnostics = [
+		...selected.diagnostics,
+		...readingDiagnostics(model, selected.reading, selected.file, selected.id, "BOOKMARK").filter(
+			(entry) => !selected.diagnostics.some((known) => known.code === entry.code),
+		),
+	];
+	return withBookmark(model, { ...selected, diagnostics });
 }
 export { legacyAddresses, legacyAddressOf, selectBookmark };
 

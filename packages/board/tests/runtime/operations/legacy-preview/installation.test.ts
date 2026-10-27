@@ -1,13 +1,95 @@
 import { afterEach, expect, test } from "bun:test";
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readArchitectureModel } from "@archboard/board/store-read";
 import * as writes from "@archboard/board/store-write";
 import { narrativeFixture } from "#tests/runtime/operations/legacy-preview/readings-fixture.ts";
 import { savePreviewPlan } from "#tests/runtime/operations/legacy-preview/fixture.ts";
+import { installationFixture } from "#tests/runtime/operations/legacy-preview/install-fixture.ts";
 const homes: string[] = [];
 afterEach(() => {
 	for (const home of homes.splice(0)) rmSync(home, { recursive: true, force: true });
+});
+
+test("an installed bookmark reports removed subjects without replacing its exact original reading", async () => {
+	const { home, vault, request } = await installationFixture();
+	homes.push(home);
+	const installed = await writes.migrateArchitectureModel(vault, request);
+	if (!installed.success) throw new Error(JSON.stringify(installed));
+	const before = await readArchitectureModel(vault, undefined, undefined, {
+		bookmark: "Shop/System#Unused",
+	});
+	if (!before.success) throw new Error(JSON.stringify(before));
+	const bookmark = before.migration!.bookmark!;
+	expect(bookmark.diagnostics).toEqual([]);
+	expect(bookmark.reading.visibility?.modules).toEqual(["Shop/System#Db"]);
+	const database = before.modules.find((module) => module.id === "Shop/System#Db")!;
+	const api = before.modules.find((module) => module.id === "Shop/System#Api")!;
+	const { file, ...input } = api;
+	writeFileSync(join(vault, file), JSON.stringify({ ...input, outgoing: [] }));
+	rmSync(join(vault, database.file));
+	for (const entry of [...before.collections, ...before.walkthroughs])
+		rmSync(join(vault, entry.file));
+	const current = readArchitectureModel(vault);
+	if (!current.success) throw new Error(JSON.stringify(current));
+	expect(current.modules.map((module) => module.id)).not.toContain("Shop/System#Db");
+	const selected = await readArchitectureModel(vault, undefined, undefined, {
+		bookmark: bookmark.id,
+	});
+	if (!selected.success) throw new Error(JSON.stringify(selected));
+	expect(selected.migration?.bookmark?.diagnostics).toMatchObject([
+		{ code: "BOOKMARK_SUBJECT_MISSING", subjects: ["Shop/System#Db"] },
+	]);
+	expect(selected.migration?.bookmark?.reading).toEqual(bookmark.reading);
+	expect(selected.revision).toEqual(current.revision);
+	expect(selected.modules).toEqual(current.modules);
+	expect(selected).not.toHaveProperty("migrationPreview");
+	const original = await readArchitectureModel(vault, undefined, undefined, {
+		preview: "Shop",
+		checkpoint: before.migration!.checkpoint,
+		bookmark: bookmark.id,
+	});
+	if (!original.success) throw new Error(JSON.stringify(original));
+	expect(original.migrationPreview?.bookmark).toEqual(bookmark);
+	expect(original.modules.map((module) => module.id)).toContain("Shop/System#Db");
+});
+
+test("installed behavioral bookmarks retain conversion refusals and report removed flows", async () => {
+	const fixture = narrativeFixture();
+	homes.push(fixture.home);
+	fixture.original.variants[0]!.content.walkthroughs[0]!.beats.splice(1, 1);
+	fixture.original.views.push({
+		id: "NoFlow",
+		name: "No flow",
+		grammar: "sequence",
+		scope: { kind: "selection", nodes: ["Db"], edges: [], flows: [] },
+	});
+	writeFileSync(join(fixture.vault, "Shop.semantic.json"), JSON.stringify(fixture.original));
+	const { vault, request } = await installationFixture(fixture);
+	const installed = await writes.migrateArchitectureModel(vault, request);
+	if (!installed.success) throw new Error(JSON.stringify(installed));
+	const before = await readArchitectureModel(vault, undefined, undefined, { bookmark: "Order" });
+	if (!before.success) throw new Error(JSON.stringify(before));
+	const bookmark = before.migration!.bookmark!;
+	expect(bookmark.diagnostics).toEqual([]);
+	expect(bookmark.reading.flow).toBe("Shop/System#Buy");
+	for (const collection of before.collections) rmSync(join(vault, collection.file));
+	const current = readArchitectureModel(vault);
+	if (!current.success) throw new Error(JSON.stringify(current));
+	const selected = await readArchitectureModel(vault, undefined, undefined, { bookmark: "Order" });
+	if (!selected.success) throw new Error(JSON.stringify(selected));
+	expect(selected.migration?.bookmark?.diagnostics).toMatchObject([
+		{ code: "BOOKMARK_SUBJECT_MISSING", subjects: ["Shop/System#Buy"] },
+	]);
+	expect(selected.migration?.bookmark?.reading).toEqual(bookmark.reading);
+	const unavailable = await readArchitectureModel(vault, undefined, undefined, {
+		bookmark: "Shop/System#NoFlow",
+	});
+	if (!unavailable.success) throw new Error(JSON.stringify(unavailable));
+	expect(unavailable.migration?.bookmark?.diagnostics).toEqual(
+		before.migration?.bookmarks?.find((entry) => entry.id === "Shop/System#NoFlow")?.diagnostics,
+	);
+	expect(unavailable.migration?.bookmark?.diagnostics).toMatchObject([{ code: "FLOW_REQUIRED" }]);
 });
 
 test("an owner installs a complete preview once and reopens exact original readings after live removal", async () => {

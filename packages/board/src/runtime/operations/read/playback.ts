@@ -7,12 +7,11 @@ import type {
 } from "#shared/schemas/model.ts";
 import { readCurrentModel, failure } from "#runtime/operations/read/model-read.ts";
 import { readSelectedState } from "#runtime/operations/proposals/read.ts";
-import { everyStep } from "#shared/rules/flow-steps.ts";
+import { readingDiagnostics } from "#runtime/operations/read/reading-readiness.ts";
 import { historyResult } from "#runtime/operations/history/result.ts";
 
 type Selection = z.infer<typeof StateSelectionSchema>;
 type Walk = ArchitectureModel["walkthroughs"][number];
-type Beat = Walk["beats"][number];
 /**
  * Resolve identity before unique names.
  * @param model The captured catalogue.
@@ -36,84 +35,6 @@ function walkthroughOf(model: ArchitectureModel, selector: string) {
 					recovery: "Read the walkthrough catalogue and select one stable identity.",
 				},
 			]);
-}
-/**
- * Identify missing references without invalidating other beats.
- * @param model The pinned target.
- * @param beat One complete reading instruction.
- * @returns Missing stable identities.
- */
-function missingSubjects(model: ArchitectureModel, beat: Beat): string[] {
-	const flows = model.collections.flatMap((collection) => collection.flows);
-	const modules = new Set(model.modules.map((module) => module.id));
-	const subjects = new Set([
-		...modules,
-		...model.relationships.map((edge) => edge.id),
-		...flows.flatMap((flow) => [flow.id, ...everyStep(flow.steps).map((step) => step.id)]),
-		...model.collections.map((collection) => `${model.manifest.id}#${collection.id}`),
-	]);
-	const { reading } = beat;
-	const visible = reading.visibility ?? { modules: [], relationships: [], flows: [] };
-	const scope = reading.scope === undefined ? [] : [reading.scope];
-	const flow = reading.flow === undefined ? [] : [reading.flow];
-	return [
-		...new Set([
-			...[...scope, ...reading.focus, ...visible.modules].filter((id) => !modules.has(id)),
-			...reading.selection.filter((id) => !subjects.has(id)),
-			...visible.relationships.filter((id) => !model.relationships.some((edge) => edge.id === id)),
-			...[...visible.flows, ...flow].filter((id) => !flows.some((entry) => entry.id === id)),
-		]),
-	];
-}
-/**
- * Keep vocabulary errors with the affected beat.
- * @param model The pinned target.
- * @param beat One reading.
- * @returns Whether a filter is unavailable.
- */
-function missingFilters(model: ArchitectureModel, beat: Beat): boolean {
-	return (
-		beat.reading.filters.relationships.some(
-			(kind) => !Object.hasOwn(model.policy.relationshipKinds, kind),
-		) || beat.reading.filters.groups.some((group) => !Object.hasOwn(model.policy.groups, group))
-	);
-}
-/**
- * Explain unavailable reading instructions.
- * @param model The pinned target.
- * @param walk The captured narrative.
- * @param beat The affected beat.
- * @returns Actionable diagnostics.
- */
-function beatDiagnostics(model: ArchitectureModel, walk: Walk, beat: Beat): ModelDiagnostic[] {
-	const diagnostics: ModelDiagnostic[] = [];
-	const missing = missingSubjects(model, beat);
-	if (missing.length > 0)
-		diagnostics.push({
-			code: "WALKTHROUGH_SUBJECT_MISSING",
-			file: walk.file,
-			subjects: missing,
-			message: "This beat refers to subjects absent from the pinned reading.",
-			recovery:
-				"Restore the subjects or ask an agent to repair this beat, then restart the walkthrough.",
-		});
-	if (beat.reading.grammar !== "architecture" && beat.reading.flow === undefined)
-		diagnostics.push({
-			code: "FLOW_REQUIRED",
-			file: walk.file,
-			subjects: [beat.id],
-			message: "This behavioral beat names no flow.",
-			recovery: "Ask an agent to select an authored flow for this beat, then restart.",
-		});
-	if (missingFilters(model, beat))
-		diagnostics.push({
-			code: "WALKTHROUGH_FILTER_MISSING",
-			file: walk.file,
-			subjects: [beat.id],
-			message: "This beat names a filter absent from the pinned policy.",
-			recovery: "Ask an agent to repair the beat filters, then restart.",
-		});
-	return diagnostics;
 }
 /**
  * Resolve the target once without changing it between beats.
@@ -199,7 +120,7 @@ function attachPlayback(
 		const extra = importedBeatDiagnostics(target, beat.id);
 		const diagnostics = [
 			...extra,
-			...beatDiagnostics(target, walk, beat).filter(
+			...readingDiagnostics(target, beat.reading, walk.file, beat.id, "WALKTHROUGH").filter(
 				(entry) => !extra.some((known) => known.code === entry.code),
 			),
 		];

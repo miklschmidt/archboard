@@ -3,8 +3,7 @@ import { join } from "node:path";
 import { readArchitectureModel } from "@archboard/board/store-read";
 import { narrativeFixture } from "#tests/runtime/operations/legacy-preview/readings-fixture.ts";
 import { savePreviewPlan } from "#tests/runtime/operations/legacy-preview/fixture.ts";
-async function installationFixture() {
-	const fixture = narrativeFixture();
+async function installationFixture(fixture = narrativeFixture()) {
 	rmSync(join(fixture.vault, "Future.semantic.json"));
 	await savePreviewPlan(fixture.vault);
 	const preview = await readArchitectureModel(fixture.vault, undefined, undefined, {

@@ -335,7 +335,7 @@ archboard model read --preview Shop --legacy-address 'Store@Before' -C /path/to/
 ```
 
 The selected bookmark appears as `migrationPreview.bookmark`.
-Its diagnostics identify an unavailable original flow.
+Its diagnostics identify unavailable subjects, flows, scope, or filters in the selected reading.
 The model remains complete and contains no bookmark-owned architecture.
 
 `migrationPreview.addresses` lists exact original aliases with original and canonical state identities.
@@ -437,6 +437,8 @@ The existing architecture event feed announces the new model only after durable 
 The canonical result carries installed reading metadata in `migration`.
 Its catalogues are `migration.bookmarks`, `migration.addresses`, and `migration.states`.
 A selected bookmark appears as `migration.bookmark`.
+Read its diagnostics before applying its reading intent.
+Unavailable intent keeps its exact identities and the canonical model readable.
 Ordinary canonical reads omit `migrationPreview` and the retained original byte envelope.
 Use `--bookmark <id>` without preview for an installed current bookmark.
 Use `--legacy-address <address>` without preview to reopen exact original coverage.
