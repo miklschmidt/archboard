@@ -3,6 +3,7 @@ import { DiagramGrammarSchema } from "#shared/schemas/vocabulary.ts";
 import { QualifiedSubjectIdSchema, SemanticIdSchema } from "#shared/schemas/primitives.ts";
 
 const ReadingSelectionSchema = z.strictObject({
+	preview: SemanticIdSchema.optional(),
 	state: z.string().min(1).optional(),
 	checkpoint: z
 		.string()

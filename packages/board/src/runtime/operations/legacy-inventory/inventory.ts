@@ -5,6 +5,7 @@ import type {
 	LegacyInventoryRead,
 	LegacyMappingPlan,
 } from "#shared/schemas/migration.ts";
+import { flowConflicts } from "#shared/rules/legacy-inventory/flows.ts";
 import { identityEvidence } from "#shared/rules/legacy-inventory/evidence.ts";
 import { legacyIdentities } from "#shared/rules/legacy-inventory/identities.ts";
 import {
@@ -93,6 +94,7 @@ function assembleInventory(
 	conflicts.push(
 		...siblingOrderConflicts(inputs),
 		...relationshipConflicts(inputs),
+		...flowConflicts(inputs),
 		...legacyPolicyConflicts(inputs),
 	);
 	const inventory: LegacyInventory = {

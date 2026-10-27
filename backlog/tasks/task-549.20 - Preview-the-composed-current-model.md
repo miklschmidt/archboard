@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T02:36:00Z'
+updated_date: '2026-10-27T03:01:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -68,3 +68,11 @@ TASK-549.05, TASK-549.15, TASK-549.19
 4. Expose the candidate through model read --preview and the existing model HTTP route. Update consumer guidance.
 5. Run affected checks, simplify, merge the latest integration, release claims, stop the server, and publish the backend handoff. Parent owns browser acceptance and closure.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Backend public preview uses the existing architecture reader with preview=<origin>, model read --preview, and the existing model HTTP route. Early contract: /home/msc/.local/state/archboard-implementation/task-549/task-549.20-contract.md. Six public runtime cases cover semantic preservation, explicit mappings and choices, recursive flows, reference mapping, policy, and refusals. The CLI/HTTP process owner proves identical results and stale refusal. Architecture proposals remain draft. Parent owns all browser work and acceptance.
+
+Backend evidence: 44 focused tests across nine files; 15 skill distribution and policy tests across three files; one real CLI/HTTP process case. Both TypeScript projects, full lint with zero warnings, formatting, and evaluation input checks pass. Draft architecture code checks have zero warnings on Board persistence, Command interface, and Archboard server routes. Nine inherited warnings remain on Archboard and Archboard server. The board export-width debt remains owned by TASK-549.24. No full-gate success is claimed. Simplification keeps composition behind existing canonical decoding and projections, reuses mapped identities, and shares order and conflict handling. No public operation export is added. Consumer guidance, ADR 0060, CONTEXT, examples, evaluation coverage, and test ownership descriptions match the backend. Reusable parent fixture: /home/msc/.local/state/archboard-implementation/task-549/task-549.20-fixture. Task and proposals remain In Progress and draft for parent browser acceptance.
+<!-- SECTION:NOTES:END -->

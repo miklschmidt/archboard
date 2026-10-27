@@ -557,3 +557,11 @@ It uses the existing browser adapter with real temporary files and Git through t
 The proposal and reconciliation owners share the same browser state selector helper.
 The reference owner also covers exact foreign pins across external reconciliation and settlement.
 The shared model-edit fixture names the repository used by its authored code bindings, so source capture does not inspect unrelated checkouts.
+
+## Legacy current preview
+
+`packages/board/tests/runtime/operations/legacy-preview/preview.test.ts` owns composed migration behavior through the public architecture reader and writer.
+Its real files and disposable Git repositories cover semantic preservation, explicit conflict choices, recursive flows, reference mapping, vocabulary, stale source, and incoherent containment.
+The original inventory owner retains its coverage of source capture and plan persistence.
+`tests/system/semantic-boards/migration-planning.test.ts` owns CLI and HTTP agreement, explicit preview selection, and structured stale refusal.
+The parent owns visible preview behavior through the existing browser interface.

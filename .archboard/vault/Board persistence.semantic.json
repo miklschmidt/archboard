@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 188,
+	"version": 189,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-27T02:36:47.515Z",
+	"updatedAt": "2026-10-27T02:59:14.790Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -194527,6 +194527,34 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/read/model-navigation.ts",
 							"symbol": "failure"
+						}
+					},
+					{
+						"id": "mIgQpKmS",
+						"order": 223000,
+						"from": "7mTerd6Y",
+						"to": "cNaEpWjJ",
+						"kind": "call",
+						"label": "Validate the complete candidate",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/legacy-inventory/preview.ts",
+							"symbol": "decodeModel"
+						}
+					},
+					{
+						"id": "YU9IQsiJ",
+						"order": 224000,
+						"from": "vvxDSZoQ",
+						"to": "7mTerd6Y",
+						"kind": "call",
+						"label": "Read the explicit migration preview",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/read/model-navigation.ts",
+							"symbol": "readMigrationPreview"
 						}
 					}
 				],

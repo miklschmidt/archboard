@@ -38,6 +38,33 @@ const StateMetadataSchema = z
 	})
 	.strict();
 
+const MigrationPreviewSchema = z.strictObject({
+	origin: SemanticIdSchema,
+	source: ModelRevisionSchema,
+	planRevision: z.string(),
+	coverage: z.array(
+		z.strictObject({
+			board: SemanticIdSchema,
+			file: z.string(),
+			name: DisplayNameSchema,
+			formerNames: z.array(DisplayNameSchema).optional(),
+			current: StateMetadataSchema.extend({ legacy: QualifiedSubjectIdSchema }).optional(),
+		}),
+	),
+	plannedBoards: z.array(
+		z.strictObject({
+			board: SemanticIdSchema,
+			states: z.array(
+				StateMetadataSchema.extend({
+					legacy: QualifiedSubjectIdSchema,
+					canonical: QualifiedSubjectIdSchema,
+					lifecycle: z.enum(["draft", "shelved", "historical", "current"]),
+				}),
+			),
+		}),
+	),
+});
+
 const ArchitectureManifestSchema = z
 	.object({
 		schemaVersion: z.literal(1),
@@ -71,6 +98,7 @@ export {
 	ModelReferenceSchema,
 	ModelRevisionSchema,
 	StateMetadataSchema,
+	MigrationPreviewSchema,
 	ArchitectureManifestSchema,
 	ArchitectureModuleSchema,
 };

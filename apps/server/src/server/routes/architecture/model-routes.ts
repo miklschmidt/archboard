@@ -16,6 +16,7 @@ import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 const QuerySchema = z
 	.object({
 		vault: z.string(),
+		preview: z.string().min(1).optional(),
 		module: z.string().min(1).optional(),
 		flow: z.string().min(1).optional(),
 		checkpoint: z.string().min(1).optional(),
