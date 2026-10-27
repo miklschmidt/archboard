@@ -1132,7 +1132,7 @@
 					"expectedUse": "Keep independent histories separate. Map each draft explicitly. Retain exact originals through the existing archive before cutover without changing legacy authority.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/legacy-preview/history.test.ts, drafts.test.ts and retention.test.ts; tests/system/semantic-boards/migration-planning.test.ts; guidance skills/archboard/references/legacy-migration.md#preserve-original-history"
+					"owner": "packages/board/tests/runtime/operations/legacy-preview/history.test.ts, drafts.test.ts and retention.test.ts; tests/system/semantic-boards/migration-planning.test.ts; guidance skills/archboard/references/legacy-migration.md#preserve-original-history; tests/system/browser/canonical-preview-history.test.ts"
 				},
 				{
 					"path": "canonical recursive readings: scopes, exact checkpoint addresses, direct context, complete interfaces and connection aggregation",

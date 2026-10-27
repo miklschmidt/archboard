@@ -647,3 +647,8 @@ Legacy narration and recording owners retain their existing regression coverage.
 Canonical narration has one controlled browser owner in `canonical-model-narration.test.ts`.
 It covers report delivery before voice starts, matching pane requests, manual steps, pinned narrative text, and departure.
 The external media and Codex substitutes remain in the existing production voice fixture.
+
+Original migration history has one browser owner in `canonical-preview-history.test.ts`.
+It covers paired state/checkpoint navigation, original coverage, lifecycle and standing evidence, and exact original inspection after live files disappear.
+Public architecture operations create its retained fixtures in real temporary Git repositories.
+The existing `canonical-model-preview.test.ts` retains current-preview navigation, code-opening, source-preservation, and recovery ownership.

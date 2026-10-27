@@ -17,13 +17,11 @@ function ModelPreviewDetails({ model }: { model: Model }): JSX.Element | null {
 				className="border-border text-body shrink-0 border-b"
 			>
 				<summary className="hover:bg-muted cursor-pointer px-4 py-2">
-					Legacy files remain authoritative · {preview.coverage.length} source{" "}
-					{preview.coverage.length === 1 ? "board" : "boards"}
+					{sourceHeading(preview)}
 				</summary>
 				<div className="max-h-48 space-y-4 overflow-auto px-4 pb-4">
 					<p>
-						This preview writes no architecture files. Planned-only boards stay outside the current
-						model.
+						This preview writes no architecture files. Each original state retains its own coverage.
 					</p>
 
 					<dl className="space-y-2">
@@ -39,7 +37,7 @@ function ModelPreviewDetails({ model }: { model: Model }): JSX.Element | null {
 							<dt className="font-semibold">Mapping fingerprint</dt>
 							<dd>
 								<code data-slot="preview-plan" className="break-all">
-									{preview.planRevision}
+									{preview.planRevision ?? "No saved mapping plan"}
 								</code>
 							</dd>
 						</div>
@@ -100,5 +98,21 @@ export { ModelPreviewDetails };
  * @returns Whether the composed current preview contains no implemented model.
  */
 function emptyCurrent(model: Model): boolean {
-	return model.manifest.current === null && model.migrationPreview?.selected === undefined;
+	const preview = model.migrationPreview;
+	return (
+		model.manifest.current === null &&
+		preview?.selected === undefined &&
+		!preview?.diagnostics?.length
+	);
+}
+
+/**
+ * Distinguish an immutable original envelope from current legacy authority.
+ * @param preview The public source coverage.
+ * @returns The source disclosure label.
+ */
+function sourceHeading(preview: NonNullable<Model["migrationPreview"]>): string {
+	if (preview.originalInputs !== undefined)
+		return `Retained originals · ${preview.originalInputs.length} files`;
+	return `Legacy files remain authoritative · ${preview.coverage.length} source ${preview.coverage.length === 1 ? "board" : "boards"}`;
 }

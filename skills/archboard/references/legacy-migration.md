@@ -276,3 +276,18 @@ Its absent plan revision remains null.
 A qualified state selection requires a complete retained conversion plan.
 The checkpoint's `migration` metadata distinguishes original retention from a canonical architectural state.
 Archive append order never declares a historical repository reading or adopts a proposal.
+
+## Inspect migration history in the browser
+
+The preview reading selector keeps original histories separate, including drafts with equal names.
+An original-state selection keeps its migration checkpoint through navigation, reload, and Back.
+The coverage notice names the original board and does not claim a historical repository model.
+Open the state evidence to read lifecycle reasons, correction revisions, draft baselines, conflicts, and blocked ancestry.
+The browser authors no mapping or migration.
+
+A retained preview also offers Original files.
+Choose one file to inspect its exact source without reformatting.
+Unsupported UTF-8 appears as lossless base64.
+The viewer decodes only the file that the reader chooses.
+When the originals cannot form a model, the preview keeps their evidence and recovery instructions visible without drawing an empty current system.
+An absent mapping plan is explicit.

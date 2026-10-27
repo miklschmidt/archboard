@@ -1,5 +1,8 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
+import { rmSync, writeFileSync } from "node:fs";
+import { readLegacyInventory } from "@archboard/board/store-read";
+import { retainArchitectureCheckpoint } from "@archboard/board/store-write";
 import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,
@@ -178,4 +181,98 @@ test("original history exposes lifecycle reasons, exact draft baselines, and unr
 	expect(await browser.eval<string>(`new URLSearchParams(location.search).get('stateA')`)).toBe(
 		"Shop/Future#Draft",
 	);
+}, 60_000);
+
+async function inspectOriginal(browser: AgentBrowserSession, file: string): Promise<string> {
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(`document.querySelector('[data-slot="preview-originals"]') !== null`),
+		Boolean,
+		"retained original inputs",
+		WAIT,
+	);
+	await browser.run(["click", '[data-slot="preview-originals"] summary']);
+	await browser.run(["click", '[data-slot="preview-original-selector"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(`document.querySelector('[data-original-file="${file}"]') !== null`),
+		Boolean,
+		"the original input choice",
+		WAIT,
+	);
+	await browser.run(["click", `[data-original-file="${file}"]`]);
+	return pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-slot="preview-original-text"]')?.value ?? null`,
+			),
+		(text): text is string => text !== null,
+		"the exact retained original text",
+		WAIT,
+	) as Promise<string>;
+}
+
+test("retained originals remain inspectable after live inputs disappear or cannot compose", async () => {
+	await using resources = new AsyncDisposableStack();
+	const fixture = await legacyHistory(join(browserTestRoots().ownerRoot, "preview-originals"));
+	const unresolved = "unresolved legacy bytes\n";
+	writeFileSync(join(fixture.vault, "Shop.semantic.json"), unresolved);
+	rmSync(join(fixture.vault, ".archboard/migration-plan.json"));
+	const inventory = readLegacyInventory(fixture.vault, "Shop");
+	if (!inventory.success) throw new Error(JSON.stringify(inventory));
+	const retained = await retainArchitectureCheckpoint(fixture.vault, {
+		target: "migration",
+		origin: "Shop",
+		expectedPlan: null,
+		expectedRevision: inventory.source.digest,
+		operationId: "retain-unresolved-originals",
+		writer: "fixture",
+		doing: "Keep unsupported originals",
+		dependencies: [],
+	});
+	if (!retained.success) throw new Error(JSON.stringify(retained));
+	rmSync(join(fixture.vault, "Shop.semantic.json"));
+	rmSync(join(fixture.vault, "Future.semantic.json"));
+	const server = await startOwnedServer({
+		serverPath,
+		vault: fixture.vault,
+		env: serverTestEnvironment(),
+	});
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const browser = resources.use(await createAgentBrowser());
+	await browser.run([
+		"open",
+		`${server.base}/?modelA=Shop&previewA=Shop&checkpointA=${fixture.checkpoint}`,
+	]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	expect(await inspectOriginal(browser, "Shop.semantic.json")).toBe(fixture.original);
+	await browser.run([
+		"open",
+		`${server.base}/?modelA=Shop&previewA=Shop&checkpointA=${retained.checkpoint.id}`,
+	]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="preview-originals-only"]') !== null`,
+			),
+		Boolean,
+		"the unavailable composition with retained evidence",
+		WAIT,
+	);
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-reading"], [data-slot="preview-empty"]') === null`,
+		),
+	).toBe(true);
+	expect(await inspectOriginal(browser, "Shop.semantic.json")).toBe(unresolved);
+	await browser.run(["click", '[data-slot="model-migration-preview"] summary']);
+	expect(
+		await browser.eval<string>(
+			`document.querySelector('[data-slot="preview-plan"]').textContent.trim()`,
+		),
+	).not.toBe("");
+	expect(
+		await browser.eval<string>(`new URLSearchParams(location.search).get('checkpointA')`),
+	).toBe(retained.checkpoint.id);
 }, 60_000);

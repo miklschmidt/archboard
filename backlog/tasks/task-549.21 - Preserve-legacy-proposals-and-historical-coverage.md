@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T09:42:00Z'
+updated_date: '2026-10-27T09:55:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -83,4 +83,6 @@ Signed preparation merge d2d0a549112bf2511e9c45661affa966cbda1fd6 includes integ
 The first parent browser slice passes one case with four assertions. The existing preview header now selects independent original states. It preserves the paired migration checkpoint through selection, reload and Back, and shows only the original one-board coverage. Historical selections no longer display the empty-current message. The existing router keeps its ordinary canonical selector behavior. Public fixture setup uses real files, Git, inventory, mapping and retention. Types and lint pass. Browser application@TASK-549.21 is drafted before these changes. Lifecycle/standing details and retained-original inspection remain pending.
 
 The second browser slice passes one case with ten assertions. A bounded original-state disclosure shows lifecycle reasons, correction source revisions, explicit predecessor and baseline choices, baseline fingerprints, distinct compact changes, competing original values, and blocked ancestry. Equal display names never combine independent drafts. Every distinct original record remains visible; exact duplicate evidence rows share one display key. Types and lint pass. The parent removed an empty summary element when original metadata supplies no summary. Retained-original inspection and degraded composition recovery remain pending.
+
+Retained-original inspection now passes one browser case with five assertions. It shows the exact saved source after live files disappear and keeps unresolved originals inspectable when no complete candidate or mapping plan exists. The reader shows diagnostics instead of an empty current system. One selected file decodes on demand; unsupported UTF-8 retains its base64 representation. A native read-only text area supports keyboard scrolling and copying. Types and lint pass. Consumer guidance, frontend contracts, test ownership and evaluation coverage now include the three browser workflows. Final regression and visual acceptance, architecture restatement and adoption, and closure remain.
 <!-- SECTION:NOTES:END -->
