@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T09:51:00Z'
+updated_date: '2026-10-27T09:53:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -75,4 +75,6 @@ Published task-549.18-contract.md in the approved state directory. Draft proposa
 Public portability evidence passes four cases across portable.test.ts and portable-history.test.ts. The immutable closure is checked once per retained input, with actual Git ancestry kept separate from proposal lineage. Full lint passes without rule changes. Type checking reports only the two parent-owned selector labels that require a null-state fallback. The remaining runtime work covers private restoration, signing and interruption.
 
 Backend evidence now covers nine portability runtime cases plus CLI/HTTP parity. The broad shared run passes 57/60 cases and reaches a five-second timeout in the original round-trip test and two unchanged reconciliation cases. Round-trip preparation now runs before its assertion window, which passes in 4.1 seconds without a deadline change. Both reconciliation cases pass separately on exact starting source 5d2f45465332b84c59d19c3a7c21ee2b8abd8aae and current source, with matching durations. Other passing shared evidence is reused. Consumer contracts pass 33 cases, package API contracts pass 66, full lint has zero warnings, and evaluation inputs validate 21 scenarios and fixtures. Package width remains the inherited TASK-549.24 issue: board now exports 250 names against 188, from the inherited 245. No ceiling changed. Final proposals have zero affected code warnings and semantics have zero diagnostics. The same eight unrelated Archboard warnings remain. Prior architecture variants, views and lifecycle records remain exact. The task and proposals remain open for parent acceptance.
+
+Final signed implementation checkpoint: 8fac3dc80be3ca6a16bc974675b2905aa0afa2c3, after c78808ce9327ff58038dd367b16ceadc3f80d6eb. Both use configured signing. Merged latest local feat/canonical-module-model at 5d2f45465332b84c59d19c3a7c21ee2b8abd8aae before handoff; Git reports Already up to date. The simplification pass retains one Git archive engine and one installation journal. It hashes the import envelope into the signed request instead of retaining a second bundle copy. Dependency verification uses one actual ancestry graph instead of repeatedly materializing every historical state. No frontend changes, child agents, reviews, pushes, PR actions, proposal adoptions, or task closure occurred.
 <!-- SECTION:NOTES:END -->
