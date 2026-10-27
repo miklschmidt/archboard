@@ -7,6 +7,7 @@
 // the release of somebody else's lease. Nor is `showConversation`: it says which
 // checkout's conversation the person activated, and the dock follows it.
 
+import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts";
 import type { z } from "zod";
 import type { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
 import {
@@ -15,11 +16,7 @@ import {
 	type ShownConversationRequest,
 } from "@archboard/workbench/browser-contract";
 import { inVault, requestJson } from "@archboard/server-requests";
-import type {
-	BoardIdentity,
-	BrowserPaneListing,
-	LockHolder,
-} from "#ui/rules/pane-session/session-types.ts";
+import type { BrowserPaneListing, LockHolder } from "#ui/rules/pane-session/session-types.ts";
 
 /** What one pane tells the server it has in front of the human. */
 interface PaneReport {
@@ -93,40 +90,6 @@ function fetchPaneInventory(signal?: AbortSignal): Promise<BrowserPaneListing> {
 	return requestJson("/api/panes", { signal });
 }
 
-/** What `showBoard` asks for: which board of which vault, in which pane. */
-interface ShowBoardRequest {
-	/** The vault the board is in: a pane shown a board of another vault moves into it. */
-	vault: string;
-	/** The board key: `pipeline`, or `pipeline@variant`. */
-	board: string;
-	/** Which pane shows it. Required once more than one is open. */
-	pane?: string;
-}
-
-/** What the server answers a show with. */
-interface ShowBoardReply {
-	success: true;
-	board: string;
-	identity: BoardIdentity;
-	/** The repository the vault is listed under, or null when no listed one reads it. */
-	repository: string | null;
-	paneId: string;
-}
-
-/**
- * Point a pane at a board.
- *
- * The shell asks rather than deciding, so that one owner records which pane
- * holds what — the same owner an agent's `browser show` goes through, and the
- * same one `browser panes` is answered from (ADR 0009).
- * @param request The board and the pane to show it in.
- * @returns What the pane is showing now.
- */
-function showBoard(request: ShowBoardRequest): Promise<ShowBoardReply> {
-	const { vault, ...shown } = request;
-	return requestJson(inVault("/api/panes/show", vault), { method: "POST", payload: shown });
-}
-
 /**
  * Open a canonical reading through the same addressed route used by local agents.
  * @param vault The destination vault.
@@ -138,7 +101,7 @@ function showModel(
 	vault: string,
 	pane: string,
 	reading: z.input<typeof ArchitecturePaneReadingSchema>,
-): Promise<unknown> {
+): Promise<Pick<PaneModelRequest, "repository">> {
 	return requestJson(inVault("/api/panes/show", vault), {
 		method: "POST",
 		payload: { pane, reading },
@@ -196,12 +159,9 @@ export {
 	loadedBundle,
 	reportPane,
 	showModel,
-	showBoard,
 	showConversation,
 	takeBoardBack,
 	type PaneReply,
 	type PaneReport,
-	type ShowBoardReply,
-	type ShowBoardRequest,
 	type TakeBackReply,
 };

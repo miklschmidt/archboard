@@ -25,7 +25,7 @@ import type {
 import { modelReading } from "#ui/rules/board-routing/model-address.ts";
 import type { WorkspaceAddress, ModelAddress } from "#ui/rules/board-routing/address.ts";
 import type { WorkspaceAddressing } from "#ui/hooks/board-routing/use-workspace-address.ts";
-import { showBoard, showModel } from "#ui/clients/pane-session/pane-requests.ts";
+import { showModel } from "#ui/clients/pane-session/pane-requests.ts";
 
 /**
  * The pane list a tab opens with: the panes its address names, so a restored
@@ -150,8 +150,8 @@ async function showThroughServer(
 	boardKey: string,
 	vault: string,
 ): Promise<OpenedBoard> {
-	const reply = await showBoard({ vault, board: boardKey, pane: clientId });
-	return { boardKey: reply.board, repository: reply.repository };
+	const reply = await showModel(vault, clientId, { legacyAddress: boardKey });
+	return { boardKey: null, repository: reply.repository };
 }
 
 /**

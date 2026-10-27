@@ -30,8 +30,39 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${server.base}/?modelB=Shop`]);
+	await browser.run(["open", `${server.base}/?paneB=Store%40Before`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-preview-coverage="Shop/System#Old"]') !== null`,
+			),
+		Boolean,
+		"the retained original from an existing pane URL",
+		WAIT,
+	);
+	const http = createJsonRequester(server);
+	await pollUntil(
+		async () => {
+			const result = await http<{
+				panes: Array<{ paneId: string }>;
+			}>(`/api/panes?vault=${encodeURIComponent(fixture.vault)}`);
+			return result.body.panes.some((pane) => pane.paneId === "B");
+		},
+		Boolean,
+		"the restored pane registration",
+		WAIT,
+	);
+	await browser.run(["click", '[data-slot="repository-model-open"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop/System#Shop"]') !== null && !new URLSearchParams(location.search).has('previewB')`,
+			),
+		Boolean,
+		"the current model after leaving the original URL",
+		WAIT,
+	);
 	await pick(
 		browser,
 		'[data-slot="preview-bookmark-selector"]',

@@ -12,7 +12,7 @@ import type { ConversationActivation } from "#ui/clients/application/shown-conve
 import { userMoves, type UserMove } from "#ui/rules/application/user-moves.ts";
 import { chooseCheckout } from "#ui/clients/board-catalog/repositories.ts";
 import { type BoardCatalog } from "#ui/hooks/board-catalog/use-board-catalog.ts";
-import { showBoard, showModel } from "#ui/clients/pane-session/pane-requests.ts";
+import { showModel } from "#ui/clients/pane-session/pane-requests.ts";
 import type {
 	SettingsSurface,
 	ShellActions,
@@ -23,7 +23,9 @@ import type {
 import type { PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 
 /** What the server says a pane is showing after a show, and the repository it is in. */
-type ShownBoard = Pick<Awaited<ReturnType<typeof showBoard>>, "board" | "repository">;
+type ShownBoard = Pick<Awaited<ReturnType<typeof showModel>>, "repository"> & {
+	board: string | null;
+};
 
 /** What the actions act on. */
 interface ShellActionDeps {
@@ -70,8 +72,10 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 	const moving = deps.userMoves ?? ((paneId: string): UserMove => userMoves(panes.handles, paneId));
 	const show =
 		deps.show ??
-		((board: string, pane: string, vault: string): Promise<ShownBoard> =>
-			showBoard({ vault, board, pane }));
+		(async (board: string, pane: string, vault: string): Promise<ShownBoard> => {
+			const { repository } = await showModel(vault, pane, { legacyAddress: board });
+			return { board: null, repository };
+		});
 	const { activate } = deps;
 	/**
 	 * Show a listed board in one pane; the outcome is the pane moving, or a notice.
