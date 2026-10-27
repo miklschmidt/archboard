@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T19:03:00Z'
+updated_date: '2026-10-27T19:12:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -76,6 +76,8 @@ TASK-549.13, TASK-549.16, TASK-549.18, TASK-549.23
 Parent browser proposal Browser application@TASK-549.24 is VaQkKiQf. The shared projection contract moves unchanged to @archboard/board/content. LEGACY_AUTHORITY remains stable. Parent browser test first proves explicit migration guidance without drawing or rewriting legacy content, then reuses durable recovery and installed navigation acceptance. Parent removes live legacy pane mounting, legacy catalogue reads, and ownership/level controls while preserving exact original addresses through canonical migration selectors.
 
 Restore canonical agent activity through the existing server publication owner while the parent ports the shell render matrix. Preserve model identity, concurrent subject claims, durable doing attribution, idle cleanup, and per-vault routing. Keep all frontend work and final architecture adoption with the parent.
+
+Restore the approved pane composition while porting the shell matrix: one existing 280 px sidebar per pane, with canonical module navigation and selection details. Preserve its docked/floating/hidden behavior, full canvas geometry, focus and keyboard actions, and captured walkthrough behavior. Keep authored meaning before code/comparison evidence. Adapt browser interaction helpers to deliberate sidebar navigation, while retaining generic shell geometry, accessibility, theme, motion, activity and notice assertions.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
