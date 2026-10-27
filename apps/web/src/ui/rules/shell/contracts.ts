@@ -3,7 +3,7 @@
 // `ShellActions`. The shell keeps only presentation state of its own.
 
 import type { ReactNode } from "react";
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";

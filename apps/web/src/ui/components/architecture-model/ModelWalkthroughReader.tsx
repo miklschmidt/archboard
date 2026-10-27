@@ -8,7 +8,7 @@ import {
 } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button, DropdownMenu } from "@archboard/ui-kit/components";
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import { modelWalkthroughQuery } from "#ui/clients/architecture-model/walkthroughs.ts";
 import { ModelWalkthrough } from "#ui/components/architecture-model/ModelWalkthrough.tsx";
@@ -33,7 +33,11 @@ interface ReaderProps extends Pick<
 function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
 	const { checkpoint, state: requestedState, preview } = useModelLocation(props.paneId);
 	const state = walkthroughState(props.model, requestedState);
-	const [request, setRequest] = useState<PlaybackRequest | null>(null);
+	const [request, setRequest] = useState<PlaybackRequest | null>(() => {
+		const asked = props.driven;
+		if (asked === null || asked === undefined) return null;
+		return { id: crypto.randomUUID(), walkthrough: asked.walkthrough, checkpoint, state, preview };
+	});
 	const select = useCallback(
 		(walkthrough: string): void => {
 			setRequest({ id: crypto.randomUUID(), walkthrough, checkpoint, state, preview });

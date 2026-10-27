@@ -1,4 +1,4 @@
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
 
 const NO_STATES: Readonly<NonNullable<Model["states"]>> = Object.freeze([]);
 

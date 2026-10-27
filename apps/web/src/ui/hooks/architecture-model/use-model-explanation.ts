@@ -3,7 +3,7 @@ import { DiagramGrammarSchema } from "@archboard/board/views";
 import { ModelExplanationContext } from "#ui/state/architecture-model/explanations.ts";
 import { NOTHING_READ, type PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import type { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
 import type { ExplanationInvocation } from "#ui/clients/architecture-model/explanations.ts";
 
 type Action = ExplanationInvocation["request"]["action"];

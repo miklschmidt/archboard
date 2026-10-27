@@ -52,6 +52,8 @@ export interface BoardListing extends PersistedBoardListing {
 /** What the server sends a pane over its socket. */
 export interface WebSocketMessage {
 	type: string;
+	model?: string;
+	reading?: unknown;
 	/** On `board_error`: the actionable refusal the shell must keep visible. */
 	error?: string;
 	/** The board a message is about, as a pane board key. */

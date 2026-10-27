@@ -1,6 +1,6 @@
 import { useCallback, type JSX } from "react";
 import { Select } from "@archboard/ui-kit/components";
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
 
 /**
  * Open a preserved reading without creating architecture content.

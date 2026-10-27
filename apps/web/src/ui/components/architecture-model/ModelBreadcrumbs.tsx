@@ -1,6 +1,6 @@
 import { useCallback, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
-import type { projectModel } from "#ui/rules/architecture-model/projection.ts";
+import type { projectModel } from "@archboard/board/content";
 
 /**
  * The trail describes containment, independently of navigation history.

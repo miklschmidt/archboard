@@ -1,5 +1,5 @@
 import { useEffect, useMemo, type JSX } from "react";
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
 import { originalReadingAddress } from "#ui/rules/architecture-model/imported-readings.ts";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import { ModelError } from "#ui/components/architecture-model/ModelFrame.tsx";

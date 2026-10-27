@@ -1,4 +1,4 @@
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
 
 /**
  * Proposal standing comes from the coherent read, independently of comparison changes.

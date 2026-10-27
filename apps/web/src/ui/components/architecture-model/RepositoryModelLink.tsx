@@ -2,7 +2,7 @@ import { useCallback, type JSX, type MouseEvent } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { Button } from "@archboard/ui-kit/components";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
-import type { Model } from "#ui/rules/architecture-model/projection.ts";
+import type { Model } from "@archboard/board/content";
 import { addressFromSearch, validateWorkspaceSearch } from "#ui/rules/board-routing/search.ts";
 
 /**

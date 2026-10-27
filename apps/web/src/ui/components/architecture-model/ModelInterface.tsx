@@ -1,5 +1,5 @@
 import { useMemo, type JSX } from "react";
-import type { Model, projectModel } from "#ui/rules/architecture-model/projection.ts";
+import type { Model, projectModel } from "@archboard/board/content";
 import { ContainerInterface } from "#ui/components/semantic-board-canvas/ContainerInterface.tsx";
 import { kindLookOf } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 
