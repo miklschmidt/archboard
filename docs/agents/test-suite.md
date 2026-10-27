@@ -753,3 +753,8 @@ It no longer contains folders, boards, variant rows, or a second architecture hi
 The old `navigator-tree.test.tsx` retires with board hierarchy and variant expansion.
 Its private React-prop inspection also retires because it tests implementation details.
 Canonical navigation, proposal, and walkthrough browser owners retain visible architecture and presentation behavior.
+
+`measured-text.test.ts` uses canonical input while retaining the browser-versus-Bun font comparison and theme assertions.
+`browser-drawn-pictures.test.ts` retains local rendering, icons, persistent scene reuse, theme recoloring, and invalidation after a public module edit.
+Canonical drawings use the existing IndexedDB picture store and the public render schema for cached geometry.
+Their cache identity includes the renderer build and the exact prepared scene.

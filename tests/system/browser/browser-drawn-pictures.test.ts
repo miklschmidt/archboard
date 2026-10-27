@@ -14,7 +14,13 @@ import {
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
 import { switchTheme } from "./support/shell-dom.ts";
-import { addressShowing, seedSemanticBoard, pictureAtRest } from "./support/semantic-page.ts";
+import {
+	seedCanonicalModel,
+	modelAddress,
+	modelDrawn,
+	editCanonicalModel,
+} from "./support/canonical-page.ts";
+import { initializeSource } from "./support/canonical-model.ts";
 
 // The canvas draws its pictures in the page (TASK-247): the board it read, laid
 // out by engine workers in this browser, measured by this browser's canvas.
@@ -28,7 +34,7 @@ import { addressShowing, seedSemanticBoard, pictureAtRest } from "./support/sema
 const WAIT = { timeoutMs: 8_000 } as const;
 
 /** The surface a pane's picture sits in. */
-const SURFACE = "[data-slot='semantic-board-surface']";
+const SURFACE = "[data-slot='model-diagram']";
 
 /**
  * Every resource this page has fetched, by URL.
@@ -73,7 +79,7 @@ const keptPictures = (browser: AgentBrowserSession): Promise<Record<string, stri
  */
 const drawn = (browser: AgentBrowserSession, what: string): Promise<boolean> =>
 	pollUntil(
-		() => pictureAtRest(browser.eval.bind(browser)),
+		() => modelDrawn(browser.eval.bind(browser)),
 		(atRest) => atRest,
 		what,
 		WAIT,
@@ -82,15 +88,21 @@ const drawn = (browser: AgentBrowserSession, what: string): Promise<boolean> =>
 test("the page draws a board itself, keeps the picture, recolours it for a theme, and draws it again when the board changes", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = vaultIn(join(ownerRoot, "drawn-here-vault"));
-	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	const root = join(ownerRoot, "drawn-here-vault");
+	const vault = vaultIn(root);
+	const model = await seedCanonicalModel(vault, "Pipeline");
+	initializeSource(root);
+	const server = await startOwnedServer({
+		serverPath,
+		vault,
+		env: serverTestEnvironment({ GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" }),
+	});
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
 	const request = createJsonRequester(server);
-	await seedSemanticBoard(request, "pipeline");
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", addressShowing(server.base, "pipeline")]);
+	await browser.run(["open", modelAddress(server.base, model)]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await drawn(browser, "the board to be drawn in the page");
 	await switchTheme(browser, "light");
@@ -98,7 +110,7 @@ test("the page draws a board itself, keeps the picture, recolours it for a theme
 	// Drawn here: the engine worker started, the icons were fetched by name, and
 	// the server's render route was never asked.
 	const first = await fetched(browser);
-	expect(first.some((url) => url.includes("/api/semantic-boards/render"))).toBeFalse();
+	expect(first.some((url) => url.includes("/api/architecture/render"))).toBeFalse();
 	expect(first.some((url) => /\/assets\/layout-worker-[^/]+\.js$/.test(url))).toBeTrue();
 	expect(first.some((url) => url.includes("/assets/diagram-icons/"))).toBeTrue();
 	expect(
@@ -111,7 +123,7 @@ test("the page draws a board itself, keeps the picture, recolours it for a theme
 	// Opened again: the kept picture is shown, and nothing is laid out for it, so
 	// the kept entries are exactly as they were.
 	const keptBefore = await keptPictures(browser);
-	await browser.run(["open", addressShowing(server.base, "pipeline")]);
+	await browser.run(["open", modelAddress(server.base, model)]);
 	await drawn(browser, "the kept picture to be shown after the page is opened again");
 	expect(await browser.eval<string>(`document.querySelector("${SURFACE}").textContent`)).toContain(
 		"Ingest",
@@ -140,12 +152,9 @@ test("the page draws a board itself, keeps the picture, recolours it for a theme
 	expect(await keptPictures(browser)).toEqual(keptBefore);
 
 	// The board changes: the pane is told, and the new version is drawn here.
-	const wrote = await request<{ version: number }>("/api/semantic-boards/edit?expectVersion=1", {
-		method: "POST",
-		doing: "adding the ledger",
-		body: { board: "pipeline", edit: { nodes: [{ name: "Ledger", kind: "datastore" }] } },
-	});
-	expect(wrote.status).toBe(200);
+	await editCanonicalModel(request, vault, "draw-ledger", [
+		{ type: "add-module", module: { name: "Ledger", kind: "datastore", order: 2 } },
+	]);
 	await pollUntil(
 		() => browser.eval<string>(`document.querySelector("${SURFACE}")?.textContent ?? ""`),
 		(text) => text.includes("Ledger"),
@@ -153,14 +162,12 @@ test("the page draws a board itself, keeps the picture, recolours it for a theme
 		WAIT,
 	);
 	expect(
-		(await fetched(browser)).some((url) => url.includes("/api/semantic-boards/render")),
+		(await fetched(browser)).some((url) => url.includes("/api/architecture/render")),
 	).toBeFalse();
 	// Laid out here and kept again, as a picture of the new version.
 	const keptAfter = await pollUntil(
 		() => keptPictures(browser),
-		// A kept picture's key starts with its vault, board, variant, view,
-		// comparison and layout; its version comes next.
-		(kept) => Object.keys(kept).some((key) => JSON.parse(key)[6] === 2),
+		(kept) => Object.keys(kept).some((key) => !(key in keptBefore)),
 		"the new version's picture to be kept",
 		WAIT,
 	);

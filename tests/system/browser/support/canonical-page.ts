@@ -1,3 +1,11 @@
+import type { z } from "zod";
+import type {
+	ArchitectureModelRead,
+	ArchitectureModuleEditSchema,
+	ArchitectureModuleEditResult,
+	ArchitectureClaimResult,
+} from "@archboard/board/model";
+import type { createJsonRequester } from "../../support/http.ts";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { mintId } from "@archboard/board/ids";
@@ -121,7 +129,66 @@ async function modelDrawn(evaluate: <T>(expression: string) => Promise<T>): Prom
 	);
 }
 
+type Changes = Extract<
+	z.input<typeof ArchitectureModuleEditSchema>,
+	{ changes: unknown }
+>["changes"];
+/**
+ * Apply a claimed structural edit through the shared public HTTP interface.
+ * @param request The fixture server request client.
+ * @param vault The explicit fixture vault.
+ * @param operationId The retry identity.
+ * @param changes The intended module and relationship changes.
+ * @returns The durable write receipt.
+ */
+async function editCanonicalModel(
+	request: ReturnType<typeof createJsonRequester>,
+	vault: string,
+	operationId: string,
+	changes: Changes,
+) {
+	const current = await request<ArchitectureModelRead>("/api/architecture/model");
+	if (!current.body.success || current.body.manifest.current === null)
+		throw new Error(JSON.stringify(current.body));
+	const target = { model: current.body.manifest.id, state: current.body.manifest.current.id };
+	const claimed = await request<ArchitectureClaimResult>("/api/architecture/claims", {
+		method: "POST",
+		body: {
+			vault,
+			target,
+			writer: "fixture-agent",
+			reason: "Explain module boundaries",
+			subjects: [
+				target.model,
+				...current.body.modules.map((module) => module.id),
+				...current.body.relationships.map((edge) => edge.id),
+			],
+		},
+	});
+	if (!claimed.body.success) throw new Error(JSON.stringify(claimed.body));
+	const edited = await request<ArchitectureModuleEditResult>("/api/architecture/module", {
+		method: "POST",
+		body: {
+			vault,
+			target,
+			expectedRevision: current.body.revision,
+			operationId,
+			writer: "fixture-agent",
+			doing: "Changing module structure",
+			claim: claimed.body.claim.id,
+			changes,
+		},
+	});
+	await request("/api/architecture/claims/release", {
+		method: "POST",
+		body: { vault, claim: claimed.body.claim.id, writer: "fixture-agent" },
+	});
+	if (!edited.body.success) throw new Error(JSON.stringify(edited.body));
+	return edited.body;
+}
+
 export {
+	editCanonicalModel,
 	seedCanonicalModel,
 	modelAddress,
 	modelDrawn,

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T18:10:00Z'
+updated_date: '2026-10-27T18:19:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -116,4 +116,6 @@ The repository keyboard owner first reproduced stale board-based filter counts (
 Parent canonical pane follow-up: removed the retired board-show HTTP request shape. Existing pane URLs now resolve captured legacy addresses through canonical navigation. The installed bookmark browser owner starts from a retained original pane URL, opens current, and preserves bookmarks, walkthroughs, reload, and unavailable-content behavior. Focused browser owner, full source/test types, and touched lint pass. The initial preview capture assertion was discarded because retained originals intentionally disable agent explanation captures.
 
 Parent navigator retirement: replaced the unused board/folder/variant hierarchy with canonical repository rows. Active repository selection and A/B markers failed through the existing browser owner before the change and pass afterward. Repository menus, activity, filtering, failure feedback, keyboard opens, and adjacent pane behavior pass. Full source/test types and focused lint pass. Removed unused hierarchy, expansion, timeline, and guide code plus the obsolete tree-only owner. The replacement ownership ledger is in docs/agents/test-suite.md. Model scope and proposal navigation remain inside the canonical reader.
+
+Parent renderer consumer port: measured-text keeps all browser/Bun font and theme assertions on canonical inputs. Browser-drawn-pictures exposed missing persistent cache reuse before the fix and now passes local layout, icons, reload reuse, theme, and public edit invalidation. Canonical scenes use the existing IndexedDB store with exact render input and build identity. Full types and touched lint pass. The shared structural edit fixture moved unchanged to canonical-page. Its broader structure owner exposes a separate existing selection loss when changing from a checkpoint to current; parent is fixing that next and does not claim complete browser acceptance.
 <!-- SECTION:NOTES:END -->

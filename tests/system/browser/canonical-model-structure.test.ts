@@ -1,14 +1,7 @@
 import { expect, test } from "bun:test";
 import { cpSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { z } from "zod";
-import type {
-	ArchitectureModelRead,
-	ArchitectureModuleEditSchema,
-	ArchitectureModuleEditResult,
-	ArchitectureClaimResult,
-	ArchitectureCheckpointRetain,
-} from "@archboard/board/model";
+import type { ArchitectureModelRead, ArchitectureCheckpointRetain } from "@archboard/board/model";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
@@ -21,59 +14,10 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { initializeSource, selectReading } from "./support/canonical-model.ts";
+import { editCanonicalModel as edit } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
-type Changes = Extract<
-	z.input<typeof ArchitectureModuleEditSchema>,
-	{ changes: unknown }
->["changes"];
 const WAIT = { timeoutMs: 8_000 } as const;
-
-async function edit(
-	request: ReturnType<typeof createJsonRequester>,
-	vault: string,
-	operationId: string,
-	changes: Changes,
-) {
-	const current = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!current.body.success || current.body.manifest.current === null)
-		throw new Error(JSON.stringify(current.body));
-	const target = { model: current.body.manifest.id, state: current.body.manifest.current.id };
-	const claimed = await request<ArchitectureClaimResult>("/api/architecture/claims", {
-		method: "POST",
-		body: {
-			vault,
-			target,
-			writer: "fixture-agent",
-			reason: "Explain module boundaries",
-			subjects: [
-				target.model,
-				...current.body.modules.map((module) => module.id),
-				...current.body.relationships.map((edge) => edge.id),
-			],
-		},
-	});
-	if (!claimed.body.success) throw new Error(JSON.stringify(claimed.body));
-	const edited = await request<ArchitectureModuleEditResult>("/api/architecture/module", {
-		method: "POST",
-		body: {
-			vault,
-			target,
-			expectedRevision: current.body.revision,
-			operationId,
-			writer: "fixture-agent",
-			doing: "Changing module structure",
-			claim: claimed.body.claim.id,
-			changes,
-		},
-	});
-	await request("/api/architecture/claims/release", {
-		method: "POST",
-		body: { vault, claim: claimed.body.claim.id, writer: "fixture-agent" },
-	});
-	if (!edited.body.success) throw new Error(JSON.stringify(edited.body));
-	return edited.body;
-}
 
 async function roots(browser: AgentBrowserSession): Promise<string[]> {
 	return browser.eval<string[]>(

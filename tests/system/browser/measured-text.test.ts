@@ -2,7 +2,6 @@ import { expect, test } from "bun:test";
 import { join } from "node:path";
 
 import { diagramTextWidth } from "@archboard/renderer/bun";
-import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import {
@@ -12,7 +11,7 @@ import {
 	pollUntil,
 	registerServerBase,
 } from "./support/agent-browser.ts";
-import { addressShowing, seedSemanticBoard, stageState } from "./support/semantic-page.ts";
+import { seedCanonicalModel, modelAddress, modelDrawn } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 import { assertThemeParity } from "./support/theme-parity.ts";
 
@@ -83,7 +82,7 @@ interface Drawn {
  * @returns The expression that collects them in the page.
  */
 const FACES = `(() => {
-	const style = document.querySelector("[data-slot='semantic-board-surface'] svg style");
+	const style = document.querySelector("[data-slot='model-diagram'] svg style");
 	const rules = style === null ? "" : style.textContent;
 	const faces = [];
 	for (const rule of rules.matchAll(/@font-face\\{([^}]*)\\}/g)) {
@@ -146,18 +145,17 @@ test("the server's text measurement is what a real browser draws", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = vaultIn(join(ownerRoot, "measured-vault"));
+	const model = await seedCanonicalModel(vault, "Typography");
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
-	const request = createJsonRequester(server);
-	await seedSemanticBoard(request, "typography");
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", addressShowing(server.base, "typography")]);
+	await browser.run(["open", modelAddress(server.base, model)]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
-		() => stageState(browser.eval.bind(browser)),
-		(state) => state === "drawn",
+		() => modelDrawn(browser.eval.bind(browser)),
+		Boolean,
 		"the board to be drawn, which is what registers the faces",
 		WAIT,
 	);
