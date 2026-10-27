@@ -21,6 +21,7 @@ import { useDiagramGestures } from "#ui/hooks/semantic-board-canvas/use-diagram-
 import { stagePicture } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
 import { clockOf } from "#ui/clients/semantic-board-canvas/picture/picture-clock.ts";
 import { stopTraffic } from "#ui/clients/semantic-board-canvas/picture/picture-traffic.ts";
+import { markCodeWarnings } from "#ui/clients/semantic-board-canvas/subjects/code-marks.ts";
 import { markSubjects } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 import type { projectModel, Model } from "@archboard/board/content";
 import { usePresentationArrival } from "#ui/hooks/semantic-board-canvas/use-presentation-arrival.ts";
@@ -37,6 +38,7 @@ interface ModelDiagramProps {
 	presentation?: string;
 	onPresentation?: (picture: { key: string; arrived: boolean } | null) => void;
 	selected: ReadonlySet<string>;
+	warnings?: ReadonlySet<string>;
 	onSelect: (id: string | null, toggle?: boolean) => void;
 	onSelectMany: (ids: readonly string[], toggle?: boolean) => void;
 	onOpen: (id: string | null) => void;
@@ -177,12 +179,11 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 			stagePicture(root, drawing.svg, clockOf(root.querySelector("svg")) ?? 0);
 			installed.current = drawing.svg;
 		}
-		const marked = new Set(selected);
-		for (const { line, joins } of props.projection.connections) {
-			if (joins.some((edge) => selected.has(edge.id))) marked.add(line.id);
-		}
+		const marked = projectedMarks(selected, props.projection.connections);
+		const warned = projectedMarks(props.warnings, props.projection.connections);
 		markSubjects(root, marked);
-	}, [selected, drawing.svg, props.projection.connections]);
+		markCodeWarnings(root, warned);
+	}, [selected, drawing.svg, props.projection.connections, props.warnings]);
 	useLayoutEffect(() => {
 		if (camera.room === null) return;
 		if (!camera.handled() || shownBeat.current !== props.presentation) {
@@ -231,6 +232,23 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 			{rectangle !== null && <ModelSelectionRectangle rectangle={rectangle} />}
 		</section>
 	);
+}
+
+/**
+ * An aggregate line carries marks from every authored relationship that it represents.
+ * @param subjects The selected or warned canonical identities.
+ * @param connections The current projection's relationship groups.
+ * @returns Authored identities plus their visible aggregate lines.
+ */
+function projectedMarks(
+	subjects: ReadonlySet<string> | undefined,
+	connections: ReturnType<typeof projectModel>["connections"],
+): Set<string> {
+	const marked = new Set(subjects);
+	for (const { line, joins } of connections) {
+		if (joins.some((edge) => subjects?.has(edge.id))) marked.add(line.id);
+	}
+	return marked;
 }
 
 /**

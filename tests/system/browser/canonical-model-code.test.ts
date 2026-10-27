@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type {
@@ -17,7 +18,13 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { initializeSource, fixtureGit, selectReading } from "./support/canonical-model.ts";
+import {
+	initializeSource,
+	fixtureGit,
+	selectReading,
+	selectState,
+} from "./support/canonical-model.ts";
+import { editCanonicalModel } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -215,5 +222,56 @@ test("canonical code controls follow current draft and exact readings while miss
 	if (!unchanged.body.success) throw new Error(JSON.stringify(unchanged.body));
 	expect(unchanged.body.modules.find((module) => module.id === "Shop#Gateway")?.binding?.path).toBe(
 		"src/gateway.ts",
+	);
+	await selectState(browser, created.body.target.state);
+	const checked = await request<CodeCheckAnswer>(
+		`/api/vault/code-check?state=${created.body.target.state}`,
+	);
+	const warnings = checked.body.findings.filter((finding) => finding.severity === "warning");
+	expect(
+		warnings.some(
+			(finding) =>
+				finding.subject?.id === "Shop#Gateway" && finding.code === "BINDING_PATH_MISSING",
+		),
+	).toBe(true);
+	await pollUntil(
+		() =>
+			browser.eval<number>(
+				`Number(document.querySelector('[data-slot="code-warning-count"]')?.getAttribute('data-count') ?? -1)`,
+			),
+		(count) => count === warnings.length,
+		"warnings for the exact canonical reading",
+		WAIT,
+	);
+	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="semantic-inspector-findings"] [data-finding-code="BINDING_PATH_MISSING"]') !== null`,
+			),
+		Boolean,
+		"the selected module's code evidence",
+		WAIT,
+	);
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-diagram"] [data-code-warning]') !== null`,
+		),
+	).toBe(true);
+	await editCanonicalModel(request, vault, "refresh-code-evidence", [
+		{
+			type: "edit-module",
+			subject: "Shop#Worker",
+			set: { description: "A newer architecture reading" },
+		},
+	]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="code-warning-count"]') === null && document.querySelector('[data-slot="semantic-inspector-findings"]') === null && document.querySelector('[data-slot="model-diagram"] [data-code-warning]') === null`,
+			),
+		Boolean,
+		"old findings to leave the changed architecture revision",
+		WAIT,
 	);
 }, 60_000);

@@ -1,3 +1,8 @@
+import {
+	ModelCodeWarnings,
+	ModelCodeDetails,
+} from "#ui/components/architecture-model/ModelCodeFindings.tsx";
+import { useModelCodeFindings } from "#ui/hooks/architecture-model/use-model-code-findings.ts";
 import { ModelExplanationMenu } from "#ui/components/architecture-model/ModelExplanationMenu.tsx";
 import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
 import { lazy, Suspense, useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
@@ -84,6 +89,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 		[props.subject],
 	);
 	const selection = useModelSelection(projection, initialSelection);
+	const code = useModelCodeFindings(props.vault, model);
 	const explanation = useModelExplanation(props.vault, model, location, selection.ids);
 	const { clear } = selection;
 	const [explanationOpen, setExplanationOpen] = useState(false);
@@ -177,6 +183,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 						onAction={explanation.act}
 					/>
 				)}
+				<ModelCodeWarnings reading={code.reading} onSelect={selection.select} />
 				<ModelModeControls
 					content={projection.depicted}
 					subjects={subjects}
@@ -190,6 +197,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				)}
 			</ModelSelectionBar>
 			<ModelReadingContent
+				code={code}
 				overlay={props.overlay}
 				paneId={props.paneId}
 				vault={props.vault}
@@ -214,6 +222,7 @@ interface ScopedModelReadingProps extends Pick<
 	"vault" | "paneId" | "onCodeTargetNotice" | "overlay"
 > {
 	model: Model;
+	code: ReturnType<typeof useModelCodeFindings>;
 	selection: ModelSelection;
 	onReveal: () => void;
 	onRevealFlow: (id: string) => void;
@@ -348,6 +357,7 @@ function ScopedModelReading(
 			<div className="relative flex min-h-0 min-w-0 flex-1">
 				<Suspense fallback={LOADING_DIAGRAM}>
 					<ModelDiagram
+						warnings={props.code.warnings}
 						grammar={props.grammar}
 						model={model}
 						projection={props.projection}
@@ -375,6 +385,7 @@ function ScopedModelReading(
 					onReveal={props.onReveal}
 					onRevealFlow={props.onRevealFlow}
 				/>
+				<ModelCodeDetails reading={props.code.reading} selected={selected} scope={props.scope} />
 				<ModelSelectionDetails {...props} />
 			</div>
 		</div>

@@ -63,7 +63,7 @@ function bindingPathMissing(claim: BindingClaim, where: string): CodeFinding {
 		`Node ${JSON.stringify(site.subject.name)} is bound to ${JSON.stringify(binding.path)} in ` +
 			`${JSON.stringify(binding.repo)} on the named draft, and there is no such file or ` +
 			`directory in ${where}. Naming a draft says that its code ` +
-			"is built now: bind the part to where its code lives, write that code, or leave --variant " +
+			"is built now: bind the part to where its code lives, write that code, or leave --state " +
 			"out until it is built.",
 	);
 }

@@ -160,6 +160,7 @@ async function editCanonicalModel(
 			reason: "Explain module boundaries",
 			subjects: [
 				target.model,
+				...current.body.proposals.map((proposal) => proposal.id),
 				...current.body.modules.map((module) => module.id),
 				...current.body.relationships.map((edge) => edge.id),
 			],

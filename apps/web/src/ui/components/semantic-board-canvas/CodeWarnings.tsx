@@ -110,4 +110,4 @@ function WarningCount(props: {
 	);
 }
 
-export { CodeWarnings };
+export { CodeWarnings, WarningCount };
