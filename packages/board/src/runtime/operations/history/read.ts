@@ -207,11 +207,45 @@ async function exactReading(
 	if (refused !== undefined) return refused;
 	const decoded = decodeModel(captured, record.selection);
 	if (!decoded.success) return decoded;
-	const model = await recordedSelection(context, decoded, record);
+	const model = record.correction === undefined
+		? await recordedSelection(context, decoded, record)
+		: await correctedSelection(context, decoded, checkpoint, record);
 	if (!model.success) return model;
 	const enriched =
 		details === false ? model : await retainedDetails(context, model, checkpoint, record);
 	return selectFlow(selectModule(enriched, module), flow);
+}
+
+/**
+ * Apply one retained correction through the existing identity-based subject engine.
+ * @param context The archive owner.
+ * @param catalogue The checkpoint's exact live catalogue.
+ * @param checkpoint The correction checkpoint identity.
+ * @param record Its immutable metadata.
+ * @returns Corrected facts and the explicit audit chain.
+ */
+async function correctedSelection(
+	context: ArchiveContext,
+	catalogue: Extract<ArchitectureModelRead, { success: true }>,
+	checkpoint: string,
+	record: Awaited<ReturnType<typeof checkpointRecord>>,
+) {
+	const correction = record.correction!;
+	if (!record.request.dependencies.includes(correction.previous))
+		throw new ArchiveError("CHECKPOINT_INVALID", "A correction must retain its previous checkpoint as a dependency.", checkpoint);
+	const previous = await exactReading(context, correction.previous, undefined, undefined, false);
+	if (!previous.success) return previous;
+	if (previous.manifest.id !== record.model || previous.selectedState?.id !== record.selection?.id)
+		throw new ArchiveError("CHECKPOINT_INVALID", "The correction must preserve its original model and state identity.", checkpoint);
+	const { decodeSubjects } = await import("#runtime/operations/proposals/read.ts");
+	const { subjectsOf, applyCompactChanges } = await import("#runtime/operations/proposals/subjects.ts");
+	const { changes, retiredIds, ...audit } = correction;
+	const corrected = decodeSubjects(
+		{ ...previous, manifest: { ...previous.manifest, retiredIds } },
+		applyCompactChanges(subjectsOf(previous), changes),
+		{ ...record.selection!, corrections: [...(previous.selectedState?.corrections ?? []), { ...audit, checkpoint }] },
+	);
+	return corrected.success ? { ...corrected, proposals: catalogue.proposals, revision: catalogue.revision } : corrected;
 }
 
 /**

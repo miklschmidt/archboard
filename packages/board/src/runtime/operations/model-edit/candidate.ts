@@ -181,7 +181,8 @@ async function selectedTarget(
 ) {
 	if ((catalogue.selectedState?.id ?? null) === target.state) return catalogue;
 	const { resolveState } = await import("#runtime/operations/proposals/read.ts");
-	return resolveState(await archiveContext(vault), catalogue, target.state!);
+	const selected = await resolveState(await archiveContext(vault), catalogue, target.state!);
+	return selected.success ? { ...selected, proposals: catalogue.proposals } : selected;
 }
 /**
  * Capture one checked predecessor candidate before family reconciliation.
@@ -190,7 +191,7 @@ async function selectedTarget(
  * @returns The predecessor candidate or its refusal.
  */
 async function initialCandidate(vault: string, request: ArchitectureModuleEdit) {
-	const catalogue = requireTargetCatalogue(vault, request.target);
+	const catalogue = await requireTargetCatalogue(vault, request.target);
 	if (!catalogue.success) return catalogue;
 	if (!isDeepStrictEqual(catalogue.revision, request.expectedRevision))
 		throw new ArchiveError("STALE_REVISION", "Read the complete model again before a new edit.");
@@ -201,6 +202,10 @@ async function initialCandidate(vault: string, request: ArchitectureModuleEdit) 
 	requireWritableTarget(state, request);
 	const current = await selectedTarget(vault, request.target, catalogue);
 	if (!current.success) return current;
+	if ("correction" in request) {
+		const { correctionCandidate } = await import("#runtime/operations/history/correction.ts");
+		return correctionCandidate(vault, request, current, captured);
+	}
 	if ("proposal" in request) {
 		const { proposalIntentCandidate } = await import("#runtime/operations/proposals/candidate.ts");
 		return proposalIntentCandidate(vault, request, current, captured);

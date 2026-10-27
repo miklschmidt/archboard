@@ -26,7 +26,7 @@ type Candidate = Extract<Awaited<ReturnType<typeof editCandidate>>, { success: t
  * @param subjects The complete affected claim scope.
  * @returns The still-current reading or a structured refusal.
  */
-function requireUnchanged(vault: string, request: ArchitectureModuleEdit, subjects: string[]) {
+async function requireUnchanged(vault: string, request: ArchitectureModuleEdit, subjects: string[]) {
 	requireSubjectClaim(vault, request, subjects);
 	const current = readCurrentModel(vault);
 	if (!current.success) return current;
@@ -35,6 +35,12 @@ function requireUnchanged(vault: string, request: ArchitectureModuleEdit, subjec
 			"STALE_REVISION",
 			"Inputs changed during signed preparation. No current file changed.",
 		);
+	if ("correction" in request) {
+		const { stateMetadata } = await import("#runtime/operations/proposals/read.ts");
+		const latest = await stateMetadata(await archiveContext(vault), current, request.target.state!);
+		if (latest.checkpoint !== request.correction.previous)
+			throw new ArchiveError("STALE_REVISION", "The logical state changed during signed preparation. Read it again before correcting it.");
+	}
 	return current;
 }
 /**
@@ -61,6 +67,7 @@ async function candidateRecord(
 		),
 		selection: candidate.selection ?? candidate.model.selectedState,
 		lifecycle: "lifecycle" in candidate ? candidate.lifecycle : undefined,
+		correction: "correction" in candidate ? candidate.correction : undefined,
 		revision: candidate.revision,
 		createdAt: new Date().toISOString(),
 		request: {
@@ -74,7 +81,9 @@ async function candidateRecord(
 		edit: request,
 		subjects: candidate.subjects,
 		reconciliations: candidate.reconciliations,
-		sources: await captureSource(context, candidate.model, vault),
+		sources: "correction" in request
+			? request.correction.revisions.map((revision) => ({ ...revision, uncommitted: false }))
+			: await captureSource(context, candidate.model, vault),
 		...(await captureReferencePins(vault, candidate.model)),
 	});
 }
@@ -100,7 +109,7 @@ async function prepareEdit(vault: string, request: ArchitectureModuleEdit) {
 		[...new Set([...(tip === undefined ? [] : [tip]), ...candidate.dependencies])],
 		"archboard: edit canonical architecture",
 	);
-	const latest = requireUnchanged(vault, request, candidate.scopes);
+	const latest = await requireUnchanged(vault, request, candidate.scopes);
 	if (!latest.success) return latest;
 	const journal: ModelJournal = {
 		schemaVersion: 1,

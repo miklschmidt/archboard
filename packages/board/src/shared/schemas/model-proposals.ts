@@ -11,6 +11,7 @@ import {
 	ModelRevisionSchema,
 } from "#shared/schemas/model-definitions.ts";
 import { QualifiedSubjectIdSchema, SemanticIdSchema } from "#shared/schemas/primitives.ts";
+import { HistoricalRevisionsSchema } from "#shared/schemas/historical-correction.ts";
 const StateSelectionSchema = ReadingSelectionSchema.extend({
 	explain: ExplanationRequestSchema.optional(),
 });
@@ -84,11 +85,25 @@ const ProposalSchema = StateMetadataSchema.extend({
 		.array(z.strictObject({ subject: QualifiedSubjectIdSchema, checkpoint: CheckpointIdSchema }))
 		.optional(),
 }).strict();
+const CorrectionIntentSchema = z.strictObject({
+	previous: CheckpointIdSchema,
+	reason: z.string().trim().min(1),
+	revisions: HistoricalRevisionsSchema,
+});
+const CorrectionAuditSchema = CorrectionIntentSchema.extend({
+	at: z.iso.datetime(),
+	checkpoint: CheckpointIdSchema,
+});
+const CorrectionSchema = CorrectionAuditSchema.omit({ checkpoint: true }).extend({
+	changes: z.array(ProposalChangeSchema),
+	retiredIds: z.array(QualifiedSubjectIdSchema).optional(),
+});
 const SelectedStateSchema = StateLineageSchema.extend({
 	lifecycle: z.enum(["current", "draft", "historical", "shelved"]),
 	predecessor: SemanticIdSchema.nullable().optional(),
 	baseline: CheckpointIdSchema.optional(),
 	standing: ModelStandingSchema.optional(),
+	corrections: z.array(CorrectionAuditSchema).optional(),
 }).strict();
 const LifecycleSchema = z.strictObject({
 	type: z.enum(["adopt", "shelve"]),
@@ -104,6 +119,10 @@ const ComparisonSchema = z.strictObject({
 	against: SelectedStateSchema.nullable(),
 	revision: ModelRevisionSchema,
 	checkpoint: CheckpointIdSchema.optional(),
+	corrections: z.strictObject({
+		selected: z.array(CorrectionAuditSchema),
+		against: z.array(CorrectionAuditSchema),
+	}).optional(),
 	subjects: z.array(
 		z.strictObject({
 			id: QualifiedSubjectIdSchema,
@@ -130,4 +149,7 @@ export {
 	ComparisonSchema,
 	ProposalChangeSchema,
 	SubjectKindSchema,
+	CorrectionIntentSchema,
+	CorrectionSchema,
+	CorrectionAuditSchema,
 };

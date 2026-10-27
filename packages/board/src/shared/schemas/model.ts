@@ -18,6 +18,7 @@ import {
 	SelectedStateSchema,
 	ComparisonSchema,
 	LifecycleSchema,
+	CorrectionSchema,
 } from "#shared/schemas/model-proposals.ts";
 import { QualifiedSubjectIdSchema } from "#shared/schemas/primitives.ts";
 import { FlowCollectionSchema } from "#shared/schemas/model-flows.ts";
@@ -91,6 +92,7 @@ const ArchitectureCheckpointSchema = z
 		state: StateMetadataSchema,
 		selection: SelectedStateSchema.nullable().optional(),
 		lifecycle: LifecycleSchema.optional(),
+		correction: CorrectionSchema.optional(),
 		revision: ModelRevisionSchema,
 		createdAt: z.iso.datetime(),
 		request: ArchitectureCheckpointRequestSchema,
@@ -203,6 +205,7 @@ const ArchitectureModelFailureSchema = z
 			"PROPOSAL_BLOCKED",
 			"PROPOSAL_SUPERSEDED",
 			"COMPARISON_REQUIRED",
+			"SOURCE_EVIDENCE_UNAVAILABLE",
 			"MODEL_INVALID",
 			"MODEL_NOT_FOUND",
 			"MODEL_UNREADABLE",

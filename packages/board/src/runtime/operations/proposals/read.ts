@@ -406,6 +406,9 @@ async function compareSelected(
 		revision: against.revision,
 		subjects: comparisonOf(against, selected),
 		...(against.checkpoint === undefined ? {} : { checkpoint: against.checkpoint.id }),
+		...((selected.selectedState?.corrections?.length ?? 0) + (against.selectedState?.corrections?.length ?? 0) === 0 ? {} : {
+			corrections: { selected: selected.selectedState?.corrections ?? [], against: against.selectedState?.corrections ?? [] },
+		}),
 	};
 	return selected;
 }
@@ -491,4 +494,5 @@ export {
 	proposalBaseline,
 	decodeSubjects,
 	requireModel,
+	stateMetadata,
 };

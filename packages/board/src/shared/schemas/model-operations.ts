@@ -2,6 +2,7 @@ import {
 	ComparisonSchema,
 	FamilyStandingSchema,
 	SelectedStateSchema,
+	CorrectionIntentSchema,
 } from "#shared/schemas/model-proposals.ts";
 import { DiagramGrammarSchema } from "#shared/schemas/vocabulary.ts";
 import { StandaloneThemeSchema, DiagramAtlasSchema } from "#shared/protocol/render-reply.ts";
@@ -167,6 +168,12 @@ const ProposalIntentSchema = z.discriminatedUnion("type", [
 	}),
 ]);
 const ArchitectureModuleEditSchema = z.union([
+	DescriptionEditSchema.omit({ subject: true, description: true })
+		.extend({
+			correction: CorrectionIntentSchema,
+			changes: z.array(z.union([StructureChangeSchema, FlowChangeSchema])).min(1),
+		})
+		.strict(),
 	DescriptionEditSchema.omit({ subject: true, description: true })
 		.extend({
 			proposal: ProposalIntentSchema,

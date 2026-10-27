@@ -64,9 +64,13 @@ async function retainedStates(context: ArchiveContext, model?: string) {
 	const completed = records.flatMap(({ id, record }) => completedStates(record, id));
 	const previous = records.flatMap(({ record }) => displacedStates(record));
 	const displaced = new Set(previous.map((state) => state.id));
+	const corrections = records.flatMap(({ id, record }) => record.correction === undefined || record.selection == null
+		? [] : [{ ...record.selection, checkpoint: id }]);
+	const replaced = new Set(records.flatMap(({ record }) => record.correction === undefined ? [] : [record.correction.previous]));
 	return [
 		...new Map(
-			[...completed.filter((state) => !displaced.has(state.id)), ...previous].map((state) => [
+			[...completed.filter((state) => !displaced.has(state.id)), ...previous, ...corrections]
+			.filter((state) => !replaced.has(state.checkpoint!)).map((state) => [
 				JSON.stringify([state.id, state.checkpoint]),
 				state,
 			]),
@@ -85,6 +89,7 @@ async function retainedReservations(context: ArchiveContext, model: string) {
 	return new Set(
 		records.flatMap(({ record }) => {
 			const lifecycle = record.lifecycle;
+			if (record.correction !== undefined) return [record.state.id, ...record.correction.changes.map((change) => change.subject), ...(record.correction.retiredIds ?? [])];
 			if (lifecycle === undefined) return [];
 			return [
 				lifecycle.proposal.id,

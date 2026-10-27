@@ -7,6 +7,8 @@ import { ArchiveError, ARCHIVE_REF, CheckpointRecordSchema } from "#runtime/stor
 
 type Failure = Extract<ArchitectureModelRead, { success: false }>;
 const recovery: Partial<Record<Failure["code"], string>> = {
+	SOURCE_EVIDENCE_UNAVAILABLE:
+		"Supply an available immutable source commit for every referenced repository. Restore missing source history before retrying the correction.",
 	REFERENCE_UNAVAILABLE:
 		"Restore the named foreign model and exact checkpoint. Retain its current reading first if needed, then retry the local operation. No foreign model is written.",
 	STATE_NOT_FOUND: "Read the proposal catalogue and use an existing stable state identity.",
