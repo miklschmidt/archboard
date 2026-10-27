@@ -175,6 +175,16 @@ test("walkthrough beats change readings while one revision stays captured until 
 	);
 	await browser.run(["click", '[data-walkthrough-id="Shop#Tour"]']);
 	await beat(browser, 0, "architecture");
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('[data-slot="semantic-sidebar-toggle"]')?.getAttribute('aria-disabled') ?? null`,
+		),
+	).toBe("true");
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('[data-slot="semantic-sidebar-toggle"]')?.getAttribute('aria-expanded') ?? null`,
+		),
+	).toBe("false");
 	expect(await selected(browser)).toContain("Shop#Gateway");
 	expect(
 		await browser.eval<number>(
@@ -277,6 +287,16 @@ test("walkthrough beats change readings while one revision stays captured until 
 		"the original scope",
 		WAIT,
 	);
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('[data-slot="semantic-sidebar-toggle"]')?.getAttribute('aria-disabled') ?? null`,
+		),
+	).toBeNull();
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('[data-slot="semantic-sidebar-toggle"]')?.getAttribute('aria-expanded') ?? null`,
+		),
+	).toBe("true");
 	expect(
 		await browser.eval<string>(
 			`document.querySelector('[data-slot="model-selection-count"]').getAttribute('data-count')`,

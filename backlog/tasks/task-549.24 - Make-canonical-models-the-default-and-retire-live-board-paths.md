@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T21:45:00Z'
+updated_date: '2026-10-27T21:53:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -101,7 +101,9 @@ Port the existing status-legibility browser owner to canonical public proposals 
 
 Delegate the bounded canonical render-context repair to gpt-6.1-sol in an isolated worktree. Reuse shared projection and existing renderer inputs for exact unresolved subjects, aggregated connections and complete interface context in exports/recipes. Publish the shared field contract early. Parent wires browser drawing and owns the legibility browser acceptance. No new rendering engine, live board adapter, storage abstraction, export ceiling or lint waiver.
 
-Bounded render-context repair: extend the approved public runtime and HTTP/CLI render owners with real Git fixtures. Add one shared projection unsettled field, preserve represented aggregate warnings, restore existing default comparison context, and pass complete variant meaning to structural and behavioral exports. Parent retains all frontend, mapping, adoption, and cutover. Existing drafts NyesaQPQ, aolPYfP5, and KzJ2iXIq cover this intent. Publish the shared contract and final handoff, merge the latest local integration, run focused behavior/types/lint/format checks, and commit signed source. Keep parent status, assignee, and acceptance unchanged.
+Restore walkthrough ownership of the existing sidebar control. First extend the canonical walkthrough browser owner to prove that the header control is held while captured playback hides the ordinary reader, then that its prior sidebar choice returns on leave. Move the existing header into the current playback context through a composition slot; add no mirrored presentation state.
+
+Bounded render-context repair: use one shared projection unsettled field for authored issues and represented aggregate connections. Preserve complete interface meaning and the existing default comparison through canonical structural and behavioral exports. Parent owns frontend, mapping, adoption, and cutover. Existing proposals NyesaQPQ, aolPYfP5, and KzJ2iXIq cover this intent. Keep parent status, assignee, and unchecked acceptance unchanged.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -186,4 +188,8 @@ Explicit-view preparation completed through the old .23 public CLI and its owned
 Retired four obsolete board browser fixtures and their lane entries after canonical viewer, claims, recursive/foreign navigation, source evidence and durable update replacements passed. The continuing traffic owner now proves reduced-motion visibility and restoration without replacing the SVG. That owner, full types and focused browser lint pass. The retirement ledger records each continuing contract and the explicit retirement of board ownership transfer.
 
 The canonical legibility browser port passes the first 15 computed-color and traffic assertions, then reproduces an absent unresolved-subject badge. Types and focused test lint pass. The browser rendering request omits the existing renderer unsettled input. The canonical export adapter also omits complete variant and unsettled context. Repair this shared rendering contract before final acceptance.
+
+The canonical walkthrough owner reproduced an active sidebar toggle while captured playback hid its ordinary panel. The existing reader now receives the header as a composition slot inside its presentation context. ModelHeader derives the existing sidebar control state from that context; no mirrored presentation state or second sidebar owner was added. A shared frame preserves headers and recovery when no coherent model exists. The toggle is held and collapsed during playback, then restores its previous expanded state on leave. Canonical walkthrough and preview-navigation browsers, full types and focused source/test lint pass.
+
+Render-context repair is implemented in the shared projection and HTTP render adapter. Public runtime and real-Git HTTP/CLI evidence proves module and aggregate warnings, default comparison with removed subjects, complete behavioral exchanges, exact retained recipe replay after later edits, CLI artifact equality, and scoped entry-point meaning after visual filters. Consumer rendering guidance describes these semantics. Source-vault inputs remain unchanged. The parent retains full acceptance.
 <!-- SECTION:NOTES:END -->
