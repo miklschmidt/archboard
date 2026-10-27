@@ -3,6 +3,8 @@ import { renderArchitecture } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { SemanticPolicySchema } from "@archboard/board/policy";
 import { placingGroups, type VariantContent } from "@archboard/board/content";
+import { routesThroughGroupHeaders } from "#tests/runtime/support/drawn-checks.ts";
+import foldedCaption from "#tests/runtime/support/fixtures/folded-caption.json";
 import { routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import { bodyShift, routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
@@ -314,6 +316,16 @@ test("a region round one card paints its caption beside the lines into the card"
 			expect(struck, `${id} through the caption`).toBeFalse();
 		}
 });
+
+// Live panes sends a line down to a block port that later folds above its
+// card. Closing that line's jog must keep its port outside the painted tab.
+test.each(["track", "blocks"] as const)(
+	"the %s engine keeps folded routes clear of a lone region's painted caption",
+	async (layout) => {
+		const drawing = await drawn(orderedFixture(foldedCaption), layout);
+		expect(routesThroughGroupHeaders(drawing)).toEqual([]);
+	},
+);
 
 test("the track engine stands a chain over the middle of a container alone in its region", async () => {
 	const drawing = await drawn(orderedFixture(legacyRouting), "track");

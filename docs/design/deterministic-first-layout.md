@@ -4,9 +4,9 @@ Milestone 7 uses one Solver call for each architecture graph.
 It replaces speculative nesting, stacking, join, card-graph, and routed-packing choices with decisions before their expensive work.
 It repairs Groups parent frames and removes the 32-card cutoff.
 Semantic lane reservations replace the later nudge phase.
-The renderer and Rust tests pass at checkpoint `de398584a`.
-Later raster inspection finds header-card defects that those tests miss.
-That checkpoint is not ready for adoption, and the parent council still decides whether changed drawings can land.
+Checkpoint `66dcc7dd4` repairs the full painted header cards and their direct arrow endpoints.
+The earlier `de398584a` checkpoint misses those defects and is not a delivery candidate.
+The parent council still decides whether the changed drawings can land.
 
 The latest pair after orphan cleanup places all three warmed first renders and growing edits below 500 ms.
 Viewer takes 384 ms for its warmed first render and 378 ms after growth.
@@ -899,3 +899,138 @@ All warmed target renders and growing edits now meet 500 ms.
 The fresh-process viewer still takes 523 ms, so the next probe targets that remaining gap.
 
 The quiet pinned counter repeats at 152730113322 instructions before and 9655284475 after, again a 93.68% reduction.
+
+## Rejected milestone 8: keep each block's first port plan
+
+The quiet viewer result still misses the strict cold target by 23 ms.
+A stage trace finds 615 ms of debug viewer time in port settling.
+The root reroute accounts for 604 ms of that time.
+Each root input changes, so an exact-input cache cannot remove this work.
+The three slow Track graphs request no face changes or held port orders.
+Their remaining repeat comes from routing the hierarchy after moving its child ports.
+
+The candidate keeps each block's first local port positions.
+The enclosing block routes to those positions when it places the block.
+It removes the later port movement, the retained reroute closures, and the competing port-order layout.
+It also removes the width locks and frame-resize helpers that only the reroute uses.
+Geometry-based wall selection remains for Blocks.
+Local wrap candidates also remain.
+
+The first diagnostic passes every geometry helper on all 23 complete Track drawings.
+The Blocks inventory finds three routes through the Panes caption on Archboard server.
+The caption placer protects its words but allows a line through the surrounding painted tab.
+Moving the caption box does not fix this because the painter extends the tab from a group corner.
+That attempted repair is dropped.
+
+The initial port assignment already reserves caption columns for incoming ports.
+The later jog closer reads a different face boundary and moves ports back into that reservation.
+A line leaving the lower face can also fold back through the caption band toward a top block port.
+The repair puts the caption reservation in the shared card-face calculation for both faces.
+Initial assignment and every later port move use that boundary.
+A seven-card, five-edge reduction fails before the repair and passes afterward with the test's own policy.
+The fixture retains no code bindings, stale flows, or walkthroughs.
+
+### Smaller probes dropped before this candidate
+
+A sorted arrival window narrows the collinear-line counter without changing its predicate.
+Its paired debug total moves from 2837 to 2811 ms, about 0.9%.
+A channel score cache recomputes only channels that a move changes.
+Its paired debug total moves from 2840 to 2763 ms, about 2.7%.
+The cache needs additional state and does not justify that cost.
+
+A static obstacle list moves the same debug total from 2840 to 2833 ms.
+Reusing existing route spans for shared-trunk comparisons moves it from 2840 to 2814 ms.
+The latter probe changes none of the three target SVGs.
+All four probes are dropped, and their source and logs remain under `/tmp/548-08/post-553`.
+These debug totals screen the ideas and do not establish release performance gains.
+The retained candidate removes the repeated routing instead of making its pair scans slightly cheaper.
+
+### Quiet performance pair for the rejected milestone 8
+
+The pair starts with no Git owner worker present.
+The parent pool run reports load 1.39 to 1.54, and the candidate reports 1.54 to 1.50.
+Native measurements report load 1.50 to 2.32.
+The core source hash is `8d44efdd000f0de5`.
+
+| Board                   | Warmed first before/after, ms | Fresh harness first before/after, ms | Growing edit before/after, ms | Native path before/after, ms |
+| ----------------------- | ----------------------------: | -----------------------------------: | ----------------------------: | ---------------------------: |
+| Board viewer            |                    1413 / 270 |                           1657 / 406 |                    1433 / 268 |                   1058 / 137 |
+| Board persistence       |                    1481 / 175 |                           1452 / 179 |                    1437 / 172 |                    1095 / 62 |
+| Archboard server routes |                     642 / 141 |                            595 / 130 |                     590 / 123 |                     324 / 59 |
+
+The native critical path falls from 2478 to 259 ms across the three boards.
+Their solve counts change from 24/25/27 to 1/1/1 in the table's order.
+The candidate spends another 62/66/33 ms beside its solves in that same order.
+The parent spends 57/42/30 ms there.
+The growing-card harness makes each measured card taller and refuses an edit that leaves its height unchanged.
+The complete warmed vault inventory stays below 500 ms, with Command interface slowest at 438 ms.
+The logs use the `base-8-quiet`, `after-8-quiet`, and `native-8-quiet` prefixes.
+
+### Why the port plan is dropped
+
+The full renderer suite reports 641 passes, one skip, and nine failures.
+The first-port-plan candidate detaches an endpoint when a caption is wider than its card.
+It also loses group and container wall clearance, a returning-trunk rule, and existing straight-line and crossing rules.
+The shared caption boundary fixes its reduced header strike but also causes the detached narrow-card endpoint.
+The 46 complete drawing inspections do not expose these smaller reachable cases.
+The speed result cannot justify these failures.
+
+The branch restores milestone 7, including its port-settling pass and port-order comparison.
+It keeps the seven-card caption fixture because the restored path passes that case on both engines.
+That fixture also fails on the rejected candidate before its attempted caption repair.
+The complete failed corpus remains at `/tmp/548-08/post-553/after-8`.
+Its rejected core, source patch, measurements, and logs remain beside it.
+No rejected layout code stays in production.
+
+### WebAssembly optimization probe
+
+A separate probe runs Binaryen 132 with `wasm-opt -O3` on the milestone 7 module.
+It reduces the module from 9866451 to 8105805 bytes, about 17.8%.
+The probe keeps the existing WebAssembly features and source hash.
+It changes no source or build recipe.
+
+Viewer takes 549 ms from a fresh process and 389 ms after growth in that run.
+Persistence takes 241/244 ms, and server routes takes 163/147 ms.
+The warmed viewer takes 398 ms, and Command interface is slowest at 498 ms.
+Load averages range from 3.32 to 3.13.
+This run establishes no latency gain over the quiet milestone 7 pair.
+The probe is dropped, and the original matching module is restored.
+The build gains no Binaryen dependency or alternate production path.
+Its inputs, output, and logs remain under the `wasm-opt-9` prefix.
+
+The next routing probe needs an initial parent placement that lets it plan child ports before the root routes once.
+Removing port settling outright fails the existing small-fixture contracts.
+Any such change must retain full parent header bounds, visible endpoints, and source-to-target identity.
+The parent still convenes the council, and TASK-548.08 remains In Progress.
+
+### Delivery after dropping both probes
+
+The delivery keeps layout code `66dcc7dd4` and core source hash `cba5643b6e09f19f`.
+The complete corpus is `/tmp/548-08/post-553/after-7-delivery`.
+It contains 2452 drawings from 2508 jobs, including all 76 complete architecture drawings.
+Every SVG matches `/tmp/548-08/post-553/after-7-final` exactly.
+The parent comparison still changes 744 drawings across 18 boards, including 72 complete architecture drawings.
+
+Both sides of every changed drawing are SVGs under `/tmp/548-08/post-553/changed-delivery-svg`.
+Its manifest maps every corpus key to the two SVG paths.
+The board counts remain those in the milestone 7 inventory above.
+The final renderer run passes 650 tests with one platform skip and no failures.
+The two new tests cover the reduced folded-caption case without a vault dependency or a time limit.
+
+The rejected port-plan corpus changes 752 drawings from the parent.
+Its instruction log reports 7742735101 on the core PMU against 152711702048 for the parent.
+The candidate's core PMU runs for 99.93% of that counter interval, so the initial atom sample is excluded.
+These figures describe a rejected layout and do not establish an acceptable performance result.
+All earlier render directories and failed probes remain available.
+
+The final architecture code check reports the same 41 finding identities as the earlier header checkpoint.
+It adds none and removes none.
+Renderer layout is at proposal version 110, and Semantic renderer is at proposal version 152.
+Both proposals retain port settling, and the packing flow states that geometry chooses one routed arrangement.
+The consumer interface does not change, so the consumer skill needs no update.
+
+The normal gate passes lint, formatting, types, Rust, and frontend builds before its module lane stops at one unrelated Rust server test.
+That test returns `unasked` while the real rust-analyzer becomes ready, and its isolated retry passes all five cases.
+The initial module result is 4937 passes, one skip, and one failure.
+The branch changes no timeout or assertion to hide that failure.
+The remaining gate stages run separately after the focused retry.
