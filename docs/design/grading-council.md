@@ -1,9 +1,10 @@
 # The grading council
 
-A layout change that alters drawings is judged by a council of three graders
-(Opus, gpt-6.1-sol and gpt-6-astra), not by byte-identical drawings (TASK-548,
-TASK-548.09). Each grader compares the drawings before and after the change
-without knowing which is which, and decides which reads better to a person.
+A layout change that alters drawings is judged by a council of four graders
+(Opus, gpt-6.1-sol, gpt-6-astra and Gemini 4 Argon), not by byte-identical
+drawings (TASK-548, TASK-548.09, TASK-548.12). Each grader scores both
+drawings of a pair on the council's agreed criteria without knowing which
+drawing is the change, and the scores decide which reads better to a person.
 
 ## Making the pairs
 
@@ -45,11 +46,11 @@ Give the graders a copy of `<out>/pairs` in a directory of its own, such as
 
 ## The owner's weighting
 
-The owner decided this on 2026-10-27, after the second council run. Every
-grader applies it before its own weights:
+The owner decided this on 2026-10-27, after the second council run. The
+council's criteria follow it, and it comes before them:
 
 - Defects are defects. A line through a group's or a parent's header is
-  one, as are the defects listed under Grading. No other quality makes up
+  one, as are the other defects in the criteria. No other quality makes up
   for a defect.
 - Among pictures without defects, a tightly composed board reads better
   than one with dead space. Short, direct lines, frames tight around their
@@ -59,30 +60,54 @@ grader applies it before its own weights:
 
 ## Grading
 
-1. **Criteria first.** Before it sees any pair, each grader writes down what
-   makes an architecture diagram readable, in its own words. It does not use
-   the old scorecard metrics (`drawn-scorecard.ts` and the `drawn-*` checks).
-   The council's criteria are in `grading-council/criteria-<grader>.md`
-   (Opus, gpt-6.1-sol and gpt-6-astra, written on 2026-10-26). A grader
-   rereads its own file before each run, and only its own. It also reads
-   the owner's weighting below, which comes before its own weights.
-2. **One verdict per pair.** The grader looks at `A.png` and `B.png` (and may
-   zoom into either) and records `A better`, `B better` or `same`, with a
-   one-line reason that names what it saw. It also records every defect it
-   sees in either picture. A defect is a line that is missing or ends away
-   from its card, an arrow through a card, a line through a group's or a
-   parent's header, a label off its route, a parent with no visible frame,
-   or a trunk that joins different sources toward different targets. The verdicts go to a file per
-   grader in the grading copy, for example
-   `/tmp/grading-<run>/verdicts/<grader>.json`, keyed by pair number.
-   A grader does not see the verdicts of the other graders.
-3. **Unblinding and the majority.** After all three graders are done, read
-   `key.json` and turn each verdict into `better`, `worse` or `same` for the
-   change. For each pair, the majority is the verdict that two or three
-   graders gave. If all three verdicts are different, the pair is `same`.
-   Record the per-pair verdicts, the reasons and the majority in the task
-   notes.
-4. **Outcome.** A change passes when no pair has a `worse` majority.
-5. **Defects decide alone.** A defect in the after picture that is not in the
-   before picture fails the change, whatever the vote. Check every defect a
-   grader reports against the after picture yourself.
+The criteria, their anchors, the defects and the decision rules are in
+[grading-council/criteria.md](grading-council/criteria.md). Each grader
+rereads that file before each run.
+
+1. **Graders.** Run Opus, gpt-6.1-sol and gpt-6-astra at `xhigh` effort and
+   Gemini 4 Argon through Cursor at `high`, the highest it offers. Each grader
+   gets the grading copy, the criteria file and the owner's weighting above,
+   and nothing else. It does not use the old scorecard metrics
+   (`drawn-scorecard.ts` and the `drawn-*` checks), and it does not see the
+   other graders' files.
+2. **Scores.** For each pair, the grader looks at `A.png` and `B.png` and
+   scores both on every criterion from 1 to 10. It also records every defect
+   it sees in either picture. It writes one file, for example
+   `/tmp/grading-<run>/verdicts/<grader>.json`, keyed by pair number:
+
+   ```json
+   {
+   	"001": {
+   		"A": { "K": 4, "R": 5, "T": 7, "L": 10, "O": 6, "W": 5 },
+   		"B": { "K": 6, "R": 5, "T": 7, "L": 10, "O": 6, "W": 5 },
+   		"defects": [
+   			{ "side": "B", "type": 3, "where": "a gray line through the Pane state header" }
+   		],
+   		"note": "B keeps Board lease beside Atomic file replacement"
+   	}
+   }
+   ```
+
+   `type` is the number of the defect in the criteria file. `note` names
+   what decided the scores.
+
+3. **Rulings.** Look at every defect a grader reports yourself, in the
+   full-size SVG under `<out>/runs/`. Record whether each side of the pair has a
+   real defect in `/tmp/grading-<run>/rulings.json`, for example
+   `{ "001": { "A": false, "B": true } }`. A defect found real counts for
+   every grader, and a defect found false is dropped.
+4. **Tally.** Run
+
+   ```sh
+   bun scripts/council-tally.ts <out> /tmp/grading-<run>
+   ```
+
+   It refuses while a reported defect has no ruling. For each pair it prints
+   the verdict for the change (`better`, `worse`, `same` or `both fail`) and
+   each grader's margin of the after picture over the before picture. The
+   median margin decides, and a margin under 0.40 is `same`. The last line
+   says whether the change passes, and the command exits 1 when it fails.
+   Record the output and the graders' notes in the task notes.
+
+5. **Outcome.** A change passes when no pair is `worse` and no after picture
+   has a real defect that its before picture lacks.
