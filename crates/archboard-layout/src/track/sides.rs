@@ -59,8 +59,8 @@ fn ends_on(lines: &[&[Point]], bx: &Rect) -> Vec<f64> {
         .iter()
         .flat_map(|points| [points[0], points[points.len() - 1]])
         .filter(|point| {
-            point.x > bx.x
-                && point.x < bx.x + bx.width
+            point.x >= bx.x
+                && point.x <= bx.x + bx.width
                 && (abs(point.y - bx.y) < 0.5 || abs(point.y - bx.y - bx.height) < 0.5)
         })
         .map(|point| point.x)
@@ -118,9 +118,7 @@ fn fit_side(
         .chain(inner.iter().map(|&one| fittings[one].bx))
         .collect();
     let mut uprights = uprights_in(lines, &bx);
-    if fitting.wide.is_some() {
-        uprights.extend(ends_on(lines, &bx));
-    }
+    uprights.extend(ends_on(lines, &bx));
     if held.len() + uprights.len() == 0 {
         return;
     }

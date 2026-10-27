@@ -1,0 +1,1031 @@
+[
+	{
+		"name": "Board rasterizer - Walkthrough video (blocks)",
+		"policy": {
+			"levels": ["system", "service", "module"],
+			"nodeKinds": {
+				"service": {
+					"name": "Service",
+					"icon": "RiServerLine",
+					"color": "blue"
+				},
+				"module": {
+					"name": "Module",
+					"icon": "RiBox3Line",
+					"color": "violet"
+				},
+				"function": {
+					"name": "Function",
+					"icon": "RiCodeLine",
+					"color": "cyan"
+				}
+			},
+			"relationshipKinds": {
+				"call": {
+					"name": "Call",
+					"dash": "solid",
+					"arrowhead": "filled",
+					"evidence": ["call"]
+				}
+			},
+			"groups": {
+				"walkthrough": {
+					"name": "Walkthroughs",
+					"color": "cyan"
+				}
+			}
+		},
+		"content": {
+			"nodes": [
+				{
+					"id": "QSI6gCrL",
+					"order": 14000,
+					"name": "Record command",
+					"kind": "service",
+					"responsibility": "Picks the walkthrough, has it recorded to the file named, and discards the board afterwards when asked",
+					"groups": ["walkthrough"]
+				},
+				{
+					"id": "ZAj4RMzN",
+					"order": 15000,
+					"name": "Walkthrough recorder",
+					"kind": "module",
+					"responsibility": "Runs a recording's two passes: proves ffmpeg first, records the talk in a live page, keeps it, then has it drawn frame by frame",
+					"groups": ["walkthrough"]
+				},
+				{
+					"id": "hlLOugjc",
+					"order": 16000,
+					"name": "Page driver",
+					"kind": "function",
+					"responsibility": "Waits until the page is ready, starts it from a user gesture, follows each step, then streams the voice out and reads the talk's events",
+					"parent": "ZAj4RMzN",
+					"groups": ["walkthrough"]
+				},
+				{
+					"id": "kpWAp83p",
+					"order": 20000,
+					"name": "Replay command",
+					"kind": "service",
+					"responsibility": "Renders a kept talk to a video again, in either theme, with no voice and no board",
+					"groups": ["walkthrough"]
+				},
+				{
+					"id": "EWBbxckL",
+					"order": 21000,
+					"name": "Frame renderer",
+					"kind": "function",
+					"responsibility": "Draws a talk frame by frame on several replay pages at once, each in its own Chromium: every page steps through every frame, and each captures its own seconds for the encoder",
+					"parent": "ZAj4RMzN"
+				},
+				{
+					"id": "XtzfRQkG",
+					"order": 22000,
+					"name": "Talk files",
+					"kind": "function",
+					"responsibility": "Says where a talk is kept, writes it as talk.json and voice.wav in one atomic rename, and reads one back through the talk's schema",
+					"parent": "ZAj4RMzN",
+					"groups": ["walkthrough"]
+				},
+				{
+					"id": "peB5Bs5R",
+					"order": 25000,
+					"name": "Video encoder",
+					"kind": "module",
+					"responsibility": "Finds ffmpeg, proves it has the encoders the file needs, and turns the JPEG frames and the voice into that file",
+					"parent": "itWd9ux7",
+					"groups": ["walkthrough"]
+				},
+				{
+					"id": "Ljy0lW5g",
+					"order": 27000,
+					"name": "Frame order",
+					"kind": "function",
+					"responsibility": "Hands the pages' frames to the one ffmpeg in order, holding a frame that arrives before its turn",
+					"parent": "ZAj4RMzN",
+					"groups": ["walkthrough"]
+				},
+				{
+					"id": "jQpIqcDx",
+					"order": 29000,
+					"name": "Recording entry",
+					"kind": "module",
+					"responsibility": "Accepts a walkthrough recording and runs its capture and rendering",
+					"parent": "ZAj4RMzN"
+				},
+				{
+					"id": "L1cYIenF",
+					"order": 30000,
+					"name": "Recording tools",
+					"kind": "module",
+					"responsibility": "Resolves recording executables and starts the recording browser",
+					"parent": "ZAj4RMzN"
+				},
+				{
+					"id": "itWd9ux7",
+					"order": 36000,
+					"name": "Video encoding",
+					"kind": "module",
+					"responsibility": "Turns the drawn frames and the voice into one video file with ffmpeg, which it finds on the machine or runs through Nix"
+				}
+			],
+			"edges": [
+				{
+					"id": "H7LOWDrR",
+					"order": 17000,
+					"from": "QSI6gCrL",
+					"to": "jQpIqcDx",
+					"kind": "call",
+					"label": "this walkthrough, in this language, to this file",
+					"emphasis": "normal"
+				},
+				{
+					"id": "m9ReACWz",
+					"order": 21000,
+					"from": "jQpIqcDx",
+					"to": "hlLOugjc",
+					"kind": "call",
+					"label": "drive the open page",
+					"emphasis": "hero"
+				},
+				{
+					"id": "5cL4zDLx",
+					"order": 27000,
+					"from": "L1cYIenF",
+					"to": "peB5Bs5R",
+					"kind": "call",
+					"label": "find ffmpeg and probe it, before any browser starts",
+					"emphasis": "normal"
+				},
+				{
+					"id": "fiurAdpc",
+					"order": 28000,
+					"from": "jQpIqcDx",
+					"to": "XtzfRQkG",
+					"kind": "call",
+					"label": "write the talk before the render",
+					"emphasis": "normal"
+				},
+				{
+					"id": "jAnbZCzu",
+					"order": 29000,
+					"from": "jQpIqcDx",
+					"to": "EWBbxckL",
+					"kind": "call",
+					"label": "render the talk just written",
+					"emphasis": "hero"
+				},
+				{
+					"id": "dDRwkGt6",
+					"order": 31000,
+					"from": "kpWAp83p",
+					"to": "XtzfRQkG",
+					"kind": "call",
+					"label": "read the kept talk",
+					"emphasis": "normal"
+				},
+				{
+					"id": "KTIZaMYj",
+					"order": 33000,
+					"from": "kpWAp83p",
+					"to": "EWBbxckL",
+					"kind": "call",
+					"label": "this talk, in this theme, to this file",
+					"emphasis": "normal"
+				},
+				{
+					"id": "eq4BIHlx",
+					"order": 37000,
+					"from": "EWBbxckL",
+					"to": "peB5Bs5R",
+					"kind": "call",
+					"label": "open it with voice.wav",
+					"emphasis": "normal"
+				},
+				{
+					"id": "sXypEOAH",
+					"order": 41000,
+					"from": "EWBbxckL",
+					"to": "L1cYIenF",
+					"kind": "call",
+					"label": "start each page's browser; prove ffmpeg if not handed one",
+					"emphasis": "normal"
+				},
+				{
+					"id": "eJdDQjo5",
+					"order": 42000,
+					"from": "QSI6gCrL",
+					"to": "XtzfRQkG",
+					"kind": "call",
+					"label": "where the talk is kept, proven free first",
+					"emphasis": "normal"
+				},
+				{
+					"id": "g7m7u2iu",
+					"order": 43000,
+					"from": "EWBbxckL",
+					"to": "Ljy0lW5g",
+					"kind": "call",
+					"label": "each page's captured frames; wait for room",
+					"emphasis": "normal"
+				},
+				{
+					"id": "yDelHqWM",
+					"order": 44000,
+					"from": "Ljy0lW5g",
+					"to": "peB5Bs5R",
+					"kind": "call",
+					"label": "the frames, in order, one at a time",
+					"emphasis": "normal"
+				},
+				{
+					"id": "uJ0o2UWM",
+					"order": 47000,
+					"from": "EWBbxckL",
+					"to": "XtzfRQkG",
+					"kind": "call",
+					"label": "the kept voice, to level each frame",
+					"emphasis": "normal"
+				},
+				{
+					"id": "c4z5J6ZL",
+					"order": 51000,
+					"from": "jQpIqcDx",
+					"to": "L1cYIenF",
+					"kind": "call",
+					"label": "starts the recording browser",
+					"emphasis": "normal"
+				}
+			]
+		}
+	},
+	{
+		"name": "Codex workhorse - Workhorse operations responsibilities (blocks)",
+		"policy": {
+			"levels": ["system", "service", "module"],
+			"nodeKinds": {
+				"module": {
+					"name": "Module",
+					"icon": "RiBox3Line",
+					"color": "violet"
+				}
+			},
+			"relationshipKinds": {
+				"call": {
+					"name": "Call",
+					"dash": "solid",
+					"arrowhead": "filled",
+					"evidence": ["call"]
+				},
+				"rpc": {
+					"name": "RPC",
+					"color": "violet",
+					"dash": "solid",
+					"arrowhead": "filled",
+					"evidence": ["call", "configured-path"]
+				},
+				"dependency": {
+					"name": "Dependency",
+					"dash": "dotted",
+					"arrowhead": "open",
+					"evidence": ["call", "configured-path", "import", "build-dependency"]
+				}
+			},
+			"groups": {
+				"child": {
+					"name": "Codex child",
+					"color": "indigo"
+				}
+			}
+		},
+		"content": {
+			"nodes": [
+				{
+					"id": "glxfDGYq",
+					"order": 3000,
+					"name": "Workhorse operations",
+					"kind": "module",
+					"responsibility": "The four things the coordinator may ask of a workhorse, one at a time: delegate, steer, inspect, manage its queue",
+					"parent": "QkrB0Q3B"
+				},
+				{
+					"id": "5SYKj5bN",
+					"order": 5000,
+					"name": "Workhorse queue",
+					"kind": "module",
+					"responsibility": "Codex's queue of messages waiting for the workhorse: list, add, edit, reorder, delete, or start one now",
+					"parent": "QkrB0Q3B"
+				},
+				{
+					"id": "p05yEm5U",
+					"order": 6000,
+					"name": "Thread link",
+					"kind": "module",
+					"responsibility": "Which workhorse each tab session and checkout is bound to, and the refusal when a second binding disagrees",
+					"parent": "5Pg20iSq"
+				},
+				{
+					"id": "6T3oOpxS",
+					"order": 9000,
+					"name": "Epoch ledger",
+					"kind": "module",
+					"responsibility": "Which child generation owns which thread, on disk, with operations that commit, roll back or say the outcome is unknown",
+					"parent": "5Pg20iSq",
+					"groups": ["child"]
+				},
+				{
+					"id": "4slFgCMu",
+					"order": 12000,
+					"name": "Codex session",
+					"kind": "module",
+					"responsibility": "The reviewed methods a turn is actually sent on",
+					"groups": ["child"]
+				},
+				{
+					"id": "mWD948LG",
+					"order": 15000,
+					"name": "Session workhorses",
+					"kind": "module",
+					"responsibility": "One workhorse for each checkout of a tab session: its starter, queue, operations and context delivery, built on first use",
+					"parent": "WkOwgUIR"
+				},
+				{
+					"id": "WkOwgUIR",
+					"order": 17000,
+					"name": "Pane and coordinator doors",
+					"kind": "module",
+					"responsibility": "Where a pane's command and the coordinator's tool calls reach the workhorse of a checkout, and where the coordinator is told what happens"
+				},
+				{
+					"id": "QkrB0Q3B",
+					"order": 18000,
+					"name": "Turns",
+					"kind": "module",
+					"responsibility": "What a workhorse does with a turn: delegate, steer, inspect and manage its queue, with the messages waiting behind the running turn"
+				},
+				{
+					"id": "5Pg20iSq",
+					"order": 19000,
+					"name": "Thread start",
+					"kind": "module",
+					"responsibility": "Opens a workhorse's thread with its authored instructions and tool manifest, binds it to its tab session and checkout, and records which child generation owns it"
+				},
+				{
+					"id": "RbOKtjyQ",
+					"order": 24000,
+					"name": "Turn execution",
+					"kind": "module",
+					"responsibility": "Implements delegation, steering, inspection and queue changes through the shared operation runtime",
+					"parent": "glxfDGYq"
+				},
+				{
+					"id": "L2PNo3wo",
+					"order": 25000,
+					"name": "Operation validation",
+					"kind": "module",
+					"responsibility": "Captures the current binding and classifies both linked threads around each coordinator effect",
+					"parent": "glxfDGYq"
+				},
+				{
+					"id": "dypG1VCb",
+					"order": 26000,
+					"name": "Operation lifecycle",
+					"kind": "module",
+					"responsibility": "Stages operations, follows their workhorse turns and settles their outcomes once",
+					"parent": "glxfDGYq"
+				},
+				{
+					"id": "X03SzXI2",
+					"order": 27000,
+					"name": "Operations contract",
+					"kind": "module",
+					"responsibility": "Defines the requests, results and notifications of the four workhorse operations",
+					"parent": "glxfDGYq"
+				}
+			],
+			"edges": [
+				{
+					"id": "l3RkMYAH",
+					"order": 3000,
+					"from": "RbOKtjyQ",
+					"to": "5SYKj5bN",
+					"kind": "call",
+					"label": "queue a delegation behind the running turn",
+					"emphasis": "normal"
+				},
+				{
+					"id": "KGiq6epE",
+					"order": 4000,
+					"from": "L2PNo3wo",
+					"to": "p05yEm5U",
+					"kind": "call",
+					"label": "classify both linked threads through the thread-link port",
+					"emphasis": "normal"
+				},
+				{
+					"id": "yR5sjMnY",
+					"order": 5000,
+					"from": "dypG1VCb",
+					"to": "6T3oOpxS",
+					"kind": "call",
+					"label": "stage and settle the operation",
+					"emphasis": "normal"
+				},
+				{
+					"id": "zgS5gisx",
+					"order": 6000,
+					"from": "5SYKj5bN",
+					"to": "4slFgCMu",
+					"kind": "rpc",
+					"label": "thread/queue/add, update, reorder, delete, start",
+					"emphasis": "normal"
+				},
+				{
+					"id": "8xJt3Mud",
+					"order": 16000,
+					"from": "RbOKtjyQ",
+					"to": "4slFgCMu",
+					"kind": "rpc",
+					"label": "turn/start when idle, turn/steer",
+					"emphasis": "hero"
+				},
+				{
+					"id": "CT2H47EW",
+					"order": 21000,
+					"from": "p05yEm5U",
+					"to": "6T3oOpxS",
+					"kind": "call",
+					"label": "prove the linked thread current",
+					"emphasis": "muted"
+				},
+				{
+					"id": "xOvqFYUE",
+					"order": 24000,
+					"from": "p05yEm5U",
+					"to": "4slFgCMu",
+					"kind": "rpc",
+					"label": "thread/read and thread/list to classify a link",
+					"emphasis": "muted"
+				},
+				{
+					"id": "k5kBhD3O",
+					"order": 30000,
+					"from": "mWD948LG",
+					"to": "4slFgCMu",
+					"kind": "rpc",
+					"label": "turn/interrupt the turn each stopped workhorse runs",
+					"emphasis": "normal"
+				},
+				{
+					"id": "vEdJ2e3Z",
+					"order": 31000,
+					"from": "mWD948LG",
+					"to": "5SYKj5bN",
+					"kind": "dependency",
+					"label": "its own queue",
+					"emphasis": "normal"
+				},
+				{
+					"id": "AscFDt7l",
+					"order": 32000,
+					"from": "mWD948LG",
+					"to": "X03SzXI2",
+					"kind": "dependency",
+					"label": "the workhorse operations port",
+					"emphasis": "normal"
+				},
+				{
+					"id": "FSTG1rQt",
+					"order": 35000,
+					"from": "RbOKtjyQ",
+					"to": "L2PNo3wo",
+					"kind": "call",
+					"label": "classify and recheck the captured links",
+					"emphasis": "normal"
+				},
+				{
+					"id": "iK5V95pN",
+					"order": 36000,
+					"from": "RbOKtjyQ",
+					"to": "dypG1VCb",
+					"kind": "call",
+					"label": "stage and follow the operation",
+					"emphasis": "normal"
+				}
+			]
+		}
+	},
+	{
+		"name": "Command dispatch - Command routing (blocks)",
+		"policy": {
+			"levels": ["system", "service", "module"],
+			"nodeKinds": {
+				"service": {
+					"name": "Service",
+					"icon": "RiServerLine",
+					"color": "blue"
+				},
+				"module": {
+					"name": "Module",
+					"icon": "RiBox3Line",
+					"color": "violet"
+				},
+				"function": {
+					"name": "Function",
+					"icon": "RiCodeLine",
+					"color": "cyan"
+				}
+			},
+			"relationshipKinds": {
+				"call": {
+					"name": "Call",
+					"dash": "solid",
+					"arrowhead": "filled",
+					"evidence": ["call"]
+				}
+			},
+			"groups": {}
+		},
+		"content": {
+			"nodes": [
+				{
+					"id": "qHOothyT",
+					"order": 1000,
+					"name": "runCliWith",
+					"kind": "function",
+					"responsibility": "Owns one CLI invocation: help first, then the shared flags, dispatch and the run",
+					"parent": "EMV2VjBX"
+				},
+				{
+					"id": "45uNvMac",
+					"order": 2000,
+					"name": "Registry",
+					"kind": "function",
+					"responsibility": "Builds the command registry and resolves a child command",
+					"parent": "EMV2VjBX"
+				},
+				{
+					"id": "zs4XwBa9",
+					"order": 3000,
+					"name": "Global flag readers",
+					"kind": "function",
+					"responsibility": "Takes -C, --board, --doing, --expect-version and --as-session out of argv before a command's parser sees them",
+					"parent": "EMV2VjBX"
+				},
+				{
+					"id": "0R2ysy3p",
+					"order": 4000,
+					"name": "dispatchedCommand",
+					"kind": "function",
+					"responsibility": "Finds the selected contract",
+					"parent": "EMV2VjBX"
+				},
+				{
+					"id": "ZXGh0YmG",
+					"order": 5000,
+					"name": "Interruptible run",
+					"kind": "function",
+					"responsibility": "Forwards SIGINT and SIGTERM as an abort, then re-raises the signal once cleanup ends",
+					"parent": "EMV2VjBX"
+				},
+				{
+					"id": "MmMnif7e",
+					"order": 6000,
+					"name": "runCommand",
+					"kind": "module",
+					"responsibility": "The seam a bound command is run through, with its contract and the signal"
+				},
+				{
+					"id": "bV1RPiKW",
+					"order": 7000,
+					"name": "Failure reporting",
+					"kind": "function",
+					"responsibility": "Maps errors to exit codes",
+					"parent": "EMV2VjBX"
+				},
+				{
+					"id": "Swj3xzmd",
+					"order": 8000,
+					"name": "Command catalogue",
+					"kind": "service",
+					"responsibility": "The table of every command, and the caller that hands this module its argv"
+				},
+				{
+					"id": "ogSW3Rjt",
+					"order": 9000,
+					"name": "Help text",
+					"kind": "function",
+					"responsibility": "The help a reader sees, projected from the table rather than written beside it",
+					"parent": "EMV2VjBX"
+				},
+				{
+					"id": "EUV7iaLt",
+					"order": 10000,
+					"name": "Invocation context",
+					"kind": "module",
+					"responsibility": "Keeps the board, vault, doing line, expected version and writing session for one CLI invocation; stated once with stateInvocation, carried on every request"
+				},
+				{
+					"id": "EMV2VjBX",
+					"order": 11000,
+					"name": "Command routing",
+					"kind": "module",
+					"responsibility": "Turns argv and the command table into one bounded invocation; callers outside reach it only through what its index exports"
+				},
+				{
+					"id": "zUIObqwQ",
+					"order": 12000,
+					"name": "Addressed vault",
+					"kind": "function",
+					"responsibility": "Asks for the vault a command addresses to be found and registered in one call, says on stderr what that registered or why it could not, and names the vault on every request",
+					"parent": "EMV2VjBX"
+				},
+				{
+					"id": "pgD9YyAN",
+					"order": 13000,
+					"name": "Vault finder",
+					"kind": "module",
+					"responsibility": "Finds a command's vault the way git finds its repository: from -C or the working directory, at the checkout root"
+				},
+				{
+					"id": "HXDhzWiE",
+					"order": 14000,
+					"name": "Checkout registry",
+					"kind": "module",
+					"responsibility": "Every checkout and untracked vault known on this machine, the chosen checkout of each repository and a name for each that no other has; every running server watches its file"
+				}
+			],
+			"edges": [
+				{
+					"id": "mVCMJYpN",
+					"order": 1000,
+					"from": "qHOothyT",
+					"to": "ogSW3Rjt",
+					"kind": "call",
+					"label": "help, and a failure's usage line",
+					"emphasis": "normal"
+				},
+				{
+					"id": "a4PkS2Do",
+					"order": 2000,
+					"from": "qHOothyT",
+					"to": "zs4XwBa9",
+					"kind": "call",
+					"label": "capture flags",
+					"emphasis": "normal"
+				},
+				{
+					"id": "GpvovZkt",
+					"order": 3000,
+					"from": "qHOothyT",
+					"to": "0R2ysy3p",
+					"kind": "call",
+					"label": "select",
+					"emphasis": "hero"
+				},
+				{
+					"id": "Kbtdm1ew",
+					"order": 4000,
+					"from": "qHOothyT",
+					"to": "ZXGh0YmG",
+					"kind": "call",
+					"label": "execute",
+					"emphasis": "hero"
+				},
+				{
+					"id": "MFROOcqh",
+					"order": 5000,
+					"from": "ZXGh0YmG",
+					"to": "MmMnif7e",
+					"kind": "call",
+					"label": "contract + signal",
+					"emphasis": "hero"
+				},
+				{
+					"id": "HZqRR3f0",
+					"order": 6000,
+					"from": "qHOothyT",
+					"to": "bV1RPiKW",
+					"kind": "call",
+					"label": "on failure",
+					"emphasis": "normal"
+				},
+				{
+					"id": "Xqy7fxY0",
+					"order": 7000,
+					"from": "Swj3xzmd",
+					"to": "qHOothyT",
+					"kind": "call",
+					"label": "argv",
+					"emphasis": "hero"
+				},
+				{
+					"id": "Ba2uml5A",
+					"order": 8000,
+					"from": "0R2ysy3p",
+					"to": "45uNvMac",
+					"kind": "call",
+					"label": "childOf",
+					"emphasis": "normal"
+				},
+				{
+					"id": "Ml9zYVzq",
+					"order": 9000,
+					"from": "Swj3xzmd",
+					"to": "45uNvMac",
+					"kind": "call",
+					"label": "registryOf, for the contract audit",
+					"emphasis": "muted"
+				},
+				{
+					"id": "wMSceuzp",
+					"order": 10000,
+					"from": "qHOothyT",
+					"to": "EUV7iaLt",
+					"kind": "call",
+					"label": "the stated board, doing and version",
+					"emphasis": "normal"
+				},
+				{
+					"id": "nYQ1B3GK",
+					"order": 13000,
+					"from": "Swj3xzmd",
+					"to": "EMV2VjBX",
+					"kind": "call",
+					"label": "routes built with contract and child",
+					"emphasis": "normal"
+				},
+				{
+					"id": "0TkUEWO5",
+					"order": 14000,
+					"from": "qHOothyT",
+					"to": "zUIObqwQ",
+					"kind": "call",
+					"label": "find the command's vault",
+					"emphasis": "normal"
+				},
+				{
+					"id": "5oeVTCuJ",
+					"order": 17000,
+					"from": "zUIObqwQ",
+					"to": "EUV7iaLt",
+					"kind": "call",
+					"label": "name the found vault on every request",
+					"emphasis": "normal"
+				},
+				{
+					"id": "CsZo87Fp",
+					"order": 18000,
+					"from": "HXDhzWiE",
+					"to": "pgD9YyAN",
+					"kind": "call",
+					"label": "the vault an untracked holder keeps",
+					"emphasis": "normal"
+				}
+			]
+		}
+	},
+	{
+		"name": "Command interface - Contract parts (blocks)",
+		"policy": {
+			"levels": ["system", "service", "module"],
+			"nodeKinds": {
+				"module": {
+					"name": "Module",
+					"icon": "RiBox3Line",
+					"color": "violet"
+				},
+				"function": {
+					"name": "Function",
+					"icon": "RiCodeLine",
+					"color": "cyan"
+				}
+			},
+			"relationshipKinds": {
+				"call": {
+					"name": "Call",
+					"dash": "solid",
+					"arrowhead": "filled",
+					"evidence": ["call"]
+				}
+			},
+			"groups": {}
+		},
+		"content": {
+			"nodes": [
+				{
+					"id": "vAQwlVuz",
+					"order": 1000,
+					"name": "Bootstrap",
+					"kind": "module",
+					"responsibility": "Takes the server address out of argv into the environment before any module that reads it loads, and moves a leading -C behind the command name",
+					"parent": "o5zkAtUT"
+				},
+				{
+					"id": "iIVu1bGE",
+					"order": 2000,
+					"name": "Command catalogue",
+					"kind": "module",
+					"responsibility": "The one table of commands: what exists, what it takes and who owns it",
+					"parent": "OM6pX371"
+				},
+				{
+					"id": "PQcK5dF2",
+					"order": 3000,
+					"name": "Command routing",
+					"kind": "module",
+					"responsibility": "Addresses one command, captures the global flags and bounds the run",
+					"parent": "OM6pX371"
+				},
+				{
+					"id": "E2MAq7W7",
+					"order": 4000,
+					"name": "Contract execution",
+					"kind": "module",
+					"responsibility": "Parses and validates a command's input, runs its handler with the prerequisites it asks for, and presents the answer",
+					"parent": "o5zkAtUT"
+				},
+				{
+					"id": "iIJ5MRhi",
+					"order": 17000,
+					"name": "Server client",
+					"kind": "module",
+					"responsibility": "Reads what the server reports about itself, its health and its sync status, and shows a refused board request the way the CLI prints it",
+					"parent": "dHZeNcMs"
+				},
+				{
+					"id": "2KmUovkl",
+					"order": 25000,
+					"name": "Status",
+					"kind": "module",
+					"responsibility": "status: whether the Archboard server answers, who it is, and what it reports",
+					"parent": "o5zkAtUT"
+				},
+				{
+					"id": "o5zkAtUT",
+					"order": 27000,
+					"name": "Command contract",
+					"kind": "module",
+					"responsibility": "Runs one bound command contract: parse, prerequisites, handler, presentation; callers reach it only through its root files"
+				},
+				{
+					"id": "gt1eCpcS",
+					"order": 29000,
+					"name": "runCommand",
+					"kind": "function",
+					"responsibility": "The seam a selected contract is run through, with the argv and the abort signal",
+					"parent": "o5zkAtUT"
+				},
+				{
+					"id": "eMSAZPvG",
+					"order": 32000,
+					"name": "Server launcher",
+					"kind": "module",
+					"responsibility": "Starts the Archboard server, which needs no vault, as a detached child when nothing answers, stops it, and says what answers at its address and how many browsers look at it",
+					"parent": "dHZeNcMs"
+				},
+				{
+					"id": "XKjn4icZ",
+					"order": 33000,
+					"name": "Prerequisites",
+					"kind": "module",
+					"responsibility": "Makes sure what a command needs is there: the server, started when it is not running, and an open canvas",
+					"parent": "o5zkAtUT"
+				},
+				{
+					"id": "OM6pX371",
+					"order": 41000,
+					"name": "Command startup",
+					"kind": "module",
+					"responsibility": "Takes argv from the process to one selected command: hands over to the checkout whose source runs, refuses a removed environment variable, finds the command in the table and bounds its run"
+				},
+				{
+					"id": "dHZeNcMs",
+					"order": 42000,
+					"name": "Server access",
+					"kind": "module",
+					"responsibility": "Every reach to the Archboard server: the one request path, the board, claim and pane routes with their refusals, starting, stopping and restarting it, and what answers at its address"
+				}
+			],
+			"edges": [
+				{
+					"id": "WUygSWX0",
+					"order": 2000,
+					"from": "iIVu1bGE",
+					"to": "PQcK5dF2",
+					"kind": "call",
+					"label": "argv",
+					"emphasis": "hero"
+				},
+				{
+					"id": "jKqNz2j3",
+					"order": 3000,
+					"from": "PQcK5dF2",
+					"to": "gt1eCpcS",
+					"kind": "call",
+					"label": "the selected contract",
+					"emphasis": "hero"
+				},
+				{
+					"id": "lkwXJ78e",
+					"order": 25000,
+					"from": "E2MAq7W7",
+					"to": "XKjn4icZ",
+					"kind": "call",
+					"label": "ensure what the command needs",
+					"emphasis": "muted"
+				},
+				{
+					"id": "LL4azQxP",
+					"order": 32000,
+					"from": "E2MAq7W7",
+					"to": "2KmUovkl",
+					"kind": "call",
+					"label": "validated input",
+					"emphasis": "normal"
+				},
+				{
+					"id": "T7wRpA8y",
+					"order": 42000,
+					"from": "gt1eCpcS",
+					"to": "E2MAq7W7",
+					"kind": "call",
+					"label": "executeCommand",
+					"emphasis": "hero"
+				},
+				{
+					"id": "l1mVF45a",
+					"order": 49000,
+					"from": "iIVu1bGE",
+					"to": "2KmUovkl",
+					"kind": "call",
+					"label": "its contract",
+					"emphasis": "normal"
+				},
+				{
+					"id": "kggkjerM",
+					"order": 53000,
+					"from": "o5zkAtUT",
+					"to": "iIVu1bGE",
+					"kind": "call",
+					"label": "the registry, for the generated audit",
+					"emphasis": "normal"
+				},
+				{
+					"id": "pVNsw2ko",
+					"order": 54000,
+					"from": "PQcK5dF2",
+					"to": "o5zkAtUT",
+					"kind": "call",
+					"label": "shared options, usage errors",
+					"emphasis": "normal"
+				},
+				{
+					"id": "4aWZZKkA",
+					"order": 55000,
+					"from": "PQcK5dF2",
+					"to": "vAQwlVuz",
+					"kind": "call",
+					"label": "is it a help request",
+					"emphasis": "normal"
+				},
+				{
+					"id": "dMtR5BqB",
+					"order": 56000,
+					"from": "XKjn4icZ",
+					"to": "eMSAZPvG",
+					"kind": "call",
+					"label": "start it when nothing answers",
+					"emphasis": "normal"
+				},
+				{
+					"id": "EywCr04W",
+					"order": 57000,
+					"from": "XKjn4icZ",
+					"to": "eMSAZPvG",
+					"kind": "call",
+					"label": "how many browsers show the canvas",
+					"emphasis": "normal"
+				},
+				{
+					"id": "iDjPNIJS",
+					"order": 60000,
+					"from": "2KmUovkl",
+					"to": "eMSAZPvG",
+					"kind": "call",
+					"label": "what answers at its address",
+					"emphasis": "normal"
+				},
+				{
+					"id": "PDFACmp1",
+					"order": 78000,
+					"from": "PQcK5dF2",
+					"to": "iIJ5MRhi",
+					"kind": "call",
+					"label": "formats board refusals for the command result",
+					"emphasis": "muted"
+				}
+			]
+		}
+	}
+]

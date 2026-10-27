@@ -275,6 +275,27 @@ impl Track<'_> {
                 ]);
             } else if abs(from.x - to.x) <= STRAIGHT {
                 points.extend([from, to]);
+            } else if let Some(x) = net.detour_x() {
+                points.extend([
+                    from,
+                    Point {
+                        x: from.x,
+                        y: track,
+                    },
+                    Point {
+                        x: x + left,
+                        y: track,
+                    },
+                    Point {
+                        x: x + left,
+                        y: track + LANE,
+                    },
+                    Point {
+                        x: to.x,
+                        y: track + LANE,
+                    },
+                    to,
+                ]);
             } else {
                 points.extend([
                     from,

@@ -4,9 +4,9 @@
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 102,
+	"version": 105,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-10-26T17:23:25.449Z",
+	"updatedAt": "2026-10-27T00:16:27.798Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -23439,7 +23439,7 @@
 			"name": "TASK-548.08",
 			"lifecycle": "draft",
 			"parent": "yeaF7hVY",
-			"summary": "Choose group packing from the graph before solving",
+			"summary": "Proposed deterministic layout: one Solver call, one card graph, and one packing routed after estimation. Semantic lane reservations replace the later nudge phase. Parent frames, words, and line ends retain strict geometry owners. Council acceptance remains pending.",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -23451,12 +23451,12 @@
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"commit": "7b1609cd53d25a43f0f64e4548df32b12cc0f758",
+					"commit": "2cc0ae9f02c10a76ee3d29ca0ce1f38ac3485e6b",
 					"path": "docs/adr/0061-group-regions-are-packed-before-solving.md"
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"commit": "54efd0759bec06e157d2c46aebba03d3d542c31f",
+					"commit": "2cc0ae9f02c10a76ee3d29ca0ce1f38ac3485e6b",
 					"path": "backlog/tasks/task-548.08 - Deterministic-layout-replaces-the-speculative-solves-of-a-first-render.md"
 				}
 			],
@@ -23550,7 +23550,7 @@
 						"name": "Layout entry",
 						"kind": "function",
 						"responsibility": "Draws an architecture with the engine a render names, Track or Blocks: states the graph, has it laid out and chosen, fits the page and settles the crossings",
-						"description": "draw, the one call for a render's architecture and for a flowchart's step graph (ADR 0057). Track, the default, draws containers and group regions inline; Blocks packs each as a block of its own (ADR 0040). The chosen drawing is moved to the margin and its page cut to what it draws, and then its crossings are settled, so nothing after it repairs a coordinate.",
+						"description": "draw lays out an architecture or a flowchart step graph. Track packs multi-member group regions while containers remain inline within that plan. Blocks packs containers and regions. The graph plan uses one host solve. The core moves the drawing to its margin, cuts the page to its bounds, and settles crossings.",
 						"parent": "H0PF4BhI",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -23561,10 +23561,10 @@
 					{
 						"id": "oycxx6G2",
 						"order": 13000,
-						"name": "Choice between solves",
+						"name": "Layout plan",
 						"kind": "function",
-						"responsibility": "Chooses packing before solving large grouped graphs, then keeps the joins and stacking solves that read best",
-						"description": "Track counts leaf cards when it discovers group regions. At 32 cards or more, it packs each region before asking for a solve and omits the competing whole-board inline nesting. Compact graphs retain the existing comparison because reduced regression fixtures need both nestings. Graphs without regions stay inline. Blocks keeps packing containers and regions. Joins, stacking, wraps, ordering and cancellation keep their existing contracts.",
+						"responsibility": "Fixes group nesting, container order, and fan-in labels before one solve",
+						"description": "Track packs each multi-member group region. Graphs without one stay inline. Links and containment hold callers above the headers of containers they enter when this closes no cycle. Each fan-in keeps its labels beside its sources. One Solver call draws the plan. Wrap candidates remain inside the solve.",
 						"parent": "H0PF4BhI",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -23605,8 +23605,8 @@
 						"order": 23000,
 						"name": "Orthogonal router",
 						"kind": "module",
-						"responsibility": "Routes orthogonal connectors around rectangles, nudged a lane apart",
-						"description": "archboard-router, linked into the renderer core: an A* search over the grid of the obstacles' buffer edges that pays for each turn and crossing, then nudging that stands the routes on one line a lane apart in the order they part. Written from the published papers it cites, not from libavoid. A connector it cannot route comes back empty, and nothing throws.",
+						"responsibility": "Routes orthogonal connectors around rectangles with reserved semantic lanes",
+						"description": "archboard-router searches a grid of obstacle buffers, fixed pin exits, and previous paths. A parallel lane stays separate when both original source and target differ. Perpendicular crossings remain available. The search minimizes reused lane length before distance, bends, and crossings. It keeps the resulting bends without a later nudge phase. A connector with no path answers Unroutable.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-router/src/lib.rs"
@@ -23617,8 +23617,8 @@
 						"order": 24000,
 						"name": "Board layout",
 						"kind": "module",
-						"responsibility": "Draws an architecture in the renderer core and lays out each of its solves: ranks cards with Graphviz, routes lines on tracks and trunks, chooses the solve and settles crossings",
-						"description": "crates/archboard-layout, linked into the renderer core. draw(content, measured, standings, entries, engine, solver) chooses packing before solving grouped graphs of at least 32 leaf cards. Compact grouped graphs compare inline and packed nesting. It asks the Solver for the remaining alternatives, fits the page and settles crossings. lay_out_board(graph, &mut dyn Graphviz) lays out one solve. The wasm binding exports layOutBoard and satisfies Graphviz with archboard_graphviz::InCore.",
+						"responsibility": "Draws one graph plan in the core, routes it, fits its page, and settles crossings",
+						"description": "crates/archboard-layout implements draw and lay_out_board. Group membership, acyclic entry constraints, and fan-in labels fix the architecture plan before one Solver call. Each card block keeps one graph. Packing compares measured geometry before routing one arrangement. Assembly retains parent frames and their containment depths. Routing carries original card identities and painted header bounds. The wasm binding ranks through archboard_graphviz::InCore.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-layout/src"
@@ -24392,7 +24392,7 @@
 								"id": "BaLRgz68",
 								"from": "oycxx6G2",
 								"to": "oycxx6G2",
-								"label": "Does any group gather into a region? has_regions",
+								"label": "Choose nesting from group membership",
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
@@ -24404,13 +24404,13 @@
 								"id": "9PtOgYTY",
 								"from": "oycxx6G2",
 								"to": "3i20NlSQ",
-								"label": "Ask for each way to lay it out, side by side",
+								"label": "Ask for one solve of the graph plan",
 								"kind": "sync",
-								"note": "joins kept whole or apart and, with regions, each group packed as a block too; a solve the choice no longer needs is called off",
+								"note": "Fan-in labels stay beside their sources. Acyclic entry constraints fix container order. Wrap candidates stay inside this solve.",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
 									"path": "crates/archboard-layout/src/architecture/choosing.rs",
-									"symbol": "solve"
+									"symbol": "placed_blocks"
 								}
 							},
 							{
@@ -24441,7 +24441,7 @@
 								"id": "fWRYFUaD",
 								"from": "H0PF4BhI",
 								"to": "JwgvpLYJ",
-								"label": "The drawing's geometry and its reading, as JSON",
+								"label": "The drawing's geometry as JSON",
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
@@ -24465,7 +24465,7 @@
 								"id": "SCBTVr3L",
 								"from": "3i20NlSQ",
 								"to": "oycxx6G2",
-								"label": "each answer, as it comes",
+								"label": "the solve's answer",
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
@@ -24474,51 +24474,10 @@
 								}
 							},
 							{
-								"id": "mpCTSEj5",
-								"from": "oycxx6G2",
-								"to": "oycxx6G2",
-								"label": "Which solve reads better? draws_better on their readings",
-								"kind": "self",
-								"note": "weighed as drawn: crossings, line length and fit in the reference pane of the tuned 1.4 page shape, in the order laying them out one by one weighs them",
-								"anchor": {
-									"repo": "github.com/miklschmidt/archboard",
-									"path": "crates/archboard-layout/src/architecture/choosing.rs",
-									"symbol": "placed_blocks"
-								}
-							},
-							{
-								"id": "hTLQ3eGY",
-								"kind": "decision",
-								"question": "Does a group gather into a region, drawn inline?",
-								"alternatives": [
-									{
-										"label": "regions",
-										"steps": [
-											{
-												"id": "mVDdGjOV",
-												"from": "oycxx6G2",
-												"to": "oycxx6G2",
-												"label": "Does the packed solve read better? reads_better_packed",
-												"kind": "self",
-												"anchor": {
-													"repo": "github.com/miklschmidt/archboard",
-													"path": "crates/archboard-layout/src/architecture/choosing.rs",
-													"symbol": "placed_blocks"
-												}
-											}
-										]
-									},
-									{
-										"label": "none",
-										"steps": []
-									}
-								]
-							},
-							{
 								"id": "raqkfF1x",
 								"from": "oycxx6G2",
 								"to": "mHYMkWdE",
-								"label": "the chosen drawing's geometry",
+								"label": "the solved drawing's geometry",
 								"kind": "return",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
@@ -24685,41 +24644,13 @@
 								"id": "d0DitITp",
 								"from": "H0PF4BhI",
 								"to": "H0PF4BhI",
-								"label": "weigh the routed lines, ports settled or not",
+								"label": "Settle ports once both ends are known",
 								"kind": "self",
 								"anchor": {
 									"repo": "github.com/miklschmidt/archboard",
 									"path": "crates/archboard-layout/src/blocks/place.rs",
-									"symbol": "routed_weighed"
+									"symbol": "settled_board"
 								}
-							},
-							{
-								"id": "zOME8YlR",
-								"kind": "decision",
-								"question": "Does the settled drawing score worse than the unsettled?",
-								"alternatives": [
-									{
-										"label": "worse",
-										"steps": [
-											{
-												"id": "zQJVheH1",
-												"from": "H0PF4BhI",
-												"to": "H0PF4BhI",
-												"label": "Keep the blocks as they were before the ports settled",
-												"kind": "self",
-												"anchor": {
-													"repo": "github.com/miklschmidt/archboard",
-													"path": "crates/archboard-layout/src/blocks/place.rs",
-													"symbol": "settled_or_not"
-												}
-											}
-										]
-									},
-									{
-										"label": "as well or better",
-										"steps": []
-									}
-								]
 							}
 						]
 					}

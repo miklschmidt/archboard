@@ -28,6 +28,14 @@ impl Header {
         }
     }
 
+    /// The painted header size, before projecting it into the content column.
+    pub(crate) fn painted(&self, index: Option<usize>) -> Size {
+        index
+            .and_then(|at| self.steps.as_ref()?.get(at))
+            .copied()
+            .unwrap_or_else(|| self.size())
+    }
+
     /// Its least size.
     pub(crate) fn size(&self) -> Size {
         Size {

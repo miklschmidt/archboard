@@ -3,11 +3,9 @@
 //! packed and its trunks routed (`packing`); a block of cards is ranked and
 //! routed on tracks (`card_layout.rs`), its widest rank wrapped into rows
 //! (`wraps.rs`) or its ranks folded into columns (`fold.rs`) where that is
-//! worth taking. Last, every block is put where its parent placed it and each
-//! relationship's lines are joined end to end (`assembly.rs`). One solve lays
-//! the board out one way: how its containers and group regions are drawn,
-//! which way its joins are kept and whether its blocks face their walls are
-//! chosen between solves (`architecture::choosing`).
+//! worth taking. Last, assembly places every block and joins each relationship's
+//! lines through its ports (`assembly.rs`). The graph fixes the nesting,
+//! acyclic entry order and fan-in labels before the one solve starts.
 
 use std::rc::Rc;
 
@@ -17,75 +15,26 @@ use crate::geometry::Side;
 use crate::graph::Node;
 use crate::json::J;
 use crate::track::route::PAGE_MARGIN;
-use crate::track::scene::{Map, Set};
-use crate::track::score::{crossings_of, score_of};
+use crate::track::scene::Map;
+use crate::track::score::crossings_of;
 
 use super::assembly::Assembly;
 use super::card_layout::{Arrangement, CardLayout, Engine};
-use super::choosing::reading_of;
 use super::fold::{fold_block, fold_plan};
 use super::fold_layout::FoldLayout;
 use super::laid::{Insets, Laid, LaidMap, corners};
-use super::laying::{Make, lay_both, settled};
 use super::lone::{grown_insets, widened};
 use super::orders::held_orders;
 use super::packing::{PackLayout, Packing};
 use super::settle::{Settling, settle_ports};
 use super::sides::sides_of;
-use super::stacking::{Named, Stacking, Stood, Wrap, named_whole, stacked_or_not};
 use super::tree::{Block, BlockId, BlockTree, Kept, Kind, Nesting};
-use super::walls::facing_turns;
-use super::weighing::routed_weighed;
-use super::wraps::{Tried, Unwrapped, Wrapping, best_wrap, only_wrap, weighed};
+use super::wraps::{Unwrapped, Wrapping, best_wrap, weighed};
 
 /// The root option carrying the placed drawing, as the JSON the assembly answers.
 pub(crate) const BLOCKS_PLACED: &str = "archboard.blocks.placed";
-/// The root option carrying what the renderer's choices between solves read
-/// of the drawing (`choosing.rs`), as JSON only the core reads.
-pub(crate) const BLOCKS_READING: &str = "archboard.blocks.reading";
-/// The root option asking a solve to tell its drawing's reading, `true` when
-/// asked: only a drawing a choice weighs needs one, and reading a drawing
-/// costs about as much as routing a small one.
-pub(crate) const BLOCKS_READ: &str = "archboard.blocks.read";
 /// The root option naming how a solve draws the board's containers and group regions.
 pub(crate) const BLOCKS_NESTING: &str = "archboard.blocks.nesting";
-/// The root option naming the blocks whose joins a solve keeps apart, as a JSON list of ids.
-pub(crate) const BLOCKS_APART: &str = "archboard.blocks.apart";
-/// The root option asking a solve to face every block's walls, `true` when asked.
-pub(crate) const BLOCKS_FACING: &str = "archboard.blocks.facing";
-/// The root option laying a solve's first block that could stack only one way, `true` stacked.
-pub(crate) const BLOCKS_STACKING: &str = "archboard.blocks.stacking";
-/// The root option asking a solve to answer once that block is laid, `true` when asked.
-pub(crate) const BLOCKS_UNTIL_STOOD: &str = "archboard.blocks.until-stood";
-/// The root option a solve answers what that block stood at in, as JSON.
-pub(crate) const BLOCKS_STOOD: &str = "archboard.blocks.stood";
-/// The root option naming how a solve wraps that block, as JSON: `null` for
-/// no wrap, or one candidate of its wrap search tried alone with the score it
-/// must beat (`wraps.rs`, `Tried`). Without it the block's wrap search chooses.
-pub(crate) const BLOCKS_WRAP: &str = "archboard.blocks.wrap";
-/// The root option a solve that answers once that block is laid tells the
-/// block's wrap search in, as JSON, when the block has one.
-pub(crate) const BLOCKS_WRAPS: &str = "archboard.blocks.wraps";
-/// The root option a solve that tries one candidate alone tells what the
-/// search weighs that candidate on in, as JSON, when it sinks no card.
-pub(crate) const BLOCKS_WRAPPED: &str = "archboard.blocks.wrapped";
-
-/// What ends a solve early: what its first block that could stack stood at,
-/// when it was asked to answer once that block is laid; the one candidate it
-/// was asked to try alone there sinking a card or scoring too little to be
-/// kept; or what went wrong.
-pub(crate) enum Stop {
-    Stood(Box<Stood>),
-    Unkept,
-    Failed(String),
-}
-
-impl From<String> for Stop {
-    fn from(error: String) -> Stop {
-        Stop::Failed(error)
-    }
-}
-
 /// The insets a block keeps: left and right, above its first rank, below its
 /// last, grown round a container alone in its region.
 pub(crate) fn insets_of(block: &Block) -> Insets {
@@ -122,54 +71,21 @@ fn plain_insets(block: &Block) -> Insets {
     }
 }
 
-/// Lay one block of cards out: whole, stacked or not, its widest rank wrapped
-/// into rows when that reads clearly better, or folded into columns when that
-/// does. The columns are added to `laid`. The first block that could stack
-/// is laid the way the solve names, if it names one, and wrapped as it asks:
-/// as its search chooses, not at all, or with one candidate alone, in which
-/// case the solve ends when that candidate sinks a card.
+/// Lay a card block with acyclic entry constraints, then try local rank wraps
+/// and column folds. Only this block is repeated for a wrap candidate.
 fn lay_cards(
     gv: &mut Engine<'_>,
     tree: &mut BlockTree,
     block: BlockId,
     laid: &mut LaidMap,
-    stacking: &mut Stacking,
-) -> Result<Rc<Laid>, Stop> {
+) -> Result<Rc<Laid>, String> {
     let insets = insets_of(tree.get(block));
-    let could_stack = CardLayout::new(tree, laid, block, insets, Arrangement::default()).stacks();
-    let (whole, stacked, searched) = match stacking.named(could_stack) {
-        None => {
-            let (whole, stacked) = stacked_or_not(gv, tree, block, laid, insets, could_stack)?;
-            (whole, stacked, true)
-        }
-        Some(Named {
-            way,
-            wrap: Wrap::Only(alone),
-        }) => {
-            let wrapping = Wrapping {
-                laid,
-                stacked: way,
-                insets,
-            };
-            let (weighing, wrapped) =
-                only_wrap(gv, tree, block, wrapping, &alone)?.ok_or(Stop::Unkept)?;
-            stacking.weighing = Some(weighing);
-            return wrapped.ok_or(Stop::Unkept);
-        }
-        Some(Named { way, wrap }) => {
-            let whole = named_whole(gv, tree, block, laid, insets, way, stacking)?;
-            (whole, way, matches!(wrap, Wrap::Searched))
-        }
-    };
+    let whole = CardLayout::new(tree, laid, block, insets, Arrangement::default()).lay(gv)?;
     let unwrapped = Unwrapped {
-        wrapping: Wrapping {
-            laid,
-            stacked,
-            insets,
-        },
+        wrapping: Wrapping { laid, insets },
         whole: &whole,
     };
-    if searched && let Some(wrapped) = best_wrap(gv, tree, block, &unwrapped)? {
+    if let Some(wrapped) = best_wrap(gv, tree, block, &unwrapped)? {
         return Ok(wrapped);
     }
     let walled = tree
@@ -187,24 +103,14 @@ fn lay_cards(
     };
     let columns = fold_block(tree, block, &plan.items);
     for &column in &columns {
-        let held = {
-            let (tree, laid) = (&*tree, &*laid);
-            let inset = insets_of(tree.get(column));
-            let make: Make<'_> = Rc::new(move || {
-                CardLayout::new(
-                    tree,
-                    laid,
-                    column,
-                    inset,
-                    Arrangement {
-                        stacked,
-                        ..Arrangement::default()
-                    },
-                )
-            });
-            let laying = lay_both(gv, make)?;
-            settled(gv, &laying)?
-        };
+        let held = CardLayout::new(
+            tree,
+            laid,
+            column,
+            insets_of(tree.get(column)),
+            Arrangement::default(),
+        )
+        .lay(gv)?;
         laid.insert(tree.get(column).id.clone(), held);
     }
     Ok(Rc::new(
@@ -234,7 +140,7 @@ impl Board {
 #[derive(Clone, Default)]
 struct Earlier {
     /// The edge each port moves to, the ports each block holds in an order on
-    /// a face, and whether every block faces the walls its lines cross.
+    /// a face.
     kept: Kept,
     /// Each block of blocks' packing.
     packings: Map<String, Packing>,
@@ -247,13 +153,12 @@ fn lay_block(
     board: &mut Board,
     block: BlockId,
     earlier: &Earlier,
-    stacking: &mut Stacking,
-) -> Result<Rc<Laid>, Stop> {
+) -> Result<Rc<Laid>, String> {
     let tree = &board.tree;
     let packs = tree.nesting == Nesting::Blocks
         && tree.get(block).items.iter().any(|item| tree.is_block(item));
     if !packs {
-        return lay_cards(gv, &mut board.tree, block, &mut board.laid, stacking);
+        return lay_cards(gv, &mut board.tree, block, &mut board.laid);
     }
     let one = tree.get(block);
     let (packed, packing) =
@@ -270,16 +175,15 @@ fn lay_all(
     graph: &Node,
     earlier: &Earlier,
     way: &Way,
-    stacking: &mut Stacking,
-) -> Result<Board, Stop> {
-    let tree = BlockTree::new(graph, earlier.kept.clone(), way.nesting, &way.apart)?;
+) -> Result<Board, String> {
+    let tree = BlockTree::new(graph, earlier.kept.clone(), way.nesting)?;
     let mut board = Board {
         tree,
         laid: LaidMap::default(),
         packings: Map::default(),
     };
     for block in board.tree.innermost_first(board.tree.root) {
-        let once = lay_block(gv, &mut board, block, earlier, stacking)?;
+        let once = lay_block(gv, &mut board, block, earlier)?;
         let wider = board
             .tree
             .get(block)
@@ -293,7 +197,7 @@ fn lay_all(
                 one.lone = Some(wider.clone());
                 let id = one.id.clone();
                 board.tree.lone.insert(id, wider);
-                lay_block(gv, &mut board, block, earlier, stacking)?
+                lay_block(gv, &mut board, block, earlier)?
             }
         };
         board.laid.insert(board.tree.get(block).id.clone(), laid);
@@ -301,25 +205,9 @@ fn lay_all(
     Ok(board)
 }
 
-/// A layout with its ports settled, unless the drawing scores better
-/// unsettled on its lines as the blocks route them, before the steps they
-/// need not take are taken out: the room its routes run round what they pass
-/// counted as crossings at the trunk router's rate, and so is each line's run
-/// away from its ends (`weighing.rs`).
-fn settled_or_not(mut board: Board) -> Board {
-    let unsettled = board.laid.clone();
+/// Settle ports after both ends are known. An unsettled overlap cannot win by drawing less ink.
+fn settled_board(mut board: Board) -> Board {
     settle_ports(&mut board.settling());
-    let score = |laid: &LaidMap| {
-        score_of(&routed_weighed(
-            &Assembly::new(&board.tree, laid).placed(),
-            &board.tree.projections,
-        ))
-    };
-    if score(&unsettled) > score(&board.laid) {
-        for (id, one) in unsettled {
-            board.laid.insert(id, one);
-        }
-    }
     board
 }
 
@@ -337,50 +225,15 @@ fn crossings_and_bends(board: &Board) -> (f64, f64) {
     (crossings_of(lines.iter().copied()), bends)
 }
 
-/// Whether facing every block's walls would change a board's blocks. Only
-/// Blocks faces them: drawn inline, no drawing of either vault changed by
-/// facing them.
-fn faces_of(graph: &Node, exits: &Map<String, Side>, way: &Way) -> Result<bool, String> {
-    if way.nesting != Nesting::Blocks || exits.is_empty() {
-        return Ok(false);
-    }
-    let kept = Kept {
-        exits: exits.clone(),
-        facing: true,
-        ..Kept::default()
-    };
-    Ok(facing_turns(&BlockTree::new(
-        graph,
-        kept,
-        way.nesting,
-        &way.apart,
-    )?))
-}
-
-/// Lay a measured hierarchy out one way and route every relationship; when a
-/// line's blocks do not stand the way its faces point, once more with every
-/// block of its chain crossed by the edges that face each other
-/// (`sides.rs`), and every block facing its walls when asked. Where settling
-/// would swap ports on a block of cards' face, once more with those ports
-/// held in the settled order (`orders.rs`), kept where it crosses fewer
-/// lines. Not while a join is parted: the joins choice would then prefer a
-/// parted drawing that runs a line round a block. Last, the ports on every
-/// block's top and bottom are settled where both ends of their lines are
-/// known, and the blocks routed again with them there. Answers the board and
-/// whether facing every block's walls changes it.
-fn lay_out(
-    gv: &mut Engine<'_>,
-    graph: &Node,
-    way: &Way,
-    stacking: &mut Stacking,
-) -> Result<(Board, bool), Stop> {
-    let first = lay_all(gv, graph, &Earlier::default(), way, stacking)?;
+/// Lay the hierarchy, then choose the wall each route crosses from its geometry.
+/// Keep a settled port order when it reduces crossings without adding bends.
+/// Finally settle every port with both ends of its route known.
+fn lay_out(gv: &mut Engine<'_>, graph: &Node, way: &Way) -> Result<Board, String> {
+    let first = lay_all(gv, graph, &Earlier::default(), way)?;
     let exits = sides_of(&first.tree, &first.laid);
-    let faces = faces_of(graph, &exits, way)?;
     let kept = Earlier {
         packings: first.packings.clone(),
         kept: Kept {
-            facing: way.facing && faces,
             exits,
             ..Kept::default()
         },
@@ -388,20 +241,16 @@ fn lay_out(
     let mut last = if kept.kept.exits.is_empty() {
         first
     } else {
-        lay_all(gv, graph, &kept, way, stacking)?
+        lay_all(gv, graph, &kept, way)?
     };
-    let orders = if way.apart.is_empty() {
-        held_orders(&last.settling())
-    } else {
-        Map::default()
-    };
+    let orders = held_orders(&last.settling());
     if orders.is_empty() {
-        return Ok((settled_or_not(last), faces));
+        return Ok(settled_board(last));
     }
     let mut held = kept;
     held.kept.orders = orders;
-    let held = lay_all(gv, graph, &held, way, stacking)?;
-    let (one, other) = (settled_or_not(last), settled_or_not(held));
+    let held = lay_all(gv, graph, &held, way)?;
+    let (one, other) = (settled_board(last), settled_board(held));
     let ((crossings, bends), (fewer, straighter)) =
         (crossings_and_bends(&one), crossings_and_bends(&other));
     let chosen = if fewer < crossings && straighter <= bends {
@@ -409,59 +258,18 @@ fn lay_out(
     } else {
         one
     };
-    Ok((chosen, faces))
+    Ok(chosen)
 }
 
 /// The way a solve's root options ask it to lay a board out.
 struct Way {
     nesting: Nesting,
-    apart: Set<String>,
-    facing: bool,
 }
 
-/// The way a solve's root options ask it to lay a board out, and its stacking choice.
-fn way_of(graph: &Node) -> Result<(Way, Stacking), String> {
+/// The solve's nesting and port policy.
+fn way_of(graph: &Node) -> Result<Way, String> {
     let nesting = Nesting::named(graph.option(BLOCKS_NESTING).unwrap_or("inline"))?;
-    let apart: Vec<String> = serde_json::from_str(graph.option(BLOCKS_APART).unwrap_or("[]"))
-        .map_err(|error| format!("{BLOCKS_APART} is unreadable: {error}"))?;
-    let way = match graph.option(BLOCKS_STACKING) {
-        None => None,
-        Some("true") => Some(true),
-        Some("false") => Some(false),
-        Some(other) => {
-            return Err(format!(
-                "{BLOCKS_STACKING} is true or false; it was {other}."
-            ));
-        }
-    };
-    let wrap = match graph.option(BLOCKS_WRAP) {
-        None => Wrap::Searched,
-        Some(wrap) => match serde_json::from_str::<Option<Tried>>(wrap)
-            .map_err(|error| format!("{BLOCKS_WRAP} is unreadable: {error}"))?
-        {
-            None => Wrap::Unwrapped,
-            Some(alone) => Wrap::Only(alone),
-        },
-    };
-    let stacking = Stacking {
-        way,
-        until: graph.option(BLOCKS_UNTIL_STOOD) == Some("true"),
-        wrap,
-        ..Stacking::default()
-    };
-    Ok((
-        Way {
-            nesting,
-            apart: apart.into_iter().collect(),
-            facing: graph.option(BLOCKS_FACING) == Some("true"),
-        },
-        stacking,
-    ))
-}
-
-/// What a solve tells the renderer's choices, as JSON only the core reads.
-fn told_json(told: &impl serde::Serialize) -> Result<String, String> {
-    serde_json::to_string(told).map_err(|error| format!("A solve cannot tell its answer: {error}"))
+    Ok(Way { nesting })
 }
 
 /// A solve's answer: the hierarchy's root, as large as the drawing, carrying it in its options.
@@ -489,53 +297,24 @@ fn answer(graph: &Node, width: f64, height: f64, told: Vec<(&str, String)>) -> S
     .text()
 }
 
-/// Lay a measured hierarchy out and route every relationship: its containers
-/// and group regions packed as blocks, drawn inline, or inline with its
-/// groups packed, as its root options name (inline when they name none); the
-/// joins of the blocks they name kept apart; every block facing its walls
-/// when they ask so; and its first block that could stack laid only the way
-/// they name, if they name one, telling what that way stood at, and answering
-/// only that once it is laid where they ask so. Answers the hierarchy's root
-/// as JSON, with the drawing's geometry in its options.
+/// Lay one measured hierarchy out and route every relationship.
+/// Root options name its nesting: blocks, inline, or inline with packed groups.
+/// The answer carries the complete drawing as JSON in its root options.
 ///
 /// # Errors
 ///
-/// When the graph or its options are unreadable, or Graphviz refused a block's graph.
+/// When the graph or its options are unreadable, or Graphviz refuses a block.
 pub fn lay_out_board(graph: &str, host: &mut dyn Graphviz) -> Result<String, String> {
     let graph: Node = serde_json::from_str(graph)
         .map_err(|error| format!("The measured graph is unreadable: {error}"))?;
-    let (way, mut stacking) = way_of(&graph)?;
+    let way = way_of(&graph)?;
     let mut gv = Engine::new(host);
-    let (board, faces) = match lay_out(&mut gv, &graph, &way, &mut stacking) {
-        Ok(laid_out) => laid_out,
-        Err(Stop::Stood(stood)) => {
-            let mut told = vec![(BLOCKS_STOOD, stood.json().text())];
-            if let Some(search) = &stacking.search {
-                told.push((BLOCKS_WRAPS, told_json(search)?));
-            }
-            return Ok(answer(&graph, 0.0, 0.0, told));
-        }
-        Err(Stop::Unkept) => {
-            let mut told = Vec::new();
-            if let Some(weighing) = &stacking.weighing {
-                told.push((BLOCKS_WRAPPED, told_json(weighing)?));
-            }
-            return Ok(answer(&graph, 0.0, 0.0, told));
-        }
-        Err(Stop::Failed(error)) => return Err(error),
-    };
+    let board = lay_out(&mut gv, &graph, &way)?;
     let placed = Assembly::new(&board.tree, &board.laid).placed().unstepped();
-    let mut told = vec![(BLOCKS_PLACED, placed.json(faces).text())];
-    if graph.option(BLOCKS_READ) == Some("true") {
-        let reading = serde_json::to_string(&reading_of(&placed, &board.tree.projections))
-            .map_err(|error| format!("A drawing's reading cannot be told: {error}"))?;
-        told.push((BLOCKS_READING, reading));
-    }
-    if let Some(stood) = &stacking.stood {
-        told.push((BLOCKS_STOOD, stood.json().text()));
-    }
-    if let Some(weighing) = &stacking.weighing {
-        told.push((BLOCKS_WRAPPED, told_json(weighing)?));
-    }
-    Ok(answer(&graph, placed.width, placed.height, told))
+    Ok(answer(
+        &graph,
+        placed.width,
+        placed.height,
+        vec![(BLOCKS_PLACED, placed.json().text())],
+    ))
 }

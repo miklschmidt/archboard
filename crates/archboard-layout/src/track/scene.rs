@@ -38,6 +38,8 @@ pub(crate) struct Item {
     pub band: usize,
     /// How far a card's own faces stand in from its box, for a card laid out as its region.
     pub inset: Option<f64>,
+    /// Reserved caption room at the start of its top face.
+    pub top_inset: f64,
 }
 
 impl Item {
@@ -47,6 +49,7 @@ impl Item {
             bx,
             band,
             inset: None,
+            top_inset: 0.0,
         }
     }
 }

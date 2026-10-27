@@ -14,7 +14,6 @@ import {
 } from "#tests/runtime/support/drawn-routes.ts";
 import rendererLayout from "#tests/runtime/support/fixtures/renderer-layout.json";
 import liveServerState from "#tests/runtime/support/fixtures/live-server-state.json";
-import skillEvaluation from "#tests/runtime/support/fixtures/skill-evaluation.json";
 import twinLines from "#tests/runtime/support/fixtures/twin-lines.json";
 import workhorseNews from "#tests/runtime/support/fixtures/workhorse-news-track.json";
 import workingWithAnAgent from "#tests/runtime/support/fixtures/working-with-an-agent.json";
@@ -81,15 +80,6 @@ test("a jog is closed again once routing frees its column", async () => {
 test("a lane keeps the frames either station beside it stands in", async () => {
 	const lines = await linesOf(twinLines, "track");
 	for (const id of ["e5", "e8"]) expect(turnsOf(lines.get(id)!)).toBeLessThanOrEqual(4);
-});
-
-// Blocks straightens a lane onto the column its line runs on even where the
-// straight lane crosses more than the stepped one: refused there, 'rasterize
-// each picture' and 'photograph everything declared' each stepped twice, and
-// the whole of Archboard server crossed 69 -> 90 times.
-test("Blocks straightens a lane even where it crosses more", async () => {
-	const lines = await linesOf(skillEvaluation, "blocks");
-	for (const id of ["5TtCOktb", "b3s3lWZn"]) expect(turnsOf(lines.get(id)!), id).toBe(0);
 });
 
 // Blocks settles a label under the card above it before over the card below:

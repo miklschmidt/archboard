@@ -10,6 +10,7 @@ import {
 	corridorPoints,
 	routeLabels,
 	routePoints,
+	routeCrosses,
 } from "#tests/runtime/support/drawn-routes.ts";
 
 /**
@@ -201,4 +202,43 @@ function slants(drawing: RenderedDiagram): string[] {
 	);
 }
 
-export { TRACK_LANE, labelsAcrossWalls, nearLanes, runsUnderLabels, slants, wallHugs };
+/**
+ * Routes through the painted background of a group's caption.
+ * @param drawing The rendered architecture.
+ * @returns Each relationship and the group header that it crosses.
+ */
+function routesThroughGroupHeaders(drawing: RenderedDiagram): string[] {
+	const shift = bodyShift(drawing.svg);
+	const routes = routePoints(drawing.svg);
+	return drawing.svg.split(/(?=<g data-semantic-kind=)/u).flatMap((chunk) => {
+		if (!chunk.startsWith('<g data-semantic-kind="group-region"')) return [];
+		const group = /data-group="([^"]+)"/u.exec(chunk)?.[1];
+		// The near caption path names its outer foot, top arc, and inner edge.
+		const tab =
+			/<g class="ab-near">\s*<path d="M(-?[\d.]+),(-?[\d.]+) V[\d.]+ A[\d., ]+ [01] [01] [01] (-?[\d.]+),(-?[\d.]+) H(-?[\d.]+)/u.exec(
+				chunk,
+			);
+		if (tab === null) return [];
+		const left = Math.min(Number(tab[1]), Number(tab[5]));
+		const top = Number(tab[4]);
+		const box = {
+			x: left + shift.x,
+			y: top + shift.y,
+			width: Math.abs(Number(tab[1]) - Number(tab[5])),
+			height: Number(tab[2]) - top,
+		};
+		return [...routes]
+			.filter(([, points]) => routeCrosses(points, box))
+			.map(([id]) => `${id} through ${group} header`);
+	});
+}
+
+export {
+	TRACK_LANE,
+	labelsAcrossWalls,
+	nearLanes,
+	routesThroughGroupHeaders,
+	runsUnderLabels,
+	slants,
+	wallHugs,
+};

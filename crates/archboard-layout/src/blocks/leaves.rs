@@ -12,7 +12,7 @@ use crate::track::spacing::Rim;
 
 use super::headers::{Room, header_within};
 use super::laid::{Insets, LaidMap};
-use super::lone::{frame_width, room_of, side_room};
+use super::lone::{caption_width, frame_width, room_of, side_room};
 use super::tree::{Block, BlockTree, Kind, Nesting, header_of};
 
 /// The side of a port's square.
@@ -96,10 +96,10 @@ pub(crate) fn let_ports_slide(scene: &mut Placement, block: &Block) {
         return;
     }
     let (left, right) = extent_of(scene);
-    let clear = block
-        .header
-        .as_ref()
-        .map_or(left, |header| js_max(left, header.width + LANE));
+    let clear = scene.cards.get(&header_of(block)).map_or(left, |&item| {
+        let header = scene.item(item).bx;
+        js_max(left, header.x + header.width + LANE)
+    });
     for (port, &side) in &block.ports {
         let Some(&item) = scene.cards.get(port) else {
             continue;
@@ -127,6 +127,7 @@ pub(crate) fn mark_regions(scene: &mut Placement, block: &Block, tree: &BlockTre
             let card = card.expect("a card laid out as its region is on its block's scene");
             let width = scene.item(card).bx.width;
             scene.item_mut(card).inset = Some(side_room(width, lone));
+            scene.item_mut(card).top_inset = caption_width(lone) + LANE;
         }
         let region = tree
             .block_of(item)

@@ -33,14 +33,14 @@ pub(crate) fn sides_of(tree: &BlockTree, laid: &LaidMap) -> Map<String, Side> {
         } else {
             (Side::Bottom, Side::Top)
         };
-        let kind = tree.kind_of(&projection.edge);
+        let kind = crate::track::route::trunk_kind(&projection.edge);
         for &block in &projection.out {
             sides.insert(
                 exit_key(
                     &tree.get(block).id,
                     "out",
                     out_face,
-                    &format!("{}|{kind}", projection.to),
+                    &format!("{}|{kind}", projection.edge.target()),
                 ),
                 leaves,
             );
@@ -51,7 +51,7 @@ pub(crate) fn sides_of(tree: &BlockTree, laid: &LaidMap) -> Map<String, Side> {
                     &tree.get(block).id,
                     "in",
                     in_face,
-                    &format!("{}|{kind}", projection.from),
+                    &format!("{}|{kind}", projection.edge.source()),
                 ),
                 enters,
             );

@@ -12,7 +12,7 @@ use super::card_layout::{CardLayout, Sub};
 use super::clusters::{Link, title_of};
 use super::leaves::PORT;
 use super::tree::{Line, header_of};
-use super::walls::{enters_by, items_of, labelled_out};
+use super::walls::{enters_by, labelled_out};
 
 impl CardLayout<'_> {
     /// Build the block's Graphviz graph: its items, its header and top ports
@@ -20,7 +20,7 @@ impl CardLayout<'_> {
     /// on the last, and every line through its label's box.
     pub(super) fn build(&mut self) {
         let block = self.block;
-        for item in &items_of(self.tree, block) {
+        for item in &block.items {
             let node = self.node_of(item);
             self.push(self.clusters.holder_of(item), node);
         }
@@ -50,7 +50,7 @@ impl CardLayout<'_> {
         let links = self.links();
         let ordered = self.clusters.board_order(|end| self.vendor_of(end));
         for line in ordered {
-            self.connect(line, &links);
+            self.connect(line);
         }
         self.arrange(&links);
     }
@@ -154,11 +154,7 @@ impl CardLayout<'_> {
         };
         let lower: Set<String> = grid.iter().map(|edge| edge.head.clone()).collect();
         let titles = self.clusters.title_edges(&lower, links);
-        let entering = if self.arranged.stacked {
-            self.clusters.entering_edges(links)
-        } else {
-            Vec::new()
-        };
+        let entering = self.clusters.entering_edges(links);
         let holds = self.wrap_holds();
         self.edges.extend(grid);
         self.edges.extend(titles);
@@ -166,13 +162,12 @@ impl CardLayout<'_> {
         self.edges.extend(holds);
         let entries = self.entry_row_edges();
         self.edges.extend(entries);
-        self.clusters.untie(&mut self.edges);
         self.hold_sources();
         self.hold_sinks();
     }
 
     /// Connect one line, through its label's box when it carries the label here.
-    fn connect(&mut self, line: &Line, links: &[Link]) {
+    fn connect(&mut self, line: &Line) {
         let tail = self.vendor_of(&line.tail);
         let head = self.vendor_of(&line.head);
         let label = if line.labelled {
@@ -206,7 +201,7 @@ impl CardLayout<'_> {
         };
         let name = format!("label:{}", line.edge.id);
         let down = weight + self.clusters.leaving_pull(&tail, &head);
-        let (holder, holds) = self.clusters.hold_label(&tail, &head, &name, links);
+        let (holder, holds) = self.clusters.hold_label(&tail, &head, &name);
         let node = box_node(
             name.as_str(),
             label.width.unwrap_or(f64::NAN),

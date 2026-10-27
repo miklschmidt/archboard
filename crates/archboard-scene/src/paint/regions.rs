@@ -3,6 +3,8 @@
 //! in its corner (TASK-419). The tab keeps clear of the routes that cross its
 //! row, and from far away grows only as far as the nearest route.
 
+use std::borrow::Cow;
+
 use crate::drawing::{DrawingRegion, TextRun};
 use crate::geometry::{Curve, Point, Rect, Segment, round_coord, segment_start};
 use crate::js;
@@ -376,6 +378,36 @@ pub(super) fn paint_region(
     let near = region.caption.measured.runs.first();
     let crossings = crossings_of(region, routes);
     let corner = near.map_or(Corner::Start, |run| corner_of(region, run, &crossings));
+    // A lone region's layout can place its caption between incoming routes.
+    // Its background must stay there too, rather than stretch back over a line.
+    let caption_region =
+        if near.is_some_and(|run| !clear_of(tab_box(region, run, corner, 1.0).0, &crossings)) {
+            let mut caption_region = region.clone();
+            let run = near.expect("a blocked caption has words");
+            let left = region.caption.bounds.x + run.x;
+            let right = left + run.width;
+            let low = js::max(
+                std::iter::once(region.bounds.x).chain(
+                    crossings
+                        .iter()
+                        .filter(|crossing| crossing.right <= left)
+                        .map(|crossing| f64::midpoint(crossing.right, left)),
+                ),
+            );
+            let high = js::min(
+                std::iter::once(region.bounds.x + region.bounds.width).chain(
+                    crossings
+                        .iter()
+                        .filter(|crossing| crossing.left >= right)
+                        .map(|crossing| f64::midpoint(crossing.left, right)),
+                ),
+            );
+            caption_region.bounds.x = low;
+            caption_region.bounds.width = high - low;
+            Cow::Owned(caption_region)
+        } else {
+            Cow::Borrowed(region)
+        };
     let rect = region.bounds;
     grouped(
         Group::new(
@@ -387,12 +419,26 @@ pub(super) fn paint_region(
                 match near {
                     None => Items::new(),
                     Some(run) => {
-                        let room = far_room(region, run, corner, &crossings);
-                        let far = far_run(region, run, far_size, room);
+                        let room = far_room(&caption_region, run, corner, &crossings);
+                        let far = far_run(&caption_region, run, far_size, room);
                         let grown = far.font_size / run.font_size;
                         concat(vec![
-                            near_layer(caption_tab(region, run, corner, 1.0, &colours, palette)),
-                            far_layer(caption_tab(region, &far, corner, grown, &colours, palette)),
+                            near_layer(caption_tab(
+                                &caption_region,
+                                run,
+                                corner,
+                                1.0,
+                                &colours,
+                                palette,
+                            )),
+                            far_layer(caption_tab(
+                                &caption_region,
+                                &far,
+                                corner,
+                                grown,
+                                &colours,
+                                palette,
+                            )),
                         ])
                     }
                 },

@@ -2,10 +2,10 @@
 //! for over the other end of its line, the ports a face spreads and fans, and
 //! the x each net takes at both of its ends.
 
-use crate::ecma::{abs, max, min, or, sorted_by};
+use crate::ecma::{abs, js_max, max, min, or, sorted_by};
 use crate::geometry::Rect;
 use crate::track::chains::{Kind, Track};
-use crate::track::channels::{End, NetId, TrunkId, port_reach, spread_ports};
+use crate::track::channels::{End, NetId, TrunkId, port_reach, spread_along};
 use crate::track::scene::{ItemId, Map, Set, card_face};
 
 /// One port a face must give: a trunk's, or a lone net's end.
@@ -158,12 +158,30 @@ impl Track<'_> {
         let fan = ordered
             .first()
             .is_some_and(|request| request.side == End::Bottom);
-        let ports = spread_ports(&face, &if fan { fanned(&face, &wanted) } else { wanted });
+        let (low, high) = self.face_reach(item, &face, fan);
+        let ports = spread_along(
+            (low.min(high), high),
+            &if fan { fanned(&face, &wanted) } else { wanted },
+        );
         for (index, request) in ordered.iter().enumerate() {
             for &net in &request.nets {
                 self.net_mut(net).set_x_at(request.side, ports[index]);
             }
         }
+    }
+
+    /// Keep incoming ports clear of a lone region's caption.
+    fn face_reach(&self, item: ItemId, face: &Rect, fan: bool) -> (f64, f64) {
+        let (low, high) = port_reach(face);
+        let low = if fan {
+            js_max(
+                low,
+                self.scene.item(item).bx.x + self.scene.item(item).top_inset,
+            )
+        } else {
+            low
+        };
+        (low, high)
     }
 
     /// Give every net its x at both ends: cards spread their ports, labels and

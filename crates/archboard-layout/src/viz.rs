@@ -22,16 +22,6 @@ impl Value {
             Value::Bool(value) => J::Bool(*value),
         }
     }
-
-    /// Whether the value is truthy, as `if (value)` reads it.
-    pub(crate) fn truthy(&self) -> bool {
-        match self {
-            Value::Num(value) => *value != 0.0 && !value.is_nan(),
-            Value::Str(value) => !value.is_empty(),
-            Value::Bool(value) => *value,
-        }
-    }
-
     /// The value as a number, as `Number(value)` reads it.
     pub(crate) fn number(&self) -> f64 {
         match self {

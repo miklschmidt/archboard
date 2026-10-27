@@ -1,8 +1,6 @@
-//! The grid routes run on: every coordinate that bounds an obstacle's buffer
-//! or that an end stands on, in both axes. A shortest route with the fewest
-//! turns can always run on these coordinates, because a route only needs to
-//! turn where it passes the edge of a buffer or meets an end; \[W09\] §3 builds
-//! the same choice of coordinates as its orthogonal visibility graph.
+//! The grid of free space around obstacle buffers and fixed ports. Each search
+//! also uses the coordinates of earlier paths and one lane beside each coordinate.
+//! This lets another path take the next lane without moving an existing route.
 
 use crate::{Dir, End, Point, Rect, Scene};
 
@@ -12,17 +10,6 @@ pub(crate) const SAME: f64 = 1e-6;
 /// Whether two points are one point.
 pub(crate) fn close(a: Point, b: Point) -> bool {
     (a.x - b.x).abs() < SAME && (a.y - b.y).abs() < SAME
-}
-
-/// The sign of a difference: 1, -1, or 0 within [`SAME`].
-pub(crate) fn sign(value: f64) -> i32 {
-    if value > SAME {
-        1
-    } else if value < -SAME {
-        -1
-    } else {
-        0
-    }
 }
 
 /// A buffered obstacle: the space no route may enter.
@@ -123,7 +110,7 @@ fn sorted(mut values: Vec<f64>) -> Vec<f64> {
 
 impl Grid {
     /// The grid of a scene, the buffers named in `exempt` not blocking.
-    pub(crate) fn new(scene: &Scene, exempt: &[usize]) -> Grid {
+    pub(crate) fn new(scene: &Scene, exempt: &[usize], routes: &[Option<Vec<Point>>]) -> Grid {
         let clearance = scene.params.clearance;
         let buffers: Vec<Buffer> = scene
             .obstacles
@@ -133,7 +120,7 @@ impl Grid {
         let free_ends: Vec<Point> = scene
             .connectors
             .iter()
-            .flat_map(|(tail, head)| [tail, head])
+            .flat_map(|connector| [&connector.ends.0, &connector.ends.1])
             .filter_map(|end| match end {
                 End::Free { at } => Some(*at),
                 End::Pin { .. } => None,
@@ -158,7 +145,7 @@ impl Grid {
         for end in scene
             .connectors
             .iter()
-            .flat_map(|(tail, head)| [tail, head])
+            .flat_map(|connector| [&connector.ends.0, &connector.ends.1])
         {
             let at = end.at();
             xs.push(at.x);
@@ -171,6 +158,25 @@ impl Grid {
                 xs.push(stub.x);
                 ys.push(stub.y);
             }
+        }
+        for point in routes.iter().flatten().flatten() {
+            xs.push(point.x);
+            ys.push(point.y);
+        }
+        let lane = scene.params.lane;
+        xs = xs
+            .into_iter()
+            .flat_map(|x| [x - lane, x, x + lane])
+            .collect();
+        ys = ys
+            .into_iter()
+            .flat_map(|y| [y - lane, y, y + lane])
+            .collect();
+        if let Some(low) = scene.minimum {
+            xs.retain(|&x| x >= low.x - SAME);
+            xs.push(low.x);
+            ys.retain(|&y| y >= low.y - SAME);
+            ys.push(low.y);
         }
         let xs = sorted(xs);
         let ys = sorted(ys);

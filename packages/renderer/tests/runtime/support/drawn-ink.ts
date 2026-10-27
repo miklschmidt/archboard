@@ -1,14 +1,3 @@
-// What a reader gets from a drawn architecture, measured off the page: the
-// fit in the reference pane, the routes that run through cards, the skips
-// fanned down one card's flank, the share of route ink in margin corridors,
-// the bends a reader follows, the labels that sit off their own route, how far
-// a label sits from the line's nearer end, and how long two routes run side by
-// side.
-//
-// One owner for these, read by the wide-board suite and by
-// docs/design/wide-board-layout-fixtures/measure.ts, so a number in a test and
-// the same number in a design note are the same measurement.
-
 import type { DiagramBox } from "@archboard/board/render-reply";
 import type { VariantContent } from "@archboard/board/content";
 import { fitIn } from "#shared/constants/shell-geometry.ts";
@@ -397,6 +386,31 @@ function overdrawnRun(drawing: RenderedDiagram, ids: readonly string[]): number 
 	return longest;
 }
 
+/**
+ * Shared ink that loses which source reaches which target.
+ * @param drawing The rendered board.
+ * @param content The relationships whose ends a reader must distinguish.
+ * @returns The unrelated relationship pairs drawn on one trunk.
+ */
+function ambiguousTrunks(drawing: RenderedDiagram, content: VariantContent): string[] {
+	const edges = new Map(content.edges.map((edge) => [edge.id, edge]));
+	const runs = runsOf(drawing);
+	const found = new Set<string>();
+	for (let index = 0; index < runs.length; index += 1) {
+		const run = runs[index]!;
+		const edge = edges.get(run[2]);
+		if (edge === undefined) continue;
+		for (const other of runs.slice(index + 1)) {
+			const next = edges.get(other[2]);
+			if (next === undefined || edge.from === next.from || edge.to === next.to) continue;
+			const shared = besideRun(run, other, OVERDRAWN);
+			if (shared !== undefined && shared[1] - shared[0] > CORNER)
+				found.add([edge.id, next.id].toSorted().join(" / "));
+		}
+	}
+	return [...found].toSorted();
+}
+
 export {
 	type Ink,
 	type Reach,
@@ -404,6 +418,7 @@ export {
 	CORNER,
 	SIDE_BY_SIDE,
 	fitOf,
+	ambiguousTrunks,
 	overdrawnRun,
 	flankFanOf,
 	inkOf,

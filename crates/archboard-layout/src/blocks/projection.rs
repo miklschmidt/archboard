@@ -14,8 +14,8 @@ use crate::track::scene::{Map, Set};
 
 use super::cycles::CycleWalk;
 use super::tree::{
-    Block, BlockId, BlockTree, ClusterKind, Ends, Kind, Line, Nesting, Piece, Pin, Projection,
-    Route, exit_key, header_of, holds,
+    BlockId, BlockTree, ClusterKind, Ends, Kind, Line, Nesting, Piece, Pin, Projection, Route,
+    exit_key, header_of, holds,
 };
 
 impl BlockTree {
@@ -145,8 +145,9 @@ impl BlockTree {
         let edge = &projection.edge;
         let upward = back.contains(&edge.id);
         let label_at = self.label_holder(projection, before);
-        let (mut pieces, from) = self.leave(projection, upward, label_at);
-        let (entering, to) = self.enter(projection, upward, label_at);
+        let source = source_port(edge, projection.out.contains(&label_at));
+        let (mut pieces, from) = self.leave(projection, upward, label_at, &source);
+        let (entering, to) = self.enter(projection, upward, label_at, &source);
         let (tail, head) = if upward {
             (to.clone(), from.clone())
         } else {
@@ -163,6 +164,7 @@ impl BlockTree {
                 head,
             },
             at == label_at,
+            &source,
         );
         pieces.push((at, middle));
         pieces.extend(entering);
@@ -177,6 +179,7 @@ impl BlockTree {
         projection: &Projection,
         upward: bool,
         label_at: BlockId,
+        source: &str,
     ) -> (Vec<Piece>, String) {
         let edge = &projection.edge;
         let face = if upward { Side::Top } else { Side::Bottom };
@@ -186,15 +189,11 @@ impl BlockTree {
         } else {
             edge.source().to_owned()
         };
-        let key = format!(
-            "from|{}|{}|{}",
-            face.name(),
-            projection.to,
-            trunk_kind(edge)
-        );
+        let key = format!("from|{}|{}|{}", face.name(), source, trunk_kind(edge));
         let mut from = self.on_edge(start, &key, face);
         for &block in &projection.out {
-            let along = format!("{}|{}", projection.to, self.kind_of(edge));
+            let kind = trunk_kind(edge);
+            let along = format!("{}|{kind}", edge.target());
             let side = self.exit_of(block, "out", face, &along, Some(label_at));
             // A line that carries its label to a wall reaches it under the label,
             // not under its card, so it shares no wall port.
@@ -205,7 +204,12 @@ impl BlockTree {
             };
             let port = self.port(
                 block,
-                &format!("out|{}|{}{along}", side.name(), walled(side, &inner)),
+                &format!(
+                    "out|{}|{}{}|{kind}",
+                    side.name(),
+                    walled(side, &inner),
+                    source
+                ),
                 side,
             );
             let (tail, head) = if side == Side::Top {
@@ -223,6 +227,7 @@ impl BlockTree {
                     head,
                 },
                 block == label_at,
+                source,
             );
             pieces.push((block, line));
             from = self.pin(block, &port);
@@ -237,6 +242,7 @@ impl BlockTree {
         projection: &Projection,
         upward: bool,
         label_at: BlockId,
+        source: &str,
     ) -> (Vec<Piece>, String) {
         let edge = &projection.edge;
         let face = if upward { Side::Bottom } else { Side::Top };
@@ -246,19 +252,20 @@ impl BlockTree {
         } else {
             edge.target().to_owned()
         };
-        let key = format!(
-            "to|{}|{}|{}",
-            face.name(),
-            projection.from,
-            trunk_kind(edge)
-        );
+        let key = format!("to|{}|{}|{}", face.name(), edge.target(), trunk_kind(edge));
         let mut to = self.on_edge(end, &key, face);
         for &block in &projection.into {
-            let along = format!("{}|{}", projection.from, self.kind_of(edge));
+            let kind = trunk_kind(edge);
+            let along = format!("{}|{kind}", edge.source());
             let side = self.exit_of(block, "in", face, &along, None);
             let port = self.port(
                 block,
-                &format!("in|{}|{}{along}", side.name(), walled(side, &to)),
+                &format!(
+                    "in|{}|{}{}|{kind}",
+                    side.name(),
+                    walled(side, &to),
+                    edge.target()
+                ),
                 side,
             );
             let (tail, head) = if side == Side::Bottom {
@@ -276,20 +283,12 @@ impl BlockTree {
                     head,
                 },
                 block == label_at,
+                source,
             );
             pieces.insert(0, (block, line));
             to = self.pin(block, &port);
         }
         (pieces, to)
-    }
-
-    /// What a relationship's ports on a block's edge share: its kind and look, or its own id.
-    pub(crate) fn kind_of(&self, edge: &Edge) -> String {
-        if self.apart.contains(&edge.id) {
-            format!("{}|{}", trunk_kind(edge), edge.id)
-        } else {
-            trunk_kind(edge)
-        }
     }
 
     /// The block that holds a relationship's label: the innermost block around
@@ -340,7 +339,7 @@ impl BlockTree {
         along: &str,
         label_at: Option<BlockId>,
     ) -> Side {
-        if Some(block) == label_at && !self.facing {
+        if Some(block) == label_at {
             return face;
         }
         self.exits
@@ -371,7 +370,14 @@ impl BlockTree {
 
     /// A line in a block, shared with every relationship that runs between the
     /// same ends here without a label of its own.
-    fn line(&mut self, block: BlockId, edge: &Rc<Edge>, ends: Ends, labelled: bool) -> String {
+    fn line(
+        &mut self,
+        block: BlockId,
+        edge: &Rc<Edge>,
+        ends: Ends,
+        labelled: bool,
+        source: &str,
+    ) -> String {
         let carries = labelled && edge.label_count() > 0;
         let key = if carries {
             edge.id.clone()
@@ -379,7 +385,14 @@ impl BlockTree {
             format!("{}>{}|{}", ends.from, ends.to, trunk_kind(edge))
         };
         let lines = &mut self.get_mut(block).lines;
-        if !lines.contains_key(&key) {
+        if let Some(line) = lines.get_mut(&key) {
+            if line.source.as_deref() != Some(source) {
+                line.source = None;
+            }
+            if line.target.as_deref() != Some(edge.target()) {
+                line.target = None;
+            }
+        } else {
             let Ends {
                 from,
                 to,
@@ -396,10 +409,21 @@ impl BlockTree {
                     tail,
                     head,
                     labelled: carries,
+                    source: Some(source.to_owned()),
+                    target: Some(edge.target().to_owned()),
                 },
             );
         }
         key
+    }
+}
+
+/// A label before an exit applies only to the branch toward its target.
+fn source_port(edge: &Edge, before: bool) -> String {
+    if before && edge.label_count() > 0 {
+        format!("{}>{}", edge.source(), edge.target())
+    } else {
+        edge.source().to_owned()
     }
 }
 
@@ -414,16 +438,8 @@ fn walled(side: Side, inner: &str) -> String {
     }
 }
 
-/// Lines that join on the way to one card stay one line into it (`choosing.rs`):
-/// each line of a join keeps its label before the join, by its source, or,
-/// where its block is kept apart, keeps ports of its own. The blocks joins
-/// move labels to, and the relationships in joins each way, by id.
-pub(super) fn join_ways(
-    projections: &[Projection],
-    arena: &[Block],
-    back: &Set<String>,
-    apart: &Set<String>,
-) -> (Set<String>, Set<String>, Set<String>) {
+/// Put each fan-in label before the join to its original target card.
+pub(super) fn labels_before_joins(projections: &[Projection], back: &Set<String>) -> Set<String> {
     let joins: Vec<String> = projections
         .iter()
         .map(|projection| {
@@ -432,8 +448,7 @@ pub(super) fn join_ways(
             }
             let upward = back.contains(&projection.edge.id);
             format!(
-                "{}|{}|{}|{upward}",
-                projection.from,
+                "{}|{}|{upward}",
                 projection.edge.target(),
                 trunk_kind(&projection.edge)
             )
@@ -443,19 +458,10 @@ pub(super) fn join_ways(
     for join in &joins {
         *counts.entry(join.as_str()).or_default() += 1;
     }
-    let (mut joining, mut before, mut own) = (Set::default(), Set::default(), Set::default());
-    for (projection, join) in projections.iter().zip(&joins) {
-        if join.is_empty() || counts[join.as_str()] == 1 {
-            continue;
-        }
-        let block = &arena[projection.out.first().copied().unwrap_or(projection.at).0].id;
-        joining.insert(block.clone());
-        if apart.contains(block) {
-            &mut own
-        } else {
-            &mut before
-        }
-        .insert(projection.edge.id.clone());
-    }
-    (joining, before, own)
+    projections
+        .iter()
+        .zip(&joins)
+        .filter(|(_, join)| !join.is_empty() && counts[join.as_str()] > 1)
+        .map(|(projection, _)| projection.edge.id.clone())
+        .collect()
 }

@@ -76,8 +76,6 @@ pub(crate) struct Arrangement {
     pub grid: bool,
     /// Whether a wrap's rows keep their columns, each lowered card under the one above it.
     pub columns: bool,
-    /// Whether a container a line from another container enters is held below the line's source.
-    pub stacked: bool,
 }
 
 /// A subgraph of the block's graph: one of its clusters, or a rank of nodes held together.
@@ -271,11 +269,6 @@ impl<'t> CardLayout<'t> {
     }
 
     /// Whether stacking would change the block: some line runs from one inline
-    /// container into another.
-    pub(crate) fn stacks(&self) -> bool {
-        !self.clusters.entering_edges(&self.links()).is_empty()
-    }
-
     /// The block's cards no line touches, in the board's order, with their
     /// sizes, by the cluster that holds them.
     pub(crate) fn loose_cards(&self) -> Vec<Vec<Loose>> {
@@ -307,21 +300,28 @@ impl<'t> CardLayout<'t> {
     ///
     /// What Graphviz refused the block's graph with, or answered unreadably.
     pub(crate) fn lay(&mut self, gv: &mut Engine<'_>) -> Result<Rc<Laid>, String> {
+        let lined = self.lined(gv)?;
+        Ok(self.finish(lined))
+    }
+
+    /// Route a graph that was already ranked and read, without parsing it twice.
+    pub(crate) fn finish(&self, lined: Lined) -> Rc<Laid> {
         let Lined {
             placed, centres, ..
-        } = self.lined(gv)?;
-        let laid = routed(self.tree, self.id, self.insets, &placed, 0.0);
+        } = lined;
+        let (laid, left) = routed(self.tree, self.id, self.insets, &placed, 0.0);
         let reroute = Reroute {
             block: self.id,
             insets: self.insets,
             held: laid.width,
+            left,
             placed: RefCell::new(placed),
             centres,
         };
-        Ok(Rc::new(Laid {
+        Rc::new(Laid {
             reroute: Some(Rc::new(reroute)),
             ..laid
-        }))
+        })
     }
 
     /// The block ranked by Graphviz and lined up, its lines not yet routed:
@@ -335,6 +335,7 @@ impl<'t> CardLayout<'t> {
         self.build();
         let graph = self.graph();
         let answer = gv.render(&graph)?;
+
         let output = output_of(&answer)?;
         let bb = numbers(&output.bb)?;
         let (left, low, right, high) = (bb[0], bb[1], bb[2], bb[3]);
@@ -505,6 +506,8 @@ pub(crate) struct Reroute {
     block: BlockId,
     insets: Insets,
     held: f64,
+    /// The placement's horizontal shift into its block's own coordinates.
+    left: f64,
     /// The placed block; its ports', pins' and blocks' leaves move in place.
     placed: RefCell<PlacedBlock>,
     centres: Map<String, Point>,
@@ -524,12 +527,12 @@ impl Reroute {
         let mut placed = self.placed.borrow_mut();
         for leaf in leaves_of(&mut placed.children) {
             if let Some(&x) = ports.get(&leaf.id) {
-                leaf.x = x - self.insets.side - leaf.width / 2.0;
+                leaf.x = x - self.left - self.insets.side - leaf.width / 2.0;
             } else if let Some(at) = settled_leaf(tree, laid, &leaf.id, &self.centres) {
                 (leaf.x, leaf.y, leaf.width, leaf.height) = (at.x, at.y, at.width, at.height);
             }
         }
         hold_resized_children(&mut placed.children);
-        routed(tree, self.block, self.insets, &placed, self.held)
+        routed(tree, self.block, self.insets, &placed, self.held).0
     }
 }
