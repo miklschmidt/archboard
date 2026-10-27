@@ -40,6 +40,8 @@ import {
 	type NavigationIntent,
 } from "#ui/state/board-routing/intent.ts";
 import {
+	matchesModelArrival,
+	canonicalDestination,
 	operationAnswered,
 	operationMovedPane,
 	operationSettled,
@@ -81,6 +83,8 @@ type NavigationPermission = { readonly kind: "granted"; readonly move: Navigatio
 
 /** What the shell tells the address bar about the user's own gestures. */
 interface WorkspaceAddressing {
+	/** Consume the matching user open when its canonical socket arrival reaches the router. */
+	readonly modelArriving: (paneId: string, model: string, repository: string | null) => boolean;
 	/**
 	 * A user changed the workspace themselves, without asking the server: they
 	 * opened or closed a pane. The change pushes a history entry.
@@ -181,11 +185,22 @@ function answerOperation(
  * @param operation The operation that finished.
  */
 function finishOperation(state: Reconciliation, operation: Operation): void {
-	const { operator, intent, answer } = operation;
+	const { operator } = operation;
 	if (operator.kind === "restore") {
 		state.restore = restoreAnswered(state.restore, operator.target, operation);
 		return;
 	}
+	finishUserOperation(state, operation);
+}
+
+/**
+ * Record only legacy user moves that did not already navigate through the canonical router.
+ * @param state The workspace navigation owner.
+ * @param operation The completed operation.
+ */
+function finishUserOperation(state: Reconciliation, operation: Operation): void {
+	const { intent, answer } = operation;
+	if (canonicalDestination(operation) !== undefined) return;
 	if (intent !== null && answer === "opened" && operationMovedPane(operation, state.displayed)) {
 		// The visible origin can be canonical while the server remembers a legacy board.
 		state.deliberate.expect(
@@ -439,6 +454,20 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 
 	return useMemo(
 		() => ({
+			/**
+			 * Match the socket arrival against the existing user operation once.
+			 * @param paneId The addressed pane.
+			 * @param model The resolved model identity.
+			 * @param repository The resolved repository.
+			 * @returns Whether this arrival creates a user history entry.
+			 */
+			modelArriving: (paneId: string, model: string, repository: string | null): boolean => {
+				const operation = state.current.operation;
+				if (!matchesModelArrival(operation, paneId, model, repository)) return false;
+				// Keep the command object that its pending HTTP completion captured.
+				operation.modelArrived = true;
+				return true;
+			},
 			/**
 			 * A user changed the workspace themselves.
 			 * @param intent What they asked for.

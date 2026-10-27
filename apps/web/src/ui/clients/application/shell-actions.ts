@@ -164,6 +164,7 @@ async function openModel(
 	}
 	const permission = await deps.addressing.claim({
 		kind: "board",
+		destination: { model, repository },
 		paneId,
 		from: status.boardKey,
 		repository: status.repository,

@@ -789,3 +789,8 @@ It retains neighbor lighting, readable relationship labels at actual far zoom, a
 The canonical canvas reuses the retained viewer's camera commands and lighting rules.
 Board-card flights retire with board ownership.
 Canonical scope and gesture owners retain navigation and camera behavior.
+
+`workspace-address.test.ts` now uses canonical models and public proposal writes.
+It retains user history, agent replacement, stable pane identities, per-pane state choices, and checkout changes across two repositories.
+The repository navigator owner also asserts that a user open adds one history entry.
+The old missing-board fallback retires because `canonical-model-navigation.test.ts` keeps unavailable intent explicit.

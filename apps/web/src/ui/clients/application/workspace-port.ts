@@ -49,6 +49,15 @@ function openingPaneList(address: WorkspaceAddress): PaneList {
 function addressingOver(binding: LiveBinding<WorkspaceAddressing>): WorkspaceAddressing {
 	return {
 		/**
+		 * Hand the matching canonical arrival to the existing navigation owner.
+		 * @param paneId The addressed pane.
+		 * @param model The resolved model.
+		 * @param repository The destination repository.
+		 * @returns Whether the arrival answers a user open.
+		 */
+		modelArriving: (paneId, model, repository) =>
+			binding.read().modelArriving(paneId, model, repository),
+		/**
 		 * A person asked for a move.
 		 * @param intent What they asked for.
 		 */

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ModelArrivalContext } from "#ui/state/board-routing/model-arrival.ts";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { z } from "zod";
 import type { PanePresentRequestSchema } from "@archboard/board/pane-context";
 import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts";
@@ -11,6 +12,7 @@ import { useModelLocation } from "#ui/hooks/architecture-model/use-model-locatio
  * @returns Ordered navigation and presentation listeners without conversation activation.
  */
 function useModelArrival(paneId: string, onError: (message: string) => void) {
+	const modelArriving = useContext(ModelArrivalContext);
 	const { openRequested } = useModelLocation(paneId);
 	const generation = useRef(0);
 	const [arrival, setArrival] = useState(0);
@@ -26,7 +28,10 @@ function useModelArrival(paneId: string, onError: (message: string) => void) {
 	const onModelRequest = useCallback(
 		(request: PaneModelRequest): void => {
 			const current = ++generation.current;
-			void openRequested(request)
+			void openRequested(
+				request,
+				modelArriving?.(paneId, request.reading.model, request.repository) ?? false,
+			)
 				.then(() => {
 					if (current !== generation.current) return null;
 					setArrival(current);
@@ -51,7 +56,7 @@ function useModelArrival(paneId: string, onError: (message: string) => void) {
 						);
 				});
 		},
-		[openRequested, onError],
+		[openRequested, onError, modelArriving, paneId],
 	);
 	return { arrival, driven, onModelRequest, onPresentRequest };
 }

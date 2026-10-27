@@ -173,7 +173,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		[navigate],
 	);
 	const openRequested = useCallback(
-		({ reading, repository }: PaneModelRequest): Promise<void> => {
+		({ reading, repository }: PaneModelRequest, push = false): Promise<void> => {
 			return navigate(
 				{
 					id: reading.model,
@@ -191,7 +191,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					hideKinds: reading.hideKinds,
 					hideGroups: reading.hideGroups,
 				},
-				false,
+				!push,
 				repository ?? undefined,
 			);
 		},

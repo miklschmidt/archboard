@@ -1,3 +1,4 @@
+import { ModelArrivalContext } from "#ui/state/board-routing/model-arrival.ts";
 // The application root: the pane sessions, the listing, the notices, the
 // workbench and the presentation composed over the shell. The sessions, the
 // transport, the runtime and the controllers are the state; this file only
@@ -494,25 +495,27 @@ function ApplicationBody(): JSX.Element {
 		);
 	}
 	return (
-		<OrbStageProvider>
-			{/* The voice box over a pane reads the voice and its actions where it is drawn. */}
-			<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
-				<Tooltip.Provider>
-					<Shell
-						view={view}
-						actions={actions}
-						diagnostics={diagnostics}
-						voiceControls={slots.voiceControls}
-						agentDock={slots.dock}
-						agentPanel={slots.panel}
-						agentPanelOpen={agent.panel.open}
-						onAgentPanelClose={agent.panel.closePanel}
-						attachStage={fullscreen.attachStage}
-					/>
-					<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
-				</Tooltip.Provider>
-			</VoiceSurfaceProvider>
-		</OrbStageProvider>
+		<ModelArrivalContext value={addressing.modelArriving}>
+			<OrbStageProvider>
+				{/* The voice box over a pane reads the voice and its actions where it is drawn. */}
+				<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
+					<Tooltip.Provider>
+						<Shell
+							view={view}
+							actions={actions}
+							diagnostics={diagnostics}
+							voiceControls={slots.voiceControls}
+							agentDock={slots.dock}
+							agentPanel={slots.panel}
+							agentPanelOpen={agent.panel.open}
+							onAgentPanelClose={agent.panel.closePanel}
+							attachStage={fullscreen.attachStage}
+						/>
+						<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
+					</Tooltip.Provider>
+				</VoiceSurfaceProvider>
+			</OrbStageProvider>
+		</ModelArrivalContext>
 	);
 }
 

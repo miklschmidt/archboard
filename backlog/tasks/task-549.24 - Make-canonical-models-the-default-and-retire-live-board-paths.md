@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T21:13:00Z'
+updated_date: '2026-10-27T21:28:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -88,6 +88,10 @@ Preserve the existing sidebar search and group-selection workflows before retiri
 Bounded narration repair: reproduce live external-change speech in the existing public runtime/HTTP/socket narration owner, keep captured source and target revisions fixed, repair settled news without changing explicit selection/focus behavior, and preserve durable writer evidence. Use the existing Live panes/server proposals. Leave parent status, assignee, acceptance, repository migration, browser acceptance, and final gate unchanged.
 
 Preserve selected-neighbor lighting and readable relationship labels before retiring the old board-exploration browser owner. Reuse the existing lighting and line-mask owners for canonical projected content. Board-to-board card flights retire with board ownership; recursive scope navigation remains covered by canonical navigation and gesture owners.
+
+Port the workspace-address owner to canonical readings. Preserve direct two-pane restoration, user versus agent history, stable pane identity, per-pane proposal selection, and checkout changes. Retire the legacy missing-board fallback assertion because canonical missing intent remains explicit and is already owned by canonical-model-navigation.
+
+The ported workspace owner reproduces an origin bug: socket arrivals always push history, while replacing all arrivals loses human navigator history. Reuse the existing pending navigation operation to distinguish its matching canonical arrival. Keep agent arrivals as replacements and consume human intent once, independent of HTTP/socket arrival order. Preserve the existing router and pane identities.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -164,4 +168,6 @@ Canonical module search passes the ported inspection browser owner and the exist
 Canonical group selection now reuses the existing color chips, list and membership rules over selected model content. Canonical selected identities remain the only selection state; matching member sets determine group marks. The ported browser owner selects three members across recursive scopes, exposes two hidden members, focuses them, verifies actual selection rings, and clears the group without changing architecture bytes. Browser, retained group UI owner, full types and focused source/test lint pass. The initial fixture refusal required sorted group memberships before the real missing-choice RED; no product validation rule changed.
 
 Canonical attention now reuses the existing lighting and camera commands. The replacement browser owner reproduced absent neighbor lighting and missing keyboard zoom, then passed actual far-zoom label visibility and complete shared-route ink. Existing lighting and reach UI owners, full types and focused lint pass. The canvas keeps the retained viewer’s documented keyboard-surface accessibility exception, with a named section and reachable tab stop. Board-card flights retire with board ownership; canonical scope and gesture owners retain navigation behavior.
+
+Canonical workspace fixtures now preserve direct two-pane restoration, browser Back, stable client identities, per-pane proposal choices and cross-checkout refresh. The history owner reproduced agent opens pushing a user entry. Canonical arrivals now match and consume the existing pending user operation once; other arrivals replace the location. The operation retains its object identity until HTTP completion, so either HTTP/socket order can finish and later opens do not stall. Targeted workspace and repository navigator browsers pass, as do existing routing and shell-action UI owners, full types and scoped lint. Missing-board fallback retires in favor of the existing explicit unavailable canonical-address owner.
 <!-- SECTION:NOTES:END -->

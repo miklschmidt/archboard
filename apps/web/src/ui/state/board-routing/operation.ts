@@ -52,6 +52,8 @@ interface Operation {
 	 * written, and nobody else's change can be taken for their move.
 	 */
 	readonly intent: NavigationIntent | null;
+	/** The matching canonical socket arrival reached its router owner. */
+	modelArrived: boolean;
 }
 
 /**
@@ -80,6 +82,7 @@ function startOperation(
 		openedKey: null,
 		openedRepository: null,
 		intent,
+		modelArrived: false,
 	};
 }
 
@@ -123,18 +126,15 @@ function operationSettled(
 	if (operation.answer === "unreachable") {
 		return true;
 	}
+	if (!ready(operation.paneId)) return true;
+	if (canonicalDestination(operation) !== undefined) return operation.modelArrived;
 	// That the pane moved at all is what says the open arrived. A pane already
 	// showing the board the server opened, in the repository the server put it
 	// in, has nothing to wait for: that is a user opening the board their pane
 	// was on, which moves nothing and is still over. Every key and repository
 	// here comes from the server, so the same board is the same string however
 	// the request spelled the address.
-	return (
-		operationMovedPane(operation, displayed) ||
-		(boardIn(displayed, operation.paneId) === operation.openedKey &&
-			repositoryIn(displayed, operation.paneId) === operation.openedRepository) ||
-		!ready(operation.paneId)
-	);
+	return operationMovedPane(operation, displayed) || atOpenedDestination(operation, displayed);
 }
 
 /**
@@ -152,7 +152,69 @@ function operationMovedPane(operation: Operation, displayed: WorkspaceAddress): 
 	);
 }
 
+/**
+ * Read the explicit canonical target from the existing user operation.
+ * @param operation The pending workspace open.
+ * @returns Its canonical destination, when present.
+ */
+function canonicalDestination(operation: Operation) {
+	const intent = operation.intent;
+	return intent?.kind === "board" ? intent.destination : undefined;
+}
+
+/**
+ * An already displayed board needs no later arrival.
+ * @param operation The answered open.
+ * @param displayed The current workspace.
+ * @returns Whether the opened destination already matches.
+ */
+function atOpenedDestination(operation: Operation, displayed: WorkspaceAddress): boolean {
+	return (
+		boardIn(displayed, operation.paneId) === operation.openedKey &&
+		repositoryIn(displayed, operation.paneId) === operation.openedRepository
+	);
+}
+
+/**
+ * Consume only the canonical arrival that the user operation requested.
+ * @param operation The one pending navigation operation.
+ * @param paneId The addressed pane.
+ * @param model The resolved model identity.
+ * @param repository The resolved repository.
+ * @returns Whether this is the matching user arrival, once.
+ */
+function matchesModelArrival(
+	operation: Operation | null,
+	paneId: string,
+	model: string,
+	repository: string | null,
+): operation is Operation {
+	if (operation === null) return false;
+	if (operation.paneId !== paneId || operation.modelArrived) return false;
+	const destination = canonicalDestination(operation);
+	if (destination === undefined) return false;
+	if (!sameModelDestination(destination, model, repository)) return false;
+	return true;
+}
+
+/**
+ * Match the model and repository together rather than a model name alone.
+ * @param destination The user operation's destination.
+ * @param model The arriving model.
+ * @param repository The arriving repository.
+ * @returns Whether both identities match.
+ */
+function sameModelDestination(
+	destination: NonNullable<ReturnType<typeof canonicalDestination>>,
+	model: string,
+	repository: string | null,
+): boolean {
+	return destination.model === model && destination.repository === repository;
+}
+
 export {
+	matchesModelArrival,
+	canonicalDestination,
 	operationAnswered,
 	operationMovedPane,
 	operationSettled,

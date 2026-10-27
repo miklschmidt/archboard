@@ -167,6 +167,7 @@ test("repository filtering opens canonical roots by keyboard and in the other pa
 		"both repository readings",
 		WAIT,
 	);
+	const historyBefore = await browser.eval<number>("history.length");
 	await browser.run(["fill", 'input[aria-label="Find a repository"]', "orders"]);
 	expect(
 		await browser.eval<string>(
@@ -180,6 +181,7 @@ test("repository filtering opens canonical roots by keyboard and in the other pa
 		"the first matching repository opened by Enter",
 		WAIT,
 	);
+	expect(await browser.eval<number>("history.length")).toBe(historyBefore + 1);
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(
