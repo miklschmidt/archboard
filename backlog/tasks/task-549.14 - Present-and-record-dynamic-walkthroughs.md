@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-27T08:38:00Z'
+updated_date: '2026-10-27T08:42:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -114,4 +114,6 @@ Voice backend implementation passes controlled production evidence on feat/voice
 The final frozen production run passes 8 cases and 62 assertions within existing case budgets. Separate exact-source and proposal-source cases replace one over-budget combined case. Proposal authoring now happens in the shared fixture first write, which reduces that case to 9.7 seconds. The focused canonical recording owner also makes sure that the server sends no first-beat request. A simplification pass kept one capture in the existing narrated map, reused existing subject naming and comparison data, and removed unused fixture returns. No extra runtime owner, public package export, explanation action, test limit, or rule exception was added.
 
 Signed voice merge9b90e5944 composes the canonical backend with recording-page consumption. Types pass, and public recording passes one case with seven assertions. The live browser RED exposed a real ordering race: voice started before the debounced capture report reached the server. The existing reading publisher now offers an acknowledged flush, and canonical narration waits for that delivery. Narrate remains unavailable while the picture draws. The controlled browser owner now passes one case with seven assertions across first-beat requests, manual steps, a pinned source after edits, an unaffected second pane, and departure. All temporary diagnostics are removed. Types pass, and lint reported only the removed diagnostic console call. Proposal playback lifetime and final architecture restatement remain.
+
+The proposal lifetime concern did not reproduce. A new controlled browser case edits the selected proposal through the public runtime while its second beat remains open. It passes three assertions: the beat and captured revision remain unchanged, and explicit restart reads the revised narrative. No production lifetime change was needed. Full types pass. Canonical recording and live narration each pass seven assertions, offline replay passes its frame comparisons, and manual grammar/selection/recovery playback passes fourteen assertions. Final architecture restatement, scoped validation and adoption remain.
 <!-- SECTION:NOTES:END -->
