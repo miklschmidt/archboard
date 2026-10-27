@@ -380,3 +380,47 @@ Its focused rerun passes in 1900 ms, and the final full run passes without a cod
 The final current-vault integrity capture produces 34 SVGs that exactly match their light-theme corpus counterparts.
 It has no hard finding.
 These fresh captures supplement the older native request snapshots.
+
+## Post-council frame bounds
+
+The fourth council accepts all 42 sampled pairs: eight better, 34 the same, and none worse.
+No after picture contains a new defect.
+The subsequent source review finds a boundary case outside that sample.
+A reduced ten-card Track input places a leaving label across its source parent's bottom wall.
+The existing `labelsAcrossWalls` reader reports `e5 across 20,20`.
+
+The label shares the last member's band, after horizontal settlement moves it between the frame's side walls.
+Its bottom extends 24.5 points below the lowest member card.
+Container sizing includes labels only when both relationship endpoints belong to that container.
+It therefore omits this leaving label and closes the frame through it.
+The trace rules out a later scene-painter move.
+
+Container bounds now include labels that occupy the existing member bands and fit between the side walls.
+Internal relationship labels retain their existing containment rule.
+Labels on later bands stay outside, so a distant external label cannot stretch the frame.
+This correction uses the existing band and inset model, without another solve or a routing exception.
+The renderer regression owns the reduced input and the existing hard wall reader.
+It fails before the bounds correction.
+
+The correction leaves the architecture proposals and consumer workflow accurate.
+It needs no new architecture decision or consumer-skill change.
+
+Core `983e6d4c750e9aae` passes the regression and the original reproducer.
+The source frame grows by 24.5 points, with no change to card positions or relationship routes.
+Rasterized before and after pictures show the label wholly inside its frame.
+All hard geometry readers pass on that reduced input.
+The renderer suite passes 683 tests, with one platform-only skip.
+The layout crate tests, strict clippy, and complete repository gate pass inside `nix develop`.
+
+The new corpus is `/tmp/548-08/round-4/after-16`.
+Every one of its 2452 SVGs matches `after-15` byte for byte, including all 76 whole-board drawings.
+The complete compactness comparison is `after-16-vs-after-15`.
+The manifests in `milestone-5-after-16` list zero changed drawings, with light/plain pictures separate.
+That directory also retains the reduced regression's before and after SVG paths.
+
+Three fresh runs give median first/growing-edit times of Viewer 281/204 ms, Persistence 299/289 ms, and Routes 142/134 ms.
+Each edit increases the measured card height.
+All three runs start at a one-minute load of 2.96, after the complete gate exits.
+Raw runs, the source hash, and median calculations are in `boundary-fix/measurements.json`.
+The process audit finds no remaining Git owner process.
+TASK-548.08 stays In Progress for the parent to finalize.
