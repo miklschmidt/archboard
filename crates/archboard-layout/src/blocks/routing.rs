@@ -35,6 +35,8 @@ pub(super) fn routed(
             let one = scene.item_mut(item);
             one.bx.x = block.lone.as_ref().map_or(0.0, super::lone::room_of) - insets.side;
             one.bx.width = header.painted(placed.header).width;
+            one.face_top = block.lone.as_ref().map_or(0.0, super::lone::band_of)
+                + crate::constants::HEADER_SLAB_INSET;
         }
     }
     let inline = tree.nesting != Nesting::Blocks;
@@ -84,6 +86,26 @@ pub(super) fn routed(
     (laid, left)
 }
 
+/// Cards, labels, and the physical header ports of a routed scene.
+fn boxes_of(block: &Block, side: f64, scene: &Placement) -> Map<String, Rect> {
+    let mut boxes: Map<String, Rect> = Map::default();
+    for (id, &item) in &scene.cards {
+        let mut at = scene.moved_id(item, side);
+        if block.kind == Kind::Frame && block.ports.get(id) == Some(&crate::geometry::Side::Top) {
+            let header = scene.cards[super::tree::header_of(block).as_str()];
+            at.y = scene.moved_id(header, side).y
+                + block.lone.as_ref().map_or(0.0, super::lone::band_of)
+                + crate::constants::HEADER_SLAB_INSET
+                - at.height / 2.0;
+        }
+        boxes.insert(id.clone(), at);
+    }
+    for (id, &item) in &scene.labels {
+        boxes.insert(format!("label:{id}"), scene.moved_id(item, side));
+    }
+    boxes
+}
+
 /// Read the routed scene back into the laid-out block.
 fn read(
     block: &Block,
@@ -94,13 +116,7 @@ fn read(
     held: f64,
 ) -> (Laid, f64) {
     let Insets { side, bottom, .. } = insets;
-    let mut boxes: Map<String, Rect> = Map::default();
-    for (id, &item) in &scene.cards {
-        boxes.insert(id.clone(), scene.moved_id(item, side));
-    }
-    for (id, &item) in &scene.labels {
-        boxes.insert(format!("label:{id}"), scene.moved_id(item, side));
-    }
+    let mut boxes = boxes_of(block, side, scene);
     let bands: Vec<Band> = scene
         .bands
         .iter()
@@ -134,7 +150,7 @@ fn read(
             format!("title:{}", frame.id),
             Rect {
                 x: frame.bx.x,
-                width: scene.words[&title],
+                width: frame.bx.width,
                 ..row
             },
         );

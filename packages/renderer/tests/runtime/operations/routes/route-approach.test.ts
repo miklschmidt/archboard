@@ -9,6 +9,7 @@ import type { VariantContent } from "@archboard/board/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { LayoutEngineSchema, type DiagramBox } from "@archboard/board/render-reply";
 import { routeCrosses, routePoints, type DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
+import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** Containment and opposing relationships exercise each endpoint face. */
@@ -118,7 +119,7 @@ test("a self-loop meets its own card squarely and stays outside its interior", a
 // arrival's quarter-slot inside the IIS title band. Its eight-unit final leg
 // was shorter than the visible arrowhead and left no room for the bend.
 test.each(LayoutEngineSchema.options)(
-	"an incoming frame arrow has a whole head and rounded bend before its endpoint (%s)",
+	"an incoming header arrow has a whole head and rounded bend before its endpoint (%s)",
 	async (layout) => {
 		const content = orderedFixture(frameApproach);
 		const drawing = await renderArchitecture({
@@ -128,7 +129,7 @@ test.each(LayoutEngineSchema.options)(
 			layout,
 		});
 		const points = routePoints(drawing.svg).get("g1zvz5QO")!;
-		expectSquare(points.at(-1)!, tangent(points, "last"), drawing.atlas.nodes["j6TdeSth"]!);
+		expectSquare(points.at(-1)!, tangent(points, "last"), headerCards(drawing).get("j6TdeSth")!);
 		const group = drawing.svg.match(
 			/<g data-semantic-kind="edge" data-semantic-id="g1zvz5QO"[^>]*>([\s\S]*?)<\/g>/,
 		)![1]!;

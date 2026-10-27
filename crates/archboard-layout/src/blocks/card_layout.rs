@@ -117,7 +117,7 @@ impl<'t> CardLayout<'t> {
         arranged: Arrangement,
     ) -> CardLayout<'t> {
         let block = tree.get(id);
-        let clusters = Clusters::new(block);
+        let clusters = Clusters::new(tree, block);
         let subgraphs = clusters
             .top
             .iter()
@@ -268,7 +268,6 @@ impl<'t> CardLayout<'t> {
             .collect()
     }
 
-    /// Whether stacking would change the block: some line runs from one inline
     /// The block's cards no line touches, in the board's order, with their
     /// sizes, by the cluster that holds them.
     pub(crate) fn loose_cards(&self) -> Vec<Vec<Loose>> {

@@ -574,11 +574,13 @@ fn weigher_of<'w>(
 /// Every line with the steps it need not take taken out.
 pub(crate) fn unstepped<'w>(lines: &'w [Drawn<'w>], around: &Surroundings<'w>) -> Vec<Vec<Point>> {
     let mut routes: Vec<Vec<Point>> = lines.iter().map(|line| corners(line.points)).collect();
+    let mut weigher = weigher_of(lines, &routes, around);
     for _ in 0..PASSES {
         let mut slides = 0;
         for line in 0..routes.len() {
-            while let Some(moved) = best_slide(&routes, line, &weigher_of(lines, &routes, around)) {
+            while let Some(moved) = best_slide(&routes, line, &weigher) {
                 for (one, next) in moved {
+                    weigher.runs[one] = spans_of(&next);
                     routes[one] = next;
                 }
                 slides += 1;

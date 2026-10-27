@@ -537,7 +537,11 @@ impl<'a> Assembly<'a> {
     /// Every container's title row and the band across its top it stands in, in the drawing.
     fn titles(&self) -> Vec<Title> {
         let band = |title: Rect, at: Rect| Title {
-            bx: title,
+            bx: Rect {
+                x: at.x,
+                width: at.width,
+                ..title
+            },
             band: Rect {
                 height: title.y + title.height - at.y,
                 ..at

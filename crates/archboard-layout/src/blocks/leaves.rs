@@ -153,13 +153,18 @@ pub(crate) fn pinned_leaf(
     let at = inner.boxes[held.port.as_str()];
     let centre = centres[child.id.as_str()];
     let x = centre.x - inner.width / 2.0 + at.x + at.width / 2.0;
-    let y = centre.y - inner.height / 2.0;
+    let top = if child.kind == Kind::Frame && child.ports.get(&held.port) == Some(&Side::Top) {
+        at.y + at.height / 2.0
+    } else {
+        0.0
+    };
+    let y = centre.y - inner.height / 2.0 + top;
     PlacedNode {
         id: pin.to_owned(),
         x: x - PORT / 2.0,
         y,
         width: PORT,
-        height: inner.height,
+        height: inner.height - top,
         children: None,
         frame: None,
     }

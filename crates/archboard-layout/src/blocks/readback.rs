@@ -10,7 +10,7 @@ use crate::placed::{PlacedNode, PlacedRegion};
 use crate::track::graphviz::{Holds, Join, Output, Room, Wrap, align_columns, numbers};
 use crate::track::scene::Map;
 
-use super::clusters::{Clusters, NODE_GAP, inset_of, title_of};
+use super::clusters::{Clusters, NODE_GAP, title_of};
 use super::laid::Size;
 use super::lone::{Card, Head, title_row};
 use super::tree::{Cluster, ClusterKind};
@@ -40,7 +40,7 @@ impl Clusters<'_> {
         let Some(around) = self.holding(name) else {
             return Some((0.0, width));
         };
-        let inset = inset_of(&self.block.clusters[around]);
+        let inset = self.graphs[self.index[around]].margin;
         let bounds = boxes[around];
         Some((bounds.x + inset, bounds.x + bounds.width - inset))
     }

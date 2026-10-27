@@ -40,6 +40,8 @@ pub(crate) struct Item {
     pub inset: Option<f64>,
     /// Reserved caption room at the start of its top face.
     pub top_inset: f64,
+    /// How far below the item's top its visible card face starts.
+    pub face_top: f64,
 }
 
 impl Item {
@@ -50,6 +52,7 @@ impl Item {
             band,
             inset: None,
             top_inset: 0.0,
+            face_top: 0.0,
         }
     }
 }
@@ -129,7 +132,6 @@ pub(crate) struct Heading {
     pub band: usize,
     pub left: f64,
     pub end: f64,
-    pub walls: (f64, f64),
 }
 
 /// Each frame and region a band passes through, by id, with its walls.
@@ -191,6 +193,7 @@ fn title_row(node: &PlacedNode) -> Option<(Item, f64, Vec<TitleStep>, f64)> {
         },
         NO_BAND,
     );
+    item.face_top = frame.above + crate::constants::HEADER_SLAB_INSET;
     if inset > 0.0 {
         item.inset = Some(inset);
     }
@@ -390,16 +393,15 @@ impl Placement {
         self.cards.get(id).or_else(|| self.titles.get(id)).copied()
     }
 
-    /// Every title row's and caption's painted words.
+    /// Every parent header face and region caption.
     pub(crate) fn headings(&self) -> Vec<Heading> {
         let titles = self.titles.iter().map(|(id, &item)| {
             let frame = &self.frames[id];
             let row = self.item(item);
             Heading {
                 band: row.band,
-                left: row.bx.x,
-                end: row.bx.x + self.words[&item],
-                walls: (frame.x, frame.x + frame.width),
+                left: frame.x,
+                end: frame.x + frame.width,
             }
         });
         let captions = self.regions.iter().map(|region| {
@@ -408,7 +410,6 @@ impl Placement {
                 band: caption.band,
                 left: caption.bx.x,
                 end: caption.bx.x + caption.bx.width,
-                walls: (region.x, region.x + region.width),
             }
         });
         titles.chain(captions).collect()

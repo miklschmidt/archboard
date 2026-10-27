@@ -179,7 +179,7 @@ fn every_card_stands_at_its_measured_size_and_its_line_runs_from_card_to_card() 
         let points = placed["edges"][0]["points"].as_array().unwrap();
         assert!(
             on_edge(&points[0], one) && on_edge(&points[points.len() - 1], other),
-            "{nesting}"
+            "{nesting}: {points:?}, source {one}, target {other}"
         );
     }
 }

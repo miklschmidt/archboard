@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T17:03:00Z'
-updated_date: '2026-10-26T21:14:00Z'
+updated_date: '2026-10-27T01:14:00Z'
 labels:
   - renderer
   - layout
@@ -46,4 +46,8 @@ Correction: the retained Live panes segment runs two units beside the panes regi
 The native probes remove all ambiguous trunks from the four council cases. The broader check exposes the same defect on large Blocks drawings. Three causes are fixed in the candidate: port keys lose card identity, gap sizing counts coincident routes as one position, and score-based settling can prefer an overlapping route. Another probe finds compressed face ports on large blocks. The caption checker catches painted backgrounds crossing routes even when the caption words are clear. The new endpoint checker finds an Archboard arrow 20 units beyond a fitted frame. Retaining terminal points during frame fitting repairs that replay. None of these probes constitutes a council verdict.
 
 The broader routing probe now fixes a second cause: the X pass sees vertical runs that only touch, then the Y pass moves their turn and creates a 48-unit overlap at 0.6-unit separation. A reduced two-route regression reproduces this. Reserve their lanes at the touch when unrelated routes approach within one lane at their current or desired positions. Both complete Blocks drawings of Board viewer and Archboard server routes now contain no ambiguous trunk in /tmp/548-08/post-553/touch-wanted-wide. All 17 router tests pass. Extra passes are rejected: they disturb Viewer and a convergence probe costs 75.6 s in the unoptimized replay. The full-face port probe is also rejected because it increases Viewer from 12 ambiguous pairs to 15 and adds a wall overlap. Retain reachable port spans and the face capacity bound. The wider diagnostic still reports compressed Blocks lanes. Council acceptance and the complete corpus remain pending.
+
+Milestone de398584a removes the unrelated shared trunks but does not yet satisfy the full header criterion. Manual inspection of /tmp/548-08/post-553/after-6-council-fixtures/2.png finds argv crossing the blank face of Command routing. A new checker reads the complete painted header rectangle, and a stricter target checker rejects an arrow on a parent frame away from that header card. All four council fixtures are red in /tmp/548-08/post-553/header-faces-red.log. The next probe gives descendant traffic side entries below a frame header and gives parent targets the visible header top. It also keeps full inline header faces clear during routing and simplification. Council acceptance remains pending.
+
+The full header-face probe now clears all 23 native whole Track boards and all 23 Blocks boards for the strict integrity criteria. Blocks reports two 15.1-unit near-lane diagnostics on persistence under the stricter Track-only spacing rule. Direct parent arrows meet the header card; descendant traffic enters below the header through side ports. Graph-derived ancestor and left-face space replaces illegal fallback lanes. The two-container Rust endpoint contract exposed an upward side-route endpoint bug; selecting its wall end by route direction restores that contract. Full validation and corpus rendering are in progress.
 <!-- SECTION:NOTES:END -->
