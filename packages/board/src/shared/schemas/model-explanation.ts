@@ -18,6 +18,10 @@ const ExplanationRequestSchema = z.strictObject({
 	action: z.enum(["explain-selection", "explain-relationship", "trace-flow", "explain-proposal"]),
 	model: SemanticIdSchema,
 	expectedRevision: z.string().regex(/^[a-f0-9]{64}$/u),
+	expectedSourceRevision: z
+		.string()
+		.regex(/^[a-f0-9]{64}$/u)
+		.optional(),
 	subjects: z.array(QualifiedSubjectIdSchema),
 	reading: z.strictObject({
 		scope: QualifiedSubjectIdSchema.optional(),

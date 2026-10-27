@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-27T02:42:00Z'
+updated_date: '2026-10-27T02:53:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -92,4 +92,6 @@ Parent merged the signed .13 integration and preserved every authored history. T
 The combined runtime suite passes 38 tests and 215 assertions across 16 files. Types, lint, and both diff checks pass. Parent checkpoints the resolved merge before rebasing onto origin/main after PR23. The orphan Git-owner fix must be present in both active worktrees before any tests resume. No frontend acceptance or proposal adoption is claimed.
 
 The first browser slice passes one visible workflow with 13 assertions. It covers complete beat readings, architecture/sequence/flowchart transitions, missing targets, a pinned revision during external edits, explicit restart, and restored selection on exit. A separate immutable query owns each capture. React Activity preserves the ordinary reader, while the picker unmounts to close its portal. The existing ModelDiagram, camera, and SemanticPresentation own the picture and captions. Types and lint pass. Parent inspected initial and final beat screenshots and removed temporary capture calls. Recording, replay, exact/shared/proposal browser evidence, and canonical pane reports remain unfinished. No criteria are checked or proposals adopted.
+
+Public capture evidence now covers a narrative whose exact target predates its definition. Playback carries its source selector through the existing reading-selection schema. The shared explanation capture can require both source and target revisions. A narrative-only edit now refuses an old capture even when the target checkpoint remains unchanged. The new RED/GREEN case passes seven assertions, and types and lint pass. These optional fields preserve existing artifact decoding. The voice and recording adapters still need to consume this contract.
 <!-- SECTION:NOTES:END -->

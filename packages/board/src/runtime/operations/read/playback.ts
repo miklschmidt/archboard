@@ -166,14 +166,14 @@ function changedSource(vault: string, source: ArchitectureModel) {
  * @param source The captured catalogue.
  * @param target The resolved target.
  * @param walk The selected narrative.
- * @param shared Whether retained playback is required.
+ * @param selection The source addressing and retained-playback requirement.
  * @returns The complete playback or explicit refusal.
  */
 function attachPlayback(
 	source: ArchitectureModel,
 	target: ArchitectureModel,
 	walk: Walk,
-	shared: Selection["shared"],
+	selection: Selection,
 ): ArchitectureModelRead {
 	if (target.manifest.id !== source.manifest.id)
 		return failure("TARGET_CHANGED", [
@@ -184,7 +184,7 @@ function attachPlayback(
 				recovery: "Select a checkpoint from this model.",
 			},
 		]);
-	if (shared && target.checkpoint === undefined)
+	if (selection.shared && target.checkpoint === undefined)
 		return failure("CHECKPOINT_REQUIRED", [
 			{
 				code: "CHECKPOINT_REQUIRED",
@@ -206,10 +206,26 @@ function attachPlayback(
 		playback: {
 			walkthrough: walk,
 			sourceRevision: source.revision,
+			source: capturedSource(source, walk, selection),
 			revision: target.revision,
 			...(target.checkpoint === undefined ? {} : { checkpoint: target.checkpoint.id }),
 			beats,
 		},
+	};
+}
+/**
+ * Keep the narrative address distinct from a target that can predate its definition.
+ * @param model The narrative source.
+ * @param walk The resolved narrative identity.
+ * @param selection The deliberate source request.
+ * @returns Addressing metadata for an exact subsequent capture.
+ */
+function capturedSource(model: ArchitectureModel, walk: Walk, selection: Selection) {
+	return {
+		walkthrough: walk.id,
+		...(selection.state === undefined ? {} : { state: model.selectedState?.id ?? selection.state }),
+		...(selection.checkpoint === undefined ? {} : { checkpoint: selection.checkpoint }),
+		...(selection.shared === undefined ? {} : { shared: selection.shared }),
 	};
 }
 /**
@@ -230,7 +246,7 @@ async function resolvePlayback(
 	if ("success" in walk) return walk;
 	const target = await targetReading(vault, source, walk, selection);
 	if (!target.success) return target;
-	return changedSource(vault, source) ?? attachPlayback(source, target, walk, selection.shared);
+	return changedSource(vault, source) ?? attachPlayback(source, target, walk, selection);
 }
 /**
  * Prepare an ordinary state selection before narrative resolution.

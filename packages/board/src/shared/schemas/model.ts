@@ -135,6 +135,7 @@ const ArchitectureModelSchema = z
 			.strictObject({
 				walkthrough: WalkthroughSchema.extend({ file: z.string() }),
 				sourceRevision: ModelRevisionSchema,
+				source: ReadingSelectionSchema.optional(),
 				revision: ModelRevisionSchema,
 				checkpoint: GitObjectIdSchema.optional(),
 				beats: z.array(

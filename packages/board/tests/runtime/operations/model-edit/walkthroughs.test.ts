@@ -296,6 +296,31 @@ test("exact narrative targets retain their history and unavailable targets never
 	if (!read.success) throw new Error(JSON.stringify(read));
 	const walk = read.walkthroughs[0]!;
 	const { file, ...definition } = walk;
+	if (!playback.success || !playback.playback) throw new Error(JSON.stringify(playback));
+	expect(playback.playback.source).toEqual({ walkthrough: walk.id, shared: true });
+	const explanation = {
+		actionId: "narrative-capture",
+		action: "trace-flow" as const,
+		model: playback.manifest.id,
+		expectedRevision: playback.revision.digest,
+		expectedSourceRevision: playback.playback.sourceRevision.digest,
+		subjects: [],
+		reading: { focus: [], relationshipKinds: [], groups: [], grammar: "architecture" as const },
+	};
+	const captured = await readArchitectureModel(vault, undefined, undefined, {
+		...playback.playback.source,
+		explain: explanation,
+	});
+	expect(captured.success && captured.playback?.walkthrough.id).toBe(walk.id);
+	writeFileSync(
+		join(vault, file),
+		JSON.stringify({ ...definition, summary: "Changed narrative source." }),
+	);
+	const changedNarrative = await readArchitectureModel(vault, undefined, undefined, {
+		...playback.playback.source,
+		explain: explanation,
+	});
+	expect(!changedNarrative.success && changedNarrative.code).toBe("MODEL_CHANGED");
 	writeFileSync(
 		join(vault, file),
 		JSON.stringify({ ...definition, target: { checkpoint: "a".repeat(40) } }),
