@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T16:24:00Z'
-updated_date: '2026-10-27T03:31:00Z'
+updated_date: '2026-10-27T03:46:00Z'
 labels:
   - renderer
   - performance
@@ -79,4 +79,8 @@ Rejected port-plan milestone 8. Its 8d44efdd000f0de5 core meets the timing targe
 Delivery restores the passing milestone 7 layout (code 66dcc7dd4, core cba5643b6e09f19f). It adds the seven-card folded-caption regression on both engines. Renderer tests: 650 pass, one platform skip, zero fail. Complete after-7-delivery corpus: 2452 SVGs and 76 whole-board drawings, byte-identical to after-7-final. Parent comparison: 744 changed drawings on 18 boards, 72 whole-board changes. Both sides are SVGs in /tmp/548-08/post-553/changed-delivery-svg, with manifest.json. The port-plan probe and wasm-opt -O3 probe are dropped. The latter shrinks bytes by 17.8% but establishes no latency gain (viewer cold/growth 549/389 ms). The proposals again describe port settling. Renderer layout also states the measured packing decision instead of trying routed alternatives. Council verdict is still pending, and the task remains In Progress.
 
 The fresh normal gate stops in test:modules at the unchanged real rust-analyzer readiness test (4937 pass, one skip, one failure). Its isolated retry passes all five cases. No timeout or assertion changes. The separate architecture code check still reports exactly the same 41 finding identities as header-7-code-check.json, with no additions or removals. Both architecture proposals compare successfully. Remaining system, repository, and serial-browser stages run separately.
+
+Remaining stages pass: 285 system tests, 161 repository tests, and all 19 serial browser files. A final process audit finds no Git owner worker. The worktree server is stopped. A complete gate retry runs with the other work stopped to distinguish the first rust-analyzer timing failure from the final delivery state.
+
+The final complete bun run check retry exits zero: 20/20 tasks successful, 4938 module tests pass with one platform skip, 285 system tests pass, 161 repository tests pass, and all 19 serial browser files pass. The real rust-analyzer case passes in this complete retry. Log: /tmp/548-08/post-553/delivery-gate-retry.log. The initial readiness failure remains recorded. Retain milestone 7 and its matching core cba5643b6e09f19f. TASK-548.08 stays In Progress for the parent council, with the 523 ms strict cold viewer result still a measured limit.
 <!-- SECTION:NOTES:END -->

@@ -19,6 +19,23 @@ The owner targets first renders and size-changing edits below 500 ms.
 The current slow boards are Board viewer, Board persistence, and Archboard server routes.
 The grading council of TASK-548.09 decides whether changed drawings can land.
 
+## Commit and corpus map
+
+| Checkpoint                      | Commits on this branch                                      | Corpus                                         | Standing                                                  |
+| ------------------------------- | ----------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------- |
+| Unsupported wrap filter         | `f2b679f63`                                                 | `/tmp/548-08/after-1`                          | Later removed with the speculative solves.                |
+| Unconditional packing prototype | No retained code commit                                     | `/tmp/548-08/after-2`                          | Dropped for routing defects.                              |
+| Packing with a size cutoff      | `42c7f6c1a`, `a984ae2e1`, `dafbb76da`                       | `/tmp/548-08/after-3` and `after-3-full-vault` | Council rejects hidden Browser application parent frames. |
+| Packed parent frames            | `adc7bc3de`                                                 | `/tmp/548-08/round-2/after-4`                  | Retained, then extended by the header repair.             |
+| Stacking eligibility            | `f0674f18d`                                                 | `/tmp/548-08/post-553/after-5`                 | Retained.                                                 |
+| One solve and semantic lanes    | `2cc0ae9f0`, `de398584a`                                    | `/tmp/548-08/post-553/after-6`                 | Header defects require the next checkpoint.               |
+| Visible header cards            | `66dcc7dd4`, `68fd895c6`, `b5a4b498a`, `d461d37e9`          | `/tmp/548-08/post-553/after-7-delivery`        | Delivery candidate, council pending.                      |
+| First local ports               | Proposal `e455b15c3`, rejection and restoration `d461d37e9` | `/tmp/548-08/post-553/after-8`                 | No rejected code retained.                                |
+
+The early runs use the sources and tools available when those runs occur.
+The post-TASK-553 parent baseline is `/tmp/548-08/post-553/base` at `f06fa5317`.
+The detailed sections distinguish quiet measurements from historical runs under orphan load.
+
 ## Measurement reset after TASK-553
 
 TASK-553 fixes a Git owner process that survives its caller and spins at full CPU.
@@ -943,7 +960,7 @@ Reusing existing route spans for shared-trunk comparisons moves it from 2840 to 
 The latter probe changes none of the three target SVGs.
 All four probes are dropped, and their source and logs remain under `/tmp/548-08/post-553`.
 These debug totals screen the ideas and do not establish release performance gains.
-The retained candidate removes the repeated routing instead of making its pair scans slightly cheaper.
+The port-plan probe instead removes repeated routing.
 
 ### Quiet performance pair for the rejected milestone 8
 
@@ -1018,8 +1035,8 @@ The final renderer run passes 650 tests with one platform skip and no failures.
 The two new tests cover the reduced folded-caption case without a vault dependency or a time limit.
 
 The rejected port-plan corpus changes 752 drawings from the parent.
-Its instruction log reports 7742735101 on the core PMU against 152711702048 for the parent.
-The candidate's core PMU runs for 99.93% of that counter interval, so the initial atom sample is excluded.
+Its instruction log reports 7742735101 in the `cpu_core/instructions/u` field against 152711702048 for the parent.
+That field covers 99.93% of the interval and excludes the startup sample from another processor type.
 These figures describe a rejected layout and do not establish an acceptable performance result.
 All earlier render directories and failed probes remain available.
 
@@ -1034,3 +1051,14 @@ That test returns `unasked` while the real rust-analyzer becomes ready, and its 
 The initial module result is 4937 passes, one skip, and one failure.
 The branch changes no timeout or assertion to hide that failure.
 The remaining gate stages run separately after the focused retry.
+
+The remaining stages pass 285 system tests, 161 repository tests, and all 19 serial browser files.
+The original module failure remains recorded because the first complete command does not exit successfully.
+A final audit finds no Git owner worker, and the worktree server is stopped.
+
+The final complete `bun run check` retry exits zero with 20 of 20 tasks successful.
+Its module lane passes 4938 tests with one platform skip.
+It also passes all 285 system tests, 161 repository tests, and 19 serial browser files.
+The real Rust server case passes in that complete retry.
+The full log is `/tmp/548-08/post-553/delivery-gate-retry.log`.
+This supersedes the incomplete-gate limitation for delivery without removing the earlier failure record.
