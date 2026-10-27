@@ -168,7 +168,7 @@ impl BlockTree {
         for &block in &projection.out {
             let kind = trunk_kind(edge);
             let along = format!("{}|{kind}", edge.target());
-            let side = self.exit_of(block, "out", face, &along, Some(label_at));
+            let side = self.exit_of(block, "out", face, &along);
             let side = if side == Side::Top
                 && block == label_at
                 && from == header_of(self.get(block))
@@ -272,7 +272,7 @@ impl BlockTree {
         for &block in &projection.into {
             let kind = trunk_kind(edge);
             let along = format!("{}|{kind}", edge.source());
-            let side = self.exit_of(block, "in", face, &along, None);
+            let side = self.exit_of(block, "in", face, &along);
             let target = self.entry_subject(block, edge, side, &to);
             let port = self.port(block, &format!("in|{}|{target}|{kind}", side.name()), side);
             let (tail, head) = if side == Side::Bottom {
@@ -347,24 +347,13 @@ impl BlockTree {
     }
 
     /// The edge a port crosses: the wall an earlier layout moved it to, or its
-    /// face; where it leaves the block with its label, its face, unless every
-    /// block faces its walls.
-    fn exit_of(
-        &self,
-        block: BlockId,
-        way: &str,
-        face: Side,
-        along: &str,
-        label_at: Option<BlockId>,
-    ) -> Side {
-        let side = if Some(block) == label_at {
-            face
-        } else {
-            self.exits
-                .get(&exit_key(&self.get(block).id, way, face, along))
-                .copied()
-                .unwrap_or(face)
-        };
+    /// face. A labelled exit can use the same facing wall as an unlabelled one.
+    fn exit_of(&self, block: BlockId, way: &str, face: Side, along: &str) -> Side {
+        let side = self
+            .exits
+            .get(&exit_key(&self.get(block).id, way, face, along))
+            .copied()
+            .unwrap_or(face);
         let own = self.get(block);
         if side == Side::Top
             && own.kind == Kind::Frame
