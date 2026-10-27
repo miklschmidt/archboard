@@ -12,15 +12,14 @@ The primary users are software and cloud architects who work with a coding
 agent (Claude Code or Codex). They find archboard on GitHub and run it from a
 clone on Linux or macOS. They read it in a desktop browser.
 
-The work has two actors. The agent reads the code and authors the boards
-through the CLI. The architect (the user in `CONTEXT.md`) reads the boards,
-picks things out, asks, compares and presents. A typical session is long: an
-architect and an agent work on one board together for hours.
+The agent reads code and authors the canonical model through the CLI.
+The architect explores modules, selects subjects, asks questions, compares proposals, and presents walkthroughs.
+A session can continue for hours across several readings of the same model.
 
 The people who receive what the architect makes are a second audience. A
 pull-request reviewer watches a narrated walkthrough video. A newcomer plays
 back a tour of a system. A reader of a design doc or an ADR sees a rendered
-board.
+diagram.
 
 ## Product Purpose
 
@@ -28,8 +27,8 @@ Archboard is an architecture planning tool. The coding agent states what a
 system is: its parts, what contains what, how the parts talk, and in what
 order. The renderer draws every line.
 
-The main job is to understand a system. The architect reads a board and
-drills from the system down to a service and to the file. They open the code
+The main job is to understand a system. The architect opens root modules and
+recursively explores their immediate parts. They open the code
 and ask the agent about a part. Understanding comes first because the second
 job depends on it.
 
@@ -39,98 +38,90 @@ that ships is adopted with the reason for it. The state it replaces stays as
 history.
 
 Success means this: an architect understands a system that they did not draw,
-from its boards alone. Then they plan a change against it and trust that the
+from its model alone. Then they plan a change against it and trust that the
 picture says what the code is.
 
 ## Positioning
 
 Nobody places a box. The agent states meaning and the renderer draws it, so a
-renderer improvement redraws every board at once, history included (ADR 0023).
+renderer improvement redraws every reading, including retained history.
 
-Archboard keeps one model of each system and changes it over time. One file
-per board holds every variant: current, draft, historical and shelved. A
-proposal is compared with what exists part by part, and each adoption keeps its
-date and reason. The agent that changes the code updates the map in the same
-task. Claims and version checks let several agents write safely. The same
-board is narrated by a voice and recorded to video.
+Each vault holds one canonical model.
+A module has one definition and owns its outgoing relationships.
+Independent flows describe ordered behavior across modules.
+Active proposals store changes against retained baselines.
+The independent Git archive preserves completed states and decisions without copying them into current files.
+
+An agent updates architecture in the same task as the code that changes its meaning.
+Subject claims and complete revision guards protect concurrent work.
+Explicit adoption records implemented architecture.
+A source merge or approval never adopts a proposal.
 
 ## Operating Context
 
-- The agent writes boards with `archboard semantic …` commands in a terminal.
-  The architect reads them in browser panes that the Archboard server serves on
-  `127.0.0.1`, with no authentication.
-- Boards live in a vault, a directory of `.semantic.json` files. The vault is
-  usually committed with the code, so a board change is reviewed in the same
-  pull request as the code change. A vault is the `.archboard/vault` directory
-  of one directory. A command finds its vault from the directory it runs in, as
-  git finds a repository: at the checkout root inside a git checkout, or in the
-  nearest enclosing directory outside any checkout. `-C <dir>` starts the
-  search elsewhere, and every answer names the vault that it used. No
-  environment variable names a vault. The server serves only vaults in that
-  layout. Setting a repository up makes the directory and adds nothing to
-  its `CLAUDE.md` or `AGENTS.md`. The first command in a checkout that the
-  machine does not know registers it, and the answer says so.
-- The shell has a navigator of boards, up to two panes side by side, a sidebar
-  for each pane, and an agent dock at the foot of the navigator. Talk and Narrate start the
-  voice. The dock shows the conversation of the checkout that the person last
-  activated: by focusing a pane, opening a board or drilling down. While the tab
-  works in two or more checkouts, the dock lists their workhorses, says which
-  one runs or waits for the person, and a pick shows that conversation. Nothing
-  an agent does to a pane changes the conversation shown.
-- One Archboard server serves every vault on the machine, and it starts without
-  one. The navigator lists
-  every repository that has a vault, each with the boards of its chosen
-  checkout. A repository is named by its identity, and a repository on GitHub
-  by its owner and name beside GitHub's mark. An untracked vault is named by its
-  registry name. The menu on a repository's row chooses its checkout for the
-  whole machine. An agent's `browser show` from another checkout of it chooses
-  that checkout, and the agent says so. The two panes of one tab can show boards of two repositories,
-  and the address names the repository of each pane beside its board.
-- Code bindings open a part's file in VS Code, Cursor, Zed or on GitHub.
-- Boards also leave the app: as SVG or PNG for docs, ADRs and pull requests,
-  and as a narrated MP4 attached to a pull request.
-- Archboard maps itself. Its own architecture is in `.archboard/vault`, and
-  every task changes it through a proposal. Inside an archboard checkout,
-  `archboard` runs that checkout's source. The main checkout's server keeps
-  port 3000. A worktree of archboard gets a server of its own on a port from
-  10000 to 19999, so a change to the server is tried without the server
-  that people use every day.
+- The agent authors through `archboard model` commands.
+  The architect uses browser panes served on `127.0.0.1` without application authentication.
+  Rendering, repository access, and agent execution remain local or on the client.
+- The vault is a checkout's `.archboard/vault` directory.
+  A manifest identifies the model.
+  Module, flow, active proposal, and walkthrough files contain authored meaning.
+  The combined graph and readings are derived.
+  Current architecture files normally share a source pull request with their implementing code.
+- The CLI finds the vault from its working directory or `-C <dir>`.
+  Every server request names its vault explicitly.
+  The server starts without one and can serve multiple repositories.
+  The first command in an unknown checkout registers it and reports that registration.
+  [INSTALL.md](INSTALL.md) defines setup and discovery.
+- New vaults start as canonical planning models without implemented current architecture.
+  Unmigrated vaults receive `LEGACY_AUTHORITY` and an explicit migration route.
+  Mapping, preview, and owner-authorized installation preserve exact originals before cutover.
+  Legacy decoding supports migration and exact retained history.
+- The shell provides a repository navigator, up to two panes, and a conversation dock.
+  Repository rows select the chosen checkout for that repository.
+  Each pane can show another scope, state, or repository.
+  Human activation selects the shown workhorse conversation.
+  Agent navigation never changes that conversation.
+- Code bindings open local source or a repository's GitHub location.
+  SVG, PNG, and narrated video carry architecture outside the application.
+  Shared history requires explicit archive publication, independently of a source push.
+- Archboard describes itself in `.archboard/vault`.
+  Architecture changes use proposals through the same public interface that consumers use.
+  Each linked Archboard worktree uses its own source and server port.
+  The main checkout keeps port 3000.
 
 ## Capabilities and Constraints
 
-`CONTEXT.md` defines the domain terms (board, pane, node, variant, proposal,
-adoption, walkthrough and the rest). Product copy uses those terms.
+[CONTEXT.md](CONTEXT.md) defines the terms that product copy uses.
+A reading is a selection of architecture to draw.
+It contains no duplicate definitions.
 
-Shipped capabilities:
+Shipped capabilities include:
 
-- architecture boards, and sequence views over the same parts
-- levels and drill-down from board to board, also into a board of another
-  repository, with a breadcrumb that leads back
-- variants with a lifecycle, and comparison of any two of them
-- walkthroughs, narration by the Codex voice, and recording to video
-- an agent dock and conversation that read the board and the selection, with
-  one voice coordinator for the app and one workhorse for each checkout, which
-  works in that checkout and follows its repository's agent instructions
-- claims, the doing of each write, and the control that takes a board back
-- every repository's boards in one browser app, and a choice of checkout for
-  each repository
-- moving a board, with its whole history, to another repository's vault
-- groups, code bindings, illustrated traffic, and SVG and PNG renders
+- Recursive module exploration with breadcrumbs and browser history.
+- Selection, focus, visible filters, and inspection of aggregated connections.
+- Architecture, sequence, and flowchart readings, with explicit authored flows for behavior.
+- Compact proposals, comparison, reconciliation, adoption, shelving, and audited historical correction.
+- Exact checkpoints, explicit archive publication and fetch, and portable model export and import.
+- Dynamic walkthroughs, local Codex narration, and retained recording replay.
+- Local explanation actions that preserve the reading captured when the request starts.
+- Subject claims, writer intent, human take-back, and durable recovery.
+- Code bindings, source evidence, groups, traffic, and reproducible SVG and PNG exports.
 
-Constraints that every surface keeps:
+Every surface keeps these constraints:
 
-- Agents author, users read. The browser never edits what a board says. A
-  user has two controls over a board: take back an agent's claim, and move the
-  board to another repository. Send, Stop and Talk drive the agent and never
-  edit a board.
-- No layout by hand. If the meaning is right and the picture is wrong, the
-  renderer has a bug.
-- Archboard is a desktop app for use near full screen at 1920×1080. Screens
-  smaller than 1080p are out of scope, and it has no phone or narrow layout.
-- Codex runs the agent, the voice, narration and recording, through a
-  private app-server with its own sign-in. Any agent that runs a CLI can author
-  boards.
-- Archboard is young and its interfaces change often. It is not on npm.
+- Agents author architecture. The browser reads it and owns presentation.
+  A human can revoke an agent's claim.
+  Cross-model ownership transfer is unavailable.
+- The renderer owns geometry.
+  Correct saved meaning with incorrect placement requires a renderer repair.
+- The shell targets desktop use at 1920×1080.
+  Phone and narrow layouts remain outside scope.
+- Codex supplies conversation, voice, narration, and recording through the private app-server sign-in.
+  Any agent that runs a CLI can author architecture.
+- Git identity and configured signing remain in force for archive operations.
+  Missing architecture or source evidence receives explicit recovery guidance.
+- Archboard runs from a clone and is not published on npm.
+  Hosted storage and account services remain deferred.
 
 ## Brand Commitments
 
@@ -146,15 +137,15 @@ Archboard server. Nothing here was dragged into place."
 
 ## Evidence on Hand
 
-- `docs/readme/`: the README's SVGs drawn by `archboard semantic render`, its
-  index thumbnails, and its banner, which sets the logo beside a proposal that
-  `archboard semantic render` drew.
+- `docs/readme/`: checked-in diagrams, index thumbnails, and the banner.
+  New exports use `archboard model render` and canonical reading selectors.
 - The README's clips, filmed from a running Archboard server, and three
   narrated videos, attached on GitHub and linked from the README.
   `bun run readme:assets` makes all of them (`docs/agents/readme-assets.md`).
 - `examples/web-shop`: the example vault with history, proposals, drill-down
   and walkthroughs.
-- `.archboard/vault`: Archboard's own 15 boards, with real adoption history.
+- `.archboard/vault`: Archboard's architecture inputs.
+  Exact legacy originals remain authoritative until explicit migration.
 - `docs/design/assets/`: the shell reference image and rendered captures of the
   shell.
 - `docs/assets/`: the social card, cut from the banner.
@@ -173,10 +164,10 @@ rates. Future work must not invent any of these.
 2. Meaning, not placement. Agents state meaning and the renderer draws it. A
    wrong picture is fixed in the meaning or in the renderer.
 3. Only real state. Every number, mark, state and preview shows what the
-   product actually has. A board for something nobody built says `not built`,
-   and history stays what was true then.
-4. Agents in plain sight. Where a board is read, the reader sees which agent
-   holds it, why, and what it is doing, with one control to take it back.
+   product actually has. Unbuilt architecture stays proposed,
+   and retained history states its actual coverage.
+4. Agents in plain sight. Claims show the agent, its purpose, and affected subjects.
+   A human can take back a claim.
 
 ## Accessibility & Inclusion
 
@@ -186,7 +177,7 @@ WCAG 2.2 AA is the required standard for every surface, except for contrast:
 - the reduced-motion preference honored by every animation, including traffic
   and camera glides
 - an accessible name and state for every mark that carries meaning, such as a
-  variant's lifecycle or a board's level
+  proposal's lifecycle or a reading's active filters
 
 The contrast of text and of marks is judged with APCA (the Accessible
 Perceptual Contrast Algorithm), not with the WCAG 2 contrast ratio. The owner

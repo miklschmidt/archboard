@@ -4,6 +4,10 @@ status: accepted
 
 # A renamed board keeps answering to its former names
 
+Canonical stable identities and explicit migration aliases supersede live board rename operations below. Exact original addresses retain their original historical coverage.
+[ADR 0062](0062-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
+
 Extends [ADR 0010](0010-board-names-are-case-insensitive.md) and
 [ADR 0023](0023-semantic-boards-own-meaning-renderers-own-presentation.md).
 Tracked as TASK-281.

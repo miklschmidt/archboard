@@ -24,7 +24,7 @@ A module can name a parent in the same model.
 Parents form a containment forest without fixed levels or a depth limit.
 Containment states ownership, not a relationship between independent descriptions.
 
-A qualified identity includes its model namespace and local identity.
+A qualified identity includes its stable origin namespace and short local ID.
 Imported identities can also retain an original board namespace.
 Names and former names support discovery when they resolve uniquely.
 They never establish shared identity.
@@ -172,6 +172,7 @@ Installation requires explicit authorization and the exact expected source and p
 The existing migration journal retains the original history and supports recovery.
 The runtime never infers full-vault identity mappings from names or bindings.
 
-See [ADR 0060](docs/adr/0060-canonical-model-reads-keep-legacy-authority-explicit.md),
+See [ADR 0062](docs/adr/0062-one-live-canonical-model-and-consumer-path.md) for the transition pending parent acceptance,
+[ADR 0060](docs/adr/0060-canonical-model-reads-keep-legacy-authority-explicit.md),
 [ADR 0061](docs/adr/0061-active-proposals-store-identity-changes.md), and
 [the canonical consumer reference](skills/archboard/references/canonical-models.md).

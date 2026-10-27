@@ -4,6 +4,10 @@ status: accepted
 
 # A variant names the repository documents it draws
 
+Canonical state metadata supersedes variant-owned document lists below. Proposal documents and exact retained source references preserve the evidence contract.
+[ADR 0062](0062-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
+
 Decided for TASK-498 on 2026-10-18.
 
 Amended by TASK-526.01 (2026-10-24): the code check that reads the
