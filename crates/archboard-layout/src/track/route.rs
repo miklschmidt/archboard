@@ -1,13 +1,10 @@
-//! The track router (TASK-349): every relationship drawn on tracks it owns.
+//! The Track router assigns each relationship its own tracks (TASK-349).
 //!
-//! A block's placement put cards, label boxes and frame title rows on ranks,
-//! and said where each relationship passes the ranks between its ends. Here
-//! the ranks become bands and the space between two bands a channel. A
-//! relationship is a chain of stations (`chains.rs`); between two stations it
-//! leaves the upper one straight down, runs across on a track of the channel,
-//! and enters the lower one straight down (`channels.rs`). Each channel is
-//! made as tall as its tracks need, so lanes keep one spacing and never
-//! squeeze, and every label sits on its own line by construction.
+//! Placement groups cards, labels, and frame titles into ranked bands.
+//! A channel is the space between two bands. Relationships have stations on
+//! those bands (`chains.rs`). Each route drops from a station, crosses its
+//! channel on a track, then enters the next station (`channels.rs`).
+//! Channels grow to fit their tracks, with fixed spacing and labels on routes.
 
 use std::rc::Rc;
 
@@ -51,9 +48,7 @@ struct Routed {
     upward: bool,
 }
 
-/// The kind two lines must share to share a trunk, read off a relationship:
-/// its kind, its comparison standing, its emphasis and whether it carries
-/// traffic.
+/// The relationship kind, standing, emphasis, and traffic required to share a trunk.
 pub(crate) fn trunk_kind(edge: &crate::graph::Edge) -> String {
     [
         edge.option("archboard.relationship.kind").unwrap_or(""),
@@ -119,14 +114,19 @@ impl Track<'_> {
     }
 
     /// Turn a line that enters or leaves its block by a wall onto that wall.
-    fn turn_to_wall(&mut self, line: &SceneLine<'_>, nets: &[NetId]) {
-        if let Some(enters) = line.enters {
+    fn turn_to_wall(&mut self, line: &SceneLine<'_>, nets: &[NetId], upward: bool) {
+        let (enters, leaves) = if upward {
+            (line.leaves, line.enters)
+        } else {
+            (line.enters, line.leaves)
+        };
+        if let Some(enters) = enters {
             let x = self.wall_x(enters);
             let first = self.net_mut(nets[0]);
             first.wall = Some(End::Top);
             first.top_x = x;
         }
-        if let Some(leaves) = line.leaves {
+        if let Some(leaves) = leaves {
             let x = self.wall_x(leaves);
             let last = self.net_mut(*nets.last().expect("a net"));
             last.wall = Some(End::Bottom);
@@ -228,7 +228,7 @@ impl Track<'_> {
         let bottom = self.station(net.bottom);
         match bottom.item {
             None => self.scene.bands[bottom.band].new_top,
-            Some(item) => self.scene.moved_id(item, left).y,
+            Some(item) => self.scene.moved_id(item, left).y + self.scene.item(item).face_top,
         }
     }
 
@@ -275,6 +275,27 @@ impl Track<'_> {
                 ]);
             } else if abs(from.x - to.x) <= STRAIGHT {
                 points.extend([from, to]);
+            } else if let Some(x) = net.detour_x() {
+                points.extend([
+                    from,
+                    Point {
+                        x: from.x,
+                        y: track,
+                    },
+                    Point {
+                        x: x + left,
+                        y: track,
+                    },
+                    Point {
+                        x: x + left,
+                        y: track + LANE,
+                    },
+                    Point {
+                        x: to.x,
+                        y: track + LANE,
+                    },
+                    to,
+                ]);
             } else {
                 points.extend([
                     from,
@@ -515,7 +536,6 @@ pub(crate) fn route_scene(
         .collect();
     let all: Vec<ChainId> = chains.values().copied().collect();
     track.fit_title_rows(&all);
-    track.clear_headings(&all);
     track.straighten_lanes(&all);
     let kinds: Vec<(ChainId, Rc<str>)> = inner
         .iter()
@@ -549,7 +569,7 @@ pub(crate) fn route_scene(
     }
     for line in &inner {
         let nets = routed[&line.id].nets.clone();
-        track.turn_to_wall(line, &nets);
+        track.turn_to_wall(line, &nets, routed[&line.id].upward);
     }
     track.part_and_close(&all, &routes);
     let edges: Edges<'_> = lines

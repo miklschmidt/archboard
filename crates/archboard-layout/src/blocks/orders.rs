@@ -48,7 +48,9 @@ pub(crate) fn held_orders(settling: &Settling<'_>) -> Map<String, Vec<String>> {
         for face in [Side::Top, Side::Bottom] {
             let on_face: Vec<(&String, f64)> = ports
                 .iter()
-                .filter(|(port, _)| block.ports.get(port.as_str()) == Some(&face))
+                .filter(|(port, _)| {
+                    block.ports.get(port.as_str()) == Some(&face) && !block.header_entry(port)
+                })
                 .map(|(port, &x)| (port, x))
                 .collect();
             let swapped = inverted(&on_face, &settling.laid[block.id.as_str()]);

@@ -252,8 +252,11 @@ test("a wrapped rank stands each lowered card under one of its row above", async
 	const parentOf = new Map(content.nodes.map(({ id, parent }) => [id, parent]));
 	const box = (id: string) => drawing.atlas.nodes[id]!;
 	const top = (id: string): number => Math.round(box(id).y);
-	const rows = [...new Set(rank.map(top))].toSorted((one, other) => one - other);
-	const rowOf = (id: string): number => rows.indexOf(top(id));
+	const rowOf = (id: string): number => {
+		const siblings = rank.filter((other) => parentOf.get(other) === parentOf.get(id));
+		const rows = [...new Set(siblings.map(top))].toSorted((one, other) => one - other);
+		return rows.indexOf(top(id));
+	};
 	for (const card of rank.filter((id) => rowOf(id) > 0)) {
 		const over = rank.filter(
 			(other) =>

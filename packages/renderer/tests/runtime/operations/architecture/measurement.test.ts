@@ -178,7 +178,7 @@ test("a container draws its whole wrapped header above its members and leaves it
 	expect(runs.every((run) => run.y < child.y)).toBe(true);
 	expect(runs.some((run) => description.includes(run.text))).toBe(false);
 	expect(
-		runsOf(runs, "parent", TITLE_SIZE)
+		runsOf(runs, "parent", TITLE_SIZE + 1)
 			.map((run) => run.text)
 			.join(" "),
 	).toBe(name);

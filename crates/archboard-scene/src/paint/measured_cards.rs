@@ -12,9 +12,20 @@ use crate::paint::palette::Palette;
 use crate::paint::slab::{Lift, slab_seat, slab_shadow};
 use crate::paint::standing::{standing_palette, standing_pin, subject, warning_badge};
 use crate::paint::styles::Styles;
-use crate::paint::tray::{header_of, tray};
+use crate::paint::tray::{header_of as slab_box, tray};
 use crate::request::{NodeAppearance, Standing};
 use crate::scene::{ClipId, Role, SubjectKind};
+
+/// The same compact slab for the tray surface and its painted words.
+fn header_of(placed: &Node) -> Rect {
+    slab_box(
+        Rect {
+            width: placed.measured.width,
+            ..placed.bounds
+        },
+        placed.measured.header_height,
+    )
+}
 
 /// One measured card with its kind glyph and its standing's treatment: the
 /// card drawn as `part`, its words where the layout measured them.
@@ -48,11 +59,7 @@ pub(super) fn paint_measured_frame(
 ) -> Items {
     let rect = placed.bounds;
     let styles = Styles::of(palette);
-    let look = tray_look(
-        header_of(rect, placed.measured.header_height),
-        palette,
-        placed.depth,
-    );
+    let look = tray_look(header_of(placed), palette, placed.depth);
     group(
         Role::Frame(Some(Box::new(appearance.clone()))),
         Some(subject(
@@ -79,7 +86,7 @@ pub(super) fn paint_measured_header(
     unsettled: bool,
     appearance: &NodeAppearance,
 ) -> Items {
-    let header = header_of(placed.bounds, placed.measured.header_height);
+    let header = header_of(placed);
     let face = Rect {
         height: header.height - CARD_THICKNESS,
         ..header

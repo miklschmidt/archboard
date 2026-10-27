@@ -211,7 +211,14 @@ impl Track<'_> {
             .collect();
         let fewest = min_of(&counts);
         let crosses_more = self.scene.inline && fewest > self.standing_crossings(run, bands);
-        if crosses_more {
+        let standing_clear = run.lanes.iter().all(|&lane| {
+            let station = self.station(lane);
+            let x = self.x(lane);
+            occupancy.taken[station.band]
+                .iter()
+                .all(|&(low, high)| x <= low || x >= high)
+        });
+        if crosses_more && standing_clear {
             return None;
         }
         counts

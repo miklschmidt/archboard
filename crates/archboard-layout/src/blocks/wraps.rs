@@ -1,16 +1,7 @@
 //! A block of cards' widest rank wrapped into rows, or its loose cards set out
 //! as a grid, when that scores clearly better than the block whole (`score_of`).
 //!
-//! The search lays its candidates out one after another. The search of the
-//! first block of a solve that could stack can instead be split between
-//! solves (`architecture::choosing`): the partial solve that lays that block
-//! tells its search (`Search`), one solve lays the board with no wrap there,
-//! and one solve for each candidate tries that candidate alone (`only_wrap`).
-//! The renderer then keeps the candidate this search would keep (`kept_of`).
-
 use std::rc::Rc;
-
-use serde::{Deserialize, Serialize};
 
 use crate::constants::LAYOUT_ASPECT;
 use crate::ecma::{abs, sorted_by};
@@ -23,8 +14,7 @@ use crate::track::score::{
 
 use super::card_layout::{Arrangement, CardLayout, Engine};
 use super::laid::{Insets, Laid, LaidMap};
-use super::laying::{Laying, Make, lay_both, settled};
-use super::tree::{Block, BlockId, BlockTree, Kind, Nesting};
+use super::tree::{BlockId, BlockTree, Kind, Nesting};
 
 /// How much better a wrap must fit the page than the board whole.
 const WORTH_WRAPPING: f64 = 1.1;
@@ -46,11 +36,10 @@ pub(crate) fn weighed(laid: &Laid) -> Weighed {
 }
 
 /// What a block's wraps are laid out with, beside Graphviz: every block laid
-/// out so far, whether it stacks, and its insets.
+/// out so far and its insets.
 #[derive(Clone, Copy)]
 pub(crate) struct Wrapping<'a> {
     pub laid: &'a LaidMap,
-    pub stacked: bool,
     pub insets: Insets,
 }
 
@@ -64,8 +53,7 @@ pub(crate) struct Unwrapped<'a> {
 /// One wrap the search tries: the block's loose cards set out as a grid, or
 /// its widest rank dealt into rows as a plan lowers it, the rows' columns
 /// held or free.
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
-#[serde(rename_all = "lowercase")]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Candidate {
     Grid,
     Lowered { lowered: Plan, columns: bool },
@@ -73,26 +61,15 @@ pub(crate) enum Candidate {
 
 /// A block's wrap search: the score a wrap must beat, and the candidates in
 /// the order the search weighs them.
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Search {
     pub needed: f64,
     pub candidates: Vec<Candidate>,
 }
 
-/// One candidate of a wrap search tried alone, and the score it must beat to be kept.
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
-pub(crate) struct Tried {
-    pub candidate: Candidate,
-    pub needed: f64,
-}
-
-/// What trying one candidate alone gave: what the search weighs it on, and
-/// the block laid out with it where it scores more than the block needs.
-pub(crate) type Alone = (Weighing, Option<Rc<Laid>>);
-
 /// What the search weighs a wrap that sinks no card on: the wrap with its
-/// titles tied, and how many rows it deals its rank into (none for a grid).
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+/// fixed graph constraints, and its row count (none for a grid).
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Weighing {
     pub weighed: Weighed,
     pub rows: Option<usize>,
@@ -115,7 +92,7 @@ pub(crate) fn search_of(
     if needed >= 1.0 {
         return None;
     }
-    let Wrapping { laid, insets, .. } = laying.wrapping;
+    let Wrapping { laid, insets } = laying.wrapping;
     let loose = CardLayout::new(tree, laid, block, insets, Arrangement::default()).loose_cards();
     let mut candidates = Vec::new();
     if loose.iter().any(|cards| grids(cards.len())) {
@@ -159,34 +136,7 @@ pub(crate) fn best_wrap(
     else {
         return Ok(None);
     };
-    Ok(Some(settled_wrap(gv, tree.get(block), best)?))
-}
-
-/// One candidate tried alone: what the search weighs it on, and the block
-/// laid out with it, as the search keeps it, where it scores more than the
-/// block needs; nothing when it sinks a card. A candidate that scores no
-/// more is never kept, whatever the others score.
-///
-/// # Errors
-///
-/// What Graphviz refused the wrap's graph with.
-pub(crate) fn only_wrap(
-    gv: &mut Engine<'_>,
-    tree: &BlockTree,
-    block: BlockId,
-    wrapping: Wrapping<'_>,
-    alone: &Tried,
-) -> Result<Option<Alone>, String> {
-    let Some(wrapped) = tried(gv, tree, block, wrapping, &alone.candidate)? else {
-        return Ok(None);
-    };
-    let weighing = wrapped.weighing();
-    let laid = if score_of(&weighing.weighed) > alone.needed {
-        Some(settled_wrap(gv, tree.get(block), &wrapped)?)
-    } else {
-        None
-    };
-    Ok(Some((weighing, laid)))
+    Ok(Some(Rc::clone(&best.laid)))
 }
 
 /// Which candidate the search keeps, from what it weighs each candidate that
@@ -205,33 +155,24 @@ pub(crate) fn kept_of(needed: f64, weighings: &[Option<Weighing>]) -> Option<usi
 }
 
 /// A wrap or grid laid out, and how many rows a wrap deals its rank into.
-struct Wrapped<'t> {
-    laying: Laying<'t>,
-    /// How far each wrapped item is lowered; none for a grid.
-    lowered: Plan,
+struct Wrapped {
+    laid: Rc<Laid>,
     rows: Option<usize>,
 }
 
-impl Wrapped<'_> {
-    /// What the search weighs it on.
+impl Wrapped {
     fn weighing(&self) -> Weighing {
         Weighing {
-            weighed: weighed(&self.laying.tied),
+            weighed: weighed(&self.laid),
             rows: self.rows,
         }
     }
 }
 
-/// A wrap or grid as the wrap choice weighs it.
-fn wrap_of(laying: Laying<'_>, lowered: Option<Plan>) -> Wrapped<'_> {
-    let rows = lowered
-        .as_ref()
-        .map(|lowered| 1 + lowered.values().copied().max().unwrap_or(0));
-    Wrapped {
-        laying,
-        lowered: lowered.unwrap_or_default(),
-        rows,
-    }
+/// A wrap and its row count, without another whole-block solve.
+fn wrap_of(laid: Rc<Laid>, lowered: Option<&Plan>) -> Wrapped {
+    let rows = lowered.map(|lowered| 1 + lowered.values().copied().max().unwrap_or(0));
+    Wrapped { laid, rows }
 }
 
 /// One candidate laid out, unless it sinks a card.
@@ -240,58 +181,37 @@ fn wrap_of(laying: Laying<'_>, lowered: Option<Plan>) -> Wrapped<'_> {
 /// neighbours: it is no wrap. Where a card stands across the block is settled
 /// before its lines are routed, so a wrap lined up that sinks one is not
 /// routed at all.
-fn tried<'t>(
+fn tried(
     gv: &mut Engine<'_>,
-    tree: &'t BlockTree,
+    tree: &BlockTree,
     block: BlockId,
-    wrapping: Wrapping<'t>,
+    wrapping: Wrapping<'_>,
     candidate: &Candidate,
-) -> Result<Option<Wrapped<'t>>, String> {
-    let Wrapping {
-        laid,
-        stacked,
-        insets,
-    } = wrapping;
+) -> Result<Option<Wrapped>, String> {
+    let Wrapping { laid, insets } = wrapping;
     let arranged = match candidate {
         Candidate::Grid => Arrangement {
             grid: true,
-            stacked,
             ..Arrangement::default()
         },
         Candidate::Lowered { lowered, columns } => Arrangement {
             lowered: lowered.clone(),
-            stacked,
             columns: *columns,
             grid: false,
         },
     };
-    let make: Make<'t> =
-        Rc::new(move || CardLayout::new(tree, laid, block, insets, arranged.clone()));
+    let mut layout = CardLayout::new(tree, laid, block, insets, arranged);
     let Candidate::Lowered { lowered, .. } = candidate else {
-        return Ok(Some(wrap_of(lay_both(gv, make)?, None)));
+        return Ok(Some(wrap_of(layout.lay(gv)?, None)));
     };
     let held = tree.get(block);
     let around = |card: &str| held.cluster_of.get(card).cloned();
-    let mut layout = make();
-    layout.clusters.keep_ties = true;
-    if sinks(lowered, &layout.lined(gv)?.boxes, around) {
+    let lined = layout.lined(gv)?;
+    if sinks(lowered, &lined.boxes, around) {
         return Ok(None);
     }
-    let wrapped = wrap_of(lay_both(gv, make)?, Some(lowered.clone()));
-    Ok((!sinks(lowered, &wrapped.laying.tied.boxes, around)).then_some(wrapped))
-}
-
-/// The wrap kept, settled: chosen with its titles tied, it is laid again with
-/// them pulled down, and kept so unless that sinks a card.
-fn settled_wrap(gv: &mut Engine<'_>, held: &Block, best: &Wrapped<'_>) -> Result<Rc<Laid>, String> {
-    let kept = settled(gv, &best.laying)?;
-    let around = |card: &str| held.cluster_of.get(card).cloned();
-    let sunk = sinks(&best.lowered, &kept.boxes, around);
-    Ok(if sunk {
-        Rc::clone(&best.laying.tied)
-    } else {
-        kept
-    })
+    let wrapped = wrap_of(layout.finish(lined), Some(lowered));
+    Ok((!sinks(lowered, &wrapped.laid.boxes, around)).then_some(wrapped))
 }
 
 /// Whether one wrap reads better than another: it scores higher, or, as well,

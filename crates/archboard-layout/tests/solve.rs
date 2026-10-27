@@ -166,7 +166,7 @@ fn every_card_stands_at_its_measured_size_and_its_line_runs_from_card_to_card() 
         let points = placed["edges"][0]["points"].as_array().unwrap();
         assert!(
             on_edge(&points[0], one) && on_edge(&points[points.len() - 1], other),
-            "{nesting}"
+            "{nesting}: {points:?}, source {one}, target {other}"
         );
     }
 }
@@ -174,6 +174,42 @@ fn every_card_stands_at_its_measured_size_and_its_line_runs_from_card_to_card() 
 #[test]
 fn a_solve_fails_when_graphviz_refuses_its_graph() {
     lay_out_board(&two_containers("blocks"), &mut Refusing).unwrap_err();
+}
+
+#[test]
+fn a_parent_inside_a_packed_group_stays_above_its_enclosing_inline_frame() {
+    let graph = json!({
+        "id": "root",
+        "layoutOptions": {
+            "archboard.blocks.nesting": "groups",
+            "archboard.group.captions": "[[\"drawing\",80,20]]",
+        },
+        "children": [{
+            "id": "outer", "width": 300, "height": 60,
+            "layoutOptions": { "archboard.header.size": "60", "archboard.order": "5000" },
+            "children": [{
+                "id": "inner", "width": 300, "height": 60,
+                "layoutOptions": {
+                    "archboard.header.size": "60", "archboard.group": "drawing",
+                    "archboard.order": "0",
+                },
+                "children": [{ "id": "leaf", "width": 200, "height": 80 }],
+            }, {
+                "id": "peer", "width": 200, "height": 80,
+                "layoutOptions": { "archboard.group": "drawing" },
+            }],
+        }],
+    });
+    let (_, placed) =
+        placed_of(&lay_out_board(&graph.to_string(), &mut Column::default()).unwrap()).unwrap();
+    let frames = placed["frames"].as_array().unwrap();
+    let depth = |id: &str| number(&frames.iter().find(|frame| frame["id"] == id).unwrap()["depth"]);
+    assert!(
+        depth("inner") > depth("outer"),
+        "the outer frame must not hide the inner frame"
+    );
+    let regions = placed["regions"].as_array().unwrap();
+    assert_eq!(regions[0]["parent"], "outer");
 }
 
 #[test]

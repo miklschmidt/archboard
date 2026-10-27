@@ -1,21 +1,3 @@
-// How the track engine's lines run through a drawing (visual polish): each
-// test is a defect a visual review found in real boards, reduced to a fixture.
-// What this catches: a line that steps sideways by less than its two bends
-// need, a line rising into the card above whose arrowhead sits on its last
-// bend, labels on a crowded band shifted together until every line through
-// them jogs, a labelled fan whose trunk turns once and whose labels then turn
-// it a second time, two labelled lines entering one card unevenly, a line
-// crossing a container's heading through its painted words, lanes put where
-// they cross another line that a free column would have left alone, a line
-// through a card entering and leaving it a few points apart, a run of lanes
-// left where a label stood before it slid aside, a container ending 12 px
-// above another opening under it, two lines lined up end to end across a
-// channel so that they read as one, lines into one card that join on the way
-// and then part again, to their own ends or to join once more, a line
-// run round the outside of the drawing where a short free route ran through
-// it, and a labelled line stepping sideways both above and below its label
-// where one column ran free from its label to its card.
-
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
@@ -111,7 +93,7 @@ test.each([
 			layout: "track",
 			policy,
 		});
-		for (const [id, points] of routePoints(drawing.svg))
+		for (const [id, points] of corridorPoints(drawing.svg))
 			for (const step of sidewaysSteps(points))
 				expect(step > 0.5 && step < TWO_BENDS, `${id} steps ${step}`).toBe(false);
 	},
@@ -407,13 +389,6 @@ test("a container standing over another keeps a container's inset from it", asyn
 		}
 });
 
-// Reduced from a dogfood board, names replaced: a line came down onto its track
-// and turned where another turned off the track below and went on down, one
-// lane over, and the two read as one line with a kink. The second, taken from
-// a board of this repository, had the two parted, and a later pass closing a
-// short step moved one back onto the other's column. In the third, the one
-// line's run of lanes stepped round a label above, so no move of the whole
-// run was free.
 test.each([
 	["read-as-one", readAsOne],
 	["command-groups", commandGroups],
@@ -449,11 +424,6 @@ test.each([
 	},
 );
 
-// Reduced from a dogfood board, names replaced: under Blocks, lines of one
-// kind from one block reach a card in another through one port. Each carrying
-// its own label inside the card's block, they split through their labels
-// after the port, and either joined again at the card, a ladder of loops, or
-// ended apart on it. Once joined, lines stay one line into the card.
 test("lines of one kind that join on the way to a card stay one line into it", async () => {
 	const content = orderedFixture(twinLines);
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "blocks", policy });

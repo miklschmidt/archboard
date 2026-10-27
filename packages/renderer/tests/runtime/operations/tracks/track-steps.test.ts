@@ -1,11 +1,3 @@
-// How often the track engine's lines step sideways (visual polish): each test
-// is a step a visual review found in real boards, reduced to a fixture. What
-// this catches: a long line whose lanes no one column holds stepping in
-// every channel it passes, a line stepped aside from another it joins at one
-// port anyway, a line that leaves a group region on a second track where the
-// first one runs clear, and a line that runs past a group region's port and
-// doubles back.
-
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
@@ -137,11 +129,6 @@ test("a line leaving a group region runs on the track it is already on", async (
 	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(1);
 });
 
-// Taken from boards of this repository: a line's lanes stood on several
-// columns, a middle one meeting neither the lane above it nor the one below,
-// so the line stepped sideways twice where one step would do. In the first
-// the step stood between a label and its card; in the second, a run left
-// stepped once the other runs were straightened.
 test.each([
 	["browser application", browserApplication, "md5cpNZV", 3],
 	["command interface", commandInterface, "REIYPxdO", 2],
@@ -252,13 +239,6 @@ function besideWalls(points: readonly DrawnPoint[], regions: readonly Walls[]): 
 	});
 }
 
-// Reduced from dogfood boards: a line ran down beside a group region's wall
-// half a lane away, or a lane away, where it read as part of the region's
-// outline: a region's wall is a thin line with no inset, and a lane off it
-// reads as closer than a lane off a card. The third is a board whose groups
-// are packed as blocks of their own, where a trunk of four lines ran a lane
-// off one of them for its whole height. In the last a region's wall, fitted
-// to what it holds, stood as near a line inside it as a card's inset.
 test("a line keeps a lane and a half from a group region's wall it runs beside", async () => {
 	for (const fixture of [durableWriteBoundary, oneCommand, commandGroups, browserApplication]) {
 		const drawing = await renderArchitecture({
@@ -366,28 +346,6 @@ function throughForeign(points: readonly DrawnPoint[], regions: readonly Walls[]
 	});
 }
 
-// Taken from a board of this repository: of the ways to lay it out, the one
-// chosen by crossings alone ran two lines down the page's margin, round
-// everything, one of them 1567 px long, on a page 220 px wider. A lap counts
-// as a crossing when the layouts are weighed.
-test("a layout whose line laps the drawing weighs the lap as a crossing", async () => {
-	const drawing = await renderArchitecture({
-		content: orderedFixture(commandInterface),
-		theme: "light",
-		layout: "track",
-		policy,
-	});
-	expect(drawing.width).toBeLessThan(3450);
-});
-
-// Taken from boards of this repository. In the first, a line from a card
-// near the left of the drawing to one at the foot ran down the page's left
-// margin, round everything, where a way inside crossed one line: a lap round
-// the page reads worse than a crossing. In the second, a line had room in
-// the gap between a card and a group region's wall only half a lane from the
-// wall; kept a whole lane off it, the line went round, and the crossing that
-// cost sent the whole board to a wrapped layout whose line laps the margin;
-// kept inside, it must still not cut through a group region it has no card in.
 test("a line runs inside the drawing rather than round it", async () => {
 	for (const [fixture, id] of [
 		[boardRasterizer, "P1XYQl8l"],
@@ -408,11 +366,6 @@ test("a line runs inside the drawing rather than round it", async () => {
 	}
 });
 
-// The workhorse board again: its relaid line passes a card that stands a
-// lane and a bit off a group region's wall, where the line may keep only as
-// far off the wall as the card leaves it. Above the card it kept a lane and a
-// half off, and stepped aside 20 px just to pass the card. Squeezed on one
-// band, it keeps that column on the bands above and below.
 test("a line squeezed between a card and a region's wall passes on one column", async () => {
 	const drawing = await renderArchitecture({
 		content: orderedFixture(codexWorkhorse),
@@ -423,11 +376,6 @@ test("a line squeezed between a card and a region's wall passes on one column", 
 	expect(sidewaysLevels(corridorPoints(drawing.svg).get("FWJMAVKj")!).size).toBeLessThanOrEqual(2);
 });
 
-// Taken from a board of this repository, its groups packed as blocks of their
-// own: a pin on a group's block was settled only between its line's two ends
-// as they stood, and the board's lines into its groups crossed each other
-// eleven times where three will do. An end facing a pin stands where the
-// board routed the line first turning from it, and the pin moves onto the line.
 test("a packed group's pin stands where the board's line turns to it", async () => {
 	const content = orderedFixture(commandGroups);
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });

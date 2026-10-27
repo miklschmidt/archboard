@@ -20,6 +20,8 @@
 //! shortest path is printed: its solves, their time with the time Graphviz
 //! took of it, the time of solves the render dropped, the critical path, the
 //! render's own time beside its solves, and the chain of solves on the path.
+//! Set `ARCHBOARD_CRITICAL_PICTURES` to a directory to save native JSON
+//! pictures after the timer stops. Leave it unset for instruction counters.
 
 use std::cell::{Cell, RefCell};
 use std::collections::BTreeMap;
@@ -32,7 +34,7 @@ use std::time::Instant;
 use std::{env, fs};
 
 use archboard_graphviz::InCore;
-use archboard_layout::{Calling, Graphviz, Solver, Unsolved, lay_out_board};
+use archboard_layout::{Graphviz, Solver, Unsolved, lay_out_board};
 use archboard_render::request::RenderRequest;
 use archboard_render::{Host, Renderer};
 use serde::Deserialize;
@@ -126,7 +128,7 @@ fn way_of(graph: &str) -> String {
 impl Solver for Clocked {
     type Solve<'s> = Answer<'s>;
 
-    fn solve(&self, graph: String, _: &Calling) -> Answer<'_> {
+    fn solve(&self, graph: String) -> Answer<'_> {
         let spent = Cell::new(0.0);
         let started = Instant::now();
         let answer = lay_out_board(&graph, &mut Timed(&spent)).map_err(Unsolved::Failed);
@@ -213,12 +215,11 @@ fn first_render(captured: &Captured) -> Result<(Clock, f64), String> {
     let mut context = Context::from_waker(&waker);
     let renderer = Renderer::default();
     let started = Instant::now();
-    {
+    let picture = {
         let mut render = pin!(renderer.render(&request, &host));
         loop {
             if let Poll::Ready(rendered) = render.as_mut().poll(&mut context) {
-                rendered?;
-                break;
+                break rendered?;
             }
             if woken.0.swap(false, Ordering::Relaxed) {
                 continue;
@@ -236,8 +237,26 @@ fn first_render(captured: &Captured) -> Result<(Clock, f64), String> {
             clock.last = Some(next);
             clock.solves[next].answered = Some(at);
         }
-    }
+    };
     let wall = ms_since(started);
+    if let Some(directory) = env::var_os("ARCHBOARD_CRITICAL_PICTURES") {
+        let directory = std::path::Path::new(&directory);
+        fs::create_dir_all(directory).map_err(|error| error.to_string())?;
+        let name: String = captured
+            .name
+            .chars()
+            .map(|ch| {
+                if ch.is_ascii_alphanumeric() || ch == '-' {
+                    ch
+                } else {
+                    '-'
+                }
+            })
+            .collect();
+        let bytes = serde_json::to_vec(&picture).map_err(|error| error.to_string())?;
+        fs::write(directory.join(format!("{name}.json")), bytes)
+            .map_err(|error| error.to_string())?;
+    }
     Ok((host.clock.into_inner(), wall))
 }
 

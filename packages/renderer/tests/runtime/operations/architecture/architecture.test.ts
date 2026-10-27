@@ -12,6 +12,7 @@ import {
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
 import type { VariantContent } from "@archboard/board/content";
+import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 const policy = DEFAULT_SEMANTIC_POLICY;
@@ -298,14 +299,13 @@ describe("renderArchitecture", () => {
 		}
 	});
 
-	test("an edge naming a container arrives on that container's frame", async () => {
+	test("an edge naming a container arrives on its visible header card", async () => {
 		const rendered = await render();
 		const arrival = routeEnds(rendered.svg).get("e7");
 		expect(arrival).toBeDefined();
 
-		// The arrowhead touches the box the reader sees, rather than landing well
-		// inside it on a strip of title the router happens to find convenient.
-		const box = rendered.atlas.regions["store"]!;
+		const box = headerCards(rendered).get("store")!;
+		expect(box).toBeDefined();
 		expect(distanceToFrame(arrival!, box)).toBeLessThan(2);
 		expect(arrival!.x).toBeGreaterThanOrEqual(box.x - 2);
 		expect(arrival!.y).toBeGreaterThanOrEqual(box.y - 2);

@@ -29,7 +29,7 @@ impl PackLayout<'_> {
         self.block
             .ports
             .iter()
-            .filter(|&(_, &at)| at == side)
+            .filter(|&(port, &at)| at == side && !self.block.header_entry(port))
             .map(|(port, _)| port.clone())
             .collect()
     }
@@ -38,10 +38,12 @@ impl PackLayout<'_> {
     /// under the pins its lines reach, clear of the header, a lane apart.
     fn place_ports(&mut self, side: Side, width: f64, y: f64) {
         let ports = self.own_ports(side);
-        let header = self.header.map(|header| header.size);
+        let header = self.boxes.get(&self.header_id()).copied();
         let low = self.insets.side
             + match header {
-                Some(header) if side == Side::Top => header.width + LANE,
+                Some(header) if side == Side::Top => {
+                    header.x + header.width + TRUNK_CLEARANCE - self.insets.side
+                }
                 _ => 0.0,
             };
         let high = js_max(
@@ -144,7 +146,7 @@ impl PackLayout<'_> {
                 .block
                 .ports
                 .iter()
-                .filter(|&(_, &at)| at == side)
+                .filter(|&(port, &at)| at == side && !self.block.header_entry(port))
                 .map(|(port, _)| (port.clone(), self.level_of(port, side)))
                 .collect();
             sort_by(&mut wanted, |one, other| one.1 - other.1);
@@ -203,9 +205,19 @@ impl PackLayout<'_> {
             self.boxes.insert(
                 self.header_id(),
                 Rect {
-                    x: self.insets.side,
+                    x: self
+                        .block
+                        .lone
+                        .as_ref()
+                        .map_or(0.0, |lone| super::super::lone::side_room(width, lone)),
                     y: top,
-                    width: header.size.width,
+                    width: self
+                        .block
+                        .header
+                        .as_ref()
+                        .expect("a header")
+                        .painted(header.index)
+                        .width,
                     height: header.size.height,
                 },
             );

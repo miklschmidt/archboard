@@ -73,7 +73,7 @@ impl Placement {
             })
             .map(|(id, frame)| {
                 // A lone region is laid out as the frame, whose drawn walls stand inside it.
-                let inset = self.item(self.titles[id.as_str()]).inset.unwrap_or(0.0);
+                let inset = frame.below.unwrap_or(0.0);
                 (id.clone(), (frame.x + inset, frame.x + frame.width - inset))
             })
             .collect()

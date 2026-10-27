@@ -1,17 +1,14 @@
-//! An architecture drawn: a board's parts and relationships, measured, laid
-//! out by Track or Blocks in solves the host runs ([`Solver`]), chosen
-//! between, put on a page fitted to it, and its crossings settled. What the
-//! painter paints, and what a flowchart is laid out as.
+//! An architecture drawn from one graph plan through the host's [`Solver`].
+//! Track or Blocks places its parts and relationships, fits its page, and
+//! settles its crossings. The painter and flowcharts consume that drawing.
 
 mod choosing;
 mod content;
 mod drawn;
 mod graph;
-mod joins;
 mod measured;
 mod page;
 mod solving;
-mod stacking;
 
 use std::collections::{BTreeMap, HashSet};
 use std::hash::BuildHasher;
@@ -25,7 +22,7 @@ use serde::{Deserialize, Serialize};
 pub use content::{Content, Edge, Node};
 pub use graph::Standings;
 pub use measured::{Measured, MeasuredGroups};
-pub use solving::{Calling, InProcess, Laying, Solver, Unsolved};
+pub use solving::{InProcess, Laying, Solver, Unsolved};
 
 use crate::routes::{LineLook, bridge_crossings, bridge_unfolded, unfold_crossings};
 
@@ -33,8 +30,8 @@ use crate::routes::{LineLook, bridge_crossings, bridge_unfolded, unfold_crossing
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Engine {
-    /// Every relationship on an assigned track between ranks, containers and
-    /// group regions drawn inline as clusters of the board's one layout.
+    /// Every relationship on an assigned track between ranks. Multi-member
+    /// group regions pack as blocks, with their containers drawn inline.
     #[default]
     Track,
     /// Each container and group region packed as a block of its own.
@@ -50,8 +47,7 @@ pub enum Engine {
 ///
 /// # Errors
 ///
-/// A solve the host failed or answered unreadably, and a reading a choice
-/// cannot weigh.
+/// A solve the host failed or answered unreadably.
 pub async fn draw<S: Solver>(
     content: &Content,
     measured: &Measured,

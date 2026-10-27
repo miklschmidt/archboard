@@ -99,7 +99,7 @@ pub(crate) fn separate_facing_ports(
         let x = column_of(one, settled);
         if !others
             .iter()
-            .any(|other| abs(column_of(other, settled) - x) < SAME)
+            .any(|other| abs(column_of(other, settled) - x) < LANE - SAME)
         {
             continue;
         }
