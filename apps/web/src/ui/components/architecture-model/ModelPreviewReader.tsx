@@ -25,7 +25,10 @@ type PreviewProps = Pick<
 	ComponentProps<typeof ModelReading>,
 	"vault" | "paneId" | "reducedMotion" | "onCodeTargetNotice"
 > &
-	Pick<ComponentProps<typeof ModelWalkthroughReader>, "driven" | "narration" | "overlay">;
+	Pick<
+		ComponentProps<typeof ModelWalkthroughReader>,
+		"driven" | "narration" | "overlay" | "onPresentationEnd"
+	>;
 
 /**
  * Read a saved migration candidate without subscribing to canonical live authority.

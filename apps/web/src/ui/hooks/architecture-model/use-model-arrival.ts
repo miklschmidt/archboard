@@ -58,7 +58,8 @@ function useModelArrival(paneId: string, onError: (message: string) => void) {
 		},
 		[openRequested, onError, modelArriving, paneId],
 	);
-	return { arrival, driven, onModelRequest, onPresentRequest };
+	const endPresentation = useCallback((): void => onPresentRequest(null), []);
+	return { arrival, driven, onModelRequest, onPresentRequest, endPresentation };
 }
 
 export { useModelArrival };

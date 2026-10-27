@@ -16,7 +16,7 @@ import { serverPath } from "./support/navigator-support.ts";
 import { initializeSource } from "./support/canonical-model.ts";
 
 import { startVoiceServer } from "./support/voice-box-page.ts";
-import { seedCanonicalModel, modelAddress } from "./support/canonical-page.ts";
+import { seedCanonicalModel, modelAddress, editCanonicalModel } from "./support/canonical-page.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
 
@@ -51,10 +51,28 @@ test("agent navigation opens the requested canonical pane without moving its nei
 			],
 		}),
 	);
-	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	const server = await startOwnedServer({
+		serverPath,
+		vault,
+		env: serverTestEnvironment({ GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" }),
+	});
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
 	const request = createJsonRequester(server);
+	const proposed = await editCanonicalModel(
+		request,
+		vault,
+		"navigation-draft",
+		[
+			{
+				type: "edit-module",
+				subject: "Shop#Handler",
+				set: { description: "Proposed handler behavior" },
+			},
+		],
+		{ proposal: { type: "create", name: "Handler proposal" } },
+	);
+	if (proposed.target.state === null) throw new Error("The navigation fixture needs a proposal.");
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run([
 		"open",
@@ -139,6 +157,34 @@ test("agent navigation opens the requested canonical pane without moving its nei
 		"leaving the requested walkthrough",
 		WAIT,
 	);
+	await browser.run(["click", '[data-pane="B"] [data-slot="model-reading-selector"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(`(() => {
+		const item = document.querySelector('[data-state-id="${proposed.target.state}"]');
+		if (!item) return false;
+		const box = item.getBoundingClientRect();
+		return box.height > 0 && item.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2));
+	})()`),
+		Boolean,
+		"the proposal choice after leaving the presentation",
+		WAIT,
+	);
+	await browser.run(["click", `[data-state-id="${proposed.target.state}"]`]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-pane="B"] [data-reading="${proposed.target.state}"] [data-slot="model-reading"]')?.checkVisibility() ?? false`,
+			),
+		Boolean,
+		"ordinary proposal reading after the requested presentation ended",
+		WAIT,
+	);
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-pane="B"] [data-slot="model-walkthrough"]') === null`,
+		),
+	).toBe(true);
 }, 60_000);
 
 test("repository filtering opens canonical roots by keyboard and in the other pane", async () => {

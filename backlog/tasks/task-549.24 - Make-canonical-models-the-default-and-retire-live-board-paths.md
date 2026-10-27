@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T21:49:00Z'
+updated_date: '2026-10-27T21:55:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -102,6 +102,8 @@ Port the existing status-legibility browser owner to canonical public proposals 
 Delegate the bounded canonical render-context repair to gpt-6.1-sol in an isolated worktree. Reuse shared projection and existing renderer inputs for exact unresolved subjects, aggregated connections and complete interface context in exports/recipes. Publish the shared field contract early. Parent wires browser drawing and owns the legibility browser acceptance. No new rendering engine, live board adapter, storage abstraction, export ceiling or lint waiver.
 
 Restore walkthrough ownership of the existing sidebar control. First extend the canonical walkthrough browser owner to prove that the header control is held while captured playback hides the ordinary reader, then that its prior sidebar choice returns on leave. Move the existing header into the current playback context through a composition slot; add no mirrored presentation state.
+
+Extend the existing agent-navigation browser owner to leave a requested walkthrough and open an uncached proposal. A completed remote presentation request must not restart when the ordinary reader remounts. Clear that request at the existing leave event through the pane arrival owner, without a second handled-request store or effect that mirrors state.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -188,4 +190,6 @@ Retired four obsolete board browser fixtures and their lane entries after canoni
 The canonical legibility browser port passes the first 15 computed-color and traffic assertions, then reproduces an absent unresolved-subject badge. Types and focused test lint pass. The browser rendering request omits the existing renderer unsettled input. The canonical export adapter also omits complete variant and unsettled context. Repair this shared rendering contract before final acceptance.
 
 The canonical walkthrough owner reproduced an active sidebar toggle while captured playback hid its ordinary panel. The existing reader now receives the header as a composition slot inside its presentation context. ModelHeader derives the existing sidebar control state from that context; no mirrored presentation state or second sidebar owner was added. A shared frame preserves headers and recovery when no coherent model exists. The toggle is held and collapsed during playback, then restores its previous expanded state on leave. Canonical walkthrough and preview-navigation browsers, full types and focused source/test lint pass.
+
+The existing agent-navigation browser owner reproduced a completed remote walkthrough reopening after an uncached proposal read remounted the reader. Leaving now closes the captured session and clears the original driven request through useModelArrival, its existing owner. This is one event callback, without a mirrored effect or second handled-request store. The proposal remains ordinary after leave. Agent-navigation and walkthrough browser owners, full types and focused source/test lint pass.
 <!-- SECTION:NOTES:END -->

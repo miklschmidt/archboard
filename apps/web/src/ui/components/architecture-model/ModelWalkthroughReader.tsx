@@ -26,6 +26,7 @@ interface ReaderProps extends Pick<
 	reducedMotion: boolean;
 	children: ReactNode;
 	chrome?: ReactNode;
+	onPresentationEnd?: (() => void) | undefined;
 }
 
 /**
@@ -81,7 +82,11 @@ function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
 		},
 		[source, checkpoint, state, preview],
 	);
-	const leave = useCallback((): void => setSession({ source, request: null }), [source]);
+	const { onPresentationEnd } = props;
+	const leave = useCallback((): void => {
+		setSession({ source, request: null });
+		onPresentationEnd?.();
+	}, [source, onPresentationEnd]);
 	const active = request !== null;
 	const context = useMemo(() => ({ select, active }), [select, active]);
 	return (

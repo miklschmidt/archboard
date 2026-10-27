@@ -145,7 +145,7 @@ function useBoundCallbacks(props: ApplicationPaneProps): BoundCallbacks {
 function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	const { paneId, callbacks, onRecordedReading } = props;
 	const bound = useBoundCallbacks(props);
-	const { arrival, driven, onModelRequest, onPresentRequest } = useModelArrival(
+	const { arrival, driven, onModelRequest, onPresentRequest, endPresentation } = useModelArrival(
 		paneId,
 		bound.onBoardError,
 	);
@@ -227,6 +227,7 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 						reducedMotion={props.reducedMotion}
 						onCodeTargetNotice={callbacks.onCodeTargetNotice}
 						driven={driven}
+						onPresentationEnd={endPresentation}
 						narration={narration}
 						overlay={props.overlay}
 					/>

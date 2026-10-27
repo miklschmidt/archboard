@@ -42,7 +42,10 @@ type ModelQuery = UseQueryResult<Extract<ArchitectureModelRead, { success: true 
 interface ModelStageProps
 	extends
 		Pick<ComponentProps<typeof ModelReading>, "onCodeTargetNotice">,
-		Pick<ComponentProps<typeof ModelWalkthroughReader>, "driven" | "narration" | "overlay"> {
+		Pick<
+			ComponentProps<typeof ModelWalkthroughReader>,
+			"driven" | "narration" | "overlay" | "onPresentationEnd"
+		> {
 	vault: string;
 	paneId: string;
 	reducedMotion: boolean;
@@ -207,6 +210,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				failure={feed.failure}
 				onCodeTargetNotice={props.onCodeTargetNotice}
 				driven={props.driven}
+				onPresentationEnd={props.onPresentationEnd}
 				narration={props.narration}
 				overlay={props.overlay}
 			/>
@@ -355,7 +359,14 @@ function readingState(query: ModelQuery, stale: boolean): "loading" | "error" | 
 
 interface ModelResponseProps extends Pick<
 	ModelStageProps,
-	"vault" | "paneId" | "reducedMotion" | "onCodeTargetNotice" | "driven" | "narration" | "overlay"
+	| "vault"
+	| "paneId"
+	| "reducedMotion"
+	| "onCodeTargetNotice"
+	| "driven"
+	| "narration"
+	| "overlay"
+	| "onPresentationEnd"
 > {
 	subject: string | null;
 	query: ModelQuery;
@@ -423,6 +434,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			paneId={props.paneId}
 			reducedMotion={props.reducedMotion}
 			driven={props.driven}
+			onPresentationEnd={props.onPresentationEnd}
 			narration={props.narration}
 			overlay={props.overlay}
 			chrome={props.header}
