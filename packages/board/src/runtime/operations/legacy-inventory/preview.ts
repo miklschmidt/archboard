@@ -1,4 +1,8 @@
 import {
+	migrationInstallationFiles,
+	migrationContextFingerprint,
+} from "#runtime/store/migration-installation.ts";
+import {
 	legacyAddresses,
 	legacyAddressOf,
 	selectBookmark,
@@ -9,7 +13,7 @@ import { walkthroughOf, attachPlayback } from "#runtime/operations/read/playback
 import type { ArchitectureModelRead } from "#shared/schemas/model.ts";
 import type { LegacyInventory } from "#shared/schemas/migration.ts";
 import { GitObjectIdSchema } from "#shared/schemas/model.ts";
-import { readLegacyInventory } from "#runtime/operations/legacy-inventory/inventory.ts";
+import { readCapturedLegacyInventory } from "#runtime/operations/legacy-inventory/inventory.ts";
 import { readMigrationPlan } from "#runtime/store/migration-plan.ts";
 import { readModelFiles } from "#runtime/store/model-files.ts";
 import { currentNodes } from "#shared/rules/legacy-inventory/evidence.ts";
@@ -90,6 +94,7 @@ async function readMigrationPreview(
 					undefined,
 					selection.legacyAddress,
 				);
+	await attachInstallation(vault, model, selection);
 	const result = previewPlayback(selectBookmark(model, selection.bookmark), selection);
 	if (!result.success) return result;
 	return selectFlow(selectModule(result, module), flow);
@@ -106,7 +111,7 @@ function livePreview(
 	origin: string,
 	selection: z.infer<typeof StateSelectionSchema>,
 ): ArchitectureModelRead {
-	const inventory = readLegacyInventory(vault, origin);
+	const inventory = readCapturedLegacyInventory(vault, origin);
 	if (!inventory.success) return failure("MAPPING_INVALID", inventory.diagnostics);
 	const refused = previewEligibility(inventory);
 	if (refused !== undefined) return refused;
@@ -300,4 +305,50 @@ function previewCoverageChoice(inventory: LegacyInventory, selector?: string, st
 	return selector === undefined
 		? undefined
 		: legacyAddressOf(legacyAddresses(inventory), selector, state);
+}
+
+/**
+ * Identify a live complete preview that can authorize installation.
+ * @param selection The deliberate reading selectors.
+ * @returns Whether the selector names complete live composition.
+ */
+function isInstallationPreview(selection: z.infer<typeof StateSelectionSchema>): boolean {
+	return (
+		selection.checkpoint === undefined &&
+		selection.state === undefined &&
+		selection.legacyAddress === undefined
+	);
+}
+/**
+ * Attach complete target and checkout fingerprints without creating state.
+ * @param vault The addressed vault.
+ * @param model The composed model or its refusal.
+ * @param selection The deliberate reading selectors.
+ */
+async function attachInstallation(
+	vault: string,
+	model: ArchitectureModelRead,
+	selection: z.infer<typeof StateSelectionSchema>,
+): Promise<void> {
+	if (!model.success || !isInstallationPreview(selection)) return;
+	{
+		try {
+			const context = await archiveContext(vault);
+			model.migrationPreview!.installation = {
+				expectedRevision: migrationInstallationFiles(vault).revision,
+				expectedContext: await migrationContextFingerprint(vault, context),
+			};
+		} catch (error) {
+			if (!(error instanceof ArchiveError)) throw error;
+			model.migrationPreview!.diagnostics = [
+				...(model.migrationPreview!.diagnostics ?? []),
+				{
+					code: error.code,
+					file: ".",
+					message: error.message,
+					recovery: "Initialize or restore the archive before requesting an installation preview.",
+				},
+			];
+		}
+	}
 }

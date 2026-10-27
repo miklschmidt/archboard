@@ -1,3 +1,4 @@
+import { InstalledMigrationSchema } from "#shared/schemas/migration-installation.ts";
 import { WalkthroughSchema } from "#shared/schemas/model-walkthroughs.ts";
 import { readRequestedArchitecture } from "#runtime/operations/read/model-explanation.ts";
 import { ProposalSchema } from "#shared/schemas/model-proposals.ts";
@@ -199,6 +200,7 @@ function decodeModel(
 			return definition === undefined ? [] : [{ ...definition, file }];
 		});
 
+	const migration = decodeInstalledMigration(captured);
 	const proposals = [...inputs]
 		.filter(([file]) => file.endsWith(".proposal.json"))
 		.flatMap(([file, bytes]) => {
@@ -223,6 +225,7 @@ function decodeModel(
 		.map((module) => ({ ...module, outgoing: module.outgoing.toSorted(compareModelSubjects) }));
 	return {
 		success: true,
+		migration,
 		manifest,
 		policy,
 		revision,
@@ -383,3 +386,18 @@ export {
 	selectFlow,
 	failure,
 };
+
+/**
+ * Decode installed reading metadata only when it exists.
+ * @param captured Exact input bytes and diagnostics.
+ * @returns Installed migration metadata, or absence.
+ */
+function decodeInstalledMigration(captured: CapturedModel) {
+	if (!captured.inputs.has("migration.json")) return undefined;
+	return decode(
+		"migration.json",
+		captured.inputs.get("migration.json"),
+		InstalledMigrationSchema,
+		captured.diagnostics,
+	);
+}

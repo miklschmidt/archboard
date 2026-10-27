@@ -178,7 +178,7 @@ async function settlementPredecessor(vault: string, proposal: z.infer<typeof Pro
 		await resolveState(
 			context,
 			requireModel(readCurrentModel(vault)),
-			proposal.predecessor ?? "current",
+			proposal.predecessorCheckpoint ?? proposal.predecessor ?? "current",
 		),
 	);
 	if (predecessor.selectedState?.standing !== undefined)

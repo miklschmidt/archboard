@@ -1,3 +1,4 @@
+import { canonicalContext } from "#server/projections/semantic-context/canonical-context.ts";
 import type {
 	CodexWorkbenchSessionComponents,
 	CodexWorkbenchWorkhorseComponents,
@@ -501,6 +502,8 @@ function semanticInputFor(
 	cursor: SemanticContextInput["cursor"],
 	forPane: ContextPane,
 ): SemanticContextInput {
+	const canonical = canonicalInput(active, vault, cursor, forPane);
+	if (canonical !== undefined) return canonical;
 	const exactPaneId = forPane.paneId;
 	// The pane that can speak for what is on screen, or nothing when none can.
 	const pane = contextPane(vault, contextBoard, forPane.clientId);
@@ -541,10 +544,6 @@ function semanticInputFor(
 
 /**
  * The board a pane is showing, for a context that has to name one.
- *
- * A pane exists whether or not it is showing a board, but a thread is bound to
- * a pane *and its board*: a context built for a pane showing nothing would be a
- * brief about no architecture at all.
  * @param pane The pane.
  * @returns The board key.
  * @throws {Error} When the pane is showing no board.
@@ -567,8 +566,34 @@ function fullInputFor(
 	owners: Parameters<typeof semanticInputFor>[0],
 	pane: PaneRegistration,
 ): ReturnType<typeof semanticInputFor> {
-	return semanticInputFor(owners, pane.vault, shownBoard(pane), null, pane);
+	const canonical = canonicalInput(owners, pane.vault, null, pane);
+	return canonical ?? semanticInputFor(owners, pane.vault, shownBoard(pane), null, pane);
 }
-
+/**
+ * Attach the existing session identities to canonical runtime context.
+ * @param active The session owners.
+ * @param vault The addressed vault.
+ * @param cursor The existing event cursor.
+ * @param pane The exact reporting pane.
+ * @returns Canonical context or absence for legacy authority.
+ */
+function canonicalInput(
+	active: SemanticInputOwners | null,
+	vault: string,
+	cursor: SemanticContextInput["cursor"],
+	pane: ContextPane,
+): SemanticContextInput | undefined {
+	const reading = canonicalContext(vault, pane.clientId);
+	if (reading === undefined) return undefined;
+	return {
+		repository: checkoutOfVault(vault),
+		...linkedIdentities(active),
+		...reading,
+		pane: { paneId: pane.paneId, focused: reading.stale !== true },
+		claim: { holder: "none", doing: null },
+		doing: null,
+		cursor,
+	};
+}
 export type { SemanticInputOwners };
 export { canonicalContextFromBrief, fullInputFor, semanticInputFor, type ContextPane };

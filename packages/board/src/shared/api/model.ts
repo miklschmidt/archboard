@@ -46,3 +46,5 @@ export {
 	ArchitectureImportRequestSchema,
 	ArchitectureExportResultSchema,
 } from "#shared/schemas/model-portable.ts";
+
+export { ArchitectureMigrationRequestSchema } from "#shared/schemas/migration-installation.ts";

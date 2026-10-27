@@ -196,9 +196,7 @@ function attachPlayback(
 			},
 		]);
 	const beats = walk.beats.map((beat) => {
-		const extra =
-			target.migrationPreview?.readingDiagnostics?.find((entry) => entry.id === beat.id)
-				?.diagnostics ?? [];
+		const extra = importedBeatDiagnostics(target, beat.id);
 		const diagnostics = [
 			...extra,
 			...beatDiagnostics(target, walk, beat).filter(
@@ -310,3 +308,17 @@ async function readPlayback(
 	});
 }
 export { readPlayback, walkthroughOf, attachPlayback };
+
+/**
+ * Read preserved unavailable intent from its migration owner.
+ * @param model The captured target.
+ * @param id The stable beat identity.
+ * @returns Its original conversion diagnostics.
+ */
+function importedBeatDiagnostics(model: ArchitectureModel, id: string): ModelDiagnostic[] {
+	return (
+		(model.migrationPreview ?? model.migration)?.readingDiagnostics?.find(
+			(entry) => entry.id === id,
+		)?.diagnostics ?? []
+	);
+}

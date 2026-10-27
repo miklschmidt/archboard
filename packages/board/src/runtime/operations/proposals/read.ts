@@ -58,6 +58,8 @@ function materializedInputs(model: ArchitectureModel, policy: Buffer): Map<strin
 		["model.json", Buffer.from(JSON.stringify(model.manifest))],
 		[".archboard/config.yaml", policy],
 	]);
+	if (model.migration !== undefined)
+		inputs.set("migration.json", Buffer.from(JSON.stringify(model.migration)));
 	for (const value of [...model.modules, ...model.collections, ...model.walkthroughs]) {
 		const { file, ...definition } = value;
 		inputs.set(file, Buffer.from(`${JSON.stringify(definition, null, 2)}\n`));
@@ -155,7 +157,12 @@ async function requirePredecessor(
 	visited: Set<string>,
 ) {
 	if (proposal.predecessor === null) return undefined;
-	const predecessor = await resolveState(context, catalogue, proposal.predecessor, visited);
+	const predecessor = await resolveState(
+		context,
+		catalogue,
+		proposal.predecessorCheckpoint ?? proposal.predecessor,
+		visited,
+	);
 	if (!predecessor.success) return predecessor;
 	if (predecessorRevision(predecessor) !== proposal.predecessorRevision)
 		throw new ArchiveError(
@@ -198,7 +205,12 @@ function decodeProposal(
 		SelectedStateSchema.strip().parse(proposal),
 	);
 	if (!decoded.success) return decoded;
-	return { ...decoded, revision: catalogue.revision, proposals: catalogue.proposals };
+	return {
+		...decoded,
+		migration: catalogue.migration,
+		revision: catalogue.revision,
+		proposals: catalogue.proposals,
+	};
 }
 /**
  * Decode resolved subjects through the canonical file authority.

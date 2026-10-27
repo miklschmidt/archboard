@@ -18,7 +18,8 @@ const modelReadContract = defineCommand({
 			spellings: ["--legacy-address"],
 			value: "required",
 			placeholder: "address",
-			description: "Follow one exact original address inside an explicit migration preview",
+			description:
+				"Follow an exact original address from an installed migration map or explicit preview",
 		},
 		{
 			kind: "option",
@@ -26,7 +27,8 @@ const modelReadContract = defineCommand({
 			spellings: ["--bookmark"],
 			value: "required",
 			placeholder: "id|name",
-			description: "Select one content-free imported bookmark inside an explicit migration preview",
+			description:
+				"Select one content-free imported bookmark from an installed migration map or preview",
 		},
 		{
 			kind: "option",

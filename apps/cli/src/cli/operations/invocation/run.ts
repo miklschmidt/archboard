@@ -29,7 +29,11 @@ import {
 	modelCheckpointsContract,
 	modelRetainContract,
 } from "#cli/operations/model/checkpoints.ts";
-import { modelInventoryContract, modelPlanContract } from "#cli/operations/model/migration.ts";
+import {
+	modelInventoryContract,
+	modelPlanContract,
+	modelMigrateContract,
+} from "#cli/operations/model/migration.ts";
 import {
 	modelContract,
 	modelReadContract,
@@ -137,6 +141,9 @@ const COMMANDS: Record<string, CommandRoute> = {
 			),
 			fetch: child(
 				contract(modelFetchContract, "apps/cli/src/cli/operations/model/publication.ts"),
+			),
+			migrate: child(
+				contract(modelMigrateContract, "apps/cli/src/cli/operations/model/migration.ts"),
 			),
 			plan: child(contract(modelPlanContract, "apps/cli/src/cli/operations/model/migration.ts")),
 		},

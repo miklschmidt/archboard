@@ -1,3 +1,4 @@
+import { LegacyDraftMappingSchema } from "#shared/schemas/migration-drafts.ts";
 import {
 	ExplanationRequestSchema,
 	ReadingSelectionSchema,
@@ -36,6 +37,8 @@ const FamilyStandingSchema = z.array(
 	z.strictObject({ state: SemanticIdSchema, standing: ModelStandingSchema.optional() }),
 );
 const ProposalSchema = StateMetadataSchema.extend({
+	migration: LegacyDraftMappingSchema.extend({ checkpoint: CheckpointIdSchema }).optional(),
+	predecessorCheckpoint: CheckpointIdSchema.optional(),
 	schemaVersion: z.literal(1),
 	lifecycle: z.literal("draft"),
 	createdAt: z.iso.datetime().optional(),

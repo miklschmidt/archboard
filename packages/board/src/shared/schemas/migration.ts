@@ -8,6 +8,7 @@ import {
 	QualifiedSubjectIdSchema,
 	ModelDiagnosticSchema,
 	ModelRevisionSchema,
+	ModelRecoverySchema,
 } from "#shared/schemas/model.ts";
 
 const LegacyIdentitySchema = z.strictObject({
@@ -93,6 +94,7 @@ const LegacyInventorySchema = z.strictObject({
 	planRevision: z.string().nullable(),
 });
 const LegacyMigrationFailureSchema = z.strictObject({
+	recovery: ModelRecoverySchema.optional(),
 	success: z.literal(false),
 	code: z.enum([
 		"INVENTORY_UNREADABLE",
@@ -101,6 +103,8 @@ const LegacyMigrationFailureSchema = z.strictObject({
 		"MAPPING_INVALID",
 		"MAPPING_STALE",
 		"MAPPING_HELD",
+		"RECOVERY_REQUIRED",
+		"MODEL_BUSY",
 	]),
 	error: z.string(),
 	diagnostics: z.array(ModelDiagnosticSchema).min(1),

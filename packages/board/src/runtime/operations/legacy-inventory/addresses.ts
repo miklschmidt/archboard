@@ -81,10 +81,10 @@ function legacyAddressOf(addresses: Address[], selector: string, state?: string)
  */
 function selectBookmark(model: ArchitectureModelRead, selector?: string): ArchitectureModelRead {
 	if (!model.success || selector === undefined) return model;
-	const bookmarks = model.migrationPreview?.bookmarks ?? [];
+	const bookmarks = importedBookmarks(model);
 	const selected = bookmarkOf(bookmarks, selector);
 	if ("success" in selected) return selected;
-	return { ...model, migrationPreview: { ...model.migrationPreview!, bookmark: selected } };
+	return withBookmark(model, selected);
 }
 export { legacyAddresses, legacyAddressOf, selectBookmark };
 
@@ -113,4 +113,28 @@ function bookmarkOf(
 		]);
 	}
 	return matches[0]!;
+}
+
+/**
+ * Attach selected reading intent to its existing provenance owner.
+ * @param model The coherent architecture.
+ * @param selected The chosen content-free bookmark.
+ * @returns Its reading with one explicit selection.
+ */
+function withBookmark(
+	model: ArchitectureModel,
+	selected: NonNullable<NonNullable<ArchitectureModel["migration"]>["bookmark"]>,
+): ArchitectureModel {
+	if (model.migrationPreview !== undefined)
+		return { ...model, migrationPreview: { ...model.migrationPreview, bookmark: selected } };
+	return { ...model, migration: { ...model.migration!, bookmark: selected } };
+}
+
+/**
+ * Read optional bookmarks from the current reading authority.
+ * @param model The coherent reading.
+ * @returns Its content-free bookmark catalogue.
+ */
+function importedBookmarks(model: ArchitectureModel) {
+	return model.migrationPreview?.bookmarks ?? model.migration?.bookmarks ?? [];
 }

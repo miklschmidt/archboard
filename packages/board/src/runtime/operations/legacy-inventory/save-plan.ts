@@ -1,3 +1,4 @@
+import { legacyAuthorityProblem } from "#runtime/store/legacy-authority.ts";
 import { join } from "node:path";
 import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import { errorMessage } from "@archboard/diagnostics/errno";
@@ -42,6 +43,9 @@ async function saveLegacyMappingPlan(
 				waitMs: 0,
 			},
 			() => {
+				const authority = legacyAuthorityProblem(vault);
+				if (authority !== undefined)
+					return migrationFailure("MAPPING_HELD", MIGRATION_PLAN_PATH, authority);
 				const inventory = readLegacyInventory(vault, plan.origin, plan);
 				if (!inventory.success) return inventory;
 				if (

@@ -1,3 +1,4 @@
+import { legacyAuthorityProblem } from "#runtime/store/legacy-authority.ts";
 // Reading a board off disk, and refusing to guess when it is not one.
 //
 // The board on disk is the board (ADR 0015's rule, applied to ADR 0023's file):
@@ -211,6 +212,8 @@ function readSemanticBoardAtUnderLease(
 	location: SemanticBoardLocation,
 	configured = readSemanticBoardConfiguration(vault),
 ): SemanticBoardRead {
+	const authority = legacyAuthorityProblem(vault);
+	if (authority !== undefined) return unreadable(location, authority);
 	const result = readAt(location, configured, true);
 	if ("migration" in result) {
 		throw new Error("A migration cannot remain pending inside the board lease");
@@ -234,6 +237,8 @@ function readSemanticBoardAtAsLeased(
 	location: SemanticBoardLocation,
 	configured = readSemanticBoardConfiguration(vault),
 ): SemanticBoardRead {
+	const authority = legacyAuthorityProblem(vault);
+	if (authority !== undefined) return unreadable(location, authority);
 	const result = readAt(location, configured, false);
 	if (!("migration" in result)) return result;
 	const { read } = result;
@@ -257,6 +262,8 @@ function readSemanticBoardAt(
 	configured = readSemanticBoardConfiguration(vault),
 	options: { migrate?: boolean } = {},
 ): SemanticBoardRead {
+	const authority = legacyAuthorityProblem(vault);
+	if (authority !== undefined) return unreadable(location, authority);
 	const first = readAt(location, configured, false);
 	if (!("migration" in first)) return first;
 	if (options.migrate === false) return first.read;

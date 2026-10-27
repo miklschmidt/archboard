@@ -1,3 +1,4 @@
+import { legacyAuthorityProblem } from "#runtime/store/legacy-authority.ts";
 // Moving a board to another repository's vault (ADR 0051).
 //
 // The whole note moves: every variant, every former name and every subject id
@@ -140,6 +141,9 @@ function writeChecked(
 	candidate: SemanticBoard,
 	at: string,
 ): { readonly board: SemanticBoard } | { readonly problem: string } {
+	const authority = legacyAuthorityProblem(vault);
+	if (authority !== undefined)
+		return { problem: `Ownership transfer is unavailable for this vault. ${authority}` };
 	const configured = readSemanticBoardConfiguration(vault);
 	const accepted = acceptedBoard(
 		before,

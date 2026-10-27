@@ -12,6 +12,7 @@ import type { ArchitectureModel, ModelDiagnostic } from "#shared/schemas/model.t
 function isModelInput(file: string): boolean {
 	return (
 		file === "model.json" ||
+		file === "migration.json" ||
 		file === ".archboard/config.yaml" ||
 		/\.(?:module|semantic|flows|proposal|walkthrough)\.json$/u.test(file)
 	);

@@ -1,3 +1,4 @@
+import { modelBoundaryFailure } from "#runtime/store/model-state.ts";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import { SemanticIdSchema } from "#shared/schemas/primitives.ts";
 import type {
@@ -163,7 +164,7 @@ function inventoryChanged(vault: string, inventory: LegacyInventory): boolean {
  * @param proposed A candidate plan to assess without saving it.
  * @returns Original coverage, identity provenance and a separate mapping plan.
  */
-function readLegacyInventory(
+function readCapturedLegacyInventory(
 	vault: string,
 	origin: string,
 	proposed?: LegacyMappingPlan,
@@ -215,4 +216,39 @@ function migrationFailure(
 		],
 	};
 }
-export { readLegacyInventory, migrationFailure, inventoryFromInputs };
+export { readCapturedLegacyInventory, readLegacyInventory, migrationFailure, inventoryFromInputs };
+
+/**
+ * Keep public inventory readers behind the shared installation authority.
+ * @param vault The addressed vault.
+ * @param origin The stable import namespace.
+ * @param proposed Optional explicit mapping choices.
+ * @returns Original inventory or the shared recovery refusal.
+ */
+function readLegacyInventory(
+	vault: string,
+	origin: string,
+	proposed?: LegacyMappingPlan,
+): LegacyInventoryRead {
+	const blocked = modelBoundaryFailure(vault);
+	if (blocked !== undefined) return inventoryBoundary(blocked);
+	const inventory = readCapturedLegacyInventory(vault, origin, proposed);
+	const after = modelBoundaryFailure(vault);
+	return after === undefined ? inventory : inventoryBoundary(after);
+}
+/**
+ * Preserve structured recovery data without exposing a mixed original inventory.
+ * @param blocked The shared architecture refusal.
+ * @returns The inventory transport refusal.
+ */
+function inventoryBoundary(
+	blocked: NonNullable<ReturnType<typeof modelBoundaryFailure>>,
+): Extract<LegacyInventoryRead, { success: false }> {
+	return {
+		success: false,
+		code: blocked.code === "MODEL_BUSY" ? "MODEL_BUSY" : "RECOVERY_REQUIRED",
+		error: blocked.error,
+		diagnostics: blocked.diagnostics,
+		recovery: blocked.recovery,
+	};
+}

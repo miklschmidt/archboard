@@ -12,7 +12,7 @@ const PortablePathSchema = z
 		(path) =>
 			!/[\\\0:]/u.test(path) &&
 			path.split("/").every((part) => !["", ".", ".."].includes(part)) &&
-			(/^(?:model\.json|\.archboard\/config\.yaml)$/u.test(path) ||
+			(/^(?:model\.json|migration\.json|\.archboard\/config\.yaml)$/u.test(path) ||
 				/\.(?:module|flows|proposal|walkthrough)\.json$/u.test(path)),
 		"Use a normalized relative architecture input path.",
 	);

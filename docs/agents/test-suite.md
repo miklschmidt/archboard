@@ -692,3 +692,19 @@ The browser proves exact bookmark membership, architecture and sequence beats, f
 It also follows a converted reference and reopens original playback after live original files disappear.
 Original state and checkpoint selectors remain paired throughout those actions.
 The existing history, canonical reference, and walkthrough owners retain their broader behavior coverage.
+
+## Explicit migration cutover
+
+The public architecture runtime owns migration installation under `legacy-preview/installation*.test.ts` and `proposal-installation.test.ts`.
+Real files and Git prove complete fingerprints, configured signing refusal, compact baselines, exact originals, and one authoritative representation.
+The existing durable crash fixture owns interruptions before installation, during mixed images, after archive append, and during cleanup.
+Foreign bytes and the recovery journal remain intact after replay refusal.
+The private archive case uses the same installation interface and proves complete portable original dependencies.
+The history case keeps original standing, blocked ancestry, corrections, and unavailable historical beats.
+Current and draft conversion requires explicit views.
+
+`tests/system/semantic-boards/model-migration.test.ts` owns thin CLI and HTTP agreement.
+It subscribes before cutover and observes the existing feed after durable completion.
+It also covers strict owner intent, explicit vaults, exact retry, operation reuse, and refused legacy authoring.
+The parent owns visible pane transitions, navigation, recovery feedback, and unavailable ownership transfer controls.
+These backend owners imply no browser acceptance.

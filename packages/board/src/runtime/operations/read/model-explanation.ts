@@ -242,7 +242,8 @@ async function readRequestedArchitecture(
  * @returns A structured refusal or no conflict.
  */
 function selectionFailure(selection: z.infer<typeof StateSelectionSchema>) {
-	if (selection.preview !== undefined) return previewSelectionFailure(selection);
+	if (selection.preview !== undefined || selection.legacyAddress !== undefined)
+		return previewSelectionFailure(selection);
 	if (selection.state !== undefined && selection.checkpoint !== undefined)
 		return refuse("MODEL_INVALID", [], "Select one state or checkpoint.");
 	return undefined;

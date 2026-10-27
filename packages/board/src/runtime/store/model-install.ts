@@ -1,3 +1,4 @@
+import { migrationInstallationFiles } from "#runtime/store/migration-installation.ts";
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { sameSemanticValue } from "#shared/rules/semantic-value.ts";
@@ -29,13 +30,24 @@ import {
 type FileImage = ModelJournal["files"][number];
 
 /**
+ * Capture the input format that this logged operation replaces.
+ * @param vault The addressed vault.
+ * @param journal The durable intent.
+ * @returns Its complete recognized file set.
+ */
+function installationFiles(vault: string, journal: ModelJournal) {
+	return "type" in journal.request && journal.request.type === "migrate"
+		? migrationInstallationFiles(vault)
+		: readModelFiles(vault);
+}
+/**
  * Find foreign input values before any replay changes a file.
  * @param vault The explicitly addressed vault.
  * @param journal The durable installation record.
  * @param complete Whether every input must match its final image.
  */
 function requireImages(vault: string, journal: ModelJournal, complete = false): void {
-	const captured = readModelFiles(vault);
+	const captured = installationFiles(vault, journal);
 	if (captured.diagnostics.length !== 0)
 		throw new ArchiveError(
 			"RECOVERY_CONFLICT",

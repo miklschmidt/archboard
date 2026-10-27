@@ -51,6 +51,12 @@ const LegacyCoverageSchema = z.strictObject({
 	completeModel: z.literal(false),
 });
 const MigrationPreviewSchema = MigrationReadingsSchema.extend({
+	installation: z
+		.strictObject({
+			expectedRevision: ModelRevisionSchema,
+			expectedContext: z.string().regex(/^[a-f0-9]{64}$/u),
+		})
+		.optional(),
 	selected: LegacyCoverageSchema.optional(),
 	diagnostics: z.array(ModelDiagnosticSchema).optional(),
 	history: z

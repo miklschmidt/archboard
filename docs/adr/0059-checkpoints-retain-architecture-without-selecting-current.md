@@ -203,3 +203,33 @@ The original reader proves its exact source and mapping fingerprints before port
 Current portable inputs still accept only their existing canonical file formats.
 A later canonical narrative can retain a migration checkpoint as an exact target dependency.
 Export and import preserve its original readings and complete original bytes through actual archive ancestry.
+
+## Explicit migration installation
+
+TASK-549.23 installs only an owner-authorized complete live preview.
+Its request carries complete source, mapping, candidate, destination, and checkout fingerprints.
+The destination token also covers the separate saved plan.
+Changed bytes, paths, policy, or checkout context refuse installation.
+A configured signing failure changes no live input.
+
+The existing signer retains exact original inputs and saved mapping choices before removal.
+Each converted compact proposal retains its canonical baseline through actual Git parents.
+Original predecessor and baseline choices remain explicit proposal provenance.
+Standing conflicts and blocked ancestry keep their retained bases.
+Historical and shelved originals keep their exact coverage, lifecycle, correction evidence, and bytes.
+Omitted historical views remain unavailable reading intent and do not block conversion of valid live narratives.
+Every converted current or draft beat requires an explicit valid original view.
+
+The same lease, journal, retention ref, atomic writer, archive append, and completion record install all canonical inputs.
+Both legacy and canonical readers pass the existing recovery boundary.
+Foreign edits preserve their bytes beside the journal and block replay.
+The source HEAD and index remain unchanged.
+The existing recovery operation serves Git-backed and explicitly initialized private archives.
+Exact completed retries return their signed receipt without another installation.
+
+The installed migration.json file holds original checkpoint references, state identities, bookmarks, and addresses.
+It holds no architecture snapshots.
+Portable export and import include that file and its complete original and baseline ancestry.
+Canonical dependencies keep the retained original checkpoint reachable after later edits.
+Live legacy authoring refuses the migrated vault and continues for other unmigrated vaults.
+No dual writer remains for a migrated model.

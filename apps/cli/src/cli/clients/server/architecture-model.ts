@@ -1,6 +1,7 @@
 import {
 	ArchitectureExportResultSchema,
 	ArchitectureImportRequestSchema,
+	ArchitectureMigrationRequestSchema,
 } from "@archboard/board/model";
 import {
 	ExplanationActionRequestSchema,
@@ -331,3 +332,19 @@ function importArchitectureModelOnServer(input: z.infer<typeof ArchitectureImpor
 	);
 }
 export { exportArchitectureModelOnServer, importArchitectureModelOnServer };
+
+/**
+ * Submit the explicit owner migration intent through the shared runtime.
+ * @param input The complete input.
+ * @returns The shared migration receipt or refusal.
+ */
+function migrateArchitectureModelOnServer(
+	input: z.infer<typeof ArchitectureMigrationRequestSchema>,
+) {
+	return architectureResult(
+		ArchitectureModuleEditResultSchema,
+		"/api/architecture/migration/apply",
+		jsonPost(input),
+	);
+}
+export { migrateArchitectureModelOnServer };

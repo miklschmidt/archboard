@@ -24,6 +24,8 @@ type Selection = Record["selection"];
 function proposalDependencies(proposal: Omit<Proposal, "file">): string[] {
 	return [
 		proposal.baseline,
+		...(proposal.predecessorCheckpoint === undefined ? [] : [proposal.predecessorCheckpoint]),
+		...(proposal.migration === undefined ? [] : [proposal.migration.checkpoint]),
 		...(proposal.standing === undefined ? [] : [proposal.standing.baseline]),
 		...(proposal.restorations ?? []).map((entry) => entry.checkpoint),
 	];
@@ -48,6 +50,7 @@ function selectionDependencies(selection: Selection): string[] {
  */
 function modelDependencies(model: ArchitectureModel): string[] {
 	return [
+		...(model.migration === undefined ? [] : [model.migration.checkpoint]),
 		...model.proposals.flatMap(proposalDependencies),
 		...model.walkthroughs.flatMap((walk) =>
 			"checkpoint" in walk.target ? [walk.target.checkpoint] : [],
@@ -200,7 +203,7 @@ async function retainedModel(context: ArchiveContext, id: string, record: Record
 		);
 	const model =
 		record.migration === undefined
-			? (discoveryFailure(captured) ?? decodeModel(captured))
+			? (discoveryFailure(captured) ?? decodeModel(captured, record.selection))
 			: retainedMigrationPreview(captured, record);
 	if (!model.success) throw new ArchiveError(model.code, model.diagnostics[0]!.message, id);
 	if (model.manifest.id !== record.model)
