@@ -45,16 +45,17 @@ Give the graders a copy of `<out>/pairs` in a directory of its own, such as
 
 ## The owner's weighting
 
-The owner decided this on 2026-10-27, after the second council run, where
-Opus weighed compactness and the other two weighed fixed header crossings.
-The owner sides with Opus. Every grader applies it before its own weights:
+The owner decided this on 2026-10-27, after the second council run. Every
+grader applies it before its own weights:
 
-- A compact picture, short and direct lines, and related cards close
-  together count most.
-- A line through a group's or a parent's header is a flaw, not a defect. It
-  is weighed against what avoiding it costs. A line sent around the picture
-  or along a frame's full height, a frame much larger than its members, or
-  related cards split by an empty span cost more than one short crossing.
+- Defects are defects. A line through a group's or a parent's header is
+  one, as are the defects listed under Grading. No other quality makes up
+  for a defect.
+- Among pictures without defects, a tightly composed board reads better
+  than one with dead space. Short, direct lines, frames tight around their
+  members and related cards close together count most. A line sent around
+  the picture or along a frame's full height, a frame much larger than its
+  members, or related cards split by an empty span read worse.
 
 ## Grading
 
@@ -69,9 +70,9 @@ The owner sides with Opus. Every grader applies it before its own weights:
    zoom into either) and records `A better`, `B better` or `same`, with a
    one-line reason that names what it saw. It also records every defect it
    sees in either picture. A defect is a line that is missing or ends away
-   from its card, an arrow through a card, a label off its route, a parent
-   with no visible frame, or a trunk that joins different sources toward
-   different targets. The verdicts go to a file per
+   from its card, an arrow through a card, a line through a group's or a
+   parent's header, a label off its route, a parent with no visible frame,
+   or a trunk that joins different sources toward different targets. The verdicts go to a file per
    grader in the grading copy, for example
    `/tmp/grading-<run>/verdicts/<grader>.json`, keyed by pair number.
    A grader does not see the verdicts of the other graders.
