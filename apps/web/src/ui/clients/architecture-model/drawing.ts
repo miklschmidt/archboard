@@ -28,6 +28,7 @@ function modelDrawingQuery(
 		variant: projection.complete,
 		held: projection.held,
 		standing: projection.standing,
+		unsettled: projection.unsettled,
 		policy: model.policy,
 	});
 	const key = JSON.stringify(["canonical", rendererBuild, model.manifest.id, prepared.key]);

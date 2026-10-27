@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T21:57:00Z'
+updated_date: '2026-10-27T22:00:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -196,4 +196,6 @@ The canonical walkthrough owner reproduced an active sidebar toggle while captur
 The existing agent-navigation browser owner reproduced a completed remote walkthrough reopening after an uncached proposal read remounted the reader. Leaving now closes the captured session and clears the original driven request through useModelArrival, its existing owner. This is one event callback, without a mirrored effect or second handled-request store. The proposal remains ordinary after leave. Agent-navigation and walkthrough browser owners, full types and focused source/test lint pass.
 
 Render-context repair is implemented in the shared projection and HTTP render adapter. Public runtime and real-Git HTTP/CLI evidence proves module and aggregate warnings, default comparison with removed subjects, complete behavioral exchanges, exact retained recipe replay after later edits, CLI artifact equality, and scoped entry-point meaning after visual filters. Consumer rendering guidance describes these semantics; source-vault inputs remain unchanged. Focused tests pass 6 cases / 44 assertions. Both TypeScript projects, focused source/test lint with zero warnings, touched-file formatting, and git diff --check pass. Signed source 25157a31544c2128a0146ac889887091a824017c is based on integration 86ad139a453420768f321cb6ee8e7b1c13457e1a and includes required main a98f28811f4fa74233ae4a55e52b90d75defd93b. Full contract/evidence is in task-549.24-render-context-contract.md and task-549.24-render-context-backend.md under /home/msc/.local/state/archboard-implementation/task-549. Parent status, assignee, acceptance, frontend work, and architecture migration remain unchanged.
+
+Parent wired the merged shared projection.unsettled field into the existing browser renderer request. The canonical legibility owner now passes computed light/dark colors, added and removed connection ink, traffic behind labels, distinct kind icons, and unresolved badges together with selection rings and structured inspector issues. Popup choices wait for actual hit targets as the existing mode owner does. Browser, full types and focused source/test lint pass. The backend source merged through signeda154b6bc5; its six public cases and 44 assertions remain valid.
 <!-- SECTION:NOTES:END -->

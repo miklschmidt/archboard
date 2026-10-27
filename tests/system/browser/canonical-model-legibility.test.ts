@@ -150,6 +150,33 @@ const overThePill = (
 			` }; })()`,
 	);
 
+/**
+ * Choose a visible mode or flow after its popup finishes opening.
+ * @param browser The page.
+ * @param trigger The visible control selector.
+ * @param choice The exact authored or grammar option selector.
+ */
+async function choose(
+	browser: AgentBrowserSession,
+	trigger: string,
+	choice: string,
+): Promise<void> {
+	await browser.run(["click", trigger]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(`(() => {
+		const item = document.querySelector(${JSON.stringify(choice)});
+		if (!item) return false;
+		const box = item.getBoundingClientRect();
+		return box.height > 0 && item.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2));
+	})()`),
+		Boolean,
+		"the model reading option to become clickable",
+		WAIT,
+	);
+	await browser.run(["click", choice]);
+}
+
 test("a reader sees what changed, what belongs together and what is unsettled", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "model-legibility");
@@ -350,10 +377,8 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	// The other grammar, told in the same language: the plate is over the dots.
 	// The views are on the board tab, which the pick moved away from.
 	await openModelSidebar(browser);
-	await browser.run(["click", '[data-slot="model-grammar-selector"]']);
-	await browser.run(["click", '[role="option"][data-grammar="sequence"]']);
-	await browser.run(["click", '[data-slot="model-flow-selector"]']);
-	await browser.run(["click", `[role="option"][data-flow-id="${flow}"]`]);
+	await choose(browser, '[data-slot="model-grammar-selector"]', '[data-grammar="sequence"]');
+	await choose(browser, '[data-slot="model-flow-selector"]', `[data-flow-id="${flow}"]`);
 	await pollUntil(
 		() =>
 			browser.eval<number>(
@@ -386,8 +411,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 		"the picture to take the dark ground's colours",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="model-grammar-selector"]']);
-	await browser.run(["click", '[role="option"][data-grammar="architecture"]']);
+	await choose(browser, '[data-slot="model-grammar-selector"]', '[data-grammar="architecture"]');
 	await pollUntil(
 		() =>
 			browser.eval<number>(

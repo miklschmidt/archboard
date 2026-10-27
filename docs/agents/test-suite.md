@@ -800,3 +800,9 @@ Canonical viewer, gesture, navigation, reference, structure, code, proposal, and
 Their contracts include exact pane reports, selected source actions, foreign destinations, durable updates, and subject claim take-back.
 `semantic-traffic.test.ts` also retains reduced-motion visibility without replacing the picture.
 Board ownership transfer remains explicitly unavailable for canonical models, so its old move workflow retires.
+
+`canonical-model-legibility.test.ts` replaces the legacy status-legibility browser fixture.
+It retains computed light and dark colors, comparison ink, label paint order, kind icons, and simultaneous issue and selection marks.
+The public proposal fixture also proves structured issue details beside authored group meaning.
+Shared projection supplies unresolved subject identities and their represented aggregate connections to browser and exported drawings.
+The render-context runtime and HTTP/CLI owners cover exact replay and complete interface context.
