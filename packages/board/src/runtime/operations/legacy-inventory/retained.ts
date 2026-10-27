@@ -173,15 +173,17 @@ type MigrationContext = ReturnType<typeof migrationContext>;
  * @param captured Exact archive inputs.
  * @param record Their immutable checkpoint metadata.
  * @param selector An optional qualified original state.
+ * @param legacyAddress An optional exact captured original alias.
  * @returns Scoped architecture or an explicit originals-only reading.
  */
 function retainedMigrationPreview(
 	captured: Captured,
 	record: Record,
 	selector?: string,
+	legacyAddress?: string,
 ): ArchitectureModelRead {
 	const context = migrationContext(captured, record);
-	const result = materializeOriginals(context, selector);
+	const result = materializeOriginals(context, selector, legacyAddress);
 	return result.success
 		? {
 				...result,
@@ -208,22 +210,24 @@ function convertibleInventory(
  * Materialize supported coverage while keeping failed conversions inspectable as originals.
  * @param context Complete original checkpoint evidence.
  * @param selector The optional explicit original state.
+ * @param legacyAddress The optional exact captured alias.
  * @returns Original coverage or diagnostic evidence without a fabricated model.
  */
 function materializeOriginals(
 	context: MigrationContext,
 	selector: string | undefined,
+	legacyAddress?: string,
 ): ArchitectureModelRead {
 	const { inventory, diagnostics, originals } = context;
+	const exactSelection = [selector, legacyAddress].some((value) => value !== undefined);
 	if (convertibleInventory(inventory)) {
-		const result = previewFromInventory(inventory, selector);
+		const result = previewFromInventory(inventory, selector, undefined, undefined, legacyAddress);
 		if (result.success)
 			return { ...result, migrationPreview: { ...result.migrationPreview!, originals } };
-		if (selector !== undefined) return result;
+		if (exactSelection) return result;
 		return unconvertedReading(context, result.diagnostics);
 	}
-	if (selector !== undefined)
-		return failure("MAPPING_UNRESOLVED", unresolvedDiagnostics(diagnostics));
+	if (exactSelection) return failure("MAPPING_UNRESOLVED", unresolvedDiagnostics(diagnostics));
 	return unconvertedReading(context, diagnostics);
 }
 /**

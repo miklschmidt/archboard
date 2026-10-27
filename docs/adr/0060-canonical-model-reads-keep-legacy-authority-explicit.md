@@ -349,5 +349,38 @@ A migration checkpoint carries explicit migration metadata and no selected canon
 Its reader reconstructs originals from Git objects independently of live source and plan files.
 Incomplete conversion returns inspectable originals and diagnostics rather than a fabricated complete model.
 Exact original state materialization requires a complete retained plan.
-Original views, walkthroughs, bookmarks, addresses, and unresolved payloads remain available for TASK-549.22.
+Original views, walkthroughs, bookmarks, addresses, and unresolved payloads remain available for conversion.
 TASK-549.23 owns conversion installation and cutover through the existing durable transaction.
+
+## Converted original readings
+
+TASK-549.22 extends preview through the existing reading, reference, and playback owners.
+Referenced views expand into complete narrative beat readings with stable identities.
+Every converted beat requires an explicit original view.
+Older originals remain decodable, but a missing view stops its affected beat with an owner correction diagnostic.
+Conversion preserves original bytes and never inherits another view or supplies an overview.
+Identity-only visibility lists preserve exact relationship subsets without copying architectural content.
+Unused views become optional imported bookmarks.
+Basic recursive navigation depends on neither named views nor bookmarks.
+Board level classification stays retired without numeric depth.
+
+Explicit legacy address resolution uses the captured original alias catalogue.
+It selects one qualified original state and preserves that state's one-board coverage.
+Unknown or ambiguous aliases refuse without matching similar names or substituting current architecture.
+Current composition applies explicit identity choices.
+Historical subject readings retain original namespaces and original content.
+Predecessor names remain former names, while independent sibling names stay separate.
+
+Each original reference decision can name its qualified source state.
+An unqualified source choice applies only to the captured current designation.
+Historical coverage never borrows another state's decision.
+Same-vault references resolve explicit targets through the captured preview source and plan fingerprints.
+Retained local targets stay within the same migration checkpoint unless the reference names another exact checkpoint.
+Unpinned external historical references remain unavailable through the existing reference owner.
+
+Playback captures one complete current candidate or one original state.
+A migration checkpoint pins its original files, plan, narrative, and target coverage together.
+The returned source selectors preserve paired state and checkpoint addressing for restart.
+Unavailable reading intent stops only its affected beat.
+The original files remain the sole live authority throughout preview.
+TASK-549.23 owns durable installation and the persistent form of imported bookmark and address inputs.

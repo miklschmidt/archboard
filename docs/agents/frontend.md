@@ -127,7 +127,17 @@ not add imports or a second state path before that work.
   File inspection decodes one selected input and exposes unsupported UTF-8 as base64.
   Failed composition keeps originals and recovery visible without drawing an empty current model.
   Planned-only sources expose an empty current reading with visible guidance.
-  Code and reference reads preserve the preview origin. A foreign destination clears it.
+  Code and reference reads preserve the preview origin and selected original state beside the checkpoint.
+  A followed reference uses its returned preview origin and clears any source alias or bookmark.
+  `bookmarkX` selects an imported reading. `legacyAddressX` resolves an exact original alias.
+  Both remain router-owned intent through reload and browser history.
+  Bookmarks supply default reading fields without copying model content.
+  Scope, focus, or grammar changes leave the bookmark and retain the displayed reading fields.
+  Filters narrow the bookmark without changing its original membership.
+  Preview walkthroughs reuse the existing captured player and explicit restart.
+  Every converted beat requires an explicit original view. Missing views remain unavailable.
+  Explicit visibility narrows diagrams while complete model content supplies interface facts.
+  Bookmarks and walkthrough beats use the same projection rule.
   Canonical sockets name `reading=canonical` and start without a legacy board.
   Browser listings, board snapshots, and vault diagnostics normalize old schemas without persisting them.
   Explicit canonical intent remains visible even when the server remembers a legacy board.

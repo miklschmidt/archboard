@@ -1135,6 +1135,13 @@
 					"owner": "packages/board/tests/runtime/operations/legacy-preview/history.test.ts, drafts.test.ts and retention.test.ts; tests/system/semantic-boards/migration-planning.test.ts; guidance skills/archboard/references/legacy-migration.md#preserve-original-history; tests/system/browser/canonical-preview-history.test.ts"
 				},
 				{
+					"path": "converted legacy readings: complete beats, imported bookmarks, former names, and exact original addresses",
+					"expectedUse": "Play one captured preview revision. Require an explicit original view for every converted beat. Preserve original bytes and report missing views without inheritance or an overview fallback. Follow captured aliases and state-specific reference choices.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/legacy-preview/readings.test.ts, reading-history.test.ts, reference-readings.test.ts and portable-readings.test.ts; tests/system/semantic-boards/migration-planning.test.ts; guidance skills/archboard/references/legacy-migration.md#read-converted-narratives; tests/system/browser/canonical-preview-navigation.test.ts owns visible bookmarks, exact view membership, aliases, retained playback, and paired reference navigation"
+				},
+				{
 					"path": "canonical recursive readings: scopes, exact checkpoint addresses, direct context, complete interfaces and connection aggregation",
 					"expectedUse": "Open immediate module children without creating boards. Preserve exact readings through navigation and inspect every authored relationship behind a projected line.",
 					"scenarios": [],

@@ -194,6 +194,7 @@ async function retainedDetails(
  * @param flow The optional explicit flow selector.
  * @param details Whether the caller returns publication and source evidence.
  * @param legacyState Optional qualified original state coverage for migration history.
+ * @param legacyAddress Optional captured original address.
  * @returns A coherent retained reading or model validation diagnostics.
  */
 async function exactReading(
@@ -203,6 +204,7 @@ async function exactReading(
 	flow?: string,
 	details?: boolean,
 	legacyState?: string,
+	legacyAddress?: string,
 ): Promise<ArchitectureModelRead> {
 	const record = await checkpointRecord(context, checkpoint);
 	await requireDependencies(context, checkpoint, record, new Set());
@@ -213,7 +215,14 @@ async function exactReading(
 			"Retained input fingerprints disagree with the checkpoint.",
 			checkpoint,
 		);
-	const model = await decodeCheckpoint(context, captured, record, checkpoint, legacyState);
+	const model = await decodeCheckpoint(
+		context,
+		captured,
+		record,
+		checkpoint,
+		legacyState,
+		legacyAddress,
+	);
 	if (!model.success) return model;
 	const enriched =
 		details === false ? model : await retainedDetails(context, model, checkpoint, record);
@@ -227,6 +236,7 @@ async function exactReading(
  * @param record The immutable checkpoint record.
  * @param checkpoint Its exact identity.
  * @param legacyState Optional original board coverage.
+ * @param legacyAddress Optional captured original address.
  * @returns Complete canonical meaning or retained original evidence.
  */
 async function decodeCheckpoint(
@@ -235,11 +245,12 @@ async function decodeCheckpoint(
 	record: Awaited<ReturnType<typeof checkpointRecord>>,
 	checkpoint: string,
 	legacyState?: string,
+	legacyAddress?: string,
 ): Promise<ArchitectureModelRead> {
 	if (record.migration !== undefined) {
 		const { retainedMigrationPreview } =
 			await import("#runtime/operations/legacy-inventory/retained.ts");
-		const model = retainedMigrationPreview(captured, record, legacyState);
+		const model = retainedMigrationPreview(captured, record, legacyState, legacyAddress);
 		return model;
 	}
 	const refused = discoveryFailure(captured);

@@ -70,7 +70,7 @@ function matchingNavigation(actual: Model | undefined, shown: Model): boolean {
 }
 
 /**
- * One canonical read selects either mutable state or immutable checkpoint.
+ * Preview navigation preserves the original state beside its retained checkpoint.
  * @param model The coherent inspected model.
  * @param subject The inspected module.
  * @returns The existing opener destination fields.
@@ -78,9 +78,18 @@ function matchingNavigation(actual: Model | undefined, shown: Model): boolean {
 function navigationTarget(model: Model, subject: string) {
 	const checkpoint = model.checkpoint?.id;
 	const preview = model.migrationPreview?.origin;
-	const state =
-		checkpoint === undefined && preview === undefined ? model.selectedState?.id : undefined;
+	const state = navigationState(model);
 	return { model: model.manifest.id, subject, state, checkpoint, preview };
+}
+
+/**
+ * Original coverage remains independent of the checkpoint that retains its inputs.
+ * @param model The exact source architecture.
+ * @returns Its original state or ordinary canonical selector.
+ */
+function navigationState(model: Model): string | undefined {
+	if (model.migrationPreview !== undefined) return model.migrationPreview.selected?.legacy;
+	return model.checkpoint === undefined ? model.selectedState?.id : undefined;
 }
 
 /**
@@ -94,6 +103,7 @@ function navigationIdentity(model: Model) {
 		model.selectedState?.id,
 		model.checkpoint?.id,
 		model.migrationPreview?.origin,
+		model.migrationPreview?.selected?.legacy,
 		model.revision.digest,
 	];
 }

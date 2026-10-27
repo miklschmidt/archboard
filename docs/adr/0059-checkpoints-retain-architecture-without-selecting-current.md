@@ -196,3 +196,10 @@ The destination signs its own installation checkpoint under its configured polic
 Import changes no source HEAD, index, worktree registration, publication destination, or remote history.
 A complete bundle can repair lost local history, but it cannot prevent archive deletion.
 A second persistence engine or transaction owner is rejected because the existing archive and journal already own these guarantees.
+
+Migration originals travel as an archive-only `migration-originals.json` envelope.
+The portable validator accepts that path only for a migration checkpoint.
+The original reader proves its exact source and mapping fingerprints before portability accepts the checkpoint.
+Current portable inputs still accept only their existing canonical file formats.
+A later canonical narrative can retain a migration checkpoint as an exact target dependency.
+Export and import preserve its original readings and complete original bytes through actual archive ancestry.

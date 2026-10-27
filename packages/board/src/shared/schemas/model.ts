@@ -30,7 +30,8 @@ const ModelReferenceAddressSchema = z.strictObject({
 	vault: z.string(),
 	model: SemanticIdSchema,
 	subject: QualifiedSubjectIdSchema,
-	state: SemanticIdSchema,
+	state: ModelReferenceSchema.shape.state,
+	preview: SemanticIdSchema.optional(),
 	checkpoint: GitObjectIdSchema.optional(),
 });
 
@@ -237,6 +238,10 @@ const ArchitectureModelFailureSchema = z
 		success: z.literal(false),
 		code: z.enum([
 			"WALKTHROUGH_NOT_FOUND",
+			"BOOKMARK_NOT_FOUND",
+			"BOOKMARK_AMBIGUOUS",
+			"LEGACY_ADDRESS_NOT_FOUND",
+			"LEGACY_ADDRESS_AMBIGUOUS",
 			"WALKTHROUGH_AMBIGUOUS",
 			"STATE_NOT_FOUND",
 			"STATE_AMBIGUOUS",

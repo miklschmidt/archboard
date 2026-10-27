@@ -14,6 +14,22 @@ const modelReadContract = defineCommand({
 	parameters: [
 		{
 			kind: "option",
+			key: "legacyAddress",
+			spellings: ["--legacy-address"],
+			value: "required",
+			placeholder: "address",
+			description: "Follow one exact original address inside an explicit migration preview",
+		},
+		{
+			kind: "option",
+			key: "bookmark",
+			spellings: ["--bookmark"],
+			value: "required",
+			placeholder: "id|name",
+			description: "Select one content-free imported bookmark inside an explicit migration preview",
+		},
+		{
+			kind: "option",
 			key: "walkthrough",
 			spellings: ["--walkthrough"],
 			value: "required",
@@ -114,6 +130,8 @@ const modelReadContract = defineCommand({
 	input: {
 		ingress: z.object({
 			preview: z.string().optional(),
+			legacyAddress: z.string().optional(),
+			bookmark: z.string().optional(),
 			module: z.string().optional(),
 			walkthrough: z.string().optional(),
 			shared: z.boolean().optional(),

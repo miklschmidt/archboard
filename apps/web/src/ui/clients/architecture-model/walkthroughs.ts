@@ -9,6 +9,7 @@ import { readModel } from "#ui/clients/architecture-model/queries.ts";
  * @param request.walkthrough The authored narrative identity.
  * @param request.checkpoint The exact source checkpoint, or current inputs.
  * @param request.state The selected proposal, or current architecture.
+ * @param request.preview The migration origin, when reading original architecture.
  * @returns A captured read that changes only after an explicit new invocation.
  */
 function modelWalkthroughQuery(
@@ -18,6 +19,7 @@ function modelWalkthroughQuery(
 		walkthrough: string;
 		checkpoint: string | null;
 		state: string | null;
+		preview?: string | null;
 	},
 ) {
 	return queryOptions({
@@ -29,6 +31,7 @@ function modelWalkthroughQuery(
 		 */
 		queryFn: (context) =>
 			readModel(vault, request.checkpoint, context.signal, {
+				preview: request.preview,
 				state: request.state,
 				walkthrough: request.walkthrough,
 			}),

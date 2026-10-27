@@ -8,6 +8,7 @@ import { inspectContainer } from "@archboard/board/container-interface";
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 type ModelFlow = Model["collections"][number]["flows"][number];
 type ModelFilters = Pick<ModelAddress, "hideKinds" | "hideGroups">;
+type Visibility = Model["walkthroughs"][number]["beats"][number]["reading"]["visibility"];
 
 /**
  * Adapt canonical meaning to the existing renderer content contract.
@@ -90,6 +91,7 @@ function projectScope(
  * @param focus Explicit focused identities, or no focus.
  * @param filters Hidden relationship kinds and group regions.
  * @param reference The coherent comparison base, when available.
+ * @param visibility Exact imported view membership, when the reading supplies it.
  * @returns Visible parts, complete interface facts, and exact underlying connections.
  */
 function projectModel(
@@ -98,14 +100,18 @@ function projectModel(
 	focus: readonly string[] | null = null,
 	filters: ModelFilters = {},
 	reference?: Model,
+	visibility?: Visibility,
 ) {
 	const context = comparisonContent(model, reference);
 	const standing = context.standing ?? {};
-	const projection = projectContent(context.depicted, scope, focus, standing);
+	const projection = projectContent(context.depicted, scope, focus, standing, visibility);
 	const held =
 		reference === undefined
 			? undefined
-			: filteredContent(projectContent(context.complete, scope, focus, standing).content, filters);
+			: filteredContent(
+					projectContent(context.complete, scope, focus, standing, visibility).content,
+					filters,
+				);
 	return {
 		...projection,
 		...context,
@@ -147,6 +153,7 @@ function comparisonContent(model: Model, reference: Model | undefined) {
  * @param scope The recursive scope.
  * @param focus Explicit focused identities, or no focus.
  * @param standing Exact subject comparison states.
+ * @param visibility Exact imported view membership, when present.
  * @returns The requested structural reading.
  */
 function projectContent(
@@ -154,10 +161,40 @@ function projectContent(
 	scope: string | null,
 	focus: readonly string[] | null,
 	standing: Readonly<Record<string, ChangeKind>>,
+	visibility?: Visibility,
 ) {
+	if (visibility !== undefined) return projectVisible(complete, scope, standing, visibility);
 	return focus === null
 		? projectScope(complete, scope, standing)
 		: projectFocused(complete, scope, focus, standing);
+}
+
+/**
+ * Preserve exact imported membership without expanding adjacent relationships.
+ * @param complete The complete architecture used for inspection.
+ * @param scope The underlying recursive location.
+ * @param standing The existing comparison classification.
+ * @param visibility Explicit modules and relationships in the original view.
+ * @returns The same projection contract with only the requested picture narrowed.
+ */
+function projectVisible(
+	complete: VariantContent,
+	scope: string | null,
+	standing: Readonly<Record<string, ChangeKind>>,
+	visibility: NonNullable<Visibility>,
+): ReturnType<typeof projectScope> {
+	const visible = new Set(visibility.modules);
+	const relationships = new Set(visibility.relationships);
+	const connections = complete.edges
+		.filter((edge) => relationships.has(edge.id) && visible.has(edge.from) && visible.has(edge.to))
+		.map((edge) => ({ line: edge, joins: [edge] as const }));
+	return {
+		...projectScope(complete, scope, standing),
+		children: complete.nodes.filter((node) => visible.has(node.id)),
+		context: [],
+		connections,
+		content: drawingContent(complete, visible, connections, visible),
+	};
 }
 
 /**

@@ -1,3 +1,11 @@
+import {
+	legacyAddresses,
+	legacyAddressOf,
+	selectBookmark,
+} from "#runtime/operations/legacy-inventory/addresses.ts";
+import type { z } from "zod";
+import type { StateSelectionSchema } from "#shared/schemas/model-proposals.ts";
+import { walkthroughOf, attachPlayback } from "#runtime/operations/read/playback.ts";
 import type { ArchitectureModelRead } from "#shared/schemas/model.ts";
 import type { LegacyInventory } from "#shared/schemas/migration.ts";
 import { GitObjectIdSchema } from "#shared/schemas/model.ts";
@@ -20,6 +28,7 @@ import { exactReading } from "#runtime/operations/history/read.ts";
  * @param state The optional original state identity.
  * @param module The optional original subject.
  * @param flow The optional original flow.
+ * @param legacyAddress The optional exact original alias.
  * @returns An immutable original reading without live source inputs.
  */
 function retainedPreview(
@@ -29,6 +38,7 @@ function retainedPreview(
 	state?: string,
 	module?: string,
 	flow?: string,
+	legacyAddress?: string,
 ) {
 	return historyResult(
 		"ARCHIVE_UNREADABLE",
@@ -47,19 +57,18 @@ function retainedPreview(
 					"Select the matching migration checkpoint and origin.",
 					checkpoint,
 				);
-			return exactReading(context, checkpoint, module, flow, true, state);
+			return exactReading(context, checkpoint, module, flow, true, state, legacyAddress);
 		},
 		checkpoint,
 	);
 }
 /**
- * Preview current composition or one original board state without changing authority.
+ * Preview current composition or exact originals without changing live authority.
  * @param vault The explicitly addressed legacy vault.
  * @param origin The saved import namespace.
  * @param module The optional module selector.
  * @param flow The optional flow selector.
- * @param state The optional qualified original state identity.
- * @param checkpoint The optional immutable original checkpoint.
+ * @param selection The original state, checkpoint, address, and reading selectors.
  * @returns A complete scoped reading or an actionable refusal.
  */
 async function readMigrationPreview(
@@ -67,16 +76,47 @@ async function readMigrationPreview(
 	origin: string,
 	module?: string,
 	flow?: string,
-	state?: string,
-	checkpoint?: string,
+	selection: z.infer<typeof StateSelectionSchema> = {},
 ): Promise<ArchitectureModelRead> {
-	if (checkpoint !== undefined)
-		return retainedPreview(vault, origin, checkpoint, state, module, flow);
+	const model =
+		selection.checkpoint === undefined
+			? livePreview(vault, origin, selection)
+			: await retainedPreview(
+					vault,
+					origin,
+					selection.checkpoint,
+					selection.state,
+					undefined,
+					undefined,
+					selection.legacyAddress,
+				);
+	const result = previewPlayback(selectBookmark(model, selection.bookmark), selection);
+	if (!result.success) return result;
+	return selectFlow(selectModule(result, module), flow);
+}
+/**
+ * Compose one fresh original source and plan capture.
+ * @param vault The explicitly addressed vault.
+ * @param origin The saved namespace.
+ * @param selection The original coverage selectors.
+ * @returns A source-stable candidate without installing it.
+ */
+function livePreview(
+	vault: string,
+	origin: string,
+	selection: z.infer<typeof StateSelectionSchema>,
+): ArchitectureModelRead {
 	const inventory = readLegacyInventory(vault, origin);
 	if (!inventory.success) return failure("MAPPING_INVALID", inventory.diagnostics);
-	const refused = previewEligibility(inventory) ?? previewReferenceFailure(inventory);
+	const refused = previewEligibility(inventory);
 	if (refused !== undefined) return refused;
-	const result = previewFromInventory(inventory, state, module, flow);
+	const result = previewFromInventory(
+		inventory,
+		selection.state,
+		undefined,
+		undefined,
+		selection.legacyAddress,
+	);
 	if (previewChanged(vault, inventory))
 		return failure("MODEL_CHANGED", [
 			{
@@ -94,9 +134,29 @@ async function readMigrationPreview(
  * @param state Optional original state coverage.
  * @param module Optional original subject selection.
  * @param flow Optional original flow selection.
+ * @param legacyAddress Optional exact original alias.
  * @returns One canonical candidate with original coverage metadata.
  */
 function previewFromInventory(
+	inventory: LegacyInventory,
+	state?: string,
+	module?: string,
+	flow?: string,
+	legacyAddress?: string,
+): ArchitectureModelRead {
+	const address = previewCoverageChoice(inventory, legacyAddress, state);
+	if (address !== undefined && "success" in address) return address;
+	return withAddress(composePreview(inventory, address?.state ?? state, module, flow), address);
+}
+/**
+ * Materialize selected coverage and its explicit compact draft conversions.
+ * @param inventory Captured original content and identity choices.
+ * @param state The selected original state, when requested.
+ * @param module The optional module selector.
+ * @param flow The optional flow selector.
+ * @returns Coherent coverage with original evidence.
+ */
+function composePreview(
 	inventory: LegacyInventory,
 	state?: string,
 	module?: string,
@@ -154,7 +214,12 @@ function previewReferenceFailure(inventory: LegacyInventory) {
 	const missingReferences = currentNodes(inventory).filter(
 		(entry) =>
 			entry.node.drillDown !== undefined &&
-			!inventory.plan.references?.some((mapping) => mapping.legacy === entry.subject),
+			!inventory.plan.references?.some(
+				(mapping) =>
+					mapping.legacy === entry.subject &&
+					(mapping.state === undefined ||
+						mapping.state === `${inventory.plan.origin}/${entry.board}#${entry.state}`),
+			),
 	);
 	if (missingReferences.length > 0)
 		return failure(
@@ -188,3 +253,51 @@ function previewChanged(vault: string, inventory: LegacyInventory): boolean {
 }
 
 export { readMigrationPreview, previewFromInventory };
+
+/**
+ * Attach the existing immutable playback contract to one captured preview.
+ * @param model The complete captured current or original reading.
+ * @param selection Its explicit narrative source selectors.
+ * @returns The existing playback result without another source read.
+ */
+function previewPlayback(
+	model: ArchitectureModelRead,
+	selection: z.infer<typeof StateSelectionSchema>,
+): ArchitectureModelRead {
+	if (!model.success || selection.walkthrough === undefined) return model;
+	const walk = walkthroughOf(model, selection.walkthrough);
+	if ("success" in walk) return walk;
+	return attachPlayback(model, model, walk, {
+		...selection,
+		state: model.migrationPreview?.selected?.legacy,
+	});
+}
+
+/**
+ * Report the exact address that selected this original coverage.
+ * @param model The selected original reading.
+ * @param address The captured explicit address, when requested.
+ * @returns The same reading and its inspectable address.
+ */
+function withAddress(
+	model: ArchitectureModelRead,
+	address: Extract<ReturnType<typeof legacyAddressOf>, { address: string }> | undefined,
+): ArchitectureModelRead {
+	return !model.success || address === undefined
+		? model
+		: { ...model, migrationPreview: { ...model.migrationPreview!, resolvedAddress: address } };
+}
+
+/**
+ * Resolve original coverage or require complete current reference choices.
+ * @param inventory The captured alias catalogue.
+ * @param selector The optional original alias.
+ * @param state Its optional paired original state.
+ * @returns The exact address or an explicit refusal.
+ */
+function previewCoverageChoice(inventory: LegacyInventory, selector?: string, state?: string) {
+	if (selector === undefined && state === undefined) return previewReferenceFailure(inventory);
+	return selector === undefined
+		? undefined
+		: legacyAddressOf(legacyAddresses(inventory), selector, state);
+}

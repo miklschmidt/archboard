@@ -1,3 +1,4 @@
+import { retainedMigrationPreview } from "#runtime/operations/legacy-inventory/retained.ts";
 import { git } from "@archboard/process/git";
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import { ArchitecturePortableBundleSchema } from "#shared/schemas/model-portable.ts";
@@ -125,8 +126,9 @@ async function archiveAncestry(context: ArchiveContext, tips: string[]) {
  * Require one regular architecture blob rather than an executable, link, or unrelated file.
  * @param entry The immutable Git tree entry.
  * @param id The inspected commit identity.
+ * @param migration Whether the record owns a migration originals envelope.
  */
-function requireArchitectureEntry(entry: string, id: string): void {
+function requireArchitectureEntry(entry: string, id: string, migration: boolean): void {
 	const match = /^100644 blob [a-f0-9]+\t(.+)$/u.exec(entry);
 	if (match === null)
 		throw new ArchiveError(
@@ -136,6 +138,10 @@ function requireArchitectureEntry(entry: string, id: string): void {
 		);
 	const path = match[1]!;
 	if (path === "record.json") return;
+	if (migration) {
+		requireOriginalsPath(path, id);
+		return;
+	}
 	if (!path.startsWith("inputs/"))
 		throw new ArchiveError(
 			"ARCHIVE_NOT_PORTABLE",
@@ -150,12 +156,12 @@ function requireArchitectureEntry(entry: string, id: string): void {
  * Require regular architecture-only paths in every immutable tree.
  * @param context The archive under inspection.
  * @param id The inspected commit identity.
- * @param checkpoint Whether this is a checkpoint rather than synchronization.
+ * @param record The immutable checkpoint or synchronization metadata.
  */
 async function requireArchitectureTree(
 	context: ArchiveContext,
 	id: string,
-	checkpoint: boolean,
+	record: Awaited<ReturnType<typeof requireCompleteArchive>>[number]["record"],
 ): Promise<void> {
 	const listing =
 		(await git(context.root, ["ls-tree", "-r", "-z", id], {
@@ -163,8 +169,14 @@ async function requireArchitectureTree(
 			trimOutput: false,
 		})) ?? "";
 	const entries = listing.split("\0").filter(Boolean);
-	entries.forEach((entry) => requireArchitectureEntry(entry, id));
-	if (!checkpoint && entries.length !== 1)
+	entries.forEach((entry) =>
+		requireArchitectureEntry(
+			entry,
+			id,
+			record.kind === "checkpoint" && record.migration !== undefined,
+		),
+	);
+	if (record.kind !== "checkpoint" && entries.length !== 1)
 		throw new ArchiveError(
 			"CHECKPOINT_INVALID",
 			"A synchronization record contains architecture inputs.",
@@ -186,7 +198,10 @@ async function retainedModel(context: ArchiveContext, id: string, record: Record
 			"Retained inputs disagree with their complete fingerprint.",
 			id,
 		);
-	const model = discoveryFailure(captured) ?? decodeModel(captured);
+	const model =
+		record.migration === undefined
+			? (discoveryFailure(captured) ?? decodeModel(captured))
+			: retainedMigrationPreview(captured, record);
 	if (!model.success) throw new ArchiveError(model.code, model.diagnostics[0]!.message, id);
 	if (model.manifest.id !== record.model)
 		throw new ArchiveError(
@@ -278,7 +293,7 @@ async function requirePortableClosure(
 
 	await Promise.all(
 		records.map(async ({ id, record }) => {
-			await requireArchitectureTree(context, id, record.kind === "checkpoint");
+			await requireArchitectureTree(context, id, record);
 			if (record.kind !== "checkpoint") return;
 			if (record.vault !== context.vault)
 				throw new ArchiveError(
@@ -297,3 +312,17 @@ async function requirePortableClosure(
 	await requireMaterializations(context, model);
 }
 export { requirePortableClosure };
+
+/**
+ * Keep migration evidence inside its one supported archive-only envelope.
+ * @param path The exact immutable tree path.
+ * @param id Its checkpoint identity.
+ */
+function requireOriginalsPath(path: string, id: string): void {
+	if (path !== "inputs/migration-originals.json")
+		throw new ArchiveError(
+			"ARCHIVE_NOT_PORTABLE",
+			"A migration checkpoint contains an unsupported original evidence path.",
+			id,
+		);
+}

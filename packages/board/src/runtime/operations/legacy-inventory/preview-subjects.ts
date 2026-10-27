@@ -1,3 +1,5 @@
+import { originalReferences } from "#runtime/operations/legacy-inventory/references.ts";
+import { predecessorNames } from "#shared/rules/legacy-inventory/names.ts";
 import { z } from "zod";
 import { applySiblingOrder } from "#runtime/operations/legacy-inventory/preview-order.ts";
 import type { LegacyInventory } from "#shared/schemas/migration.ts";
@@ -36,13 +38,15 @@ function moduleEvidence(inventory: LegacyInventory, entries: ReturnType<typeof c
 		),
 	);
 	const references = uniqueValues(
-		entries.flatMap((entry) =>
-			entry.node.drillDown === undefined
-				? []
-				: (inventory.plan.references
-						?.filter((reference) => reference.legacy === entry.subject)
-						.map((mapping) => mapping.reference) ?? []),
-		),
+		entries.flatMap((entry) => {
+			const document = inventory.boards.find(
+				(board) => board.document?.id === entry.board,
+			)!.document!;
+			const state = document.variants.find((candidate) => candidate.id === entry.state)!;
+			return originalReferences(inventory, document, state)
+				.references.filter((mapping) => mapping.legacy === entry.subject)
+				.map((mapping) => mapping.reference);
+		}),
 	);
 	return { documents, references };
 }
@@ -102,7 +106,17 @@ function composeModules(inventory: LegacyInventory, diagnostics: ModelDiagnostic
 		);
 		const { documents, references } = moduleEvidence(inventory, entries);
 		const formerNames = [
-			...new Set(entries.map((entry) => entry.node.name).filter((name) => name !== fields["name"])),
+			...new Set(
+				entries
+					.flatMap((entry) =>
+						predecessorNames(inventory, entry.board, entry.state, (state) =>
+							state.content.nodes
+								.filter((node) => node.id === entry.node.id)
+								.map((node) => node.name),
+						),
+					)
+					.filter((name) => name !== fields["name"]),
+			),
 		];
 		return {
 			schemaVersion: 1,

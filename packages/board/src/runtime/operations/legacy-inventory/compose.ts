@@ -1,3 +1,5 @@
+import { predecessorNames } from "#shared/rules/legacy-inventory/names.ts";
+import { convertedReadings } from "#runtime/operations/legacy-inventory/readings.ts";
 import type {
 	ArchitectureModel,
 	ArchitectureModelRead,
@@ -12,6 +14,7 @@ import {
 	resolvedValue,
 	definitionFields,
 	chosenValue,
+	choiceFailure,
 } from "#runtime/operations/legacy-inventory/preview-choices.ts";
 import { mappedIdentity } from "#shared/rules/legacy-inventory/plan.ts";
 import { composeModules } from "#runtime/operations/legacy-inventory/preview-subjects.ts";
@@ -38,7 +41,17 @@ function composeCollections(inventory: LegacyInventory, diagnostics: ModelDiagno
 			diagnostics,
 		);
 		const formerNames = [
-			...new Set(entries.map((entry) => entry.flow.name).filter((name) => name !== fields["name"])),
+			...new Set(
+				entries
+					.flatMap((entry) =>
+						predecessorNames(inventory, entry.board, entry.state, (state) =>
+							state.content.flows
+								.filter((flow) => flow.id === entry.flow.id)
+								.map((flow) => flow.name),
+						),
+					)
+					.filter((name) => name !== fields["name"]),
+			),
 		];
 		const collection: CandidateCollection = collections.get(owner.board) ?? {
 			schemaVersion: 1,
@@ -71,8 +84,20 @@ function candidateInputs(
 	 * @param value Its complete schema input.
 	 */
 	function put(file: string, value: unknown) {
-		inputs.set(file, Buffer.from(JSON.stringify(value)));
+		const bytes = Buffer.from(JSON.stringify(value));
+		const previous = inputs.get(file);
+		if (previous !== undefined && !previous.equals(bytes)) {
+			choiceFailure(
+				diagnostics,
+				[],
+				"Combined original identities supply different narrative definitions. Keep them separate or resolve the originals explicitly.",
+			);
+			return;
+		}
+		inputs.set(file, bytes);
 	}
+	for (const walk of convertedReadings(inventory).walkthroughs)
+		put(`walkthroughs/${walk.id.replace("#", "/")}.walkthrough.json`, walk);
 	for (const collection of composeCollections(inventory, diagnostics))
 		put(`flows/${collection.id}.flows.json`, collection);
 	for (const { file, ...subject } of composeModules(inventory, diagnostics)) put(file, subject);

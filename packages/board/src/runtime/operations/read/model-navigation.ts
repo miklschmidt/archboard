@@ -47,18 +47,13 @@ async function navigationReading(
 	flow: string | undefined,
 	options: NavigationOptions,
 ) {
+	const invalid = previewSelectorFailure(options);
+	if (invalid !== undefined) return invalid;
 	const model =
 		options.preview !== undefined
 			? await (
 					await import("#runtime/operations/legacy-inventory/preview.ts")
-				).readMigrationPreview(
-					vault,
-					options.preview,
-					module,
-					flow,
-					options.state,
-					options.checkpoint,
-				)
+				).readMigrationPreview(vault, options.preview, module, flow, options)
 			: await localReading(vault, module, flow, options);
 	if (!model.success) return model;
 	if (options.model === undefined) return model;
@@ -71,6 +66,23 @@ async function navigationReading(
 			);
 }
 
+/**
+ * Confine imported address selectors to explicit migration previews.
+ * @param options The deliberate reader selectors.
+ * @returns The invalid combination or absence.
+ */
+function previewSelectorFailure(options: NavigationOptions) {
+	if (options.preview !== undefined || (options.legacyAddress ?? options.bookmark) === undefined)
+		return undefined;
+	return failure("MODEL_INVALID", [
+		{
+			code: "MODEL_INVALID",
+			file: "model.json",
+			message: "Legacy addresses and imported bookmarks require an explicit migration preview.",
+			recovery: "Name the preview origin with this selector.",
+		},
+	]);
+}
 /**
  * Resolve state, retained inputs, or narrative playback through their existing owners.
  * @param vault The explicit vault.
@@ -132,13 +144,12 @@ async function openReference(
 	address: NonNullable<ArchitectureModel["location"]>,
 	code: boolean | undefined,
 ): Promise<ArchitectureModelRead> {
-	const target = await readModelNavigation(address.vault, undefined, undefined, {
-		model: address.model,
-		references: true,
-		...(address.checkpoint === undefined
-			? { state: address.state }
-			: { checkpoint: address.checkpoint }),
-	});
+	const target = await readModelNavigation(
+		address.vault,
+		undefined,
+		undefined,
+		referenceSelection(address),
+	);
 	const selected = selectReferenceSubject(target, address.subject);
 	if (!selected.success) return selected;
 	if (referenceState(selected) !== address.state)
@@ -151,6 +162,30 @@ async function openReference(
 	return code ? { ...located, ...(await modelCodeTarget(address.vault, located)) } : located;
 }
 
+/**
+ * Keep original state and migration checkpoint paired in a resolved address.
+ * @param address The exact reference destination.
+ * @returns Its reader selectors.
+ */
+function referenceSelection(
+	address: NonNullable<ArchitectureModel["location"]>,
+): NavigationOptions {
+	if (address.preview !== undefined)
+		return {
+			model: address.model,
+			references: true,
+			preview: address.preview,
+			state: address.state === "current" ? undefined : address.state,
+			checkpoint: address.checkpoint,
+		};
+	return {
+		model: address.model,
+		references: true,
+		...(address.checkpoint === undefined
+			? { state: address.state }
+			: { checkpoint: address.checkpoint }),
+	};
+}
 /**
  * Resolve presentation actions through existing architecture and checkout authorities.
  * @param vault The explicitly addressed vault.

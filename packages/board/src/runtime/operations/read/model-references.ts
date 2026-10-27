@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import {
 	resolveRegisteredCheckout,
@@ -22,7 +22,9 @@ type ReferenceEntry = Pick<Resolution, "module" | "index" | "reference">;
  * @returns Its selected state identity, when one exists.
  */
 function referenceState(model: ArchitectureModel) {
-	return model.selectedState?.id;
+	return model.migrationPreview === undefined
+		? model.selectedState?.id
+		: (model.migrationPreview.selected?.legacy ?? "current");
 }
 
 /**
@@ -133,16 +135,33 @@ function resolvedReference(
 		stateName: reading.selectedState?.name,
 		lifecycle: reading.selectedState?.lifecycle,
 		diagnostics: [],
-		address: {
-			vault,
-			model: entry.reference.model,
-			subject: entry.reference.subject,
-			state: referenceState(reading)!,
-			...(checkpoint === undefined ? {} : { checkpoint }),
-		},
+		address: referenceAddress(entry, vault, reading, checkpoint),
 	};
 }
 
+/**
+ * Keep exact preview coverage in a resolved reference address.
+ * @param entry The authored target reference.
+ * @param vault Its resolved vault.
+ * @param reading The addressed coherent model.
+ * @param checkpoint Its exact retained checkpoint, when selected.
+ * @returns The complete navigation address.
+ */
+function referenceAddress(
+	entry: ReferenceEntry,
+	vault: string,
+	reading: ArchitectureModel,
+	checkpoint?: string,
+): NonNullable<Resolution["address"]> {
+	return {
+		vault,
+		preview: reading.migrationPreview?.origin,
+		model: entry.reference.model,
+		subject: entry.reference.subject,
+		state: referenceState(reading)!,
+		...(checkpoint === undefined ? {} : { checkpoint }),
+	};
+}
 /**
  * Require retained pins rather than selecting foreign current architecture for history.
  * @param model The source reading.
@@ -176,16 +195,20 @@ function checkpointReferencePin(
 }
 /**
  * Resolve one direct reference without recursively expanding foreign ownership.
+ * @param vault The explicitly addressed source vault.
  * @param snapshot The source vault's existing checkout snapshot.
  * @param model The coherent current or retained source.
  * @param entry The authored reference and its owner.
  * @returns The replaceable navigation entry.
  */
 async function resolveReference(
+	vault: string,
 	snapshot: CheckoutSnapshot,
 	model: ArchitectureModel,
 	entry: ReferenceEntry,
 ): Promise<Resolution> {
+	const local = await localPreviewReference(vault, snapshot, model, entry);
+	if (local !== undefined) return local;
 	const checkpoint = referencePin(model, entry);
 	if (checkpoint === null)
 		return unavailableReference(
@@ -227,9 +250,98 @@ async function resolveModelReferences(
 		bindings: entries.map((entry) => ({ repo: entry.reference.repo, path: "" })),
 	});
 	const resolvedReferences = await Promise.all(
-		entries.map((entry) => resolveReference(snapshot, model, entry)),
+		entries.map((entry) => resolveReference(vault, snapshot, model, entry)),
 	);
 	return { ...model, resolvedReferences };
 }
 
 export { resolveModelReferences, referenceState, matchesReference };
+
+/**
+ * Read an explicit same-vault migration target without passing through live legacy authority.
+ * @param vault The source vault.
+ * @param snapshot The existing repository lookup evidence.
+ * @param model The captured preview and original source fingerprint.
+ * @param entry The explicit reference choice.
+ * @returns Its exact preview target, or absence for ordinary foreign resolution.
+ */
+async function localPreviewReference(
+	vault: string,
+	snapshot: CheckoutSnapshot,
+	model: ArchitectureModel,
+	entry: ReferenceEntry,
+): Promise<Resolution | undefined> {
+	const preview = model.migrationPreview;
+	if (preview === undefined || !sameReferenceVault(vault, snapshot, entry)) return undefined;
+	if (preview.selected !== undefined && entry.reference.state === "current")
+		return unavailableReference(
+			entry,
+			"This original historical reference does not identify an exact target state.",
+			"Save an explicit qualified original state target. Historical navigation never follows current content.",
+		);
+	const checkpoint = localPreviewCheckpoint(model, entry);
+	const reading = await readArchitectureModel(vault, undefined, undefined, {
+		preview: preview.origin,
+		state: originalReferenceState(entry),
+		checkpoint,
+	});
+	if (changedPreviewSource(model, reading, entry))
+		return unavailableReference(
+			entry,
+			"The original source or identity choices differ from the captured reference.",
+			"Reopen the source reading and follow its reference again.",
+		);
+	return resolvedReference(
+		entry,
+		vault,
+		selectReferenceSubject(reading, entry.reference.subject),
+		checkpoint,
+	);
+}
+/**
+ * Compare resolved repository ownership rather than model names.
+ * @param vault The explicitly addressed source vault.
+ * @param snapshot The repository lookup evidence.
+ * @param entry The authored reference.
+ * @returns Whether the target is this exact vault.
+ */
+function sameReferenceVault(vault: string, snapshot: CheckoutSnapshot, entry: ReferenceEntry) {
+	const checkout = resolveRegisteredCheckout(entry.reference.repo, snapshot);
+	return checkout.ok && resolve(join(checkout.root, ".archboard/vault")) === resolve(vault);
+}
+/**
+ * Use an explicit target checkpoint before the captured migration checkpoint.
+ * @param model The captured source reading.
+ * @param entry The authored target.
+ * @returns Its exact retained pin, when present.
+ */
+function localPreviewCheckpoint(model: ArchitectureModel, entry: ReferenceEntry) {
+	return entry.reference.checkpoint ?? model.checkpoint?.id;
+}
+/**
+ * Translate only the explicit current designation into the composed preview selector.
+ * @param entry The authored target.
+ * @returns Its original state selector or composed current selection.
+ */
+function originalReferenceState(entry: ReferenceEntry) {
+	return entry.reference.state === "current" ? undefined : entry.reference.state;
+}
+/**
+ * Refuse navigation across different original source or choice fingerprints.
+ * @param source The captured reference source.
+ * @param target The separately resolved target.
+ * @param entry The authored exact checkpoint or captured source selector.
+ * @returns Whether a coherent target comes from different originals.
+ */
+function changedPreviewSource(
+	source: ArchitectureModel,
+	target: ArchitectureModelRead,
+	entry: ReferenceEntry,
+) {
+	if (entry.reference.checkpoint !== undefined) return false;
+	if (!target.success) return false;
+	return (
+		target.migrationPreview?.source.digest !== source.migrationPreview!.source.digest ||
+		target.migrationPreview.planRevision !== source.migrationPreview!.planRevision
+	);
+}

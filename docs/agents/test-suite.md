@@ -669,3 +669,26 @@ The existing `canonical-model-preview.test.ts` retains current-preview navigatio
 The portability runtime owners cover complete data, history, signing, refusal, and recovery.
 `canonical-model-import.test.ts` owns the browser behavior for imported planning-only checkpoints in reading and comparison selectors.
 It uses real public export/import operations and does not repeat persistence assertions through the browser.
+
+## Converted original readings
+
+Public architecture operations own `legacy-preview/readings.test.ts`, `reading-history.test.ts`, and `reference-readings.test.ts`.
+Real files and Git prove complete beat conversion, exact relationship visibility, content-free bookmarks, former names, and explicit alias refusal.
+A focused missing-view case stops the affected original beats without view inheritance or an overview fallback.
+The decoder preserves those original bytes, while explicit-view beats stay ready.
+The same owners prove mapped current identities, original namespaces, immutable retained playback, and state-specific drill-down choices.
+The signed retention case reopens playback and former addresses after live inputs disappear.
+The existing reference owner retains foreign pin and unavailable-history coverage.
+`legacy-preview/portable-readings.test.ts` owns composition with portable history.
+It exports and imports a canonical narrative with a retained original target, then reopens its original playback, bookmark, and former address.
+
+`tests/system/semantic-boards/migration-planning.test.ts` owns CLI and HTTP selector agreement through retained original playback and bookmarks.
+The parent owns visible converted playback, exact visibility, bookmark navigation, and original address navigation through the existing browser interface.
+These backend cases imply no browser acceptance or migration installation.
+
+`tests/system/browser/canonical-preview-navigation.test.ts` owns visible converted navigation.
+Its real-file fixture uses explicit views and the public mapping and retention operations.
+The browser proves exact bookmark membership, architecture and sequence beats, former addresses, and reload.
+It also follows a converted reference and reopens original playback after live original files disappear.
+Original state and checkpoint selectors remain paired throughout those actions.
+The existing history, canonical reference, and walkthrough owners retain their broader behavior coverage.

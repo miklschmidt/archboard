@@ -7,6 +7,13 @@ import {
 import { DiagramGrammarSchema } from "#shared/schemas/vocabulary.ts";
 
 const ReadingSchema = z.strictObject({
+	visibility: z
+		.strictObject({
+			modules: z.array(QualifiedSubjectIdSchema),
+			relationships: z.array(QualifiedSubjectIdSchema),
+			flows: z.array(QualifiedSubjectIdSchema),
+		})
+		.optional(),
 	scope: QualifiedSubjectIdSchema.optional(),
 	selection: z.array(QualifiedSubjectIdSchema).default([]),
 	focus: z.array(QualifiedSubjectIdSchema).default([]),
@@ -58,4 +65,4 @@ const WalkthroughChangeSchema = z.discriminatedUnion("type", [
 	}),
 	z.strictObject({ type: z.literal("remove-walkthrough"), subject: QualifiedSubjectIdSchema }),
 ]);
-export { WalkthroughSchema, BeatSchema, WalkthroughChangeSchema };
+export { ReadingSchema, WalkthroughSchema, BeatSchema, WalkthroughChangeSchema };

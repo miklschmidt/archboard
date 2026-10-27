@@ -118,19 +118,37 @@ test("CLI and HTTP retain original migration history and open its exact board co
 			],
 			edges: [],
 			flows: [],
-			walkthroughs: [],
+			walkthroughs: [
+				{
+					id: "Tour",
+					name: "Tour",
+					beats: [
+						{
+							id: "Start",
+							heading: "API",
+							body: "Accept requests",
+							subjects: ["Api"],
+							view: "Primary",
+						},
+					],
+				},
+			],
 		};
 		const document = {
 			schemaVersion: "2.4.0",
 			kind: "semantic-board",
 			id: "Family",
 			name: "Shop",
+			formerNames: ["Store"],
 			level: "service",
 			version: 1,
 			createdAt: "2026-01-01T00:00:00.000Z",
 			updatedAt: "2026-01-01T00:00:00.000Z",
 			current: "Now",
-			views: [],
+			views: [
+				{ id: "Primary", name: "API", grammar: "architecture", scope: { kind: "all" } },
+				{ id: "Backup", name: "Saved reading", grammar: "architecture", scope: { kind: "all" } },
+			],
 			variants: [
 				{ id: "Old", name: "Before", lifecycle: "historical", content },
 				{ id: "Now", name: "Implemented", lifecycle: "current", parent: "Old", content },
@@ -188,6 +206,10 @@ test("CLI and HTTP retain original migration history and open its exact board co
 			preview: "Shop",
 			checkpoint: answer.checkpoint.id,
 			state: "Shop/Family#Old",
+			legacyAddress: "Store@Before",
+			bookmark: "Shop/Family#Backup",
+			walkthrough: "Shop/Family#Tour",
+			shared: "true",
 		};
 		const response = await fetch(
 			`${server!.base}/api/architecture/model?${new URLSearchParams(selectors)}`,
@@ -203,6 +225,13 @@ test("CLI and HTTP retain original migration history and open its exact board co
 			answer.checkpoint.id,
 			"--state",
 			"Shop/Family#Old",
+			"--legacy-address",
+			"Store@Before",
+			"--bookmark",
+			"Shop/Family#Backup",
+			"--walkthrough",
+			"Shop/Family#Tour",
+			"--shared",
 			"-C",
 			root,
 		]);
@@ -211,9 +240,15 @@ test("CLI and HTTP retain original migration history and open its exact board co
 		expect(cliReading).toEqual(reading);
 		expect(reading).toMatchObject({
 			selectedState: { id: "Old", lifecycle: "historical" },
+			playback: {
+				checkpoint: answer.checkpoint.id,
+				beats: [{ id: "Shop/Family#Start", status: "ready" }],
+			},
 			migrationPreview: {
 				selected: { legacy: "Shop/Family#Old", board: "Family", completeModel: false },
 				originals: [{ source: JSON.stringify(document) }],
+				bookmark: { id: "Shop/Family#Backup" },
+				resolvedAddress: { address: "Store@Before", state: "Shop/Family#Old" },
 			},
 		});
 		const invalid = await fetch(`${server!.base}/api/architecture/checkpoints`, {

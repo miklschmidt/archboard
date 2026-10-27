@@ -141,7 +141,8 @@ An omitted state mapping preserves its original qualified identity.
 A planning-only vault returns no current modules or flows and a null current designation.
 It never substitutes a draft for implemented architecture.
 Draft conversion and original history follow the steps below.
-Walkthrough conversion, bookmarks, and installation remain separate delivery slices.
+Converted walkthroughs and bookmarks follow the reading instructions below.
+Installation remains separate work.
 Read the inventory for their complete original coverage.
 
 Definition choices supply complete definition fields without identity or authored order.
@@ -168,7 +169,7 @@ Each current drill-down requires an explicit entry in `plan.references`:
 		"repo": "github.com/acme/shop",
 		"model": "Shop",
 		"subject": "Shop/Detail#Gateway",
-		"state": "Shop"
+		"state": "current"
 	},
 	"reason": "Open the gateway in the composed migration baseline"
 }
@@ -215,7 +216,8 @@ Its current designation is null.
 History entries retain original state metadata, corrections, standing bases, adoptions, and shelving reasons.
 Unpinned external history and code remain unavailable.
 The reader never substitutes present-day surroundings or source evidence.
-Original views, walkthroughs, and addresses stay in the complete originals for their later conversion.
+Converted narratives and bookmarks retain this original coverage.
+Exact addresses remain available through the preview catalogue.
 
 ## Map each draft
 
@@ -291,3 +293,105 @@ Unsupported UTF-8 appears as lossless base64.
 The viewer decodes only the file that the reader chooses.
 When the originals cannot form a model, the preview keeps their evidence and recovery instructions visible without drawing an empty current system.
 An absent mapping plan is explicit.
+
+## Read converted narratives
+
+Use the walkthrough catalogue from the preview result.
+
+```bash
+archboard model read --preview Shop --walkthrough 'Shop/System#Tour' -C /path/to/checkout
+archboard model read --preview Shop --state 'Shop/System#Old' --walkthrough 'Shop/System#Tour' -C /path/to/checkout
+archboard model read --preview Shop --checkpoint <checkpoint> --state 'Shop/System#Old' --walkthrough 'Shop/System#Tour' --shared -C /path/to/checkout
+```
+
+Current playback captures the composed current candidate once.
+An original-state selection captures only that original board and its namespace.
+A retained selection reads original content and choices only from its migration checkpoint.
+The playback reports separate source selectors and a complete target revision.
+Keep that returned model for every beat until an explicit restart.
+Shared playback requires a retained checkpoint.
+
+Each converted beat contains complete reading instructions.
+A referenced view supplies its grammar and exact visible subjects.
+Optional `reading.visibility` lists module, relationship, and flow identities without content or geometry.
+It preserves a view that isolates one relationship between otherwise connected modules.
+Every original beat must name an explicit view for conversion.
+For the whole original board, select an all-scope architecture view.
+A missing view produces `WALKTHROUGH_VIEW_REQUIRED` on that beat and stops its playback.
+The decoder preserves the original bytes and omission for explicit owner correction.
+Conversion selects neither a prior view nor an implicit overview.
+Unavailable subjects or behavioral flows stop their affected beat with recovery diagnostics.
+Recursive navigation remains independent of these readings.
+
+## Open imported bookmarks and addresses
+
+Unused named views become `migrationPreview.bookmarks`.
+A bookmark owns a name, summary, and reading intent only.
+Use its stable identity to avoid ambiguity.
+
+```bash
+archboard model read --preview Shop --bookmark 'Shop/System#Saved' -C /path/to/checkout
+archboard model read --preview Shop --legacy-address 'Store@Before' -C /path/to/checkout
+```
+
+The selected bookmark appears as `migrationPreview.bookmark`.
+Its diagnostics identify an unavailable original flow.
+The model remains complete and contains no bookmark-owned architecture.
+
+`migrationPreview.addresses` lists exact original aliases with original and canonical state identities.
+The `legacyAddress` selector opens its exact original state and one-board coverage.
+`migrationPreview.resolvedAddress` records that choice.
+Board names, former names, filenames, state names, former state names, and state IDs remain explicit aliases.
+Ambiguous addresses refuse rather than selecting a similarly named subject.
+A conflicting explicit state returns `TARGET_CHANGED`.
+Unknown addresses return `LEGACY_ADDRESS_NOT_FOUND`.
+Unknown bookmarks return `BOOKMARK_NOT_FOUND`.
+Both selectors require an explicit preview origin.
+
+Current merged modules and flows retain predecessor names as former names.
+Sibling proposal names do not become former names of current subjects.
+Historical subject reads preserve their original namespaces instead of applying current identity merges.
+
+For an original historical drill-down, add the source state's qualified identity to its reference choice:
+
+```json
+{
+	"legacy": "Shop/System#Api",
+	"state": "Shop/System#Old",
+	"reference": {
+		"repo": "github.com/acme/shop",
+		"model": "Shop",
+		"subject": "Shop/Detail#Gateway",
+		"state": "Shop/Detail#Old"
+	},
+	"reason": "Preserve the exact original target state"
+}
+```
+
+An omitted source state applies only to the captured designated current state.
+Historical coverage never reuses that current choice.
+A missing choice leaves an explicit `REFERENCE_UNAVAILABLE` diagnostic beside readable original architecture.
+Same-vault references use qualified original states through the existing reference owner.
+Retained local references keep their source checkpoint and paired original state.
+Unpinned external history remains unavailable, even when a matching current model exists.
+Installation and portable live bookmark inputs remain with TASK-549.23.
+Complete original checkpoints retain the source for every derived reading until cutover.
+
+## Read converted navigation in the browser
+
+Open the preview with `modelA=<model>&previewA=<origin>`.
+Use Bookmarks to open an unused original view.
+Use Former addresses to open an exact original board and state alias.
+The address retains `bookmarkA` or `legacyAddressA` for reload and browser history.
+A bookmark owns reading instructions only. Scope, focus, or grammar changes resume ordinary exploration.
+Filters preserve the exact bookmark membership.
+
+Use Walkthroughs to play a converted narrative through the existing presentation controls.
+Every beat requires an explicit original view, including whole-board readings.
+An unavailable beat explains its missing view or subjects and draws no replacement architecture.
+The presentation keeps its captured source and target until an explicit restart.
+
+A retained preview keeps `checkpointA` beside its original state or former address.
+Its original files can remain readable after the live copies disappear.
+Following a converted reference preserves the returned preview origin, original state, and exact checkpoint.
+The destination replaces the source bookmark and former address.
