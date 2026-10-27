@@ -97,7 +97,7 @@ function discoveryFailure(captured: CapturedModel): ArchitectureModelRead | unde
 				code: "LEGACY_AUTHORITY",
 				file,
 				message: "Legacy board files still own this vault.",
-				recovery: "Read the existing boards. Canonical cutover requires an explicit migration.",
+				recovery: "Run model inventory, save model plan choices, read model read --preview, then request explicit owner-authorized model migrate.",
 			})),
 		);
 	if (captured.diagnostics.length > 0) return failure("MODEL_UNREADABLE", captured.diagnostics);
@@ -108,7 +108,7 @@ function discoveryFailure(captured: CapturedModel): ArchitectureModelRead | unde
 				file: "model.json",
 				message: "The vault has no canonical model manifest.",
 				recovery:
-					"Use an authored model vault. Existing boards remain authoritative until explicit migration.",
+					"Run model init for an empty vault. For legacy inputs, run model inventory and follow the explicit migration workflow.",
 			},
 		]);
 

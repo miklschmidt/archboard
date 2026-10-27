@@ -37,6 +37,5 @@ export {
 	sendToPane,
 	settleAfterLayout,
 	socketVaults,
-	syncLockWatch,
 } from "#server/services/panes/registry.ts";
 export type { PendingPaneClose, PendingPaneOpen } from "#server/services/panes/registry.ts";

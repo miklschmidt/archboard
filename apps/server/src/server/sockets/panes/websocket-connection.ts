@@ -13,10 +13,7 @@ import {
 	type TabSessionId,
 } from "@archboard/codex-realtime-voice/server";
 import { codexWiring, forgetTabSession, noteTabSession } from "@archboard/workbench/server";
-import {
-	agentActivity,
-	tellPaneAboutLock,
-} from "#server/projections/board-announcements/board-announcements.ts";
+
 import { server } from "#server/wiring/http/server-app.ts";
 import {
 	acceptedSockets,
@@ -31,7 +28,6 @@ import {
 	paneVaults,
 	panes,
 	socketVaults,
-	syncLockWatch,
 } from "@archboard/workbench/panes";
 import { isRecord, namedVault, VAULT_PARAMETER, type NamedVault } from "@archboard/workbench/host";
 import {
@@ -67,7 +63,6 @@ function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void
 	const closingCodexInstance = codexSocketInstances.get(ws);
 	codexSocketInstances.delete(ws);
 	if (closingId === undefined) {
-		syncLockWatch();
 		logger.info("WebSocket connection closed");
 		return;
 	}
@@ -80,12 +75,10 @@ function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void
 			.catch((error) => logger.error("Codex browser cleanup failed:", error));
 	}
 	if (currentSocketsByClient.get(closingId) !== ws) {
-		syncLockWatch();
 		logger.info(`Replaced WebSocket connection closed (client ${closingId})`);
 		return;
 	}
 	retirePaneOwner(closingId);
-	syncLockWatch();
 	logger.info("WebSocket connection closed");
 }
 
@@ -286,23 +279,6 @@ function listenForCodexRequests(ws: WebSocket, socket: RegisteredSocket): void {
  * @param clientId The pane's client id, or null for an anonymous socket.
  * @param startingKey The board the pane starts on, or null when it starts on none.
  */
-function announceToNewPane(
-	ws: WebSocket,
-	clientId: string | null,
-	startingKey: string | null,
-): void {
-	// Where its lock stands. A broadcast only reaches panes that were already
-	// connected, so a tab that has just arrived — or come back from a dropped
-	// socket — is told outright rather than left assuming the board is free.
-	if (clientId !== null && startingKey !== null) {
-		tellPaneAboutLock(clientId, startingKey);
-	}
-	// And which boards an agent has right now, in every vault (ADR 0022): the
-	// same reasoning, for the navigator rather than the pane.
-	for (const snapshot of agentActivity.snapshots()) {
-		ws.send(JSON.stringify(snapshot));
-	}
-}
 
 /** What one accepted socket is registered as, before it is presented anything. */
 interface RegisteredSocket {
@@ -404,11 +380,9 @@ async function acceptWebSocketConnection(
 	}
 	// There is a screen again, so the lock files of what is on it are worth
 	// reading (ADR 0016).
-	syncLockWatch();
 	logger.info(
 		`New WebSocket connection established${socket.clientId === null ? "" : ` (client ${socket.clientId})`}`,
 	);
-	announceToNewPane(ws, socket.clientId, startingKey);
 	listenForCodexRequests(ws, socket);
 }
 

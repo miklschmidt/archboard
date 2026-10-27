@@ -7,7 +7,7 @@ import {
 	type Response,
 } from "express";
 
-import { CodeBindingSchema, type CodeBinding } from "@archboard/code-binding/bindings";
+import { type CodeBinding } from "@archboard/code-binding/bindings";
 import {
 	type CodeTargetOpenSuccess,
 	type CodeTargetFailureCode,
@@ -28,7 +28,6 @@ import {
 	type OtherRef,
 } from "@archboard/code-binding/resolution";
 import { githubUrlForBinding } from "#server/projections/github-link.ts";
-import { readBoardVariant } from "@archboard/board/store-read";
 import { createBrowserOriginGuard } from "#server/middleware/browser-origin-guard.ts";
 import {
 	readOpenerSelection,
@@ -129,48 +128,8 @@ export interface CodeOpenerRouteDependencies {
  * @param subjectId The node whose binding is wanted.
  * @returns The binding, or which of board, node or binding was missing.
  */
-function canonicalBinding(vault: string, boardKey: string, subjectId: string): BindingLookup {
-	const address = boardAddressOf(boardKey);
-	const opened = readBoardVariant(vault, address.board, address.variant);
-	if (!opened.ok) {
-		const variantMissing = opened.code === "VARIANT_MISSING" || opened.code === "VARIANT_UNCHOSEN";
-		return {
-			ok: false,
-			code: "BOARD_NOT_FOUND",
-			error: variantMissing ? `${opened.problem}.` : opened.problem,
-		};
-	}
-	const node = opened.variant.content.nodes.find((one) => one.id === subjectId);
-	if (node === undefined) {
-		return {
-			ok: false,
-			code: "ELEMENT_NOT_FOUND",
-			error: `${subjectId} is not a node on this board.`,
-		};
-	}
-	// The binding keeps its `symbol`: the opener opens the bound file at the line that
-	// defines it where code facts find one (ADR 0046).
-	const parsed = CodeBindingSchema.safeParse(node.binding);
-	return parsed.success
-		? { ok: true, binding: parsed.data }
-		: { ok: false, code: "BINDING_UNAVAILABLE", error: "This node is not bound to code." };
-}
-
-/**
- * What a pane board key names: the board, and which of its variants.
- *
- * Split at the first `@`, which is the one spelling a pane and an address use
- * (`apps/web/src/ui/rules/semantic-board-canvas/board/address.ts` holds the browser's half of it).
- * @param key The board key.
- * @returns The board name and the variant, when it names one.
- */
-function boardAddressOf(key: string): { board: string; variant: string | undefined } {
-	const mark = key.indexOf("@");
-	if (mark <= 0) {
-		return { board: key, variant: undefined };
-	}
-	const variant = key.slice(mark + 1);
-	return { board: key.slice(0, mark), variant: variant === "" ? undefined : variant };
+function canonicalBinding(_vault:string,_boardKey:string,_subjectId:string):BindingLookup {
+ return {ok:false,code:"BINDING_UNAVAILABLE",error:"Open code from a canonical model and stable module identity. Migrate legacy architecture explicitly first."};
 }
 
 const DEFAULT_DEPENDENCIES: Omit<CodeOpenerRouteDependencies, "bindingForElement"> = {

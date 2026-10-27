@@ -203,10 +203,10 @@ function installSkillFiles(
  * @param context - The command context.
  * @returns The source report or the install receipt.
  */
-function executeInstallSkill(
+async function executeInstallSkill(
 	input: InstallSkillInput,
 	context: CommandContext,
-): InstallSkillResult {
+): Promise<InstallSkillResult> {
 	if (input.printSource) {
 		return {
 			success: true,
@@ -221,7 +221,7 @@ function executeInstallSkill(
 	const skills = installSkillFiles(destination.root, context);
 	const setup = request.noSetup
 		? undefined
-		: setUpRepository({
+		: await setUpRepository({
 				...(request.repo === undefined ? {} : { repoSpec: request.repo }),
 				context,
 			});
@@ -349,7 +349,7 @@ const installSkillContract = defineCommand({
 	 * @returns The install result.
 	 */
 	async handler(input, context) {
-		return { result: executeInstallSkill(input, context) };
+		return { result: await executeInstallSkill(input, context) };
 	},
 });
 

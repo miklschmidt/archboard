@@ -1,3 +1,5 @@
+import {modelReplayContract} from "#cli/operations/model/replay.ts";
+import { modelInitContract } from "#cli/operations/model/initialize.ts";
 import { modelExportContract, modelImportContract } from "#cli/operations/model/portable.ts";
 import { modelRecordContract } from "#cli/operations/model/record.ts";
 import { modelExplainContract } from "#cli/operations/model/explain.ts";
@@ -56,32 +58,6 @@ import {
 	repoListContract,
 	repoUseContract,
 } from "#cli/operations/repo/repo.ts";
-import {
-	semanticContract,
-	semanticBranchContract,
-	semanticEditContract,
-	semanticNewContract,
-	semanticShowContract,
-} from "#cli/operations/semantic/board/board.ts";
-import {
-	semanticAdoptContract,
-	semanticResolveContract,
-	semanticShelveContract,
-} from "#cli/operations/semantic/board/lifecycle.ts";
-import { semanticCompareContract } from "#cli/operations/semantic/compare/compare.ts";
-import { semanticCorrectContract } from "#cli/operations/semantic/board/correct.ts";
-import { semanticMoveContract } from "#cli/operations/semantic/board/move.ts";
-import { semanticDeleteContract } from "#cli/operations/semantic/board/delete.ts";
-import { semanticRenameContract } from "#cli/operations/semantic/board/rename.ts";
-import { semanticInspectContract } from "#cli/operations/semantic/inspect/inspect.ts";
-import { semanticFootprintContract } from "#cli/operations/semantic/history/footprint.ts";
-import { semanticLocalityContract } from "#cli/operations/semantic/history/locality.ts";
-import { semanticRenderContract } from "#cli/operations/semantic/draw/render.ts";
-import { semanticRasterizeContract } from "#cli/operations/semantic/draw/rasterize.ts";
-import { semanticViewsContract } from "#cli/operations/semantic/board/views.ts";
-import { semanticRecordContract } from "#cli/operations/semantic/draw/record.ts";
-import { semanticReplayContract } from "#cli/operations/semantic/draw/replay.ts";
-import { claimContract, releaseContract } from "#cli/operations/claim/claim.ts";
 import { installSkillContract } from "#cli/operations/install-skill/install-skill.ts";
 import { type CliBootstrap, runCliWith } from "#cli/operations/invocation/session.ts";
 import {
@@ -98,6 +74,9 @@ const COMMANDS: Record<string, CommandRoute> = {
 	model: {
 		owner: contract(modelContract, "apps/cli/src/cli/operations/model/read.ts"),
 		children: {
+ replay:child(contract(modelReplayContract,"apps/cli/src/cli/operations/model/replay.ts")),
+ config: child(contract(semanticConfigContract,"apps/cli/src/cli/operations/vault/vault.ts")),
+ init: child(contract(modelInitContract,"apps/cli/src/cli/operations/model/initialize.ts")),
 			"archive-init": child(
 				contract(modelArchiveInitContract, "apps/cli/src/cli/operations/model/archive.ts"),
 			),
@@ -173,90 +152,6 @@ const COMMANDS: Record<string, CommandRoute> = {
 	status: {
 		owner: contract(statusContract, "apps/cli/src/cli/operations/server/status.ts"),
 	},
-	semantic: {
-		owner: contract(semanticContract, "apps/cli/src/cli/operations/semantic/board/board.ts"),
-		children: {
-			config: child(contract(semanticConfigContract, "apps/cli/src/cli/operations/vault/vault.ts")),
-			new: child(
-				contract(semanticNewContract, "apps/cli/src/cli/operations/semantic/board/board.ts"),
-			),
-			edit: child(
-				contract(semanticEditContract, "apps/cli/src/cli/operations/semantic/board/board.ts"),
-			),
-			branch: child(
-				contract(semanticBranchContract, "apps/cli/src/cli/operations/semantic/board/board.ts"),
-			),
-			resolve: child(
-				contract(
-					semanticResolveContract,
-					"apps/cli/src/cli/operations/semantic/board/lifecycle.ts",
-				),
-			),
-			adopt: child(
-				contract(semanticAdoptContract, "apps/cli/src/cli/operations/semantic/board/lifecycle.ts"),
-			),
-			shelve: child(
-				contract(semanticShelveContract, "apps/cli/src/cli/operations/semantic/board/lifecycle.ts"),
-			),
-			rename: child(
-				contract(semanticRenameContract, "apps/cli/src/cli/operations/semantic/board/rename.ts"),
-			),
-			correct: child(
-				contract(semanticCorrectContract, "apps/cli/src/cli/operations/semantic/board/correct.ts"),
-			),
-			move: child(
-				contract(semanticMoveContract, "apps/cli/src/cli/operations/semantic/board/move.ts"),
-			),
-			delete: child(
-				contract(semanticDeleteContract, "apps/cli/src/cli/operations/semantic/board/delete.ts"),
-			),
-			show: child(
-				contract(semanticShowContract, "apps/cli/src/cli/operations/semantic/board/board.ts"),
-			),
-			compare: child(
-				contract(
-					semanticCompareContract,
-					"apps/cli/src/cli/operations/semantic/compare/compare.ts",
-				),
-			),
-			inspect: child(
-				contract(
-					semanticInspectContract,
-					"apps/cli/src/cli/operations/semantic/inspect/inspect.ts",
-				),
-			),
-			footprint: child(
-				contract(
-					semanticFootprintContract,
-					"apps/cli/src/cli/operations/semantic/history/footprint.ts",
-				),
-			),
-			locality: child(
-				contract(
-					semanticLocalityContract,
-					"apps/cli/src/cli/operations/semantic/history/locality.ts",
-				),
-			),
-			views: child(
-				contract(semanticViewsContract, "apps/cli/src/cli/operations/semantic/board/views.ts"),
-			),
-			render: child(
-				contract(semanticRenderContract, "apps/cli/src/cli/operations/semantic/draw/render.ts"),
-			),
-			rasterize: child(
-				contract(
-					semanticRasterizeContract,
-					"apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
-				),
-			),
-			record: child(
-				contract(semanticRecordContract, "apps/cli/src/cli/operations/semantic/draw/record.ts"),
-			),
-			replay: child(
-				contract(semanticReplayContract, "apps/cli/src/cli/operations/semantic/draw/replay.ts"),
-			),
-		},
-	},
 	browser: {
 		owner: contract(browserContract, "apps/cli/src/cli/operations/pane/pane.ts"),
 		children: {
@@ -269,12 +164,6 @@ const COMMANDS: Record<string, CommandRoute> = {
 			kind: "namespace-refusal",
 			message: "browser needs a subcommand: panes, open, close, or show",
 		},
-	},
-	claim: {
-		owner: contract(claimContract, "apps/cli/src/cli/operations/claim/claim.ts"),
-	},
-	release: {
-		owner: contract(releaseContract, "apps/cli/src/cli/operations/claim/claim.ts"),
 	},
 	repo: {
 		owner: contract(repoContract, "apps/cli/src/cli/operations/repo/repo.ts"),

@@ -533,7 +533,7 @@ const checkCodeContract = defineCommand({
 	},
 });
 const semanticConfigContract = defineCommand({
-	path: ["semantic", "config"],
+	path: ["model", "config"],
 	shared: ["url", "directory"],
 	summary: "Discover the configured vocabulary or its editor schema",
 	description:
@@ -574,7 +574,7 @@ const semanticConfigContract = defineCommand({
 	 */
 	async handler(input, context) {
 		if (input.schema) return { result: z.toJSONSchema(SemanticBoardConfigurationSchema) };
-		await context.require("server", "semantic config");
+		await context.require("server", "model config");
 		return { result: await checkSemanticVaultOnServer() };
 	},
 });

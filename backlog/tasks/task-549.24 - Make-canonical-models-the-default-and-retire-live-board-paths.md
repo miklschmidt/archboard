@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T14:36:00Z'
+updated_date: '2026-10-27T14:42:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -78,4 +78,6 @@ TASK-549.13, TASK-549.16, TASK-549.18, TASK-549.23
 
 <!-- SECTION:NOTES:BEGIN -->
 TASK-549.23 is integrated in signed e7672f62 with parent note32021ec7. All 23 dependencies are complete. The owner already approved the full task graph, public runtime and browser test seams, gpt-6.1-sol worktree delegates, signed commits, and one integration PR. Read-only repository evidence lives in external task-549.24-live-readings.json and task-549.24-conflict-evidence.json. Their Archbrd origin is only a probe until the parent records the deliberate migration plan.
+
+Backend contract: external task-549.24-contract.md. Signed integration 615ce7a5 and required main a98f2881 are ancestors. Backend architecture drafts precede implementation on Board persistence, Command interface, Archboard server routes, Archboard server, Live panes, and Semantic renderer, each named TASK-549.24. Parent owns acceptance, frontend, and full-vault migration.
 <!-- SECTION:NOTES:END -->

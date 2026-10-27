@@ -10,9 +10,9 @@
 // alone is an edit the picture does not show, such as one outside the view:
 // the embed is current, and `--fix` only writes its new recipe.
 
-import { EVERYTHING_VIEW } from "@archboard/board/views";
 import type { EmbedFix, EmbedsPart, EmbedVault } from "#cli/protocol/check/embeds-answer.ts";
-import type { RenderRecipe } from "#cli/rules/semantic/draw/picture-recipe.ts";
+import {readRenderRecipe} from "@archboard/renderer/recipe";
+type RenderRecipe=Extract<ReturnType<typeof readRenderRecipe>,{kind:"recipe"}>["recipe"];
 
 /**
  * How a kept embed stands against the same recipe drawn now.
@@ -37,22 +37,6 @@ function embedStanding(kept: RenderRecipe, fresh: RenderRecipe): EmbedStanding {
 	}
 	const redrawn = kept.raster === undefined ? fresh : { ...fresh, raster: kept.raster };
 	return Bun.deepEquals(kept, redrawn) ? "current" : "recipe-stale";
-}
-
-/**
- * Whether `--fix` may point a recipe at another board that holds its deleted
- * board's name: only a recipe that asks for the current variant and the
- * overview or Everything, read on its own or against nothing, because the ids
- * of an old variant, view or compared variant do not exist on another board.
- * @param recipe The recipe.
- * @returns True when the other board can draw what it asks for.
- */
-function isRepointable(recipe: RenderRecipe): boolean {
-	return (
-		recipe.variant === "current" &&
-		(recipe.view === "overview" || recipe.view.id === EVERYTHING_VIEW.id) &&
-		typeof recipe.comparison === "string"
-	);
 }
 
 /**
@@ -114,4 +98,4 @@ function embedsCheckLines(part: EmbedsPart | undefined): string[] {
 	];
 }
 
-export { embedsCheckLines, embedStanding, fixLine, isRepointable, type EmbedStanding };
+export { embedsCheckLines, embedStanding, fixLine, type EmbedStanding };

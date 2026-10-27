@@ -18,8 +18,8 @@ export type {
 } from "#shared/schemas/model.ts";
 export {
 	ArchitectureModuleEditSchema,
-	ArchitectureFlowRenderRequestSchema,
-	ArchitectureFlowRenderResultSchema,
+	ArchitectureRenderRequestSchema,
+	ArchitectureRenderResultSchema,
 	ArchitectureModuleEditResultSchema,
 	ArchitectureRecoveryResultSchema,
 	ArchitectureClaimRequestSchema,
@@ -48,3 +48,5 @@ export {
 } from "#shared/schemas/model-portable.ts";
 
 export { ArchitectureMigrationRequestSchema } from "#shared/schemas/migration-installation.ts";
+
+export { ArchitectureInitializationRequestSchema } from "#shared/schemas/model-portable.ts";

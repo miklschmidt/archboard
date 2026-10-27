@@ -19,7 +19,7 @@ import {
 import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal, doingRefusal } from "#cli/protocol/contract/refusals.ts";
-import { statedJson } from "#cli/operations/semantic/input/semantic-input.ts";
+import { statedJson } from "#cli/operations/model/input.ts";
 
 /**
  * Keep runtime refusals intact through CLI output and exit status.

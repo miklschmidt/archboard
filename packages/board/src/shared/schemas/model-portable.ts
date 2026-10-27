@@ -34,6 +34,17 @@ const ArchitectureImportRequestSchema = z.strictObject({
 	writer: SingleLineTextSchema,
 	doing: SingleLineTextSchema.max(140),
 });
+const ArchitectureInitializationRequestSchema = z.strictObject({
+ name: z.string().trim().min(1),
+ operationId: SingleLineTextSchema,
+ writer: SingleLineTextSchema,
+ doing: SingleLineTextSchema.max(140),
+});
+const InitializationInstallationSchema = ArchitectureInitializationRequestSchema.extend({
+ type: z.literal("initialize"),
+ expectedRevision: ModelRevisionSchema,
+ target: z.strictObject({ model: SemanticIdSchema, state: z.null() }),
+});
 const PortableInstallationSchema = ArchitectureImportRequestSchema.omit({ bundle: true }).extend({
 	type: z.literal("import"),
 	bundleDigest: z.string().regex(/^[a-f0-9]{64}$/u),
@@ -44,6 +55,8 @@ const ArchitectureExportResultSchema = z.discriminatedUnion("success", [
 	ArchitectureModelFailureSchema,
 ]);
 export {
+ ArchitectureInitializationRequestSchema,
+ InitializationInstallationSchema,
 	ArchitecturePortableBundleSchema,
 	ArchitectureImportRequestSchema,
 	ArchitectureExportResultSchema,

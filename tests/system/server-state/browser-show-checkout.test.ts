@@ -105,12 +105,7 @@ function chosenCheckout(): string | undefined {
  * @param board The board.
  */
 async function createBoard(vault: string, board: string): Promise<void> {
-	const made = await createRequester({ ...server, vault })("/api/semantic-boards/create", {
-		method: "POST",
-		doing: "starting a board",
-		body: { board, create: { level: "system", nodes: [] } },
-	});
-	expect(made.status).toBe(200);
+ writeFileSync(join(vault,"model.json"),JSON.stringify({schemaVersion:1,id:"Payments",name:board,current:null}));
 }
 
 /**
@@ -245,14 +240,7 @@ describe.serial("browser show and the chosen checkout", () => {
 		await using resources = new AsyncDisposableStack();
 		const pane = await paneIn(worktreeVault, "pane-watch");
 		resources.defer(() => pane.close());
-		// Board commands in the main checkout, which is not chosen now.
-		archboard(main, ["semantic"]);
-		archboard(main, ["semantic", "show", "payments"]);
-		archboard(
-			main,
-			["semantic", "new", "ledger", "--doing", "drawing a board in the main checkout"],
-			JSON.stringify({ level: "system", nodes: [{ name: "Ledger", kind: "service" }] }),
-		);
+		archboard(main,["model","read"]);
 		// The first command in a new worktree registers it without choosing it.
 		const target = join(fixture.root, "orders-fix");
 		execFileSync("git", ["worktree", "add", "-q", "-b", "fix", target], {
@@ -260,9 +248,9 @@ describe.serial("browser show and the chosen checkout", () => {
 			stdio: "ignore",
 		});
 		const fix = realpathSync.native(target);
-		vaultOf(fix);
+		await createBoard(vaultOf(fix),"payments");
 		const mark = pane.mark();
-		expect(archboard(fix, ["semantic"])).toMatchObject({
+		expect(archboard(fix, ["model","read"])).toMatchObject({
 			vault: { registered: { root: fix, chosen: false } },
 		});
 		expect(await pane.waitFor("repositories_changed", mark)).toBeDefined();
@@ -334,7 +322,6 @@ describe.serial("browser show and the chosen checkout", () => {
 		});
 		resources.defer(() => back.close());
 		expect(back.events.find((event) => event.type === "pane_board")).toMatchObject({
-			board: "payments",
 			vault: mainVault,
 			repository: ORDERS,
 		});

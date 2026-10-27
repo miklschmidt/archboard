@@ -8,7 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { readRenderRecipe } from "@archboard/renderer/recipe";
 import { gitOutput } from "#cli/clients/git/git-output.ts";
-import type { RenderRecipe } from "#cli/rules/semantic/draw/picture-recipe.ts";
+type RenderRecipe=Extract<ReturnType<typeof readRenderRecipe>,{kind:"recipe"}>["recipe"];
 
 /** One tracked file that carries a render recipe, readable or not. */
 interface CheckoutEmbed {

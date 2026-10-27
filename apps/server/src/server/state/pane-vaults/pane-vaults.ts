@@ -12,7 +12,6 @@ import {
 	paneVaults,
 	panes,
 	socketVaults,
-	syncLockWatch,
 	forgetSemanticPaneContext,
 } from "@archboard/workbench/panes";
 
@@ -62,7 +61,6 @@ function movePaneVault(clientId: string, vault: string): void {
 		panes.set(clientId, { ...registration, vault });
 	}
 	forgetSemanticPaneContext(clientId);
-	syncLockWatch();
 }
 
 /**

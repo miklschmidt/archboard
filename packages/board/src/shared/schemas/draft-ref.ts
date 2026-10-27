@@ -18,7 +18,7 @@ import type { SemanticNode } from "#shared/schemas/content.ts";
  * @param variant The variant.
  * @returns Its parent, the parent's parent, and so on.
  */
-function ancestorsOf(board: SemanticBoard, variant: SemanticVariant): SemanticVariant[] {
+function ancestorsOf(board: Pick<SemanticBoard, "variants">, variant: SemanticVariant): SemanticVariant[] {
 	const chain: SemanticVariant[] = [];
 	let next = board.variants.find((one) => one.id === variant.parent);
 	while (next !== undefined && !chain.includes(next)) {
@@ -61,7 +61,7 @@ function refsIn(variants: readonly SemanticVariant[], repo: string): Set<string>
  * @param repo The repository.
  * @returns The refs, sorted; none when the draft names no ref there.
  */
-function draftRefs(board: SemanticBoard, variant: SemanticVariant, repo: string): string[] {
+function draftRefs(board: Pick<SemanticBoard, "variants">, variant: SemanticVariant, repo: string): string[] {
 	const named = refsIn([variant], repo);
 	const earlier = refsIn(ancestorsOf(board, variant), repo);
 	const own = [...named].filter((ref) => !earlier.has(ref));
@@ -92,7 +92,7 @@ interface OwnRef {
  * @param variant The variant.
  * @returns The ref the draft is read at, by repository.
  */
-function ownRefs(board: SemanticBoard, variant: SemanticVariant): Map<string, OwnRef> {
+function ownRefs(board: Pick<SemanticBoard, "variants">, variant: SemanticVariant): Map<string, OwnRef> {
 	const own = new Map<string, OwnRef>();
 	if (variant.lifecycle !== "draft") return own;
 	const { nodes } = variant.content;
@@ -111,7 +111,7 @@ function ownRefs(board: SemanticBoard, variant: SemanticVariant): Map<string, Ow
  * @returns The ref and a binding that names it, or undefined when the draft names none or several of its own.
  */
 function ownRefIn(
-	board: SemanticBoard,
+	board: Pick<SemanticBoard, "variants">,
 	variant: SemanticVariant,
 	repo: string,
 ): OwnRef | undefined {

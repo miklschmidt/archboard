@@ -5,8 +5,9 @@
 // Everything, read against nothing, can follow a deleted board's name.
 
 import { expect, test } from "bun:test";
-import type { RenderRecipe } from "#cli/rules/semantic/draw/picture-recipe.ts";
-import { embedStanding, isRepointable } from "#cli/rules/check/embed-state.ts";
+import {readRenderRecipe} from "@archboard/renderer/recipe";
+type RenderRecipe=Extract<Extract<ReturnType<typeof readRenderRecipe>,{kind:"recipe"}>["recipe"],{board:unknown}>;
+import { embedStanding } from "#cli/rules/check/embed-state.ts";
 
 const digest = (digit: string) => `sha256:${digit.repeat(64)}`;
 const kept: RenderRecipe = {
@@ -35,12 +36,4 @@ test("a changed picture is outdated with a changed fingerprint and a renderer ch
 	// The route draws a bitmap's SVG, so its scale and region are the kept ones.
 	const bitmap = { ...kept, raster: { scale: 2, region: null } };
 	expect(embedStanding(bitmap, kept)).toBe("current");
-});
-
-test("only the current variant's overview or Everything, read against nothing, follows a deleted board's name", () => {
-	expect(isRepointable(kept)).toBe(true);
-	expect(isRepointable({ ...kept, view: { id: "Everything" }, comparison: "off" })).toBe(true);
-	expect(isRepointable({ ...kept, view: { id: "v1" } })).toBe(false);
-	expect(isRepointable({ ...kept, variant: { id: "x1" } })).toBe(false);
-	expect(isRepointable({ ...kept, comparison: { against: "x1" } })).toBe(false);
 });

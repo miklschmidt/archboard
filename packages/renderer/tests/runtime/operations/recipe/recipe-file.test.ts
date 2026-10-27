@@ -43,7 +43,7 @@ async function drawnSvg(recipe: boolean, board = EXPORT_BOARD, view = "intake"):
  */
 function recipeIn(bytes: Uint8Array): RenderRecipe {
 	const read = readRenderRecipe(bytes);
-	if (read.kind !== "recipe") throw new Error(`Expected a recipe, read ${JSON.stringify(read)}`);
+	if (read.kind !== "recipe" || !("board" in read.recipe)) throw new Error(`Expected a recipe, read ${JSON.stringify(read)}`);
 	return read.recipe;
 }
 
