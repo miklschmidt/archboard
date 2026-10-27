@@ -350,3 +350,47 @@ test("canonical locality and branch footprint retain source analysis without a l
 	expect(refused.status, refused.stderr).toBe(2);
 	expect(answer(refused.stdout)).toMatchObject({ success: false, code: "STATE_NOT_FOUND" });
 });
+
+test("canonical initialization accepts shared CLI doing intent and retries without replacing its identity", () => {
+	const root = mkdtempSync(join(tmpdir(), "archboard-init-cli-"));
+	try {
+		const addressed = vaultIn(root);
+		for (const args of [
+			["init", "-q"],
+			["config", "user.name", "CLI Author"],
+			["config", "user.email", "cli@example.test"],
+			["config", "commit.gpgsign", "false"],
+		]) {
+			const ran = Bun.spawnSync(["git", "-C", root, ...args]);
+			if (ran.exitCode !== 0) throw new Error(ran.stderr.toString());
+		}
+		const invoke = (args: string[]) =>
+			runServerCli({ repoRoot, server: server!, vault: addressed, args, input: undefined });
+		const base = [
+			"model",
+			"init",
+			"--name",
+			"Checkout and orders",
+			"--operation-id",
+			"initialize-evidence",
+			"--writer",
+			"readme",
+		];
+		const silent = invoke(base);
+		expect(silent.status).toBe(2);
+		const stated = [...base, "--doing", "Initialize the synthetic architecture"];
+		const created = invoke(stated);
+		expect(created.status, created.stderr).toBe(0);
+		const retried = invoke(stated);
+		expect(retried.status, retried.stderr).toBe(0);
+		expect(answer(retried.stdout)).toEqual(answer(created.stdout));
+		const read = ArchitectureModelReadSchema.parse(answer(invoke(["model", "read"]).stdout));
+		expect(read).toMatchObject({
+			success: true,
+			manifest: { name: "Checkout and orders", current: null },
+			policy: { levels: [] },
+		});
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});

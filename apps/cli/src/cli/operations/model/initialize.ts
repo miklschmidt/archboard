@@ -1,3 +1,5 @@
+import { statedInvocation } from "@archboard/server-lifecycle/server-client";
+import { serverRefusal, doingRefusal } from "#cli/protocol/contract/refusals.ts";
 import {
 	ArchitectureInitializationRequestSchema,
 	ArchitectureModuleEditResultSchema,
@@ -8,6 +10,8 @@ import { defineCommand } from "#cli/protocol/contract/contract.ts";
 
 const modelInitContract = defineCommand({
 	...modelArchiveInitContract,
+	shared: ["url", "directory", "doing"],
+	refusals: [serverRefusal, doingRefusal],
 	output: {
 		cases: [
 			{
@@ -35,7 +39,6 @@ const modelInitContract = defineCommand({
 			["name", "The model name"],
 			["operationId", "The stable retry identity"],
 			["writer", "The author identity"],
-			["doing", "The present intent"],
 		] as const
 	).map(([key, description]) => ({
 		kind: "option" as const,
@@ -46,7 +49,7 @@ const modelInitContract = defineCommand({
 		required: true,
 		description,
 	})),
-	input: { ingress: ArchitectureInitializationRequestSchema },
+	input: { ingress: ArchitectureInitializationRequestSchema.omit({ doing: true }) },
 	result: ArchitectureModuleEditResultSchema,
 	effects: ["write", "server-state-write"],
 	relationships: [
@@ -65,7 +68,11 @@ const modelInitContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "model init");
-		const result = await initializeArchitectureModelOnServer(input);
+		const request = context.parse(ArchitectureInitializationRequestSchema, {
+			...input,
+			doing: statedInvocation().doing,
+		});
+		const result = await initializeArchitectureModelOnServer(request);
 		return {
 			result,
 			...(result.success
