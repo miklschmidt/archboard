@@ -33,7 +33,7 @@ const BROWSER_TEST_PATHS = [
 	"tests/system/browser/canonical-model-legibility.test.ts",
 	"tests/system/browser/canonical-model-inspection.test.ts",
 	"tests/system/browser/canonical-model-groups.test.ts",
-	"tests/system/browser/semantic-walkthrough-presentation.test.ts",
+	"tests/system/browser/canonical-model-presentation.test.ts",
 	"tests/system/browser/canonical-model-attention.test.ts",
 	"tests/system/browser/voice-box.test.ts",
 	"tests/system/browser/voice-box-presented.test.ts",

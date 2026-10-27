@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T22:00:00Z'
+updated_date: '2026-10-27T22:07:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -106,6 +106,8 @@ Restore walkthrough ownership of the existing sidebar control. First extend the 
 Extend the existing agent-navigation browser owner to leave a requested walkthrough and open an uncached proposal. A completed remote presentation request must not restart when the ordinary reader remounts. Clear that request at the existing leave event through the pane arrival owner, without a second handled-request store or effect that mirrors state.
 
 Bounded render-context repair: extend the shared model projection with unsettled identities from selected-state issues and represented aggregate connections, then carry that field through flow projection and existing render exports. Preserve default comparison selection, exact identified base checks, existing request schemas, complete structural and behavioral interface meaning, and recipe replay. Parent owns frontend wiring, mapping, adoption, migration, and final acceptance.
+
+Port the final legacy walkthrough-presentation browser owner to canonical authored readings. Preserve actual caption transitions, keyboard stepping, camera arrival, selected-subject emphasis, readable narration controls, read-only behavior and return to the ordinary camera/sidebar. Reuse existing presentation and camera rules for any reproduced gap; retain the existing motion clock and timing constants.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -198,4 +200,8 @@ The existing agent-navigation browser owner reproduced a completed remote walkth
 Render-context repair is implemented in the shared projection and HTTP render adapter. Public runtime and real-Git HTTP/CLI evidence proves module and aggregate warnings, default comparison with removed subjects, complete behavioral exchanges, exact retained recipe replay after later edits, CLI artifact equality, and scoped entry-point meaning after visual filters. Consumer rendering guidance describes these semantics; source-vault inputs remain unchanged. Focused tests pass 6 cases / 44 assertions. Both TypeScript projects, focused source/test lint with zero warnings, touched-file formatting, and git diff --check pass. Signed source 25157a31544c2128a0146ac889887091a824017c is based on integration 86ad139a453420768f321cb6ee8e7b1c13457e1a and includes required main a98f28811f4fa74233ae4a55e52b90d75defd93b. Full contract/evidence is in task-549.24-render-context-contract.md and task-549.24-render-context-backend.md under /home/msc/.local/state/archboard-implementation/task-549. Parent status, assignee, acceptance, frontend work, and architecture migration remain unchanged.
 
 Parent wired the merged shared projection.unsettled field into the existing browser renderer request. The canonical legibility owner now passes computed light/dark colors, added and removed connection ink, traffic behind labels, distinct kind icons, and unresolved badges together with selection rings and structured inspector issues. Popup choices wait for actual hit targets as the existing mode owner does. Browser, full types and focused source/test lint pass. The backend source merged through signeda154b6bc5; its six public cases and 44 assertions remain valid.
+
+The canonical presentation browser port reaches the intended RED: its second authored selection leaves the camera at the whole-picture transform. Types and focused test lint pass. Reuse the existing beat-focus arithmetic and auto-fit hook with narrow content, dimensions and explicit picture identity; keep the ordinary reader camera owner unchanged.
+
+The final legacy presentation browser owner now uses explicit canonical walkthrough readings. Its RED showed the camera remaining at the whole-picture transform between authored selections. Canonical playback now reuses beatFocus and useAutoFit with narrow content/dimensions and explicit picture identity, plus the existing emphasis marks and timing. Ordinary camera ownership remains unchanged. The browser proves caption cross-fades, progress motion, keyboard stepping, camera arrival, receded unrelated subjects and return to the prior camera/sidebar without writes. Presentation, walkthrough, narration and gesture browsers, canonical offline replay, retained camera/presentation UI owners, full types and focused lint pass. The retirement ledger names the replacement owner.
 <!-- SECTION:NOTES:END -->

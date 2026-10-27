@@ -806,3 +806,10 @@ It retains computed light and dark colors, comparison ink, label paint order, ki
 The public proposal fixture also proves structured issue details beside authored group meaning.
 Shared projection supplies unresolved subject identities and their represented aggregate connections to browser and exported drawings.
 The render-context runtime and HTTP/CLI owners cover exact replay and complete interface context.
+
+`canonical-model-presentation.test.ts` replaces the legacy walkthrough-presentation browser owner.
+It retains actual caption cross-fades, progress motion, camera arrival, subject emphasis, keyboard stepping, and return to the ordinary reading.
+The canonical reader reuses the existing beat-focus and auto-fit rules with content, dimensions, and an explicit picture identity.
+Retained camera and presentation-box UI owners keep their existing behavior assertions.
+The walkthrough header owner also proves that sidebar controls remain held during playback and restore afterward.
+The agent-navigation owner proves that a completed remote presentation cannot reopen after an uncached state read.

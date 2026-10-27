@@ -157,7 +157,7 @@ function flowSubjectOf(
  * @param id The id a click produced.
  * @returns The subject, or undefined when the variant no longer holds it.
  */
-function subjectOf(variant: SemanticVariant, id: string): Subject | undefined {
+function subjectOf(variant: Pick<SemanticVariant, "content">, id: string): Subject | undefined {
 	const byId = new Map(variant.content.nodes.map((node) => [node.id, node]));
 	const node = byId.get(id);
 	if (node !== undefined) {

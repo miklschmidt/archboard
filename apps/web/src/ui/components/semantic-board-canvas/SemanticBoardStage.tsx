@@ -298,7 +298,12 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 		reducedMotion,
 		presenting: narrative.open !== null,
 	});
+	const fitPicture = useMemo(
+		() => (drawn === null ? null : JSON.stringify([drawn.board, drawn.variant.id, drawn.view?.id])),
+		[drawn],
+	);
 	useAutoFit(camera, drawn, focus, {
+		picture: fitPicture,
 		presenting: narrative.open !== null,
 		reducedMotion,
 		cut: dive.cut,

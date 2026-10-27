@@ -1,3 +1,5 @@
+import { useAutoFit } from "#ui/hooks/semantic-board-canvas/use-auto-fit.ts";
+import { beatFocus, subjectMarks } from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
 import { moveCameraByKey } from "#ui/clients/semantic-board-canvas/picture/camera-keys.ts";
 import { useLighting } from "#ui/hooks/semantic-board-canvas/use-lighting.ts";
 import { NOTHING_PEEKED } from "#ui/components/semantic-board-canvas/Peek.tsx";
@@ -45,6 +47,7 @@ interface ModelDiagramProps {
 	reducedMotion: boolean;
 	reserve?: number;
 	presentation?: string;
+	presentedSubjects?: readonly string[];
 	onPresentation?: (picture: { key: string; arrived: boolean } | null) => void;
 	selected: ReadonlySet<string>;
 	warnings?: ReadonlySet<string>;
@@ -131,7 +134,6 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 	const [arrivalSurface, setArrivalSurface] = useState<HTMLDivElement | null>(null);
 	const [settled, setSettled] = useState<string | null>(null);
 	const installed = useRef<string | null>(null);
-	const shownBeat = useRef<string | undefined>(undefined);
 	const attach = useCallback((element: HTMLDivElement | null): void => {
 		surface.current = element;
 		setArrivalSurface(element);
@@ -147,6 +149,31 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		},
 		[model.modules, onOpen],
 	);
+	const focus = useMemo(
+		() =>
+			beatFocus(
+				props.presentation === undefined
+					? null
+					: {
+							id: props.presentation,
+							subjects: [
+								...projectedMarks(new Set(props.presentedSubjects), props.projection.connections),
+							],
+						},
+				drawing,
+				{ content: props.projection.content },
+			),
+		[props.presentation, props.presentedSubjects, props.projection, drawing],
+	);
+	const veil = useMemo(
+		() => (focus.drawn.length === 0 ? null : new Set(focus.drawn)),
+		[focus.drawn],
+	);
+	useAutoFit(camera, props.presentation === undefined ? null : drawing, focus, {
+		picture: drawing.svg,
+		presenting: props.presentation !== undefined,
+		reducedMotion: props.reducedMotion,
+	});
 	const lightingInput = useMemo(
 		() => ({
 			content: props.projection.content,
@@ -211,19 +238,27 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 			stagePicture(root, drawing.svg, clockOf(root.querySelector("svg")) ?? 0);
 			installed.current = drawing.svg;
 		}
-		const marked = projectedMarks(selected, props.projection.connections);
+		const marked = projectedMarks(
+			subjectMarks(null, focus, [...selected]),
+			props.projection.connections,
+		);
 		const warned = projectedMarks(props.warnings, props.projection.connections);
 		markSubjects(root, marked);
 		markCodeWarnings(root, warned);
-		markVeil(root, lighting.standing);
+		markVeil(root, veil ?? lighting.standing);
 		lightInk(root);
-	}, [selected, drawing.svg, props.projection.connections, props.warnings, lighting.standing]);
+	}, [
+		selected,
+		drawing.svg,
+		props.projection.connections,
+		props.warnings,
+		lighting.standing,
+		veil,
+		focus,
+	]);
 	useLayoutEffect(() => {
-		if (camera.room === null) return;
-		if (!camera.handled() || shownBeat.current !== props.presentation) {
-			camera.fit({ kind: "whole", content: drawing }, true);
-			shownBeat.current = props.presentation;
-		}
+		if (camera.room === null || props.presentation !== undefined) return;
+		if (!camera.handled()) camera.fit({ kind: "whole", content: drawing }, true);
 	}, [camera, drawing, props.presentation]);
 	useEffect(() => {
 		const root = surface.current;
@@ -260,11 +295,13 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 				attach={attach}
 				gesture={gesture}
 				reducedMotion={props.reducedMotion}
-				marks={surfaceMarks({
-					veiled: false,
-					far: false,
-					probing: lighting.mode,
-				})}
+				marks={
+					surfaceMarks({
+						veiled: veil !== null,
+						far: false,
+						probing: lighting.mode,
+					}) + (props.presentation === undefined ? "" : " is-presenting")
+				}
 			/>
 			{props.updating && (
 				<output className="text-body text-muted-foreground bg-background absolute top-2 right-2 rounded px-2 py-1">

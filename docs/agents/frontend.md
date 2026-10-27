@@ -342,6 +342,10 @@ The Selection tab starts with the selected module meaning, then its evidence and
 ModelPane owns ordinary selection across asynchronous reads.
 The drawing projection translates aggregate lines into canonical relationship identities without owning another selection.
 Captured walkthroughs keep their own selection and suspend the ordinary reader.
+Their header shares the existing presentation context and holds the sidebar control until playback ends.
+Authored beat subjects drive the shared focus, camera glide, and emphasis rules.
+An ordinary reader retains its own camera while a captured presentation runs.
+Leaving a remote presentation clears its request in the pane arrival owner, so another state read cannot restart it.
 Narrative buttons start playback directly and create no popup outside the suspended reader.
 
 A coherent model event resumes exact reads interrupted by an installation barrier.

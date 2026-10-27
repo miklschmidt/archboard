@@ -22,7 +22,6 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 
 import { PICTURE_MS, PRESENTATION_MS } from "@archboard/timing";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
-import type { SemanticDrawing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { BeatFocus } from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
 import type { Camera, FitTarget, Size } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
 
@@ -38,6 +37,8 @@ interface FitReading {
 
 /** How a pane says it is being read, before anything is decided about it. */
 interface FitRequest {
+	/** The caller identifies the picture independently from its dimensions. */
+	readonly picture: string | null;
 	readonly presenting: boolean;
 	readonly reducedMotion?: boolean | undefined;
 	/** The picture on screen is the one a flight arrived at: the camera lands on it at once. */
@@ -205,9 +206,9 @@ function keepFitted(
  */
 function useAutoFit(
 	camera: BoardCamera,
-	drawing: SemanticDrawing | null,
+	drawing: Size | null,
 	focus: BeatFocus,
-	request: FitRequest = { presenting: false },
+	request: FitRequest,
 ): void {
 	const reducedMotion = request.reducedMotion === true;
 	const cut = request.cut === true;
@@ -221,8 +222,7 @@ function useAutoFit(
 					}),
 		[drawing, focus.target, camera.room],
 	);
-	const picture =
-		drawing === null ? null : JSON.stringify([drawing.board, drawing.variant.id, drawing.view?.id]);
+	const { picture } = request;
 	const subject = picture === null ? null : JSON.stringify([picture, focus.key]);
 	const fitted = useRef<Fitted>({ subject: null, picture: null, room: null });
 	const held = useRef<HeldCamera | null>(null);

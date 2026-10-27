@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { createJsonRequester } from "../support/http.ts";
+import { readArchitectureModel } from "@archboard/board/store-read";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import {
@@ -15,7 +15,7 @@ import {
 } from "./support/agent-browser.ts";
 import { WAIT, press } from "./support/drilling.ts";
 import { serverPath } from "./support/navigator-support.ts";
-import { pictureAtRest } from "./support/semantic-page.ts";
+import { seedCanonicalModel, startModelWalkthrough } from "./support/canonical-page.ts";
 import { stepBrowserMotion } from "./support/motion-clock.ts";
 
 // Presenting a walkthrough in a real browser: the half only a browser can
@@ -49,11 +49,11 @@ interface Presented {
 const presented = (browser: AgentBrowserSession): Promise<Presented> =>
 	browser.eval<Presented>(
 		`(() => {` +
-			` const stage = document.querySelector("[data-slot='semantic-board-stage']");` +
-			` const surface = document.querySelector("[data-slot='semantic-board-surface']");` +
+			` const stage = document.querySelector("[data-slot='model-walkthrough']") ?? document.querySelector("[data-slot='model-reading']");` +
+			` const surface = stage?.querySelector("[data-slot='semantic-board-surface']");` +
 			` const sidebar = document.querySelector("[data-slot='semantic-sidebar']");` +
 			` return {` +
-			`  step: stage?.getAttribute("data-presentation-step") ?? null,` +
+			`  step: stage?.querySelector("[data-slot='semantic-presentation']")?.getAttribute("data-step") ?? null,` +
 			`  arrived: !!surface && !surface.hasAttribute("data-camera-motion") && !surface.hasAttribute("data-picture-motion"),` +
 			`  heading: document.querySelector("[data-slot='semantic-presentation-heading']")?.textContent ?? null,` +
 			`  sidebar: !!sidebar && sidebar.checkVisibility(),` +
@@ -83,7 +83,7 @@ const arrivedAt = (browser: AgentBrowserSession, step: string): Promise<Presente
  */
 const opacityOfCard = (browser: AgentBrowserSession, words: string): Promise<number> =>
 	browser.eval<number>(
-		`(() => { const card = [...document.querySelectorAll("[data-slot='semantic-board-surface'] [data-semantic-kind='node']")]` +
+		`(() => { const stage = document.querySelector("[data-slot='model-walkthrough']") ?? document.querySelector("[data-slot='model-reading']"); const card = [...stage.querySelectorAll("[data-slot='semantic-board-surface'] [data-semantic-kind='node']")]` +
 			`.find((group) => group.textContent.includes(${JSON.stringify(words)}));` +
 			` if (!card) return -1;` +
 			// What a reader sees: the card's own opacity, under any opacity filter over it.
@@ -121,56 +121,47 @@ interface HandOverFrame {
 
 test("a person presents a walkthrough step by step, and leaving gives the pane back", async () => {
 	await using resources = new AsyncDisposableStack();
-	const { ownerRoot } = browserTestRoots();
-	const vault = vaultIn(join(ownerRoot, "semantic-presentation-vault"));
-	mkdirSync(join(vault, ".archboard"), { recursive: true });
+	const vault = vaultIn(join(browserTestRoots().ownerRoot, "model-presentation"));
+	const model = await seedCanonicalModel(vault, "Write path", {
+		nodes: [
+			{ name: "Gateway", kind: "route" },
+			{ name: "Writer", kind: "module" },
+			{ name: "Ledger", kind: "datastore" },
+			{ name: "Reports", kind: "datastore" },
+		],
+		edges: [
+			{ from: "Gateway", to: "Writer", kind: "call", label: "hands it over" },
+			{ from: "Writer", to: "Ledger", kind: "data", label: "writes" },
+			{ from: "Ledger", to: "Reports", kind: "data", label: "feeds" },
+		],
+		walkthroughs: [
+			{
+				name: "Where writes go",
+				beats: [
+					{ heading: "All of it", body: "Four parts, one direction." },
+					{ heading: "The gateway", body: "Everything enters here." },
+					{ heading: "The ledger", body: "Where it lands." },
+				],
+			},
+		],
+	});
+	const tourPath = join(vault, "tour-0.walkthrough.json");
+	const tour = JSON.parse(readFileSync(tourPath, "utf8"));
+	tour.beats[1].reading.selection = [model.modules.find((module) => module.name === "Gateway")!.id];
+	tour.beats[2].reading.selection = [model.modules.find((module) => module.name === "Ledger")!.id];
+	writeFileSync(tourPath, JSON.stringify(tour));
+	const before = await readArchitectureModel(vault);
+	if (!before.success) throw new Error(JSON.stringify(before));
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
-	const request = createJsonRequester(server);
-
-	const created = await request<{ success: boolean }>("/api/semantic-boards/create", {
-		method: "POST",
-		doing: "explaining the write path",
-		body: {
-			board: "tour",
-			origin: "agent",
-			create: {
-				level: "system",
-				nodes: [
-					{ name: "Gateway", kind: "route" },
-					{ name: "Writer", kind: "module" },
-					{ name: "Ledger", kind: "datastore" },
-					{ name: "Reports", kind: "datastore" },
-				],
-				edges: [
-					{ from: "Gateway", to: "Writer", kind: "call", label: "hands it over" },
-					{ from: "Writer", to: "Ledger", kind: "data", label: "writes" },
-					{ from: "Ledger", to: "Reports", kind: "data", label: "feeds" },
-				],
-				views: [{ name: "The write", grammar: "architecture" }],
-				walkthroughs: [
-					{
-						name: "Where writes go",
-						beats: [
-							{ heading: "All of it", body: "Four parts, one direction." },
-							{ heading: "The gateway", body: "Everything enters here.", subjects: ["Gateway"] },
-							{ heading: "The ledger", body: "Where it lands.", subjects: ["Ledger"] },
-						],
-					},
-				],
-			},
-		},
-	});
-	expect(created.status).toBe(200);
-	const before = readFileSync(join(vault, "tour.semantic.json"), "utf8");
 
 	const browser = await stepBrowserMotion(resources.use(await createAgentBrowser()));
-	await browser.run(["open", `${server.base}/?paneA=tour`]);
+	await browser.run(["open", `${server.base}/?modelA=${model.manifest.id}`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
-		() => pictureAtRest(browser.eval.bind(browser)),
-		(atRest) => atRest,
+		() => presented(browser),
+		(state) => state.arrived && state.camera !== "",
 		"the board to be drawn in its pane",
 		WAIT,
 	);
@@ -179,7 +170,7 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	expect(reader.sidebar).toBe(true);
 
 	// Presenting: the first step, in the frame, and the sidebar steps aside.
-	await press(browser, "[data-slot='semantic-walkthrough-choice']");
+	await startModelWalkthrough(browser, model.walkthroughs[0]!.id);
 	const first = await arrivedAt(browser, "0");
 	expect(first.heading).toBe("All of it");
 	expect(first.sidebar).toBe(false);
@@ -264,6 +255,8 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	);
 
 	// Nothing a person did in the browser wrote a board.
-	expect(readFileSync(join(vault, "tour.semantic.json"), "utf8")).toBe(before);
+	const after = await readArchitectureModel(vault);
+	if (!after.success) throw new Error(JSON.stringify(after));
+	expect(after.revision).toEqual(before.revision);
 	await server.assertRunning();
 }, 60_000);

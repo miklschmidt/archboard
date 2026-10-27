@@ -129,6 +129,7 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 						reducedMotion={props.reducedMotion}
 						reserve={index < 0 ? 0 : reserve}
 						presentation={key}
+						presentedSubjects={reading.selection}
 						onPresentation={setPicture}
 					/>
 				</Suspense>
