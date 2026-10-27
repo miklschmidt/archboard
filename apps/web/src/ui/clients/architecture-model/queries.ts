@@ -9,7 +9,9 @@ import {
 } from "@archboard/board/model";
 import { inVault, strictReply, type ReplySchema } from "@archboard/server-requests";
 
-type StateSelection = { readonly [Field in "state" | "against"]?: ModelAddress[Field] | null } & {
+type StateSelection = {
+	readonly [Field in "state" | "against" | "preview"]?: ModelAddress[Field] | null;
+} & {
 	readonly compare?: boolean;
 	readonly walkthrough?: string;
 	readonly shared?: boolean;
@@ -32,6 +34,7 @@ class ArchitectureReadError extends Error {
 }
 
 const READING_FIELDS = [
+	"preview",
 	"state",
 	"against",
 	"compare",

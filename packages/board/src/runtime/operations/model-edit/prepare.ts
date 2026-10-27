@@ -2,7 +2,8 @@ import { StateMetadataSchema } from "#shared/schemas/model-definitions.ts";
 import { isDeepStrictEqual } from "node:util";
 import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts";
 import { editCandidate } from "#runtime/operations/model-edit/candidate.ts";
-import { requireSubjectClaim, requireTarget } from "#runtime/operations/model-edit/claims.ts";
+import { requireSubjectClaim } from "#runtime/operations/model-edit/claims.ts";
+import { readCurrentModel } from "#runtime/operations/read/model-read.ts";
 import {
 	archiveContext,
 	assertArchiveWritable,
@@ -12,9 +13,11 @@ import {
 	CheckpointRecordSchema,
 	tree,
 	ArchiveError,
+	type ArchiveContext,
 } from "#runtime/store/model-archive.ts";
 import { operationRef, checkoutContext, type ModelJournal } from "#runtime/store/model-state.ts";
 import { captureReferencePins } from "#runtime/operations/history/reference-pins.ts";
+type Candidate = Extract<Awaited<ReturnType<typeof editCandidate>>, { success: true }>;
 
 /**
  * Recheck the caller's complete token after the asynchronous signer finishes.
@@ -29,14 +32,68 @@ async function requireUnchanged(
 	subjects: string[],
 ) {
 	requireSubjectClaim(vault, request, subjects);
-	const current = await requireTarget(vault, request.target);
+	const current = readCurrentModel(vault);
 	if (!current.success) return current;
 	if (!isDeepStrictEqual(current.revision, request.expectedRevision))
 		throw new ArchiveError(
 			"STALE_REVISION",
 			"Inputs changed during signed preparation. No current file changed.",
 		);
+	if ("correction" in request) {
+		const { stateMetadata } = await import("#runtime/operations/proposals/read.ts");
+		const latest = await stateMetadata(await archiveContext(vault), current, request.target.state!);
+		if (latest.checkpoint !== request.correction.previous)
+			throw new ArchiveError(
+				"STALE_REVISION",
+				"The logical state changed during signed preparation. Read it again before correcting it.",
+			);
+	}
 	return current;
+}
+/**
+ * Capture one complete signed operation record, including selected lifecycle metadata.
+ * @param vault The explicitly addressed vault.
+ * @param request The original operation intent.
+ * @param candidate The complete checked candidate.
+ * @param context The addressed archive context.
+ * @returns Its immutable checkpoint metadata.
+ */
+async function candidateRecord(
+	vault: string,
+	request: ArchitectureModuleEdit,
+	candidate: Candidate,
+	context: ArchiveContext,
+) {
+	return CheckpointRecordSchema.parse({
+		schemaVersion: 1,
+		kind: "checkpoint",
+		vault: context.vault,
+		model: candidate.current.manifest.id,
+		state: StateMetadataSchema.strip().parse(
+			candidate.selection ?? candidate.current.manifest.current,
+		),
+		selection: candidate.selection ?? candidate.model.selectedState,
+		lifecycle: "lifecycle" in candidate ? candidate.lifecycle : undefined,
+		correction: "correction" in candidate ? candidate.correction : undefined,
+		revision: candidate.revision,
+		createdAt: new Date().toISOString(),
+		request: {
+			target: "current",
+			operationId: request.operationId,
+			writer: request.writer,
+			doing: request.doing,
+			expectedRevision: request.expectedRevision.digest,
+			dependencies: candidate.dependencies,
+		},
+		edit: request,
+		subjects: candidate.subjects,
+		reconciliations: candidate.reconciliations,
+		sources:
+			"correction" in request
+				? request.correction.revisions.map((revision) => ({ ...revision, uncommitted: false }))
+				: await captureSource(context, candidate.model, vault),
+		...(await captureReferencePins(vault, candidate.model)),
+	});
 }
 /**
  * Prepare signed architecture before any current input changes.
@@ -51,31 +108,7 @@ async function prepareEdit(vault: string, request: ArchitectureModuleEdit) {
 	const checkout = await checkoutContext(context);
 	await assertArchiveWritable(context);
 	const tip = await archiveTip(context);
-	const record = CheckpointRecordSchema.parse({
-		schemaVersion: 1,
-		kind: "checkpoint",
-		vault: context.vault,
-		model: candidate.current.manifest.id,
-		state: StateMetadataSchema.strip().parse(
-			candidate.selection ?? candidate.current.manifest.current,
-		),
-		selection: candidate.selection,
-		revision: candidate.revision,
-		createdAt: new Date().toISOString(),
-		request: {
-			target: "current",
-			operationId: request.operationId,
-			writer: request.writer,
-			doing: request.doing,
-			expectedRevision: request.expectedRevision.digest,
-			dependencies: candidate.dependencies,
-		},
-		edit: request,
-		subjects: candidate.subjects,
-		reconciliations: candidate.reconciliations,
-		sources: await captureSource(context, candidate.model, vault),
-		...(await captureReferencePins(vault, candidate.model)),
-	});
+	const record = await candidateRecord(vault, request, candidate, context);
 	const inputs = new Map([...candidate.inputs].map(([file, bytes]) => [`inputs/${file}`, bytes]));
 	inputs.set("record.json", Buffer.from(JSON.stringify(record)));
 	const checkpoint = await archiveCommit(

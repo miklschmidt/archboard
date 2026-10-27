@@ -114,6 +114,19 @@ not add imports or a second state path before that work.
   board in the repository the pane is in.
 
   Canonical panes use `modelX`, `scopeX`, and `checkpointX` beside `repoX`.
+  `previewX` names a saved migration origin beside `modelX`.
+  Preview queries keep their own identity and use no canonical event feed or state controls.
+  They refresh on mount, focus, reconnect, and explicit Refresh.
+  A failed preview hides cached candidate content and retains the requested address for recovery.
+  Source details retain exact fingerprints, original board coverage, and proposed state mappings.
+  Planned-only sources expose an empty current reading with visible guidance.
+  Code and reference reads preserve the preview origin. A foreign destination clears it.
+  Canonical sockets name `reading=canonical` and start without a legacy board.
+  Browser listings, board snapshots, and vault diagnostics normalize old schemas without persisting them.
+  Explicit canonical intent remains visible even when the server remembers a legacy board.
+  A deliberate legacy open replaces that pane through the existing operation owner.
+  Its history origin comes from the visible reading.
+  Each reader instance belongs to its resolved vault. A foreign destination replaces that instance and its native reading controls.
   `stateX` names a mutable proposal, and `againstX` names an explicit comparison base.
   `subjectX` names an explicit reference destination and seeds selection when that reading opens.
   Later pointer selection stays temporary and does not rewrite that destination.
@@ -139,6 +152,17 @@ not add imports or a second state path before that work.
   Other mutable readings refresh through the same public reader. Exact checkpoints keep distinct keys.
   The selected state metadata supplies lifecycle labels, including retained drafts.
   It also supplies unresolved issues and blocked ancestry, independently of comparison changes.
+  The current catalogue also supplies adopted and shelved logical states.
+  Reading and comparison controls share those identities and keep exact checkpoints distinct.
+  Selected state details expose recorded decisions, dates, ancestry, and document references.
+
+  The same bounded history disclosure exposes correction reasons, source commits, and exact prior and corrected reading links.
+  Its summary identifies corrections even while collapsed.
+  Comparison-base audit remains distinct from the selected audit, including when the selected model has no current state.
+  Archive-only completion events refresh mutable logical states without a file-digest equality guard.
+  Exact checkpoints preserve their original audit coverage and remain explicit during unavailable-history recovery.
+
+  Lineage actions use the existing router and preserve explicit unavailable history.
   The state picker and selected reading expose that standing. The shared issue component shows both values and repair instructions.
   A blocked reading can open its live ancestor through the same router.
   Exact checkpoints preserve their original standing after live settlement. The browser authors no settlement.

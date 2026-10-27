@@ -4,6 +4,7 @@ import type { ArchitectureEvent } from "#shared/schemas/model-operations.ts";
 import { readArchitectureModel } from "#runtime/operations/read/model-read.ts";
 import { readArchitectureClaims } from "#runtime/operations/model-edit/claims.ts";
 import { onArchitectureNews, type Completion } from "#runtime/store/model-news.ts";
+import { observeArchitectureHistory } from "#runtime/store/model-history-news.ts";
 
 /**
  * Identify completed subjects, or the full set affected by external observation.
@@ -50,6 +51,25 @@ function readingEvent(
 		...changedSubjects(latest, previous, completion),
 	};
 }
+
+/**
+ * Keep incomplete installations pending and announce each observed checkpoint once.
+ * @returns The next durable completion for a coherent reading, when one exists.
+ */
+function completionReader() {
+	const announced = new Set<string>();
+	let pending: Completion | undefined;
+	return (latest: ArchitectureModelRead, completion?: Completion) => {
+		if (completion !== undefined) pending = completion;
+		if (!latest.success) return undefined;
+		if (pending === undefined) return undefined;
+		const candidate = pending;
+		pending = undefined;
+		if (announced.has(candidate.checkpoint.id)) return undefined;
+		announced.add(candidate.checkpoint.id);
+		return candidate;
+	};
+}
 /**
  * Send a fresh coherent snapshot and subsequent durable or stable external changes.
  * @param vault The explicitly addressed vault.
@@ -62,30 +82,36 @@ function watchArchitectureModel(
 ): () => void {
 	let reading = readArchitectureModel(vault);
 	let claims = readArchitectureClaims(vault);
+	const completedNews = completionReader();
+	const retained = observeArchitectureHistory(vault, (completion) => refresh(completion));
 	listener({ type: "architecture_snapshot", vault, reading, claims });
 	/**
 	 * Observe current files and claims after a local completion or disk poll.
 	 * @param completion The durable edit result, when locally known.
 	 */
 	function refresh(completion?: Completion): void {
+		retained.poll();
 		const latest = readArchitectureModel(vault);
 		const latestClaims = readArchitectureClaims(vault);
 		if (JSON.stringify(claims) !== JSON.stringify(latestClaims)) {
 			claims = latestClaims;
 			listener({ type: "architecture_claims", vault, claims });
 		}
-		if (JSON.stringify(latest) === JSON.stringify(reading)) return;
+		const completed = completedNews(latest, completion);
+		if (JSON.stringify(latest) === JSON.stringify(reading) && completed === undefined) return;
 		const previous = reading;
 		reading = latest;
-		listener(readingEvent(vault, latest, previous, completion));
+		listener(readingEvent(vault, latest, previous, completed));
 	}
 	const unsubscribe = onArchitectureNews(vault, refresh);
+	retained.poll();
 	// Claims and foreign inputs share the existing disk-observation cadence.
 	const timer = setInterval(refresh, BOARD_LOCK_MS.watch);
 	timer.unref();
 	return () => {
 		clearInterval(timer);
 		unsubscribe();
+		retained.stop();
 	};
 }
 export { watchArchitectureModel };

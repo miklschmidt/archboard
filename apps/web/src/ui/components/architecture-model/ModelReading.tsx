@@ -33,7 +33,7 @@ const ModelDiagram = lazy(async () => {
 });
 
 const LOADING_DIAGRAM = (
-	<output className="text-body text-muted-foreground p-8">Loading diagram…</output>
+	<output className="text-body text-muted-foreground min-w-0 flex-1 p-8">Loading diagram…</output>
 );
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
@@ -114,8 +114,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 			 */
 			function keyDown(event: KeyboardEvent): void {
 				if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
-					event.preventDefault();
-					setExplanationOpen(true);
+					contextMenu(event);
 					return;
 				}
 				if (event.key === "Escape" && !event.defaultPrevented) clear();
@@ -124,7 +123,8 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 			 * Open the shared action menu for the selection already visible in this reading.
 			 * @param event The context request inside this reading.
 			 */
-			function contextMenu(event: MouseEvent): void {
+			function contextMenu(event: Event): void {
+				if (model.migrationPreview !== undefined) return;
 				event.preventDefault();
 				setExplanationOpen(true);
 			}
@@ -135,7 +135,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				element.removeEventListener("contextmenu", contextMenu);
 			};
 		},
-		[clear],
+		[clear, model.migrationPreview],
 	);
 	return (
 		<div
@@ -159,14 +159,16 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				architectural={grammar === "architecture"}
 				canFocus={canFocus}
 			>
-				<ModelExplanationMenu
-					open={explanationOpen}
-					onOpenChange={setExplanationOpen}
-					model={model}
-					selected={selection.ids}
-					unavailable={explanation.unavailable}
-					onAction={explanation.act}
-				/>
+				{model.migrationPreview === undefined && (
+					<ModelExplanationMenu
+						open={explanationOpen}
+						onOpenChange={setExplanationOpen}
+						model={model}
+						selected={selection.ids}
+						unavailable={explanation.unavailable}
+						onAction={explanation.act}
+					/>
+				)}
 				<ModelModeControls
 					content={projection.depicted}
 					subjects={subjects}

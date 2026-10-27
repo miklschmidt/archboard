@@ -56,6 +56,8 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 * of every pane it picks for somebody who did not name it. Absent means false.
 	 */
 	recording?: boolean;
+	/** An explicit canonical reading must not open a legacy board on connection. */
+	canonical?: boolean;
 	theme: PaneTheme;
 	/**
 	 * The vault the pane opens in: what its socket names until the server moves

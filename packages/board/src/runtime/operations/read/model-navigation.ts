@@ -47,7 +47,12 @@ async function navigationReading(
 	flow: string | undefined,
 	options: NavigationOptions,
 ) {
-	const model = await localReading(vault, module, flow, options);
+	const model =
+		options.preview === undefined
+			? await localReading(vault, module, flow, options)
+			: await (
+					await import("#runtime/operations/legacy-inventory/preview.ts")
+				).readMigrationPreview(vault, options.preview, module, flow);
 	if (!model.success) return model;
 	if (options.model === undefined) return model;
 	return options.model === model.manifest.id

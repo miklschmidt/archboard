@@ -5,8 +5,13 @@ import {
 
 import { ReconciliationIssueSchema } from "#shared/schemas/reconciliation.ts";
 import { z } from "zod";
-import { StateMetadataSchema, ModelRevisionSchema } from "#shared/schemas/model-definitions.ts";
+import {
+	StateMetadataSchema,
+	StateLineageSchema,
+	ModelRevisionSchema,
+} from "#shared/schemas/model-definitions.ts";
 import { QualifiedSubjectIdSchema, SemanticIdSchema } from "#shared/schemas/primitives.ts";
+import { HistoricalRevisionsSchema } from "#shared/schemas/historical-correction.ts";
 const StateSelectionSchema = ReadingSelectionSchema.extend({
 	explain: ExplanationRequestSchema.optional(),
 });
@@ -77,6 +82,7 @@ const FamilyStandingSchema = z.array(
 const ProposalSchema = StateMetadataSchema.extend({
 	schemaVersion: z.literal(1),
 	lifecycle: z.literal("draft"),
+	createdAt: z.iso.datetime().optional(),
 	predecessor: SemanticIdSchema.nullable(),
 	predecessorRevision: z.string().regex(/^[a-f0-9]{64}$/u),
 	baseline: CheckpointIdSchema,
@@ -87,17 +93,46 @@ const ProposalSchema = StateMetadataSchema.extend({
 		.array(z.strictObject({ subject: QualifiedSubjectIdSchema, checkpoint: CheckpointIdSchema }))
 		.optional(),
 }).strict();
-const SelectedStateSchema = StateMetadataSchema.extend({
+const CorrectionIntentSchema = z.strictObject({
+	previous: CheckpointIdSchema,
+	reason: z.string().trim().min(1),
+	revisions: HistoricalRevisionsSchema,
+});
+const CorrectionAuditSchema = CorrectionIntentSchema.extend({
+	at: z.iso.datetime(),
+	checkpoint: CheckpointIdSchema,
+});
+const CorrectionSchema = CorrectionAuditSchema.omit({ checkpoint: true }).extend({
+	changes: z.array(ProposalChangeSchema),
+	retiredIds: z.array(QualifiedSubjectIdSchema).optional(),
+});
+const SelectedStateSchema = StateLineageSchema.extend({
 	lifecycle: z.enum(["current", "draft", "historical", "shelved"]),
 	predecessor: SemanticIdSchema.nullable().optional(),
 	baseline: CheckpointIdSchema.optional(),
 	standing: ModelStandingSchema.optional(),
+	corrections: z.array(CorrectionAuditSchema).optional(),
 }).strict();
+const LifecycleSchema = z.strictObject({
+	type: z.enum(["adopt", "shelve"]),
+	at: z.iso.datetime(),
+	reason: z.string().min(1),
+	proposal: ProposalSchema,
+	previous: z
+		.strictObject({ state: SelectedStateSchema, checkpoint: CheckpointIdSchema })
+		.nullable(),
+});
 const ComparisonSchema = z.strictObject({
 	reason: z.enum(["explicit", "current", "predecessor"]),
 	against: SelectedStateSchema.nullable(),
 	revision: ModelRevisionSchema,
 	checkpoint: CheckpointIdSchema.optional(),
+	corrections: z
+		.strictObject({
+			selected: z.array(CorrectionAuditSchema),
+			against: z.array(CorrectionAuditSchema),
+		})
+		.optional(),
 	subjects: z.array(
 		z.strictObject({
 			id: QualifiedSubjectIdSchema,
@@ -120,7 +155,11 @@ export {
 	FamilyStandingSchema,
 	ProposalSchema,
 	SelectedStateSchema,
+	LifecycleSchema,
 	ComparisonSchema,
 	ProposalChangeSchema,
 	SubjectKindSchema,
+	CorrectionIntentSchema,
+	CorrectionSchema,
+	CorrectionAuditSchema,
 };

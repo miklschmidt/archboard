@@ -20,7 +20,10 @@ function stepIds(
 				: []),
 	]);
 }
-async function request(vault: string, state = "Current") {
+async function request(
+	vault: string,
+	state: ArchitectureModuleEdit["target"]["state"] = "Current",
+) {
 	const model = readArchitectureModel(vault);
 	if (!model.success) throw new Error(JSON.stringify(model));
 	const claims = readArchitectureClaims(vault);
@@ -30,6 +33,7 @@ async function request(vault: string, state = "Current") {
 	const target = { model: model.manifest.id, state };
 	const scopes = [
 		model.manifest.id,
+		...(state === null ? [] : [state]),
 		...model.modules.map((m) => m.id),
 		...model.relationships.map((e) => e.id),
 		...model.walkthroughs.flatMap((walk) => [walk.id, ...walk.beats.map((beat) => beat.id)]),

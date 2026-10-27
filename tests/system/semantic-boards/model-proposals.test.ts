@@ -27,6 +27,7 @@ beforeAll(async () => {
 		["config", "user.name", "Proposal Author"],
 		["config", "user.email", "proposal@example.test"],
 		["config", "commit.gpgsign", "false"],
+		["remote", "add", "origin", "https://github.com/acme/shop.git"],
 		["add", "."],
 		["commit", "--quiet", "-m", "test: seed model"],
 	]) {
@@ -38,6 +39,7 @@ beforeAll(async () => {
 		vault,
 	});
 });
+
 afterAll(async () => {
 	await server?.dispose();
 	rmSync(home, { recursive: true, force: true });
@@ -249,3 +251,123 @@ test("CLI and HTTP preserve family standing, blocked refusal and complete settle
 		reconciliation: false,
 	});
 });
+
+test("CLI and HTTP preserve completed lifecycle states and forced comparison receipts", async () => {
+	if (server === undefined) throw new Error("The server did not start");
+	const initial = readArchitectureModel(vault);
+	if (!initial.success) throw new Error(JSON.stringify(initial));
+	const parent = initial.proposals.find((entry) => entry.name === "Queued")!;
+	const child = initial.proposals.find((entry) => entry.name === "Child")!;
+	async function lifecycleInput(state: string) {
+		const claims = readArchitectureClaims(vault);
+		if (!claims.success) throw new Error(JSON.stringify(claims));
+		for (const value of claims.claims)
+			await releaseArchitectureClaim(vault, { claim: value.id, writer: value.writer });
+		const target = { model: "Shop", state };
+		const claimed = await claimArchitectureSubjects(vault, {
+			target,
+			writer: "agent",
+			reason: "adapter lifecycle contract",
+			subjects: ["Shop", "Shop#Gateway", parent.id, child.id].filter(
+				(id) => id !== child.id || state === child.id,
+			),
+		});
+		if (!claimed.success) throw new Error(JSON.stringify(claimed));
+		const model = readArchitectureModel(vault);
+		if (!model.success) throw new Error(JSON.stringify(model));
+		return {
+			target,
+			writer: "agent",
+			claim: claimed.claim.id,
+			operationId: crypto.randomUUID(),
+			expectedRevision: model.revision,
+			changes: [],
+		};
+	}
+	const shelved = await fetch(`${server.base}/api/architecture/module`, {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({
+			...(await lifecycleInput(child.id)),
+			vault,
+			doing: "shelve dependent proposal",
+			proposal: { type: "shelve", reason: "Retain the alternative." },
+		}),
+	});
+	expect(shelved.status).toBe(200);
+	expect(ArchitectureModuleEditResultSchema.parse(await shelved.json())).toMatchObject({
+		success: true,
+		selectedState: { id: child.id, lifecycle: "shelved" },
+	});
+	const input = await lifecycleInput(parent.id);
+	const refused = await fetch(`${server.base}/api/architecture/module`, {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({
+			...input,
+			vault,
+			doing: "adopt queued routing",
+			proposal: { type: "adopt", force: true, reason: "The queue is implemented." },
+		}),
+	});
+	expect(refused.status).toBe(409);
+	expect(await refused.json()).toMatchObject({
+		success: false,
+		code: "COMPARISON_REQUIRED",
+		applied: false,
+	});
+	const comparison = runServerCli({
+		repoRoot,
+		server,
+		args: ["model", "compare", "--state", parent.id, "--against", "current"],
+		input: undefined,
+	});
+	expect(comparison.status, comparison.stderr).toBe(0);
+	const content = JSON.stringify({
+		...input,
+		proposal: {
+			type: "adopt",
+			force: true,
+			reason: "The queue is implemented.",
+			comparison: JSON.parse(comparison.stdout).comparison,
+		},
+	});
+	const cli = {
+		repoRoot,
+		server,
+		args: ["model", "edit", "--doing", "adopt queued routing"],
+		input: content,
+	};
+	const adopted = runServerCli(cli);
+	expect(adopted.status, adopted.stderr).toBe(0);
+	const { vault: _vault, ...raw } = JSON.parse(adopted.stdout);
+	expect(ArchitectureModuleEditResultSchema.parse(raw)).toMatchObject({
+		success: true,
+		selectedState: { id: parent.id, lifecycle: "current" },
+		checkpoint: { lifecycle: { type: "adopt", previous: { state: { id: "Current" } } } },
+	});
+	const retry = runServerCli(cli);
+	expect(retry.status, retry.stderr).toBe(0);
+	expect(JSON.parse(retry.stdout)).toEqual(JSON.parse(adopted.stdout));
+	const reopened = runServerCli({
+		repoRoot,
+		server,
+		args: ["model", "read", "--state", child.id],
+		input: undefined,
+	});
+	expect(reopened.status, reopened.stderr).toBe(0);
+	expect(JSON.parse(reopened.stdout)).toMatchObject({
+		success: true,
+		selectedState: { id: child.id, lifecycle: "shelved" },
+	});
+	const catalogue = runServerCli({
+		repoRoot,
+		server,
+		args: ["model", "proposals"],
+		input: undefined,
+	});
+	expect(catalogue.status, catalogue.stderr).toBe(0);
+	expect(JSON.parse(catalogue.stdout).states).toEqual(
+		expect.arrayContaining([expect.objectContaining({ id: "Current", lifecycle: "historical" })]),
+	);
+}, 20_000);

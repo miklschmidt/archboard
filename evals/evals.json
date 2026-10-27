@@ -1796,7 +1796,7 @@
 				},
 				{
 					"feature": "read-only",
-					"requirement": "Creates no plan and changes no active architecture. Explains that composition and installation remain unavailable in this workflow.",
+					"requirement": "Creates no plan and changes no active architecture. Explains that an explicit preview requires a saved mapping plan and that installation remains unavailable.",
 					"skill": ["references/legacy-migration.md#read-the-inventory"]
 				}
 			],

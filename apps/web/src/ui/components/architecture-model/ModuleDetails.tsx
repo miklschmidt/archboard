@@ -1,3 +1,4 @@
+import { AuthoredReference as Reference } from "#ui/components/architecture-model/AuthoredReference.tsx";
 import type { JSX, ReactNode } from "react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
 
@@ -135,30 +136,6 @@ function Fact(props: FactProps): JSX.Element | null {
 			<dt className="text-muted-foreground">{name}</dt>
 			<dd className="min-w-0 break-words">{children}</dd>
 		</>
-	);
-}
-
-interface ReferenceProps {
-	reference: NonNullable<Module["binding"]>;
-}
-
-/**
- * A reference remains text until code navigation is delivered separately.
- * @param props An authored binding or document reference.
- * @returns Its repository, path, and any pinned revision.
- */
-function Reference(props: ReferenceProps): JSX.Element {
-	const { reference } = props;
-	const revision = reference.commit ?? reference.branch;
-	return (
-		<span className="block space-y-1">
-			<span className="text-muted-foreground block break-all">{reference.repo}</span>
-			<code className="block break-all">
-				{reference.path}
-				{reference.symbol && <> · {reference.symbol}</>}
-			</code>
-			{revision && <code className="text-muted-foreground block break-all">{revision}</code>}
-		</span>
 	);
 }
 

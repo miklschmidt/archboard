@@ -186,7 +186,12 @@ function finishOperation(state: Reconciliation, operation: Operation): void {
 		return;
 	}
 	if (intent !== null && answer === "opened" && operationMovedPane(operation, state.displayed)) {
-		state.deliberate.expect(intent);
+		// The visible origin can be canonical while the server remembers a legacy board.
+		state.deliberate.expect(
+			intent.kind === "board"
+				? { ...intent, from: operation.from, repository: operation.fromRepository }
+				: intent,
+		);
 	}
 }
 
@@ -312,10 +317,11 @@ function commandsOver(state: Reconciliation) {
 function reconcile(state: Reconciliation): void {
 	const running = state.operation;
 	if (running !== null) {
-		if (!operationSettled(running, state.displayed, state.port.ready)) {
+		if (!operationSettled(running, state.port.displayed, state.port.ready)) {
 			return;
 		}
 		state.operation = null;
+		if (running.answer === "opened") revealOpenedPane(state, running.paneId);
 		finishOperation(state, running);
 	}
 	if (state.queue.length > 0) {
@@ -326,6 +332,20 @@ function reconcile(state: Reconciliation): void {
 		return;
 	}
 	publishAddress(state);
+}
+
+/**
+ * A completed legacy open replaces only that pane's canonical reading intent.
+ * @param state The existing routing operation owner.
+ * @param paneId The pane whose open succeeded.
+ */
+function revealOpenedPane(state: Reconciliation, paneId: string): void {
+	const actual = state.port.displayed.panes.find((pane) => pane.paneId === paneId);
+	if (actual === undefined) return;
+	state.displayed = {
+		...state.displayed,
+		panes: state.displayed.panes.map((pane) => (pane.paneId === paneId ? actual : pane)),
+	};
 }
 
 /**

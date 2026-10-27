@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ModelReferenceSchema } from "#shared/schemas/model-definitions.ts";
 import { SemanticBoardSchema } from "#shared/schemas/board-document.ts";
 import { SemanticIdSchema } from "#shared/schemas/primitives.ts";
 import { SemanticPolicySchema } from "#shared/schemas/semantic-policy.ts";
@@ -35,6 +36,15 @@ const LegacyMappingPlanSchema = z.strictObject({
 	schemaVersion: z.literal(1),
 	origin: SemanticIdSchema,
 	sourceDigest: z.string(),
+	references: z
+		.array(
+			z.strictObject({
+				legacy: QualifiedSubjectIdSchema,
+				reference: ModelReferenceSchema,
+				reason: z.string().trim().min(1),
+			}),
+		)
+		.optional(),
 	mappings: z.array(
 		z.strictObject({
 			legacy: QualifiedSubjectIdSchema,

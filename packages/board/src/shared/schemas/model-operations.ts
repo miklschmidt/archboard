@@ -1,5 +1,10 @@
 import { WalkthroughChangeSchema } from "#shared/schemas/model-walkthroughs.ts";
-import { FamilyStandingSchema, SelectedStateSchema } from "#shared/schemas/model-proposals.ts";
+import {
+	ComparisonSchema,
+	CorrectionIntentSchema,
+	FamilyStandingSchema,
+	SelectedStateSchema,
+} from "#shared/schemas/model-proposals.ts";
 import { DiagramGrammarSchema } from "#shared/schemas/vocabulary.ts";
 import { StandaloneThemeSchema, DiagramAtlasSchema } from "#shared/protocol/render-reply.ts";
 import { FlowChangeSchema } from "#shared/schemas/model-flows.ts";
@@ -133,6 +138,13 @@ const StructureChangeSchema = z.discriminatedUnion("type", [
 		.strict(),
 ]);
 const ProposalIntentSchema = z.discriminatedUnion("type", [
+	z.strictObject({
+		type: z.literal("adopt"),
+		reason: z.string().trim().min(1),
+		force: z.boolean().optional(),
+		comparison: ComparisonSchema.optional(),
+	}),
+	z.strictObject({ type: z.literal("shelve"), reason: z.string().trim().min(1) }),
 	z.strictObject({ type: z.literal("reconcile") }),
 	z.strictObject({
 		type: z.literal("settle"),
@@ -156,20 +168,25 @@ const ProposalIntentSchema = z.discriminatedUnion("type", [
 		clear: z.array(z.enum(["summary", "documents"])).optional(),
 	}),
 ]);
+const ArchitectureChangesSchema = z.array(
+	z.union([StructureChangeSchema, FlowChangeSchema, WalkthroughChangeSchema]),
+);
 const ArchitectureModuleEditSchema = z.union([
 	DescriptionEditSchema.omit({ subject: true, description: true })
 		.extend({
+			correction: CorrectionIntentSchema,
+			changes: ArchitectureChangesSchema.min(1),
+		})
+		.strict(),
+	DescriptionEditSchema.omit({ subject: true, description: true })
+		.extend({
 			proposal: ProposalIntentSchema,
-			changes: z.array(z.union([StructureChangeSchema, FlowChangeSchema, WalkthroughChangeSchema])),
+			changes: ArchitectureChangesSchema,
 		})
 		.strict(),
 	DescriptionEditSchema,
 	DescriptionEditSchema.omit({ subject: true, description: true })
-		.extend({
-			changes: z
-				.array(z.union([StructureChangeSchema, FlowChangeSchema, WalkthroughChangeSchema]))
-				.min(1),
-		})
+		.extend({ changes: ArchitectureChangesSchema.min(1) })
 		.strict(),
 ]);
 const ArchitectureEditSuccessSchema = z
@@ -184,7 +201,7 @@ const ArchitectureEditSuccessSchema = z
 		before: ModelRevisionSchema,
 		after: ModelRevisionSchema,
 		checkpoint: ArchitectureCheckpointSchema,
-		selectedState: SelectedStateSchema.extend({ lifecycle: z.literal("draft") }).optional(),
+		selectedState: SelectedStateSchema.optional(),
 		cleanup: z.enum(["complete", "pending"]),
 	})
 	.strict();

@@ -46,15 +46,22 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 	useLayoutEffect(() => reserveBottom(props.reserve ?? 0), [reserveBottom, props.reserve]);
 	if (projection.content.nodes.length === 0)
 		return (
-			<output data-slot="model-empty-diagram" className="text-body text-muted-foreground p-8">
+			<output
+				data-slot="model-empty-diagram"
+				className="text-body text-muted-foreground min-w-0 flex-1 p-8"
+			>
 				No modules are visible in this reading.
 			</output>
 		);
 	if (drawing.isPending)
-		return <output className="text-body text-muted-foreground p-8">Drawing modules…</output>;
+		return (
+			<output className="text-body text-muted-foreground min-w-0 flex-1 p-8">
+				Drawing modules…
+			</output>
+		);
 	if (drawing.isError)
 		return (
-			<output role="alert" className="text-body p-8">
+			<output role="alert" className="text-body min-w-0 flex-1 p-8">
 				{drawing.error.message}
 			</output>
 		);

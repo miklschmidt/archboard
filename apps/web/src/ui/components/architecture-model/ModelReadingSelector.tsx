@@ -1,3 +1,5 @@
+import { checkpointTime } from "#ui/rules/architecture-model/history-time.ts";
+import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
 import { useCallback, type JSX } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { ArchitectureCheckpointList } from "@archboard/board/model";
@@ -55,7 +57,7 @@ function ModelReadingSelector(props: ModelReadingSelectorProps): JSX.Element {
 				>
 					{catalogue.data?.manifest.current === null ? "No implemented state" : "Current"}
 				</Select.Item>
-				<ActiveStates {...props} />
+				<ModelStates {...props} />
 				<RetainedChoices checkpoint={checkpoint} history={history} />
 				<HistoryStatus history={history} />
 			</Select.Content>
@@ -97,13 +99,13 @@ function selectedStateLabel(state: Model["selectedState"] | undefined, requested
 }
 
 /**
- * Active proposals come from current inputs, independently of the selected retained state.
+ * Logical states include retained decisions, independently of the selected exact checkpoint.
  * @param props The current catalogue and requested state.
- * @returns Explicit proposal choices and a missing requested state when necessary.
+ * @returns Explicit lifecycle choices and a missing requested state when necessary.
  */
-function ActiveStates(props: ModelReadingSelectorProps): JSX.Element {
+function ModelStates(props: ModelReadingSelectorProps): JSX.Element {
 	const entries = new Map<string, Model["selectedState"] | undefined>(
-		(props.catalogue.data?.proposals ?? []).map((entry) => [entry.id, entry]),
+		stateCatalogue(props.catalogue.data).map((entry) => [entry.id, entry]),
 	);
 	if (props.state !== null) entries.set(props.state, entries.get(props.state) ?? props.selected);
 	return (
@@ -126,7 +128,7 @@ function ActiveStates(props: ModelReadingSelectorProps): JSX.Element {
 			))}
 			{props.catalogue.isError && (
 				<p role="alert" className="text-body max-w-prose p-3">
-					Active states are unavailable. Reopen this menu to retry.
+					Architecture states are unavailable. Reopen this menu to retry.
 				</p>
 			)}
 		</>
@@ -215,15 +217,4 @@ function HistoryStatus(props: Pick<ModelReadingSelectorProps, "history">): JSX.E
 	return null;
 }
 
-/**
- * Render the retained timestamp in the reader's locale.
- * @param value The shared ISO timestamp.
- * @returns A date and time, including the year.
- */
-function checkpointTime(value: string): string {
-	return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
-		new Date(value),
-	);
-}
-
-export { ModelReadingSelector, HistoryStatus, checkpointTime };
+export { ModelReadingSelector, HistoryStatus };

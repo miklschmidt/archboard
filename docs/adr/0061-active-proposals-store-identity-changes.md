@@ -45,6 +45,10 @@ Proposal writes use the existing claim, complete stale token, durable journal, f
 They introduce no second writer, recovery log, or history store.
 Signing failure refuses installation before authored inputs change.
 
+Claim admission validates live state identity and known subject scopes from the coherent authored catalog.
+The writer materializes selected architecture after it validates the exact token and writable standing.
+Exact input revisions and complete claims remain mandatory before installation.
+
 A current read exposes the active proposal catalogue and explicit selected state metadata.
 A selected draft always reports lifecycle `draft`, even when its retained manifest still names an implemented state.
 Its read token covers the addressed vault's exact input paths and bytes, including active proposals.
@@ -67,7 +71,7 @@ If that predecessor changes, ordinary draft reads and edits return `PREDECESSOR_
 Exact retained proposal revisions remain readable against their own retained catalogue.
 This refusal prevents an unreconciled draft from appearing settled.
 TASK-549.07 adds family reconciliation and explicit settlement through the same operation.
-Adoption and shelving belong to TASK-549.08.
+TASK-549.08 completes adoption and shelving through that same writer.
 
 CLI and HTTP adapt the existing architecture operations.
 The public package interface gains no names.
@@ -133,3 +137,58 @@ Beat placement identifies its walkthrough and optional following sibling.
 Reordering or editing a beat preserves its identity.
 Current and proposal materialization include narrative inputs in one coherent revision.
 The existing claimed transaction owns narrative installation and identity retirement.
+
+Adoption requires a coherent settled proposal and settled ancestry.
+A superseded current predecessor refuses adoption by default.
+Forced adoption requires the complete explicit comparison against the observed current revision.
+The runtime compares that captured result before it installs the proposal's complete materialized architecture.
+It never applies a compact patch blindly to another baseline.
+
+The current designation retains the adopted state's stable identity, names, documents, predecessor, baseline, reason, and lifecycle time.
+The signed checkpoint retains the final compact proposal and the exact prior current reading.
+Shelving retains the same proposal evidence without changing current architecture.
+Both intents remove the active proposal through the existing recoverable installation.
+Following drafts retain their predecessor identities and reconcile against the completed reading in that same transaction.
+An exact retry returns one retained event.
+
+Completed history never enters current model files or active proposal files.
+The shared reader derives completed state metadata from explicit lifecycle records in the existing archive.
+Displacement records identify the final reading of a former current state.
+Archive append order supplies no architecture ancestry or current designation.
+Ambiguous retained identities require an exact checkpoint.
+Logical and exact historical readings preserve source associations, foreign pins, and comparison behavior.
+
+TASK-549.09 adds explicit factual corrections to completed logical states through the same writer.
+The request names the latest exact checkpoint, a reason, and immutable source revisions.
+The live input token and complete affected claims remain mandatory.
+Current and draft states refuse correction intents, and ordinary historical edits still refuse.
+The runtime requires available source commits for every referenced repository.
+The author remains responsible for the factual interpretation of that evidence.
+
+The retained correction stores normalized identity changes and an explicit link to the prior checkpoint.
+Actual Git parents retain that checkpoint and all required proposal baselines.
+The existing subject engine materializes the corrected reading and the existing comparison engine describes its differences.
+Logical lookup follows correction links and exposes the audit chain.
+Exact checkpoint lookup preserves the original record.
+Concurrent correction tips remain ambiguous instead of selecting by archive append order.
+Fetched publication refs participate in the same derived logical catalogue.
+
+The existing family operation reconciles local following drafts against corrected facts.
+It preserves conflict baselines and blocks descendants of unsettled drafts.
+Propagation stops at adopted, historical, and shelved successors.
+The correction changes no current designation or unrelated current content.
+Current authored files gain no correction ledger or copied history.
+
+Archive-only writes still use the durable journal, configured signer, exact retry, and completion feed.
+The observer reads newly retained operations after the archive ref changes.
+Idle observations read the loose ref and packed-ref metadata without starting Git.
+Only records for the addressed vault produce completion events.
+
+The browser reads correction evidence through its existing state history disclosure.
+The selected and comparison audits remain distinct inside one bounded region.
+Each entry shows its reason, date, source commits, and links to exact prior and corrected readings.
+
+Logical readers refresh after archive-only completion events, even when the current file digest is unchanged.
+Exact original checkpoints keep their original facts and audit coverage.
+A missing archive leaves the exact requested address intact for explicit recovery.
+The browser submits no correction writes.

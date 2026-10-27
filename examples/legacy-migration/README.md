@@ -37,4 +37,14 @@ archboard model inventory --origin Shop -C "$example_dir"
 ```
 
 The saved plan remains separate from the live boards.
-This example performs no model composition or installation.
+After every conflict has an explicit choice, read the candidate:
+
+```bash
+archboard model read --preview Shop -C "$example_dir"
+```
+
+The preview preserves source fingerprints, semantic details, and explicit identity choices.
+It installs no canonical files and changes no live board.
+An unresolved choice returns a structured refusal.
+A source change requires a fresh inventory and revised plan.
+The [consumer recipe](../../skills/archboard/references/legacy-migration.md#preview-the-current-model) describes reference and policy choices.

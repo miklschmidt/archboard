@@ -32,9 +32,10 @@ function useModelExplanation(
 		}),
 		[state, checkpoint, against],
 	);
+	const referenceSubject = subject ?? undefined;
 	const capture = useMemo(() => {
 		const mode = DiagramGrammarSchema.safeParse(grammar);
-		if (!mode.success) return null;
+		if (!mode.success || model.migrationPreview !== undefined) return null;
 		return {
 			vault,
 			model: model.manifest.id,
@@ -52,10 +53,10 @@ function useModelExplanation(
 				),
 				grammar: mode.data,
 				flow: flow ?? undefined,
-				referenceSubject: subject ?? undefined,
+				referenceSubject,
 			},
 		};
-	}, [vault, model, selected, scope, focus, filters, grammar, flow, subject, selection]);
+	}, [vault, model, selected, scope, focus, filters, grammar, flow, referenceSubject, selection]);
 	const report = host?.report;
 	useEffect(() => {
 		report?.(capture === null ? null : { ...NOTHING_READ, architecture: capture });

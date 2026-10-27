@@ -5,6 +5,7 @@ import { QualifiedSubjectIdSchema, SemanticIdSchema } from "#shared/schemas/prim
 const ReadingSelectionSchema = z.strictObject({
 	walkthrough: z.string().min(1).optional(),
 	shared: z.boolean().optional(),
+	preview: SemanticIdSchema.optional(),
 	state: z.string().min(1).optional(),
 	checkpoint: z
 		.string()

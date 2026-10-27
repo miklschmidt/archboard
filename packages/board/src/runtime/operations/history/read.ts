@@ -114,18 +114,42 @@ function retainedSelection(record: Awaited<ReturnType<typeof checkpointRecord>>)
 	return record.selection;
 }
 /**
+ * Materialize a completed shelved proposal from its own final patch and baseline.
+ * @param context The archive owner.
+ * @param model The exact checkpoint catalogue.
+ * @param record The retained lifecycle record.
+ * @returns Its complete final proposal side.
+ */
+async function shelvedSelection(
+	context: ArchiveContext,
+	model: Extract<ArchitectureModelRead, { success: true }>,
+	record: Awaited<ReturnType<typeof checkpointRecord>>,
+) {
+	const { decodeProposal } = await import("#runtime/operations/proposals/read.ts");
+	const proposal = record.lifecycle!.proposal;
+	const baseline = await exactReading(context, proposal.baseline, undefined, undefined, false);
+	if (!baseline.success) return baseline;
+	const draft = decodeProposal(baseline, proposal, model);
+	return draft.success ? { ...draft, selectedState: retainedSelection(record) } : draft;
+}
+/**
  * Resolve a retained draft against only its checkpoint's own catalogue.
  * @param context The archive owner.
  * @param model The decoded checkpoint inputs.
  * @param record The immutable metadata.
+ * @param checkpoint The exact checkpoint identity.
  * @returns The exact selected architecture.
  */
 async function recordedSelection(
 	context: ArchiveContext,
 	model: Extract<ArchitectureModelRead, { success: true }>,
 	record: Awaited<ReturnType<typeof checkpointRecord>>,
+	checkpoint: string,
 ): Promise<ArchitectureModelRead> {
+	if (record.correction !== undefined)
+		return correctedSelection(context, model, checkpoint, record);
 	const selection = retainedSelection(record);
+	if (record.lifecycle?.type === "shelve") return shelvedSelection(context, model, record);
 	const proposal = model.proposals.find((entry) => entry.id === selection?.id);
 	if (proposal === undefined) return { ...model, selectedState: selection };
 	const { materializeProposal } = await import("#runtime/operations/proposals/read.ts");
@@ -190,11 +214,74 @@ async function exactReading(
 	if (refused !== undefined) return refused;
 	const decoded = decodeModel(captured, record.selection);
 	if (!decoded.success) return decoded;
-	const model = await recordedSelection(context, decoded, record);
+	const model = await recordedSelection(context, decoded, record, checkpoint);
 	if (!model.success) return model;
 	const enriched =
 		details === false ? model : await retainedDetails(context, model, checkpoint, record);
 	return selectFlow(selectModule(enriched, module), flow);
+}
+
+/**
+ * Require a continuing identity before materializing retained correction changes.
+ * @param record The immutable correction metadata.
+ * @param previous The exact prior architecture.
+ * @returns Its continuing state metadata.
+ */
+function correctionState(
+	record: Awaited<ReturnType<typeof checkpointRecord>>,
+	previous: Extract<ArchitectureModelRead, { success: true }>,
+) {
+	const selection = record.selection;
+	if (selection == null)
+		throw new ArchiveError("CHECKPOINT_INVALID", "A correction requires selected state metadata.");
+	if (previous.manifest.id !== record.model || previous.selectedState?.id !== selection.id)
+		throw new ArchiveError(
+			"CHECKPOINT_INVALID",
+			"The correction must preserve its original model and state identity.",
+		);
+	return selection;
+}
+
+/**
+ * Apply one retained correction through the existing identity-based subject engine.
+ * @param context The archive owner.
+ * @param catalogue The checkpoint's exact live catalogue.
+ * @param checkpoint The correction checkpoint identity.
+ * @param record Its immutable metadata.
+ * @returns Corrected facts and the explicit audit chain.
+ */
+async function correctedSelection(
+	context: ArchiveContext,
+	catalogue: Extract<ArchitectureModelRead, { success: true }>,
+	checkpoint: string,
+	record: Awaited<ReturnType<typeof checkpointRecord>>,
+) {
+	const correction = record.correction!;
+	if (!record.request.dependencies.includes(correction.previous))
+		throw new ArchiveError(
+			"CHECKPOINT_INVALID",
+			"A correction must retain its previous checkpoint as a dependency.",
+			checkpoint,
+		);
+	const { decodeSubjects, requireModel } = await import("#runtime/operations/proposals/read.ts");
+	const previous = requireModel(
+		await exactReading(context, correction.previous, undefined, undefined, false),
+	);
+	const selection = correctionState(record, previous);
+	const { subjectsOf, applyCompactChanges } =
+		await import("#runtime/operations/proposals/subjects.ts");
+	const { changes, retiredIds, ...audit } = correction;
+	const corrected = requireModel(
+		decodeSubjects(
+			{ ...previous, manifest: { ...previous.manifest, retiredIds } },
+			applyCompactChanges(subjectsOf(previous), changes),
+			{
+				...selection,
+				corrections: [...(previous.selectedState?.corrections ?? []), { ...audit, checkpoint }],
+			},
+		),
+	);
+	return { ...corrected, proposals: catalogue.proposals, revision: catalogue.revision };
 }
 
 /**

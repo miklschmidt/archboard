@@ -5,8 +5,12 @@ import { captureReferencePins } from "#runtime/operations/history/reference-pins
 import { SelectedStateSchema } from "#shared/schemas/model-proposals.ts";
 import { mintId } from "#shared/rules/ids.ts";
 import { assignFields } from "#runtime/operations/model-edit/fields.ts";
-import { applyStructure } from "#runtime/operations/model-edit/structure.ts";
-import { candidateInputs, changedFiles } from "#runtime/operations/model-edit/candidate.ts";
+import type { applyStructure } from "#runtime/operations/model-edit/structure.ts";
+import {
+	candidateInputs,
+	changedFiles,
+	applyCandidateStructure,
+} from "#runtime/operations/model-edit/candidate.ts";
 import { requireSubjectClaim } from "#runtime/operations/model-edit/claims.ts";
 import { decodeModel } from "#runtime/operations/read/model-read.ts";
 import { exactReading } from "#runtime/operations/history/read.ts";
@@ -37,6 +41,43 @@ type Request = Extract<ArchitectureModuleEdit, { proposal: unknown }> & {
 		{ type: "create" | "edit" }
 	>;
 };
+
+/**
+ * Preserve the exact ancestry behind a materialized predecessor.
+ * @param request The complete architectural intent.
+ * @param predecessor The selected complete reading.
+ * @returns Every required baseline parent.
+ */
+function baselineDependencies(request: ArchitectureModuleEdit, predecessor: ArchitectureModel) {
+	return [
+		...new Set([
+			...(predecessor.selectedState?.baseline === undefined
+				? []
+				: [predecessor.selectedState.baseline]),
+			...(predecessor.checkpoint === undefined ? [] : [predecessor.checkpoint.id]),
+			...("correction" in request ? [request.correction.previous] : []),
+		]),
+	];
+}
+
+/**
+ * Preserve retained source evidence rather than replacing it with today's source HEAD.
+ * @param context The archive owner.
+ * @param vault The addressed vault.
+ * @param predecessor The complete retained or live predecessor.
+ * @param request The complete architectural intent.
+ * @returns The source associations behind these facts.
+ */
+function baselineSources(
+	context: Awaited<ReturnType<typeof archiveContext>>,
+	vault: string,
+	predecessor: ArchitectureModel,
+	request: ArchitectureModuleEdit,
+) {
+	if ("correction" in request)
+		return request.correction.revisions.map((revision) => ({ ...revision, uncommitted: false }));
+	return predecessor.checkpoint?.sources ?? captureSource(context, predecessor, vault);
+}
 /**
  * Retain a complete immutable predecessor before installing a compact draft.
  * @param vault The explicit vault.
@@ -59,9 +100,7 @@ async function retainBaseline(
 	);
 	const dependencies = [
 		...new Set([
-			...(predecessor.selectedState?.baseline === undefined
-				? []
-				: [predecessor.selectedState.baseline]),
+			...baselineDependencies(request, predecessor),
 			...(await walkthroughDependencies(context, predecessor)),
 		]),
 	];
@@ -84,7 +123,7 @@ async function retainBaseline(
 			expectedRevision: request.expectedRevision.digest,
 			dependencies,
 		},
-		sources: await captureSource(context, predecessor, vault),
+		sources: await baselineSources(context, vault, predecessor, request),
 		...(await captureReferencePins(vault, predecessor)),
 	});
 	const files = new Map([...inputs].map(([file, bytes]) => [`inputs/${file}`, bytes]));
@@ -101,11 +140,13 @@ type Proposal = z.infer<typeof ProposalSchema>;
 /**
  * Allocate one state identity without changing architecture subject identities.
  * @param model The coherent model.
+ * @param reservations The identities retained by completed lifecycle events.
  * @returns A fresh state identity.
  */
-function freshState(model: ArchitectureModel) {
+function freshState(model: ArchitectureModel, reservations: Set<string>) {
 	return mintId(
 		new Set([
+			...reservations,
 			model.manifest.id,
 			...model.proposals.map((entry) => entry.id),
 			...(model.manifest.current === null ? [] : [model.manifest.current.id]),
@@ -116,9 +157,10 @@ function freshState(model: ArchitectureModel) {
  * Initialize metadata for a new draft or copy continuing metadata.
  * @param request The explicit proposal intent.
  * @param model The target reading.
+ * @param reservations The retained state and subject identities.
  * @returns The continuing proposal and its existing location, when present.
  */
-function proposalFor(request: Request, model: ArchitectureModel) {
+function proposalFor(request: Request, model: ArchitectureModel, reservations: Set<string>) {
 	if (request.proposal.type === "create")
 		return {
 			proposal: ProposalSchema.parse({
@@ -126,8 +168,9 @@ function proposalFor(request: Request, model: ArchitectureModel) {
 					.strip()
 					.parse(request.proposal),
 				schemaVersion: 1,
-				id: freshState(model),
+				id: freshState(model, reservations),
 				lifecycle: "draft",
+				createdAt: new Date().toISOString(),
 				predecessor: request.target.state,
 				predecessorRevision: predecessorRevision(model),
 				baseline: "0".repeat(40),
@@ -262,7 +305,13 @@ async function proposalCandidate(
 	captured: ReturnType<typeof readModelFiles>,
 ) {
 	requirePlanningRoot(request, predecessor);
-	const { proposal, existing } = proposalFor(request, predecessor);
+	const structure = await applyCandidateStructure(
+		vault,
+		predecessor,
+		request,
+		captured.inputs.keys(),
+	);
+	const { proposal, existing } = proposalFor(request, predecessor, structure.reservations);
 	const baseline =
 		existing === undefined
 			? predecessor
@@ -274,7 +323,6 @@ async function proposalCandidate(
 					false,
 				);
 	if (!baseline.success) return baseline;
-	const structure = applyStructure(predecessor, request, captured.inputs.keys());
 	const draft = decodedDraft(predecessor, structure, proposal);
 	if (!draft.success) return draft;
 	const scopes = proposalScopes(structure.scopes, predecessor.manifest.id, existing);
@@ -379,6 +427,10 @@ async function proposalIntentCandidate(
 	if (request.proposal.type === "settle") {
 		const { settleCandidate } = await import("#runtime/operations/proposals/settle.ts");
 		return settleCandidate(vault, { ...request, proposal: request.proposal }, current, captured);
+	}
+	if (request.proposal.type === "adopt" || request.proposal.type === "shelve") {
+		const { lifecycleCandidate } = await import("#runtime/operations/proposals/lifecycle.ts");
+		return lifecycleCandidate(vault, { ...request, proposal: request.proposal }, current, captured);
 	}
 	return proposalCandidate(vault, { ...request, proposal: request.proposal }, current, captured);
 }

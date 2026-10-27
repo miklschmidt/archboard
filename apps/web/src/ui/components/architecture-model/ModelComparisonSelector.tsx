@@ -1,9 +1,10 @@
+import { checkpointTime } from "#ui/rules/architecture-model/history-time.ts";
+import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
 import { useCallback, type ComponentProps, type JSX } from "react";
 import { Select } from "@archboard/ui-kit/components";
 import {
 	ModelReadingSelector,
 	HistoryStatus,
-	checkpointTime,
 } from "#ui/components/architecture-model/ModelReadingSelector.tsx";
 
 type ComparisonSelectorProps = Pick<
@@ -56,7 +57,7 @@ function ModelComparisonSelector(props: ComparisonSelectorProps): JSX.Element {
 				))}
 				{catalogue.isError && (
 					<p role="alert" className="text-body max-w-prose p-3">
-						Active states are unavailable. Reopen this menu to retry.
+						Architecture states are unavailable. Reopen this menu to retry.
 					</p>
 				)}
 				<HistoryStatus history={history} />
@@ -71,7 +72,7 @@ function ModelComparisonSelector(props: ComparisonSelectorProps): JSX.Element {
  * @returns Ordered comparison choices, including unavailable requested intent.
  */
 function comparisonChoices(props: ComparisonSelectorProps): Map<string, string> {
-	const choices = activeChoices(props.catalogue.data);
+	const choices = stateChoices(props.catalogue.data);
 	for (const [id, label] of savedChoices(props.history.data)) choices.set(id, label);
 	if (props.against !== null && !choices.has(props.against))
 		choices.set(props.against, `Selected base · ${props.against}`);
@@ -79,15 +80,16 @@ function comparisonChoices(props: ComparisonSelectorProps): Map<string, string> 
 }
 
 /**
- * Current and draft choices follow the mutable catalogue.
+ * Current, draft, and completed choices follow the public state catalogue.
  * @param model The latest available catalogue.
- * @returns Explicit current and active state labels.
+ * @returns Explicit current and retained state labels.
  */
-function activeChoices(model: ComparisonSelectorProps["catalogue"]["data"]): Map<string, string> {
+function stateChoices(model: ComparisonSelectorProps["catalogue"]["data"]): Map<string, string> {
 	const choices = new Map<string, string>();
 	if (model === undefined) return choices;
 	if (model.manifest.current !== null) choices.set("current", "Current");
-	for (const state of model.proposals) choices.set(state.id, `${state.name} · ${state.lifecycle}`);
+	for (const state of stateCatalogue(model))
+		choices.set(state.id, `${state.name} · ${state.lifecycle}`);
 	return choices;
 }
 

@@ -223,8 +223,8 @@ async function readRequestedArchitecture(
 	const parsed = StateSelectionSchema.safeParse(intent);
 	if (!parsed.success) return refuse("MODEL_INVALID", [], "The reading request is invalid.");
 	const { explain, ...selection } = parsed.data;
-	if (selection.state !== undefined && selection.checkpoint !== undefined)
-		return refuse("MODEL_INVALID", [], "Select one state or checkpoint.");
+	const invalidSelection = selectionFailure(parsed.data);
+	if (invalidSelection !== undefined) return invalidSelection;
 	const model = await requestedReading(vault, module, flow, {
 		...parsed.data,
 		model: expectedModel,
@@ -234,6 +234,28 @@ async function readRequestedArchitecture(
 	});
 	if (!model.success || explain === undefined) return model;
 	return attachCapture(model, explain, selection);
+}
+/**
+ * Refuse conflicting architecture selectors before reading any state.
+ * @param selection The parsed explicit selectors.
+ * @returns A structured refusal or no conflict.
+ */
+function selectionFailure(selection: z.infer<typeof StateSelectionSchema>) {
+	const incompatible = [
+		selection.state,
+		selection.checkpoint,
+		selection.against,
+		selection.explain,
+	].some((value) => value !== undefined);
+	if (selection.preview !== undefined && (incompatible || selection.compare === true))
+		return refuse(
+			"MODEL_INVALID",
+			[],
+			"Select preview without state, checkpoint, comparison, or explanation.",
+		);
+	if (selection.state !== undefined && selection.checkpoint !== undefined)
+		return refuse("MODEL_INVALID", [], "Select one state or checkpoint.");
+	return undefined;
 }
 /**
  * Attach the validated immutable invocation metadata to its coherent reading.

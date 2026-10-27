@@ -18,6 +18,7 @@ fs.fsyncSync = (fd) => {
 		if (point === phase) process.exit(86);
 	}
 	if (point === "removed" && removed.endsWith("/worker.module.json")) process.exit(86);
+	if (point === "proposal-removed" && removed.endsWith(".proposal.json")) process.exit(86);
 	if (point === "file" && renamed.endsWith("/gateway.module.json")) process.exit(86);
 };
 fs.unlinkSync = (path) => {
