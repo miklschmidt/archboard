@@ -1,14 +1,12 @@
 # Deterministic choices for a first layout
 
-The first candidate chooses group packing before solving graphs with at least 32 leaf cards.
-The council rejects that candidate because Groups hides parent frames.
-The next round fixes the layout defect before it replaces the tuned cutoff.
-Compact graphs retain their existing comparison because reduced fixtures need both nestings.
-The standard corpus changes zero of 2376 drawings.
-A separate complete-source comparison changes Browser application and Command interface.
-The three target boards remain byte-identical.
-The first native counter run drops from 152.711 to 58.131 billion instructions across the three slow boards.
-The 500 ms pool target and quiet-machine acceptance criterion remain unproven.
+The council rejects the first packing shortcut because Groups hides parent frames.
+The next round repairs Groups before it removes the 32-card cutoff.
+The frame repair and complete-board corpus are committed checkpoints.
+The current probe also repairs route identity, port spacing, frame endpoints, and caption backgrounds.
+It tests deterministic port settling in place of the score comparison with unsettled routes.
+Its acceptance still requires drawing integrity and the parent council.
+The 500 ms target remains open.
 
 TASK-548.08 starts at `764d3b9ca` on `task-548.08`.
 The owner targets first renders and size-changing edits below 500 ms.
@@ -67,6 +65,113 @@ Their 22 changed drawings match the frame-fix changes, with every whole-board SV
 The next experiment removes the numerical cutoff and tests Groups directly on every graph that contains a multi-member region.
 
 ## Council rejection and the second round
+
+### Unconditional Groups and routing probes
+
+The next candidate packs every multi-member region, without a card-count cutoff.
+The raw corpus is `/tmp/548-08/post-553/after-6-raw`.
+It changes 130 of 2452 drawings, including 26 complete-board drawings.
+It still fails nine renderer tests, so it is not a milestone for adoption.
+
+A packed region loses two pieces of context from its inline form.
+Its metadata omits an inline enclosing parent.
+Its group-level callers also lose the ordering that holds them above the headers of containers they enter.
+The repairs retain the parent and add those dependency constraints when they close no cycle.
+The context corpus is `/tmp/548-08/post-553/after-6-context`.
+The three-node ordering regression goes from a 654-unit page to a 547-unit page.
+Walkthrough video's raw Track page narrows from 2432 to 1644 units.
+The reduced members fixture now places two independent members beside each other.
+The attempted root-column adjustment does not change that layout, so it is dropped.
+
+TASK-548.10 enters scope because these probes reach routing.
+The new trunk check finds the defect in all four council cases.
+Block ports use projected blocks as keys, which loses each card's identity at a boundary.
+The candidate preserves the original card endpoint in each key and in the corresponding side lookup.
+The native four-case replay then reports no ambiguous trunk.
+
+The broader nested API fixture still has ten ambiguous pairs.
+Its gap estimator counts distinct positions, so overlapping routes count as one line.
+Counting distinct routes removes nine pairs.
+The last pair uses facing ports less than one unit apart.
+Port separation now reserves a full lane rather than separating only identical coordinates.
+The old score comparison can still prefer the unsettled overlap.
+Always keeping the settled ports removes the remaining pair and deletes that score comparison.
+
+A block's router can also put a lane left of its declared boundary.
+The candidate carries that horizontal shift through every returned shape and through later port movement.
+A native Live panes trace locates the original two-unit wall gap after port settling.
+Final line simplification preserves it.
+The trace files stay under `/tmp/548-08/post-553/wallhug` and the adjacent debug logs.
+The temporary instrumentation is removed from the source.
+
+Raster inspection finds a caption background across three lines in the repaired Board rasterizer picture.
+The caption words are already clear of the lines.
+The painter expands their background back to a corner, across the routes that the layout avoided.
+The painter now limits the background to the free span around those words.
+The new header check passes all four council cases in `/tmp/548-08/post-553/caption-clear`.
+
+The endpoint check also finds an Archboard arrow 20 units beyond the Workspace packages frame.
+Frame fitting ignores terminal points on ordinary frames while it pulls their walls inward.
+Keeping those points repairs the native replay in `/tmp/548-08/post-553/frame-end`.
+Internal relationships can still meet a parent header inside its visible frame.
+
+The full-face probe increases the complete Board viewer drawing from 12 ambiguous pairs to 15 and adds a wall overlap.
+It is rejected, and ports retain their reachable spans.
+The width reservation of one lane per face port remains.
+The complete native artifacts stay in `wide-faces-pictures` under the measurement directory.
+
+The deterministic join probe places each fan-in label beside its source before a trunk that identifies the original target.
+It removes the whole-board competition between label positions and wall-facing drawings.
+The complete Blocks drawings then ask one Solver call each.
+The source-owned port alternative clears Board viewer but leaves one server-routes ambiguity.
+The target-owned plan clears Board viewer and leaves two pairs around one server-routes trunk.
+
+The last two pairs expose an axis-order defect in the router.
+Its vertical runs initially meet at one turn without an overlap.
+The horizontal pass moves that turn and creates 48 units of shared vertical ink, only 0.6 units apart.
+An extra vertical pass repairs this case but creates two ambiguities on Board viewer.
+Repeated passes cost 75.6 seconds in the unoptimized Viewer replay and are rejected.
+Keeping the full packing gap during alignment changes neither drawing and is also rejected.
+
+The smaller repair reserves separation when unrelated runs touch and their current or desired positions approach within one lane.
+The router still uses one pass per axis.
+The reduced two-route regression fails without this repair and passes with it.
+All 17 router tests pass, including the shared-pin and crowded-channel contracts.
+Both complete Blocks drawings then contain no ambiguous trunk in `touch-wanted-wide`.
+Board viewer still reports crowded lanes in the broader diagnostic report, which also applies Track's lane bound to Blocks.
+Those findings remain visible evidence for further routing work and council judgment.
+No wall-clock gain is claimed from these unoptimized diagnostic runs.
+
+Later probes expose another identity loss at the router boundary.
+The router previously inferred a shared end from an obstacle and coordinates.
+Different cards can cross a block boundary at the same coordinates.
+Each connector now carries its original source and target identities.
+A line that represents several original cards marks that end as multiple rather than naming its first card.
+The bundle guard retains the common source and target during each union, instead of scanning every segment again.
+The 18 router tests include coincident boundary ports with different original cards.
+
+The complete Codex workhorse drawing also has no free gap wide enough for its caption between eight incoming routes.
+Moving its painted background cannot repair words crossed by those routes.
+The card now reserves the caption span before the router places its top ports.
+The endpoint helper also reads each painted parent header, so a line on that visible header is valid.
+It still rejects ends beside an absent or covered frame.
+
+A packed block previously reserved 48 units under its children for any number of bottom ports.
+Several unrelated trunks can collapse onto the same horizontal row there.
+The strip-size probe reserves lanes from the number of own ports and header relationships before routing.
+Budgeting every packed gap from all links instead makes drawings larger and creates more overlaps, so that probe is rejected.
+Choosing a packing first by its ambiguous pairs also fails after later port movement and is rejected.
+
+Keeping every Blocks port on its original top or bottom face clears several ambiguities but creates a worse Browser application picture.
+The parent picture is 4816 by 4504 units.
+The probe leaves much more empty space and substantially longer routes, as the retained rasters show.
+That face rule is rejected after visual inspection.
+The current source-identity and strip probes still need complete integrity results and a council verdict.
+
+The next plan removes the stacking competition through the existing Solver port.
+Links and containment determine every acyclic caller-to-entered-header constraint before ranking.
+Each architecture graph then uses one Solver call, with local wraps inside it.
+The draft architecture boards state this plan before implementation.
 
 The council rejects `f55ca07dc` on 2026-10-26.
 All three graders prefer its complete Command interface drawing.
@@ -450,3 +555,110 @@ Their critical solves remain visible in the native path logs.
 TASK-548.10 remains the separate owner of trunk ambiguity and header or arrow defects.
 A straight-route Graphviz experiment is deferred because those routes seed Archboard's own routing and alignment.
 No Graphviz phase or port was replaced in this task.
+
+## One graph inside each card block
+
+The one-Solver probe still draws Viewer three times inside its root block.
+Its base graph, leaving-label remedy, and entering-label remedy each route the complete block.
+A debug trace counts seven Graphviz calls, including four small group blocks.
+The root calls account for 903 of 932 ms in Graphviz during that diagnostic run.
+That debug wall time is not a performance result.
+The pool still measures Viewer at 641 ms and its growing-card render at 680 ms with load near 12.
+
+The next probe fixes the card graph rules before ranking.
+It pulls tied titles toward their members and keeps leaving labels toward the relationship's lower end.
+It anchors entering labels below internal callers when the graph permits that constraint.
+These rules already exist as the three competing graph remedies.
+The probe applies them together and removes their competing routed drawings.
+Local wraps remain separate candidates until their cost and geometry are measured.
+
+## Reserved routing lanes probe
+
+The cross-axis order constraint repairs the reduced Archboard server case.
+Dense Blocks drawings still force some unrelated runs onto the same stroke.
+Their available channels and fixed pins contradict the spacing constraints.
+The next probe reserves lanes while the path search runs.
+A previous route blocks parallel travel within a lane when both original card ends differ.
+A perpendicular crossing stays available.
+The path search uses lane offsets beside obstacle boundaries and pins.
+It produces the final route without a later pass that moves its bends.
+This probe replaces the nudge phase of ADR 0059 if its drawings and cost pass the same gates.
+
+## One retained graph and one routed packing
+
+The next candidate removes the whole-board stacking and join competitions.
+It chooses group nesting from membership and keeps acyclic container-entry constraints.
+Each architecture request asks the Solver port once.
+The Solver still owns local wraps, folds, and port-order candidates.
+This count does not mean that Graphviz ranks only one graph inside the solve.
+
+The card graph keeps its original title ties and always applies the leaving-label pull.
+Applying every former remedy together creates new wall and lane defects, so that probe is dropped.
+The entering-label anchor and untied-title alternatives are removed.
+A wrap reuses its ranked geometry for its sink decision and final routing.
+The packer estimates fit, route length, and crossings before it routes the selected packing.
+It no longer routes every packing to score the complete pictures.
+
+The old segment nudge phase moves a shared turn when it separates another axis.
+That can join unrelated routes after an earlier axis separates them.
+The replacement reserves parallel lanes during path search and keeps its resulting bends.
+A hard reservation leaves some routes without a path and sends the old fallback through cards.
+That probe is dropped.
+The retained search minimizes reused parallel length before its ordinary path cost.
+It adds grid lanes beside previous routes and reserves every fixed pin exit before the first path.
+Original card identities cross each block boundary.
+A source with a label before its branch also distinguishes the target.
+
+Dense root traffic needs room before routing starts.
+A first-row face now reserves space from its distinct source and target counts.
+Side faces reserve enough width for their ports.
+The packer counts distinct routes when it widens a crowded channel.
+A child includes all its routed body in the bounds that its parent treats as an obstacle.
+The clearance includes both a complete bend and the arrow approach.
+
+The stricter title owner exposes another gap.
+The inline drawing omits its fitted title bounds from the joined-line simplifier.
+A safe lane then moves through the painted words during simplification.
+The routed block now carries those bounds with its frames.
+Blocks also routes around a projected header box while the painter uses a wider wrapped header.
+Routing now uses the painted header size and origin.
+The geometry owner names parent-word strikes as well as missing frames and detached line ends.
+
+A probe that holds every settled child port creates new steps inside the child.
+It is dropped, together with its broader labelled-port reach.
+A fixed pair of nearby endpoints instead needs two complete turns on separate tracks.
+The channel reserves those tracks before spacing the bands.
+An unresolved pair that reads as one line receives a wider gap between its tracks.
+
+Tests for the deleted global score competitions no longer select page width, aspect, or a winning bend count.
+The singleton-region tests retain their card, caption, containment, and visible-endpoint owners.
+The comparison test retains stable card and region geometry without demanding that a mark move a route.
+The source and target integrity owners remain strict across the whole-board fixtures and council failures.
+The council remains the authority on changed reading quality.
+
+## Milestone 6 measurement before the next exact optimization
+
+The matching core is `0a149c43490890b1`.
+The renderer suite passes 648 tests, skips one platform case, and fails none.
+The changed Rust crates pass 149 tests.
+Clippy and Rust documentation pass with warnings denied.
+The prior matching core `428cee50bb7380ad` differs only in source descriptions.
+
+The alternating parent run uses the complete `f06fa5317` crate sources and its matching core `ce42bd12e4ee9ccb`.
+The script restores the candidate sources and core before the candidate run starts.
+The saved script is `/tmp/548-08/post-553/alternate-baseline-6.sh`.
+The parent load ranges from 18.81 to 20.61.
+The candidate load ranges from 20.37 to 20.59.
+
+| Board                   | Parent first, ms | Candidate first, ms | Parent growing edit, ms | Candidate growing edit, ms |
+| ----------------------- | ---------------: | ------------------: | ----------------------: | -------------------------: |
+| Archboard server routes |              956 |                 243 |                     818 |                        216 |
+| Board persistence       |             2199 |                 481 |                    2247 |                        463 |
+| Board viewer            |             2132 |                 498 |                    2072 |                        499 |
+
+The first column pair comes from the required `timing.ts 7` workload.
+The growing-edit process starts with a cold viewer render of 716 ms, then grows its card in 499 ms.
+Its later first renders take 477 ms for persistence and 226 ms for routes.
+All three edited cards grow by the asserted amounts.
+The candidate meets 500 ms in the warmed workload but lacks headroom and still misses the cold viewer case.
+The next exact optimization targets repeated construction of the simplifier's unchanged geometry.

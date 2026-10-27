@@ -6,7 +6,7 @@ status: proposed
 
 TASK-548.08 proposes this change on 2026-10-26.
 The parent council judges every changed drawing before this decision is accepted.
-It replaces the group-packing competition in ADR 0059 and its global reading comparison from ADR 0039.
+It replaces the speculative layout choices in ADR 0059 and their global reading comparison from ADR 0039.
 The Rust core, Solver port, worker pool, and vendored Graphviz of ADR 0060 remain.
 
 ## Context
@@ -35,10 +35,53 @@ A graph without such a region keeps its inline nesting.
 A region with one member keeps the existing compact representation.
 Blocks continues to pack containers and group regions.
 
+A packed region retains its inline enclosing parent and its containment depth.
+A group-level caller precedes the header of a container that it enters when that ordering closes no cycle.
+
 The core omits the competing whole-board inline solve for a graph with regions.
-It applies one graph predicate to every block to detect whether stacking can change anything.
-If no ranked line enters one inline container from another, it asks one layout solve.
-The remaining joins, stacking, and wrap choices keep their Solver contract while the task replaces more speculative work.
+Every fan-in keeps its labels beside its sources before the shared trunk.
+Outgoing ports identify the original source card.
+Incoming ports identify the original target card.
+A label before a fan-in join also distinguishes its target at the outgoing port.
+Relationship kind and direction remain part of each port identity.
+The core removes the competing label positions and wall-facing solves.
+Every card block keeps the acyclic entry constraints that hold a caller above the container header it enters.
+The core omits partial stacking solves and speculative whole-board solves.
+Each architecture graph uses one Solver call.
+Dropping its future cancels pending work through the host.
+The speculative cancellation token disappears with the competing solves.
+Wrap candidates remain local to the block inside that solve.
+
+Each card block uses one graph with its existing title ties and leaving-label constraints.
+The core removes the competing title and entering-label remedies.
+A wrap reuses its ranked geometry for its sink decision and final routing.
+Local wraps and port-order candidates remain inside the single solve.
+
+The packer compares measured block sizes and estimated line crossings before routing.
+It routes the selected packing once, then adds channel room when distinct routes require it.
+The packer reserves a lane for each distinct face port and each first-row arrival.
+It includes routed lines in each child's bounds because its parent treats that child as one obstacle.
+A route keeps its body inside those bounds, apart from the fixed stub that crosses a face.
+The clearance includes a complete bend and arrow approach.
+
+Ports settle after both ends are known.
+The parent reads each child’s final port positions after that child reroutes.
+A bundle retains only the original source and target common to every relationship it represents.
+Coincident boundary ports do not establish that two routes share a card.
+
+The orthogonal router reserves earlier parallel lanes for unrelated source and target pairs.
+Every fixed pin reserves its exit before the first path starts.
+The path grid adds columns and rows beside the routes already found.
+A perpendicular crossing remains available.
+The path search first minimizes reused parallel length, then distance, bends, and crossings.
+This ordered cost retains a route when the available room forces reuse.
+Hard exclusions failed because they made the old fallback cross cards.
+
+The router produces final bend positions and removes the later nudge and segment-order phases of ADR 0059.
+No later axis pass can move a shared turn onto another line.
+The layout keeps its joined-line simplifier, with painted title bounds from the fitted frames.
+The drawing helpers reject missing frames, detached endpoints, header strikes, and ambiguous shared strokes.
+The council decides whether the remaining changes improve how the picture reads.
 
 There is one implementation and no old/new switch.
 Saved parent binaries, matching core builds, and complete corpora provide the comparison.

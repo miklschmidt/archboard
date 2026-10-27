@@ -1,31 +1,21 @@
-//! Orthogonal connector routing around rectangular obstacles (ADR 0059).
+//! Orthogonal connector routing around rectangular obstacles (ADR 0061).
 //!
-//! Written from the published algorithms, not from any existing router's
-//! source:
+//! The path search follows \[W09\] M. Wybrow, K. Marriott and P. J. Stuckey,
+//! "Orthogonal Connector Routing", Graph Drawing 2009, LNCS 5849, pp. 219-231.
+//! It uses A* with direction, length, bend and crossing costs.
 //!
-//! - \[W09\] M. Wybrow, K. Marriott and P. J. Stuckey, "Orthogonal Connector
-//!   Routing", Graph Drawing 2009, LNCS 5849, pp. 219-231: the path search
-//!   with bend penalties and the nudging of shared segments.
-//! - \[W12\] M. Wybrow, K. Marriott and P. J. Stuckey, "Orthogonal Hyperedge
-//!   Routing", Diagrams 2012: connectors that share an end run as one line
-//!   until they part.
-//! - \[D05\] T. Dwyer, K. Marriott and P. J. Stuckey, "Fast Node Overlap
-//!   Removal", Graph Drawing 2005: the separation-constraint solver (VPSC).
+//! Earlier paths reserve parallel lanes unless the connectors share a semantic
+//! source or target. Fixed pin stubs reserve their exits before any path runs.
+//! The search minimizes reused lane length first, then its ordinary cost.
+//! No later pass moves a route's bends. Input order breaks every tie.
 //!
-//! A route never throws. A connector with no route through free space is
-//! answered [`Route::Unroutable`], and the caller decides what to draw.
-//! Every tie is broken by input order, so the same scene gives the same
-//! routes on every platform.
+//! A connector with no path through free space answers [`Route::Unroutable`].
+//! The caller decides how to handle that result.
 
 #![forbid(unsafe_code)]
 
 mod grid;
-mod joining;
-mod nudge;
-mod order;
 mod search;
-mod segments;
-mod vpsc;
 
 /// A point in diagram units.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -115,7 +105,7 @@ impl End {
 pub struct Params {
     /// How far a route keeps from every obstacle it passes.
     pub clearance: f64,
-    /// How far apart nudging puts routes that would run on one line.
+    /// How far apart unrelated parallel routes reserve their lanes.
     pub lane: f64,
     /// What a route pays for each turn, in diagram units of length.
     pub bend: f64,
@@ -123,13 +113,26 @@ pub struct Params {
     pub crossing: f64,
 }
 
+/// A route's geometric ends and original semantic source and target.
+/// Subject numbers identify cards across block boundaries, even when ports coincide.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Connector {
+    /// The source-side and target-side points and their attachment directions.
+    pub ends: (End, End),
+    /// Semantic stroke identities. The caller keeps different original cards distinct.
+    /// A label before a branch can refine its source identity. None spans several cards.
+    pub subjects: (Option<usize>, Option<usize>),
+}
+
 /// Everything one routing call reads.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Scene {
     /// The rectangles routes keep clear of, which a pin names by index.
     pub obstacles: Vec<Rect>,
+    /// The least body coordinates. Fixed pin stubs can extend beyond this inset.
+    pub minimum: Option<Point>,
     /// Each connector's two ends, from its tail to its head.
-    pub connectors: Vec<(End, End)>,
+    pub connectors: Vec<Connector>,
     /// What routes pay for and how far they keep from things.
     pub params: Params,
 }
@@ -168,24 +171,24 @@ fn started_inside(buffers: &[grid::Buffer], ends: [End; 2]) -> Vec<usize> {
     inside
 }
 
-/// Route every connector of a scene, in order, then nudge the routes apart.
+/// Route each connector in order, with earlier paths and every fixed pin reserved.
 pub fn route(scene: &Scene) -> Vec<Route> {
-    let grid = grid::Grid::new(scene, &[]);
     let mut found: Vec<Option<Vec<Point>>> = Vec::with_capacity(scene.connectors.len());
-    let mut taken = search::Taken::new(&grid);
-    for (tail, head) in &scene.connectors {
-        let inside = started_inside(&grid.buffers, [*tail, *head]);
-        // The grid's coordinates do not depend on what blocks, so `taken`
-        // reads the same vertices on either grid.
-        let own = (!inside.is_empty()).then(|| grid::Grid::new(scene, &inside));
-        let path = search::shortest(own.as_ref().unwrap_or(&grid), scene, *tail, *head, &taken);
-        if let Some(points) = &path {
-            taken.add(&grid, points);
+    for (index, connector) in scene.connectors.iter().enumerate() {
+        let (tail, head) = connector.ends;
+        let grid = grid::Grid::new(scene, &[], &found);
+        let inside = started_inside(&grid.buffers, [tail, head]);
+        let own = (!inside.is_empty()).then(|| grid::Grid::new(scene, &inside, &found));
+        let mut taken = search::Taken::new(&grid);
+        for (previous, path) in scene.connectors[..index].iter().zip(&found) {
+            if let Some(points) = path {
+                taken.add(&grid, points, previous.subjects);
+            }
         }
+        let path = search::shortest(own.as_ref().unwrap_or(&grid), scene, connector, &taken);
         found.push(path);
     }
-    let nudged = nudge::nudge(scene, &grid.buffers, &found);
-    nudged
+    found
         .into_iter()
         .map(|points| match points {
             Some(points) => Route::Routed(points),
@@ -196,3 +199,6 @@ pub fn route(scene: &Scene) -> Vec<Route> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod subject_tests;

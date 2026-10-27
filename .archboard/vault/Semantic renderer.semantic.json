@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 145,
+	"version": 148,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-26T17:21:05.704Z",
+	"updatedAt": "2026-10-27T00:16:45.102Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -66630,7 +66630,7 @@
 			"name": "TASK-548.08",
 			"lifecycle": "draft",
 			"parent": "zZV4las8",
-			"summary": "Choose group packing from the graph before solving",
+			"summary": "Proposed deterministic layout: one Solver call, one card graph, and one packing routed after estimation. Semantic lane reservations replace the later nudge phase. Parent frames, words, and line ends retain strict geometry owners. Council acceptance remains pending.",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
@@ -66642,12 +66642,12 @@
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"commit": "7b1609cd53d25a43f0f64e4548df32b12cc0f758",
+					"commit": "2cc0ae9f02c10a76ee3d29ca0ce1f38ac3485e6b",
 					"path": "docs/adr/0061-group-regions-are-packed-before-solving.md"
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"commit": "54efd0759bec06e157d2c46aebba03d3d542c31f",
+					"commit": "2cc0ae9f02c10a76ee3d29ca0ce1f38ac3485e6b",
 					"path": "backlog/tasks/task-548.08 - Deterministic-layout-replaces-the-speculative-solves-of-a-first-render.md"
 				}
 			],
@@ -66703,8 +66703,8 @@
 						"order": 4000,
 						"name": "Layout engines",
 						"kind": "module",
-						"responsibility": "Settles cards, frames, routes and labels as one drawing with the engine the render names, Track or Blocks: chooses between its solves and settles the crossings",
-						"description": "archboard_layout::draw lays out architectures and flowchart graphs. Track counts leaf cards when it finds group regions. At 32 cards or more, it chooses group packing before solving. Compact grouped graphs retain their inline-versus-packed comparison. Containers stay inline within each block, and Blocks packs containers and regions. Joins, stacking and wrap choices keep their host Solver contract. The core routes, fits the page and settles crossings.",
+						"responsibility": "Settles the cards, frames, routes and labels of one graph plan",
+						"description": "archboard_layout::draw lays out architectures and flowchart graphs. Track packs multi-member regions before solving. Graph links and containment fix acyclic container order. Fan-in labels stay beside their sources. Each architecture graph uses one host solve, and wraps stay inside it. The core retains parent frames, fits the page, and settles crossings. Flowcharts can still compare their decision orders.",
 						"parent": "ld6jjHND",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -67082,7 +67082,7 @@
 						"name": "Renderer core",
 						"kind": "module",
 						"responsibility": "The WebAssembly build Bun and the browser load: one render call answers a picture and its key, and one solve lays a graph out in a layout worker",
-						"description": "Built by scripts/build-core.ts, which records the hash of its sources in the build (ADR 0059) and writes the TypeScript types of the core's contract from their Rust types, and the marks a viewer draws from the painter. It answers that hash so a host can refuse a build of other sources. It exports two calls. render(request, host) reads the render request as JSON and hands it to the renderer of this place (crates/archboard-render), which remembers its layouts; the host it is given answers each solve, which the core can call off while it waits for a worker, and the icons a picture draws. layOutBoard(graph) lays out one solve, Track or Blocks (crates/archboard-layout, which routes Blocks' trunks with crates/archboard-router), and ranks each graph with the Graphviz built into the core (crates/archboard-graphviz, ADR 0060). Its answer depends on the graph alone.",
+						"description": "scripts/build-core.ts records the source hash and writes the TypeScript contract from Rust types. render(request, host) asks the host for layout solves and icons. Dropping a pending solve future cancels its host request. layOutBoard(graph) runs the graph plan and the vendored Graphviz through archboard_graphviz::InCore. The core remembers layouts, and each solve depends on its graph alone.",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "crates/archboard-renderer-wasm/src"
@@ -68822,9 +68822,9 @@
 																"id": "QXhFPRlf",
 																"from": "Y0smyqtZ",
 																"to": "Y0smyqtZ",
-																"label": "lay out, keep what reads best, settle crossings",
+																"label": "draw one graph plan and settle its crossings",
 																"kind": "self",
-																"note": "every variant is laid out fresh (ADR 0032); each way to lay it out is a solve the host runs on its worker pool, and the core chooses between them",
+																"note": "Each architecture graph uses one Solver call. The graph fixes nesting, acyclic entry constraints, and fan-in labels before that call. Local wraps remain inside it. Every variant lays out fresh (ADR 0032).",
 																"anchor": {
 																	"repo": "github.com/miklschmidt/archboard",
 																	"path": "crates/archboard-layout/src/architecture/mod.rs",

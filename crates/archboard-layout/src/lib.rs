@@ -25,8 +25,8 @@ mod track;
 mod viz;
 
 pub use architecture::{
-    Calling, Content, Edge, Engine, InProcess, Laying, Measured, MeasuredGroups, Node, Solver,
-    Standings, Unsolved, draw, shown_drawing,
+    Content, Edge, Engine, InProcess, Laying, Measured, MeasuredGroups, Node, Solver, Standings,
+    Unsolved, draw, shown_drawing,
 };
 pub use blocks::choosing::pair_crossings;
 pub use blocks::place::lay_out_board;

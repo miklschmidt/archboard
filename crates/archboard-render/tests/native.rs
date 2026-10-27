@@ -17,7 +17,7 @@ use std::pin::pin;
 use std::task::{Context, Poll, Waker};
 
 use archboard_graphviz::InCore;
-use archboard_layout::{Calling, InProcess, Laying, Solver};
+use archboard_layout::{InProcess, Laying, Solver};
 use archboard_render::request::RenderRequest;
 use archboard_render::{Host, Rendered, Renderer};
 use serde::Deserialize;
@@ -54,8 +54,8 @@ impl Solver for Native {
     where
         Self: 's;
 
-    fn solve(&self, graph: String, calling: &Calling) -> Self::Solve<'_> {
-        self.solver.solve(graph, calling)
+    fn solve(&self, graph: String) -> Self::Solve<'_> {
+        self.solver.solve(graph)
     }
 }
 

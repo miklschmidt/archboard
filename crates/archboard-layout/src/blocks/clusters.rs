@@ -17,7 +17,7 @@ use crate::viz::{Attrs, Edge, Node, Value, box_node};
 use super::cycles::Below;
 use super::laid::Size;
 use super::lone::title_width;
-use super::tree::{Block, Cluster, ClusterKind, Line};
+use super::tree::{Block, Cluster, ClusterKind, Kind, Line};
 
 /// How strongly a title row holds each member below it.
 const TITLE_WEIGHT: f64 = 10.0;
@@ -93,23 +93,7 @@ pub(crate) struct ClusterGraph {
     pub subgraphs: Vec<usize>,
 }
 
-/// How much harder a graph's edges pull each vendor node down than up.
-fn pulls_down(edges: &[Edge]) -> Map<String, f64> {
-    let mut pulls: Map<String, f64> = Map::default();
-    for edge in edges {
-        let weight = edge.attributes.get("weight").map_or(1.0, Value::number);
-        *pulls.entry(edge.tail.clone()).or_insert(0.0) += weight;
-        let head = pulls.entry(edge.head.clone()).or_insert(0.0);
-        *head -= weight;
-    }
-    pulls
-}
-
-/// A block's inline clusters, in its Graphviz graph and read back from it.
-#[expect(
-    clippy::struct_excessive_bools,
-    reason = "each switch is one remedy a relaying turns on (laying.rs), in any mix with the others"
-)]
+/// A block's inline clusters, in its graph and read back from it.
 pub(crate) struct Clusters<'t> {
     pub block: &'t Block,
     /// Each cluster's graph, in the block's order.
@@ -122,14 +106,6 @@ pub(crate) struct Clusters<'t> {
     pub top: Vec<usize>,
     /// The width of each card evened with the card over or under it.
     pub widths: Map<String, f64>,
-    /// Whether a title pulled up as hard as down is left tied, for Graphviz to break.
-    pub keep_ties: bool,
-    /// Whether some title was pulled up as hard as down.
-    pub tied: bool,
-    /// Whether the label of a line leaving a container is pulled onto its lower end.
-    pub pulls_leaving: bool,
-    /// Whether the label of a line entering a container is held below a line from inside it.
-    pub anchors_labels: bool,
 }
 
 impl<'t> Clusters<'t> {
@@ -142,10 +118,6 @@ impl<'t> Clusters<'t> {
             names: Map::default(),
             top: Vec::new(),
             widths: Map::default(),
-            keep_ties: false,
-            tied: false,
-            pulls_leaving: false,
-            anchors_labels: false,
         };
         for (index, cluster) in block.clusters.values().enumerate() {
             let name = format!("cluster_{index}");
@@ -249,29 +221,16 @@ impl<'t> Clusters<'t> {
     /// Stand a line's label in its cluster: inside the innermost container its
     /// lower end stands in and its upper end does not, held below that
     /// container's title; else in the innermost cluster around both ends.
-    /// Where labels are anchored, it is held below a labelled line into the
-    /// same card from inside the container instead. Answers where the label
-    /// goes, and the edge holding it below its cluster's title, if it needs one.
-    pub(crate) fn hold_label(
-        &self,
-        tail: &str,
-        head: &str,
-        label: &str,
-        links: &[Link],
-    ) -> (Holder, Vec<Edge>) {
+    /// Answers where the label goes and the edge holding it below the title.
+    pub(crate) fn hold_label(&self, tail: &str, head: &str, label: &str) -> (Holder, Vec<Edge>) {
         let Some(entered) = self.entered_frame(tail, head) else {
             return (self.common(tail, head), Vec::new());
-        };
-        let upper = if self.anchors_labels {
-            self.anchor_of(tail, head, entered, links)
-        } else {
-            None
         };
         let attributes = Attrs::of([
             ("style", Value::from("invis")),
             ("weight", Value::Num(TITLE_WEIGHT)),
         ]);
-        let tail = upper.map_or_else(|| title_of(entered), str::to_owned);
+        let tail = title_of(entered);
         (
             self.holder(entered),
             vec![Edge::new(tail, label, attributes)],
@@ -295,35 +254,6 @@ impl<'t> Clusters<'t> {
             .cluster_of
             .get(member)
             .is_some_and(|around| self.around(tail).contains(&around.as_str()))
-    }
-
-    /// Pull every title a little harder onto its members where it is pulled up
-    /// exactly as hard as down, unless ties are kept.
-    pub(crate) fn untie(&mut self, edges: &mut [Edge]) {
-        let pulls = pulls_down(edges);
-        let downs: Vec<usize> = self
-            .block
-            .clusters
-            .keys()
-            .filter_map(|cluster| {
-                let title = title_of(cluster);
-                let down = edges.iter().position(|edge| {
-                    edge.tail == title && edge.attributes.get("weight").is_some_and(Value::truthy)
-                });
-                (pulls.get(&title) == Some(&0.0)).then_some(down).flatten()
-            })
-            .collect();
-        self.tied = !downs.is_empty();
-        if self.keep_ties {
-            return;
-        }
-        for down in downs {
-            let weight = edges[down]
-                .attributes
-                .get("weight")
-                .map_or(f64::NAN, Value::number);
-            edges[down].attributes.set("weight", weight + 1.0);
-        }
     }
 
     /// How strongly a line pulls its lower end: one that holds it below its
@@ -363,9 +293,9 @@ impl<'t> Clusters<'t> {
             .collect()
     }
 
-    /// The invisible edges that hold a container a line from another container
-    /// enters below the line's source, so containers in a chain stack, but for
-    /// one that would close a loop.
+    /// Group-level callers precede the header of a container they enter.
+    /// Callers inside other inline containers precede it too.
+    /// Neither ordering can close a cycle.
     pub(crate) fn entering_edges(&self, links: &[Link]) -> Vec<Edge> {
         let mut below = Below::default();
         for link in links {
@@ -375,33 +305,45 @@ impl<'t> Clusters<'t> {
             below.add(&title_of(around), &self.vendor_of(member));
         }
         let mut edges = Vec::new();
-        for link in links {
-            let entered: Vec<&str> = self
-                .entered(&link.tail, &link.head)
-                .into_iter()
-                .filter(|cluster| !below.reaches(&title_of(cluster), &link.tail))
-                .collect();
-            for cluster in entered {
-                below.add(&link.tail, &title_of(cluster));
-                let minlen = if link.labelled { 2.0 } else { 1.0 };
-                edges.push(Edge::new(
-                    link.tail.clone(),
-                    title_of(cluster),
-                    Attrs::of([
-                        ("style", Value::from("invis")),
-                        ("minlen", Value::Num(minlen)),
-                        ("weight", Value::Num(0.0)),
-                    ]),
-                ));
+        // Establish group-level order before the constraints inside containers.
+        for group_level in [true, false] {
+            for link in links {
+                let at_root = self.block.kind == Kind::Region && self.around(&link.tail).is_empty();
+                if at_root != group_level {
+                    continue;
+                }
+                self.hold_entry(link, &mut below, &mut edges);
             }
         }
         edges
     }
 
+    /// Hold a caller above each entered header without closing a cycle.
+    fn hold_entry(&self, link: &Link, below: &mut Below, edges: &mut Vec<Edge>) {
+        let entered: Vec<&str> = self
+            .entered(&link.tail, &link.head)
+            .into_iter()
+            .filter(|cluster| !below.reaches(&title_of(cluster), &link.tail))
+            .collect();
+        for cluster in entered {
+            below.add(&link.tail, &title_of(cluster));
+            let minlen = if link.labelled { 2.0 } else { 1.0 };
+            edges.push(Edge::new(
+                link.tail.clone(),
+                title_of(cluster),
+                Attrs::of([
+                    ("style", Value::from("invis")),
+                    ("minlen", Value::Num(minlen)),
+                    ("weight", Value::Num(0.0)),
+                ]),
+            ));
+        }
+    }
+
     /// The clusters a line from inside another cluster enters.
     fn entered<'a>(&'a self, tail: &'a str, head: &'a str) -> Vec<&'a str> {
         let theirs = self.around(tail);
-        if theirs.is_empty() {
+        if theirs.is_empty() && self.block.kind != Kind::Region {
             return Vec::new();
         }
         self.around(head)

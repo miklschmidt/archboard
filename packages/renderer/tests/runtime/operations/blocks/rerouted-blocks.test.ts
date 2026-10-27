@@ -1,17 +1,11 @@
-// A block packed inside another is routed again once its parent settles its
-// ports, and can grow when its channels need more room. Its parent, routed
-// again after it, kept the block's first size: the container round the block
-// closed above the block's foot, and the parent's lines ran across the part
-// that hung out (Board persistence, reduced).
-// What this catches: a group region packed as a block of its own drawn past
-// the bottom of the container it stands in.
-
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { SemanticPolicySchema } from "@archboard/board/policy";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import reroutedRegion from "#tests/runtime/support/fixtures/rerouted-region.json";
+import settledWall from "#tests/runtime/support/fixtures/settled-wall.json";
+import { wallHugs } from "#tests/runtime/support/drawn-checks.ts";
 
 /** The vocabulary the fixture draws with, its groups in the dogfood vault's order. */
 const policy = SemanticPolicySchema.parse({
@@ -58,6 +52,16 @@ function rectsOf(drawing: RenderedDiagram, group: string): Rect[] {
 		height: Number(height),
 	}));
 }
+
+test("settling a region's ports keeps its routes clear of its wall", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(settledWall.content),
+		policy: SemanticPolicySchema.parse(settledWall.policy),
+		theme: "light",
+		layout: "track",
+	});
+	expect(wallHugs(drawing)).toEqual([]);
+});
 
 test("a container holds a group region routed again inside it", async () => {
 	const content = orderedFixture(reroutedRegion);

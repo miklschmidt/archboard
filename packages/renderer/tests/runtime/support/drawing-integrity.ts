@@ -2,14 +2,23 @@ import { expect } from "bun:test";
 import type { LayoutEngineName } from "@archboard/board/render-reply";
 import type { VariantContent } from "@archboard/board/content";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
-import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
-import { hiddenParentFrames } from "#tests/runtime/support/drawn-parents.ts";
+import {
+	ambiguousTrunks,
+	labelsOffRuns,
+	routesThroughCards,
+} from "#tests/runtime/support/drawn-ink.ts";
+import {
+	hiddenParentFrames,
+	endsOffCards,
+	routesThroughParentWords,
+} from "#tests/runtime/support/drawn-parents.ts";
 import {
 	labelsAcrossWalls,
 	nearLanes,
 	runsUnderLabels,
 	slants,
 	wallHugs,
+	routesThroughGroupHeaders,
 } from "#tests/runtime/support/drawn-checks.ts";
 
 /**
@@ -23,6 +32,13 @@ export function expectDrawingIntact(
 	content: VariantContent,
 	layout: LayoutEngineName,
 ) {
+	expect(
+		ambiguousTrunks(drawing, content),
+		"trunks with unrelated source and target pairs",
+	).toEqual([]);
+	expect(endsOffCards(drawing, content), "line ends away from their intended card").toEqual([]);
+	expect(routesThroughParentWords(drawing, content), "routes through parent words").toEqual([]);
+	expect(routesThroughGroupHeaders(drawing), "routes through group headers").toEqual([]);
 	expect(
 		hiddenParentFrames(drawing, content),
 		"parents with no visible frame or line boundary",

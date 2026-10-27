@@ -162,10 +162,9 @@ impl Settling<'_> {
         let side = insets_of(block).side;
         let header = inner.boxes.get(&header_of(block));
         let top = block.ports.get(port) == Some(&Side::Top);
-        let low = side
-            + header
-                .filter(|_| top)
-                .map_or(0.0, |header| header.width + LANE);
+        let low = header
+            .filter(|_| top)
+            .map_or(side, |header| header.x + header.width + LANE);
         let edge = (low, js_max(low, inner.width - side));
         let reach = self
             .reach_of(block, port)

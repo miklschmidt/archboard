@@ -11,6 +11,7 @@ use serde_json::{Value, json};
 #[derive(Default)]
 struct Column {
     asked: usize,
+    ranked: Vec<(String, String)>,
 }
 
 /// Every node of a viz-js graph, its subgraphs' included.
@@ -35,6 +36,18 @@ impl Graphviz for Column {
     fn render(&mut self, graph: &str) -> Result<String, String> {
         self.asked += 1;
         let graph: Value = serde_json::from_str(graph).map_err(|error| error.to_string())?;
+        self.ranked.extend(
+            graph["edges"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|edge| {
+                    Some((
+                        edge["tail"].as_str()?.to_owned(),
+                        edge["head"].as_str()?.to_owned(),
+                    ))
+                }),
+        );
         let mut nodes = Vec::new();
         nodes_of(&graph, &mut nodes);
         let (mut width, mut height) = (0.0_f64, 0.0);
@@ -207,6 +220,36 @@ fn a_parent_inside_a_packed_group_stays_above_its_enclosing_inline_frame() {
     assert!(
         depth("inner") > depth("outer"),
         "the outer frame must not hide the inner frame"
+    );
+    let regions = placed["regions"].as_array().unwrap();
+    assert_eq!(regions[0]["parent"], "outer");
+}
+
+#[test]
+fn a_group_member_ranks_its_sibling_containers_header_below_the_caller() {
+    let graph = json!({
+        "id": "root",
+        "layoutOptions": {
+            "archboard.blocks.nesting": "groups",
+            "archboard.blocks.stacking": "false",
+            "archboard.group.captions": "[[\"g\",80,20]]",
+        },
+        "children": [{
+            "id": "source", "width": 200, "height": 80,
+            "layoutOptions": { "archboard.group": "g" },
+        }, {
+            "id": "frame", "width": 300, "height": 60,
+            "layoutOptions": { "archboard.group": "g", "archboard.header.size": "60" },
+            "children": [{ "id": "target", "width": 200, "height": 80 }],
+        }],
+        "edges": [{ "id": "call", "sources": ["source"], "targets": ["target"] }],
+    });
+    let mut graphviz = Column::default();
+    lay_out_board(&graph.to_string(), &mut graphviz).unwrap();
+    assert!(
+        graphviz
+            .ranked
+            .contains(&("source".to_owned(), "title:frame".to_owned()))
     );
 }
 

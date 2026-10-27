@@ -1,6 +1,6 @@
 //! Points and boxes, and the few measures of them the layout takes.
 
-pub(crate) use archboard_scene::geometry::{Point, Rect, covering, inflate};
+pub(crate) use archboard_scene::geometry::{Point, Rect, inflate};
 
 use crate::ecma::{js_max, js_min};
 

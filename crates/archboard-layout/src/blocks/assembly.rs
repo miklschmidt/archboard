@@ -69,9 +69,8 @@ fn box_json(at: &Rect) -> J {
 }
 
 impl Placed {
-    /// The drawing as the solve answers it, with whether facing every block's
-    /// walls would change its blocks.
-    pub(crate) fn json(&self, faces: bool) -> J {
+    /// The complete drawing carried by the solve answer.
+    pub(crate) fn json(&self) -> J {
         let card = |one: &PlacedCard| {
             let mut members = vec![
                 ("id".to_owned(), J::str(&one.id)),
@@ -129,7 +128,6 @@ impl Placed {
                         .collect(),
                 ),
             ),
-            ("faces", J::Bool(faces)),
         ])
     }
 
@@ -194,6 +192,12 @@ fn block_frame(tree: &BlockTree, block: &Block) -> Option<String> {
             return Some(one.id.clone());
         }
         at = one.parent.map(|parent| tree.get(parent));
+        if let Some(parent) = at
+            && let Some(frame) =
+                parent.frame_around(parent.cluster_of.get(&one.id).map(String::as_str))
+        {
+            return Some(frame);
+        }
     }
     None
 }
@@ -441,11 +445,7 @@ impl<'a> Assembly<'a> {
             .filter(|block| block.kind == Kind::Region)
             .map(|block| PlacedArea {
                 group: block.group.clone().unwrap_or_default(),
-                parent: block
-                    .parent
-                    .map(|parent| self.tree.get(parent))
-                    .filter(|parent| parent.kind == Kind::Frame)
-                    .map(|parent| parent.id.clone()),
+                parent: block_frame(self.tree, block),
                 bx: self.box_of(block),
                 caption: self.caption(block),
                 depth: self.depths[block.id.as_str()],

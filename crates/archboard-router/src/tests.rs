@@ -1,6 +1,5 @@
 use crate::grid::{Buffer, SAME};
-use crate::vpsc::{self, Constraint, Var};
-use crate::{Dir, End, Params, Point, Rect, Route, Scene, route};
+use crate::{Connector, Dir, End, Params, Point, Rect, Route, Scene, route};
 
 const PARAMS: Params = Params {
     clearance: 16.0,
@@ -9,7 +8,7 @@ const PARAMS: Params = Params {
     crossing: 300.0,
 };
 
-fn rect(x: f64, y: f64, width: f64, height: f64) -> Rect {
+pub(super) fn rect(x: f64, y: f64, width: f64, height: f64) -> Rect {
     Rect {
         x,
         y,
@@ -18,7 +17,7 @@ fn rect(x: f64, y: f64, width: f64, height: f64) -> Rect {
     }
 }
 
-fn pin(obstacle: usize, x: f64, y: f64, leaves: Dir) -> End {
+pub(super) fn pin(obstacle: usize, x: f64, y: f64, leaves: Dir) -> End {
     End::Pin {
         obstacle,
         at: Point { x, y },
@@ -26,7 +25,34 @@ fn pin(obstacle: usize, x: f64, y: f64, leaves: Dir) -> End {
     }
 }
 
-fn routed(answer: &Route) -> &[Point] {
+/// Fixtures with no block boundary use each distinct geometric end as one subject.
+pub(crate) fn identified(ends: Vec<(End, End)>) -> Vec<Connector> {
+    let mut subjects = Vec::new();
+    let mut identify = |end| {
+        if let Some(id) = subjects.iter().position(|one| match (*one, end) {
+            (
+                End::Pin { obstacle: one, .. },
+                End::Pin {
+                    obstacle: other, ..
+                },
+            ) => one == other,
+            (one, other) => one == other,
+        }) {
+            id
+        } else {
+            subjects.push(end);
+            subjects.len() - 1
+        }
+    };
+    ends.into_iter()
+        .map(|(tail, head)| Connector {
+            ends: (tail, head),
+            subjects: (Some(identify(tail)), Some(identify(head))),
+        })
+        .collect()
+}
+
+pub(super) fn routed(answer: &Route) -> &[Point] {
     match answer {
         Route::Routed(points) => points,
         Route::Unroutable => panic!("expected a route"),
@@ -35,7 +61,7 @@ fn routed(answer: &Route) -> &[Point] {
 
 /// Every run of a route stays out of every buffer it does not end in.
 fn clear_of_buffers(scene: &Scene, connector: usize, points: &[Point]) -> bool {
-    let (tail, head) = scene.connectors[connector];
+    let (tail, head) = scene.connectors[connector].ends;
     let owners: Vec<usize> = [tail, head]
         .iter()
         .filter_map(|end| match end {
@@ -64,8 +90,12 @@ fn orthogonal(points: &[Point]) -> bool {
 #[test]
 fn facing_pins_join_by_a_straight_line() {
     let scene = Scene {
+        minimum: None,
         obstacles: vec![rect(0.0, 0.0, 100.0, 50.0), rect(0.0, 200.0, 100.0, 50.0)],
-        connectors: vec![(pin(0, 50.0, 50.0, Dir::Down), pin(1, 50.0, 200.0, Dir::Up))],
+        connectors: identified(vec![(
+            pin(0, 50.0, 50.0, Dir::Down),
+            pin(1, 50.0, 200.0, Dir::Up),
+        )]),
         params: PARAMS,
     };
     let answer = route(&scene);
@@ -80,8 +110,9 @@ fn ends_exactly_one_tolerance_apart_keep_their_own_vertices() {
     for at in [Point { x: SAME, y: 0.0 }, Point { x: 0.0, y: SAME }] {
         let from = Point { x: 0.0, y: 0.0 };
         let scene = Scene {
+            minimum: None,
             obstacles: Vec::new(),
-            connectors: vec![(End::Free { at: from }, End::Free { at })],
+            connectors: identified(vec![(End::Free { at: from }, End::Free { at })]),
             params: PARAMS,
         };
         assert_eq!(route(&scene), vec![Route::Routed(vec![from, at])]);
@@ -91,12 +122,16 @@ fn ends_exactly_one_tolerance_apart_keep_their_own_vertices() {
 #[test]
 fn a_route_goes_round_an_obstacle_at_its_clearance() {
     let scene = Scene {
+        minimum: None,
         obstacles: vec![
             rect(0.0, 0.0, 100.0, 50.0),
             rect(0.0, 300.0, 100.0, 50.0),
             rect(-20.0, 140.0, 140.0, 40.0),
         ],
-        connectors: vec![(pin(0, 50.0, 50.0, Dir::Down), pin(1, 50.0, 300.0, Dir::Up))],
+        connectors: identified(vec![(
+            pin(0, 50.0, 50.0, Dir::Down),
+            pin(1, 50.0, 300.0, Dir::Up),
+        )]),
         params: PARAMS,
     };
     let answer = route(&scene);
@@ -111,6 +146,7 @@ fn a_route_goes_round_an_obstacle_at_its_clearance() {
 fn an_enclosed_head_is_unroutable() {
     // The head's pin leaves into a ring of obstacles with no way out.
     let scene = Scene {
+        minimum: None,
         obstacles: vec![
             rect(0.0, 0.0, 50.0, 50.0),
             rect(300.0, 300.0, 40.0, 40.0),
@@ -119,7 +155,10 @@ fn an_enclosed_head_is_unroutable() {
             rect(240.0, 240.0, 20.0, 160.0),
             rect(380.0, 240.0, 20.0, 160.0),
         ],
-        connectors: vec![(pin(0, 25.0, 50.0, Dir::Down), pin(1, 320.0, 300.0, Dir::Up))],
+        connectors: identified(vec![(
+            pin(0, 25.0, 50.0, Dir::Down),
+            pin(1, 320.0, 300.0, Dir::Up),
+        )]),
         params: PARAMS,
     };
     assert_eq!(route(&scene), vec![Route::Unroutable]);
@@ -129,19 +168,20 @@ fn an_enclosed_head_is_unroutable() {
 fn routes_that_would_share_a_line_stand_a_lane_apart() {
     // Two connectors between separate pin pairs, both forced through one gap.
     let scene = Scene {
+        minimum: None,
         obstacles: vec![
             rect(0.0, 0.0, 200.0, 50.0),
             rect(0.0, 400.0, 200.0, 50.0),
             rect(-200.0, 200.0, 280.0, 40.0),
             rect(200.0, 200.0, 280.0, 40.0),
         ],
-        connectors: vec![
+        connectors: identified(vec![
             (pin(0, 40.0, 50.0, Dir::Down), pin(1, 40.0, 400.0, Dir::Up)),
             (
                 pin(0, 160.0, 50.0, Dir::Down),
                 pin(1, 160.0, 400.0, Dir::Up),
             ),
-        ],
+        ]),
         params: PARAMS,
     };
     let answer = route(&scene);
@@ -171,18 +211,19 @@ fn routes_that_would_share_a_line_stand_a_lane_apart() {
 #[test]
 fn routes_from_one_pin_run_as_one_line_until_they_part() {
     let scene = Scene {
+        minimum: None,
         obstacles: vec![
             rect(100.0, 0.0, 100.0, 50.0),
             rect(0.0, 300.0, 80.0, 50.0),
             rect(220.0, 300.0, 80.0, 50.0),
         ],
-        connectors: vec![
+        connectors: identified(vec![
             (pin(0, 150.0, 50.0, Dir::Down), pin(1, 40.0, 300.0, Dir::Up)),
             (
                 pin(0, 150.0, 50.0, Dir::Down),
                 pin(2, 260.0, 300.0, Dir::Up),
             ),
-        ],
+        ]),
         params: PARAMS,
     };
     let answer = route(&scene);
@@ -194,15 +235,16 @@ fn routes_from_one_pin_run_as_one_line_until_they_part() {
 #[test]
 fn the_same_scene_routes_the_same_way() {
     let scene = Scene {
+        minimum: None,
         obstacles: vec![
             rect(0.0, 0.0, 200.0, 50.0),
             rect(0.0, 400.0, 200.0, 50.0),
             rect(60.0, 200.0, 80.0, 40.0),
         ],
-        connectors: vec![
+        connectors: identified(vec![
             (pin(0, 40.0, 50.0, Dir::Down), pin(1, 160.0, 400.0, Dir::Up)),
             (pin(0, 160.0, 50.0, Dir::Down), pin(1, 40.0, 400.0, Dir::Up)),
-        ],
+        ]),
         params: PARAMS,
     };
     assert_eq!(route(&scene), route(&scene));
@@ -211,13 +253,14 @@ fn the_same_scene_routes_the_same_way() {
 #[test]
 fn a_free_end_is_reached_from_any_side() {
     let scene = Scene {
+        minimum: None,
         obstacles: vec![rect(0.0, 0.0, 100.0, 50.0)],
-        connectors: vec![(
+        connectors: identified(vec![(
             pin(0, 50.0, 50.0, Dir::Down),
             End::Free {
                 at: Point { x: 300.0, y: 200.0 },
             },
-        )],
+        )]),
         params: PARAMS,
     };
     let answer = route(&scene);
@@ -227,98 +270,16 @@ fn a_free_end_is_reached_from_any_side() {
 }
 
 #[test]
-fn vpsc_separates_two_variables_that_want_one_place() {
-    let placed = vpsc::solve(
-        &[
-            Var {
-                desired: 0.0,
-                weight: 1.0,
-            },
-            Var {
-                desired: 0.0,
-                weight: 1.0,
-            },
-        ],
-        &[Constraint {
-            left: 0,
-            right: 1,
-            gap: 10.0,
-        }],
-    );
-    assert!((placed[0] + 5.0).abs() < 1e-6 && (placed[1] - 5.0).abs() < 1e-6);
-}
-
-#[test]
-fn vpsc_splits_a_block_that_holds_a_variable_back() {
-    // [D05] Example 3's shape: a chain where the optimum leaves one
-    // constraint inactive, which satisfy alone does not find.
-    let vars = [
-        Var {
-            desired: 2.0,
-            weight: 1.0,
-        },
-        Var {
-            desired: 0.0,
-            weight: 1.0,
-        },
-        Var {
-            desired: 9.0,
-            weight: 1.0,
-        },
-    ];
-    let constraints = [
-        Constraint {
-            left: 0,
-            right: 1,
-            gap: 2.0,
-        },
-        Constraint {
-            left: 1,
-            right: 2,
-            gap: 2.0,
-        },
-    ];
-    let placed = vpsc::solve(&vars, &constraints);
-    // 0 and 1 meet at 0 and 2; 2 stays where it wants to be.
-    assert!((placed[0] - 0.0).abs() < 1e-6, "{placed:?}");
-    assert!((placed[1] - 2.0).abs() < 1e-6, "{placed:?}");
-    assert!((placed[2] - 9.0).abs() < 1e-6, "{placed:?}");
-}
-
-/// How often two routes' runs cross.
-fn crossings(a: &[Point], b: &[Point]) -> usize {
-    let mut count = 0;
-    for p in a.windows(2) {
-        for q in b.windows(2) {
-            let (h, v) = if (p[0].y - p[1].y).abs() < SAME {
-                (p, q)
-            } else {
-                (q, p)
-            };
-            if (h[0].y - h[1].y).abs() > SAME || (v[0].x - v[1].x).abs() > SAME {
-                continue;
-            }
-            let (x0, x1) = (h[0].x.min(h[1].x), h[0].x.max(h[1].x));
-            let (y0, y1) = (v[0].y.min(v[1].y), v[0].y.max(v[1].y));
-            if v[0].x > x0 + SAME && v[0].x < x1 - SAME && h[0].y > y0 + SAME && h[0].y < y1 - SAME
-            {
-                count += 1;
-            }
-        }
-    }
-    count
-}
-
-#[test]
 fn routes_that_share_a_path_stand_in_the_order_they_part() {
     // Both run down from one block, round its corner and up into the other;
     // the first parts first at both ends, so it runs inside the second.
     let scene = Scene {
+        minimum: None,
         obstacles: vec![
             rect(24.0, 24.0, 1963.7, 1358.0),
             rect(2059.7, 24.0, 3238.3, 2600.0),
         ],
-        connectors: vec![
+        connectors: identified(vec![
             (
                 pin(0, 975.7, 1382.0, Dir::Down),
                 pin(1, 2455.7, 24.0, Dir::Up),
@@ -327,7 +288,7 @@ fn routes_that_share_a_path_stand_in_the_order_they_part() {
                 pin(0, 1721.7, 1382.0, Dir::Down),
                 pin(1, 3980.0, 24.0, Dir::Up),
             ),
-        ],
+        ]),
         params: PARAMS,
     };
     let answer = route(&scene);
@@ -339,12 +300,16 @@ fn a_pin_that_leaves_into_another_buffer_still_routes() {
     // A port on a block's top wall, over the block's header: where its route
     // leaves the port's buffer lies in the header's.
     let scene = Scene {
+        minimum: None,
         obstacles: vec![
             rect(48.0, 161.0, 1202.0, 628.0),
             rect(48.0, 0.0, 340.0, 113.0),
             rect(375.5, 0.0, 1.0, 1.0),
         ],
-        connectors: vec![(pin(2, 376.0, 0.5, Dir::Down), pin(0, 376.0, 161.0, Dir::Up))],
+        connectors: identified(vec![(
+            pin(2, 376.0, 0.5, Dir::Down),
+            pin(0, 376.0, 161.0, Dir::Up),
+        )]),
         params: PARAMS,
     };
     assert!(matches!(route(&scene)[0], Route::Routed(_)));
@@ -357,12 +322,13 @@ fn a_line_crossed_either_way_does_not_turn_the_others_round() {
     // whichever side it takes, so the orders it gives contradict each other;
     // the three that climb still stand in the order where they part.
     let scene = Scene {
+        minimum: None,
         obstacles: vec![
             rect(24.0, 372.0, 340.0, 573.0),
             rect(444.0, 468.0, 960.0, 825.0),
             rect(444.0, 24.0, 748.0, 364.0),
         ],
-        connectors: vec![
+        connectors: identified(vec![
             (
                 pin(0, 364.0, 709.0, Dir::Right),
                 pin(2, 444.0, 117.0, Dir::Left),
@@ -379,7 +345,7 @@ fn a_line_crossed_either_way_does_not_turn_the_others_round() {
                 pin(0, 364.0, 893.0, Dir::Right),
                 pin(1, 444.0, 646.0, Dir::Left),
             ),
-        ],
+        ]),
         params: PARAMS,
     };
     let answer = route(&scene);
@@ -425,8 +391,9 @@ fn decoded(text: &str) -> Scene {
         })
         .collect();
     Scene {
+        minimum: None,
         obstacles,
-        connectors,
+        connectors: identified(connectors),
         params,
     }
 }
@@ -472,4 +439,75 @@ fn a_pin_holds_only_its_stub_where_its_segment_crowds_a_channel() {
             );
         }
     }
+}
+
+#[test]
+fn a_local_body_stays_inside_its_parent_boundary() {
+    let mut scene = Scene {
+        minimum: None,
+        obstacles: vec![rect(20.0, 0.0, 80.0, 80.0)],
+        connectors: identified(vec![(
+            End::Free {
+                at: Point { x: 0.0, y: 10.0 },
+            },
+            End::Free {
+                at: Point { x: 130.0, y: 10.0 },
+            },
+        )]),
+        params: PARAMS,
+    };
+    let unbounded = route(&scene);
+    assert!(routed(&unbounded[0]).iter().any(|point| point.y < 0.0));
+    scene.minimum = Some(Point { x: 0.0, y: 0.0 });
+    let bounded = route(&scene);
+    assert!(
+        routed(&bounded[0])
+            .iter()
+            .all(|point| point.x >= 0.0 && point.y >= 0.0)
+    );
+    assert!(clear_of_buffers(&scene, 0, routed(&bounded[0])));
+}
+
+#[test]
+fn a_fixed_port_stub_can_cross_the_body_inset() {
+    let scene = Scene {
+        minimum: Some(Point { x: 16.0, y: 16.0 }),
+        obstacles: vec![rect(0.0, 49.5, 1.0, 1.0), rect(80.0, 40.0, 100.0, 100.0)],
+        connectors: identified(vec![(
+            pin(1, 80.0, 80.0, Dir::Left),
+            pin(0, 0.5, 50.0, Dir::Right),
+        )]),
+        params: PARAMS,
+    };
+    let answer = route(&scene);
+    let points = routed(&answer[0]);
+    assert_eq!(points[points.len() - 1], Point { x: 0.5, y: 50.0 });
+    assert!(
+        points[1..points.len() - 1]
+            .iter()
+            .all(|point| point.x >= 16.0 && point.y >= 16.0)
+    );
+}
+
+fn crossings(a: &[Point], b: &[Point]) -> usize {
+    let mut count = 0;
+    for p in a.windows(2) {
+        for q in b.windows(2) {
+            let (h, v) = if (p[0].y - p[1].y).abs() < SAME {
+                (p, q)
+            } else {
+                (q, p)
+            };
+            if (h[0].y - h[1].y).abs() > SAME || (v[0].x - v[1].x).abs() > SAME {
+                continue;
+            }
+            let (x0, x1) = (h[0].x.min(h[1].x), h[0].x.max(h[1].x));
+            let (y0, y1) = (v[0].y.min(v[1].y), v[0].y.max(v[1].y));
+            if v[0].x > x0 + SAME && v[0].x < x1 - SAME && h[0].y > y0 + SAME && h[0].y < y1 - SAME
+            {
+                count += 1;
+            }
+        }
+    }
+    count
 }

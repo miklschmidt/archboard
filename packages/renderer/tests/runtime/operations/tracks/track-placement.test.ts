@@ -1,18 +1,7 @@
-// Where the track engine stands a card sideways (TASK-349). What this
-// catches: a card fed by a fan standing off its middle, so the fan's lines
-// land unevenly on it; and a wrap standing a card in a line's way, or away
-// from the port its one line leaves; and the label of a line leaving a container standing beside
-// it, where the card the line leads into follows it out past the container's
-// wall; and a board's containers stacked or not by a near tie, given to the
-// page that fits the pane better however little, at the cost of a crossing;
-// and a group region's ports held where its parent settled them, off their
-// lines.
-
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
-import { LAYOUT_ASPECT } from "#shared/constants/shell-geometry.ts";
 import {
 	corridorPoints,
 	routeLabels,
@@ -20,9 +9,7 @@ import {
 	routesCross,
 } from "#tests/runtime/support/drawn-routes.ts";
 import underPort from "#tests/runtime/support/fixtures/under-port.json";
-import browserApplication from "#tests/runtime/support/fixtures/browser-application.json";
 import grading from "#tests/runtime/support/fixtures/grading.json";
-import reservedLane from "#tests/runtime/support/fixtures/reserved-label-lane.json";
 import workingWithAnAgent from "#tests/runtime/support/fixtures/working-with-an-agent.json";
 import wrappedBlocker from "#tests/runtime/support/fixtures/wrapped-blocker.json";
 
@@ -173,33 +160,6 @@ test("a line leaving a container stands its label below the container", async ()
 	expect(label.y).toBeGreaterThanOrEqual(frame.y + frame.height);
 });
 
-// Reduced from a real library board: pulling the labels of lines leaving a
-// container below it answered with another ranking of the whole block, on a
-// page 170 px wider and 30 px taller, which the score alone did not refuse.
-test("a leaving label is pulled below its container only on no more page", async () => {
-	const drawing = await renderArchitecture({
-		content: orderedFixture(reservedLane),
-		theme: "light",
-		policy: SemanticPolicySchema.parse({
-			levels: ["service"],
-			nodeKinds: Object.fromEntries(
-				["external", "service", "datastore", "module"].map((kind) => [
-					kind,
-					{ name: kind, icon: "RiBox3Line" },
-				]),
-			),
-			relationshipKinds: {
-				http: { name: "HTTP", color: "sky", dash: "solid", arrowhead: "filled" },
-				call: { name: "Call", dash: "solid", arrowhead: "filled" },
-				dependency: { name: "Dependency", dash: "dotted", arrowhead: "open" },
-				data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
-			},
-		}),
-		layout: "track",
-	});
-	expect(drawing.width).toBeLessThan(2100);
-});
-
 /** The vocabulary of the Browser application board's fixtures. */
 const browserPolicy = SemanticPolicySchema.parse({
 	levels: ["system", "service", "module"],
@@ -222,26 +182,6 @@ const browserPolicy = SemanticPolicySchema.parse({
 	},
 });
 
-// Taken from a board of this repository: its containers laid stacked scored
-// within a twentieth of laid as Graphviz ranks them, on a page far taller
-// than the pane's proportions, and a wider clearance off group regions'
-// walls tipped it to the tall page.
-test("a board that reads about as well stacked keeps the page that fits the pane better", async () => {
-	const drawing = await renderArchitecture({
-		content: orderedFixture(browserApplication),
-		theme: "light",
-		policy: browserPolicy,
-		layout: "track",
-	});
-	expect(drawing.width / drawing.height).toBeGreaterThan(LAYOUT_ASPECT);
-});
-
-// Taken from a board of this repository: its containers laid stacked scored
-// within a twentieth of laid as Graphviz ranks them, one crossing more on a
-// page that fit the pane only a little better, and a wider clearance off a
-// container's wall tipped it to the stacked layout, its lines through a group
-// region they have no card in: 'the pane socket: registration and news'
-// crossed 'controllers over the focused pane's'. Fit never buys a crossing.
 test("a board stays as Graphviz ranks its containers where stacking them crosses more", async () => {
 	const content = orderedFixture(workingWithAnAgent);
 	const drawing = await renderArchitecture({
