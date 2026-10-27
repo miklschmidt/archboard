@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T18:10:00Z'
+updated_date: '2026-10-27T18:13:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -116,4 +116,6 @@ The repository keyboard owner first reproduced stale board-based filter counts (
 Parent canonical pane follow-up: removed the retired board-show HTTP request shape. Existing pane URLs now resolve captured legacy addresses through canonical navigation. The installed bookmark browser owner starts from a retained original pane URL, opens current, and preserves bookmarks, walkthroughs, reload, and unavailable-content behavior. Focused browser owner, full source/test types, and touched lint pass. The initial preview capture assertion was discarded because retained originals intentionally disable agent explanation captures.
 
 Parent navigator retirement: replaced the unused board/folder/variant hierarchy with canonical repository rows. Active repository selection and A/B markers failed through the existing browser owner before the change and pass afterward. Repository menus, activity, filtering, failure feedback, keyboard opens, and adjacent pane behavior pass. Full source/test types and focused lint pass. Removed unused hierarchy, expansion, timeline, and guide code plus the obsolete tree-only owner. The replacement ownership ledger is in docs/agents/test-suite.md. Model scope and proposal navigation remain inside the canonical reader.
+
+Repository-guidance slice: signed b60cd5eb4 replaces obsolete live board ownership, levels, storage, and PR instructions with canonical modules, flows, compact proposals, subject claims, exact checkpoints, signing, retention, and explicit migration. Signed merge 96ae4242d includes local integration a70a38c39. Existing deterministic validation passes: 8 scenarios, 8 fixtures, 14 coverage parts; skill links pass 3 cases/5 assertions; schema distribution passes 1 case/8 assertions; focused formatting and diff checks pass. The only consumer skill correction removes a stale ordinary-legacy-read instruction. Documentation describes already-implemented proposals, so it creates no new architectural meaning and needs no second proposal. ADR supersession pointers keep ADR0062 proposed. The parent retains all mappings, draft dispositions, migration, adoption, frontend assets, integration validation, and acceptance. Task remains In Progress with the parent assignee and all acceptance unchanged. External handoff: /home/msc/.local/state/archboard-implementation/task-549/task-549.24-guidance.md.
 <!-- SECTION:NOTES:END -->
