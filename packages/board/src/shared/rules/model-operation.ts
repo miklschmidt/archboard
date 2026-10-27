@@ -6,7 +6,10 @@ import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts
  * @param subjects The retained affected identities.
  * @returns The complete recorded subjects, or the legacy subject.
  */
-function operationSubjects(request: ArchitectureModuleEdit, subjects?: string[]): string[] {
+function operationSubjects(
+	request: ArchitectureModuleEdit | { target: unknown },
+	subjects?: string[],
+): string[] {
 	if (subjects !== undefined) return subjects;
 	return "subject" in request ? [request.subject] : [];
 }

@@ -169,7 +169,7 @@ function RetainedChoices({
 					) : (
 						<span className="flex min-w-0 flex-col gap-1">
 							<span>
-								{entry.state.name} · {checkpointTime(entry.createdAt)}
+								{entry.state?.name ?? "Planning model"} · {checkpointTime(entry.createdAt)}
 							</span>
 							<span className="text-muted-foreground text-body max-w-prose whitespace-normal">
 								{entry.request.doing}

@@ -102,7 +102,7 @@ async function retainedReservations(context: ArchiveContext, model: string) {
 			const lifecycle = record.lifecycle;
 			if (record.correction !== undefined)
 				return [
-					record.state.id,
+					record.state!.id,
 					...record.correction.changes.map((change) => change.subject),
 					...(record.correction.retiredIds ?? []),
 				];

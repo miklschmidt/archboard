@@ -648,7 +648,24 @@ Canonical narration has one controlled browser owner in `canonical-model-narrati
 It covers report delivery before voice starts, matching pane requests, manual steps, pinned narrative text, and departure.
 The external media and Codex substitutes remain in the existing production voice fixture.
 
+## Portable canonical models
+
+`packages/board/tests/runtime/operations/history/portable*.test.ts` owns portable architecture behavior.
+The public architecture operations use real temporary files and disposable Git repositories.
+Coverage includes exact identities, completed decisions, corrections, standing conflicts, narrative targets, private archives, and lost-history restoration.
+The same owner covers incomplete closure, destination refusal, signing, interruption, foreign bytes, and exact retry.
+The existing durable crash fixture supplies real interruption points.
+No second installer or history implementation belongs to these tests.
+
+`tests/system/semantic-boards/model-portable.test.ts` owns strict CLI and HTTP routing and refused output preservation.
+The parent owns any visible integration in checkpoint selectors, including a planning checkpoint with no state designation.
+No browser test or model evaluation belongs to the backend slice.
+
 Original migration history has one browser owner in `canonical-preview-history.test.ts`.
 It covers paired state/checkpoint navigation, original coverage, lifecycle and standing evidence, and exact original inspection after live files disappear.
 Public architecture operations create its retained fixtures in real temporary Git repositories.
 The existing `canonical-model-preview.test.ts` retains current-preview navigation, code-opening, source-preservation, and recovery ownership.
+
+The portability runtime owners cover complete data, history, signing, refusal, and recovery.
+`canonical-model-import.test.ts` owns the browser behavior for imported planning-only checkpoints in reading and comparison selectors.
+It uses real public export/import operations and does not repeat persistence assertions through the browser.
