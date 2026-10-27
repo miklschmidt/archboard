@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T22:48:00Z'
+updated_date: '2026-10-27T23:02:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -120,6 +120,8 @@ Remove the obsolete board-only context object from the agent surfaces. It now co
 Remove empty board catalogue compatibility and board-release/activity invalidation. Canonical model queries already subscribe to the shared vault event feed. Keep repository discovery, reconnect recovery, and agent activity. Retire board-name lookup and obsolete release assertions without adding a second model cache.
 
 Retire remaining live board list/document/render HTTP adapters. Keep exact original recording reads behind the existing BoardReads and PictureSource owners, with explicit captured providers and local rendering. Port retained UI fixtures to those existing providers, preserve shared geometry/meaning owners, and isolate retained replay startup from ordinary canonical browser startup.
+
+Repair the observed same-model reference failure during canonical edits after migration. A migrated local drill-down points into the same model, but settlement currently refuses REFERENCE_UNAVAILABLE because reference retention reads its own active installation. Delegate a bounded public-runtime RED/GREEN repair with real files and Git; preserve exact capture, dependency closure, foreign-vault barriers, and signing. Parent retains all frontend, example meaning, root mapping, adoption and cutover.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
