@@ -10,6 +10,7 @@
 
 use crate::constants::{CONTAINER_INSET, REGION_INSET};
 use crate::ecma::{js_min, or, sorted_by};
+use crate::track::chains::{LANE, REGION_CLEARANCE};
 use crate::track::graphviz::Join;
 use crate::track::scene::{Map, Set};
 use crate::viz::{Attrs, Edge, Node, Value, box_node};
@@ -17,7 +18,7 @@ use crate::viz::{Attrs, Edge, Node, Value, box_node};
 use super::cycles::Below;
 use super::laid::Size;
 use super::lone::title_width;
-use super::tree::{Block, Cluster, ClusterKind, Kind, Line};
+use super::tree::{Block, BlockTree, Cluster, ClusterKind, Kind, Line};
 
 /// How strongly a title row holds each member below it.
 const TITLE_WEIGHT: f64 = 10.0;
@@ -110,7 +111,7 @@ pub(crate) struct Clusters<'t> {
 
 impl<'t> Clusters<'t> {
     /// Make every cluster of a block, each headed by its title.
-    pub(crate) fn new(block: &'t Block) -> Clusters<'t> {
+    pub(crate) fn new(tree: &BlockTree, block: &'t Block) -> Clusters<'t> {
         let mut clusters = Clusters {
             block,
             graphs: Vec::new(),
@@ -143,7 +144,58 @@ impl<'t> Clusters<'t> {
                 }
             }
         }
+        for (index, cluster) in block.clusters.values().enumerate() {
+            let room = clusters.header_room(tree, &cluster.id);
+            clusters.graphs[index].margin = clusters.graphs[index].margin.max(room);
+        }
         clusters
+    }
+
+    /// Lanes inside a shared ancestor that must pass beside a nested header.
+    fn header_room(&self, tree: &BlockTree, ancestor: &str) -> f64 {
+        let lines: Vec<_> = self
+            .block
+            .lines
+            .values()
+            .filter(|line| {
+                let vendor = |end: &str| {
+                    let child = tree
+                        .pins
+                        .get(end)
+                        .map(|pin| tree.get(pin.block).id.as_str());
+                    self.vendor_of(child.unwrap_or(end))
+                };
+                let tail = vendor(&line.tail);
+                let head = vendor(&line.head);
+                let from = self.around(&tail);
+                let to = self.around(&head);
+                from.contains(&ancestor)
+                    && to.contains(&ancestor)
+                    && from.iter().chain(&to).any(|id| {
+                        self.block.clusters[*id].kind == ClusterKind::Frame
+                            && from.contains(id) != to.contains(id)
+                            && tail != title_of(id)
+                            && head != title_of(id)
+                    })
+            })
+            .collect();
+        if lines.is_empty() {
+            return 0.0;
+        }
+        let identities = |source: bool| -> Set<String> {
+            lines
+                .iter()
+                .map(|line| {
+                    let end = if source { &line.source } else { &line.target };
+                    format!(
+                        "{}|{}",
+                        end.as_deref().unwrap_or(&line.key),
+                        crate::track::route::trunk_kind(&line.edge)
+                    )
+                })
+                .collect()
+        };
+        identities(true).len().min(identities(false).len()) as f64 * LANE + REGION_CLEARANCE
     }
 
     /// Where a cluster's nodes go.

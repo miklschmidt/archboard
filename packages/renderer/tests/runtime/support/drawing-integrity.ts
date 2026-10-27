@@ -10,7 +10,7 @@ import {
 import {
 	hiddenParentFrames,
 	endsOffCards,
-	routesThroughParentWords,
+	routesThroughParentHeaders,
 } from "#tests/runtime/support/drawn-parents.ts";
 import {
 	labelsAcrossWalls,
@@ -37,7 +37,7 @@ export function expectDrawingIntact(
 		"trunks with unrelated source and target pairs",
 	).toEqual([]);
 	expect(endsOffCards(drawing, content), "line ends away from their intended card").toEqual([]);
-	expect(routesThroughParentWords(drawing, content), "routes through parent words").toEqual([]);
+	expect(routesThroughParentHeaders(drawing), "routes through parent header cards").toEqual([]);
 	expect(routesThroughGroupHeaders(drawing), "routes through group headers").toEqual([]);
 	expect(
 		hiddenParentFrames(drawing, content),

@@ -119,14 +119,19 @@ impl Track<'_> {
     }
 
     /// Turn a line that enters or leaves its block by a wall onto that wall.
-    fn turn_to_wall(&mut self, line: &SceneLine<'_>, nets: &[NetId]) {
-        if let Some(enters) = line.enters {
+    fn turn_to_wall(&mut self, line: &SceneLine<'_>, nets: &[NetId], upward: bool) {
+        let (enters, leaves) = if upward {
+            (line.leaves, line.enters)
+        } else {
+            (line.enters, line.leaves)
+        };
+        if let Some(enters) = enters {
             let x = self.wall_x(enters);
             let first = self.net_mut(nets[0]);
             first.wall = Some(End::Top);
             first.top_x = x;
         }
-        if let Some(leaves) = line.leaves {
+        if let Some(leaves) = leaves {
             let x = self.wall_x(leaves);
             let last = self.net_mut(*nets.last().expect("a net"));
             last.wall = Some(End::Bottom);
@@ -228,7 +233,7 @@ impl Track<'_> {
         let bottom = self.station(net.bottom);
         match bottom.item {
             None => self.scene.bands[bottom.band].new_top,
-            Some(item) => self.scene.moved_id(item, left).y,
+            Some(item) => self.scene.moved_id(item, left).y + self.scene.item(item).face_top,
         }
     }
 
@@ -536,7 +541,6 @@ pub(crate) fn route_scene(
         .collect();
     let all: Vec<ChainId> = chains.values().copied().collect();
     track.fit_title_rows(&all);
-    track.clear_headings(&all);
     track.straighten_lanes(&all);
     let kinds: Vec<(ChainId, Rc<str>)> = inner
         .iter()
@@ -570,7 +574,7 @@ pub(crate) fn route_scene(
     }
     for line in &inner {
         let nets = routed[&line.id].nets.clone();
-        track.turn_to_wall(line, &nets);
+        track.turn_to_wall(line, &nets, routed[&line.id].upward);
     }
     track.part_and_close(&all, &routes);
     let edges: Edges<'_> = lines

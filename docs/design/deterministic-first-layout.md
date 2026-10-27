@@ -1,12 +1,17 @@
 # Deterministic choices for a first layout
 
-The council rejects the first packing shortcut because Groups hides parent frames.
-The next round repairs Groups before it removes the 32-card cutoff.
-The frame repair and complete-board corpus are committed checkpoints.
-The current probe also repairs route identity, port spacing, frame endpoints, and caption backgrounds.
-It tests deterministic port settling in place of the score comparison with unsettled routes.
-Its acceptance still requires drawing integrity and the parent council.
-The 500 ms target remains open.
+Milestone 6 uses one Solver call for each architecture graph.
+It replaces speculative nesting, stacking, join, card-graph, and routed-packing choices with decisions before their expensive work.
+It repairs Groups parent frames and removes the 32-card cutoff.
+Semantic lane reservations replace the later nudge phase.
+The renderer and Rust tests pass at checkpoint `de398584a`.
+Later raster inspection finds header-card defects that those tests miss.
+That checkpoint is not ready for adoption, and the parent council still decides whether changed drawings can land.
+
+The alternating warmed workload places all three target boards and their growing edits below 500 ms.
+A cold viewer render still takes 716 ms, so the target lacks headroom.
+The instruction count falls by 93.2% against the fresh parent baseline.
+The detailed measurements and corpus inventory follow at the end of this note.
 
 TASK-548.08 starts at `764d3b9ca` on `task-548.08`.
 The owner targets first renders and size-changing edits below 500 ms.
@@ -662,3 +667,107 @@ Its later first renders take 477 ms for persistence and 226 ms for routes.
 All three edited cards grow by the asserted amounts.
 The candidate meets 500 ms in the warmed workload but lacks headroom and still misses the cold viewer case.
 The next exact optimization targets repeated construction of the simplifier's unchanged geometry.
+
+## Milestone 6 native work and drawing inventory
+
+The saved native binaries use the same captured requests and CPU 2.
+The fresh parent executes 152,722,597,050 user instructions.
+Milestone 6 executes 10,402,976,071, a reduction of 93.2%.
+The counter files are `/tmp/548-08/post-553/base-6-instructions.txt` and `after-6-instructions.txt`.
+The native measurement pair reports load 21.81 to 19.84.
+
+| Board                   | Parent solves | Candidate solves | Parent native path, ms | Candidate native path, ms |
+| ----------------------- | ------------: | ---------------: | ---------------------: | ------------------------: |
+| Archboard server routes |            27 |                1 |                    350 |                       105 |
+| Board persistence       |            25 |                1 |                   1425 |                       250 |
+| Board viewer            |            24 |                1 |                   1442 |                       254 |
+
+These are the best paths over three fresh renders per board.
+The total falls from 3218 ms to 610 ms before per-board rounding.
+Each process also measures rendering beside the solves.
+Those candidate costs are 54, 118, and 118 ms in the table's order.
+The parent costs are 32, 74, and 79 ms.
+The new drawing uses more paint work while it removes most layout work.
+
+The complete candidate corpus is `/tmp/548-08/post-553/after-6` at `de398584a`.
+Its parent corpus is `/tmp/548-08/post-553/base` from `f06fa5317`.
+Both retain all 2452 SVGs, including 76 whole-board drawings across the vaults and examples.
+The comparison changes 712 drawings: 348 Track and 364 Blocks.
+It changes 72 whole-board drawings.
+The complete changed keys stay in `/tmp/548-08/post-553/after-6-changed.json`.
+
+| Board                   | Changed drawings |
+| ----------------------- | ---------------: |
+| Archboard               |               36 |
+| Archboard server        |               44 |
+| Archboard server routes |               12 |
+| Board persistence       |               36 |
+| Board rasterizer        |               64 |
+| Board viewer            |               52 |
+| Browser application     |               36 |
+| Codex realtime voice    |              108 |
+| Codex workhorse         |               52 |
+| Command dispatch        |               28 |
+| Command interface       |               60 |
+| Inventory service       |               20 |
+| Live panes              |               20 |
+| Renderer layout         |               28 |
+| Semantic renderer       |               36 |
+| Skill evaluation        |               40 |
+| Voice coordinator       |               28 |
+| Web shop                |               12 |
+
+I inspect the final whole Browser application and Command interface beside their parent pictures.
+The new pictures retain visible nested parent frames and read down the page.
+Both versions contain substantial empty frame space.
+Browser application becomes narrower and taller, from 13575 × 4325 to 9210 × 7537.
+That tradeoff remains a council question.
+The inspected samples show no new missing frame, card strike, detached arrow, or misplaced label.
+The earlier full-size Blocks samples also retain every group header and separate the unrelated trunks.
+
+The process audits find no orphan Git owner in this checkout.
+Orphans from other checkouts reappear during the work and contribute to the later load near 20.
+They remain untouched because the cleanup instruction names this checkout only.
+The paired wall times retain their recorded load, and the instruction counts provide the load-independent work comparison.
+
+## Header-card defects after milestone 6
+
+Manual inspection of Command routing finds a line through the blank face of its parent header.
+The earlier helper protects only header words.
+A line into that parent also stops on the surrounding frame, eight units before the visible header card.
+These defects violate TASK-548.10 even when the earlier geometry report is clear.
+The four council fixtures fail the stronger face and endpoint contracts before the repair.
+
+The retained probe treats the full painted header as an obstacle.
+A direct parent target meets that header's top face, including its caption offset.
+Traffic to a descendant enters the container through its side below the header.
+The parent keeps the child's actual header port instead of projecting it back onto the surrounding frame.
+The final joined-line simplifier also receives complete header bounds.
+
+The first Track probe moves lanes clear of each header without checking sibling cards.
+It creates card strikes and is dropped.
+The ordinary occupancy search already excludes cards, but its fixed 256-point search range can miss both edges of a wide header.
+Known obstacle edges now remain candidates at any distance.
+Physical clearance takes precedence over a lower crossing score when the current lane is illegal.
+
+Two complete Track boards still lack space between nested frames.
+Their shared ancestor keeps only the default 20-point margin.
+The graph now counts the distinct semantic lanes that cross a nested header inside each shared ancestor.
+That count reserves side space before Graphviz places the containers.
+The same margin limits later card alignment.
+Packed Blocks also reserves left-face traffic from its graph because its left boundary is fixed.
+
+The two-container Rust contract also exposes a direction error on an entering side route.
+The track router moves the upper geometric endpoint to the wall even when an upward route starts at its lower endpoint.
+It now selects the wall endpoint from the route direction.
+The existing contract then passes all three nestings without weaker assertions.
+
+The stronger helper replaces the word-only helper rather than adding a second owner of the same behavior.
+It rejects a route through any part of a parent header and an arrowhead that stops on its surrounding frame.
+All whole-board artifacts and failed probes remain under `/tmp/548-08/post-553/header-*`.
+
+A separate exact-work optimization retains the simplifier's static obstacles between slides.
+Only the spans of moved routes change after a slide.
+The previous implementation rebuilds every box, label, and route span for each line and every accepted slide.
+The new implementation updates the moved route spans and retains the static geometry.
+Drawing equivalence and fresh measurements decide whether this optimization stays.

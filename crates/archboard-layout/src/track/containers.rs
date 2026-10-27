@@ -347,6 +347,7 @@ mod tests {
                 height: (depth - index) as f64 * 40.0 + 20.0,
                 children: Some(vec![node]),
                 frame: Some(FrameRow {
+                    above: 0.0,
                     title: [0.0, y, 300.0, 20.0, 80.0],
                     steps: None,
                     below: None,

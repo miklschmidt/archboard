@@ -216,7 +216,10 @@ impl<'t> PackLayout<'t> {
     /// columns on one left edge, so their ports line up.
     fn place(&mut self, packing: &Packing) {
         self.gap = packing.gap.unwrap_or(PACK_GAP);
-        self.margin = packing.margin.unwrap_or(TRUNK_CLEARANCE);
+        self.margin = js_max(
+            packing.margin.unwrap_or(TRUNK_CLEARANCE),
+            self.left_room(packing),
+        );
         self.header = least_header(self.block);
         self.outer_top = self.top_room(packing);
         let top = self.insets.top + self.head_room();

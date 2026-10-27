@@ -321,7 +321,12 @@ impl BlockTree {
     fn on_edge(&mut self, end: String, key: &str, face: Side) -> String {
         match self.block_of(&end) {
             Some(block) if self.get(block).kind == Kind::Frame => {
-                let port = self.port(block, key, face);
+                let side = if key.starts_with("to|") {
+                    Side::Top
+                } else {
+                    face
+                };
+                let port = self.port(block, key, side);
                 self.pin(block, &port)
             }
             _ => end,
@@ -339,13 +344,19 @@ impl BlockTree {
         along: &str,
         label_at: Option<BlockId>,
     ) -> Side {
-        if Some(block) == label_at {
-            return face;
+        let side = if Some(block) == label_at {
+            face
+        } else {
+            self.exits
+                .get(&exit_key(&self.get(block).id, way, face, along))
+                .copied()
+                .unwrap_or(face)
+        };
+        if side == Side::Top && self.get(block).kind == Kind::Frame {
+            if way == "in" { Side::Left } else { Side::Right }
+        } else {
+            side
         }
-        self.exits
-            .get(&exit_key(&self.get(block).id, way, face, along))
-            .copied()
-            .unwrap_or(face)
     }
 
     /// A block's port, made on first use.

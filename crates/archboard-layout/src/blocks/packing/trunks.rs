@@ -183,6 +183,7 @@ impl TrunkRouter<'_> {
         let x = (port.x + port.width / 2.0) / inner.width;
         let y = (port.y + port.height / 2.0) / inner.height;
         let (x, y) = match side {
+            Side::Top if child.kind == super::super::tree::Kind::Frame => (x, y),
             Side::Top => (x, 0.0),
             Side::Bottom => (x, 1.0),
             Side::Left => (0.0, y),

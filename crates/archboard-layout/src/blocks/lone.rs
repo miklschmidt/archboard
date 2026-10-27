@@ -254,6 +254,7 @@ pub(crate) fn title_row(bounds: Rect, head: &Head<'_>, lone: Option<&Lone>) -> F
                 .map(|step| (step.width - ARCHITECTURE_HEADER_PADDING, step.height))
                 .collect()
         }),
+        above: lone.map_or(0.0, band_of),
         below: lone.map(|_| REGION_INSET),
         wide: lone.map(caption_width),
     }

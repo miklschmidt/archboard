@@ -28,10 +28,10 @@ impl PackLayout<'_> {
     }
 
     /// Whether an end is on the top face of a block in the first row.
-    fn on_top(&self, end: &str, items: &Set<&str>) -> bool {
+    fn on_face(&self, end: &str, items: &Set<&str>, side: Side) -> bool {
         self.tree.pins.get(end).is_some_and(|pin| {
             let block = self.tree.get(pin.block);
-            items.contains(block.id.as_str()) && block.ports.get(&pin.port) == Some(&Side::Top)
+            items.contains(block.id.as_str()) && block.ports.get(&pin.port) == Some(&side)
         })
     }
 
@@ -46,6 +46,25 @@ impl PackLayout<'_> {
                 .filter_map(|group| group.first().copied())
                 .collect()
         };
+        self.face_room(&indices, Side::Top)
+    }
+
+    /// Reserve the bounded space outside the first column's left faces.
+    pub(super) fn left_room(&self, packing: &Packing) -> f64 {
+        let indices = if packing.across {
+            packing
+                .groups
+                .iter()
+                .filter_map(|group| group.first().copied())
+                .collect()
+        } else {
+            packing.groups[0].clone()
+        };
+        self.face_room(&indices, Side::Left)
+    }
+
+    /// Distinct semantic lanes that cross one outer face of a packing.
+    fn face_room(&self, indices: &[usize], side: Side) -> f64 {
         let items: Set<&str> = indices
             .iter()
             .map(|&index| self.block.items[index].as_str())
@@ -54,7 +73,9 @@ impl PackLayout<'_> {
             .block
             .lines
             .values()
-            .filter(|line| self.on_top(&line.from, &items) || self.on_top(&line.to, &items))
+            .filter(|line| {
+                self.on_face(&line.from, &items, side) || self.on_face(&line.to, &items, side)
+            })
             .collect();
         if lines.is_empty() {
             return 0.0;

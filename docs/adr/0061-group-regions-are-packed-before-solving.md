@@ -65,7 +65,7 @@ A route keeps its body inside those bounds, apart from the fixed stub that cross
 The clearance includes a complete bend and arrow approach.
 
 Ports settle after both ends are known.
-The parent reads each child’s final port positions after that child reroutes.
+The parent reads each child's final port positions after that child reroutes.
 A bundle retains only the original source and target common to every relationship it represents.
 Coincident boundary ports do not establish that two routes share a card.
 
@@ -80,6 +80,12 @@ Hard exclusions failed because they made the old fallback cross cards.
 The router produces final bend positions and removes the later nudge and segment-order phases of ADR 0059.
 No later axis pass can move a shared turn onto another line.
 The layout keeps its joined-line simplifier, with painted title bounds from the fitted frames.
+A parent header reserves its entire painted face, including blank space beside its words.
+An arrow to that parent meets its header card rather than the surrounding frame.
+Traffic to descendants enters below that header through a side face.
+The graph reserves lanes beside nested headers inside their common ancestor before ranking.
+Known obstacle edges remain routing candidates regardless of their distance from the initial lane.
+Physical clearance takes precedence over fewer crossings when the initial lane crosses an obstacle.
 The drawing helpers reject missing frames, detached endpoints, header strikes, and ambiguous shared strokes.
 The council decides whether the remaining changes improve how the picture reads.
 

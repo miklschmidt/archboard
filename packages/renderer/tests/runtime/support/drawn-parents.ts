@@ -6,7 +6,6 @@ import {
 	type DrawnPoint,
 } from "#tests/runtime/support/drawn-routes.ts";
 import type { VariantContent } from "@archboard/board/content";
-import { drawnTexts, drawnSpan } from "#tests/runtime/support/drawn-text.ts";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 
 /**
@@ -56,13 +55,11 @@ function onBoundary(point: DrawnPoint, box: DiagramBox): boolean {
 }
 
 /**
- * Line ends that miss the boundary of their semantic card or parent frame.
+ * The painted header cards of semantic containers, in page coordinates.
  * @param drawing The rendered architecture.
- * @param content The relationships and their intended ends.
- * @returns Each detached source or arrowhead with its intended card.
+ * @returns Their visible faces, including the base where lines attach.
  */
-export function endsOffCards(drawing: RenderedDiagram, content: VariantContent): string[] {
-	const routes = routePoints(drawing.svg);
+export function headerCards(drawing: RenderedDiagram): Map<string, DiagramBox> {
 	const shift = bodyShift(drawing.svg);
 	const headers = new Map<string, DiagramBox>();
 	for (const chunk of drawing.svg.split(/(?=<g data-semantic-kind=)/u)) {
@@ -86,6 +83,18 @@ export function endsOffCards(drawing: RenderedDiagram, content: VariantContent):
 				height: Number(slab[4]),
 			});
 	}
+	return headers;
+}
+
+/**
+ * Line ends that miss the boundary of their semantic card or parent frame.
+ * @param drawing The rendered architecture.
+ * @param content The relationships and their intended ends.
+ * @returns Each detached source or arrowhead with its intended card.
+ */
+export function endsOffCards(drawing: RenderedDiagram, content: VariantContent): string[] {
+	const routes = routePoints(drawing.svg);
+	const headers = headerCards(drawing);
 	return content.edges.flatMap((edge) => {
 		const points = routes.get(edge.id);
 		if (points === undefined) return [];
@@ -93,9 +102,9 @@ export function endsOffCards(drawing: RenderedDiagram, content: VariantContent):
 			[edge.from, points[0]!],
 			[edge.to, points.at(-1)!],
 		] as const;
-		return ends.flatMap(([id, point]) => {
-			const box = drawing.atlas.nodes[id];
+		return ends.flatMap(([id, point], index) => {
 			const header = headers.get(id);
+			const box = index === 1 && header !== undefined ? header : drawing.atlas.nodes[id];
 			return box !== undefined &&
 				!onBoundary(point, box) &&
 				!(header !== undefined && onBoundary(point, header))
@@ -106,28 +115,15 @@ export function endsOffCards(drawing: RenderedDiagram, content: VariantContent):
 }
 
 /**
- * Routes that cross the painted words of a parent container.
+ * Routes that pass through a parent header's face, even beside its words.
  * @param drawing The rendered architecture.
- * @param content Its containment.
- * @returns Each route and the parent whose words it crosses.
+ * @returns Each route and the header card that it crosses.
  */
-export function routesThroughParentWords(
-	drawing: RenderedDiagram,
-	content: VariantContent,
-): string[] {
-	const parents = new Set(content.nodes.map((node) => node.parent));
-	const words = drawnTexts(drawing.svg).filter((run) => parents.has(run.subject.id));
+export function routesThroughParentHeaders(drawing: RenderedDiagram): string[] {
 	const routes = routePoints(drawing.svg);
-	return words.flatMap((run) => {
-		const span = drawnSpan(run);
-		const box = {
-			x: span.left - 12,
-			y: run.y - run.size - 12,
-			width: span.right - span.left + 24,
-			height: run.size * 1.35 + 24,
-		};
-		return [...routes]
+	return [...headerCards(drawing)].flatMap(([parent, box]) =>
+		[...routes]
 			.filter(([, points]) => routeCrosses(points, box))
-			.map(([id]) => `${id}: route crosses ${run.subject.id} header words`);
-	});
+			.map(([id]) => `${id}: route crosses ${parent} header card`),
+	);
 }
