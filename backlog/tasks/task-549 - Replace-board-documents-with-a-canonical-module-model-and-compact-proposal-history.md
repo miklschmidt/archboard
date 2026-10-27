@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex-orchestrator'
 created_date: '2026-10-26T04:11:00Z'
-updated_date: '2026-10-26T23:44:00Z'
+updated_date: '2026-10-27T01:04:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -346,4 +346,10 @@ The recomputed ready frontier is TASK-549.08, TASK-549.13, TASK-549.14, and TASK
 Frontier clarification: TASK-549.08 becomes newly eligible after .07 completion. TASK-549.20 was already dependency-ready after .15 because its direct dependencies .05, .15, and .19 were complete; it remains in the current frontier.
 
 Correction to the .14 frontier note: TASK-549.14 backend completed at signed source f2b90da5041e043ddafbb1695498d33dbe3d1447 on feat/backend-recording-replay in t3-e2633130. Its terminal result is delivered and owning exec744 is closed; no T3 implementation delegate is active. TASK-549.14 remains In Progress for parent frontend work. The parent will dispatch .08 and take .13 browser work. No other task status or worktree was changed by this merger.
+
+Integrated TASK-549.13 from signed source fde0cc3fb1e95430feb967e985ce9f52613ae234 through signed no-fast-forward merge 3b37c6311b0659fdb28cbc4caf3d1b10ac893035. Merge parents are integration e28c69457986363ac26aad68131260ae988ce723 and source fde0cc3fb1e95430feb967e985ce9f52613ae234. Merge tree 4a879a618af1c9635cb711e3b583288593d3d339 exactly equals the validated source tree. Both checkouts were clean before merge; source, expected integration, and merge signatures verify with the configured SSH signer.
+
+TASK-549.13 is Done with all acceptance and completion criteria checked, and all eight proposals adopted. TASK-549 remains In Progress. Reused the signed source evidence because the merge tree matches; no tests or checks were rerun. Evidence records 23 runtime tests / 8,864 assertions, two explanation browser cases / 11 assertions, one legacy browser case / 38 assertions, passing source/frontend types, full lint, formatting, and evaluation input validation covering 21 scenarios, 21 fixtures, and 14 coverage parts. Semantics has zero findings; all eight affected boards have zero code warnings; nine unrelated warnings remain. No live model evaluation or full-gate pass is claimed.
+
+The current dependency-ready incomplete frontier is TASK-549.08, TASK-549.14, and TASK-549.20. TASK-549.08 and .20 are eligible for backend work. TASK-549.14 is dependency-ready with its backend complete; parent frontend work remains. The parent-reported .14 T3 delegate has completed and no implementation delegate is active. No other task status changed.
 <!-- SECTION:NOTES:END -->
