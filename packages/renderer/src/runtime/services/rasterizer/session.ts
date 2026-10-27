@@ -200,7 +200,10 @@ class RasterSession {
 
 	/**
 	 * Size the viewport to the page, set the device scale to the job's scale
-	 * and take the shot of the requested rectangle.
+	 * and take the shot of the requested rectangle. The viewport is the whole
+	 * page, so the shot never captures beyond it: a capture beyond the viewport
+	 * resizes the view again and, on a loaded machine, took the frame before
+	 * every tile was drawn, leaving blank rectangles in a large picture.
 	 * @param devtools The connection.
 	 * @param job What to draw.
 	 * @returns The DevTools answer.
@@ -222,7 +225,7 @@ class RasterSession {
 			{
 				format: "png",
 				clip: { ...regionOf(job), scale: 1 },
-				captureBeyondViewport: true,
+				captureBeyondViewport: false,
 				fromSurface: true,
 			},
 			timeout,
