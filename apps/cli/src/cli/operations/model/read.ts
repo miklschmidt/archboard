@@ -9,9 +9,24 @@ const modelReadContract = defineCommand({
 	shared: ["url", "directory"],
 	summary: "Read an authored canonical module model",
 	description:
-		"Returns ordered root modules, authored details, source-owned relationships and the exact input revision. A module selector accepts a qualified id or a unique name. Use --preview <origin> for the composed migration baseline. Add --state <qualified-original-id> for one original board state or --checkpoint <id> for retained originals. Legacy authority stays unchanged.",
+		"Returns ordered root modules, authored details, source-owned relationships, and the exact input revision. A module selector accepts a qualified id or unique name. Use --preview <origin> for the saved legacy mapping plan, --state <qualified-original-id> for one original board state, or --checkpoint <id> for retained originals. Legacy authority stays unchanged. Use --walkthrough <id|name> for pinned narrative playback; --shared requires an exact retained playback target.",
 	examples: ["archboard model read", "archboard model read 'Shop#Gateway' -C /tmp/shop"],
 	parameters: [
+		{
+			kind: "option",
+			key: "walkthrough",
+			spellings: ["--walkthrough"],
+			value: "required",
+			placeholder: "id|name",
+			description: "Resolve one narrative against one complete revision",
+		},
+		{
+			kind: "option",
+			key: "shared",
+			spellings: ["--shared"],
+			value: "none",
+			description: "Require an exact retained playback target",
+		},
 		{
 			kind: "option",
 			key: "preview",
@@ -100,6 +115,8 @@ const modelReadContract = defineCommand({
 		ingress: z.object({
 			preview: z.string().optional(),
 			module: z.string().optional(),
+			walkthrough: z.string().optional(),
+			shared: z.boolean().optional(),
 			state: z.string().optional(),
 			against: z.string().optional(),
 			compare: z.boolean().optional(),

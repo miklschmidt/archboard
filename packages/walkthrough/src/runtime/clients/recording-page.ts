@@ -1,3 +1,4 @@
+import type { ArchitectureModelRead } from "@archboard/board/model";
 // Driving one recording page from outside it (TASK-304).
 //
 // The page paces the talk itself; the recorder only follows it. It reads the
@@ -291,10 +292,47 @@ async function logOf(page: RecordingPageHandle, signal: AbortSignal): Promise<Ta
 }
 
 /**
+ * Load the captured canonical reading before any voice starts.
+ * @param page The existing recording page.
+ * @param architecture The exact retained playback.
+ * @param signal Cancellation of this recording.
+ * @param deadline The existing page readiness deadline.
+ * @returns Once the canonical payload reaches the page.
+ */
+async function loadArchitecture(
+	page: RecordingPageHandle,
+	architecture: Extract<ArchitectureModelRead, { success: true }>,
+	signal: AbortSignal,
+	deadline: number,
+): Promise<void> {
+	const published = await heeded(
+		signal,
+		page.evaluate(`typeof ${PAGE}?.load === "function"`, { timeoutMs: RECORDER_MS.call }),
+	);
+	if (published === true) {
+		await heeded(
+			signal,
+			page.evaluate(`${PAGE}.load(${JSON.stringify(architecture)})`, {
+				timeoutMs: RECORDER_MS.frameCall,
+			}),
+		);
+		return;
+	}
+	if (performance.now() >= deadline)
+		throw new RecordingPageError(
+			"The recording page does not support canonical playback. Rebuild the frontend and restart the server.",
+			false,
+		);
+	await pause(RECORDER_MS.poll, signal);
+	return loadArchitecture(page, architecture, signal, deadline);
+}
+
+/**
  * Record one walkthrough's talk through a page that is already open on it.
  * @param page The page.
  * @param options Where the voice goes, cancellation and progress.
  * @param options.voice Where to write the voice, a WAV file.
+ * @param options.architecture The optional exact retained canonical playback.
  * @param options.signal Cancels the recording.
  * @param options.onProgress Told each new phase and step.
  * @returns The finished state and the talk's log.
@@ -305,6 +343,7 @@ async function drive(
 	page: RecordingPageHandle,
 	options: {
 		readonly voice: string;
+		readonly architecture?: Extract<ArchitectureModelRead, { success: true }>;
 		readonly signal: AbortSignal;
 		readonly onProgress: (state: RecordingState) => void;
 	},
@@ -313,6 +352,13 @@ async function drive(
 	const following: Following = { said: "", changedAt: 0, shown: false };
 	try {
 		signal.throwIfAborted();
+		if (options.architecture !== undefined)
+			await loadArchitecture(
+				page,
+				options.architecture,
+				signal,
+				performance.now() + RECORDER_MS.pageReady,
+			);
 		await ready(page, signal, performance.now() + RECORDER_MS.pageReady, false);
 		await begin(page, signal);
 		following.changedAt = performance.now();

@@ -1,3 +1,4 @@
+import { walkthroughDependencies } from "#runtime/operations/history/walkthrough-targets.ts";
 import type { z } from "zod";
 import { StateMetadataSchema } from "#shared/schemas/model-definitions.ts";
 import { captureReferencePins } from "#runtime/operations/history/reference-pins.ts";
@@ -97,7 +98,12 @@ async function retainBaseline(
 		predecessor,
 		Buffer.from(Bun.YAML.stringify(predecessor.policy)),
 	);
-	const dependencies = baselineDependencies(request, predecessor);
+	const dependencies = [
+		...new Set([
+			...baselineDependencies(request, predecessor),
+			...(await walkthroughDependencies(context, predecessor)),
+		]),
+	];
 	const record = CheckpointRecordSchema.parse({
 		schemaVersion: 1,
 		kind: "checkpoint",
@@ -338,7 +344,12 @@ async function proposalCandidate(
 		subjects: structure.subjects,
 		scopes,
 		selection: SelectedStateSchema.strip().parse(proposal),
-		dependencies: proposalDependencies(proposal),
+		dependencies: [
+			...new Set([
+				...proposalDependencies(proposal),
+				...(await walkthroughDependencies(await archiveContext(vault), draft)),
+			]),
+		],
 	};
 }
 /**

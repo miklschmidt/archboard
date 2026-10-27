@@ -1177,6 +1177,13 @@
 					"owner": "tests/system/browser/canonical-model-modes.test.ts; guidance skills/archboard/references/canonical-models.md"
 				},
 				{
+					"path": "canonical walkthroughs: narrative inputs, stable beats, compact changes, revision-pinned playback, retained recording and replay",
+					"expectedUse": "Author through the shared claimed writer. Preserve beat identities. Resolve one complete target for playback. Retain exact history before sharing or recording. Reuse the local talk pipeline.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/model-edit/walkthroughs.test.ts; packages/board/tests/runtime/operations/proposals/proposals.test.ts; tests/system/semantic-boards/model-walkthroughs.test.ts; packages/walkthrough/tests/runtime/store/canonical-talk.test.ts; guidance skills/archboard/references/canonical-walkthroughs.md; tests/system/browser/canonical-model-walkthroughs.test.ts; tests/system/browser/canonical-walkthrough-proposal.test.ts; tests/system/browser/canonical-model-narration.test.ts; tests/system/server-state/canonical-walkthrough-recording.test.ts; tests/system/server-state/canonical-walkthrough-replay.test.ts; tests/system/server-state/canonical-walkthrough-narration.test.ts"
+				},
+				{
 					"path": "canonical explanations: exact reading capture, shared local actions, one text answer, cancellation, unavailable agents, and explicit captured retry",
 					"expectedUse": "Resolve the actual canonical vault, model, selected state or checkpoint, complete revision, stable subjects, reading intent, and action identity before delivery. Preserve the comparison base revision. Keep answers temporary and use normal claimed writes only after an explicit save request.",
 					"scenarios": [],

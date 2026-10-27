@@ -710,7 +710,7 @@ Preserve the baseline and proposal changes.
 Ordinary reads and edits refuse until an explicit reconciliation follows that external edit.
 An exact retained proposal checkpoint remains readable against its own inputs.
 Neither a code merge nor an approval adopts a draft.
-Adoption and shelving use the explicit lifecycle intents below.
+Adoption and shelving remain separate explicit lifecycle actions.
 
 An explicit comparison against an empty planning baseline returns `comparison.against:null` and the baseline's exact `comparison.checkpoint`.
 Its subject changes still identify the planning additions.
@@ -892,6 +892,11 @@ The selected proposal also exposes its standing through `selectedState`.
 Retry an identical request with the same operation ID after a lost response.
 If installation stops, use `model recover` in the original checkout.
 Recovery completes the same family and returns its retained receipt.
+
+## Dynamic walkthroughs
+
+For narrative authoring, pinned playback, or canonical recording, read [canonical walkthroughs](canonical-walkthroughs.md).
+That recipe uses the existing claimed writer and exact checkpoint workflow.
 
 ## Complete a proposal
 

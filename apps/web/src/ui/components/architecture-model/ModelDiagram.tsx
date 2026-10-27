@@ -1,4 +1,12 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, type JSX } from "react";
+import {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+	type JSX,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import { everyStep } from "@archboard/board/flow";
 import type { DiagramGrammar } from "@archboard/board/views";
@@ -10,8 +18,11 @@ import {
 	type BoardCamera,
 } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import { useDiagramGestures } from "#ui/hooks/semantic-board-canvas/use-diagram-gestures.ts";
+import { stagePicture } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
+import { stopTraffic } from "#ui/clients/semantic-board-canvas/picture/picture-traffic.ts";
 import { markSubjects } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 import type { projectModel, Model } from "#ui/rules/architecture-model/projection.ts";
+import { usePresentationArrival } from "#ui/hooks/semantic-board-canvas/use-presentation-arrival.ts";
 import { modelDrawingQuery } from "#ui/clients/architecture-model/drawing.ts";
 
 type RenderedDiagram = Awaited<ReturnType<ReturnType<typeof prepareContentHere>["draw"]>>;
@@ -21,6 +32,9 @@ interface ModelDiagramProps {
 	grammar: DiagramGrammar;
 	projection: ReturnType<typeof projectModel>;
 	reducedMotion: boolean;
+	reserve?: number;
+	presentation?: string;
+	onPresentation?: (picture: { key: string; arrived: boolean } | null) => void;
 	selected: ReadonlySet<string>;
 	onSelect: (id: string | null, toggle?: boolean) => void;
 	onSelectMany: (ids: readonly string[], toggle?: boolean) => void;
@@ -40,15 +54,9 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 	);
 	const drawing = useQuery(drawingOptions);
 	const camera = useBoardCamera(props.reducedMotion);
-	if (projection.content.nodes.length === 0)
-		return (
-			<output
-				data-slot="model-empty-diagram"
-				className="text-body text-muted-foreground min-w-0 flex-1 p-8"
-			>
-				No modules are visible in this reading.
-			</output>
-		);
+	const { reserve: reserveBottom } = camera;
+	useLayoutEffect(() => reserveBottom(props.reserve ?? 0), [reserveBottom, props.reserve]);
+	if (projection.content.nodes.length === 0) return <EmptyDiagram {...props} />;
 	if (drawing.isPending)
 		return (
 			<output className="text-body text-muted-foreground min-w-0 flex-1 p-8">
@@ -64,6 +72,26 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 	return <ModelScene {...props} drawing={drawing.data} camera={camera} />;
 }
 
+/**
+ * An empty coherent reading is a finished picture too.
+ * @param props The optional presentation identity and its observer.
+ * @param props.presentation The requested picture identity.
+ * @param props.onPresentation Receives its completed empty picture.
+ * @returns The visible empty reading.
+ */
+function EmptyDiagram({ presentation, onPresentation }: ModelDiagramProps): JSX.Element {
+	useEffect(() => {
+		if (presentation === undefined) return undefined;
+		onPresentation?.({ key: presentation, arrived: true });
+		return () => onPresentation?.(null);
+	}, [presentation, onPresentation]);
+	return (
+		<output data-slot="model-empty-diagram" className="text-body text-muted-foreground flex-1 p-8">
+			No modules are visible in this reading.
+		</output>
+	);
+}
+
 interface ModelSceneProps extends ModelDiagramProps {
 	drawing: RenderedDiagram;
 	camera: BoardCamera;
@@ -77,9 +105,13 @@ interface ModelSceneProps extends ModelDiagramProps {
 function ModelScene(props: ModelSceneProps): JSX.Element {
 	const { drawing, camera, selected, onSelect, onSelectMany, onOpen, model } = props;
 	const surface = useRef<HTMLDivElement | null>(null);
+	const [arrivalSurface, setArrivalSurface] = useState<HTMLDivElement | null>(null);
+	const [settled, setSettled] = useState<string | null>(null);
 	const installed = useRef<string | null>(null);
+	const shownBeat = useRef<string | undefined>(undefined);
 	const attach = useCallback((element: HTMLDivElement | null): void => {
 		surface.current = element;
+		setArrivalSurface(element);
 		installed.current = null;
 	}, []);
 	const attachViewport = useCallback(
@@ -130,7 +162,7 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		const root = surface.current;
 		if (root === null) return;
 		if (installed.current !== drawing.svg) {
-			root.innerHTML = drawing.svg;
+			stagePicture(root, drawing.svg);
 			installed.current = drawing.svg;
 		}
 		const marked = new Set(selected);
@@ -140,9 +172,25 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		markSubjects(root, marked);
 	}, [selected, drawing.svg, props.projection.connections]);
 	useLayoutEffect(() => {
-		if (camera.room !== null && !camera.handled())
+		if (camera.room === null) return;
+		if (!camera.handled() || shownBeat.current !== props.presentation) {
 			camera.fit({ kind: "whole", content: drawing }, true);
-	}, [camera, drawing]);
+			shownBeat.current = props.presentation;
+		}
+	}, [camera, drawing, props.presentation]);
+	useEffect(() => {
+		const root = surface.current;
+		return () => {
+			if (root !== null) stopTraffic(root);
+		};
+	}, []);
+	usePresentationArrival(arrivalSurface, props.presentation ?? null, setSettled);
+	const { onPresentation, presentation } = props;
+	useEffect(() => {
+		if (arrivalSurface === null || presentation === undefined) return undefined;
+		onPresentation?.({ key: presentation, arrived: settled === presentation });
+		return () => onPresentation?.(null);
+	}, [onPresentation, presentation, settled, arrivalSurface]);
 	return (
 		<section
 			data-slot="model-diagram"

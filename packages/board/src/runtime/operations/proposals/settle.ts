@@ -1,3 +1,4 @@
+import { walkthroughDependencies } from "#runtime/operations/history/walkthrough-targets.ts";
 import { orderOf } from "#shared/rules/reconcile/told-order.ts";
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts";
@@ -90,7 +91,11 @@ function takeTheirs(result: Subjects, theirs: Subjects, issue: Issue): void {
  */
 function takeOrderedSide(result: Subjects, source: Subjects, id: string): void {
 	const subject = source.get(id);
-	if (subject?.kind === "step" && subject.placement !== undefined) {
+	if (
+		subject !== undefined &&
+		["step", "beat"].includes(subject.kind) &&
+		subject.placement !== undefined
+	) {
 		takeSiblingOrder(result, source, subject.placement.holder, subject.placement.alternative);
 		return;
 	}
@@ -386,7 +391,12 @@ async function settleCandidate(
 		subjects: [...affected].filter((id) => id.includes("#")),
 		scopes,
 		selection: SelectedStateSchema.strip().parse(proposal),
-		dependencies: proposalDependencies(proposal),
+		dependencies: [
+			...new Set([
+				...proposalDependencies(proposal),
+				...(await walkthroughDependencies(await archiveContext(vault), settled)),
+			]),
+		],
 	};
 }
 export { settleCandidate };

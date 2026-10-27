@@ -1,3 +1,4 @@
+import { reconcileNarratives } from "#runtime/operations/proposals/reconcile-narratives.ts";
 import { everyStep } from "#shared/rules/flow-steps.ts";
 import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
@@ -114,6 +115,7 @@ function writeCollections(
  * @param theirs The new predecessor.
  * @param content The existing semantic engine result.
  * @param collections The merged collection definitions.
+ * @param walkthroughs The reconciled narratives and their complete readings.
  * @returns The complete canonical result or its actionable diagnostics.
  */
 function canonicalContent(
@@ -121,6 +123,7 @@ function canonicalContent(
 	theirs: ArchitectureModel,
 	content: VariantContent,
 	collections: Collection[],
+	walkthroughs: ArchitectureModel["walkthroughs"],
 ): ArchitectureModelRead {
 	const diagnostics = ownerDiagnostics(mine, content, collections);
 	if (diagnostics.length > 0)
@@ -131,7 +134,7 @@ function canonicalContent(
 			diagnostics,
 		};
 	const inputs = materializedInputs(
-		{ ...mine, modules: [], collections: [] },
+		{ ...mine, modules: [], collections: [], walkthroughs },
 		Buffer.from(Bun.YAML.stringify(theirs.policy)),
 	);
 	writeModules(inputs, mine, theirs, content);
@@ -142,6 +145,7 @@ function canonicalContent(
 			...content.edges,
 			...content.flows,
 			...content.flows.flatMap((flow) => everyStep(flow.steps)),
+			...walkthroughs.flatMap((walk) => [walk, ...walk.beats]),
 		].map((subject) => subject.id),
 	);
 	const retiredIds = [
@@ -198,6 +202,7 @@ function reconcileModels(
 		["name"],
 		"collection",
 	);
+	const narratives = reconcileNarratives(base, mine, theirs);
 	const states = { base: contentOf(base), mine: contentOf(mine), theirs: contentOf(theirs) };
 	/**
 	 * Decode through the already reconciled collection ownership.
@@ -205,13 +210,14 @@ function reconcileModels(
 	 * @returns The canonical reader result.
 	 */
 	const decode = (content: VariantContent) =>
-		canonicalContent(mine, theirs, content, collections.entities);
+		canonicalContent(mine, theirs, content, collections.entities, narratives.walkthroughs);
 	const merged = reconcileVariant(states, (content) => coherenceIssues(decode(content), mine));
 	const result = decode(merged.content);
 	return {
 		result,
 		issues: [
 			...merged.issues,
+			...narratives.issues,
 			...collections.issues.map((issue) => ({
 				...issue,
 				subject: `${mine.manifest.id}#${issue.subject}`,

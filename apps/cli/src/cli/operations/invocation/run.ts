@@ -1,3 +1,4 @@
+import { modelRecordContract } from "#cli/operations/model/record.ts";
 import { modelExplainContract } from "#cli/operations/model/explain.ts";
 import { modelRenderContract } from "#cli/operations/model/render.ts";
 import { modelArchiveInitContract } from "#cli/operations/model/archive.ts";
@@ -100,6 +101,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 			release: child(contract(modelReleaseContract, "apps/cli/src/cli/operations/model/edit.ts")),
 			claims: child(contract(modelClaimsContract, "apps/cli/src/cli/operations/model/edit.ts")),
 			recover: child(contract(modelRecoverContract, "apps/cli/src/cli/operations/model/edit.ts")),
+			record: child(contract(modelRecordContract, "apps/cli/src/cli/operations/model/record.ts")),
 			render: child(contract(modelRenderContract, "apps/cli/src/cli/operations/model/render.ts")),
 			explain: child(
 				contract(modelExplainContract, "apps/cli/src/cli/operations/model/explain.ts"),

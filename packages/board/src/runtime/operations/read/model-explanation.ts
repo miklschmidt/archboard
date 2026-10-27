@@ -107,13 +107,27 @@ function proposalFailure(model: ArchitectureModel) {
 	return undefined;
 }
 /**
+ * A captured narrative requires its source and target to remain the observed readings.
+ * @param model The resolved architecture and optional narrative source.
+ * @param request The observed revisions.
+ * @returns Whether the requested capture changed.
+ */
+function changedRevision(model: ArchitectureModel, request: Request): boolean {
+	return (
+		request.model !== model.manifest.id ||
+		request.expectedRevision !== model.revision.digest ||
+		(request.expectedSourceRevision !== undefined &&
+			request.expectedSourceRevision !== model.playback?.sourceRevision.digest)
+	);
+}
+/**
  * Validate capture inputs without independently reading architecture files.
  * @param model The complete public reading.
  * @param request The invocation intent.
  * @returns The first precondition failure.
  */
 function captureFailure(model: ArchitectureModel, request: Request) {
-	if (request.model !== model.manifest.id || request.expectedRevision !== model.revision.digest)
+	if (changedRevision(model, request))
 		return refuse(
 			"MODEL_CHANGED",
 			[request.model],

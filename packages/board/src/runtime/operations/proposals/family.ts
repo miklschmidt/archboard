@@ -1,3 +1,4 @@
+import { walkthroughDependencies } from "#runtime/operations/history/walkthrough-targets.ts";
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import {
 	SelectedStateSchema,
@@ -100,7 +101,12 @@ function materializeAgainst(
 ): ArchitectureModel {
 	const decoded = requireModel(
 		decodeSubjects(
-			{ ...next, modules: baseline.modules, collections: baseline.collections },
+			{
+				...next,
+				modules: baseline.modules,
+				collections: baseline.collections,
+				walkthroughs: baseline.walkthroughs,
+			},
 			applyCompactChanges(subjectsOf(baseline), compactChanges(baseline, next)),
 			next.selectedState,
 		),
@@ -188,14 +194,17 @@ function affectedSubjects(
  * @param proposal The reconciled compact proposal.
  * @param mine The old proposal reading.
  * @param next The reconciled proposal reading.
+ * @returns Nothing after retained dependencies and the draft are recorded.
  */
-function recordProposal(
+async function recordProposal(
 	family: Family,
 	existing: ArchitectureModel["proposals"][number],
 	proposal: Proposal,
 	mine: ArchitectureModel,
 	next: ArchitectureModel,
-): void {
+): Promise<void> {
+	for (const dependency of await walkthroughDependencies(family.context, next))
+		family.dependencies.add(dependency);
 	for (const dependency of proposalDependencies(proposal)) family.dependencies.add(dependency);
 	if (isDeepStrictEqual(ProposalSchema.strip().parse(existing), proposal)) return;
 	family.scopes.add(proposal.id);
@@ -238,7 +247,7 @@ async function reconcileChild(
 			...standingOf(family, proposal, state, proposal.standing?.issues ?? []),
 			blockedBy: state.standing.blockedBy ?? state.id,
 		};
-	recordProposal(family, existing, proposal, mine, next);
+	await recordProposal(family, existing, proposal, mine, next);
 	return { ...next, selectedState: SelectedStateSchema.strip().parse(proposal) };
 }
 /**

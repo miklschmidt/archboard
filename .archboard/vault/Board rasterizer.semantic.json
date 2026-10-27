@@ -4,9 +4,9 @@
 	"id": "SMjRfwN3",
 	"name": "Board rasterizer",
 	"level": "module",
-	"version": 80,
+	"version": 86,
 	"createdAt": "2026-09-17T21:02:37.619Z",
-	"updatedAt": "2026-10-26T06:05:45.877Z",
+	"updatedAt": "2026-10-27T09:01:54.440Z",
 	"views": [
 		{
 			"id": "WXfBg0nd",
@@ -21603,7 +21603,7 @@
 		{
 			"id": "LA43vys3",
 			"name": "TASK-526.02",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "4lZZiZuM",
 			"summary": "Bitmaps and videos drawn headlessly from a board, and the recipe a PNG carries",
 			"content": {
@@ -24175,9 +24175,2651 @@
 					}
 				]
 			}
+		},
+		{
+			"id": "fFECebqp",
+			"name": "TASK-549.14",
+			"lifecycle": "current",
+			"parent": "LA43vys3",
+			"summary": "The local talk pipeline accepts retained canonical playback alongside legacy boards and keeps one timeline, encoder, and frame renderer.",
+			"content": {
+				"nodes": [
+					{
+						"id": "jChkQdeE",
+						"order": 1000,
+						"name": "Rasterize command",
+						"kind": "service",
+						"responsibility": "Asks the Archboard server for the SVG, then photographs it here and writes the receipt",
+						"parent": "KeEVHJEm",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "KyQxypRC",
+						"order": 2000,
+						"name": "Rasterizer",
+						"kind": "module",
+						"responsibility": "Admits one job at a time, starts a browser only when there is work, and retires one that failed a capture",
+						"description": "Nothing is started until a job arrives, and the session is stopped with the rasterizer, so no browser outlives the command that needed it. A Chromium that failed one capture is closed rather than trusted with the next.",
+						"parent": "Z6KpYhw6",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts"
+						}
+					},
+					{
+						"id": "7N0JLb2b",
+						"order": 3000,
+						"name": "Bounds and limits",
+						"kind": "function",
+						"responsibility": "The region, the bitmap size, and the refusal when either is past what may be drawn",
+						"parent": "Z6KpYhw6",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/operations/rasterizer/bounds.ts"
+						}
+					},
+					{
+						"id": "8c0zvhQW",
+						"order": 4000,
+						"name": "Raster session",
+						"kind": "function",
+						"responsibility": "Draws one SVG at a time in the page it opened: writes the file, loads it, proves the page ready, sets the scale and shoots",
+						"parent": "Z6KpYhw6",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/rasterizer/session.ts"
+						}
+					},
+					{
+						"id": "6uHnaygd",
+						"order": 5000,
+						"name": "Chromium launch",
+						"kind": "function",
+						"responsibility": "Starts one Chromium, connects to it, opens pages and exact-size windows, and stops it with proof the group and root are gone",
+						"parent": "IzgAi2R1",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/processes/headless-chromium/launch.ts"
+						}
+					},
+					{
+						"id": "AVCQVNqI",
+						"order": 6000,
+						"name": "DevTools connection",
+						"kind": "function",
+						"responsibility": "One socket to a target: its calls and events, the page's last complaints, and a Blob streamed into a file",
+						"parent": "IzgAi2R1",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/clients/headless-chromium/devtools.ts"
+						}
+					},
+					{
+						"id": "FXGZhgKo",
+						"order": 7000,
+						"name": "Page readiness",
+						"kind": "function",
+						"responsibility": "What the page must say before it is photographed, and what the answer must be",
+						"description": "The faces are loaded, the animation is paused at its first frame, and the SVG is the size the job asked for. A bitmap of the wrong size is refused, never cropped.",
+						"parent": "Z6KpYhw6",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/rasterizer/page.ts"
+						}
+					},
+					{
+						"id": "ctgF3OPk",
+						"order": 8000,
+						"name": "PNG header",
+						"kind": "function",
+						"responsibility": "The two numbers from the IHDR of the answered image",
+						"parent": "Z6KpYhw6",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/operations/rasterizer/png.ts"
+						}
+					},
+					{
+						"id": "EqEyDg2D",
+						"order": 9000,
+						"name": "Receipt",
+						"kind": "function",
+						"responsibility": "What was drawn, at what scale, and from which SVG",
+						"parent": "Z6KpYhw6",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/operations/rasterizer/receipt.ts"
+						}
+					},
+					{
+						"id": "R9St060W",
+						"order": 10000,
+						"name": "Chromium",
+						"kind": "external",
+						"responsibility": "The browser that paints the SVG, runs the recording and replay pages and answers over DevTools",
+						"description": "Found on this machine, or named by ARCHBOARD_RENDERER_CHROMIUM. Archboard neither ships nor manages it beyond its own child process group.",
+						"parent": "jeDfgVfS"
+					},
+					{
+						"id": "IzgAi2R1",
+						"order": 11000,
+						"name": "Headless browser",
+						"kind": "module",
+						"responsibility": "The one place archboard starts a browser of its own: private, reachable only over loopback DevTools, and proved gone",
+						"description": "The headless-chromium module. Its root exports launchHeadlessChromium, DevTools and discoveredChromiumPath; their implementing children are the entry points its callers reach.",
+						"parent": "jeDfgVfS",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/processes/headless-chromium"
+						}
+					},
+					{
+						"id": "ShT7QadJ",
+						"order": 12000,
+						"name": "Chromium executable",
+						"kind": "function",
+						"responsibility": "Which Chromium to run, spawning it in its own group and temp root, and making that whole group go away",
+						"parent": "IzgAi2R1",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts"
+						}
+					},
+					{
+						"id": "2UcHnREN",
+						"order": 13000,
+						"name": "Archboard server",
+						"kind": "service",
+						"responsibility": "Draws the SVG, serves the recording and replay pages, and starts the voice that narrates a recording",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server"
+						},
+						"drillDown": {
+							"board": "Archboard server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "QSI6gCrL",
+						"order": 14000,
+						"name": "Record command",
+						"kind": "service",
+						"responsibility": "Picks the walkthrough, has it recorded to the file named, and discards the board afterwards when asked",
+						"description": "With --against it resolves the variant named as compare does and has the recorder keep it in the talk.",
+						"parent": "gTwVYQo9",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/record.ts"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "ZAj4RMzN",
+						"order": 15000,
+						"name": "Walkthrough recorder",
+						"kind": "module",
+						"responsibility": "Runs a recording's two passes: proves ffmpeg first, records the talk in a live page, keeps it, then has it drawn frame by frame",
+						"description": "Pass 1's browser is started with audio allowed to play and a fake microphone playing a second of silence, because voice will not start without a microphone and would hear Chromium's default tone as somebody speaking. It captures nothing and needs no GPU: nobody looks at the page, whose reports are what the server hands the voice. A board drawn at another version while it was recorded fails the recording and nothing is kept, since no one picture goes with that talk. The talk is written before pass 2 starts, so a render that fails keeps it. Both passes find ffmpeg and start their browser through the same two helpers (lib/tools.ts). An interrupt stops the browser at once, so every call waiting on it fails and nothing is written. The recording page names the repository of the command's vault as repoA, so it reads that vault.",
+						"parent": "gTwVYQo9",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime"
+						}
+					},
+					{
+						"id": "hlLOugjc",
+						"order": 16000,
+						"name": "Page driver",
+						"kind": "function",
+						"responsibility": "Waits until the page is ready, starts it from a user gesture, follows each step, then streams the voice out and reads the talk's events",
+						"description": "Everything the page says crosses as the shared recording state or the talk's log and is parsed as such, so a page from another build is refused rather than guessed at.",
+						"parent": "ZAj4RMzN",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/clients/recording-page.ts"
+						}
+					},
+					{
+						"id": "PhFc1AJ9",
+						"order": 18000,
+						"name": "ffmpeg",
+						"kind": "external",
+						"responsibility": "Encodes the frames and the voice into one file: H.264 and AAC in MP4, or VP9 and Opus in WebM, the index at the front",
+						"description": "Named by ARCHBOARD_FFMPEG, found on PATH, or run through Nix. A recording needs it: without one, the recording is refused before a browser starts.",
+						"parent": "itWd9ux7",
+						"groups": [
+							"walkthrough"
+						]
+					},
+					{
+						"id": "T1TYskKQ",
+						"order": 19000,
+						"name": "Recording page",
+						"kind": "ui",
+						"responsibility": "The server's own page on one board: shows the pane alone, paces each step by the voice, and records the talk, never the picture",
+						"description": "The voice plays through a muted audio element, so nobody hears a recording, and talk capture taps the same stream. The page hands over the voice as a 16-bit mono 48 kHz WAV and the talk's events by value. It captures no picture: the replay page draws every frame again from the talk.\n\nThe existing page.load contract accepts one validated canonical model. The recorder keeps that payload with the driven step and waits for the exact source and target revisions before starting voice.",
+						"parent": "44gQ5gUw",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/state/walkthrough-recording"
+						}
+					},
+					{
+						"id": "kpWAp83p",
+						"order": 20000,
+						"name": "Replay command",
+						"kind": "service",
+						"responsibility": "Renders a kept talk to a video again, in either theme, with no voice and no board",
+						"description": "Needs the Archboard server only to serve the page. A talk that cannot be read, or one of another format version, is refused as a usage error before a browser starts. Its --out checks and its refusals of the browser and ffmpeg are the ones record uses (recording-output.ts).",
+						"parent": "gTwVYQo9",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "EWBbxckL",
+						"order": 21000,
+						"name": "Frame renderer",
+						"kind": "function",
+						"responsibility": "Draws a talk frame by frame on several replay pages at once, each in its own Chromium: every page steps through every frame, and each captures its own seconds for the encoder",
+						"description": "One frame is 1/30 s of talk, exactly 1600 samples of the voice, so frame n and sample 1600n are the same moment. Chromium draws in software (--disable-gpu) and without partial raster, so two renders of a talk are identical, and without the frame-rate limit, so a screenshot does not wait for the display. A screenshot costs several times what drawing a frame does, so the talk is drawn by up to six pages at once, a quarter of the machine's threads and one for every 300 frames: page k captures seconds k, k + n and so on, and draws the frames between without capturing them, since a frame depends on the ones before it. A frame is the same whichever page draws it. Before the first frame each page proves it counts the talk's frames and its window is 1920x1080. A frame is taken as JPEG at quality 92, since the picture is encoded again as 4:2:0 anyway. Handed no ffmpeg, as semantic replay hands none, it finds and proves one first. The file moves into place only once the browsers have stopped and ffmpeg has exited. A render that fails on any page stops the others, keeps the talk and names the replay command that renders it again.\n\nChromium also disables threaded animation so the stepped replay clock owns compositor animation timing. Canonical frame readiness requires its exact drawn revision and requested beat. The clock advances motion without waiting for a future arrival.",
+						"parent": "ZAj4RMzN",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/render-talk.ts"
+						}
+					},
+					{
+						"id": "XtzfRQkG",
+						"order": 22000,
+						"name": "Talk files",
+						"kind": "function",
+						"responsibility": "Keeps voice and one exact legacy or canonical playback payload for offline replay.",
+						"description": "Every recording keeps its talk under the state directory's recordings, where the newest 10 stay. --talk keeps it in a new directory of its own that is never pruned. A place that already exists is refused before anything starts. A talk read back must parse as a talk and its voice.wav must hold as many samples as talk.json says, or it is refused before a browser starts.",
+						"parent": "ZAj4RMzN",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/store/talk-files.ts"
+						}
+					},
+					{
+						"id": "JvmFYpVf",
+						"order": 23000,
+						"name": "Talk capture",
+						"kind": "function",
+						"responsibility": "Taps the voice through an AudioWorklet and stamps each step, subtitle line and drawn version on the audio's own 48 kHz clock",
+						"description": "The origin is the moment the voice goes live, where the video begins. A stamp is late by at most one audio buffer, about 10 to 21 ms on Linux, which is under one frame. Only the voice's own lines of the transcript are kept. At the end the audio is cut to the origin and the end, so it is exact to the sample against the stamps. The worklet writes silence while nothing plays.\n\nCanonical drawn events also stamp the exact model revision. Legacy drawn events keep their existing shape.",
+						"parent": "44gQ5gUw",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/clients/walkthrough-recording/talk-capture.ts"
+						}
+					},
+					{
+						"id": "Kek84WN9",
+						"order": 24000,
+						"name": "Replay page",
+						"kind": "ui",
+						"responsibility": "The server's page asked for with ?replay=1: draws a talk's board from the talk alone, one frame at a time on a stepped clock",
+						"description": "It mounts the recording page's stage, viewer and subtitles, and no workbench, pane session or socket, so no Codex is involved. Loading a talk plays the board's entrance through first, uncaptured, so frame 0 shows the board at rest. A frame is ready once the fonts are loaded, no read is in flight, the step's picture is drawn and the page has not changed for two turns of its event loop, within RECORDING_FRAME_READY_MS. The stepped clock runs even the frames a library asks of the browser, and stands every animation at the frame's time, a picture's traffic at where its picture's clock stands. An animation on another timeline, or a read of another board, fails the render and names the frame.\n\nA canonical talk draws its captured model and narrative through the shared walkthrough presentation. It reads no mutable vault and needs no source repository for replay.",
+						"parent": "44gQ5gUw",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/clients/walkthrough-replay/start-replay.ts"
+						}
+					},
+					{
+						"id": "peB5Bs5R",
+						"order": 25000,
+						"name": "Video encoder",
+						"kind": "module",
+						"responsibility": "Finds ffmpeg, proves it has the encoders the file needs, and turns the JPEG frames and the voice into that file",
+						"description": "ARCHBOARD_FFMPEG comes first, and one named there that does not run is refused by that name, never passed over. Then ffmpeg on PATH, then nix run nixpkgs#ffmpeg-headless. With none of them, ENCODER_UNAVAILABLE names both ways to get one. MP4 needs libx264 and aac, and WebM needs libvpx-vp9 and libopus. The frames are converted from full-range BT.601 to BT.709 limited range and tagged so, and the voice is padded to the last frame.",
+						"parent": "itWd9ux7",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/processes/video-encoder.ts"
+						}
+					},
+					{
+						"id": "WSI0A2k3",
+						"order": 26000,
+						"name": "Nix",
+						"kind": "external",
+						"responsibility": "Runs nixpkgs#ffmpeg-headless from the machine's registry when no ffmpeg is found",
+						"description": "nix run starts the package's own program in its place, so the frame pipe and signals reach ffmpeg itself. The first run fetches the package, which can take minutes.",
+						"parent": "itWd9ux7",
+						"groups": [
+							"walkthrough"
+						]
+					},
+					{
+						"id": "Ljy0lW5g",
+						"order": 27000,
+						"name": "Frame order",
+						"kind": "function",
+						"responsibility": "Hands the pages' frames to the one ffmpeg in order, holding a frame that arrives before its turn",
+						"description": "A page may put a frame at most two rounds of seconds ahead of the encoder and waits for room otherwise, which bounds how many frames are held.",
+						"parent": "ZAj4RMzN",
+						"groups": [
+							"walkthrough"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/frame-order.ts"
+						}
+					},
+					{
+						"id": "Z6KpYhw6",
+						"order": 28000,
+						"name": "Semantic rasterizer",
+						"kind": "module",
+						"responsibility": "Renders a board to a bounded image through one reusable browser session",
+						"parent": "KeEVHJEm",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/rasterizer"
+						}
+					},
+					{
+						"id": "jQpIqcDx",
+						"order": 29000,
+						"name": "Recording entry",
+						"kind": "module",
+						"responsibility": "Records a legacy board or an exact retained canonical walkthrough through the existing page driver.",
+						"description": "Keeps the talk with the board, the vault check and, when record was given --against, the variant every picture of it is read against, so a replay draws the same comparison.",
+						"parent": "ZAj4RMzN",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts"
+						}
+					},
+					{
+						"id": "L1cYIenF",
+						"order": 30000,
+						"name": "Recording tools",
+						"kind": "module",
+						"responsibility": "Resolves recording executables and starts the recording browser",
+						"parent": "ZAj4RMzN",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/services/recording-tools.ts"
+						}
+					},
+					{
+						"id": "5ut3UjV6",
+						"order": 31000,
+						"name": "Skill evaluation",
+						"kind": "service",
+						"responsibility": "Grades captured images using their PNG dimensions",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/skills/src/runtime/store/grading-images.ts"
+						},
+						"drillDown": {
+							"board": "Skill evaluation",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "KeEVHJEm",
+						"order": 32000,
+						"name": "Rasterizing",
+						"kind": "module",
+						"responsibility": "Photographs a board into a bounded PNG: the command fetches the board's SVG from the server, and the rasterizer draws it in a browser page that it keeps for the next job"
+					},
+					{
+						"id": "jeDfgVfS",
+						"order": 33000,
+						"name": "Browser hosting",
+						"kind": "module",
+						"responsibility": "Starts the one private Chromium that archboard draws pictures and video frames in, reaches it only over loopback DevTools, and proves it gone"
+					},
+					{
+						"id": "gTwVYQo9",
+						"order": 34000,
+						"name": "Walkthrough video",
+						"kind": "module",
+						"responsibility": "Turns a walkthrough into a narrated video: records the talk in a live page, then draws it frame by frame and encodes it with the voice, or draws a kept talk again"
+					},
+					{
+						"id": "44gQ5gUw",
+						"order": 35000,
+						"name": "Walkthrough pages",
+						"kind": "module",
+						"responsibility": "The server's own pages that Chromium loads for a video: the recording page records the talk on the audio clock, and the replay page draws a kept talk one frame at a time",
+						"parent": "gTwVYQo9"
+					},
+					{
+						"id": "itWd9ux7",
+						"order": 36000,
+						"name": "Video encoding",
+						"kind": "module",
+						"responsibility": "Turns the drawn frames and the voice into one video file with ffmpeg, which it finds on the machine or runs through Nix",
+						"parent": "gTwVYQo9"
+					},
+					{
+						"id": "QNRrx3i3",
+						"order": 37000,
+						"name": "Encoder availability",
+						"kind": "module",
+						"responsibility": "Finds ffmpeg and tests its required encoders before recording",
+						"parent": "peB5Bs5R",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/services/ffmpeg.ts"
+						}
+					},
+					{
+						"id": "fEsvd4ka",
+						"order": 38000,
+						"name": "Recording pace",
+						"kind": "module",
+						"responsibility": "Decides when a recorded step finishes and the next step starts",
+						"parent": "T1TYskKQ",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/rules/walkthrough-recording/pacing.ts"
+						}
+					},
+					{
+						"id": "H2MUNwiC",
+						"order": 39000,
+						"name": "PNG recipe chunk",
+						"kind": "function",
+						"responsibility": "Writes the render recipe into a text chunk of a PNG, and reads it back",
+						"parent": "Z6KpYhw6",
+						"groups": [
+							"drawing"
+						],
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/operations/recipe/png-recipe.ts"
+						}
+					},
+					{
+						"id": "Vs2LoKMH",
+						"order": 40000,
+						"name": "Talk destination",
+						"kind": "module",
+						"responsibility": "Resolves the video container and output destination, and reserves a fresh talk directory before recording",
+						"parent": "gTwVYQo9",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/rules/semantic/draw/recording-output.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "RPqD1PrA",
+						"order": 1000,
+						"from": "jChkQdeE",
+						"to": "KyQxypRC",
+						"kind": "call",
+						"label": "one SVG, a scale and a region",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+							"symbol": "createSemanticRasterizer"
+						}
+					},
+					{
+						"id": "7gIxznvp",
+						"order": 2000,
+						"from": "KyQxypRC",
+						"to": "7N0JLb2b",
+						"kind": "call",
+						"label": "refuse what is past the limits first",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
+							"symbol": "boundsRefusal"
+						}
+					},
+					{
+						"id": "IiA7nIxT",
+						"order": 3000,
+						"from": "KyQxypRC",
+						"to": "8c0zvhQW",
+						"kind": "call",
+						"label": "capture, one job at a time",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
+							"symbol": "RasterSession"
+						}
+					},
+					{
+						"id": "tJ3SgMcL",
+						"order": 4000,
+						"from": "8c0zvhQW",
+						"to": "6uHnaygd",
+						"kind": "call",
+						"label": "launch, open a page, stop",
+						"description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+							"symbol": "launchHeadlessChromium"
+						}
+					},
+					{
+						"id": "wI4kxS9L",
+						"order": 5000,
+						"from": "ShT7QadJ",
+						"to": "R9St060W",
+						"kind": "call",
+						"label": "spawn in its own group and temp root",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
+							"symbol": "Bun.spawn"
+						}
+					},
+					{
+						"id": "aYI0EhkT",
+						"order": 6000,
+						"from": "8c0zvhQW",
+						"to": "AVCQVNqI",
+						"kind": "call",
+						"label": "one socket to the page",
+						"description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+							"symbol": "DevTools.evaluate"
+						}
+					},
+					{
+						"id": "JgtXFRyO",
+						"order": 7000,
+						"from": "AVCQVNqI",
+						"to": "R9St060W",
+						"kind": "rpc",
+						"label": "CDP over a WebSocket",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/clients/headless-chromium/devtools.ts",
+							"symbol": "WebSocket"
+						}
+					},
+					{
+						"id": "TBd33jdx",
+						"order": 8000,
+						"from": "8c0zvhQW",
+						"to": "FXGZhgKo",
+						"kind": "call",
+						"label": "prove the page before shooting",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+							"symbol": "checkedReadiness"
+						}
+					},
+					{
+						"id": "6dBMtPdX",
+						"order": 9000,
+						"from": "8c0zvhQW",
+						"to": "7N0JLb2b",
+						"kind": "call",
+						"label": "the clip region",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+							"symbol": "regionOf"
+						}
+					},
+					{
+						"id": "68lKuaPg",
+						"order": 10000,
+						"from": "FXGZhgKo",
+						"to": "ctgF3OPk",
+						"kind": "call",
+						"label": "the size of the answered bitmap",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/rasterizer/page.ts",
+							"symbol": "readPngDimensions"
+						}
+					},
+					{
+						"id": "2nhl0tv0",
+						"order": 11000,
+						"from": "jChkQdeE",
+						"to": "EqEyDg2D",
+						"kind": "data",
+						"label": "what the picture is of",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+							"symbol": "SemanticRasterReceiptSchema"
+						}
+					},
+					{
+						"id": "De1J26nB",
+						"order": 12000,
+						"from": "6uHnaygd",
+						"to": "ShT7QadJ",
+						"kind": "call",
+						"label": "spawn, read the port, stop the group",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/processes/headless-chromium/launch.ts",
+							"symbol": "spawnChromium"
+						}
+					},
+					{
+						"id": "ZP5lfDZ6",
+						"order": 13000,
+						"from": "6uHnaygd",
+						"to": "AVCQVNqI",
+						"kind": "call",
+						"label": "connect the browser and each page",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/processes/headless-chromium/launch.ts",
+							"symbol": "DevTools"
+						}
+					},
+					{
+						"id": "FDMYhJSq",
+						"order": 14000,
+						"from": "KyQxypRC",
+						"to": "ShT7QadJ",
+						"kind": "call",
+						"label": "which Chromium",
+						"description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
+							"symbol": "discoveredChromiumPath"
+						}
+					},
+					{
+						"id": "DIvMjVOy",
+						"order": 15000,
+						"from": "jChkQdeE",
+						"to": "2UcHnREN",
+						"kind": "http",
+						"label": "the SVG with its recipe, faces embedded",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+							"symbol": "semanticRasterizeContract"
+						}
+					},
+					{
+						"id": "P1XYQl8l",
+						"order": 16000,
+						"from": "QSI6gCrL",
+						"to": "2UcHnREN",
+						"kind": "http",
+						"label": "read the board and the vault policy; discard it when asked",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+							"symbol": "semanticRecordContract"
+						}
+					},
+					{
+						"id": "H7LOWDrR",
+						"order": 17000,
+						"from": "QSI6gCrL",
+						"to": "jQpIqcDx",
+						"kind": "call",
+						"label": "this walkthrough, in this language, to this file",
+						"description": "--language names the narration's language as a BCP 47 tag, English when it is not given. The command refuses a tag that names no language before a browser starts.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+							"symbol": "recordWalkthrough"
+						}
+					},
+					{
+						"id": "a0oemoX5",
+						"order": 18000,
+						"from": "L1cYIenF",
+						"to": "ShT7QadJ",
+						"kind": "call",
+						"label": "which Chromium",
+						"description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
+							"symbol": "discoveredChromiumPath"
+						}
+					},
+					{
+						"id": "BN01aJai",
+						"order": 19000,
+						"from": "L1cYIenF",
+						"to": "6uHnaygd",
+						"kind": "call",
+						"label": "launch, a 1920x1080 window, stop",
+						"description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
+							"symbol": "launchHeadlessChromium"
+						}
+					},
+					{
+						"id": "2fcZLCiQ",
+						"order": 20000,
+						"from": "jQpIqcDx",
+						"to": "AVCQVNqI",
+						"kind": "call",
+						"label": "evaluate in the page, stream its Blob",
+						"description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+							"symbol": "DevTools.readBlobTo"
+						}
+					},
+					{
+						"id": "m9ReACWz",
+						"order": 21000,
+						"from": "jQpIqcDx",
+						"to": "hlLOugjc",
+						"kind": "call",
+						"label": "drive the open page",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+							"symbol": "drive"
+						}
+					},
+					{
+						"id": "IOU51tal",
+						"order": 22000,
+						"from": "hlLOugjc",
+						"to": "T1TYskKQ",
+						"kind": "rpc",
+						"label": "state, start, voice, talk",
+						"description": "Through the one global the page publishes, evaluated over the recorder's DevTools connection.",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
+							"symbol": "PAGE"
+						}
+					},
+					{
+						"id": "yWqRrF8i",
+						"order": 25000,
+						"from": "R9St060W",
+						"to": "2UcHnREN",
+						"kind": "http",
+						"label": "load the recording page, or the replay page",
+						"emphasis": "normal"
+					},
+					{
+						"id": "4SigiIMB",
+						"order": 26000,
+						"from": "T1TYskKQ",
+						"to": "2UcHnREN",
+						"kind": "event",
+						"label": "voice as a recording in its language; each step shown",
+						"description": "The page asks the server's agent for voice narrating this walkthrough as a recording in the language it was opened with, and reports each step it shows, which the server tells the voice model as it does a step chosen by hand. Only a recording carries a language: the voice is told to speak only that language, whatever language a step is written in.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+							"symbol": "WalkthroughRecorder.start"
+						}
+					},
+					{
+						"id": "5cL4zDLx",
+						"order": 27000,
+						"from": "L1cYIenF",
+						"to": "peB5Bs5R",
+						"kind": "call",
+						"label": "find ffmpeg and probe it, before any browser starts",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
+							"symbol": "probeFfmpeg"
+						}
+					},
+					{
+						"id": "fiurAdpc",
+						"order": 28000,
+						"from": "jQpIqcDx",
+						"to": "XtzfRQkG",
+						"kind": "call",
+						"label": "write the talk before the render",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+							"symbol": "writeTalk"
+						}
+					},
+					{
+						"id": "jAnbZCzu",
+						"order": 29000,
+						"from": "jQpIqcDx",
+						"to": "EWBbxckL",
+						"kind": "call",
+						"label": "render the talk just written",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+							"symbol": "renderTalk"
+						}
+					},
+					{
+						"id": "MqDfCTuA",
+						"order": 30000,
+						"from": "T1TYskKQ",
+						"to": "JvmFYpVf",
+						"kind": "call",
+						"label": "the voice's stream; each step, line and version shown",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+							"symbol": "TalkCapture"
+						}
+					},
+					{
+						"id": "dDRwkGt6",
+						"order": 31000,
+						"from": "kpWAp83p",
+						"to": "XtzfRQkG",
+						"kind": "call",
+						"label": "read the kept talk",
+						"description": "The caller imports the walkthrough-recorder root, which re-exports readTalk, requireFreshPlace and renderTalk from these implementing children.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts",
+							"symbol": "readTalk"
+						}
+					},
+					{
+						"id": "KTIZaMYj",
+						"order": 33000,
+						"from": "kpWAp83p",
+						"to": "EWBbxckL",
+						"kind": "call",
+						"label": "this talk, in this theme, to this file",
+						"description": "The caller imports the walkthrough-recorder root, which re-exports readTalk, requireFreshPlace and renderTalk from these implementing children.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts",
+							"symbol": "renderTalk"
+						}
+					},
+					{
+						"id": "gbjuMdZa",
+						"order": 34000,
+						"from": "EWBbxckL",
+						"to": "6uHnaygd",
+						"kind": "call",
+						"label": "one per page, in software, 1920x1080; stop them all",
+						"description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+							"symbol": "HeadlessChromium.openWindow"
+						}
+					},
+					{
+						"id": "nthMhjL4",
+						"order": 35000,
+						"from": "EWBbxckL",
+						"to": "Kek84WN9",
+						"kind": "rpc",
+						"label": "load the talk, then frame(n) for every frame",
+						"description": "Through window.archboardReplay, evaluated over the renderer's DevTools connection. A frame answers once the page has drawn it at the frame's time and holds still.",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+							"symbol": "PAGE"
+						}
+					},
+					{
+						"id": "8rmq24D9",
+						"order": 36000,
+						"from": "EWBbxckL",
+						"to": "AVCQVNqI",
+						"kind": "call",
+						"label": "evaluate in the page; screenshot each frame as JPEG q92",
+						"description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+							"symbol": "DevTools.call"
+						}
+					},
+					{
+						"id": "eq4BIHlx",
+						"order": 37000,
+						"from": "EWBbxckL",
+						"to": "peB5Bs5R",
+						"kind": "call",
+						"label": "open it with voice.wav",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+							"symbol": "openVideoEncoder"
+						}
+					},
+					{
+						"id": "KIRE5kGi",
+						"order": 38000,
+						"from": "peB5Bs5R",
+						"to": "PhFc1AJ9",
+						"kind": "call",
+						"description": "list its encoders; then frames on stdin, voice.wav beside",
+						"emphasis": "normal",
+						"traffic": {
+							"speed": 40,
+							"volume": 0.5
+						},
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/processes/video-encoder.ts",
+							"symbol": "Bun.spawn"
+						}
+					},
+					{
+						"id": "jPAvfxQA",
+						"order": 39000,
+						"from": "peB5Bs5R",
+						"to": "WSI0A2k3",
+						"kind": "call",
+						"label": "nix run nixpkgs#ffmpeg-headless, when no ffmpeg is found",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/services/ffmpeg.ts",
+							"symbol": "NIX_ARGV"
+						}
+					},
+					{
+						"id": "MGrLK1Qz",
+						"order": 40000,
+						"from": "WSI0A2k3",
+						"to": "PhFc1AJ9",
+						"kind": "call",
+						"description": "fetch it, then run it in its own place",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/services/ffmpeg.ts",
+							"symbol": "NIX_ARGV"
+						}
+					},
+					{
+						"id": "sXypEOAH",
+						"order": 41000,
+						"from": "EWBbxckL",
+						"to": "L1cYIenF",
+						"kind": "call",
+						"label": "start each page's browser; prove ffmpeg if not handed one",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+							"symbol": "startBrowser"
+						}
+					},
+					{
+						"id": "eJdDQjo5",
+						"order": 42000,
+						"from": "QSI6gCrL",
+						"to": "Vs2LoKMH",
+						"kind": "call",
+						"label": "resolve the talk destination",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+							"symbol": "talkPlaceOf"
+						}
+					},
+					{
+						"id": "g7m7u2iu",
+						"order": 43000,
+						"from": "EWBbxckL",
+						"to": "Ljy0lW5g",
+						"kind": "call",
+						"label": "each page's captured frames; wait for room",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+							"symbol": "FrameOrder"
+						}
+					},
+					{
+						"id": "yDelHqWM",
+						"order": 44000,
+						"from": "Ljy0lW5g",
+						"to": "peB5Bs5R",
+						"kind": "call",
+						"label": "the frames, in order, one at a time",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/frame-order.ts",
+							"symbol": "writeFrame"
+						}
+					},
+					{
+						"id": "djyu83ia",
+						"order": 45000,
+						"from": "jChkQdeE",
+						"to": "7N0JLb2b",
+						"kind": "data",
+						"label": "the scale range --scale accepts",
+						"description": "The CLI reads RASTER_MIN_SCALE from the semantic-rasterizer root; the exported constant is implemented by Bounds and limits.",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+							"symbol": "RASTER_MIN_SCALE"
+						}
+					},
+					{
+						"id": "noNd5J0o",
+						"order": 46000,
+						"from": "FXGZhgKo",
+						"to": "7N0JLb2b",
+						"kind": "call",
+						"label": "the size the bitmap must be",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/rasterizer/page.ts",
+							"symbol": "bitmapSizeOf"
+						}
+					},
+					{
+						"id": "uJ0o2UWM",
+						"order": 47000,
+						"from": "EWBbxckL",
+						"to": "XtzfRQkG",
+						"kind": "call",
+						"label": "the kept voice, to level each frame",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+							"symbol": "voiceSamples"
+						}
+					},
+					{
+						"id": "YZuYCZhH",
+						"order": 48000,
+						"from": "ShT7QadJ",
+						"to": "AVCQVNqI",
+						"kind": "dependency",
+						"label": "the guard for its /json/version answer",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
+							"symbol": "isJsonRecord"
+						}
+					},
+					{
+						"id": "DDGmqL3f",
+						"order": 49000,
+						"from": "FXGZhgKo",
+						"to": "IzgAi2R1",
+						"kind": "dependency",
+						"label": "the guard for a page's answer",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/rasterizer/page.ts",
+							"symbol": "isJsonRecord"
+						}
+					},
+					{
+						"id": "ZflKJBv6",
+						"order": 50000,
+						"from": "8c0zvhQW",
+						"to": "IzgAi2R1",
+						"kind": "call",
+						"label": "a page that would not open, as the browser's own failure",
+						"emphasis": "muted",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+							"symbol": "HeadlessChromiumError"
+						}
+					},
+					{
+						"id": "c4z5J6ZL",
+						"order": 51000,
+						"from": "jQpIqcDx",
+						"to": "L1cYIenF",
+						"kind": "call",
+						"label": "starts the recording browser",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+							"symbol": "startBrowser"
+						}
+					},
+					{
+						"id": "Kiapa8dj",
+						"order": 52000,
+						"from": "5ut3UjV6",
+						"to": "ctgF3OPk",
+						"kind": "call",
+						"description": "Reads captured picture dimensions when grading",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/skills/src/runtime/store/grading-images.ts",
+							"symbol": "readPngDimensions"
+						}
+					},
+					{
+						"id": "TIjtkPvX",
+						"order": 53000,
+						"from": "jChkQdeE",
+						"to": "H2MUNwiC",
+						"kind": "call",
+						"label": "the SVG's recipe with the scale and region, in the PNG",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+							"symbol": "embedRecipeInPng"
+						}
+					},
+					{
+						"id": "rzORtiO1",
+						"order": 54000,
+						"from": "H2MUNwiC",
+						"to": "ctgF3OPk",
+						"kind": "call",
+						"label": "the bytes are a PNG",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/renderer/src/runtime/operations/recipe/png-recipe.ts",
+							"symbol": "readPngDimensions"
+						}
+					},
+					{
+						"id": "83qFfI7k",
+						"order": 55000,
+						"from": "Vs2LoKMH",
+						"to": "XtzfRQkG",
+						"kind": "call",
+						"label": "reserve a fresh talk directory",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/rules/semantic/draw/recording-output.ts",
+							"symbol": "freshTalkPlace"
+						}
+					},
+					{
+						"id": "Z09ZRbfn",
+						"order": 56000,
+						"from": "kpWAp83p",
+						"to": "Vs2LoKMH",
+						"kind": "call",
+						"label": "resolve the replay container",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts",
+							"symbol": "containerOf"
+						}
+					},
+					{
+						"id": "VXPf7fBP",
+						"order": 57000,
+						"from": "Vs2LoKMH",
+						"to": "L1cYIenF",
+						"kind": "call",
+						"label": "resolve a supported video container",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/rules/semantic/draw/recording-output.ts",
+							"symbol": "recordingContainerOf"
+						}
+					}
+				],
+				"flows": [
+					{
+						"id": "ZGaUX7x0",
+						"name": "One rasterize",
+						"participants": [
+							"jChkQdeE",
+							"KyQxypRC",
+							"7N0JLb2b",
+							"8c0zvhQW",
+							"FXGZhgKo",
+							"R9St060W"
+						],
+						"steps": [
+							{
+								"id": "ApoPXsjX",
+								"from": "jChkQdeE",
+								"to": "KyQxypRC",
+								"label": "This SVG, this scale, this region",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+									"symbol": "captureBoard"
+								}
+							},
+							{
+								"id": "NogA00nj",
+								"from": "KyQxypRC",
+								"to": "7N0JLb2b",
+								"label": "Would the bitmap pass the limits?",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
+									"symbol": "boundsRefusal"
+								}
+							},
+							{
+								"id": "2yTy6fAw",
+								"from": "7N0JLb2b",
+								"to": "KyQxypRC",
+								"label": "Nothing, or why not",
+								"kind": "return",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/runtime/operations/rasterizer/bounds.ts",
+									"symbol": "boundsRefusal"
+								}
+							},
+							{
+								"id": "YjiULE1a",
+								"kind": "decision",
+								"question": "Is the bitmap past what one capture may hold?",
+								"alternatives": [
+									{
+										"label": "past the limits",
+										"steps": [
+											{
+												"id": "5FE0So36",
+												"from": "KyQxypRC",
+												"to": "jChkQdeE",
+												"label": "RASTER_BOUNDS_EXCEEDED: no browser is started",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
+													"symbol": "admissionFailure"
+												}
+											}
+										]
+									},
+									{
+										"label": "within the limits",
+										"steps": [
+											{
+												"id": "oMOVRn5A",
+												"kind": "decision",
+												"question": "Is a Chromium running already?",
+												"alternatives": [
+													{
+														"label": "first job",
+														"steps": [
+															{
+																"id": "GBGVLGJz",
+																"from": "KyQxypRC",
+																"to": "8c0zvhQW",
+																"label": "Start a session",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
+																	"symbol": "startSession"
+																}
+															},
+															{
+																"id": "SHD1kW3E",
+																"from": "8c0zvhQW",
+																"to": "R9St060W",
+																"label": "Spawn in a new process group and temp root; open a page",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+																	"symbol": "launchHeadlessChromium"
+																}
+															}
+														]
+													},
+													{
+														"label": "a later job",
+														"steps": []
+													}
+												]
+											},
+											{
+												"id": "94P1t130",
+												"from": "KyQxypRC",
+												"to": "8c0zvhQW",
+												"label": "Capture it, one job at a time",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
+													"symbol": "runOnSession"
+												}
+											},
+											{
+												"id": "JWqTd10Q",
+												"from": "8c0zvhQW",
+												"to": "8c0zvhQW",
+												"label": "Write the SVG into the temp root",
+												"kind": "self",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+													"symbol": "writeFileSync"
+												}
+											},
+											{
+												"id": "aijceujK",
+												"from": "8c0zvhQW",
+												"to": "R9St060W",
+												"label": "Navigate the page to that file",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+													"symbol": "load"
+												}
+											},
+											{
+												"id": "6mpleIjx",
+												"kind": "loop",
+												"condition": "until the document says it is complete",
+												"steps": [
+													{
+														"id": "Iewvate2",
+														"from": "8c0zvhQW",
+														"to": "R9St060W",
+														"label": "Is the document loaded?",
+														"kind": "sync",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+															"symbol": "load"
+														}
+													},
+													{
+														"id": "IUrY2M92",
+														"from": "R9St060W",
+														"to": "8c0zvhQW",
+														"label": "Its ready state",
+														"kind": "return"
+													}
+												]
+											},
+											{
+												"id": "EfoAb4TZ",
+												"from": "8c0zvhQW",
+												"to": "R9St060W",
+												"label": "Run the readiness script",
+												"kind": "sync",
+												"note": "pauses the traffic animation at its first frame and loads every declared face",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+													"symbol": "READINESS_SCRIPT"
+												}
+											},
+											{
+												"id": "ELhwhDXZ",
+												"from": "R9St060W",
+												"to": "8c0zvhQW",
+												"label": "Faces loaded, SVG size",
+												"kind": "return"
+											},
+											{
+												"id": "0O2UQVMD",
+												"from": "8c0zvhQW",
+												"to": "FXGZhgKo",
+												"label": "Check what the page said",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+													"symbol": "checkedReadiness"
+												}
+											},
+											{
+												"id": "J2GJ9oBm",
+												"kind": "decision",
+												"question": "Did every declared face load?",
+												"alternatives": [
+													{
+														"label": "a face failed",
+														"steps": [
+															{
+																"id": "KMp1ED4B",
+																"from": "FXGZhgKo",
+																"to": "8c0zvhQW",
+																"label": "Refuse: a face did not load",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/renderer/src/runtime/services/rasterizer/page.ts",
+																	"symbol": "checkedReadiness"
+																}
+															},
+															{
+																"id": "dAwIJEjS",
+																"from": "8c0zvhQW",
+																"to": "KyQxypRC",
+																"label": "RASTER_FAILED, with what the page logged",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+																	"symbol": "captureFailure"
+																}
+															},
+															{
+																"id": "Iux4hzgS",
+																"from": "KyQxypRC",
+																"to": "jChkQdeE",
+																"label": "RASTER_FAILED: that Chromium is closed, the next is new",
+																"kind": "return",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
+																	"symbol": "retireFailed"
+																}
+															}
+														]
+													},
+													{
+														"label": "all loaded",
+														"steps": [
+															{
+																"id": "eimr261K",
+																"from": "8c0zvhQW",
+																"to": "R9St060W",
+																"label": "Set the device scale and shoot the clip",
+																"kind": "sync",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+																	"symbol": "shoot"
+																}
+															},
+															{
+																"id": "5jAPLLsA",
+																"from": "R9St060W",
+																"to": "8c0zvhQW",
+																"label": "One PNG",
+																"kind": "return"
+															},
+															{
+																"id": "x9eGxXY0",
+																"from": "8c0zvhQW",
+																"to": "FXGZhgKo",
+																"label": "Check the bitmap's size",
+																"kind": "sync",
+																"note": "reads the size from the PNG's own header",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+																	"symbol": "checkedBitmap"
+																}
+															},
+															{
+																"id": "Vgv8fqjt",
+																"kind": "decision",
+																"question": "Is the PNG the size the diagram asks for?",
+																"alternatives": [
+																	{
+																		"label": "another size",
+																		"steps": [
+																			{
+																				"id": "8ST8qC5G",
+																				"from": "FXGZhgKo",
+																				"to": "8c0zvhQW",
+																				"label": "Refuse: never cropped, scaled or padded to fit",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/renderer/src/runtime/services/rasterizer/page.ts",
+																					"symbol": "checkedBitmap"
+																				}
+																			},
+																			{
+																				"id": "aH3mtXGu",
+																				"from": "8c0zvhQW",
+																				"to": "KyQxypRC",
+																				"label": "RASTER_FAILED, with what the page logged",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+																					"symbol": "captureFailure"
+																				}
+																			},
+																			{
+																				"id": "AFBY0KMv",
+																				"from": "KyQxypRC",
+																				"to": "jChkQdeE",
+																				"label": "RASTER_FAILED: that Chromium is closed, the next is new",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
+																					"symbol": "retireFailed"
+																				}
+																			}
+																		]
+																	},
+																	{
+																		"label": "the size asked for",
+																		"steps": [
+																			{
+																				"id": "zJd1U8dy",
+																				"from": "FXGZhgKo",
+																				"to": "8c0zvhQW",
+																				"label": "The bitmap, checked",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/renderer/src/runtime/services/rasterizer/page.ts",
+																					"symbol": "checkedBitmap"
+																				}
+																			},
+																			{
+																				"id": "U3MQ5j9j",
+																				"from": "8c0zvhQW",
+																				"to": "KyQxypRC",
+																				"label": "The bitmap and its size",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+																					"symbol": "capture"
+																				}
+																			},
+																			{
+																				"id": "7O0VczY8",
+																				"from": "KyQxypRC",
+																				"to": "jChkQdeE",
+																				"label": "The bitmap and its size",
+																				"kind": "return",
+																				"anchor": {
+																					"repo": "github.com/miklschmidt/archboard",
+																					"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
+																					"symbol": "runOnSession"
+																				}
+																			}
+																		]
+																	}
+																]
+															}
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							},
+							{
+								"id": "gdaD9RnY",
+								"from": "jChkQdeE",
+								"to": "KyQxypRC",
+								"label": "Stop",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+									"symbol": "captureBoard"
+								}
+							},
+							{
+								"id": "qjERCgHg",
+								"from": "KyQxypRC",
+								"to": "R9St060W",
+								"label": "Close the socket, reap the group, remove the temp root",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
+									"symbol": "stopOnce"
+								}
+							},
+							{
+								"id": "GF3g1xaN",
+								"from": "KyQxypRC",
+								"to": "jChkQdeE",
+								"label": "What the teardown proved",
+								"kind": "return",
+								"note": "an unclean teardown fails the command, beside the capture",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/renderer/src/runtime/services/rasterizer/rasterizer.ts",
+									"symbol": "stopOnce"
+								}
+							}
+						]
+					},
+					{
+						"id": "TH7uB42x",
+						"name": "One recording",
+						"participants": [
+							"QSI6gCrL",
+							"Vs2LoKMH",
+							"ZAj4RMzN",
+							"peB5Bs5R",
+							"R9St060W",
+							"T1TYskKQ",
+							"JvmFYpVf",
+							"2UcHnREN",
+							"XtzfRQkG",
+							"EWBbxckL"
+						],
+						"steps": [
+							{
+								"id": "CpEERX24",
+								"from": "QSI6gCrL",
+								"to": "2UcHnREN",
+								"label": "Read the board, its walkthroughs and the vault policy",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+									"symbol": "semanticRecordContract"
+								}
+							},
+							{
+								"id": "Lwo6TPZ5",
+								"from": "2UcHnREN",
+								"to": "QSI6gCrL",
+								"label": "The board and the policy",
+								"kind": "return"
+							},
+							{
+								"id": "pGLHZ6HU",
+								"from": "QSI6gCrL",
+								"to": "Vs2LoKMH",
+								"label": "Resolve the talk destination",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+									"symbol": "talkPlaceOf"
+								}
+							},
+							{
+								"id": "LngnxTuy",
+								"from": "Vs2LoKMH",
+								"to": "XtzfRQkG",
+								"label": "Reserve a fresh talk directory",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/rules/semantic/draw/recording-output.ts",
+									"symbol": "freshTalkPlace"
+								}
+							},
+							{
+								"id": "amQKPVNB",
+								"from": "QSI6gCrL",
+								"to": "ZAj4RMzN",
+								"label": "Record this walkthrough to this file",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+									"symbol": "recordWalkthrough"
+								}
+							},
+							{
+								"id": "YdUUbdcW",
+								"from": "ZAj4RMzN",
+								"to": "peB5Bs5R",
+								"label": "Find ffmpeg and probe its encoders",
+								"kind": "sync",
+								"note": "ARCHBOARD_FFMPEG, then PATH, then nix run nixpkgs#ffmpeg-headless",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
+									"symbol": "probeFfmpeg"
+								}
+							},
+							{
+								"id": "uzF3MfUp",
+								"from": "peB5Bs5R",
+								"to": "ZAj4RMzN",
+								"label": "Its command line, or why it cannot encode",
+								"kind": "return"
+							},
+							{
+								"id": "1ilkAwDS",
+								"kind": "decision",
+								"question": "Can that ffmpeg encode this container?",
+								"alternatives": [
+									{
+										"label": "no encoder",
+										"steps": [
+											{
+												"id": "84Th4Fwl",
+												"from": "ZAj4RMzN",
+												"to": "QSI6gCrL",
+												"label": "ENCODER_UNAVAILABLE: no browser was started",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
+													"symbol": "resolveEncoder"
+												}
+											}
+										]
+									},
+									{
+										"label": "it can",
+										"steps": [
+											{
+												"id": "Lk5LhctG",
+												"from": "ZAj4RMzN",
+												"to": "R9St060W",
+												"label": "Launch: autoplay, a silent microphone",
+												"kind": "sync",
+												"note": "nothing is captured in this pass, so it needs no GPU",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
+													"symbol": "launchHeadlessChromium"
+												}
+											},
+											{
+												"id": "6bnPKhY9",
+												"from": "ZAj4RMzN",
+												"to": "R9St060W",
+												"label": "Open a 1920x1080 window at the board's recording address",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+													"symbol": "openRecordingPage"
+												}
+											},
+											{
+												"id": "iP9ehg7Z",
+												"from": "R9St060W",
+												"to": "2UcHnREN",
+												"label": "Load the recording page, the board in its one pane",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+													"symbol": "recordingPageUrl"
+												}
+											},
+											{
+												"id": "i9f475xq",
+												"kind": "loop",
+												"condition": "until the page is ready, or its time to get ready is up",
+												"steps": [
+													{
+														"id": "jttToJ2m",
+														"from": "ZAj4RMzN",
+														"to": "T1TYskKQ",
+														"label": "Read its state",
+														"kind": "sync",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
+															"symbol": "ready"
+														}
+													},
+													{
+														"id": "sw03z5bw",
+														"from": "T1TYskKQ",
+														"to": "ZAj4RMzN",
+														"label": "Its phase",
+														"kind": "return"
+													}
+												]
+											},
+											{
+												"id": "3Oi7IzIn",
+												"from": "ZAj4RMzN",
+												"to": "T1TYskKQ",
+												"label": "Start, from a user gesture",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
+													"symbol": "begin"
+												}
+											},
+											{
+												"id": "bvfmfEQf",
+												"from": "T1TYskKQ",
+												"to": "2UcHnREN",
+												"label": "Voice for this walkthrough, as a recording",
+												"kind": "async",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+													"symbol": "WalkthroughRecorder.start"
+												}
+											},
+											{
+												"id": "g7bZI4lE",
+												"from": "T1TYskKQ",
+												"to": "JvmFYpVf",
+												"label": "Stamp the voice and each step on one clock",
+												"kind": "sync",
+												"note": "the voice plays through a muted element, so nobody hears a recording; its samples and every event share the 48 kHz audio clock",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/web/src/ui/clients/walkthrough-recording/talk-capture.ts",
+													"symbol": "TalkCapture"
+												}
+											},
+											{
+												"id": "vQAdyffb",
+												"kind": "loop",
+												"condition": "for each beat of the walkthrough",
+												"steps": [
+													{
+														"id": "BhAoJMSq",
+														"from": "T1TYskKQ",
+														"to": "T1TYskKQ",
+														"label": "Show the step once the voice has finished the last",
+														"kind": "self",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "apps/web/src/ui/rules/walkthrough-recording/pacing.ts",
+															"symbol": "pace"
+														}
+													}
+												]
+											},
+											{
+												"id": "5mxVZ25R",
+												"kind": "loop",
+												"condition": "until the talk is finished, or the page stalls",
+												"steps": [
+													{
+														"id": "qIpJxDIE",
+														"from": "ZAj4RMzN",
+														"to": "T1TYskKQ",
+														"label": "Read its state",
+														"kind": "sync",
+														"note": "each new step is told to the command as progress",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
+															"symbol": "finished"
+														}
+													},
+													{
+														"id": "IghujaeO",
+														"from": "T1TYskKQ",
+														"to": "ZAj4RMzN",
+														"label": "Its phase and step",
+														"kind": "return"
+													}
+												]
+											},
+											{
+												"id": "I2aWwYYH",
+												"from": "ZAj4RMzN",
+												"to": "T1TYskKQ",
+												"label": "Hand over the voice and the talk",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
+													"symbol": "logOf"
+												}
+											},
+											{
+												"id": "QoqAq2kO",
+												"from": "T1TYskKQ",
+												"to": "ZAj4RMzN",
+												"label": "The voice as a WAV Blob, streamed out, and the talk's events",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+													"symbol": "pageHandle"
+												}
+											},
+											{
+												"id": "NplH1qsP",
+												"from": "ZAj4RMzN",
+												"to": "R9St060W",
+												"label": "Stop: close, reap the group, remove the temp root",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+													"symbol": "talkedWith"
+												}
+											},
+											{
+												"id": "0AtLLXsB",
+												"from": "ZAj4RMzN",
+												"to": "XtzfRQkG",
+												"label": "Write the talk: talk.json and voice.wav",
+												"kind": "sync",
+												"note": "a board drawn at another version fails the recording before this, and nothing is kept",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+													"symbol": "writeTalk"
+												}
+											},
+											{
+												"id": "gRyhb0Kd",
+												"from": "ZAj4RMzN",
+												"to": "EWBbxckL",
+												"label": "Render the talk to the file",
+												"kind": "sync",
+												"note": "with the ffmpeg proven above; the frames are drawn as One replay shows",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+													"symbol": "renderTalk"
+												}
+											},
+											{
+												"id": "wgpRHtNN",
+												"from": "EWBbxckL",
+												"to": "ZAj4RMzN",
+												"label": "The file, its size and its frames",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+													"symbol": "renderTalk"
+												}
+											},
+											{
+												"id": "nvoy90K0",
+												"from": "ZAj4RMzN",
+												"to": "QSI6gCrL",
+												"label": "The recording and where its talk is kept",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+													"symbol": "recordWalkthrough"
+												}
+											},
+											{
+												"id": "kPhoO1Dr",
+												"kind": "decision",
+												"question": "Was --discard given?",
+												"alternatives": [
+													{
+														"label": "discard",
+														"steps": [
+															{
+																"id": "RJQsW5wl",
+																"from": "QSI6gCrL",
+																"to": "2UcHnREN",
+																"label": "Discard the board",
+																"kind": "sync",
+																"note": "only at the version that was recorded",
+																"anchor": {
+																	"repo": "github.com/miklschmidt/archboard",
+																	"path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+																	"symbol": "discardRecorded"
+																}
+															}
+														]
+													},
+													{
+														"label": "keep the board",
+														"steps": []
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "cMM9n1WR",
+						"name": "One replay",
+						"participants": [
+							"kpWAp83p",
+							"XtzfRQkG",
+							"EWBbxckL",
+							"Ljy0lW5g",
+							"Kek84WN9",
+							"R9St060W",
+							"peB5Bs5R"
+						],
+						"steps": [
+							{
+								"id": "sYr0x7lA",
+								"from": "kpWAp83p",
+								"to": "XtzfRQkG",
+								"label": "Read the kept talk",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts",
+									"symbol": "readTalk"
+								}
+							},
+							{
+								"id": "oAWe3YYa",
+								"from": "XtzfRQkG",
+								"to": "kpWAp83p",
+								"label": "The talk, or why it cannot be rendered",
+								"kind": "return"
+							},
+							{
+								"id": "09EcKhRi",
+								"from": "kpWAp83p",
+								"to": "EWBbxckL",
+								"label": "Render this talk, in this theme, to this file",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts",
+									"symbol": "renderTalk"
+								}
+							},
+							{
+								"id": "QC0roJfe",
+								"from": "EWBbxckL",
+								"to": "peB5Bs5R",
+								"label": "Find ffmpeg and probe its encoders",
+								"kind": "sync",
+								"anchor": {
+									"repo": "github.com/miklschmidt/archboard",
+									"path": "packages/walkthrough/src/runtime/services/ffmpeg.ts",
+									"symbol": "probeFfmpeg"
+								}
+							},
+							{
+								"id": "1labsBCm",
+								"from": "peB5Bs5R",
+								"to": "EWBbxckL",
+								"label": "Its command line, or why it cannot encode",
+								"kind": "return"
+							},
+							{
+								"id": "B6qwKbNT",
+								"kind": "decision",
+								"question": "Can that ffmpeg encode this container?",
+								"alternatives": [
+									{
+										"label": "no encoder",
+										"steps": [
+											{
+												"id": "xZtLvbcf",
+												"from": "EWBbxckL",
+												"to": "kpWAp83p",
+												"label": "ENCODER_UNAVAILABLE: no browser was started",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "apps/cli/src/cli/operations/semantic/draw/replay.ts",
+													"symbol": "semanticReplayContract"
+												}
+											}
+										]
+									},
+									{
+										"label": "it can",
+										"steps": [
+											{
+												"id": "iXO4ykLC",
+												"from": "EWBbxckL",
+												"to": "XtzfRQkG",
+												"label": "Read the voice, to level each frame",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+													"symbol": "voiceSamples"
+												}
+											},
+											{
+												"id": "wXjKsJck",
+												"kind": "loop",
+												"condition": "for each page of the render, as many as the talk repays",
+												"steps": [
+													{
+														"id": "dzqZ7fmL",
+														"from": "EWBbxckL",
+														"to": "R9St060W",
+														"label": "Launch in software, sound muted",
+														"kind": "sync",
+														"note": "no GPU and no partial raster, so every render of a talk is the same",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+															"symbol": "startBrowsers"
+														}
+													}
+												]
+											},
+											{
+												"id": "JbfGpkEv",
+												"from": "EWBbxckL",
+												"to": "peB5Bs5R",
+												"label": "Start ffmpeg on the frames to come and the voice",
+												"kind": "sync",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+													"symbol": "openVideoEncoder"
+												}
+											},
+											{
+												"id": "fmMMbhmK",
+												"from": "EWBbxckL",
+												"to": "R9St060W",
+												"label": "Open a 1920x1080 window at the replay address",
+												"kind": "sync",
+												"note": "the page's files come from the Archboard server: no socket, no pane, no voice",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+													"symbol": "openReplayPage"
+												}
+											},
+											{
+												"id": "vWLY5lMp",
+												"kind": "loop",
+												"condition": "until the page has published its replay",
+												"steps": [
+													{
+														"id": "vHxiDEC5",
+														"from": "EWBbxckL",
+														"to": "Kek84WN9",
+														"label": "Has it published frame()?",
+														"kind": "sync",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+															"symbol": "pageReady"
+														}
+													},
+													{
+														"id": "5fafkFiK",
+														"from": "Kek84WN9",
+														"to": "EWBbxckL",
+														"label": "Yes or not yet",
+														"kind": "return"
+													}
+												]
+											},
+											{
+												"id": "VuHlOJPH",
+												"from": "EWBbxckL",
+												"to": "Kek84WN9",
+												"label": "Load the talk",
+												"kind": "sync",
+												"note": "the page reads the board and the policy only from the talk",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+													"symbol": "loadTalk"
+												}
+											},
+											{
+												"id": "YGJyJUoN",
+												"from": "Kek84WN9",
+												"to": "EWBbxckL",
+												"label": "The number of frames",
+												"kind": "return",
+												"note": "checked against the talk's own count, and the window against 1920x1080"
+											},
+											{
+												"id": "JrvIS1OQ",
+												"kind": "loop",
+												"condition": "for each frame of the talk",
+												"steps": [
+													{
+														"id": "8nLdG8jb",
+														"from": "EWBbxckL",
+														"to": "Kek84WN9",
+														"label": "Draw frame n",
+														"kind": "sync",
+														"note": "the clock steps to the frame's time; the answer waits until the frame is drawn and still",
+														"anchor": {
+															"repo": "github.com/miklschmidt/archboard",
+															"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+															"symbol": "drawFrames"
+														}
+													},
+													{
+														"id": "6fRsYAet",
+														"from": "Kek84WN9",
+														"to": "EWBbxckL",
+														"label": "Drawn at the frame's time",
+														"kind": "return"
+													},
+													{
+														"id": "d6oQcAHr",
+														"kind": "decision",
+														"question": "Is the frame in one of this page's seconds?",
+														"alternatives": [
+															{
+																"label": "this page's",
+																"steps": [
+																	{
+																		"id": "g5UFxQfb",
+																		"from": "EWBbxckL",
+																		"to": "R9St060W",
+																		"label": "Capture the page as JPEG",
+																		"kind": "sync",
+																		"anchor": {
+																			"repo": "github.com/miklschmidt/archboard",
+																			"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+																			"symbol": "screenshot"
+																		}
+																	},
+																	{
+																		"id": "RIfMuRq6",
+																		"from": "R9St060W",
+																		"to": "EWBbxckL",
+																		"label": "One JPEG",
+																		"kind": "return"
+																	},
+																	{
+																		"id": "UTRVR4cG",
+																		"from": "EWBbxckL",
+																		"to": "Ljy0lW5g",
+																		"label": "Hand it on, once there is room",
+																		"kind": "sync",
+																		"anchor": {
+																			"repo": "github.com/miklschmidt/archboard",
+																			"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+																			"symbol": "FrameOrder"
+																		}
+																	},
+																	{
+																		"id": "w0DdhxZC",
+																		"from": "Ljy0lW5g",
+																		"to": "peB5Bs5R",
+																		"label": "Write the frame, in order",
+																		"kind": "sync",
+																		"note": "a frame that arrives before its turn is held back",
+																		"anchor": {
+																			"repo": "github.com/miklschmidt/archboard",
+																			"path": "packages/walkthrough/src/runtime/operations/frame-order.ts",
+																			"symbol": "writeFrame"
+																		}
+																	}
+																]
+															},
+															{
+																"label": "another page's",
+																"steps": []
+															}
+														]
+													}
+												]
+											},
+											{
+												"id": "lhHrrBGP",
+												"from": "EWBbxckL",
+												"to": "R9St060W",
+												"label": "Stop: close, reap the group, remove the temp root",
+												"kind": "sync",
+												"note": "the picture is drawn, so the browser goes before ffmpeg finishes",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+													"symbol": "stopAll"
+												}
+											},
+											{
+												"id": "kqIkjnY8",
+												"from": "EWBbxckL",
+												"to": "peB5Bs5R",
+												"label": "Finish",
+												"kind": "sync",
+												"note": "ffmpeg pads the voice to the last frame and moves the index to the front",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+													"symbol": "renderTalk"
+												}
+											},
+											{
+												"id": "MBCHJ68n",
+												"from": "EWBbxckL",
+												"to": "EWBbxckL",
+												"label": "Move the file into place",
+												"kind": "self",
+												"note": "only once the browser has stopped and ffmpeg has exited",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+													"symbol": "renameSync"
+												}
+											},
+											{
+												"id": "r3CLUky5",
+												"from": "EWBbxckL",
+												"to": "kpWAp83p",
+												"label": "The file, its size and its frames",
+												"kind": "return",
+												"anchor": {
+													"repo": "github.com/miklschmidt/archboard",
+													"path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+													"symbol": "renderTalk"
+												}
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				"walkthroughs": [
+					{
+						"id": "ZIq30sQv",
+						"name": "Why a picture is refused rather than approximated",
+						"beats": [
+							{
+								"id": "wwX4OD4Q",
+								"heading": "A browser only while there is work",
+								"body": "No Chromium is started until a job arrives, and it is stopped with the rasterizer. The process lives in its own group with its own temp root so the whole of it can be reaped, whatever it spawned.",
+								"subjects": [
+									"KyQxypRC",
+									"8c0zvhQW",
+									"6uHnaygd"
+								]
+							},
+							{
+								"id": "BnjBLsWM",
+								"heading": "The page says it is ready, in so many words",
+								"body": "Before anything is photographed the page is asked whether the diagram faces are loaded, the animation is paused at its first frame, and the SVG is the size the job named. A picture taken before that would differ run to run.",
+								"subjects": [
+									"FXGZhgKo"
+								]
+							},
+							{
+								"id": "cA04qJSt",
+								"heading": "The wrong size is a refusal, not a crop",
+								"body": "The answered bitmap is measured from its own header against the size the bounds asked for. Cropping or scaling it here would hand back a picture that quietly is not what was asked for.",
+								"subjects": [
+									"FXGZhgKo",
+									"ctgF3OPk",
+									"7N0JLb2b"
+								]
+							}
+						]
+					},
+					{
+						"id": "m5t3GI9p",
+						"name": "How a walkthrough becomes a video",
+						"beats": [
+							{
+								"id": "lTBYduvu",
+								"heading": "Two passes: first the talk, then the picture",
+								"body": "A recording is made in two passes. The first lets the voice pace the walkthrough on a live page and keeps only the talk: the voice's sound, and when each step and subtitle line came. The second draws the picture again from that talk, frame by frame, with no voice and no capture.",
+								"subjects": [
+									"TH7uB42x",
+									"XtzfRQkG",
+									"EWBbxckL"
+								],
+								"view": "tj0eNDOG"
+							},
+							{
+								"id": "RpA8ERKl",
+								"heading": "The page paces the talk",
+								"body": "Where a walkthrough stands is the browser's, and only the page hears when the voice has finished a step, so the page moves itself on. The recorder outside only starts it and follows what it says.",
+								"subjects": [
+									"T1TYskKQ",
+									"hlLOugjc"
+								],
+								"view": "tj0eNDOG"
+							},
+							{
+								"id": "ULRbPIvC",
+								"heading": "One clock stamps the voice and every step",
+								"body": "The voice plays through a muted element, so nobody hears a recording. Talk capture taps the same stream through Web Audio and stamps each step, subtitle line and drawn version on the audio's own clock. The talk is written as talk.json and voice.wav before any picture is drawn, so a failed render keeps it.",
+								"subjects": [
+									"T1TYskKQ",
+									"JvmFYpVf",
+									"XtzfRQkG"
+								],
+								"view": "tj0eNDOG"
+							},
+							{
+								"id": "NdjuWh7j",
+								"heading": "Every frame is drawn before it is captured",
+								"body": "The replay page reads the board only from the talk. Its glides, fades, subtitles and traffic run on a clock the renderer steps 1/30 s at a time, and even a frame a library asks of the browser runs on that clock. A frame is captured only once it is drawn and still, so no frame is held or dropped, with or without a GPU and under any load. An animation on a timeline the clock cannot stand fails the render.",
+								"subjects": [
+									"Kek84WN9",
+									"EWBbxckL"
+								],
+								"view": "W7hYCiQ6"
+							},
+							{
+								"id": "NPZSg7mB",
+								"heading": "ffmpeg makes the file, or nothing starts",
+								"body": "The frames go to ffmpeg as JPEG, with voice.wav beside them, and ffmpeg writes H.264 and AAC, or VP9 and Opus. The recorder takes ARCHBOARD_FFMPEG, then ffmpeg on PATH, then runs nixpkgs#ffmpeg-headless through Nix. With none of them it refuses before any browser starts, and says how to get one.",
+								"subjects": [
+									"peB5Bs5R",
+									"EWBbxckL"
+								],
+								"view": "W7hYCiQ6"
+							},
+							{
+								"id": "IMY5jsga",
+								"heading": "A whole file, or nothing",
+								"body": "The file moves into place only once the render's browser has stopped and ffmpeg has exited. An interrupt anywhere before that stops the browser at once and leaves nothing where the file goes.",
+								"subjects": [
+									"EWBbxckL",
+									"peB5Bs5R"
+								],
+								"view": "W7hYCiQ6"
+							},
+							{
+								"id": "cwdTl7pE",
+								"heading": "A kept talk renders again",
+								"body": "The render needs only the talk, so semantic replay renders a kept talk to a new file: in the other theme, or after a renderer fix. It needs the Archboard server to serve the page, and no board, no Codex and no voice. A render that fails keeps the talk and names this command.",
+								"subjects": [
+									"XtzfRQkG",
+									"EWBbxckL"
+								],
+								"view": "W7hYCiQ6"
+							},
+							{
+								"id": "20M5pQwd",
+								"heading": "One browser module, two uses",
+								"body": "Pictures and recordings start Chromium through the same module: the rasterizer once, a recording twice, once for the talk and once for its frames. Each browser has its own process group and temporary root, and each stop proves the group and the root are gone.",
+								"subjects": [
+									"IzgAi2R1",
+									"8c0zvhQW",
+									"ZAj4RMzN",
+									"EWBbxckL",
+									"6uHnaygd"
+								],
+								"view": "vAJmBRF7"
+							}
+						]
+					}
+				]
+			}
 		}
 	],
-	"current": "LA43vys3",
+	"current": "fFECebqp",
 	"adoptions": [
 		{
 			"variant": "PfFN8kCs",
@@ -24256,6 +26898,12 @@
 			"from": "4lZZiZuM",
 			"at": "2026-10-24T17:14:14.281Z",
 			"reason": "A board render carries its render recipe, and standalone renders default to a legend (TASK-526.02)"
+		},
+		{
+			"variant": "fFECebqp",
+			"from": "LA43vys3",
+			"at": "2026-10-27T09:01:54.440Z",
+			"reason": "Canonical playback, recording, replay and narration pass the approved public runtime and browser evidence."
 		}
 	],
 	"shelvings": [

@@ -230,3 +230,49 @@ test("retained comparisons identify the live base revision independently of the 
 		}),
 	).toMatchObject({ success: false, code: "MODEL_INVALID" });
 }, 20_000);
+
+test("compact proposals store narrative beats as independent stable subjects and materialize exact retained playback inputs", async () => {
+	const { vault } = behaviorFixture();
+	const input = await structureIntent(vault, ["Shop"]);
+	const result = await editArchitectureModule(vault, {
+		...input,
+		proposal: { type: "create", name: "Narrated draft" },
+		changes: [
+			{
+				type: "add-walkthrough",
+				walkthrough: {
+					name: "Draft tour",
+					target: { state: "current" },
+					beats: [
+						{
+							title: "Queue",
+							narrative: "Dispatch this request.",
+							reading: {
+								grammar: "sequence",
+								flow: "Shop#Checkout",
+								selection: [],
+								focus: [],
+								filters: { relationships: [], groups: [] },
+							},
+						},
+					],
+				},
+			},
+		],
+	});
+	expect(result.success).toBe(true);
+	if (!result.success) throw new Error(JSON.stringify(result));
+	const current = readArchitectureModel(vault);
+	if (!current.success) throw new Error(JSON.stringify(current));
+	expect(current.walkthroughs).toEqual([]);
+	const proposal = current.proposals[0]!;
+	expect(
+		proposal.changes.filter((change) => change.type === "add").map((change) => change.kind),
+	).toEqual(["walkthrough", "beat"]);
+	expect(JSON.stringify(proposal.changes)).not.toContain('"modules"');
+	const draft = await readArchitectureModel(vault, undefined, undefined, { state: proposal.id });
+	if (!draft.success) throw new Error(JSON.stringify(draft));
+	expect(draft.walkthroughs[0]!.beats[0]!.narrative).toBe("Dispatch this request.");
+	const retained = await readArchitectureCheckpoint(vault, result.checkpoint.id);
+	expect(retained.success && retained.walkthroughs).toEqual(draft.walkthroughs);
+});

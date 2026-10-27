@@ -36,6 +36,7 @@ async function request(
 		...(state === null ? [] : [state]),
 		...model.modules.map((m) => m.id),
 		...model.relationships.map((e) => e.id),
+		...model.walkthroughs.flatMap((walk) => [walk.id, ...walk.beats.map((beat) => beat.id)]),
 		...model.collections.flatMap((collection) => [
 			`${model.manifest.id}#${collection.id}`,
 			...collection.flows.flatMap((flow) => [flow.id, ...stepIds(flow.steps)]),

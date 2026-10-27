@@ -18,6 +18,7 @@ import {
 } from "#ui/clients/architecture-model/queries.ts";
 import { semanticBoardListQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import { ModelStateDetails } from "#ui/components/architecture-model/ModelStateDetails.tsx";
+import { ModelWalkthroughReader } from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
 import { ModelReadingSelector } from "#ui/components/architecture-model/ModelReadingSelector.tsx";
 import { ModelComparisonSelector } from "#ui/components/architecture-model/ModelComparisonSelector.tsx";
@@ -32,7 +33,10 @@ import { useArchitectureFeed } from "#ui/hooks/architecture-model/use-architectu
 
 type ModelQuery = UseQueryResult<Extract<ArchitectureModelRead, { success: true }>>;
 
-interface ModelStageProps extends Pick<ComponentProps<typeof ModelReading>, "onCodeTargetNotice"> {
+interface ModelStageProps
+	extends
+		Pick<ComponentProps<typeof ModelReading>, "onCodeTargetNotice">,
+		Pick<ComponentProps<typeof ModelWalkthroughReader>, "driven" | "narration" | "overlay"> {
 	vault: string;
 	paneId: string;
 	reducedMotion: boolean;
@@ -173,6 +177,9 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				stale={stale}
 				failure={feed.failure}
 				onCodeTargetNotice={props.onCodeTargetNotice}
+				driven={props.driven}
+				narration={props.narration}
+				overlay={props.overlay}
 			/>
 		</section>
 	);
@@ -321,7 +328,7 @@ function readingState(query: ModelQuery, stale: boolean): "loading" | "error" | 
 
 interface ModelResponseProps extends Pick<
 	ModelStageProps,
-	"vault" | "paneId" | "reducedMotion" | "onCodeTargetNotice"
+	"vault" | "paneId" | "reducedMotion" | "onCodeTargetNotice" | "driven" | "narration" | "overlay"
 > {
 	subject: string | null;
 	query: ModelQuery;
@@ -358,19 +365,47 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 				<>
 					<ModelStateDetails model={model} paneId={props.paneId} states={props.states} />
 					<CheckpointEvidence model={model} />
-					<ModelReading
-						key={JSON.stringify([model.manifest.id, props.subject])}
-						subject={props.subject}
+					<ModelWalkthroughReader
+						key={readingSessionKey(model, props.subject)}
 						vault={props.vault}
 						model={model}
 						paneId={props.paneId}
 						reducedMotion={props.reducedMotion}
-						onCodeTargetNotice={props.onCodeTargetNotice}
-					/>
+						driven={props.driven}
+						narration={props.narration}
+						overlay={props.overlay}
+					>
+						<ModelReading
+							subject={props.subject}
+							vault={props.vault}
+							model={model}
+							paneId={props.paneId}
+							reducedMotion={props.reducedMotion}
+							onCodeTargetNotice={props.onCodeTargetNotice}
+						/>
+					</ModelWalkthroughReader>
 				</>
 			)}
 		</>
 	);
+}
+
+/**
+ * Changing architecture selection closes its presentation while live updates preserve it.
+ * @param model The selected architecture.
+ * @param subject The explicit navigation destination.
+ * @returns The identity of this reader session.
+ */
+function readingSessionKey(
+	model: Extract<ArchitectureModelRead, { success: true }>,
+	subject: string | null,
+): string {
+	return JSON.stringify([
+		model.manifest.id,
+		model.selectedState?.id,
+		model.checkpoint?.id,
+		subject,
+	]);
 }
 
 /**

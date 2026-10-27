@@ -90,7 +90,10 @@ async function requireDependencies(
 	visited: Set<string>,
 ): Promise<void> {
 	visited.add(checkpoint);
-	for (const dependency of record.request.dependencies) {
+	for (const dependency of [
+		...record.request.dependencies,
+		...(record.narrativeDependencies ?? []),
+	]) {
 		if (visited.has(dependency)) continue;
 		// oxlint-disable-next-line no-await-in-loop -- dependency traversal shares one visited closure
 		const required = await retainedDependency(context, dependency, checkpoint);

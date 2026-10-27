@@ -12,11 +12,11 @@ import {
 } from "#shared/schemas/model-definitions.ts";
 import { QualifiedSubjectIdSchema, SemanticIdSchema } from "#shared/schemas/primitives.ts";
 import { HistoricalRevisionsSchema } from "#shared/schemas/historical-correction.ts";
+import { ProposalChangeSchema, SubjectKindSchema } from "#shared/schemas/model-changes.ts";
 const StateSelectionSchema = ReadingSelectionSchema.extend({
 	explain: ExplanationRequestSchema.optional(),
 });
 const CheckpointIdSchema = z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u);
-import { ProposalChangeSchema, SubjectKindSchema } from "#shared/schemas/model-changes.ts";
 const ModelIssueSchema = ReconciliationIssueSchema.extend({
 	subject: z.union([QualifiedSubjectIdSchema, SemanticIdSchema]),
 });

@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { QualifiedSubjectIdSchema, SemanticIdSchema } from "#shared/schemas/primitives.ts";
-const SubjectKindSchema = z.enum(["module", "relationship", "collection", "flow", "step"]);
+const SubjectKindSchema = z.enum([
+	"module",
+	"relationship",
+	"collection",
+	"flow",
+	"step",
+	"walkthrough",
+	"beat",
+]);
 const PlacementSchema = z.strictObject({
 	holder: z.union([QualifiedSubjectIdSchema, SemanticIdSchema]),
 	alternative: z.string().optional(),

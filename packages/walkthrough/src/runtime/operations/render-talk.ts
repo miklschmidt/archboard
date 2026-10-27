@@ -135,6 +135,8 @@ function renderFlags(): readonly string[] {
 		// A partial raster reuses a tile's old content, so a frame's pixels would depend on how many
 		// real frames Chromium drew while the page waited; two renders of a talk then differ.
 		"--disable-partial-raster",
+		// The first sample of a new SVG must not run ahead of the replay clock on the compositor.
+		"--disable-threaded-animation",
 		"--hide-scrollbars",
 		"--force-device-scale-factor=1",
 		"--force-color-profile=srgb",

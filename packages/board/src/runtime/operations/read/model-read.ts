@@ -1,5 +1,7 @@
+import { WalkthroughSchema } from "#shared/schemas/model-walkthroughs.ts";
 import { readRequestedArchitecture } from "#runtime/operations/read/model-explanation.ts";
 import { ProposalSchema } from "#shared/schemas/model-proposals.ts";
+
 import { FlowCollectionSchema } from "#shared/schemas/model-flows.ts";
 import { z } from "zod";
 import { errorMessage } from "@archboard/diagnostics/errno";
@@ -108,16 +110,7 @@ function discoveryFailure(captured: CapturedModel): ArchitectureModelRead | unde
 					"Use an authored model vault. Existing boards remain authoritative until explicit migration.",
 			},
 		]);
-	for (const file of captured.inputs.keys()) {
-		if (file.endsWith(".walkthrough.json"))
-			captured.diagnostics.push({
-				code: "UNSUPPORTED_FORMAT",
-				file,
-				message: "This authored format has no supported canonical reader yet.",
-				recovery:
-					"Use a model vault that contains only the supported manifest, module and policy formats.",
-			});
-	}
+
 	return undefined;
 }
 
@@ -199,6 +192,13 @@ function decodeModel(
 			const collection = decode(file, bytes, FlowCollectionSchema, diagnostics);
 			return collection === undefined ? [] : [{ ...collection, file }];
 		});
+	const walkthroughs = [...inputs]
+		.filter(([file]) => file.endsWith(".walkthrough.json"))
+		.flatMap(([file, bytes]) => {
+			const definition = decode(file, bytes, WalkthroughSchema, diagnostics);
+			return definition === undefined ? [] : [{ ...definition, file }];
+		});
+
 	const proposals = [...inputs]
 		.filter(([file]) => file.endsWith(".proposal.json"))
 		.flatMap(([file, bytes]) => {
@@ -213,6 +213,7 @@ function decodeModel(
 			policy,
 			validationManifest(manifest, selectedState),
 			collections,
+			walkthroughs,
 		),
 	);
 	if (diagnostics.length > 0) return failure("MODEL_INVALID", diagnostics);
@@ -227,6 +228,7 @@ function decodeModel(
 		revision,
 		modules,
 		collections,
+		walkthroughs,
 		proposals,
 		selectedState: selectedState ?? currentSelection(manifest),
 		roots: modules.filter((module) => module.parent === undefined).map((module) => module.id),

@@ -152,11 +152,23 @@ function materializedDefinitions(baseline: ArchitectureModel, subjects: Subjects
 	const collections = [...subjects]
 		.filter(([, subject]) => subject.kind === "collection")
 		.map(([id, subject]) => collectionDefinition(state, id, subject));
+	const walkthroughs = [...subjects]
+		.filter(([, subject]) => subject.kind === "walkthrough")
+		.map(([id, subject]) => ({
+			...takeSubject(state, id, subject, "walkthrough"),
+			beats: heldSubjects(subjects, id).map(([beat, entry]) =>
+				takeSubject(state, beat, entry, "beat"),
+			),
+			file:
+				baseline.walkthroughs.find((walk) => walk.id === id)?.file ??
+				`${id.split("#")[1]}.walkthrough.json`,
+		}));
+
 	if (state.used.size !== subjects.size)
 		throw new ArchiveError(
 			"MODEL_INVALID",
 			"A proposal leaves a subject without its exact holder or alternative.",
 		);
-	return { modules, collections };
+	return { modules, collections, walkthroughs };
 }
 export { materializedDefinitions };

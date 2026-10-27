@@ -179,6 +179,15 @@ not add imports or a second state path before that work.
   Answer controls use the captured vault after navigation. The result labels its original model, state, subjects, and revision.
   Canonical metadata joins the existing pane report sequence, with the admitted vault on the request and actual reading vault inside architecture.
 
+  Canonical walkthroughs reuse the existing presentation controls, diagram, camera, and voice overlay.
+  Each playback query holds one captured source and target until an explicit restart.
+  The pane reports both revision guards and the narrative source selection.
+  Narration waits for the latest report to reach the server before starting voice.
+  A changed or failed report refuses that start. The control remains unavailable while the picture draws.
+  Server presentation requests move only the matching captured walkthrough in that socket's pane.
+  The existing position owner reports the request identity until a person chooses another step.
+  Recording and replay pages use their supplied capture without reading mutable architecture.
+
   The address follows the note, which is the persisted content of the board.
   When a person opens a board, the open runs the command of the shell. Then the
   pane reports its new board. Only after that report does the page write the

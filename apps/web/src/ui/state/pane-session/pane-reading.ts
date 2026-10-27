@@ -38,6 +38,8 @@ const NOTHING_READ: PaneReading = Object.freeze({
 
 /** One pane's reading publisher. */
 interface ReadingPublisher {
+	/** Send the latest reading now and report whether it remains accepted and current. */
+	readonly flush: () => Promise<boolean>;
 	/**
 	 * The reading changed; publish it after the debounce.
 	 * @param reading What the pane is reading now.
@@ -126,6 +128,7 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 	// count it has seen and this is how it tells them apart. It counts up for
 	// the life of this publisher and never goes back.
 	let sequence = 0;
+	let delivery = Promise.resolve(false);
 	const marks = createUserMarks();
 
 	/** Send the pending reading, unless it is what was already published. */
@@ -145,7 +148,7 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 		// A report that has to be sent again after a failure goes without its marks. Saying
 		// nothing is the safe way to be wrong here.
 		const byUser = marks.take(reading);
-		send({
+		delivery = send({
 			paneId: parts.paneId,
 			clientId: parts.clientId,
 			...reading,
@@ -153,12 +156,27 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 			at: new Date().toISOString(),
 			sequence: counted,
 		})
-			.then((reply) => noteDropped(reply, counted))
+			.then((reply) => {
+				noteDropped(reply, counted);
+				return reply.kept !== false;
+			})
 			.catch(() => {
 				// A failed publication forgets what was published, so the next change
 				// resends rather than leaving the server describing an older pane.
 				published = "";
+				return false;
 			});
+	}
+
+	/**
+	 * Order a dependent action after the latest report reaches the server.
+	 * @returns False if publication failed or the pane changed while awaiting its answer.
+	 */
+	async function flushLatest(): Promise<boolean> {
+		const observed = latest;
+		if (timer !== null) clearTimeout(timer);
+		if (pending !== null) flush();
+		return (await delivery) && observed !== null && observed === latest;
 	}
 
 	/**
@@ -221,6 +239,8 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 
 	/** The pane is closing. */
 	function dispose(): void {
+		latest = null;
+		pending = null;
 		if (timer !== null) {
 			clearTimeout(timer);
 			timer = null;
@@ -228,6 +248,7 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 	}
 
 	return {
+		flush: flushLatest,
 		publish,
 		userChanged: marks.mark,
 		userChangeFailed: marks.unmark,

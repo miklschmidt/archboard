@@ -524,4 +524,12 @@ function beatsIn(
 	return walkthroughs.find((walkthrough) => walkthrough.id === id)?.beats ?? [];
 }
 
-export { reconcileTold, settledEntries, orderOf, afterAnchor, TOLD_FIELDS, type OrderedIssue };
+export {
+	reconcileTold,
+	mergeTold,
+	settledEntries,
+	orderOf,
+	afterAnchor,
+	TOLD_FIELDS,
+	type OrderedIssue,
+};

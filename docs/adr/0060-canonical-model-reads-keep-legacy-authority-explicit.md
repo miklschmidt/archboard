@@ -262,6 +262,27 @@ Several selected flows remain separate choices, because one behavioral diagram e
 Structural Focus applies to modules and relationships.
 The existing renderer, camera, bounds, and keyboard controls remain the implementation owners.
 
+## Dynamic narrative readings
+
+TASK-549.14 adds versioned `.walkthrough.json` inputs to the same coherent reader and writer.
+Each narrative owns stable walkthrough and beat identities.
+Each beat states a complete scope, selection, focus, filters, grammar, and optional flow.
+Omission resets presentation fields instead of inheriting hidden state from another beat.
+Narrative inputs contain no geometry or architecture copies.
+
+Playback resolves current, a proposal, or an exact checkpoint once.
+The returned complete model remains the reading for every beat.
+Source and resolved revision tokens let the browser offer an explicit restart after changes.
+Missing subjects produce diagnostics for their affected beat.
+Missing history returns an unavailable reading and never substitutes current inputs.
+Ordinary playback changes no authored input or archive.
+
+Shared and recorded playback require an exact retained target.
+An explicit checkpoint pins both the narrative and the complete target model.
+Exact authored targets become retained archive dependencies before signed preparation.
+CLI and HTTP use the same public reader without increasing package exports.
+The frontend acceptance remains with the parent implementation.
+
 ## Explicit migration preview
 
 TASK-549.20 adds an explicit preview selection to the existing canonical reader.

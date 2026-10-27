@@ -94,6 +94,20 @@ function subjectsOf(model: ArchitectureModel): Subjects {
 	});
 	return new Map([
 		...modules,
+		...model.walkthroughs.flatMap((walk): [string, Subject][] => {
+			const { beats, file: _file, ...value } = walk;
+			return [
+				[walk.id, { kind: "walkthrough", value }],
+				...beats.map((beat, index): [string, Subject] => [
+					beat.id,
+					{
+						kind: "beat",
+						value: beat,
+						placement: { holder: walk.id, ...before(beats[index + 1]?.id) },
+					},
+				]),
+			];
+		}),
 		...model.collections.flatMap((collection) => collectionSubjects(model.manifest.id, collection)),
 	]);
 }
@@ -243,7 +257,7 @@ function changeFields(subjects: Subjects, change: Change): void {
  */
 function requirePlacements(subjects: Subjects): void {
 	for (const subject of subjects.values())
-		if (subject.kind !== "collection" && subject.placement === undefined)
+		if (!["collection", "walkthrough"].includes(subject.kind) && subject.placement === undefined)
 			throw new ArchiveError("MODEL_INVALID", "An owned subject needs an explicit placement.");
 }
 /**
