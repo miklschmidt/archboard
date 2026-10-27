@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-10-27T04:28:00Z'
-updated_date: '2026-10-27T14:01:00Z'
+updated_date: '2026-10-27T15:32:00Z'
 labels:
   - renderer
   - layout
@@ -52,6 +52,8 @@ Both SVG sides are saved in /tmp/548-08/round-3/base and /tmp/548-08/round-3/aft
 Round 4 checkpoint 2 preserves the compact header sizing and emphasis without another header design change. Core a444102b6641c731 passes all 660 renderer tests, including light, dark, and inherited-theme header coverage. The native board and fixture scans have no header crossing or hidden frame. Both hard header assertions remain enabled. The complete before/after SVG corpus, including all 76 whole boards, is in /tmp/548-08/round-4/after-6 and /tmp/548-08/round-3/after-1. The report is docs/design/corpus-compactness-and-typed-trunks.md. The task remains In Progress and council criterion 4 remains unchecked.
 
 Round four checkpoint d4eb944a12850ce4 keeps the compact header painter and both engines. Packed top ports and settlement now reserve the trunk router clearance of 20 points instead of the 16-point lane. A reduced 19-card Archboard server fixture reproduces the former header crossings and passes expectDrawingIntact after the fix. Header crossings stay hard checks. The renderer suite passes 666 tests with one platform skip. All 2452 SVGs and 76 whole boards are saved in /tmp/548-08/round-4/after-11. The task stays In Progress pending the parent council.
+
+The round four frame checkpoint keeps the accepted compact header painter and every theme. Core 65e48764d0efbd32 passes 668 renderer tests with one platform skip and the complete repository gate. All 2452 SVGs, including 76 whole-board drawings, are in /tmp/548-08/round-4/after-15. Fresh whole-board integrity captures match all 34 light corpus SVGs and report no header crossing, missing frame or other hard defect. The only spacing observations are the existing four optional Blocks lanes in Board viewer. Header checks stay hard. Council approval remains pending, so this task stays In Progress.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

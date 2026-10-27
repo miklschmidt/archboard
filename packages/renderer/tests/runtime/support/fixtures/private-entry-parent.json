@@ -1,0 +1,152 @@
+{
+	"nodes": [
+		{
+			"id": "fssx6Gaq",
+			"order": 13000,
+			"name": "Workspace packages",
+			"kind": "package",
+			"responsibility": "Reusable libraries that the applications reach only through their package exports.",
+			"description": "A package owns one behavior and names its public files in package.json exports; nothing imports an app. Each package sits in a layer: the longest chain of packages it imports. A package imports only layers below its own, and packages of one layer never import each other (tests/system/repository-policy/package-graph.test.ts holds both rules). The apps share layer 8 above them all.",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "packages"
+			}
+		},
+		{
+			"id": "aIT2jJaC",
+			"order": 19000,
+			"name": "Layer 5",
+			"kind": "other",
+			"responsibility": "Imports only the layers below it, 0 to 4",
+			"description": "Holds renderer, code-intel, codex-app-server. A package's layer is the longest chain of packages it imports.",
+			"parent": "fssx6Gaq"
+		},
+		{
+			"id": "TQNCxSiT",
+			"order": 20000,
+			"name": "Layer 6",
+			"kind": "other",
+			"responsibility": "Imports only the layers below it, 0 to 5",
+			"description": "Holds server-lifecycle, code-opener, walkthrough, codex-realtime-voice. A package's layer is the longest chain of packages it imports.",
+			"parent": "fssx6Gaq"
+		},
+		{
+			"id": "zjBzk8pe",
+			"order": 21000,
+			"name": "Layer 7",
+			"kind": "other",
+			"responsibility": "Imports only the layers below it, 0 to 6",
+			"description": "Holds workbench, skills. A package's layer is the longest chain of packages it imports.",
+			"parent": "fssx6Gaq"
+		},
+		{
+			"id": "vEVm326r",
+			"order": 32000,
+			"name": "codex-app-server",
+			"kind": "package",
+			"responsibility": "One private Codex app-server session over stdio",
+			"parent": "aIT2jJaC",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "packages/codex-app-server"
+			}
+		},
+		{
+			"id": "sw4oFps0",
+			"order": 36000,
+			"name": "workbench",
+			"kind": "package",
+			"responsibility": "Archboard's host of the voice package: board context, domain tools, narration, pane routing, and the visual workbench shell",
+			"parent": "zjBzk8pe",
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "packages/workbench"
+			}
+		},
+		{
+			"id": "lU0khwR0",
+			"order": 38000,
+			"name": "codex-realtime-voice",
+			"kind": "package",
+			"responsibility": "The public MIT voice agent: one host entry for a server and one browser client, over Codex sessions, a coordinator, checkout workhorses and the host's own identity and policy",
+			"description": "Its npm build bundles codex-app-server, process, timing and diagnostics, which are MIT like it; every other workspace package is BUSL and stays out of it. Archboard and the example reach it only through the entries an outside host uses.",
+			"parent": "TQNCxSiT",
+			"groups": ["agent"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "packages/codex-realtime-voice"
+			}
+		},
+		{
+			"id": "xssnUgIk",
+			"order": 39000,
+			"name": "Workbench example",
+			"kind": "service",
+			"responsibility": "An independent host on Bun.serve that uses only the voice package's public entries, without a board or vault",
+			"groups": ["agent"],
+			"binding": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "apps/workbench-example",
+				"branch": "feat/reusable-codex-workbench"
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "Gh6v3DzI",
+			"order": 59000,
+			"from": "sw4oFps0",
+			"to": "vEVm326r",
+			"kind": "dependency",
+			"label": "the private session's tool requests and identities",
+			"emphasis": "normal",
+			"anchor": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "packages/workbench/src/runtime/operations/dynamic-tools/dispatch/dispatch-mutations.ts",
+				"symbol": "DynamicServerRequest"
+			}
+		},
+		{
+			"id": "hfMj0fMk",
+			"order": 61000,
+			"from": "sw4oFps0",
+			"to": "lU0khwR0",
+			"kind": "dependency",
+			"label": "host Archboard on the voice agent",
+			"emphasis": "normal",
+			"anchor": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "packages/workbench/src/server/services/owner/wiring.ts",
+				"symbol": "createVoiceAgent"
+			}
+		},
+		{
+			"id": "8AmcrRb6",
+			"order": 62000,
+			"from": "lU0khwR0",
+			"to": "vEVm326r",
+			"kind": "dependency",
+			"label": "own Codex threads and negotiate realtime voice",
+			"emphasis": "normal",
+			"anchor": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "packages/codex-realtime-voice/src/server/services/generation/workbench.ts",
+				"symbol": "createCodexProcess"
+			}
+		},
+		{
+			"id": "lwujMzjf",
+			"order": 63000,
+			"from": "xssnUgIk",
+			"to": "lU0khwR0",
+			"kind": "dependency",
+			"label": "a voice agent and client with its own policy",
+			"emphasis": "normal",
+			"anchor": {
+				"repo": "github.com/miklschmidt/archboard",
+				"path": "apps/workbench-example/src/server/wiring/application/application.ts",
+				"symbol": "createVoiceAgent"
+			}
+		}
+	]
+}

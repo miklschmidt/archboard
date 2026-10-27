@@ -64,9 +64,23 @@ test.each([
 		],
 	});
 	if (internal !== undefined)
-		content.edges.push({ id: "internal", order: 3000, from: internal, to: "b", kind: "call" });
+		content.edges.push({
+			id: "internal",
+			order: 3000,
+			from: internal,
+			to: "b",
+			kind: "call",
+			emphasis: "normal",
+		});
 	if (mixed)
-		content.edges.push({ id: "other", order: 4000, from: "worker", to: "c", kind: "dependency" });
+		content.edges.push({
+			id: "other",
+			order: 4000,
+			from: "worker",
+			to: "c",
+			kind: "dependency",
+			emphasis: "normal",
+		});
 	const drawing = await renderArchitecture({
 		content,
 		policy: DEFAULT_SEMANTIC_POLICY,

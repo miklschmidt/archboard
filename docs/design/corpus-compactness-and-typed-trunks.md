@@ -287,3 +287,96 @@ The existing packing score and crossing cost remain unchanged.
 The report now includes total relationship length as well as the longest route.
 This separates a single route tradeoff from an increase across all of the picture's relationships.
 The owner's shared composition criteria guide inspection, and defects remain an independent gate.
+
+## Fourth checkpoint: private wrapper collections and complete frame units
+
+The total route measure exposes a regression in Workbench reuse that page area alone misses.
+The third checkpoint makes that view 22.6% smaller, but its total relationship length grows by 53.5%.
+Its longest route grows from 1335 to 3287 points.
+The outside caller's label falls below the entire inline hierarchy before returning to its target.
+The return is visibly worse and is removed.
+
+A closed collection of transparent parent frames now uses local ranks for one exclusive outside root caller.
+Each nested parent contains one leaf card, and every leaf belongs to a nested parent.
+The caller sends one relationship and receives none.
+The collection contains internal work and has no outgoing dependency.
+This describes a wrapper, rather than a card-count threshold.
+Complex scopes keep their existing entry ordering.
+
+The broader private-scope probe fails the service's established entry-row test.
+A new nested service regression reproduces the same failure: Scheduler stands beside API instead of below it.
+The transparent-wrapper restriction keeps both entry-row contracts intact.
+No holding rule or assertion is weakened.
+
+A trace finds another source of long returns.
+Track folds an all-unit parent into columns, so the later facing pass cannot find its original child boxes.
+Both engines now pack complete parent frames when their holder has no inline clusters or labelled trunks.
+Track's organizational regions keep their shared rank context.
+The inline-cluster guard preserves every parent frame.
+Labelled exits use the existing facing walls, wall stubs, and label ranks.
+The obsolete bottom-face restriction and its argument are removed.
+
+The broader all-unit probe is dropped.
+It creates two ambiguous trunks in Board persistence and one label across a wall in Skill evaluation.
+The retained Track case accepts complete parent frames only.
+Blocks keeps its existing region packing.
+The final current-vault captures cover all 17 boards in both engines and contain no hard finding.
+Board viewer in Blocks retains four optional lane-spacing observations under the existing Track-only rule.
+
+The final core is `65e48764d0efbd32`.
+Its corpus is `/tmp/548-08/round-4/after-15`.
+It retains 2452 SVGs, including 76 whole-board drawings across both engines and themes.
+Compared with round three, 272 drawings change across 18 boards.
+The paired SVGs are in `milestone-4-after-15`, with 13 selected acceptance cases and a manifest for every whole board.
+Reports against round three, the third checkpoint, and the older council reference retain every drawing, frame, and route measure.
+The full report is `after-15-vs-round-3/per-board.md`.
+
+Workbench reuse now uses 37.3% less page area than round three, and its longest route falls to 875 points.
+Code evidence in Blocks uses 16.6% less area, with its two frames beside each other.
+The Blocks command-family view uses 29.4% less area and 14.8% less total relationship length.
+The largest remaining area increase is Tools and work in Track, at 9.6%.
+Its total relationship length falls 11.6%, and its longest route falls 54.9%.
+Reserving 4 in the Inventory fixture grows 7.7%, with 5.5% more total relationship length and an 8.5% shorter longest route.
+Visual inspection retains this small tradeoff: both branch labels stay distinct, and the paths need fewer crossings.
+Workspace packages in Blocks grows 6.2%, with 13.8% less total relationship length and a 34.2% shorter longest route.
+All other page-area increases stay below 4.6%.
+The per-board report names these costs alongside the gains.
+
+The renderer suite passes 668 tests, with one platform-only skip.
+The layout crate tests and strict clippy pass.
+The first repository gate finds two missing schema defaults in the fork test's added relationships.
+Both relationships now state normal emphasis, which matches the renderer's existing default.
+The gate is rerun after that type correction.
+The proposals match the final source, remain drafts, and retain the same 41 code-finding identities with no new finding.
+The consumer skill needs no change because the agent workflow does not change.
+
+Fresh counters pin each native run to P-core 2.
+The original baseline uses 152.724 billion instructions, round three uses 9.188 billion, and the final core uses 9.211 billion.
+The reduction from the original baseline is 94.0%.
+Viewer, Persistence, and Routes each use one solve, against 24, 25, and 27 originally.
+Their native critical paths, best of three, are 81, 84, and 73 ms.
+The original paths are 1054, 1093, and 326 ms.
+
+Three alternating growth runs give median first/growth times of 277/203, 301/287, and 141/134 ms.
+The original medians are 1546/1437, 1458/1452, and 581/573 ms.
+The owner's quiet round-three reference remains 265/201, 302/290, and 142/134 ms.
+Both alternating seven-render pool runs time every measured board.
+Viewer first renders change from 1419/1441 to 201/200 ms.
+Persistence changes from 1475/1481 to 298/296 ms.
+Routes changes from 677/635 to 149/158 ms.
+Every individual run, cached-render time, source hash, card-growth assertion, and load is retained in `after-15-measurements`.
+Its `summary.json` contains the complete measurements.
+Counter runs start at loads 0.67 to 1.66, pool runs at 1.60 to 2.07, and growth runs at 1.83 to 2.90.
+The retained performance evidence uses none of the old load-40 wall times.
+
+The next step is the parent's four-grader council, using the shared criteria and the retained SVG pairs.
+The tasks stay In Progress until that verdict.
+Broader private scopes need their entry-order contract before they can replace shared ranks.
+Organizational-region packing needs a traceable treatment of mixed joins before it can replace the existing Track pass.
+
+The final complete gate passes all 20 tasks, including the browser lane.
+The prior full run fails only the untouched real rust-analyzer deadline test at 2073 ms.
+Its focused rerun passes in 1900 ms, and the final full run passes without a code change to that owner.
+The final current-vault integrity capture produces 34 SVGs that exactly match their light-theme corpus counterparts.
+It has no hard finding.
+These fresh captures supplement the older native request snapshots.

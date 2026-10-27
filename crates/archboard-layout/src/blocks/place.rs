@@ -147,7 +147,8 @@ struct Earlier {
 }
 
 /// Lay one block out: packed with its child blocks as the pieces when it
-/// holds any and the board's blocks are packed, else as cards.
+/// holds child blocks alone, with no inline clusters or labels, else as cards.
+/// Track packs complete parent frames here; group regions keep shared ranks.
 fn lay_block(
     gv: &mut Engine<'_>,
     board: &mut Board,
@@ -155,8 +156,14 @@ fn lay_block(
     earlier: &Earlier,
 ) -> Result<Rc<Laid>, String> {
     let tree = &board.tree;
-    let packs = tree.nesting == Nesting::Blocks
-        && tree.get(block).items.iter().any(|item| tree.is_block(item))
+    let one = tree.get(block);
+    let packs = !one.items.is_empty()
+        && one.clusters.is_empty()
+        && one.items.iter().all(|item| {
+            tree.block_of(item).is_some_and(|child| {
+                tree.nesting == Nesting::Blocks || tree.get(child).kind == Kind::Frame
+            })
+        })
         && !tree
             .get(block)
             .lines

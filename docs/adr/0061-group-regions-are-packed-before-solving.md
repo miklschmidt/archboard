@@ -56,6 +56,21 @@ An exclusive collaborator is a leaf with one incoming relationship and no outgoi
 Its caller has exactly one relationship that leaves that parent.
 Other parents remain inline.
 This prevents an outside path from stretching a frame between distant member ranks.
+A closed collection of transparent parent frames also uses local ranks when its one outside root caller sends one relationship and receives none.
+Each nested parent contains one leaf card, and every leaf belongs to a nested parent.
+Complex scopes retain their existing entry ordering.
+The hierarchy contains internal work and has no outgoing dependency.
+Every parent inside that hierarchy becomes a local unit.
+This keeps an outside caller's label above the hierarchy instead of below its full height.
+
+Both engines pack a holder of complete parent frames when it has no inline clusters or labelled trunks.
+Track's organizational regions retain their shared rank context.
+Blocks retains its existing region packing.
+For that all-frame shape, measured packing replaces the Graphviz ranks described in ADR 0060.
+This also removes an unnecessary fold into columns and its full-height buses.
+The facing pass can read the child boxes directly.
+Labelled exits can use the facing wall, through the existing wall stubs and label ranks.
+The obsolete restriction that holds every labelled exit on its bottom face is removed.
 The existing entry-ordering constraints stay unchanged.
 
 Track places a parent beside its exclusive loose collaborator in one measured row.

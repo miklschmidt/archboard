@@ -65,11 +65,62 @@ fn context_of<'a>(id: &'a str, frames: &Map<&'a str, Set<&'a str>>) -> Option<&'
         .map(|(&parent, _)| parent)
 }
 
+/// A root leaf belongs only to this workflow when it calls once and receives no work.
+fn private_caller(graph: &Node, source: &str) -> bool {
+    graph
+        .kids()
+        .iter()
+        .any(|node| node.id == source && !node.has_children())
+        && !graph
+            .edges
+            .iter()
+            .flatten()
+            .any(|edge| edge.target() == source)
+        && graph
+            .edges
+            .iter()
+            .flatten()
+            .filter(|edge| edge.source() == source)
+            .count()
+            == 1
+}
+
+/// The one outside call into a scope, from a caller with no other work.
+fn private_entry(parent: &str, members: &Set<&str>, graph: &Node) -> bool {
+    let inside = |id: &str| id == parent || members.contains(id);
+    let mut incoming = graph
+        .edges
+        .iter()
+        .flatten()
+        .filter(|edge| inside(edge.target()) && !inside(edge.source()));
+    let Some(entry) = incoming.next() else {
+        return false;
+    };
+    incoming.next().is_none() && private_caller(graph, entry.source())
+}
+
+/// A collection of transparent wrappers has no hidden member ordering to rebuild.
+fn wrapper_collection(members: &Set<&str>, frames: &Map<&str, Set<&str>>) -> bool {
+    let nested: Vec<_> = members.iter().filter_map(|id| frames.get(*id)).collect();
+    !nested.is_empty()
+        && nested.iter().all(|inside| {
+            inside
+                .iter()
+                .filter(|id| !frames.contains_key(**id))
+                .count()
+                == 1
+        })
+        && members
+            .iter()
+            .copied()
+            .filter(|id| !frames.contains_key(*id))
+            .all(|leaf| nested.iter().any(|inside| inside.contains(leaf)))
+}
+
 /// A flat sink used by one caller context can rank its internals locally.
 fn closed(parent: &str, members: &Set<&str>, graph: &Node, frames: &Map<&str, Set<&str>>) -> bool {
-    if members.iter().any(|id| frames.contains_key(id)) {
-        return false;
-    }
+    let flat = !members.iter().any(|id| frames.contains_key(id));
+    let private = wrapper_collection(members, frames) && private_entry(parent, members, graph);
     let inside = |id: &str| id == parent || members.contains(id);
     let contexts: Set<_> = graph
         .edges
@@ -83,8 +134,8 @@ fn closed(parent: &str, members: &Set<&str>, graph: &Node, frames: &Map<&str, Se
         .iter()
         .flatten()
         .any(|edge| members.contains(edge.source()) && members.contains(edge.target()));
-    contexts.len() == 1
-        && !contexts.contains(&None)
+    let coherent = flat && contexts.len() == 1 && !contexts.contains(&None);
+    (private || coherent)
         && internal
         && !graph
             .edges
@@ -180,14 +231,28 @@ pub(crate) fn local_frames(graph: &Node) -> Set<String> {
         .filter_map(|node| sole_caller(graph, &node.id))
         .filter(|source| leaves.contains(source))
         .collect();
-    members
+    let mut local: Set<String> = members
         .iter()
         .filter(|(parent, inside)| {
             leaves_and_returns(inside, &next)
                 || local_shape(parent, inside, &members, graph, &exclusive)
         })
         .map(|(parent, _)| (*parent).to_owned())
-        .collect()
+        .collect();
+    // One exclusive caller makes the whole closed hierarchy a local composition.
+    let scoped: Vec<String> = members
+        .iter()
+        .filter(|(parent, inside)| {
+            local.contains(**parent)
+                && private_entry(parent, inside, graph)
+                && closed(parent, inside, graph, &members)
+        })
+        .flat_map(|(_, inside)| inside.iter())
+        .filter(|member| members.contains_key(*member))
+        .map(|member| (*member).to_owned())
+        .collect();
+    local.extend(scoped);
+    local
 }
 
 #[cfg(test)]
