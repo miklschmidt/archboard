@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T21:53:00Z'
+updated_date: '2026-10-27T21:54:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -192,4 +192,6 @@ The canonical legibility browser port passes the first 15 computed-color and tra
 The canonical walkthrough owner reproduced an active sidebar toggle while captured playback hid its ordinary panel. The existing reader now receives the header as a composition slot inside its presentation context. ModelHeader derives the existing sidebar control state from that context; no mirrored presentation state or second sidebar owner was added. A shared frame preserves headers and recovery when no coherent model exists. The toggle is held and collapsed during playback, then restores its previous expanded state on leave. Canonical walkthrough and preview-navigation browsers, full types and focused source/test lint pass.
 
 Render-context repair is implemented in the shared projection and HTTP render adapter. Public runtime and real-Git HTTP/CLI evidence proves module and aggregate warnings, default comparison with removed subjects, complete behavioral exchanges, exact retained recipe replay after later edits, CLI artifact equality, and scoped entry-point meaning after visual filters. Consumer rendering guidance describes these semantics. Source-vault inputs remain unchanged. The parent retains full acceptance.
+
+Bounded render-context evidence: bun test --isolate over reconcile-standing.test.ts and model-render-context.test.ts passes 6 cases and 44 assertions. Both TypeScript projects, focused source/test lint with zero warnings, touched-file formatting, and git diff --check pass. Signed implementation 2355a5d40 and integration merge bb11bf72d retain required main a98f28811 and local integration 86ad139a4. The final contract and handoff are task-549.24-render-context-contract.md and task-549.24-render-context-backend.md under /home/msc/.local/state/archboard-implementation/task-549. All fixture claims and owned servers close. Parent status, assignee, acceptance, and architecture cutover remain unchanged.
 <!-- SECTION:NOTES:END -->
