@@ -1,3 +1,4 @@
+import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 // One pane as the application mounts it: its session with the server, and the
 // semantic board it is showing drawn inside it.
 //
@@ -201,6 +202,7 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 		[onSemanticReading],
 	);
 	const bound = useBoundCallbacks(props);
+	const { model: requestedModel } = useModelLocation(paneId);
 	// A step somebody narrating a walkthrough asked for (TASK-251). Kept with the
 	// pane because it is about this pane's picture, and handed to the stage, which
 	// owns where the pane is in a walkthrough and answers through its reading.
@@ -213,10 +215,11 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	const options = useMemo(
 		() => ({
 			...optionsFor(props, bound),
+			canonical: requestedModel !== null,
 			onPresentRequest,
 			onExplanationsChanged: refreshExplanations,
 		}),
-		[props, bound, refreshExplanations],
+		[props, bound, refreshExplanations, requestedModel],
 	);
 	const session = usePaneSession(options);
 	const { attachPaneElement, openedKey, readingChanged, vault } = session;
@@ -244,7 +247,10 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	// reading. Following a link down moves what is on screen without moving
 	// this: the trail out is drawn from it, and the pane says what it is
 	// actually showing through its reading instead.
-	const address = useMemo(() => boardAddressOf(openedKey), [openedKey]);
+	const address = useMemo(
+		() => (requestedModel === null ? boardAddressOf(openedKey) : null),
+		[openedKey, requestedModel],
+	);
 	// A pane on no board is reading nothing, and says so: the stage is not
 	// mounted to report it.
 	const reading = useMemo(

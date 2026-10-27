@@ -23,6 +23,7 @@ function useModelLocation(paneId: string) {
 	const scope = nullableParameter(search[`scope${paneId}`]);
 	const checkpoint = nullableParameter(search[`checkpoint${paneId}`]);
 	const state = nullableParameter(search[`state${paneId}`]);
+	const preview = nullableParameter(search[`preview${paneId}`]);
 	const against = nullableParameter(search[`against${paneId}`]);
 	const subject = nullableParameter(search[`subject${paneId}`]);
 	const grammar = search[`grammar${paneId}`] ?? "architecture";
@@ -153,6 +154,7 @@ function useModelLocation(paneId: string) {
 	);
 	return {
 		subject,
+		preview,
 		openReference,
 		state,
 		against,
@@ -189,6 +191,7 @@ function referenceAddress(reading: Model): ModelAddress {
 	const checkpoint = location.checkpoint ?? null;
 	return {
 		id: location.model,
+		preview: undefined,
 		subject: location.subject,
 		scope: referenceScope(reading),
 		checkpoint,

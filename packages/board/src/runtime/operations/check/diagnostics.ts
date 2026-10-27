@@ -215,7 +215,7 @@ function readBoardFile(
 			.slice(0, -SEMANTIC_BOARD_FILE_SUFFIX.length);
 		const location = { ...semanticBoardAddress(name), file };
 		recordAddress(location, addresses, diagnostics);
-		const result = readSemanticBoardAt(root, location, configured);
+		const result = readSemanticBoardAt(root, location, configured, { migrate: false });
 		if (!result.ok) {
 			diagnostics.push({
 				severity: "error",

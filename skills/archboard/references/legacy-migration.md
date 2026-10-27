@@ -108,6 +108,17 @@ archboard model read --preview Shop -C /path/to/checkout
 archboard model read 'Shop/System#Api' --preview Shop --flow 'Shop/System#Buy' -C /path/to/checkout
 ```
 
+Open the local browser at `/?modelA=Shop&previewA=Shop` to inspect that candidate.
+For a different repository, add its registered identity as `repoA`.
+The preview uses the existing module navigation, selection, filters, and flow modes.
+Its source disclosure shows both fingerprints, original board coverage, and proposed state mappings.
+Reload and browser history retain the preview origin and selected scope or flow.
+If the source changes, Refresh refuses the stale candidate until the plan matches the source again.
+
+Browser snapshots and diagnostics normalize old board schemas in memory.
+Opening a preview does not persist those schema upgrades.
+Ordinary legacy CLI reads retain their existing schema migration behavior.
+
 The existing canonical model result carries the composed current modules, source-owned relationships, and independent flows.
 The preview uses the origin as its model identity and composed current-state identity.
 It names that state `Migration baseline`.
