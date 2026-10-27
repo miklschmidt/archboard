@@ -64,6 +64,7 @@ async function candidateRecord(
 	candidate: Candidate,
 	context: ArchiveContext,
 ) {
+	const references = await captureReferencePins(vault, candidate.model, request);
 	return CheckpointRecordSchema.parse({
 		schemaVersion: 1,
 		kind: "checkpoint",
@@ -92,7 +93,7 @@ async function candidateRecord(
 			"correction" in request
 				? request.correction.revisions.map((revision) => ({ ...revision, uncommitted: false }))
 				: await captureSource(context, candidate.model, vault),
-		...(await captureReferencePins(vault, candidate.model)),
+		...references,
 	});
 }
 /**
@@ -114,7 +115,13 @@ async function prepareEdit(vault: string, request: ArchitectureModuleEdit) {
 	const checkpoint = await archiveCommit(
 		context,
 		await tree(context, inputs),
-		[...new Set([...(tip === undefined ? [] : [tip]), ...candidate.dependencies])],
+		[
+			...new Set([
+				...(tip === undefined ? [] : [tip]),
+				...candidate.dependencies,
+				...(record.referenceDependencies ?? []),
+			]),
+		],
 		"archboard: edit canonical architecture",
 	);
 	const latest = await requireUnchanged(vault, request, candidate.scopes);

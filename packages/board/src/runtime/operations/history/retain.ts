@@ -54,6 +54,7 @@ async function prepareCheckpoint(
 		throw new ArchiveError("STALE_REVISION", "Inputs changed before retention.");
 	const tip = await archiveTip(context);
 	const narrativeDependencies = await walkthroughDependencies(context, current);
+	const references = await captureReferencePins(vault, current, request);
 	const record = CheckpointRecordSchema.parse({
 		schemaVersion: 1,
 		kind: "checkpoint",
@@ -66,7 +67,7 @@ async function prepareCheckpoint(
 		request,
 		...(narrativeDependencies.length === 0 ? {} : { narrativeDependencies }),
 		sources: await captureSource(context, current, vault),
-		...(await captureReferencePins(vault, current)),
+		...references,
 	});
 	const inputs = new Map([...captured.inputs].map(([file, bytes]) => [`inputs/${file}`, bytes]));
 	inputs.set("record.json", Buffer.from(JSON.stringify(record)));
@@ -78,6 +79,7 @@ async function prepareCheckpoint(
 			...new Set([
 				...(tip === undefined ? [] : [tip]),
 				...request.dependencies,
+				...references.referenceDependencies,
 				...narrativeDependencies,
 			]),
 		],
@@ -178,4 +180,4 @@ async function prepareRetention(
 		);
 	return prepareCheckpoint(context, vault, current, request);
 }
-export { retainArchitectureCheckpoint };
+export { retainArchitectureCheckpoint, prepareCheckpoint };

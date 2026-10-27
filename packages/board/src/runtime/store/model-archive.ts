@@ -37,6 +37,7 @@ const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, pub
 		kind: z.literal("checkpoint"),
 		vault: z.string(),
 		narrativeDependencies: z.array(ArchitectureCheckpointSchema.shape.id).optional(),
+		referenceDependencies: z.array(ArchitectureCheckpointSchema.shape.id).optional(),
 		edit: ArchitectureModuleEditSchema.optional(),
 		installation: z
 			.union([

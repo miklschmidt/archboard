@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T23:02:00Z'
+updated_date: '2026-10-27T23:26:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -122,6 +122,8 @@ Remove empty board catalogue compatibility and board-release/activity invalidati
 Retire remaining live board list/document/render HTTP adapters. Keep exact original recording reads behind the existing BoardReads and PictureSource owners, with explicit captured providers and local rendering. Port retained UI fixtures to those existing providers, preserve shared geometry/meaning owners, and isolate retained replay startup from ordinary canonical browser startup.
 
 Repair the observed same-model reference failure during canonical edits after migration. A migrated local drill-down points into the same model, but settlement currently refuses REFERENCE_UNAVAILABLE because reference retention reads its own active installation. Delegate a bounded public-runtime RED/GREEN repair with real files and Git; preserve exact capture, dependency closure, foreign-vault barriers, and signing. Parent retains all frontend, example meaning, root mapping, adoption and cutover.
+
+Bounded local-reference repair: reproduce at the approved public runtime owner with signed temporary Git repositories. Keep same-state local references inside their complete captured snapshot. Retain exact local current targets for proposal references through the existing archive and dependency closure. Preserve foreign references, barriers, signing, claims, and recovery. Use focused reference/history owners and types, lint, and formatting. Parent owns NyesaQPQ and final authoring, status, assignee, and acceptance.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -230,4 +232,12 @@ Removed AgentContext from the shared agent view and its app consumers. This obje
 Removed the empty board catalogue projection, board-name shell lookup, board release tracking, activity-based content invalidation, and obsolete pane-list acceptance callbacks. useModelCatalog consumes canonical queries and their shared event feed. The ported repository catalogue owner proves model discovery, explicit migration, transport failure, and snapshot updates without another model fetch. Full types, focused source/test lint, catalogue, shell view, activity, actions, and pane connection owners pass. Retained replay and remaining legacy read adapters stay open work.
 
 Live legacy list, document, and render HTTP adapters now retire. Retained originals require the existing explicit capture provider and local renderer. Replay startup loads separately from ordinary model browsing. Both TypeScript projects, focused lint, seven retained UI owners, fresh-build browser drawing, canonical replay across page counts, and exact original-schema replay pass. Retained fixture transport now has its own support file. The existing 500 kB bundle warning remains open integration work; no threshold or lint/type rule changed. Repository migration, example conversion, asset recipes, final gate, and review remain open.
+
+Bounded local-reference repair reproduces the reported writer-lease refusal through the existing public runtime owner before source changes. Self references and distinct local subjects now resolve inside their complete captured state. Proposal references to local current architecture reuse or prepare exact signed checkpoints through the existing retention owner. Git parents and private referenceDependencies preserve their closure without changing original retention requests. Foreign references retain their existing public-reader barriers and exact pins. No public package exports, runtime flags, signing rules, lint rules, type rules, or interface ceilings change.
+
+The local reference owner passes four cases and 16 assertions. It proves exact revisions, later-edit independence, signed ancestry, foreign preservation, retention retries, and shallow-history refusal. The three existing owners pass 33 cases in total in the first isolated run. A later repeat hits existing deadlines during heavy shared-machine CPU activity. No test deadline is raised in an existing owner. Both TypeScript projects and focused source/test lint and formatting pass. Full gate and model evaluations remain with parent integration.
+
+Parent-owned Board persistence proposal NyesaQPQ under board 0T9enjhi remains unchanged. Affected subjects are Mv3r4IsX, QDE2xctM, Bd4GPG6d, 8Uq1mtzw, KJy5yYuq, and ZRq51Ecz. Final source mapping and authoring remain with the parent. No frontend, example, README asset, source-vault, or parent scratch inputs change. No source-vault claims or servers are created. Parent status, assignee, acceptance criteria, migration, and adoption remain unchanged. Exact contract and backend evidence use task-549.24-local-reference-contract.md and task-549.24-local-reference-backend.md in the external task-549 state directory.
+
+Final timing follow-up: all four reference cases that hit deadlines pass the focused retry with unchanged source and existing deadlines. That retry passes four cases and 22 assertions. Together with the final local owner and the other existing cases, all 37 affected cases have passing evidence. No source changes follow signed implementation cfc057aba89099ec1ec992973e8ae34bcfe545e7. Final local integration remains signed d95f79c58 and includes required main a98f28811. The branch is fix/same-model-reference-repair. Parent status, assignee, and acceptance remain unchanged.
 <!-- SECTION:NOTES:END -->

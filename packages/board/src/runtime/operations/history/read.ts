@@ -93,6 +93,7 @@ async function requireDependencies(
 	for (const dependency of [
 		...record.request.dependencies,
 		...(record.narrativeDependencies ?? []),
+		...(record.referenceDependencies ?? []),
 	]) {
 		if (visited.has(dependency)) continue;
 		// oxlint-disable-next-line no-await-in-loop -- dependency traversal shares one visited closure
