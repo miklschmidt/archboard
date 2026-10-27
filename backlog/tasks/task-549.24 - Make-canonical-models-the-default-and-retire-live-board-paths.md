@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T21:43:00Z'
+updated_date: '2026-10-27T21:45:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -100,6 +100,8 @@ Retire the obsolete legacy board viewer, board-wide claim, and board drill brows
 Port the existing status-legibility browser owner to canonical public proposals and flows. Retain computed theme colors, added/removed connection ink, traffic/label paint order, distinct kind chips, and simultaneous unresolved/selected marks. Keep authored text assertions only for actual architecture content; use structured issue fields for conflict behavior.
 
 Delegate the bounded canonical render-context repair to gpt-6.1-sol in an isolated worktree. Reuse shared projection and existing renderer inputs for exact unresolved subjects, aggregated connections and complete interface context in exports/recipes. Publish the shared field contract early. Parent wires browser drawing and owns the legibility browser acceptance. No new rendering engine, live board adapter, storage abstraction, export ceiling or lint waiver.
+
+Bounded render-context repair: extend the approved public runtime and HTTP/CLI render owners with real Git fixtures. Add one shared projection unsettled field, preserve represented aggregate warnings, restore existing default comparison context, and pass complete variant meaning to structural and behavioral exports. Parent retains all frontend, mapping, adoption, and cutover. Existing drafts NyesaQPQ, aolPYfP5, and KzJ2iXIq cover this intent. Publish the shared contract and final handoff, merge the latest local integration, run focused behavior/types/lint/format checks, and commit signed source. Keep parent status, assignee, and acceptance unchanged.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes

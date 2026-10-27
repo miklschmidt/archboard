@@ -1108,6 +1108,11 @@ Select a module with `--module`, an exact scope with `--scope`, or repeated iden
 Use `--hide-kind` and `--hide-group` for presentation filters.
 Use `--state` or `--checkpoint` for explicit architecture selection.
 Use `--flow` with `--grammar sequence` or `--grammar flowchart` for a complete behavioral exchange.
+Exports use the selected state's default comparison, including removed subjects from its exact reference.
+Unresolved subjects carry warning badges.
+A joined connection carries a warning when any relationship that it represents remains unresolved.
+Presentation filters keep the complete selected state's container interface meaning.
+If the comparison base changes during export, retry the reported `STALE_REVISION` refusal.
 `model rasterize --out picture.png` accepts the same reading selectors, plus `--scale` and `--region`.
 Both artifacts carry a canonical recipe with model identity, reading, revision, and picture digest.
 Track exported artifacts through Git when other files embed them.

@@ -120,6 +120,7 @@ function projectModel(
 	return {
 		...projection,
 		...context,
+		unsettled: unsettledSubjects(model, projection.connections),
 		reference,
 		held,
 		inspection: interfaceOf(
@@ -133,6 +134,24 @@ function projectModel(
 		),
 		content: filteredContent(projection.content, filters),
 	};
+}
+
+/**
+ * Carry each unresolved authored identity to every connection that represents it.
+ * @param model The complete selected state and its standing issues.
+ * @param connections Lines with their underlying relationship identities.
+ * @returns Distinct issue identities and represented connection identities.
+ */
+function unsettledSubjects(model: Model, connections: ReturnType<typeof overviewLines>): string[] {
+	const unresolved = new Set(model.selectedState?.standing?.issues.map((issue) => issue.subject));
+	return [
+		...new Set([
+			...unresolved,
+			...connections
+				.filter(({ joins }) => joins.some((edge) => unresolved.has(edge.id)))
+				.map(({ line }) => line.id),
+		]),
+	];
 }
 
 /**

@@ -5,7 +5,7 @@ import {
 	ArchitectureRenderRequestSchema,
 	type ArchitectureModelRead,
 } from "@archboard/board/model";
-import { projectModel, projectFlow } from "@archboard/board/content";
+import { projectModel, projectFlow, type Model } from "@archboard/board/content";
 import { recordArchitectureRecipe } from "@archboard/renderer/recipe";
 import { vaultIdentity } from "@archboard/code-binding/resolution";
 import { renderArchitecture } from "@archboard/renderer/bun";
@@ -46,13 +46,11 @@ function flowReading(vault: string, input: Reading) {
  * @param vault The addressed vault.
  * @returns The SVG and exact reading receipt.
  */
-async function flowPicture(
-	model: Extract<ArchitectureModelRead, { success: true }>,
-	input: Reading,
-	vault: string,
-) {
-	const { architecture, flow, content } = renderProjection(model, input);
-	if (architecture.missing || architecture.missingFocus.length !== 0)
+async function flowPicture(model: Model, input: Reading, vault: string) {
+	const reference = await comparisonModel(vault, model);
+	if (reference !== undefined && !reference.success) return reference;
+	const { projection, flow } = renderProjection(model, input, reference);
+	if (projection.missing || projection.missingFocus.length !== 0)
 		return {
 			success: false as const,
 			code: "MODULE_NOT_FOUND" as const,
@@ -67,7 +65,11 @@ async function flowPicture(
 			],
 		};
 	const drawn = await renderArchitecture({
-		content,
+		content: projection.content,
+		variant: projection.complete,
+		held: projection.held,
+		standing: projection.standing,
+		unsettled: projection.unsettled,
 		grammar: input.grammar,
 		policy: model.policy,
 		fonts: "embedded",
@@ -76,31 +78,88 @@ async function flowPicture(
 	return renderReceipt(model, input, vault, drawn, flow);
 }
 /**
+ * Read only the comparison base identified by the shared public reader.
+ * @param vault The addressed vault.
+ * @param model The selected coherent state and its default comparison.
+ * @returns Its exact base, an actionable refusal, or no comparison.
+ */
+async function comparisonModel(
+	vault: string,
+	model: Model,
+): Promise<ArchitectureModelRead | undefined> {
+	const comparison = model.comparison;
+	if (comparison === undefined) return undefined;
+	const reference = await readArchitectureModel(vault, undefined, undefined, {
+		...(comparison.checkpoint === undefined
+			? { state: comparison.against?.id }
+			: { checkpoint: comparison.checkpoint }),
+		compare: false,
+	});
+	if (!reference.success) return reference;
+	if (coherentComparison(model, reference, comparison)) return reference;
+	return {
+		success: false,
+		code: "STALE_REVISION",
+		error: "The comparison base changed while preparing the export.",
+		diagnostics: [
+			{
+				code: "STALE_REVISION",
+				file: "model.json",
+				message: "The selected state and comparison base no longer share one coherent reading.",
+				recovery: "Retry the render to read the selected state and its comparison again.",
+			},
+		],
+	};
+}
+/**
+ * Match complete input revision and semantic state without substituting a newer base.
+ * @param model The selected architecture.
+ * @param reference The separately read comparison content.
+ * @param comparison The selected reader's comparison identity.
+ * @returns Whether the two reads describe the same comparison.
+ */
+function coherentComparison(
+	model: Model,
+	reference: Model,
+	comparison: NonNullable<Model["comparison"]>,
+): boolean {
+	return (
+		reference.manifest.id === model.manifest.id &&
+		reference.selectedState?.id === comparison.against?.id &&
+		reference.revision.digest === comparison.revision.digest &&
+		sameCheckpoint(reference, comparison)
+	);
+}
+/**
+ * An identified retained reference must keep its exact checkpoint.
+ * @param reference The complete reference reading.
+ * @param comparison The comparison selected by the runtime.
+ * @returns Whether the optional retained identity matches.
+ */
+function sameCheckpoint(reference: Model, comparison: NonNullable<Model["comparison"]>): boolean {
+	return comparison.checkpoint === undefined || reference.checkpoint?.id === comparison.checkpoint;
+}
+/**
  * Project structural scope and complete behavioral meaning through shared rules.
  * @param model The coherent reading.
  * @param input The requested presentation.
- * @returns The structural projection, selected flow, and complete content.
+ * @param reference The exact comparison base, when available.
+ * @returns The complete projection and selected flow.
  */
-function renderProjection(
-	model: Extract<ArchitectureModelRead, { success: true }>,
-	input: Reading,
-) {
+function renderProjection(model: Model, input: Reading, reference?: Model) {
 	const architecture = projectModel(
 		model,
 		input.scope ?? model.selectedModule ?? null,
 		input.focus ?? null,
 		{ hideKinds: input.hideKinds, hideGroups: input.hideGroups },
+		reference,
 	);
 	const flow = model.collections
 		.flatMap((collection) => collection.flows)
 		.find((value) => value.id === model.selectedFlow);
 	return {
-		architecture,
 		flow,
-		content:
-			input.grammar === "architecture"
-				? architecture.content
-				: projectFlow(architecture, flow!).content,
+		projection: input.grammar === "architecture" ? architecture : projectFlow(architecture, flow!),
 	};
 }
 /**
@@ -113,7 +172,7 @@ function renderProjection(
  * @returns The canonical rendering receipt.
  */
 function renderReceipt(
-	model: Extract<ArchitectureModelRead, { success: true }>,
+	model: Model,
 	input: Reading,
 	vault: string,
 	drawn: Awaited<ReturnType<typeof renderArchitecture>>,
