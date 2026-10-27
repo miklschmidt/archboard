@@ -1,3 +1,4 @@
+import { agentActivity } from "#server/wiring/owners/server-owners.ts";
 import type { IncomingMessage } from "http";
 import path from "path";
 import { WebSocket, WebSocketServer } from "ws";
@@ -378,6 +379,8 @@ async function acceptWebSocketConnection(
 	if (ws.readyState !== WebSocket.OPEN || !admitSocket(ws, socket, startingKey)) {
 		return;
 	}
+	agentActivity.follow(vault);
+	for (const snapshot of agentActivity.snapshots()) ws.send(JSON.stringify(snapshot));
 	// There is a screen again, so the lock files of what is on it are worth
 	// reading (ADR 0016).
 	logger.info(

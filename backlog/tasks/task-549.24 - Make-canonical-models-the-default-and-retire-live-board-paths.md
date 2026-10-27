@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T19:21:00Z'
+updated_date: '2026-10-27T19:22:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -134,4 +134,6 @@ Parent code evidence transition: the existing code browser owner reproduced abse
 Parent source-history transition: selected canonical modules now use the existing locality analysis and commit/coupling presentation. The browser owner reproduced an absent history panel and now displays the exact source fixture Git commit. Query identity includes explicit vault, model, state, checkpoint and revision, and mismatched replies refuse. History reads remain on demand, with shared pending work across quick picks and explicit refresh or failure feedback. The old PartHistory HTTP adapter is retired; its pure evidence display remains. Browser code/history owner, full types, and touched source/test lint pass.
 
 Parent shell fixture port reaches all 12 render-matrix cells through canonical setup. Existing assertions remain. The first visual failure is the reference canvas width: expected 1271, actual 911, caused by two 320 px panels instead of the shared 280 px sidebar. Full types and touched test lint pass. Fixture reads the repository catalogue through the actual browser origin guard. This checkpoint records RED evidence; sidebar integration and backend activity frontend acceptance remain open.
+
+Backend activity gap: signed 21bd25646 connects the existing agent_activity snapshot tracker to canonical watchArchitectureModel events for registered, explicitly addressed, and connected vaults. Each model entry preserves all concurrent subject claims and attributes its latest doing line only from a durable operation receipt. Temporary MODEL_BUSY reads keep live claims. Real signed temporary Git repositories and existing server/socket interfaces cover startup/reconnect, off-screen vault identity, cross-process durable writes, release, take-back, expiry, failed signatures, stale writes, and idle cleanup. The focused owner passes 2 cases and 25 assertions; source types and touched source/test lint pass. The minimal public contract and handoff are external in task-549.24-activity-contract.md and task-549.24-activity-backend.md. Existing Live panes draft SGrr8NFb and server drafts cover this publication meaning; the parent owns their source mapping, update, migration, and adoption. No frontend changes, source-vault writes, status changes, assignee changes, or acceptance changes. Integration 9a95481c2 is merged with the parent task notes preserved.
 <!-- SECTION:NOTES:END -->
