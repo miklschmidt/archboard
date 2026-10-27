@@ -53,7 +53,8 @@ interface WorkspaceAddress {
 /** One pane whose board must change to reach a wanted address. */
 interface AddressOpen {
 	readonly paneId: string;
-	readonly boardKey: string;
+	readonly boardKey: string | null;
+	readonly model?: ModelAddress;
 	/** The repository the board is in, or null for the one the pane is in. */
 	readonly repository: string | null;
 }
@@ -285,11 +286,16 @@ function planFor(
 		.filter((pane) => !hasAddressedPane(asked, pane.paneId))
 		.map((pane) => pane.paneId);
 	const wantedOpen = asked.panes.filter((pane) => hasAddressedPane(displayed, pane.paneId));
-	const opens = wantedOpen.flatMap((pane) =>
-		pane.boardKey !== null && elsewhere(displayed, pane)
+	const opens = wantedOpen.flatMap((pane): AddressOpen[] => {
+		if (pane.model !== undefined) {
+			return pane.repository !== null && pane.repository !== repositoryIn(displayed, pane.paneId)
+				? [{ paneId: pane.paneId, boardKey: null, model: pane.model, repository: pane.repository }]
+				: [];
+		}
+		return pane.boardKey !== null && elsewhere(displayed, pane)
 			? [{ paneId: pane.paneId, boardKey: pane.boardKey, repository: pane.repository }]
-			: [],
-	);
+			: [];
+	});
 	// A pane the address is about to point at another board is not read here as
 	// well: the view it should end up on is a view of the board it is going to,
 	// and the reading is settled once that board is there.

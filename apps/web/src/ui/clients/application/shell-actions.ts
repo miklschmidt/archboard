@@ -158,13 +158,21 @@ async function openModel(
 		deps.notices.raise(vault);
 		return false;
 	}
+	const permission = await deps.addressing.claim({
+		kind: "board",
+		paneId,
+		from: status.boardKey,
+		repository: status.repository,
+	});
 	const move = userMoves(deps.panes.handles, paneId);
 	try {
 		await showModel(vault, status.clientId, { model });
+		permission.move.done(null, repository);
 		await deps.activate(paneId, { vault });
 		deps.notices.dismiss("architecture-command");
 		return true;
 	} catch (error) {
+		permission.move.failed();
 		move.failed();
 		deps.notices.raise(
 			failureNotice(

@@ -32,6 +32,7 @@ import {
 	settledAddress,
 	withModelAddresses,
 	type WorkspaceAddress,
+	type ModelAddress,
 } from "#ui/rules/board-routing/address.ts";
 import {
 	createDeliberateNavigation,
@@ -70,7 +71,7 @@ interface NavigationClaim {
 	 * pane in are the server's own answer, and are what says whether the pane
 	 * has anything to move to.
 	 */
-	readonly done: (openedKey: string, repository: string | null) => void;
+	readonly done: (openedKey: string | null, repository: string | null) => void;
 	/** The command did not finish, so nothing moved. */
 	readonly failed: () => void;
 }
@@ -235,7 +236,7 @@ function grantSlot(state: Reconciliation): void {
 			 * @param openedKey The board the server says it opened.
 			 * @param repository The repository the server says the pane is in now.
 			 */
-			done: (openedKey: string, repository: string | null): void => {
+			done: (openedKey: string | null, repository: string | null): void => {
 				if (operation === null) {
 					reconcile(state);
 					return;
@@ -279,20 +280,26 @@ function commandsOver(state: Reconciliation) {
 			return step.kind === "focus" ? state.port.selectPane(step.paneId) : false;
 		},
 		/**
-		 * Take the slot and point a pane at a board.
+		 * Take the slot and point a pane at its requested architecture.
 		 * @param paneId The pane.
 		 * @param boardKey The board.
 		 * @param repository The repository the board is in, or null for the pane's own.
+		 * @param model The complete canonical reading, when this address names one.
 		 */
-		open: (paneId: string, boardKey: string, repository: string | null): void => {
+		open: (
+			paneId: string,
+			boardKey: string | null,
+			repository: string | null,
+			model?: ModelAddress,
+		): void => {
 			const operation = startOperation(
 				{ kind: "restore", target: state.restore.target },
 				paneId,
-				{ boardKey, repository },
+				{ boardKey, repository, ...(model === undefined ? {} : { model }) },
 				state.displayed,
 			);
 			state.operation = operation;
-			void state.port.open(paneId, boardKey, repository).then((outcome) => {
+			void state.port.open(paneId, boardKey, repository, model).then((outcome) => {
 				if (outcome.kind === "opened") {
 					answerOperation(state, operation, "opened", outcome);
 				} else {
@@ -344,7 +351,12 @@ function revealOpenedPane(state: Reconciliation, paneId: string): void {
 	if (actual === undefined) return;
 	state.displayed = {
 		...state.displayed,
-		panes: state.displayed.panes.map((pane) => (pane.paneId === paneId ? actual : pane)),
+		panes: state.displayed.panes.map((pane) => {
+			if (pane.paneId !== paneId) return pane;
+			return actual.boardKey === null && pane.model !== undefined
+				? { ...actual, model: pane.model }
+				: actual;
+		}),
 	};
 }
 

@@ -17,7 +17,7 @@ function picker() {
 	let record = initialPaneRecord("A");
 	const notices: ShellNotice[] = [];
 	const shown: string[] = [];
-	const moved: string[] = [];
+	const moved: (string | null)[] = [];
 	const marked: string[] = [];
 	const activated: { readonly paneId: string; readonly vault: string | undefined }[] = [];
 	let failures = 0;

@@ -56,7 +56,10 @@ const READ: Readonly<Record<SemanticPanePart, (reading: MarkedReading) => unknow
 	 * @param reading The reading.
 	 * @returns The id, or undefined.
 	 */
-	variant: (reading) => reading.architecture?.selection ?? reading.variant?.id,
+	variant: (reading) =>
+		reading.architecture
+			? [reading.architecture.model, reading.architecture.selection]
+			: reading.variant?.id,
 	/**
 	 * The view's identity.
 	 * @param reading The reading.

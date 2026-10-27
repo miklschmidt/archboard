@@ -459,6 +459,24 @@ test(
 		);
 		expect(placed.body.panes.find((pane) => pane.paneId === "B")?.vault).toBe(ordersVault);
 		expect(placed.body.panes.find((pane) => pane.paneId === "A")?.vault).toBe(shopVault);
+		await browser.run(["reload"]);
+		const restored = await pollUntil(
+			() =>
+				createJsonRequester(server)<{
+					panes: { paneId: string; vault: string; architecture?: { vault: string } }[];
+				}>("/api/panes"),
+			(result) =>
+				result.body.panes.some(
+					(pane) => pane.paneId === "A" && pane.architecture?.vault === shopVault,
+				) &&
+				result.body.panes.some(
+					(pane) => pane.paneId === "B" && pane.architecture?.vault === ordersVault,
+				),
+			"both restored pane connections to match their repository readings",
+			{ timeoutMs: 10_000 },
+		);
+		expect(restored.body.panes.find((pane) => pane.paneId === "A")?.vault).toBe(shopVault);
+		expect(restored.body.panes.find((pane) => pane.paneId === "B")?.vault).toBe(ordersVault);
 		expect(await browser.run(["errors"])).toBe("");
 	},
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
