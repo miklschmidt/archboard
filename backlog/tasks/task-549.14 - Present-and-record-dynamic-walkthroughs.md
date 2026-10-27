@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-27T02:53:00Z'
+updated_date: '2026-10-27T02:56:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -73,6 +73,8 @@ Implement backend and CLI only in feat/backend-recording-replay. Parent owns fro
 7. Create accurate Browser application and combined backend proposals. Reuse existing presentation, renderer, camera, query cache, recording page, and replay owners for canonical narrative beats. Keep one captured revision during playback and offer explicit restart on change.
 
 8. Use public runtime TDD with real disk/Git for composed narrative reconciliation and capture, then the existing controlled browser seam for visible beat transitions, missing targets, restart, exact recording, and offline replay. Simplify, validate, adopt accurate proposals, sign the completed source, and dispatch the merger.
+
+9. Complete the existing voice narration adapter for canonical recordings. Await server-owned capture through the existing voice start operation, preserve source and target revisions, and reuse the pane presentation port. Draft Codex realtime voice and Live panes diagrams now describe these existing owners. Use controlled public voice and browser seams, with no live model calls.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
