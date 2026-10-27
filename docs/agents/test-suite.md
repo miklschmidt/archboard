@@ -558,6 +558,21 @@ The proposal and reconciliation owners share the same browser state selector hel
 The reference owner also covers exact foreign pins across external reconciliation and settlement.
 The shared model-edit fixture names the repository used by its authored code bindings, so source capture does not inspect unrelated checkouts.
 
+## Canonical narrative playback
+
+`packages/board/tests/runtime/operations/model-edit/walkthroughs.test.ts` owns narrative authoring and target resolution through public architecture operations with real files and Git.
+It covers beat identity, claims, stale tokens, exact retry, retained inputs, pinned playback, restart reads, and per-beat missing subjects.
+The proposal owner covers independent compact narrative and beat subjects.
+
+`tests/system/semantic-boards/model-walkthroughs.test.ts` owns CLI and HTTP routing, schema agreement, retained selection, and refused output preservation.
+`packages/walkthrough/tests/runtime/store/canonical-talk.test.ts` owns the controlled page load, exact payload storage, and revision refusal through existing recording contracts.
+
+`tests/system/server-state/canonical-walkthrough-replay.test.ts` owns offline canonical replay through the existing Chromium and encoder interface.
+It removes the source repository and compares every frame across one-page and two-page rendering.
+`tests/system/browser/canonical-model-walkthroughs.test.ts` owns visible reading changes, revision capture, restart, missing beats, restored selection, and captured pane reports.
+Existing talk, timeline, encoder, and renderer owners keep their behavior matrices.
+No live voice model or model evaluation runs in these owners.
+
 ## Legacy current preview
 
 `packages/board/tests/runtime/operations/legacy-preview/preview.test.ts` owns composed migration behavior through the public architecture reader and writer.
@@ -607,3 +622,14 @@ It uses real legacy files, saved mapping choices, temporary Git repositories, an
 It covers recursive navigation, flow rendering, fingerprints, unchanged source bytes, stale refusal, and recovery.
 It also covers preview code opening, missing plans, planned-only empty states, and repeated navigation between preview and legacy readings.
 The unchanged-byte assertion includes old schema files and catches implicit upgrades during browser startup and background reads.
+
+`tests/system/server-state/canonical-walkthrough-narration.test.ts` owns the canonical voice bridge through public architecture reads, HTTP reports, and application sockets.
+Its temporary files and Git repositories exercise separate source and target captures, pinned narration after edits, stale refusal, and unavailable history.
+The existing `productionServer` preload supplies the controlled provider without live voice calls.
+The existing voice action owner covers cancellation and replacement during asynchronous narrative preparation.
+The existing pane presentation owner covers settled arrivals and exact beat acknowledgements.
+Legacy narration and recording owners retain their existing regression coverage.
+
+Canonical narration has one controlled browser owner in `canonical-model-narration.test.ts`.
+It covers report delivery before voice starts, matching pane requests, manual steps, pinned narrative text, and departure.
+The external media and Codex substitutes remain in the existing production voice fixture.

@@ -16,7 +16,15 @@ const StateSelectionSchema = ReadingSelectionSchema.extend({
 	explain: ExplanationRequestSchema.optional(),
 });
 const CheckpointIdSchema = z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u);
-const SubjectKindSchema = z.enum(["module", "relationship", "collection", "flow", "step"]);
+const SubjectKindSchema = z.enum([
+	"module",
+	"relationship",
+	"collection",
+	"flow",
+	"step",
+	"walkthrough",
+	"beat",
+]);
 const PlacementSchema = z.strictObject({
 	holder: z.union([QualifiedSubjectIdSchema, SemanticIdSchema]),
 	alternative: z.string().optional(),

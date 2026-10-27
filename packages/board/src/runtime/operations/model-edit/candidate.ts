@@ -1,3 +1,4 @@
+import { walkthroughDependencies } from "#runtime/operations/history/walkthrough-targets.ts";
 import { isDeepStrictEqual } from "node:util";
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts";
@@ -94,6 +95,7 @@ function candidateInputs(
 	const inputs = new Map(captured.inputs);
 	writeDefinitions(inputs, current.modules, candidate.modules);
 	writeDefinitions(inputs, current.collections, candidate.collections);
+	writeDefinitions(inputs, current.walkthroughs, candidate.walkthroughs);
 	if (!isDeepStrictEqual(current.manifest, candidate.manifest))
 		inputs.set("model.json", Buffer.from(`${JSON.stringify(candidate.manifest, null, 2)}\n`));
 	return inputs;
@@ -155,7 +157,7 @@ async function currentCandidate(
 		subjects: candidate.subjects,
 		scopes: candidate.scopes,
 		selection: undefined,
-		dependencies: [],
+		dependencies: await walkthroughDependencies(await archiveContext(vault), checked),
 	};
 }
 /**

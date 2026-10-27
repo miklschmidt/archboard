@@ -42,6 +42,7 @@ function predecessorRevision(model: ArchitectureModel): string {
 				policy: model.policy,
 				modules: model.modules,
 				collections: model.collections,
+				...(model.walkthroughs.length === 0 ? {} : { walkthroughs: model.walkthroughs }),
 			}),
 		)
 		.digest("hex");
@@ -57,7 +58,7 @@ function materializedInputs(model: ArchitectureModel, policy: Buffer): Map<strin
 		["model.json", Buffer.from(JSON.stringify(model.manifest))],
 		[".archboard/config.yaml", policy],
 	]);
-	for (const value of [...model.modules, ...model.collections]) {
+	for (const value of [...model.modules, ...model.collections, ...model.walkthroughs]) {
 		const { file, ...definition } = value;
 		inputs.set(file, Buffer.from(`${JSON.stringify(definition, null, 2)}\n`));
 	}
@@ -213,8 +214,13 @@ function decodeSubjects(
 ): ArchitectureModelRead {
 	const definitions = materializedDefinitions(baseline, subjects);
 	const inputs = materializedInputs(baseline, Buffer.from(Bun.YAML.stringify(baseline.policy)));
-	for (const file of inputs.keys()) if (/\.(module|flows)\.json$/u.test(file)) inputs.delete(file);
-	for (const { file, ...definition } of [...definitions.modules, ...definitions.collections])
+	for (const file of inputs.keys())
+		if (/\.(module|flows|walkthrough)\.json$/u.test(file)) inputs.delete(file);
+	for (const { file, ...definition } of [
+		...definitions.modules,
+		...definitions.collections,
+		...definitions.walkthroughs,
+	])
 		inputs.set(file, Buffer.from(JSON.stringify(definition)));
 	return decodeModel({ inputs, revision: modelRevision(inputs), diagnostics: [] }, selection);
 }

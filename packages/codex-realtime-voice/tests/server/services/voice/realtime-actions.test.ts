@@ -102,8 +102,12 @@ type Actions = ReturnType<typeof createServerRealtimeActions>;
  * @param value The fixture.
  * @returns The handle the chat holds the session by.
  */
-async function startVoice(actions: Actions, value: Fixture) {
-	const commandId = value.identity.identity.issuer.mintBrowserCommandId();
+async function startVoice(
+	actions: Actions,
+	value: Fixture,
+	narrative?: { topic: string },
+	commandId = value.identity.identity.issuer.mintBrowserCommandId(),
+) {
 	await actions.start(
 		{
 			kind: "browser_command",
@@ -114,6 +118,7 @@ async function startVoice(actions: Actions, value: Fixture) {
 			epoch: value.context.epoch,
 			threadId: value.threadId,
 			sdp: "v=0\r\na=offer",
+			...(narrative === undefined ? {} : { narrative }),
 		},
 		value.context,
 	);
@@ -387,4 +392,67 @@ test("a refused host narrative leaves live voice and its coordinator unchanged",
 	expect(value.calls.map((call) => call.name)).toEqual(["start"]);
 	await onSession(actions, value, handle, "append");
 	expect(value.calls.map((call) => call.name)).toEqual(["start", "append"]);
+});
+
+test.each(["disconnect", "stop"] as const)(
+	"%s during asynchronous narrative preparation prevents a late voice offer",
+	async (cancel) => {
+		const value = fixture();
+		const entered = Promise.withResolvers<void>();
+		const prepared = Promise.withResolvers<{ topic: string }>();
+		let forgotten = 0;
+		const actions = createServerRealtimeActions(
+			value.components as never,
+			value.scope as never,
+			undefined,
+			{
+				prepare: () => {
+					entered.resolve();
+					return prepared.promise;
+				},
+				forget: () => {
+					forgotten++;
+				},
+			},
+		);
+		const handle = value.identity.identity.issuer.mintBrowserCommandId();
+		const starting = startVoice(actions, value, { topic: "capture" }, handle);
+		const result = starting.catch((error: unknown) => error);
+		await entered.promise;
+		const disconnected =
+			cancel === "disconnect"
+				? actions.onBrowserDisconnect?.(value.context, "browser_disconnected")
+				: onSession(actions, value, handle, "stop");
+		prepared.resolve({ topic: "captured" });
+		expect(await result).toBeInstanceOf(Error);
+		await disconnected;
+		expect(value.calls).toEqual([]);
+		expect(forgotten).toBe(1);
+	},
+);
+
+test("a replacement start discards asynchronous preparation before creating any old offer", async () => {
+	const value = fixture();
+	const entered = Promise.withResolvers<void>();
+	const prepared = Promise.withResolvers<{ topic: string }>();
+	const actions = createServerRealtimeActions(
+		value.components as never,
+		value.scope as never,
+		undefined,
+		{
+			prepare: () => {
+				entered.resolve();
+				return prepared.promise;
+			},
+		},
+	);
+	const first = startVoice(actions, value, { topic: "capture" }).catch((error: unknown) => error);
+	await entered.promise;
+	const second = startVoice(actions, value);
+	prepared.resolve({ topic: "old capture" });
+	expect(await first).toBeInstanceOf(Error);
+	const handle = await second;
+	expect(value.calls).toHaveLength(1);
+	expect(value.calls[0]?.value).toMatchObject({ sessionId: String(handle) });
+	expect(value.replacements).toHaveLength(0);
 });

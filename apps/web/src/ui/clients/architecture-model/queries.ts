@@ -13,6 +13,8 @@ type StateSelection = {
 	readonly [Field in "state" | "against" | "preview"]?: ModelAddress[Field] | null;
 } & {
 	readonly compare?: boolean;
+	readonly walkthrough?: string;
+	readonly shared?: boolean;
 	readonly module?: Extract<ArchitectureModelRead, { success: true }>["selectedModule"];
 	readonly code?: boolean;
 	readonly references?: boolean;
@@ -40,6 +42,8 @@ const READING_FIELDS = [
 	"code",
 	"references",
 	"reference",
+	"walkthrough",
+	"shared",
 ] as const;
 
 /** The canonical readings cached by this tab. */

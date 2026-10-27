@@ -1,3 +1,5 @@
+import { canonicalRecordingModel } from "#shared/protocol/canonical.ts";
+import { type ArchitectureModelRead } from "@archboard/board/model";
 // Recording one walkthrough of a board to a video file, narrated by the Codex
 // voice (TASK-304), in two passes (TASK-381).
 //
@@ -58,11 +60,9 @@ import type { z } from "zod";
 type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 /** What to record, and where. */
-interface WalkthroughRecordingRequest {
+interface RecordingOptions {
 	/** The server the page is served by. */
 	readonly serverUrl: string;
-	/** The board as it was read before the talk, which the talk keeps and is drawn from. */
-	readonly board: SemanticBoard;
 	/** The vault check the board is drawn under, which the talk keeps. */
 	readonly policy: VaultCheck;
 	/** The variant asked for, by id, or null for the one that is current. */
@@ -103,6 +103,13 @@ interface WalkthroughRecordingRequest {
 	readonly chromiumPath?: string;
 }
 
+type CanonicalModel = Extract<ArchitectureModelRead, { success: true }>;
+type WalkthroughRecordingRequest = RecordingOptions &
+	(
+		| { board: SemanticBoard; architecture?: never; vault?: never }
+		| { architecture: CanonicalModel; vault: string; board?: never }
+	);
+
 /** A finished recording. */
 interface RecordedWalkthrough {
 	readonly file: string;
@@ -128,9 +135,11 @@ type RecordingPageAddress = Pick<
 	WalkthroughRecordingRequest,
 	"serverUrl" | "variant" | "repository" | "language" | "against"
 > & {
-	readonly board: Pick<SemanticBoard, "name">;
 	readonly walkthrough: Pick<WalkthroughRecordingRequest["walkthrough"], "id">;
-};
+} & (
+		| { board: Pick<SemanticBoard, "name">; architecture?: never; vault?: never }
+		| { architecture: CanonicalModel; vault: string; board?: never }
+	);
 
 /**
  * The address of the recording page.
@@ -139,8 +148,7 @@ type RecordingPageAddress = Pick<
  */
 function recordingPageUrl(request: RecordingPageAddress): string {
 	const url = new URL("/", request.serverUrl);
-	const { board, variant } = request;
-	url.searchParams.set("paneA", variant === null ? board.name : `${board.name}@${variant}`);
+	addressReading(url, request);
 	if (request.repository !== null) url.searchParams.set("repoA", request.repository);
 	url.searchParams.set(RECORDING_SEARCH_PARAM, request.walkthrough.id);
 	url.searchParams.set(RECORDING_LANGUAGE_SEARCH_PARAM, request.language);
@@ -148,6 +156,23 @@ function recordingPageUrl(request: RecordingPageAddress): string {
 		url.searchParams.set(RECORDING_AGAINST_SEARCH_PARAM, request.against);
 	}
 	return url.toString();
+}
+
+/**
+ * Address the exact captured reading through the existing recording page.
+ * @param url The page address.
+ * @param request The requested recording.
+ */
+function addressReading(url: URL, request: RecordingPageAddress): void {
+	if (request.architecture !== undefined) {
+		const model = canonicalRecordingModel(request.architecture);
+		url.searchParams.set("modelA", model.manifest.id);
+		url.searchParams.set("checkpointA", model.checkpoint!.id);
+		url.searchParams.set("recordVault", request.vault);
+		return;
+	}
+	const { variant, board } = request;
+	url.searchParams.set("paneA", variant === null ? board.name : `${board.name}@${variant}`);
 }
 
 /**
@@ -268,6 +293,7 @@ async function talkIn(
 		voice,
 		signal: request.signal,
 		onProgress: request.onProgress,
+		...(request.architecture === undefined ? {} : { architecture: request.architecture }),
 	});
 }
 
@@ -335,34 +361,51 @@ async function talkedWith(
  *   while it was recorded, which no one picture is of.
  */
 function talkOf(request: WalkthroughRecordingRequest, log: TalkLog, steps: number): Talk {
-	const { board } = request;
 	const parsed = talkFrom({
 		recordedAt: new Date(),
 		language: request.language,
 		theme: request.theme,
 		layout: request.layout,
-		board: {
-			name: board.name,
-			variant: request.variant,
-			...(request.against === null ? {} : { against: request.against }),
-			version: board.version,
-			walkthrough: request.walkthrough,
-			steps,
-		},
+		...talkSubject(request, steps),
 		log,
-		document: board,
 		policy: request.policy,
 	});
 	if (parsed.success) return parsed.data;
-	const redrawn = log.events.some(
-		(event) => event.kind === "drawn" && event.version !== board.version,
-	);
 	throw new WalkthroughRecordingError(
 		"RECORDING_FAILED",
-		redrawn
-			? `${board.name} changed while it was recorded, so no one picture of it goes with the talk. Record again once nothing is writing it.`
-			: `The talk the page kept cannot be rendered: ${parsed.error.message} Record again.`,
+		`The talk the page kept cannot be rendered: ${parsed.error.message} Record again.`,
 	);
+}
+/**
+ * Keep one captured subject without converting a model into a board.
+ * @param request The requested recording.
+ * @param steps The completed beat count.
+ * @returns Talk metadata and its one architecture payload.
+ */
+function talkSubject(request: WalkthroughRecordingRequest, steps: number) {
+	if (request.architecture !== undefined)
+		return {
+			board: {
+				name: request.architecture.manifest.name,
+				variant: request.variant,
+				version: 0,
+				walkthrough: request.walkthrough,
+				steps,
+			},
+			document: null,
+			architecture: request.architecture,
+		};
+	return {
+		board: {
+			name: request.board.name,
+			variant: request.variant,
+			...(request.against === null ? {} : { against: request.against }),
+			version: request.board.version,
+			walkthrough: request.walkthrough,
+			steps,
+		},
+		document: request.board,
+	};
 }
 
 /**
@@ -408,6 +451,18 @@ async function keptTalk(
 async function recordWalkthrough(
 	request: WalkthroughRecordingRequest,
 ): Promise<RecordedWalkthrough> {
+	if (request.architecture !== undefined) {
+		if (!request.vault)
+			throw new WalkthroughRecordingError(
+				"RECORDING_REFUSED",
+				"Canonical recording requires its explicit vault.",
+			);
+		try {
+			canonicalRecordingModel(request.architecture);
+		} catch (error) {
+			throw new WalkthroughRecordingError("RECORDING_REFUSED", messageOf(error));
+		}
+	}
 	const ffmpeg = await resolveEncoder(request.container, request.say, request.signal);
 	const scratch = mkdtempSync(join(tmpdir(), "archboard-recording-"));
 	try {

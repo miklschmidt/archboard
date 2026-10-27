@@ -1,3 +1,4 @@
+import { readPlayback } from "#runtime/operations/read/playback.ts";
 import { modelCodeTarget } from "#runtime/operations/read/model-code.ts";
 import { failure } from "#runtime/operations/read/model-read.ts";
 import type { z } from "zod";
@@ -46,22 +47,15 @@ async function navigationReading(
 	flow: string | undefined,
 	options: NavigationOptions,
 ) {
-	const { readSelectedState } = await import("#runtime/operations/proposals/read.ts");
-	const selection = { state: options.state, against: options.against, compare: options.compare };
 	const model =
-		options.preview !== undefined
-			? (await import("#runtime/operations/legacy-inventory/preview.ts")).readMigrationPreview(
+		options.preview === undefined
+			? await localReading(vault, module, flow, options)
+			: (await import("#runtime/operations/legacy-inventory/preview.ts")).readMigrationPreview(
 					vault,
 					options.preview,
 					module,
 					flow,
-				)
-			: options.checkpoint === undefined
-				? await readSelectedState(vault, module, flow, selection)
-				: await readCheckpointModel(vault, options.checkpoint, module, flow, {
-						against: options.against,
-						compare: options.compare,
-					});
+				);
 	if (!model.success) return model;
 	if (options.model === undefined) return model;
 	return options.model === model.manifest.id
@@ -71,6 +65,31 @@ async function navigationReading(
 				"The addressed model identity changed.",
 				"Open the vault that owns the requested model identity.",
 			);
+}
+
+/**
+ * Resolve state, retained inputs, or narrative playback through their existing owners.
+ * @param vault The explicit vault.
+ * @param module The optional module selector.
+ * @param flow The optional flow selector.
+ * @param options The combined reader request.
+ * @returns One complete local reading.
+ */
+async function localReading(
+	vault: string,
+	module: string | undefined,
+	flow: string | undefined,
+	options: NavigationOptions,
+): Promise<ArchitectureModelRead> {
+	if (options.walkthrough !== undefined) return readPlayback(vault, module, flow, options);
+	const { readSelectedState } = await import("#runtime/operations/proposals/read.ts");
+	const selection = { state: options.state, against: options.against, compare: options.compare };
+	return options.checkpoint === undefined
+		? readSelectedState(vault, module, flow, selection)
+		: readCheckpointModel(vault, options.checkpoint, module, flow, {
+				against: options.against,
+				compare: options.compare,
+			});
 }
 
 /**

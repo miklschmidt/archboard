@@ -128,6 +128,16 @@ CLI and HTTP interpret neither conflicts nor recovery progress.
 An explicit reconcile intent follows deliberate external predecessor edits.
 Until then, the existing predecessor refusal preserves the requested draft and its retained history.
 
+## Narrative subjects
+
+TASK-549.14 extends compact changes to walkthroughs and their beats.
+A walkthrough stores metadata and its reading target.
+Each beat stores its narrative and complete reading instructions as atomic fields.
+Beat placement identifies its walkthrough and optional following sibling.
+Reordering or editing a beat preserves its identity.
+Current and proposal materialization include narrative inputs in one coherent revision.
+The existing claimed transaction owns narrative installation and identity retirement.
+
 Adoption requires a coherent settled proposal and settled ancestry.
 A superseded current predecessor refuses adoption by default.
 Forced adoption requires the complete explicit comparison against the observed current revision.

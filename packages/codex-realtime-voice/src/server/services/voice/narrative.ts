@@ -9,7 +9,10 @@ export interface VoiceNarrativeAdapter {
 	/** Refuse a narrative before the start changes any running session. */
 	readonly validate?: (input: VoiceNarrative | null) => void;
 	/** Turn the browser's narrative into the one the session presents. */
-	readonly prepare: (input: VoiceNarrative | null, browserId: string) => VoiceNarrative;
+	readonly prepare: (
+		input: VoiceNarrative | null,
+		browserId: string,
+	) => VoiceNarrative | Promise<VoiceNarrative>;
 	/** Hear that the session presenting this narrative is open. */
 	readonly opened?: (
 		narrative: VoiceNarrative | null,
@@ -71,7 +74,7 @@ export function prepareNarrative(
 	adapter: VoiceNarrativeAdapter | undefined,
 	input: VoiceNarrative | null | undefined,
 	browserId: string,
-): VoiceNarrative | null {
+): VoiceNarrative | null | Promise<VoiceNarrative> {
 	return input === undefined ? null : (adapter?.prepare(input, browserId) ?? input);
 }
 /**

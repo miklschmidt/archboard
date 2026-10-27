@@ -1,8 +1,9 @@
+import { WalkthroughChangeSchema } from "#shared/schemas/model-walkthroughs.ts";
 import {
 	ComparisonSchema,
+	CorrectionIntentSchema,
 	FamilyStandingSchema,
 	SelectedStateSchema,
-	CorrectionIntentSchema,
 } from "#shared/schemas/model-proposals.ts";
 import { DiagramGrammarSchema } from "#shared/schemas/vocabulary.ts";
 import { StandaloneThemeSchema, DiagramAtlasSchema } from "#shared/protocol/render-reply.ts";
@@ -167,7 +168,9 @@ const ProposalIntentSchema = z.discriminatedUnion("type", [
 		clear: z.array(z.enum(["summary", "documents"])).optional(),
 	}),
 ]);
-const ArchitectureChangesSchema = z.array(z.union([StructureChangeSchema, FlowChangeSchema]));
+const ArchitectureChangesSchema = z.array(
+	z.union([StructureChangeSchema, FlowChangeSchema, WalkthroughChangeSchema]),
+);
 const ArchitectureModuleEditSchema = z.union([
 	DescriptionEditSchema.omit({ subject: true, description: true })
 		.extend({

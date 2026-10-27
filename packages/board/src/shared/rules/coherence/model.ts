@@ -8,12 +8,14 @@ type Module = ArchitectureModel["modules"][number];
  * @param modules All modules in path order.
  * @param manifest The current model manifest.
  * @param collections The independent flow definitions.
+ * @param walkthroughs The narrative definitions.
  * @returns Identity diagnostics.
  */
 function identityDiagnostics(
 	modules: Module[],
 	manifest: ArchitectureModel["manifest"],
 	collections: ArchitectureModel["collections"],
+	walkthroughs: ArchitectureModel["walkthroughs"],
 ): ModelDiagnostic[] {
 	const definitions = new Map<string, string>();
 	const retired = new Set(manifest.retiredIds);
@@ -29,6 +31,11 @@ function identityDiagnostics(
 					file: collection.file,
 				})),
 			),
+		),
+	);
+	subjects.push(
+		...walkthroughs.flatMap((walk) =>
+			[walk.id, ...walk.beats.map((beat) => beat.id)].map((id) => ({ id, file: walk.file })),
 		),
 	);
 	for (const { id, file } of subjects) {
@@ -173,6 +180,7 @@ function forestDiagnostics(modules: Module[], byId: Map<string, Module>): ModelD
  * @param policy The valid authored vocabulary.
  * @param manifest The model identity and current-state metadata.
  * @param collections The independent flow definitions.
+ * @param walkthroughs The narrative definitions.
  * @returns Diagnostics that refuse the complete model.
  */
 function modelDiagnostics(
@@ -180,6 +188,7 @@ function modelDiagnostics(
 	policy: ArchitectureModel["policy"],
 	manifest: ArchitectureModel["manifest"],
 	collections: ArchitectureModel["collections"],
+	walkthroughs: ArchitectureModel["walkthroughs"],
 ): ModelDiagnostic[] {
 	const byId = new Map(modules.map((module) => [module.id, module]));
 	return [
@@ -194,7 +203,7 @@ function modelDiagnostics(
 					},
 				]
 			: []),
-		...identityDiagnostics(modules, manifest, collections),
+		...identityDiagnostics(modules, manifest, collections, walkthroughs),
 		...modules.flatMap((module) => [
 			...vocabularyDiagnostics(module, policy),
 			...referenceDiagnostics(module, byId),

@@ -19,6 +19,11 @@ const QuerySchema = z
 		preview: z.string().min(1).optional(),
 		module: z.string().min(1).optional(),
 		flow: z.string().min(1).optional(),
+		walkthrough: z.string().min(1).optional(),
+		shared: z
+			.enum(["true", "false"])
+			.transform((value) => value === "true")
+			.optional(),
 		checkpoint: z.string().min(1).optional(),
 		model: z.string().min(1).optional(),
 		references: z

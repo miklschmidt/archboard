@@ -484,6 +484,7 @@ function asIssues(issues: readonly OrderedIssue[]): ReconciliationIssue[] {
 }
 
 export {
+	asIssues,
 	mergeByIdentity,
 	sidesOf,
 	MERGED,

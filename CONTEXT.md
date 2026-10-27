@@ -81,6 +81,16 @@ Reading intent:
 The scope, focus, relationship filters, group visibility, grammar, and optional explicit flow of a reading.
 An explicit reference destination stays separate from temporary pointer selection.
 
+Canonical walkthrough:
+An ordered narrative that selects readings of one architectural state.
+
+Narrative beat:
+One stable step that states its text and complete reading instructions.
+
+Pinned playback:
+A presentation that uses one resolved complete revision for every beat.
+A restart explicitly resolves a newer reading.
+
 Subject claim:
 An agent's exclusive scope of named architecture subjects.
 The claim identifies its writer, purpose, and start time.

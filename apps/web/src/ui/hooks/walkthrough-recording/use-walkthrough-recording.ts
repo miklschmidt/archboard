@@ -7,10 +7,7 @@ import { useEffect, useSyncExternalStore } from "react";
 
 import { publishRecordingPage } from "@archboard/walkthrough/recording";
 
-import type {
-	RecordedStep,
-	WalkthroughRecorder,
-} from "#ui/state/walkthrough-recording/recorder.ts";
+import type { WalkthroughRecorder } from "#ui/state/walkthrough-recording/recorder.ts";
 import type { RecordingSources } from "#ui/rules/walkthrough-recording/voice-sources.ts";
 
 /**
@@ -29,35 +26,39 @@ function usePublished(recorder: WalkthroughRecorder | null): void {
 }
 
 /** The step store of a page that is not a recording. */
-const NO_STEP = Object.freeze({
+const EMPTY_VIEW: ReturnType<WalkthroughRecorder["view"]> = Object.freeze({
+	step: null,
+	architecture: undefined,
+});
+const NO_RECORDING = Object.freeze({
 	/**
 	 * Nothing to hear without a recorder.
 	 * @returns How to stop listening.
 	 */
 	subscribe: (): (() => void) => () => undefined,
 	/**
-	 * No step without a recorder.
-	 * @returns Null.
+	 * No capture or driven step without a recorder.
+	 * @returns The stable empty view.
 	 */
-	step: (): RecordedStep | null => null,
+	view: (): ReturnType<WalkthroughRecorder["view"]> => EMPTY_VIEW,
 });
 
 /**
  * Keep a recorder in step with the server, and publish it on the page.
  * @param recorder The page's recorder, or null when the page is not a recording.
  * @param sources The server's agent and voice.
- * @returns The step the recorded pane is to show, or null.
+ * @returns The captured model and driven position, or the ordinary empty view.
  */
 function useWalkthroughRecording(
 	recorder: WalkthroughRecorder | null,
 	sources: RecordingSources,
-): RecordedStep | null {
+): ReturnType<WalkthroughRecorder["view"]> {
 	// Bound each render, like the pane events: the recorder reads the agent and the voice
 	// when its tick asks, and they are whatever the server holds now.
 	recorder?.bind(sources);
 	usePublished(recorder);
-	const store = recorder ?? NO_STEP;
-	return useSyncExternalStore(store.subscribe, store.step, store.step);
+	const store = recorder ?? NO_RECORDING;
+	return useSyncExternalStore(store.subscribe, store.view, store.view);
 }
 
 export { useWalkthroughRecording };

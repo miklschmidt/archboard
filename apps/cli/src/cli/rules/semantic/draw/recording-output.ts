@@ -4,7 +4,11 @@
 import { accessSync, constants, statSync } from "node:fs";
 import { dirname } from "node:path";
 
-import { recordingContainerOf } from "@archboard/walkthrough/recorder";
+import {
+	recordingContainerOf,
+	TalkFileError,
+	freshTalkPlace,
+} from "@archboard/walkthrough/recorder";
 import { CliUsageError } from "#cli/protocol/contract/contract.ts";
 
 const recorderUnavailableRefusal = {
@@ -63,10 +67,27 @@ function requireWritableDirectory(out: string, file: string): void {
 	}
 }
 
+/**
+ * Where the talk is kept: the directory asked for, or a new one in the state directory.
+ * @param asked The --talk the command was given, resolved, if any.
+ * @param board The board recorded, which names a talk kept in the state directory.
+ * @returns The place, proven free.
+ * @throws {CliUsageError} When the directory asked for exists or cannot be made.
+ */
+function talkPlaceOf(asked: string | undefined, board: string): ReturnType<typeof freshTalkPlace> {
+	try {
+		return freshTalkPlace(asked, board, new Date());
+	} catch (error) {
+		if (error instanceof TalkFileError) throw new CliUsageError(error.message);
+		throw error;
+	}
+}
+
 export {
 	encoderUnavailableRefusal,
 	recorderUnavailableRefusal,
 	renderFailedRefusal,
 	containerOf,
+	talkPlaceOf,
 	requireWritableDirectory,
 };

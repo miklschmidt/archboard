@@ -15,9 +15,9 @@ import type { Narration } from "#ui/hooks/application/use-narration.ts";
 import type { PaneReadings, PickedSubject } from "#ui/hooks/application/use-pane-reading.ts";
 import type { Panes } from "#ui/hooks/application/use-panes.ts";
 import type { PaneTheme } from "#ui/rules/pane-session/session-contracts.ts";
-import type { SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
+import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import { servedVault } from "@archboard/server-requests";
-import type { RecordedStep } from "#ui/state/walkthrough-recording/recorder.ts";
+import type { WalkthroughRecorder } from "#ui/state/walkthrough-recording/recorder.ts";
 
 /** Something the shell lays over one pane's picture. */
 interface PaneOverlay {
@@ -60,14 +60,12 @@ interface PaneViewSources {
 }
 
 /** What a recording page gives its pane. */
-interface PaneRecording {
-	/** The step the page moves the pane to, or null before the first. */
-	readonly step: RecordedStep | null;
+interface PaneRecording extends ReturnType<WalkthroughRecorder["view"]> {
 	/**
 	 * The recorder hears what the pane is reading.
 	 * @param reading The reading.
 	 */
-	readonly onReading: (reading: SemanticPaneReading) => void;
+	readonly onReading: (reading: PaneReading) => void;
 }
 
 /**
@@ -144,14 +142,18 @@ function recordedOrNot(
 	recording: PaneRecording | null,
 	first: boolean,
 	active: boolean,
-): Pick<ApplicationPaneProps, "primary" | "focused" | "recording" | "step" | "onSemanticReading"> {
+): Pick<
+	ApplicationPaneProps,
+	"primary" | "focused" | "recording" | "step" | "onRecordedReading" | "recordedArchitecture"
+> {
 	if (recording === null) {
 		return {
 			primary: first,
 			focused: active,
 			recording: false,
 			step: null,
-			onSemanticReading: undefined,
+			onRecordedReading: undefined,
+			recordedArchitecture: undefined,
 		};
 	}
 	return {
@@ -159,7 +161,8 @@ function recordedOrNot(
 		focused: false,
 		recording: true,
 		step: recording.step,
-		onSemanticReading: recording.onReading,
+		onRecordedReading: recording.onReading,
+		recordedArchitecture: recording.architecture,
 	};
 }
 
