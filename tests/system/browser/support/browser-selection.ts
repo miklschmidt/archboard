@@ -3,7 +3,6 @@ const BROWSER_ADAPTER_PATH = "tests/system/browser/run-browser-lane.ts";
 const BROWSER_TEST_PATHS = [
 	"tests/system/browser/shell-layout.test.ts",
 	"tests/system/browser/workspace-address.test.ts",
-	"tests/system/browser/semantic-board-viewer.test.ts",
 	"tests/system/browser/canonical-model-viewer.test.ts",
 	"tests/system/browser/canonical-model-navigation.test.ts",
 	"tests/system/browser/canonical-model-agent-navigation.test.ts",
@@ -35,10 +34,7 @@ const BROWSER_TEST_PATHS = [
 	"tests/system/browser/canonical-model-inspection.test.ts",
 	"tests/system/browser/canonical-model-groups.test.ts",
 	"tests/system/browser/semantic-walkthrough-presentation.test.ts",
-	"tests/system/browser/semantic-drill-boundary.test.ts",
-	"tests/system/browser/semantic-drill-address.test.ts",
 	"tests/system/browser/canonical-model-attention.test.ts",
-	"tests/system/browser/semantic-claim.test.ts",
 	"tests/system/browser/voice-box.test.ts",
 	"tests/system/browser/voice-box-presented.test.ts",
 	"tests/system/browser/measured-text.test.ts",

@@ -794,3 +794,9 @@ Canonical scope and gesture owners retain navigation and camera behavior.
 It retains user history, agent replacement, stable pane identities, per-pane state choices, and checkout changes across two repositories.
 The repository navigator owner also asserts that a user open adds one history entry.
 The old missing-board fallback retires because `canonical-model-navigation.test.ts` keeps unavailable intent explicit.
+
+The legacy board viewer, board claim, drill-address, and drill-boundary browser owners retire.
+Canonical viewer, gesture, navigation, reference, structure, code, proposal, and agent-navigation owners cover their continuing behavior.
+Their contracts include exact pane reports, selected source actions, foreign destinations, durable updates, and subject claim take-back.
+`semantic-traffic.test.ts` also retains reduced-motion visibility without replacing the picture.
+Board ownership transfer remains explicitly unavailable for canonical models, so its old move workflow retires.

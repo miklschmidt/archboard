@@ -24,6 +24,7 @@ import {
 import { serverPath } from "./support/navigator-support.ts";
 import { editCanonicalModel } from "./support/canonical-page.ts";
 import { initializeSource } from "./support/canonical-model.ts";
+import { emulateMedia } from "./support/shell-render-matrix.ts";
 
 const WAIT = { timeoutMs: 8_000 } as const;
 
@@ -217,4 +218,37 @@ test("the page runs a picture's traffic where SMIL would, without SMIL, and runs
 		WAIT,
 	);
 	expect(await browser.eval<number>(TRAFFIC_CLOCK)).toBeGreaterThanOrEqual(before);
+
+	// The existing picture answers reduced motion without another layout or read.
+	await browser.eval(
+		`document.querySelector('${SEMANTIC_SURFACE} svg').setAttribute('data-test-kept', 'motion')`,
+	);
+	const visibleTraffic = () =>
+		browser.eval<number>(
+			`[...document.querySelectorAll('${SEMANTIC_SURFACE} .ab-pulse')].filter(node => getComputedStyle(node).display !== 'none').length`,
+		);
+	const moving = await visibleTraffic();
+	expect(moving).toBeGreaterThan(0);
+	const restore = await emulateMedia(browser, "light", "reduced-motion");
+	try {
+		await pollUntil(
+			visibleTraffic,
+			(count) => count === 0,
+			"traffic hidden by reduced motion",
+			WAIT,
+		);
+		expect(
+			await browser.eval<boolean>(
+				`document.querySelector('${SEMANTIC_SURFACE} svg[data-test-kept="motion"]') !== null`,
+			),
+		).toBe(true);
+	} finally {
+		await restore();
+	}
+	await pollUntil(
+		visibleTraffic,
+		(count) => count === moving,
+		"traffic restored without another picture",
+		WAIT,
+	);
 });
