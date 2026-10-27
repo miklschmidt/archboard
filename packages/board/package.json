@@ -19,7 +19,6 @@
 		"./policy": "./src/shared/api/policy.ts",
 		"./comparison": "./src/shared/api/comparison.ts",
 		"./container-interface": "./src/shared/api/container-interface.ts",
-		"./commands": "./src/shared/api/commands.ts",
 		"./render-reply": "./src/shared/api/render-reply.ts",
 		"./pane-context": "./src/shared/api/pane-context.ts",
 		"./board-listing": "./src/shared/api/board-listing.ts",

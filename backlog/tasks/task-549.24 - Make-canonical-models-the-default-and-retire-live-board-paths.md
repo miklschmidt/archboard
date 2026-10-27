@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T16:49:00Z'
+updated_date: '2026-10-27T16:52:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -94,4 +94,6 @@ Parent ports the generic voice-box and text-workbench fixtures to real canonical
 Merged backend checkpoint56447f6f through signed mergee351f4e7. The canonical voice-box owner still catches startup flight, while the same owner passes against signed .23. Parent moved the ordinary overlay into the canvas area; diagnosis remains open. README evidence fixtures now use canonical initialization, claims, edits, adoption, and two independent proposals over their own real source repository. The first CLI smoke exposed model init rejecting its documented --doing option. Backend delegate supplied a focused RED/GREEN fix at e52aa826; the parent will integrate it before continuing the real consumer smoke. No final acceptance is claimed.
 
 Backend signed checkpoint 56447f6f contains canonical initialization, shared projections and pane navigation, local agent selection/focus news, code checks, locality and branch footprint. Live legacy runtime writers/readers and obsolete exports are retired. Unchanged interface ceilings pass: board 188, code-intel 16, renderer 60. Source types/lint and touched-test lint pass. Focused runtime and adapter evidence is in the external task-549 directory. Frontend recording replay and final integration remain parent-owned. No repository identity mapping, cutover, adoption, task acceptance or closure is claimed. Keep In Progress with the parent assignee.
+
+Backend follow-up: signed e52aa826 fixes shared --doing admission for model init. The shipped CLI regression is RED then GREEN (1 case, 5 assertions). Initialization passes 3 cases/13 assertions after simplification. After merging parent README consumers, the obsolete commands entry and its input protocols retire. Exact source evidence stays under model. The board interface narrows to 184 and its ceiling drops to 184. Command/schema/history owners pass 66 cases/102 assertions, touched non-browser test lint passes, backend source lint passes, and source types pass. The repository still returns LEGACY_AUTHORITY with all 17 original inputs unchanged. Draft proposal validation and adoption await parent mapping/cutover. This delegate stopped only its own port 10648 server. Task remains In Progress with the parent assignee.
 <!-- SECTION:NOTES:END -->

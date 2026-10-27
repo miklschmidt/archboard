@@ -739,3 +739,9 @@ Generic source discovery, vault selection, origin guards, socket replacement, si
 Their fixtures now seed canonical architecture or use canonical public operations.
 No deadline, lint rule, type rule, or interface ceiling changes for this transition.
 The parent runs the final complete integration gate and browser acceptance.
+
+The retired `@archboard/board/commands` entry has no live consumers.
+Canonical flow inputs use the existing model schema owner.
+Semantic content owners retain traffic, responsibility, label, comparison, and reconciliation coverage.
+`HistoricalRevisionSchema` remains under `@archboard/board/model` for exact source evidence.
+The board interface narrows to 184 exports, and its ceiling drops to 184.

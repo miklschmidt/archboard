@@ -7,7 +7,6 @@ import {
 	effectiveTraffic,
 	type VariantContent,
 } from "#shared/schemas/content.ts";
-import { SemanticEdgeInputSchema } from "#shared/protocol/board-input.ts";
 import { compareVariants } from "#shared/rules/compare/variants.ts";
 import { reconcileVariant } from "#shared/rules/reconcile/variant.ts";
 import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";
@@ -17,7 +16,6 @@ const NODES = [
 	{ id: "db", name: "Database", kind: "datastore" },
 ];
 const EDGE = { id: "call", from: "api", to: "db", kind: "call", emphasis: "normal", order: 1000 };
-const EDGE_INPUT = { from: "API", to: "Database", kind: "call" };
 
 /** Parse one content value through the persisted contract. */
 function content(edge: Record<string, unknown>): VariantContent {
@@ -36,27 +34,19 @@ describe("traffic contract", () => {
 			speed: DEFAULT_TRAFFIC_SPEED,
 			volume: DEFAULT_TRAFFIC_VOLUME,
 		});
-		expect(SemanticEdgeInputSchema.parse({ ...EDGE_INPUT, traffic: {} }).traffic).toEqual({
-			speed: DEFAULT_TRAFFIC_SPEED,
-			volume: DEFAULT_TRAFFIC_VOLUME,
-		});
 	});
 
 	test.each([0, -1, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NaN])(
 		"refuses a non-positive or non-finite speed: %s",
 		(speed) => {
-			expect(SemanticEdgeInputSchema.safeParse({ ...EDGE_INPUT, traffic: { speed } }).success).toBe(
-				false,
-			);
+			expect(SemanticEdgeSchema.safeParse({ ...EDGE, traffic: { speed } }).success).toBe(false);
 		},
 	);
 
 	test.each([0, -1, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NaN])(
 		"refuses a non-positive or non-finite volume: %s",
 		(volume) => {
-			expect(
-				SemanticEdgeInputSchema.safeParse({ ...EDGE_INPUT, traffic: { volume } }).success,
-			).toBe(false);
+			expect(SemanticEdgeSchema.safeParse({ ...EDGE, traffic: { volume } }).success).toBe(false);
 		},
 	);
 });
