@@ -715,3 +715,27 @@ It subscribes before cutover and observes the existing feed after durable comple
 It also covers strict owner intent, explicit vaults, exact retry, operation reuse, and refused legacy authoring.
 The parent owns visible pane transitions, navigation, recovery feedback, and unavailable ownership transfer controls.
 These backend owners imply no browser acceptance.
+
+## Canonical backend consumer owners
+
+TASK-549.24 retires the live legacy writer and reader paths.
+Their tests retire with those product paths.
+The following continuing owners replace their responsibilities.
+
+| Retired product path                                                                | Continuing owner                                                                                                                                                                       |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Legacy create, edit, branch, adopt, settle, rename, discard, move, and board claims | `packages/board/tests/runtime/operations/model-edit`, `proposals`, and `legacy-preview` cover canonical authoring, claims, reconciliation, migration, and recovery.                    |
+| Automatic legacy read upgrades                                                      | `packages/board/tests/runtime/store/format/read-migration.test.ts` decodes exact original bytes without writes. Migration owners cover explicit cutover.                               |
+| Legacy CLI and HTTP authoring adapters                                              | `tests/system/semantic-boards/model-flows.test.ts` covers canonical creation, flow edits, structural and behavioral exports, code checks, history commands, and retired-route refusal. |
+| Board-owned embed tracking and name-based repair                                    | Canonical render recipes use the existing renderer metadata owner. The model surface owner covers SVG, PNG, and Git-discovered embeds. Fetch and cache owners remain.                  |
+| Legacy locality and footprint lookup adapters                                       | Canonical history commands use real module bindings and Git commits through the existing analysis. Pure language and history owners remain.                                            |
+| Legacy board context and outside-write announcements                                | The canonical change-feed owner and generic server owners cover durable attribution, captured selection, focus, shared conversations, and local workhorse routing.                     |
+| Legacy side-by-side variant commands                                                | Canonical proposal adapters cover independent state reads. The parent's browser owners cover simultaneous displayed readings.                                                          |
+| Legacy recording setup, start, and replay authoring fixtures                        | Canonical narration, recording, and retained-replay owners cover continuing behavior. Pure retained-talk decoding remains.                                                             |
+| Legacy board lock API and cross-process authoring routes                            | Canonical exclusion, news, and recovery owners exercise the shared lease and claims. Generic process cleanup uses a fixture inside the board module.                                   |
+| Legacy fixed-level evaluation scenarios                                             | Eight canonical scenarios use eight authored fixtures and fourteen coverage parts. Deterministic validation uses public runtime reads. Earlier reports remain historical evidence.     |
+
+Generic source discovery, vault selection, origin guards, socket replacement, sign-in, conversation, approval, process cleanup, and opener owners remain.
+Their fixtures now seed canonical architecture or use canonical public operations.
+No deadline, lint rule, type rule, or interface ceiling changes for this transition.
+The parent runs the final complete integration gate and browser acceptance.
