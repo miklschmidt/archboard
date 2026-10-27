@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T19:03:00Z'
+updated_date: '2026-10-27T19:13:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -130,4 +130,6 @@ Parent traffic consumer port: the existing browser owner now uses canonical rela
 Parent code evidence transition: the existing code browser owner reproduced absent canonical warning controls. Matching remembered model/state/revision results now feed the existing warning count, canvas warning marks, and source evidence panel. The owner proves real named-proposal findings, visible marks and selected evidence, and removal after the architecture revision changes. Full types and touched source/test lint pass. The shared fixture now claims active proposal IDs affected by current edits. Recovery guidance names the shipped --state flag. Parent inspected the 1920x1080 screenshot externally; final inspector hierarchy polish remains before acceptance.
 
 Parent source-history transition: selected canonical modules now use the existing locality analysis and commit/coupling presentation. The browser owner reproduced an absent history panel and now displays the exact source fixture Git commit. Query identity includes explicit vault, model, state, checkpoint and revision, and mismatched replies refuse. History reads remain on demand, with shared pending work across quick picks and explicit refresh or failure feedback. The old PartHistory HTTP adapter is retired; its pure evidence display remains. Browser code/history owner, full types, and touched source/test lint pass.
+
+Backend activity gap: the existing agent_activity snapshot tracker now follows canonical watchArchitectureModel events for registered, explicitly addressed, and connected vaults. Each model entry preserves all concurrent subject claims and attributes its latest doing line only from a durable operation receipt. Temporary MODEL_BUSY reads keep live claims. Startup/reconnect, off-screen vault identity, release, take-back, expiry, failed signatures, stale writes, and idle cleanup are covered through real signed temporary Git repositories and existing server/socket interfaces. Public contract and evidence are external in task-549.24-activity-contract.md and task-549.24-activity-backend.md. Existing Live panes draft SGrr8NFb and server drafts cover this publication meaning; the parent owns their source mapping, update, migration, and adoption. No frontend changes, source-vault writes, status changes, assignee changes, or acceptance changes.
 <!-- SECTION:NOTES:END -->

@@ -5,11 +5,12 @@
 // on two boards, so a pane showing board A has to be able to tell that news
 // about board B is not its business.
 
-import type { boardLockState } from "@archboard/board/lock";
-import type { recentDoing } from "@archboard/board/doing";
+import type { ArchitectureClaim, ArchitectureModuleEditResult } from "@archboard/board/model";
 
-type DoingEntry = ReturnType<typeof recentDoing>[number];
-type LockHolder = NonNullable<ReturnType<typeof boardLockState>>;
+type DurableRequest = Extract<
+	ArchitectureModuleEditResult,
+	{ success: true }
+>["checkpoint"]["request"];
 
 /** The shape every JSON route answers with. */
 interface ApiResponse<T = unknown> {
@@ -58,9 +59,8 @@ type WebSocketMessageType =
 	// A board could not be read or drawn. The pane shows this through the
 	// shell's board-error notice.
 	| "board_error"
-	// Which boards an agent is working on, across this whole server (ADR 0022).
-	// Boardless on purpose: it is one thing behind every board, and the
-	// navigator marks each one it names.
+	// Canonical model activity across every explicit vault (ADR 0022 and ADR 0062).
+	// Every pane receives the snapshot, independently of its displayed reading.
 	| "agent_activity"
 	// Layout, addressed to one pane rather than to a board: the shell is asked
 	// for another pane, or for this one to go.
@@ -72,17 +72,19 @@ type WebSocketMessageType =
 	// another board does not step through a walkthrough it is not showing.
 	| "pane_present";
 
-/** What an agent is doing to one board, as every pane is shown it (ADR 0022). */
+/** Canonical model activity, shared by every pane (ADR 0022 and ADR 0062). */
 interface AgentActivity {
+	/** The existing presentation key, `model:<id>`. */
 	board: string;
-	claim: LockHolder | null;
-	doing: DoingEntry | null;
+	model: ArchitectureClaim["target"]["model"];
+	claims: ArchitectureClaim[];
+	doing: (Pick<DurableRequest, "writer" | "doing"> & { at: string }) | null;
 }
 
 /** One vault's whole activity snapshot, sent to every pane. */
 interface AgentActivityMessage extends WebSocketMessage {
 	type: "agent_activity";
-	/** The vault the boards are in. */
+	/** The explicit vault that owns this model. */
 	vault: string;
 	activity: AgentActivity[];
 }

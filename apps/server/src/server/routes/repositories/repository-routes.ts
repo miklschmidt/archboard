@@ -18,6 +18,7 @@
 // there chooses. So the server watches the file and follows every change it
 // did not follow already, whoever made it.
 
+import { agentActivity } from "#server/wiring/owners/server-owners.ts";
 import fs from "fs";
 import path from "path";
 import type { Express, Request, Response } from "express";
@@ -161,6 +162,9 @@ function registryText(): string | null {
  */
 function followRegistry(): void {
 	followedRegistry = registryText();
+	for (const entry of listRepositories()) {
+		if (entry.vault !== null) agentActivity.follow(entry.vault);
+	}
 	// A move sets the entry of a pane it has visited already, which adds no entry to visit.
 	for (const [clientId, vault] of paneVaults) {
 		const { home, repository } = placeOfVault(vault);
@@ -272,6 +276,9 @@ function watchRegistry(): void {
 	}
 	const file = path.resolve(registryPath());
 	followedRegistry = registryText();
+	for (const entry of listRepositories()) {
+		if (entry.vault !== null) agentActivity.follow(entry.vault);
+	}
 	try {
 		fs.mkdirSync(path.dirname(file), { recursive: true });
 		registryWatcher = fs.watch(path.dirname(file), { persistent: false }, (_event, name) => {
