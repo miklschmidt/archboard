@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T17:13:00Z'
+updated_date: '2026-10-27T17:18:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -104,4 +104,6 @@ Backend follow-up: signed e52aa826 fixes shared --doing admission for model init
 Backend handoff boundary: examples/canonical-model and the pipeline builder/gallery use canonical operations. Parent owns conversion of the three examples/web-shop semantic inputs together with README flows, narratives, films, and selectors. No web-shop identities or mappings come from the backend builder. Final backend source types, full source lint after f892ca60c, touched non-browser test lint, and changed-file formatting pass. Deterministic skill validation passes 8 scenarios, 8 fixtures, 14 coverage parts. Removed stale consumer reference instructions that still suggested retired live board commands. Final full integration, frontend acceptance, repository migration, proposal adoption, and task acceptance remain parent work.
 
 Final backend47c7d1c is integrated through signed dcb0e552 with parent notes preserved. Canonical fullscreen now hides the existing navigation, inspection, selection, and state controls through the shared presentation convention. The updated live-voice owner first reproduced the visible chrome failure, then passed that section. It next reproduced missing user-selection speech during captured narration. Captured playback now uses the existing canonical selection hook, with authored selection restored for each beat and temporary human selection kept separately. The existing pane user-marks path recognizes canonical captures and credits human selection through ModelExplanationHost, without a second publisher. Live voice and selection/walkthrough regressions pass. Frontend types, focused source lint, and focused browser lint pass. The large voice fixture moved to existing canonical-page support without changing its behavior or weakening the line limit. Scope/filter gesture marks and remaining shell/replay/asset/migration acceptance remain open.
+
+The focus browser owner reproduced missing human view attribution through the existing pane context route. Explicit scope, focus, mode, filter, bookmark, state, and comparison gestures now mark their existing context fields; automatic identity normalization and agent arrivals keep the raw unmarked navigation path. Preview readings do not queue these marks. Focus-origin and agent-navigation owners pass, along with frontend types and focused source/test lint. Canonical replay also passes against the current frontend build, resolving the backend handoff stale-build limit. No passing replay or voice owner was repeated without a relevant change.
 <!-- SECTION:NOTES:END -->

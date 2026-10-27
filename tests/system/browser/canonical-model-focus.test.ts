@@ -1,4 +1,6 @@
 import { expect, test } from "bun:test";
+import type { z } from "zod";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { ArchitectureModelRead } from "@archboard/board/model";
@@ -129,6 +131,17 @@ test("focus keeps selected ancestors and descendants with only necessary paths a
 		"the focused context",
 		WAIT,
 	);
+	const focusedReport = await pollUntil(
+		() =>
+			request<{ panes: z.infer<typeof SemanticPaneContextSchema>[] }>(
+				"/api/panes/semantic-context",
+			),
+		(result) =>
+			result.body.panes.some((pane) => pane.architecture?.reading.focus.includes("Shop#Decode")),
+		"the focused reading to reach the local agent context",
+		WAIT,
+	);
+	expect(focusedReport.body.panes.find((pane) => pane.paneId === "A")?.byUser).toContain("view");
 	expect(
 		await browser.eval<boolean>(
 			`document.querySelector('[data-slot="model-connections"] [data-connection-id="Shop#Private"]') === null`,

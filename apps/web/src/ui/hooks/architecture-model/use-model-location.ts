@@ -1,4 +1,5 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useContext, useMemo } from "react";
+import { ModelExplanationContext } from "#ui/state/architecture-model/explanations.ts";
 import { useRouter, useRouterState } from "@tanstack/react-router";
 import { validateWorkspaceSearch } from "#ui/rules/board-routing/search.ts";
 import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
@@ -15,6 +16,7 @@ type Reading = Model["walkthroughs"][number]["beats"][number]["reading"];
  */
 function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const router = useRouter();
+	const reportUserChange = useContext(ModelExplanationContext)?.userChanged;
 	const address = useRouterState({
 		/**
 		 * Read the location without copying it into component state.
@@ -30,6 +32,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const checkpoint = nullableParameter(search[`checkpoint${paneId}`]);
 	const state = nullableParameter(search[`state${paneId}`]);
 	const preview = nullableParameter(search[`preview${paneId}`]);
+	const userChanged = preview === null ? reportUserChange : undefined;
 	const bookmark = nullableParameter(search[`bookmark${paneId}`]);
 	const legacyAddress = nullableParameter(search[`legacyAddress${paneId}`]);
 	const against = nullableParameter(search[`against${paneId}`]);
@@ -79,6 +82,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	);
 	const explore = useCallback(
 		(patch: Partial<ModelAddress>): void => {
+			userChanged?.("view");
 			void navigate({
 				...(bookmarkReading === undefined
 					? {}
@@ -94,10 +98,11 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				...patch,
 			});
 		},
-		[navigate, bookmarkReading, scope, focus, grammar, flow, filters],
+		[navigate, bookmarkReading, scope, focus, grammar, flow, filters, userChanged],
 	);
 	const selectBookmark = useCallback(
 		(next: string | null): void => {
+			userChanged?.("view");
 			void navigate({
 				bookmark: next ?? undefined,
 				scope: null,
@@ -109,7 +114,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				subject: undefined,
 			});
 		},
-		[navigate],
+		[navigate, userChanged],
 	);
 	const identify = useCallback(
 		(id: string): void => {
@@ -200,6 +205,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	);
 	const selectCheckpoint = useCallback(
 		(next: string | null): void => {
+			userChanged?.("variant");
 			void navigate({
 				checkpoint: next,
 				bookmark: undefined,
@@ -207,7 +213,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				against: undefined,
 			});
 		},
-		[navigate, preview, state],
+		[navigate, preview, state, userChanged],
 	);
 	const setFocus = useCallback(
 		(ids: readonly string[] | null): void => {
@@ -219,13 +225,14 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	);
 	const toggleFilter = useCallback(
 		(field: "hideKinds" | "hideGroups", id: string): void => {
+			userChanged?.("view");
 			const current = filters[field];
 			const next = current.includes(id)
 				? current.filter((value) => value !== id)
 				: [...current, id];
 			void navigate({ [field]: next.length === 0 ? undefined : next.toSorted() });
 		},
-		[filters, navigate],
+		[filters, navigate, userChanged],
 	);
 	const reveal = useCallback(
 		(ids: readonly string[], kinds: readonly string[]): void => {
@@ -258,6 +265,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	);
 	const selectState = useCallback(
 		(next: string | null): void => {
+			userChanged?.("variant");
 			void navigate({
 				state: next ?? undefined,
 				legacyAddress: undefined,
@@ -266,13 +274,14 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				against: undefined,
 			});
 		},
-		[navigate, preview, checkpoint],
+		[navigate, preview, checkpoint, userChanged],
 	);
 	const compareAgainst = useCallback(
 		(next: string | null): void => {
+			userChanged?.("variant");
 			void navigate({ against: next ?? undefined });
 		},
-		[navigate],
+		[navigate, userChanged],
 	);
 	const openReference = useCallback(
 		(repository: string, reading: Model): void => {
