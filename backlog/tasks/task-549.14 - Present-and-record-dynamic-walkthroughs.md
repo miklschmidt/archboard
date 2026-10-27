@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-27T01:52:00Z'
+updated_date: '2026-10-27T02:42:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -90,4 +90,6 @@ Final lint completed with zero errors and zero warnings. Final types and formatt
 Parent merged the signed .13 integration and preserved every authored history. The public proposal decoder now includes narrative definitions after the .07 materialization refactor; its existing compact-narrative RED/GREEN case passes. New public family evidence covers safe inherited narrative fields, explicit text and atomic-reading conflicts, beat order, and complete settlement through the existing identity and ordered-list rules. A second public RED exposed missing retained dependencies for an exact target kept only by a following narrative. Propagation and settlement now include those targets in the same archive graph. Both family cases pass within their unchanged 15-second budgets, and types pass. Final lint and combined regression checks remain. Browser application and combined backend proposals are drawn before frontend implementation; the three superseded backend drafts are shelved with preserved content. Board rasterizer keeps its original .14 draft.
 
 The combined runtime suite passes 38 tests and 215 assertions across 16 files. Types, lint, and both diff checks pass. Parent checkpoints the resolved merge before rebasing onto origin/main after PR23. The orphan Git-owner fix must be present in both active worktrees before any tests resume. No frontend acceptance or proposal adoption is claimed.
+
+The first browser slice passes one visible workflow with 13 assertions. It covers complete beat readings, architecture/sequence/flowchart transitions, missing targets, a pinned revision during external edits, explicit restart, and restored selection on exit. A separate immutable query owns each capture. React Activity preserves the ordinary reader, while the picker unmounts to close its portal. The existing ModelDiagram, camera, and SemanticPresentation own the picture and captions. Types and lint pass. Parent inspected initial and final beat screenshots and removed temporary capture calls. Recording, replay, exact/shared/proposal browser evidence, and canonical pane reports remain unfinished. No criteria are checked or proposals adopted.
 <!-- SECTION:NOTES:END -->

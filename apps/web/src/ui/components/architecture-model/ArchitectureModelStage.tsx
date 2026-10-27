@@ -19,6 +19,7 @@ import {
 } from "#ui/clients/architecture-model/queries.ts";
 import { semanticBoardListQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import { ModelStateDetails } from "#ui/components/architecture-model/ModelStateDetails.tsx";
+import { ModelWalkthroughReader } from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
 import { ModelReadingSelector } from "#ui/components/architecture-model/ModelReadingSelector.tsx";
 import { ModelComparisonSelector } from "#ui/components/architecture-model/ModelComparisonSelector.tsx";
@@ -356,19 +357,44 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 				<>
 					<ModelStateDetails model={model} paneId={props.paneId} />
 					<CheckpointEvidence model={model} />
-					<ModelReading
-						key={JSON.stringify([model.manifest.id, props.subject])}
-						subject={props.subject}
+					<ModelWalkthroughReader
+						key={readingSessionKey(model, props.subject)}
 						vault={props.vault}
 						model={model}
 						paneId={props.paneId}
 						reducedMotion={props.reducedMotion}
-						onCodeTargetNotice={props.onCodeTargetNotice}
-					/>
+					>
+						<ModelReading
+							subject={props.subject}
+							vault={props.vault}
+							model={model}
+							paneId={props.paneId}
+							reducedMotion={props.reducedMotion}
+							onCodeTargetNotice={props.onCodeTargetNotice}
+						/>
+					</ModelWalkthroughReader>
 				</>
 			)}
 		</>
 	);
+}
+
+/**
+ * Changing architecture selection closes its presentation while live updates preserve it.
+ * @param model The selected architecture.
+ * @param subject The explicit navigation destination.
+ * @returns The identity of this reader session.
+ */
+function readingSessionKey(
+	model: Extract<ArchitectureModelRead, { success: true }>,
+	subject: string | null,
+): string {
+	return JSON.stringify([
+		model.manifest.id,
+		model.selectedState?.id,
+		model.checkpoint?.id,
+		subject,
+	]);
 }
 
 /**

@@ -21,6 +21,8 @@ interface ModelDiagramProps {
 	grammar: DiagramGrammar;
 	projection: ReturnType<typeof projectModel>;
 	reducedMotion: boolean;
+	reserve?: number;
+	presentation?: string;
 	selected: ReadonlySet<string>;
 	onSelect: (id: string | null, toggle?: boolean) => void;
 	onSelectMany: (ids: readonly string[], toggle?: boolean) => void;
@@ -40,6 +42,8 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 	);
 	const drawing = useQuery(drawingOptions);
 	const camera = useBoardCamera(props.reducedMotion);
+	const { reserve: reserveBottom } = camera;
+	useLayoutEffect(() => reserveBottom(props.reserve ?? 0), [reserveBottom, props.reserve]);
 	if (projection.content.nodes.length === 0)
 		return (
 			<output data-slot="model-empty-diagram" className="text-body text-muted-foreground p-8">
@@ -71,6 +75,7 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 	const { drawing, camera, selected, onSelect, onSelectMany, onOpen, model } = props;
 	const surface = useRef<HTMLDivElement | null>(null);
 	const installed = useRef<string | null>(null);
+	const shownBeat = useRef<string | undefined>(undefined);
 	const attach = useCallback((element: HTMLDivElement | null): void => {
 		surface.current = element;
 		installed.current = null;
@@ -133,9 +138,12 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		markSubjects(root, marked);
 	}, [selected, drawing.svg, props.projection.connections]);
 	useLayoutEffect(() => {
-		if (camera.room !== null && !camera.handled())
+		if (camera.room === null) return;
+		if (!camera.handled() || shownBeat.current !== props.presentation) {
 			camera.fit({ kind: "whole", content: drawing }, true);
-	}, [camera, drawing]);
+			shownBeat.current = props.presentation;
+		}
+	}, [camera, drawing, props.presentation]);
 	return (
 		<section
 			data-slot="model-diagram"
