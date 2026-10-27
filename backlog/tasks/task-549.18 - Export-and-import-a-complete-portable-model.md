@@ -1,11 +1,11 @@
 ---
 id: TASK-549.18
 title: Export and import a complete portable model
-status: In Progress
+status: Done
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T10:37:00Z'
+updated_date: '2026-10-27T10:47:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -47,15 +47,15 @@ TASK-549.08, TASK-549.14, TASK-549.17
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An owner exports current inputs and required history, then imports them into a fresh location. Modules, proposals, decisions, and walkthroughs remain usable.
-- [ ] #2 Include every referenced baseline and checkpoint, including private archives. Preserve identities and refuse incomplete bundles before exposing an imported model.
-- [ ] #3 Import uses the existing installation contract. A restored bundle can supply lost local history without claiming that archive deletion is impossible.
+- [x] #1 An owner exports current inputs and required history, then imports them into a fresh location. Modules, proposals, decisions, and walkthroughs remain usable.
+- [x] #2 Include every referenced baseline and checkpoint, including private archives. Preserve identities and refuse incomplete bundles before exposing an imported model.
+- [x] #3 Import uses the existing installation contract. A restored bundle can supply lost local history without claiming that archive deletion is impossible.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -83,4 +83,12 @@ Final signed implementation checkpoint: 8fac3dc80be3ca6a16bc974675b2905aa0afa2c3
 Signed preparation merge edbd5f0ee8754498e4b190cf08414c0ae1a0eb39 includes integration a778a5a03c5d3dcaba7266a59b07597f08295384. All original variants, parents, decisions and views remain preserved, .18 proposals remain draft, and incoming .21 current pointers are retained. Focused portable and legacy-preview history/retention evidence passes15 cases87 assertions through the configured preload and default deadline. Types report only the two known nullable checkpoint labels. Parent now owns visible acceptance and those labels.
 
 Parent browser acceptance passes one case with four assertions. The fixture exports a planning-only model, imports it into a fresh Git repository, and opens its exact checkpoint through reading and comparison controls, including reload. The two selector labels now handle null checkpoint state without inventing an implemented state. Full source and frontend types and lint pass. Consumer guidance, test ownership and evaluation coverage name this visible owner. The existing Browser application description remains accurate and needs no new proposal for these two labels. Final architecture restatement, acceptance checks and adoption remain.
+
+Parent acceptance is complete. The imported planning browser case passes four assertions, and full types and lint pass. Evaluation inputs and formatting pass. The preparation merge passed 15 focused cases and 87 assertions for portable and retained legacy history. The three architecture proposals are restated on current as TASK-549.18-integration and adopted. Original TASK-549.18 drafts are shelved with their content and parents unchanged. Semantic validation reports zero diagnostics. Accepted variants report zero code findings. Eight unrelated Archboard warnings remain. The parent inspected both persistence diagrams. Prior variant fields, views, and decision records remain exact, with only the intended lifecycle transitions. The simplification pass keeps the existing selector labels and one installation journal. The inherited package export count is 250 against 188 and remains assigned to TASK-549.24. No full final gate or review is claimed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Export and import preserve exact authored inputs and complete retained history through the existing durable installation journal. Incomplete bundles refuse before exposure. Imported planning-only checkpoints remain readable without a current designation. Public runtime, adapter, and browser evidence pass. Consumer instructions and three adopted architecture descriptions match the implementation. TASK-549.24 still owns the inherited package export limit.
+<!-- SECTION:FINAL_SUMMARY:END -->
