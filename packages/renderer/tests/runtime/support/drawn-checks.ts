@@ -213,22 +213,19 @@ function routesThroughGroupHeaders(drawing: RenderedDiagram): string[] {
 	return drawing.svg.split(/(?=<g data-semantic-kind=)/u).flatMap((chunk) => {
 		if (!chunk.startsWith('<g data-semantic-kind="group-region"')) return [];
 		const group = /data-group="([^"]+)"/u.exec(chunk)?.[1];
-		// The near caption path names its outer foot, top arc, and inner edge.
-		const tab =
-			/<g class="ab-near">\s*<path d="M(-?[\d.]+),(-?[\d.]+) V[\d.]+ A[\d., ]+ [01] [01] [01] (-?[\d.]+),(-?[\d.]+) H(-?[\d.]+)/u.exec(
-				chunk,
-			);
-		if (tab === null) return [];
-		const left = Math.min(Number(tab[1]), Number(tab[5]));
-		const top = Number(tab[4]);
-		const box = {
-			x: left + shift.x,
-			y: top + shift.y,
+		// Both zoom layers paint a caption tab. The far tab can be wider.
+		const boxes = [
+			...chunk.matchAll(
+				/<g class="ab-(?:near|far)">\s*<path d="M(-?[\d.]+),(-?[\d.]+) V[\d.]+ A[\d., ]+ [01] [01] [01] (-?[\d.]+),(-?[\d.]+) H(-?[\d.]+)/gu,
+			),
+		].map((tab) => ({
+			x: Math.min(Number(tab[1]), Number(tab[5])) + shift.x,
+			y: Number(tab[4]) + shift.y,
 			width: Math.abs(Number(tab[1]) - Number(tab[5])),
-			height: Number(tab[2]) - top,
-		};
+			height: Number(tab[2]) - Number(tab[4]),
+		}));
 		return [...routes]
-			.filter(([, points]) => routeCrosses(points, box))
+			.filter(([, points]) => boxes.some((box) => routeCrosses(points, box)))
 			.map(([id]) => `${id} through ${group} header`);
 	});
 }
