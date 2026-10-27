@@ -622,3 +622,10 @@ It uses real legacy files, saved mapping choices, temporary Git repositories, an
 It covers recursive navigation, flow rendering, fingerprints, unchanged source bytes, stale refusal, and recovery.
 It also covers preview code opening, missing plans, planned-only empty states, and repeated navigation between preview and legacy readings.
 The unchanged-byte assertion includes old schema files and catches implicit upgrades during browser startup and background reads.
+
+`tests/system/server-state/canonical-walkthrough-narration.test.ts` owns the canonical voice bridge through public architecture reads, HTTP reports, and application sockets.
+Its temporary files and Git repositories exercise separate source and target captures, pinned narration after edits, stale refusal, and unavailable history.
+The existing `productionServer` preload supplies the controlled provider without live voice calls.
+The existing voice action owner covers cancellation and replacement during asynchronous narrative preparation.
+The existing pane presentation owner covers settled arrivals and exact beat acknowledgements.
+Legacy narration and recording owners retain their existing regression coverage.
