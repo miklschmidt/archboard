@@ -8,9 +8,9 @@ The renderer and Rust tests pass at checkpoint `de398584a`.
 Later raster inspection finds header-card defects that those tests miss.
 That checkpoint is not ready for adoption, and the parent council still decides whether changed drawings can land.
 
-The latest alternating workload places persistence and routes below 500 ms.
-Viewer takes 594 ms for its warmed first render and 683 ms after a card grows.
-The cold viewer takes 1158 ms, so the target remains unmet.
+The latest pair after orphan cleanup places all three warmed first renders and growing edits below 500 ms.
+Viewer takes 384 ms for its warmed first render and 378 ms after growth.
+A fresh-process viewer takes 523 ms, so the strict cold target still needs headroom.
 The instruction count falls by 93.68% against the fresh parent baseline.
 The detailed measurements and corpus inventory follow at the end of this note.
 
@@ -874,3 +874,28 @@ The next speed probe must retain the repaired header and trunk contracts.
 The profile supports removing repeated pair scans or deciding port order before another whole hierarchy pass.
 A future worker or Graphviz port change needs separate evidence for cold startup and text serialization costs.
 The parent still convenes the council, and TASK-548.08 remains In Progress.
+
+### Measurements after the parent authorizes orphan cleanup
+
+The parent then authorizes stopping the other checkouts' orphan Git owners.
+SIGTERM stops all 23 found under systemd, and the follow-up audit finds none still running.
+The first new audit reports only two runnable tasks.
+A new Git owner with a live parent exits normally.
+The rolling load averages still include the preceding CPU load.
+
+| Board                   | Warmed first before/after, ms | Growing edit before/after, ms | Fresh harness first after, ms | Native path before/after, ms |
+| ----------------------- | ----------------------------: | ----------------------------: | ----------------------------: | ---------------------------: |
+| Board viewer            |                    1447 / 384 |                    1456 / 378 |                           523 |                   1056 / 216 |
+| Board persistence       |                    1556 / 227 |                    1505 / 219 |                           229 |                   1091 / 100 |
+| Archboard server routes |                     640 / 161 |                     594 / 145 |                           152 |                     327 / 73 |
+
+The new native total falls from 2474 to 389 ms.
+Its solve counts remain 27/25/24 before and 1/1/1 after.
+Native load averages decay from 5.31 to 3.61 during the pair.
+Parent pool load decays from 15.24 to 13.17, and candidate load decays from 6.84 to 6.53.
+The process audit, rather than the delayed averages, establishes that the orphan CPU work stops before this measurement.
+The logs use the `base-7-quiet`, `after-7-quiet`, and `native-7-quiet` prefixes.
+All warmed target renders and growing edits now meet 500 ms.
+The fresh-process viewer still takes 523 ms, so the next probe targets that remaining gap.
+
+The quiet pinned counter repeats at 152730113322 instructions before and 9655284475 after, again a 93.68% reduction.
