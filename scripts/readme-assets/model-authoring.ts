@@ -1,4 +1,5 @@
 import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { z } from "zod";
 import {
 	ArchitectureModelReadSchema,
@@ -54,12 +55,9 @@ async function editModel(
 	proposal?: Proposal,
 ) {
 	const model = await readModel(server, state);
-	const target = {
-		model: model.manifest.id,
-		state: model.selectedState?.id ?? model.manifest.current?.id ?? null,
-	};
+	const target = modelTarget(model);
 	const operationId = crypto.randomUUID();
-	const input = scratch("takes", take, `${operationId}.json`);
+	const input = join(scratch("takes", take), `${operationId}.json`);
 	const writer = "readme";
 	writeFileSync(
 		input,
@@ -113,6 +111,18 @@ async function editModel(
 		writeFileSync(input, JSON.stringify({ claim: claimed.claim.id, writer }));
 		await server.cli(["model", "release", "--input", input]);
 	}
+}
+
+/**
+ * Address the exact state returned by the canonical reader.
+ * @param model The public reading.
+ * @returns The explicit mutation target.
+ */
+function modelTarget(model: Awaited<ReturnType<typeof readModel>>) {
+	return {
+		model: model.manifest.id,
+		state: model.selectedState?.id ?? model.manifest.current?.id ?? null,
+	};
 }
 
 export { readModel, editModel, modelResult };
