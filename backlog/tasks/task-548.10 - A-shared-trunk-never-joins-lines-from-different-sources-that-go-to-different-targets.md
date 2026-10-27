@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T17:03:00Z'
-updated_date: '2026-10-27T08:04:00Z'
+updated_date: '2026-10-27T12:51:00Z'
 labels:
   - renderer
   - layout
@@ -58,4 +58,6 @@ Round 3 delivery 9a6d1c147 keeps different boundary point ports distinct and pre
 Round 4 checkpoint: the Voice defect shares Tab sessions as source but mixes event NfthRpE6 and call etaTfLee. The checker exempted every common endpoint, and packed routing keyed sharing by card without trunk_kind. The reduced real-renderer case has nine cards and two edges and fails before the fix. Packed subjects now include card plus kind/standing/emphasis/traffic. The checker requires a matching kind for the common-end exemption. Native scans of 17 current vault boards and six fixtures per engine have no hard geometry finding. Blocks records three optional Track-only lane-spacing counts. Affected Rust tests pass, and the full renderer run passes 657 tests with one platform skip. The arrow approach regression now recognizes crossing hops on a straight entry while retaining full arrowhead and actual rounded-bend requirements.
 
 The canonical scripts/layout-compactness.ts measures every saved SVG for area, aspect, member occupancy in frames, member envelope, every route length, and the longest route. The initial scan covers 2452 drawings and all 76 whole boards. The complete checkpoint corpus is /tmp/548-08/round-4/after-1. Complete comparisons against the earlier council reference and round 3 are in after-1-vs-council-reference and after-1-vs-round-3. The per-board reports cover all 19 boards and both engines. The design note is docs/design/corpus-compactness-and-typed-trunks.md. Composition remains open, with label ownership as the next graph-based probe. Both main tasks stay In Progress.
+
+TASK-548.08 checkpoint 2 retains the mixed-kind trunk repair from a771b0529. The stronger checker and real nine-card regression pass, and the 17 current boards plus six fixtures per engine contain no hard trunk finding. Source fan-out grouping at parent boundaries is the next probe. It must keep labels after their fork, distinct relationship treatments, visible header entries, and physical point ports. No council acceptance is claimed.
 <!-- SECTION:NOTES:END -->

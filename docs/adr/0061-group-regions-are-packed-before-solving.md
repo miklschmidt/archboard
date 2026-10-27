@@ -40,8 +40,28 @@ A parent uses local ranks when a path between different member cards leaves that
 The rule reads containment and relationships before the solve.
 Paths through parent interface names do not stand for paths through their members.
 The parent keeps the existing block layout and ports.
+Parents also use local ranks for three more graph shapes when no relationship names their interface.
+Those shapes are a flat sink, a nested transparent wrapper, and work with one exclusive outside collaborator.
+A caller context is one parent and its members.
+A flat sink receives every outside call from one caller context and has no outgoing dependency beyond its parent.
+Its members contain no nested parents.
+It contains an internal relationship.
+An isolated scope or loose caller does not establish that shared context.
+A nested wrapper uses local ranks when its one descendant sends work outside it.
+An exclusive collaborator is a leaf with one incoming relationship and no outgoing work.
+Its caller has exactly one relationship that leaves that parent.
 Other parents remain inline.
 This prevents an outside path from stretching a frame between distant member ranks.
+The existing entry-ordering constraints stay unchanged.
+
+Track places a parent beside its exclusive loose collaborator in one measured row.
+Each side must have exactly one eligible partner.
+The original caller must have no other forward relationship in their containing block.
+The existing cycle analysis identifies feedback relationships before this decision.
+The collaborator and its label reserve one measured box, beside the actual caller's internal port.
+The painter keeps the normal card width.
+The shared routing pass reserves both the card and the label as obstacles.
+The final connection is a short horizontal route at that port's height.
 
 The core omits the competing whole-board inline solve for a graph with regions.
 Every fan-in keeps its labels beside its sources before the shared trunk.
@@ -63,7 +83,13 @@ A wrap reuses its ranked geometry for its sink decision and final routing.
 Local wraps and port-order candidates remain inside the single solve.
 
 The packer compares measured block sizes and estimated line crossings before routing.
+It estimates each connection from its boundary pins.
 It routes the selected packing once, then adds channel room when distinct routes require it.
+Each facing gutter reserves room for its maximum concurrent runs.
+Separated runs reuse that room at different heights.
+The count includes complete runs beyond the facing boxes because they can share turns around the corners.
+Each run also reserves a bend and straight approach beyond both ends.
+Each relationship keeps its lane reservation, including branches that share part of a route.
 The packer reserves a lane for each distinct face port and each first-row arrival.
 It includes routed lines in each child's bounds because its parent treats that child as one obstacle.
 A route keeps its body inside those bounds, apart from the fixed stub that crosses a face.

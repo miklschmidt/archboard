@@ -3,6 +3,7 @@
 //! (`packings.rs`), and the trunks between them routed by the orthogonal
 //! router (`trunks.rs`).
 
+mod capacity;
 mod edges;
 mod open_edge;
 mod pack;

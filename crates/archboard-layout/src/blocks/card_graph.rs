@@ -177,6 +177,9 @@ impl CardLayout<'_> {
         } else {
             None
         };
+        if self.peer_line(line, &tail, &head) {
+            return;
+        }
         let id = &line.key;
         // A wrapped item sits a row of cards and its labels lower for each row it is lowered.
         let minlen = 1.0 + 2.0 * self.arranged.lowered.get(&head).copied().unwrap_or(0) as f64;
@@ -218,6 +221,41 @@ impl CardLayout<'_> {
             ("weight", Value::Num(down)),
         ]);
         self.edges.push(Edge::new(name, head, attributes));
+    }
+
+    /// One indivisible row keeps an exclusive peer beside its parent caller.
+    fn peer_line(&mut self, line: &Line, tail: &str, head: &str) -> bool {
+        let peers = self.tree.nesting != super::tree::Nesting::Blocks
+            && self
+                .tree
+                .peer_of(line.edge.target())
+                .is_some_and(|(owner, peer)| {
+                    self.tree.get(owner).id == self.block.id
+                        && peer == tail
+                        && line.edge.target() == head
+                });
+        if !peers {
+            return false;
+        }
+        self.subgraphs.push(Sub::Plain(Subgraph {
+            name: Some(format!("cluster:peer:{}", line.edge.target())),
+            graph_attributes: Some(Attrs::of([("margin", Value::Num(0.0))])),
+            subgraphs: Some(vec![Subgraph {
+                graph_attributes: Some(Attrs::of([("rank", Value::from("same"))])),
+                nodes: Some(vec![self.node_of(tail), self.node_of(head)]),
+                ..Subgraph::default()
+            }]),
+            ..Subgraph::default()
+        }));
+        self.edges.push(Edge::new(
+            tail,
+            head,
+            Attrs::of([
+                ("id", Value::from(line.key.clone())),
+                ("constraint", Value::Bool(false)),
+            ]),
+        ));
+        true
     }
 
     /// The block's Graphviz graph, as built.

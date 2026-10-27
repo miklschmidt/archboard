@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-10-27T04:28:00Z'
-updated_date: '2026-10-27T06:56:00Z'
+updated_date: '2026-10-27T12:51:00Z'
 labels:
   - renderer
   - layout
@@ -48,6 +48,8 @@ Round 3 now uses compact measured parent headers in both engines and every theme
 TASK-548.11 delivery 9a6d1c147 uses compact normal-card width rules in both engines and every theme. Header names use 15 px versus 14 px, icons use 20 px versus 18 px, and the far name gains 1 px. Focused tests cover light, dark, and inherited themes and real parent/member connections. Both hard header assertions remain unchanged. The matching-core renderer suite passes 653 tests with one platform skip, and the complete gate passes, including all 19 browser files. Correction to earlier shorthand: the native scan covers 17 current vault boards plus six fixtures per engine, rather than 23 vault boards. All those pictures and the four exact acceptance requests pass hard geometry checks. The final proposal code check retains 41 old finding identities with none new. ADR 0062 remains proposed, and the Renderer layout and Semantic renderer proposals remain unadopted pending council.
 
 Both SVG sides are saved in /tmp/548-08/round-3/base and /tmp/548-08/round-3/after-1, with 2452 drawings and 76 whole-board views each. The comparison changes 1204 drawings across 19 boards. changed-svg-pairs.json, whole-board-svg-pairs.json, and acceptance-svg/manifest.json name the pairs. The design note docs/design/compact-parent-headers-and-local-composition.md records the modest emphasis, all 20 probes, exact acceptance geometry, fresh performance, changed boards, and remaining tradeoffs. Median first/growth times are 280/203, 299/289, and 140/134 ms for Viewer, Persistence, and Routes. Browser Blocks grows 93.2% in area, Voice retains some long outer routes, and the feedback example adds an ordinary crossing. The parent must grade those tradeoffs. Criteria 1 to 3 are supported by measurement, rendered tests, and visual inspection. Criterion 4 remains unchecked, and TASK-548.11 stays In Progress.
+
+Round 4 checkpoint 2 preserves the compact header sizing and emphasis without another header design change. Core a444102b6641c731 passes all 660 renderer tests, including light, dark, and inherited-theme header coverage. The native board and fixture scans have no header crossing or hidden frame. Both hard header assertions remain enabled. The complete before/after SVG corpus, including all 76 whole boards, is in /tmp/548-08/round-4/after-6 and /tmp/548-08/round-3/after-1. The report is docs/design/corpus-compactness-and-typed-trunks.md. The task remains In Progress and council criterion 4 remains unchecked.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

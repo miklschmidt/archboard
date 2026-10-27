@@ -299,6 +299,9 @@ impl BlockTree {
     /// its target that can hold one, or with the label before a join its
     /// source's, else the block that holds both ends.
     fn label_holder(&self, projection: &Projection, before: bool) -> BlockId {
+        if self.nesting != Nesting::Blocks && self.peer_of(projection.edge.target()).is_some() {
+            return projection.at;
+        }
         if projection.edge.label_count() > 0
             && let Some(frame) = self
                 .block_of(projection.edge.source())

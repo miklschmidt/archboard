@@ -5,13 +5,13 @@
 
 use archboard_router::{Connector, Dir, End, Params, Route, Scene, route};
 
-use crate::ecma::{abs, js_max};
+use crate::ecma::abs;
 use crate::geometry::{Point, Rect, Side};
 use crate::track::chains::LANE;
-use crate::track::scene::{Map, Set};
+use crate::track::scene::Map;
 use crate::track::score::{Weighed, crossings_of};
 
-use super::super::laid::{LaidMap, SAME};
+use super::super::laid::LaidMap;
 use super::super::tree::{Block, BlockTree, Line, header_of};
 
 /// How far a trunk keeps from a block it passes.
@@ -93,49 +93,6 @@ fn routed_weighed(width: f64, height: f64, lines: &[&[Point]]) -> Weighed {
         crossings: crossings_of(lines.iter().copied()) + detour / TRUNK_CROSSING,
         ..Weighed::default()
     }
-}
-
-/// Whether a value lies strictly between two others.
-fn between(low: f64, high: f64, at: f64) -> bool {
-    at > low && at < high
-}
-
-/// The room the trunks running between two neighbouring blocks need: a lane
-/// either side of each, where the router squeezed more into a gap than it
-/// holds a lane apart. Answers the room the most crowded gap needs.
-pub(crate) fn room_needed(items: &[Rect], lines: &[&[Point]], gap: f64) -> f64 {
-    let runs: Vec<(usize, Point, Point)> = lines
-        .iter()
-        .enumerate()
-        .flat_map(|(line, points)| points.windows(2).map(move |pair| (line, pair[0], pair[1])))
-        .collect();
-    let mut most = 0.0;
-    for one in items {
-        for other in items {
-            let across = (one.x + one.width, other.x);
-            let down = (one.y + one.height, other.y);
-            let beside = across.1 - across.0 > 0.0 && across.1 - across.0 <= gap + SAME;
-            let under = down.1 - down.0 > 0.0 && down.1 - down.0 <= gap + SAME;
-            // Coincident routes still need separate lanes. Counting positions
-            // treats an overcrowded trunk as one line and never opens its gap.
-            let columns = runs
-                .iter()
-                .filter(|(_, from, to)| beside && abs(from.x - to.x) < SAME)
-                .filter(|(_, from, _)| between(across.0, across.1, from.x))
-                .map(|(line, _, _)| *line)
-                .collect::<Set<usize>>()
-                .len();
-            let rows = runs
-                .iter()
-                .filter(|(_, from, to)| under && abs(from.y - to.y) < SAME)
-                .filter(|(_, from, _)| between(down.0, down.1, from.y))
-                .map(|(line, _, _)| *line)
-                .collect::<Set<usize>>()
-                .len();
-            most = js_max(most, columns.max(rows) as f64);
-        }
-    }
-    (most + 1.0) * LANE
 }
 
 /// Where on its obstacle a pinned end stands, and which way it leaves.
@@ -244,7 +201,7 @@ impl TrunkRouter<'_> {
         }
     }
 
-    /// Estimate a packing from its graph pins before running the path search.
+    /// Estimate a packing from its graph pins before routing.
     pub(super) fn estimate(&self, width: f64, height: f64) -> Weighed {
         let paths: Vec<Vec<Point>> = self
             .block

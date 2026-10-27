@@ -10,7 +10,7 @@ use crate::track::scene::{Map, Placement, Set};
 use crate::track::score::laps_of;
 use crate::track::sides::fit_sides;
 
-use super::laid::{Band, Insets, Laid};
+use super::laid::{Band, Insets, Laid, LaidMap};
 use super::leaves::{let_ports_slide, mark_regions, rim_of};
 use super::lone::frame_shape;
 use super::tree::{Block, BlockId, BlockTree, Kind, Nesting};
@@ -23,6 +23,7 @@ use super::walls::{
 pub(super) fn routed(
     tree: &BlockTree,
     id: BlockId,
+    laid: &LaidMap,
     insets: Insets,
     placed: &PlacedBlock,
     held: f64,
@@ -54,8 +55,13 @@ pub(super) fn routed(
         .map(|edge| (edge.id.as_str(), edge))
         .collect();
     crate::track::sides::place_headers(&mut scene, &edges);
+    let peers = super::peers::Peers::new(tree, block, laid, &mut scene);
     let beside = beside_walls(block, tree, &scene);
-    let straight: Set<&str> = beside.iter().map(|one| one.key.as_str()).collect();
+    let straight: Set<&str> = beside
+        .iter()
+        .map(|one| one.key.as_str())
+        .chain(peers.keys.iter().map(String::as_str))
+        .collect();
     mark_besides(&mut scene, &beside);
     let lines: Vec<SceneLine<'_>> = placed
         .edges
@@ -84,6 +90,7 @@ pub(super) fn routed(
     for (key, points) in beside_points(&scene, &beside, insets.side) {
         routes.insert(key, points);
     }
+    peers.finish(tree, block, laid, &mut scene, &mut routes, insets.side);
     let (mut laid, left) = read(block, insets, &scene, routes, &edges, held);
     laid.header = placed.header;
     super::headers::place_header_entries(block, &mut laid, ports);

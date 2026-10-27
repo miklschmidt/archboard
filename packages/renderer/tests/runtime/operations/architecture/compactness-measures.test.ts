@@ -19,3 +19,12 @@ test("the longest route measure names the detour independently of canvas size", 
 		detour: 400,
 	});
 });
+
+test("group frames without semantic node IDs contribute to occupancy", () => {
+	const svg = `<svg><g data-semantic-kind="group-region" data-group="reads" data-members="b a"><rect x="0" y="0" width="200" height="100" rx="10" style="fill:none"/></g><g data-semantic-kind="node" data-semantic-id="a"><rect x="10" y="10" width="100" height="40" pointer-events="all"/></g></svg>`;
+	const measured = compactnessOf(svg, 200, 100);
+	expect(measured.frames).toHaveLength(1);
+	expect(measured.frames[0]?.kind).toBe("group");
+	expect(measured.frames[0]?.id).toBe("group:reads:a b");
+	expect(measured.frameEmptyShare).toBeCloseTo(0.8);
+});
