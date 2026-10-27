@@ -207,3 +207,26 @@ function answer(stdout: string) {
 	const { vault: _vault, ...result } = z.record(z.string(), z.unknown()).parse(JSON.parse(stdout));
 	return result;
 }
+
+test("structural exports use canonical recursive scope and preserve reproducible selectors", async () => {
+ const out = join(home,"architecture.svg");
+ const rendered=cli(["model","render","--module","Gateway","--out",out]);
+ expect(rendered.status,rendered.stderr).toBe(0);
+ const receipt=answer(rendered.stdout);
+ expect(receipt).toMatchObject({success:true,model:"Shop",grammar:"architecture"});
+ expect(readFileSync(out,"utf8")).toContain("Shop#Handler");
+ const request=await fetch(`${server!.base}/api/architecture/render?${new URLSearchParams({vault,module:"Gateway"})}`);
+ expect(request.status).toBe(200);
+ expect(await request.json()).toMatchObject({success:true,grammar:"architecture",placed:expect.arrayContaining(["Shop#Handler"])});
+});
+
+test("retired board writers and claims cannot change a vault through HTTP or CLI", async () => {
+ const before=cli(["model","read"]);
+ for(const route of ["create","edit","branch","adopt","shelve","resolve","rename","discard","move","track-embed","correct"]){
+  const response=await fetch(`${server!.base}/api/semantic-boards/${route}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({vault,board:"retired",doing:"Try retired authoring"})});
+  expect([404,410]).toContain(response.status);
+ }
+ const old=cli(["semantic","new","retired","--level","module","--doing","Try retired authoring"]);
+ expect(old.status).toBe(2);
+ expect(cli(["model","read"]).stdout).toBe(before.stdout);
+});

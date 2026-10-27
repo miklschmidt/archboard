@@ -30,7 +30,6 @@
 		"./vault-policy": "./src/runtime/api/vault-policy.ts",
 		"./doing": "./src/runtime/api/doing.ts",
 		"./lock": "./src/runtime/api/lock.ts",
-		"./store-move": "./src/runtime/api/store-move.ts",
 		"./store-write": "./src/runtime/api/store-write.ts"
 	}
 }

@@ -35,6 +35,7 @@ type WebSocketMessageType =
 	// changes. It carries no picture — the board is a file the server draws, and
 	// the pane asks for the drawing itself (ADR 0023).
 	| "pane_board"
+ | "pane_model"
 	// The repositories of this machine changed: a checkout was chosen. Boardless
 	// and sent to every tab, because the navigator of each lists every one.
 	| "repositories_changed"

@@ -19,18 +19,24 @@ import {
 	QualifiedSubjectIdSchema,
 } from "#shared/schemas/model.ts";
 
-const ArchitectureFlowRenderRequestSchema = z.strictObject({
+const ArchitectureRenderRequestSchema = z.strictObject({
 	flow: z.string().min(1).optional(),
-	grammar: DiagramGrammarSchema.exclude(["architecture"]),
+	grammar: DiagramGrammarSchema.default("architecture"),
+ module: z.string().min(1).optional(),
+ state: z.string().min(1).optional(),
+ scope: QualifiedSubjectIdSchema.optional(),
+ focus: z.array(QualifiedSubjectIdSchema).optional(),
+ hideKinds: z.array(z.string()).optional(),
+ hideGroups: z.array(z.string()).optional(),
 	checkpoint: z.string().min(1).optional(),
 	theme: StandaloneThemeSchema.optional(),
 });
-const ArchitectureFlowRenderResultSchema = z.discriminatedUnion("success", [
+const ArchitectureRenderResultSchema = z.discriminatedUnion("success", [
 	z.strictObject({
 		success: z.literal(true),
 		model: SemanticIdSchema,
-		flow: QualifiedSubjectIdSchema,
-		grammar: ArchitectureFlowRenderRequestSchema.shape.grammar,
+		flow: QualifiedSubjectIdSchema.optional(),
+		grammar: ArchitectureRenderRequestSchema.shape.grammar,
 		revision: ModelRevisionSchema,
 		checkpoint: z.string().optional(),
 		svg: z.string(),
@@ -261,8 +267,8 @@ type ArchitectureClaimResult = z.infer<typeof ArchitectureClaimResultSchema>;
 type ArchitectureRecoveryResult = z.infer<typeof ArchitectureRecoveryResultSchema>;
 type ArchitectureEvent = z.infer<typeof ArchitectureEventSchema>;
 export {
-	ArchitectureFlowRenderRequestSchema,
-	ArchitectureFlowRenderResultSchema,
+	ArchitectureRenderRequestSchema,
+	ArchitectureRenderResultSchema,
 	ArchitectureTargetSchema,
 	ArchitectureClaimSchema,
 	ArchitectureClaimRequestSchema,

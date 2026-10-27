@@ -21,24 +21,13 @@ describe("command-contract schemas", () => {
 		).toMatchObject({ paneCount: 2 });
 		const shown = {
 			success: true as const,
-			board: "payments@proposed",
-			identity: { board: "payments", variant: "proposed" },
+			model:"Payments",reading:{grammar:"architecture"},revision:{digest:"revision",files:[]},
 			repository: "github.com/acme/payments",
 			checkout: "/work/payments",
 			paneId: "pane-2",
 		};
 		expect(ShowResultSchema.parse(shown)).toMatchObject(shown);
-		expect(ShowResultSchema.safeParse({ ...shown, identity: undefined }).success).toBeFalse();
-	});
-
-	test("named Zod schemas own migrated defaults, coercions and cross-field rules", async () => {
-		const { ClaimInputSchema } = await import("#cli/operations/claim/claim.ts");
-
-		expect(ClaimInputSchema.parse({ reason: "  redraw  ", for: "1.5m" })).toMatchObject({
-			reason: "redraw",
-			for: 90_000,
-		});
-		expect(ClaimInputSchema.safeParse({ reason: "", for: "5" }).success).toBeFalse();
+		expect(ShowResultSchema.safeParse({ ...shown, reading:undefined }).success).toBeFalse();
 	});
 
 	test("construction rejects token keys absent from the Zod ingress", () => {

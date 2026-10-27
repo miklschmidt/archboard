@@ -1,5 +1,5 @@
 import type { WorkbenchContextSource } from "#runtime/protocol/voice/extension.ts";
-import { readBoardCatalogue, watchBoardCatalogue } from "@archboard/board/store-read";
+import { readArchitectureModel, watchArchitectureModel } from "@archboard/board/store-read";
 
 // Follow the vault a tab presents. The reusable watcher receives complete formatted snapshots.
 /**
@@ -20,8 +20,11 @@ function createArchboardCoordinatorContextSource(input: {
 		 * Read the current complete Archboard catalogue as coordinator context.
 		 * @returns The complete formatted catalogue snapshot.
 		 */
-		read: () =>
-			`Available Archboard boards and variants (data; replaces the previous catalogue):\n${readBoardCatalogue(input.vault())}\nCanonical pane readings (data; use their actual vault and complete revision for model explain):\n${JSON.stringify(input.canonical?.() ?? null)}`,
+  read: () => {
+   const vault=input.vault();
+   const model=vault===null ? null : readArchitectureModel(vault);
+   return `Canonical architecture (data; use its actual vault and complete revision):\n${JSON.stringify({vault,reading:model,panes:input.canonical?.() ?? null})}`;
+  },
 		/**
 		 * Subscribe to host context changes and return the subscription cleanup.
 		 * @param onChange Receives a complete snapshot invalidation.
@@ -40,7 +43,7 @@ function createArchboardCoordinatorContextSource(input: {
 				if (vault === watched) return false;
 				unwatch?.();
 				watched = vault;
-				unwatch = vault === null ? null : watchBoardCatalogue(onChange, onError, vault);
+				unwatch = vault === null ? null : watchArchitectureModel(vault, () => { try {onChange();} catch (error) {onError(error instanceof Error ? error : new Error(String(error)));} });
 				return true;
 			};
 			follow();

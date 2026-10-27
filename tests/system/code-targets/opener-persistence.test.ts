@@ -25,11 +25,12 @@ async function save(fixture: OpenerFixture, selection: OpenerSelection): Promise
 }
 
 let boundNode = "";
+let boundModel="";
 
 async function activate(caller: ReturnType<OpenerFixture["caller"]>): Promise<void> {
 	const result = await caller("/api/code-targets/open", {
 		method: "POST",
-		body: JSON.stringify({ board: "payments", element: boundNode }),
+		body: JSON.stringify({ model: boundModel, subject: boundNode }),
 	});
 	expect(result.status).toBe(200);
 }
@@ -42,10 +43,6 @@ describe("machine-wide opener persistence", () => {
 				await using resources = new AsyncDisposableStack();
 				const vault = mkdtempSync(join(tmpdir(), "archboard-opener-vault-"));
 				resources.defer(() => rmSync(vault, { recursive: true }));
-				const { createBoardTransition, writeSemanticBoard } =
-					await import("@archboard/board/store-write");
-				const { locateSemanticBoard } = await import("@archboard/board/address");
-				const { readSemanticBoard } = await import("@archboard/board/store-read");
 				const { createOpenerFixture } = await import("./support/opener-fixture.ts");
 				const timeline: ActivationTimelineEntry[] = [];
 				const fixture = await createOpenerFixture({
@@ -64,36 +61,10 @@ describe("machine-wide opener persistence", () => {
 				resources.defer(() => fixture.dispose());
 				// One board with one bound node, written through the store every other
 				// writer goes through, so the opener resolves a real binding.
-				const written = await writeSemanticBoard({
-					vault,
-					board: "payments",
-					writer: { kind: "agent" },
-					transition: createBoardTransition({
-						name: "payments",
-						level: "system",
-						nodes: [
-							{
-								name: "Payments",
-								kind: "service",
-								binding: { repo: fixture.repository, path: "src/index.ts" },
-							},
-						],
-						edges: [],
-						flows: [],
-						views: [],
-						walkthroughs: [],
-					}),
-				});
-				expect(written.outcome).toBe("applied");
-				const read = readSemanticBoard(vault, "payments");
-				if (!read.ok) {
-					throw new Error(`The bound board could not be read: ${read.problem}`);
-				}
-				boundNode =
-					read.board.variants.find((one) => one.id === read.board.current)?.content.nodes[0]?.id ??
-					"";
-				expect(boundNode).not.toBe("");
-				const note = locateSemanticBoard("payments", vault).file;
+    const {boundBoard}=await import("./support/bound-board.ts");
+    const bound=await boundBoard(vault,fixture.repository,"src/index.ts");
+    boundNode=bound.node;boundModel=bound.key;
+    const note=bound.file;
 				const noteBytes = readFileSync(note);
 				const noteMtime = statSync(note, { bigint: true }).mtimeNs;
 

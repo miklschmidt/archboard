@@ -8,7 +8,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
-import { initializeSemanticBoardConfiguration } from "@archboard/board/vault-policy";
+import { initializeArchitectureModel, initializeArchitectureArchive } from "@archboard/board/store-write";
+import { repoRootOf } from "@archboard/workspace/checkouts";
+import { CliUsageError } from "#cli/protocol/contract/contract.ts";
 import type { CommandContext } from "#cli/protocol/contract/contract.ts";
 import { expandHome } from "#cli/operations/install-skill/skill-destination.ts";
 
@@ -109,20 +111,25 @@ function removeOldBlocks(repo: string): string[] {
  * @param options - Which repository, and the context.
  * @returns What was done.
  */
-function setUpRepository(options: SetupOptions): SetupResult {
+async function setUpRepository(options: SetupOptions): Promise<SetupResult> {
 	const { context } = options;
 	const repo = checkoutRootOf(options.repoSpec ? expandHome(options.repoSpec) : process.cwd());
 	const vault = path.join(repo, VAULT_DIRECTORY);
 	const vaultCreated = !fs.existsSync(vault);
 	fs.mkdirSync(vault, { recursive: true });
 	if (vaultCreated) {
-		initializeSemanticBoardConfiguration(vault);
+		if (await repoRootOf(repo) === undefined) {
+   const archive = await initializeArchitectureArchive(vault);
+   if (!archive.success) throw new CliUsageError(archive.diagnostics.map((item)=>`${item.code}: ${item.message} ${item.recovery}`).join("\n"));
+  }
+  const initialized = await initializeArchitectureModel(vault,{name:path.basename(repo),operationId:"repository-setup",writer:"installer",doing:"Initialize canonical architecture"});
+  if (!initialized.success) throw new CliUsageError(initialized.diagnostics.map((item)=>`${item.code}: ${item.message} ${item.recovery}`).join("\n"));
 	}
 	const removedBlocks = removeOldBlocks(repo);
 	const vaultIgnored = gitIgnores(repo, vault);
 
 	context.diagnostic(
-		`${vaultCreated ? "Made" : "Found"} the boards of this repository in ${vault}`,
+		`${vaultCreated ? "Made" : "Found"} the architecture of this repository in ${vault}`,
 	);
 	for (const file of removedBlocks) {
 		context.diagnostic(
@@ -131,7 +138,7 @@ function setUpRepository(options: SetupOptions): SetupResult {
 	}
 	if (vaultIgnored) {
 		context.diagnostic(
-			`Git ignores ${VAULT_DIRECTORY}, so the boards stay on this machine. Remove that rule to commit them with your code.`,
+			`Git ignores ${VAULT_DIRECTORY}, so the architecture stays on this machine. Remove that rule to commit them with your code.`,
 		);
 	}
 	return { repo, vault, vaultCreated, vaultIgnored, removedBlocks };

@@ -49,6 +49,7 @@
 // not at the version it names, with no subject: its `path` names the reference
 // as `variants.<id>.documents.<index>` (ADR 0054).
 
+import { ArchitectureModelReadSchema } from "@archboard/board/model";
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";
 import { z } from "zod";
 import { EvidenceKindSchema, VaultDiagnosticSchema } from "@archboard/board/policy";
@@ -357,6 +358,7 @@ type CheckTiming = z.infer<typeof CheckTimingSchema>;
  * `success: true`, as every route does, and a parse keeps only the answer.
  */
 const CodeCheckAnswerSchema = z.object({
+ models:z.array(z.strictObject({model:z.string(),state:z.string().nullable(),revision:ArchitectureModelReadSchema.options[0].shape.revision})).optional(),
 	timings: z.array(CheckTimingSchema),
 	boards: z.array(CodeCheckBoardSchema),
 	findings: z.array(CodeFindingSchema),

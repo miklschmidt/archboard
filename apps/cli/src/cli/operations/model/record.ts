@@ -11,7 +11,8 @@ import {
 } from "@archboard/walkthrough/recording";
 import { recordWalkthrough } from "@archboard/walkthrough/recorder";
 import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
-import { semanticRecordContract } from "#cli/operations/semantic/draw/record.ts";
+import {serverRefusal} from "#cli/protocol/contract/refusals.ts";
+import type {CommandContext} from "#cli/protocol/contract/contract.ts";
 import { readArchitectureModelOnServer } from "#cli/clients/server/architecture-model.ts";
 import { defineCommand, CliUsageError } from "#cli/protocol/contract/contract.ts";
 import {
@@ -53,7 +54,7 @@ function recordingPlayback(model: Model) {
  */
 function recordingRequest(
 	input: z.infer<typeof InputSchema>,
-	context: Parameters<typeof semanticRecordContract.handler>[1],
+	context: CommandContext,
 	architecture: Model,
 ): Parameters<typeof recordWalkthrough>[0] {
 	if (!context.vault) throw new CliUsageError("Canonical recording requires an explicit vault.");
@@ -97,10 +98,8 @@ function recordingRequest(
 }
 
 const modelRecordContract = defineCommand({
-	...semanticRecordContract,
-	refusals: semanticRecordContract.refusals.filter(
-		(refusal) => !["DOING_REQUIRED", "CHECKOUT_NOT_CHOSEN"].includes(refusal.code),
-	),
+	prerequisites:["server"],
+	refusals:[serverRefusal],
 	output: {
 		cases: [
 			{
@@ -123,9 +122,7 @@ const modelRecordContract = defineCommand({
 		"Uses the existing local voice, talk storage, and frame renderer. Every beat reads the same retained checkpoint. Missing subjects refuse recording before voice starts.",
 	examples: ["archboard model record --checkpoint <id> --walkthrough Tour --out tour.mp4"],
 	parameters: [
-		...semanticRecordContract.parameters.filter((parameter) =>
-			["out", "theme", "layout", "language", "talk"].includes(parameter.key),
-		),
+ ...(["out","theme","layout","language","talk"] as const).map((key)=>({kind:"option" as const,key,spellings:[`--${key}`] as const,value:"required" as const,required:key==="out",placeholder:"value",description:`The recording ${key}`})),
 		{
 			kind: "option",
 			key: "checkpoint",

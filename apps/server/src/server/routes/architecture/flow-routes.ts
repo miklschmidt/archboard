@@ -1,15 +1,18 @@
 import type { Express } from "express";
 import { z } from "zod";
-import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/board/store-read";
+import { readArchitectureModel } from "@archboard/board/store-read";
 import {
-	ArchitectureFlowRenderRequestSchema,
+	ArchitectureRenderRequestSchema,
 	type ArchitectureModelRead,
 } from "@archboard/board/model";
+import { projectModel, projectFlow } from "@archboard/board/content";
+import {recordArchitectureRecipe} from "@archboard/renderer/recipe";
+import {vaultIdentity} from "@archboard/code-binding/resolution";
 import { renderArchitecture } from "@archboard/renderer/bun";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { respond } from "#server/routes/architecture/model-response.ts";
 
-type Reading = z.infer<typeof ArchitectureFlowRenderRequestSchema>;
+type Reading = z.infer<typeof ArchitectureRenderRequestSchema>;
 /**
  * Read the explicitly selected current or retained flow through the public runtime.
  * @param vault The addressed vault.
@@ -17,7 +20,7 @@ type Reading = z.infer<typeof ArchitectureFlowRenderRequestSchema>;
  * @returns A selected reading or actionable diagnostics.
  */
 function flowReading(vault: string, input: Reading) {
-	if (input.flow === undefined)
+	if (input.grammar !== "architecture" && input.flow === undefined)
 		return {
 			success: false as const,
 			code: "FLOW_REQUIRED" as const,
@@ -31,9 +34,7 @@ function flowReading(vault: string, input: Reading) {
 				},
 			],
 		};
-	return input.checkpoint === undefined
-		? readArchitectureModel(vault, undefined, input.flow)
-		: readArchitectureCheckpoint(vault, input.checkpoint, undefined, input.flow);
+	return readArchitectureModel(vault,input.module,input.flow,{state:input.state,checkpoint:input.checkpoint});
 }
 /**
  * Adapt complete selected meaning to the existing renderer operation.
@@ -44,16 +45,11 @@ function flowReading(vault: string, input: Reading) {
 async function flowPicture(
 	model: Extract<ArchitectureModelRead, { success: true }>,
 	input: Reading,
+ vault:string,
 ) {
-	const flow = model.collections
-		.flatMap((collection) => collection.flows)
-		.find((value) => value.id === model.selectedFlow)!;
-	const content = {
-		nodes: model.modules.filter((module) => flow.participants.includes(module.id)),
-		edges: [],
-		flows: [flow],
-		walkthroughs: [],
-	};
+ const architecture = projectModel(model,input.scope ?? model.selectedModule ?? null,input.focus ?? null,{hideKinds:input.hideKinds,hideGroups:input.hideGroups});
+ const flow = model.collections.flatMap((collection)=>collection.flows).find((value)=>value.id===model.selectedFlow);
+ const {content} = input.grammar === "architecture" ? architecture : projectFlow(architecture,flow!);
 	const drawn = await renderArchitecture({
 		content,
 		grammar: input.grammar,
@@ -64,11 +60,12 @@ async function flowPicture(
 	return {
 		success: true as const,
 		model: model.manifest.id,
-		flow: flow.id,
+		...(input.grammar === "architecture" ? {} : {flow:flow!.id}),
 		grammar: input.grammar,
 		revision: model.revision,
 		checkpoint: model.checkpoint?.id,
-		...drawn,
+		...Object.fromEntries(Object.entries(drawn).filter(([key])=>key!=="readingDirection")),
+ svg:recordArchitectureRecipe(drawn.svg,model,input,vaultIdentity(vault)??null), width:drawn.width,height:drawn.height,placed:drawn.placed,atlas:drawn.atlas,
 	};
 }
 /**
@@ -77,8 +74,8 @@ async function flowPicture(
  */
 function mountArchitectureFlowRoutes(app: Express): void {
 	app.get("/api/architecture/render", requireVault, async (req, res) => {
-		const query = ArchitectureFlowRenderRequestSchema.extend({ vault: z.string() }).safeParse(
-			req.query,
+		const query = ArchitectureRenderRequestSchema.extend({ vault: z.string() }).safeParse(
+ {...req.query, ...Object.fromEntries(["focus","hideKinds","hideGroups"].filter((key)=>typeof req.query[key] === "string").map((key)=>[key,[req.query[key]]]))},
 		);
 		if (!query.success) {
 			res
@@ -91,7 +88,7 @@ function mountArchitectureFlowRoutes(app: Express): void {
 			respond(res, model);
 			return;
 		}
-		respond(res, await flowPicture(model, query.data));
+		respond(res, await flowPicture(model, query.data,vaultOfRequest(req)));
 	});
 }
 export { mountArchitectureFlowRoutes };

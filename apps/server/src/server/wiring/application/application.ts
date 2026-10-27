@@ -22,13 +22,11 @@ import {
 } from "#server/middleware/mutation-work/mutation-work.ts";
 import { mountPaneRoutes } from "#server/routes/panes/pane-routes.ts";
 import { mountRepositoryRoutes } from "#server/routes/repositories/repository-routes.ts";
-import { mountSemanticLockRoutes } from "#server/routes/semantic-boards/semantic-lock-routes.ts";
-import { mountSemanticBoardRoutes } from "#server/routes/semantic-boards/semantic-board-routes.ts";
+import { mountArchitectureConfigurationRoutes } from "#server/routes/architecture/configuration-routes.ts";
 import { mountLocalityRoute } from "#server/routes/locality/locality-route.ts";
 import { mountVoiceStartTraceRoute } from "@archboard/codex-realtime-voice/server";
 
 import { mountSemanticPaneContextRoutes } from "@archboard/workbench/panes";
-import { watchSemanticBoardFiles } from "#server/watchers/semantic-boards/semantic-disk-watch.ts";
 import { mountServiceRoutes } from "#server/routes/service/service-routes.ts";
 import { mountLegacyMigrationRoutes } from "#server/routes/architecture/migration-routes.ts";
 import { mountArchitectureModelRoutes } from "#server/routes/architecture/model-routes.ts";
@@ -116,10 +114,10 @@ app.use(
 	}),
 );
 
-mountSemanticLockRoutes(app);
+
 mountPaneRoutes(app);
 mountRepositoryRoutes(app);
-mountSemanticBoardRoutes(app);
+mountArchitectureConfigurationRoutes(app);
 mountArchitectureModelRoutes(app);
 mountLegacyMigrationRoutes(app);
 mountLocalityRoute(app);
@@ -131,7 +129,7 @@ mountVoiceStartTraceRoute(app);
 // A vault can be open in more than one server, and the lease says who may write
 // rather than who has been told. Watching the boards on screen is what keeps a
 // pane from reading a board another writer replaced under it.
-watchSemanticBoardFiles();
+
 
 mountServiceRoutes(app);
 

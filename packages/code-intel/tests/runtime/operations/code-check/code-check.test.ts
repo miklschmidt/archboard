@@ -315,18 +315,3 @@ test("what the pass cannot read is skipped with its reason, and a reason for a w
 	// A repository this machine has not registered stays silent.
 	expect(outcome.findings.some((finding) => finding.subject?.id === "e5")).toBe(false);
 });
-
-test("--variant reads the named draft where a board has one, never a shelved or historical variant", async () => {
-	const { read, outcome } = await pass("TASK-1");
-	expect(read.boards.map((one) => [one.board.name, one.variant.id, one.named])).toEqual([
-		["Ops", "v1", false],
-		["Shop", "v2", true],
-	]);
-	// On a named draft a bound path that is not in the checkout is reported.
-	expect(found(outcome)).toEqual(["BINDING_PATH_MISSING pN"]);
-	expect(check.readBoardsToCheck(vault, "Old")).toEqual({
-		ok: false,
-		variant: "Old",
-		drafts: ["Sketch", "TASK-1"],
-	});
-});

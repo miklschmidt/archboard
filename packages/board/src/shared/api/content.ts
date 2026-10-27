@@ -22,3 +22,6 @@ export type {
 } from "#shared/schemas/content.ts";
 export type { EdgeEmphasis } from "#shared/schemas/vocabulary.ts";
 export { WalkthroughBeatSchema } from "#shared/schemas/walkthrough.ts";
+
+export { modelContent, projectModel, type Model, type ModelFlow, type ModelFilters } from "#shared/rules/model-projection.ts";
+export { projectFlow } from "#shared/rules/model-flow-projection.ts";

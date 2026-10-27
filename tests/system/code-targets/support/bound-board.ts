@@ -1,54 +1,22 @@
-import { createBoardTransition, writeSemanticBoard } from "@archboard/board/store-write";
-import { locateSemanticBoard } from "@archboard/board/address";
-import { readSemanticBoard } from "@archboard/board/store-read";
-
-/** A board written to a vault, and the node whose binding is bound. */
-interface BoundBoard {
-	/** The board key an activation names. */
-	readonly key: string;
-	/** The node id an activation names. */
-	readonly node: string;
-	/** The file the board lives in, so a test can prove it was not touched. */
-	readonly file: string;
-}
-
+import {writeFileSync,mkdirSync} from "node:fs";
+import {join} from "node:path";
+import {mintId} from "@archboard/board/ids";
+import {initializeSemanticBoardConfiguration} from "@archboard/board/vault-policy";
+/** Canonical input and bound module for opener integration fixtures. */
+interface BoundBoard {readonly key:string;readonly node:string;readonly file:string;}
 /**
- * Write one board whose single node is bound to a file in the fixture's
- * repository, through the store that every other writer goes through.
- * @param vault The vault the board goes in.
- * @param repository The repository identity the binding names.
- * @param path The path inside it.
- * @returns The board key, the node's id and the board's file.
+ * Seed one real canonical module for the opener's existing public route.
+ * @param vault The fixture vault.
+ * @param repository The binding repository.
+ * @param path The bound path.
+ * @returns The canonical model, module, and authored input path.
  */
-async function boundBoard(vault: string, repository: string, path: string): Promise<BoundBoard> {
-	const name = `payments-${Math.random().toString(36).slice(2, 8)}`;
-	const written = await writeSemanticBoard({
-		vault,
-		board: name,
-		writer: { kind: "agent" },
-		transition: createBoardTransition({
-			name,
-			level: "system",
-			nodes: [{ name: "Payments", kind: "service", binding: { repo: repository, path } }],
-			edges: [],
-			flows: [],
-			views: [],
-			walkthroughs: [],
-		}),
-	});
-	if (written.outcome !== "applied") {
-		throw new Error(`Could not write the bound board: ${written.problem}`);
-	}
-	const read = readSemanticBoard(vault, name);
-	if (!read.ok) {
-		throw new Error(`Could not read the bound board: ${read.problem}`);
-	}
-	const variant = read.board.variants.find((one) => one.id === read.board.current);
-	const node = variant?.content.nodes[0];
-	if (node === undefined) {
-		throw new Error("The written board has no node.");
-	}
-	return { key: name, node: node.id, file: locateSemanticBoard(name, vault).file };
+async function boundBoard(vault:string,repository:string,path:string):Promise<BoundBoard>{
+ mkdirSync(vault,{recursive:true});
+ initializeSemanticBoardConfiguration(vault);
+ const key=mintId(),node=`${key}#Payments`,file=join(vault,"payments.module.json");
+ writeFileSync(join(vault,"model.json"),JSON.stringify({schemaVersion:1,id:key,name:"Payments",current:{id:"Now",name:"Current"}}));
+ writeFileSync(file,JSON.stringify({schemaVersion:1,id:node,name:"Payments",kind:"service",order:0,binding:{repo:repository,path},outgoing:[]}));
+ return {key,node,file};
 }
-
-export { type BoundBoard, boundBoard };
+export {type BoundBoard,boundBoard};

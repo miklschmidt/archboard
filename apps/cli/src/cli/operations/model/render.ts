@@ -1,21 +1,23 @@
 import { z } from "zod";
 import {
-	ArchitectureFlowRenderRequestSchema,
-	ArchitectureFlowRenderResultSchema,
+	ArchitectureRenderRequestSchema,
+	ArchitectureRenderResultSchema,
 } from "@archboard/board/model";
 import { renderArchitectureFlowOnServer } from "#cli/clients/server/architecture-model.ts";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { PendingArtifactSchema } from "#cli/protocol/contract/schemas.ts";
-const InputSchema = ArchitectureFlowRenderRequestSchema.extend({ out: z.string() });
+const InputSchema = ArchitectureRenderRequestSchema.extend({ out: z.string() });
 const modelRenderContract = defineCommand({
 	path: ["model", "render"],
 	shared: ["url", "directory"],
-	summary: "Render one explicitly selected canonical flow",
+	summary: "Render a canonical architecture or behavioral reading",
 	description:
 		"Sequence and flowchart require an explicit flow identity or unique name. The complete flow includes every participant, independently of module scope and structural filters.",
 	examples: ["archboard model render --flow 'Shop#Checkout' --grammar sequence --out request.svg"],
 	parameters: [
+ ...([['module','Select a module by identity or unique name'],['state','Select an explicit architectural state'],['scope','Open an exact module scope']] as const).map(([key,description])=>({kind:"option" as const,key,spellings:[`--${key}`] as const,value:"required" as const,placeholder:"id",description})),
+ ...([['focus','Focus these identities'],['hideKinds','Hide these relationship kinds'],['hideGroups','Hide these groups']] as const).map(([key,description])=>({kind:"option" as const,key,spellings:[key==='hideKinds'?'--hide-kind':key==='hideGroups'?'--hide-group':'--focus'] as const,value:"required" as const,occurrences:"append" as const,placeholder:"id",description})),
 		{
 			kind: "option",
 			key: "flow",
@@ -30,7 +32,7 @@ const modelRenderContract = defineCommand({
 			spellings: ["--grammar"],
 			value: "required",
 			placeholder: "grammar",
-			choices: ArchitectureFlowRenderRequestSchema.shape.grammar.options,
+			choices: ArchitectureRenderRequestSchema.shape.grammar.removeDefault().options,
 			description: "Draw sequence or flowchart",
 		},
 		{
@@ -61,10 +63,10 @@ const modelRenderContract = defineCommand({
 	],
 	input: { ingress: InputSchema },
 	result: z.union([
-		ArchitectureFlowRenderResultSchema.options[0]
+		ArchitectureRenderResultSchema.options[0]
 			.omit({ svg: true, atlas: true })
 			.extend({ file: z.string() }),
-		ArchitectureFlowRenderResultSchema.options[1],
+		ArchitectureRenderResultSchema.options[1],
 	]),
 	output: {
 		cases: [

@@ -13,7 +13,7 @@ import {
 } from "#cli/clients/server/legacy-migration.ts";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal, doingRefusal } from "#cli/protocol/contract/refusals.ts";
-import { statedJson } from "#cli/operations/semantic/input/semantic-input.ts";
+import { statedJson } from "#cli/operations/model/input.ts";
 
 /**
  * Keep inventory decisions readable without treating an unresolved choice as a failed read.

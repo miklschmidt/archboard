@@ -5,6 +5,8 @@ import {
 	ArchitectureImportRequestSchema,
 	ArchitecturePortableBundleSchema,
 	type PortableInstallationSchema,
+ type InitializationInstallationSchema,
+ type ArchitectureInitializationRequestSchema,
 } from "#shared/schemas/model-portable.ts";
 import { readArchitectureModel } from "#runtime/operations/read/model-read.ts";
 import { readModelFiles } from "#runtime/store/model-files.ts";
@@ -82,7 +84,7 @@ async function exportArchitectureModel(vault: string) {
  * @param expected The durable request.
  * @param request The requested installation.
  */
-function requireSame(expected: unknown, request: z.infer<typeof PortableInstallationSchema>): void {
+function requireSame(expected: unknown, request: z.infer<typeof PortableInstallationSchema> | z.infer<typeof InitializationInstallationSchema>): void {
 	if (!isDeepStrictEqual(expected, request))
 		throw new ArchiveError(
 			"OPERATION_REUSED",
@@ -102,7 +104,7 @@ function requireSame(expected: unknown, request: z.infer<typeof PortableInstalla
 async function previousInstallation(
 	vault: string,
 	context: ArchiveContext,
-	request: z.infer<typeof PortableInstallationSchema>,
+	request: z.infer<typeof PortableInstallationSchema> | z.infer<typeof InitializationInstallationSchema>,
 	guard: () => void,
 	notification: { emit: boolean },
 ) {
@@ -134,9 +136,10 @@ async function previousInstallation(
  * @param input The portable envelope and complete destination token.
  * @returns The existing installation receipt or structured refusal.
  */
-async function importArchitectureModel(
+async function installArchitectureModel(
 	vault: string,
 	input: z.input<typeof ArchitectureImportRequestSchema>,
+ initialization?: z.infer<typeof ArchitectureInitializationRequestSchema>,
 ) {
 	const parsed = ArchitectureImportRequestSchema.parse(input);
 	const { bundle, ...intent } = parsed;
@@ -149,12 +152,13 @@ async function importArchitectureModel(
 				...model.proposals.flatMap((proposal) => proposal.changes.map((change) => change.subject)),
 			]),
 		];
-		const request = {
+		const target = { model: model.manifest.id, state: model.manifest.current?.id ?? null };
+ const request = initialization === undefined ? {
 			...intent,
 			type: "import" as const,
 			bundleDigest: bundleDigest(bundle),
-			target: { model: model.manifest.id, state: model.manifest.current?.id ?? null },
-		};
+			target,
+		} : { ...initialization, type: "initialize" as const, expectedRevision: intent.expectedRevision, target: { model: model.manifest.id, state: null } };
 		return withModelLock(vault, async (guard) => {
 			const context = await archiveContext(vault);
 			const previous = await previousInstallation(vault, context, request, guard, notification);
@@ -170,7 +174,7 @@ async function importArchitectureModel(
 					"STALE_REVISION",
 					"Destination inputs differ from the complete expected revision.",
 				);
-			if (before.inputs.size !== 0 && !isDeepStrictEqual(before.revision, bundle.revision))
+			if (before.inputs.size !== 0 && !(initialization !== undefined && [...before.inputs.keys()].every((path) => path === ".archboard/config.yaml")) && !isDeepStrictEqual(before.revision, bundle.revision))
 				throw new ArchiveError(
 					"TARGET_CHANGED",
 					"Import requires empty or byte-identical authored inputs. Preserve the destination and choose a fresh vault.",
@@ -247,4 +251,13 @@ async function importArchitectureModel(
 	if (notification.emit) notifyArchitecture(vault, result);
 	return result;
 }
-export { exportArchitectureModel, importArchitectureModel };
+/**
+ * Import a portable model through the shared signed installation owner.
+ * @param vault The destination vault.
+ * @param input The portable request.
+ * @returns The durable result or refusal.
+ */
+function importArchitectureModel(vault: string, input: z.input<typeof ArchitectureImportRequestSchema>) {
+ return installArchitectureModel(vault, input);
+}
+export { exportArchitectureModel, importArchitectureModel, installArchitectureModel };

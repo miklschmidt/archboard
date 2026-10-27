@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T15:18:00Z'
+updated_date: '2026-10-27T15:20:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -84,4 +84,6 @@ TASK-549.23 is integrated in signed e7672f62 with parent note32021ec7. All 23 de
 Parent browser RED/GREEN proves that an unmigrated repository receives explicit migration guidance without drawing or changing the legacy file. The same browser owner then exercises interrupted migration and durable recovery. Live legacy pane mounting and the legacy authority fallback are removed; pane sessions always report canonical readings. The retained preview reader remains available. The focused case passes with six assertions, and source types and full lint pass. The shared projection transition awaits the backend source merge.
 
 Parent catalogue now uses only canonical queries and the shared event feed. It performs no live semantic-board listing or pane-inventory content projection. Migration guidance issues no retired semantic-board or lock requests. Removed the old board-move UI/client/hook and its retired dialog test, and removed the legacy claim banner; canonical ModelClaims remains its behavior owner. Removed EmptyBoardCatalog after the focused browser case exposed a remount/refetch loop from obsolete empty-board guidance. The migration case now passes. The latest type/lint runs found only an unused import after that deletion; the import is removed. Remaining parent work includes canonical navigation actions and socket handling, replacing retained shell compatibility fields, browser fixture/owner transition, shared projection imports, and full vault migration.
+
+Backend contract checkpoint: external task-549.24-contract.md. Signed source 949d23ecfdcf7a1530e18ffab1ad9a08af70f56d is based on 615ce7a5c0a14b98589d6db6909048b77add2abb and required main a98f28811f4fa74233ae4a55e52b90d75defd93b; both ancestry checks pass. It supplies shared projection, ArchitecturePaneReadingSchema and pane_model handling, canonical initialization, and legacy retirement APIs needed by parent browser TDD. Validation is partial at this checkpoint; no task status or acceptance state changes.
 <!-- SECTION:NOTES:END -->

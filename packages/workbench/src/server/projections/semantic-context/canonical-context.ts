@@ -27,7 +27,7 @@ function requiresCapture(model: ArchitectureModel, report: Report): boolean {
  * @param clientId The pane that reports its reading.
  * @returns Canonical context, or absence for an unmigrated vault.
  */
-function canonicalContext(vault: string, clientId: string | null): Reading | undefined {
+function canonicalContext(vault: string, clientId: string | null): Reading {
 	const model = readArchitectureModel(vault);
 	if (!model.success) return unavailableCanonical(vault, model);
 	const report = clientId === null ? null : semanticPaneContextFor(clientId);
@@ -57,8 +57,7 @@ function selectionRequiresCapture(
 function unavailableCanonical(
 	vault: string,
 	model: Extract<ArchitectureModelRead, { success: false }>,
-): Reading | undefined {
-	if (["LEGACY_AUTHORITY", "MODEL_NOT_FOUND"].includes(model.code)) return undefined;
+): Reading {
 	return {
 		board: {
 			key: "architecture",

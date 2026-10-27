@@ -1,6 +1,7 @@
 import {
 	ArchitectureExportResultSchema,
 	ArchitectureImportRequestSchema,
+ ArchitectureInitializationRequestSchema,
 	ArchitectureMigrationRequestSchema,
 } from "@archboard/board/model";
 import {
@@ -19,8 +20,8 @@ import {
 	ArchitectureClaimListSchema,
 	ArchitectureClaimReleaseSchema,
 	ArchitectureModelReadSchema,
-	ArchitectureFlowRenderRequestSchema,
-	ArchitectureFlowRenderResultSchema,
+	ArchitectureRenderRequestSchema,
+	ArchitectureRenderResultSchema,
 	ArchitecturePublicationSchema,
 	ArchitecturePublicationDestinationSchema,
 	ArchitecturePublicationRequestSchema,
@@ -267,13 +268,16 @@ export { initializeArchitectureArchiveOnServer };
  * @returns The SVG receipt or structured diagnostics.
  */
 function renderArchitectureFlowOnServer(
-	input: z.infer<typeof ArchitectureFlowRenderRequestSchema>,
+	input: z.infer<typeof ArchitectureRenderRequestSchema>,
+ vault?:string,
 ) {
-	const query = new URLSearchParams(
-		Object.entries(input).filter((entry): entry is [string, string] => entry[1] !== undefined),
-	);
+ const query = new URLSearchParams(vault===undefined?undefined:{vault});
+ for (const [key,value] of Object.entries(input)) {
+  if (value === undefined) continue;
+  for (const entry of Array.isArray(value) ? value : [value]) query.append(key,entry);
+ }
 	return architectureResult(
-		ArchitectureFlowRenderResultSchema,
+		ArchitectureRenderResultSchema,
 		`/api/architecture/render?${query}`,
 	);
 }
@@ -348,3 +352,13 @@ function migrateArchitectureModelOnServer(
 	);
 }
 export { migrateArchitectureModelOnServer };
+
+/**
+ * Initialize an empty canonical model through the public runtime adapter.
+ * @param input The stable initialization intent.
+ * @returns The durable installation receipt.
+ */
+function initializeArchitectureModelOnServer(input: z.infer<typeof ArchitectureInitializationRequestSchema>) {
+ return architectureResult(ArchitectureModuleEditResultSchema,"/api/architecture/init",jsonPost(input));
+}
+export { initializeArchitectureModelOnServer };

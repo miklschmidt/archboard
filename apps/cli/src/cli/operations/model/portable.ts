@@ -11,7 +11,7 @@ import {
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { PendingArtifactSchema } from "#cli/protocol/contract/schemas.ts";
-import { statedJson } from "#cli/operations/semantic/input/semantic-input.ts";
+import { statedJson } from "#cli/operations/model/input.ts";
 const unavailable = {
 	id: "unavailable",
 	exit: 2,

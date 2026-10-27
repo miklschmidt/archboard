@@ -6,7 +6,7 @@ import {
 import { explainArchitectureOnServer } from "#cli/clients/server/architecture-model.ts";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
-import { statedJson } from "#cli/operations/semantic/input/semantic-input.ts";
+import { statedJson } from "#cli/operations/model/input.ts";
 
 const modelExplainContract = defineCommand({
 	path: ["model", "explain"],

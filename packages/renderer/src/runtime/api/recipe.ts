@@ -2,3 +2,5 @@
 export { embedRecipeInPng } from "#runtime/operations/recipe/png-recipe.ts";
 export { readRenderRecipe, replaceRenderRecipe } from "#runtime/operations/recipe/read-recipe.ts";
 export { recipeRenderRequest } from "#runtime/operations/recipe/render-request.ts";
+
+export {recordArchitectureRecipe} from "#runtime/operations/recipe/model-recipe.ts";
