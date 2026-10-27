@@ -10,6 +10,8 @@ interface ModelAddress {
 	readonly checkpoint: string | null;
 	readonly state?: string | undefined;
 	readonly preview?: string | undefined;
+	readonly bookmark?: string | undefined;
+	readonly legacyAddress?: string | undefined;
 	readonly against?: string | undefined;
 	readonly subject?: string | undefined;
 	readonly grammar?: string | undefined;

@@ -161,6 +161,8 @@ function projectionOf(model: Model, reading: Reading) {
 		reading.scope ?? null,
 		reading.focus.length === 0 ? null : reading.focus,
 		{ hideKinds: reading.filters.relationships, hideGroups: reading.filters.groups },
+		undefined,
+		reading.visibility,
 	);
 	const flow = structural.depicted.flows.find((entry) => entry.id === reading.flow);
 	return reading.grammar === "architecture" || flow === undefined

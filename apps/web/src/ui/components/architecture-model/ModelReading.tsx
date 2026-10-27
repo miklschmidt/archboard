@@ -54,7 +54,8 @@ interface ModelReadingProps {
 function ModelReading(props: ModelReadingProps): JSX.Element {
 	const { model } = props;
 	const comparison = useModelComparison(props.vault, model);
-	const location = useModelLocation(props.paneId);
+	const bookmarkReading = importedReading(model);
+	const location = useModelLocation(props.paneId, bookmarkReading);
 	const {
 		scope,
 		open,
@@ -72,8 +73,9 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 	const { id: modelId } = model.manifest;
 	const onOpen = useCallback((next: string | null): void => open(modelId, next), [modelId, open]);
 	const projection = useMemo(
-		() => projectModel(model, scope, focus, filters, comparison.reference),
-		[model, scope, focus, filters, comparison.reference],
+		() =>
+			projectModel(model, scope, focus, filters, comparison.reference, bookmarkReading?.visibility),
+		[model, scope, focus, filters, comparison.reference, bookmarkReading?.visibility],
 	);
 	const selection = useModelSelection(projection, props.subject);
 	const explanation = useModelExplanation(props.vault, model, location, selection.ids);
@@ -410,3 +412,12 @@ function FocusAvailability(props: { missing: readonly string[] }): JSX.Element |
 }
 
 export { ModelReading };
+
+/**
+ * Keep optional imported reading intent separate from the ordinary model reader.
+ * @param model The coherent architecture response.
+ * @returns Its selected bookmark reading, when present.
+ */
+function importedReading(model: Model) {
+	return model.migrationPreview?.bookmark?.reading;
+}

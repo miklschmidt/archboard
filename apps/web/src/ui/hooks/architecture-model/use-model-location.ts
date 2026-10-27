@@ -4,14 +4,17 @@ import { validateWorkspaceSearch } from "#ui/rules/board-routing/search.ts";
 import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
 import type { Model } from "#ui/rules/architecture-model/projection.ts";
 
+type Reading = Model["walkthroughs"][number]["beats"][number]["reading"];
+
 /**
  * Module navigation shares the application's router and browser history.
  * @param paneId The pane that owns this reading.
+ * @param bookmarkReading An imported bookmark's complete starting reading.
  * @returns Exact reading intent and deliberate navigation actions.
  */
-function useModelLocation(paneId: string) {
+function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const router = useRouter();
-	const search = useRouterState({
+	const address = useRouterState({
 		/**
 		 * Read the location without copying it into component state.
 		 * @param state The router snapshot.
@@ -19,11 +22,14 @@ function useModelLocation(paneId: string) {
 		 */
 		select: (state) => state.location.search,
 	});
+	const search = { ...bookmarkSearch(bookmarkReading, paneId), ...address };
 	const model = nullableParameter(search[`model${paneId}`]);
 	const scope = nullableParameter(search[`scope${paneId}`]);
 	const checkpoint = nullableParameter(search[`checkpoint${paneId}`]);
 	const state = nullableParameter(search[`state${paneId}`]);
 	const preview = nullableParameter(search[`preview${paneId}`]);
+	const bookmark = nullableParameter(search[`bookmark${paneId}`]);
+	const legacyAddress = nullableParameter(search[`legacyAddress${paneId}`]);
 	const against = nullableParameter(search[`against${paneId}`]);
 	const subject = nullableParameter(search[`subject${paneId}`]);
 	const grammar = search[`grammar${paneId}`] ?? "architecture";
@@ -33,8 +39,8 @@ function useModelLocation(paneId: string) {
 	const hiddenGroups = search[`hideGroups${paneId}`];
 	const filters = useMemo(
 		() => ({
-			hideKinds: hiddenKinds?.split(",") ?? [],
-			hideGroups: hiddenGroups?.split(",") ?? [],
+			hideKinds: hiddenKinds ? hiddenKinds.split(",") : [],
+			hideGroups: hiddenGroups ? hiddenGroups.split(",") : [],
 		}),
 		[hiddenKinds, hiddenGroups],
 	);
@@ -69,22 +75,75 @@ function useModelLocation(paneId: string) {
 		},
 		[router, paneId],
 	);
+	const explore = useCallback(
+		(patch: Partial<ModelAddress>): void => {
+			navigate({
+				...(bookmarkReading === undefined
+					? {}
+					: {
+							scope,
+							focus: focus ?? undefined,
+							grammar,
+							flow: flow ?? undefined,
+							hideKinds: filters.hideKinds,
+							hideGroups: filters.hideGroups,
+							bookmark: undefined,
+						}),
+				...patch,
+			});
+		},
+		[navigate, bookmarkReading, scope, focus, grammar, flow, filters],
+	);
+	const selectBookmark = useCallback(
+		(next: string | null): void => {
+			navigate({
+				bookmark: next ?? undefined,
+				scope: null,
+				focus: undefined,
+				grammar: undefined,
+				flow: undefined,
+				hideKinds: undefined,
+				hideGroups: undefined,
+				subject: undefined,
+			});
+		},
+		[navigate],
+	);
 	const identify = useCallback(
 		(id: string): void => {
 			if (model === null) navigate({ id }, true);
 		},
 		[model, navigate],
 	);
-	const open = useCallback(
-		(id: string, next: string | null): void => {
-			navigate({ id, scope: next, focus: undefined, grammar: undefined });
+	const selectLegacyAddress = useCallback(
+		(next: string): void => {
+			navigate({
+				legacyAddress: next,
+				state: undefined,
+				bookmark: undefined,
+				scope: null,
+				focus: undefined,
+				grammar: undefined,
+				flow: undefined,
+				hideKinds: undefined,
+				hideGroups: undefined,
+				subject: undefined,
+				against: undefined,
+			});
 		},
 		[navigate],
+	);
+	const open = useCallback(
+		(id: string, next: string | null): void => {
+			explore({ id, scope: next, focus: undefined, grammar: undefined });
+		},
+		[explore],
 	);
 	const selectCheckpoint = useCallback(
 		(next: string | null): void => {
 			navigate({
 				checkpoint: next,
+				bookmark: undefined,
 				state: preview === null ? undefined : (state ?? undefined),
 				against: undefined,
 			});
@@ -95,9 +154,9 @@ function useModelLocation(paneId: string) {
 		(ids: readonly string[] | null): void => {
 			const next = ids === null ? undefined : [...new Set(ids)].toSorted();
 			if (next?.join(",") === focused) return;
-			navigate({ focus: next });
+			explore({ focus: next });
 		},
-		[navigate, focused],
+		[explore, focused],
 	);
 	const toggleFilter = useCallback(
 		(field: "hideKinds" | "hideGroups", id: string): void => {
@@ -112,36 +171,38 @@ function useModelLocation(paneId: string) {
 	const reveal = useCallback(
 		(ids: readonly string[], kinds: readonly string[]): void => {
 			const hidden = filters.hideKinds.filter((kind) => !kinds.includes(kind));
-			navigate({
+			explore({
 				grammar: undefined,
 				focus: [...new Set(ids)].toSorted(),
 				hideKinds: hidden.length === 0 ? undefined : hidden,
 			});
 		},
-		[filters.hideKinds, navigate],
+		[filters.hideKinds, explore],
 	);
 	const selectGrammar = useCallback(
 		(next: string): void => {
-			if (next !== grammar) navigate({ grammar: next === "architecture" ? undefined : next });
+			if (next !== grammar) explore({ grammar: next === "architecture" ? undefined : next });
 		},
-		[grammar, navigate],
+		[grammar, explore],
 	);
 	const selectFlow = useCallback(
 		(next: string): void => {
-			if (next !== flow) navigate({ flow: next });
+			if (next !== flow) explore({ flow: next });
 		},
-		[flow, navigate],
+		[flow, explore],
 	);
 	const openFlow = useCallback(
 		(id: string): void => {
-			navigate({ flow: id, grammar: grammar === "flowchart" ? "flowchart" : "sequence" });
+			explore({ flow: id, grammar: grammar === "flowchart" ? "flowchart" : "sequence" });
 		},
-		[grammar, navigate],
+		[grammar, explore],
 	);
 	const selectState = useCallback(
 		(next: string | null): void => {
 			navigate({
 				state: next ?? undefined,
+				legacyAddress: undefined,
+				bookmark: undefined,
 				checkpoint: preview === null ? null : checkpoint,
 				against: undefined,
 			});
@@ -161,6 +222,10 @@ function useModelLocation(paneId: string) {
 		[navigate],
 	);
 	return {
+		legacyAddress,
+		selectLegacyAddress,
+		bookmark,
+		selectBookmark,
 		subject,
 		preview,
 		openReference,
@@ -200,6 +265,7 @@ function referenceAddress(reading: Model): ModelAddress {
 	return {
 		id: location.model,
 		preview: undefined,
+		bookmark: undefined,
 		subject: location.subject,
 		scope: referenceScope(reading),
 		checkpoint,
@@ -252,3 +318,27 @@ function searchValue(value: ModelAddress[keyof ModelAddress]): string | undefine
 }
 
 export { useModelLocation };
+
+/**
+ * Read bookmark defaults through the same parameter representation as explicit navigation.
+ * @param reading The optional imported reading.
+ * @param paneId The pane that owns its parameters.
+ * @returns Defaults that explicit router values can override.
+ */
+function bookmarkSearch(reading: Reading | undefined, paneId: string): Record<string, string> {
+	if (reading === undefined) return {};
+	const values = {
+		scope: reading.scope,
+		grammar: reading.grammar,
+		flow: reading.flow,
+		focus: reading.focus,
+		hideKinds: reading.filters.relationships,
+		hideGroups: reading.filters.groups,
+	};
+	return Object.fromEntries(
+		Object.entries(values).flatMap(([field, value]) => {
+			const encoded = searchValue(value);
+			return encoded === undefined || encoded === "" ? [] : [[`${field}${paneId}`, encoded]];
+		}),
+	);
+}

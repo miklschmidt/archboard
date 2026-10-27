@@ -31,13 +31,14 @@ interface ReaderProps extends Pick<
  * @returns A narrative choice and one captured reading at a time.
  */
 function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
-	const { checkpoint, state } = useModelLocation(props.paneId);
+	const { checkpoint, state: requestedState, preview } = useModelLocation(props.paneId);
+	const state = walkthroughState(props.model, requestedState);
 	const [request, setRequest] = useState<PlaybackRequest | null>(null);
 	const select = useCallback(
 		(walkthrough: string): void => {
-			setRequest({ id: crypto.randomUUID(), walkthrough, checkpoint, state });
+			setRequest({ id: crypto.randomUUID(), walkthrough, checkpoint, state, preview });
 		},
-		[checkpoint, state],
+		[checkpoint, state, preview],
 	);
 	const leave = useCallback((): void => setRequest(null), []);
 	return (
@@ -175,3 +176,13 @@ function PlaybackFailure(props: {
 }
 
 export { ModelWalkthroughReader };
+
+/**
+ * Preserve original coverage when an alias selected it without a state URL field.
+ * @param model The exact reading offered by the preview.
+ * @param requested The ordinary current or proposal selector.
+ * @returns The original state identity, or unchanged canonical selection.
+ */
+function walkthroughState(model: Model, requested: string | null): string | null {
+	return model.migrationPreview?.selected?.legacy ?? requested;
+}

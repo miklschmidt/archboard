@@ -150,7 +150,7 @@ const PANE_PARAMS: readonly RegExp[] = [
 	PANE_PARAM,
 	VIEW_PARAM,
 	REPO_PARAM,
-	/^(model|scope|checkpoint|focus|hideKinds|hideGroups|grammar|flow|state|preview|against|subject)([A-Za-z0-9]+)$/,
+	/^(model|scope|checkpoint|focus|hideKinds|hideGroups|grammar|flow|state|preview|bookmark|legacyAddress|against|subject)([A-Za-z0-9]+)$/,
 ];
 
 /**
@@ -212,6 +212,8 @@ function modelFromSearch(search: WorkspaceSearch, paneId: string): ModelAddress 
 		checkpoint: search[`checkpoint${paneId}`] ?? null,
 		state: search[`state${paneId}`],
 		preview: search[`preview${paneId}`],
+		bookmark: search[`bookmark${paneId}`],
+		legacyAddress: search[`legacyAddress${paneId}`],
 		against: search[`against${paneId}`],
 		subject: search[`subject${paneId}`],
 		grammar: search[`grammar${paneId}`],
@@ -286,7 +288,18 @@ function modelSearch(pane: AddressedPane): Record<string, string> {
 		...(model.scope === null ? {} : { [`scope${pane.paneId}`]: model.scope }),
 		...(model.checkpoint === null ? {} : { [`checkpoint${pane.paneId}`]: model.checkpoint }),
 		...Object.fromEntries(
-			(["state", "preview", "against", "subject", "grammar", "flow"] as const).flatMap((field) => {
+			(
+				[
+					"state",
+					"preview",
+					"bookmark",
+					"legacyAddress",
+					"against",
+					"subject",
+					"grammar",
+					"flow",
+				] as const
+			).flatMap((field) => {
 				const value = model[field];
 				return value === undefined ? [] : [[`${field}${pane.paneId}`, value]];
 			}),

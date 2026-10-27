@@ -3,9 +3,9 @@ id: TASK-549.22
 title: Preserve legacy walkthroughs, bookmarks, and addresses
 status: In Progress
 assignee:
-  - '@codex-backend'
+  - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T11:18:00Z'
+updated_date: '2026-10-27T11:38:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -65,6 +65,8 @@ TASK-549.14, TASK-549.21
 2. Use focused RED/GREEN public runtime cases with real files and Git for converted readings and exact address resolution. Preserve original coverage, identity choices, and retained inputs.
 3. Extend the existing playback and reference owners, then add thin CLI and HTTP selectors. Update consumer, domain, ADR, evaluation, and test ownership documentation.
 4. Run affected validation with fixed source, simplify, merge latest integration, release claims, stop this checkout server, and write the backend handoff. Parent owns frontend acceptance and keeps proposals draft.
+
+Parent completes the browser using the approved browser seam. Create Browser application@TASK-549.22. Extend existing router and query owners for bookmarks and exact legacy addresses. Reuse the model reader and walkthrough player with explicit original coverage, preview selection, and view membership. Preserve preview and paired state/checkpoint when following references. Every converted beat requires an explicit view, as the owner directed. Prove bookmark membership, diagram changes, former-address navigation, reload, and retained original playback with real files. Inspect the UI and diagrams, simplify, update consumer and test documentation, adopt complete architecture, and close only after acceptance.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -81,4 +83,8 @@ Merged signed integration 9d19307d41d33b328916a9a3ebe6c3bca309a21c through signe
 Owner correction supersedes the prior view inheritance plan. Every converted beat now requires an explicit original view. Removed activeView inheritance and implicit overview selection. Old original bytes and omitted fields remain decodable and retained. Missing views produce WALKTHROUGH_VIEW_REQUIRED on only their affected beats. Overview fixtures now name an explicit all-scope architecture view. Canonical beats retain their existing required complete reading, with no legacy view ID added. Focused RED/GREEN missing-view evidence is 42-required-view-red.log and 43-required-view-green.log. Parent has no UI edits yet.
 
 Backend acceptance evidence is complete at the approved real-file/Git runtime seam. Final explicit-view migration suite passes 34 cases and 173 assertions. Reused unchanged passing evidence covers seven canonical narrative cases, ten reference cases, three adapter/portable cases, and 73 package/skill cases. Source and browser types, full lint with zero warnings, formatting, evaluation input validation, and diff whitespace pass. New missing-view behavior has focused RED/GREEN evidence and an explicit all-scope view fixture. Final .22 draft code checks have zero warnings; eight unrelated Archboard warnings remain. Two semantic warnings reproduce on the exact accepted .18 current variants, which this task preserves as requested. The inherited 250/188 interface transition remains with .24. No full gate or browser acceptance is claimed. Simplification removes inherited view state and duplicate retained reads, keeps one playback owner, and reuses the portable archive validator. Parent UI and .23 installation remain outstanding. TASK-549.22 stays In Progress, all acceptance items stay with the parent, and all .22 proposals remain draft. The shared contract and task-549.22-backend.md contain exact source, fixture, evidence, and recovery details.
+
+Backend handoff is signed7d6b9626a and includes integration9d19307d. All 34 final migration cases pass, plus types, lint, formatting, and evaluation inputs. The parent now owns source t3-2201eb62. Backend proposals remain draft. The parent will reuse passing backend evidence and add visible acceptance.
+
+Parent browser acceptance now passes two cases and twelve assertions. Imported bookmarks preserve exact view membership, including excluded connections. Explicit-view walkthroughs change between architecture and sequence readings through the existing player. Former addresses preserve original coverage and retained checkpoints through reload after live originals disappear. Types and lint pass. The next focused slice preserves preview origin and paired original state/checkpoint during resolved reference navigation. Architecture proposals remain draft and the task remains open.
 <!-- SECTION:NOTES:END -->

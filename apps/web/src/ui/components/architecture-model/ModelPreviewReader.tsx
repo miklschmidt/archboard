@@ -13,6 +13,9 @@ import { ModelPreviewStateEvidence } from "#ui/components/architecture-model/Mod
 import { ModelPreviewSelector } from "#ui/components/architecture-model/ModelPreviewSelector.tsx";
 import { ModelPreviewCoverage } from "#ui/components/architecture-model/ModelPreviewCoverage.tsx";
 import { ModelPreviewDetails } from "#ui/components/architecture-model/ModelPreviewDetails.tsx";
+import { ModelBookmarks } from "#ui/components/architecture-model/ModelBookmarks.tsx";
+import { ModelWalkthroughReader } from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
+import { ModelLegacyAddresses } from "#ui/components/architecture-model/ModelLegacyAddresses.tsx";
 
 type PreviewProps = Pick<
 	ComponentProps<typeof ModelReading>,
@@ -29,6 +32,8 @@ function ModelPreviewReader(props: PreviewProps): JSX.Element {
 	const query = useQuery(
 		architectureModelQuery(props.vault, location.checkpoint, {
 			preview: location.preview,
+			bookmark: location.bookmark,
+			legacyAddress: location.legacyAddress,
 			state: location.state,
 			against: location.against,
 		}),
@@ -40,6 +45,7 @@ function ModelPreviewReader(props: PreviewProps): JSX.Element {
 	}, [client, vault]);
 	const model = query.isError ? undefined : query.data;
 	const problem = previewProblem(query.error, model?.manifest.id, location.model);
+	const preview = model?.migrationPreview;
 	return (
 		<section
 			data-slot="architecture-model-stage"
@@ -55,10 +61,22 @@ function ModelPreviewReader(props: PreviewProps): JSX.Element {
 				refreshing={query.isFetching}
 			>
 				<ModelPreviewSelector
-					preview={query.data?.migrationPreview}
+					preview={preview}
 					pending={query.isPending}
-					state={location.state}
+					state={previewOriginal(preview, location.state)}
 					onState={location.selectState}
+				/>
+				<ModelBookmarks
+					preview={preview}
+					selected={location.bookmark}
+					pending={query.isPending}
+					onSelect={location.selectBookmark}
+				/>
+				<ModelLegacyAddresses
+					preview={preview}
+					selected={location.legacyAddress}
+					pending={query.isPending}
+					onSelect={location.selectLegacyAddress}
 				/>
 			</ModelHeader>
 			{query.isPending && (
@@ -158,5 +176,56 @@ function PreviewModel(
 				/>
 			</div>
 		);
-	return <ModelReading {...props} key={JSON.stringify([props.model.manifest.id, props.subject])} />;
+	return <PreviewReading {...props} />;
+}
+
+/**
+ * Captured presentations and imported bookmarks share the ordinary reader.
+ * @param props The coherent original architecture and pane.
+ * @returns A readable bookmark or explicit unavailable view.
+ */
+function PreviewReading(
+	props: PreviewProps & Pick<ComponentProps<typeof ModelReading>, "model" | "subject">,
+): JSX.Element {
+	const bookmark = props.model.migrationPreview?.bookmark;
+	const bookmarkProblems = bookmark?.diagnostics;
+	if (bookmarkProblems !== undefined && bookmarkProblems.length > 0)
+		return (
+			<ModelError
+				code="BOOKMARK_UNAVAILABLE"
+				message="This bookmark cannot be drawn. Select another reading or correct its original view."
+				diagnostics={bookmarkProblems}
+			/>
+		);
+	return (
+		<ModelWalkthroughReader key={previewReadingKey(props.model)} {...props}>
+			<ModelReading {...props} key={JSON.stringify([props.subject, bookmark?.id])} />
+		</ModelWalkthroughReader>
+	);
+}
+
+/**
+ * A new source selection starts a new presentation, while refresh keeps its capture.
+ * @param model The complete selected preview.
+ * @returns The source identity of the presentation session.
+ */
+function previewReadingKey(model: ComponentProps<typeof ModelReading>["model"]): string {
+	return JSON.stringify([
+		model.manifest.id,
+		previewOriginal(model.migrationPreview, null),
+		model.checkpoint?.id,
+	]);
+}
+
+/**
+ * A former address identifies the exact original selected by the runtime.
+ * @param preview The resolved original coverage.
+ * @param requested An explicit original state, including unavailable intent.
+ * @returns The resolved original identity or the unchanged request.
+ */
+function previewOriginal(
+	preview: ComponentProps<typeof ModelReading>["model"]["migrationPreview"],
+	requested: string | null,
+): string | null {
+	return preview?.selected?.legacy ?? requested;
 }
