@@ -55,10 +55,13 @@ function choiceProblem(
  * @returns A refusal reason, or undefined when each choice appears once.
  */
 function duplicateProblem(plan: LegacyMappingPlan): string | undefined {
+	const references = plan.references ?? [];
 	if (new Set(plan.mappings.map((mapping) => mapping.legacy)).size !== plan.mappings.length)
 		return "Each legacy identity must have at most one mapping.";
 	if (new Set(plan.choices.map((choice) => choice.conflict)).size !== plan.choices.length)
 		return "Each conflict must have at most one choice.";
+	if (new Set(references.map((reference) => reference.legacy)).size !== references.length)
+		return "Each legacy reference must have at most one target mapping.";
 	return undefined;
 }
 
@@ -70,6 +73,15 @@ function duplicateProblem(plan: LegacyMappingPlan): string | undefined {
 function mappingProblem(inventory: LegacyInventory): string | undefined {
 	return (
 		duplicateProblem(inventory.plan) ??
+		inventory.plan.references
+			?.map((reference) =>
+				inventory.identities.some(
+					(identity) => identity.id === reference.legacy && identity.kind === "node",
+				)
+					? undefined
+					: `Reference ${reference.legacy} must name an existing node identity.`,
+			)
+			.find((problem) => problem !== undefined) ??
 		inventory.plan.mappings
 			.map((mapping) => identityProblem(inventory, mapping))
 			.find((problem) => problem !== undefined) ??

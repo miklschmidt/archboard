@@ -247,15 +247,19 @@ function readSemanticBoardAtAsLeased(
  * @param vault The vault root the board lives in.
  * @param location The board address.
  * @param configured The vault configuration; the vault's own when not given.
+ * @param options Whether an inventory read must leave source bytes unchanged.
+ * @param options.migrate False keeps schema normalization in memory.
  * @returns The current board or refusal.
  */
 function readSemanticBoardAt(
 	vault: string,
 	location: SemanticBoardLocation,
 	configured = readSemanticBoardConfiguration(vault),
+	options: { migrate?: boolean } = {},
 ): SemanticBoardRead {
 	const first = readAt(location, configured, false);
 	if (!("migration" in first)) return first;
+	if (options.migrate === false) return first.read;
 	return migrateOnRead(vault, location, configured);
 }
 
@@ -337,11 +341,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * the name it goes by now from `board.name` and `location`.
  * @param vault The vault root to read from.
  * @param asked The board name as typed.
+ * @param options Whether to persist automatic schema migration.
  * @returns The board, or why it could not be read.
  * @throws {Error} When the name is not usable or would escape the vault.
  */
-function readSemanticBoard(vault: string, asked: string): SemanticBoardRead {
-	return readSemanticBoardAt(vault, resolveSemanticBoard(asked, vault));
+function readSemanticBoard(
+	vault: string,
+	asked: string,
+	options?: Parameters<typeof readSemanticBoardAt>[3],
+): SemanticBoardRead {
+	return readSemanticBoardAt(vault, resolveSemanticBoard(asked, vault), undefined, options);
 }
 
 export {

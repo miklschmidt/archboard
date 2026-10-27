@@ -397,7 +397,7 @@ async function acceptWebSocketConnection(
 	// board, which no longer exists as a single thing. A pane that has been here
 	// before (a dropped socket, not a new tab) resumes what it was holding,
 	// because a reconnect must not undo a user's scene arrangement.
-	const startingKey = socket.clientId === null ? null : boardForNewPane(socket.clientId, vault);
+	const startingKey = startingBoard(req, socket.clientId, vault);
 	await sendStartingBoard(ws, startingKey, vault);
 	if (ws.readyState !== WebSocket.OPEN || !admitSocket(ws, socket, startingKey)) {
 		return;
@@ -410,6 +410,23 @@ async function acceptWebSocketConnection(
 	);
 	announceToNewPane(ws, socket.clientId, startingKey);
 	listenForCodexRequests(ws, socket);
+}
+
+/**
+ * Canonical panes keep their own reading instead of inheriting a legacy board.
+ * @param req The socket address and explicit reading mode.
+ * @param clientId The admitted pane identity.
+ * @param vault The pane's source vault.
+ * @returns The legacy starting key, or no legacy reading.
+ */
+function startingBoard(
+	req: IncomingMessage,
+	clientId: string | null,
+	vault: string,
+): string | null {
+	const canonical =
+		new URL(req.url ?? "/", "http://localhost").searchParams.get("reading") === "canonical";
+	return clientId === null || canonical ? null : boardForNewPane(clientId, vault);
 }
 
 /**

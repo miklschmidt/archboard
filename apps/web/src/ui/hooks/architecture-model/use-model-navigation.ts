@@ -13,11 +13,12 @@ import { architectureModelQuery, readModel } from "#ui/clients/architecture-mode
 function useModelNavigation(vault: string, model: Model, module: Model["modules"][number]) {
 	const subject = module.id;
 	const target = navigationTarget(model, subject);
-	const { checkpoint, state } = target;
+	const { checkpoint, state, preview } = target;
 	const query = useQuery(
 		architectureModelQuery(vault, checkpoint ?? null, {
 			module: subject,
 			state,
+			preview,
 			code: module.binding !== undefined,
 			references: true,
 			compare: false,
@@ -29,11 +30,12 @@ function useModelNavigation(vault: string, model: Model, module: Model["modules"
 		(index: number, signal: AbortSignal) =>
 			readModel(vault, checkpoint ?? null, signal, {
 				state,
+				preview,
 				module: subject,
 				reference: index,
 				compare: false,
 			}),
-		[vault, checkpoint, state, subject],
+		[vault, checkpoint, state, preview, subject],
 	);
 	return {
 		query,
@@ -75,8 +77,10 @@ function matchingNavigation(actual: Model | undefined, shown: Model): boolean {
  */
 function navigationTarget(model: Model, subject: string) {
 	const checkpoint = model.checkpoint?.id;
-	const state = checkpoint === undefined ? model.selectedState?.id : undefined;
-	return { model: model.manifest.id, subject, state, checkpoint };
+	const preview = model.migrationPreview?.origin;
+	const state =
+		checkpoint === undefined && preview === undefined ? model.selectedState?.id : undefined;
+	return { model: model.manifest.id, subject, state, checkpoint, preview };
 }
 
 /**
@@ -85,7 +89,13 @@ function navigationTarget(model: Model, subject: string) {
  * @returns Its ordered identity fields.
  */
 function navigationIdentity(model: Model) {
-	return [model.manifest.id, model.selectedState?.id, model.checkpoint?.id, model.revision.digest];
+	return [
+		model.manifest.id,
+		model.selectedState?.id,
+		model.checkpoint?.id,
+		model.migrationPreview?.origin,
+		model.revision.digest,
+	];
 }
 
 export { useModelNavigation };

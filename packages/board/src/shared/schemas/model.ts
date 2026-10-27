@@ -12,6 +12,7 @@ import {
 	ModelRevisionSchema,
 	ArchitectureManifestSchema,
 	ArchitectureModuleSchema,
+	MigrationPreviewSchema,
 } from "#shared/schemas/model-definitions.ts";
 import {
 	ProposalSchema,
@@ -121,6 +122,7 @@ const ArchitectureModelSchema = z
 	.object({
 		success: z.literal(true),
 		manifest: ArchitectureManifestSchema,
+		migrationPreview: MigrationPreviewSchema.optional(),
 		policy: SemanticPolicySchema,
 		modules: z.array(ArchitectureModuleSchema.extend({ file: z.string() })),
 		collections: z.array(FlowCollectionSchema.extend({ file: z.string() })),
@@ -201,6 +203,10 @@ const ArchitectureModelFailureSchema = z
 			"STATE_AMBIGUOUS",
 			"PREDECESSOR_CHANGED",
 			"PROPOSAL_BLOCKED",
+			"MAPPING_REQUIRED",
+			"MAPPING_INVALID",
+			"MAPPING_STALE",
+			"MAPPING_UNRESOLVED",
 			"PROPOSAL_SUPERSEDED",
 			"COMPARISON_REQUIRED",
 			"MODEL_INVALID",

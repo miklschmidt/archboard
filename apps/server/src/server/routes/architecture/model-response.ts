@@ -3,6 +3,9 @@ import type { ArchitectureModelRead } from "@archboard/board/model";
 const failureStatuses: Partial<
 	Record<Extract<ArchitectureModelRead, { success: false }>["code"], number>
 > = {
+	MAPPING_REQUIRED: 409,
+	MAPPING_STALE: 409,
+	MAPPING_UNRESOLVED: 409,
 	STATE_NOT_FOUND: 404,
 	STATE_AMBIGUOUS: 409,
 	PREDECESSOR_CHANGED: 409,

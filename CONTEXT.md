@@ -121,6 +121,11 @@ Mapping plan:
 An owner's explicit identity mappings and conflict decisions for migration.
 The plan changes no active architecture.
 
+Migration preview:
+A composed current candidate read from an explicit saved mapping plan.
+It retains source provenance and leaves legacy authority unchanged.
+Planned-only states retain future proposal mappings outside current architecture.
+
 **Board**:
 A semantically named description of one architectural subject or question at one
 abstraction level. A board owns its shared views and the tree of variants recording

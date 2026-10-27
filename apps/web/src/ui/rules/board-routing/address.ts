@@ -9,6 +9,7 @@ interface ModelAddress {
 	readonly scope: string | null;
 	readonly checkpoint: string | null;
 	readonly state?: string | undefined;
+	readonly preview?: string | undefined;
 	readonly against?: string | undefined;
 	readonly subject?: string | undefined;
 	readonly grammar?: string | undefined;
@@ -169,7 +170,17 @@ function sameModelAddress(one: ModelAddress | undefined, other: ModelAddress | u
 	if (one === undefined || other === undefined) return false;
 	return (
 		(
-			["id", "scope", "checkpoint", "state", "against", "subject", "grammar", "flow"] as const
+			[
+				"id",
+				"scope",
+				"checkpoint",
+				"state",
+				"preview",
+				"against",
+				"subject",
+				"grammar",
+				"flow",
+			] as const
 		).every((field) => one[field] === other[field]) &&
 		(["focus", "hideKinds", "hideGroups"] as const).every((field) =>
 			sameSubjects(one[field], other[field]),
@@ -201,8 +212,14 @@ function withModelAddresses(
 		...displayed,
 		panes: displayed.panes.map((pane) => {
 			const wanted = requested.panes.find((entry) => entry.paneId === pane.paneId);
-			if (pane.boardKey !== null || wanted?.model === undefined) return pane;
-			return { ...pane, model: wanted.model, repository: wanted.repository ?? pane.repository };
+			if (wanted?.model === undefined) return pane;
+			return {
+				...pane,
+				boardKey: null,
+				view: null,
+				model: wanted.model,
+				repository: wanted.repository ?? pane.repository,
+			};
 		}),
 	};
 }

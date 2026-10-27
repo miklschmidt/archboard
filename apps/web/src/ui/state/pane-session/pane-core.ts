@@ -400,13 +400,18 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		handleSocketMessage(messageContext, data);
 	}
 
-	const connector = createPaneSocketConnector(clientId, paneVault, {
-		opened: socketOpened,
-		message: onSocketMessage,
-		closed: socketLost,
-		retired: socketRetired,
-		errored: socketLost,
-	});
+	const connector = createPaneSocketConnector(
+		clientId,
+		paneVault,
+		{
+			opened: socketOpened,
+			message: onSocketMessage,
+			closed: socketLost,
+			retired: socketRetired,
+			errored: socketLost,
+		},
+		() => ports.options().canonical === true,
+	);
 
 	const paneReports = createPaneReportSender({
 		paneId,

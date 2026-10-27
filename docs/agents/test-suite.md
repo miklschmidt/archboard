@@ -558,6 +558,14 @@ The proposal and reconciliation owners share the same browser state selector hel
 The reference owner also covers exact foreign pins across external reconciliation and settlement.
 The shared model-edit fixture names the repository used by its authored code bindings, so source capture does not inspect unrelated checkouts.
 
+## Legacy current preview
+
+`packages/board/tests/runtime/operations/legacy-preview/preview.test.ts` owns composed migration behavior through the public architecture reader and writer.
+Its real files and disposable Git repositories cover semantic preservation, explicit conflict choices, recursive flows, reference mapping, vocabulary, stale source, and incoherent containment.
+The original inventory owner retains its coverage of source capture and plan persistence.
+`tests/system/semantic-boards/migration-planning.test.ts` owns CLI and HTTP agreement, explicit preview selection, and structured stale refusal.
+The parent owns visible preview behavior through the existing browser interface.
+
 ## Completed canonical proposals
 
 The public proposal owners cover adoption and shelving with real files and Git.
@@ -575,3 +583,9 @@ The existing canonical reference owner keeps foreign pins through adoption.
 The existing CLI and HTTP proposal owner covers completed state selection, structured refusal, and exact retry.
 `tests/system/browser/canonical-model-lifecycle.test.ts` owns completed state discovery, decisions, lineage, comparisons, exact readings, and missing-history recovery.
 It uses real temporary Git repositories and the public HTTP writer for agent decisions.
+
+`tests/system/browser/canonical-model-preview.test.ts` owns visible migration preview behavior.
+It uses real legacy files, saved mapping choices, temporary Git repositories, and the existing browser adapter.
+It covers recursive navigation, flow rendering, fingerprints, unchanged source bytes, stale refusal, and recovery.
+It also covers preview code opening, missing plans, planned-only empty states, and repeated navigation between preview and legacy readings.
+The unchanged-byte assertion includes old schema files and catches implicit upgrades during browser startup and background reads.

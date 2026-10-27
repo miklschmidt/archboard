@@ -205,7 +205,12 @@ function identityEvidence(
 	const conflicts: MigrationConflict[] = [];
 	for (const [index, one] of nodes.entries()) {
 		for (const other of nodes.slice(index + 1)) {
-			if (one.board === other.board) continue;
+			if (
+				one.board === other.board &&
+				mappedIdentity(inventory.plan, one.subject!) !==
+					mappedIdentity(inventory.plan, other.subject!)
+			)
+				continue;
 			const pair = pairEvidence(inventory, one, other);
 			evidence.push(...pair.evidence);
 			conflicts.push(...pair.conflicts);

@@ -77,7 +77,7 @@ Current definitions are compared within their original designated states.
 No historical state borrows surrounding current architecture.
 Conflict keys include the source fingerprint, so changed sources invalidate old choices.
 An explicit replacement value records intent without claiming that a coherent target exists.
-Later composition and installation must validate the complete candidate before any cutover.
+Explicit preview and later installation must make sure that the complete candidate is coherent before any cutover.
 
 CLI and server adapters share these schemas and runtime operations.
 The public runtime tests use temporary files and disposable Git repositories.
@@ -261,3 +261,42 @@ A hidden flow step remains a known subject with an explicit action to open its a
 Several selected flows remain separate choices, because one behavioral diagram explains one flow.
 Structural Focus applies to modules and relationships.
 The existing renderer, camera, bounds, and keyboard controls remain the implementation owners.
+
+## Explicit migration preview
+
+TASK-549.20 adds an explicit preview selection to the existing canonical reader.
+The reader composes only designated current states from the saved mapping plan.
+Legacy files remain the sole live authority, and ordinary canonical reads still refuse them.
+No preview read installs inputs, retains history, or changes a current designation.
+
+Explicit choices control shared definitions, parents, sibling order, relationship ownership, and vocabulary.
+Mapped flows require one complete recursive definition when their behavior differs.
+Drill-down conversion requires an explicit target subject and state in the mapping plan.
+Matching names, code bindings, and target board roots establish no identity.
+The canonical schemas and coherence rules assess the complete synthetic candidate.
+The existing projections read its modules, relationships, and flows without another model authority.
+
+The result carries the exact original source fingerprint and saved plan revision.
+The candidate revision also covers those inputs, so a different plan invalidates a prior reading.
+Original names, summaries, documents, and planned-only state mappings remain visible as preview provenance.
+Planned-only subjects stay outside current architecture for the later proposal conversion.
+Board level classification disappears without a numeric replacement.
+The existing shared policy contract remains in force.
+
+Preview refuses missing plans, stale source, unanswered choices, contradictory choices, and incoherent output.
+State, checkpoint, comparison, and explanation selectors cannot combine with preview.
+The CLI and HTTP adapters pass this selection through the same public reader.
+Installation, historical proposal migration, walkthroughs, and bookmarks remain outside this slice.
+
+The browser addresses migration previews with `modelX` and `previewX`.
+The existing reading projects their modules and flows, and a disclosure shows source fingerprints and planned-state mappings.
+Preview failures expose recovery without showing a cached candidate as current architecture.
+The preview has no state, checkpoint, claim, publication, or explanation controls.
+Code navigation retains the mapping origin and uses the existing local opener.
+
+Canonical pane startup opens no legacy board.
+Browser board listings, snapshots, and vault diagnostics normalize older schemas in memory.
+They preserve the exact source bytes that the saved mapping plan names.
+Ordinary legacy CLI reads keep their existing automatic schema migration behavior.
+The workspace keeps explicit canonical intent until a deliberate legacy open succeeds.
+Browser history records the visible origin, even when the server remembers an earlier legacy board.

@@ -56,10 +56,10 @@ function BoundCode(
 ): JSX.Element {
 	const { navigation } = props;
 	const { vault, onNotice } = props;
-	const { model, subject, state, checkpoint } = navigation.target;
+	const { model, subject, state, checkpoint, preview } = navigation.target;
 	const open = useCallback((): void => {
-		activateCodeTarget({ vault, target: { model, subject, state, checkpoint }, onNotice });
-	}, [vault, model, subject, state, checkpoint, onNotice]);
+		activateCodeTarget({ vault, target: { model, subject, state, checkpoint, preview }, onNotice });
+	}, [vault, model, subject, state, checkpoint, preview, onNotice]);
 	return (
 		<div className="space-y-3">
 			<Button
