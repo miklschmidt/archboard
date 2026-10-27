@@ -178,6 +178,8 @@ function sameModelAddress(one: ModelAddress | undefined, other: ModelAddress | u
 				"checkpoint",
 				"state",
 				"preview",
+				"bookmark",
+				"legacyAddress",
 				"against",
 				"subject",
 				"grammar",

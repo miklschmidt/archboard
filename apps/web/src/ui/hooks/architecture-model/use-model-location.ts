@@ -264,12 +264,13 @@ function referenceAddress(reading: Model): ModelAddress {
 	const checkpoint = location.checkpoint ?? null;
 	return {
 		id: location.model,
-		preview: undefined,
+		preview: location.preview,
 		bookmark: undefined,
+		legacyAddress: undefined,
 		subject: location.subject,
 		scope: referenceScope(reading),
 		checkpoint,
-		state: checkpoint === null ? location.state : undefined,
+		state: checkpoint === null || location.preview !== undefined ? location.state : undefined,
 		flow: reading.selectedFlow,
 		grammar: reading.selectedFlow === undefined ? undefined : "sequence",
 		against: undefined,

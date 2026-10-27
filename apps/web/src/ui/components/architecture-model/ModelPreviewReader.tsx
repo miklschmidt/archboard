@@ -20,7 +20,8 @@ import { ModelLegacyAddresses } from "#ui/components/architecture-model/ModelLeg
 type PreviewProps = Pick<
 	ComponentProps<typeof ModelReading>,
 	"vault" | "paneId" | "reducedMotion" | "onCodeTargetNotice"
->;
+> &
+	Pick<ComponentProps<typeof ModelWalkthroughReader>, "driven" | "narration" | "overlay">;
 
 /**
  * Read a saved migration candidate without subscribing to canonical live authority.

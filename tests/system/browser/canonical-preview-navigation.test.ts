@@ -7,6 +7,7 @@ import {
 	createAgentBrowser,
 	pollUntil,
 	registerServerBase,
+	runServerCli,
 	serverTestEnvironment,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
@@ -170,4 +171,71 @@ test("a former address reopens exact retained original coverage and its walkthro
 	await beat(browser, 0, "architecture");
 	expect(await drawn(browser, '[data-slot="model-walkthrough"]')).toContain("Shop/System#Api");
 	expect(await drawn(browser, '[data-slot="model-walkthrough"]')).not.toContain("Shop/System#Db");
+}, 60_000);
+
+test("a converted reference preserves preview and paired original state and checkpoint", async () => {
+	await using resources = new AsyncDisposableStack();
+	const fixture = await legacyNavigation(
+		join(browserTestRoots().ownerRoot, "preview-reference-navigation"),
+	);
+	const server = await startOwnedServer({
+		serverPath,
+		vault: fixture.vault,
+		env: serverTestEnvironment(),
+	});
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	runServerCli(server, ["repo", "add", fixture.root]);
+	const browser = resources.use(await createAgentBrowser());
+	await browser.run([
+		"open",
+		`${server.base}/?modelA=Shop&previewA=Shop&checkpointA=${fixture.checkpoint}&legacyAddressA=Store@Before`,
+	]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop/System#Api"]') !== null`,
+			),
+		Boolean,
+		"the original source module",
+		WAIT,
+	);
+	rmSync(join(fixture.vault, "Shop.semantic.json"));
+	rmSync(join(fixture.vault, ".archboard/migration-plan.json"));
+	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop/System#Api"]']);
+	const action = '[data-slot="module-follow-reference"]';
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(`document.querySelector('${action}')?.matches(':enabled') === true`),
+		Boolean,
+		"the exact original reference",
+		WAIT,
+	);
+	await browser.run(["scrollintoview", action]);
+	await browser.run(["click", action]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="module-details"][data-module-id="Shop/System#Db"]') !== null`,
+			),
+		Boolean,
+		"the original reference destination",
+		WAIT,
+	);
+	const address = await browser.eval<Record<string, string>>(
+		`Object.fromEntries(new URLSearchParams(location.search))`,
+	);
+	expect(address).toMatchObject({
+		previewA: "Shop",
+		stateA: "Shop/System#Now",
+		checkpointA: fixture.checkpoint,
+		subjectA: "Shop/System#Db",
+	});
+	expect(address["legacyAddressA"]).toBeUndefined();
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-preview-coverage="Shop/System#Now"]') !== null`,
+		),
+	).toBe(true);
 }, 60_000);

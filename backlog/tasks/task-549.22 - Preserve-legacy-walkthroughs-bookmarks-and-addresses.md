@@ -1,11 +1,11 @@
 ---
 id: TASK-549.22
 title: Preserve legacy walkthroughs, bookmarks, and addresses
-status: In Progress
+status: Done
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T11:38:00Z'
+updated_date: '2026-10-27T11:57:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -46,16 +46,16 @@ TASK-549.14, TASK-549.21
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Complete the migration preview with dynamic walkthrough readings, imported bookmarks, former names, and explicit legacy address mappings.
-- [ ] #2 Expand referenced views into walkthrough beats. Preserve other named views as bookmarks that own no model content.
-- [ ] #3 Resolve migrated subject and state targets without fallback to similar names or current content. Unpinned external historical references remain explicitly unresolved.
-- [ ] #4 A reader can play the converted walkthrough and follow a legacy address within the preview. The original vault still remains authoritative.
+- [x] #1 Complete the migration preview with dynamic walkthrough readings, imported bookmarks, former names, and explicit legacy address mappings.
+- [x] #2 Expand referenced views into walkthrough beats. Preserve other named views as bookmarks that own no model content.
+- [x] #3 Resolve migrated subject and state targets without fallback to similar names or current content. Unpinned external historical references remain explicitly unresolved.
+- [x] #4 A reader can play the converted walkthrough and follow a legacy address within the preview. The original vault still remains authoritative.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -87,4 +87,12 @@ Backend acceptance evidence is complete at the approved real-file/Git runtime se
 Backend handoff is signed7d6b9626a and includes integration9d19307d. All 34 final migration cases pass, plus types, lint, formatting, and evaluation inputs. The parent now owns source t3-2201eb62. Backend proposals remain draft. The parent will reuse passing backend evidence and add visible acceptance.
 
 Parent browser acceptance now passes two cases and twelve assertions. Imported bookmarks preserve exact view membership, including excluded connections. Explicit-view walkthroughs change between architecture and sequence readings through the existing player. Former addresses preserve original coverage and retained checkpoints through reload after live originals disappear. Types and lint pass. The next focused slice preserves preview origin and paired original state/checkpoint during resolved reference navigation. Architecture proposals remain draft and the task remains open.
+
+Parent acceptance is complete. Three new browser cases pass fifteen assertions. Together with original history, canonical references, and walkthrough regression owners, eight cases pass sixty-two assertions. Types, lint, formatting, and evaluation inputs pass. The parent inspected bookmark and sequence UI captures plus current and proposed Browser and Routes diagrams. Explicit imported visibility narrows only the picture, while full architecture remains available for inspection. Former addresses and converted reference actions retain exact original states beside migration checkpoints. Every converted beat requires an explicit view, as the owner directed. No inherited view or implicit overview exists. The simplification pass retains one router, query cache, projection, and player. Backend proposals were restated on accepted portability as TASK-549.22-integration and adopted. Browser application@TASK-549.22 is adopted. Superseded backend drafts are shelved. Prior variant contents, parents, documents, views, and decisions remain exact except intended lifecycle transitions. The final command diagram removes a redundant containment line. Portable routes now sit inside Architecture writes. Accepted scopes have zero code findings, and post-adoption semantics has zero diagnostics. Eight unrelated Archboard code warnings and the inherited 250/188 package export limit remain. TASK-549.24 owns the export limit. All four claims are released and server17023 is stopped. No full final gate, review, or push is claimed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Migration preview preserves explicit walkthrough readings, content-free bookmarks, former names, and exact original addresses. The browser reuses existing navigation and presentation, including retained playback and references after live originals disappear. Missing views remain explicit failures. Runtime, transport, and browser evidence pass. Four adopted architecture descriptions and consumer guidance match the delivered behavior. TASK-549.23 owns installation and persistent imported navigation.
+<!-- SECTION:FINAL_SUMMARY:END -->

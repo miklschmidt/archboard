@@ -376,3 +376,22 @@ Retained local references keep their source checkpoint and paired original state
 Unpinned external history remains unavailable, even when a matching current model exists.
 Installation and portable live bookmark inputs remain with TASK-549.23.
 Complete original checkpoints retain the source for every derived reading until cutover.
+
+## Read converted navigation in the browser
+
+Open the preview with `modelA=<model>&previewA=<origin>`.
+Use Bookmarks to open an unused original view.
+Use Former addresses to open an exact original board and state alias.
+The address retains `bookmarkA` or `legacyAddressA` for reload and browser history.
+A bookmark owns reading instructions only. Scope, focus, or grammar changes resume ordinary exploration.
+Filters preserve the exact bookmark membership.
+
+Use Walkthroughs to play a converted narrative through the existing presentation controls.
+Every beat requires an explicit original view, including whole-board readings.
+An unavailable beat explains its missing view or subjects and draws no replacement architecture.
+The presentation keeps its captured source and target until an explicit restart.
+
+A retained preview keeps `checkpointA` beside its original state or former address.
+Its original files can remain readable after the live copies disappear.
+Following a converted reference preserves the returned preview origin, original state, and exact checkpoint.
+The destination replaces the source bookmark and former address.

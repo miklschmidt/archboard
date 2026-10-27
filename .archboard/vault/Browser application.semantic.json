@@ -4,9 +4,9 @@
 	"id": "yejBBUFY",
 	"name": "Browser application",
 	"level": "service",
-	"version": 219,
+	"version": 220,
 	"createdAt": "2026-09-12T22:28:20.067Z",
-	"updatedAt": "2026-10-27T11:22:50.652Z",
+	"updatedAt": "2026-10-27T11:55:29.008Z",
 	"views": [
 		{
 			"id": "PDi7k1Hs",
@@ -106042,7 +106042,7 @@
 		{
 			"id": "ZOrrpWv9",
 			"name": "TASK-549.21",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"parent": "OmKyQJWc",
 			"documents": [
 				{
@@ -109953,7 +109953,7 @@
 		{
 			"id": "yOURlznd",
 			"name": "TASK-549.22",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "ZOrrpWv9",
 			"documents": [
 				{
@@ -113863,7 +113863,7 @@
 			}
 		}
 	],
-	"current": "ZOrrpWv9",
+	"current": "yOURlznd",
 	"adoptions": [
 		{
 			"variant": "NdfNpTda",
@@ -114068,6 +114068,12 @@
 			"from": "OmKyQJWc",
 			"at": "2026-10-27T10:17:22.573Z",
 			"reason": "Original-state navigation, lifecycle evidence, draft baselines and retained inputs pass public runtime and browser acceptance."
+		},
+		{
+			"variant": "yOURlznd",
+			"from": "ZOrrpWv9",
+			"at": "2026-10-27T11:55:29.008Z",
+			"reason": "Explicit original views, bookmarks, addresses, and retained references pass runtime and browser acceptance"
 		}
 	],
 	"shelvings": [

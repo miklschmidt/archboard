@@ -112,6 +112,10 @@ async function legacyNavigation(root: string) {
 			},
 		],
 	};
+	original.content.nodes[0]!.drillDown = {
+		board: "Store",
+		variant: { kind: "named", name: "Implemented" },
+	};
 	current.parent = "Old";
 	board.variants = [original, current];
 	writeFileSync(file, JSON.stringify(board));
@@ -120,7 +124,22 @@ async function legacyNavigation(root: string) {
 	const inventory = readLegacyInventory(vault, "Shop");
 	if (!inventory.success) throw new Error(JSON.stringify(inventory));
 	const saved = await saveLegacyMappingPlan(vault, {
-		plan: inventory.plan,
+		plan: {
+			...inventory.plan,
+			references: [
+				{
+					legacy: "Shop/System#Api",
+					state: "Shop/System#Old",
+					reference: {
+						repo: "github.com/acme/shop",
+						model: "Shop",
+						subject: "Shop/System#Db",
+						state: "Shop/System#Now",
+					},
+					reason: "Open the explicit original storage state",
+				},
+			],
+		},
 		expectedPlan: inventory.planRevision,
 		doing: "Keep exact original navigation",
 	});
@@ -136,7 +155,7 @@ async function legacyNavigation(root: string) {
 		dependencies: [],
 	});
 	if (!retained.success) throw new Error(JSON.stringify(retained));
-	return { vault, checkpoint: retained.checkpoint.id, original: readFileSync(file, "utf8") };
+	return { root, vault, checkpoint: retained.checkpoint.id, original: readFileSync(file, "utf8") };
 }
 
 export { legacyNavigation };

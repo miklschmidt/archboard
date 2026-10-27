@@ -685,3 +685,10 @@ It exports and imports a canonical narrative with a retained original target, th
 `tests/system/semantic-boards/migration-planning.test.ts` owns CLI and HTTP selector agreement through retained original playback and bookmarks.
 The parent owns visible converted playback, exact visibility, bookmark navigation, and original address navigation through the existing browser interface.
 These backend cases imply no browser acceptance or migration installation.
+
+`tests/system/browser/canonical-preview-navigation.test.ts` owns visible converted navigation.
+Its real-file fixture uses explicit views and the public mapping and retention operations.
+The browser proves exact bookmark membership, architecture and sequence beats, former addresses, and reload.
+It also follows a converted reference and reopens original playback after live original files disappear.
+Original state and checkpoint selectors remain paired throughout those actions.
+The existing history, canonical reference, and walkthrough owners retain their broader behavior coverage.

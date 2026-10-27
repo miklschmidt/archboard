@@ -6,7 +6,7 @@ import { ArchitectureReadError } from "#ui/clients/architecture-model/queries.ts
 
 type Reference = NonNullable<Model["resolvedReferences"]>[number];
 type Navigation = ReturnType<typeof useModelNavigation>;
-const LOCATION_FIELDS = ["vault", "model", "subject", "state", "checkpoint"] as const;
+const LOCATION_FIELDS = ["vault", "model", "subject", "state", "checkpoint", "preview"] as const;
 
 /**
  * A reference opens only its captured destination and cancels when its source leaves the inspector.
