@@ -49,3 +49,5 @@ export { ArchitectureInitializationRequestSchema } from "#shared/schemas/model-p
 export type { ArchitectureRecoveryResult } from "#shared/schemas/model-operations.ts";
 
 export type { ArchitectureCheckpointRetain } from "#shared/schemas/model.ts";
+
+export { HistoricalRevisionSchema } from "#shared/schemas/historical-correction.ts";

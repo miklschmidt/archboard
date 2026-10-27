@@ -1,5 +1,5 @@
-// The one-writer lease of a board: claims, the take-back, the lock state and
-// what announces a change of it, and the process memory a stopping server forgets.
+// Shared lease inspection and process-memory cleanup.
+// Canonical claim operations belong to store-read and store-write.
 
 export { boardLockState } from "#runtime/store/lock/lease-state.ts";
 

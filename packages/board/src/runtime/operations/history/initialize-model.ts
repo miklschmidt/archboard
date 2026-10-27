@@ -28,9 +28,9 @@ type Inputs = ReturnType<typeof readModelFiles>;
  * @returns A recovery refusal, when another operation owns the boundary.
  */
 function initializationBoundary(vault: string, request: Request) {
-	const pending = activeJournal(vault);
-	if (pending?.request.operationId === request.operationId) return undefined;
-	return modelBoundaryFailure(vault);
+	const blocked = modelBoundaryFailure(vault);
+	if (blocked?.recovery?.operationId === request.operationId) return undefined;
+	return blocked;
 }
 /**
  * Refuse legacy authority before consulting any source or private archive.

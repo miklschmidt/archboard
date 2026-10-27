@@ -7,7 +7,7 @@
 // the vault is never touched.
 //
 // Run from the repository root:
-//   bun scripts/engine-gallery.ts [vault] [out] [engine,engine]
+//   bun scripts/engine-gallery.ts [vault] [out] [engine,engine] [state]
 // The vault defaults to the tracked dogfood vault, the output to a temporary
 // folder, and the engines to every registered one.
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
@@ -54,7 +54,7 @@ function fileOf(board: string, view: string | undefined, engine: string): string
 	return `${[board, view ?? "whole", engine].join("--").replaceAll(/[^\w-]+/gu, "_")}.svg`;
 }
 
-const model = readArchitectureModel(vault);
+const model = await readArchitectureModel(vault, undefined, undefined, { state: process.argv[5] });
 if (!model.success) throw new Error(JSON.stringify(model));
 const scopes = [
 	null,

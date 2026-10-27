@@ -299,3 +299,58 @@ Select Gateway → Worker through the Connections list.
 Its details identify the Dispatch request relationship and its original endpoints.
 The address records the model, scope, and saved reading for each pane.
 Reload preserves that reading.
+
+## Initialize and export a planning model
+
+Use a disposable Git checkout for this recipe.
+Keep the checkout's configured signing policy.
+
+```bash
+example_dir=$(mktemp -d)
+git init --quiet "$example_dir"
+bun scripts/build-pipeline-example.ts "$example_dir/.archboard/vault"
+archboard model read --state 'Initial pipeline' -C "$example_dir"
+archboard model render --state 'Initial pipeline' --out "$example_dir/pipeline.svg" -C "$example_dir"
+archboard model rasterize --state 'Initial pipeline' --out "$example_dir/pipeline.png" -C "$example_dir"
+bun scripts/engine-gallery.ts "$example_dir/.archboard/vault" "$example_dir/gallery" track 'Initial pipeline'
+```
+
+The builder calls public canonical initialization, claims, and edit operations.
+It creates an unadopted proposal and releases its claim.
+An exact retry preserves the existing model and proposal identities.
+An unrelated occupied vault refuses initialization.
+For an untracked vault, initialize its private archive explicitly before the recipe.
+
+## Read local source history
+
+The existing code and Git algorithms read canonical modules and their bindings.
+Use a source repository whose local refs and bound paths exist.
+The commands do not fetch source refs or retain another source history.
+
+```bash
+archboard check code --state '<state-id>' -C '<checkout>'
+archboard model locality --state '<state-id>' --since 2026-01-01 -C '<checkout>'
+archboard model footprint --state '<proposal-id>' --base main --head feature -C '<checkout>'
+```
+
+Results name the actual model, selected state, complete revision, and source evidence.
+The footprint compares a proposal with its exact architectural comparison base.
+`--against` selects an explicit comparison source.
+A missing source ref appears in the existing skipped or unresolved evidence.
+A missing architecture state returns a structured refusal.
+
+## Address an agent pane
+
+Use the pane identifier that `browser panes` reports.
+The existing pane router resolves this request before changing a pane or chosen checkout.
+
+```bash
+archboard browser show --pane '<pane>' --module 'Shop#Gateway' -C '<checkout>'
+archboard browser show --pane '<pane>' --walkthrough '<walkthrough-id>' --beat 1 -C '<checkout>'
+archboard browser panes
+```
+
+The exact capture appears in `panes[].architecture` beside its tab session identity.
+Agent navigation never activates another shown conversation.
+The browser's existing activation action focuses the workhorse.
+Rendering and agent execution remain local.

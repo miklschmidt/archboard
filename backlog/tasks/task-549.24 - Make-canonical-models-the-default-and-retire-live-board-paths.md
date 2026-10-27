@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T16:58:00Z'
+updated_date: '2026-10-27T17:01:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -96,4 +96,10 @@ Merged backend checkpoint56447f6f through signed mergee351f4e7. The canonical vo
 The README evidence smoke now succeeds through shipped model init, model claim/edit/release, adoption, and two independent proposals. Locality reads nine real Git commits. Footprint reads two branch commits and returns all three comparison categories. Fixed the temporary input path and all four README lint findings without rule changes. Focused recipe lint passes. The film selectors and remaining visual recipes still need transition, so this does not claim visual acceptance. Voice diagnosis identifies preparation before a pane transport exists; the frontend now supplies its ordinary overlay during preparation, with an empty transcript until transport arrives. The unchanged browser owner is running against this repair.
 
 The ordinary canonical voice-box owner now passes all25 assertions. The repair mounts the preparing overlay before a transport exists and switches to the real transcript feed when it arrives. Orb motion code and assertions remain unchanged, and all temporary probes are removed. The second text-workbench owner passes after waiting for actual pane registration; source types and focused source lint pass. Generic presentation and live-voice fixtures now use canonical narratives. Their continuing acceptance remains open. Presentation observations now select the visible box because the retained ordinary reader stays hidden during captured playback.
+
+Backend signed checkpoint 56447f6f contains canonical initialization, shared projections and pane navigation, local agent selection/focus news, code checks, locality and branch footprint. Live legacy runtime writers/readers and obsolete exports are retired. Unchanged interface ceilings pass: board 188, code-intel 16, renderer 60. Source types/lint and touched-test lint pass. Focused runtime and adapter evidence is in the external task-549 directory. Frontend recording replay and final integration remain parent-owned. No repository identity mapping, cutover, adoption, task acceptance or closure is claimed. Keep In Progress with the parent assignee.
+
+Backend follow-up: signed e52aa826 fixes shared --doing admission for model init. The shipped CLI regression is RED then GREEN (1 case, 5 assertions). Initialization passes 3 cases/13 assertions after simplification. After merging parent README consumers, the obsolete commands entry and its input protocols retire. Exact source evidence stays under model. The board interface narrows to 184 and its ceiling drops to 184. Command/schema/history owners pass 66 cases/102 assertions, touched non-browser test lint passes, backend source lint passes, and source types pass. The repository still returns LEGACY_AUTHORITY with all 17 original inputs unchanged. Draft proposal validation and adoption await parent mapping/cutover. This delegate stopped only its own port 10648 server. Task remains In Progress with the parent assignee.
+
+Backend handoff boundary: examples/canonical-model and the pipeline builder/gallery use canonical operations. Parent owns conversion of the three examples/web-shop semantic inputs together with README flows, narratives, films, and selectors. No web-shop identities or mappings come from the backend builder. Final backend source types, full source lint after f892ca60c, touched non-browser test lint, and changed-file formatting pass. Deterministic skill validation passes 8 scenarios, 8 fixtures, 14 coverage parts. Removed stale consumer reference instructions that still suggested retired live board commands. Final full integration, frontend acceptance, repository migration, proposal adoption, and task acceptance remain parent work.
 <!-- SECTION:NOTES:END -->

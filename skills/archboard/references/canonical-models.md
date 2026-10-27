@@ -5,7 +5,7 @@ Existing `.semantic.json` boards retain authority until explicit migration.
 The canonical reader refuses a mixed vault.
 
 Run `archboard model read -C <directory>` to inspect root modules and relationships.
-The directory follows the same vault discovery rules as board commands.
+The CLI discovers the vault from that checkout directory.
 The result names the addressed vault.
 Read `roots` in order, then find each identity in `modules`.
 
@@ -261,12 +261,10 @@ Switch that worktree to another branch before retrying retention.
 Preserve that branch and resolve its ownership before retrying.
 An unsuccessful operation keeps its structured JSON and exits with status 2.
 
-This delivery supports module structure and relationship edits, retained checkpoints, private archives, and explicit archive publication.
-Use existing board commands for legacy vaults.
-For legacy inventory and identity choices, use [legacy migration](legacy-migration.md).
+An unmigrated vault refuses ordinary live reads and writes with `LEGACY_AUTHORITY`.
+For legacy inventory, identity choices, preview, and explicit cutover, use [legacy migration](legacy-migration.md).
 Compact proposals use the workflow below.
-Reconciliation, adoption, and shelving use the shared model writer described below.
-Explicit migration and historical correction remain later TASK-549 slices.
+Reconciliation, adoption, shelving, and historical correction use the shared model writer.
 
 ## Edit one module description
 
@@ -611,7 +609,7 @@ The flowchart draws control steps and their branches.
 Both readings use the existing renderer and include the complete selected flow.
 Structural scope and relationship filters cannot remove its participants or messages.
 These commands do not require a board or named view.
-The browser grammar controls belong to a later delivery.
+The browser selects these grammars through its existing diagram and flow controls.
 
 ## Create and compare compact proposals
 

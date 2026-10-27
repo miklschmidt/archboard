@@ -1,4 +1,5 @@
-// Reading boards from a vault: one board, the listing and the catalogue of them, the vaults a repository is bound to, and the decode of a board file.
+// Canonical model, claims, history, and bound-vault reads.
+// Legacy document decoding serves migration and exact retained originals.
 
 export { vaultsBoundTo } from "#runtime/store/bound-vaults.ts";
 export { decodeSemanticBoardDocument } from "#runtime/store/format/decode.ts";
