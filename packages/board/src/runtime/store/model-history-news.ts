@@ -78,7 +78,7 @@ function completions(records: Awaited<ReturnType<typeof archiveRecords>>, vault:
 	return records.flatMap(({ id, record }) => {
 		if (record.kind !== "checkpoint") return [];
 		if (record.vault !== vault) return [];
-		if (record.edit === undefined) return [];
+		if (record.edit === undefined && record.installation === undefined) return [];
 		return [editResult(id, record)];
 	});
 }

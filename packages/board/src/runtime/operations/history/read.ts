@@ -108,7 +108,8 @@ async function requireDependencies(
  * @returns Explicit retained selection metadata.
  */
 function retainedSelection(record: Awaited<ReturnType<typeof checkpointRecord>>) {
-	if (record.selection === undefined) return { ...record.state, lifecycle: "historical" as const };
+	if (record.selection === undefined)
+		return record.state === null ? null : { ...record.state, lifecycle: "historical" as const };
 	if (record.selection?.lifecycle === "current")
 		return { ...record.selection, lifecycle: "historical" as const };
 	return record.selection;

@@ -1,3 +1,4 @@
+import { modelExportContract, modelImportContract } from "#cli/operations/model/portable.ts";
 import { modelRecordContract } from "#cli/operations/model/record.ts";
 import { modelExplainContract } from "#cli/operations/model/explain.ts";
 import { modelRenderContract } from "#cli/operations/model/render.ts";
@@ -96,6 +97,8 @@ const COMMANDS: Record<string, CommandRoute> = {
 			"archive-init": child(
 				contract(modelArchiveInitContract, "apps/cli/src/cli/operations/model/archive.ts"),
 			),
+			export: child(contract(modelExportContract, "apps/cli/src/cli/operations/model/portable.ts")),
+			import: child(contract(modelImportContract, "apps/cli/src/cli/operations/model/portable.ts")),
 			edit: child(contract(modelEditContract, "apps/cli/src/cli/operations/model/edit.ts")),
 			claim: child(contract(modelClaimContract, "apps/cli/src/cli/operations/model/edit.ts")),
 			release: child(contract(modelReleaseContract, "apps/cli/src/cli/operations/model/edit.ts")),

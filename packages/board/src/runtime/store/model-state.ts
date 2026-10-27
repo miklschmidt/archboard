@@ -29,6 +29,8 @@ import {
 	type ArchiveContext,
 } from "#runtime/store/model-archive.ts";
 
+import { PortableInstallationSchema } from "#shared/schemas/model-portable.ts";
+
 const MODEL_LOCK = "@canonical-install";
 const MODEL_STATE = "archboard-transactions";
 const CheckoutContextSchema = z
@@ -45,7 +47,7 @@ const JournalSchema = z
 	.object({
 		schemaVersion: z.literal(1),
 		context: CheckoutContextSchema,
-		request: ArchitectureModuleEditSchema,
+		request: z.union([ArchitectureModuleEditSchema, PortableInstallationSchema]),
 		subjects: z.array(QualifiedSubjectIdSchema).optional(),
 		before: ModelRevisionSchema,
 		after: ModelRevisionSchema,

@@ -303,6 +303,7 @@ async function fetchNamedRef(
  * @param context The resolved archive context.
  * @param tip The retained archive tip.
  * @param forPublication Whether this closure will be sent to a remote.
+ * @returns The complete supported archive records.
  */
 async function requireCompleteArchive(
 	context: ArchiveContext,
@@ -335,6 +336,7 @@ async function requireCompleteArchive(
 			"The archive still has a shallow boundary. Restore complete history at the configured remote.",
 			tip,
 		);
+	return records;
 }
 
 /**

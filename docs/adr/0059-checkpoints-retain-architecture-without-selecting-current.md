@@ -170,3 +170,29 @@ The archive remains local until an owner configures a destination and explicitly
 Creating the archive or configuring a destination performs no network exchange.
 Private checkpoints use the same independent archive branch and actual Git ancestry as source-backed checkpoints.
 Export and migration remain separate delivery slices.
+
+## Portable model restoration
+
+TASK-549.18 adds a versioned JSON envelope with exact authored inputs and a prerequisite-free Git bundle.
+The bundle retains the complete archive and operation roots through actual Git parents.
+It preserves compact proposals, lifecycle decisions, corrections, standing baselines, and exact narrative targets.
+Foreign model pins remain references to separately owned models.
+Source associations remain evidence and never include source checkouts.
+
+Import inspects untrusted history in disposable Git storage before changing destination refs or inputs.
+It refuses incomplete dependency closure, unsafe paths, invalid content, and mismatched fingerprints.
+The destination accepts empty inputs or byte-identical inputs for archive restoration.
+Different authored content requires a fresh destination or ordinary model edits.
+Private destinations require the existing explicit archive initialization.
+
+The existing installation lease, journal, signer, atomic writer, archive append, and completion receipt own import.
+The signed installation record retains the envelope digest and operation intent rather than another embedded archive copy.
+An interrupted import uses `model recover` and preserves foreign content through the same refusal contract.
+A retry returns the original receipt without another installation event.
+A planning-only installation records a null state and invents no architectural designation.
+
+Imported checkpoints keep their original identities and signatures.
+The destination signs its own installation checkpoint under its configured policy.
+Import changes no source HEAD, index, worktree registration, publication destination, or remote history.
+A complete bundle can repair lost local history, but it cannot prevent archive deletion.
+A second persistence engine or transaction owner is rejected because the existing archive and journal already own these guarantees.

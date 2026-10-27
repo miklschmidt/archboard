@@ -128,6 +128,11 @@ Archive publication:
 An explicit exchange that makes retained architecture available at a configured remote and archive ref.
 A source-code push does not establish this fact.
 
+Portable bundle:
+A versioned envelope of exact current inputs and complete architecture archive history.
+It preserves identities and required dependencies without retaining repository source files.
+Import uses the existing installation journal and can restore lost local history.
+
 Private archive:
 An explicitly initialized bare Git repository for one untracked vault.
 It uses the same history engine and stays outside source repositories.

@@ -1217,6 +1217,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/board/tests/runtime/operations/proposals/correction*.test.ts; CLI and HTTP tests/system/semantic-boards/model-corrections.test.ts; browser tests/system/browser/canonical-model-corrections.test.ts; guidance skills/archboard/references/canonical-models.md#correct-a-recorded-state"
+				},
+				{
+					"path": "canonical portable model: exact inputs, complete archive dependencies, planning-only state, private history, lifecycle, corrections, standing, narrative targets, interruption and restoration",
+					"expectedUse": "Export a complete bundle. Import into empty or identical inputs through the existing journal. Refuse missing history before exposing imported content. Keep source evidence separate from repository source files.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/board/tests/runtime/operations/history/portable*.test.ts; tests/system/semantic-boards/model-portable.test.ts; tests/system/browser/canonical-model-import.test.ts"
 				}
 			]
 		},

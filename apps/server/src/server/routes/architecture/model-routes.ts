@@ -1,3 +1,4 @@
+import { mountArchitecturePortableRoutes } from "#server/routes/architecture/portable-routes.ts";
 import { mountArchitectureExplanationRoutes } from "#server/routes/architecture/explanation-routes.ts";
 import { mountArchitectureFlowRoutes } from "#server/routes/architecture/flow-routes.ts";
 import { mountArchitecturePublicationRoutes } from "#server/routes/architecture/publication-routes.ts";
@@ -62,6 +63,7 @@ const RetainBodySchema = ArchitectureCheckpointRequestSchema.safeExtend({
 function mountArchitectureModelRoutes(app: Express): void {
 	mountArchitectureExplanationRoutes(app);
 	mountArchitecturePublicationRoutes(app);
+	mountArchitecturePortableRoutes(app);
 	mountArchitectureEditRoutes(app);
 	mountArchitectureFlowRoutes(app);
 	app.post("/api/architecture/archive/init", requireVault, async (req, res) => {

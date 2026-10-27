@@ -23,6 +23,7 @@ const BROWSER_TEST_PATHS = [
 	"tests/system/browser/canonical-model-explanations.test.ts",
 	"tests/system/browser/canonical-model-comparison.test.ts",
 	"tests/system/browser/canonical-model-planning.test.ts",
+	"tests/system/browser/canonical-model-import.test.ts",
 	"tests/system/browser/canonical-model-code.test.ts",
 	"tests/system/browser/canonical-model-references.test.ts",
 	"tests/system/browser/canonical-model-structure.test.ts",

@@ -40,3 +40,9 @@ export type {
 	ArchitectureClaimResult,
 	ArchitectureEvent,
 } from "#shared/schemas/model-operations.ts";
+
+export {
+	ArchitecturePortableBundleSchema,
+	ArchitectureImportRequestSchema,
+	ArchitectureExportResultSchema,
+} from "#shared/schemas/model-portable.ts";
