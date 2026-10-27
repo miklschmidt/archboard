@@ -141,11 +141,12 @@ function PublicationHeader(props: PublicationHeaderProps): JSX.Element {
 				>
 					Set sharing destination
 				</Button>
-				{status.destination !== undefined && (
+				{status.destination !== undefined && status.publication !== undefined && (
 					<PublicationExchange
 						destination={status.destination}
 						checkpoint={checkpoint}
 						unavailable={status.publication === "unavailable"}
+						retry={status.publication === "publication-pending"}
 						pending={pending}
 						onExchange={onExchange}
 					/>
@@ -162,6 +163,7 @@ function PublicationHeader(props: PublicationHeaderProps): JSX.Element {
  * @param props.checkpoint The immutable reading identity.
  * @param props.unavailable Whether local architecture needs recovery.
  * @param props.pending Whether an explicit action is underway.
+ * @param props.retry Whether the prior publication needs another attempt.
  * @param props.onExchange Sends the captured intent.
  * @returns Publish or fetch, without an implicit remote operation.
  */
@@ -170,6 +172,7 @@ function PublicationExchange(props: {
 	checkpoint: string;
 	unavailable: boolean;
 	pending: boolean;
+	retry: boolean;
 	onExchange: (command: PublicationCommand) => void;
 }): JSX.Element {
 	const { destination, checkpoint, unavailable, onExchange } = props;
@@ -190,7 +193,13 @@ function PublicationExchange(props: {
 			disabled={props.pending}
 			aria-busy={props.pending}
 		>
-			{props.pending ? "Working…" : unavailable ? "Fetch this reading" : "Publish history"}
+			{props.pending
+				? "Working…"
+				: unavailable
+					? "Fetch this reading"
+					: props.retry
+						? "Retry publication"
+						: "Publish history"}
 		</Button>
 	);
 }

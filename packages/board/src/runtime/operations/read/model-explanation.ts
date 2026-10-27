@@ -3,6 +3,7 @@ import { StateSelectionSchema } from "#shared/schemas/model-proposals.ts";
 import type { ExplanationRequestSchema } from "#shared/schemas/model-explanation.ts";
 import type { ArchitectureModelRead, ArchitectureModel } from "#shared/schemas/model.ts";
 import { subjectsOf } from "#runtime/operations/proposals/subjects.ts";
+import type { NavigationOptions } from "#runtime/operations/read/model-navigation.ts";
 
 type Request = z.infer<typeof ExplanationRequestSchema>;
 
@@ -124,13 +125,27 @@ function captureFailure(model: ArchitectureModel, request: Request) {
 			missing,
 			"Some requested subjects are unavailable in this reading.",
 		);
-	if (request.reading.relationshipKinds.some((kind) => !(kind in model.policy.relationshipKinds)))
+	if (unavailableReadingPolicy(model, request))
 		return refuse(
 			"MODEL_INVALID",
 			[],
-			"A requested relationship kind is unavailable in this reading.",
+			"A requested relationship kind or group is unavailable in this reading.",
 		);
 	return readingFailure(model, request) ?? actionFailure(model, request);
+}
+
+/**
+ * Exact visible group selections and relationship kinds use the selected model's vocabulary.
+ * @param model The coherent model and its policy.
+ * @param request The captured reading intent.
+ * @returns Whether a requested kind or group is unavailable.
+ */
+function unavailableReadingPolicy(model: ArchitectureModel, request: Request): boolean {
+	const groups = Array.isArray(request.reading.groups) ? request.reading.groups : [];
+	return (
+		request.reading.relationshipKinds.some((kind) => !(kind in model.policy.relationshipKinds)) ||
+		groups.some((group) => !(group in model.policy.groups))
+	);
 }
 /**
  * Read one exact requested state through the existing public runtime owners.
@@ -144,25 +159,37 @@ async function requestedReading(
 	vault: string,
 	module: string | undefined,
 	flow: string | undefined,
-	selection: z.infer<typeof StateSelectionSchema>,
+	selection: NavigationOptions,
 ) {
-	const { checkpoint, explain, ...state } = selection;
-	const scope = module ?? explain?.reading.scope;
-	const selectedFlow = flow ?? explain?.reading.flow;
-	if (checkpoint !== undefined)
-		return (await import("#runtime/operations/history/read.ts")).readArchitectureCheckpoint(
-			vault,
-			checkpoint,
-			scope,
-			selectedFlow,
-			state,
+	const { explain } = selection;
+	if (explain !== undefined && selection.reference !== undefined)
+		return refuse(
+			"MODEL_INVALID",
+			[],
+			"Open the referenced architecture before requesting an explanation.",
 		);
-	return (await import("#runtime/operations/proposals/read.ts")).readSelectedState(
+	const selectors = requestedSelectors(module, flow, explain);
+	return (await import("#runtime/operations/read/model-navigation.ts")).readModelNavigation(
 		vault,
-		scope,
-		selectedFlow,
-		state,
+		selectors.module,
+		selectors.flow,
+		selection,
 	);
+}
+
+/**
+ * Explicit positional selectors remain available for the capture consistency check.
+ * @param module The optional positional module.
+ * @param flow The optional positional flow.
+ * @param explain The captured reading intent, when present.
+ * @returns Positional selectors or the corresponding captured defaults.
+ */
+function requestedSelectors(
+	module: string | undefined,
+	flow: string | undefined,
+	explain: Request | undefined,
+) {
+	return { module: module ?? explain?.reading.scope, flow: flow ?? explain?.reading.flow };
 }
 /**
  * Parse one reading request and capture its exact model for local explanations.
@@ -176,14 +203,21 @@ async function readRequestedArchitecture(
 	vault: string,
 	module: string | undefined,
 	flow: string | undefined,
-	input: z.input<typeof StateSelectionSchema>,
+	input: NavigationOptions,
 ): Promise<ArchitectureModelRead> {
-	const parsed = StateSelectionSchema.safeParse(input);
+	const { model: expectedModel, code, references, reference, ...intent } = input;
+	const parsed = StateSelectionSchema.safeParse(intent);
 	if (!parsed.success) return refuse("MODEL_INVALID", [], "The reading request is invalid.");
 	const { explain, ...selection } = parsed.data;
 	if (selection.state !== undefined && selection.checkpoint !== undefined)
 		return refuse("MODEL_INVALID", [], "Select one state or checkpoint.");
-	const model = await requestedReading(vault, module, flow, parsed.data);
+	const model = await requestedReading(vault, module, flow, {
+		...parsed.data,
+		model: expectedModel,
+		code,
+		references,
+		reference,
+	});
 	if (!model.success || explain === undefined) return model;
 	return attachCapture(model, explain, selection);
 }

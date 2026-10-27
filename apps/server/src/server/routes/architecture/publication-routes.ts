@@ -1,4 +1,4 @@
-import type { Express, Response } from "express";
+import type { Express } from "express";
 import { z } from "zod";
 import { readArchitecturePublication } from "@archboard/board/store-read";
 import {
@@ -9,34 +9,9 @@ import {
 import {
 	ArchitecturePublicationDestinationSchema,
 	ArchitecturePublicationRequestSchema,
-	ArchitecturePublicationSchema,
 } from "@archboard/board/model";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
-
-const failureStatuses: Partial<
-	Record<Extract<z.infer<typeof ArchitecturePublicationSchema>, { success: false }>["code"], number>
-> = {
-	ARCHITECTURE_UNAVAILABLE: 404,
-	CHECKPOINT_INVALID: 422,
-	PUBLICATION_NOT_CONFIGURED: 409,
-	PUBLICATION_DESTINATION_CHANGED: 409,
-	ARCHIVE_NOT_INITIALIZED: 409,
-	ARCHIVE_IN_USE: 409,
-	ARCHIVE_BUSY: 409,
-	ARCHIVE_NETWORK_FAILED: 502,
-};
-
-/**
- * Preserve the common publication result and disable response caching.
- * @param res The outgoing response.
- * @param result The runtime outcome.
- */
-function respond(res: Response, result: z.infer<typeof ArchitecturePublicationSchema>) {
-	res
-		.set("Cache-Control", "no-store")
-		.status(result.success ? 200 : (failureStatuses[result.code] ?? 422))
-		.json(result);
-}
+import { respond } from "#server/routes/architecture/model-response.ts";
 
 /**
  * Mount explicit history operations. Every request names its vault.

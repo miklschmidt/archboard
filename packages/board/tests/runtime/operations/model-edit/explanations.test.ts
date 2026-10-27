@@ -35,6 +35,17 @@ test("an explanation captures the complete reading without changing authored inp
 		},
 	});
 	expect(readFileSync(join(vault, "gateway.module.json"))).toEqual(before);
+	const groups = Object.keys(current.policy.groups);
+	expect(
+		await readArchitectureModel(vault, undefined, undefined, {
+			explain: { ...explain, reading: { ...explain.reading, groups } },
+		}),
+	).toMatchObject({ success: true, explanation: { request: { reading: { groups } } } });
+	expect(
+		await readArchitectureModel(vault, undefined, undefined, {
+			explain: { ...explain, reading: { ...explain.reading, groups: ["missing"] } },
+		}),
+	).toMatchObject({ success: false, code: "MODEL_INVALID" });
 	writeFileSync(join(vault, "gateway.module.json"), `${before.toString()}\n`);
 	expect(await readArchitectureModel(vault, undefined, undefined, { explain })).toMatchObject({
 		success: false,
@@ -65,10 +76,25 @@ test("relationship and missing-flow explanations retain stable reading intent an
 		success: false,
 		code: "MODEL_INVALID",
 	});
-	expect(await readArchitectureModel(vault, undefined, undefined, { explain })).toMatchObject({
+	expect(
+		await readArchitectureModel(vault, undefined, undefined, {
+			explain,
+			model: "Shop",
+			code: true,
+			references: true,
+		}),
+	).toMatchObject({
 		success: true,
 		explanation: { request: explain },
+		codeBinding: { repo: "github.com/acme/shop", path: "src/gateway.ts" },
+		codeTarget: { ok: false },
 	});
+	expect(
+		await readArchitectureModel(vault, undefined, undefined, {
+			explain,
+			reference: 0,
+		}),
+	).toMatchObject({ success: false, code: "MODEL_INVALID" });
 	expect(
 		await readArchitectureModel(vault, undefined, undefined, {
 			explain: {

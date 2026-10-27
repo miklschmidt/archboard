@@ -380,6 +380,7 @@ async function settleCandidate(
 	return {
 		success: true as const,
 		current,
+		model: settled,
 		inputs: candidate.inputs,
 		revision: candidate.revision,
 		files: changedFiles(captured.inputs, candidate.inputs),

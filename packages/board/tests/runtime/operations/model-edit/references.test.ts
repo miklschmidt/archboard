@@ -11,6 +11,10 @@ import {
 	retain,
 } from "#tests/runtime/support/publication-fixture.ts";
 import { structureIntent } from "#tests/runtime/operations/model-edit/fixture.ts";
+import {
+	request as familyRequest,
+	proposal as createProposal,
+} from "#tests/runtime/operations/proposals/fixture.ts";
 
 const originalState = process.env["XDG_STATE_HOME"];
 const originalRegistry = process.env["ARCHBOARD_REPOS"];
@@ -184,6 +188,52 @@ test("a foreign draft reference follows its explicit state and retains that draf
 		success: true,
 		selectedState: { id: foreignDraft.target.state, lifecycle: "draft" },
 		checkpoint: { id: foreignDraft.checkpoint.id },
+	});
+}, 20_000);
+
+test("reference conflicts retain the selected foreign pin through external reconciliation and settlement", async () => {
+	const { local, foreign, reference, checkpoint } = await referencedFixture();
+	const authored = { ...reference, subject: "Ledger#Worker" };
+	const proposal = await createProposal(local.vault, "Worker reference", "Current", [
+		{ type: "edit-module", subject: "Shop#Gateway", set: { references: [authored] } },
+	]);
+	const path = join(local.vault, "gateway.module.json");
+	const current = JSON.parse(readFileSync(path, "utf8"));
+	current.references = [{ ...reference, state: "Current" }];
+	writeFileSync(path, JSON.stringify(current));
+	const reconciled = await editArchitectureModule(local.vault, {
+		...(await familyRequest(local.vault)),
+		proposal: { type: "reconcile" },
+		changes: [],
+	});
+	expect(reconciled).toMatchObject({ success: true, reconciliation: true });
+	if (!reconciled.success) throw new Error(JSON.stringify(reconciled));
+	const settled = await editArchitectureModule(local.vault, {
+		...(await familyRequest(local.vault, proposal.target.state!)),
+		proposal: {
+			type: "settle",
+			resolutions: [{ subject: "Shop#Gateway", field: "references", take: "mine" }],
+		},
+		changes: [],
+	});
+	expect(settled).toMatchObject({
+		success: true,
+		reconciliation: false,
+		checkpoint: {
+			references: [{ reference: authored, checkpoint: checkpoint.id }],
+		},
+	});
+	if (!settled.success) throw new Error(JSON.stringify(settled));
+	writeFileSync(join(foreign.vault, "model.json"), "{");
+	expect(
+		await readArchitectureModel(local.vault, "Shop#Gateway", undefined, {
+			checkpoint: settled.checkpoint.id,
+			reference: 0,
+		}),
+	).toMatchObject({
+		success: true,
+		selectedModule: "Ledger#Worker",
+		checkpoint: { id: checkpoint.id },
 	});
 }, 20_000);
 
