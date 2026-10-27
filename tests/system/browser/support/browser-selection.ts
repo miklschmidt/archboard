@@ -13,6 +13,7 @@ const BROWSER_TEST_PATHS = [
 	"tests/system/browser/canonical-model-modes.test.ts",
 	"tests/system/browser/canonical-model-proposals.test.ts",
 	"tests/system/browser/canonical-model-lifecycle.test.ts",
+	"tests/system/browser/canonical-model-corrections.test.ts",
 	"tests/system/browser/canonical-model-preview.test.ts",
 	"tests/system/browser/canonical-model-reconciliation.test.ts",
 	"tests/system/browser/canonical-model-explanations.test.ts",

@@ -4,6 +4,7 @@ import type { Model } from "#ui/rules/architecture-model/projection.ts";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import { checkpointTime } from "#ui/rules/architecture-model/history-time.ts";
 import { AuthoredReference } from "#ui/components/architecture-model/AuthoredReference.tsx";
+import { ModelCorrections } from "#ui/components/architecture-model/ModelCorrections.tsx";
 
 type State = NonNullable<Model["selectedState"]>;
 interface HistoryProps {
@@ -29,20 +30,23 @@ function ModelStateHistory(props: HistoryProps): JSX.Element {
 			)}
 			{hasHistory(state) && (
 				<details data-slot="model-state-history" className="text-body">
-					<summary className="text-muted-foreground cursor-pointer">Decision and history</summary>
-					<dl className="mt-3 grid max-h-64 max-w-prose grid-cols-[auto_1fr] gap-x-6 gap-y-2 overflow-y-auto">
-						<StateDates state={state} />
-						<StateLineage state={state} states={props.states} onSelect={location.selectState} />
-						{state.baseline && (
-							<HistoryLink
-								label="Baseline"
-								id={state.baseline}
-								onSelect={location.selectCheckpoint}
-								exact
-							/>
-						)}
-						<StateDocuments state={state} />
-					</dl>
+					<summary className="text-muted-foreground cursor-pointer">{historyLabel(state)}</summary>
+					<div className="mt-3 max-h-64 max-w-prose space-y-4 overflow-y-auto">
+						<dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
+							<StateDates state={state} />
+							<StateLineage state={state} states={props.states} onSelect={location.selectState} />
+							{state.baseline && (
+								<HistoryLink
+									label="Baseline"
+									id={state.baseline}
+									onSelect={location.selectCheckpoint}
+									exact
+								/>
+							)}
+							<StateDocuments state={state} />
+						</dl>
+						<ModelCorrections corrections={state.corrections} onRead={location.selectCheckpoint} />
+					</div>
 				</details>
 			)}
 		</>
@@ -63,7 +67,19 @@ function hasHistory(state: State): boolean {
 		state.previousCurrent,
 		state.baseline,
 		state.documents?.length,
+		state.corrections?.length,
 	].some(Boolean);
+}
+
+/**
+ * A collapsed disclosure still identifies corrected facts.
+ * @param state The selected retained metadata.
+ * @returns Its history label with the recorded correction count.
+ */
+function historyLabel(state: State): string {
+	const count = state.corrections?.length ?? 0;
+	if (count === 0) return "Decision and history";
+	return `Decision and history · ${count} ${count === 1 ? "correction" : "corrections"}`;
 }
 
 const DATES = [

@@ -3,9 +3,9 @@ id: TASK-549.09
 title: Correct historical architecture with an audit trail
 status: In Progress
 assignee:
-  - '@codex-implementation'
+  - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-27T04:14:00Z'
+updated_date: '2026-10-27T05:21:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -66,6 +66,12 @@ Implement the approved backend/shared contract/CLI/server slice only.
 4. Use public architecture operations with real files and Git for focused RED/GREEN correction, exact history, family reconciliation, recovery, and adapter coverage.
 5. Update consumer instructions, ADRs, domain terms, and test ownership. Run required affected gates without changing limits.
 6. Merge latest integration, simplify, sign commits, release claims, stop this server, and publish backend handoff. Parent owns frontend acceptance, adoption, and closure.
+
+7. Add Browser application@TASK-549.09. Extend the existing state history disclosure with correction reasons, source commits, exact reading links, and comparison-base audit evidence. Keep one bounded history region and no browser correction writes.
+
+8. Use the existing browser seam with public HTTP fixture edits and real temporary Git. Prove live archive-only correction refresh, original checkpoint navigation, comparison provenance, following draft inheritance, and unavailable history recovery. Reuse runtime evidence for authoring refusals and adopted-successor preservation.
+
+9. Update consumer and frontend guidance. Run affected checks, simplify, restate and adopt the completed architecture descriptions, sign completion, release claims, stop the server, and hand the source to the merger.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -77,4 +83,6 @@ Backend/shared contract/CLI/server slice is ready for parent browser acceptance.
 Evidence: 24 runtime tests /161 assertions across11 owners pass on frozen source, plus the final structural correction case /5 assertions. CLI/HTTP parity passes1 case /10 assertions. Source/browser types, warning-free lint, formatting and21 evaluation scenarios /21 fixtures /14 coverage parts pass. Exact logs and early contract are in /home/msc/.local/state/archboard-implementation/task-549. The known board interface width remains245/188 under TASK-549.24; no rule or ceiling changes. Three draft architecture proposals remain unadopted. Parent owns every browser change and all acceptance criteria. No children, review, push, PR or task closure.
 
 Final simplification uses one private change schema for current, proposal and correction intents, so TASK-549.14 can extend the change vocabulary once. The final CLI/HTTP owner passes1 case /10 assertions after the schema and identity reservation changes. Final types, lint and formatting pass. Code checks report zero warnings on the three task drafts; nine inherited warnings remain on unrelated boards. All original test deadlines and interface ceilings remain unchanged. The parent receives exact source, contract, fixture and evidence pointers in task-549.09-backend.md. Keep all criteria unchecked, the task In Progress and the three architecture proposals draft for parent browser acceptance.
+
+First browser slice passes one case with seven assertions. An archive-only correction refreshes the open logical state while the current file revision stays unchanged. The existing history disclosure shows its reason, date, source commit, and exact prior and corrected reading links. Opening the prior checkpoint preserves original facts. Source and browser types and lint pass. Comparison-base audit, following draft acceptance, unavailable history recovery, final documentation and adoption remain pending.
 <!-- SECTION:NOTES:END -->
