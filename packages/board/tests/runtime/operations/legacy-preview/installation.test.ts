@@ -1,7 +1,8 @@
 import { afterEach, expect, test } from "bun:test";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { makeIdentity, paneBoardAddress } from "@archboard/board/address";
+import { readArchitectureModel, readBoardVariant } from "@archboard/board/store-read";
 import * as writes from "@archboard/board/store-write";
 import { narrativeFixture } from "#tests/runtime/operations/legacy-preview/readings-fixture.ts";
 import { savePreviewPlan } from "#tests/runtime/operations/legacy-preview/fixture.ts";
@@ -9,6 +10,74 @@ import { installationFixture } from "#tests/runtime/operations/legacy-preview/in
 const homes: string[] = [];
 afterEach(() => {
 	for (const home of homes.splice(0)) rmSync(home, { recursive: true, force: true });
+});
+
+test("installed original addresses reopen the exact readings emitted by the legacy pane interface", async () => {
+	const fixture = narrativeFixture();
+	homes.push(fixture.home);
+	const current = fixture.original.variants[0]!;
+	const historical = {
+		...structuredClone(current),
+		id: "Past",
+		name: "Old",
+		lifecycle: "historical",
+	};
+	historical.content.nodes[1]!.name = "Former API";
+	fixture.original.variants = [historical, current];
+	writeFileSync(join(fixture.vault, "Shop.semantic.json"), JSON.stringify(fixture.original));
+	const selections = ["current", "Old", "Past"].map((variant) => {
+		const identity = makeIdentity({
+			board: fixture.original.name,
+			variant,
+		});
+		const legacy = readBoardVariant(fixture.vault, identity.board, identity.variant);
+		if (!legacy.ok) throw new Error(JSON.stringify(legacy));
+		return { address: paneBoardAddress(identity), state: legacy.variant };
+	});
+	expect(selections.map((entry) => entry.address)).toEqual(["shop", "shop@Old", "shop@Past"]);
+	const { vault, request } = await installationFixture(fixture);
+	const installed = await writes.migrateArchitectureModel(vault, request);
+	if (!installed.success) throw new Error(JSON.stringify(installed));
+	const canonical = readArchitectureModel(vault);
+	if (!canonical.success) throw new Error(JSON.stringify(canonical));
+	for (const { address, state } of selections) {
+		const result = await readArchitectureModel(vault, undefined, undefined, {
+			legacyAddress: address,
+		});
+		if (!result.success) throw new Error(JSON.stringify({ address, result }));
+		expect(result).toMatchObject({
+			checkpoint: { id: canonical.migration!.checkpoint },
+			migrationPreview: {
+				selected: { legacy: `Shop/System#${state.id}`, completeModel: false },
+				resolvedAddress: { address, board: "System", state: `Shop/System#${state.id}` },
+			},
+		});
+		expect(result.modules.find((module) => module.id === "Shop/System#Api")?.name).toBe(
+			state.content.nodes.find((node) => node.id === "Api")!.name,
+		);
+	}
+	expect(
+		await readArchitectureModel(vault, undefined, undefined, { legacyAddress: "sHoP@Old" }),
+	).toMatchObject({ success: false, code: "LEGACY_ADDRESS_NOT_FOUND" });
+});
+
+test("captured public pane keys preserve ambiguity between original board families", async () => {
+	const { home, vault, planned } = narrativeFixture();
+	homes.push(home);
+	writeFileSync(
+		join(vault, "Future.semantic.json"),
+		JSON.stringify({ ...planned, formerNames: ["SHOP"] }),
+	);
+	await savePreviewPlan(vault);
+	const result = await readArchitectureModel(vault, undefined, undefined, {
+		preview: "Shop",
+		legacyAddress: paneBoardAddress(makeIdentity({ board: "Shop" })),
+	});
+	expect(result).toMatchObject({
+		success: false,
+		code: "LEGACY_ADDRESS_AMBIGUOUS",
+		diagnostics: [{ subjects: ["Shop/Future#Draft", "Shop/System#Now"] }],
+	});
 });
 
 test("an installed bookmark reports removed subjects without replacing its exact original reading", async () => {

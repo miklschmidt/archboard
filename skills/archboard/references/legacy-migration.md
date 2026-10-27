@@ -342,6 +342,8 @@ The model remains complete and contains no bookmark-owned architecture.
 The `legacyAddress` selector opens its exact original state and one-board coverage.
 `migrationPreview.resolvedAddress` records that choice.
 Board names, former names, filenames, state names, former state names, and state IDs remain explicit aliases.
+The catalogue also captures serialized legacy pane addresses, such as `shop` and `shop@Old`.
+Resolution matches those captured strings exactly.
 Ambiguous addresses refuse rather than selecting a similarly named subject.
 A conflicting explicit state returns `TARGET_CHANGED`.
 Unknown addresses return `LEGACY_ADDRESS_NOT_FOUND`.

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-backend'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T13:50:00Z'
+updated_date: '2026-10-27T14:07:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -84,4 +84,6 @@ Installed canonical reads expose migration.bookmarks, migration.addresses, and m
 Signing restoration blocks the final source checkpoint. The configured SSH agent has no identities. A signed commit attempt returned No private key found and created no commit. The private PIN request timed out. Keep signing requirements unchanged. Source changes remain staged in feat/canonical-migration-backend. All five claims are released and only worktree server 19089 stopped. The latest integration merge reports Already up to date at 4aed11f76a960af4cbd22cb1515f1c1228712d68. The external backend handoff records the exact contract, signed real fixtures, evidence, and remaining parent work.
 
 Fixed the confirmed installed-bookmark gap at signed source 4977bbf48. The public real-file/Git regression first reproduced empty diagnostics after valid external removal of Db. Bookmarks now share the existing playback readiness rules and report missing subjects, flows, scope, or filters through existing diagnostics. Exact reading intent, retained originals, and canonical authority stay intact. Focused runtime evidence: 17 cases, 103 assertions. Focused source/test lint and source types pass. Existing .23 drafts still describe this shared runtime behavior, so no extra proposal is needed. Status, assignee, acceptance criteria, and proposals remain unchanged for the parent.
+
+Fixed the second confirmed cutover gap: installed addresses now capture exact legacy pane keys through the existing parser, serializer, and original-state resolver. Public RED reproduced LEGACY_ADDRESS_NOT_FOUND for shop after installation. Focused GREEN proves shop, shop@Old, and shop@Past reopen their exact original states and checkpoint, while uncaptured spellings refuse and colliding captured keys remain ambiguous. Two focused cases pass with nine assertions. Source types, focused lint, and formatting pass. The final simplification removes duplicate archive reads without changing deadlines. Source b94f8c3e6 remains an ancestor. Existing .23 runtime drafts stay accurate, with no extra proposal. Parent status, assignee, acceptance, frontend, and browser ownership remain unchanged.
 <!-- SECTION:NOTES:END -->
