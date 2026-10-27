@@ -677,6 +677,8 @@ Real files and Git prove complete beat conversion, exact relationship visibility
 The same owners prove mapped current identities, original namespaces, immutable retained playback, and state-specific drill-down choices.
 The signed retention case reopens playback and former addresses after live inputs disappear.
 The existing reference owner retains foreign pin and unavailable-history coverage.
+`legacy-preview/portable-readings.test.ts` owns composition with portable history.
+It exports and imports a canonical narrative with a retained original target, then reopens its original playback, bookmark, and former address.
 
 `tests/system/semantic-boards/migration-planning.test.ts` owns CLI and HTTP selector agreement through retained original playback and bookmarks.
 The parent owns visible converted playback, exact visibility, bookmark navigation, and original address navigation through the existing browser interface.

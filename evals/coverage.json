@@ -1139,7 +1139,7 @@
 					"expectedUse": "Play one captured preview revision. Preserve exact original coverage and explicit identity choices. Follow only captured aliases and state-specific reference choices without current fallback.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/legacy-preview/readings.test.ts, reading-history.test.ts and reference-readings.test.ts; tests/system/semantic-boards/migration-planning.test.ts; guidance skills/archboard/references/legacy-migration.md#read-converted-narratives"
+					"owner": "packages/board/tests/runtime/operations/legacy-preview/readings.test.ts, reading-history.test.ts, reference-readings.test.ts and portable-readings.test.ts; tests/system/semantic-boards/migration-planning.test.ts; guidance skills/archboard/references/legacy-migration.md#read-converted-narratives"
 				},
 				{
 					"path": "canonical recursive readings: scopes, exact checkpoint addresses, direct context, complete interfaces and connection aggregation",

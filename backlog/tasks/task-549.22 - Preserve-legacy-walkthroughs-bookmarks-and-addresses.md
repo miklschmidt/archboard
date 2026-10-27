@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-backend'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T10:53:00Z'
+updated_date: '2026-10-27T11:00:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -75,4 +75,6 @@ Published task-549.22-contract.md in the shared context directory before impleme
 Focused RED/GREEN cases now pass for complete narrative conversion, unused bookmarks, exact legacy addresses, immutable playback metadata, and predecessor former names. The existing playback owner supplies readiness and retained-target refusal. Original files stay byte-identical and continue to own live reads. Added identity-only visibility selectors to preserve exact original relationship subsets.
 
 Extended thin CLI and HTTP selectors for exact legacy addresses and optional bookmarks. Historical drill-down choices now identify their original source state. Same-vault preview references use the existing reference owner, including explicit earlier checkpoint targets. Legacy omitted views expand to complete instructions: the original overview before the first explicit view, then the last explicit view. Parent contract records this behavior. Preparing the signed TASK-549.18 integration merge while preserving accepted diagrams and draft .22 provenance.
+
+Merged signed integration 9d19307d41d33b328916a9a3ebe6c3bca309a21c through signed merge 4b6ced182. All accepted .18 variants, views, and lifecycle decisions remain exact. Preserved .22 draft identities and parents, then composed accepted .18 content into those drafts through claimed CLI edits with explicit identity restoration. The portable closure validator now accepts only the migration checkpoint envelope through the existing originals reader. A focused RED/GREEN export/import case preserves exact original playback, bookmarks, and former addresses. No current portable input validation rule changed.
 <!-- SECTION:NOTES:END -->
