@@ -149,7 +149,8 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 	);
 	const handleClick = useCallback(
 		(event: MouseEvent<HTMLDivElement>) => {
-			if (paneCanShow(row)) onOpen(row, event.altKey);
+			if (paneCanShow(row) || (row.kind === "repository" && row.model !== undefined))
+				onOpen(row, event.altKey);
 			else if (expanded !== undefined) onExpand(row.id, !expanded);
 		},
 		[row, expanded, onOpen, onExpand],

@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { cpSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { startOwnedServer } from "../support/owned-server.ts";
-import { vaultIn } from "../support/test-vault.ts";
+import { holderOf, vaultIn } from "../support/test-vault.ts";
 import { createJsonRequester } from "../support/http.ts";
 import {
 	browserTestRoots,
@@ -10,9 +10,13 @@ import {
 	createAgentBrowser,
 	pollUntil,
 	registerServerBase,
+	runServerCli,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
 import { initializeSource } from "./support/canonical-model.ts";
+
+import { startVoiceServer } from "./support/voice-box-page.ts";
+import { seedCanonicalModel, modelAddress } from "./support/canonical-page.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
 
@@ -135,4 +139,69 @@ test("agent navigation opens the requested canonical pane without moving its nei
 		"leaving the requested walkthrough",
 		WAIT,
 	);
+}, 60_000);
+
+test("repository filtering opens canonical roots by keyboard and in the other pane", async () => {
+	await using resources = new AsyncDisposableStack();
+	const { server } = await startVoiceServer(resources, "shop");
+	const shop = await seedCanonicalModel(server.vault, "Storefront");
+	const ordersVault = vaultIn(join(browserTestRoots().ownerRoot, "orders"));
+	const orders = await seedCanonicalModel(ordersVault, "Orders");
+	runServerCli(server, ["repo", "add", holderOf(ordersVault)]);
+	const browser = resources.use(await createAgentBrowser());
+	await browser.run(["open", `${modelAddress(server.base, shop)}&repoA=shop`]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	const request = createJsonRequester(server);
+	await pollUntil(
+		() => request<{ panes: { paneId: string }[] }>("/api/panes"),
+		(result) => result.body.panes.some((pane) => pane.paneId === "A"),
+		"the repository navigator's registered pane",
+		WAIT,
+	);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="repository-model-open"][title="Open Orders"]') !== null`,
+			),
+		Boolean,
+		"both repository readings",
+		WAIT,
+	);
+	await browser.run(["fill", 'input[aria-label="Find a repository"]', "orders"]);
+	expect(
+		await browser.eval<string>(
+			`document.querySelector('[data-slot="navigator"] output')?.textContent ?? ''`,
+		),
+	).toBe("1/2");
+	await browser.run(["press", "Enter"]);
+	await pollUntil(
+		() => browser.eval<string | null>(`new URLSearchParams(location.search).get('modelA')`),
+		(id) => id === orders.manifest.id,
+		"the first matching repository opened by Enter",
+		WAIT,
+	);
+	await browser.run(["fill", 'input[aria-label="Find a repository"]', "shop"]);
+	await browser.run(["press", "Alt+Enter"]);
+	await pollUntil(
+		() => browser.eval<string | null>(`new URLSearchParams(location.search).get('modelB')`),
+		(id) => id === shop.manifest.id,
+		"the other repository in a new adjacent pane",
+		WAIT,
+	);
+	expect(
+		await browser.eval<string | null>(`new URLSearchParams(location.search).get('modelA')`),
+	).toBe(orders.manifest.id);
+	expect(
+		await browser.eval<string>(`new URLSearchParams(location.search).get('pane') ?? 'A'`),
+	).toBe("A");
+	await browser.run(["fill", 'input[aria-label="Find a repository"]', "orders"]);
+	await browser.run(["press", "ArrowDown"]);
+	await browser.run(["press", "Alt+Enter"]);
+	await pollUntil(
+		() => browser.eval<string | null>(`new URLSearchParams(location.search).get('modelB')`),
+		(id) => id === orders.manifest.id,
+		"the focused repository row opened beside",
+		WAIT,
+	);
+	expect(await browser.run(["errors"])).toBe("");
 }, 60_000);

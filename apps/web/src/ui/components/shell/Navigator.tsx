@@ -30,7 +30,7 @@ import { WorkingNow, type WorkingEntry } from "#ui/components/shell/WorkingNow.t
 import { useFindShortcut } from "#ui/hooks/shell/use-find-shortcut.ts";
 import { useKept } from "#ui/hooks/shell/use-kept.ts";
 import { useNavigatorExpansion } from "#ui/hooks/shell/use-navigator-expansion.ts";
-import { filterCount, navigatorRows, rowSelected } from "#ui/rules/shell/navigator-rows.ts";
+import { navigatorRows, rowSelected } from "#ui/rules/shell/navigator-rows.ts";
 import { boardRowId, scopedRowId } from "#ui/rules/shell/row-ids.ts";
 import { paneLetter } from "#ui/rules/shell/pane-letters.ts";
 import { foldQuery } from "#ui/rules/shell/text-match.ts";
@@ -111,6 +111,7 @@ function workingEntries(view: ShellView, panes: readonly PaneMark[]): WorkingEnt
  * @returns The key, or null for a row that only gathers others.
  */
 function rowKey(row: NavigatorRow): string | null {
+	if (row.kind === "repository") return row.model?.id ?? null;
 	if (row.kind === "board") return row.board.key;
 	return row.kind === "variant" ? row.variant.key : null;
 }
@@ -156,15 +157,6 @@ function listingFailure(view: ShellView): string | null {
 }
 
 /**
- * How many boards every repository lists.
- * @param view The shell view.
- * @returns The count.
- */
-function boardTotal(view: ShellView): number {
-	return view.repositories.reduce((total, shell) => total + shell.boards.boards.length, 0);
-}
-
-/**
  * The board navigator.
  * @param props The shell view and actions.
  * @returns The navigator column.
@@ -193,7 +185,8 @@ function Navigator(props: NavigatorProps): JSX.Element {
 	const open = useCallback(
 		(row: NavigatorRow, beside: boolean): void => {
 			if (row.kind === "repository" && row.model !== undefined) {
-				void actions.openModel(row.model.id, row.repository);
+				if (beside) actions.openBeside(row.model.id, row.repository);
+				else void actions.openModel(row.model.id, row.repository);
 				return;
 			}
 			const key = rowKey(row);
@@ -225,7 +218,14 @@ function Navigator(props: NavigatorProps): JSX.Element {
 		column.current?.querySelector<HTMLElement>('[role="tree"] [tabindex="0"]')?.focus();
 	}, []);
 	const homeId = homeRowId(rows, panes);
-	const total = boardTotal(view);
+	const total = view.repositories.length;
+	const count = useMemo(
+		() => ({
+			found: rows.filter((row) => row.kind === "repository" && !row.dimmed).length,
+			total,
+		}),
+		[rows, total],
+	);
 	useRevealActive(
 		column,
 		homeId,
@@ -240,7 +240,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 			{props.head}
 			<nav
 				ref={column}
-				aria-label="Boards"
+				aria-label="Repositories"
 				data-slot="navigator"
 				className="flex min-h-0 flex-1 flex-col"
 			>
@@ -248,7 +248,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 					input={input}
 					query={query}
 					onQuery={setQuery}
-					count={filterCount(rows, total)}
+					count={count}
 					onOpenFirst={onOpenFirst}
 					onEnterTree={onEnterTree}
 				/>

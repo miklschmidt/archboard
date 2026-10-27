@@ -98,7 +98,8 @@ function enterAction(
 ): OutlineKeyAction | null {
 	const row = rows[index];
 	if (row === undefined) return null;
-	if (paneCanShow(row)) return { kind: "open", row, beside: event.altKey };
+	if (paneCanShow(row) || (row.kind === "repository" && row.model !== undefined))
+		return { kind: "open", row, beside: event.altKey };
 	const open = rowOpen(row);
 	return open === undefined ? null : { kind: "expand", id: row.id, open: !open };
 }

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T17:47:00Z'
+updated_date: '2026-10-27T17:53:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -110,4 +110,6 @@ The focus browser owner reproduced missing human view attribution through the ex
 A human repository Open now goes through the existing shell action and canonical pane-show route, then activates the destination checkout through the existing conversation action. RepositoryModelLink no longer writes the router independently. The controlled text-workbench owner proves the destination conversation and pane B capture/vault agree while pane A stays unchanged; prior agent navigation still leaves the shown conversation unchanged. Full source/test types, frontend types, and focused lint pass after adapting the existing navigator fixture. The shared visible workbench reader moved to its existing support module to keep the test file bounded. URL restoration, keyboard repository opening, and removal of retired shell compatibility paths still remain open.
 
 The controlled two-repository workbench case exposed a reload mismatch: pane A displayed shop architecture but remained connected to the orders vault. The existing workspace restore planner now compares actual pane repository placement with URL intent and carries complete canonical selectors through its existing operation slot and pane-show route. Human repository opens now use that same command slot. Model addresses remain intact when the socket confirms a canonical move. Canonical state attribution includes model identity so state IDs from different models do not leave a stale human mark. Reload, all three existing routing UI owners, and agent navigation pass. Full source/test types and focused source/UI/browser lint pass. No new restoration pipeline, deadline change, or lint exception was added; temporary probes are removed.
+
+The repository keyboard owner first reproduced stale board-based filter counts (0/0 for one match among two repositories). Counts now describe repositories. Filter Enter, repository row Enter/Space, and pointer opens use canonical models. Alt+Enter uses the existing adjacent-pane owner, waits for a new pane registration, and preserves the original active pane. The real browser case covers opening current roots, creating a neighbor, and reusing that neighbor from the filtered tree. It passes, as do full source/test types and focused lint after memoizing the count object. No legacy view or board is created.
 <!-- SECTION:NOTES:END -->
