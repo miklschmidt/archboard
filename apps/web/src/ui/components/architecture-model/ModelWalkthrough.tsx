@@ -1,27 +1,44 @@
-import { lazy, Suspense, useCallback, useMemo, useState, type JSX } from "react";
+import {
+	lazy,
+	Suspense,
+	useCallback,
+	useMemo,
+	useState,
+	type ComponentProps,
+	type JSX,
+} from "react";
 import {
 	SemanticPresentation,
 	type SemanticPresentationProps,
 } from "#ui/components/semantic-board-canvas/SemanticPresentation.tsx";
 import { projectModel, type Model } from "#ui/rules/architecture-model/projection.ts";
-import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
 import { projectFlow } from "#ui/rules/architecture-model/flow-reading.ts";
+import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
+import type { DrivenPlace } from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";
+import { useWalkthroughBeat } from "#ui/hooks/architecture-model/use-walkthrough-beat.ts";
+import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 
 const ModelDiagram = lazy(async () => {
 	const module = await import("#ui/components/architecture-model/ModelDiagram.tsx");
 	return { default: module.ModelDiagram };
 });
 const LOADING_DIAGRAM = (
-	<output className="text-body text-muted-foreground p-8">Drawing walkthrough…</output>
+	<output className="text-body text-muted-foreground flex-1 p-8">Drawing walkthrough…</output>
 );
-
 const NO_MISSING_SUBJECTS: readonly string[] = Object.freeze([]);
+type Playback = NonNullable<Model["playback"]>;
+type Reading = Playback["walkthrough"]["beats"][number]["reading"];
+type Picture = Parameters<NonNullable<ComponentProps<typeof ModelDiagram>["onPresentation"]>>[0];
 
 interface WalkthroughProps {
 	vault: string;
 	model: Model;
 	reducedMotion: boolean;
 	onLeave: () => void;
+	driven?: DrivenPlace | null;
+	onReading?: (reading: PaneReading | null) => void;
+	overlay?: SemanticPresentationProps["overlay"];
+	narration?: SemanticPresentationProps["narration"];
 }
 
 /**
@@ -39,19 +56,23 @@ function ModelWalkthrough(props: WalkthroughProps): JSX.Element {
 }
 
 /**
- * Beat position and caption clearance are presentation state, independent of architecture content.
+ * Share manual, recorded, and replayed positions through the existing walkthrough owner.
  * @param props The resolved playback and immutable model.
- * @returns The authored beat or its explicit recovery, with the existing stepping controls.
+ * @returns The authored beat or its explicit recovery.
  */
-function NarrativePresentation(
-	props: WalkthroughProps & { playback: NonNullable<Model["playback"]> },
-): JSX.Element {
+function NarrativePresentation(props: WalkthroughProps & { playback: Playback }): JSX.Element {
 	const { model, playback } = props;
-	const [index, setIndex] = useState(0);
 	const [reserve, setReserve] = useState(0);
-	const beat = playback.walkthrough.beats[index]!;
-	const reading = beat.reading;
+	const [picture, setPicture] = useState<Picture>(null);
+	const { caption, position, reading, key, unavailable } = useWalkthroughBeat(
+		model,
+		playback,
+		props.driven,
+	);
+	const index = position.beatIndex;
+	const available = unavailable === null;
 	const selected = useMemo(() => new Set(reading.selection), [reading.selection]);
+	const projection = useMemo(() => projectionOf(model, reading), [model, reading]);
 	const location = useMemo(
 		() => ({
 			state: null,
@@ -66,43 +87,25 @@ function NarrativePresentation(
 		}),
 		[reading, model.checkpoint?.id],
 	);
-	useModelExplanation(props.vault, model, location, selected);
-	const projection = useMemo(() => {
-		const structural = projectModel(
-			model,
-			reading.scope ?? null,
-			reading.focus.length === 0 ? null : reading.focus,
-			{
-				hideKinds: reading.filters.relationships,
-				hideGroups: reading.filters.groups,
-			},
-		);
-		const flow = structural.depicted.flows.find((entry) => entry.id === reading.flow);
-		return reading.grammar === "architecture" || flow === undefined
-			? structural
-			: projectFlow(structural, flow);
-	}, [model, reading]);
-	const caption = useMemo(
-		(): SemanticPresentationProps["walkthrough"] => ({
-			id: playback.walkthrough.id,
-			name: playback.walkthrough.name,
-			beats: playback.walkthrough.beats.map((entry) => ({
-				id: entry.id,
-				heading: entry.title,
-				body: entry.narrative,
-				subjects: entry.reading.selection,
-			})),
-		}),
-		[playback.walkthrough],
+	const presentation = useMemo(
+		() =>
+			index < 0
+				? null
+				: {
+						walkthrough: playback.walkthrough.id,
+						beat: index,
+						of: caption.beats.length,
+						arrived: picture?.key === key && picture.arrived,
+						answering: position.answering,
+					},
+		[index, playback.walkthrough.id, caption.beats.length, picture, key, position.answering],
 	);
+	const reporting = useMemo(
+		() => ({ ready: picture?.key === key || !available, presentation, onReading: props.onReading }),
+		[picture, key, available, presentation, props.onReading],
+	);
+	useModelExplanation(props.vault, model, location, selected, reporting);
 	const ignore = useCallback((): void => {}, []);
-	const go = useCallback(
-		(next: number): void =>
-			setIndex(Math.max(0, Math.min(playback.walkthrough.beats.length - 1, next))),
-		[playback.walkthrough.beats.length],
-	);
-	const status = playback.beats[index]!;
-	const diagnostics = new Map(status.diagnostics.map((entry) => [JSON.stringify(entry), entry]));
 	return (
 		<div
 			data-slot="model-walkthrough"
@@ -111,7 +114,7 @@ function NarrativePresentation(
 			data-grammar={reading.grammar}
 			className="relative flex min-h-0 flex-1 flex-col"
 		>
-			{status.status === "ready" ? (
+			{available ? (
 				<Suspense fallback={LOADING_DIAGRAM}>
 					<ModelDiagram
 						model={model}
@@ -122,32 +125,69 @@ function NarrativePresentation(
 						onSelectMany={ignore}
 						onOpen={ignore}
 						reducedMotion={props.reducedMotion}
-						reserve={reserve}
-						presentation={beat.id}
+						reserve={index < 0 ? 0 : reserve}
+						presentation={key}
+						onPresentation={setPicture}
 					/>
 				</Suspense>
 			) : (
-				<div
-					role="alert"
-					data-slot="model-walkthrough-unavailable"
-					className="text-body max-w-prose space-y-4 p-8"
-				>
-					<h3 className="text-title font-semibold">This step is unavailable</h3>
-					{[...diagnostics].map(([key, diagnostic]) => (
-						<p key={key}>
-							{diagnostic.message} {diagnostic.recovery}
-						</p>
-					))}
-				</div>
+				<UnavailableBeat status={unavailable} />
 			)}
-			<SemanticPresentation
-				walkthrough={caption}
-				index={index}
-				missing={NO_MISSING_SUBJECTS}
-				onGo={go}
-				onLeave={props.onLeave}
-				reserve={setReserve}
-			/>
+			{index >= 0 && (
+				<SemanticPresentation
+					walkthrough={caption}
+					index={index}
+					missing={NO_MISSING_SUBJECTS}
+					onGo={position.goTo}
+					onLeave={props.onLeave}
+					reserve={setReserve}
+					overlay={props.overlay}
+					narration={props.narration}
+				/>
+			)}
+		</div>
+	);
+}
+
+/**
+ * Project one complete beat through the existing architecture and flow readers.
+ * @param model The immutable captured architecture.
+ * @param reading The authored reading instructions.
+ * @returns The diagram content for that beat.
+ */
+function projectionOf(model: Model, reading: Reading) {
+	const structural = projectModel(
+		model,
+		reading.scope ?? null,
+		reading.focus.length === 0 ? null : reading.focus,
+		{ hideKinds: reading.filters.relationships, hideGroups: reading.filters.groups },
+	);
+	const flow = structural.depicted.flows.find((entry) => entry.id === reading.flow);
+	return reading.grammar === "architecture" || flow === undefined
+		? structural
+		: projectFlow(structural, flow);
+}
+
+/**
+ * Keep a missing beat explicit without drawing another reading in its place.
+ * @param props The unavailable beat diagnostics.
+ * @param props.status The resolved beat status.
+ * @returns Recovery instructions while the stepping controls remain available.
+ */
+function UnavailableBeat({ status }: { status: Playback["beats"][number] }): JSX.Element {
+	const diagnostics = new Map(status.diagnostics.map((entry) => [JSON.stringify(entry), entry]));
+	return (
+		<div
+			role="alert"
+			data-slot="model-walkthrough-unavailable"
+			className="text-body max-w-prose space-y-4 p-8"
+		>
+			<h3 className="text-title font-semibold">This step is unavailable</h3>
+			{[...diagnostics].map(([key, diagnostic]) => (
+				<p key={key}>
+					{diagnostic.message} {diagnostic.recovery}
+				</p>
+			))}
 		</div>
 	);
 }

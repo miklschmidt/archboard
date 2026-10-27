@@ -563,11 +563,15 @@ The shared model-edit fixture names the repository used by its authored code bin
 `packages/board/tests/runtime/operations/model-edit/walkthroughs.test.ts` owns narrative authoring and target resolution through public architecture operations with real files and Git.
 It covers beat identity, claims, stale tokens, exact retry, retained inputs, pinned playback, restart reads, and per-beat missing subjects.
 The proposal owner covers independent compact narrative and beat subjects.
+
 `tests/system/semantic-boards/model-walkthroughs.test.ts` owns CLI and HTTP routing, schema agreement, retained selection, and refused output preservation.
 `packages/walkthrough/tests/runtime/store/canonical-talk.test.ts` owns the controlled page load, exact payload storage, and revision refusal through existing recording contracts.
+
+`tests/system/server-state/canonical-walkthrough-replay.test.ts` owns offline canonical replay through the existing Chromium and encoder interface.
+It removes the source repository and compares every frame across one-page and two-page rendering.
+`tests/system/browser/canonical-model-walkthroughs.test.ts` owns visible reading changes, revision capture, restart, missing beats, restored selection, and captured pane reports.
 Existing talk, timeline, encoder, and renderer owners keep their behavior matrices.
-The parent owns frontend and browser acceptance.
-No live voice model or model evaluation runs for this backend slice.
+No live voice model or model evaluation runs in these owners.
 
 ## Legacy current preview
 

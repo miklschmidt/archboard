@@ -429,3 +429,15 @@ The page driver, audio timeline, talk store, frame renderer, and encoder remain 
 Replay loads the stored payload and uses the existing frame clock.
 It reads no current vault and starts no voice model.
 Canonical recording and replay page acceptance remain with the parent frontend implementation.
+
+Canonical replay draws the captured model through the same walkthrough component as live playback.
+It uses the existing presentation controls, picture loader, and frame clock.
+The artifact supplies every architecture read, including after the source repository disappears.
+Picture readiness names the captured revision and requested beat.
+The frame clock advances motion after the picture is drawn.
+
+Replay disables Chromium animation execution on the compositor thread.
+The first frame of a new SVG otherwise varied even when its markup and sampled animation times matched.
+The existing picture loader converts SVG traffic into animations that the frame clock controls.
+The canonical replay owner compares every frame across one-page and two-page rendering.
+Legacy replay keeps the same owner and also passes its frame comparisons.

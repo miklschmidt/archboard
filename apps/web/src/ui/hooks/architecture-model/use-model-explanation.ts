@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo } from "react";
 import { DiagramGrammarSchema } from "@archboard/board/views";
 import { ModelExplanationContext } from "#ui/state/architecture-model/explanations.ts";
-import { NOTHING_READ } from "#ui/state/pane-session/pane-reading.ts";
+import { NOTHING_READ, type PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import type { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import type { Model } from "#ui/rules/architecture-model/projection.ts";
 import type { ExplanationInvocation } from "#ui/clients/architecture-model/explanations.ts";
@@ -14,6 +14,7 @@ type Action = ExplanationInvocation["request"]["action"];
  * @param model The coherent query result.
  * @param location The router-owned reading intent.
  * @param selected The temporary selected identities.
+ * @param reporting The optional presentation and picture readiness.
  * @returns One invocation callback and its availability.
  */
 function useModelExplanation(
@@ -32,6 +33,7 @@ function useModelExplanation(
 		| "against"
 	>,
 	selected: ReadonlySet<string>,
+	reporting?: Parameters<typeof useModelReadingReport>[1],
 ) {
 	const host = useContext(ModelExplanationContext);
 	const { scope, focus, filters, grammar, flow, subject, state, checkpoint, against } = location;
@@ -69,11 +71,7 @@ function useModelExplanation(
 			},
 		};
 	}, [vault, model, selected, scope, focus, filters, grammar, flow, referenceSubject, source]);
-	const report = host?.report;
-	useEffect(() => {
-		report?.(capture === null ? null : { ...NOTHING_READ, architecture: capture });
-		return () => report?.(null);
-	}, [report, capture]);
+	useModelReadingReport(capture, reporting);
 	const invoke = host?.invoke;
 	const act = useCallback(
 		(action: Action): void => {
@@ -102,6 +100,33 @@ function captureSource(model: Model, selection: NonNullable<ExplanationInvocatio
 		selection: playback.source ?? { ...selection, walkthrough: playback.walkthrough.id },
 		expectedSourceRevision: playback.sourceRevision.digest,
 	};
+}
+
+/**
+ * Publish a drawn reading through the existing pane owner or offline replay callback.
+ * @param capture The architecture and its source guards.
+ * @param reporting The picture readiness and presentation position.
+ * @param reporting.ready Whether the captured picture is drawn.
+ * @param reporting.presentation The current narrative position.
+ * @param reporting.onReading An optional offline report recipient.
+ */
+function useModelReadingReport(
+	capture: NonNullable<PaneReading["architecture"]> | null,
+	reporting?: {
+		ready: boolean;
+		presentation: PaneReading["presentation"];
+		onReading?: ((reading: PaneReading | null) => void) | undefined;
+	},
+): void {
+	const host = useContext(ModelExplanationContext);
+	const { ready = true, presentation = null, onReading } = reporting ?? {};
+	const report = onReading ?? host?.report;
+	useEffect(() => {
+		report?.(
+			capture !== null && ready ? { ...NOTHING_READ, architecture: capture, presentation } : null,
+		);
+		return () => report?.(null);
+	}, [report, capture, ready, presentation]);
 }
 
 export { useModelExplanation };

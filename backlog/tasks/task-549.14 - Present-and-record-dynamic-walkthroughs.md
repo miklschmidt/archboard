@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:25:00Z'
-updated_date: '2026-10-27T06:21:00Z'
+updated_date: '2026-10-27T07:35:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -100,4 +100,6 @@ Public capture evidence now covers a narrative whose exact target predates its d
 The signed integration merge f253e7aff composes lifecycle, correction and migration preview work with walkthroughs. Types pass after removal of one duplicate import. Six focused runtime owners pass21 tests with136 assertions. The next browser RED reaches the intended missing capture report: playback displays its diagram but the public pane report has no architecture context. Parent now connects playback to the existing explanation/report owner, preserving separate source and target revisions.
 
 Captured walkthroughs now publish the architecture that they show through the existing explanation/report owner. The report preserves the narrative source selector, source revision, target revision, and selected subjects while legacy board identity stays null. The browser RED/GREEN owner passes14 assertions. Types and lint pass after one shared capture-source helper and removal of a redundant await introduced by merge composition. Presentation arrival, recording payload consumption, replay and canonical voice remain unfinished.
+
+Canonical replay now uses the captured model through the existing walkthrough, picture loader, frame clock and encoder. The public replay owner deletes the source repository and compares all33 frames across one-page and two-page rendering. It passes twice with4 assertions each. Legacy replay passes3 cases with24 assertions. A first-frame SVG traffic mismatch was isolated to compositor-thread animation; the existing replay browser flags now keep animation on the main thread. All failed timing and animation experiments and temporary diagnostics are removed. Types, lint, formatting and diff checks pass. Manual walkthrough behavior passes14 assertions, and the existing picture traffic lifetime owner passes4 assertions. Parent inspected the final replay frame. Recording-page payload loading and the canonical voice bridge remain unfinished.
 <!-- SECTION:NOTES:END -->
