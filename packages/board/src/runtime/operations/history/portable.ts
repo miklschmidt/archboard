@@ -1,3 +1,4 @@
+import { subjectsOf } from "#runtime/operations/proposals/subjects.ts";
 import { isDeepStrictEqual } from "node:util";
 import type { z } from "zod";
 import {
@@ -142,6 +143,12 @@ async function importArchitectureModel(
 	const notification = { emit: true };
 	const result = await historyResult("MODEL_WRITE_FAILED", async () => {
 		const { inputs, model } = portableInputs(bundle);
+		const subjects = [
+			...new Set([
+				...subjectsOf(model).keys(),
+				...model.proposals.flatMap((proposal) => proposal.changes.map((change) => change.subject)),
+			]),
+		];
 		const request = {
 			...intent,
 			type: "import" as const,
@@ -194,7 +201,7 @@ async function importArchitectureModel(
 						dependencies: bundle.history.tips,
 					},
 					installation: request,
-					subjects: [],
+					subjects,
 					sources: [],
 				});
 				const retained = new Map([...inputs].map(([path, bytes]) => [`inputs/${path}`, bytes]));
@@ -222,7 +229,7 @@ async function importArchitectureModel(
 					schemaVersion: 1,
 					context: checkout,
 					request,
-					subjects: [],
+					subjects,
 					before: before.revision,
 					after: bundle.revision,
 					checkpoint,

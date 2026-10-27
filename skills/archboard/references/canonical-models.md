@@ -219,7 +219,7 @@ Archive order never selects the checkout's current state.
 `ARCHIVE_NOT_PORTABLE` refuses publication of retained machine-local source repository paths.
 Immutable checkpoint metadata cannot be redacted during publication.
 Keep such checkpoints local and use portable source repository identities for future archives.
-Portable export remains a separate delivery slice.
+Use [Export and restore a model](#export-and-restore-a-model) for a complete portable backup.
 
 The browser shows sharing status when the reader selects a retained checkpoint.
 The reader can set its destination, publish history, retry a failed exchange, or fetch missing history.

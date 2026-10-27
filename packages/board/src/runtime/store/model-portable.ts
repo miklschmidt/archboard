@@ -1,3 +1,4 @@
+import { errorMessage } from "@archboard/diagnostics/errno";
 import { requirePortableClosure } from "#runtime/store/portable-closure.ts";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
@@ -85,6 +86,35 @@ async function exportPortableHistory(context: ArchiveContext) {
 	}
 }
 /**
+ * Report damaged or incomplete bundle history before the destination receives any objects.
+ * @param context The disposable archive.
+ * @param bundle The portable envelope.
+ * @param model The coherent authored catalogue.
+ */
+async function inspectPortableArchive(
+	context: ArchiveContext,
+	bundle: Bundle,
+	model: ReturnType<typeof portableInputs>["model"],
+): Promise<void> {
+	try {
+		if ((bundle.history.bundle === null) !== (bundle.history.tips.length === 0))
+			throw new ArchiveError("CHECKPOINT_INVALID", "Portable history roots and bundle disagree.");
+		if (bundle.history.bundle !== null) {
+			const file = join(context.root, "history.bundle");
+			writeFileSync(file, Buffer.from(bundle.history.bundle, "base64"));
+			await git(context.root, ["bundle", "verify", file]);
+			await git(context.root, ["bundle", "unbundle", file]);
+		}
+		await requirePortableClosure(context, bundle.history.tips, model);
+	} catch (error) {
+		if (error instanceof ArchiveError) throw error;
+		throw new ArchiveError(
+			"CHECKPOINT_INVALID",
+			`The portable archive is incomplete or damaged. Restore a complete bundle before retrying. ${errorMessage(error)}`,
+		);
+	}
+}
+/**
  * Inspect untrusted history in disposable Git storage before exposing objects to a destination.
  * @param bundle The parsed portable envelope.
  * @param work The consumer of the complete inspected closure.
@@ -105,15 +135,7 @@ async function withPortableArchive<T>(
 			...(bundle.history.tips[0]?.length === 64 ? ["--object-format=sha256"] : []),
 		]);
 		const context = { root: directory, vault: ".archboard/vault", sourceRoot: undefined };
-		if ((bundle.history.bundle === null) !== (bundle.history.tips.length === 0))
-			throw new ArchiveError("CHECKPOINT_INVALID", "Portable history roots and bundle disagree.");
-		if (bundle.history.bundle !== null) {
-			const file = join(directory, "history.bundle");
-			writeFileSync(file, Buffer.from(bundle.history.bundle, "base64"));
-			await git(directory, ["bundle", "verify", file]);
-			await git(directory, ["bundle", "unbundle", file]);
-		}
-		await requirePortableClosure(context, bundle.history.tips, model);
+		await inspectPortableArchive(context, bundle, model);
 		return await work(context);
 	} finally {
 		rmSync(directory, { recursive: true, force: true });

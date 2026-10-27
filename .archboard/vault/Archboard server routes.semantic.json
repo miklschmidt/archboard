@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 191,
+	"version": 193,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-27T09:16:37.121Z",
+	"updatedAt": "2026-10-27T09:40:22.186Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -369,6 +369,22 @@
 					"QboPNrzG",
 					"YRHoGRbV",
 					"bB2IRV9I"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "4p5oMB2t",
+			"name": "Portable model",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"oy2Th2sT",
+					"nn1ec9Tw",
+					"bB2IRV9I",
+					"fs2ehN0i"
 				],
 				"edges": [],
 				"flows": []
@@ -220005,6 +220021,48 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/server/src/server/routes/architecture/explanation-routes.ts",
 							"symbol": "requireVault"
+						}
+					},
+					{
+						"id": "IqKTKYw0",
+						"order": 128000,
+						"from": "oy2Th2sT",
+						"to": "bB2IRV9I",
+						"kind": "call",
+						"label": "exportArchitectureModel",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/portable-routes.ts",
+							"symbol": "exportArchitectureModel"
+						}
+					},
+					{
+						"id": "CugxYaZL",
+						"order": 129000,
+						"from": "oy2Th2sT",
+						"to": "fs2ehN0i",
+						"kind": "call",
+						"label": "requireVault",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/portable-routes.ts",
+							"symbol": "requireVault"
+						}
+					},
+					{
+						"id": "7lIStdzH",
+						"order": 130000,
+						"from": "nn1ec9Tw",
+						"to": "oy2Th2sT",
+						"kind": "call",
+						"label": "mountArchitecturePortableRoutes",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/model-routes.ts",
+							"symbol": "mountArchitecturePortableRoutes"
 						}
 					}
 				],

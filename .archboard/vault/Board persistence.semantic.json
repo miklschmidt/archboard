@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 208,
+	"version": 211,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-27T09:14:28.282Z",
+	"updatedAt": "2026-10-27T09:49:22.647Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -443,6 +443,25 @@
 					"MI2LKBji",
 					"ov7pPg21",
 					"W6wFcSQz"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "GDBSwvcW",
+			"name": "Portable model",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"4P7YZdnj",
+					"2gFwMLTT",
+					"cNaEpWjJ",
+					"Bd4GPG6d",
+					"ZRq51Ecz",
+					"CLdaoYy3",
+					"YREYrbYW"
 				],
 				"edges": [],
 				"flows": []
@@ -255906,6 +255925,7 @@
 						"name": "Portable model operations",
 						"kind": "module",
 						"responsibility": "Export exact inputs and complete archive history. Install verified bundles through the existing journal.",
+						"parent": "1VHRyajb",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/history/portable.ts"
@@ -259252,6 +259272,90 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "packages/board/src/runtime/operations/history/portable.ts",
 							"symbol": "writeState"
+						}
+					},
+					{
+						"id": "W1fBWglm",
+						"order": 245000,
+						"from": "2gFwMLTT",
+						"to": "cNaEpWjJ",
+						"kind": "call",
+						"label": "readArchitectureModel",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/history/portable.ts",
+							"symbol": "readArchitectureModel"
+						}
+					},
+					{
+						"id": "IyzXWhR8",
+						"order": 246000,
+						"from": "2gFwMLTT",
+						"to": "Bd4GPG6d",
+						"kind": "call",
+						"label": "historyResult",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/history/portable.ts",
+							"symbol": "historyResult"
+						}
+					},
+					{
+						"id": "J7A3jU0T",
+						"order": 247000,
+						"from": "2gFwMLTT",
+						"to": "IyV7OF9L",
+						"kind": "call",
+						"label": "notifyArchitecture",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/history/portable.ts",
+							"symbol": "notifyArchitecture"
+						}
+					},
+					{
+						"id": "7r71xcNW",
+						"order": 248000,
+						"from": "2gFwMLTT",
+						"to": "nqi2h0Ku",
+						"kind": "call",
+						"label": "ArchiveError",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/history/portable.ts",
+							"symbol": "ArchiveError"
+						}
+					},
+					{
+						"id": "8KIXscUH",
+						"order": 249000,
+						"from": "2gFwMLTT",
+						"to": "KJy5yYuq",
+						"kind": "call",
+						"label": "subjectsOf",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "packages/board/src/runtime/operations/history/portable.ts",
+							"symbol": "subjectsOf"
+						}
+					},
+					{
+						"id": "NdGIaM6r",
+						"order": 250000,
+						"from": "4P7YZdnj",
+						"to": "2gFwMLTT",
+						"kind": "call",
+						"label": "exportArchitectureModel",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/server/src/server/routes/architecture/portable-routes.ts",
+							"symbol": "exportArchitectureModel"
 						}
 					}
 				],

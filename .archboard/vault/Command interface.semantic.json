@@ -4,9 +4,9 @@
 	"id": "XppR9owz",
 	"name": "Command interface",
 	"level": "service",
-	"version": 226,
+	"version": 229,
 	"createdAt": "2026-09-12T22:28:19.474Z",
-	"updatedAt": "2026-10-27T09:16:36.300Z",
+	"updatedAt": "2026-10-27T09:49:23.134Z",
 	"views": [
 		{
 			"id": "Po1YmalJ",
@@ -310,6 +310,22 @@
 					"4jS9CVi6",
 					"TsCise1I",
 					"yHgIapK7"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "6eeNoJCp",
+			"name": "Portable model",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"E9qFjmdt",
+					"TsCise1I",
+					"o5zkAtUT",
+					"bLpk2XKU"
 				],
 				"edges": [],
 				"flows": []
@@ -199557,6 +199573,7 @@
 						"name": "Portable model commands",
 						"kind": "module",
 						"responsibility": "Route portable export and import through the shared architecture runtime.",
+						"parent": "bLpk2XKU",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/operations/model/portable.ts"
@@ -201264,6 +201281,34 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "apps/cli/src/cli/operations/model/portable.ts",
 							"symbol": "exportArchitectureModelOnServer"
+						}
+					},
+					{
+						"id": "WYi9Yxym",
+						"order": 121000,
+						"from": "E9qFjmdt",
+						"to": "o5zkAtUT",
+						"kind": "call",
+						"label": "defineCommand",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/model/portable.ts",
+							"symbol": "defineCommand"
+						}
+					},
+					{
+						"id": "WscD5Cc5",
+						"order": 122000,
+						"from": "E9qFjmdt",
+						"to": "bLpk2XKU",
+						"kind": "call",
+						"label": "statedJson",
+						"emphasis": "normal",
+						"anchor": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "apps/cli/src/cli/operations/model/portable.ts",
+							"symbol": "statedJson"
 						}
 					}
 				],

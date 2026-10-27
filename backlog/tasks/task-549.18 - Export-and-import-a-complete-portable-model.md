@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T09:30:00Z'
+updated_date: '2026-10-27T09:51:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -73,4 +73,6 @@ TASK-549.08, TASK-549.14, TASK-549.17
 Published task-549.18-contract.md in the approved state directory. Draft proposals: Board persistence@TASK-549.18, Command interface@TASK-549.18, Archboard server routes@TASK-549.18. First public runtime round trip and incomplete narrative closure cases pass. Import extends the existing journal and signer. Planning-only import requires nullable checkpoint state metadata. The parent owns null-state labels in ModelReadingSelector.tsx and ModelComparisonSelector.tsx; no frontend files changed.
 
 Public portability evidence passes four cases across portable.test.ts and portable-history.test.ts. The immutable closure is checked once per retained input, with actual Git ancestry kept separate from proposal lineage. Full lint passes without rule changes. Type checking reports only the two parent-owned selector labels that require a null-state fallback. The remaining runtime work covers private restoration, signing and interruption.
+
+Backend evidence now covers nine portability runtime cases plus CLI/HTTP parity. The broad shared run passes 57/60 cases and reaches a five-second timeout in the original round-trip test and two unchanged reconciliation cases. Round-trip preparation now runs before its assertion window, which passes in 4.1 seconds without a deadline change. Both reconciliation cases pass separately on exact starting source 5d2f45465332b84c59d19c3a7c21ee2b8abd8aae and current source, with matching durations. Other passing shared evidence is reused. Consumer contracts pass 33 cases, package API contracts pass 66, full lint has zero warnings, and evaluation inputs validate 21 scenarios and fixtures. Package width remains the inherited TASK-549.24 issue: board now exports 250 names against 188, from the inherited 245. No ceiling changed. Final proposals have zero affected code warnings and semantics have zero diagnostics. The same eight unrelated Archboard warnings remain. Prior architecture variants, views and lifecycle records remain exact. The task and proposals remain open for parent acceptance.
 <!-- SECTION:NOTES:END -->
