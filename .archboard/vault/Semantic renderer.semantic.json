@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 148,
+	"version": 150,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-27T00:16:45.102Z",
+	"updatedAt": "2026-10-27T01:21:58.348Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -66642,12 +66642,12 @@
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"commit": "2cc0ae9f02c10a76ee3d29ca0ce1f38ac3485e6b",
+					"commit": "66dcc7dd4e956c04bedaefb6bbd78e079cacfe07",
 					"path": "docs/adr/0061-group-regions-are-packed-before-solving.md"
 				},
 				{
 					"repo": "github.com/miklschmidt/archboard",
-					"commit": "2cc0ae9f02c10a76ee3d29ca0ce1f38ac3485e6b",
+					"commit": "66dcc7dd4e956c04bedaefb6bbd78e079cacfe07",
 					"path": "backlog/tasks/task-548.08 - Deterministic-layout-replaces-the-speculative-solves-of-a-first-render.md"
 				}
 			],

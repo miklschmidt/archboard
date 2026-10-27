@@ -1,13 +1,10 @@
-//! The track router (TASK-349): every relationship drawn on tracks it owns.
+//! The Track router assigns each relationship its own tracks (TASK-349).
 //!
-//! A block's placement put cards, label boxes and frame title rows on ranks,
-//! and said where each relationship passes the ranks between its ends. Here
-//! the ranks become bands and the space between two bands a channel. A
-//! relationship is a chain of stations (`chains.rs`); between two stations it
-//! leaves the upper one straight down, runs across on a track of the channel,
-//! and enters the lower one straight down (`channels.rs`). Each channel is
-//! made as tall as its tracks need, so lanes keep one spacing and never
-//! squeeze, and every label sits on its own line by construction.
+//! Placement groups cards, labels, and frame titles into ranked bands.
+//! A channel is the space between two bands. Relationships have stations on
+//! those bands (`chains.rs`). Each route drops from a station, crosses its
+//! channel on a track, then enters the next station (`channels.rs`).
+//! Channels grow to fit their tracks, with fixed spacing and labels on routes.
 
 use std::rc::Rc;
 
@@ -51,9 +48,7 @@ struct Routed {
     upward: bool,
 }
 
-/// The kind two lines must share to share a trunk, read off a relationship:
-/// its kind, its comparison standing, its emphasis and whether it carries
-/// traffic.
+/// The relationship kind, standing, emphasis, and traffic required to share a trunk.
 pub(crate) fn trunk_kind(edge: &crate::graph::Edge) -> String {
     [
         edge.option("archboard.relationship.kind").unwrap_or(""),
