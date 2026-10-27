@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T16:37:00Z'
+updated_date: '2026-10-27T16:45:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -90,4 +90,6 @@ Backend contract checkpoint: external task-549.24-contract.md. Signed source 949
 Merged signed backend contract checkpoint949d23ecf through merger4d340e40, without treating it as backend acceptance. Parent deleted the duplicated frontend projection and imports shared modelContent/projectModel/projectFlow from @archboard/board/content. The pane socket validates ArchitecturePaneReadingSchema and routes addressed pane_model arrivals through the existing router. Explicit model arrivals start the requested captured walkthrough only after navigation; ordinary presentation steps keep the existing capture. Agent navigation does not activate the shown conversation. The new browser owner proves pane B scope navigation, reload, requested walkthrough beat, unchanged neighbor, and user departure. Walkthrough and narration regressions pass. Frontend types, focused source lint, and focused browser test lint pass. No lint/type rule or deadline changed. README visual recipe transition and generic voice/shell/rendering fixture ports remain parent-owned.
 
 Parent ports the generic voice-box and text-workbench fixtures to real canonical files read through the public model interface. The sign-in, held-message, and approval workflow passes. Ordinary canonical readings now mount the existing voice overlay. The voice-box owner exposed a remaining startup flight failure; its assertions remain intact, and diagnosis is recorded externally. This signed checkpoint permits integration of the next backend voice-context checkpoint and does not claim browser acceptance.
+
+Merged backend checkpoint56447f6f through signed mergee351f4e7. The canonical voice-box owner still catches startup flight, while the same owner passes against signed .23. Parent moved the ordinary overlay into the canvas area; diagnosis remains open. README evidence fixtures now use canonical initialization, claims, edits, adoption, and two independent proposals over their own real source repository. The first CLI smoke exposed model init rejecting its documented --doing option. Backend delegate supplied a focused RED/GREEN fix at e52aa826; the parent will integrate it before continuing the real consumer smoke. No final acceptance is claimed.
 <!-- SECTION:NOTES:END -->

@@ -18,7 +18,7 @@ import { holding } from "./holding.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { inRepository } from "./producer.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
-import { startServer, type TakeServer, type TrackedVault } from "./server.ts";
+import { startServer, type TakeServer, type TakeSource } from "./server.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { ROOT, inOrder, scratch } from "./tools.ts";
 
@@ -46,7 +46,7 @@ interface Moment {
  */
 async function withTake(
 	name: string,
-	vault: TrackedVault,
+	vault: TakeSource,
 	codex: boolean,
 	scene: (server: TakeServer, browser: Browser) => Promise<void>,
 ): Promise<void> {
