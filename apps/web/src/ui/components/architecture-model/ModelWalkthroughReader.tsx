@@ -69,6 +69,7 @@ function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
 				</div>
 			)}
 			<Activity mode={request === null ? "visible" : "hidden"}>{props.children}</Activity>
+			{request === null && props.overlay}
 			{request !== null && (
 				<CapturedWalkthrough
 					key={request.id}

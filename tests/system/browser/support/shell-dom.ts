@@ -48,6 +48,8 @@ const navigatorRow = (key: string): string =>
 
 /** The board name the header of the pane with focus shows. */
 const BOARD_NAME_EXPRESSION = `document.querySelector('${BOARD_BREADCRUMB} [data-slot="pane-board-name"]')?.textContent?.trim() ?? null`;
+/** The authored model name in the active pane. */
+const MODEL_NAME_EXPRESSION = `document.querySelector('section[aria-current="true"] [data-slot="pane-header"] h2')?.textContent?.trim() ?? null`;
 
 /** The theme the root element carries. */
 const THEME_EXPRESSION = "document.documentElement.getAttribute('data-theme') ?? ''";
@@ -184,6 +186,7 @@ export {
 	AGENT_PANEL,
 	BOARD_BREADCRUMB,
 	BOARD_NAME_EXPRESSION,
+	MODEL_NAME_EXPRESSION,
 	BRAND_BAR,
 	COMPOSER,
 	NAVIGATOR,
