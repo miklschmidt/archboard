@@ -111,3 +111,53 @@ test("portable history shares large exact inputs without changing source HEAD or
 	expect(first.success && first.revision).toEqual(largeCurrent.revision);
 	expect(last.success && last.revision).toEqual(largeCurrent.revision);
 });
+
+test("portable imports retain synchronized histories as readable exact checkpoints", async () => {
+	const source = fixture();
+	const current = readArchitectureModel(source.vault);
+	if (!current.success) throw new Error(JSON.stringify(current));
+	const request = {
+		target: "current" as const,
+		expectedRevision: current.revision.digest,
+		operationId: "original-history",
+		writer: "agent",
+		doing: "retaining original architecture",
+		dependencies: [],
+	};
+	const original = await retainArchitectureCheckpoint(source.vault, request);
+	if (!original.success) throw new Error(JSON.stringify(original));
+	git(source.root, "update-ref", "-d", "refs/heads/archboard-history");
+	const file = join(source.vault, "gateway.module.json");
+	const gateway = JSON.parse(readFileSync(file, "utf8"));
+	writeFileSync(file, JSON.stringify({ ...gateway, description: "Independent architecture." }));
+	const changed = readArchitectureModel(source.vault);
+	if (!changed.success) throw new Error(JSON.stringify(changed));
+	const independent = await retainArchitectureCheckpoint(source.vault, {
+		...request,
+		operationId: "independent-history",
+		expectedRevision: changed.revision.digest,
+	});
+	if (!independent.success) throw new Error(JSON.stringify(independent));
+	expect(await retainArchitectureCheckpoint(source.vault, request)).toEqual(original);
+	const exported = await exportArchitectureModel(source.vault);
+	if (!exported.success) throw new Error(JSON.stringify(exported));
+	const target = destination();
+	const installed = await importArchitectureModel(target.vault, {
+		bundle: exported.bundle,
+		expectedRevision: empty,
+		operationId: "synchronized-import",
+		writer: "agent",
+		doing: "restoring synchronized history",
+	});
+	if (!installed.success) throw new Error(JSON.stringify(installed));
+	expect(await readArchitectureCheckpoint(target.vault, installed.checkpoint.id)).toMatchObject({
+		success: true,
+		revision: changed.revision,
+	});
+	for (const checkpoint of [original.checkpoint, independent.checkpoint])
+		expect(await readArchitectureCheckpoint(target.vault, checkpoint.id)).toMatchObject({
+			success: true,
+			revision: checkpoint.revision,
+		});
+	expect(await exportArchitectureModel(target.vault)).toMatchObject({ success: true });
+});

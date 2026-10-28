@@ -29,6 +29,7 @@ import {
 import {
 	checkpointPublication,
 	retainedPublicationTips,
+	requireCompleteArchive,
 } from "#runtime/store/model-publication.ts";
 import { resolveModelReferences } from "#runtime/operations/read/model-references.ts";
 
@@ -50,15 +51,40 @@ async function checkpointRecord(context: ArchiveContext, checkpoint: string) {
 }
 
 /**
+ * Accept a synchronization dependency only as an imported archive root.
+ * @param context The addressed archive.
+ * @param dependency The retained parent identity.
+ * @param archiveRoot Whether the parent retains imported history.
+ * @returns The supported record for this vault.
+ */
+async function dependencyRecord(context: ArchiveContext, dependency: string, archiveRoot: boolean) {
+	if (!archiveRoot) return checkpointRecord(context, dependency);
+	const record = await readRecord(context, dependency);
+	if (record.kind === "checkpoint" && record.vault !== context.vault)
+		throw new ArchiveError(
+			"CHECKPOINT_INVALID",
+			"A required checkpoint belongs to another vault.",
+			dependency,
+		);
+	return record;
+}
+
+/**
  * Resolve and prove one required retained parent.
  * @param context The caller's checkout.
  * @param dependency The required immutable checkpoint.
  * @param checkpoint The child that must retain it.
+ * @param archiveRoot Whether an import can depend on a synchronization root.
  * @returns The retained dependency record.
  */
-async function retainedDependency(context: ArchiveContext, dependency: string, checkpoint: string) {
+async function retainedDependency(
+	context: ArchiveContext,
+	dependency: string,
+	checkpoint: string,
+	archiveRoot: boolean,
+) {
 	try {
-		const required = await checkpointRecord(context, dependency);
+		const required = await dependencyRecord(context, dependency, archiveRoot);
 		if (!(await isArchiveAncestor(context, dependency, checkpoint)))
 			throw new ArchiveError(
 				"CHECKPOINT_INVALID",
@@ -77,6 +103,44 @@ async function retainedDependency(context: ArchiveContext, dependency: string, c
 }
 
 /**
+ * Collect explicit checkpoint dependencies without treating archive order as state ancestry.
+ * @param record The immutable checkpoint metadata.
+ * @returns Every declared dependency.
+ */
+function checkpointDependencies(record: ReturnType<typeof CheckpointRecordSchema.parse>) {
+	return [
+		...record.request.dependencies,
+		...(record.narrativeDependencies ?? []),
+		...(record.referenceDependencies ?? []),
+	];
+}
+
+/**
+ * Inspect complete synchronized import history without exposing a synchronization as architecture.
+ * @param context The addressed archive.
+ * @param root The imported synchronization root.
+ * @param visited The shared dependency traversal.
+ */
+async function requireImportedDependencies(
+	context: ArchiveContext,
+	root: string,
+	visited: Set<string>,
+) {
+	const records = await requireCompleteArchive(context, root);
+	for (const { id, record } of records) {
+		if (record.kind !== "checkpoint" || visited.has(id)) continue;
+		if (record.vault !== context.vault)
+			throw new ArchiveError(
+				"CHECKPOINT_INVALID",
+				"Imported history contains a checkpoint for another vault.",
+				id,
+			);
+		// oxlint-disable-next-line no-await-in-loop -- share the same visited dependency closure
+		await requireDependencies(context, id, record, visited);
+	}
+}
+
+/**
  * Require every dependency to remain available through actual Git ancestry.
  * @param context The caller's checkout.
  * @param checkpoint The retained child checkpoint.
@@ -90,14 +154,20 @@ async function requireDependencies(
 	visited: Set<string>,
 ): Promise<void> {
 	visited.add(checkpoint);
-	for (const dependency of [
-		...record.request.dependencies,
-		...(record.narrativeDependencies ?? []),
-		...(record.referenceDependencies ?? []),
-	]) {
+	for (const dependency of checkpointDependencies(record)) {
 		if (visited.has(dependency)) continue;
 		// oxlint-disable-next-line no-await-in-loop -- dependency traversal shares one visited closure
-		const required = await retainedDependency(context, dependency, checkpoint);
+		const required = await retainedDependency(
+			context,
+			dependency,
+			checkpoint,
+			record.installation?.type === "import" && record.request.dependencies.includes(dependency),
+		);
+		if (required.kind === "synchronization") {
+			// oxlint-disable-next-line no-await-in-loop -- inspect the imported root before traversing its checkpoints
+			await requireImportedDependencies(context, dependency, visited);
+			continue;
+		}
 		// oxlint-disable-next-line no-await-in-loop -- shared ancestors must finish before the next dependency
 		await requireDependencies(context, dependency, required, visited);
 	}
