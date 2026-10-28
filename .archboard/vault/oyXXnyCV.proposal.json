@@ -196,6 +196,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/qKGcB6vZ#0eYa0szs"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/yejBBUFY#VbLQ6rfX"
     },
     {
@@ -556,6 +560,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/IbGtfJE2#uT0ylhOM"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/SJ2JMVyz#p05yEm5U"
     },
     {
@@ -585,6 +593,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/yejBBUFY#G4NHQC25"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/9ncuT5DP#giL6EI28"
     },
     {
       "type": "remove",
@@ -860,6 +872,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/vKEsyHFk#19855Ply"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#wBw5FntC"
     },
     {
@@ -960,6 +976,18 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/9ncuT5DP#DNQTPTxE"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/qKGcB6vZ#AahDTiw9"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/nAmiQ3Vc#TuLpnBlQ"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#GWg2Fads"
     },
     {
@@ -977,6 +1005,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#gZweHb5q"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn"
     },
     {
       "type": "remove",
@@ -1156,6 +1188,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/HBlhIeSD#fs2ehN0i"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/Oi6SBIAM#7wxK5YUi"
     },
     {
@@ -1177,6 +1213,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#a6FGj58i"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#4smEPsmF"
     },
     {
       "type": "remove",
@@ -1412,6 +1452,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/qKGcB6vZ#ccaUoxFa"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/yejBBUFY#TY7m2mtd"
     },
     {
@@ -1433,6 +1477,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/HBlhIeSD#ujYiodpp"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#Bfh2rRfX"
     },
     {
       "type": "remove",
@@ -5402,26 +5450,8 @@
       "type": "place",
       "subject": "vKEsyHFk/IbGtfJE2#JaLEafPa",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#LDqRcaY1"
+        "holder": "vKEsyHFk/vKEsyHFk#PxnjFfV3"
       }
-    },
-    {
-      "type": "clear",
-      "subject": "vKEsyHFk/qKGcB6vZ#0eYa0szs",
-      "field": "references"
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/qKGcB6vZ#0eYa0szs",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
-      }
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/qKGcB6vZ#ntLLD7Df",
-      "field": "to",
-      "value": "vKEsyHFk/9ncuT5DP#ZQxB1ZaK"
     },
     {
       "type": "assign",
@@ -5639,6 +5669,12 @@
       "field": "references"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+      "field": "description",
+      "value": "Each pane owns its admitted vault, socket, registration, and reading publisher. A vault change clears the prior reading cache, including canonical arrivals without a legacy board key. Returning to an unchanged visible picture still republishes the capture that the server discarded."
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/Oi6SBIAM#wH0rE1x7",
       "placement": {
@@ -5694,6 +5730,12 @@
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#9GaG5ItC",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
     },
     {
       "type": "place",
@@ -5812,6 +5854,31 @@
       "subject": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
       "placement": {
         "holder": "vKEsyHFk/yejBBUFY#POloYnX3"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#MtvcBtx6",
+      "kind": "relationship",
+      "value": {
+        "order": 70022,
+        "kind": "call",
+        "label": "apply picture and camera interaction",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+          "symbol": "moveCameraByKey"
+        },
+        "id": "vKEsyHFk#MtvcBtx6",
+        "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#MtvcBtx6",
+      "placement": {
+        "holder": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
       }
     },
     {
@@ -6087,7 +6154,7 @@
       "type": "place",
       "subject": "vKEsyHFk/yejBBUFY#0x47EMoO",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+        "holder": "vKEsyHFk/9ncuT5DP#tzyaOHwF"
       }
     },
     {
@@ -6173,7 +6240,20 @@
       "type": "place",
       "subject": "vKEsyHFk/yejBBUFY#0SRnYXnC",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+        "holder": "vKEsyHFk/9ncuT5DP#tzyaOHwF"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#ntLLD7Df",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#ZQxB1ZaK"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#ntLLD7Df",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#0SRnYXnC"
       }
     },
     {
@@ -6181,6 +6261,12 @@
       "subject": "vKEsyHFk/SJ2JMVyz#zgS5gisx",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#hYCgIdBo",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
     },
     {
       "type": "place",
@@ -6255,6 +6341,31 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/code-opener/src/server/projections/model-target.ts",
         "symbol": "readArchitectureModel"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#6MddSKIu",
+      "kind": "relationship",
+      "value": {
+        "order": 70019,
+        "kind": "call",
+        "label": "enforce the local browser origin",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-opener/src/server/routes/code-opener.ts",
+          "symbol": "createBrowserOriginGuard"
+        },
+        "id": "vKEsyHFk#6MddSKIu",
+        "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#6MddSKIu",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#6a2R1ddu"
       }
     },
     {
@@ -6373,11 +6484,23 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#3vlSu8a3",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/9ncuT5DP#3vlSu8a3",
       "placement": {
         "holder": "vKEsyHFk/wAHh0HTa#ql0DevMk"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#aoHKAkWD",
+      "field": "to",
+      "value": "vKEsyHFk/SJ2JMVyz#ZGoXFusm"
     },
     {
       "type": "place",
@@ -6453,6 +6576,112 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#RZlJRIaF",
+      "kind": "relationship",
+      "value": {
+        "order": 70001,
+        "kind": "call",
+        "label": "publish host changes",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/services/owner/wiring.ts",
+          "symbol": "createArchboardAnnouncements"
+        },
+        "id": "vKEsyHFk#RZlJRIaF",
+        "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#RZlJRIaF",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#jKN6JFi4",
+      "kind": "relationship",
+      "value": {
+        "order": 70002,
+        "kind": "call",
+        "label": "supply the model catalogue",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/services/owner/wiring.ts",
+          "symbol": "createArchboardCoordinatorContextSource"
+        },
+        "id": "vKEsyHFk#jKN6JFi4",
+        "to": "vKEsyHFk/qKGcB6vZ#ZilfteOF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#jKN6JFi4",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#pTZh5zI9",
+      "kind": "relationship",
+      "value": {
+        "order": 70003,
+        "kind": "call",
+        "label": "run captured explanation actions",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/services/owner/wiring.ts",
+          "symbol": "createExplanationActions"
+        },
+        "id": "vKEsyHFk#pTZh5zI9",
+        "to": "vKEsyHFk/SJ2JMVyz#bxWDGUJk"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#pTZh5zI9",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#ItrMo4q3",
+      "kind": "relationship",
+      "value": {
+        "order": 70004,
+        "kind": "call",
+        "label": "read narrated presentation position",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
+          "symbol": "panePresentations"
+        },
+        "id": "vKEsyHFk#ItrMo4q3",
+        "to": "vKEsyHFk/Oi6SBIAM#74SVrhRe"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ItrMo4q3",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#ouRI3SQQ",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/Oi6SBIAM#ouRI3SQQ",
       "placement": {
@@ -6492,6 +6721,29 @@
       "value": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#FrlPt4zQ",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
+      "field": "responsibility",
+      "value": "Answers the shared thread tools through one generation-owned dispatcher"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
+      "field": "description",
+      "value": "The dispatcher runs reads, writes, and waits through the same request cache and quarantine boundary. Its private services retain mutation settlements and waiting state. One generation owns its lifetime."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
+      "field": "binding"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
       "placement": {
@@ -6505,10 +6757,31 @@
       "value": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#mxl6bmYW",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#ZGoXFusm"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/SJ2JMVyz#r1jVxlwm",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#IxtTYfQ6",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#ZGoXFusm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#zOHsZyzc",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#ZGoXFusm"
+      }
     },
     {
       "type": "assign",
@@ -6573,9 +6846,36 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+      "field": "name",
+      "value": "Workbench browser"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+      "field": "responsibility",
+      "value": "Presents the agent, conversation, and voice controls over the browser transport"
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
       "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+      "field": "formerNames",
+      "value": [
+        "Browser pane"
+      ]
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
     },
     {
       "type": "assign",
@@ -6692,6 +6992,31 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#6XCZNyGh",
+      "kind": "relationship",
+      "value": {
+        "order": 70010,
+        "kind": "call",
+        "label": "measure interface facts",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+          "symbol": "entryPointsOf"
+        },
+        "id": "vKEsyHFk#6XCZNyGh",
+        "to": "vKEsyHFk/gbyqW4H3#ld6jjHND"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#6XCZNyGh",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#hDWpDois"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/gbyqW4H3#3EvpTPuC",
       "placement": {
@@ -6702,7 +7027,7 @@
       "type": "place",
       "subject": "vKEsyHFk/wAHh0HTa#xtHoCCnF",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+        "holder": "vKEsyHFk/9ncuT5DP#wkvnbMs8"
       }
     },
     {
@@ -6715,6 +7040,12 @@
       "type": "clear",
       "subject": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
       "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#J5WjwmUn",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     },
     {
       "type": "assign",
@@ -6732,6 +7063,12 @@
       "type": "clear",
       "subject": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
       "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#oK9fPKdv",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     },
     {
       "type": "place",
@@ -6847,6 +7184,31 @@
       ]
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#7IJFtNQk",
+      "kind": "relationship",
+      "value": {
+        "order": 70026,
+        "kind": "call",
+        "label": "deliver captured grading images",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+          "symbol": "imagesForRun"
+        },
+        "id": "vKEsyHFk#7IJFtNQk",
+        "to": "vKEsyHFk/SMjRfwN3#5ut3UjV6"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#7IJFtNQk",
+      "placement": {
+        "holder": "vKEsyHFk/IbGtfJE2#PwYiE0Hr"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
       "field": "responsibility",
@@ -6917,6 +7279,24 @@
       "value": "In a Git checkout with no vault, check, check all and check embeds run embeds alone and report why semantics/code were skipped. With a vault, check semantics reads canonical model diagnostics and authored policy; legacy authority returns migration guidance without changing source. Code and embed checks keep their existing owners."
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/nAmiQ3Vc#y6ueYYtZ",
+      "field": "to",
+      "value": "vKEsyHFk/0T9enjhi#mYtOhgML"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#xr1MHYE7",
+      "field": "description",
+      "value": "Each host owns one private Codex child over stdio. Its threads use the local CLI and the server URL supplied by that host. Every architecture command names its vault through checkout discovery. The host owns authentication, conversation lifetime, and process cleanup."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#DcdR8rPv",
+      "field": "label",
+      "value": "run local architecture commands"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/yejBBUFY#6uWT4mUj",
       "placement": {
@@ -6928,13 +7308,6 @@
       "subject": "vKEsyHFk/yejBBUFY#chjmKQLj",
       "field": "to",
       "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/vKEsyHFk#19855Ply",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
-      }
     },
     {
       "type": "clear",
@@ -6953,6 +7326,31 @@
       "subject": "vKEsyHFk/vKEsyHFk#zs8yTQLI",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#OFpAXpvp",
+      "kind": "relationship",
+      "value": {
+        "order": 70024,
+        "kind": "call",
+        "label": "reuse delivered image evidence",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/skills/src/runtime/operations/grading/grading-retry.ts",
+          "symbol": "combinedDelivery"
+        },
+        "id": "vKEsyHFk#OFpAXpvp",
+        "to": "vKEsyHFk/SMjRfwN3#5ut3UjV6"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#OFpAXpvp",
+      "placement": {
+        "holder": "vKEsyHFk/IbGtfJE2#m7s6sgLI"
       }
     },
     {
@@ -7007,9 +7405,30 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
+      "field": "responsibility",
+      "value": "Defines and answers the workhorse tool that sends news to the coordinator"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
+      "field": "description",
+      "value": "One tool owner publishes its reviewed manifest and answers the corresponding requests. It validates the message, reports unavailable listeners, and queues news for the live coordinator."
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
       "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
+      "field": "formerNames",
+      "value": [
+        "Tell coordinator",
+        "Coordinator callback manifest"
+      ]
     },
     {
       "type": "place",
@@ -7020,9 +7439,30 @@
     },
     {
       "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#kK1YexMf",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#35DJDouE",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#5EeoHuyh",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+      }
+    },
+    {
+      "type": "place",
       "subject": "vKEsyHFk/yejBBUFY#zs2QxCu7",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+        "holder": "vKEsyHFk/9ncuT5DP#tzyaOHwF"
       }
     },
     {
@@ -7102,6 +7542,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#oyurpL2B",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#0SRnYXnC"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/qKGcB6vZ#oyurpL2B",
       "placement": {
@@ -7133,6 +7579,12 @@
       "placement": {
         "holder": "vKEsyHFk/9ncuT5DP#08zJvPJq"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#z89BWp39",
+      "field": "to",
+      "value": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
     },
     {
       "type": "place",
@@ -7168,6 +7620,31 @@
       "value": "vKEsyHFk/wAHh0HTa#ql0DevMk"
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#f43RMTLN",
+      "kind": "relationship",
+      "value": {
+        "order": 70044,
+        "kind": "call",
+        "label": "share captured read queries",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
+          "symbol": "boardReads"
+        },
+        "id": "vKEsyHFk#f43RMTLN",
+        "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#f43RMTLN",
+      "placement": {
+        "holder": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/XppR9owz#I6RAbOlG",
       "field": "references"
@@ -7190,14 +7667,7 @@
       "type": "place",
       "subject": "vKEsyHFk/yejBBUFY#0yb2VbKc",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
-      }
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/9ncuT5DP#DNQTPTxE",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+        "holder": "vKEsyHFk/yejBBUFY#0x47EMoO"
       }
     },
     {
@@ -7205,13 +7675,6 @@
       "subject": "vKEsyHFk/SMjRfwN3#IOU51tal",
       "field": "to",
       "value": "vKEsyHFk/yejBBUFY#fscW90Xt"
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/qKGcB6vZ#AahDTiw9",
-      "placement": {
-        "holder": "vKEsyHFk/9ncuT5DP#08zJvPJq"
-      }
     },
     {
       "type": "assign",
@@ -7238,19 +7701,6 @@
       "placement": {
         "holder": "vKEsyHFk/yejBBUFY#fscW90Xt"
       }
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/nAmiQ3Vc#TuLpnBlQ",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
-      }
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
-      "field": "to",
-      "value": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     },
     {
       "type": "clear",
@@ -7303,6 +7753,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#Tt8yC8yW",
+      "field": "to",
+      "value": "vKEsyHFk/IbGtfJE2#PEfE7dCL"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/XppR9owz#iIJ5MRhi",
       "placement": {
@@ -7330,58 +7786,55 @@
       }
     },
     {
-      "type": "place",
+      "type": "assign",
       "subject": "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
-      }
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
       "field": "name",
-      "value": "Evaluation server instance"
+      "value": "Architecture refusal formatter"
     },
     {
       "type": "assign",
-      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+      "subject": "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",
       "field": "responsibility",
-      "value": "Starts and owns an isolated local server for one evaluation run"
+      "value": "Formats an architecture refusal for the CLI reader"
     },
     {
       "type": "assign",
-      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
-      "field": "binding",
-      "value": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/processes/server.ts",
-        "symbol": "startServer"
-      }
-    },
-    {
-      "type": "clear",
-      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
-      "field": "references"
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
-      "field": "description",
-      "value": "The evaluation launcher chooses a free port, proves the server identity through health, and stops its owned process when the run ends. This instance is separate from the ordinary interactive server."
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+      "subject": "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",
       "field": "formerNames",
       "value": [
-        "Archboard server"
+        "Board refusal formatter"
       ]
     },
     {
       "type": "place",
-      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+      "subject": "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",
       "placement": {
-        "holder": "vKEsyHFk/IbGtfJE2#8O4XNZOZ"
+        "holder": "vKEsyHFk/XppR9owz#iIJ5MRhi"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#lBMb2LoN",
+      "kind": "relationship",
+      "value": {
+        "order": 70021,
+        "kind": "call",
+        "label": "share thread context policy",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/refusal-reasons.ts",
+          "symbol": "ADDITIONAL_CONTEXT_POLICY"
+        },
+        "id": "vKEsyHFk#lBMb2LoN",
+        "to": "vKEsyHFk/SJ2JMVyz#5Pg20iSq"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#lBMb2LoN",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#RkhHgrhb"
       }
     },
     {
@@ -7534,6 +7987,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#pXUOBmiu",
+      "field": "to",
+      "value": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/qKGcB6vZ#pXUOBmiu",
       "placement": {
@@ -7591,7 +8050,7 @@
       "type": "place",
       "subject": "vKEsyHFk/yejBBUFY#t5Wy06ua",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+        "holder": "vKEsyHFk/yejBBUFY#0x47EMoO"
       }
     },
     {
@@ -7674,6 +8133,31 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#inAwwoLx",
+      "kind": "relationship",
+      "value": {
+        "order": 70018,
+        "kind": "call",
+        "label": "apply source-reading policy",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-intel/src/runtime/operations/code-check/checkouts.ts",
+          "symbol": "neverRead"
+        },
+        "id": "vKEsyHFk#inAwwoLx",
+        "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#inAwwoLx",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/6E6hL0Zk#uZdil5lI",
       "placement": {
@@ -7708,13 +8192,6 @@
       }
     },
     {
-      "type": "place",
-      "subject": "vKEsyHFk/HBlhIeSD#fs2ehN0i",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
-      }
-    },
-    {
       "type": "assign",
       "subject": "vKEsyHFk/Oi6SBIAM#HZkTRFtf",
       "field": "to",
@@ -7725,6 +8202,56 @@
       "subject": "vKEsyHFk/OjRLKb74#tppVDaSZ",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#7VR3bTTE",
+      "kind": "relationship",
+      "value": {
+        "order": 70006,
+        "kind": "call",
+        "label": "measure internal routes",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
+          "symbol": "selfLoop"
+        },
+        "id": "vKEsyHFk#7VR3bTTE",
+        "to": "vKEsyHFk/gbyqW4H3#ld6jjHND"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#7VR3bTTE",
+      "placement": {
+        "holder": "vKEsyHFk/OjRLKb74#tppVDaSZ"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#tSupPsEh",
+      "kind": "relationship",
+      "value": {
+        "order": 70007,
+        "kind": "call",
+        "label": "use the installed drawing host",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/renderer/src/shared/rules/blocks/tree/solves.ts",
+          "symbol": "rendererHost"
+        },
+        "id": "vKEsyHFk#tSupPsEh",
+        "to": "vKEsyHFk/gbyqW4H3#JK2EHDyY"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#tSupPsEh",
+      "placement": {
+        "holder": "vKEsyHFk/OjRLKb74#tppVDaSZ"
       }
     },
     {
@@ -7785,10 +8312,28 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#vOEGQ4ga",
+      "kind": "relationship",
+      "value": {
+        "order": 70009,
+        "kind": "call",
+        "label": "read retained content and refusals",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-reads.ts",
+          "symbol": "SemanticBoardError"
+        },
+        "id": "vKEsyHFk#vOEGQ4ga",
+        "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
+      }
+    },
+    {
       "type": "place",
-      "subject": "vKEsyHFk/Oi6SBIAM#4smEPsmF",
+      "subject": "vKEsyHFk#vOEGQ4ga",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
+        "holder": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
       }
     },
     {
@@ -7803,6 +8348,12 @@
       "placement": {
         "holder": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#aXFI100m",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#KLt72lWa"
     },
     {
       "type": "place",
@@ -7841,6 +8392,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#8IdEaZWJ",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/Oi6SBIAM#qHLocIlw",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
@@ -7867,10 +8424,30 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#CkB9Bygm",
+      "field": "name",
+      "value": "Shared thread policy"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#CkB9Bygm",
+      "field": "responsibility",
+      "value": "Defines the role profiles and instruction policy that thread and voice owners share"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#CkB9Bygm",
+      "field": "formerNames",
+      "value": [
+        "Thread and voice"
+      ]
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/qKGcB6vZ#CkB9Bygm",
       "placement": {
-        "holder": "vKEsyHFk/9ncuT5DP#Fg9dkGj3"
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
       }
     },
     {
@@ -7960,6 +8537,31 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#SyLH2N4H",
+      "kind": "relationship",
+      "value": {
+        "order": 70041,
+        "kind": "call",
+        "label": "recognize the canonical vault layout",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workspace/src/server/projections/repository-listing.ts",
+          "symbol": "isVaultLayout"
+        },
+        "id": "vKEsyHFk#SyLH2N4H",
+        "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#SyLH2N4H",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/IbGtfJE2#hu0RfGwG",
       "placement": {
@@ -8009,6 +8611,31 @@
       "subject": "vKEsyHFk/yejBBUFY#wlbLOPSH",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#YZOiFcZt",
+      "kind": "relationship",
+      "value": {
+        "order": 70030,
+        "kind": "call",
+        "label": "address the selected reading",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/rules/board-catalog/listing.ts",
+          "symbol": "boardKeyFor"
+        },
+        "id": "vKEsyHFk#YZOiFcZt",
+        "to": "vKEsyHFk/yejBBUFY#POloYnX3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#YZOiFcZt",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#wlbLOPSH"
       }
     },
     {
@@ -8075,6 +8702,31 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#0teCdOOO",
+      "kind": "relationship",
+      "value": {
+        "order": 70025,
+        "kind": "call",
+        "label": "inspect captured image regions",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/skills/src/runtime/store/grading-images.ts",
+          "symbol": "tileRegions"
+        },
+        "id": "vKEsyHFk#0teCdOOO",
+        "to": "vKEsyHFk/IbGtfJE2#hu0RfGwG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#0teCdOOO",
+      "placement": {
+        "holder": "vKEsyHFk/IbGtfJE2#RrIatpuG"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
       "placement": {
@@ -8100,6 +8752,62 @@
       "subject": "vKEsyHFk/IbGtfJE2#tDDQDe92",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#PxnjFfV3"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#jkSstw4e",
+      "kind": "relationship",
+      "value": {
+        "order": 70040,
+        "kind": "call",
+        "label": "read captured grading evidence",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/skills/src/runtime/store/records.ts",
+          "symbol": "suppliedCaptures"
+        },
+        "id": "vKEsyHFk#jkSstw4e",
+        "to": "vKEsyHFk/IbGtfJE2#RrIatpuG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#jkSstw4e",
+      "placement": {
+        "holder": "vKEsyHFk/IbGtfJE2#tDDQDe92"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#7YCu9h8P",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#LfkZEor0",
+      "kind": "relationship",
+      "value": {
+        "order": 70058,
+        "kind": "call",
+        "label": "read registry fields",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workspace/src/runtime/store/registry-file.ts",
+          "symbol": "stringAt"
+        },
+        "id": "vKEsyHFk#LfkZEor0",
+        "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#LfkZEor0",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
       }
     },
     {
@@ -8198,6 +8906,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#0SFK7vbb",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/UOXNWLhR#g00kNnNx",
       "placement": {
@@ -8232,7 +8946,94 @@
       "type": "place",
       "subject": "vKEsyHFk/9ncuT5DP#wkvnbMs8",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+        "holder": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#rHTIxHOa",
+      "field": "to",
+      "value": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#fDI8NrtW",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#PxGHOuMG",
+      "kind": "relationship",
+      "value": {
+        "order": 70050,
+        "kind": "call",
+        "label": "report structured failures",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/board/src/runtime/operations/history/result.ts",
+          "symbol": "errorMessage"
+        },
+        "id": "vKEsyHFk#PxGHOuMG",
+        "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#PxGHOuMG",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#EXqmey6d",
+      "kind": "relationship",
+      "value": {
+        "order": 70051,
+        "kind": "call",
+        "label": "inspect the signed Git archive",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/board/src/runtime/store/model-portable.ts",
+          "symbol": "git"
+        },
+        "id": "vKEsyHFk#EXqmey6d",
+        "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#EXqmey6d",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#CZjzqbF1",
+      "kind": "relationship",
+      "value": {
+        "order": 70052,
+        "kind": "call",
+        "label": "resolve bound repository vaults",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/board/src/runtime/store/bound-vaults.ts",
+          "symbol": "isVaultLayout"
+        },
+        "id": "vKEsyHFk#CZjzqbF1",
+        "to": "vKEsyHFk/vKEsyHFk#tdKalihR"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#CZjzqbF1",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
       }
     },
     {
@@ -8260,7 +9061,7 @@
       "type": "place",
       "subject": "vKEsyHFk/9ncuT5DP#Akuz1a3J",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+        "holder": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
       }
     },
     {
@@ -8363,6 +9164,31 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#zeayswzH",
+      "kind": "relationship",
+      "value": {
+        "order": 70008,
+        "kind": "call",
+        "label": "refresh after durable changes",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/services/host/archboard-context-source.ts",
+          "symbol": "semanticChangeFeed"
+        },
+        "id": "vKEsyHFk#zeayswzH",
+        "to": "vKEsyHFk/Oi6SBIAM#mStVd7fZ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#zeayswzH",
+      "placement": {
+        "holder": "vKEsyHFk/qKGcB6vZ#ZilfteOF"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/vKEsyHFk#OHywsFXm",
       "field": "references"
@@ -8385,7 +9211,7 @@
       "type": "place",
       "subject": "vKEsyHFk/9ncuT5DP#i5AuDn9L",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+        "holder": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
       }
     },
     {
@@ -8405,6 +9231,31 @@
       "subject": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#GSMazGUv",
+      "kind": "relationship",
+      "value": {
+        "order": 70005,
+        "kind": "call",
+        "label": "subscribe to durable changes",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+          "symbol": "semanticChangeFeed"
+        },
+        "id": "vKEsyHFk#GSMazGUv",
+        "to": "vKEsyHFk/Oi6SBIAM#mStVd7fZ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#GSMazGUv",
+      "placement": {
+        "holder": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ"
       }
     },
     {
@@ -8488,6 +9339,81 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#o6iMuevP",
+      "kind": "relationship",
+      "value": {
+        "order": 70053,
+        "kind": "call",
+        "label": "report source inspection failures",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-intel/src/runtime/operations/code-check/checkouts.ts",
+          "symbol": "errorMessage"
+        },
+        "id": "vKEsyHFk#o6iMuevP",
+        "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#o6iMuevP",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#zAB848k7",
+      "kind": "relationship",
+      "value": {
+        "order": 70054,
+        "kind": "call",
+        "label": "measure source inspection work",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-intel/src/runtime/operations/code-check/check.ts",
+          "symbol": "createElapsedClock"
+        },
+        "id": "vKEsyHFk#zAB848k7",
+        "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#zAB848k7",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#73DTR15V",
+      "kind": "relationship",
+      "value": {
+        "order": 70055,
+        "kind": "call",
+        "label": "resolve configured source tooling",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-intel/src/runtime/operations/code-check/resolution.ts",
+          "symbol": "configureCommand"
+        },
+        "id": "vKEsyHFk#73DTR15V",
+        "to": "vKEsyHFk/vKEsyHFk#tdKalihR"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#73DTR15V",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/HBlhIeSD#KovkhwZi",
       "placement": {
@@ -8495,15 +9421,35 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#5ut3UjV6",
+      "field": "name",
+      "value": "Grader image delivery"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#5ut3UjV6",
+      "field": "responsibility",
+      "value": "Prepares captured images and delivery receipts for the grading run"
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/SMjRfwN3#5ut3UjV6",
       "field": "references"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#5ut3UjV6",
+      "field": "formerNames",
+      "value": [
+        "Skill evaluation"
+      ]
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/SMjRfwN3#5ut3UjV6",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#LDqRcaY1"
+        "holder": "vKEsyHFk/IbGtfJE2#RrIatpuG"
       }
     },
     {
@@ -8540,6 +9486,56 @@
       "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#DxnUwbpm",
+      "kind": "relationship",
+      "value": {
+        "order": 70014,
+        "kind": "call",
+        "label": "resolve the captured tab",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/services/explanations/actions.ts",
+          "symbol": "tabSessionOf"
+        },
+        "id": "vKEsyHFk#DxnUwbpm",
+        "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#DxnUwbpm",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#bxWDGUJk"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#3YLhUCde",
+      "kind": "relationship",
+      "value": {
+        "order": 70015,
+        "kind": "call",
+        "label": "resolve the captured pane",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/services/explanations/actions.ts",
+          "symbol": "panes"
+        },
+        "id": "vKEsyHFk#3YLhUCde",
+        "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#3YLhUCde",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#bxWDGUJk"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/HBlhIeSD#yBgqPUx8",
       "placement": {
@@ -8563,7 +9559,7 @@
       "type": "place",
       "subject": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+        "holder": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
       }
     },
     {
@@ -8584,14 +9580,32 @@
       "type": "place",
       "subject": "vKEsyHFk/9ncuT5DP#3vO7eN8L",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+        "holder": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#V2ti26xJ",
+      "kind": "relationship",
+      "value": {
+        "order": 70056,
+        "kind": "call",
+        "label": "report local request failures",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+          "symbol": "isRecord"
+        },
+        "id": "vKEsyHFk#V2ti26xJ",
+        "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
       }
     },
     {
       "type": "place",
-      "subject": "vKEsyHFk/Oi6SBIAM#Bfh2rRfX",
+      "subject": "vKEsyHFk#V2ti26xJ",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+        "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
       }
     },
     {
@@ -8633,6 +9647,31 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#uOeTTOcP",
+      "kind": "relationship",
+      "value": {
+        "order": 70011,
+        "kind": "call",
+        "label": "install the drawing host",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/renderer/src/runtime/operations/measure.ts",
+          "symbol": "installBunHost"
+        },
+        "id": "vKEsyHFk#uOeTTOcP",
+        "to": "vKEsyHFk/gbyqW4H3#eMXdmcWP"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#uOeTTOcP",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#GSL08xvL"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/vKEsyHFk#q1ENQYcO",
       "field": "label",
@@ -8656,6 +9695,31 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#YAA7XugC",
+      "kind": "relationship",
+      "value": {
+        "order": 70047,
+        "kind": "call",
+        "label": "record and replay exact walkthroughs",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+          "symbol": "WalkthroughRecordingError"
+        },
+        "id": "vKEsyHFk#YAA7XugC",
+        "to": "vKEsyHFk/XppR9owz#XAJYaUnv"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#YAA7XugC",
+      "placement": {
+        "holder": "vKEsyHFk/SMjRfwN3#gTwVYQo9"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#mYtOhgML",
       "field": "responsibility",
@@ -8666,6 +9730,26 @@
       "subject": "vKEsyHFk/0T9enjhi#mYtOhgML",
       "field": "description",
       "value": "Scans chosen checkouts and registered untracked vaults, then reads canonical model and proposal modules. LEGACY_AUTHORITY produces no match; discovery does not decode or rewrite legacy board files."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#mYtOhgML"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/nAmiQ3Vc#7hxRgVwY",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#mYtOhgML"
+      }
     },
     {
       "type": "assign",
@@ -8704,6 +9788,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#2lwNLxzO",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
       "field": "responsibility",
       "value": "Keeps pane sockets and tab sessions live; existing publishers send canonical change and activity snapshots."
@@ -8733,6 +9823,31 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#e00V8dhv",
+      "kind": "relationship",
+      "value": {
+        "order": 70057,
+        "kind": "call",
+        "label": "publish structured local diagnostics",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/services/explanations/dispatch.ts",
+          "symbol": "logger"
+        },
+        "id": "vKEsyHFk#e00V8dhv",
+        "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#e00V8dhv",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/yejBBUFY#b6D8IxT0",
       "placement": {
@@ -8754,6 +9869,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#Z7IOHBEv",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/gbyqW4H3#bm9AWXkW",
       "field": "description",
       "value": "Carries canonical model selectors and the exact input revision in the existing SVG metadata recipe. The embed checker reuses canonical reading and rendering owners."
@@ -8763,6 +9884,31 @@
       "subject": "vKEsyHFk/gbyqW4H3#bm9AWXkW",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#wsEMWmNJ",
+      "kind": "relationship",
+      "value": {
+        "order": 70039,
+        "kind": "call",
+        "label": "read image dimensions from recipes",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/renderer/src/runtime/operations/recipe/read-recipe.ts",
+          "symbol": "readPngDimensions"
+        },
+        "id": "vKEsyHFk#wsEMWmNJ",
+        "to": "vKEsyHFk/SMjRfwN3#KeEVHJEm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#wsEMWmNJ",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#bm9AWXkW"
       }
     },
     {
@@ -8799,10 +9945,41 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#Lot1YAoW",
+      "kind": "relationship",
+      "value": {
+        "order": 70027,
+        "kind": "call",
+        "label": "report the server phase",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/routes/service/service-routes.ts",
+          "symbol": "serverPhase"
+        },
+        "id": "vKEsyHFk#Lot1YAoW",
+        "to": "vKEsyHFk/6E6hL0Zk#Wcng1nxx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Lot1YAoW",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#nU6dNHBE"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/SJ2JMVyz#KGiq6epE",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#byMaoUe0"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#ncTGv1jp",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
     },
     {
       "type": "place",
@@ -8816,6 +9993,31 @@
       "subject": "vKEsyHFk/6E6hL0Zk#Wcng1nxx",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#4Uvqzrek",
+      "kind": "relationship",
+      "value": {
+        "order": 70045,
+        "kind": "call",
+        "label": "start pane socket ownership",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+          "symbol": "startWebSocketServer"
+        },
+        "id": "vKEsyHFk#4Uvqzrek",
+        "to": "vKEsyHFk/6E6hL0Zk#cuOguqkZ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#4Uvqzrek",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#Wcng1nxx"
       }
     },
     {
@@ -8840,6 +10042,31 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#YwuotQri",
+      "kind": "relationship",
+      "value": {
+        "order": 70048,
+        "kind": "call",
+        "label": "resolve the configured Codex process",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/workbench-example/src/server/wiring/application/application.ts",
+          "symbol": "resolveCodexExecutable"
+        },
+        "id": "vKEsyHFk#YwuotQri",
+        "to": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#YwuotQri",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#xssnUgIk"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
       "field": "description",
@@ -8853,9 +10080,40 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#kEIA3Iaa",
+      "kind": "relationship",
+      "value": {
+        "order": 70029,
+        "kind": "call",
+        "label": "wrap addressed pane requests",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+          "symbol": "asyncEndpoint"
+        },
+        "id": "vKEsyHFk#kEIA3Iaa",
+        "to": "vKEsyHFk/6E6hL0Zk#nU6dNHBE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#kEIA3Iaa",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#cuOguqkZ"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/9ncuT5DP#iLWBCObu",
       "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#ofrMAblk",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
     },
     {
       "type": "place",
@@ -8882,6 +10140,12 @@
       "subject": "vKEsyHFk/HBlhIeSD#gRG7JEPt",
       "field": "description",
       "value": "Renders architecture, sequence, and flowchart from canonical readings through the shared client-local projection and existing Bun renderer."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#7fKX6THX",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
     },
     {
       "type": "place",
@@ -8964,6 +10228,12 @@
       "value": "vKEsyHFk/SJ2JMVyz#bxWDGUJk"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#qRuxyaeW",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/XppR9owz#QKs0tycT",
       "placement": {
@@ -8979,9 +10249,51 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#yyFS6UVO",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/production.ts",
+        "symbol": "createServerVoiceAgentOptions"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#yyFS6UVO",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
       "field": "description",
       "value": "Retains exact architecture and source associations, then reopens those bytes independently of current files. Public metadata omits private reference and narrative dependency records."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#eLpodERU",
+      "kind": "relationship",
+      "value": {
+        "order": 70012,
+        "kind": "call",
+        "label": "retain exact architecture trees",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/board/src/runtime/operations/history/retain.ts",
+          "symbol": "tree"
+        },
+        "id": "vKEsyHFk#eLpodERU",
+        "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#eLpodERU",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
+      }
     },
     {
       "type": "place",
@@ -8992,10 +10304,63 @@
     },
     {
       "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#k9hxdLjq",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#DGC0nyAH",
+      "kind": "relationship",
+      "value": {
+        "order": 70049,
+        "kind": "call",
+        "label": "install generation hooks",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+          "symbol": "createProductionHooks"
+        },
+        "id": "vKEsyHFk#DGC0nyAH",
+        "to": "vKEsyHFk/9ncuT5DP#wkvnbMs8"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#DGC0nyAH",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#k9hxdLjq"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#CugxYaZL",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "type": "place",
       "subject": "vKEsyHFk/XppR9owz#nvbnGOtV",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
+      "field": "name",
+      "value": "Voice agent backend"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
+      "field": "formerNames",
+      "value": [
+        "Shared agent workbench",
+        "Codex realtime voice"
+      ]
     },
     {
       "type": "clear",
@@ -9010,11 +10375,42 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#C12Ez7nd",
+      "kind": "relationship",
+      "value": {
+        "order": 70046,
+        "kind": "call",
+        "label": "apply shared thread profiles",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+          "symbol": "captureExecutionContext"
+        },
+        "id": "vKEsyHFk#C12Ez7nd",
+        "to": "vKEsyHFk/qKGcB6vZ#CkB9Bygm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#C12Ez7nd",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/9ncuT5DP#Q2sXZO7T",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#HO533F7P",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#hCKEBd5f"
     },
     {
       "type": "place",
@@ -9035,6 +10431,31 @@
       "subject": "vKEsyHFk/XppR9owz#pB6BrbXY",
       "field": "to",
       "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#PlQAGfVL",
+      "kind": "relationship",
+      "value": {
+        "order": 70042,
+        "kind": "call",
+        "label": "retain invocation claims",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+          "symbol": "withWriteClaims"
+        },
+        "id": "vKEsyHFk#PlQAGfVL",
+        "to": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#PlQAGfVL",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#yHgIapK7"
+      }
     },
     {
       "type": "assign",
@@ -9105,6 +10526,13 @@
     },
     {
       "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#DQ99hH5l",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
+      }
+    },
+    {
+      "type": "place",
       "subject": "vKEsyHFk/0T9enjhi#RfwX9gsx",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
@@ -9127,6 +10555,31 @@
       "subject": "vKEsyHFk/0T9enjhi#EekL5c17",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#N8bivOLt",
+      "kind": "relationship",
+      "value": {
+        "order": 70028,
+        "kind": "call",
+        "label": "retain original migration trees",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/board/src/runtime/operations/legacy-inventory/install-candidate.ts",
+          "symbol": "tree"
+        },
+        "id": "vKEsyHFk#N8bivOLt",
+        "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#N8bivOLt",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#EekL5c17"
       }
     },
     {
@@ -9156,16 +10609,86 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#J52Bs9ep",
+      "kind": "relationship",
+      "value": {
+        "order": 70031,
+        "kind": "call",
+        "label": "identify the captured picture",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
+          "symbol": "sameBoardName"
+        },
+        "id": "vKEsyHFk#J52Bs9ep",
+        "to": "vKEsyHFk/yejBBUFY#DW1hIFRx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#J52Bs9ep",
+      "placement": {
+        "holder": "vKEsyHFk/UOXNWLhR#yJNjYLh1"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#A87QndqZ",
+      "kind": "relationship",
+      "value": {
+        "order": 70032,
+        "kind": "call",
+        "label": "preserve retained read refusals",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/picture-source.ts",
+          "symbol": "SemanticBoardError"
+        },
+        "id": "vKEsyHFk#A87QndqZ",
+        "to": "vKEsyHFk/UOXNWLhR#kr46TVLf"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#A87QndqZ",
+      "placement": {
+        "holder": "vKEsyHFk/UOXNWLhR#yJNjYLh1"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#7mTerd6Y",
       "field": "description",
       "value": "Installs an explicitly approved mapping through the existing signed archive, journal, and recovery owner. Canonical decoding normalizes proposal baselines before fingerprinting. Original bytes, addresses, and independent drafts remain available."
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#SScV6EZR",
+      "field": "name",
+      "value": "Narration host"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#SScV6EZR",
+      "field": "responsibility",
+      "value": "Captures walkthrough narration and applies addressed presentation commands"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#SScV6EZR",
+      "field": "formerNames",
+      "value": [
+        "Hosts"
+      ]
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/9ncuT5DP#SScV6EZR",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+        "holder": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
       }
     },
     {
@@ -9202,10 +10725,135 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#GsciFned",
+      "kind": "relationship",
+      "value": {
+        "order": 70043,
+        "kind": "call",
+        "label": "identify the retained reading",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-refresh.ts",
+          "symbol": "sameBoardName"
+        },
+        "id": "vKEsyHFk#GsciFned",
+        "to": "vKEsyHFk/yejBBUFY#DW1hIFRx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#GsciFned",
+      "placement": {
+        "holder": "vKEsyHFk/UOXNWLhR#kr46TVLf"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/9ncuT5DP#eOG7Eo1U",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#tCxB82K4",
+      "kind": "relationship",
+      "value": {
+        "order": 70034,
+        "kind": "call",
+        "label": "create browser media ownership",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/ui/clients/voice-client/voice-client.ts",
+          "symbol": "createBrowserWorkbenchMediaOwner"
+        },
+        "id": "vKEsyHFk#tCxB82K4",
+        "to": "vKEsyHFk/yejBBUFY#HaOwgfOs"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#tCxB82K4",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#eOG7Eo1U"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#zAQcPUKN",
+      "kind": "relationship",
+      "value": {
+        "order": 70035,
+        "kind": "call",
+        "label": "compose the host role profile",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/server/services/agent/voice-agent.ts",
+          "symbol": "createWorkbenchThreadProfile"
+        },
+        "id": "vKEsyHFk#zAQcPUKN",
+        "to": "vKEsyHFk/qKGcB6vZ#CkB9Bygm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#zAQcPUKN",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#eOG7Eo1U"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#cWzsQnxC",
+      "kind": "relationship",
+      "value": {
+        "order": 70036,
+        "kind": "call",
+        "label": "admit addressed browser sessions",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/server/services/agent/admission.ts",
+          "symbol": "parseTabSessionId"
+        },
+        "id": "vKEsyHFk#cWzsQnxC",
+        "to": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#cWzsQnxC",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#eOG7Eo1U"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#RPZfWIL0",
+      "kind": "relationship",
+      "value": {
+        "order": 70037,
+        "kind": "call",
+        "label": "create the browser transport",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/ui/clients/voice-client/voice-client.ts",
+          "symbol": "createBrowserWorkbenchTransport"
+        },
+        "id": "vKEsyHFk#RPZfWIL0",
+        "to": "vKEsyHFk/yejBBUFY#941UBxya"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#RPZfWIL0",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#eOG7Eo1U"
       }
     },
     {
@@ -9252,6 +10900,26 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+      "field": "responsibility",
+      "value": "Routes captured context changes to the requested live thread and voice audiences"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#wyliCZzQ",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#8yOrpoeg"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#j3Td3x8x",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#8yOrpoeg"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/UOXNWLhR#9L5uHzND",
       "field": "name",
       "value": "Picture transitions"
@@ -9292,10 +10960,73 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#FQ6Dm2Go",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#8yOrpoeg"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/qKGcB6vZ#FQ6Dm2Go",
       "placement": {
         "holder": "vKEsyHFk/9ncuT5DP#SQjLwRvE"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#uTLOYjNB",
+      "kind": "relationship",
+      "value": {
+        "order": 70000,
+        "kind": "call",
+        "label": "capture canonical context",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+          "symbol": "canonicalContextFromBrief"
+        },
+        "id": "vKEsyHFk#uTLOYjNB",
+        "to": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#uTLOYjNB",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#SQjLwRvE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#8Uq1mtzw",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#Zeo3aQWz"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#RnWLqued",
+      "kind": "relationship",
+      "value": {
+        "order": 70013,
+        "kind": "call",
+        "label": "prepare exact architecture trees",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
+          "symbol": "tree"
+        },
+        "id": "vKEsyHFk#RnWLqued",
+        "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#RnWLqued",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#8Uq1mtzw"
       }
     },
     {
@@ -9312,10 +11043,42 @@
       }
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#e0GTqv1k",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#Zeo3aQWz"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#KJy5yYuq",
       "field": "description",
       "value": "Stores compact changes against exact retained predecessors. Consistent decoding keeps predecessor fingerprints stable across live and retained inputs. Changed predecessors require explicit reconciliation or replacement decisions."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#c0DxX92y",
+      "kind": "relationship",
+      "value": {
+        "order": 70020,
+        "kind": "call",
+        "label": "materialize exact proposal trees",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+          "symbol": "tree"
+        },
+        "id": "vKEsyHFk#c0DxX92y",
+        "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#c0DxX92y",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#KJy5yYuq"
+      }
     },
     {
       "type": "assign",
@@ -9337,6 +11100,63 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#5Fd9qq2B",
+      "kind": "relationship",
+      "value": {
+        "order": 70016,
+        "kind": "call",
+        "label": "show shared reading controls",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/components/architecture-model/ModelCodeFindings.tsx",
+          "symbol": "WarningCount"
+        },
+        "id": "vKEsyHFk#5Fd9qq2B",
+        "to": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#5Fd9qq2B",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#TLCeNkdh"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#f0RC9khM",
+      "kind": "relationship",
+      "value": {
+        "order": 70017,
+        "kind": "call",
+        "label": "cache and interact with pictures",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/clients/architecture-model/drawing.ts",
+          "symbol": "browserPictureStorage"
+        },
+        "id": "vKEsyHFk#f0RC9khM",
+        "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#f0RC9khM",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#TLCeNkdh"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#YREYrbYW",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#CLdaoYy3"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/yejBBUFY#hO56iL2W",
       "placement": {
@@ -9345,9 +11165,37 @@
     },
     {
       "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#ov7pPg21",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#Zeo3aQWz"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#hLWF9OC5",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+      }
+    },
+    {
+      "type": "place",
       "subject": "vKEsyHFk/yejBBUFY#OPt4rjAR",
       "placement": {
         "holder": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#IyV7OF9L",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#CLdaoYy3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#W6wFcSQz",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#ZLJy8ivl"
       }
     },
     {
@@ -9361,6 +11209,13 @@
       "subject": "vKEsyHFk/0T9enjhi#yEqHs86l",
       "field": "description",
       "value": "Publication uses the batched archive reader to inspect complete records and actual ancestry. Explicit destinations, shallow-history refusal, and concurrent append recovery remain unchanged."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#yEqHs86l",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
+      }
     },
     {
       "type": "assign",
@@ -9378,7 +11233,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#IgYndyJd",
       "field": "description",
-      "value": "The browser and export adapters share this projection. It preserves exact visible identities, aggregated connections, comparison context, and unresolved subjects without copying architecture ownership into a reading."
+      "value": "One shared projection selects recursive scopes, focus, and visual filters without copying architecture. It groups connections by visible endpoints, kind, and comparison standing. Aggregate lines summarize their hidden relationships while the inspector retains every original identity and label. Complete authored flows remain ordered and unchanged."
     },
     {
       "type": "assign",
@@ -9405,10 +11260,24 @@
       }
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#nqi2h0Ku",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#yNZEhzyc",
       "field": "description",
       "value": "Applies flow and message changes within one complete model edit. Explicitly removed messages do not block endpoint removal. Surviving edited or moved messages still require valid endpoints."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#yNZEhzyc",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#Zeo3aQWz"
+      }
     },
     {
       "type": "assign",
@@ -9423,10 +11292,87 @@
       "value": "Exports structural and behavioral canonical readings through the shared projection and existing renderer. The existing render recipe records exact selectors and revision for reproducible embeds."
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#O4jP5DrF",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#ZLJy8ivl"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#llmZ5fau",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#Zeo3aQWz"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#vvxDSZoQ",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#Mv3r4IsX",
       "field": "description",
       "value": "Resolves explicit repository, model, subject, and state references. Same-model reads use the captured candidate without reopening its public write barrier. Foreign reads retain their normal ownership checks."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#Mv3r4IsX",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#bNZaCkOt",
+      "kind": "relationship",
+      "value": {
+        "order": 70023,
+        "kind": "call",
+        "label": "resolve selected proposal content",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/board/src/runtime/operations/read/model-references.ts",
+          "symbol": "readSelectedState"
+        },
+        "id": "vKEsyHFk#bNZaCkOt",
+        "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#bNZaCkOt",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#Mv3r4IsX"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#iPnxvJWp",
+      "kind": "module",
+      "value": {
+        "order": 68000,
+        "name": "Thread tool dispatch",
+        "kind": "module",
+        "responsibility": "Routes reviewed thread operations and returns one answer for each request",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/runtime/operations/dynamic-tools"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#iPnxvJWp"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#iPnxvJWp",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#ZGoXFusm"
+      }
     },
     {
       "type": "assign",
@@ -9435,10 +11381,242 @@
       "value": "Retains exact reference dependencies through Git ancestry. A proposal reference to current uses the captured current checkpoint. A checkpoint does not embed its own future identity."
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#esML8Ssb",
+      "kind": "module",
+      "value": {
+        "order": 68001,
+        "name": "Thread tool settlements",
+        "kind": "module",
+        "responsibility": "Retains mutation outcomes, quarantine state, and waits within the dispatcher lifetime",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/runtime/services/dynamic-tools"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#esML8Ssb"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#esML8Ssb",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#ZGoXFusm"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#F0aENCVG",
+      "kind": "module",
+      "value": {
+        "order": 69000,
+        "name": "Layout investigation",
+        "kind": "module",
+        "responsibility": "Compares layout engines and measures the saved layout fixtures",
+        "description": "The canonical engine gallery reads current module scopes and flows. The two historical investigation scripts measure the saved scorecard and timing fixtures. Fixture data stays shared with renderer tests and is not private implementation.",
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#F0aENCVG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#F0aENCVG",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#xTpg1eOM",
+      "kind": "relationship",
+      "value": {
+        "order": 71000,
+        "kind": "call",
+        "label": "render measured layout fixtures",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "docs/design/wide-board-layout-fixtures/measure.ts",
+          "symbol": "renderArchitecture"
+        },
+        "id": "vKEsyHFk#xTpg1eOM",
+        "to": "vKEsyHFk/gbyqW4H3#0XCanbzp"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#xTpg1eOM",
+      "placement": {
+        "holder": "vKEsyHFk#F0aENCVG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#jQ671Dxs",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#D5PpXrVK",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/0T9enjhi#Jx4O72DO",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#KtBdeME1",
+      "kind": "module",
+      "value": {
+        "order": 72000,
+        "name": "Navigation reads",
+        "kind": "module",
+        "responsibility": "Reads source and reference availability for the exact selected module",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/hooks/architecture-model/use-model-navigation.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#KtBdeME1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#KtBdeME1",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#0IYZeQvF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#FlAxCoeb",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#RILUrr2x",
+      "kind": "module",
+      "value": {
+        "order": 72001,
+        "name": "Reference activation",
+        "kind": "module",
+        "responsibility": "Opens the captured reference destination through the existing reading router",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/hooks/architecture-model/use-reference-navigation.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#RILUrr2x"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#RILUrr2x",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#0IYZeQvF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#7xQLokcW",
+      "kind": "module",
+      "value": {
+        "order": 73000,
+        "name": "Engine gallery",
+        "kind": "module",
+        "responsibility": "Compares complete canonical readings across the available layout engines",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/engine-gallery.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#7xQLokcW"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#7xQLokcW",
+      "placement": {
+        "holder": "vKEsyHFk#F0aENCVG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#MI2LKBji",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#IyV7OF9L"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#S6MFhkV7",
+      "kind": "module",
+      "value": {
+        "order": 74000,
+        "name": "Layout scorecards",
+        "kind": "module",
+        "responsibility": "Measures saved fixture geometry against the drawing scorecard",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "docs/design/wide-board-layout-fixtures/measure.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#S6MFhkV7"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#S6MFhkV7",
+      "placement": {
+        "holder": "vKEsyHFk#F0aENCVG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#8nPhZJ6C",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#MCVEWRGl",
+      "kind": "module",
+      "value": {
+        "order": 74001,
+        "name": "Layout timing",
+        "kind": "module",
+        "responsibility": "Measures first layout and repeated drawing time for saved fixtures",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "docs/design/wide-board-layout-fixtures/timing.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#MCVEWRGl"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#MCVEWRGl",
+      "placement": {
+        "holder": "vKEsyHFk#F0aENCVG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#d8uON4nq",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#Zeo3aQWz"
       }
     },
     {
@@ -9452,6 +11630,38 @@
       "subject": "vKEsyHFk/0T9enjhi#2gFwMLTT",
       "field": "description",
       "value": "Portable inspection validates every retained record, authored input, local dependency, and materialized proposal. It bounds reads and historical decoding without skipping older records. Import uses the shared signed installer and preserves exact retry, source HEAD, and the index."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#2gFwMLTT",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#IAJ0ChHL",
+      "kind": "relationship",
+      "value": {
+        "order": 70033,
+        "kind": "call",
+        "label": "inspect portable history trees",
+        "emphasis": "muted",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/board/src/runtime/operations/history/portable.ts",
+          "symbol": "tree"
+        },
+        "id": "vKEsyHFk#IAJ0ChHL",
+        "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#IAJ0ChHL",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#2gFwMLTT"
+      }
     },
     {
       "type": "add",
@@ -10750,7 +12960,7 @@
         "vKEsyHFk/9ncuT5DP#u2LFaG7R",
         "vKEsyHFk/9ncuT5DP#jylkTBp7",
         "vKEsyHFk/wAHh0HTa#ql0DevMk",
-        "vKEsyHFk/9ncuT5DP#giL6EI28"
+        "vKEsyHFk/vKEsyHFk#xr1MHYE7"
       ]
     },
     {
@@ -10764,6 +12974,18 @@
       "subject": "vKEsyHFk/9ncuT5DP#tRcBpEcU",
       "field": "from",
       "value": "vKEsyHFk/wAHh0HTa#ql0DevMk"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#tRcBpEcU",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#cZXGs8Br",
+      "field": "from",
+      "value": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
     },
     {
       "type": "assign",
@@ -10791,6 +13013,18 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#6LnEoErP",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#VBIITwQ7",
+      "field": "from",
+      "value": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/9ncuT5DP#VBIITwQ7",
       "field": "to",
       "value": "vKEsyHFk/wAHh0HTa#ql0DevMk"
@@ -10800,6 +13034,34 @@
       "subject": "vKEsyHFk/9ncuT5DP#YcjArnsa",
       "field": "from",
       "value": "vKEsyHFk/wAHh0HTa#ql0DevMk"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#UmUjUWRv",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
+        "vKEsyHFk/9ncuT5DP#SQjLwRvE",
+        "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+        "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+        "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+        "vKEsyHFk/9ncuT5DP#byMaoUe0",
+        "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#cvG5Sh5Q",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#DSobstio",
+      "field": "from",
+      "value": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
     },
     {
       "type": "place",
@@ -10847,6 +13109,71 @@
       "placement": {
         "holder": "vKEsyHFk#HBlhIeSD"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#lZsh600a",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+        "vKEsyHFk/IbGtfJE2#IsMHIzoa",
+        "vKEsyHFk/IbGtfJE2#8NS6WwkH",
+        "vKEsyHFk/IbGtfJE2#PEfE7dCL",
+        "vKEsyHFk/IbGtfJE2#IFhUy8C6",
+        "vKEsyHFk/IbGtfJE2#WbFIRpiE"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#HIrlYAPT",
+      "field": "to",
+      "value": "vKEsyHFk/IbGtfJE2#PEfE7dCL"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#HIrlYAPT",
+      "field": "kind",
+      "value": "self"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#K0ubWGBY",
+      "field": "from",
+      "value": "vKEsyHFk/IbGtfJE2#PEfE7dCL"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#K0ubWGBY",
+      "field": "kind",
+      "value": "self"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#ccyEofmP",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+        "vKEsyHFk/IbGtfJE2#1snXnK3G",
+        "vKEsyHFk/IbGtfJE2#fRFvnVRE",
+        "vKEsyHFk/IbGtfJE2#PEfE7dCL",
+        "vKEsyHFk/IbGtfJE2#TJmrdpKj",
+        "vKEsyHFk/IbGtfJE2#WbFIRpiE",
+        "vKEsyHFk/IbGtfJE2#RqoYaLTK",
+        "vKEsyHFk/IbGtfJE2#xzOQOY33",
+        "vKEsyHFk/IbGtfJE2#7LcGoxWH"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#mcrr34OM",
+      "field": "to",
+      "value": "vKEsyHFk/IbGtfJE2#PEfE7dCL"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#XRnNichB",
+      "field": "from",
+      "value": "vKEsyHFk/IbGtfJE2#PEfE7dCL"
     },
     {
       "type": "assign",
@@ -10906,7 +13233,7 @@
         "vKEsyHFk/Oi6SBIAM#X07YebBP",
         "vKEsyHFk/Oi6SBIAM#RjaKX25k",
         "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
-        "vKEsyHFk/Oi6SBIAM#4smEPsmF"
+        "vKEsyHFk/HBlhIeSD#KLt72lWa"
       ]
     },
     {
@@ -10940,6 +13267,18 @@
       "subject": "vKEsyHFk/Oi6SBIAM#hn2Q6jbD",
       "field": "to",
       "value": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#RPw8zIHG",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#iV6tUF2l",
+      "field": "from",
+      "value": "vKEsyHFk/HBlhIeSD#KLt72lWa"
     },
     {
       "type": "assign",
@@ -11226,11 +13565,17 @@
       "subject": "vKEsyHFk/qKGcB6vZ#VXUdwB7J",
       "field": "participants",
       "value": [
-        "vKEsyHFk/qKGcB6vZ#0eYa0szs",
+        "vKEsyHFk/yejBBUFY#0SRnYXnC",
         "vKEsyHFk/9ncuT5DP#ZQxB1ZaK",
         "vKEsyHFk/qKGcB6vZ#ZilfteOF",
         "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#NEsX0usx",
+      "field": "from",
+      "value": "vKEsyHFk/yejBBUFY#0SRnYXnC"
     },
     {
       "type": "assign",
@@ -11243,6 +13588,12 @@
       "subject": "vKEsyHFk/qKGcB6vZ#DktndcLd",
       "field": "from",
       "value": "vKEsyHFk/9ncuT5DP#ZQxB1ZaK"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#DktndcLd",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#0SRnYXnC"
     },
     {
       "type": "assign",
@@ -11288,15 +13639,33 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#NDg4hiIG",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#0SRnYXnC"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/qKGcB6vZ#LEQCOBB7",
       "field": "from",
       "value": "vKEsyHFk/9ncuT5DP#ZQxB1ZaK"
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#LEQCOBB7",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#0SRnYXnC"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/qKGcB6vZ#aUJubLhr",
       "field": "from",
       "value": "vKEsyHFk/9ncuT5DP#ZQxB1ZaK"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#aUJubLhr",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#0SRnYXnC"
     },
     {
       "type": "assign",
@@ -11655,7 +14024,7 @@
       "value": [
         "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
         "vKEsyHFk/9ncuT5DP#SQjLwRvE",
-        "vKEsyHFk/qKGcB6vZ#ccaUoxFa",
+        "vKEsyHFk/9ncuT5DP#8yOrpoeg",
         "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
         "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
         "vKEsyHFk/9ncuT5DP#jylkTBp7"
@@ -11690,6 +14059,18 @@
       "subject": "vKEsyHFk/qKGcB6vZ#6Frsf6H7",
       "field": "from",
       "value": "vKEsyHFk/9ncuT5DP#SQjLwRvE"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#6Frsf6H7",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#8yOrpoeg"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#KhxEodYR",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#8yOrpoeg"
     },
     {
       "type": "assign",
@@ -11729,12 +14110,18 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#qYnhuyc3",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#8yOrpoeg"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/qKGcB6vZ#7L5gGw1B",
       "field": "participants",
       "value": [
         "vKEsyHFk/9ncuT5DP#iay14AUl",
         "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
-        "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+        "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
         "vKEsyHFk/qKGcB6vZ#hxZxt8Wy",
         "vKEsyHFk/qKGcB6vZ#LHBPlItu"
       ]
@@ -11747,9 +14134,75 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#MOk6mH8D",
+      "field": "to",
+      "value": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#FD3wiScb",
+      "field": "from",
+      "value": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/qKGcB6vZ#ZQ5W68t5",
       "field": "from",
       "value": "vKEsyHFk/9ncuT5DP#iay14AUl"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#eKLob8Ao",
+      "field": "to",
+      "value": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#qXrxUF4w",
+      "field": "from",
+      "value": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#H3M4oEvR",
+      "field": "from",
+      "value": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#uzMLiGRm",
+      "field": "to",
+      "value": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#rdb7dU2w",
+      "field": "from",
+      "value": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#BC2rZJNG",
+      "field": "from",
+      "value": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#EvOI8P51",
+      "field": "from",
+      "value": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#OxcQpfh7",
+      "field": "to",
+      "value": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#zKqjru6u",
+      "field": "from",
+      "value": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
     },
     {
       "type": "assign",
@@ -14597,6 +17050,18 @@
     "vKEsyHFk/yejBBUFY#RKEuUGxw",
     "vKEsyHFk/SMjRfwN3#fEsvd4ka",
     "vKEsyHFk/UOXNWLhR#Hc8yakWW",
-    "vKEsyHFk/UOXNWLhR#EKpFBFTC"
+    "vKEsyHFk/UOXNWLhR#EKpFBFTC",
+    "vKEsyHFk/IbGtfJE2#uT0ylhOM",
+    "vKEsyHFk/9ncuT5DP#DNQTPTxE",
+    "vKEsyHFk/Oi6SBIAM#4smEPsmF",
+    "vKEsyHFk/Oi6SBIAM#Bfh2rRfX",
+    "vKEsyHFk/qKGcB6vZ#ccaUoxFa",
+    "vKEsyHFk/HBlhIeSD#fs2ehN0i",
+    "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+    "vKEsyHFk/nAmiQ3Vc#TuLpnBlQ",
+    "vKEsyHFk/vKEsyHFk#19855Ply",
+    "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+    "vKEsyHFk/qKGcB6vZ#0eYa0szs",
+    "vKEsyHFk/9ncuT5DP#giL6EI28"
   ]
 }

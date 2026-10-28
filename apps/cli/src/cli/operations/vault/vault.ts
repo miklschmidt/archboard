@@ -259,16 +259,14 @@ const codeCheckParameters = [
 		spellings: ["--state"],
 		value: "required",
 		placeholder: "draft",
-		description:
-			"Read this draft on every board that has one, and the current state elsewhere, in the code check",
+		description: "Read the canonical state identified by this ID or unique name",
 	},
 	{
 		kind: "option",
 		key: "everyDraft",
 		spellings: ["--every-draft"],
 		value: "none",
-		description:
-			"Read every draft of every board in the code check, each against the ref its bindings name, and no current state",
+		description: "Inspect each independent active proposal instead of current architecture",
 	},
 	{
 		kind: "option",
@@ -450,7 +448,7 @@ const checkEmbedsContract = defineCommand({
 	path: ["check", "embeds"],
 	shared: ["url", "directory"],
 	runsWithoutVault: true,
-	summary: "Check the board renders that this checkout's documents embed",
+	summary: "Check the reproducible architecture artifacts that this checkout embeds",
 	description: CHECK_EMBEDS_HELP,
 	examples: ["archboard check embeds", "archboard check embeds --fix"],
 	parameters: [fixParameter],
@@ -476,9 +474,9 @@ const checkEmbedsContract = defineCommand({
 const checkSemanticsContract = defineCommand({
 	path: ["check", "semantics"],
 	shared: ["url", "directory"],
-	summary: "Check configuration and every board family in the vault",
+	summary: "Check the canonical model, active proposals, and vocabulary",
 	description:
-		"Reports invalid configuration, unreadable boards and removed vocabulary references. It reads no code and no Git, and it is the check that every open pane polls. Exit 1 means the vault has a diagnostic or a warning; no board is changed.",
+		"Reports invalid configuration, incoherent model content, and removed vocabulary references. It changes no authored input. Exit 1 means that a diagnostic or warning remains.",
 	examples: ["archboard check semantics"],
 	parameters: [],
 	input: { ingress: z.object({}) },
@@ -503,7 +501,7 @@ const checkSemanticsContract = defineCommand({
 const checkCodeContract = defineCommand({
 	path: ["check", "code"],
 	shared: ["url", "directory"],
-	summary: "Check the code that the bindings and anchors of the boards name",
+	summary: "Inspect the source that canonical bindings and evidence anchors name",
 	description: CHECK_CODE_HELP,
 	examples: [
 		"archboard check code",

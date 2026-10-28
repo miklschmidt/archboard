@@ -1,5 +1,5 @@
 // The ask clip: a person picks a part out, types a question into the agent dock, and a real Codex
-// agent answers from the board. It runs on a server with the machine's Archboard Codex sign-in and
+// agent answers from the captured model. It runs on a server with the machine's Archboard Codex sign-in and
 // spends Codex usage. The wait for the answer is played faster, so it lasts about seven seconds.
 
 import {
@@ -16,6 +16,7 @@ import {
 } from "./kit.ts";
 
 const MODEL = "Shop";
+const SCOPE = "Shop/MKhTEYqf#lwmpnaVU";
 const PART = "Timeout guard";
 const QUESTION = "Why does this part exist, and what would break without it?";
 const CLIP = attachmentFile("ask.webp");
@@ -115,7 +116,7 @@ const ask: Producer = {
 	make: async () =>
 		withTake("ask", "examples/web-shop", true, async (server, browser) => {
 			const page = await browser.open({
-				url: `${server.url}/?modelA=${MODEL}`,
+				url: `${server.url}/?modelA=${MODEL}&scopeA=${encodeURIComponent(SCOPE)}`,
 				theme: "light",
 				cursor: true,
 			});
