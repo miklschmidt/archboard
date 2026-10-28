@@ -7085,6 +7085,257 @@
       "value": "Portable inspection validates every retained record, authored input, local dependency, and materialized proposal. It bounds reads and historical decoding without skipping older records. Import uses the shared signed installer and preserves exact retry, source HEAD, and the index."
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#pcvrNsYC",
+      "kind": "walkthrough",
+      "value": {
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#pcvrNsYC",
+        "name": "From modules to durable architecture",
+        "summary": "Explore the canonical repository model, its local readers, and the history behind each accepted change.",
+        "target": {
+          "state": "oyXXnyCV"
+        }
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#CgnqY1Af",
+      "kind": "beat",
+      "value": {
+        "id": "vKEsyHFk#CgnqY1Af",
+        "title": "One model, several readers",
+        "narrative": "The CLI, server, and browser use one canonical architecture model. The files describe modules and relationships. Each reader chooses what to show without copying that meaning.",
+        "reading": {
+          "selection": [
+            "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+          ],
+          "focus": [
+            "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+            "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+            "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+            "vKEsyHFk/vKEsyHFk#fssx6Gaq"
+          ],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#CgnqY1Af",
+      "placement": {
+        "holder": "vKEsyHFk#pcvrNsYC",
+        "before": "vKEsyHFk#5HtjEmmS"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#5HtjEmmS",
+      "kind": "beat",
+      "value": {
+        "id": "vKEsyHFk#5HtjEmmS",
+        "title": "Open a module",
+        "narrative": "Opening a module changes the scope. Selection, focus, filters, and diagram grammar remain presentation choices. The local reader draws the selected architecture and keeps interaction responsive.",
+        "reading": {
+          "scope": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+          "selection": [
+            "vKEsyHFk/yejBBUFY#n2ONtqdt"
+          ],
+          "focus": [
+            "vKEsyHFk/yejBBUFY#TLCeNkdh",
+            "vKEsyHFk/yejBBUFY#n2ONtqdt",
+            "vKEsyHFk/yejBBUFY#AIp6YN1P"
+          ],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#5HtjEmmS",
+      "placement": {
+        "holder": "vKEsyHFk#pcvrNsYC",
+        "before": "vKEsyHFk#v3HCwAon"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#v3HCwAon",
+      "kind": "beat",
+      "value": {
+        "id": "vKEsyHFk#v3HCwAon",
+        "title": "Propose a change",
+        "narrative": "The shared runtime keeps stable identities across modules and flows. A proposal stores changed fields against an exact baseline. It does not copy the whole system into another board.",
+        "reading": {
+          "scope": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+          "selection": [
+            "vKEsyHFk/0T9enjhi#KJy5yYuq"
+          ],
+          "focus": [
+            "vKEsyHFk/0T9enjhi#1VHRyajb",
+            "vKEsyHFk/0T9enjhi#KJy5yYuq",
+            "vKEsyHFk/0T9enjhi#llmZ5fau",
+            "vKEsyHFk/0T9enjhi#yNZEhzyc"
+          ],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#v3HCwAon",
+      "placement": {
+        "holder": "vKEsyHFk#pcvrNsYC",
+        "before": "vKEsyHFk#scCzO9lh"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#scCzO9lh",
+      "kind": "beat",
+      "value": {
+        "id": "vKEsyHFk#scCzO9lh",
+        "title": "Make the edit durable",
+        "narrative": "The runtime validates the complete intent and signs its checkpoint before changing current files. A journal coordinates installation and recovery. Readers hear the result only after durable completion.",
+        "reading": {
+          "selection": [
+            "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+            "vKEsyHFk/0T9enjhi#CLdaoYy3"
+          ],
+          "focus": [],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "sequence",
+          "flow": "vKEsyHFk#37yCryrX"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#scCzO9lh",
+      "placement": {
+        "holder": "vKEsyHFk#pcvrNsYC",
+        "before": "vKEsyHFk#jJXw6qRR"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#jJXw6qRR",
+      "kind": "beat",
+      "value": {
+        "id": "vKEsyHFk#jJXw6qRR",
+        "title": "Draw the chosen reading",
+        "narrative": "The shared renderer measures text, lays out modules, and routes connections. The browser owns interaction. Exported pictures carry an exact recipe for the same reading.",
+        "reading": {
+          "scope": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+          "selection": [
+            "vKEsyHFk/gbyqW4H3#ld6jjHND"
+          ],
+          "focus": [
+            "vKEsyHFk/gbyqW4H3#JK2EHDyY",
+            "vKEsyHFk/gbyqW4H3#ld6jjHND",
+            "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+            "vKEsyHFk/gbyqW4H3#bm9AWXkW"
+          ],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#jJXw6qRR",
+      "placement": {
+        "holder": "vKEsyHFk#pcvrNsYC",
+        "before": "vKEsyHFk#XdoufLnA"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#XdoufLnA",
+      "kind": "beat",
+      "value": {
+        "id": "vKEsyHFk#XdoufLnA",
+        "title": "Explain what the reader selected",
+        "narrative": "The local workbench captures the exact pane reading for agent explanations and voice. Selection and focus travel with the model revision. Later navigation does not silently change that captured question.",
+        "reading": {
+          "scope": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+          "selection": [
+            "vKEsyHFk/SJ2JMVyz#bxWDGUJk"
+          ],
+          "focus": [
+            "vKEsyHFk/Oi6SBIAM#tHLqdtCJ",
+            "vKEsyHFk/SJ2JMVyz#bxWDGUJk",
+            "vKEsyHFk/Oi6SBIAM#mStVd7fZ"
+          ],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#XdoufLnA",
+      "placement": {
+        "holder": "vKEsyHFk#pcvrNsYC",
+        "before": "vKEsyHFk#hyjKNr7W"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#hyjKNr7W",
+      "kind": "beat",
+      "value": {
+        "id": "vKEsyHFk#hyjKNr7W",
+        "title": "Keep and share exact history",
+        "narrative": "Adoption and shelving keep their decisions in retained history. Exact checkpoints preserve the inputs they explain. Sharing source files and publishing the architecture archive are separate actions.",
+        "reading": {
+          "scope": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+          "selection": [
+            "vKEsyHFk/0T9enjhi#yEqHs86l"
+          ],
+          "focus": [
+            "vKEsyHFk/0T9enjhi#ZRq51Ecz",
+            "vKEsyHFk/0T9enjhi#yEqHs86l",
+            "vKEsyHFk/0T9enjhi#2gFwMLTT",
+            "vKEsyHFk/0T9enjhi#DQ99hH5l"
+          ],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#hyjKNr7W",
+      "placement": {
+        "holder": "vKEsyHFk#pcvrNsYC"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#P7V1u4aN",
       "field": "name",
