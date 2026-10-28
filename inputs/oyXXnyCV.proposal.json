@@ -596,6 +596,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/9ncuT5DP#giL6EI28"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#8CAH6rSD"
     },
     {
@@ -5665,6 +5669,12 @@
       "field": "references"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+      "field": "description",
+      "value": "Each pane owns its admitted vault, socket, registration, and reading publisher. A vault change clears the prior reading cache, including canonical arrivals without a legacy board key. Returning to an unchanged visible picture still republishes the capture that the server discarded."
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/Oi6SBIAM#wH0rE1x7",
       "placement": {
@@ -5720,6 +5730,12 @@
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#9GaG5ItC",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
     },
     {
       "type": "place",
@@ -6466,6 +6482,12 @@
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#3vlSu8a3",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
     },
     {
       "type": "place",
@@ -7261,6 +7283,18 @@
       "subject": "vKEsyHFk/nAmiQ3Vc#y6ueYYtZ",
       "field": "to",
       "value": "vKEsyHFk/0T9enjhi#mYtOhgML"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#xr1MHYE7",
+      "field": "description",
+      "value": "Each host owns one private Codex child over stdio. Its threads use the local CLI and the server URL supplied by that host. Every architecture command names its vault through checkout discovery. The host owns authentication, conversation lifetime, and process cleanup."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#DcdR8rPv",
+      "field": "label",
+      "value": "run local architecture commands"
     },
     {
       "type": "place",
@@ -11276,7 +11310,7 @@
         "responsibility": "Measures layout fixtures and captures their rendered geometry",
         "binding": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "docs/design/wide-board-layout-fixtures/measure.ts"
+          "path": "docs/design/wide-board-layout-fixtures"
         },
         "schemaVersion": 1,
         "id": "vKEsyHFk#F0aENCVG"
@@ -11319,6 +11353,54 @@
       "subject": "vKEsyHFk/0T9enjhi#Jx4O72DO",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#KtBdeME1",
+      "kind": "module",
+      "value": {
+        "order": 72000,
+        "name": "Navigation reads",
+        "kind": "module",
+        "responsibility": "Reads source and reference availability for the exact selected module",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/hooks/architecture-model/use-model-navigation.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#KtBdeME1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#KtBdeME1",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#0IYZeQvF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#RILUrr2x",
+      "kind": "module",
+      "value": {
+        "order": 72001,
+        "name": "Reference activation",
+        "kind": "module",
+        "responsibility": "Opens the captured reference destination through the existing reading router",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/hooks/architecture-model/use-reference-navigation.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#RILUrr2x"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#RILUrr2x",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#0IYZeQvF"
       }
     },
     {
@@ -12655,7 +12737,7 @@
         "vKEsyHFk/9ncuT5DP#u2LFaG7R",
         "vKEsyHFk/9ncuT5DP#jylkTBp7",
         "vKEsyHFk/wAHh0HTa#ql0DevMk",
-        "vKEsyHFk/9ncuT5DP#giL6EI28"
+        "vKEsyHFk/vKEsyHFk#xr1MHYE7"
       ]
     },
     {
@@ -12669,6 +12751,18 @@
       "subject": "vKEsyHFk/9ncuT5DP#tRcBpEcU",
       "field": "from",
       "value": "vKEsyHFk/wAHh0HTa#ql0DevMk"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#tRcBpEcU",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#cZXGs8Br",
+      "field": "from",
+      "value": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
     },
     {
       "type": "assign",
@@ -12696,6 +12790,18 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#6LnEoErP",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#VBIITwQ7",
+      "field": "from",
+      "value": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/9ncuT5DP#VBIITwQ7",
       "field": "to",
       "value": "vKEsyHFk/wAHh0HTa#ql0DevMk"
@@ -12705,6 +12811,34 @@
       "subject": "vKEsyHFk/9ncuT5DP#YcjArnsa",
       "field": "from",
       "value": "vKEsyHFk/wAHh0HTa#ql0DevMk"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#UmUjUWRv",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
+        "vKEsyHFk/9ncuT5DP#SQjLwRvE",
+        "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+        "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+        "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+        "vKEsyHFk/9ncuT5DP#byMaoUe0",
+        "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#cvG5Sh5Q",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#DSobstio",
+      "field": "from",
+      "value": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
     },
     {
       "type": "place",
@@ -16704,6 +16838,7 @@
     "vKEsyHFk/nAmiQ3Vc#TuLpnBlQ",
     "vKEsyHFk/vKEsyHFk#19855Ply",
     "vKEsyHFk/qKGcB6vZ#AahDTiw9",
-    "vKEsyHFk/qKGcB6vZ#0eYa0szs"
+    "vKEsyHFk/qKGcB6vZ#0eYa0szs",
+    "vKEsyHFk/9ncuT5DP#giL6EI28"
   ]
 }
