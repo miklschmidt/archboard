@@ -129,7 +129,7 @@ async function fitted(browser: AgentBrowserSession): Promise<void> {
 
 async function gatewayName(browser: AgentBrowserSession): Promise<string | null> {
 	return browser.eval<string | null>(
-		`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"] > span')?.textContent ?? null`,
+		`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"] [data-slot="model-module-name"]')?.textContent ?? null`,
 	);
 }
 

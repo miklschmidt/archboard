@@ -19,6 +19,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { fixtureGit, initializeSource } from "./support/canonical-model.ts";
+import { openModelSidebar } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -85,6 +86,7 @@ async function visible(browser: AgentBrowserSession, selector: string): Promise<
 }
 
 async function description(browser: AgentBrowserSession, value: string): Promise<void> {
+	await openModelSidebar(browser);
 	await visible(browser, '[data-slot="module-list"] [data-module-id="Shop#Gateway"]');
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await pollUntil(
@@ -99,6 +101,8 @@ async function description(browser: AgentBrowserSession, value: string): Promise
 }
 
 async function openHistory(browser: AgentBrowserSession): Promise<void> {
+	await openModelSidebar(browser);
+	await visible(browser, '[data-slot="model-state-history"]');
 	if (
 		!(await browser.eval<boolean>(
 			`document.querySelector('[data-slot="model-state-history"]')?.open === true`,
@@ -183,12 +187,12 @@ test("historical corrections refresh the lasting reading and expose exact origin
 	// This UI update must arrive even when no live file revision changed.
 	expect(corrected.before.digest).toBe(corrected.after.digest);
 	await description(browser, "Routes authenticated requests.");
+	await openHistory(browser);
 	expect(
 		await browser.eval<boolean>(
 			`document.querySelector('[data-correction-checkpoint="${corrected.checkpoint.id}"]') !== null`,
 		),
 	).toBe(true);
-	await openHistory(browser);
 	const row = `[data-correction-checkpoint="${corrected.checkpoint.id}"]`;
 	expect(
 		await browser.eval<string>(
@@ -213,6 +217,7 @@ test("historical corrections refresh the lasting reading and expose exact origin
 		`[data-slot="model-checkpoint"][data-checkpoint-id="${original.checkpoint.id}"]`,
 	);
 	await description(browser, "An incorrect recorded description.");
+	await openHistory(browser);
 	expect(
 		await browser.eval<number>(`document.querySelectorAll('[data-correction-checkpoint]').length`),
 	).toBe(0);
@@ -242,6 +247,7 @@ test("historical corrections refresh the lasting reading and expose exact origin
 		`[data-slot="model-checkpoint"][data-checkpoint-id="${original.checkpoint.id}"]`,
 	);
 	await browser.run(["back"]);
+	await openModelSidebar(browser);
 	await visible(browser, `[data-correction-checkpoint="${corrected.checkpoint.id}"]`);
 	expect(
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('stateA')`),
