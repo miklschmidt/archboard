@@ -1,0 +1,14 @@
+{
+  "order": 21000,
+  "name": "Command admission",
+  "kind": "module",
+  "responsibility": "Admits a command only under its live lease, link, readiness and pending approval",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/operations/command/command-admission.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#ui4leDPl",
+  "parent": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
+  "outgoing": []
+}

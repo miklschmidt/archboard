@@ -1,0 +1,54 @@
+{
+  "order": 6000,
+  "name": "Thread link",
+  "kind": "module",
+  "responsibility": "Which workhorse each tab session and checkout is bound to, and the refusal when a second binding disagrees",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/rules/thread-link"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
+  "parent": "vKEsyHFk/SJ2JMVyz#5Pg20iSq",
+  "outgoing": [
+    {
+      "order": 21000,
+      "kind": "call",
+      "label": "prove the linked thread current",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/thread-link/binding.ts",
+        "symbol": "assertCurrent"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#CT2H47EW",
+      "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS"
+    },
+    {
+      "order": 24000,
+      "kind": "rpc",
+      "label": "thread/read and thread/list to classify a link",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/thread-link/classifier.ts",
+        "symbol": "threadRead"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#xOvqFYUE",
+      "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+    },
+    {
+      "order": 25000,
+      "kind": "dependency",
+      "label": "the link reasons the context policy orders",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/thread-link/link-shape.ts",
+        "symbol": "ADDITIONAL_CONTEXT_POLICY"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#qdsTcqWf",
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
+    }
+  ]
+}
