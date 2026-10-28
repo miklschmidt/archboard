@@ -107,18 +107,19 @@ function proposalFailure(model: ArchitectureModel) {
 	return undefined;
 }
 /**
- * A captured narrative requires its source and target to remain the observed readings.
- * @param model The resolved architecture and optional narrative source.
+ * Capture requires the target, comparison, and narrative source to match the observed readings.
+ * @param model The resolved architecture, comparison, and optional narrative source.
  * @param request The observed revisions.
  * @returns Whether the requested capture changed.
  */
 function changedRevision(model: ArchitectureModel, request: Request): boolean {
-	return (
-		request.model !== model.manifest.id ||
-		request.expectedRevision !== model.revision.digest ||
-		(request.expectedSourceRevision !== undefined &&
-			request.expectedSourceRevision !== model.playback?.sourceRevision.digest)
-	);
+	return [
+		request.model !== model.manifest.id,
+		request.expectedRevision !== model.revision.digest,
+		request.expectedComparisonRevision !== model.comparison?.revision.digest,
+		request.expectedSourceRevision !== undefined &&
+			request.expectedSourceRevision !== model.playback?.sourceRevision.digest,
+	].some(Boolean);
 }
 /**
  * Validate capture inputs without independently reading architecture files.
