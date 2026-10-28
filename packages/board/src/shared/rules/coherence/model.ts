@@ -25,12 +25,13 @@ function identityDiagnostics(
 	);
 	subjects.push(
 		...collections.flatMap((collection) =>
-			collection.flows.flatMap((flow) =>
-				[flow.id, ...everyStep(flow.steps).map((step) => step.id)].map((id) => ({
-					id,
-					file: collection.file,
-				})),
-			),
+			[
+				`${manifest.id}#${collection.id}`,
+				...collection.flows.flatMap((flow) => [
+					flow.id,
+					...everyStep(flow.steps).map((step) => step.id),
+				]),
+			].map((id) => ({ id, file: collection.file })),
 		),
 	);
 	subjects.push(

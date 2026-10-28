@@ -339,3 +339,33 @@ test("module identity wins over names and authored positions determine outgoing 
 		"Shop#Later",
 	]);
 });
+
+test("collection identities cannot collide with live or retired canonical subjects", () => {
+	const vault = fixture();
+	const path = join(vault, "behavior.flows.json");
+	writeFileSync(
+		path,
+		JSON.stringify({ schemaVersion: 1, id: "Gateway", name: "Behavior", flows: [] }),
+	);
+	expect(readArchitectureModel(vault)).toMatchObject({
+		success: false,
+		code: "MODEL_INVALID",
+		diagnostics: expect.arrayContaining([
+			expect.objectContaining({ code: "DUPLICATE_ID", subjects: ["Shop#Gateway"] }),
+		]),
+	});
+	writeFileSync(
+		path,
+		JSON.stringify({ schemaVersion: 1, id: "Behavior", name: "Behavior", flows: [] }),
+	);
+	const manifestPath = join(vault, "model.json");
+	const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+	writeFileSync(manifestPath, JSON.stringify({ ...manifest, retiredIds: ["Shop#Behavior"] }));
+	expect(readArchitectureModel(vault)).toMatchObject({
+		success: false,
+		code: "MODEL_INVALID",
+		diagnostics: expect.arrayContaining([
+			expect.objectContaining({ code: "RETIRED_ID", subjects: ["Shop#Behavior"] }),
+		]),
+	});
+});
