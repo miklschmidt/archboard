@@ -1,0 +1,28 @@
+{
+  "order": 38000,
+  "name": "Catalog subscription",
+  "kind": "module",
+  "responsibility": "Combines repository queries into the live catalog",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/hooks/board-catalog/use-board-catalog.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#MPUyJZXc",
+  "parent": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+  "outgoing": [
+    {
+      "order": 66000,
+      "kind": "call",
+      "label": "combine the vault and pane listings",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/board-catalog/use-board-catalog.ts",
+        "symbol": "composeListing"
+      },
+      "id": "vKEsyHFk/yejBBUFY#yK8KVlKw",
+      "to": "vKEsyHFk/yejBBUFY#j7j12e3U"
+    }
+  ]
+}

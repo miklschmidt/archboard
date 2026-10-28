@@ -1,0 +1,18 @@
+{
+  "order": 21000,
+  "name": "Voice orb",
+  "kind": "module",
+  "responsibility": "The one orb, drawn once and flown between the dock's circle and the voice box's socket",
+  "description": "The canvas is made once and moved, never remounted, so the light and the last second of level it has drawn go with it, and it carries the plate it sits on: what flies is one object, only one is ever on the page, and a home draws its seat only while the orb rests in it. The dock offers its circle as one home and the voice box offers a socket as the other; the stage flies an orb that can be seen over the page between them from where it was seen, meets a socket where it is as it moves, turns a flight round from where the orb is, and cuts when motion is not wanted, when a home is not on screen or when the orb is not yet seen, so voice starting lights it where it is wanted and does not launch it from the Talk key. It says whether a home is on the page, so a surface gives the voice up only to a home that is there. While the page is fullscreen it paints only the element presented, so the flight crosses inside that element, a home outside it is not on screen, and a flight in the air when fullscreen starts lands where it was going.",
+  "groups": [
+    "voice"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/ui/components/orb"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#t5Wy06ua",
+  "parent": "vKEsyHFk/yejBBUFY#W0EmXnR9",
+  "outgoing": []
+}

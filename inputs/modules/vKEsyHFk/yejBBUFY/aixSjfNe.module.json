@@ -1,0 +1,123 @@
+{
+  "order": 19000,
+  "name": "Walkthrough replay",
+  "kind": "module",
+  "responsibility": "A page drawing a recorded talk again, one frame at a time: the recording's pane and subtitles, fed from the talk, on a stepped clock",
+  "description": "Asked for by ?replay=1, and mounted by the entry point in place of the application, so it has no workbench, no pane session and no socket, and no Codex is involved. It publishes load(talk) and frame(n) on the window for the renderer that drives it (drawn on Board rasterizer). It reads the board and the policy only from the talk, and a read of any other board fails the render.",
+  "groups": [
+    "walkthrough"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/walkthrough-replay"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#aixSjfNe",
+  "parent": "vKEsyHFk/yejBBUFY#01sVgqBF",
+  "outgoing": [
+    {
+      "order": 35000,
+      "kind": "call",
+      "label": "install the stepped clock; step it a frame at a time",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "symbol": "createSteppedClock"
+      },
+      "id": "vKEsyHFk/yejBBUFY#f2n9GAXv",
+      "to": "vKEsyHFk/yejBBUFY#rouptSyK"
+    },
+    {
+      "order": 36000,
+      "kind": "render",
+      "label": "one stage, at the talk's step",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "symbol": "SemanticBoardStage"
+      },
+      "id": "vKEsyHFk/yejBBUFY#o3xHmMmJ",
+      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+    },
+    {
+      "order": 37000,
+      "kind": "data",
+      "label": "the talk's board and policy, in place of the server's",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "symbol": "readBoardsFrom"
+      },
+      "id": "vKEsyHFk/yejBBUFY#TGkTEPYM",
+      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+    },
+    {
+      "order": 38000,
+      "kind": "render",
+      "label": "the voice box, with the talk's lines as they were said",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "symbol": "VoiceBox"
+      },
+      "id": "vKEsyHFk/yejBBUFY#FYKw5y8U",
+      "to": "vKEsyHFk/yejBBUFY#0x47EMoO"
+    },
+    {
+      "order": 39000,
+      "kind": "render",
+      "label": "the recording's stage, so both pages draw alike",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "symbol": "RecordingStage"
+      },
+      "id": "vKEsyHFk/yejBBUFY#3cky5MpR",
+      "to": "vKEsyHFk/yejBBUFY#fscW90Xt"
+    },
+    {
+      "order": 48000,
+      "kind": "call",
+      "label": "a board cache of its own, under the tab's defaults",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "symbol": "createBoardQueryClient"
+      },
+      "id": "vKEsyHFk/yejBBUFY#q9tk8Tjs",
+      "to": "vKEsyHFk/yejBBUFY#zWQG6LJZ"
+    },
+    {
+      "order": 50000,
+      "kind": "render",
+      "label": "the one orb, in the voice box's socket",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "symbol": "OrbHost"
+      },
+      "id": "vKEsyHFk/yejBBUFY#gIVISpC9",
+      "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
+    },
+    {
+      "order": 56000,
+      "kind": "render",
+      "label": "gives the stage the recorded talk as its vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "symbol": "PaneVaultContext"
+      },
+      "id": "vKEsyHFk/yejBBUFY#tLxlPuMO",
+      "to": "vKEsyHFk/yejBBUFY#p5UCow7F"
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "order": 4000,
+  "name": "Pane session",
+  "kind": "module",
+  "responsibility": "Keeps each pane in server contact",
+  "description": "Owns the pane's socket and its generations, registration and pane reports, board news, taking back a claim, opening code, saying which checkout the person activated, and the workbench transport each socket generation carries. Starts in the vault its pane opens in, then holds the vault and repository the server last put the pane in, and names that vault on every call and on its socket's address. Every socket names the tab session, so the server knows which panes share a conversation.",
+  "groups": [
+    "panes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/pane-session"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+  "parent": "vKEsyHFk/yejBBUFY#wlbLOPSH",
+  "outgoing": [
+    {
+      "order": 6000,
+      "kind": "event",
+      "label": "the pane socket, naming its vault: registration and news",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
+        "symbol": "WebSocket"
+      },
+      "id": "vKEsyHFk/yejBBUFY#PuILGsjg",
+      "to": "vKEsyHFk/yejBBUFY#G4NHQC25"
+    },
+    {
+      "order": 9000,
+      "kind": "call",
+      "label": "open the bound code",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/pane-session/pane-core.ts",
+        "symbol": "activateCodeTarget"
+      },
+      "id": "vKEsyHFk/yejBBUFY#Cw08FQeQ",
+      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+    },
+    {
+      "order": 19000,
+      "kind": "call",
+      "label": "report the pane, show a board, take back, pick a checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
+        "symbol": "post"
+      },
+      "id": "vKEsyHFk/yejBBUFY#5U5bpM9T",
+      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
+    },
+    {
+      "order": 20000,
+      "kind": "event",
+      "label": "a board's new version, in the pane's vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
+        "symbol": "announceSemanticBoardChange"
+      },
+      "id": "vKEsyHFk/yejBBUFY#ZDhACWtE",
+      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+    },
+    {
+      "order": 21000,
+      "kind": "call",
+      "label": "one per socket generation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/pane-session/workbench-socket.ts",
+        "symbol": "createTransport"
+      },
+      "id": "vKEsyHFk/yejBBUFY#rcSUaP1b",
+      "to": "vKEsyHFk/yejBBUFY#941UBxya"
+    },
+    {
+      "order": 34000,
+      "kind": "call",
+      "label": "the id each of this tab's sockets carries",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
+        "symbol": "tabSessionId"
+      },
+      "id": "vKEsyHFk/yejBBUFY#w9Qrw2Xe",
+      "to": "vKEsyHFk/yejBBUFY#aG0rP4SX"
+    }
+  ]
+}

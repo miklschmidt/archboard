@@ -1,0 +1,14 @@
+{
+  "order": 34000,
+  "name": "Board addresses",
+  "kind": "module",
+  "responsibility": "Identifies the board and variant that a pane reads",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/rules/semantic-board-canvas/board/address.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#DW1hIFRx",
+  "parent": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+  "outgoing": []
+}

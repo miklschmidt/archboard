@@ -1,0 +1,58 @@
+{
+  "order": 7000,
+  "name": "Workbench client",
+  "kind": "service",
+  "responsibility": "The agent dock, the conversation beside the navigator and the voice box over a pane: the agent's state, Talk, the composer, the tab's workhorses to pick from, and its conversation with its work",
+  "description": "The dock lists the tab's workhorses by repository and checkout, once there are two, with the shown one picked and a word for each that runs, waits for your approval or waits for your answer, in text and not in colour alone; a pick shows that workhorse's conversation in every pane. The list is one named group of buttons that the Up and Down arrows move through. It reads one AgentView and acts through one AgentActions, both composed by the application over the agent setup, the focused pane's controllers and the voice session. While the person wants subtitles, and always in a fullscreen presentation, where no dock is on screen, it also draws the voice box, a capsule round the orb with mute and the subtitles control as two keys at its end, which carries the voice the dock otherwise shows. The box is free over the voice's pane, or in the pill at the foot of a presented walkthrough's box, where the pill is its skin. The dock hands the voice over only to a box that the orb's stage says is on the page, and places the orb after its own motion so the orb leaves from where it was seen. The bar of a fullscreen presentation holds one key of the client: Talk, which reads End voice while the voice is live.",
+  "groups": [
+    "agent"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/ui/components"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#0x47EMoO",
+  "parent": "vKEsyHFk/yejBBUFY#W0EmXnR9",
+  "outgoing": [
+    {
+      "order": 44000,
+      "kind": "render",
+      "label": "the dock's circle, or the voice box's socket",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/voice/VoiceControl.tsx",
+        "symbol": "OrbHost"
+      },
+      "id": "vKEsyHFk/yejBBUFY#MmIPovT7",
+      "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
+    },
+    {
+      "order": 45000,
+      "kind": "render",
+      "label": "its words, inside the voice box",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/voice/VoiceBox.tsx",
+        "symbol": "SubtitleWords"
+      },
+      "id": "vKEsyHFk/yejBBUFY#5fWy6ymA",
+      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc"
+    },
+    {
+      "order": 64000,
+      "kind": "call",
+      "label": "the dock's actions: send, Talk, pick a workhorse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
+        "symbol": "showConversation"
+      },
+      "id": "vKEsyHFk/yejBBUFY#4FfFQ9ag",
+      "to": "vKEsyHFk/yejBBUFY#HggZR41l"
+    }
+  ]
+}

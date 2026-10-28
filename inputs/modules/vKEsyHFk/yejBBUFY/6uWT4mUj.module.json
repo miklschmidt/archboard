@@ -1,0 +1,32 @@
+{
+  "order": 13000,
+  "name": "Server requests",
+  "kind": "module",
+  "responsibility": "The one way this tab speaks JSON to the Archboard server: each call names the vault it is about, and the page learns once which vault it opens in, or that there is none",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/server-requests/src/ui/clients/server-requests.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#6uWT4mUj",
+  "parent": "vKEsyHFk/yejBBUFY#wlbLOPSH",
+  "outgoing": [
+    {
+      "order": 14000,
+      "kind": "http",
+      "label": "JSON",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-requests/src/ui/clients/server-requests.ts",
+        "symbol": "fetch"
+      },
+      "id": "vKEsyHFk/yejBBUFY#chjmKQLj",
+      "to": "vKEsyHFk/yejBBUFY#G4NHQC25"
+    }
+  ]
+}

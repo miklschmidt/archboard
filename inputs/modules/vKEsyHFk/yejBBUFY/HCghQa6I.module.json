@@ -1,0 +1,32 @@
+{
+  "order": 5000,
+  "name": "Workspace routing",
+  "kind": "module",
+  "responsibility": "Restores pane display intent",
+  "description": "One TanStack Router route at /, whose search parameters paneA, paneB and pane are the workspace, with repoA and repoB beside them naming each pane's repository by its identity or an untracked vault's registry name, never by a path. The address follows what the panes report; on a first load and on Back or Forward it leads, restoring through the workspace port with the same command the navigator runs, once the repositories are known. It is never board authority.",
+  "groups": [
+    "panes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/hooks/board-routing"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#HCghQa6I",
+  "parent": "vKEsyHFk/yejBBUFY#wlbLOPSH",
+  "outgoing": [
+    {
+      "order": 3000,
+      "kind": "call",
+      "label": "restore through the workspace port, repository by pane",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
+        "symbol": "open"
+      },
+      "id": "vKEsyHFk/yejBBUFY#zfz9dQDf",
+      "to": "vKEsyHFk/yejBBUFY#HggZR41l"
+    }
+  ]
+}
