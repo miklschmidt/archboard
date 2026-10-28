@@ -1012,6 +1012,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/SMjRfwN3#T1TYskKQ"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/UOXNWLhR#Pz4KA2iT"
     },
     {
@@ -1096,6 +1100,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#K385etzX"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/UOXNWLhR#J6P3Mhjb"
     },
     {
@@ -1172,6 +1180,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/SMjRfwN3#JvmFYpVf"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/UOXNWLhR#888B84Js"
     },
     {
@@ -1181,6 +1193,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#VgEZTrmE"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/UOXNWLhR#G6arm4oI"
     },
     {
       "type": "remove",
@@ -1392,6 +1408,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#pbmVZ2Bh"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/yejBBUFY#TY7m2mtd"
     },
     {
@@ -1432,6 +1452,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/yejBBUFY#RKEuUGxw"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#XI1dBAG5"
     },
     {
@@ -1441,6 +1465,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/XppR9owz#vxMXavpj"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/yejBBUFY#SzB9LKAM"
     },
     {
       "type": "remove",
@@ -1549,6 +1577,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#9gqokaFZ"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/SMjRfwN3#fEsvd4ka"
     },
     {
       "type": "remove",
@@ -1681,6 +1713,14 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#Fr0oDPug"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/UOXNWLhR#Hc8yakWW"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/UOXNWLhR#EKpFBFTC"
     },
     {
       "type": "remove",
@@ -5271,6 +5311,18 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#eK0DABEt",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#hDWpDois"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#pszRWvFQ",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#aixSjfNe"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/6E6hL0Zk#C9PQBOwg",
       "field": "label",
       "value": "mount canonical model routes"
@@ -5459,19 +5511,19 @@
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#dtYjWvlf",
       "field": "name",
-      "value": "Retained diagram viewer"
+      "value": "Picture clients"
     },
     {
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#dtYjWvlf",
       "field": "responsibility",
-      "value": "Presents exact original diagram captures"
+      "value": "Supplies cached pictures, subject interaction, and transitions for architecture readings"
     },
     {
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#dtYjWvlf",
       "field": "description",
-      "value": "This viewer remains for retained original diagrams and replay. Its content comes from an explicit retained provider. It exposes no live board authoring or catalogue authority."
+      "value": "Canonical and retained readers share these drawing clients. The clients keep picture caches and camera transitions separate from authored model state. Retained document reads stay inside their explicit captured provider."
     },
     {
       "type": "clear",
@@ -5483,7 +5535,8 @@
       "subject": "vKEsyHFk/yejBBUFY#dtYjWvlf",
       "field": "formerNames",
       "value": [
-        "Semantic viewer"
+        "Semantic viewer",
+        "Retained diagram viewer"
       ]
     },
     {
@@ -5586,10 +5639,31 @@
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#wH0rE1x7",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#PuILGsjg",
       "field": "to",
       "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#yG8Hyadm",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#MCGiGynf",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+      }
     },
     {
       "type": "assign",
@@ -5627,6 +5701,12 @@
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#gK39PRbo",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#xsn0RvSi"
     },
     {
       "type": "assign",
@@ -6736,6 +6816,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#5zgh8igv",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/vKEsyHFk#8XKRkSHl",
       "field": "name",
       "value": "Architecture inputs"
@@ -7115,10 +7201,42 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#IOU51tal",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#fscW90Xt"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/qKGcB6vZ#AahDTiw9",
       "placement": {
         "holder": "vKEsyHFk/9ncuT5DP#08zJvPJq"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#4SigiIMB",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#4SigiIMB",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#fscW90Xt"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#MqDfCTuA",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#uG3OntgL"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#MqDfCTuA",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#fscW90Xt"
       }
     },
     {
@@ -7280,6 +7398,34 @@
     },
     {
       "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#Ntxc6nJp",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#aixSjfNe"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#r0RVKR0o",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#aixSjfNe"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#qu6pVEXF",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#aixSjfNe"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#VIqC762A",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#aixSjfNe"
+      }
+    },
+    {
+      "type": "place",
       "subject": "vKEsyHFk/Oi6SBIAM#RjaKX25k",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#7hdbqGFn"
@@ -7344,19 +7490,6 @@
       "placement": {
         "holder": "vKEsyHFk/9ncuT5DP#42Ws0Eeo"
       }
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/SMjRfwN3#T1TYskKQ",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
-      }
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/SMjRfwN3#4SigiIMB",
-      "field": "to",
-      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     },
     {
       "type": "place",
@@ -7459,13 +7592,6 @@
       "subject": "vKEsyHFk/yejBBUFY#t5Wy06ua",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
-      }
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/Oi6SBIAM#K385etzX",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
       }
     },
     {
@@ -7589,6 +7715,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#HZkTRFtf",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/OjRLKb74#tppVDaSZ",
       "placement": {
@@ -7660,13 +7792,6 @@
       }
     },
     {
-      "type": "place",
-      "subject": "vKEsyHFk/SMjRfwN3#JvmFYpVf",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
-      }
-    },
-    {
       "type": "assign",
       "subject": "vKEsyHFk/qKGcB6vZ#XB5TwXA3",
       "field": "to",
@@ -7724,7 +7849,7 @@
       "type": "place",
       "subject": "vKEsyHFk/SMjRfwN3#Kek84WN9",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+        "holder": "vKEsyHFk/yejBBUFY#aixSjfNe"
       }
     },
     {
@@ -7862,17 +7987,22 @@
     },
     {
       "type": "place",
-      "subject": "vKEsyHFk/UOXNWLhR#G6arm4oI",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
-      }
-    },
-    {
-      "type": "place",
       "subject": "vKEsyHFk/qKGcB6vZ#CjiN3z5a",
       "placement": {
         "holder": "vKEsyHFk/9ncuT5DP#Fg9dkGj3"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#wlbLOPSH",
+      "field": "responsibility",
+      "value": "Owns pane sessions, repository discovery, reading addresses, and local source navigation"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#wlbLOPSH",
+      "field": "description",
+      "value": "The tab restores each reading from its address and keeps pane ownership separate from architecture. Model discovery uses the canonical catalogue. Moving architecture ownership between models is unavailable."
     },
     {
       "type": "place",
@@ -9007,6 +9137,18 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
+      "field": "responsibility",
+      "value": "Caches and draws captured diagram content through the local renderer"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
+      "field": "description",
+      "value": "Picture identity follows its captured content. Canonical drawing reuses the picture cache while retained readers supply their original content through an explicit provider."
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
       "placement": {
@@ -9025,6 +9167,32 @@
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+      "field": "name",
+      "value": "Retained reads"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+      "field": "responsibility",
+      "value": "Reads exact captured documents and reports their displayed subjects"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+      "field": "description",
+      "value": "The original diagram viewer receives immutable content through the retained read provider. It has no live board authoring or fallback route. Shared diagnostics remain reusable by canonical readers."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+      "field": "formerNames",
+      "value": [
+        "Stage and reads"
+      ]
     },
     {
       "type": "place",
@@ -9079,7 +9247,7 @@
       "type": "place",
       "subject": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
       "placement": {
-        "holder": "vKEsyHFk/yejBBUFY#POloYnX3"
+        "holder": "vKEsyHFk/yejBBUFY#dtYjWvlf"
       }
     },
     {
@@ -9100,7 +9268,7 @@
       "type": "place",
       "subject": "vKEsyHFk/UOXNWLhR#9L5uHzND",
       "placement": {
-        "holder": "vKEsyHFk/yejBBUFY#POloYnX3"
+        "holder": "vKEsyHFk/yejBBUFY#dtYjWvlf"
       }
     },
     {
@@ -9154,6 +9322,19 @@
       "subject": "vKEsyHFk/0T9enjhi#CLdaoYy3",
       "field": "description",
       "value": "Installs canonical initialization, portable imports, and explicit migration through one signed archive, journal, atomic writer, and recovery mechanism."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#TLCeNkdh",
+      "field": "description",
+      "value": "Reads one coherent canonical model and its selected state. Opening a module changes attention without copying architecture. Unmigrated vaults expose explicit migration guidance. Exact retained originals use their captured viewer."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#TLCeNkdh",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#POloYnX3"
+      }
     },
     {
       "type": "place",
@@ -10717,12 +10898,60 @@
       "value": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#StrSdB9p",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/yejBBUFY#xsn0RvSi",
+        "vKEsyHFk/Oi6SBIAM#X07YebBP",
+        "vKEsyHFk/Oi6SBIAM#RjaKX25k",
+        "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+        "vKEsyHFk/Oi6SBIAM#4smEPsmF"
+      ]
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/Oi6SBIAM#StrSdB9p",
       "placement": {
         "holder": "vKEsyHFk#Oi6SBIAM",
         "before": "vKEsyHFk/Oi6SBIAM#YkrftZyC"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#gId3lbYc",
+      "field": "from",
+      "value": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#Z1AwOpO4",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UXFumNQO",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#hn2Q6jbD",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#J5gyfFop",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#h8QBd6aC",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#xsn0RvSi"
     },
     {
       "type": "assign",
@@ -10734,7 +10963,7 @@
         "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
         "vKEsyHFk/Oi6SBIAM#BL7LFThw",
         "vKEsyHFk/Oi6SBIAM#MqTq68P3",
-        "vKEsyHFk/Oi6SBIAM#K385etzX"
+        "vKEsyHFk/yejBBUFY#xsn0RvSi"
       ]
     },
     {
@@ -10790,6 +11019,12 @@
       "subject": "vKEsyHFk/Oi6SBIAM#U31cZhAR",
       "field": "from",
       "value": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#Q6IZmbLE",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#xsn0RvSi"
     },
     {
       "type": "assign",
@@ -12373,12 +12608,89 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#8y13ofdf",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/yejBBUFY#aixSjfNe",
+        "vKEsyHFk/UOXNWLhR#qV7dcNI5",
+        "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+        "vKEsyHFk/UOXNWLhR#aYC7if1N"
+      ]
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/UOXNWLhR#8y13ofdf",
       "placement": {
         "holder": "vKEsyHFk#UOXNWLhR",
         "before": "vKEsyHFk/UOXNWLhR#RYeM7bcW"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#B7t6AbnH",
+      "field": "from",
+      "value": "vKEsyHFk/yejBBUFY#aixSjfNe"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#rEMVUaSW",
+      "field": "from",
+      "value": "vKEsyHFk/yejBBUFY#aixSjfNe"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#SNxH5IuT",
+      "field": "from",
+      "value": "vKEsyHFk/yejBBUFY#aixSjfNe"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#d1iquVJp",
+      "field": "from",
+      "value": "vKEsyHFk/yejBBUFY#aixSjfNe"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#urWtDY15",
+      "field": "from",
+      "value": "vKEsyHFk/yejBBUFY#aixSjfNe"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#urWtDY15",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#aixSjfNe"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#NP2VXtuV",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#aixSjfNe"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#XyXsOCuZ",
+      "field": "from",
+      "value": "vKEsyHFk/yejBBUFY#aixSjfNe"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#avHI5NZl",
+      "field": "from",
+      "value": "vKEsyHFk/yejBBUFY#aixSjfNe"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#avHI5NZl",
+      "field": "to",
+      "value": "vKEsyHFk/yejBBUFY#aixSjfNe"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#oSCXYjlZ",
+      "field": "from",
+      "value": "vKEsyHFk/yejBBUFY#aixSjfNe"
     },
     {
       "type": "assign",
@@ -14275,6 +14587,16 @@
     "vKEsyHFk/HBlhIeSD#3LoKNA2g",
     "vKEsyHFk/gbyqW4H3#wskEBeIy",
     "vKEsyHFk/qKGcB6vZ#r7P2iu6H",
-    "vKEsyHFk/yejBBUFY#TY7m2mtd"
+    "vKEsyHFk/yejBBUFY#TY7m2mtd",
+    "vKEsyHFk/Oi6SBIAM#K385etzX",
+    "vKEsyHFk/yejBBUFY#SzB9LKAM",
+    "vKEsyHFk/SMjRfwN3#T1TYskKQ",
+    "vKEsyHFk/UOXNWLhR#G6arm4oI",
+    "vKEsyHFk/SMjRfwN3#JvmFYpVf",
+    "vKEsyHFk/Oi6SBIAM#pbmVZ2Bh",
+    "vKEsyHFk/yejBBUFY#RKEuUGxw",
+    "vKEsyHFk/SMjRfwN3#fEsvd4ka",
+    "vKEsyHFk/UOXNWLhR#Hc8yakWW",
+    "vKEsyHFk/UOXNWLhR#EKpFBFTC"
   ]
 }
