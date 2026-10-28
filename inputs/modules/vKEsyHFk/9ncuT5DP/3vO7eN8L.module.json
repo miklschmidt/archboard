@@ -1,0 +1,9 @@
+{
+  "order": 33000,
+  "name": "Voice",
+  "kind": "module",
+  "responsibility": "The separate fast coordinator thread of a tab session, its realtime voice leg, and the callbacks that tell it and the voice model workhorse and pane news while voice is live",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#3vO7eN8L",
+  "outgoing": []
+}

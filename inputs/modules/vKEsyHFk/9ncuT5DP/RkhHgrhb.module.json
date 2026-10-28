@@ -1,0 +1,58 @@
+{
+  "order": 18000,
+  "name": "Board-change delivery",
+  "kind": "module",
+  "responsibility": "Tells each workhorse what a user changed on the boards of its checkout: one quiet developer message, settled once",
+  "description": "Before each delivery it checks the child, epoch, thread link and cursor again; the outcome is delivered, not delivered with a reason, or unknown, and it is never retried.",
+  "groups": [
+    "workhorse"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/services/thread-context"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+  "parent": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+  "outgoing": [
+    {
+      "order": 27000,
+      "kind": "rpc",
+      "label": "thread/inject_items into the workhorse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/thread-context/delivery.ts",
+        "symbol": "threadInjectItems"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#8g1SNngD",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 28000,
+      "kind": "call",
+      "label": "check the link of its checkout's workhorse again",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/thread-context/delivery-guards.ts",
+        "symbol": "read"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#jbxp553Z",
+      "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
+    },
+    {
+      "order": 54000,
+      "kind": "call",
+      "label": "only while its generation is current",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/thread-context/delivery-guards.ts",
+        "symbol": "assertCurrent"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#zEsrkAfC",
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    }
+  ]
+}
