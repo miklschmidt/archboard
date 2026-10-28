@@ -7,8 +7,6 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-27T12:13:00Z'
-updated_date: '2026-10-28T01:20:00Z'
-
 updated_date: '2026-10-28T01:21:00Z'
 labels:
   - renderer
