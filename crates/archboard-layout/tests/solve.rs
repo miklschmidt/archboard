@@ -150,7 +150,7 @@ fn every_card_stands_at_its_measured_size_and_its_line_runs_from_card_to_card() 
         let mut graphviz = Column::default();
         let (answer, placed) =
             placed_of(&lay_out_board(&two_containers(nesting), &mut graphviz).unwrap()).unwrap();
-        assert!(graphviz.asked > 0);
+        assert_eq!(graphviz.asked > 0, nesting != "blocks");
         let cards = placed["cards"].as_array().unwrap();
         let box_of = |id: &str| &cards.iter().find(|card| card["id"] == id).unwrap()["box"];
         let inside = |one: &Value, (width, height): (f64, f64)| {
@@ -172,8 +172,10 @@ fn every_card_stands_at_its_measured_size_and_its_line_runs_from_card_to_card() 
 }
 
 #[test]
-fn a_solve_fails_when_graphviz_refuses_its_graph() {
-    lay_out_board(&two_containers("blocks"), &mut Refusing).unwrap_err();
+fn a_track_solve_fails_when_graphviz_refuses_its_graph() {
+    for nesting in ["inline", "groups"] {
+        lay_out_board(&two_containers(nesting), &mut Refusing).unwrap_err();
+    }
 }
 
 #[test]

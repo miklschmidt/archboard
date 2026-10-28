@@ -23,7 +23,6 @@ pub(super) struct Label {
     pub edge: usize,
     pub scope: usize,
     pub size: Rect,
-    pub alternatives: [Rect; 4],
 }
 
 /// A route crosses these scopes in source-to-target order.
@@ -71,11 +70,6 @@ impl Topology {
                         width: label.width.unwrap_or(0.0),
                         height: label.height.unwrap_or(0.0),
                     },
-                    alternatives: label_slots(
-                        model.endpoints[from].bounds,
-                        label.width.unwrap_or(0.0),
-                        label.height.unwrap_or(0.0),
-                    ),
                 });
             }
             for common in [CommonEndpoint::Source(from), CommonEndpoint::Target(to)] {
@@ -114,9 +108,6 @@ impl Topology {
                 label.scope == model.endpoints[model.ends[label.edge].0].scope
                     && label.size.width.is_finite()
                     && label.size.height.is_finite()
-                    && label.alternatives.iter().all(|slot| {
-                        slot.width == label.size.width && slot.height == label.size.height
-                    })
             })
             && self.routes.iter().enumerate().all(|(edge, route)| {
                 let (from, to) = model.ends[edge];
@@ -139,24 +130,6 @@ impl Topology {
                             .collect::<Vec<_>>()
             })
     }
-}
-
-fn label_slots(source: Rect, width: f64, height: f64) -> [Rect; 4] {
-    [0, 1, 2, 3].map(|candidate| Rect {
-        x: if candidate < 2 {
-            source.x + source.width + 64.0
-        } else {
-            source.x - 64.0 - width
-        },
-        y: source.y + source.height / 2.0 - height / 2.0
-            + if candidate % 2 == 0 {
-                0.0
-            } else {
-                height + 32.0
-            },
-        width,
-        height,
-    })
 }
 
 fn ancestors(model: &Model<'_>, scope: usize) -> Vec<usize> {

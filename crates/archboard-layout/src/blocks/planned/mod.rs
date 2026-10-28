@@ -1,7 +1,10 @@
 //! Private measured planning with a temporary dispatcher for unmigrated graph classes.
 
 mod channel;
+mod geometry;
+mod lanes;
 mod model;
+mod portals;
 mod shape;
 mod topology;
 
@@ -19,9 +22,8 @@ pub(super) fn lay_out(
         topology.complete(&model),
         "planned routes and fans retain semantic ownership"
     );
-    if !model.edges.is_empty() && !channel::eligible(&model) {
+    if !channel::eligible(&model, &topology) {
         return Ok(None);
     }
-    let mut shape = shape::plan(&model);
-    Ok(channel::emit(&model, &mut shape).then_some(shape.drawing))
+    Ok(shape::plan(&model, &topology).map(|shape| shape.drawing))
 }

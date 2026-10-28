@@ -9,7 +9,8 @@ import {
 	routeLabels,
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
-import { across, along, breadth, depth, faceOf } from "#tests/runtime/support/drawn-reading.ts";
+import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
+import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { headerFoot } from "#tests/runtime/support/drawn-subjects.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
@@ -133,8 +134,8 @@ function ancestorsOf(id: string): string[] {
 	return found;
 }
 
-// Track still leaves such a frame by its side, so this holds on Blocks alone.
-test("a container's external dependency ahead leaves its forward perimeter", async () => {
+// A direct parent relationship names its painted header, not a descendant portal.
+test("a container's direct dependency leaves its painted header", async () => {
 	const content = orderedFixture({
 		nodes: [
 			{ id: "frame", name: "Service", kind: "service" },
@@ -151,18 +152,9 @@ test("a container's external dependency ahead leaves its forward perimeter", asy
 		layout: "blocks",
 	});
 
-	const frame = drawing.atlas.nodes["frame"]!;
-	const target = drawing.atlas.nodes["store"]!;
-	// Establish the visible geometry that makes the forward face appropriate,
-	// whichever reading the renderer selected; no coordinates or ranks are fixed.
-	expect(along(target)).toBeGreaterThan(along(frame) + depth(frame));
-	const targetCenter = across(target) + breadth(target) / 2;
-	expect(targetCenter).toBeGreaterThan(across(frame));
-	expect(targetCenter).toBeLessThan(across(frame) + breadth(frame));
-	const origin = routePoints(drawing.svg).get("write")![0]!;
-	// A title-band-only router forces this ordinary dependency out a header flank.
-	// The actual frame perimeter is the container's external connection boundary.
-	expect(faceOf(origin, frame)).toBe("ahead");
+	const route = routePoints(drawing.svg).get("write")!;
+	expect(distanceToFrame(route[0]!, headerCards(drawing).get("frame")!)).toBeLessThan(1);
+	expectDrawingIntact(drawing, content, "blocks");
 });
 
 // A chain inside a container once stepped sideways a few dozen points per

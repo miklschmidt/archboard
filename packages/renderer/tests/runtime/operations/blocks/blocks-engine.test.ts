@@ -13,6 +13,8 @@ import {
 	routePoints,
 	sharedStretches,
 } from "#tests/runtime/support/drawn-routes.ts";
+import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
+import { headerCards, endsOffCards } from "#tests/runtime/support/drawn-parents.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import agentWorkbench from "#tests/runtime/support/fixtures/agent-workbench.json";
 import oneBrowserTwoUses from "#tests/runtime/support/fixtures/one-browser-two-uses.json";
@@ -399,11 +401,8 @@ test("lines that join on the way to a card stay joined, without running along a 
 	expect(alongWalls(routePoints(drawn.svg), drawn.atlas.nodes["7TAwfrZF"]!)).toEqual([]);
 });
 
-// Taken from the IIS migration board: a line into a container itself ends on a
-// port no line inside the container runs through, which stood wherever the
-// container's block put it, and settling the trunk pulled the line off the
-// middle of the card it leaves toward that meaningless place.
-test("a line into a container itself leaves its card on the card's own column", async () => {
+// Parent relationships attach to the visible header through any feasible wall.
+test("a line into a container itself keeps its header endpoint and its private label", async () => {
 	const content = orderedFixture({
 		nodes: [
 			{ id: "lb", name: "Legacy load balancer", kind: "service" },
@@ -419,9 +418,9 @@ test("a line into a container itself leaves its card on the card's own column", 
 		edges: [{ id: "e1", from: "lb", to: "pool", kind: "call", label: "L4 forwarding" }],
 	});
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const card = drawn.atlas.nodes["lb"]!;
-	const route = routePoints(drawn.svg).get("e1")!;
-	for (const { x } of route) expect(x).toBeCloseTo(card.x + card.width / 2, 0);
+	expect(headerCards(drawn).has("pool")).toBe(true);
+	expect(endsOffCards(drawn, content)).toEqual([]);
+	expectDrawingIntact(drawn, content, "blocks");
 });
 
 test("a line into a container enters the card from the side its source stands on", async () => {

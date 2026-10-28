@@ -560,6 +560,42 @@ The initial fit penalty also preferred one tall column of ten independent cards 
 The candidate now charges twice the magnification above the pane's natural fit.
 This calibration applies to every scope and keeps the original compact-inset assertions intact.
 
+### Build checkpoint: four-wall candidates
+
+Step 5 admits disjoint chains across measured scopes and labels whose source owns the route's containing scope.
+Each scope retains at most two shapes, with upright cards in downward or rightward readings.
+The parent compares those measured shapes without recomputing its children.
+Each complete local candidate includes source label cells, four-wall approaches, and its actual channel paths.
+Free frame-wall crossings face the peer when the protected headers permit that approach.
+
+Channel intervals reuse the lowest available lane in a shared gap.
+The planner rejects routes through protected objects, foreign frames, other labels, or existing routes.
+Unsupported branching, special flow endpoints, and source labels outside the route's owning scope retain legacy placement.
+There is no grid fallback in this checkpoint.
+
+The source cell now computes label alternatives from its real measured dimensions.
+This replaces the shadow model's provisional label rectangles and removes a second geometry definition.
+The topology still owns each label's relationship and containing scope.
+
+Each emitted boundary crossing must follow the declared portal chain exactly once.
+Routes cannot follow a frame wall or cross near its corner.
+The existing Rust solve tests now require Graphviz invocation and refusal only for Track.
+The measured-size and endpoint-attachment assertions still apply to both engines.
+The planned chain test accepts either forward reading direction while retaining directness.
+
+The corpus exposed a label detour that normalization erased.
+Feasibility now requires the final polyline to cross both padded label pins on one horizontal run.
+The regression fixture exercises both authored endpoint orders.
+Connected scopes retain one local direction rather than wrapping a chain across shelves.
+The page's existing downward reading metadata remains unchanged, while a local row can read rightward.
+
+The test inventory changes at this checkpoint are limited to the superseded Blocks rules.
+`containers/compound-layout.test.ts` now requires a direct parent route to attach to its visible header instead of its frame perimeter.
+`blocks/blocks-engine.test.ts` replaces the forced source-column rule with intactness and visible header attachment.
+`blocks/packed-frame.test.ts` replaces fixed center alignment with attached endpoints, a clear shortest route, and at most two bends.
+`export/reading-direction.test.ts` permits a forward rightward row for Blocks and keeps Track's existing rules.
+Every card, header, label, wall, frame, and endpoint integrity assertion remains in force.
+
 ## Risks and decisions left to evidence
 
 The largest risk is conservative over-reservation.

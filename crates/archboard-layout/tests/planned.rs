@@ -34,8 +34,10 @@ fn an_adjacent_chain_uses_direct_channels_with_measured_cards_and_no_ranker() {
     assert!(placed["edges"].as_array().unwrap().iter().all(|edge| {
         let points = edge["points"].as_array().unwrap();
         points.len() == 2
-            && points[0]["x"] == points[1]["x"]
-            && points[0]["y"].as_f64().unwrap() < points[1]["y"].as_f64().unwrap()
+            && ((points[0]["x"] == points[1]["x"]
+                && points[0]["y"].as_f64().unwrap() < points[1]["y"].as_f64().unwrap())
+                || (points[0]["y"] == points[1]["y"]
+                    && points[0]["x"].as_f64().unwrap() < points[1]["x"].as_f64().unwrap()))
     }));
     assert_eq!(placed["cards"][0]["box"]["width"], 200.0);
     assert_eq!(placed["cards"][1]["box"]["height"], 60.0);
@@ -60,4 +62,33 @@ fn an_isolated_nested_group_keeps_semantic_frame_depth_and_measured_caption() {
     assert_eq!(placed["regions"][0]["parent"], "outer");
     assert_eq!(placed["regions"][0]["caption"]["width"], 90.0);
     assert_eq!(placed["regions"][0]["caption"]["height"], 20.0);
+}
+
+#[test]
+fn a_label_has_one_horizontal_source_owned_run_and_keeps_its_measured_rectangle() {
+    for orders in [["0", "1"], ["1", "0"]] {
+        let placed = drawing(
+            &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+        "children":[{"id":"a","width":200,"height":80,"layoutOptions":{"archboard.order":orders[0]}},{"id":"b","width":200,"height":80,"layoutOptions":{"archboard.order":orders[1]}}],
+        "edges":[{"id":"ab","sources":["a"],"targets":["b"],"labels":[{"width":80,"height":24}]}]}),
+        );
+        let label = &placed["edges"][0]["label"];
+        let (x, y) = (label["x"].as_f64().unwrap(), label["y"].as_f64().unwrap());
+        assert_eq!(
+            (label["width"].as_f64(), label["height"].as_f64()),
+            (Some(80.0), Some(24.0))
+        );
+        let points = placed["edges"][0]["points"].as_array().unwrap();
+        assert!(points.windows(2).any(|pair| {
+            let (a, b) = (
+                pair[0]["x"].as_f64().unwrap(),
+                pair[1]["x"].as_f64().unwrap(),
+            );
+            pair[0]["y"].as_f64() == Some(y + 12.0)
+                && pair[1]["y"] == pair[0]["y"]
+                && a.min(b) <= x
+                && a.max(b) >= x + 80.0
+        }));
+        assert!((points[0]["x"].as_f64().unwrap() - x - 40.0).abs() < 200.0);
+    }
 }

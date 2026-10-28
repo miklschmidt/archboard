@@ -1,5 +1,5 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-// Architecture diagrams always read top to bottom, including wide fans and long pipelines.
+// Track reads downward. Blocks also permits a rightward reading within one scope.
 
 import { describe, expect, test } from "bun:test";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
@@ -145,7 +145,9 @@ test.each(
 		for (let index = 1; index < 12; index++) {
 			const before = drawing.atlas.nodes[`s${index - 1}`]!;
 			const after = drawing.atlas.nodes[`s${index}`]!;
-			if (after.y < before.y) {
+			if (layout === "blocks" && after.y === before.y) {
+				expect(after.x).toBeGreaterThan(before.x + before.width);
+			} else if (after.y < before.y) {
 				expect(after.x).toBeGreaterThan(before.x + before.width);
 				expect(after.y).toBe(drawing.atlas.nodes["s0"]!.y);
 			} else {

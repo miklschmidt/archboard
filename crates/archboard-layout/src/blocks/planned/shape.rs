@@ -6,15 +6,25 @@ use crate::blocks::assembly::{Placed, PlacedArea, PlacedCard, Title};
 use crate::constants::{CONTAINER_INSET, HEADER_SLAB_INSET, REGION_INSET, fit_in};
 use crate::geometry::{Point, Rect};
 
+use super::geometry::length;
 use super::model::{Child, Model};
+use super::topology::Topology;
 
 pub(super) const CLEAR: f64 = 32.0;
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum Axis {
+    Down,
+    Right,
+}
 
 #[derive(Clone)]
 pub(super) struct Shape {
     pub drawing: Placed,
     pub endpoints: BTreeMap<usize, Rect>,
     pub scopes: BTreeMap<usize, Rect>,
+    pub labels: BTreeMap<usize, Rect>,
+    pub axis: Axis,
     pub occupied: f64,
     pub empty: f64,
 }
@@ -33,14 +43,33 @@ impl Shape {
             },
             endpoints: BTreeMap::new(),
             scopes: BTreeMap::new(),
+            labels: BTreeMap::new(),
+            axis: Axis::Down,
             occupied: 0.0,
             empty: 0.0,
         }
     }
 
     pub(super) fn cost(&self) -> f64 {
+        let routes = self.drawing.edges.len().max(1) as f64;
+        let typical = self.endpoints.values().map(|at| at.width).sum::<f64>()
+            / self.endpoints.len().max(1) as f64;
+        let distance: f64 = self
+            .drawing
+            .edges
+            .iter()
+            .map(|edge| length(&edge.points))
+            .sum();
+        let bends: usize = self
+            .drawing
+            .edges
+            .iter()
+            .map(|edge| edge.points.len().saturating_sub(2))
+            .sum();
         30.0 * self.empty / self.occupied.max(1.0)
+            + 25.0 * distance / (routes * typical).max(1.0)
             + 14.0 * (1.0 / fit_in(self.drawing.width, self.drawing.height).max(0.001) - 1.0)
+            + 2.0 * bends as f64 / routes
     }
 
     fn shift(&mut self, by: Point) {
@@ -48,6 +77,7 @@ impl Shape {
             .endpoints
             .values_mut()
             .chain(self.scopes.values_mut())
+            .chain(self.labels.values_mut())
             .chain(
                 self.drawing
                     .cards
@@ -98,17 +128,39 @@ impl Shape {
         self.drawing.titles.extend(child.drawing.titles);
         self.endpoints.extend(child.endpoints);
         self.scopes.extend(child.scopes);
+        self.labels.extend(child.labels);
     }
 }
 
-fn card(model: &Model<'_>, index: usize) -> Shape {
+fn card(model: &Model<'_>, topology: &Topology, index: usize, left: bool) -> Shape {
     let endpoint = &model.endpoints[index];
     let scope = &model.scopes[endpoint.scope];
     let mut shape = Shape::empty();
-    let at = endpoint.bounds;
-    shape.drawing.width = at.width;
-    shape.drawing.height = at.height;
-    shape.occupied = at.width * at.height;
+    let label = topology
+        .labels
+        .iter()
+        .find(|label| model.ends[label.edge].0 == index);
+    let mut at = endpoint.bounds;
+    let width = label.map_or(0.0, |label| label.size.width + 3.0 * CLEAR);
+    let height = label.map_or(at.height, |label| at.height.max(label.size.height));
+    at.y = (height - at.height) / 2.0;
+    if left {
+        at.x += width;
+    }
+    if let Some(label) = label {
+        shape.labels.insert(
+            label.edge,
+            Rect {
+                x: if left { CLEAR } else { at.width + 2.0 * CLEAR },
+                y: (height - label.size.height) / 2.0,
+                ..label.size
+            },
+        );
+        shape.occupied += label.size.width * label.size.height;
+    }
+    shape.drawing.width = at.width + width;
+    shape.drawing.height = height;
+    shape.occupied += at.width * at.height;
     shape.drawing.cards.push(PlacedCard {
         id: endpoint.node.id.clone(),
         bx: at,
@@ -119,56 +171,111 @@ fn card(model: &Model<'_>, index: usize) -> Shape {
     shape
 }
 
-/// Compare a bounded set of complete shelf placements, preserving authored order.
-pub(super) fn plan(model: &Model<'_>) -> Shape {
-    scope(model, 0)
+/// Keep at most two measured child shapes. Parent candidates never recompute a child.
+pub(super) fn plan(model: &Model<'_>, topology: &Topology) -> Option<Shape> {
+    scope(model, topology, 0)
+        .into_iter()
+        .min_by(|a, b| a.cost().total_cmp(&b.cost()))
 }
 
-fn scope(model: &Model<'_>, index: usize) -> Shape {
-    let one = &model.scopes[index];
-    let children: Vec<_> = one
+fn scope(model: &Model<'_>, topology: &Topology, index: usize) -> Vec<Shape> {
+    let children: Vec<Vec<_>> = model.scopes[index]
         .children
         .iter()
         .map(|child| match *child {
-            Child::Endpoint(endpoint) => card(model, endpoint),
-            Child::Scope(index) => scope(model, index),
+            Child::Endpoint(endpoint) => [false, true]
+                .map(|left| card(model, topology, endpoint, left))
+                .into(),
+            Child::Scope(index) => scope(model, topology, index),
         })
         .collect();
-    let widest = children.iter().map(|c| c.drawing.width).fold(0.0, f64::max);
-    let area: f64 = children
-        .iter()
-        .map(|c| (c.drawing.width + CLEAR) * (c.drawing.height + CLEAR))
-        .sum();
-    let widths = if model.edges.is_empty() {
-        vec![
-            widest,
-            widest.max((area * 1.4).sqrt()),
-            children.iter().map(|c| c.drawing.width + CLEAR).sum(),
-        ]
-    } else {
-        vec![widest]
-    };
-    widths
+    if children.iter().any(Vec::is_empty) {
+        return Vec::new();
+    }
+    [Axis::Down, Axis::Right]
         .into_iter()
-        .enumerate()
-        .map(|(candidate, width)| {
-            let shape = pack(model, index, &children, width);
-            (shape.cost(), candidate, shape)
+        .filter_map(|axis| {
+            candidates(model, topology, index, &children, axis)
+                .into_iter()
+                .min_by(|a, b| a.cost().total_cmp(&b.cost()))
         })
-        .min_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)))
-        .expect("three shelf candidates")
-        .2
+        .collect()
 }
 
-fn pack(model: &Model<'_>, index: usize, children: &[Shape], across: f64) -> Shape {
-    let one = &model.scopes[index];
-    let inset = if one.header.is_some() {
-        CONTAINER_INSET
-    } else if one.group.is_some() {
-        REGION_INSET
+fn candidates(
+    model: &Model<'_>,
+    topology: &Topology,
+    index: usize,
+    children: &[Vec<Shape>],
+    axis: Axis,
+) -> Vec<Shape> {
+    let mut feasible = Vec::new();
+    for alternative in 0..2 {
+        let children: Vec<_> = children
+            .iter()
+            .map(|shapes| &shapes[alternative.min(shapes.len() - 1)])
+            .collect();
+        let widest = children
+            .iter()
+            .map(|child| cross_size(child, axis))
+            .fold(0.0, f64::max);
+        let area: f64 = children
+            .iter()
+            .map(|c| (c.drawing.width + CLEAR) * (c.drawing.height + CLEAR))
+            .sum();
+        let widths = [
+            widest,
+            widest.max((area * 1.4).sqrt()),
+            children.iter().map(|c| cross_size(c, axis) + CLEAR).sum(),
+        ];
+        let connected = topology.routes.iter().any(|route| route.scope == index);
+        for (shelf, across) in widths
+            .into_iter()
+            .enumerate()
+            .filter(|(shelf, _)| !connected || *shelf != 1)
+        {
+            let mut shape = pack(
+                model,
+                index,
+                &children,
+                across,
+                axis,
+                connected && shelf == 0,
+            );
+            if super::channel::emit(model, topology, index, &mut shape) {
+                feasible.push(shape);
+            }
+        }
+    }
+    feasible
+}
+
+fn cross_size(shape: &Shape, axis: Axis) -> f64 {
+    if axis == Axis::Down {
+        shape.drawing.width
     } else {
-        CLEAR
-    };
+        shape.drawing.height
+    }
+}
+
+fn along_size(shape: &Shape, axis: Axis) -> f64 {
+    if axis == Axis::Down {
+        shape.drawing.height
+    } else {
+        shape.drawing.width
+    }
+}
+
+fn pack(
+    model: &Model<'_>,
+    index: usize,
+    children: &[&Shape],
+    across: f64,
+    axis: Axis,
+    single: bool,
+) -> Shape {
+    let one = &model.scopes[index];
+    let inset = inset(one);
     let header = one.header.map(|id| model.endpoints[id].bounds);
     let top = header.map_or_else(
         || {
@@ -178,34 +285,49 @@ fn pack(model: &Model<'_>, index: usize, children: &[Shape], across: f64) -> Sha
         |at| at.y + at.height + inset,
     );
     let mut shape = Shape::empty();
-    let (mut x, mut y, mut row_height, mut width) = (inset, top, 0.0_f64, 0.0_f64);
+    shape.axis = axis;
+    let (mut cross, mut along, mut row, mut width, mut height) =
+        (0.0, 0.0, 0.0_f64, 0.0_f64, 0.0_f64);
+    let centering = if children.len() == 1 && one.group.is_some() {
+        one.caption.map_or(0.0, |(width, _)| {
+            (width - children[0].drawing.width).max(0.0) / 2.0
+        })
+    } else {
+        0.0
+    };
     let mut used = 0.0;
     for child in children {
-        if x > inset && x + child.drawing.width > inset + across {
-            x = inset;
-            y += row_height + CLEAR;
-            row_height = 0.0;
+        if cross > 0.0 && (single || cross + cross_size(child, axis) > across) {
+            cross = 0.0;
+            along += row + 2.0 * CLEAR;
+            row = 0.0;
         }
-        let mut child = child.clone();
-        child.shift(Point {
-            x: x + if model.edges.is_empty() {
-                0.0
-            } else {
-                (across - child.drawing.width) / 2.0
-            },
-            y,
-        });
+        let mut offset = if axis == Axis::Down {
+            Point {
+                x: inset + cross,
+                y: top + along,
+            }
+        } else {
+            Point {
+                x: inset + along,
+                y: top + cross,
+            }
+        };
+        offset.x += centering;
+        let mut child = (*child).clone();
+        child.shift(offset);
         used += child.drawing.width * child.drawing.height;
-        row_height = row_height.max(child.drawing.height);
-        width = width.max(x + child.drawing.width + inset);
-        x += child.drawing.width + CLEAR;
+        row = row.max(along_size(&child, axis));
+        cross += cross_size(&child, axis) + 2.0 * CLEAR;
+        width = width.max(offset.x + child.drawing.width + inset);
+        height = height.max(offset.y + child.drawing.height + inset);
         shape.absorb(child);
     }
     shape.drawing.width = width
         .max(header.map_or(0.0, |at| at.x + at.width + inset))
         .max(one.caption.map_or(0.0, |(w, _)| w + 2.0 * inset))
         .max(2.0 * inset);
-    shape.drawing.height = y + row_height + inset;
+    shape.drawing.height = height.max(top + inset);
     let bounds = Rect {
         x: 0.0,
         y: 0.0,
@@ -260,5 +382,15 @@ fn add_frame(model: &Model<'_>, index: usize, shape: &mut Shape, bounds: Rect) {
                 depth: one.depth,
             },
         );
+    }
+}
+
+fn inset(one: &super::model::Scope<'_>) -> f64 {
+    if one.header.is_some() {
+        CONTAINER_INSET
+    } else if one.group.is_some() {
+        REGION_INSET
+    } else {
+        CLEAR
     }
 }
