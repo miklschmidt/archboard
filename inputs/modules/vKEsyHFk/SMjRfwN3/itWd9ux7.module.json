@@ -1,0 +1,10 @@
+{
+  "order": 36000,
+  "name": "Video encoding",
+  "kind": "module",
+  "responsibility": "Turns the drawn frames and the voice into one video file with ffmpeg, which it finds on the machine or runs through Nix",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SMjRfwN3#itWd9ux7",
+  "parent": "vKEsyHFk/SMjRfwN3#gTwVYQo9",
+  "outgoing": []
+}

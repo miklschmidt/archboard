@@ -1,0 +1,90 @@
+{
+  "order": 56000,
+  "name": "Model reading",
+  "kind": "module",
+  "responsibility": "Shows recursive modules, interfaces, connection evidence, and exact reading history",
+  "description": "Reads current, draft, completed, and exact architecture with explicit unavailable states. One catalogue supplies reading and comparison choices. Recursive scopes expose complete interfaces and relationship evidence. The router owns scope, state, checkpoint, focus, filters, grammar, flow, comparison, and foreign destinations.\n\nSelection retains canonical identities through renames, hidden subjects, and removed comparison definitions. Pointer modifiers, keyboard commands, and area selection share one owner. Focus opens containment paths. Filters preserve complete interfaces. Behavioral readings retain all participants and steps.\n\nCode and foreign navigation preserve exact historical pins. State details expose decisions, dates, documents, correction audit, unresolved issues, and blocked ancestry. Explanation actions capture the exact reading through the existing local action.\n\nEach reader belongs to its resolved vault. Captured walkthroughs reuse its renderer and camera, retain the ordinary reading, and change revision only on explicit restart. Every converted beat requires an explicit view. Unavailable beats draw no replacement architecture.\n\nMigration previews retain original coverage, lifecycle, standing, predecessors, and baselines. Failed composition keeps exact originals inspectable without claiming an empty current model. The browser authors no mapping, settlement, lifecycle decision, or migration.\n\nInstalled bookmarks preserve canonical authority and exact view membership without owning model content. Former addresses reopen retained originals with their exact state and checkpoint. Model ownership transfer remains explicitly unavailable.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/architecture-model"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+  "parent": "vKEsyHFk/yejBBUFY#TLCeNkdh",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.13 - Explain-the-captured-reading-through-local-agent-actions.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 69000,
+      "kind": "call",
+      "label": "Read current or retained content",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ArchitectureModelStage.tsx",
+        "symbol": "CanonicalModelReader"
+      },
+      "id": "vKEsyHFk/yejBBUFY#R8xiiNXP",
+      "to": "vKEsyHFk/yejBBUFY#AIp6YN1P"
+    },
+    {
+      "order": 72000,
+      "kind": "call",
+      "label": "Read the legacy board listing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ArchitectureModelStage.tsx",
+        "symbol": "ArchitectureModelStage"
+      },
+      "id": "vKEsyHFk/yejBBUFY#uZDbu609",
+      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+    },
+    {
+      "order": 74000,
+      "kind": "call",
+      "label": "subscribe to current model updates",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ArchitectureModelStage.tsx",
+        "symbol": "useArchitectureFeed"
+      },
+      "id": "vKEsyHFk/yejBBUFY#m551U9Gl",
+      "to": "vKEsyHFk/yejBBUFY#JrTKhhoI"
+    },
+    {
+      "order": 75000,
+      "kind": "call",
+      "label": "projectModel",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelReading.tsx",
+        "symbol": "projectModel"
+      },
+      "id": "vKEsyHFk/yejBBUFY#scByKwmU",
+      "to": "vKEsyHFk/yejBBUFY#IgYndyJd"
+    },
+    {
+      "order": 81000,
+      "kind": "call",
+      "label": "change the canonical reading address",
+      "emphasis": "normal",
+      "id": "vKEsyHFk/yejBBUFY#DTvtRXMv",
+      "to": "vKEsyHFk/yejBBUFY#w46oCRoH"
+    }
+  ]
+}

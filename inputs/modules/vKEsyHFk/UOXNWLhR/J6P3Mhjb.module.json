@@ -1,0 +1,35 @@
+{
+  "order": 20004,
+  "name": "Archboard server",
+  "kind": "service",
+  "responsibility": "Answers the semantic read routes",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/routes/semantic-boards/semantic-board-routes.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#J6P3Mhjb",
+  "references": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "model": "vKEsyHFk",
+      "subject": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+      "state": "current"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 118000,
+      "kind": "event",
+      "label": "announces a board's new version over the pane socket",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/semantic-board-canvas/board-changes.ts",
+        "symbol": "announceSemanticBoardChange"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#9frwgDZJ",
+      "to": "vKEsyHFk/UOXNWLhR#bx5fJdP8"
+    }
+  ]
+}
