@@ -71,9 +71,9 @@ const modelExplainContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "model explain");
 		const raw = await statedJson(input, context);
-		const request = ExplanationActionRequestSchema.parse({
+		const request = context.parse(ExplanationActionRequestSchema, {
 			type: "invoke",
-			...z.record(z.string(), z.unknown()).parse(raw),
+			...context.parse(z.record(z.string(), z.unknown()), raw),
 		});
 		const result = await explainArchitectureOnServer(request);
 		return {

@@ -86,6 +86,52 @@ test("CLI and HTTP expose the same public model read and structured refusal", as
 	expect(ArchitectureModelReadSchema.parse(failedResult)).toEqual(failure);
 });
 
+test("explanation HTTP adapters refuse malformed envelopes before dispatch", async () => {
+	if (server === undefined) throw new Error("The server did not start");
+	const endpoint = `${server.base}/api/architecture/explanations`;
+	const query = new URLSearchParams({ vault, tabSessionId: "surface-tab" });
+	const body = JSON.stringify({ vault, tabSessionId: "surface-tab", unknown: true });
+	for (const path of ["", "/missing"]) {
+		const response = await fetch(`${endpoint}${path}?${query}&unknown=true`);
+		expect(response.status).toBe(400);
+		expect(await response.json()).toMatchObject({ success: false, code: "INVALID_REQUEST" });
+	}
+	for (const path of ["/missing/retry", "/missing/cancel"]) {
+		const response = await fetch(`${endpoint}${path}`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body,
+		});
+		expect(response.status).toBe(400);
+		expect(await response.json()).toMatchObject({ success: false, code: "INVALID_REQUEST" });
+	}
+	for (const path of ["", "/missing/cancel"]) {
+		const response = await fetch(`${endpoint}${path}?${new URLSearchParams({ vault })}`, {
+			method: "POST",
+		});
+		expect(response.status).toBe(400);
+		expect(await response.json()).toMatchObject({ success: false, code: "INVALID_REQUEST" });
+	}
+});
+
+test("malformed explanation CLI input reports a usage refusal", () => {
+	if (server === undefined) throw new Error("The server did not start");
+	for (const input of [
+		[],
+		{ type: "latest" },
+		{ type: "latest", tabSessionId: "surface-tab", unknown: true },
+	]) {
+		const result = runServerCli({
+			repoRoot,
+			server,
+			args: ["model", "explain"],
+			input: JSON.stringify(input),
+		});
+		expect(result.status, result.stderr).toBe(2);
+		expect(result.stdout).toBe("");
+	}
+});
+
 test("CLI and HTTP retain, list and reopen one exact checkpoint after current content changes", async () => {
 	if (server === undefined) throw new Error("The server did not start");
 	rmSync(join(vault, "bad.module.json"), { force: true });

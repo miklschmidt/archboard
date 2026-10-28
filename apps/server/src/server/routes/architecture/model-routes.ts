@@ -13,6 +13,7 @@ import { ArchitectureCheckpointRequestSchema } from "@archboard/board/model";
 import { respond } from "#server/routes/architecture/model-response.ts";
 import { mountArchitectureEditRoutes } from "#server/routes/architecture/model-edit-routes.ts";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
+import { asyncEndpoint } from "#server/middleware/mutation-work/mutation-work.ts";
 
 const QuerySchema = z
 	.object({
@@ -69,16 +70,20 @@ function mountArchitectureModelRoutes(app: Express): void {
 	mountArchitecturePortableRoutes(app);
 	mountArchitectureEditRoutes(app);
 	mountArchitectureFlowRoutes(app);
-	app.post("/api/architecture/archive/init", requireVault, async (req, res) => {
-		const parsed = InitializeBodySchema.safeParse(req.body);
-		if (!parsed.success) {
-			res
-				.status(400)
-				.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(parsed.error) });
-			return;
-		}
-		respond(res, await initializeArchitectureArchive(vaultOfRequest(req)));
-	});
+	app.post(
+		"/api/architecture/archive/init",
+		requireVault,
+		asyncEndpoint(async (req, res) => {
+			const parsed = InitializeBodySchema.safeParse(req.body);
+			if (!parsed.success) {
+				res
+					.status(400)
+					.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(parsed.error) });
+				return;
+			}
+			respond(res, await initializeArchitectureArchive(vaultOfRequest(req)));
+		}),
+	);
 	app.get(
 		["/api/architecture/model", "/api/architecture/proposals"],
 		requireVault,
@@ -104,17 +109,21 @@ function mountArchitectureModelRoutes(app: Express): void {
 		}
 		respond(res, await listArchitectureCheckpoints(vaultOfRequest(req)));
 	});
-	app.post("/api/architecture/checkpoints", requireVault, async (req, res) => {
-		const parsed = RetainBodySchema.safeParse(req.body);
-		if (!parsed.success) {
-			res
-				.status(400)
-				.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(parsed.error) });
-			return;
-		}
-		const { vault: _vault, ...input } = parsed.data;
-		respond(res, await retainArchitectureCheckpoint(vaultOfRequest(req), input));
-	});
+	app.post(
+		"/api/architecture/checkpoints",
+		requireVault,
+		asyncEndpoint(async (req, res) => {
+			const parsed = RetainBodySchema.safeParse(req.body);
+			if (!parsed.success) {
+				res
+					.status(400)
+					.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(parsed.error) });
+				return;
+			}
+			const { vault: _vault, ...input } = parsed.data;
+			respond(res, await retainArchitectureCheckpoint(vaultOfRequest(req), input));
+		}),
+	);
 }
 
 export { mountArchitectureModelRoutes };
