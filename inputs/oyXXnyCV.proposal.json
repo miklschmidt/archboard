@@ -556,6 +556,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/IbGtfJE2#uT0ylhOM"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/SJ2JMVyz#p05yEm5U"
     },
     {
@@ -860,6 +864,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/vKEsyHFk#19855Ply"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#wBw5FntC"
     },
     {
@@ -960,6 +968,14 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/9ncuT5DP#DNQTPTxE"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/nAmiQ3Vc#TuLpnBlQ"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#GWg2Fads"
     },
     {
@@ -977,6 +993,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#gZweHb5q"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn"
     },
     {
       "type": "remove",
@@ -1156,6 +1176,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/HBlhIeSD#fs2ehN0i"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/Oi6SBIAM#7wxK5YUi"
     },
     {
@@ -1177,6 +1201,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#a6FGj58i"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#4smEPsmF"
     },
     {
       "type": "remove",
@@ -1412,6 +1440,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/qKGcB6vZ#ccaUoxFa"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/yejBBUFY#TY7m2mtd"
     },
     {
@@ -1433,6 +1465,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/HBlhIeSD#ujYiodpp"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#Bfh2rRfX"
     },
     {
       "type": "remove",
@@ -6183,6 +6219,12 @@
       "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#hYCgIdBo",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt",
       "placement": {
@@ -6380,6 +6422,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#aoHKAkWD",
+      "field": "to",
+      "value": "vKEsyHFk/SJ2JMVyz#ZGoXFusm"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/9ncuT5DP#aoHKAkWD",
       "placement": {
@@ -6453,6 +6501,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#ouRI3SQQ",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/Oi6SBIAM#ouRI3SQQ",
       "placement": {
@@ -6492,6 +6546,29 @@
       "value": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#FrlPt4zQ",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
+      "field": "responsibility",
+      "value": "Answers the shared thread tools through one generation-owned dispatcher"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
+      "field": "description",
+      "value": "The dispatcher runs reads, writes, and waits through the same request cache and quarantine boundary. Its private services retain mutation settlements and waiting state. One generation owns its lifetime."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
+      "field": "binding"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
       "placement": {
@@ -6505,10 +6582,31 @@
       "value": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#mxl6bmYW",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#ZGoXFusm"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/SJ2JMVyz#r1jVxlwm",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#IxtTYfQ6",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#ZGoXFusm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#zOHsZyzc",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#ZGoXFusm"
+      }
     },
     {
       "type": "assign",
@@ -6702,7 +6800,7 @@
       "type": "place",
       "subject": "vKEsyHFk/wAHh0HTa#xtHoCCnF",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+        "holder": "vKEsyHFk/9ncuT5DP#wkvnbMs8"
       }
     },
     {
@@ -6715,6 +6813,12 @@
       "type": "clear",
       "subject": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
       "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#J5WjwmUn",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     },
     {
       "type": "assign",
@@ -6732,6 +6836,12 @@
       "type": "clear",
       "subject": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
       "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#oK9fPKdv",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     },
     {
       "type": "place",
@@ -6917,6 +7027,12 @@
       "value": "In a Git checkout with no vault, check, check all and check embeds run embeds alone and report why semantics/code were skipped. With a vault, check semantics reads canonical model diagnostics and authored policy; legacy authority returns migration guidance without changing source. Code and embed checks keep their existing owners."
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/nAmiQ3Vc#y6ueYYtZ",
+      "field": "to",
+      "value": "vKEsyHFk/0T9enjhi#mYtOhgML"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/yejBBUFY#6uWT4mUj",
       "placement": {
@@ -6928,13 +7044,6 @@
       "subject": "vKEsyHFk/yejBBUFY#chjmKQLj",
       "field": "to",
       "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/vKEsyHFk#19855Ply",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
-      }
     },
     {
       "type": "clear",
@@ -7007,9 +7116,33 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
+      "field": "name",
+      "value": "Coordinator callback manifest"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+        "symbol": "renderCoordinatorCallbackNamespace"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
       "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
+      "field": "formerNames",
+      "value": [
+        "Tell coordinator"
+      ]
     },
     {
       "type": "place",
@@ -7194,17 +7327,34 @@
       }
     },
     {
-      "type": "place",
-      "subject": "vKEsyHFk/9ncuT5DP#DNQTPTxE",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
-      }
-    },
-    {
       "type": "assign",
       "subject": "vKEsyHFk/SMjRfwN3#IOU51tal",
       "field": "to",
       "value": "vKEsyHFk/yejBBUFY#fscW90Xt"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+      "field": "name",
+      "value": "Tell coordinator handler"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+        "symbol": "createTellCoordinator"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+      "field": "formerNames",
+      "value": [
+        "Tell coordinator"
+      ]
     },
     {
       "type": "place",
@@ -7238,19 +7388,6 @@
       "placement": {
         "holder": "vKEsyHFk/yejBBUFY#fscW90Xt"
       }
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/nAmiQ3Vc#TuLpnBlQ",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
-      }
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
-      "field": "to",
-      "value": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     },
     {
       "type": "clear",
@@ -7303,6 +7440,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#Tt8yC8yW",
+      "field": "to",
+      "value": "vKEsyHFk/IbGtfJE2#PEfE7dCL"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/XppR9owz#iIJ5MRhi",
       "placement": {
@@ -7334,54 +7477,6 @@
       "subject": "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
-      }
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
-      "field": "name",
-      "value": "Evaluation server instance"
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
-      "field": "responsibility",
-      "value": "Starts and owns an isolated local server for one evaluation run"
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
-      "field": "binding",
-      "value": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/processes/server.ts",
-        "symbol": "startServer"
-      }
-    },
-    {
-      "type": "clear",
-      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
-      "field": "references"
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
-      "field": "description",
-      "value": "The evaluation launcher chooses a free port, proves the server identity through health, and stops its owned process when the run ends. This instance is separate from the ordinary interactive server."
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
-      "field": "formerNames",
-      "value": [
-        "Archboard server"
-      ]
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
-      "placement": {
-        "holder": "vKEsyHFk/IbGtfJE2#8O4XNZOZ"
       }
     },
     {
@@ -7708,13 +7803,6 @@
       }
     },
     {
-      "type": "place",
-      "subject": "vKEsyHFk/HBlhIeSD#fs2ehN0i",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
-      }
-    },
-    {
       "type": "assign",
       "subject": "vKEsyHFk/Oi6SBIAM#HZkTRFtf",
       "field": "to",
@@ -7785,13 +7873,6 @@
       }
     },
     {
-      "type": "place",
-      "subject": "vKEsyHFk/Oi6SBIAM#4smEPsmF",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
-      }
-    },
-    {
       "type": "assign",
       "subject": "vKEsyHFk/qKGcB6vZ#XB5TwXA3",
       "field": "to",
@@ -7803,6 +7884,12 @@
       "placement": {
         "holder": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#aXFI100m",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#KLt72lWa"
     },
     {
       "type": "place",
@@ -7841,6 +7928,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#8IdEaZWJ",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/Oi6SBIAM#qHLocIlw",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
@@ -7867,10 +7960,30 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#CkB9Bygm",
+      "field": "name",
+      "value": "Shared thread policy"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#CkB9Bygm",
+      "field": "responsibility",
+      "value": "Defines the role profiles and instruction policy that thread and voice owners share"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#CkB9Bygm",
+      "field": "formerNames",
+      "value": [
+        "Thread and voice"
+      ]
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/qKGcB6vZ#CkB9Bygm",
       "placement": {
-        "holder": "vKEsyHFk/9ncuT5DP#Fg9dkGj3"
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
       }
     },
     {
@@ -8104,6 +8217,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#7YCu9h8P",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/Oi6SBIAM#YXy1uQYC",
       "field": "name",
       "value": "Architecture news"
@@ -8198,6 +8317,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#0SFK7vbb",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/UOXNWLhR#g00kNnNx",
       "placement": {
@@ -8232,8 +8357,14 @@
       "type": "place",
       "subject": "vKEsyHFk/9ncuT5DP#wkvnbMs8",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+        "holder": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#fDI8NrtW",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     },
     {
       "type": "place",
@@ -8260,7 +8391,7 @@
       "type": "place",
       "subject": "vKEsyHFk/9ncuT5DP#Akuz1a3J",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+        "holder": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
       }
     },
     {
@@ -8385,7 +8516,7 @@
       "type": "place",
       "subject": "vKEsyHFk/9ncuT5DP#i5AuDn9L",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+        "holder": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
       }
     },
     {
@@ -8495,15 +8626,35 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#5ut3UjV6",
+      "field": "name",
+      "value": "Grader image delivery"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#5ut3UjV6",
+      "field": "responsibility",
+      "value": "Prepares captured images and delivery receipts for the grading run"
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/SMjRfwN3#5ut3UjV6",
       "field": "references"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#5ut3UjV6",
+      "field": "formerNames",
+      "value": [
+        "Skill evaluation"
+      ]
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/SMjRfwN3#5ut3UjV6",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#LDqRcaY1"
+        "holder": "vKEsyHFk/IbGtfJE2#RrIatpuG"
       }
     },
     {
@@ -8563,7 +8714,7 @@
       "type": "place",
       "subject": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+        "holder": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
       }
     },
     {
@@ -8584,14 +8735,7 @@
       "type": "place",
       "subject": "vKEsyHFk/9ncuT5DP#3vO7eN8L",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
-      }
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/Oi6SBIAM#Bfh2rRfX",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+        "holder": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
       }
     },
     {
@@ -8669,6 +8813,26 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#mYtOhgML"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/nAmiQ3Vc#7hxRgVwY",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#mYtOhgML"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#1Rd0xfYJ",
       "field": "label",
       "value": "read models bound to a repository"
@@ -8701,6 +8865,12 @@
       "subject": "vKEsyHFk/HBlhIeSD#nn1ec9Tw",
       "field": "description",
       "value": "Adapts canonical discovery, initialization, exact readings, archive history, and the existing change feed. Unmigrated vaults receive explicit migration guidance."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#2lwNLxzO",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
     },
     {
       "type": "assign",
@@ -8754,6 +8924,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#Z7IOHBEv",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/gbyqW4H3#bm9AWXkW",
       "field": "description",
       "value": "Carries canonical model selectors and the exact input revision in the existing SVG metadata recipe. The embed checker reuses canonical reading and rendering owners."
@@ -8803,6 +8979,12 @@
       "subject": "vKEsyHFk/SJ2JMVyz#KGiq6epE",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#byMaoUe0"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#ncTGv1jp",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
     },
     {
       "type": "place",
@@ -8858,6 +9040,12 @@
       "field": "references"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#ofrMAblk",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/XppR9owz#OM6pX371",
       "placement": {
@@ -8882,6 +9070,12 @@
       "subject": "vKEsyHFk/HBlhIeSD#gRG7JEPt",
       "field": "description",
       "value": "Renders architecture, sequence, and flowchart from canonical readings through the shared client-local projection and existing Bun renderer."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#7fKX6THX",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
     },
     {
       "type": "place",
@@ -8964,6 +9158,12 @@
       "value": "vKEsyHFk/SJ2JMVyz#bxWDGUJk"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#qRuxyaeW",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/XppR9owz#QKs0tycT",
       "placement": {
@@ -8975,6 +9175,23 @@
       "subject": "vKEsyHFk/6E6hL0Zk#mR7wPSei",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#yyFS6UVO",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/production.ts",
+        "symbol": "createServerVoiceAgentOptions"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#yyFS6UVO",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
       }
     },
     {
@@ -8992,10 +9209,38 @@
     },
     {
       "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#k9hxdLjq",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#CugxYaZL",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "type": "place",
       "subject": "vKEsyHFk/XppR9owz#nvbnGOtV",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
+      "field": "name",
+      "value": "Voice agent backend"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
+      "field": "formerNames",
+      "value": [
+        "Shared agent workbench",
+        "Codex realtime voice"
+      ]
     },
     {
       "type": "clear",
@@ -9015,6 +9260,12 @@
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#HO533F7P",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#hCKEBd5f"
     },
     {
       "type": "place",
@@ -9252,6 +9503,36 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+      "field": "responsibility",
+      "value": "Routes captured context changes to the requested live thread and voice audiences"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+        "symbol": "announceContextChange"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#wyliCZzQ",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#8yOrpoeg"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#j3Td3x8x",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#8yOrpoeg"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/UOXNWLhR#9L5uHzND",
       "field": "name",
       "value": "Picture transitions"
@@ -9290,6 +9571,12 @@
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#FQ6Dm2Go",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#8yOrpoeg"
     },
     {
       "type": "place",
@@ -9429,10 +9716,58 @@
       "value": "Resolves explicit repository, model, subject, and state references. Same-model reads use the captured candidate without reopening its public write barrier. Foreign reads retain their normal ownership checks."
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#iPnxvJWp",
+      "kind": "module",
+      "value": {
+        "order": 68000,
+        "name": "Thread tool dispatch",
+        "kind": "module",
+        "responsibility": "Routes reviewed thread operations and returns one answer for each request",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/runtime/operations/dynamic-tools"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#iPnxvJWp"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#iPnxvJWp",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#ZGoXFusm"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#QDE2xctM",
       "field": "description",
       "value": "Retains exact reference dependencies through Git ancestry. A proposal reference to current uses the captured current checkpoint. A checkpoint does not embed its own future identity."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#esML8Ssb",
+      "kind": "module",
+      "value": {
+        "order": 68001,
+        "name": "Thread tool settlements",
+        "kind": "module",
+        "responsibility": "Retains mutation outcomes, quarantine state, and waits within the dispatcher lifetime",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/runtime/services/dynamic-tools"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#esML8Ssb"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#esML8Ssb",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#ZGoXFusm"
+      }
     },
     {
       "type": "place",
@@ -10850,6 +11185,71 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#lZsh600a",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+        "vKEsyHFk/IbGtfJE2#IsMHIzoa",
+        "vKEsyHFk/IbGtfJE2#8NS6WwkH",
+        "vKEsyHFk/IbGtfJE2#PEfE7dCL",
+        "vKEsyHFk/IbGtfJE2#IFhUy8C6",
+        "vKEsyHFk/IbGtfJE2#WbFIRpiE"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#HIrlYAPT",
+      "field": "to",
+      "value": "vKEsyHFk/IbGtfJE2#PEfE7dCL"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#HIrlYAPT",
+      "field": "kind",
+      "value": "self"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#K0ubWGBY",
+      "field": "from",
+      "value": "vKEsyHFk/IbGtfJE2#PEfE7dCL"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#K0ubWGBY",
+      "field": "kind",
+      "value": "self"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#ccyEofmP",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+        "vKEsyHFk/IbGtfJE2#1snXnK3G",
+        "vKEsyHFk/IbGtfJE2#fRFvnVRE",
+        "vKEsyHFk/IbGtfJE2#PEfE7dCL",
+        "vKEsyHFk/IbGtfJE2#TJmrdpKj",
+        "vKEsyHFk/IbGtfJE2#WbFIRpiE",
+        "vKEsyHFk/IbGtfJE2#RqoYaLTK",
+        "vKEsyHFk/IbGtfJE2#xzOQOY33",
+        "vKEsyHFk/IbGtfJE2#7LcGoxWH"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#mcrr34OM",
+      "field": "to",
+      "value": "vKEsyHFk/IbGtfJE2#PEfE7dCL"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#XRnNichB",
+      "field": "from",
+      "value": "vKEsyHFk/IbGtfJE2#PEfE7dCL"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/nAmiQ3Vc#tnVc95Oc",
       "field": "participants",
       "value": [
@@ -10906,7 +11306,7 @@
         "vKEsyHFk/Oi6SBIAM#X07YebBP",
         "vKEsyHFk/Oi6SBIAM#RjaKX25k",
         "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
-        "vKEsyHFk/Oi6SBIAM#4smEPsmF"
+        "vKEsyHFk/HBlhIeSD#KLt72lWa"
       ]
     },
     {
@@ -10940,6 +11340,18 @@
       "subject": "vKEsyHFk/Oi6SBIAM#hn2Q6jbD",
       "field": "to",
       "value": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#RPw8zIHG",
+      "field": "to",
+      "value": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#iV6tUF2l",
+      "field": "from",
+      "value": "vKEsyHFk/HBlhIeSD#KLt72lWa"
     },
     {
       "type": "assign",
@@ -11655,7 +12067,7 @@
       "value": [
         "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
         "vKEsyHFk/9ncuT5DP#SQjLwRvE",
-        "vKEsyHFk/qKGcB6vZ#ccaUoxFa",
+        "vKEsyHFk/9ncuT5DP#8yOrpoeg",
         "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
         "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
         "vKEsyHFk/9ncuT5DP#jylkTBp7"
@@ -11693,6 +12105,18 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#6Frsf6H7",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#8yOrpoeg"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#KhxEodYR",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#8yOrpoeg"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/qKGcB6vZ#tLuWM1gd",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
@@ -11726,6 +12150,12 @@
       "subject": "vKEsyHFk/qKGcB6vZ#9JWa3cQa",
       "field": "from",
       "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#qYnhuyc3",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#8yOrpoeg"
     },
     {
       "type": "assign",
@@ -14597,6 +15027,15 @@
     "vKEsyHFk/yejBBUFY#RKEuUGxw",
     "vKEsyHFk/SMjRfwN3#fEsvd4ka",
     "vKEsyHFk/UOXNWLhR#Hc8yakWW",
-    "vKEsyHFk/UOXNWLhR#EKpFBFTC"
+    "vKEsyHFk/UOXNWLhR#EKpFBFTC",
+    "vKEsyHFk/IbGtfJE2#uT0ylhOM",
+    "vKEsyHFk/9ncuT5DP#DNQTPTxE",
+    "vKEsyHFk/Oi6SBIAM#4smEPsmF",
+    "vKEsyHFk/Oi6SBIAM#Bfh2rRfX",
+    "vKEsyHFk/qKGcB6vZ#ccaUoxFa",
+    "vKEsyHFk/HBlhIeSD#fs2ehN0i",
+    "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+    "vKEsyHFk/nAmiQ3Vc#TuLpnBlQ",
+    "vKEsyHFk/vKEsyHFk#19855Ply"
   ]
 }
