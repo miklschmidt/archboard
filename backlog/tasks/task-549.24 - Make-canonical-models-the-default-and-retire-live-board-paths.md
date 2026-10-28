@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T13:28:00Z'
+updated_date: '2026-10-28T13:53:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -178,6 +178,8 @@ Visual acceptance found that aggregate line labels stack every joined relationsh
 Close the measured renderer corpus consumer: wide-boards.test.ts still discovers only .semantic.json files, so canonical cutover silently removes the repository model from benchmark coverage. Delegate a bounded port of that existing benchmark to public canonical reads and recursive projections. Preserve fixed fixtures, drawing assertions, and established timing limits. Keep it outside the normal gate, add no product exports, and leave historical investigation scripts unchanged.
 
 Repair the reproduced Track label-station contract before final acceptance. Read-only diagnosis pins one real case to chainOf omitting a label whose placed band is outside the endpoint span. Normalize coherent label placement before chain construction, keeping every label on its routed segment and preserving geometry assertions. Delegate this bounded renderer repair. Existing architecture responsibility vKEsyHFk/OjRLKb74#Wp2usbe5 remains accurate: this restores its declared layout invariant and needs no new architecture proposal.
+
+Repair the full-gate integration findings before final acceptance. Root owns all frontend owners, their replacement browser evidence, and final visual acceptance. Delegate the bounded non-frontend fixture and contract repairs in a separate signed worktree. Preserve canonical-only authoring, real signed archive tests, strict diagnostic behavior, and existing lint/type/timing limits. Reuse focused evidence, then resume the full gate. The Track label repair is integrated; three lane-clearance cases and one container-wall label remain open.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -376,4 +378,6 @@ Adopted completion state oyXXnyCV through canonical-root-adoption-549-24-1 at si
 The restored benchmark runs 268 cases: all 134 Blocks cases and all fixed fixtures pass, while twelve Track cases expose geometry or speed failures. No assertion or deadline is waived. Root fixed the optional-label assertion type error; both TypeScript projects now pass. The architecture, ask, explainer, PR walkthrough, and newcomer producers all completed. Root inspected standalone light/dark SVGs, ask output, nine video frames, and complete transcripts. Uploads remain deferred until renderer acceptance. The recordings retain their captured talks for replay without another voice run.
 
 The first full integration gate stopped on an unbound-method source lint error in the server shutdown resource. The callback now invokes agentActivity.dispose through its owner. The declared lifecycle and architecture remain unchanged. Test lint passed before the refusal. No lint rule or gate is weakened. The Track label repair remains separate.
+
+Signed merge 9a3fd850a integrates source caecae117 with an identical tree. All eight off-route labels now pass, and 155 affected geometry cases pass. The restored corpus has264 passes and4 remaining Track failures. Full gate v2 at11c8206aa passed source/test lint, CSS lint, formatting, types, frontend and workbench builds. The package/app stage reports4737 passes,1 skip,51 failures and stopped before system/browser stages. Early failures include obsolete live-board fixtures and migration fixtures that use an unavailable user signing key. Root is classifying the exact causes; none are waived. External logs and failure inventory use task-549.24-full-gate-v2. Review coverage remains partial and final acceptance remains unchecked.
 <!-- SECTION:NOTES:END -->
