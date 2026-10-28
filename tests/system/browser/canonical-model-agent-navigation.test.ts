@@ -94,6 +94,18 @@ test("agent navigation opens the requested canonical pane without moving its nei
 		"the addressed pane registration",
 		WAIT,
 	);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-pane="A"] [data-slot="model-diagram"] svg') !== null`,
+			),
+		Boolean,
+		"the neighboring scene before navigation",
+		WAIT,
+	);
+	await browser.eval(
+		`document.querySelector('[data-pane="A"] [data-slot="model-diagram"] svg').setAttribute('data-test-scene', 'kept')`,
+	);
 	const shown = await request<{ success: boolean }>("/api/panes/show", {
 		method: "POST",
 		body: { pane: "B", agent: true, reading: { model: "Shop", scope: "Shop#Handler" } },
@@ -116,6 +128,11 @@ test("agent navigation opens the requested canonical pane without moving its nei
 	expect(
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('scopeB')`),
 	).toBe("Shop#Handler");
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('[data-pane="A"] [data-slot="model-diagram"] svg')?.getAttribute('data-test-scene') ?? null`,
+		),
+	).toBe("kept");
 	await browser.run(["reload"]);
 	await pollUntil(
 		() =>

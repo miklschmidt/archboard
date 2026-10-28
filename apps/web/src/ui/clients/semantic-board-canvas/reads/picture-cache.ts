@@ -21,6 +21,7 @@
 // simply draws again.
 
 import { createStore, del, get, keys, set } from "idb-keyval";
+import { z } from "zod";
 import { ArchitectureRenderResultSchema } from "@archboard/board/model";
 import type { prepareContentHere } from "@archboard/renderer/browser";
 
@@ -54,13 +55,13 @@ interface PictureStorage {
 }
 
 type ModelDrawing = Awaited<ReturnType<ReturnType<typeof prepareContentHere>["draw"]>>;
-const ModelDrawingSchema = ArchitectureRenderResultSchema.options[0].pick({
-	svg: true,
-	width: true,
-	height: true,
-	atlas: true,
-	placed: true,
-});
+const ModelDrawingSchema = ArchitectureRenderResultSchema.options[0]
+	.pick({ svg: true, width: true, height: true, atlas: true, placed: true })
+	.extend({
+		readingDirection: z
+			.literal("down" satisfies NonNullable<ModelDrawing["readingDirection"]>)
+			.optional(),
+	});
 
 /**
  * Reuse a local scene only when its complete render input and renderer build match.

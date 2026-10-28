@@ -2,6 +2,7 @@ import { openModelSidebar } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { releaseArchitectureClaim } from "@archboard/board/store-write";
 import type {
 	ArchitectureCheckpointRetain,
 	ArchitectureCheckpointList,
@@ -172,6 +173,16 @@ test("canonical subject claims name the agent and let the reader take back contr
 		"the connected model reading before an agent claims it",
 		WAIT,
 	);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(`document.querySelector('[data-slot="model-diagram"] svg') !== null`),
+		Boolean,
+		"the scene before ownership changes",
+		WAIT,
+	);
+	await browser.eval(
+		`document.querySelector('[data-slot="model-diagram"] svg').setAttribute('data-test-scene', 'kept')`,
+	);
 	const claimed = await request<ArchitectureClaimResult>("/api/architecture/claims", {
 		method: "POST",
 		body: {
@@ -203,6 +214,11 @@ test("canonical subject claims name the agent and let the reader take back contr
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!after.body.success) throw new Error(after.body.error);
 	expect(after.body.revision).toEqual(model.body.revision);
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('[data-slot="model-diagram"] svg')?.getAttribute('data-test-scene') ?? null`,
+		),
+	).toBe("kept");
 }, 30_000);
 
 test("current model readings refresh after external edits and reconnect with explicit stale content", async () => {
@@ -246,13 +262,17 @@ test("current model readings refresh after external edits and reconnect with exp
 	writeFileSync(gatewayPath, "{");
 	const stale = (): Promise<boolean> =>
 		browser.eval<boolean>(`document.querySelector('[data-slot="model-stale"]') !== null`);
-	await pollUntil(stale, Boolean, "the stale reading notice", WAIT);
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-slot="model-error"]')?.getAttribute('data-code') ?? null`,
+			),
+		(code) => code === "MODEL_INVALID",
+		"the invalid external edit refusal",
+		WAIT,
+	);
+	expect(await stale()).toBe(true);
 	expect(await details()).toContain("Observed external description");
-	expect(
-		await browser.eval<string | null>(
-			`document.querySelector('[data-slot="model-error"]')?.getAttribute('data-code') ?? null`,
-		),
-	).toBe("MODEL_INVALID");
 	gateway["description"] = "Repaired external description";
 	writeFileSync(gatewayPath, JSON.stringify(gateway));
 	await pollUntil(
@@ -262,10 +282,34 @@ test("current model readings refresh after external edits and reconnect with exp
 		WAIT,
 	);
 	await pollUntil(stale, (value) => !value, "the stale notice to clear", WAIT);
+	const request = createJsonRequester(server);
+	const current = await request<ArchitectureModelRead>("/api/architecture/model");
+	if (!current.body.success || !current.body.manifest.current)
+		throw new Error("Missing current model");
+	const claim = await request<ArchitectureClaimResult>("/api/architecture/claims", {
+		method: "POST",
+		body: {
+			vault,
+			target: { model: current.body.manifest.id, state: current.body.manifest.current.id },
+			writer: "reconnecting-agent",
+			reason: "Inspect the gateway",
+			subjects: ["Shop#Gateway"],
+		},
+	});
+	if (!claim.body.success) throw new Error(claim.body.error);
+	const claimId = claim.body.claim.id;
+	const working = (): Promise<boolean> =>
+		browser.eval<boolean>(`document.querySelector('[data-slot="working-now"]') !== null`);
+	await pollUntil(working, Boolean, "activity before the connection drops", WAIT);
 	await server.restart({
 		whileStopped: async () => {
 			await pollUntil(stale, Boolean, "the disconnected reading notice", WAIT);
 			expect(await details()).toContain("Repaired external description");
+			const released = await releaseArchitectureClaim(vault, {
+				claim: claimId,
+				writer: "reconnecting-agent",
+			});
+			if (!released.success) throw new Error(released.error);
 			gateway["description"] = "Changed while disconnected";
 			writeFileSync(gatewayPath, JSON.stringify(gateway));
 		},
@@ -277,6 +321,7 @@ test("current model readings refresh after external edits and reconnect with exp
 		WAIT,
 	);
 	await pollUntil(stale, (value) => !value, "the reconnected reading to become current", WAIT);
+	await pollUntil(working, (visible) => !visible, "the expired activity to leave the shell", WAIT);
 }, 40_000);
 
 test("saved readings stay exact after current inputs change and expose missing evidence and archive recovery", async () => {
