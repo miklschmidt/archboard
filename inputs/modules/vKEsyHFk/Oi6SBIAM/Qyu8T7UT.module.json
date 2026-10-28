@@ -1,0 +1,147 @@
+{
+  "order": 30002,
+  "name": "Board routes",
+  "kind": "module",
+  "responsibility": "The routes that write, rename, move and show boards: each tells the panes what it did, and a show or a move takes panes to another vault",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/Oi6SBIAM#Qyu8T7UT",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "references": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "model": "vKEsyHFk",
+      "subject": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+      "state": "current"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 7000,
+      "kind": "event",
+      "label": "announce the accepted write",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+        "symbol": "broadcast"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#dl8GcVsN",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "order": 8000,
+      "kind": "call",
+      "label": "point its panes at the new name",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
+        "symbol": "sendToPane"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#JHTQ2avc",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "order": 11000,
+      "kind": "call",
+      "label": "what the writer said it was doing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+        "symbol": "announceDoing"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#esNJ3K32",
+      "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
+    },
+    {
+      "order": 23000,
+      "kind": "call",
+      "label": "the moved pane arrives on the new name",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
+        "symbol": "arrivedOnBoard"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#UVtcPHc3",
+      "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
+    },
+    {
+      "order": 28000,
+      "kind": "call",
+      "description": "the write, as a settled change",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+        "symbol": "settledChangeFields"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#ZGGx69Il",
+      "to": "vKEsyHFk/Oi6SBIAM#mStVd7fZ"
+    },
+    {
+      "order": 51000,
+      "kind": "call",
+      "label": "a show or a move takes the panes to another vault",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+        "symbol": "movePaneVault"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#tqLvLUcA",
+      "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J"
+    },
+    {
+      "order": 52000,
+      "kind": "call",
+      "label": "the repository and checkout of a shown board's vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+        "symbol": "placeOfVault"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#6o2ZXOzG",
+      "to": "vKEsyHFk/Oi6SBIAM#4smEPsmF"
+    },
+    {
+      "order": 60000,
+      "kind": "call",
+      "label": "a show that chose a checkout: every pane follows",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+        "symbol": "followRegistry"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#gwCn1bx5",
+      "to": "vKEsyHFk/Oi6SBIAM#etiWAAKH"
+    },
+    {
+      "order": 80000,
+      "kind": "call",
+      "label": "open the board and variant a show names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+        "symbol": "readBoardVariant"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#oVsV7Zvz",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    }
+  ]
+}

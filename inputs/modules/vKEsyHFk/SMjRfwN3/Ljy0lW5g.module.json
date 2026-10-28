@@ -1,0 +1,32 @@
+{
+  "order": 27000,
+  "name": "Frame order",
+  "kind": "function",
+  "responsibility": "Hands the pages' frames to the one ffmpeg in order, holding a frame that arrives before its turn",
+  "description": "A page may put a frame at most two rounds of seconds ahead of the encoder and waits for room otherwise, which bounds how many frames are held.",
+  "groups": [
+    "walkthrough"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/walkthrough/src/runtime/operations/frame-order.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SMjRfwN3#Ljy0lW5g",
+  "parent": "vKEsyHFk/SMjRfwN3#ZAj4RMzN",
+  "outgoing": [
+    {
+      "order": 44000,
+      "kind": "call",
+      "label": "the frames, in order, one at a time",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/operations/frame-order.ts",
+        "symbol": "writeFrame"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#yDelHqWM",
+      "to": "vKEsyHFk/SMjRfwN3#peB5Bs5R"
+    }
+  ]
+}

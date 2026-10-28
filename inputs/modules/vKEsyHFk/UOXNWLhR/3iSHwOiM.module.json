@@ -1,0 +1,58 @@
+{
+  "order": 22000,
+  "name": "Picture transition",
+  "kind": "function",
+  "responsibility": "Carries one picture into the next: kept parts fly to their new places, departed ones fade, and the traffic's clock carries over; a picture a flight arrived at is put up as it is",
+  "description": "It writes the picture into the surface itself, once per picture, and runs the traffic of each picture, ghost and borrowed group as it puts them up. Flights read the time and their frames from the frame clock, and the picture clock its traffic runs on is read and set through it, so a replay seeks every one of them to the frame's time. The picture of a board that a flight into a card arrived at is put up as it is, with no entrance. Continuing cards carry their one shared chip and moving words; content comparison ignores the per-picture placement properties, so a moved card keeps its shared content (picture-pairing.ts).",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+  "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
+  "outgoing": [
+    {
+      "order": 39000,
+      "kind": "call",
+      "label": "the time, frames, and the picture's clock",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+        "symbol": "frameClock"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#xi1UCkyt",
+      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
+    },
+    {
+      "order": 40000,
+      "kind": "call",
+      "label": "run the traffic of what it puts up",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+        "symbol": "stopTraffic"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#iVizf8Iu",
+      "to": "vKEsyHFk/UOXNWLhR#n5No6FUy"
+    },
+    {
+      "order": 115000,
+      "kind": "call",
+      "label": "ghost the leaving picture",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+        "symbol": "ghostPicture"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#AmxCEbK0",
+      "to": "vKEsyHFk/UOXNWLhR#oF5Ib5A4"
+    }
+  ]
+}

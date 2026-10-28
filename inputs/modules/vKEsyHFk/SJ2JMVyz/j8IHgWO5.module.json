@@ -1,0 +1,64 @@
+{
+  "order": 14000,
+  "name": "Coordinator callbacks",
+  "kind": "module",
+  "responsibility": "Deliver ordered workhorse news and a host's announced context changes to the voice coordinator and the voice",
+  "description": "The shared runtime owns callback ordering, correlation, and delivery outcomes. A host announces its own context changes through the voice agent's announce, which gives the coordinator's and the voice's parts to this queue: Archboard announces its board changes, focus and selection. The tell_coordinator tool uses this same callback owner.",
+  "groups": [
+    "voice"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#j8IHgWO5",
+  "parent": "vKEsyHFk/SJ2JMVyz#WkOwgUIR",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 18000,
+      "kind": "call",
+      "label": "check the link of the workhorse the news names",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+        "symbol": "classify"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#kJ4DsUAw",
+      "to": "vKEsyHFk/SJ2JMVyz#p05yEm5U"
+    },
+    {
+      "order": 22000,
+      "kind": "rpc",
+      "label": "a context change: realtime/appendText for the voice",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+        "symbol": "realtimeAppendText"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#4DGyP7RO",
+      "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+    },
+    {
+      "order": 42000,
+      "kind": "call",
+      "label": "a callback as canonical JSON, kept on its record",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+        "symbol": "canonicalJson"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#HiOX9Fc5",
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
+    }
+  ]
+}

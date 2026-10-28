@@ -1,0 +1,20 @@
+{
+  "order": 22000,
+  "name": "timing",
+  "kind": "package",
+  "responsibility": "Every duration, grouped by the subsystem that owns it, with what it pulls against",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/timing"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
+  "parent": "vKEsyHFk/vKEsyHFk#wqZgAWf3",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

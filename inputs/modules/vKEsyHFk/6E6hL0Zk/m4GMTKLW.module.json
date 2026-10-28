@@ -1,0 +1,57 @@
+{
+  "order": 34000,
+  "name": "Server entry",
+  "kind": "function",
+  "responsibility": "The process entry that archboard start spawns: it starts the server and reports a startup failure",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/6E6hL0Zk#m4GMTKLW",
+  "parent": "vKEsyHFk/6E6hL0Zk#Wcng1nxx",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 36000,
+      "kind": "call",
+      "label": "start the server",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server.ts",
+        "symbol": "startServer"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#NoHUsyG6",
+      "to": "vKEsyHFk/Oi6SBIAM#hwACZ2zb"
+    },
+    {
+      "order": 92000,
+      "kind": "call",
+      "label": "start the server",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server.ts",
+        "symbol": "startServer"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#PKAaizYP",
+      "to": "vKEsyHFk/6E6hL0Zk#J7yOKraz"
+    }
+  ]
+}

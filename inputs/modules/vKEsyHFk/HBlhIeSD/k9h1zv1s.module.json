@@ -1,0 +1,62 @@
+{
+  "order": 9000,
+  "name": "Locality route",
+  "kind": "route",
+  "responsibility": "Answers one board's hotspots and change coupling on request as checkout work: names the board and variant to the history lens, which picks the variant and keeps each answer",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/routes/locality/locality-route.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/HBlhIeSD#k9h1zv1s",
+  "parent": "vKEsyHFk/HBlhIeSD#KovkhwZi",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 27000,
+      "kind": "call",
+      "label": "the hotspots, by board and variant name",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/locality/locality-route.ts",
+        "symbol": "createLocalityReading"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#IndUemKN",
+      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+    },
+    {
+      "order": 54000,
+      "kind": "call",
+      "label": "requires a vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/locality/locality-route.ts",
+        "symbol": "requireVault"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#PCWk4dD9",
+      "to": "vKEsyHFk/HBlhIeSD#fs2ehN0i"
+    }
+  ]
+}

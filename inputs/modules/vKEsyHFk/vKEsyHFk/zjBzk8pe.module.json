@@ -1,0 +1,17 @@
+{
+  "order": 21000,
+  "name": "Layer 7",
+  "kind": "other",
+  "responsibility": "Imports only the layers below it, 0 to 6",
+  "description": "Holds workbench, skills. A package's layer is the longest chain of packages it imports.",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/vKEsyHFk#zjBzk8pe",
+  "parent": "vKEsyHFk/vKEsyHFk#fssx6Gaq",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

@@ -1,0 +1,15 @@
+{
+  "order": 2500,
+  "name": "Skill citations",
+  "kind": "module",
+  "responsibility": "Keeps the batch's copy of the candidate skill, and holds every cited passage, catalogue row and rubric section to a heading the skill has",
+  "description": "A citation is a skill file and a heading anchor, never a line number, so rewording a passage keeps it cited and renaming a heading breaks it at check time rather than at grading.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/skills/src/runtime/services/citations.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#wOZsx1lS",
+  "parent": "vKEsyHFk/IbGtfJE2#PCxTuzNW",
+  "outgoing": []
+}

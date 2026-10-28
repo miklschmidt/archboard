@@ -1,0 +1,29 @@
+{
+  "order": 61000,
+  "name": "Model projection",
+  "kind": "module",
+  "responsibility": "Projects recursive scopes and aggregates directed connections by kind and comparison standing",
+  "description": "Keeps direct context and complete interface facts. Underlying relationship identities and labels stay in authored order. Whole-module endpoints retain their boundary. Closed internal connections disappear without deleting meaning. Focus retains selected ancestors and descendants, expands only needed paths, and keeps required endpoint context. Filters operate after complete interface classification. Authored open-module self-connections stay visible without converting hidden internal self-connections into ancestor loops. Group filtering changes visual memberships only in projected content. Behavioral projection reads one authored flow and all required participants without converting structural relationships into execution order. Relevant flow choices follow the current subjects, and structural filters never remove messages. One complete subject inventory includes flows and their nested steps. Hidden behavior remains separate from structural focus. Flow relevance includes selected step participants and contained modules. Proposal pictures use the existing semantic comparison rules and renderer standing fields. Removed subjects come from the coherent base and never become authored members of the selected state. Scope, filters, and behavioral projection retain complete state and comparison identity.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/rules/architecture-model"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#IgYndyJd",
+  "parent": "vKEsyHFk/yejBBUFY#TLCeNkdh",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.13 - Explain-the-captured-reading-through-local-agent-actions.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
+    }
+  ],
+  "outgoing": []
+}

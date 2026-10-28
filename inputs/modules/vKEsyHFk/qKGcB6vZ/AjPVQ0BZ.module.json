@@ -1,0 +1,61 @@
+{
+  "order": 18000,
+  "name": "Outcome report",
+  "kind": "module",
+  "responsibility": "Gives the coordinator one piece of news as one turn/start, joining its running turn or starting one, and nothing while the live voice session is unattended",
+  "description": "The prompt says what happened and what to do with it: say it under [FINAL] if the user is waiting on it, keep it to a [COMMENTARY] line otherwise, and start no new work because of it.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/services/voice/outcome-report.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#AjPVQ0BZ",
+  "parent": "vKEsyHFk/qKGcB6vZ#hshxlvQL",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 23000,
+      "kind": "call",
+      "label": "turn/start on the coordinator thread",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/voice/outcome-report.ts",
+        "symbol": "turnStart"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#kdzh3hrY",
+      "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+    },
+    {
+      "order": 24000,
+      "kind": "call",
+      "label": "is the live session unattended?",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/voice/outcome-report.ts",
+        "symbol": "unattended"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#tMugyhPT",
+      "to": "vKEsyHFk/qKGcB6vZ#2vHAg1Ei"
+    },
+    {
+      "order": 38000,
+      "kind": "call",
+      "label": "the report turn, as authored",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/voice/outcome-report.ts",
+        "symbol": "createWorkbenchTurnStartParams"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#ovIBdlhV",
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
+    }
+  ]
+}

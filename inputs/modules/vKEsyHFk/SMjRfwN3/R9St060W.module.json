@@ -1,0 +1,20 @@
+{
+  "order": 10000,
+  "name": "Chromium",
+  "kind": "external",
+  "responsibility": "The browser that paints the SVG, runs the recording and replay pages and answers over DevTools",
+  "description": "Found on this machine, or named by ARCHBOARD_RENDERER_CHROMIUM. Archboard neither ships nor manages it beyond its own child process group.",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SMjRfwN3#R9St060W",
+  "parent": "vKEsyHFk/SMjRfwN3#jeDfgVfS",
+  "outgoing": [
+    {
+      "order": 25000,
+      "kind": "http",
+      "label": "load the recording page, or the replay page",
+      "emphasis": "normal",
+      "id": "vKEsyHFk/SMjRfwN3#yWqRrF8i",
+      "to": "vKEsyHFk/SMjRfwN3#2UcHnREN"
+    }
+  ]
+}
