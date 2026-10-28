@@ -1,0 +1,15 @@
+{
+  "order": 22000,
+  "name": "Coordinator turn homes",
+  "kind": "module",
+  "responsibility": "Remembers, for each coordinator turn, the conversation shown when it started and the checkouts it gave work to, so the dock shows the turn in the right conversation",
+  "description": "A turn that delivered, steered or queued work, or whose delivery may have reached the workhorse, shows in the conversation of each workhorse it reached. A delegation the workhorse refused as busy or with an invalid body gave it nothing, and moves the turn nowhere. A turn that gave work to none shows in the conversation shown while it ran. A turn with no record shows in whatever conversation is shown.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/services/sessions/delegations.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#qTmIytbT",
+  "parent": "vKEsyHFk/qKGcB6vZ#CjiN3z5a",
+  "outgoing": []
+}
