@@ -117,7 +117,7 @@ const modelEditContract = defineCommand({
 	shared: ["url", "directory", "doing"],
 	summary: "Edit canonical modules and independent flow behavior durably",
 	description:
-		"Reads one complete revision, target, operation, writer, claim and change batch from JSON. Changes can edit modules, flows, or walkthroughs. Proposal intents create, edit, reconcile, settle, adopt, or shelve states; corrections name the previous checkpoint and immutable source revisions. Forced adoption requires a fresh explicit comparison with current. Supply the doing line through --doing. Retry the exact request after a lost response.",
+		"Reads one complete revision, target, operation, writer, claim and change batch from JSON. Changes can edit modules, flows, or walkthroughs. Proposal intents create, edit, reconcile, settle, adopt, or shelve states; corrections name the previous checkpoint and immutable source revisions. Deliberate inheritance removal or module recreation uses proposal.confirm. Forced adoption requires a fresh explicit comparison with current. Supply the doing line through --doing. Retry the exact request after a lost response.",
 	examples: [
 		'archboard model edit --input edit.json --doing "explaining request routing" -C /tmp/shop',
 	],
