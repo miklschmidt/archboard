@@ -10,6 +10,7 @@ import {
 	ArchitectureModelReadSchema,
 	ArchitectureClaimResultSchema,
 	ArchitectureModuleEditResultSchema,
+	ArchitectureCheckpointRetainSchema,
 } from "@archboard/board/model";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
@@ -343,6 +344,33 @@ test("canonical locality and branch footprint retain source analysis without a l
 		throw new Error(JSON.stringify({ local, branch }));
 	expect(local.hotspots.map((part) => part.subject.id)).toContain("Shop#Gateway");
 	expect(branch.changed.map((part) => part.subject.id)).toContain("Shop#Gateway");
+	const current = ArchitectureModelReadSchema.parse(answer(cli(["model", "read"]).stdout));
+	if (!current.success) throw new Error(JSON.stringify(current));
+	const retained = ArchitectureCheckpointRetainSchema.parse(
+		answer(
+			cli([
+				"model",
+				"retain",
+				"--operation-id",
+				"history-comparison",
+				"--writer",
+				"surface-agent",
+				"--expect-revision",
+				current.revision.digest,
+				"--doing",
+				"Retain source comparison",
+			]).stdout,
+		),
+	);
+	if (!retained.success) throw new Error(JSON.stringify(retained));
+	for (const command of [["locality"], ["footprint", "--base", "HEAD~1"]]) {
+		const exact = cli(["model", ...command, "--against", retained.checkpoint.id]);
+		expect(exact.status, exact.stdout + exact.stderr).toBe(0);
+		expect(ArchitectureHistoryResultSchema.parse(answer(exact.stdout))).toMatchObject({
+			success: true,
+			model: "Shop",
+		});
+	}
 	expect(Bun.spawnSync(["git", "-C", home, "rev-parse", "HEAD"]).stdout.toString()).toBe(
 		sourceHead,
 	);
