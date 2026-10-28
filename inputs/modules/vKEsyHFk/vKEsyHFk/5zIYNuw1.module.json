@@ -1,0 +1,73 @@
+{
+  "order": 35000,
+  "name": "walkthrough",
+  "kind": "package",
+  "responsibility": "Records a narrated walkthrough and renders its talk again",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/walkthrough"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/vKEsyHFk#5zIYNuw1",
+  "parent": "vKEsyHFk/vKEsyHFk#TQNCxSiT",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 34000,
+      "kind": "dependency",
+      "label": "headless Chromium",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
+        "symbol": "launchHeadlessChromium"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#zSvgwAHH",
+      "to": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+    },
+    {
+      "order": 42000,
+      "kind": "data",
+      "label": "keep the recorded talk and voice",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+        "symbol": "writeTalk"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#SGwsCHPo",
+      "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
+    },
+    {
+      "order": 56000,
+      "kind": "dependency",
+      "label": "keep board and rendering schemas in a talk",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/shared/protocol/talk.ts",
+        "symbol": "LayoutEngineSchema"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#iaq6pG14",
+      "to": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+    },
+    {
+      "order": 60000,
+      "kind": "dependency",
+      "label": "locate the recorded talks in state storage",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/store/talk-files.ts",
+        "symbol": "stateDir"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#YBT0ys2i",
+      "to": "vKEsyHFk/vKEsyHFk#tdKalihR"
+    }
+  ]
+}

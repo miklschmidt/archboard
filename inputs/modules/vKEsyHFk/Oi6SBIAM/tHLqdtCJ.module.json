@@ -1,0 +1,70 @@
+{
+  "order": 31000,
+  "name": "Architecture context input",
+  "kind": "module",
+  "responsibility": "Read canonical runtime facts after cutover, require exact capture for a different reported state, and retain legacy board context for unmigrated vaults",
+  "description": "Accept ordered pane reports and notify the coordinator context source directly when canonical reading intent changes. Resolve explanation actions from that explicit canonical report, never from the initial legacy board.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ",
+  "parent": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+  "formerNames": [
+    "Semantic context input"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 74000,
+      "kind": "call",
+      "label": "the board a pane shows",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+        "symbol": "boardForPane"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#uiV0btMb",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "order": 76000,
+      "kind": "call",
+      "label": "read the board for the brief",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+        "symbol": "readSemanticBoard"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#Q85nTD4V",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    },
+    {
+      "order": 77000,
+      "kind": "call",
+      "label": "who holds the board",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+        "symbol": "boardLockState"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#FrzjCHPF",
+      "to": "vKEsyHFk/6E6hL0Zk#8imgDQSw"
+    }
+  ]
+}

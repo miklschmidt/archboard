@@ -1,0 +1,13 @@
+{
+  "order": 22000,
+  "name": "Block layout",
+  "kind": "module",
+  "responsibility": "Lays the board out as blocks: ranks the cards of each block, packs blocks, routes the lines between them and keeps the solve that reads best",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/rules/blocks"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/OjRLKb74#tppVDaSZ",
+  "outgoing": []
+}

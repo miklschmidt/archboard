@@ -1,0 +1,20 @@
+{
+  "order": 13001,
+  "name": "Recorded talks",
+  "kind": "datastore",
+  "responsibility": "Each recording's talk: its voice, and when each step and line came, kept to render again",
+  "description": "talk.json and voice.wav, under the state directory's recordings, where the newest 10 stay, or in a directory --talk names, which is never pruned. A talk holds the board and the policy it was drawn from, so it renders again without the board.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/walkthrough/src/runtime/store/talk-files.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/vKEsyHFk#VgzgNAGW",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

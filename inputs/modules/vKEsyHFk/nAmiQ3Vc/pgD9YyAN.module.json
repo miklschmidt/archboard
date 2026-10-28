@@ -1,0 +1,14 @@
+{
+  "order": 10005,
+  "name": "Vault finder",
+  "kind": "module",
+  "responsibility": "Finds a command's vault the way git finds its repository: from -C or the working directory, at the checkout root",
+  "description": "TASK-472.09. No environment variable names a vault any longer: a set ARCHBOARD_VAULT is refused before the command runs, and the finder's origin is -C or working-directory. isVaultLayout says whether a path is the .archboard/vault of a directory, and checkoutOfVault gives the directory that holds it. The finder refuses a vault whose link leads out of that layout as VAULT_NOT_FOUND (reason vault-outside-layout), before the command registers anything. The server uses isVaultLayout and checkoutOfVault to serve only vaults in that layout. TASK-480: in a checkout with no vault, the finder asks the lookup it is given for the known vaults whose boards bind the checkout's repository, and the refusal names each one as the -C to give, with its boards.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workspace/src/runtime/services/vault-finder.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
+  "outgoing": []
+}

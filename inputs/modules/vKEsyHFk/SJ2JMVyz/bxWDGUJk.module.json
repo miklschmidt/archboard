@@ -1,0 +1,58 @@
+{
+  "order": 32000,
+  "name": "Canonical explanation actions",
+  "kind": "module",
+  "responsibility": "Runs one temporary captured request through the existing local workhorse and queue",
+  "description": "One action serves browser, typed requests, CLI, and voice. It retains only temporary invocation and result state. Exact retry reuses captured architecture. Existing queue deletion, turn interruption, and provider notifications establish cancellation and the one textual answer.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/services/explanations"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#bxWDGUJk",
+  "parent": "vKEsyHFk/SJ2JMVyz#WkOwgUIR",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 43000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/start.ts",
+        "symbol": "enqueue"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#iBhsibnc",
+      "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn"
+    },
+    {
+      "order": 44000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/start.ts",
+        "symbol": "readyWorkhorse"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#QvQYycYS",
+      "to": "vKEsyHFk/SJ2JMVyz#mWD948LG"
+    },
+    {
+      "order": 45000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/actions.ts",
+        "symbol": "interrupt"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#rCIdAV06",
+      "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+    }
+  ]
+}
