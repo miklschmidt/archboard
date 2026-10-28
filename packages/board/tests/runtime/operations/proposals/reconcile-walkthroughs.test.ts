@@ -63,11 +63,12 @@ test("narrative families inherit safe fields and settle disputed text, reading, 
 		...(await request(vault, draft.target.state!)),
 		proposal: {
 			type: "settle",
-			resolutions: issues.map((issue) => ({
-				subject: issue.subject,
-				...(issue.field === undefined ? {} : { field: issue.field }),
-				take: "theirs" as const,
-			})),
+			resolutions: issues.map((issue) => {
+				const resolution = { subject: issue.subject, take: "theirs" as const };
+				return issue.field === undefined
+					? resolution
+					: Object.assign(resolution, { field: issue.field });
+			}),
 		},
 		changes: [],
 	});
