@@ -48,7 +48,10 @@ test.each(["transfer", "remove-and-add", "flow-repair"])(
 						},
 					]
 				: kind === "flow-repair"
-					? [{ type: "remove-module", subject: "Shop#Worker" }]
+					? [
+							{ type: "remove-module", subject: "Shop#Worker" },
+							{ type: "remove-step", subject: "Shop#Send" },
+						]
 					: [
 							{ type: "remove-module", subject: "Shop#Worker" },
 							{ type: "add-module", module: { name: "Cache", kind: "service", order: 3 } },

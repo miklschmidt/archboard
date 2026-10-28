@@ -17,13 +17,13 @@ function removeCollections(state: FlowCandidate): void {
 	state.collections = state.collections.filter((value) => !state.removedCollections.has(value.id));
 }
 /**
- * Find messages whose continuing endpoints were explicitly removed.
+ * Find surviving messages whose endpoints were explicitly removed.
  * @param state The complete candidate.
  * @param entry The continuing step and placement.
  * @returns Whether module deletion affects this message.
  */
 function incidentMessage(state: FlowCandidate, entry: Entry): boolean {
-	if (!("from" in entry.value)) return false;
+	if (!("from" in entry.value) || state.removals.has(entry.value.id)) return false;
 	return state.removedModules.has(entry.value.from) || state.removedModules.has(entry.value.to);
 }
 /**
