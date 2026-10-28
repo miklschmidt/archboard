@@ -47,9 +47,23 @@
   "baseline": "c74474411ecf69a357e88c786dd1e475114b1fba",
   "changes": [
     {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#LMJVhlqw",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/0T9enjhi#4P7YZdnj",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#4P7YZdnj",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
     },
     {
       "type": "clear",
@@ -62,9 +76,30 @@
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#jChkQdeE",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#LDqRcaY1"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/UOXNWLhR#xJIh6Jdp",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#xJIh6Jdp",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
     },
     {
       "type": "clear",
@@ -72,9 +107,23 @@
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#LgbAlvMN",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/qKGcB6vZ#0eYa0szs",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#0eYa0szs",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
     },
     {
       "type": "assign",
@@ -89,6 +138,20 @@
       "value": "Mounts canonical readers and captured recordings. It never opens a live legacy board. Existing legacy addresses resolve through retained originals after migration. Unmigrated vaults expose explicit migration guidance. The shared pane session reports captured canonical readings to local agents."
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#HggZR41l",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/HBlhIeSD#r6IpmadI",
       "field": "description",
@@ -100,9 +163,23 @@
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#Ly6hUU5o",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/yejBBUFY#dtYjWvlf",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
     },
     {
       "type": "assign",
@@ -120,6 +197,13 @@
       "subject": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
       "field": "description",
       "value": "Canonical initialization, reads, edits, proposals, claims, history, and recovery own live architecture. Legacy decoding remains only for migration and exact retained originals."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      }
     },
     {
       "type": "clear",
@@ -144,9 +228,51 @@
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#9diqPrFw",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#X6j6fViI",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#aRDbMlep",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
     },
     {
       "type": "assign",
@@ -159,6 +285,13 @@
       "subject": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
       "field": "description",
       "value": "Reads repository identities and canonical model authority through the shared query cache. The navigator opens each model in the active pane. Legacy authority exposes migration guidance instead of fetching live board listings or levels."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#M3mPynLe",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
     },
     {
       "type": "assign",
@@ -178,9 +311,23 @@
       "value": "The server owns the shared local HTTP and socket process. Canonical model and migration routes refuse legacy live authority; pane and workbench routes remain separate owners."
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/XppR9owz#MUs4pwRq",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
     },
     {
       "type": "clear",
@@ -188,9 +335,51 @@
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#C3wBXyPG",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/yejBBUFY#0x47EMoO",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#0x47EMoO",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#3FR6mev4",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#8QpDaiD6",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SJ2JMVyz#Fxm7RW2x",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
     },
     {
       "type": "clear",
@@ -198,14 +387,49 @@
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/yejBBUFY#G4NHQC25",
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#G4NHQC25",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#4LDuKQvq",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#7hdbqGFn"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/wAHh0HTa#FPKa6YCR",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#FPKa6YCR",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
     },
     {
       "type": "assign",
@@ -220,9 +444,37 @@
       "value": "The desktop frame keeps the repository navigator, local agent controls, conversation, and canonical panes. Repository actions open current modules through the shared router. Unmigrated repositories show their migration state. Board ownership and level controls are retired."
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#c4LPnwh5",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#qTv7HuBw",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/gbyqW4H3#wskEBeIy",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#wskEBeIy",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#7hdbqGFn"
+      }
     },
     {
       "type": "clear",
@@ -230,9 +482,44 @@
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#qZsXIuQG",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
     },
     {
       "type": "clear",
@@ -240,14 +527,63 @@
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#0XCanbzp",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/SMjRfwN3#2UcHnREN",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#2UcHnREN",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
+      }
     },
     {
       "type": "clear",
@@ -260,9 +596,30 @@
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#LIpURyJE",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/yejBBUFY#hDWpDois",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#hDWpDois",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#xtHoCCnF",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
     },
     {
       "type": "assign",
@@ -274,6 +631,13 @@
       "type": "clear",
       "subject": "vKEsyHFk/HBlhIeSD#3LoKNA2g",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#3LoKNA2g",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
     },
     {
       "type": "clear",
@@ -350,9 +714,37 @@
       "value": "In a Git checkout with no vault, check, check all and check embeds run embeds alone and report why semantics/code were skipped. With a vault, check semantics reads canonical model diagnostics and authored policy; legacy authority returns migration guidance without changing source. Code and embed checks keep their existing owners."
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#6uWT4mUj",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#29kIWfHH"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/vKEsyHFk#19855Ply",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#LDqRcaY1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/vKEsyHFk#zs8yTQLI",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
     },
     {
       "type": "clear",
@@ -372,9 +764,37 @@
       "value": "Follows watchArchitectureModel once per vault and emits only completed architecture_changed events. External file changes have no writer or doing attribution. The cursor belongs to the process feed and starts again after restart."
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#mStVd7fZ",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/vKEsyHFk#VgzgNAGW",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#5zIYNuw1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/vKEsyHFk#yEgsaWnA",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
     },
     {
       "type": "clear",
@@ -382,9 +802,30 @@
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#F90402mH",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#mAwzQrjT",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/SMjRfwN3#QSI6gCrL",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#QSI6gCrL",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
     },
     {
       "type": "assign",
@@ -399,9 +840,65 @@
       "value": "browser show resolves exact model, module, state, flow, and walkthrough selectors before moving the pane. A successful request may select the model repository checkout; its receipt reports that choice. browser panes reports vault, repository, checkout, tab, and exact reading capture."
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/nAmiQ3Vc#HXDhzWiE",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#941UBxya",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#99KMASDs",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/nAmiQ3Vc#kQsYPnIq",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/XppR9owz#I6RAbOlG",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/XppR9owz#I6RAbOlG",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#0yb2VbKc",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#DNQTPTxE",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/nAmiQ3Vc#TuLpnBlQ",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      }
     },
     {
       "type": "clear",
@@ -414,9 +911,114 @@
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/IbGtfJE2#fRFvnVRE",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/XppR9owz#iIJ5MRhi",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SJ2JMVyz#WkOwgUIR",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#Fvl3uDPi"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#RjaKX25k",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#7hdbqGFn"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SJ2JMVyz#QkrB0Q3B",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#Fvl3uDPi"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#T1TYskKQ",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#rouptSyK",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#l5jdGkb1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SJ2JMVyz#5Pg20iSq",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#Fvl3uDPi"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/nAmiQ3Vc#Gq93nL5x",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#VNzfidEL",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#radK8osF",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+      }
     },
     {
       "type": "clear",
@@ -424,14 +1026,168 @@
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#kpWAp83p",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#t5Wy06ua",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#K385etzX",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/OjRLKb74#5UnSr8ZQ",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#ld6jjHND"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SJ2JMVyz#FZjiPawv",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#Fvl3uDPi"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/UOXNWLhR#J6P3Mhjb",
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#J6P3Mhjb",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#UFO3ulXp",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/OjRLKb74#e10t6gst",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#ld6jjHND"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#fs2ehN0i",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/OjRLKb74#tppVDaSZ",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/XppR9owz#XAJYaUnv",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/XppR9owz#XAJYaUnv",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#5zIYNuw1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#QNCwmrh5",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#w9zvoSFD"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/IbGtfJE2#PCxTuzNW",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#PxnjFfV3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#4smEPsmF",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#JvmFYpVf",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#ON3C5Z6t",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#Kek84WN9",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#PxnjFfV3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#l5jdGkb1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#CkB9Bygm",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#Fg9dkGj3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#POloYnX3",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
     },
     {
       "type": "assign",
@@ -446,6 +1202,104 @@
       "value": "The decoder is used by legacy inventory and retained-original readers. It keeps source text for comparison and recovery and does not persist ordinary schema upgrades."
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#KLt72lWa",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/IbGtfJE2#hu0RfGwG",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#PxnjFfV3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#80IozszZ",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#G6arm4oI",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#CjiN3z5a",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#Fg9dkGj3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#wlbLOPSH",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#klNuMiwC",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#w9zvoSFD"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#adthSPYy",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#nLp2hILd",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/IbGtfJE2#RrIatpuG",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#PxnjFfV3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#cuOguqkZ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#hshxlvQL",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#Fg9dkGj3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#W0EmXnR9",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/IbGtfJE2#tDDQDe92",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#PxnjFfV3"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/Oi6SBIAM#YXy1uQYC",
       "field": "responsibility",
@@ -458,9 +1312,51 @@
       "value": "The model change feed carries durable operation events into agent context. The activity tracker broadcasts complete vault-keyed subject claims and durable action metadata. Legacy board-content announcements are retired."
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#YXy1uQYC",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#cuOguqkZ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/XppR9owz#o5zkAtUT",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/gbyqW4H3#CzHSL7yr",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#CzHSL7yr",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#01sVgqBF",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/XppR9owz#bLpk2XKU",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#r7P2iu6H",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
     },
     {
       "type": "assign",
@@ -475,9 +1371,72 @@
       "value": "Canonical readers project models and flows through @archboard/board/content before drawing. The renderer receives content, grammar, policy and host inputs; it does not resolve model identity or navigation."
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#nDQmpHQi",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/9ncuT5DP#SsiEBdik",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#I6MrfGUg",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#Y70KOm9C"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#xwAgUBmW",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#Wcng1nxx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#ld6jjHND",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SJ2JMVyz#624ETIsk",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#ZilfteOF",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
     },
     {
       "type": "clear",
@@ -485,9 +1444,37 @@
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#ETrslazw",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#Y70KOm9C"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/Oi6SBIAM#Qyu8T7UT",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#Qyu8T7UT",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#Y70KOm9C"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
     },
     {
       "type": "assign",
@@ -502,14 +1489,140 @@
       "value": "Publishes canonical model context and exact captured reading selectors to local agents. Unmigrated vaults expose migration guidance instead of board authoring or fixed levels."
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#BC9wK59M",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#KovkhwZi",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#Y70KOm9C"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/SMjRfwN3#5ut3UjV6",
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#5ut3UjV6",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#LDqRcaY1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#eXWJ2qtq",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#zYwmlbj8",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#1aoB46lM",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SJ2JMVyz#bxWDGUJk",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/XppR9owz#eMSAZPvG",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#8fMA8lHI",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#Y70KOm9C"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#KeEVHJEm",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#3vO7eN8L",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#Bfh2rRfX",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#jeDfgVfS",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/0T9enjhi#nSTHru5x",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#nSTHru5x",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#74SVrhRe",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#gTwVYQo9",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#5zIYNuw1"
+      }
     },
     {
       "type": "assign",
@@ -522,6 +1635,13 @@
       "subject": "vKEsyHFk/0T9enjhi#mYtOhgML",
       "field": "description",
       "value": "Scans chosen checkouts and registered untracked vaults, then reads canonical model and proposal modules. LEGACY_AUTHORITY produces no match; discovery does not decode or rewrite legacy board files."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#cZ1UH0xU",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#7hdbqGFn"
+      }
     },
     {
       "type": "assign",
@@ -547,10 +1667,59 @@
       "field": "references"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#ldITx5BG",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#Y70KOm9C"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/XppR9owz#NG7OXLv9",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/gbyqW4H3#bm9AWXkW",
       "field": "description",
       "value": "Carries canonical model selectors and the exact input revision in the existing SVG metadata recipe. The embed checker reuses canonical reading and rendering owners."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#bm9AWXkW",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#nU6dNHBE",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/XppR9owz#e5UQUj78",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#Wcng1nxx",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
     },
     {
       "type": "assign",
@@ -565,9 +1734,37 @@
       "value": "Reads one live canonical model or an exact retained reading. The shared decoder orders collections and walkthroughs consistently. Legacy bytes serve explicit migration and original history only."
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#cuOguqkZ",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/9ncuT5DP#iLWBCObu",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#SduOZmuI",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/XppR9owz#OM6pX371",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#ScjxtP0G",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
     },
     {
       "type": "assign",
@@ -582,10 +1779,45 @@
       "value": "Renders architecture, sequence, and flowchart from canonical readings through the shared client-local projection and existing Bun renderer."
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#j9uyTKyA",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/XppR9owz#dHZeNcMs",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/6E6hL0Zk#C9EOzoYB",
       "field": "description",
       "value": "Publishes canonical model and captured reading context to the existing local agents. Unmigrated vault context exposes migration instructions without legacy live content."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#C9EOzoYB",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/XppR9owz#QKs0tycT",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#mR7wPSei",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+      }
     },
     {
       "type": "assign",
@@ -594,9 +1826,44 @@
       "value": "Retains exact architecture and source associations, then reopens those bytes independently of current files. Public metadata omits private reference and narrative dependency records."
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#3CaBjhIM",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/XppR9owz#nvbnGOtV",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#Q2sXZO7T",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/XppR9owz#yHgIapK7",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
+      }
     },
     {
       "type": "assign",
@@ -615,6 +1882,13 @@
       "subject": "vKEsyHFk/0T9enjhi#108U3Rhl",
       "field": "description",
       "value": "Uses checkpointBlobs for retained reads and tree for exact batched writes."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/XppR9owz#fF4A9uvU",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
+      }
     },
     {
       "type": "assign",
@@ -643,6 +1917,13 @@
       ]
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#RfwX9gsx",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#EekL5c17",
       "field": "responsibility",
@@ -655,16 +1936,93 @@
       "value": "Retains the legacy decoder for explicit migration and exact originals. Legacy public authoring, ownership, moves, and automatic schema persistence retire."
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#EekL5c17",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#tAO3moEw",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#xssnUgIk"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#7mTerd6Y",
       "field": "description",
       "value": "Installs an explicitly approved mapping through the existing signed archive, journal, and recovery owner. Canonical decoding normalizes proposal baselines before fingerprinting. Original bytes, addresses, and independent drafts remain available."
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#SScV6EZR",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#eOG7Eo1U",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#9L5uHzND",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#1VHRyajb",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/XppR9owz#66xX05dW",
       "field": "description",
       "value": "Canonical models are the one live authoring format. Model commands own discovery, recursive readings, proposals, history, code inspection, and walkthroughs. Legacy commands retire."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#HaOwgfOs",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
     },
     {
       "type": "assign",
@@ -677,6 +2035,13 @@
       "subject": "vKEsyHFk/0T9enjhi#CLdaoYy3",
       "field": "description",
       "value": "Installs canonical initialization, portable imports, and explicit migration through one signed archive, journal, atomic writer, and recovery mechanism."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#hO56iL2W",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
     },
     {
       "type": "assign",
@@ -719,6 +2084,13 @@
       "subject": "vKEsyHFk/0T9enjhi#QDE2xctM",
       "field": "description",
       "value": "Retains exact reference dependencies through Git ancestry. A proposal reference to current uses the captured current checkpoint. A checkpoint does not embed its own future identity."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#Jx4O72DO",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      }
     }
   ]
 }

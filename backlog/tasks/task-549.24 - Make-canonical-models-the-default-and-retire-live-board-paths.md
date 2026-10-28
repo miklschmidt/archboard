@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T04:03:00Z'
+updated_date: '2026-10-28T04:16:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -152,6 +152,10 @@ Create one explicit canonical completion proposal from the verified migration ba
 Repair the observed large Base64 export refusal through the existing portable validator and public runtime test seam. Use a gpt-6.1-sol delegate in an isolated worktree. Preserve exact encoding rules, schema distribution, signed history, source HEAD and index, and retry behavior. Parent retains canonical proposal curation, README history filming, and final acceptance.
 
 Bounded portable Base64 repair: preserve the public portable format and encoding language. Extend the existing real-disk/Git roundtrip owner with an 8 MB authored input, reproduce export refusal before repair, then repair only validation and prove runtime/installed JSON schema agreement. Run affected portable owners, source/frontend types, scoped lint and formatting. Use a disposable retained source copy for external large-history export evidence. Merge the newest local integration before signed handoff. Parent retains architecture authoring, final acceptance, lifecycle and README work.
+
+Place the existing implementation modules inside their source app and package owners in completion proposal oyXXnyCV. Use the reviewed responsibility groups as recursive parents. Move cross-package children to their actual owners and preserve existing containment within each owner. Keep all stable identities and relationships. The prepared intent covers 196 parent changes and reduces roots from148 to20 without deleting or merging subjects.
+
+Repair the reproduced portable archive inspection timeout at the actual repository size. Bound or batch existing archive reads after measuring the cause. Preserve every closure, ancestry, signature, byte, mode, identity, and damaged-history check. Require the complete disposable export/import replay and exact retry before handoff. Keep process deadlines and all frontend or source-vault work unchanged.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -322,4 +326,6 @@ Bounded portable Base64 scale repair: public export RED reproduces ARCHIVE_WRITE
 Final test simplification: the existing roundtrip fixture now prepares its initial public import. All original assertions and exact retry remain. This keeps its setup and assertions within their existing budgets without a deadline change or duplicate import. The added 8 MB public export case takes about 140 ms. Earlier suite attempts exposed the existing small-case five-second limit; their logs remain external. Source and frontend types, scoped source/test lint and formatting pass. The latest local integration merge is already up to date at signed31c0daf8b3c1a0ed1ebca2388f899e6588002d15. No new architecture proposal or source-vault claim is needed because this repair restores the existing contract.
 
 Final bounded repair validation: all 11 affected portable/schema-distribution tests pass across seven existing owner files (139 assertions, 60.30 seconds). Source and frontend TypeScript projects pass. Scoped source and test lint and formatting pass without warnings or waivers. The complete gate, browser acceptance and model evaluations were not run. Final simplification keeps one private validator, the unchanged JSON schema contract, and one 8 MB public-export regression in the existing portable owner. Full retained-root export still reaches the separate archive-closure Git timeout after Base64 validation. Leave TASK-549 and TASK-549.24 In Progress with their current assignees and unchecked acceptance.
+
+Merged the signed portable Base64 repair ed5dee9ab through signed dd0fd3d91. The merge tree equals the validated source. Eleven affected tests and both type projects passed in the source handoff, with no repeated tests. A parent disposable replay reproduced a separate Git timeout during export. Its trace shows 110 batch object reads and110 tree reads clustered together. Exact evidence is task-549.24-portable-closure-repro.log and task-549.24-portable-closure-trace.jsonl in the external task directory. Root completion proposal oyXXnyCV now contains the reviewed recursive ownership intent. The public writer accepted196 parent changes at checkpoint8394f3e275c924d9ad84f7773acab5a4c749dd3d, revision6b3b91d1fc7058182ec17cdc18dbed025c2f52dec32e45e55148f02e00915a2e. Public reread succeeds with656 modules and20 roots. Stable identities, all other module fields, relationships, flows, and walkthroughs match the prior proposal exactly. Claims are empty. Retirement, narrative cleanup, adoption, and final acceptance remain open.
 <!-- SECTION:NOTES:END -->
