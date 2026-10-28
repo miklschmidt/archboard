@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T11:40:00Z'
+updated_date: '2026-10-28T11:54:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -364,4 +364,6 @@ Production build passes without bundle warnings. Both type projects pass. The ex
 The existing foreign-repository conversation case reproduces the missing capture twice. Its observational network trace shows pane movement and successful registration without a new reading report. Canonical arrival now resets the reading publisher when its vault changes, even with no legacy board key. The original case passes after the fix: 1 case, 9 assertions, normal cleanup. Temporary instrumentation is removed. The final root evidence intent also describes this boundary and the navigation helpers. Historical layout measurement scripts now consume the canonical root projection and optional active proposals through the public reader.
 
 Simplification after inspection: keep the historical wide-layout investigation scripts unchanged. They use frozen renderer fixtures and test-owned scorecards; converting them would expand the public renderer interface for research tooling. The existing engine-gallery.ts already provides canonical current, scoped, and flow measurements. The root model names both consumers, with their different purposes. The experimental reader helper was removed. Source lint for the product changes remains the required owner.
+
+Signed merge 85f9f2526 integrates aggregate labels from dba5be542. The merge tree equals the validated source. The four-line canonical projection change retains complete joins and leaves single labels, flows, legacy readings, and exact visibility intact. Parent acceptance removes fixed prose from the new assertion and checks count, one-line format, and rendered agreement instead. Browser acceptance follows on the real repository model.
 <!-- SECTION:NOTES:END -->

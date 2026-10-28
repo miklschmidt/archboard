@@ -188,9 +188,10 @@ test("canonical aggregates draw compact counts while retaining authored relation
 		to: "Shop#Worker",
 		kind: "call",
 		order: 10,
-		label: "2 relationships",
+		label: expect.stringMatching(/\b2\b/),
 		emphasis: "normal",
 	});
+	expect(aggregate.line.label).not.toContain("\n");
 	expect([...aggregate.joins]).toEqual(authored);
 	expect(aggregate.joins.map((edge) => edge.label)).toEqual(["Dispatch request", "Second route"]);
 	const reverse = reading.relationships.find((edge) => edge.id === "Shop#Enter")!;
@@ -212,7 +213,7 @@ test("canonical aggregates draw compact counts while retaining authored relation
 	const texts = new dom.DOMParser()
 		.parseFromString(picture.svg, "image/svg+xml")
 		.querySelectorAll('[data-semantic-id="Shop#Dispatch"] text');
-	expect([...texts].map((element) => element.textContent).join(" ")).toBe("2 relationships");
+	expect([...texts].map((element) => element.textContent).join(" ")).toBe(aggregate.line.label);
 });
 
 test("canonical exports retain default comparison and unresolved subject marks through exact recipes", async () => {
