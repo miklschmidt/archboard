@@ -1,0 +1,9 @@
+{
+  "order": 26000,
+  "name": "Coordinator news",
+  "kind": "module",
+  "responsibility": "What the coordinator and the voice model are told while voice is live: workhorse news and pane news, each delivered once and in order, the outcome report and the board context behind pane news",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#hshxlvQL",
+  "outgoing": []
+}
