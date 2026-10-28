@@ -1,0 +1,46 @@
+{
+  "order": 19000,
+  "name": "Recording page",
+  "kind": "ui",
+  "responsibility": "The server's own page on one board: shows the pane alone, paces each step by the voice, and records the talk, never the picture",
+  "description": "The voice plays through a muted audio element, so nobody hears a recording, and talk capture taps the same stream. The page hands over the voice as a 16-bit mono 48 kHz WAV and the talk's events by value. It captures no picture: the replay page draws every frame again from the talk.\n\nThe existing page.load contract accepts one validated canonical model. The recorder keeps that payload with the driven step and waits for the exact source and target revisions before starting voice.",
+  "groups": [
+    "walkthrough"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/state/walkthrough-recording"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SMjRfwN3#T1TYskKQ",
+  "parent": "vKEsyHFk/SMjRfwN3#44gQ5gUw",
+  "outgoing": [
+    {
+      "order": 26000,
+      "kind": "event",
+      "label": "voice as a recording in its language; each step shown",
+      "description": "The page asks the server's agent for voice narrating this walkthrough as a recording in the language it was opened with, and reports each step it shows, which the server tells the voice model as it does a step chosen by hand. Only a recording carries a language: the voice is told to speak only that language, whatever language a step is written in.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "symbol": "WalkthroughRecorder.start"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#4SigiIMB",
+      "to": "vKEsyHFk/SMjRfwN3#2UcHnREN"
+    },
+    {
+      "order": 30000,
+      "kind": "call",
+      "label": "the voice's stream; each step, line and version shown",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "symbol": "TalkCapture"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#MqDfCTuA",
+      "to": "vKEsyHFk/SMjRfwN3#JvmFYpVf"
+    }
+  ]
+}

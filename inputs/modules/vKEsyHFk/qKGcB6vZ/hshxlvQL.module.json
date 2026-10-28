@@ -1,0 +1,15 @@
+{
+  "order": 26003,
+  "name": "Coordinator news",
+  "kind": "module",
+  "responsibility": "What the coordinator and the voice model are told while voice is live: workhorse news and announced context changes, in order, the outcome report, and the Archboard context they come from",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#hshxlvQL",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

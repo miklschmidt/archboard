@@ -1,0 +1,105 @@
+{
+  "order": 4000,
+  "name": "Claim routes",
+  "kind": "route",
+  "responsibility": "An agent's claim on a board, its release, and the person's override",
+  "description": "ADR 0016 and ADR 0022: one writer at a time, visible in every pane showing the board, and the one control a person has over it is taking it back.",
+  "groups": [
+    "writes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/routes/semantic-boards/semantic-lock-routes.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/HBlhIeSD#TW3uG9Uh",
+  "parent": "vKEsyHFk/HBlhIeSD#I6MrfGUg",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 9000,
+      "kind": "call",
+      "label": "take, release or take back the claim",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-lock-routes.ts",
+        "symbol": "claimBoard"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#pTXsEFlF",
+      "to": "vKEsyHFk/6E6hL0Zk#8imgDQSw"
+    },
+    {
+      "order": 10000,
+      "kind": "call",
+      "label": "is there such a board",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-lock-routes.ts",
+        "symbol": "readSemanticBoard"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#8vOEjDKu",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    },
+    {
+      "order": 38000,
+      "kind": "call",
+      "label": "the board family of the pane's address",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-lock-routes.ts",
+        "symbol": "aggregateOf"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#YDToFZl3",
+      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+    },
+    {
+      "order": 50000,
+      "kind": "call",
+      "label": "requires a vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-lock-routes.ts",
+        "symbol": "requireVault"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#tMJduLTB",
+      "to": "vKEsyHFk/HBlhIeSD#fs2ehN0i"
+    },
+    {
+      "order": 115000,
+      "kind": "call",
+      "label": "callerGone",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-lock-routes.ts",
+        "symbol": "callerGone"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#bldMN1ZH",
+      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
+    }
+  ]
+}
