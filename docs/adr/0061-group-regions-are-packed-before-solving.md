@@ -43,6 +43,10 @@ A packed region retains its inline enclosing parent and its containment depth.
 A parent uses local ranks when a path between different member cards leaves that parent and returns through outside cards.
 The rule reads containment and relationships before the solve.
 Paths through parent interface names do not stand for paths through their members.
+A private caller's feedback does not count as an outside dependency path.
+That caller is a root leaf that exchanges relationships with a member in both directions, and all its neighbors belong to the parent.
+It shares the members' rank context for this decision, so feedback alone does not force an opaque parent.
+Ordinary outside pipelines still require local composition.
 The parent keeps the existing block layout and ports.
 Parents also use local ranks for three more graph shapes when no relationship names their interface.
 Those shapes are a flat sink, a nested transparent wrapper, and work with one exclusive outside collaborator.
