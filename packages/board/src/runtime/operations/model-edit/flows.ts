@@ -1,4 +1,5 @@
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
+import { isDeepStrictEqual } from "node:util";
 import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts";
 import { FlowChangeSchema } from "#shared/schemas/model-flows.ts";
 import { assignFields } from "#runtime/operations/model-edit/fields.ts";
@@ -242,6 +243,33 @@ function includeFinalScopes(state: FlowCandidate, flows: Flow[]): void {
 			includeAffected(state.entries, flows, flow.id, state.subjects);
 }
 /**
+ * Capture the metadata and ordered members owned by each collection subject.
+ * @param collections One side of the complete candidate.
+ * @returns The collection meaning outside its independently claimed flows.
+ */
+function collectionScopes(collections: ArchitectureModel["collections"]) {
+	return new Map(
+		collections.map((collection) => [
+			collection.id,
+			{ name: collection.name, flows: collection.flows.map((flow) => flow.id) },
+		]),
+	);
+}
+/**
+ * Include collection metadata and membership changes in the complete subject closure.
+ * @param state The complete candidate.
+ */
+function includeCollectionChanges(state: FlowCandidate): void {
+	const original = collectionScopes(state.model.collections);
+	const final = collectionScopes(state.collections);
+	for (const id of new Set([...original.keys(), ...final.keys()])) {
+		if (isDeepStrictEqual(original.get(id), final.get(id))) continue;
+		const subject = `${state.model.manifest.id}#${id}`;
+		state.subjects.add(subject);
+		if (!final.has(id)) state.retired.add(subject);
+	}
+}
+/**
  * Extend the complete graph behind the existing durable write operation.
  * @param model The coherent starting model.
  * @param statements The complete architecture batch.
@@ -276,6 +304,7 @@ function applyFlowChanges(
 	const flows = state.collections.flatMap((collection) => collection.flows);
 	includeFinalScopes(state, flows);
 	materialize(flows, state.entries, state.moves);
+	includeCollectionChanges(state);
 	return state.collections;
 }
 export { applyFlowChanges, type FlowCandidate };

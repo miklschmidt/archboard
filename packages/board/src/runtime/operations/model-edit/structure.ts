@@ -429,12 +429,13 @@ function applyStructure(
 		...model.walkthroughs.flatMap((walk) => [walk.id, ...walk.beats.map((beat) => beat.id)]),
 		...model.modules.map((module) => module.id),
 		...model.relationships.map((edge) => edge.id),
-		...model.collections.flatMap((collection) =>
-			collection.flows.flatMap((flow) => [
+		...model.collections.flatMap((collection) => [
+			`${model.manifest.id}#${collection.id}`,
+			...collection.flows.flatMap((flow) => [
 				flow.id,
 				...everyStep(flow.steps).map((step) => step.id),
 			]),
-		),
+		]),
 	]);
 	const scopes = [...state.subjects].filter((id) => known.has(id));
 	if (state.structural) scopes.push(model.manifest.id);

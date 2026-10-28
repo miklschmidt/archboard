@@ -8,6 +8,7 @@ import {
 } from "@archboard/board/store-read";
 import {
 	editArchitectureModule,
+	releaseArchitectureClaim,
 	takeBackArchitectureClaim,
 	claimArchitectureSubjects,
 } from "@archboard/board/store-write";
@@ -17,6 +18,7 @@ import {
 	intent,
 	readBytes,
 	disposeFixtures,
+	structureIntent,
 } from "#tests/runtime/operations/model-edit/fixture.ts";
 afterEach(disposeFixtures);
 
@@ -124,4 +126,43 @@ test("explicit scope exclusion and take-back reject the former writer without ch
 		code: "CLAIM_REVOKED",
 	});
 	expect(readArchitectureModel(vault)).toEqual(before);
+});
+
+test("collection metadata edits respect the collection subject claim", async () => {
+	const { vault } = fixture();
+	writeFileSync(
+		join(vault, "behavior.flows.json"),
+		JSON.stringify({ schemaVersion: 1, id: "Behavior", name: "Behavior", flows: [] }),
+	);
+	const input = await structureIntent(vault, ["Shop"]);
+	const original = readArchitectureModel(vault);
+	const competing = await claimArchitectureSubjects(vault, {
+		target: input.target,
+		writer: "other",
+		reason: "editing collection metadata",
+		subjects: ["Shop#Behavior"],
+	});
+	if (!competing.success) throw new Error(JSON.stringify(competing));
+	const request = {
+		...input,
+		changes: [{ type: "edit-collection" as const, collection: "Behavior", name: "Renamed" }],
+	};
+	expect(await editArchitectureModule(vault, request)).toMatchObject({
+		success: false,
+		code: "CLAIM_HELD",
+	});
+	expect(readArchitectureModel(vault)).toEqual(original);
+	await releaseArchitectureClaim(vault, { claim: competing.claim.id, writer: "other" });
+	expect(await editArchitectureModule(vault, request)).toMatchObject({
+		success: false,
+		code: "CLAIM_REQUIRED",
+	});
+	await releaseArchitectureClaim(vault, { claim: input.claim, writer: input.writer });
+	const complete = await structureIntent(vault, ["Shop", "Shop#Behavior"]);
+	expect(
+		await editArchitectureModule(vault, {
+			...request,
+			...complete,
+		}),
+	).toMatchObject({ success: true, subjects: ["Shop#Behavior"] });
 });
