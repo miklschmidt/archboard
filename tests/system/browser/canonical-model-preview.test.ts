@@ -24,8 +24,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { fixtureGit, initializeSource } from "./support/canonical-model.ts";
-import { clickNavigatorRow } from "./support/shell-dom.ts";
-import { serverPath, type PanesBody } from "./support/navigator-support.ts";
+import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
 
@@ -249,54 +248,4 @@ test("a missing preview plan recovers to an explicit planned-only reading", asyn
 	).toEqual(["Shop/Future#Draft"]);
 	await visible(browser, '[data-slot="model-empty-diagram"]');
 	expect(authoredBytes(vault)).toEqual(before);
-});
-
-test("preview and legacy navigation preserve deliberate history across repeated visits", async () => {
-	await using resources = new AsyncDisposableStack();
-	const root = join(browserTestRoots().ownerRoot, "preview-history");
-	const vault = vaultIn(root);
-	cpSync(join(import.meta.dir, "fixtures/legacy-preview"), vault, { recursive: true });
-	initializeSource(root);
-	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
-	resources.defer(() => server.dispose());
-	registerServerBase(server.base);
-	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${server.base}/?modelA=Shop&previewA=Shop`]);
-	await browser.run(["set", "viewport", "1920", "1080"]);
-	await visible(browser, '[data-slot="model-migration-preview"]');
-	const request = createJsonRequester(server);
-	await pollUntil(
-		async () => (await request<PanesBody>("/api/panes")).body,
-		(panes) => panes.paneCount === 1,
-		"the connected preview pane",
-		WAIT,
-	);
-	for (let visit = 0; visit < 2; visit += 1) {
-		await pollUntil(
-			() => clickNavigatorRow(browser, "details"),
-			Boolean,
-			"the legacy source in the navigator",
-			WAIT,
-		);
-		await pollUntil(
-			() =>
-				browser.eval<{ address: string; pane: string | null; notices: string[] }>(
-					`({address: window.location.search, pane: new URLSearchParams(window.location.search).get('paneA'), notices: [...document.querySelectorAll('[role="alert"]')].map(node => node.textContent)})`,
-				),
-			(value) => value.pane === "details",
-			`the deliberate legacy address on visit ${visit + 1}`,
-			WAIT,
-		);
-
-		expect(
-			await browser.eval<boolean>(
-				`document.querySelector('[data-slot="architecture-model-stage"]') === null`,
-			),
-		).toBe(true);
-		await browser.eval("window.history.back()");
-		await visible(browser, '[data-slot="architecture-model-stage"][data-preview="Shop"]');
-		expect(
-			await browser.eval<string | null>(`new URLSearchParams(location.search).get('previewA')`),
-		).toBe("Shop");
-	}
 });

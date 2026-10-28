@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T16:59:00Z'
+updated_date: '2026-10-28T17:07:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -402,4 +402,6 @@ System repairs are integrated through signed 0fa50d038. Full gate v5 passes lint
 The explanation browser owner reproduced two visible defects. Selecting a module removed its focused sidebar control, which blocked Shift+F10. The pane now moves focus to its existing Selection tab before that panel changes. A failed latest-answer read also replaced cached content without exposing recovery. The query now keeps ACTION_NOT_FOUND as the empty state and reports other refusals through its existing error surface. The extended owner passes six assertions after both repairs. Both type projects pass. Scoped lint passes after simplifying the focus helper. The remaining browser inventory and independent review remain open.
 
 The resumed browser lane passes selection, gestures, focus, filters, modes, walkthroughs, narration, proposal playback, proposals and lifecycle. Filter reveal already drew the selected connection; its fixture now inspects that canvas edge instead of a closed sidebar list. Module-name fixtures now read the existing name element without the standing badge. The correction fixture opens Architecture and its history disclosure before inspecting or navigating that content. Its focused owner passes 10 assertions. All four changed browser owners pass scoped test lint, formatting and the earlier combined types. No product behavior, assertion value or deadline was weakened. Canonical read-contract review covers 21 source owners and fixes two Spec findings in signed source 2d7671805: qualified collection identity collisions and inherited policy property acceptance. That source awaits its merger. Remaining browser inventory starts at canonical-model-preview.test.ts. Final review, asset refresh, full gate, archive publication and PR readiness remain open.
+
+Signed merge aa70f3eef integrates the two canonical read-contract review fixes with matching source and merge trees, passing signatures, and one passing combined type run. Browser remainder v4 passes the three current preview workflows. Its fourth case targets the retired live-board navigator entry, which ADR0062 removes. That obsolete case is removed. Retained original addresses, their browser history, and old pane URL migration remain owned by canonical-preview-history, canonical-preview-navigation and canonical-model-migration. Scoped test lint and formatting pass. The next browser owner is canonical-preview-history.test.ts. Durable edit and claim review is active in its isolated worktree.
 <!-- SECTION:NOTES:END -->
