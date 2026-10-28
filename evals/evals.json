@@ -122,8 +122,9 @@
 			"guidance": ["references/canonical-models.md"],
 			"captures": [
 				{
-					"label": "architecture",
-					"board": "Flask"
+					"label": "proposal",
+					"board": "Flask",
+					"variant": "Context changes"
 				}
 			]
 		},
@@ -158,8 +159,9 @@
 			"guidance": ["references/canonical-models.md"],
 			"captures": [
 				{
-					"label": "architecture",
-					"board": "Flask"
+					"label": "application",
+					"board": "Flask",
+					"scope": "Flask#App"
 				}
 			]
 		},
@@ -191,8 +193,16 @@
 			"guidance": ["references/canonical-models.md"],
 			"captures": [
 				{
-					"label": "architecture",
-					"board": "Flask"
+					"label": "sequence",
+					"board": "Flask",
+					"flow": "Request",
+					"grammar": "sequence"
+				},
+				{
+					"label": "flowchart",
+					"board": "Flask",
+					"flow": "Request",
+					"grammar": "flowchart"
 				}
 			]
 		},
@@ -263,8 +273,9 @@
 			"guidance": ["references/canonical-models.md"],
 			"captures": [
 				{
-					"label": "architecture",
-					"board": "Flask"
+					"label": "application",
+					"board": "Flask",
+					"scope": "Flask#App"
 				}
 			]
 		},

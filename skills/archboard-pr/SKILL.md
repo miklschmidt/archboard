@@ -90,8 +90,9 @@ Follow [renders](references/renders.md) for exact canonical selectors and visual
 Retain the selected architecture before recording or sharing a pinned reading.
 Use `model render` for SVG and `model rasterize` for PNG.
 Use captions and alt text that name the scope, selected state, and change.
+Exports draw the selected state's default comparison, including removed subjects and unresolved marks.
 The render command exposes no comparison-base flag.
-Keep semantic change evidence in `model compare` rather than claiming unprovided comparison marks.
+Use `model compare` to inspect that default base before describing the picture's changes.
 
 Record a [walkthrough](references/walkthrough.md) when the user requests it or when order across several parts needs explanation.
 Each beat states a complete reading and stable subjects.

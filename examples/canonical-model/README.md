@@ -1,7 +1,7 @@
 # Authored canonical model fixture
 
 Copy this directory to a temporary directory before using it.
-Commands inside this repository discover its authoritative legacy vault.
+Commands inside this repository discover its own canonical model.
 
 For proposal completion, use the existing `model edit` request with an active draft target and its complete revision.
 An adoption adds `proposal:{type:"adopt",reason:"The change is implemented."}` and `changes:[]`.
@@ -30,7 +30,7 @@ It requires no migration, history archive, or model writer.
 
 The following commands use your configured Git identity and signing.
 Run them from this Archboard checkout.
-The temporary repository keeps this example separate from the authoritative legacy vault.
+The temporary repository keeps this example separate from this repository's canonical model.
 
 ```bash
 checkpoint_fixture=$(mktemp -d)
