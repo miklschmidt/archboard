@@ -500,6 +500,26 @@ A step that cannot keep its corpus intact remains disabled at its replacement se
 This is a development checkpoint, not a shipped configuration flag.
 Do not merge known regressions with a promise that the next step repairs them.
 
+### Build checkpoint: baseline
+
+The implementation starts at `5b82ce00d` on `feat/blocks-planned`.
+Step 1 retains the complete baseline in `/tmp/blocks-explore/base` and the unchanged Track corpus in `/tmp/blocks-explore/speed/track-before`.
+Each corpus contains 4,043 drawings.
+The copied integrity inventory preserves all 84 failures, including the 61 historical subject-set mismatches.
+Finding identities, rather than counts alone, decide whether a new layout introduces a defect.
+
+The build evidence lives in `/tmp/blocks-explore/build`.
+Its tools reuse the exploration harnesses, with imports changed to this checkout.
+The six dark references and the source-matched baseline core stay outside Git.
+The growth workload increases Browser client from 72 to 139 units and the other two measured cards from 105 to 139 units.
+The host records solve count, solve duration, complete render duration, and actual card growth.
+Complete render duration includes crossing decoration and painting.
+The later planner records deterministic candidate and lane counts without using elapsed time to choose geometry.
+
+The parent owns the Renderer layout and Semantic renderer proposals and Backlog updates.
+This implementation does not edit the vault or Backlog.
+The consumer interface and skill remain unchanged.
+
 ## Risks and decisions left to evidence
 
 The largest risk is conservative over-reservation.
