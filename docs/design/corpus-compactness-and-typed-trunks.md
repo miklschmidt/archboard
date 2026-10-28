@@ -424,3 +424,66 @@ All three runs start at a one-minute load of 2.96, after the complete gate exits
 Raw runs, the source hash, and median calculations are in `boundary-fix/measurements.json`.
 The process audit finds no remaining Git owner process.
 TASK-548.08 stays In Progress for the parent to finalize.
+
+## Fifth council and the outside caller
+
+The fifth council compares the complete change with its true parent, `c147b73c8`.
+Of 40 pairs, it judges 20 better, 19 the same, and one worse, with no new defect.
+The remaining case is Voice coordinator's Tools and work view in Track.
+Tab sessions stands above the entire frame instead of beside its header.
+The resulting empty band stretches three relationships and adds crossings.
+
+The input reduces to four cards and three relationships.
+An outside session calls two members and receives feedback from one of them.
+The existing outside-path rule treats that private feedback loop as a reason to make the parent opaque.
+Graphviz then ranks the caller before that whole measured block.
+The compact header does not require this extra rank.
+Two renderer cases reproduce the misplaced caller, with and without an exclusive outside worker.
+
+The first probe holds the caller and opaque parent on one rank.
+It removes the empty band but grows the width from 1521 to 1901 points.
+Same-band pins also route under the full-height parent, which creates card strikes and an ambiguous trunk.
+That probe is dropped without a routing workaround.
+
+The retained approach changes the earlier composition decision.
+A root leaf shares the members' rank context when it exchanges relationships with a member in both directions and every neighbor belongs to the parent.
+A private feedback loop therefore does not force an opaque parent.
+Other local-shape rules remain unchanged.
+The first broader context probe also suppresses real outside pipelines, so the existing Rust regression rejects it.
+This exchange requirement preserves that contract without a card-count threshold or board exception.
+
+Core `097cda3d474917c2` passes both reduced renderer cases and the complete renderer suite: 685 pass, one platform-only skip.
+The layout Rust tests and strict clippy pass inside `nix develop`.
+Every hard reader also passes on the actual Tools and work drawing.
+No routing code or hard assertion changes.
+
+The complete corpus is `/tmp/548-08/round-5/after-1`.
+It retains all 2452 SVGs and all 76 whole-board drawings.
+Exactly four drawings change against `round-4/after-16`, all Tools and work in Track: light and dark, plain and comparison.
+The other 2448 SVGs, including every whole board, match byte for byte.
+Both SVG sides, all eight inspected rasters, and separate light/plain and other manifests are in `round-5/milestone-1`.
+The inspection finds no defect or clear readability regression.
+
+The picture changes from 1521 by 1108 to 1188 by 972 points, with 31.5% less page area.
+Tab sessions and the frame now start at y=20, which removes the empty band above the header.
+Total route length falls from 3412.41 to 2680.71 points, and the longest route falls from 1073.52 to 677.92.
+The new picture retains compact headers and is 45 points taller than the original `c147b73c8` picture.
+The parent judges that remaining comparison.
+
+The Renderer layout and Semantic renderer proposals describe the retained private-caller rule.
+Their interfaces stay unchanged, and their code check retains the same 41 finding identities, with none new.
+The consumer skill needs no change because the authoring workflow stays the same.
+Both claims are released, and the owned server is stopped.
+
+The final complete gate passes all 20 tasks, including all 19 browser files.
+The first attempt fails the untouched rust-analyzer deadline owner at 2261 ms, whose focused rerun passes in 1966 ms.
+The second attempt fails an unrelated concurrent-start skill-symlink race, whose focused rerun also passes.
+Both owners pass in the final complete run without a code or assertion change.
+The logs retain all three gate attempts.
+
+Three fresh runs give median first/growing-edit times of Viewer 282/204 ms, Persistence 300/295 ms, and Routes 141/138 ms.
+All 18 timed renders stay below 500 ms, with a maximum of 301 ms.
+Every edit grows a measured card, and every run reports core `097cda3d474917c2`.
+The runs start at one-minute loads of 2.71 to 2.85 after the gate exits.
+`/tmp/548-08/round-5/measurements.json` retains every sample, source hash, height change, and load.
+TASK-548.08 stays In Progress for the parent's next council verdict.
