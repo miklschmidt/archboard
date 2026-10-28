@@ -69,7 +69,7 @@
 			"command": "bun run readme:assets explainer",
 			"files": [],
 			"sources": [
-				".archboard/vault/.archboard/config.yaml",
+				".archboard/vault",
 				"apps/web",
 				"packages/ui-kit/src/ui",
 				"packages/server-requests/src/ui",
