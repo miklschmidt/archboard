@@ -10,6 +10,7 @@ import {
 } from "@archboard/board/store-write";
 import { installationFixture } from "#tests/runtime/operations/legacy-preview/install-fixture.ts";
 import { git } from "#tests/runtime/operations/model-edit/fixture.ts";
+import { signing } from "#tests/runtime/support/publication-fixture.ts";
 const homes: string[] = [];
 afterEach(() => {
 	for (const home of homes.splice(0)) rmSync(home, { recursive: true, force: true });
@@ -21,8 +22,7 @@ test("explicit private history shares cutover and portable original dependencies
 	rmSync(join(source.home, ".git"), { recursive: true, force: true });
 	const initialized = await initializeArchitectureArchive(source.vault);
 	if (!initialized.success) throw new Error(JSON.stringify(initialized));
-	git(initialized.archive, "config", "user.name", "Migration Owner");
-	git(initialized.archive, "config", "user.email", "migration@example.test");
+	signing(initialized.archive, source.key);
 	const preview = await readArchitectureModel(source.vault, undefined, undefined, {
 		preview: "Shop",
 	});

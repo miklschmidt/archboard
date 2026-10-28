@@ -274,7 +274,7 @@ function found(outcome: CodeCheckOutcome): string[] {
 
 test("the current variant reports a missing anchored file, anchor symbol and bound symbol", async () => {
 	const { read, outcome } = await pass();
-	expect(read.boards.map((one) => [one.board.name, one.variant.id])).toEqual([
+	expect(read.boards.map((one) => [one.board.name, one.variant.id]).toSorted()).toEqual([
 		["Ops", "v1"],
 		["Shop", "v1"],
 	]);

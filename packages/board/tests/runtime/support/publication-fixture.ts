@@ -29,6 +29,12 @@ export function signing(root: string, key: string) {
 	git(root, "config", "gpg.ssh.allowedSignersFile", signers);
 }
 
+export function createSigningKey(root: string, key: string) {
+	const result = Bun.spawnSync(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", key]);
+	if (result.exitCode !== 0) throw new Error(result.stderr.toString());
+	signing(root, key);
+}
+
 export function publicationFixture() {
 	const home = mkdtempSync(join(tmpdir(), "archboard-publication-"));
 	homes.push(home);
@@ -37,9 +43,7 @@ export function publicationFixture() {
 	cpSync(resolve("examples/canonical-model/.archboard/vault"), vault, { recursive: true });
 	git(root, "init", "--quiet", "--initial-branch=main");
 	const key = join(home, "signing-key");
-	const result = Bun.spawnSync(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", key]);
-	if (result.exitCode !== 0) throw new Error(result.stderr.toString());
-	signing(root, key);
+	createSigningKey(root, key);
 	git(root, "remote", "add", "origin", "https://github.com/acme/shop.git");
 	writeFileSync(join(root, "code.ts"), "export const version = 1;\n");
 	git(root, "add", ".");

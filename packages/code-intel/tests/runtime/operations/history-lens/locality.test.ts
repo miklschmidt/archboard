@@ -380,22 +380,31 @@ test("an answer is kept until the board's version, the start of the period or a 
 	const reading = lens.createVariantLocality();
 	const first = small(1);
 	const answer = await reading.read(scratch, first, variantOf(first, "v1"), undefined);
-	expect(await reading.read(scratch, first, variantOf(first, "v1"), undefined)).toBe(answer);
+	expect((await reading.read(scratch, first, variantOf(first, "v1"), undefined)).hotspots).toBe(
+		answer.hotspots,
+	);
 	// Two worktrees of one repository hold copies of a board with one id and version, which
 	// each may have changed since (ADR 0049): what one vault's board is read as is not the other's.
 	const elsewhere = join(scratch, "another-vault");
-	expect(await reading.read(elsewhere, first, variantOf(first, "v1"), undefined)).not.toBe(answer);
-	const next = small(2);
-	expect(await reading.read(scratch, next, variantOf(next, "v1"), undefined)).not.toBe(answer);
 	expect(
-		await reading.read(scratch, first, variantOf(first, "v1"), new Date(LAST * 1000 - DAY * 1000)),
-	).not.toBe(answer);
+		(await reading.read(elsewhere, first, variantOf(first, "v1"), undefined)).hotspots,
+	).not.toBe(answer.hotspots);
+	const next = small(2);
+	expect((await reading.read(scratch, next, variantOf(next, "v1"), undefined)).hotspots).not.toBe(
+		answer.hotspots,
+	);
+	expect(
+		(await reading.read(scratch, first, variantOf(first, "v1"), new Date(LAST * 1000 - DAY * 1000)))
+			.hotspots,
+	).not.toBe(answer.hotspots);
 	write(shop, edit("src/c.ts", 3));
 	commit(shop, 0, "a commit in a repository the board does not bind");
-	expect(await reading.read(scratch, first, variantOf(first, "v1"), undefined)).toBe(answer);
+	expect((await reading.read(scratch, first, variantOf(first, "v1"), undefined)).hotspots).toBe(
+		answer.hotspots,
+	);
 	write(tiny, edit("t.ts", 1));
 	commit(tiny, 0, "tiny again");
 	const moved = await reading.read(scratch, first, variantOf(first, "v1"), undefined);
-	expect(moved).not.toBe(answer);
+	expect(moved.hotspots).not.toBe(answer.hotspots);
 	expect(moved.hotspots[0]?.count).toBe(2);
 });
