@@ -1,0 +1,9 @@
+{
+  "order": 24000,
+  "name": "Thread and voice",
+  "kind": "module",
+  "responsibility": "Starts the tab's coordinator thread with its authored instructions, runs the realtime voice leg on it, and unloads a thread that a fresh one replaced",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#CkB9Bygm",
+  "outgoing": []
+}

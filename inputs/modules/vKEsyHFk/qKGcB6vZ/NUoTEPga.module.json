@@ -1,0 +1,69 @@
+{
+  "order": 2000,
+  "name": "Coordinator thread",
+  "kind": "module",
+  "responsibility": "Each tab session's separate fast thread that voice attaches to, the voice model's subconscious: its model, its settings, and how it is started",
+  "description": "Started with its tab session's first message or Talk, before the workhorse, on gpt-6-sol at low effort with project_doc_max_bytes 0 and the archboard_workhorse and archboard_voice tools. It works in a directory of its own under the server's state directory, which is no checkout and holds no vault: a command it runs without -C is refused, and it gives work in a checkout to that checkout's workhorse. Each tab session has its own, so two tabs can talk at the same time, and it speaks for every workhorse of its tab. If it cannot start, the message or Talk is refused with the reason and no workhorse starts. It carries at most one voice session: a voice start that finds it already carried one starts a fresh thread first, and swaps it in only once it is ready, so the old thread is never driven again. Once the old thread's voice session has closed and no turn runs on it, the coordinator unsubscribes from it, so Codex unloads it. When the tab session ends, its threads are unsubscribed the same way. It runs turns only for a live voice session: a handoff, workhorse news, a spoken approval.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/services/coordinator"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+  "parent": "vKEsyHFk/qKGcB6vZ#CkB9Bygm",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "thread/start its body",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/coordinator/start.ts",
+        "symbol": "threadStart"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#uWKB5oF9",
+      "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+    },
+    {
+      "order": 2000,
+      "kind": "dependency",
+      "label": "its developer instructions, by digest",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/coordinator/review.ts",
+        "symbol": "COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#QEitA6l5",
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
+    },
+    {
+      "order": 27000,
+      "kind": "call",
+      "label": "unload the thread a fresh one replaced",
+      "description": "The caller receives the unload method of the public createCodexThreadUnload factory imported from the module root; the module is drawn whole.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/coordinator/coordinator.ts",
+        "symbol": "unload"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#cDFB96mF",
+      "to": "vKEsyHFk/9ncuT5DP#YxDrzJtI"
+    },
+    {
+      "order": 30000,
+      "kind": "dependency",
+      "label": "the tools it is started with",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/coordinator/model.ts",
+        "symbol": "ARCHBOARD_WORKHORSE_NAMESPACE"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#VFlVLSkl",
+      "to": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P"
+    }
+  ]
+}

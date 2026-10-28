@@ -1,0 +1,55 @@
+{
+  "order": 18000,
+  "name": "Outcome report",
+  "kind": "module",
+  "responsibility": "Gives the coordinator one piece of news as one turn/start, joining its running turn or starting one, and nothing while a recording holds the voice",
+  "description": "The prompt says what happened and what to do with it: say it under [FINAL] if the user is waiting on it, keep it to a [COMMENTARY] line otherwise, and start no new work because of it.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/services/voice/outcome-report.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#AjPVQ0BZ",
+  "parent": "vKEsyHFk/qKGcB6vZ#hshxlvQL",
+  "outgoing": [
+    {
+      "order": 23000,
+      "kind": "call",
+      "label": "turn/start on the coordinator thread",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/voice/outcome-report.ts",
+        "symbol": "turnStart"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#kdzh3hrY",
+      "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+    },
+    {
+      "order": 24000,
+      "kind": "call",
+      "label": "is a recording holding the voice?",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/voice/outcome-report.ts",
+        "symbol": "recording"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#tMugyhPT",
+      "to": "vKEsyHFk/qKGcB6vZ#2vHAg1Ei"
+    },
+    {
+      "order": 38000,
+      "kind": "call",
+      "label": "the report turn, as authored",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/voice/outcome-report.ts",
+        "symbol": "createTurnStartParams"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#ovIBdlhV",
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
+    }
+  ]
+}
