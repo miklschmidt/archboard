@@ -60,6 +60,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/0T9enjhi#4P7YZdnj"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#lcZxhHuv"
     },
     {
@@ -448,6 +452,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/XppR9owz#MUs4pwRq"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#i2CrY6Xj"
     },
     {
@@ -505,6 +513,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#7qJKTQgN"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/yejBBUFY#G4NHQC25"
     },
     {
       "type": "remove",
@@ -609,6 +621,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/XppR9owz#8bgnBTp4"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/SMjRfwN3#2UcHnREN"
     },
     {
       "type": "remove",
@@ -5054,44 +5070,6 @@
       }
     },
     {
-      "type": "assign",
-      "subject": "vKEsyHFk/0T9enjhi#4P7YZdnj",
-      "field": "name",
-      "value": "Architecture HTTP service"
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/0T9enjhi#4P7YZdnj",
-      "field": "responsibility",
-      "value": "Exposes canonical model operations to local clients"
-    },
-    {
-      "type": "clear",
-      "subject": "vKEsyHFk/0T9enjhi#4P7YZdnj",
-      "field": "references"
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/0T9enjhi#4P7YZdnj",
-      "field": "description",
-      "value": "The server routes explicit vault requests to the public model runtime. The same runtime supports local callers without a second storage implementation."
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/0T9enjhi#4P7YZdnj",
-      "field": "formerNames",
-      "value": [
-        "Archboard server"
-      ]
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/0T9enjhi#4P7YZdnj",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
-      }
-    },
-    {
       "type": "clear",
       "subject": "vKEsyHFk/OjRLKb74#nmyK8UOO",
       "field": "references"
@@ -5201,6 +5179,12 @@
       ]
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#pqG9kqlF",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
       "placement": {
@@ -5249,6 +5233,12 @@
       "type": "clear",
       "subject": "vKEsyHFk/XppR9owz#PQcK5dF2",
       "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#PuILGsjg",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     },
     {
       "type": "assign",
@@ -5407,30 +5397,6 @@
       }
     },
     {
-      "type": "assign",
-      "subject": "vKEsyHFk/XppR9owz#MUs4pwRq",
-      "field": "responsibility",
-      "value": "Hosts the local server and routes explicitly addressed canonical model, migration, rendering, code, repository, and pane operations."
-    },
-    {
-      "type": "clear",
-      "subject": "vKEsyHFk/XppR9owz#MUs4pwRq",
-      "field": "references"
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/XppR9owz#MUs4pwRq",
-      "field": "description",
-      "value": "The server owns the shared local HTTP and socket process. Canonical model and migration routes refuse legacy live authority; pane and workbench routes remain separate owners."
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/XppR9owz#MUs4pwRq",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
-      }
-    },
-    {
       "type": "clear",
       "subject": "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
       "field": "references"
@@ -5542,44 +5508,6 @@
       "subject": "vKEsyHFk/yejBBUFY#0SRnYXnC",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
-      }
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/yejBBUFY#G4NHQC25",
-      "field": "name",
-      "value": "Architecture read service"
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/yejBBUFY#G4NHQC25",
-      "field": "responsibility",
-      "value": "Answers explicitly addressed canonical reads"
-    },
-    {
-      "type": "clear",
-      "subject": "vKEsyHFk/yejBBUFY#G4NHQC25",
-      "field": "references"
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/yejBBUFY#G4NHQC25",
-      "field": "description",
-      "value": "The browser reads a coherent model or retained reading from the local server. It owns only presentation and refreshes when the durable model revision changes."
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/yejBBUFY#G4NHQC25",
-      "field": "formerNames",
-      "value": [
-        "Archboard server"
-      ]
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/yejBBUFY#G4NHQC25",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
       }
     },
     {
@@ -5731,6 +5659,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#yWqRrF8i",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/XppR9owz#e8DKQF2E",
       "field": "name",
       "value": "Model comparison"
@@ -5788,18 +5722,6 @@
       "subject": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
-      }
-    },
-    {
-      "type": "clear",
-      "subject": "vKEsyHFk/SMjRfwN3#2UcHnREN",
-      "field": "references"
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/SMjRfwN3#2UcHnREN",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
       }
     },
     {
@@ -5904,9 +5826,98 @@
       "field": "references"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+      "field": "responsibility",
+      "value": "Hosts the local HTTP and socket service for architecture and local agents"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+      "field": "description",
+      "value": "One server app serves canonical model operations, code evidence, exports, retained playback, repository selection, and pane routing. Its route and lifecycle children own those details. Reader and rendering roles do not create separate copies of this app."
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
       "field": "references"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#hx5UtSvH",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#lbpfmZQK",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#iXs0a5bj",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#ZWlFN4et",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#VoM3JXyO",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#LF1VUIUY",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#SuACli3y",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#tDk3zmci",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#gCSSYsMT",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#txWnt33L",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#NdGIaM6r",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      }
     },
     {
       "type": "clear",
@@ -5978,6 +5989,12 @@
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#29kIWfHH"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#chjmKQLj",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     },
     {
       "type": "place",
@@ -6101,6 +6118,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#EAT8ges2",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/wAHh0HTa#99KMASDs",
       "placement": {
@@ -6179,15 +6202,51 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+      "field": "name",
+      "value": "Evaluation server instance"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+      "field": "responsibility",
+      "value": "Starts and owns an isolated local server for one evaluation run"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/processes/server.ts",
+        "symbol": "startServer"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
       "field": "references"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+      "field": "description",
+      "value": "The evaluation launcher chooses a free port, proves the server identity through health, and stops its owned process when the run ends. This instance is separate from the ordinary interactive server."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+      "field": "formerNames",
+      "value": [
+        "Archboard server"
+      ]
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+        "holder": "vKEsyHFk/IbGtfJE2#8O4XNZOZ"
       }
     },
     {
@@ -6224,6 +6283,12 @@
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#4SigiIMB",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     },
     {
       "type": "place",
@@ -6327,6 +6392,12 @@
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#5zIYNuw1"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#mLWF1WuB",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     },
     {
       "type": "place",
@@ -6899,6 +6970,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#CfLy7gvx",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
       "placement": {
@@ -7213,6 +7290,12 @@
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#pB6BrbXY",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     },
     {
       "type": "assign",
@@ -8677,11 +8760,75 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#Xlfo3lAv",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/XppR9owz#OfRn3av3",
+        "vKEsyHFk/XppR9owz#yHgIapK7",
+        "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#A2YQ6ASl",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#DJOodCKl",
+      "field": "from",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#eizWExyA",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#246hJJey",
+      "field": "from",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#ekeJcn8d",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/XppR9owz#XKjn4icZ",
+        "vKEsyHFk/XppR9owz#eMSAZPvG",
+        "vKEsyHFk/XppR9owz#iIJ5MRhi",
+        "vKEsyHFk/XppR9owz#yHgIapK7",
+        "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      ]
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/XppR9owz#ekeJcn8d",
       "placement": {
         "holder": "vKEsyHFk#XppR9owz"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#rIL6FqVI",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#QfFrSi7Q",
+      "field": "from",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#Y8SMRInQ",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     },
     {
       "type": "assign",
@@ -8692,10 +8839,27 @@
     {
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#YnBAS29q",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/yejBBUFY#HggZR41l",
+        "vKEsyHFk/yejBBUFY#HCghQa6I",
+        "vKEsyHFk/yejBBUFY#xsn0RvSi",
+        "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#YnBAS29q",
       "field": "formerNames",
       "value": [
         "Restore the workspace from the address"
       ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#VxiHaXwr",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     },
     {
       "type": "assign",
@@ -8716,6 +8880,12 @@
     {
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#pCF646U5",
+      "field": "from",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#pCF646U5",
       "field": "label",
       "value": "accepted repository destination"
     },
@@ -8728,6 +8898,18 @@
         "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
         "symbol": "showModel"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#mAK9VniS",
+      "field": "from",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#fLVTutjj",
+      "field": "from",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     },
     {
       "type": "assign",
@@ -8746,11 +8928,113 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#j71M2dfg",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/yejBBUFY#0x47EMoO",
+        "vKEsyHFk/yejBBUFY#HggZR41l",
+        "vKEsyHFk/yejBBUFY#zs2QxCu7",
+        "vKEsyHFk/yejBBUFY#941UBxya",
+        "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#poXIQO2Q",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#SWAwr2T3",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#4q4eqiKE",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#PskQF5yo",
+      "field": "from",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#k15Ecakx",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+        "vKEsyHFk/yejBBUFY#fscW90Xt",
+        "vKEsyHFk/yejBBUFY#zs2QxCu7",
+        "vKEsyHFk/yejBBUFY#0SRnYXnC",
+        "vKEsyHFk/yejBBUFY#941UBxya",
+        "vKEsyHFk/yejBBUFY#dtYjWvlf"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#7ajZkOZW",
+      "field": "from",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#TJCV96ua",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+        "vKEsyHFk/yejBBUFY#aixSjfNe",
+        "vKEsyHFk/yejBBUFY#rouptSyK",
+        "vKEsyHFk/yejBBUFY#dtYjWvlf"
+      ]
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/yejBBUFY#TJCV96ua",
       "placement": {
         "holder": "vKEsyHFk#yejBBUFY"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#fL9kcN7y",
+      "field": "from",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#wNOnYF4H",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#tAkrO8n6",
+      "field": "from",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#dlHOylBt",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#lPvWErSi",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#vtrjAMdx",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     }
   ],
   "retiredIds": [
@@ -10000,6 +10284,10 @@
     "vKEsyHFk/yejBBUFY#jO7Gi0tH",
     "vKEsyHFk/yejBBUFY#9UKF2Yhc",
     "vKEsyHFk/yejBBUFY#W3pA3wXh",
-    "vKEsyHFk/yejBBUFY#btUJSC5C"
+    "vKEsyHFk/yejBBUFY#btUJSC5C",
+    "vKEsyHFk/0T9enjhi#4P7YZdnj",
+    "vKEsyHFk/SMjRfwN3#2UcHnREN",
+    "vKEsyHFk/XppR9owz#MUs4pwRq",
+    "vKEsyHFk/yejBBUFY#G4NHQC25"
   ]
 }
