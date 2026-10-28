@@ -116,6 +116,8 @@ test(
 
 		await seedCanonicalModel(server.vault, "workbench");
 		await browser.run(["open", server.base]);
+		// The fake provider page must not depend on external DNS or a failed network navigation.
+		await browser.run(["network", "route", LOGIN_URL, "--body", '{"fixture":"sign-in"}']);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		expect(await browser.eval<[number, number]>("[innerWidth, innerHeight]")).toEqual([1920, 1080]);
 		await pollUntil(
