@@ -1,0 +1,55 @@
+{
+  "order": 1000,
+  "name": "Browser gateway",
+  "kind": "module",
+  "responsibility": "Where a pane's command arrives, already admitted under its tab session's lease, and is carried out by the workhorse of the checkout the pane's tab shows",
+  "description": "The gateway asks which checkout the pane's tab shows on every read and command, because the person can activate another one at any time: it hears the change and presents every pane of the tab again, with the workhorse of the new checkout. It dispatches each browser command to one action of that checkout's workhorse: a typed message or an interrupt (Stop) to the text actions (src/server/archboard/lib/codex-workbench-text-actions.ts), a queue edit to its queue, a new workhorse to its create action (codex-workbench-thread-links.ts), which makes the tab's coordinator ready first. A command that names a thread is admitted only when that thread is the link of the shown checkout, and a lease taken before a switch is refused as link_changed. A command runs on the workhorse its lease was claimed for: once it has run, only that workhorse's own link is asked whether it still stands, so a switch meanwhile does not make its outcome unknown. None of them passes through the workhorse operations.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/services/gateway"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
+  "parent": "vKEsyHFk/SJ2JMVyz#WkOwgUIR",
+  "outgoing": [
+    {
+      "order": 14000,
+      "kind": "call",
+      "label": "edit the queue of the shown checkout's workhorse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/actions/browser-gateway.ts",
+        "symbol": "add"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#FWJMAVKj",
+      "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn"
+    },
+    {
+      "order": 15000,
+      "kind": "call",
+      "label": "start the workhorse of the shown checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/actions/thread-links.ts",
+        "symbol": "start"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#NALNPztL",
+      "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN"
+    },
+    {
+      "order": 29000,
+      "kind": "call",
+      "label": "the workhorse of the shown checkout, built on first use",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/actions/browser-gateway.ts",
+        "symbol": "workhorse"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#mK9SfZDk",
+      "to": "vKEsyHFk/SJ2JMVyz#mWD948LG"
+    }
+  ]
+}

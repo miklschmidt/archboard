@@ -1,0 +1,9 @@
+{
+  "order": 17000,
+  "name": "Pane and coordinator doors",
+  "kind": "module",
+  "responsibility": "Where a pane's command and the coordinator's tool calls reach the workhorse of a checkout, and where the coordinator is told what happens",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#WkOwgUIR",
+  "outgoing": []
+}

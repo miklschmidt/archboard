@@ -1,0 +1,9 @@
+{
+  "order": 20000,
+  "name": "Cross-thread calls",
+  "kind": "module",
+  "responsibility": "Runs the archboard_app calls a thread makes on the server's other threads, and registers every wait so that no wait closes a cycle",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#FZjiPawv",
+  "outgoing": []
+}

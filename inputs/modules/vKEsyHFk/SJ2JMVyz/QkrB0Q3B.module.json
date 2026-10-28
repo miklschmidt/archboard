@@ -1,0 +1,9 @@
+{
+  "order": 18000,
+  "name": "Turns",
+  "kind": "module",
+  "responsibility": "What a workhorse does with a turn: delegate, steer, inspect and manage its queue, with the messages waiting behind the running turn",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#QkrB0Q3B",
+  "outgoing": []
+}
