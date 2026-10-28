@@ -5,6 +5,7 @@ import { Window } from "happy-dom";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { readArchitectureModel } from "@archboard/board/store-read";
+import { projectModel } from "@archboard/board/content";
 import {
 	claimArchitectureSubjects,
 	editArchitectureModule,
@@ -174,6 +175,45 @@ function group(svg: string, id: string): string {
 		.map((element) => element.outerHTML)
 		.join("\n");
 }
+
+test("canonical aggregates draw compact counts while retaining authored relationships and exact visibility", async () => {
+	const reading = await readArchitectureModel(vault, undefined, undefined, { compare: false });
+	if (!reading.success) throw new Error(JSON.stringify(reading));
+	const authored = reading.relationships.filter((edge) => edge.from === "Shop#Gateway");
+	const root = projectModel(reading);
+	const aggregate = root.connections.find(({ line }) => line.id === "Shop#Dispatch")!;
+	expect(aggregate.line).toEqual({
+		id: "Shop#Dispatch",
+		from: "Shop#Gateway",
+		to: "Shop#Worker",
+		kind: "call",
+		order: 10,
+		label: "2 relationships",
+		emphasis: "normal",
+	});
+	expect([...aggregate.joins]).toEqual(authored);
+	expect(aggregate.joins.map((edge) => edge.label)).toEqual(["Dispatch request", "Second route"]);
+	const reverse = reading.relationships.find((edge) => edge.id === "Shop#Enter")!;
+	expect(root.connections.find(({ line }) => line.id === reverse.id)).toEqual({
+		line: { ...reverse, to: "Shop#Gateway" },
+		joins: [reverse],
+	});
+	expect(projectModel(reading, "Shop#Worker").connections).toEqual(root.connections);
+	expect(projectModel(reading, null, ["Shop#Gateway"]).connections).toEqual(root.connections);
+	const focused = projectModel(reading, null, ["Shop#Dispatch"]);
+	expect(focused.connections).toEqual([{ line: authored[0]!, joins: [authored[0]!] }]);
+	const exact = projectModel(reading, null, null, {}, undefined, {
+		modules: ["Shop#Gateway", "Shop#Worker"],
+		relationships: ["Shop#Dispatch", "Shop#Second"],
+		flows: [],
+	});
+	expect(exact.connections).toEqual(authored.map((edge) => ({ line: edge, joins: [edge] })));
+	const picture = await render();
+	const texts = new dom.DOMParser()
+		.parseFromString(picture.svg, "image/svg+xml")
+		.querySelectorAll('[data-semantic-id="Shop#Dispatch"] text');
+	expect([...texts].map((element) => element.textContent).join(" ")).toBe("2 relationships");
+});
 
 test("canonical exports retain default comparison and unresolved subject marks through exact recipes", async () => {
 	const draft = await edit(

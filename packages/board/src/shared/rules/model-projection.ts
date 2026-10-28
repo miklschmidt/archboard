@@ -353,6 +353,10 @@ function projectedConnections(
 	}
 	return [...groups.values()]
 		.flatMap((edges) => overviewLines({ ...complete, nodes: flat, edges }, open))
+		.map(({ line, joins }) => ({
+			line: joins.length === 1 ? line : { ...line, label: `${joins.length} relationships` },
+			joins,
+		}))
 		.toSorted((one, other) => one.line.order - other.line.order);
 }
 
