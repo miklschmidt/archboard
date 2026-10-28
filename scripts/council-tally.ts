@@ -12,6 +12,7 @@
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { errorMessage } from "@archboard/diagnostics/thrown-error";
 import { z } from "zod";
 
 /** The agreed criteria and their weights (docs/design/grading-council/criteria.md). */
@@ -73,7 +74,13 @@ function refuse(message: string): never {
  */
 function readJson<Schema extends z.ZodType>(path: string, schema: Schema): z.infer<Schema> {
 	if (!existsSync(path)) return refuse(`${path} is missing.`);
-	const parsed = schema.safeParse(JSON.parse(readFileSync(path, "utf8")));
+	let value: unknown;
+	try {
+		value = JSON.parse(readFileSync(path, "utf8"));
+	} catch (error) {
+		return refuse(`${path}: ${errorMessage(error)}\nUse a readable file that contains valid JSON.`);
+	}
+	const parsed = schema.safeParse(value);
 	return parsed.success ? parsed.data : refuse(`${path}: ${z.prettifyError(parsed.error)}`);
 }
 
