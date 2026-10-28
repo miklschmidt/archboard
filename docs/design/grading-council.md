@@ -105,6 +105,7 @@ rereads that file before each run.
    bun scripts/council-tally.ts <out> /tmp/grading-<run>
    ```
 
+   It requires four grader files and all four scores for every selected pair.
    It refuses while a reported defect has no ruling. For each pair it prints
    the verdict for the change (`better`, `worse`, `same` or `both fail`) and
    each grader's margin of the after picture over the before picture. The

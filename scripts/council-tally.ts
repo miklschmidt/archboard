@@ -85,15 +85,13 @@ function readJson<Schema extends z.ZodType>(path: string, schema: Schema): z.inf
 }
 
 /**
- * A side's weighted score on the 1 to 10 scale.
+ * A side's weighted score in hundredths, exact until after the median.
  * @param scores The side's scores.
- * @returns The weighted mean.
+ * @returns The weighted total.
  */
 function weighted(scores: Scores): number {
 	const { K, R, T, L, O, W } = WEIGHTS;
-	return (
-		(K * scores.K + R * scores.R + T * scores.T + L * scores.L + O * scores.O + W * scores.W) / 100
-	);
+	return K * scores.K + R * scores.R + T * scores.T + L * scores.L + O * scores.O + W * scores.W;
 }
 
 /**
@@ -117,7 +115,10 @@ function gradersOf(grading: string): Map<string, Graded> {
 	if (!existsSync(dir))
 		return refuse(`${dir} is missing; each grader writes verdicts/<grader>.json.`);
 	const files = readdirSync(dir).filter((name) => name.endsWith(".json"));
-	if (files.length === 0) return refuse(`${dir} holds no grader's verdicts.`);
+	if (files.length !== 4)
+		return refuse(
+			`${dir} must hold four graders' verdict files, but holds ${files.length}. Finish all four files and remove files from other runs.`,
+		);
 	return new Map(
 		files
 			.toSorted()
@@ -202,14 +203,19 @@ function tally(
 	rulings: Rulings,
 ): Tallied {
 	const after: Side = before === "A" ? "B" : "A";
-	const margins = [...graders.values()].flatMap((pairs) => {
+	const hundredths = [...graders].map(([grader, pairs]) => {
 		const graded = pairs[pair];
-		return graded ? [weighted(graded[after]) - weighted(graded[before])] : [];
+		if (!graded) refuse(`${grader} has no scores for pair ${pair}. Finish that grader's file.`);
+		return weighted(graded[after]) - weighted(graded[before]);
 	});
-	if (margins.length === 0) refuse(`No grader scored pair ${pair}.`);
 	const ruling = rulings[pair] ?? {};
 	const defective = { before: ruling[before] === true, after: ruling[after] === true };
-	return { pair, verdict: decide(defective, median(margins)), margins, defective };
+	return {
+		pair,
+		verdict: decide(defective, median(hundredths) / 100),
+		margins: hundredths.map((margin) => margin / 100),
+		defective,
+	};
 }
 
 /**
