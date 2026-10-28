@@ -1,0 +1,34 @@
+{
+  "order": 11001,
+  "name": "Generation hooks",
+  "kind": "module",
+  "responsibility": "Takes the child's epoch, with the coordinator's own directory as its workspace root, then initializes the session and reads the account before a generation is ready",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/services/generation/hooks.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/wAHh0HTa#xtHoCCnF",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "initialize, once",
+      "description": "The caller invokes initialize on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file.",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/hooks.ts",
+        "symbol": "initialize"
+      },
+      "id": "vKEsyHFk/wAHh0HTa#qQrqNYdt",
+      "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg"
+    }
+  ]
+}

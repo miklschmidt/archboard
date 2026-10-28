@@ -1,0 +1,33 @@
+{
+  "order": 6000,
+  "name": "Approvals",
+  "kind": "module",
+  "responsibility": "Every approval the child raises, answered exactly once whichever way the answer came",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/services/approvals"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#C3wBXyPG",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 31000,
+      "kind": "rpc",
+      "label": "answer the approval request",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/approvals/settlement.ts",
+        "symbol": "respond"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#XuK4e69W",
+      "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu"
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "order": 4000,
+  "name": "Coordinator tools",
+  "kind": "module",
+  "responsibility": "Runs the tool calls the coordinator makes, once each, against a replay ledger; each workhorse tool names the checkout whose workhorse it works with, and a spoken stop names none",
+  "description": "A replay of one logical call is the same call only when it names the same checkout: the same arguments in another checkout are work for another workhorse. A delegation to a checkout whose workhorse has no thread that can run turns starts it first; the other three workhorse tools refuse a checkout with no ready workhorse, and say what a checkout is. stop_workhorses stops every running workhorse of the calling tab session and says what each one did.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+  "parent": "vKEsyHFk/qKGcB6vZ#CjiN3z5a",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 8000,
+      "kind": "call",
+      "label": "validate against the frozen manifest",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/coordinator-tools/validation.ts",
+        "symbol": "parseCoordinatorToolInput"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#FRlXCCgx",
+      "to": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P"
+    },
+    {
+      "order": 9000,
+      "kind": "call",
+      "label": "route the sustained work to the named checkout",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/tool-execution.ts",
+        "symbol": "delegate"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#gxWbt0Mt",
+      "to": "vKEsyHFk/qKGcB6vZ#LIpURyJE"
+    },
+    {
+      "order": 10000,
+      "kind": "call",
+      "label": "resolve the approval answered aloud",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/call-execution.ts",
+        "symbol": "resolve"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#jWYpMYjr",
+      "to": "vKEsyHFk/qKGcB6vZ#fEiupnAD"
+    },
+    {
+      "order": 40000,
+      "kind": "call",
+      "label": "stop_workhorses: stop every running workhorse of the tab",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/tool-execution.ts",
+        "symbol": "stopWork"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#au7MY0Yt",
+      "to": "vKEsyHFk/qKGcB6vZ#VNzfidEL"
+    },
+    {
+      "order": 42000,
+      "kind": "rpc",
+      "label": "answer the tool call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/dispatcher.ts",
+        "symbol": "respondOnce"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#8DGohqjh",
+      "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu"
+    },
+    {
+      "order": 49000,
+      "kind": "call",
+      "label": "the role a call came through, by name and digest",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/coordinator-tools/validation.ts",
+        "symbol": "toolRoleOf"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#veSu4QHr",
+      "to": "vKEsyHFk/qKGcB6vZ#7Mxz4kA6"
+    }
+  ]
+}

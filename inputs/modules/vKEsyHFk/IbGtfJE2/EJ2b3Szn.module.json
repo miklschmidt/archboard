@@ -1,0 +1,21 @@
+{
+  "order": 18000,
+  "name": "Archboard server",
+  "kind": "service",
+  "responsibility": "One per run, on its own port. It starts with no vault, and every call names the run's vault",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+  "references": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "model": "vKEsyHFk",
+      "subject": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+      "state": "current"
+    }
+  ],
+  "outgoing": []
+}

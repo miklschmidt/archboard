@@ -1,0 +1,49 @@
+{
+  "order": 32000,
+  "name": "Context announcements",
+  "kind": "module",
+  "responsibility": "Tells a tab session's coordinator and live voice a context change the host announces, each through the tab's one callback queue, and only while voice is live",
+  "description": "With no voice session the receipt says voice_inactive and nothing is queued. Each audience the change names is its own callback, so the coordinator and the voice are told independently, in no fixed order.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#ccaUoxFa",
+  "parent": "vKEsyHFk/qKGcB6vZ#hshxlvQL",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 25000,
+      "kind": "call",
+      "label": "the coordinator's and the voice's parts of a change",
+      "description": "The voice agent's announce gives each audience a change names its own callback on the tab's queue, while voice is live.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+        "symbol": "enqueue"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#wyliCZzQ",
+      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI"
+    },
+    {
+      "order": 53000,
+      "kind": "dependency",
+      "label": "the execution context's keys, which a payload cannot use",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+        "symbol": "EXECUTION_CONTEXT_KEYS"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#j3Td3x8x",
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
+    }
+  ]
+}

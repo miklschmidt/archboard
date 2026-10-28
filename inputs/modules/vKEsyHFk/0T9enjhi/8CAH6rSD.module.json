@@ -1,0 +1,53 @@
+{
+  "order": 8000,
+  "name": "Propagate descendant edits",
+  "kind": "function",
+  "responsibility": "Carries parent changes into drafts",
+  "description": "propagateEdit walks descendants of an edited variant, automatically merges compatible changes, records reconciliation issues where meanings diverge, and blocks descendants behind unresolved ancestors.",
+  "groups": [
+    "writes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/variant/propagate.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/0T9enjhi#8CAH6rSD",
+  "parent": "vKEsyHFk/0T9enjhi#VCoMuJnP",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 217000,
+      "kind": "call",
+      "label": "reconcile complete meaning",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/variant/propagate.ts",
+        "symbol": "answerFor"
+      },
+      "id": "vKEsyHFk/0T9enjhi#sTWqGRdl",
+      "to": "vKEsyHFk/0T9enjhi#Jx4O72DO"
+    }
+  ]
+}

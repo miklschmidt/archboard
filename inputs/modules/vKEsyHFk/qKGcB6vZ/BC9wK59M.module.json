@@ -1,0 +1,35 @@
+{
+  "order": 31000,
+  "name": "Archboard announcements",
+  "kind": "module",
+  "responsibility": "Archboard's board changes, focus and selection, worded for the coordinator and the voice and announced through the voice agent",
+  "description": "The voice hears the news of a board on screen, as speech when it stops the narration, and nothing of a board no pane shows. The coordinator hears only what an agent outside the session did: a board it wrote, or a pane it moved with browser show. A focus or selection the user made carries a topic, so a later one replaces it while it waits.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/services/host/archboard-announcements.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#BC9wK59M",
+  "parent": "vKEsyHFk/qKGcB6vZ#hshxlvQL",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 51000,
+      "kind": "call",
+      "label": "agent.announce: one change, worded for each audience",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+        "symbol": "announce"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#FQ6Dm2Go",
+      "to": "vKEsyHFk/qKGcB6vZ#ccaUoxFa"
+    }
+  ]
+}

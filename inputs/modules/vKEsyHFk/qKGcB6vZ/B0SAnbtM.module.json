@@ -1,0 +1,21 @@
+{
+  "order": 6000,
+  "name": "Coordinator callbacks",
+  "kind": "module",
+  "responsibility": "What the voice side is told while voice is live: workhorse news for the coordinator, and a host's context changes for the coordinator or the voice model",
+  "description": "Nothing is sent with no voice session. Every callback settles once as delivered, not delivered with a reason, or outcome unknown. A callback is correlated with the workhorse its own thread names, one of the tab session's workhorses.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#B0SAnbtM",
+  "parent": "vKEsyHFk/qKGcB6vZ#hshxlvQL",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

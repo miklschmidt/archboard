@@ -1,0 +1,54 @@
+{
+  "order": 38000,
+  "name": "codex-realtime-voice",
+  "kind": "package",
+  "responsibility": "The public MIT voice agent: one host entry for a server and one browser client, over Codex sessions, a coordinator, checkout workhorses and the host's own identity and policy",
+  "description": "Its npm build bundles codex-app-server, process, timing and diagnostics, which are MIT like it; every other workspace package is BUSL and stays out of it. Archboard and the example reach it only through the entries an outside host uses.",
+  "groups": [
+    "agent"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/vKEsyHFk#lU0khwR0",
+  "parent": "vKEsyHFk/vKEsyHFk#TQNCxSiT",
+  "formerNames": [
+    "agent-workbench"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 62000,
+      "kind": "dependency",
+      "label": "own Codex threads and negotiate realtime voice",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/workbench.ts",
+        "symbol": "createCodexProcess"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#8AmcrRb6",
+      "to": "vKEsyHFk/vKEsyHFk#vEVm326r"
+    },
+    {
+      "order": 66000,
+      "kind": "dependency",
+      "label": "approval, realtime and session durations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/approvals/broker.ts",
+        "symbol": "CODEX_APPROVAL_MS"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#aDY2uOmY",
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    }
+  ]
+}

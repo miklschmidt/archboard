@@ -1,0 +1,67 @@
+{
+  "order": 18000,
+  "name": "Context delivery",
+  "kind": "module",
+  "responsibility": "Tells one workhorse each context change a host announces for its checkout: one quiet developer message, settled once",
+  "description": "It hears one feed's sequence at most once and refuses a sequence that does not pass the last of its feed. A change the workhorse or its tab's coordinator made is not told, nor one that went stale or whose words the host withheld. Before the write it checks the child, epoch, thread link and freshness again; the outcome is delivered, not delivered with a reason, or unknown, and it is never retried.",
+  "groups": [
+    "workhorse"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+  "parent": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+  "formerNames": [
+    "Board-change delivery"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 27000,
+      "kind": "rpc",
+      "label": "thread/inject_items into the workhorse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+        "symbol": "threadInjectItems"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#8g1SNngD",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 28000,
+      "kind": "call",
+      "label": "check the link of its checkout's workhorse again",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery-guards.ts",
+        "symbol": "read"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#jbxp553Z",
+      "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
+    },
+    {
+      "order": 54000,
+      "kind": "call",
+      "label": "only while its generation is current",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery-guards.ts",
+        "symbol": "assertCurrent"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#zEsrkAfC",
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    }
+  ]
+}
