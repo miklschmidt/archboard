@@ -318,23 +318,25 @@ impl<'t> FoldLayout<'t> {
 
     /// Place the header in the block's top-left corner, at the widest size it
     /// has room for once the columns stand: no wider than the columns, and left
-    /// of where each top port wants to stand.
+    /// of where each top port wants to stand. A line that comes down into the
+    /// header itself does not bound it: its port stands right of the header.
     fn place_header(&mut self, courses: &[Course], right: f64) {
         let block = self.tree.get(self.block);
         let Some(least) = &block.header else {
             return;
         };
+        let own = header_of(block);
         let Insets { side, top, .. } = self.insets;
         let beside: Vec<f64> = self
             .ports_on(Side::Top)
             .iter()
-            .map(|port| {
+            .filter_map(|port| {
                 let reached: Vec<f64> = courses
                     .iter()
-                    .filter(|course| course.line.tail == *port)
+                    .filter(|course| course.line.tail == *port && course.line.head != own)
                     .map(|course| self.end_x(&course.line.head))
                     .collect();
-                Self::mean(&reached) - LANE - side
+                (!reached.is_empty()).then(|| Self::mean(&reached) - LANE - side)
             })
             .collect();
         let taken = header_within(
