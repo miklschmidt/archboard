@@ -1,0 +1,32 @@
+{
+  "order": 53000,
+  "name": "Voice box presence",
+  "kind": "module",
+  "responsibility": "Keeps the voice box present until its exit motion ends",
+  "groups": [
+    "agent",
+    "voice"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/ui/hooks/voice/use-voice-box-presence.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#sOSPdXJh",
+  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO",
+  "outgoing": [
+    {
+      "order": 49000,
+      "kind": "call",
+      "label": "the voice box's wait while it leaves",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/hooks/voice/use-voice-box-presence.ts",
+        "symbol": "frameClock"
+      },
+      "id": "vKEsyHFk/yejBBUFY#294aYIvD",
+      "to": "vKEsyHFk/yejBBUFY#rouptSyK"
+    }
+  ]
+}

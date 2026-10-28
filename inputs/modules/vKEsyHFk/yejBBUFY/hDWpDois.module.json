@@ -1,0 +1,17 @@
+{
+  "order": 12000,
+  "name": "Browser renderer",
+  "kind": "module",
+  "responsibility": "Draws a board in this tab: the tab's own canvas for measuring, a worker pool for the layout",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/ui"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#hDWpDois",
+  "parent": "vKEsyHFk/yejBBUFY#POloYnX3",
+  "outgoing": []
+}

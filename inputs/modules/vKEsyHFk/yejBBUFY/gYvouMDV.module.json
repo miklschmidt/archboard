@@ -1,0 +1,14 @@
+{
+  "order": 50000,
+  "name": "Voice link capture",
+  "kind": "module",
+  "responsibility": "Captures the workhorse link that a voice session follows",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/ui/rules/voice-session/binding.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#gYvouMDV",
+  "parent": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+  "outgoing": []
+}

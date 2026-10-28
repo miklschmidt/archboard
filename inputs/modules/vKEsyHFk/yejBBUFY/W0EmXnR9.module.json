@@ -1,0 +1,9 @@
+{
+  "order": 27000,
+  "name": "Agent and voice",
+  "kind": "module",
+  "responsibility": "Carries the person's conversation with the agent: the dock and voice box, the setup that sends a message or Talk, the voice with its orb and words, and the agent's channel on the pane socket",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#W0EmXnR9",
+  "outgoing": []
+}

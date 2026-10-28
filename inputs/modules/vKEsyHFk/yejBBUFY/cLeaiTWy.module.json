@@ -1,0 +1,33 @@
+{
+  "order": 24000,
+  "name": "Shown conversation",
+  "kind": "function",
+  "responsibility": "Tells the server which checkout the person activated, by a pointer focus change, a board they opened or a pick from the dock's list; an agent's show activates nothing",
+  "description": "Each place where the person acts calls the one activation, which the application builds and the shell actions, a pane's pointer focus, the dock's list and Fix with Codex share, with the pane they acted in. The server keeps the one answer: every pane of the tab shows the conversation of that checkout. A refusal leaves the dock showing what it showed, which the server still says. Going back or forward activates nothing.",
+  "groups": [
+    "agent"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/application/shown-conversation.ts",
+    "symbol": "conversationActivation"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#cLeaiTWy",
+  "parent": "vKEsyHFk/yejBBUFY#W0EmXnR9",
+  "outgoing": [
+    {
+      "order": 63000,
+      "kind": "call",
+      "label": "say which checkout the person activated",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/application/shown-conversation.ts",
+        "symbol": "showConversation"
+      },
+      "id": "vKEsyHFk/yejBBUFY#zd3E41io",
+      "to": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    }
+  ]
+}

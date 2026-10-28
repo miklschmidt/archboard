@@ -1,0 +1,1633 @@
+{
+  "schemaVersion": 1,
+  "id": "yejBBUFY",
+  "name": "Browser application",
+  "flows": [
+    {
+      "id": "vKEsyHFk/yejBBUFY#dKOGgU8A",
+      "name": "Show a board in a pane",
+      "participants": [
+        "vKEsyHFk/yejBBUFY#HggZR41l",
+        "vKEsyHFk/yejBBUFY#xsn0RvSi",
+        "vKEsyHFk/yejBBUFY#dtYjWvlf",
+        "vKEsyHFk/yejBBUFY#hDWpDois",
+        "vKEsyHFk/yejBBUFY#G4NHQC25"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/yejBBUFY#q26mZgv2",
+          "from": "vKEsyHFk/yejBBUFY#HggZR41l",
+          "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+          "label": "open a session for the pane, in its vault",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+            "symbol": "usePaneSession"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#A80F7i0b",
+          "from": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+          "to": "vKEsyHFk/yejBBUFY#G4NHQC25",
+          "label": "open the pane socket, naming the vault",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
+            "symbol": "WebSocket"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#jZHhFVtP",
+          "from": "vKEsyHFk/yejBBUFY#G4NHQC25",
+          "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+          "label": "point the pane at a board in this vault",
+          "kind": "async",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
+            "symbol": "paneBoard"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#ImCCKIt7",
+          "from": "vKEsyHFk/yejBBUFY#HggZR41l",
+          "to": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+          "label": "mount a stage for the board the server named",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+            "symbol": "SemanticBoardStage"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#Zmttncng",
+          "from": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+          "to": "vKEsyHFk/yejBBUFY#G4NHQC25",
+          "label": "read the board document, naming the vault",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
+            "symbol": "fetchSemanticBoardDocument"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#fOufXKNz",
+          "from": "vKEsyHFk/yejBBUFY#G4NHQC25",
+          "to": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+          "label": "the board, every variant",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
+            "symbol": "fetchSemanticBoardDocument"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#COs3Q2Rg",
+          "from": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+          "to": "vKEsyHFk/yejBBUFY#G4NHQC25",
+          "label": "read the vault's policy and fingerprint",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
+            "symbol": "fetchVaultCheck"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#xsn9V47Z",
+          "from": "vKEsyHFk/yejBBUFY#G4NHQC25",
+          "to": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+          "label": "policy",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
+            "symbol": "fetchVaultCheck"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#G8bimJbM",
+          "kind": "decision",
+          "question": "Does the browser keep a picture of this version?",
+          "alternatives": [
+            {
+              "label": "kept",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/yejBBUFY#2wXBHtCF",
+                  "from": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+                  "to": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+                  "label": "show the kept picture",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
+                    "symbol": "readCachedPicture"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "not kept",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/yejBBUFY#swr9Vrwt",
+                  "from": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+                  "to": "vKEsyHFk/yejBBUFY#hDWpDois",
+                  "label": "lay the board out and draw it",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
+                    "symbol": "draw"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/yejBBUFY#n0GGB2rM",
+                  "from": "vKEsyHFk/yejBBUFY#hDWpDois",
+                  "to": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+                  "label": "the drawing",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
+                    "symbol": "drawn"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/yejBBUFY#kAUyELGJ",
+                  "from": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+                  "to": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+                  "label": "keep the picture for the next load",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
+                    "symbol": "writeCachedPicture"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#6vdM7aqU",
+      "name": "Hear that a board changed",
+      "participants": [
+        "vKEsyHFk/yejBBUFY#G4NHQC25",
+        "vKEsyHFk/yejBBUFY#xsn0RvSi",
+        "vKEsyHFk/yejBBUFY#dtYjWvlf",
+        "vKEsyHFk/yejBBUFY#hDWpDois"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/yejBBUFY#yhUAqUIU",
+          "from": "vKEsyHFk/yejBBUFY#G4NHQC25",
+          "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+          "label": "this board has a new version",
+          "kind": "async",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
+            "symbol": "boardChanged"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#pIB9HDkw",
+          "from": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+          "to": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+          "label": "announce the change, by vault and board",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
+            "symbol": "announceSemanticBoardChange"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#A3M3f2EX",
+          "kind": "decision",
+          "question": "Is it the board this pane reads, in this pane's vault?",
+          "alternatives": [
+            {
+              "label": "yes",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/yejBBUFY#HOfF9twi",
+                  "from": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+                  "to": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+                  "label": "cancel reads in flight, mark the document and pictures stale",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-semantic-board-changes.ts",
+                    "symbol": "readBoardAgain"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/yejBBUFY#jO7Gi0tH",
+                  "from": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+                  "to": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                  "label": "read the new document",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
+                    "symbol": "fetchSemanticBoardDocument"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/yejBBUFY#9UKF2Yhc",
+                  "from": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                  "to": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+                  "label": "the board at its new version",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
+                    "symbol": "fetchSemanticBoardDocument"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/yejBBUFY#W3pA3wXh",
+                  "from": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+                  "to": "vKEsyHFk/yejBBUFY#hDWpDois",
+                  "label": "draw the board again",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
+                    "symbol": "draw"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/yejBBUFY#btUJSC5C",
+                  "from": "vKEsyHFk/yejBBUFY#hDWpDois",
+                  "to": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+                  "label": "the new drawing",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
+                    "symbol": "drawn"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "no",
+              "steps": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#YnBAS29q",
+      "name": "Restore the workspace from the address",
+      "participants": [
+        "vKEsyHFk/yejBBUFY#HggZR41l",
+        "vKEsyHFk/yejBBUFY#HCghQa6I",
+        "vKEsyHFk/yejBBUFY#xsn0RvSi",
+        "vKEsyHFk/yejBBUFY#G4NHQC25"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/yejBBUFY#C36ABMWI",
+          "from": "vKEsyHFk/yejBBUFY#HggZR41l",
+          "to": "vKEsyHFk/yejBBUFY#HCghQa6I",
+          "label": "bind the address bar to the panes",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/application/use-workspace-addressing.ts",
+            "symbol": "useWorkspaceAddress"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#CYhROVQC",
+          "from": "vKEsyHFk/yejBBUFY#HCghQa6I",
+          "to": "vKEsyHFk/yejBBUFY#HCghQa6I",
+          "label": "plan what the address asks for from what is on screen",
+          "kind": "self",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/rules/board-routing/restore.ts",
+            "symbol": "restoreOutcome"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#6QoTAwy1",
+          "kind": "loop",
+          "condition": "until the plan is empty, one step at a time",
+          "steps": [
+            {
+              "id": "vKEsyHFk/yejBBUFY#7GSvblsl",
+              "kind": "decision",
+              "question": "What is the next step of the plan?",
+              "alternatives": [
+                {
+                  "label": "pane or view",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#ILCB83vN",
+                      "from": "vKEsyHFk/yejBBUFY#HCghQa6I",
+                      "to": "vKEsyHFk/yejBBUFY#HggZR41l",
+                      "label": "add, close or focus a pane, or read its board through a view",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
+                        "symbol": "commandsOver"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "board",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#5KjOQLli",
+                      "from": "vKEsyHFk/yejBBUFY#HCghQa6I",
+                      "to": "vKEsyHFk/yejBBUFY#HggZR41l",
+                      "label": "take the command slot and open the board in the pane",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
+                        "symbol": "commandsOver"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#Oyq0M6rF",
+                      "from": "vKEsyHFk/yejBBUFY#HggZR41l",
+                      "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+                      "label": "show the board in the pane, in the vault the address names",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/clients/application/workspace-port.ts",
+                        "symbol": "showThroughServer"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#VxiHaXwr",
+                      "from": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+                      "to": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                      "label": "post the pane and the board",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
+                        "symbol": "showBoard"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#Y2oFOECt",
+                      "kind": "decision",
+                      "question": "Does the server reach the board?",
+                      "alternatives": [
+                        {
+                          "label": "opened",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/yejBBUFY#pCF646U5",
+                              "from": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                              "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+                              "label": "the board key the server spells, and its repository",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
+                                "symbol": "showBoard"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/yejBBUFY#OCNxYBYR",
+                              "from": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+                              "to": "vKEsyHFk/yejBBUFY#HggZR41l",
+                              "label": "opened",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/web/src/ui/clients/application/workspace-port.ts",
+                                "symbol": "showThroughServer"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/yejBBUFY#mAK9VniS",
+                              "from": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                              "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+                              "label": "the pane is on the board",
+                              "kind": "async",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
+                                "symbol": "paneBoard"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/yejBBUFY#YWKDsqAK",
+                              "from": "vKEsyHFk/yejBBUFY#HggZR41l",
+                              "to": "vKEsyHFk/yejBBUFY#HCghQa6I",
+                              "label": "opened, with the server's spelling",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
+                                "symbol": "answerOperation"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/yejBBUFY#B8SpopGS",
+                              "from": "vKEsyHFk/yejBBUFY#HCghQa6I",
+                              "to": "vKEsyHFk/yejBBUFY#HCghQa6I",
+                              "label": "wait until the pane is seen to have moved",
+                              "kind": "self",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/web/src/ui/state/board-routing/operation.ts",
+                                "symbol": "operationSettled"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "label": "unreachable",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/yejBBUFY#fLVTutjj",
+                              "from": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                              "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+                              "label": "refused",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
+                                "symbol": "showBoard"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/yejBBUFY#y1jW71u5",
+                              "from": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+                              "to": "vKEsyHFk/yejBBUFY#HggZR41l",
+                              "label": "the refusal, thrown",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/web/src/ui/clients/application/workspace-port.ts",
+                                "symbol": "showThroughServer"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/yejBBUFY#7bcw1EmS",
+                              "from": "vKEsyHFk/yejBBUFY#HggZR41l",
+                              "to": "vKEsyHFk/yejBBUFY#HCghQa6I",
+                              "label": "unreachable",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/web/src/ui/clients/application/workspace-port.ts",
+                                "symbol": "OpenOutcome"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/yejBBUFY#vDa9CXvj",
+                              "from": "vKEsyHFk/yejBBUFY#HCghQa6I",
+                              "to": "vKEsyHFk/yejBBUFY#HCghQa6I",
+                              "label": "remember the board as one the address could not reach",
+                              "kind": "self",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/web/src/ui/rules/board-routing/restore.ts",
+                                "symbol": "boardUnreachable"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#DgX4TIE3",
+          "from": "vKEsyHFk/yejBBUFY#HCghQa6I",
+          "to": "vKEsyHFk/yejBBUFY#HCghQa6I",
+          "label": "write the address, leaving out boards it could not reach",
+          "kind": "self",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
+            "symbol": "publishAddress"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#j71M2dfg",
+      "name": "Send a message to the agent",
+      "participants": [
+        "vKEsyHFk/yejBBUFY#0x47EMoO",
+        "vKEsyHFk/yejBBUFY#HggZR41l",
+        "vKEsyHFk/yejBBUFY#zs2QxCu7",
+        "vKEsyHFk/yejBBUFY#941UBxya",
+        "vKEsyHFk/yejBBUFY#G4NHQC25"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/yejBBUFY#Bt9yZ1aM",
+          "from": "vKEsyHFk/yejBBUFY#0x47EMoO",
+          "to": "vKEsyHFk/yejBBUFY#HggZR41l",
+          "label": "send the message, queued or not",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/ui/components/panel/AgentComposer.tsx",
+            "symbol": "onSend"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#SspC7Ppw",
+          "from": "vKEsyHFk/yejBBUFY#HggZR41l",
+          "to": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+          "label": "hold the message and carry it through what is missing",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/application/agent-actions.ts",
+            "symbol": "agentActions"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#wO09MhuD",
+          "kind": "loop",
+          "condition": "until the timeline shows it, or a step fails it",
+          "steps": [
+            {
+              "id": "vKEsyHFk/yejBBUFY#zvbHcVwO",
+              "from": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+              "to": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+              "label": "look at where the agent stands",
+              "kind": "self",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+                "symbol": "pump"
+              }
+            },
+            {
+              "id": "vKEsyHFk/yejBBUFY#vski7EKw",
+              "kind": "decision",
+              "question": "Where does the agent stand?",
+              "alternatives": [
+                {
+                  "label": "unavailable",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#q8TMVvzj",
+                      "from": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+                      "to": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+                      "label": "fail the held message with Codex's reason",
+                      "kind": "self",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+                        "symbol": "failWaiting"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "signed out",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#jeYZcNFT",
+                      "from": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+                      "to": "vKEsyHFk/yejBBUFY#941UBxya",
+                      "label": "ask for a ChatGPT sign-in",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+                        "symbol": "askSignIn"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#poXIQO2Q",
+                      "from": "vKEsyHFk/yejBBUFY#941UBxya",
+                      "to": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                      "label": "the sign-in command",
+                      "kind": "async",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
+                        "symbol": "sendRequest"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "starting",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#FDThA7Cn",
+                      "from": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+                      "to": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+                      "label": "keep the message held until Codex is up",
+                      "kind": "self",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+                        "symbol": "advance"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "ready, no conversation",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#fIw319hX",
+                      "from": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+                      "to": "vKEsyHFk/yejBBUFY#941UBxya",
+                      "label": "create the tab's conversation",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+                        "symbol": "link"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#SWAwr2T3",
+                      "from": "vKEsyHFk/yejBBUFY#941UBxya",
+                      "to": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                      "label": "create it: its coordinator, then its workhorse",
+                      "kind": "async",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
+                        "symbol": "sendRequest"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "ready, with a conversation",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#4x3MoJUq",
+                      "from": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+                      "to": "vKEsyHFk/yejBBUFY#941UBxya",
+                      "label": "deliver the oldest held message",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+                        "symbol": "deliverNext"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#4q4eqiKE",
+                      "from": "vKEsyHFk/yejBBUFY#941UBxya",
+                      "to": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                      "label": "start a turn, steer the running one, or queue",
+                      "kind": "async",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
+                        "symbol": "sendRequest"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "vKEsyHFk/yejBBUFY#PskQF5yo",
+              "from": "vKEsyHFk/yejBBUFY#G4NHQC25",
+              "to": "vKEsyHFk/yejBBUFY#941UBxya",
+              "label": "the snapshot: account, thread link, timeline",
+              "kind": "async",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
+                "symbol": "onMessage"
+              }
+            },
+            {
+              "id": "vKEsyHFk/yejBBUFY#aEcZxj5U",
+              "from": "vKEsyHFk/yejBBUFY#941UBxya",
+              "to": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+              "label": "the state changed",
+              "kind": "async",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+                "symbol": "connect"
+              }
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#VkyD4NyT",
+          "from": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+          "to": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+          "label": "stop holding the message the timeline shows",
+          "kind": "self",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+            "symbol": "prune"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#rJ0zWUg4",
+      "name": "Start Talk",
+      "participants": [
+        "vKEsyHFk/yejBBUFY#0x47EMoO",
+        "vKEsyHFk/yejBBUFY#HggZR41l",
+        "vKEsyHFk/yejBBUFY#zs2QxCu7",
+        "vKEsyHFk/yejBBUFY#0SRnYXnC",
+        "vKEsyHFk/yejBBUFY#941UBxya"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/yejBBUFY#8thZNEWh",
+          "from": "vKEsyHFk/yejBBUFY#0x47EMoO",
+          "to": "vKEsyHFk/yejBBUFY#HggZR41l",
+          "label": "press Talk",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/ui/rules/dock/circle-state.ts",
+            "symbol": "talk"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#kweFucYD",
+          "from": "vKEsyHFk/yejBBUFY#HggZR41l",
+          "to": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+          "label": "start voice, setting up what is missing first",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/application/agent-actions.ts",
+            "symbol": "agentActions"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#MybRaYS0",
+          "from": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+          "to": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+          "label": "carry Talk through sign-in and the conversation",
+          "kind": "self",
+          "note": "the same phases as a message waits on: see Send a message to the agent",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+            "symbol": "startVoice"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#0bxGsdmF",
+          "from": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+          "to": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+          "label": "start voice, a conversation or a narrated walkthrough",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+            "symbol": "startTalk"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#xotU2OOc",
+          "from": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+          "to": "vKEsyHFk/yejBBUFY#941UBxya",
+          "label": "read the pane's thread link",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/ui/rules/voice-session/binding.ts",
+            "symbol": "captureBinding"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#Ubg9ruhn",
+          "from": "vKEsyHFk/yejBBUFY#941UBxya",
+          "to": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+          "label": "the link, executable or not",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/ui/rules/voice-session/binding.ts",
+            "symbol": "captureBinding"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#Yim43lcB",
+          "kind": "decision",
+          "question": "Is the pane's thread link executable?",
+          "alternatives": [
+            {
+              "label": "yes",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/yejBBUFY#5xoUw1IZ",
+                  "from": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+                  "to": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+                  "label": "bind to the link and start the realtime voice",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/ui/state/voice-session/session.ts",
+                    "symbol": "startNew"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/yejBBUFY#QGoYmz4Z",
+                  "from": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+                  "to": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+                  "label": "the voice view: live or on its way",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/ui/state/voice-session/session.ts",
+                    "symbol": "run"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "no",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/yejBBUFY#lQDfj83Y",
+                  "from": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+                  "to": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+                  "label": "refused: a voice session needs an executable link",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/ui/rules/voice-session/binding.ts",
+                    "symbol": "captureBinding"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#k15Ecakx",
+      "name": "Record a walkthrough",
+      "participants": [
+        "vKEsyHFk/yejBBUFY#G4NHQC25",
+        "vKEsyHFk/yejBBUFY#fscW90Xt",
+        "vKEsyHFk/yejBBUFY#zs2QxCu7",
+        "vKEsyHFk/yejBBUFY#0SRnYXnC",
+        "vKEsyHFk/yejBBUFY#941UBxya",
+        "vKEsyHFk/yejBBUFY#dtYjWvlf"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/yejBBUFY#7ajZkOZW",
+          "from": "vKEsyHFk/yejBBUFY#G4NHQC25",
+          "to": "vKEsyHFk/yejBBUFY#fscW90Xt",
+          "label": "start recording, once the page reports ready",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+            "symbol": "start"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#Yrxwo4pD",
+          "from": "vKEsyHFk/yejBBUFY#fscW90Xt",
+          "to": "vKEsyHFk/yejBBUFY#fscW90Xt",
+          "label": "listen to the page's audio for the talk",
+          "kind": "self",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+            "symbol": "TalkCapture"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#vwYrG0pg",
+          "from": "vKEsyHFk/yejBBUFY#fscW90Xt",
+          "to": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+          "label": "ask for Talk as a recording, in the language",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+            "symbol": "talk"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#Ioy0fSZ3",
+          "from": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+          "to": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+          "label": "start voice as a recording",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/ui/state/agent-setup/setup.ts",
+            "symbol": "startTalk"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#3jSmUxKy",
+          "kind": "loop",
+          "condition": "every pacing tick, until the talk is kept or fails",
+          "steps": [
+            {
+              "id": "vKEsyHFk/yejBBUFY#SiHTZh57",
+              "from": "vKEsyHFk/yejBBUFY#fscW90Xt",
+              "to": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+              "label": "is the voice live, and how loud is it",
+              "kind": "sync",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "apps/web/src/ui/rules/walkthrough-recording/voice-sources.ts",
+                "symbol": "level"
+              }
+            },
+            {
+              "id": "vKEsyHFk/yejBBUFY#wEiftLc8",
+              "from": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+              "to": "vKEsyHFk/yejBBUFY#fscW90Xt",
+              "label": "its status and output level",
+              "kind": "return",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "apps/web/src/ui/rules/walkthrough-recording/voice-sources.ts",
+                "symbol": "readVoice"
+              }
+            },
+            {
+              "id": "vKEsyHFk/yejBBUFY#ybcxSdqc",
+              "from": "vKEsyHFk/yejBBUFY#941UBxya",
+              "to": "vKEsyHFk/yejBBUFY#fscW90Xt",
+              "label": "each change of the voice's transcript",
+              "kind": "async",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+                "symbol": "subscribe"
+              }
+            },
+            {
+              "id": "vKEsyHFk/yejBBUFY#dPKJKrlr",
+              "from": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+              "to": "vKEsyHFk/yejBBUFY#fscW90Xt",
+              "label": "what the pane reads: board drawn, step arrived",
+              "kind": "async",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+                "symbol": "reading"
+              }
+            },
+            {
+              "id": "vKEsyHFk/yejBBUFY#6wTfjzrK",
+              "from": "vKEsyHFk/yejBBUFY#fscW90Xt",
+              "to": "vKEsyHFk/yejBBUFY#fscW90Xt",
+              "label": "ask the pacing what to do",
+              "kind": "self",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "apps/web/src/ui/rules/walkthrough-recording/pacing.ts",
+                "symbol": "pace"
+              }
+            },
+            {
+              "id": "vKEsyHFk/yejBBUFY#5CfNbi5J",
+              "kind": "decision",
+              "question": "What did the pacing say?",
+              "alternatives": [
+                {
+                  "label": "nothing yet",
+                  "steps": []
+                },
+                {
+                  "label": "the voice is live",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#uVdX8LFZ",
+                      "from": "vKEsyHFk/yejBBUFY#fscW90Xt",
+                      "to": "vKEsyHFk/yejBBUFY#fscW90Xt",
+                      "label": "begin the talk on the board as drawn",
+                      "kind": "self",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+                        "symbol": "begin"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "show the next step",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#hHu0uJQk",
+                      "from": "vKEsyHFk/yejBBUFY#fscW90Xt",
+                      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+                      "label": "move the pane to the step",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+                        "symbol": "recordedStep"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "the last step is explained",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#VuITBPtJ",
+                      "from": "vKEsyHFk/yejBBUFY#fscW90Xt",
+                      "to": "vKEsyHFk/yejBBUFY#fscW90Xt",
+                      "label": "keep the voice and the log of the talk",
+                      "kind": "self",
+                      "note": "the recorder outside the page reads the state, then takes the voice and the log",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+                        "symbol": "finish"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#6VoLJSP8",
+                      "from": "vKEsyHFk/yejBBUFY#fscW90Xt",
+                      "to": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+                      "label": "stop voice",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+                        "symbol": "stop"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "a wait ran out",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#ApYClwsA",
+                      "from": "vKEsyHFk/yejBBUFY#fscW90Xt",
+                      "to": "vKEsyHFk/yejBBUFY#fscW90Xt",
+                      "label": "stop and keep nothing, saying what did not happen",
+                      "kind": "self",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/rules/walkthrough-recording/pacing.ts",
+                        "symbol": "failed"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#nLcWefv0",
+                      "from": "vKEsyHFk/yejBBUFY#fscW90Xt",
+                      "to": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+                      "label": "stop voice",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+                        "symbol": "stop"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#TJCV96ua",
+      "name": "Replay a talk frame by frame",
+      "participants": [
+        "vKEsyHFk/yejBBUFY#G4NHQC25",
+        "vKEsyHFk/yejBBUFY#aixSjfNe",
+        "vKEsyHFk/yejBBUFY#rouptSyK",
+        "vKEsyHFk/yejBBUFY#dtYjWvlf"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/yejBBUFY#fL9kcN7y",
+          "from": "vKEsyHFk/yejBBUFY#G4NHQC25",
+          "to": "vKEsyHFk/yejBBUFY#aixSjfNe",
+          "label": "load the talk with its theme and layout",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+            "symbol": "load"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#Ahao1K8p",
+          "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+          "to": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+          "label": "answer the pane's board reads from the talk",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+            "symbol": "readBoardsFrom"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#OxJKtMIe",
+          "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+          "to": "vKEsyHFk/yejBBUFY#rouptSyK",
+          "label": "install the stepped clock",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+            "symbol": "createSteppedClock"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#OkRUa8KX",
+          "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+          "to": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+          "label": "mount the recording's stage on the talk's board",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+            "symbol": "SemanticBoardStage"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#5qWHDV7o",
+          "kind": "loop",
+          "condition": "for each pre-roll frame, drawn and not captured",
+          "steps": [
+            {
+              "id": "vKEsyHFk/yejBBUFY#rPTZXW0g",
+              "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+              "to": "vKEsyHFk/yejBBUFY#aixSjfNe",
+              "label": "draw the board's entrance",
+              "kind": "self",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "symbol": "draw"
+              }
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#wNOnYF4H",
+          "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+          "to": "vKEsyHFk/yejBBUFY#G4NHQC25",
+          "label": "how many frames the talk renders to",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+            "symbol": "load"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#7kpUkDH9",
+          "kind": "loop",
+          "condition": "for each frame of the talk, in order",
+          "steps": [
+            {
+              "id": "vKEsyHFk/yejBBUFY#tAkrO8n6",
+              "from": "vKEsyHFk/yejBBUFY#G4NHQC25",
+              "to": "vKEsyHFk/yejBBUFY#aixSjfNe",
+              "label": "draw the next frame",
+              "kind": "sync",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "symbol": "frame"
+              }
+            },
+            {
+              "id": "vKEsyHFk/yejBBUFY#IE58RDy7",
+              "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+              "to": "vKEsyHFk/yejBBUFY#rouptSyK",
+              "label": "move the clock to the frame's time",
+              "kind": "sync",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "symbol": "advanceTo"
+              }
+            },
+            {
+              "id": "vKEsyHFk/yejBBUFY#fs460RYm",
+              "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+              "to": "vKEsyHFk/yejBBUFY#aixSjfNe",
+              "label": "play the talk to the frame: step, words, loudness",
+              "kind": "self",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "symbol": "playTo"
+              }
+            },
+            {
+              "id": "vKEsyHFk/yejBBUFY#x9x4wHrj",
+              "from": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+              "to": "vKEsyHFk/yejBBUFY#aixSjfNe",
+              "label": "what the pane reads: board drawn, step arrived",
+              "kind": "async",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "symbol": "SemanticPaneReading"
+              }
+            },
+            {
+              "id": "vKEsyHFk/yejBBUFY#mI4F8401",
+              "kind": "decision",
+              "question": "Is the frame ready before the limit?",
+              "alternatives": [
+                {
+                  "label": "ready",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#RCy7lhz4",
+                      "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+                      "to": "vKEsyHFk/yejBBUFY#rouptSyK",
+                      "label": "run the due timers, sync animations, paint",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                        "symbol": "runFrame"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#uUxGGYAs",
+                      "kind": "decision",
+                      "question": "Did anything move outside the frame clock?",
+                      "alternatives": [
+                        {
+                          "label": "no",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/yejBBUFY#dlHOylBt",
+                              "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+                              "to": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                              "label": "the frame is drawn",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                                "symbol": "frame"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "label": "yes",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/yejBBUFY#lPvWErSi",
+                              "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+                              "to": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                              "label": "the frame cannot be rendered from the talk",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                                "symbol": "violationsOf"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "label": "not ready in time",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/yejBBUFY#vtrjAMdx",
+                      "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+                      "to": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                      "label": "the frame was not ready: what it waited for",
+                      "kind": "return",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/clients/walkthrough-replay/frame-readiness.ts",
+                        "symbol": "notReady"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#2UbNBuFP",
+      "name": "Move a board to another repository",
+      "participants": [
+        "vKEsyHFk/yejBBUFY#c4LPnwh5",
+        "vKEsyHFk/yejBBUFY#HQWPLutt",
+        "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+        "vKEsyHFk/yejBBUFY#6uWT4mUj",
+        "vKEsyHFk/yejBBUFY#G4NHQC25"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/yejBBUFY#mh8AA2VA",
+          "from": "vKEsyHFk/yejBBUFY#c4LPnwh5",
+          "to": "vKEsyHFk/yejBBUFY#HQWPLutt",
+          "label": "render the move control in the pane's header",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/components/shell/PaneControls.tsx",
+            "symbol": "MoveBoardControl"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#d0hL8Lmq",
+          "from": "vKEsyHFk/yejBBUFY#HQWPLutt",
+          "to": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+          "label": "read the repositories the board can move to",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
+            "symbol": "repositoriesQuery"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#esa7G5iH",
+          "from": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+          "to": "vKEsyHFk/yejBBUFY#HQWPLutt",
+          "label": "the ready ones, except the board's own",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
+            "symbol": "targetsOf"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#Q8Kh7EHd",
+          "from": "vKEsyHFk/yejBBUFY#HQWPLutt",
+          "to": "vKEsyHFk/yejBBUFY#HQWPLutt",
+          "label": "a person chooses the target repository",
+          "kind": "self",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
+            "symbol": "useMoveTarget"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#d3CqcX4x",
+          "from": "vKEsyHFk/yejBBUFY#HQWPLutt",
+          "to": "vKEsyHFk/yejBBUFY#6uWT4mUj",
+          "label": "ask what the move would rewrite",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/board-move/move.ts",
+            "symbol": "previewMove"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#WcSvs7XE",
+          "from": "vKEsyHFk/yejBBUFY#6uWT4mUj",
+          "to": "vKEsyHFk/yejBBUFY#G4NHQC25",
+          "label": "GET the preview, in the board's vault",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/server-requests/src/ui/clients/server-requests.ts",
+            "symbol": "fetch"
+          }
+        },
+        {
+          "id": "vKEsyHFk/yejBBUFY#mY3EarWA",
+          "kind": "decision",
+          "question": "Does the preview refuse the move?",
+          "alternatives": [
+            {
+              "label": "refused",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/yejBBUFY#Ejzu8kr1",
+                  "from": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                  "to": "vKEsyHFk/yejBBUFY#6uWT4mUj",
+                  "label": "the refusal, in the move's own words",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/server-requests/src/ui/clients/server-requests.ts",
+                    "symbol": "plainFailure"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/yejBBUFY#nNRjJ92n",
+                  "from": "vKEsyHFk/yejBBUFY#6uWT4mUj",
+                  "to": "vKEsyHFk/yejBBUFY#HQWPLutt",
+                  "label": "the preview throws, and Move stays off",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/clients/board-move/move.ts",
+                    "symbol": "previewMove"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "would move",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/yejBBUFY#3fGKRBMs",
+                  "from": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                  "to": "vKEsyHFk/yejBBUFY#6uWT4mUj",
+                  "label": "the drill-downs it rewrites, and the version",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/server-requests/src/ui/clients/server-requests.ts",
+                    "symbol": "json"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/yejBBUFY#VYvCWpMO",
+                  "from": "vKEsyHFk/yejBBUFY#6uWT4mUj",
+                  "to": "vKEsyHFk/yejBBUFY#HQWPLutt",
+                  "label": "the preview",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/clients/board-move/move.ts",
+                    "symbol": "previewMove"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/yejBBUFY#4Vdp7tFO",
+                  "from": "vKEsyHFk/yejBBUFY#HQWPLutt",
+                  "to": "vKEsyHFk/yejBBUFY#HQWPLutt",
+                  "label": "list what the move rewrites",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/components/board-move/MoveRewrites.tsx",
+                    "symbol": "MoveRewrites"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/yejBBUFY#Mh10NcVJ",
+                  "from": "vKEsyHFk/yejBBUFY#HQWPLutt",
+                  "to": "vKEsyHFk/yejBBUFY#6uWT4mUj",
+                  "label": "move it as the version the preview read",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/clients/board-move/move.ts",
+                    "symbol": "moveBoard"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/yejBBUFY#RNSzSgmS",
+                  "from": "vKEsyHFk/yejBBUFY#6uWT4mUj",
+                  "to": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                  "label": "POST the move: human origin, expected version",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/server-requests/src/ui/clients/server-requests.ts",
+                    "symbol": "fetch"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/yejBBUFY#2IApAuqE",
+                  "kind": "decision",
+                  "question": "Does the server refuse the move?",
+                  "alternatives": [
+                    {
+                      "label": "moved",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/yejBBUFY#ixk63wEu",
+                          "from": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                          "to": "vKEsyHFk/yejBBUFY#6uWT4mUj",
+                          "label": "the move's answer",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/server-requests/src/ui/clients/server-requests.ts",
+                            "symbol": "post"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/yejBBUFY#WYqnWFle",
+                          "from": "vKEsyHFk/yejBBUFY#6uWT4mUj",
+                          "to": "vKEsyHFk/yejBBUFY#HQWPLutt",
+                          "label": "moved",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/clients/board-move/move.ts",
+                            "symbol": "moveBoard"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/yejBBUFY#7BSxMy2c",
+                          "from": "vKEsyHFk/yejBBUFY#HQWPLutt",
+                          "to": "vKEsyHFk/yejBBUFY#HQWPLutt",
+                          "label": "close the dialog",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
+                            "symbol": "onMoved"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "refused",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/yejBBUFY#xbX2nVik",
+                          "from": "vKEsyHFk/yejBBUFY#G4NHQC25",
+                          "to": "vKEsyHFk/yejBBUFY#6uWT4mUj",
+                          "label": "the refusal, in the move's own words",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/server-requests/src/ui/clients/server-requests.ts",
+                            "symbol": "plainFailure"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/yejBBUFY#myUEVEk8",
+                          "from": "vKEsyHFk/yejBBUFY#6uWT4mUj",
+                          "to": "vKEsyHFk/yejBBUFY#HQWPLutt",
+                          "label": "the move throws",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/clients/board-move/move.ts",
+                            "symbol": "moveBoard"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/yejBBUFY#xROzUXex",
+                          "from": "vKEsyHFk/yejBBUFY#HQWPLutt",
+                          "to": "vKEsyHFk/yejBBUFY#HQWPLutt",
+                          "label": "show the refusal and read the preview again",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/hooks/board-move/use-board-move.ts",
+                            "symbol": "readAgain"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

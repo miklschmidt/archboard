@@ -1,0 +1,28 @@
+{
+  "order": 29000,
+  "name": "Pane composition",
+  "kind": "module",
+  "responsibility": "Mounts the session and drawing stage for one pane",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/application/ApplicationPane.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#zkDth8gp",
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "outgoing": [
+    {
+      "order": 65000,
+      "kind": "call",
+      "label": "resolve the repositories a drill-down opens",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "symbol": "useDrillRepositories"
+      },
+      "id": "vKEsyHFk/yejBBUFY#cHxuRI45",
+      "to": "vKEsyHFk/yejBBUFY#WWPvFeLg"
+    }
+  ]
+}

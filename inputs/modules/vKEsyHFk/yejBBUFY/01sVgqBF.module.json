@@ -1,0 +1,9 @@
+{
+  "order": 28000,
+  "name": "Walkthrough recordings",
+  "kind": "module",
+  "responsibility": "Records a walkthrough's talk in a page of its own and draws the recorded talk again, one frame at a time",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#01sVgqBF",
+  "outgoing": []
+}
