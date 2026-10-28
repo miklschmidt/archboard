@@ -3,9 +3,16 @@ import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:f
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
-import { ArchitectureModelReadSchema } from "@archboard/board/model";
+import {
+	ArchitectureModelReadSchema,
+	ArchitectureModuleEditResultSchema,
+} from "@archboard/board/model";
 import { readArchitectureModel } from "@archboard/board/store-read";
-import { retainArchitectureCheckpoint } from "@archboard/board/store-write";
+import {
+	retainArchitectureCheckpoint,
+	claimArchitectureSubjects,
+	releaseArchitectureClaim,
+} from "@archboard/board/store-write";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 
@@ -134,15 +141,88 @@ test("CLI and HTTP share explicit code resolution, foreign navigation and unavai
 		selectedModule: "Ledger#Gateway",
 		location: { model: "Ledger", vault: join(foreign, ".archboard/vault") },
 	});
-	rmSync(join(foreign, ".archboard/vault/model.json"));
-	const unavailable = cli(["model", "read", "Shop#Gateway", "--reference", "0"]);
-	expect(unavailable.status).toBe(2);
-	expect(answer(unavailable.stdout)).toMatchObject({
-		success: false,
-		code: "REFERENCE_UNAVAILABLE",
+	const foreignManifest = join(foreign, ".archboard/vault/model.json");
+	const original = readFileSync(foreignManifest);
+	rmSync(foreignManifest);
+	try {
+		const unavailable = cli(["model", "read", "Shop#Gateway", "--reference", "0"]);
+		expect(unavailable.status).toBe(2);
+		expect(answer(unavailable.stdout)).toMatchObject({
+			success: false,
+			code: "REFERENCE_UNAVAILABLE",
+		});
+		query.set("reference", "0");
+		expect((await fetch(`${server.base}/api/architecture/model?${query}`)).status).toBe(404);
+		query.set("reference", "-1");
+		expect((await fetch(`${server.base}/api/architecture/model?${query}`)).status).toBe(400);
+	} finally {
+		writeFileSync(foreignManifest, original);
+	}
+});
+
+test("CLI edits and HTTP exact retries decode checkpoints with local current references", async () => {
+	if (!server) throw new Error("Server unavailable");
+	const current = readArchitectureModel(vault);
+	if (!current.success || !current.manifest.current) throw new Error(JSON.stringify(current));
+	const target = { model: "Shop", state: current.manifest.current.id };
+	const claimed = await claimArchitectureSubjects(vault, {
+		target,
+		writer: "agent",
+		reason: "testing public checkpoint metadata",
+		subjects: ["Shop", "Shop#Gateway"],
 	});
-	query.set("reference", "0");
-	expect((await fetch(`${server.base}/api/architecture/model?${query}`)).status).toBe(404);
-	query.set("reference", "-1");
-	expect((await fetch(`${server.base}/api/architecture/model?${query}`)).status).toBe(400);
+	if (!claimed.success) throw new Error(JSON.stringify(claimed));
+	try {
+		const request = {
+			target,
+			expectedRevision: current.revision,
+			operationId: "local-reference-proposal",
+			writer: "agent",
+			claim: claimed.claim.id,
+			proposal: { type: "create", name: "Local reference" },
+			changes: [
+				{
+					type: "edit-module",
+					subject: "Shop#Gateway",
+					set: {
+						references: [
+							{
+								repo: "github.com/acme/shop",
+								model: "Shop",
+								subject: "Shop#Worker",
+								state: "current",
+							},
+						],
+					},
+				},
+			],
+		};
+		const doing = "proposing a local reference";
+		const edited = runServerCli({
+			repoRoot,
+			server,
+			args: ["model", "edit", "--doing", doing],
+			input: JSON.stringify(request),
+		});
+		expect(edited.status, edited.stderr).toBe(0);
+		const { vault: _address, ...raw } = JSON.parse(edited.stdout);
+		const created = ArchitectureModuleEditResultSchema.parse(raw);
+		if (!created.success) throw new Error(JSON.stringify(created));
+		const response = await fetch(`${server.base}/api/architecture/module`, {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ ...request, doing, vault }),
+		});
+		expect(response.status).toBe(200);
+		expect(ArchitectureModuleEditResultSchema.parse(await response.json())).toEqual(created);
+		const retained = cli(["model", "read", "--checkpoint", created.checkpoint.id]);
+		expect(retained.status, retained.stderr).toBe(0);
+		expect(answer(retained.stdout)).toMatchObject({
+			success: true,
+			checkpoint: { id: created.checkpoint.id },
+			selectedState: { name: "Local reference" },
+		});
+	} finally {
+		await releaseArchitectureClaim(vault, { claim: claimed.claim.id, writer: "agent" });
+	}
 });

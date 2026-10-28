@@ -1,7 +1,17 @@
 import { afterEach, expect, test } from "bun:test";
 import { join } from "node:path";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
-import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/board/store-read";
+import {
+	readArchitectureModel,
+	readArchitectureCheckpoint,
+	listArchitectureCheckpoints,
+} from "@archboard/board/store-read";
+import {
+	ArchitectureModuleEditResultSchema,
+	ArchitectureModelReadSchema,
+	ArchitectureCheckpointListSchema,
+	type ArchitectureModuleEdit,
+} from "@archboard/board/model";
 import { editArchitectureModule, retainArchitectureCheckpoint } from "@archboard/board/store-write";
 import {
 	isolatedFixture,
@@ -74,16 +84,41 @@ test("a proposal pins local current separately from its own draft and preserves 
 		subject: "Shop#Worker",
 		state: "current",
 	};
-	const created = await editArchitectureModule(local.vault, {
+	const intent = {
 		...(await request(local.vault)),
 		proposal: { type: "create", name: "Local link" },
 		changes: [
 			{ type: "edit-module", subject: "Shop#Gateway", set: { references: [reference, foreign] } },
 			{ type: "edit-module", subject: "Shop#Worker", set: { name: "Planned worker" } },
 		],
-	});
+	} satisfies ArchitectureModuleEdit;
+	const created = await editArchitectureModule(local.vault, intent);
 	expect(created).toMatchObject({ success: true });
 	if (!created.success) throw new Error(JSON.stringify(created));
+	const applied = await readArchitectureModel(local.vault, undefined, undefined, {
+		state: created.target.state!,
+	});
+	expect(applied).toMatchObject({
+		success: true,
+		modules: expect.arrayContaining([
+			expect.objectContaining({ id: "Shop#Worker", name: "Planned worker" }),
+		]),
+	});
+	const retry = await editArchitectureModule(local.vault, intent);
+	expect(retry).toEqual(created);
+	expect(ArchitectureModuleEditResultSchema.parse(created)).toEqual(created);
+	expect(ArchitectureModuleEditResultSchema.parse(retry)).toEqual(created);
+	expect(
+		ArchitectureModelReadSchema.parse(
+			await readArchitectureCheckpoint(local.vault, created.checkpoint.id),
+		),
+	).toMatchObject({ success: true, checkpoint: { id: created.checkpoint.id } });
+	expect(
+		ArchitectureCheckpointListSchema.parse(await listArchitectureCheckpoints(local.vault)),
+	).toMatchObject({
+		success: true,
+		checkpoints: expect.arrayContaining([expect.objectContaining({ id: created.checkpoint.id })]),
+	});
 	expect(created.checkpoint.references).toEqual([
 		{ module: "Shop#Gateway", index: 0, reference, checkpoint: expect.any(String) },
 		{ module: "Shop#Gateway", index: 1, reference: foreign, checkpoint: checkpoint.id },
@@ -95,10 +130,12 @@ test("a proposal pins local current separately from its own draft and preserves 
 	const workerPath = join(local.vault, "worker.module.json");
 	const worker = JSON.parse(readFileSync(workerPath, "utf8"));
 	writeFileSync(workerPath, JSON.stringify({ ...worker, name: "Later worker" }));
-	const exact = await readArchitectureModel(local.vault, "Shop#Gateway", undefined, {
-		checkpoint: created.checkpoint.id,
-		reference: 0,
-	});
+	const exact = ArchitectureModelReadSchema.parse(
+		await readArchitectureModel(local.vault, "Shop#Gateway", undefined, {
+			checkpoint: created.checkpoint.id,
+			reference: 0,
+		}),
+	);
 	expect(exact).toMatchObject({
 		success: true,
 		selectedModule: "Shop#Worker",

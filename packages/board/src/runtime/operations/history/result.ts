@@ -141,6 +141,7 @@ function checkpointMetadata(
 		installation: _installation,
 		subjects: _subjects,
 		reconciliations: _reconciliations,
+		referenceDependencies: _referenceDependencies,
 		...metadata
 	} = record;
 	return { ...metadata, id, publication };
