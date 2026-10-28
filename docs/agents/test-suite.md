@@ -112,7 +112,7 @@ the browser shows.
 - A command runs in the directory that holds its vault, with the registry of
   the server it talks to: `runServerCli` in `tests/system/support/run-cli.ts`
   and in the browser support. It never runs in this checkout, because there it
-  finds the boards of this repository. It never runs in another archboard
+  finds the architecture model of this repository. It never runs in another archboard
   checkout either, because there `archboard` runs that checkout's source
   instead of the source under test.
 - A command that reaches a server names it with `ARCHBOARD_URL`. Without it,
@@ -197,31 +197,27 @@ test owner may import the declaration from
 it feeds measures every owner. A module owner keeps its `TEST_*` bound beside the
 case.
 
-`tests/system/semantic-boards/rasterize.test.ts` owns the zero-client bitmap
-workflow: `semantic rasterize` against a real Archboard server, the same selectors as
-`semantic render`, and a board file that does not move. The rasterizer's own
-owner, `packages/renderer/tests/runtime/services/rasterizer`, proves real pixels, native and
+`tests/system/semantic-boards/model-flows.test.ts` owns canonical SVG and bitmap exports
+through the CLI and HTTP interfaces.
+It runs `model render` and `model rasterize` against a real Archboard server without a browser client.
+It also reads their exact recipes through `check embeds`.
+`model-render-context.test.ts` beside it covers complete interface context, comparison, unresolved subjects, and exact recipe replay.
+The rasterizer's own owner, `packages/renderer/tests/runtime/services/rasterizer`, proves real pixels, native and
 scaled dimensions, full bounds past a display, font readiness, bounds refusals,
 cancellation and a Chromium that is provably gone. The Chromium it runs on is
 `packages/renderer/src/runtime/processes/headless-chromium`, whose owner proves caller flags, an exact
 window viewport, event delivery without retention, a page Blob streamed to a
 file, and provable teardown.
 
-The recording owners in `tests/system/server-state` run a fake ffmpeg that keeps
-each frame's hash. `walkthrough-recording.test.ts` owns `semantic record` end to
-end. The real CLI drives the built page in a headless Chromium against a server
-whose fake Codex narrates. The owner checks the kept talk, the frames, the order
-in which the steps reached the voice, and `--discard`.
-`walkthrough-replay.test.ts` owns `semantic replay`. It renders a talk of a
-discarded board three times through the real replay page. The frames are the
-same each time, on one page or split across two. The last frames all differ,
-because the voice box in the walkthrough box holds the orb, which never stands
-still. The dark theme is another picture from the first frame. A talk recorded
-with Blocks is drawn with Blocks, and `--layout track` draws another picture.
-`walkthrough-render.test.ts` owns a render that fails. Against a stand-in page
-it is `RENDER_FAILED`, keeps the talk and writes no file.
-`walkthrough-recording-refusals.test.ts` owns the refusals that start no browser
-and no voice. These module owners hold the parts:
+The recording owners in `tests/system/server-state` use a fake ffmpeg that records each frame hash.
+`canonical-walkthrough-recording.test.ts` calls the public recording runtime against a real server and a fake Codex narrator.
+It keeps distinct narrative-source and target revisions, then observes the authored beat order and captured drawing revision.
+`canonical-walkthrough-replay.test.ts` deletes the source inputs before it renders the retained talk through the built page.
+It compares complete frame output from one page and two pages.
+The same owner also replays an original board recording from its captured document.
+`walkthrough-render.test.ts` supplies a page that refuses a frame.
+That owner requires `RENDER_FAILED`, preserves the talk, and leaves no output or partial file.
+These module owners cover the supporting contracts:
 
 - `packages/walkthrough/tests/runtime/services` and `processes`: finding and running ffmpeg.
 - `packages/walkthrough/tests/shared/protocol`: the talk's contract.
@@ -230,9 +226,9 @@ and no voice. These module owners hold the parts:
 - `packages/walkthrough/tests/runtime/store` and `operations`: the talk on disk and the browsers'
   flags.
 
-Every owner in these two paragraphs needs a Chromium-family executable
-(`ARCHBOARD_RENDERER_CHROMIUM` names one), except the refusals owner and the
-module owners in the list. The recording and replay owners need
+The system owners above need a Chromium-family executable
+(`ARCHBOARD_RENDERER_CHROMIUM` names one). The module owners in the list do not.
+The recording and replay owners need
 `dist/frontend` as well. Real-browser owners cover only live `browser`
 commands.
 
