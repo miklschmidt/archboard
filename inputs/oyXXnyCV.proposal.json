@@ -7595,6 +7595,307 @@
       "value": "Model persistence"
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#37yCryrX",
+      "kind": "flow",
+      "value": {
+        "id": "vKEsyHFk#37yCryrX",
+        "name": "A canonical edit becomes durable",
+        "summary": "The shared runtime signs the complete candidate before changing current inputs. It returns only after durable installation.",
+        "participants": [
+          "vKEsyHFk/HBlhIeSD#9zu5ryhZ",
+          "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+          "vKEsyHFk/0T9enjhi#8Uq1mtzw",
+          "vKEsyHFk/0T9enjhi#e0GTqv1k",
+          "vKEsyHFk/0T9enjhi#ZRq51Ecz",
+          "vKEsyHFk/0T9enjhi#YREYrbYW",
+          "vKEsyHFk/0T9enjhi#CLdaoYy3",
+          "vKEsyHFk/0T9enjhi#IyV7OF9L"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#37yCryrX",
+      "placement": {
+        "holder": "vKEsyHFk#0T9enjhi"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#WhIXidbU",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#WhIXidbU",
+        "from": "vKEsyHFk/HBlhIeSD#9zu5ryhZ",
+        "to": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+        "label": "editArchitectureModule",
+        "kind": "sync",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+          "symbol": "editArchitectureModule"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#WhIXidbU",
+      "placement": {
+        "holder": "vKEsyHFk#37yCryrX",
+        "before": "vKEsyHFk#53cdVjYp"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#53cdVjYp",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#53cdVjYp",
+        "from": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+        "to": "vKEsyHFk/0T9enjhi#8Uq1mtzw",
+        "label": "prepareEdit",
+        "kind": "sync",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/board/src/runtime/operations/model-edit/edit.ts",
+          "symbol": "prepareEdit"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#53cdVjYp",
+      "placement": {
+        "holder": "vKEsyHFk#37yCryrX",
+        "before": "vKEsyHFk#YfqHBPuw"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#YfqHBPuw",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#YfqHBPuw",
+        "from": "vKEsyHFk/0T9enjhi#8Uq1mtzw",
+        "to": "vKEsyHFk/0T9enjhi#e0GTqv1k",
+        "label": "editCandidate",
+        "kind": "sync",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
+          "symbol": "editCandidate"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#YfqHBPuw",
+      "placement": {
+        "holder": "vKEsyHFk#37yCryrX",
+        "before": "vKEsyHFk#XXyCeIrL"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#XXyCeIrL",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#XXyCeIrL",
+        "from": "vKEsyHFk/0T9enjhi#e0GTqv1k",
+        "to": "vKEsyHFk/0T9enjhi#8Uq1mtzw",
+        "label": "complete candidate",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#XXyCeIrL",
+      "placement": {
+        "holder": "vKEsyHFk#37yCryrX",
+        "before": "vKEsyHFk#10U4hOmj"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#10U4hOmj",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#10U4hOmj",
+        "from": "vKEsyHFk/0T9enjhi#8Uq1mtzw",
+        "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz",
+        "label": "archiveCommit",
+        "kind": "sync",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
+          "symbol": "archiveCommit"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#10U4hOmj",
+      "placement": {
+        "holder": "vKEsyHFk#37yCryrX",
+        "before": "vKEsyHFk#laWOvUmM"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#laWOvUmM",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#laWOvUmM",
+        "from": "vKEsyHFk/0T9enjhi#ZRq51Ecz",
+        "to": "vKEsyHFk/0T9enjhi#8Uq1mtzw",
+        "label": "signed checkpoint",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#laWOvUmM",
+      "placement": {
+        "holder": "vKEsyHFk#37yCryrX",
+        "before": "vKEsyHFk#jl9a1Ipi"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#jl9a1Ipi",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#jl9a1Ipi",
+        "from": "vKEsyHFk/0T9enjhi#8Uq1mtzw",
+        "to": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+        "label": "prepared journal",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#jl9a1Ipi",
+      "placement": {
+        "holder": "vKEsyHFk#37yCryrX",
+        "before": "vKEsyHFk#HvSEtBsg"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#HvSEtBsg",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#HvSEtBsg",
+        "from": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+        "to": "vKEsyHFk/0T9enjhi#YREYrbYW",
+        "label": "writeState",
+        "kind": "sync",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/board/src/runtime/operations/model-edit/edit.ts",
+          "symbol": "writeState"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#HvSEtBsg",
+      "placement": {
+        "holder": "vKEsyHFk#37yCryrX",
+        "before": "vKEsyHFk#fhSRy9Hi"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#fhSRy9Hi",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#fhSRy9Hi",
+        "from": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+        "to": "vKEsyHFk/0T9enjhi#CLdaoYy3",
+        "label": "installJournal",
+        "kind": "sync",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/board/src/runtime/operations/model-edit/edit.ts",
+          "symbol": "installJournal"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#fhSRy9Hi",
+      "placement": {
+        "holder": "vKEsyHFk#37yCryrX",
+        "before": "vKEsyHFk#TFWkQtKh"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#TFWkQtKh",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#TFWkQtKh",
+        "from": "vKEsyHFk/0T9enjhi#CLdaoYy3",
+        "to": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+        "label": "durable receipt",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#TFWkQtKh",
+      "placement": {
+        "holder": "vKEsyHFk#37yCryrX",
+        "before": "vKEsyHFk#eLFZNVoJ"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#eLFZNVoJ",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#eLFZNVoJ",
+        "from": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+        "to": "vKEsyHFk/0T9enjhi#IyV7OF9L",
+        "label": "notifyArchitecture",
+        "kind": "sync",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/board/src/runtime/operations/model-edit/edit.ts",
+          "symbol": "notifyArchitecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#eLFZNVoJ",
+      "placement": {
+        "holder": "vKEsyHFk#37yCryrX",
+        "before": "vKEsyHFk#EkbXYAoj"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#EkbXYAoj",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#EkbXYAoj",
+        "from": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+        "to": "vKEsyHFk/HBlhIeSD#9zu5ryhZ",
+        "label": "exact result",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#EkbXYAoj",
+      "placement": {
+        "holder": "vKEsyHFk#37yCryrX"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/6E6hL0Zk#xfUOzZhb",
       "placement": {
