@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T00:04:00Z'
+updated_date: '2026-10-28T00:15:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -246,4 +246,6 @@ Final timing follow-up: all four reference cases that hit deadlines pass the foc
 Merged signed local-reference repair c0566e62b through signed 9e01df6d3. The previously refused real shop settlement now passes. The shop example migrated through public inventory, plan, migration, claim, settlement, proposal and adoption operations in an isolated Git repository. Current architecture has 8 roots and recursive inventory internals; four independent proposals and exact original readings remain. Canonical inputs and a 217 kB public import request replace the legacy fixture files. The archive is a tracked historical dependency because current inputs cannot reconstruct it. The README take harness restores that archive through the public importer with configured Git identity/signing. Actual bootstrap and all five state reads plus an exact original alias pass; its server stopped in finally. Full types and focused lint/format pass. TESTING now describes canonical discovery, proposals, exports and navigation. Asset recipe ports, root migration, bundle warning, final gate/review and PR publication remain open.
 
 Ported shared filming readiness and camera fitting to canonical model stages. Plan uses complete browser reading inputs with its exact Starting point comparison, so competing recommendations show only relevant changes. Drill-down traverses Inventory and Stock API and waits for both exact scope addresses. The ask recipe uses a canonical URL but was not run. Types/lint/format and both non-Codex producer runs pass. Parent inspected the generated images; the corrected plan image removes unrelated shop comparisons. Receipt sources now include the exact shared bootstrap and authoring helpers used by those verified runs. Clips remain local, with no upload or PR update. Canonical authoring helper also claims shared flow/step and walkthrough/beat scopes. Remaining recipes and root migration stay open.
+
+Ported README SVG/raster recipes and banner rendering to canonical structural/flow requests and selected states. Removed retired view, track, and legend flags; repository SVGs keep recipes for Git-discovered embed checks. Receipt dimensions derive from the shared render result schema. Updated source dependencies to canonical example inputs and actual shared helpers. Types, lint, format and the banner/web-shop/sequence producers pass. Parent inspected the banner and both thumbnails; generated SVGs and images are committed with their receipts. README quick-start and export instructions now use canonical imports and exports. No narrated or Codex producer ran. Remaining authoring/history/evidence/narrated recipes and root architecture migration remain open.
 <!-- SECTION:NOTES:END -->

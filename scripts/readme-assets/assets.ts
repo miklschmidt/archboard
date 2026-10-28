@@ -49,8 +49,7 @@ const PRODUCERS: Readonly<Record<string, Producer>> = {
 	sequence: diagramProducer({
 		name: "sequence",
 		vault: "examples/web-shop",
-		board: "Web shop",
-		view: "Place an order",
+		reading: { flow: "Place an order", grammar: "sequence" },
 		thumbnail: { file: "docs/readme/idx-sequence.webp", theme: "light", width: 1120 },
 	}),
 	newcomer: narratedProducer({
@@ -66,14 +65,13 @@ const PRODUCERS: Readonly<Record<string, Producer>> = {
 	"web-shop": diagramProducer({
 		name: "web-shop",
 		vault: "examples/web-shop",
-		board: "Web shop",
-		view: "Everything",
+		reading: { grammar: "architecture" },
 		thumbnail: { file: "docs/readme/idx-docs.webp", theme: "dark", width: 1600 },
 	}),
 	architecture: diagramProducer({
 		name: "architecture",
 		vault: ".archboard/vault",
-		board: "Archboard",
+		reading: { grammar: "architecture" },
 	}),
 };
 

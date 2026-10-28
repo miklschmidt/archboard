@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/readme/banner-dark.webp">
-  <img src="docs/readme/banner-light.webp" width="100%" alt="Archboard: the gold peak mark and the name archboard in tall capitals, beside a proposal for the example web shop that Archboard drew, on a sheet that tilts away. New parts are green, a changed part is orange, and the removed timeout guard is a red ghost.">
+  <img src="docs/readme/banner-light.webp" width="100%" alt="Archboard: the gold peak mark and the name archboard in tall capitals, beside a proposal for the example web shop that Archboard drew, on a sheet that tilts away. New modules are green, and changed or removed relationships carry comparison marks.">
 </picture>
 
 <h3>Plan the next architecture with your coding agent. <br>Archboard draws every proposal against what is built, keeps the record of why it changed, and walks your team through it out loud.
@@ -198,35 +198,38 @@ Let agents work on the map without wondering what they touched. When an agent **
 
 ## Pictures for docs, ADRs and pull requests
 
-Put the same drawing in a design doc, an ADR or the description of a pull request. A board renders to a self-contained SVG or PNG from the command line. One SVG shows the ground of the reader's colour scheme, and a PNG is dark unless you ask for light. The key is drawn under the picture unless you pass `--no-legend`, and `--title` draws a title above it. The same board always gives the same bytes. A regenerated picture shows up in a diff only after the architecture changes.
+Put a selected architecture reading in a design document, ADR, or pull request.
+The CLI exports self-contained SVG and PNG files from the same canonical model that the browser reads.
+Select a module, proposal, flow, or exact checkpoint without copying architecture into another board.
+Use `--theme` to choose the standalone palette.
 
 ```bash
-archboard -C ~/archboard-example semantic render "Web shop" --view Everything --title --out web-shop.svg
-archboard -C ~/archboard-example semantic rasterize "Web shop" --scale 2 --out web-shop.png
+archboard -C ~/archboard-example model render --out web-shop.svg
+archboard -C ~/archboard-example model rasterize --scale 2 --out web-shop.png
 ```
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/readme/web-shop-dark.svg">
-  <img alt="The Web shop board as it is built today: the storefront, a checkout API with Place order, Basket route and a timeout guard, the orders database and the basket cache. It also has the Payments and Fulfilment groups." src="docs/readme/web-shop-light.svg" width="100%">
+  <img alt="The current shop model shows its storefront, checkout API, inventory service, storage, and external providers. Module scopes keep implementation details inside their owners." src="docs/readme/web-shop-light.svg" width="100%">
 </picture>
 
 <p align="center"><sub>The SVG embeds its fonts and keeps the traffic animation: the pulses on the hot path fly.</sub></p>
 
 ## Diagrams that stay current in your docs
 
-A diagram in a design doc goes stale the day the code moves, and nobody notices. Draw it with `--track`, and the board keeps a list of the files that show it:
+A tracked diagram carries its exact render recipe.
+Inside a Git checkout with a canonical model, create and track the artifact:
 
 ```bash
-archboard semantic render Payments --out docs/payments.svg --track --doing "Drawing the payments picture for the design doc"
+archboard model render --out docs/architecture.svg
+git add docs/architecture.svg
+archboard check embeds
 ```
 
-Every picture carries its recipe: the board, the variant, the view and how it was drawn. After a code change, `archboard check` follows the whole chain. The code check says that a board no longer matches the code. Your agent corrects the board. The same check then names every picture that still shows the old board:
-
-```text
-warning: EMBED_OUTDATED: docs/payments.svg: "Payments" changed what this picture shows. `archboard check embeds --fix` draws it again.
-```
-
-`archboard check --fix` draws each one again from its own recipe and lists the files it rewrote. Commit them with the change.
+Git supplies the artifact list. No board owns another tracking list.
+Each recipe identifies the model reading, retained history, and rendering choices.
+After an architecture change, `check embeds` names outdated drawings.
+Run `archboard check embeds --fix` to refresh them through their recorded reading instructions, then commit the updated artifacts.
 
 ```text
 Put a diagram of the Payments board in docs/design.md, and keep it current.

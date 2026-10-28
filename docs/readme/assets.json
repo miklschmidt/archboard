@@ -12,8 +12,6 @@
 				"docs/assets/archboard-social-card.jpg"
 			],
 			"sources": [
-				"examples/web-shop/Web shop.semantic.json",
-				"examples/web-shop/.archboard/config.yaml",
 				"packages/renderer/src",
 				"packages/board/src/shared",
 				"packages/code-binding/src/shared",
@@ -23,9 +21,13 @@
 				"apps/web/src/ui/components/shell/Brand.tsx",
 				"scripts/readme-assets/banner.ts",
 				"scripts/readme-assets/lockup.ts",
-				"scripts/readme-assets/browser.ts"
+				"scripts/readme-assets/browser.ts",
+				"examples/web-shop",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "cc1da493ee3ce13187e982ab67aaa0d439935a612d15a1a6a8a73dbf6d5bd4bc"
+			"hash": "c4677fb2c087437a1a120a9f5c7d2d78897a961a5c2eee4b4961b765acdc11a9"
 		},
 		{
 			"name": "hero",
@@ -88,9 +90,7 @@
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets plan",
-			"files": [
-				"docs/readme/idx-plan.webp"
-			],
+			"files": ["docs/readme/idx-plan.webp"],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -118,9 +118,7 @@
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets history",
-			"files": [
-				"docs/readme/idx-history.webp"
-			],
+			"files": ["docs/readme/idx-history.webp"],
 			"sources": [
 				".archboard/vault/Renderer layout.semantic.json",
 				".archboard/vault/.archboard/config.yaml",
@@ -146,9 +144,7 @@
 			"kind": "narrated",
 			"codex": true,
 			"command": "bun run readme:assets pr-walkthrough",
-			"files": [
-				"docs/readme/idx-voice.webp"
-			],
+			"files": ["docs/readme/idx-voice.webp"],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -181,8 +177,6 @@
 				"docs/readme/idx-sequence.webp"
 			],
 			"sources": [
-				"examples/web-shop/Web shop.semantic.json",
-				"examples/web-shop/.archboard/config.yaml",
 				"packages/renderer/src",
 				"packages/board/src/shared",
 				"packages/code-binding/src/shared",
@@ -190,18 +184,21 @@
 				"packages/timing/src",
 				"packages/renderer/assets/fonts",
 				"scripts/readme-assets/svg.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"examples/web-shop",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "94cebc41703d26a266be9d07ab381e7cf0799486f2666d7ca399666f228b896e"
+			"hash": "38a41c891d01f6c736aba111cd0c46a58e1f6b65d8619d2ee484214d9fd13199"
 		},
 		{
 			"name": "newcomer",
 			"kind": "narrated",
 			"codex": true,
 			"command": "bun run readme:assets newcomer",
-			"files": [
-				"docs/readme/idx-newcomer.webp"
-			],
+			"files": ["docs/readme/idx-newcomer.webp"],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -228,9 +225,7 @@
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets drill-down",
-			"files": [
-				"docs/readme/idx-drill.webp"
-			],
+			"files": ["docs/readme/idx-drill.webp"],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -257,9 +252,7 @@
 			"kind": "clip",
 			"codex": true,
 			"command": "bun run readme:assets ask",
-			"files": [
-				"docs/readme/idx-ask.webp"
-			],
+			"files": ["docs/readme/idx-ask.webp"],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -283,9 +276,7 @@
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets take-back",
-			"files": [
-				"docs/readme/idx-safety.webp"
-			],
+			"files": ["docs/readme/idx-safety.webp"],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -319,8 +310,6 @@
 				"docs/readme/idx-docs.webp"
 			],
 			"sources": [
-				"examples/web-shop/Web shop.semantic.json",
-				"examples/web-shop/.archboard/config.yaml",
 				"packages/renderer/src",
 				"packages/board/src/shared",
 				"packages/code-binding/src/shared",
@@ -328,23 +317,22 @@
 				"packages/timing/src",
 				"packages/renderer/assets/fonts",
 				"scripts/readme-assets/svg.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"examples/web-shop",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "94cebc41703d26a266be9d07ab381e7cf0799486f2666d7ca399666f228b896e"
+			"hash": "38a41c891d01f6c736aba111cd0c46a58e1f6b65d8619d2ee484214d9fd13199"
 		},
 		{
 			"name": "architecture",
 			"kind": "svg",
 			"codex": false,
 			"command": "bun run readme:assets architecture",
-			"files": [
-				"docs/readme/architecture-light.svg",
-				"docs/readme/architecture-dark.svg"
-			],
-			"sources": [
-				"scripts/readme-assets/svg.ts",
-				"scripts/readme-assets/server.ts"
-			],
+			"files": ["docs/readme/architecture-light.svg", "docs/readme/architecture-dark.svg"],
+			"sources": ["scripts/readme-assets/svg.ts", "scripts/readme-assets/server.ts"],
 			"hash": "c5de20b3cf677cd7e0ed79424d68dcd6bcffeeeab23e38168320bb6e9892f55b"
 		},
 		{
@@ -352,9 +340,7 @@
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets code-evidence",
-			"files": [
-				"docs/readme/idx-code-evidence.webp"
-			],
+			"files": ["docs/readme/idx-code-evidence.webp"],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -386,9 +372,7 @@
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets module-interfaces",
-			"files": [
-				"docs/readme/idx-module-interfaces.webp"
-			],
+			"files": ["docs/readme/idx-module-interfaces.webp"],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -420,9 +404,7 @@
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets git-history",
-			"files": [
-				"docs/readme/idx-git-history.webp"
-			],
+			"files": ["docs/readme/idx-git-history.webp"],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
