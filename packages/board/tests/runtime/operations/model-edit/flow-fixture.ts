@@ -74,6 +74,7 @@ function behaviorFixture() {
 }
 const allBehaviorSubjects = [
 	"Shop",
+	"Shop#Behavior",
 	"Shop#Gateway",
 	"Shop#Worker",
 	"Shop#Checkout",

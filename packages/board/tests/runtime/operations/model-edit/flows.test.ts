@@ -409,6 +409,7 @@ test("collection transfers and step field edits keep identity while removals res
 	});
 	expect(reading.manifest.retiredIds).toEqual(
 		expect.arrayContaining([
+			"Shop#Behavior",
 			"Shop#Checkout",
 			"Shop#Send",
 			"Shop#Decide",
@@ -420,6 +421,7 @@ test("collection transfers and step field edits keep identity while removals res
 	await releaseArchitectureClaim(vault, { claim: input.claim, writer: input.writer });
 	const next = await structureIntent(vault, [
 		"Shop",
+		`Shop#${reading.collections[0]!.id}`,
 		"Shop#Gateway",
 		"Shop#Worker",
 		"Shop#Other",
