@@ -11404,6 +11404,30 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#7xQLokcW",
+      "kind": "module",
+      "value": {
+        "order": 73000,
+        "name": "Engine gallery",
+        "kind": "module",
+        "responsibility": "Compares complete canonical readings across the available layout engines",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/engine-gallery.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#7xQLokcW"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#7xQLokcW",
+      "placement": {
+        "holder": "vKEsyHFk#F0aENCVG"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#2gFwMLTT",
       "field": "responsibility",
