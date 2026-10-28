@@ -4,9 +4,9 @@
 	"id": "0T9enjhi",
 	"name": "Board persistence",
 	"level": "module",
-	"version": 231,
+	"version": 232,
 	"createdAt": "2026-09-12T22:28:19.828Z",
-	"updatedAt": "2026-10-27T14:42:40.828Z",
+	"updatedAt": "2026-10-28T01:25:15.684Z",
 	"views": [
 		{
 			"id": "jLQUM0Qo",
@@ -87713,7 +87713,7 @@
 		{
 			"id": "8W0ty0Om",
 			"name": "TASK-549.03",
-			"lifecycle": "draft",
+			"lifecycle": "shelved",
 			"parent": "Vdci4jYl",
 			"summary": "Durable canonical module edits with claims and recovery",
 			"documents": [
@@ -315485,6 +315485,11 @@
 			"variant": "MjKXeOvD",
 			"at": "2026-10-27T11:55:25.056Z",
 			"reason": "Preserved in TASK-549.22-integration on the accepted portable model"
+		},
+		{
+			"variant": "8W0ty0Om",
+			"at": "2026-10-28T01:25:15.684Z",
+			"reason": "TASK-549.03 is implemented and retained in later adopted states. This duplicate draft is superseded by current architecture and TASK-549.24."
 		}
 	]
 }

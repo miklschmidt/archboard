@@ -4,9 +4,9 @@
 	"id": "HBlhIeSD",
 	"name": "Archboard server routes",
 	"level": "module",
-	"version": 211,
+	"version": 212,
 	"createdAt": "2026-10-11T14:01:48.941Z",
-	"updatedAt": "2026-10-27T14:42:43.763Z",
+	"updatedAt": "2026-10-28T01:25:14.604Z",
 	"views": [
 		{
 			"id": "RbnCUnpJ",
@@ -90784,7 +90784,7 @@
 		{
 			"id": "Yfd3oFmv",
 			"name": "TASK-549.03",
-			"lifecycle": "draft",
+			"lifecycle": "shelved",
 			"parent": "kYIX7mDH",
 			"summary": "Durable canonical module edits with claims and recovery",
 			"documents": [
@@ -259826,6 +259826,11 @@
 			"variant": "RLbNcCRp",
 			"at": "2026-10-27T11:55:27.742Z",
 			"reason": "Preserved in TASK-549.22-integration on the accepted portable model"
+		},
+		{
+			"variant": "Yfd3oFmv",
+			"at": "2026-10-28T01:25:14.604Z",
+			"reason": "TASK-549.03 is implemented and retained in later adopted states. This duplicate draft is superseded by current architecture and TASK-549.24."
 		}
 	]
 }

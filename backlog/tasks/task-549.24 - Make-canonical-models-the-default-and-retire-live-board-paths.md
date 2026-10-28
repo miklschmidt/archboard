@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T01:21:00Z'
+updated_date: '2026-10-28T01:27:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -136,6 +136,8 @@ Continue parent README transitions through existing real producers. Demonstrate 
 Bounded checkpoint metadata repair: reproduce strict public decoding through existing local-reference runtime owner with real temporary files/Git; prove durable edit and exact retry independently of decoding; exclude private referenceDependencies in existing history conversion; extend existing CLI/HTTP reference owner; run affected tests, source types, scoped lint and formatting. Reuse Board persistence proposal NyesaQPQ (family 0T9enjhi, predecessor LSsVMn3j); parent owns final architecture authoring. Contract: /home/msc/.local/state/archboard-implementation/task-549/task-549.24-checkpoint-metadata-contract.md. Keep parent/.24 status, assignee, and acceptance unchanged.
 
 Finish canonical narrated recipes using exact retained checkpoints. Extend the existing public narrative retention owner to cover strict result decoding with an exact walkthrough dependency. Repair only the existing private-to-public metadata conversion if that owner reproduces the same private-field leak. Keep public schemas and stored dependency ancestry unchanged.
+
+Before saving root migration mappings, shelve the three obsolete leaf TASK-549.03 drafts through the retained .23 public writer: Routes/Yfd3oFmv, Persistence/8W0ty0Om, Command/D7KLrOPr. Later current states already include their implementation. Preserve all other states, adoption records and original retained bytes. Release each claim, stop the temporary writer, then inventory the new source fingerprint for canonical mapping.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -274,4 +276,6 @@ Final bounded metadata evidence: 27 affected tests pass with 129 assertions. Thi
 While porting narrated recipes, the parent reproduced a second private metadata leak through the existing exact-narrative-target public owner. Strict retention decoding failed on checkpoint.narrativeDependencies. One line in the existing checkpointMetadata conversion now excludes that private field beside referenceDependencies. Stored target ancestry and all public schemas stay unchanged. RED then GREEN recorded; all 5 walkthrough cases/33 assertions, both type projects, focused source/test lint, format and diff checks pass. Existing Board persistence NyesaQPQ/Bd4GPG6d remains the affected architecture subject. No new abstraction or proposal needed.
 
 Canonical hero now explicitly compares against current and requires a nonempty comparison; the real clip shows 41 changed subjects. All three real code/interface/Git-history producers pass after using visible sidebar controls and optional pinning for floating panels. Parent inspected thumbnails, full scene captures, and encoded first frames. Hero, code-evidence, module-interfaces, git-history, and the earlier accepted plan/drill clips are uploaded once and linked in README. Narrated recipes use model record/replay, retain current before recording, or name an explicit proposal checkpoint. The imported Queued fulfilment checkpoint f4ae77d823d935570198b3c0be53dd1803db8aba resolves all five beats ready through the public reader. No new voice/model recording was run. Source/frontend types, scoped lint and format pass. Root migration, history producer, narration refresh, final integration gate/review/PR remain open.
+
+Shelved the three obsolete leaf TASK-549.03 drafts through the old .23 public CLI against the explicitly addressed integration vault: Routes Yfd3oFmv v211->212, Persistence 8W0ty0Om v231->232, Command D7KLrOPr v248->249. Their implementation already exists in later adopted states. All other variant objects and adoption records remain identical. Original retained checkpoint5c732a3853a575ba954c5abfc08584bb37a03f84 remains available. Each claim was released, and owned server2857945 was stopped. Receipt: task-549.24-root-disposition-receipt.json. Fresh public inventory is task-549.24-root-inventory-disposed.json; no mapping/cutover/adoption occurred.
 <!-- SECTION:NOTES:END -->
