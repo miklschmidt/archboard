@@ -10,6 +10,7 @@ import oneCommandPath from "#tests/runtime/support/fixtures/one-command-path.jso
 import { covering, overlaps } from "#tests/runtime/support/drawn-labels.ts";
 import { labelsOffRuns } from "#tests/runtime/support/drawn-ink.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
+import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import {
 	corridorPoints,
 	distanceToRoute,
@@ -171,3 +172,27 @@ test("a response from a child keeps its label on the return route", async () => 
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
 	expect(labelsOffRuns(drawing)).toEqual([]);
 });
+
+// Reduced from Diagram presentation components: a driver into the child
+// makes Graphviz rank the response label beyond both ends of the return route.
+test.each(LayoutEngineSchema.options)(
+	"a driven child's response reserves a label run between its endpoints (%s)",
+	async (layout) => {
+		const content = orderedFixture({
+			nodes: [
+				{ id: "client", name: "Client", kind: "module" },
+				{ id: "frame", name: "Container", kind: "module" },
+				{ id: "child", name: "Child", kind: "module", parent: "frame" },
+				{ id: "driver", name: "Driver", kind: "module" },
+			],
+			edges: [
+				{ id: "response", from: "child", to: "client", kind: "call", label: "response" },
+				{ id: "request", from: "client", to: "frame", kind: "call", label: "request" },
+				{ id: "drive", from: "driver", to: "child", kind: "call", label: "drive" },
+			],
+		});
+		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		expect(routeLabels(drawing.svg).size).toBe(content.edges.length);
+		expectDrawingIntact(drawing, content, layout);
+	},
+);
