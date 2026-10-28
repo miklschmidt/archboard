@@ -53,7 +53,8 @@ test("CLI and HTTP expose the same public model read and structured refusal", as
 	const response = await fetch(`${server.base}/api/architecture/model?${query}`);
 	expect(response.status).toBe(200);
 	const http = ArchitectureModelReadSchema.parse(await response.json());
-	expect(http).toEqual(readArchitectureModel(vault, "Gateway"));
+	const runtime = await readArchitectureModel(vault, "Gateway", undefined, {});
+	expect(http).toEqual(JSON.parse(JSON.stringify(runtime)));
 	const cli = runServerCli({
 		repoRoot,
 		server,
@@ -122,12 +123,20 @@ test("CLI and HTTP retain, list and reopen one exact checkpoint after current co
 	const response = await fetch(`${server.base}/api/architecture/model?${query}`);
 	expect(response.status).toBe(200);
 	const exact = ArchitectureModelReadSchema.parse(await response.json());
-	expect(exact).toMatchObject({
-		...current,
-		selectedState: { ...current.selectedState, lifecycle: "historical" },
-		selectedModule: "Shop#Gateway",
-		checkpoint: retained.checkpoint,
+	const runtime = await readArchitectureModel(vault, "Shop#Gateway", undefined, {
+		checkpoint: retained.checkpoint.id,
 	});
+	expect(exact).toEqual(JSON.parse(JSON.stringify(runtime)));
+	expect(exact).toMatchObject(
+		JSON.parse(
+			JSON.stringify({
+				...current,
+				selectedState: { ...current.selectedState, lifecycle: "historical" },
+				selectedModule: "Shop#Gateway",
+				checkpoint: retained.checkpoint,
+			}),
+		),
+	);
 	const readCli = runServerCli({
 		repoRoot,
 		server,

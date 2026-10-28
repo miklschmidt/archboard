@@ -45,6 +45,7 @@ interface InstallFixture {
 	readonly log: string;
 	readonly registry: string;
 	readonly skillRoot: string;
+	git(repo: string, ...args: string[]): string;
 	repo(name: string, files?: Readonly<Record<string, string>>): string;
 	run(repo: string, args?: readonly string[], options?: { home?: boolean }): InstallSpawn;
 	install(repo: string, args?: readonly string[], options?: { home?: boolean }): InstalledResult;
@@ -81,6 +82,40 @@ function createInstallFixture(): InstallFixture {
 	for (const directory of [home, state, dirname(log)]) {
 		mkdirSync(directory, { recursive: true });
 	}
+	const key = join(home, "signing-key");
+	const generated = spawnSync("ssh-keygen", ["-q", "-t", "ed25519", "-N", "", "-f", key]);
+	if (generated.status !== 0) throw new Error(generated.stderr.toString());
+	const signers = join(home, "allowed-signers");
+	writeFileSync(signers, `install@example.test ${readFileSync(`${key}.pub`, "utf8")}`);
+	const gitConfiguration = join(home, ".gitconfig");
+	const environment = {
+		...Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_"))),
+		...clearedEnvironment,
+		HOME: home,
+		GIT_CONFIG_GLOBAL: gitConfiguration,
+		GIT_CONFIG_NOSYSTEM: "1",
+		XDG_STATE_HOME: state,
+		LOG_FILE_PATH: log,
+		ARCHBOARD_REPOS: registry,
+		ARCHBOARD_NO_AUTOSTART: "1",
+	};
+	const git = (repository: string, ...args: string[]) => {
+		const result = spawnSync("git", ["-C", repository, ...args], {
+			env: environment,
+			encoding: "utf8",
+		});
+		if (result.status !== 0) throw new Error(result.stderr);
+		return result.stdout.trim();
+	};
+	for (const [name, value] of [
+		["user.name", "Install Author"],
+		["user.email", "install@example.test"],
+		["gpg.format", "ssh"],
+		["user.signingkey", key],
+		["commit.gpgsign", "true"],
+		["gpg.ssh.allowedSignersFile", signers],
+	] as const)
+		git(root, "config", "--file", gitConfiguration, name, value);
 	const repo = (name: string, files: Readonly<Record<string, string>> = {}) => {
 		const path = join(root, name);
 		mkdirSync(path, { recursive: true });
@@ -107,15 +142,7 @@ function createInstallFixture(): InstallFixture {
 		const result = spawnSync(command[0]!, command.slice(1), {
 			cwd: root,
 			encoding: "utf8",
-			env: {
-				...process.env,
-				...clearedEnvironment,
-				HOME: home,
-				XDG_STATE_HOME: state,
-				LOG_FILE_PATH: log,
-				ARCHBOARD_REPOS: registry,
-				ARCHBOARD_NO_AUTOSTART: "1",
-			},
+			env: environment,
 		});
 		return {
 			command,
@@ -134,6 +161,7 @@ function createInstallFixture(): InstallFixture {
 		log,
 		registry,
 		skillRoot,
+		git,
 		repo,
 		run,
 		install(repository, args = [], options = {}) {
