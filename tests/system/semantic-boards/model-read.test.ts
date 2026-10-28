@@ -132,6 +132,22 @@ test("malformed explanation CLI input reports a usage refusal", () => {
 	}
 });
 
+test("malformed browser reading input reports a usage refusal", () => {
+	if (server === undefined) throw new Error("The server did not start");
+	const input = join(home, "invalid-reading.json");
+	for (const reading of [[], { beat: -1 }, { model: "Shop", unknown: true }]) {
+		writeFileSync(input, JSON.stringify(reading));
+		const result = runServerCli({
+			repoRoot,
+			server,
+			args: ["browser", "show", "--input", input],
+			input: undefined,
+		});
+		expect(result.status, result.stderr).toBe(2);
+		expect(result.stdout).toBe("");
+	}
+});
+
 test("CLI and HTTP retain, list and reopen one exact checkpoint after current content changes", async () => {
 	if (server === undefined) throw new Error("The server did not start");
 	rmSync(join(vault, "bad.module.json"), { force: true });

@@ -14,10 +14,38 @@ import {
 import { createRequester, sleep, waitFor } from "./support/http.ts";
 import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
 import { productionServer } from "./support/production-server.ts";
+import type { SessionParams } from "@archboard/codex-app-server/session";
 
 // Long enough for a callback to be delivered: the old appends arrived well inside it.
 const PANE_TELEMETRY_SETTLE_MS = 600;
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
+
+/**
+ * Read context delivered through the controlled provider's public protocol.
+ * @param logPath The controlled provider log.
+ * @returns Its injected context text.
+ */
+function coordinatorText(logPath: string): string[] {
+	return records(logPath)
+		.filter((entry) => entry.kind === "context_injection")
+		.flatMap((entry) => (entry.params as SessionParams<"thread/inject_items">).items)
+		.flatMap((item) =>
+			item !== null &&
+			typeof item === "object" &&
+			!Array.isArray(item) &&
+			Array.isArray(item["content"])
+				? item["content"]
+				: [],
+		)
+		.flatMap((content) =>
+			content !== null &&
+			typeof content === "object" &&
+			!Array.isArray(content) &&
+			typeof content["text"] === "string"
+				? [content["text"]]
+				: [],
+		);
+}
 
 // While voice is live a pane reports what it is reading and the server orders those reports. What
 // the pane marks as the user's own doing reaches the voice session as pane news, one sentence of
@@ -73,6 +101,10 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 			await command("realtimeStart", { threadId: link["threadId"], sdp: "v=0" }),
 		).toMatchObject({ ok: true, value: { outcome: "delivered" } });
 		// The control for the absence asserted below: this log is where an append would show.
+		await waitFor(
+			() => coordinatorText(fixture.logPath).length > 0,
+			"the initial coordinator context",
+		);
 		expect(records(fixture.logPath).some((entry) => entry.method === "thread/realtime/start")).toBe(
 			true,
 		);
@@ -119,9 +151,16 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		expect(appended()[0]).toContain("scratch");
 		expect(appended()[0]).not.toContain(ids[0]!);
 		expect(appended()[0]).not.toContain("{");
-		// A handoff turn is Codex's, so the coordinator is never given this pick. Its one live read
-		// of the selection is `browser panes`, which must already hold what the pane just reported
-		// (TASK-318): the coordinator's instructions send it there for every "this".
+		await waitFor(
+			() =>
+				coordinatorText(fixture.logPath).some((text) =>
+					text.includes(`"subjects":${JSON.stringify(ids)}`),
+				),
+			"the accepted selection in the coordinator context",
+			{ timeoutMs: 2000 },
+		);
+		// The quiet capture starts no handoff turn. The coordinator's live `browser panes` read
+		// must hold the same accepted selection (TASK-318).
 		const live = await request<{
 			panes: Array<{ clientId: string; reading: { selection: Array<{ id: string }> } }>;
 		}>("/api/panes");
@@ -254,6 +293,26 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		expect(appended()).toHaveLength(2);
 		expect(appended()[1]).toContain(model.manifest.name);
 		expect(appended()[1]).not.toContain("{");
+		const showFrom = (session: string) =>
+			request("/api/panes/show", {
+				method: "POST",
+				doing: false,
+				body: {
+					reading: { model: model.manifest.id, module: ids[0] },
+					pane: "voice-client",
+					agent: true,
+					session,
+				},
+			});
+		expect((await showFrom(String(link["threadId"]))).status).toBe(200);
+		await sleep(PANE_TELEMETRY_SETTLE_MS);
+		expect(appended()).toHaveLength(2);
+		expect((await showFrom("outside-agent")).status).toBe(200);
+		await waitFor(() => appended().length === 3, "the outside agent's navigation news", {
+			timeoutMs: 2000,
+		});
+		expect(appended()[2]).toContain(model.manifest.name);
+		expect(appended()[2]).not.toContain("{");
 	} finally {
 		await resources.disposeAsync();
 	}

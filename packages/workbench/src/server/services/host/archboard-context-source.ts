@@ -38,11 +38,10 @@ function createArchboardCoordinatorContextSource(input: {
 			let unwatch: (() => void) | null = null;
 			/**
 			 * Replace the filesystem watcher when the presenting vault changes.
-			 * @returns Whether the stated condition holds.
 			 */
-			const follow = (): boolean => {
+			const follow = (): void => {
 				const vault = input.vault();
-				if (vault === watched) return false;
+				if (vault === watched) return;
 				unwatch?.();
 				watched = vault;
 				unwatch =
@@ -55,13 +54,13 @@ function createArchboardCoordinatorContextSource(input: {
 									onError(error instanceof Error ? error : new Error(String(error)));
 								}
 							});
-				return true;
 			};
 			follow();
 			let stop: () => void;
 			try {
 				stop = input.subscribe(() => {
-					if (follow()) onChange();
+					follow();
+					onChange();
 				});
 			} catch (error) {
 				const cleanup = unwatch as (() => void) | null;

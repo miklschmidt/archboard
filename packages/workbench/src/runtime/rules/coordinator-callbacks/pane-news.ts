@@ -157,7 +157,7 @@ function agentSwitchNews(event: PaneFocusEvent, from: string | null): Coordinato
 	const now = `board "${event.board.name}"`;
 	let sentence = `A pane now shows ${now}; an agent put it there (data).`;
 	if (from === event.board.name) {
-		sentence = `The pane showing ${now} now shows another variant of it; an agent put it there (data).`;
+		sentence = `The pane showing ${now} now shows another reading of it; an agent put it there (data).`;
 	} else if (from !== null) {
 		sentence = `The pane that showed board "${from}" now shows ${now}; an agent put it there (data).`;
 	}

@@ -4,7 +4,12 @@ import { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
 import { readArchitectureModel } from "@archboard/board/store-read";
 import { projectModel } from "@archboard/board/content";
 import { publishPaneContext } from "@archboard/workbench/server";
-import { paneFromRequest, paneResponse, sendToPane } from "@archboard/workbench/panes";
+import {
+	paneFromRequest,
+	paneResponse,
+	semanticPaneContextFor,
+	sendToPane,
+} from "@archboard/workbench/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { messageOf, vaultOfRequest } from "@archboard/workbench/host";
 import { logger } from "@archboard/diagnostics/logger";
@@ -99,6 +104,19 @@ function addressedReading(model: Model, request: Reading): Reading {
 	};
 }
 /**
+ * Attribute explicit agent navigation through the existing pane event.
+ * @param body The parsed navigation request.
+ * @param clientId The pane that the agent addresses.
+ * @returns The agent mark, or absence for browser navigation.
+ */
+function agentSwitch(body: z.infer<typeof RequestSchema>, clientId: string) {
+	if (body.agent !== true) return undefined;
+	return {
+		from: semanticPaneContextFor(clientId)?.board?.name ?? null,
+		by: body.session ?? null,
+	};
+}
+/**
  * Complete an already resolved pane move through the existing routing owner.
  * @param body The parsed navigation request.
  * @param vault The addressed vault.
@@ -114,6 +132,7 @@ function showResolvedPane(
 	res: Response,
 ): void {
 	const reading = addressedReading(model, body.reading);
+	const moved = agentSwitch(body, pane.clientId);
 	const chose = body.agent === true ? chooseShownCheckout(vault) : undefined;
 	movePaneVault(pane.clientId, vault);
 	const { repository, checkout } = placeOfVault(vault);
@@ -130,7 +149,7 @@ function showResolvedPane(
 		`model:${model.manifest.id}`,
 	);
 	arrivedOnBoard(pane.clientId, `model:${model.manifest.id}`);
-	publishPaneContext(pane.clientId, "focus", []);
+	publishPaneContext(pane.clientId, "focus", [], moved);
 	if (chose !== undefined) followRegistry();
 	res.json({
 		success: true,
