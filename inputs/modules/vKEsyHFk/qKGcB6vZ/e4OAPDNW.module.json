@@ -1,0 +1,14 @@
+{
+  "order": 21000,
+  "name": "Workhorse links",
+  "kind": "function",
+  "responsibility": "Finds the workhorse a callback is about: the ready link whose thread the event names",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/rules/coordinator-callbacks/workhorse-links.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#e4OAPDNW",
+  "parent": "vKEsyHFk/qKGcB6vZ#B0SAnbtM",
+  "outgoing": []
+}

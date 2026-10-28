@@ -1,0 +1,1720 @@
+{
+  "schemaVersion": 1,
+  "id": "qKGcB6vZ",
+  "name": "Voice coordinator",
+  "flows": [
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#VXUdwB7J",
+      "name": "Start a voice session",
+      "participants": [
+        "vKEsyHFk/qKGcB6vZ#0eYa0szs",
+        "vKEsyHFk/qKGcB6vZ#2vHAg1Ei",
+        "vKEsyHFk/qKGcB6vZ#qZsXIuQG",
+        "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#NEsX0usx",
+          "from": "vKEsyHFk/qKGcB6vZ#0eYa0szs",
+          "to": "vKEsyHFk/qKGcB6vZ#2vHAg1Ei",
+          "label": "the offer this tab made",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/server/services/voice/realtime-actions.ts",
+            "symbol": "createOffer"
+          }
+        },
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#TlYSQ5KS",
+          "kind": "decision",
+          "question": "Can a session start on this offer?",
+          "alternatives": [
+            {
+              "label": "refused",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#DktndcLd",
+                  "from": "vKEsyHFk/qKGcB6vZ#2vHAg1Ei",
+                  "to": "vKEsyHFk/qKGcB6vZ#0eYa0szs",
+                  "label": "rejected: a session is active, or the coordinator is stale",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/realtime/adapter.ts",
+                    "symbol": "openSession"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "accepted",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#BmISOY1y",
+                  "from": "vKEsyHFk/qKGcB6vZ#2vHAg1Ei",
+                  "to": "vKEsyHFk/qKGcB6vZ#qZsXIuQG",
+                  "label": "the brief this start records",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/realtime/adapter.ts",
+                    "symbol": "freshSemanticBrief"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#WAKLTova",
+                  "from": "vKEsyHFk/qKGcB6vZ#qZsXIuQG",
+                  "to": "vKEsyHFk/qKGcB6vZ#2vHAg1Ei",
+                  "label": "the brief",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/realtime/adapter.ts",
+                    "symbol": "freshSemanticBrief"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#LT7FY76v",
+                  "from": "vKEsyHFk/qKGcB6vZ#2vHAg1Ei",
+                  "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                  "label": "thread/realtime/start",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/realtime/negotiation.ts",
+                    "symbol": "realtimeStart"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#8gV4OF3H",
+                  "kind": "decision",
+                  "question": "Did Codex start the session?",
+                  "alternatives": [
+                    {
+                      "label": "started",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#3LyXHaaX",
+                          "from": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                          "to": "vKEsyHFk/qKGcB6vZ#2vHAg1Ei",
+                          "label": "started",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/realtime/negotiation.ts",
+                            "symbol": "completeStart"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#NDg4hiIG",
+                          "from": "vKEsyHFk/qKGcB6vZ#2vHAg1Ei",
+                          "to": "vKEsyHFk/qKGcB6vZ#0eYa0szs",
+                          "label": "the answer",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/realtime/negotiation.ts",
+                            "symbol": "settleAnswer"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#LEQCOBB7",
+                          "from": "vKEsyHFk/qKGcB6vZ#2vHAg1Ei",
+                          "to": "vKEsyHFk/qKGcB6vZ#0eYa0szs",
+                          "label": "the transcript, as it grows",
+                          "kind": "async",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/server/projections/browser-state/owner-projection.ts",
+                            "symbol": "transcript"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "failed",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#aUJubLhr",
+                          "from": "vKEsyHFk/qKGcB6vZ#2vHAg1Ei",
+                          "to": "vKEsyHFk/qKGcB6vZ#0eYa0szs",
+                          "label": "the start error",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/realtime/negotiation.ts",
+                            "symbol": "failStart"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#5FUaX27v",
+      "name": "Start the coordinator thread",
+      "participants": [
+        "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+        "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+        "vKEsyHFk/qKGcB6vZ#ZDMIGM5P",
+        "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#7mUuTUOE",
+          "kind": "decision",
+          "question": "Is there a coordinator thread to reuse?",
+          "alternatives": [
+            {
+              "label": "yes: same reviewed instructions, tools and settings",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#HHwwEUkU",
+                  "from": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                  "to": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                  "label": "reuse it: the retained thread is ready",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/coordinator/coordinator.ts",
+                    "symbol": "decideCandidate"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "no: none, or it drifted",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#TqqNA3UX",
+                  "from": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                  "to": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                  "label": "stage the start in the epoch store",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/coordinator/start.ts",
+                    "symbol": "stageStart"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#GuU10aki",
+                  "from": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                  "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+                  "label": "its developer instructions, pinned by digest",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/coordinator/model.ts",
+                    "symbol": "COORDINATOR_DEVELOPER_INSTRUCTIONS"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#d9IUuXO6",
+                  "from": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+                  "to": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                  "label": "the instructions and their digest",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/rules/coordinator/review.ts",
+                    "symbol": "COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#DHdwDp7y",
+                  "from": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                  "to": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P",
+                  "label": "the tools it is started with",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/coordinator/model.ts",
+                    "symbol": "ARCHBOARD_WORKHORSE_NAMESPACE"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#w57Z5HwB",
+                  "from": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P",
+                  "to": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                  "label": "the two tool namespaces",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/coordinator/model.ts",
+                    "symbol": "ARCHBOARD_WORKHORSE_NAMESPACE"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#JXxi4NiG",
+                  "from": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                  "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                  "label": "thread/start with the instructions and tools",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/coordinator/start.ts",
+                    "symbol": "threadStart"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#DICVBYS8",
+                  "kind": "decision",
+                  "question": "How did thread/start settle?",
+                  "alternatives": [
+                    {
+                      "label": "not delivered",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#VAMFmnai",
+                          "from": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                          "to": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                          "label": "roll the staged start back: failed",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/coordinator/start.ts",
+                            "symbol": "settleFailedStart"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "outcome unknown",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#orXuqEBQ",
+                          "from": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                          "to": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                          "label": "mark the outcome unknown: inspect the thread list",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/coordinator/start.ts",
+                            "symbol": "markUnknown"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "confirmed",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#ZgRbVHoo",
+                          "from": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                          "to": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                          "label": "the started thread",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/coordinator/start.ts",
+                            "symbol": "threadStart"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#w6WWRMOv",
+                          "from": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                          "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                          "label": "thread/settings/update: the reviewed model and effort",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/coordinator/start.ts",
+                            "symbol": "threadSettingsUpdate"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#HCgYKUjw",
+                          "from": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                          "to": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                          "label": "accepted",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/coordinator/start.ts",
+                            "symbol": "threadSettingsUpdate"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#dkwNvKDc",
+                          "from": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                          "to": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                          "label": "wait for the matching settings notification",
+                          "kind": "self",
+                          "note": "it expires after CODEX_REQUEST_SETTLEMENT_MS, and an expiry marks the outcome unknown",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/coordinator/start.ts",
+                            "symbol": "waitForSettings"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#8sPVgQEY",
+                          "from": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                          "to": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+                          "label": "commit the start: the coordinator is ready",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/coordinator/start.ts",
+                            "symbol": "commitOperation"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#Em3B5KKC",
+      "name": "Retire a coordinator thread",
+      "participants": [
+        "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+        "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+        "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#1268Hs2R",
+          "from": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+          "to": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+          "label": "unload the thread a fresh one replaced",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/runtime/services/coordinator/coordinator.ts",
+            "symbol": "unload"
+          }
+        },
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#XNRXiSmS",
+          "from": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+          "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+          "label": "thread/read: its status",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/runtime/operations/thread-unload/unload.ts",
+            "symbol": "threadRead"
+          }
+        },
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#Yw5AGntV",
+          "from": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+          "to": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+          "label": "its status",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/runtime/operations/thread-unload/unload.ts",
+            "symbol": "threadRead"
+          }
+        },
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#C42cvT5k",
+          "kind": "loop",
+          "condition": "until its voice has closed and it is not active",
+          "steps": [
+            {
+              "id": "vKEsyHFk/qKGcB6vZ#WqaCQpDQ",
+              "from": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+              "to": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+              "label": "a status or realtime-closed notification",
+              "kind": "async",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/workbench/src/runtime/operations/thread-unload/unload.ts",
+                "symbol": "onNotification"
+              }
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#nAQdo0ae",
+          "from": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+          "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+          "label": "thread/unsubscribe",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/runtime/operations/thread-unload/unload.ts",
+            "symbol": "threadUnsubscribe"
+          }
+        },
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#Mtp3Q0lp",
+          "kind": "decision",
+          "question": "Did Codex accept the unsubscribe?",
+          "alternatives": [
+            {
+              "label": "yes",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#47g7UT4Y",
+                  "from": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                  "to": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+                  "label": "unsubscribed, or already not loaded",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/operations/thread-unload/unload.ts",
+                    "symbol": "threadUnsubscribe"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "no",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#Qbe3DvPD",
+                  "from": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+                  "to": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+                  "label": "report the failure with its message",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/operations/thread-unload/unload.ts",
+                    "symbol": "finish"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#1pMBpWEP",
+          "from": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+          "to": "vKEsyHFk/qKGcB6vZ#NUoTEPga",
+          "label": "what became of the thread",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/runtime/operations/thread-unload/unload.ts",
+            "symbol": "unload"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#BiOLk73A",
+      "name": "A tool call from the coordinator",
+      "participants": [
+        "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+        "vKEsyHFk/qKGcB6vZ#VNzfidEL",
+        "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+        "vKEsyHFk/qKGcB6vZ#ZDMIGM5P",
+        "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+        "vKEsyHFk/qKGcB6vZ#LIpURyJE",
+        "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#56UIt8Kx",
+          "from": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+          "to": "vKEsyHFk/qKGcB6vZ#VNzfidEL",
+          "label": "a tool call from the coordinator",
+          "kind": "async",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/server/services/dynamic-tools/routing.ts",
+            "symbol": "routeCoordinatorTool"
+          }
+        },
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#IKfMaWb6",
+          "from": "vKEsyHFk/qKGcB6vZ#VNzfidEL",
+          "to": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+          "label": "hand it to its session's coordinator tools",
+          "kind": "async",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/server/services/sessions/sessions.ts",
+            "symbol": "onServerRequest"
+          }
+        },
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#TYqBA5ma",
+          "from": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+          "to": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P",
+          "label": "validate against the frozen manifest",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/runtime/rules/coordinator-tools/validation.ts",
+            "symbol": "parseCoordinatorToolInput"
+          }
+        },
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#8we2PGYI",
+          "from": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P",
+          "to": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+          "label": "the validated call, or a refusal",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/runtime/rules/coordinator-tools/validation.ts",
+            "symbol": "parseCoordinatorToolInput"
+          }
+        },
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#Z0G3HVq1",
+          "kind": "decision",
+          "question": "Is the call valid?",
+          "alternatives": [
+            {
+              "label": "refused",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#kMFBLugr",
+                  "from": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+                  "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+                  "label": "respond: the refusal",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/coordinator-tools/dispatcher.ts",
+                    "symbol": "respondOnce"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "valid",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#BKfQmI4S",
+                  "kind": "decision",
+                  "question": "Has this logical call already run or started?",
+                  "alternatives": [
+                    {
+                      "label": "yes",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#BvWIm1e1",
+                          "from": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+                          "to": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+                          "label": "answer from the replay ledger, run nothing again",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/coordinator-tools/dispatcher.ts",
+                            "symbol": "replayRetained"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#OnTO6IP3",
+                          "from": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+                          "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+                          "label": "respond: the remembered result",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/coordinator-tools/dispatcher.ts",
+                            "symbol": "respondOnce"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "no",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#GsEUqiT1",
+                          "from": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+                          "to": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+                          "label": "remember the call in the replay ledger",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/coordinator-tools/dispatcher.ts",
+                            "symbol": "startLogical"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#ANgFABwm",
+                          "kind": "decision",
+                          "question": "Which tool is it?",
+                          "alternatives": [
+                            {
+                              "label": "resolve_spoken_approval",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/qKGcB6vZ#dtAOKDe4",
+                                  "from": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+                                  "to": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+                                  "label": "resolve the approval answered aloud",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/workbench/src/runtime/services/coordinator-tools/call-execution.ts",
+                                    "symbol": "resolve"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/qKGcB6vZ#c7bvPhVj",
+                                  "from": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+                                  "to": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+                                  "label": "the verdict and its settlement",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/workbench/src/runtime/services/coordinator-tools/call-execution.ts",
+                                    "symbol": "resolve"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "label": "stop_workhorses",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/qKGcB6vZ#7Q9lplJA",
+                                  "from": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+                                  "to": "vKEsyHFk/qKGcB6vZ#VNzfidEL",
+                                  "label": "stop every running workhorse of the tab",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
+                                    "symbol": "stopWork"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/qKGcB6vZ#3B1qmJCv",
+                                  "from": "vKEsyHFk/qKGcB6vZ#VNzfidEL",
+                                  "to": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+                                  "label": "the stops",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
+                                    "symbol": "stopWork"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "label": "a workhorse tool of a named checkout",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/qKGcB6vZ#8XZ1hY3u",
+                                  "from": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+                                  "to": "vKEsyHFk/qKGcB6vZ#LIpURyJE",
+                                  "label": "route the sustained work to the named checkout",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
+                                    "symbol": "delegate"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/qKGcB6vZ#y5YpIMqj",
+                                  "from": "vKEsyHFk/qKGcB6vZ#LIpURyJE",
+                                  "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                                  "label": "turn/start when idle, turn/steer",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+                                    "symbol": "turnStart"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/qKGcB6vZ#klJpVPhB",
+                                  "from": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                                  "to": "vKEsyHFk/qKGcB6vZ#LIpURyJE",
+                                  "label": "accepted",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+                                    "symbol": "turnStart"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/qKGcB6vZ#B7nb7aD1",
+                                  "from": "vKEsyHFk/qKGcB6vZ#LIpURyJE",
+                                  "to": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+                                  "label": "the operation result",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
+                                    "symbol": "delegate"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#W5lr3fBU",
+                          "from": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+                          "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+                          "label": "respond: the tool result",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/coordinator-tools/dispatcher.ts",
+                            "symbol": "respondOnce"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#o4PDOaXL",
+      "name": "Answer an approval aloud",
+      "participants": [
+        "vKEsyHFk/qKGcB6vZ#2vHAg1Ei",
+        "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+        "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+        "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+        "vKEsyHFk/qKGcB6vZ#C3wBXyPG",
+        "vKEsyHFk/qKGcB6vZ#LHBPlItu"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#PANAXWME",
+          "from": "vKEsyHFk/qKGcB6vZ#2vHAg1Ei",
+          "to": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+          "label": "the user's spoken reply, as transcript events",
+          "kind": "async",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/runtime/services/spoken-approval/gate.ts",
+            "symbol": "onSemanticEvent"
+          }
+        },
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#g7xszHMZ",
+          "kind": "decision",
+          "question": "Is it the user's final reply, in the armed voice session?",
+          "alternatives": [
+            {
+              "label": "no",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#h2WbWg2w",
+                  "from": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+                  "to": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+                  "label": "fall back to the pane's answer",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/spoken-approval/gate.ts",
+                    "symbol": "enterFallback"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "yes",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#8BBc9vaH",
+                  "from": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+                  "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+                  "label": "the classifier turn, as authored",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/spoken-approval/classifier-turn.ts",
+                    "symbol": "createTurnStartParams"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#At4y1Scd",
+                  "from": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+                  "to": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+                  "label": "the turn parameters",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/spoken-approval/classifier-turn.ts",
+                    "symbol": "createTurnStartParams"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#2u0N9Sw6",
+                  "from": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+                  "to": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+                  "label": "start the classifier turn on the coordinator thread",
+                  "kind": "self",
+                  "note": "the coordinator hears the reply and calls resolve_spoken_approval",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/spoken-approval/classifier-turn.ts",
+                    "symbol": "startClassifier"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#woouDcmt",
+                  "from": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+                  "to": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+                  "label": "resolve_spoken_approval: accept or decline",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/coordinator-tools/call-execution.ts",
+                    "symbol": "resolve"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#Pq9O1cHH",
+                  "kind": "decision",
+                  "question": "Is the resolver call valid for the armed approval?",
+                  "alternatives": [
+                    {
+                      "label": "refused",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#U6eZSpI9",
+                          "from": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+                          "to": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+                          "label": "fall back to the pane's answer",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/spoken-approval/resolver-turn.ts",
+                            "symbol": "enterFallback"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#meS9cBri",
+                          "from": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+                          "to": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+                          "label": "refused",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/spoken-approval/resolver-turn.ts",
+                            "symbol": "resolveSpokenApproval"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "valid",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#13AgzGsJ",
+                          "from": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+                          "to": "vKEsyHFk/qKGcB6vZ#C3wBXyPG",
+                          "label": "resolve the approval it was armed for",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/spoken-approval/resolver-turn.ts",
+                            "symbol": "resolve"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#ezAoLCQf",
+                          "from": "vKEsyHFk/qKGcB6vZ#C3wBXyPG",
+                          "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+                          "label": "answer the approval request",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/approvals/settlement.ts",
+                            "symbol": "respond"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#TC7QpJlF",
+                          "from": "vKEsyHFk/qKGcB6vZ#C3wBXyPG",
+                          "to": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+                          "label": "the settlement",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/spoken-approval/resolver-turn.ts",
+                            "symbol": "resolve"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#jxqLXPh9",
+                          "from": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+                          "to": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+                          "label": "the verdict and its settlement",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/spoken-approval/resolver-turn.ts",
+                            "symbol": "resolveSpokenApproval"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#SUsqs0NP",
+      "name": "A workhorse's news reaches the coordinator",
+      "participants": [
+        "vKEsyHFk/qKGcB6vZ#VNzfidEL",
+        "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+        "vKEsyHFk/qKGcB6vZ#hxZxt8Wy",
+        "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+        "vKEsyHFk/qKGcB6vZ#AjPVQ0BZ",
+        "vKEsyHFk/qKGcB6vZ#2vHAg1Ei",
+        "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#PNxDGNJ6",
+          "from": "vKEsyHFk/qKGcB6vZ#VNzfidEL",
+          "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+          "label": "a workhorse notification",
+          "kind": "async",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/server/services/sessions/sessions.ts",
+            "symbol": "onNotification"
+          }
+        },
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#2JJL8n9W",
+          "from": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+          "to": "vKEsyHFk/qKGcB6vZ#hxZxt8Wy",
+          "label": "is this notification news?",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+            "symbol": "observe"
+          }
+        },
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#bJr2XE8G",
+          "from": "vKEsyHFk/qKGcB6vZ#hxZxt8Wy",
+          "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+          "label": "the news, or nothing",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/runtime/rules/coordinator-callbacks/workhorse-news.ts",
+            "symbol": "observe"
+          }
+        },
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#SP81stza",
+          "kind": "decision",
+          "question": "Is the notification news?",
+          "alternatives": [
+            {
+              "label": "not news",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#d2KGWyo3",
+                  "from": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+                  "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+                  "label": "drop it: nothing is queued",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+                    "symbol": "observe"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "news",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#rQLIyF35",
+                  "from": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+                  "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+                  "label": "queue it: one delivery for the same news",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+                    "symbol": "insertPending"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#QWMYOgOQ",
+                  "kind": "loop",
+                  "condition": "until the queue is empty",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/qKGcB6vZ#UdRIXVCo",
+                      "from": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+                      "to": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                      "label": "deliver one callback, in order",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+                        "symbol": "deliverOne"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/qKGcB6vZ#yZXDf0SY",
+                      "kind": "decision",
+                      "question": "Which path does the callback take?",
+                      "alternatives": [
+                        {
+                          "label": "refused before an attempt",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#B37gPSR9",
+                              "from": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "to": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "label": "refuse it: stale link, lost authority or disposed",
+                              "kind": "self",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                "symbol": "clearForDelivery"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "label": "no live voice session",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#KL9jtkav",
+                              "from": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "to": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "label": "record it, told to nobody: voice_inactive",
+                              "kind": "self",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                "symbol": "recordOnly"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "label": "voice is live",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#QBnopq5k",
+                              "from": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "to": "vKEsyHFk/qKGcB6vZ#hxZxt8Wy",
+                              "label": "word the news as one sentence",
+                              "kind": "sync",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                "symbol": "workhorseNewsSentence"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#GjPMRL5n",
+                              "from": "vKEsyHFk/qKGcB6vZ#hxZxt8Wy",
+                              "to": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "label": "the sentence",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                "symbol": "workhorseNewsSentence"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#XhqJ3hGH",
+                              "from": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "to": "vKEsyHFk/qKGcB6vZ#AjPVQ0BZ",
+                              "label": "report the news",
+                              "kind": "sync",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/workbench/src/server/services/sessions/bindings.ts",
+                                "symbol": "createOutcomeReportPort"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#v0P4H3oq",
+                              "from": "vKEsyHFk/qKGcB6vZ#AjPVQ0BZ",
+                              "to": "vKEsyHFk/qKGcB6vZ#2vHAg1Ei",
+                              "label": "is a recording holding the voice?",
+                              "kind": "sync",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/workbench/src/server/services/voice/outcome-report.ts",
+                                "symbol": "recording"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#3ftMeugv",
+                              "from": "vKEsyHFk/qKGcB6vZ#2vHAg1Ei",
+                              "to": "vKEsyHFk/qKGcB6vZ#AjPVQ0BZ",
+                              "label": "yes or no",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/workbench/src/server/services/voice/outcome-report.ts",
+                                "symbol": "recording"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#rLmXpfUX",
+                              "kind": "decision",
+                              "question": "Does a recording hold the voice?",
+                              "alternatives": [
+                                {
+                                  "label": "recording",
+                                  "steps": [
+                                    {
+                                      "id": "vKEsyHFk/qKGcB6vZ#NslyBHiv",
+                                      "from": "vKEsyHFk/qKGcB6vZ#AjPVQ0BZ",
+                                      "to": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                                      "label": "recording: nothing is sent",
+                                      "kind": "return",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/workbench/src/server/services/voice/outcome-report.ts",
+                                        "symbol": "recording"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "label": "free",
+                                  "steps": [
+                                    {
+                                      "id": "vKEsyHFk/qKGcB6vZ#jpwSNOyR",
+                                      "from": "vKEsyHFk/qKGcB6vZ#AjPVQ0BZ",
+                                      "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                                      "label": "turn/start on the coordinator thread",
+                                      "kind": "sync",
+                                      "note": "Codex adds it to the coordinator's running turn, or starts one",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/workbench/src/server/services/voice/outcome-report.ts",
+                                        "symbol": "turnStart"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/qKGcB6vZ#QUMASBae",
+                                      "from": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                                      "to": "vKEsyHFk/qKGcB6vZ#AjPVQ0BZ",
+                                      "label": "accepted",
+                                      "kind": "return",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/workbench/src/server/services/voice/outcome-report.ts",
+                                        "symbol": "turnStart"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/qKGcB6vZ#cmR3zWAZ",
+                                      "from": "vKEsyHFk/qKGcB6vZ#AjPVQ0BZ",
+                                      "to": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                                      "label": "delivered",
+                                      "kind": "return",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/workbench/src/server/services/voice/outcome-report.ts",
+                                        "symbol": "createOutcomeReportPort"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "vKEsyHFk/qKGcB6vZ#yUj0L1IL",
+                      "from": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+                      "label": "the delivery record",
+                      "kind": "return",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+                        "symbol": "deliverOne"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#67E4aMeN",
+      "name": "Pane news reaches the voice model",
+      "participants": [
+        "vKEsyHFk/qKGcB6vZ#qZsXIuQG",
+        "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+        "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+        "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#6jER75L4",
+          "from": "vKEsyHFk/qKGcB6vZ#qZsXIuQG",
+          "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+          "label": "the user's change, focus or selection",
+          "kind": "async",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+            "symbol": "subscribeSettledChange"
+          }
+        },
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#dDOLOt4k",
+          "kind": "decision",
+          "question": "Did this session make it, or does no pane show its board?",
+          "alternatives": [
+            {
+              "label": "yes",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#z7c5odxF",
+                  "from": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+                  "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+                  "label": "refuse it: told to nobody",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+                    "symbol": "arrivalRefusal"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "no",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#zF3GnbGx",
+                  "from": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+                  "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+                  "label": "queue it: a newer one for the same thing replaces it",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+                    "symbol": "insertPending"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#qkHFddc7",
+                  "kind": "loop",
+                  "condition": "until the queue is empty",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/qKGcB6vZ#LGiXBagG",
+                      "from": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+                      "to": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                      "label": "deliver one callback, in order",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+                        "symbol": "deliverOne"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/qKGcB6vZ#q6R3uCRb",
+                      "kind": "decision",
+                      "question": "How is the voice model told?",
+                      "alternatives": [
+                        {
+                          "label": "not told",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#o78gfr0K",
+                              "from": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "to": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "label": "record it, told to nobody: no live voice, or not the user's",
+                              "kind": "self",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                "symbol": "recordOnly"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "label": "the user's change",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#tLuWM1gd",
+                              "from": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                              "label": "append the sentence as quiet context",
+                              "kind": "sync",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                "symbol": "realtimeAppendText"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#Lm7mnz9k",
+                              "from": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                              "to": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "label": "appended",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                "symbol": "realtimeAppendText"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "label": "the user's change that stops a narration",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#buAki6sT",
+                              "from": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                              "label": "append the sentence as speech",
+                              "kind": "sync",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                "symbol": "realtimeAppendSpeech"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#ZRmFcJMU",
+                              "from": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                              "to": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "label": "appended",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                "symbol": "realtimeAppendSpeech"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "label": "an outside agent's write",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#YHpvYVaV",
+                              "from": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                              "label": "put the sentence in the coordinator thread's history",
+                              "kind": "sync",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                "symbol": "threadInjectItems"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#9JWa3cQa",
+                              "from": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                              "to": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "label": "injected",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                "symbol": "threadInjectItems"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#LlnbsAmw",
+                              "from": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                              "label": "append the sentence for the voice model",
+                              "kind": "sync",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                "symbol": "realtimeAppendText"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/qKGcB6vZ#LOEs67RF",
+                              "from": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+                              "to": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                              "label": "appended",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                "symbol": "realtimeAppendText"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "vKEsyHFk/qKGcB6vZ#s3bAbPXq",
+                      "from": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+                      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+                      "label": "the delivery record",
+                      "kind": "return",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+                        "symbol": "deliverOne"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#7L5gGw1B",
+      "name": "A workhorse tells the coordinator",
+      "participants": [
+        "vKEsyHFk/qKGcB6vZ#VNzfidEL",
+        "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+        "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+        "vKEsyHFk/qKGcB6vZ#hxZxt8Wy",
+        "vKEsyHFk/qKGcB6vZ#LHBPlItu"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/qKGcB6vZ#qjYD2aWo",
+          "kind": "decision",
+          "question": "Does a tab session own the call?",
+          "alternatives": [
+            {
+              "label": "no session owns it",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#MOk6mH8D",
+                  "from": "vKEsyHFk/qKGcB6vZ#VNzfidEL",
+                  "to": "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+                  "label": "refuse a call no session owns",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/server/services/sessions/sessions.ts",
+                    "symbol": "answerUnownedTellCoordinator"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#FD3wiScb",
+                  "from": "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+                  "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+                  "label": "answer: not the linked workhorse; nothing was sent",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+                    "symbol": "answerUnownedTellCoordinator"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "a session owns it",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#ZQ5W68t5",
+                  "from": "vKEsyHFk/qKGcB6vZ#VNzfidEL",
+                  "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+                  "label": "the tell_coordinator call",
+                  "kind": "async",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/server/services/sessions/sessions.ts",
+                    "symbol": "onServerRequest"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#eKLob8Ao",
+                  "from": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+                  "to": "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+                  "label": "answer the call",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+                    "symbol": "createTellCoordinator"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/qKGcB6vZ#WfCDWknX",
+                  "kind": "decision",
+                  "question": "Is it a valid message of 1 to 2048 characters?",
+                  "alternatives": [
+                    {
+                      "label": "invalid",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#qXrxUF4w",
+                          "from": "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+                          "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+                          "label": "answer: nothing was sent",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+                            "symbol": "respond"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "valid",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#H3M4oEvR",
+                          "from": "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+                          "to": "vKEsyHFk/qKGcB6vZ#hxZxt8Wy",
+                          "label": "the news this message is",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+                            "symbol": "news"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#uzMLiGRm",
+                          "from": "vKEsyHFk/qKGcB6vZ#hxZxt8Wy",
+                          "to": "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+                          "label": "the news, or why there is none",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/runtime/rules/coordinator-callbacks/workhorse-news.ts",
+                            "symbol": "message"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/qKGcB6vZ#8jqZVCks",
+                          "kind": "decision",
+                          "question": "What did the message become?",
+                          "alternatives": [
+                            {
+                              "label": "another thread's call",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/qKGcB6vZ#rdb7dU2w",
+                                  "from": "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+                                  "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+                                  "label": "answer: only the linked workhorse can reach the coordinator",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+                                    "symbol": "respond"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "label": "nobody is listening",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/qKGcB6vZ#BC2rZJNG",
+                                  "from": "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+                                  "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+                                  "label": "answer: no voice session is live; say it in your answer",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+                                    "symbol": "respond"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "label": "news",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/qKGcB6vZ#EvOI8P51",
+                                  "from": "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+                                  "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+                                  "label": "queue it, wait for its delivery",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+                                    "symbol": "enqueue"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/qKGcB6vZ#OxcQpfh7",
+                                  "from": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
+                                  "to": "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+                                  "label": "how it settled",
+                                  "kind": "return",
+                                  "note": "its delivery runs the same path as workhorse news",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+                                    "symbol": "enqueue"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/qKGcB6vZ#zKqjru6u",
+                                  "from": "vKEsyHFk/qKGcB6vZ#AahDTiw9",
+                                  "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+                                  "label": "answer: delivered, unknown or not delivered",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+                                    "symbol": "respond"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

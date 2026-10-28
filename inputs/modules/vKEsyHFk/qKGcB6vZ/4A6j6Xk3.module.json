@@ -1,0 +1,16 @@
+{
+  "order": 12000,
+  "name": "Codex session",
+  "kind": "module",
+  "responsibility": "The reviewed methods the coordinator and its realtime leg are started on",
+  "groups": [
+    "child"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-app-server/src/runtime/services/session.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+  "outgoing": []
+}
