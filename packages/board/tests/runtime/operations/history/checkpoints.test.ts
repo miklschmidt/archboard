@@ -1,8 +1,16 @@
 import { afterEach, expect, test } from "bun:test";
-import { cpSync, mkdtempSync, readFileSync, rmSync, chmodSync, writeFileSync } from "node:fs";
+import {
+	cpSync,
+	mkdtempSync,
+	mkdirSync,
+	readFileSync,
+	rmSync,
+	chmodSync,
+	writeFileSync,
+} from "node:fs";
 import { createServer, type Socket } from "node:net";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, resolve as resolvePath } from "node:path";
 import {
 	readArchitectureModel,
 	readArchitectureCheckpoint,
@@ -28,7 +36,7 @@ function fixture() {
 	homes.push(home);
 	const root = join(home, "repo");
 	const vault = join(root, ".archboard/vault");
-	cpSync(resolve("examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(resolvePath("examples/canonical-model/.archboard/vault"), vault, { recursive: true });
 	git(root, "init", "--quiet", "--initial-branch=main");
 	git(root, "config", "user.name", "Checkpoint Author");
 	git(root, "config", "user.email", "checkpoint@example.test");
@@ -155,10 +163,10 @@ test("linked worktree appends preserve distinct readings through signed synchron
 	git(root, "worktree", "add", "--quiet", "-b", "parallel", linked);
 	const otherVault = join(linked, ".archboard/vault");
 	const file = join(otherVault, "gateway.module.json");
-	const module = JSON.parse(readFileSync(file, "utf8"));
+	const gateway = JSON.parse(readFileSync(file, "utf8"));
 	writeFileSync(
 		file,
-		JSON.stringify({ ...module, responsibility: "Routes the parallel architecture" }),
+		JSON.stringify({ ...gateway, responsibility: "Routes the parallel architecture" }),
 	);
 	const socketPath = join(home, "signing.sock");
 	const waiting: Socket[] = [];
@@ -197,8 +205,8 @@ process.exit(await child.exited);
 	if (!first?.success || !second?.success) throw new Error(JSON.stringify(results));
 	const listed = await listArchitectureCheckpoints(vault);
 	if (!listed.success) throw new Error(JSON.stringify(listed));
-	expect(listed.checkpoints.map((checkpoint) => checkpoint.id).sort()).toEqual(
-		[first.checkpoint.id, second.checkpoint.id].sort(),
+	expect(listed.checkpoints.map((checkpoint) => checkpoint.id).toSorted()).toEqual(
+		[first.checkpoint.id, second.checkpoint.id].toSorted(),
 	);
 	const sync = git(root, "rev-parse", "refs/heads/archboard-history");
 	expect(JSON.parse(git(root, "show", `${sync}:record.json`))).toEqual({
@@ -206,9 +214,9 @@ process.exit(await child.exited);
 		kind: "synchronization",
 	});
 	expect(git(root, "cat-file", "-p", sync)).toContain("gpgsig -----BEGIN SSH SIGNATURE-----");
-	expect(git(root, "rev-list", "--parents", "-n", "1", sync).split(" ").slice(1).sort()).toEqual(
-		[first.checkpoint.id, second.checkpoint.id].sort(),
-	);
+	expect(
+		git(root, "rev-list", "--parents", "-n", "1", sync).split(" ").slice(1).toSorted(),
+	).toEqual([first.checkpoint.id, second.checkpoint.id].toSorted());
 	expect(await readArchitectureCheckpoint(vault, sync)).toMatchObject({
 		success: false,
 		code: "CHECKPOINT_INVALID",
@@ -363,20 +371,39 @@ test("retention refuses a foreign archive branch and never advances a checked-ou
 	expect(git(archiveCheckout, "rev-parse", "HEAD")).toBe(retained.checkpoint.id);
 });
 
-test("retention preserves large UTF-8 inputs and Git-sensitive filenames exactly", async () => {
+test("retention preserves 656 modules, exact UTF-8 inputs and Git-sensitive filenames on retry", async () => {
 	const { vault } = fixture();
-	const path = "a\tb\nc.module.json";
+	const path = "π a\tb\nc.module.json";
 	const original = JSON.parse(readFileSync(join(vault, "gateway.module.json"), "utf8"));
+	for (let index = 0; index < 653; index++) {
+		const directory = join(vault, "modules", "Shop", `area-${index % 18}`);
+		mkdirSync(directory, { recursive: true });
+		writeFileSync(
+			join(directory, `scale-${index}.module.json`),
+			JSON.stringify({
+				schemaVersion: 1,
+				id: `Shop#Scale${index}`,
+				name: `Scale ${index}`,
+				kind: "service",
+				order: index,
+				responsibility: "Retains a module at repository migration scale",
+				outgoing: [],
+			}),
+		);
+	}
 	writeFileSync(
 		join(vault, path),
-		" ".repeat(100_000) + JSON.stringify({ ...original, description: "Architecture π." }) + "\n\n",
+		" ".repeat(700_000) + JSON.stringify({ ...original, description: "Architecture π." }) + "\n\n",
 	);
 	rmSync(join(vault, "gateway.module.json"));
 	const before = readArchitectureModel(vault);
 	if (!before.success) throw new Error(JSON.stringify(before));
-	const retained = await retainArchitectureCheckpoint(vault, request(vault));
+	expect(before.modules).toHaveLength(656);
+	const input = request(vault);
+	const retained = await retainArchitectureCheckpoint(vault, input);
 	if (!retained.success) throw new Error(JSON.stringify(retained));
 	rmSync(join(vault, path));
+	expect(await retainArchitectureCheckpoint(vault, input)).toEqual(retained);
 	expect(await readArchitectureCheckpoint(vault, retained.checkpoint.id)).toMatchObject({
 		...before,
 		selectedState: { ...before.selectedState, lifecycle: "historical" },

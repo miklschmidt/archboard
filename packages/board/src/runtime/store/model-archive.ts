@@ -1,5 +1,5 @@
 import { MigrationInstallationSchema } from "#shared/schemas/migration-installation.ts";
-import { checkpointBlobs } from "#runtime/store/model-archive-blobs.ts";
+import { checkpointBlobs, tree } from "#runtime/store/model-archive-blobs.ts";
 import { FamilyStandingSchema } from "#shared/schemas/model-proposals.ts";
 import { modelRevision } from "#runtime/store/model-files.ts";
 import {
@@ -98,50 +98,6 @@ async function settledValues<T>(pending: Promise<T>[]): Promise<T[]> {
 		if (result.status === "rejected") throw result.reason;
 		return result.value;
 	});
-}
-
-/**
- * Store exact bytes as a Git blob, without an index.
- * @param context The caller's checkout.
- * @param bytes The complete authored bytes.
- * @returns The blob identity.
- */
-async function blob(context: ArchiveContext, bytes: Uint8Array): Promise<string> {
-	const id = await git(context.root, ["hash-object", "-w", "--stdin"], { input: bytes });
-	if (id === undefined) throw new Error("Git returned no blob identity.");
-	return id;
-}
-
-/**
- * Build a tree from architecture-only paths and bytes.
- * @param context The caller's checkout.
- * @param inputs Exact relative paths and authored bytes.
- * @returns The tree identity.
- */
-async function tree(context: ArchiveContext, inputs: Map<string, Buffer>): Promise<string> {
-	const directories = new Map<string, Map<string, Buffer>>();
-	const files: [string, Buffer][] = [];
-	for (const [path, bytes] of inputs) {
-		const slash = path.indexOf("/");
-		if (slash < 0) files.push([path, bytes]);
-		else {
-			const directory = path.slice(0, slash);
-			const nested = directories.get(directory) ?? new Map<string, Buffer>();
-			nested.set(path.slice(slash + 1), bytes);
-			directories.set(directory, nested);
-		}
-	}
-	const entries = await settledValues([
-		...files.map(async ([path, bytes]) => `100644 blob ${await blob(context, bytes)}\t${path}`),
-		...[...directories].map(
-			async ([directory, nested]) => `040000 tree ${await tree(context, nested)}\t${directory}`,
-		),
-	]);
-	const id = await git(context.root, ["mktree", "-z"], {
-		input: Buffer.from(entries.join("\0") + "\0"),
-	});
-	if (id === undefined) throw new Error("Git returned no tree identity.");
-	return id;
 }
 
 /**
