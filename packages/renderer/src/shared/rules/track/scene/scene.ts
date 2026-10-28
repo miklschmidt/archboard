@@ -228,7 +228,9 @@ class Scene {
 		this.readLabels(placed.edges ?? []);
 		this.readRegions(placed);
 		const heads = [...this.titles.values(), ...this.regions.map(({ caption }) => caption)];
-		this.groupBands([...this.cards.values(), ...this.labels.values(), ...heads]);
+		const items = [...this.cards.values(), ...this.labels.values(), ...heads];
+		this.reserveLabels(placed.edges ?? [], items);
+		this.groupBands(items);
 		// A card stands at the top of its band, so the cards of a row line up and
 		// every line into them from above lands at one height, whatever their heights.
 		for (const card of this.cards.values())
@@ -270,6 +272,32 @@ class Scene {
 			const label = edge.labels?.[0];
 			if (label?.x !== undefined)
 				this.labels.set(edge.id, { box: boxOf(label, `the label of ${edge.id}`), band: -1 });
+		}
+	}
+
+	/**
+	 * Reserve an intervening row for a label Graphviz ranked outside its ends.
+	 * Cycle breaking can put an explicit label node beyond both endpoints,
+	 * where a monotone route cannot visit it. Move its box before grouping
+	 * bands so occupancy, container bounds and channel spacing see its station.
+	 * @param edges The placed relationships.
+	 * @param items Every placed item.
+	 */
+	private reserveLabels(edges: readonly ElkExtendedEdge[], items: readonly Item[]): void {
+		const centres = [...new Set(items.map(centreKey))].toSorted((one, other) => one - other);
+		for (const edge of edges) {
+			const label = this.labels.get(edge.id);
+			if (label === undefined) continue;
+			const source = centreKey(this.endpoint(edge.sources[0]!));
+			const target = centreKey(this.endpoint(edge.targets[0]!));
+			const [upper, lower] = [Math.min(source, target), Math.max(source, target)];
+			const at = centreKey(label);
+			if (at > upper && at < lower) continue;
+			const centre =
+				at <= upper
+					? (upper + centres.find((one) => one > upper)!) / 2
+					: (centres.findLast((one) => one < lower)! + lower) / 2;
+			label.box = { ...label.box, y: centre - label.box.height / 2 };
 		}
 	}
 
