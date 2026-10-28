@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { z } from "zod";
-import type { SemanticRasterReceiptSchema } from "@archboard/renderer/rasterizer";
+import type { ArchitectureRasterReceiptSchema } from "@archboard/renderer/rasterizer";
 import { executeRun, type RunJob } from "#runtime/operations/runs/author.ts";
 import { loadSuite } from "#runtime/schemas/suite.ts";
 import { type RunBundle } from "#runtime/operations/grading/blind.ts";
@@ -14,18 +14,17 @@ const loaded = loadSuite(path.join(checkout, "evals"));
 
 const CAPTURE_RECEIPT = {
 	success: true,
-	version: 3,
-	variant: { id: "v1", name: "Local stacks", lifecycle: "current" },
-	comparedWith: null,
-	view: { id: "w1", name: "Contexts", grammar: "architecture" },
+	model: "Flask",
+	state: "Current",
+	revision: { digest: "a".repeat(64), files: [] },
+	grammar: "architecture",
+	placed: [],
 	theme: "light",
 	width: 1,
 	height: 1,
 	scale: 1,
 	diagram: { width: 1, height: 1 },
 	region: null,
-	drawn: { nodes: [], edges: [], flows: [], steps: [] },
-	marks: null,
 	source: {
 		renderer: "semantic-renderer",
 		fonts: "embedded",
@@ -33,7 +32,7 @@ const CAPTURE_RECEIPT = {
 		facesLoaded: 4,
 		motion: "paused-at-start",
 	},
-} satisfies Omit<z.infer<typeof SemanticRasterReceiptSchema>, "board" | "file">;
+} satisfies Omit<z.infer<typeof ArchitectureRasterReceiptSchema>, "file">;
 
 /** A job that cannot run a model, using a scenario with two declared captures. */
 function jobAt(root: string, signal = new AbortController().signal): RunJob {
@@ -42,7 +41,13 @@ function jobAt(root: string, signal = new AbortController().signal): RunJob {
 	if (scenario === undefined || fixture === undefined) throw new Error("missing fixture");
 	return {
 		arm: "candidate",
-		scenario,
+		scenario: {
+			...scenario,
+			captures: [
+				{ label: "current", board: "Flask" },
+				{ label: "proposal", board: "Flask", variant: "Context changes" },
+			],
+		},
 		fixture,
 		repetition: 1,
 		root: path.join(root, "run"),
@@ -133,12 +138,12 @@ describe("failed runs keep grader capture evidence", () => {
 				if (args[0] === "install-skill") {
 					console.error("setup failed"); process.exit(71);
 				}
-				if (args.includes("--variant")) {
+				if (args.includes("--state")) {
 					console.error("capture failed"); process.exit(72);
 				}
 				const file = args[args.indexOf("--out") + 1];
 				await Bun.write(file, Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aDR8AAAAASUVORK5CYII=", "base64"));
-				console.log(JSON.stringify({ ...${JSON.stringify(CAPTURE_RECEIPT)}, board: args[2], file }));
+				console.log(JSON.stringify({ ...${JSON.stringify(CAPTURE_RECEIPT)}, file }));
 			`,
 			);
 			const base = jobAt(root);
@@ -163,7 +168,11 @@ describe("failed runs keep grader capture evidence", () => {
 				bundle.captures.map((capture) => capture.ok),
 				JSON.stringify(bundle),
 			).toEqual([true, false]);
-			expect(bundle.captures[0]?.provenance?.version).toBe(3);
+			expect(bundle.captures[0]?.provenance).toMatchObject({
+				model: "Flask",
+				state: "Current",
+				revision: CAPTURE_RECEIPT.revision,
+			});
 			expect(bundle.captures[0]?.file).toStartWith("captures/");
 			expect(bundle.captures[1]?.file).toBeNull();
 			expect(bundle.harnessOutcomes[0]?.detail).toContain("71");

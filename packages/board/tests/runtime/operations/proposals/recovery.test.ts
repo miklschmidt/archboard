@@ -106,9 +106,11 @@ test("required signing failure and stale complete tokens install no proposal", a
 	const manifest = JSON.parse(readFileSync(join(vault, "model.json"), "utf8"));
 	manifest.current.id = "Other";
 	writeFileSync(join(vault, "model.json"), JSON.stringify(manifest));
+	const changed = readArchitectureModel(vault);
 	expect(await editArchitectureModule(vault, request)).toMatchObject({
 		success: false,
-		code: "TARGET_CHANGED",
+		code: "STATE_NOT_FOUND",
 		applied: false,
 	});
+	expect(readArchitectureModel(vault)).toEqual(changed);
 }, 15_000);

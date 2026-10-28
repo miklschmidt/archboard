@@ -10,6 +10,7 @@ import * as writes from "@archboard/board/store-write";
 import { narrativeFixture } from "#tests/runtime/operations/legacy-preview/readings-fixture.ts";
 import { savePreviewPlan } from "#tests/runtime/operations/legacy-preview/fixture.ts";
 import { installationFixture } from "#tests/runtime/operations/legacy-preview/install-fixture.ts";
+import { git } from "#tests/runtime/support/publication-fixture.ts";
 const homes: string[] = [];
 afterEach(() => {
 	for (const home of homes.splice(0)) rmSync(home, { recursive: true, force: true });
@@ -184,8 +185,10 @@ test("an owner installs a complete preview once and reopens exact original readi
 	const result = await writes.migrateArchitectureModel(vault, request);
 	expect(result).toMatchObject({ success: true, applied: true, cleanup: "complete" });
 	if (!result.success) throw new Error(JSON.stringify(result));
+	expect(git(home, "verify-commit", result.checkpoint.id)).toBe("");
 	const current = readArchitectureModel(vault);
 	if (!current.success) throw new Error(JSON.stringify(current));
+	expect(git(home, "verify-commit", current.migration!.checkpoint)).toBe("");
 	expect(current).not.toHaveProperty("migrationPreview");
 	expect(current.modules.map((m) => m.id)).toEqual(preview.modules.map((m) => m.id));
 	expect(current.migration?.bookmarks?.map((b) => b.id)).toEqual(["Shop/System#Unused"]);

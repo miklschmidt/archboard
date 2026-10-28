@@ -5,6 +5,7 @@ import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { readLegacyInventory } from "@archboard/board/store-read";
 import { saveLegacyMappingPlan } from "@archboard/board/store-write";
 import type { LegacyMappingPlan } from "#shared/schemas/migration.ts";
+import { createSigningKey } from "#tests/runtime/support/publication-fixture.ts";
 
 function previewFixture() {
 	const home = mkdtempSync(join(tmpdir(), "archboard-migration-preview-"));
@@ -137,7 +138,9 @@ function previewFixture() {
 	writeFileSync(join(vault, "Future.semantic.json"), JSON.stringify(planned));
 	const result = Bun.spawnSync(["git", "init", "--quiet", home]);
 	if (result.exitCode !== 0) throw new Error(result.stderr.toString());
-	return { home, vault, board, planned };
+	const key = join(home, "signing-key");
+	createSigningKey(home, key);
+	return { home, vault, board, planned, key };
 }
 
 async function savePreviewPlan(vault: string, plan?: LegacyMappingPlan) {
