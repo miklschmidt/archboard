@@ -26,6 +26,7 @@ import {
 	ArchiveError,
 } from "#runtime/store/model-archive.ts";
 import { modelRevision } from "#runtime/store/model-files.ts";
+import { decodeModel } from "#runtime/operations/read/model-read.ts";
 import type { ArchitectureMigrationRequestSchema } from "#shared/schemas/migration-installation.ts";
 type Request = z.infer<typeof ArchitectureMigrationRequestSchema>;
 type History = NonNullable<NonNullable<ArchitectureModel["migrationPreview"]>["history"]>[number];
@@ -104,6 +105,10 @@ function conversionState(
 	originals: string,
 	request: Request,
 ) {
+	const inputs = materializedInputs(preview, Buffer.from(Bun.YAML.stringify(preview.policy)));
+	const canonical = requireModel(
+		decodeModel({ inputs, revision: modelRevision(inputs), diagnostics: [] }),
+	);
 	const migration = {
 		schemaVersion: 1 as const,
 		origin: request.origin,
@@ -118,7 +123,7 @@ function conversionState(
 		context,
 		inventory,
 		request,
-		current: { ...preview, migration },
+		current: { ...preview, ...canonical, migration },
 		proposals: [] as ArchitectureModel["proposals"],
 		dependencies: new Set([originals]),
 		completed: new Map<string, ArchitectureModel>(),
