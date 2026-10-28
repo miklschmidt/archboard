@@ -45,5 +45,680 @@
   "predecessor": "vKEsyHFk",
   "predecessorRevision": "91ab9cb477463752494d878af8e06f6df4086fe45c2dbbf56067e52f44995d35",
   "baseline": "c74474411ecf69a357e88c786dd1e475114b1fba",
-  "changes": []
+  "changes": [
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/0T9enjhi#4P7YZdnj",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/OjRLKb74#nmyK8UOO",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/SMjRfwN3#jChkQdeE",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/UOXNWLhR#xJIh6Jdp",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/gbyqW4H3#LgbAlvMN",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/qKGcB6vZ#0eYa0szs",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#HggZR41l",
+      "field": "responsibility",
+      "value": "Connects canonical pane and feature owners"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#HggZR41l",
+      "field": "description",
+      "value": "Mounts canonical readers and captured recordings. It never opens a live legacy board. Existing legacy addresses resolve through retained originals after migration. Unmigrated vaults expose explicit migration guidance. The shared pane session reports captured canonical readings to local agents."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#r6IpmadI",
+      "field": "description",
+      "value": "Legacy live content and authoring routes retire. Migration and exact retained-original readers remain under canonical operations."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/SJ2JMVyz#npbOHMgi",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+      "field": "responsibility",
+      "value": "Provides canonical model initialization, reads, edits, proposals, subject claims, migration, history, and recovery."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+      "field": "description",
+      "value": "Canonical initialization, reads, edits, proposals, claims, history, and recovery own live architecture. Legacy decoding remains only for migration and exact retained originals."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/XppR9owz#PQcK5dF2",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+      "field": "responsibility",
+      "value": "Routes canonical model read, initialization, edit, migration, archive, render, code, repository, and pane operations through their owners."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+      "field": "description",
+      "value": "The application mounts canonical architecture routes alongside code, repository, service, and pane routes. Legacy semantic-board content, writer, claim, rename, discard, and move routes are no longer mounted."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+      "field": "responsibility",
+      "value": "Lists repository architecture and migration availability"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+      "field": "description",
+      "value": "Reads repository identities and canonical model authority through the shared query cache. The navigator opens each model in the active pane. Legacy authority exposes migration guidance instead of fetching live board listings or levels."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#MUs4pwRq",
+      "field": "responsibility",
+      "value": "Hosts the local server and routes explicitly addressed canonical model, migration, rendering, code, repository, and pane operations."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/XppR9owz#MUs4pwRq",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#MUs4pwRq",
+      "field": "description",
+      "value": "The server owns the shared local HTTP and socket process. Canonical model and migration routes refuse legacy live authority; pane and workbench routes remain separate owners."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/yejBBUFY#0x47EMoO",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/yejBBUFY#G4NHQC25",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/wAHh0HTa#FPKa6YCR",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#c4LPnwh5",
+      "field": "responsibility",
+      "value": "Connects repository navigation, local agents, and canonical panes"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#c4LPnwh5",
+      "field": "description",
+      "value": "The desktop frame keeps the repository navigator, local agent controls, conversation, and canonical panes. Repository actions open current modules through the shared router. Unmigrated repositories show their migration state. Board ownership and level controls are retired."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/gbyqW4H3#wskEBeIy",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/SMjRfwN3#2UcHnREN",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/qKGcB6vZ#LIpURyJE",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/yejBBUFY#hDWpDois",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#3LoKNA2g",
+      "field": "description",
+      "value": "Every local-agent context reads canonical model state and the pane’s exact capture. Legacy authority returns migration guidance without supplying legacy board content. Explanations use the registered tab workhorse; latest-action discovery starts no work."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/HBlhIeSD#3LoKNA2g",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#8XKRkSHl",
+      "field": "name",
+      "value": "Architecture inputs"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#8XKRkSHl",
+      "field": "responsibility",
+      "value": "Stores canonical modules, relationships, flows, proposals, and walkthroughs"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#8XKRkSHl",
+      "field": "description",
+      "value": "Modules own their outgoing relationships. Independent flow collections describe exchanges. Compact proposals and authored narratives refer to stable subjects, while exact history lives in the signed archive."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#8XKRkSHl",
+      "field": "formerNames",
+      "value": [
+        "Board vault"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+      "field": "responsibility",
+      "value": "Publishes complete canonical subject-claim and durable action snapshots with explicit vault identity to panes."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+      "field": "description",
+      "value": "Consumes the public model feed and sends complete vault snapshots through the existing pane broadcast. Multiple subject claims may coexist. Only a durable operation receipt supplies writer and doing attribution. After the last claim ends, a durable action lingers briefly and then the tracker sends an empty snapshot."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/state/agent-activity/agent-activity.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#yQCdykGt",
+      "field": "responsibility",
+      "value": "Runs canonical model and policy checks, with code and embed checks owned by their existing operations."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#yQCdykGt",
+      "field": "description",
+      "value": "In a Git checkout with no vault, check, check all and check embeds run embeds alone and report why semantics/code were skipped. With a vault, check semantics reads canonical model diagnostics and authored policy; legacy authority returns migration guidance without changing source. Code and embed checks keep their existing owners."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/9ncuT5DP#tlC2W839",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#mStVd7fZ",
+      "field": "responsibility",
+      "value": "Streams durable canonical model changes by addressed vault into agent context with revision cursors and receipt attribution."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#mStVd7fZ",
+      "field": "description",
+      "value": "Follows watchArchitectureModel once per vault and emits only completed architecture_changed events. External file changes have no writer or doing attribution. The cursor belongs to the process feed and starts again after restart."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/UOXNWLhR#F90402mH",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/SMjRfwN3#QSI6gCrL",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#vn4RDLH9",
+      "field": "responsibility",
+      "value": "Lists pane captures and shows an explicit canonical model reading in one pane, reporting any repository checkout choice."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#vn4RDLH9",
+      "field": "description",
+      "value": "browser show resolves exact model, module, state, flow, and walkthrough selectors before moving the pane. A successful request may select the model repository checkout; its receipt reports that choice. browser panes reports vault, repository, checkout, tab, and exact reading capture."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/XppR9owz#I6RAbOlG",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/IbGtfJE2#fRFvnVRE",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/SMjRfwN3#kpWAp83p",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/UOXNWLhR#J6P3Mhjb",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/XppR9owz#XAJYaUnv",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#R3ldC44x",
+      "field": "responsibility",
+      "value": "Decodes legacy board bytes in memory for explicit migration and exact retained-original readings."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#R3ldC44x",
+      "field": "description",
+      "value": "The decoder is used by legacy inventory and retained-original readers. It keeps source text for comparison and recovery and does not persist ordinary schema upgrades."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#YXy1uQYC",
+      "field": "responsibility",
+      "value": "Carries canonical model change events into agent context and vault-keyed activity snapshots onto the pane broadcast."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#YXy1uQYC",
+      "field": "description",
+      "value": "The model change feed carries durable operation events into agent context. The activity tracker broadcasts complete vault-keyed subject claims and durable action metadata. Legacy board-content announcements are retired."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/gbyqW4H3#CzHSL7yr",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
+      "field": "responsibility",
+      "value": "Draws projected canonical architecture and flow content in any host through the shared layout and SVG core."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
+      "field": "description",
+      "value": "Canonical readers project models and flows through @archboard/board/content before drawing. The renderer receives content, grammar, policy and host inputs; it does not resolve model identity or navigation."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/9ncuT5DP#SsiEBdik",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/Oi6SBIAM#Qyu8T7UT",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ",
+      "field": "responsibility",
+      "value": "Publishes canonical reading context and exact-capture requirements; legacy-authority refusals return explicit migration guidance."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ",
+      "field": "description",
+      "value": "Publishes canonical model context and exact captured reading selectors to local agents. Unmigrated vaults expose migration guidance instead of board authoring or fixed levels."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/SMjRfwN3#5ut3UjV6",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/0T9enjhi#nSTHru5x",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#mYtOhgML",
+      "field": "responsibility",
+      "value": "Lists known canonical models whose current or active proposed modules bind a repository."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#mYtOhgML",
+      "field": "description",
+      "value": "Scans chosen checkouts and registered untracked vaults, then reads canonical model and proposal modules. LEGACY_AUTHORITY produces no match; discovery does not decode or rewrite legacy board files."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#nn1ec9Tw",
+      "field": "description",
+      "value": "Adapts canonical discovery, initialization, exact readings, archive history, and the existing change feed. Unmigrated vaults receive explicit migration guidance."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+      "field": "responsibility",
+      "value": "Keeps pane sockets and tab sessions live; existing publishers send canonical change and activity snapshots."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+      "field": "description",
+      "value": "Pane routes and sockets retain presentation state. The canonical change feed carries model events to agent context, while the activity tracker broadcasts vault-keyed subject claims and durable action attribution."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#bm9AWXkW",
+      "field": "description",
+      "value": "Carries canonical model selectors and the exact input revision in the existing SVG metadata recipe. The embed checker reuses canonical reading and rendering owners."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#tTkbidT4",
+      "field": "description",
+      "value": "The existing installer initializes new vaults through the shared canonical initializer. Existing vaults receive an explicit migration route without automatic rewriting."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
+      "field": "description",
+      "value": "Reads one live canonical model or an exact retained reading. The shared decoder orders collections and walkthroughs consistently. Legacy bytes serve explicit migration and original history only."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/9ncuT5DP#iLWBCObu",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#gRG7JEPt",
+      "field": "responsibility",
+      "value": "Renders a canonical structural reading or a complete explicitly selected flow as architecture, sequence, or flowchart."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#gRG7JEPt",
+      "field": "description",
+      "value": "Renders architecture, sequence, and flowchart from canonical readings through the shared client-local projection and existing Bun renderer."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#C9EOzoYB",
+      "field": "description",
+      "value": "Publishes canonical model and captured reading context to the existing local agents. Unmigrated vault context exposes migration instructions without legacy live content."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
+      "field": "description",
+      "value": "Retains exact architecture and source associations, then reopens those bytes independently of current files. Public metadata omits private reference and narrative dependency records."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#ZRq51Ecz",
+      "field": "description",
+      "value": "Stores signed architecture checkpoints with actual dependency parents. Exact object I/O batches blob writes and builds trees without changing source branches or the index."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#108U3Rhl",
+      "field": "label",
+      "value": "read inputs and build trees"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#108U3Rhl",
+      "field": "description",
+      "value": "Uses checkpointBlobs for retained reads and tree for exact batched writes."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#DQ99hH5l",
+      "field": "name",
+      "value": "Archive object I/O"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#DQ99hH5l",
+      "field": "responsibility",
+      "value": "Reads exact retained objects and builds architecture trees"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#DQ99hH5l",
+      "field": "description",
+      "value": "Batched Git object writes avoid one process per authored file. NUL-delimited tree entries preserve exact paths. The existing process owner controls cancellation and deadlines."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#DQ99hH5l",
+      "field": "formerNames",
+      "value": [
+        "Retained blob reads"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#EekL5c17",
+      "field": "responsibility",
+      "value": "Decodes legacy board documents only for explicit migration inventory and exact retained-original readings."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#EekL5c17",
+      "field": "description",
+      "value": "Retains the legacy decoder for explicit migration and exact originals. Legacy public authoring, ownership, moves, and automatic schema persistence retire."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#7mTerd6Y",
+      "field": "description",
+      "value": "Installs an explicitly approved mapping through the existing signed archive, journal, and recovery owner. Canonical decoding normalizes proposal baselines before fingerprinting. Original bytes, addresses, and independent drafts remain available."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#66xX05dW",
+      "field": "description",
+      "value": "Canonical models are the one live authoring format. Model commands own discovery, recursive readings, proposals, history, code inspection, and walkthroughs. Legacy commands retire."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#KJy5yYuq",
+      "field": "description",
+      "value": "Stores compact changes against exact retained predecessors. Consistent decoding keeps predecessor fingerprints stable across live and retained inputs. Changed predecessors require explicit reconciliation or replacement decisions."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#CLdaoYy3",
+      "field": "description",
+      "value": "Installs canonical initialization, portable imports, and explicit migration through one signed archive, journal, atomic writer, and recovery mechanism."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#IgYndyJd",
+      "field": "responsibility",
+      "value": "Projects canonical readings through the shared content interface"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#IgYndyJd",
+      "field": "description",
+      "value": "Consumes the shared projectModel, modelContent, and projectFlow implementation exposed by @archboard/board/content. Browser and structural export share one projection with exact scope, focus, visibility, and behavioral flow semantics."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#yNZEhzyc",
+      "field": "description",
+      "value": "Applies flow and message changes within one complete model edit. Explicitly removed messages do not block endpoint removal. Surviving edited or moved messages still require valid endpoints."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#255ksC3D",
+      "field": "responsibility",
+      "value": "Exports scoped canonical architecture or a complete explicitly selected flow as SVG with an exact reading receipt."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#255ksC3D",
+      "field": "description",
+      "value": "Exports structural and behavioral canonical readings through the shared projection and existing renderer. The existing render recipe records exact selectors and revision for reproducible embeds."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#Mv3r4IsX",
+      "field": "description",
+      "value": "Resolves explicit repository, model, subject, and state references. Same-model reads use the captured candidate without reopening its public write barrier. Foreign reads retain their normal ownership checks."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#QDE2xctM",
+      "field": "description",
+      "value": "Retains exact reference dependencies through Git ancestry. A proposal reference to current uses the captured current checkpoint. A checkpoint does not embed its own future identity."
+    }
+  ]
 }
