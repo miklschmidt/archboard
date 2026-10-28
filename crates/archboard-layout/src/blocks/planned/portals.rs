@@ -21,7 +21,7 @@ pub(super) fn follows(route: &Route, shape: &Shape, path: &[Point]) -> bool {
         .collect();
     let mut crossings = Vec::new();
     for &(scope, _) in &expected {
-        let Some(found) = in_frame(path, shape.scopes[&scope], scope) else {
+        let Some(found) = in_frame(path, shape.scopes[&scope].bounds, scope) else {
             return false;
         };
         crossings.extend(found);

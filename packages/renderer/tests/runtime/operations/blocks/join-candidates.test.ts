@@ -5,7 +5,7 @@ import { renderArchitecture } from "#runtime/operations/render.ts";
 import { installBunHost } from "#runtime/services/bun-host.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { installRendererHost, rendererHost } from "#shared/rules/render/host.ts";
-import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
+import { endsOffCards } from "#tests/runtime/support/drawn-parents.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /**
@@ -62,15 +62,7 @@ test.each([2, 3])("%i source blocks fan in with one solve", async (count) => {
 			theme: "light",
 		});
 		expect(asked).toBe(1);
-		const target = drawing.atlas.nodes["dest"]!;
-		for (const edge of content.edges) {
-			const end = routeEnds(drawing.svg).get(edge.id)!;
-			expect(end.x).toBeGreaterThanOrEqual(target.x);
-			expect(end.x).toBeLessThanOrEqual(target.x + target.width);
-			expect(
-				Math.min(Math.abs(end.y - target.y), Math.abs(end.y - target.y - target.height)),
-			).toBeLessThan(1);
-		}
+		expect(endsOffCards(drawing, content)).toEqual([]);
 	} finally {
 		installRendererHost(host);
 	}

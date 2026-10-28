@@ -249,6 +249,10 @@ pub struct Bridged<E> {
 /// owner returns both, so painter, atlas and interaction share one geometry.
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 pub struct PaintedDrawing<N, E> {
+    /// The layout owns final route coordinates, including during comparison filtering.
+    #[serde(skip)]
+    #[ts(skip)]
+    pub frozen: bool,
     /// The drawing, with the routes before their bridges are spliced in.
     #[serde(flatten)]
     pub drawing: ArchitectureDrawing<N, E>,

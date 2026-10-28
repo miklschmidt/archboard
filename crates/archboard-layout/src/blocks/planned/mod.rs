@@ -2,9 +2,14 @@
 
 mod channel;
 mod geometry;
+mod junctions;
 mod lanes;
 mod model;
+mod order;
 mod portals;
+mod ports;
+mod runs;
+mod score;
 mod shape;
 mod topology;
 
@@ -22,8 +27,19 @@ pub(super) fn lay_out(
         topology.complete(&model),
         "planned routes and fans retain semantic ownership"
     );
-    if !channel::eligible(&model, &topology) {
-        return Ok(None);
+    Ok(selected(&model, &topology))
+}
+
+fn selected(
+    model: &model::Model<'_>,
+    topology: &topology::Topology,
+) -> Option<crate::blocks::assembly::Placed> {
+    if !channel::eligible(model, topology) {
+        return None;
     }
-    Ok(shape::plan(&model, &topology).map(|shape| shape.drawing))
+    let (shape, counts) = shape::plan(model, topology);
+    debug_assert!(counts.within_limits(model.scopes.len(), model.edges.len()));
+    shape.and_then(|shape| {
+        runs::freeze(model, &shape.drawing).map(|frozen| frozen.emit(model, shape.drawing))
+    })
 }

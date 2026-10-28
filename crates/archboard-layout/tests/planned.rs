@@ -92,3 +92,42 @@ fn a_label_has_one_horizontal_source_owned_run_and_keeps_its_measured_rectangle(
         assert!((points[0]["x"].as_f64().unwrap() - x - 40.0).abs() < 200.0);
     }
 }
+
+#[test]
+fn a_fan_has_one_owned_departure_before_its_private_branches() {
+    let placed = drawing(
+        &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+        "children":[{"id":"a","width":160,"height":200},{"id":"b","width":160,"height":80},
+            {"id":"c","width":160,"height":80}],
+        "edges":[{"id":"ab","sources":["a"],"targets":["b"]},
+            {"id":"ac","sources":["a"],"targets":["c"]}]}),
+    );
+    let one = placed["edges"][0]["points"].as_array().unwrap();
+    let other = placed["edges"][1]["points"].as_array().unwrap();
+    assert_eq!(one[0], other[0]);
+    assert!(one[1]["x"] == other[1]["x"] || one[1]["y"] == other[1]["y"]);
+    assert_eq!(placed["edges"].as_array().unwrap().len(), 2);
+}
+
+#[test]
+fn a_nested_source_or_header_keeps_its_label_inside_its_own_frame() {
+    for source in ["a", "frame"] {
+        let placed = drawing(
+            &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+            "children":[{"id":"frame","width":240,"height":60,"children":[{"id":"a","width":200,"height":80}]},
+                {"id":"b","width":200,"height":80}],
+            "edges":[{"id":"ab","sources":[source],"targets":["b"],"labels":[{"width":80,"height":24}]}]}),
+        );
+        let label = &placed["edges"][0]["label"];
+        let frame = &placed["frames"][0]["box"];
+        assert!(
+            [("x", "width"), ("y", "height")]
+                .into_iter()
+                .all(|(axis, size)| {
+                    label[axis].as_f64().unwrap() >= frame[axis].as_f64().unwrap()
+                        && label[axis].as_f64().unwrap() + label[size].as_f64().unwrap()
+                            <= frame[axis].as_f64().unwrap() + frame[size].as_f64().unwrap()
+                })
+        );
+    }
+}

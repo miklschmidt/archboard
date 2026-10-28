@@ -42,15 +42,19 @@ pub(super) struct Hint {
     pub at: f64,
 }
 
-/// Assign only intervals that share the same free band. Disjoint bands are independent.
-pub(super) fn corridors(
+struct Reservation {
+    edges: Vec<usize>,
+    interval: Interval,
+}
+type Bands = std::collections::BTreeMap<(bool, u64, u64), Vec<Reservation>>;
+
+fn bands(
     model: &super::model::Model<'_>,
     topology: &super::topology::Topology,
     scope: usize,
     shape: &super::shape::Shape,
-) -> std::collections::BTreeMap<usize, Hint> {
-    use std::collections::BTreeMap;
-    let mut groups: BTreeMap<(bool, u64, u64), Vec<(usize, Interval)>> = BTreeMap::new();
+) -> Bands {
+    let mut groups = Bands::new();
     for (edge, _) in topology
         .routes
         .iter()
@@ -58,28 +62,110 @@ pub(super) fn corridors(
         .filter(|(_, route)| route.scope == scope)
     {
         let (from, to) = model.ends[edge];
-        let source = shape.endpoints[&from];
-        let target = shape.endpoints[&to];
-        if let Some((horizontal, low, high, interval)) = band(source, target) {
-            groups
+        if let Some((horizontal, low, high, interval)) =
+            band(shape.endpoints[&from], shape.endpoints[&to])
+        {
+            let group = groups
                 .entry((horizontal, low.to_bits(), high.to_bits()))
-                .or_default()
-                .push((edge, interval));
+                .or_default();
+            reserve(topology, edge, interval, group);
         }
     }
-    let mut hints = BTreeMap::new();
-    for ((horizontal, low, high), requests) in groups {
-        let intervals: Vec<_> = requests
+    groups
+}
+
+/// A source fan's shared band must precede private labels. A target fan follows them.
+fn reserve(
+    topology: &super::topology::Topology,
+    edge: usize,
+    interval: Interval,
+    group: &mut Vec<Reservation>,
+) {
+    let fan = topology.fans.iter().find(|fan| {
+        fan.members.contains(&edge)
+            && (!matches!(fan.common, super::topology::CommonEndpoint::Source(_))
+                || fan
+                    .members
+                    .iter()
+                    .all(|member| !topology.labels.iter().any(|label| label.edge == *member)))
+    });
+    let existing = group.iter_mut().find(|request| {
+        fan.is_some_and(|fan| request.edges.iter().all(|edge| fan.members.contains(edge)))
+    });
+    if let Some(request) = existing {
+        request.edges.push(edge);
+        request.interval.start = request.interval.start.min(interval.start);
+        request.interval.end = request.interval.end.max(interval.end);
+    } else {
+        group.push(Reservation {
+            edges: vec![edge],
+            interval,
+        });
+    }
+}
+
+fn lanes(requests: &[Reservation]) -> Vec<usize> {
+    assign(
+        &requests
             .iter()
-            .map(|(_, i)| Interval {
-                start: i.start,
-                end: i.end,
+            .map(|request| Interval {
+                start: request.interval.start,
+                end: request.interval.end,
             })
-            .collect();
-        for ((edge, _), lane) in requests.into_iter().zip(assign(&intervals)) {
+            .collect::<Vec<_>>(),
+    )
+}
+
+pub(super) struct Room {
+    pub gap: crate::geometry::Point,
+    pub peak: usize,
+}
+
+/// Grow each axis only to its peak simultaneous occupancy, before the candidate freezes.
+pub(super) fn room(
+    model: &super::model::Model<'_>,
+    topology: &super::topology::Topology,
+    scope: usize,
+    shape: &super::shape::Shape,
+) -> Room {
+    let mut peak = 0;
+    let mut room = crate::geometry::Point {
+        x: 2.0 * super::shape::CLEAR,
+        y: 2.0 * super::shape::CLEAR,
+    };
+    for ((horizontal, _, _), requests) in bands(model, topology, scope, shape) {
+        let count = lanes(&requests).into_iter().max().unwrap_or(0) + 1;
+        peak = peak.max(count);
+        let extra = count.saturating_sub(1) as f64 * LANE;
+        let gap = 2.0 * super::shape::CLEAR + extra;
+        if horizontal {
+            room.y = room.y.max(gap);
+        } else {
+            room.x = room.x.max(gap);
+        }
+    }
+    Room { gap: room, peak }
+}
+
+/// Assign only intervals that share the same free band. Disjoint bands are independent.
+pub(super) fn corridors(
+    model: &super::model::Model<'_>,
+    topology: &super::topology::Topology,
+    scope: usize,
+    shape: &super::shape::Shape,
+) -> std::collections::BTreeMap<usize, Hint> {
+    let mut hints = std::collections::BTreeMap::new();
+    for ((horizontal, low, high), requests) in bands(model, topology, scope, shape) {
+        let assigned = lanes(&requests);
+        for (request, lane) in requests.into_iter().zip(assigned) {
             let at = f64::from_bits(low) + super::shape::CLEAR + lane as f64 * LANE;
             if at <= f64::from_bits(high) - super::shape::CLEAR {
-                hints.insert(edge, Hint { horizontal, at });
+                hints.extend(
+                    request
+                        .edges
+                        .into_iter()
+                        .map(|edge| (edge, Hint { horizontal, at })),
+                );
             }
         }
     }

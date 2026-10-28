@@ -60,8 +60,17 @@ pub async fn draw<S: Solver>(
     let graph = graph::compound_graph(content, measured, standings, entries, inline);
     let placed = choosing::placed_blocks(solver, &graph, inline).await?;
     let drawing = page::fitted_page(drawn::drawing_of(content, measured, &placed));
-    let bridged = bridge_crossings(&drawing, &measured.lines);
-    Ok(PaintedDrawing { drawing, bridged })
+    let frozen = placed.planned;
+    let bridged = if frozen {
+        bridge_unfolded(&drawing, &measured.lines)
+    } else {
+        bridge_crossings(&drawing, &measured.lines)
+    };
+    Ok(PaintedDrawing {
+        drawing,
+        bridged,
+        frozen,
+    })
 }
 
 /// Whether one box lies inside another.
@@ -123,7 +132,12 @@ pub fn shown_drawing<S: BuildHasher>(
         regions,
         ..whole.clone()
     };
-    let routes = unfold_crossings(whole)
+    let settled = if drawing.frozen {
+        whole.clone()
+    } else {
+        unfold_crossings(whole)
+    };
+    let routes = settled
         .edges
         .into_iter()
         .filter(|edge| shown(&edge.edge.id))
@@ -138,5 +152,6 @@ pub fn shown_drawing<S: BuildHasher>(
     PaintedDrawing {
         drawing: kept,
         bridged,
+        frozen: drawing.frozen,
     }
 }

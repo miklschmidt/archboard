@@ -596,6 +596,85 @@ The test inventory changes at this checkpoint are limited to the superseded Bloc
 `export/reading-direction.test.ts` permits a forward rightward row for Blocks and keeps Track's existing rules.
 Every card, header, label, wall, frame, and endpoint integrity assertion remains in force.
 
+### Build checkpoint: port-aware packing and ordered junctions
+
+Step 6 collapses local strongly connected sets for ranking and keeps their real return routes.
+It uses the existing reachability owner for those hints.
+Independent siblings can exchange adjacent positions within the fixed candidate budget.
+Each scope compares at most twelve candidates and consumes at most two capacity repairs across those candidates.
+Private counters record candidate count, repair count, and peak lane occupancy.
+
+The packing score reads the exact channel plan that emission consumes.
+It counts shared ink once, measures label distance along the actual departure, and charges for junctions, return steps, bends, empty space, and pane fit.
+The score now counts unused space inside a source cell, which the first cell implementation omitted.
+Candidate index resolves equal scores.
+The small rightward-reading charge keeps downward reading as the default when compactness and route costs tie.
+
+Source cells reserve at most two label rows on each side of a card.
+A parent header reserves up to two rows beside its exact visible slab.
+Labels can belong to a nested source scope while their routes continue through an enclosing scope.
+Private departure lanes keep the order of adjacent label rows through their first turn.
+Horizontal and vertical gaps grow independently from peak interval occupancy before placement freezes.
+
+Every shared run stores its complete member set and one common source or target.
+A source fan only loses members as it splits, and a target fan obeys the reverse rule.
+Private branches cannot merge again into a source trunk after their labels.
+Source and target fans impose compatible branch-order constraints from their far endpoints.
+A constraint cycle rejects the candidate.
+Emission expands the frozen runs into the original relationships without changing a bend.
+
+Selected classes bypass the legacy fold, wrap, facing, settlement, and sliding passes.
+Those policies remain for Track and the unmigrated Blocks classes.
+This checkpoint retains the dispatcher for special flow endpoints, self-loops, larger label fans, and drawings with no feasible noncrossing channel plan.
+Steps 7 and 8 still own bounded local fallback, complete-drawing protection, fixed decoration bounds, and removal of that dispatcher.
+
+The first broader run exposed an arrow approach shortened by route normalization.
+Feasibility now reserves the straight arrow run plus the renderer's actual corner radius.
+Selected plans also bypass fan and fold transformations during painting and comparison filtering.
+A private solve marker carries that authority into an in-memory field that the scene does not serialize.
+Track and retained Blocks drawings keep their previous settlement path.
+
+Rank bands became too restrictive for a small dependent block that fits beside its caller.
+Candidates now compare rank bands with shelves that use dependency order as a hint.
+Unbranched chains still keep one local direction.
+The fit calibration also changes: five percent of additional magnification is one pane-shrink unit.
+This prevents a small area saving from making a short workflow unnecessarily wide and its names smaller.
+
+The staged selection also requires the complete plan to fit the reference pane at native text scale.
+The broader attempt made a four-card comparison 1,708 units wide, where the retained layout needs 600 units.
+That plan fails the appearance gate even though its geometry is intact.
+Larger plans remain available for development, but this checkpoint does not select them.
+Step 8 must replace this temporary acceptance boundary with the complete corpus and council evidence.
+
+`blocks/join-candidates.test.ts` retains one-solve and real-target attachment checks on all four walls.
+`blocks/entry-fork.test.ts` retains every integrity fixture and removes the forced shared entry point.
+Different source labels belong after a source fan splits, so their private branches cannot merge back into that source trunk at a portal.
+No arrowhead, clearance, label, or other hard-defect assertion changes.
+
+The generic legend fixture now supplies longer relationship type names to force wrapping on either engine.
+Its width, placement, wrapping, and unchanged-atlas assertions all remain.
+The fixture no longer depends on the old Blocks drawing being exactly narrow enough to wrap the default names.
+
+The final checkpoint changes 283 of 4,043 Blocks drawings.
+Every Track SVG remains byte-identical, and a fresh process reproduces all 8,086 SVGs with a different request order and worker count.
+The hard-finding inventory retains the same 23 geometric failures and 61 additional historical subject-set failures.
+The complete repository gate passes.
+
+The complete-corpus averages do not yet improve.
+Mean area rises from 3,899,114 to 3,900,827 square units, and frame occupancy falls from 8.3614% to 8.3548%.
+Mean route length rises from 1,204.63 to 1,206.70 units, and mean detour rises from 143.53 to 144.49 units.
+Bends per route rise from 2.3546 to 2.3631, and routes with at least four bends rise from 31.0623% to 31.1220%.
+Source cells and noncrossing templates still reserve too much room on some selected classes.
+
+All six reference SVGs remain identical to the baseline, so this checkpoint establishes no visual improvement on those references.
+Their dark PNGs retain the large empty frames, long departures, and small whole-board text that motivated the replacement.
+The three large boards remain on legacy placement.
+Their warmed first-render and growth medians are 1,077/938, 658/628, and 823/839 ms, including SVG painting.
+Those pairs name Board viewer, Board persistence, and Archboard server routes, respectively.
+None reaches the 500 ms target.
+The raw measurements and individual picture judgments live in `/tmp/blocks-explore/build/report-1.md`.
+Steps 7 and 8 still need to establish compactness, large-board speed, and visual acceptance before production adoption.
+
 ## Risks and decisions left to evidence
 
 The largest risk is conservative over-reservation.

@@ -25,7 +25,7 @@ fn picture(drawing: &Drawing, bridged: &Bridged<EdgeFacts>) -> Scene {
         .collect();
     let request: PaintRequest = serde_json::from_value(json!({
         "picture": {
-            "grammar": "architecture", "drawing": PaintedDrawing { drawing: drawing.clone(), bridged: bridged.clone() },
+            "grammar": "architecture", "drawing": PaintedDrawing { drawing: drawing.clone(), bridged: bridged.clone(), frozen: false },
             "appearances": {}, "lines": lines, "steps": [], "groups": {},
         },
         "page": { "plain": true, "unsettled": [], "unbuilt": false },

@@ -7,6 +7,8 @@ use crate::{Graphviz, graph::Node, json::J};
 pub(crate) const BLOCKS_PLACED: &str = "archboard.blocks.placed";
 /// The root option selecting Blocks or one of Track's nesting policies.
 pub(crate) const BLOCKS_NESTING: &str = "archboard.blocks.nesting";
+/// Whether this solve owns the final route coordinates.
+pub(crate) const BLOCKS_PLANNED: &str = "archboard.blocks.planned";
 
 pub(crate) use super::legacy::insets_of;
 
@@ -49,14 +51,14 @@ pub fn lay_out_board(graph: &str, host: &mut dyn Graphviz) -> Result<String, Str
     } else {
         None
     };
+    let frozen = planned.is_some();
     let placed = match planned {
         Some(placed) => placed,
         None => super::legacy::place(&graph, nesting, host)?,
     };
-    Ok(answer(
-        &graph,
-        placed.width,
-        placed.height,
-        vec![(BLOCKS_PLACED, placed.json().text())],
-    ))
+    let mut told = vec![(BLOCKS_PLACED, placed.json().text())];
+    if frozen {
+        told.push((BLOCKS_PLANNED, "true".to_owned()));
+    }
+    Ok(answer(&graph, placed.width, placed.height, told))
 }

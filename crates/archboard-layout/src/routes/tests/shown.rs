@@ -15,7 +15,11 @@ use crate::shown_drawing;
 /// A drawing as the core draws it, its crossings settled.
 fn painted(drawing: Drawing) -> Painted {
     let bridged = bridged(&drawing);
-    PaintedDrawing { drawing, bridged }
+    PaintedDrawing {
+        drawing,
+        bridged,
+        frozen: false,
+    }
 }
 
 /// Every route solid with a filled head.

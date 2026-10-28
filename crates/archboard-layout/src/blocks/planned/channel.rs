@@ -1,38 +1,36 @@
 //! Peer-facing wall candidates and local channel templates. No grid search.
 
 use crate::blocks::assembly::PlacedLine;
+use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS};
 use crate::geometry::{Point, Rect, Side, inflate};
 use crate::graph::FROM_POINTS;
 
 use super::geometry::{clean, contains, crosses_box, intersection, length};
 use super::model::Model;
+use super::ports::{Port, center, port};
 use super::shape::{CLEAR, Shape};
 use super::topology::Topology;
 
-/// This stage admits disjoint chains and keeps branching and special endpoints on legacy layout.
+/// Bounded source cells hold two adjacent label rows on either side of the card.
 pub(super) fn eligible(model: &Model<'_>, topology: &Topology) -> bool {
     !model
         .edges
         .iter()
         .any(|edge| edge.option(FROM_POINTS).is_some())
-        && model.ends.iter().all(|&(from, to)| {
-            from != to
-                && model
-                    .ends
-                    .iter()
-                    .filter(|&&(source, _)| source == from)
-                    .count()
-                    <= 1
-                && model
-                    .ends
-                    .iter()
-                    .filter(|&&(_, target)| target == to)
-                    .count()
-                    <= 1
-        })
+        && model.ends.iter().all(|&(from, to)| from != to)
         && topology.labels.iter().all(|label| {
-            label.scope == topology.routes[label.edge].scope
-                && model.scopes[label.scope].header != Some(model.ends[label.edge].0)
+            let source = model.ends[label.edge].0;
+            let limit = if model.scopes[label.scope].header == Some(source) {
+                2
+            } else {
+                4
+            };
+            topology
+                .labels
+                .iter()
+                .filter(|other| model.ends[other.edge].0 == source)
+                .count()
+                <= limit
         })
 }
 
@@ -44,18 +42,16 @@ pub(super) fn emit(
     shape: &mut Shape,
 ) -> bool {
     let hints = super::lanes::corridors(model, topology, scope, shape);
-    for (index, route) in topology
-        .routes
-        .iter()
-        .enumerate()
-        .filter(|(_, route)| route.scope == scope)
-    {
+    let Some(order) = super::order::fan_order(model, topology, scope, shape) else {
+        return false;
+    };
+    for index in order {
         let Some(line) = route_line(
             model,
             topology,
             index,
             shape,
-            shape.scopes[&route.scope],
+            shape.scopes[&scope].bounds,
             hints.get(&index).copied(),
         ) else {
             return false;
@@ -65,67 +61,22 @@ pub(super) fn emit(
     true
 }
 
-#[derive(Clone, Copy)]
-struct Port {
-    attachment: Point,
-    approach: Point,
-}
-
-fn port(at: Rect, side: Side, toward: Point) -> Port {
-    let x = toward.x.clamp(
-        at.x + at.width.min(40.0) / 2.0,
-        at.x + at.width - at.width.min(40.0) / 2.0,
-    );
-    let y = toward.y.clamp(
-        at.y + at.height.min(40.0) / 2.0,
-        at.y + at.height - at.height.min(40.0) / 2.0,
-    );
-    let (attachment, by) = match side {
-        Side::Top => (Point { x, y: at.y }, Point { x: 0.0, y: -CLEAR }),
-        Side::Right => (
-            Point {
-                x: at.x + at.width,
-                y,
-            },
-            Point { x: CLEAR, y: 0.0 },
-        ),
-        Side::Bottom => (
-            Point {
-                x,
-                y: at.y + at.height,
-            },
-            Point { x: 0.0, y: CLEAR },
-        ),
-        Side::Left => (Point { x: at.x, y }, Point { x: -CLEAR, y: 0.0 }),
-    };
-    Port {
-        attachment,
-        approach: Point {
-            x: attachment.x + by.x,
-            y: attachment.y + by.y,
-        },
-    }
-}
-
-fn center(at: Rect) -> Point {
-    Point {
-        x: at.x + at.width / 2.0,
-        y: at.y + at.height / 2.0,
-    }
-}
-
-fn departures(source: Rect, side: Side, target: Rect, label: Option<Rect>) -> Vec<Vec<Point>> {
+fn departures(
+    source: Rect,
+    side: Side,
+    label: Option<Rect>,
+    port: Port,
+    escape: f64,
+) -> Vec<Vec<Point>> {
     let Some(label) = label else {
-        let port = port(source, side, center(target));
         return vec![vec![port.attachment, port.approach]];
     };
     let right = label.x > source.x;
-    let port = port(source, side, center(label));
     let y = label.y + label.height / 2.0;
     let beyond = if right {
-        label.x + label.width + CLEAR
+        label.x + label.width + CLEAR + escape
     } else {
-        label.x - CLEAR
+        label.x - CLEAR - escape
     };
     let branch = if right {
         label.x - CLEAR
@@ -172,14 +123,24 @@ fn route_line(
     }
     let mut paths = Vec::new();
     for side in model.endpoints[from].walls {
-        for tail in departures(source, side, target, label) {
-            paths.extend(arrivals(
-                model.endpoints[to].walls,
-                target,
-                &tail,
-                bounds,
-                hint,
-            ));
+        let Some(source_port) = port(
+            model,
+            index,
+            true,
+            side,
+            shape,
+            center(label.unwrap_or(target)),
+        ) else {
+            continue;
+        };
+        for tail in departures(
+            source,
+            side,
+            label,
+            source_port,
+            label_escape(model, index, shape),
+        ) {
+            paths.extend(arrivals(model, index, shape, &tail, bounds, hint));
         }
     }
     paths
@@ -199,16 +160,19 @@ fn path_cost(points: &[Point]) -> f64 {
 }
 
 fn arrivals(
-    walls: [Side; 4],
-    target: Rect,
+    model: &Model<'_>,
+    index: usize,
+    shape: &Shape,
     tail: &[Point],
     bounds: Rect,
     hint: Option<super::lanes::Hint>,
 ) -> Vec<Vec<Point>> {
     let start = *tail.last().expect("a source approach");
     let mut paths = Vec::new();
-    for side in walls {
-        let head = port(target, side, start);
+    for side in model.endpoints[model.ends[index].1].walls {
+        let Some(head) = port(model, index, false, side, shape, start) else {
+            continue;
+        };
         for middle in connections(start, head.approach, bounds, hint) {
             let mut points = tail.to_vec();
             points.extend(middle);
@@ -265,6 +229,7 @@ fn feasible(
 ) -> bool {
     let (from, to) = model.ends[index];
     points.len() >= 2
+        && approaches(points)
         && points.iter().all(|point| {
             contains(
                 bounds,
@@ -305,7 +270,7 @@ fn feasible(
             .drawing
             .edges
             .iter()
-            .all(|line| intersection(points, &line.points) == (false, false))
+            .all(|line| shared_junction(model, topology, index, points, line))
 }
 
 fn outside_foreign_scopes(
@@ -316,7 +281,8 @@ fn outside_foreign_scopes(
     points: &[Point],
 ) -> bool {
     let route = &topology.routes[index];
-    shape.scopes.iter().all(|(&scope, &bounds)| {
+    shape.scopes.iter().all(|(&scope, placed)| {
+        let bounds = placed.bounds;
         let related = route.outward.contains(&scope)
             || route.inward.contains(&scope)
             || ancestor(model, route.scope, scope);
@@ -342,7 +308,62 @@ fn label_run(points: &[Point], label: Rect) -> bool {
     points.windows(2).any(|pair| {
         pair[0].y == y
             && pair[1].y == y
-            && pair[0].x.min(pair[1].x) <= label.x - 12.0
-            && pair[0].x.max(pair[1].x) >= label.x + label.width + 12.0
+            && pair[0].x.min(pair[1].x) <= label.x - 16.0
+            && pair[0].x.max(pair[1].x) >= label.x + label.width + 16.0
     })
+}
+
+fn shared_junction(
+    model: &Model<'_>,
+    topology: &Topology,
+    index: usize,
+    points: &[Point],
+    line: &PlacedLine,
+) -> bool {
+    let (overlap, crossing) = intersection(points, &line.points);
+    if !overlap && !crossing {
+        return true;
+    }
+    let Some(other) = model.edges.iter().position(|edge| edge.id == line.id) else {
+        return false;
+    };
+    overlap
+        && topology
+            .fans
+            .iter()
+            .any(|fan| fan.members.contains(&index) && fan.members.contains(&other))
+        && super::junctions::ordered(points, &line.points)
+}
+
+/// A higher departure uses the outer lane when both private labels leave downward.
+fn label_escape(model: &Model<'_>, index: usize, shape: &Shape) -> f64 {
+    let Some(label) = shape.labels.get(&index) else {
+        return 0.0;
+    };
+    let (from, to) = model.ends[index];
+    let source = shape.endpoints[&from];
+    let target = shape.endpoints[&to];
+    let left = label.x < source.x;
+    let mut siblings: Vec<_> = shape
+        .labels
+        .iter()
+        .filter(|(edge, at)| model.ends[**edge].0 == from && (at.x < source.x) == left)
+        .collect();
+    siblings.sort_by(|(a, one), (b, other)| one.y.total_cmp(&other.y).then(a.cmp(b)));
+    let slot = siblings
+        .iter()
+        .position(|(edge, _)| **edge == index)
+        .expect("the owned label");
+    let outside = if center(target).y < center(source).y {
+        slot
+    } else {
+        siblings.len() - 1 - slot
+    };
+    outside as f64 * crate::track::chains::LANE
+}
+
+/// Rounded corners must leave the complete arrow approach after painting.
+fn approaches(points: &[Point]) -> bool {
+    let required = APPROACH_STRAIGHT + if points.len() > 2 { BEND_RADIUS } else { 0.0 };
+    length(&points[..2]) >= required && length(&points[points.len() - 2..]) >= required
 }
