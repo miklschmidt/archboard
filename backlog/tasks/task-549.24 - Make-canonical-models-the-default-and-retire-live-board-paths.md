@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T00:52:00Z'
+updated_date: '2026-10-28T00:55:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -260,4 +260,6 @@ Canonical hero source and authored operation batch are checkpointed, not accepte
 Bounded flow-removal backend repair on fix/flow-removal-blocker starts at signed 4bbf3679e with 9e01df6 and required main a98f28811 in its ancestry. The public flows runtime owner reproduced MODEL_INVALID for explicit incident-message removal with module removal. The existing incident-message predicate now excludes identities already marked for removal. The retained flow keeps its surviving message and participants, deleted identities retire, and exact retry reopens the durable result. Existing refusal batches cover edited and moved surviving messages with deleted endpoints. The interrupted flow-repair owner now includes explicit step removal and preserves recovery conflicts, affected identities, retained content, and exact retry. Focused flows and structure-recovery owners: 12 pass. Both TypeScript projects, scoped source/test lint, formatting, and git diff whitespace pass. Board persistence proposal NyesaQPQ (predecessor LSsVMn3j, family 0T9enjhi) remains the provenance. Affected subject yNZEhzyc keeps its identity and existing relationships UHKlormM and yUvd87du. Runtime discovery reports LEGACY_AUTHORITY, so no source-vault authoring or claims occur. Parent owns final authoring, migration, and acceptance. Contract and evidence logs live in /home/msc/.local/state/archboard-implementation/task-549 under task-549.24-flow-removal-*. No full gate, model evaluation, parent hero take, frontend, example, or README asset work ran.
 
 Merged signed flow-removal repair719c3815e through signed8b5f850b; merge tree equals validated source. The next real hero run exposed checkpoint.referenceDependencies leaking through public checkpoint metadata. Exact blocker is task-549.24-checkpoint-metadata-blocker.md outside the repository. Canonical take-back producer now claims Checkout API, uses the actual human control, requires CLI exit2/CLAIM_REVOKED, and proves unchanged authored revision.digest. Real producer, both types, scoped lint and formatting pass. Parent inspected the generated thumbnail, source frames and encoded clip first frame. Clip is 3.76MiB in scratch, not uploaded. No acceptance or migration status changed.
+
+Parent ported the code-evidence, module-interfaces and git-history producer commands to canonical model readings, recursive Orders scope, explicit proposal state, and shared canonical history result schemas. Source/frontend types, focused lint, formatting and producer dry-run pass. Actual producer execution and visual acceptance remain pending the observed public checkpoint metadata repair. No generated receipt hash or asset was renewed for these three pending takes.
 <!-- SECTION:NOTES:END -->

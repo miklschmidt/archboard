@@ -6,10 +6,12 @@ import { join } from "node:path";
 import { z } from "zod";
 
 import { CodeCheckAnswerSchema } from "@archboard/code-intel/code-check";
-import { FootprintReplySchema, LocalityReplySchema } from "@archboard/code-intel/history";
+import { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { prepareEvidenceFixture, prepareEvidenceSource } from "./evidence-fixture.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
+import { modelResult, showModel } from "./model-authoring.ts";
 import {
 	Terminal,
 	attachmentFile,
@@ -38,20 +40,20 @@ const PARTNERS = "[data-slot='semantic-inspector-partners']";
  * Open the example in the actual shell, with the inspector initially folded.
  * @param server The isolated server.
  * @param browser The private browser.
- * @param board The board's name.
+ * @param model The canonical model identity.
  * @param width The window's width.
- * @param view The explicit view, when the scene needs nested parts.
+ * @param scope The explicit module whose internals the scene shows.
  * @returns The ready page.
  */
-async function openBoard(
+async function openModel(
 	server: TakeServer,
 	browser: Browser,
-	board: string,
+	model: string,
 	width: number,
-	view?: string,
+	scope?: string,
 ) {
 	const page = await browser.open({
-		url: `${server.url}/?paneA=${encodeURIComponent(board)}${view === undefined ? "" : `&viewA=${encodeURIComponent(view)}`}`,
+		url: `${server.url}/?modelA=${model}${scope === undefined ? "" : `&scopeA=${encodeURIComponent(scope)}`}`,
 		theme: "light",
 		width,
 		height: PANE.height,
@@ -111,7 +113,7 @@ async function pinInspector(page: Page, pane = "A"): Promise<void> {
  */
 async function filmCode(server: TakeServer, browser: Browser, fixture: Fixture): Promise<void> {
 	const terminal = await Terminal.open(browser, "light", PANE.height);
-	const page = await openBoard(server, browser, fixture.model, PANE.width);
+	const page = await openModel(server, browser, fixture.model, PANE.width, fixture.nodes.orders);
 	await terminal.say(
 		"Find a call that the map leaves out.\nSynthetic checkout example. Live results.",
 	);
@@ -178,42 +180,40 @@ async function filmInterfaces(
 	browser: Browser,
 	fixture: Fixture,
 ): Promise<void> {
-	const page = await openBoard(server, browser, fixture.model, 1920);
+	const page = await openModel(server, browser, fixture.model, 1920);
 	await server.cli(["browser", "open"]);
-	await server.cli([
-		"browser",
-		"show",
-		`${fixture.model}@${fixture.proposals.wide}`,
-		"--pane",
-		"left",
-	]);
-	await server.cli([
-		"browser",
-		"show",
-		`${fixture.model}@${fixture.proposals.narrow}`,
-		"--pane",
-		"right",
-	]);
+	await showModel(server, "module-interfaces", "A", {
+		model: fixture.model,
+		state: fixture.proposals.wide,
+		scope: fixture.nodes.orders,
+	});
+	await showModel(server, "module-interfaces", "B", {
+		model: fixture.model,
+		state: fixture.proposals.narrow,
+		scope: fixture.nodes.orders,
+	});
 	await page.atRest(0);
 	await page.atRest(1);
 	await foldSidebars(page);
 	await fit(page);
 	const take = await filmTogether("module-interfaces", [page], async () => {
 		await Bun.sleep(2200);
-		await selectPart(page, fixture.nodes.orders, "A");
+		await page.click("[data-pane='A'] [data-slot='semantic-sidebar-toggle']");
 		const left = "[data-slot='pane-stage'][data-pane='A']";
 		const right = "[data-slot='pane-stage'][data-pane='B']";
 		await page.waitFor(
 			`document.querySelector("${left} [data-slot='semantic-inspector-entry-points']")?.getAttribute('data-count') === '3'`,
 			"three entry points in Entry per job",
 		);
+		await reveal(page, `${left} [data-slot='semantic-inspector-interface']`);
 		await pinInspector(page, "A");
 		await Bun.sleep(3500);
-		await selectPart(page, fixture.nodes.orders, "B");
+		await page.click("[data-pane='B'] [data-slot='semantic-sidebar-toggle']");
 		await page.waitFor(
 			`document.querySelector("${right} [data-slot='semantic-inspector-hidden-parts']")?.getAttribute('data-count') === '2'`,
 			"two hidden parts in One entry point",
 		);
+		await reveal(page, `${right} [data-slot='semantic-inspector-interface']`);
 		await pinInspector(page, "B");
 		await Bun.sleep(2200);
 		await page.screenshot(join(scratch("takes", "module-interfaces"), "comparison.png"));
@@ -229,17 +229,6 @@ async function filmInterfaces(
 }
 
 /**
- * Remove CLI context metadata before the strict library result decoder.
- * @param input The CLI response envelope.
- * @returns The analysis result with every other field preserved for validation.
- */
-function withoutVaultMetadata(input: unknown) {
-	const answer = z.record(z.string(), z.unknown()).parse(input);
-	delete answer["vault"];
-	return answer;
-}
-
-/**
  * Film recent commits, a pair that changes together, and the branch against its proposal.
  * @param server The take's server.
  * @param browser The private browser.
@@ -247,7 +236,7 @@ function withoutVaultMetadata(input: unknown) {
  */
 async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixture): Promise<void> {
 	const terminal = await Terminal.open(browser, "light", PANE.height);
-	const page = await openBoard(server, browser, fixture.model, PANE.width, "Everything");
+	const page = await openModel(server, browser, fixture.model, PANE.width, fixture.nodes.orders);
 	await terminal.say(
 		"Read changes through the architecture.\nSynthetic checkout and example Git history.",
 	);
@@ -256,9 +245,9 @@ async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixtur
 		await selectPart(page, fixture.nodes.validate);
 		await reveal(page, PARTNERS);
 		await pinInspector(page);
-		await terminal.command(`archboard semantic locality "${fixture.model}"`);
-		const locality = LocalityReplySchema.parse(
-			withoutVaultMetadata(await server.cli(["semantic", "locality", fixture.model])),
+		await terminal.command(`archboard model locality`);
+		const locality = ArchitectureHistoryResultSchema.options[0].parse(
+			modelResult(await server.cli(["model", "locality"])),
 		);
 		const pair = locality.coupling.find(
 			(one) =>
@@ -272,7 +261,7 @@ async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixtur
 		await terminal.done(
 			pair.subjects.map((one) => one.name).join(" + "),
 			`${pair.shared} shared commits · ${pair.degree}% of their changes`,
-			"Nothing on the board joins them.",
+			"No authored relationship joins them.",
 		);
 		await page.waitFor(
 			"document.querySelector('[data-slot=semantic-inspector-partner][data-unjoined=true]') !== null",
@@ -285,21 +274,25 @@ async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixtur
 		await page.screenshot(join(scratch("takes", "git-history"), "history.png"));
 		const still = await moment(page, [PARTNERS], 720, { x: 600, y: 0 });
 		await terminal.command(
-			`archboard semantic footprint "${fixture.model}" --base ${fixture.base} --variant "${fixture.proposals.narrow}"`,
+			`archboard model footprint --base ${fixture.base} --state "${fixture.proposals.narrow}"`,
 		);
-		const footprint = FootprintReplySchema.parse(
-			withoutVaultMetadata(
-				await server.cli([
-					"semantic",
-					"footprint",
-					fixture.model,
-					"--base",
-					fixture.base,
-					"--variant",
-					fixture.proposals.narrow,
-				]),
-			),
-		);
+		const footprint = z
+			.union([
+				ArchitectureHistoryResultSchema.options[1],
+				ArchitectureHistoryResultSchema.options[2],
+			])
+			.parse(
+				modelResult(
+					await server.cli([
+						"model",
+						"footprint",
+						"--base",
+						fixture.base,
+						"--state",
+						fixture.proposals.narrow,
+					]),
+				),
+			);
 		if (footprint.proposal === null) throw new Error("The example footprint has no proposal");
 		if (
 			!footprint.namedAndChanged.some((one) => one.subject.id === fixture.nodes.save) ||
@@ -312,13 +305,11 @@ async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixtur
 			`Changed outside the plan: ${footprint.changedNotNamed.map((one) => one.subject.name).join(", ")}`,
 			`Planned, no code change: ${footprint.namedNotChanged.map((one) => one.subject.name).join(", ")}`,
 		);
-		await server.cli([
-			"browser",
-			"show",
-			`${fixture.model}@${fixture.proposals.narrow}`,
-			"--pane",
-			"primary",
-		]);
+		await showModel(server, "git-history", "A", {
+			model: fixture.model,
+			state: fixture.proposals.narrow,
+			scope: fixture.nodes.orders,
+		});
 		await page.atRest();
 		await foldSidebars(page);
 		await fit(page);
@@ -349,12 +340,12 @@ function evidenceProducer(name: string, description: string, scene: Scene): Prod
 		attachments: [attachmentFile(`${name}.webp`)],
 		needs: ["chromium", "ffmpeg"],
 		plan: [
-			"Create a synthetic TypeScript checkout with fixed Git commits in the scratch directory. Author its board through the CLI on an isolated server.",
+			"Create a synthetic TypeScript checkout with fixed Git commits in the scratch directory. Author its canonical model through the CLI on an isolated server.",
 			description,
 			"Film the live shell, encode a 1440 px lossless WebP, and cut an index still from the demonstrated result. No Codex session runs.",
 		],
 		/**
-		 * Run this take on isolated source and board files.
+		 * Run this take on isolated source and canonical inputs.
 		 * @returns Once its clip and still are written.
 		 */
 		make: async () => {
@@ -374,12 +365,12 @@ const codeEvidence = evidenceProducer(
 );
 const moduleInterfaces = evidenceProducer(
 	"module-interfaces",
-	"Show two proposals side by side. Select Orders in both to compare three entry points with one entry point and two hidden parts.",
+	"Show two proposals side by side. Open Orders in both to compare three entry points with one entry point and two hidden parts.",
 	filmInterfaces,
 );
 const gitHistory = evidenceProducer(
 	"git-history",
-	"Read recent commits and parts that change together, then run semantic footprint to compare the branch with its proposal.",
+	"Read recent commits and parts that change together, then run model footprint to compare the branch with its proposal.",
 	filmHistory,
 );
 

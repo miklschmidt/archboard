@@ -371,7 +371,8 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts",
 				"scripts/readme-assets/server.ts",
-				"scripts/readme-assets/tools.ts"
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/model-authoring.ts"
 			],
 			"hash": "b9219a23122af457ac8b28a91b6360adf548b439cfa04580931e030843aaf420"
 		},
@@ -403,7 +404,8 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts",
 				"scripts/readme-assets/server.ts",
-				"scripts/readme-assets/tools.ts"
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/model-authoring.ts"
 			],
 			"hash": "8a27864d90cd7d071eb666d4157fd44e3fd451dbc7d3ce05bfa31ce3ce4c0a03"
 		},
@@ -435,7 +437,8 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts",
 				"scripts/readme-assets/server.ts",
-				"scripts/readme-assets/tools.ts"
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/model-authoring.ts"
 			],
 			"hash": "a789e03dcca0f808bfa21341c32b93002734c6fc2e0f84c81df70677def9187e"
 		}
