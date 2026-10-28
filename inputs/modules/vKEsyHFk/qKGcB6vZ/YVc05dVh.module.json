@@ -1,0 +1,14 @@
+{
+  "order": 8000,
+  "name": "Authored instructions",
+  "kind": "module",
+  "responsibility": "The developer instructions a thread starts with, and the digest that proves them unchanged",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/rules/instructions"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+  "parent": "vKEsyHFk/SJ2JMVyz#5Pg20iSq",
+  "outgoing": []
+}
