@@ -1,10 +1,14 @@
-//! Private planning input, kept separate from the unchanged Track path.
+//! Private measured planning with a temporary dispatcher for unmigrated graph classes.
 
+mod channel;
 mod model;
+mod shape;
 mod topology;
 
-/// Normalize Blocks input while the legacy result remains authoritative.
-pub(super) fn observe(graph: &crate::graph::Node) -> Result<(), String> {
+/// Emit only classes whose measured channels are complete. Everything else keeps legacy placement.
+pub(super) fn lay_out(
+    graph: &crate::graph::Node,
+) -> Result<Option<crate::blocks::assembly::Placed>, String> {
     let model = model::Model::new(graph)?;
     debug_assert!(
         model.complete(),
@@ -15,5 +19,9 @@ pub(super) fn observe(graph: &crate::graph::Node) -> Result<(), String> {
         topology.complete(&model),
         "planned routes and fans retain semantic ownership"
     );
-    Ok(())
+    if !model.edges.is_empty() && !channel::eligible(&model) {
+        return Ok(None);
+    }
+    let mut shape = shape::plan(&model);
+    Ok(channel::emit(&model, &mut shape).then_some(shape.drawing))
 }

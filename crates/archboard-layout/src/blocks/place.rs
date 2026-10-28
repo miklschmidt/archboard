@@ -44,10 +44,15 @@ pub fn lay_out_board(graph: &str, host: &mut dyn Graphviz) -> Result<String, Str
     let graph: Node = serde_json::from_str(graph)
         .map_err(|error| format!("The measured graph is unreadable: {error}"))?;
     let nesting = Nesting::named(graph.option(BLOCKS_NESTING).unwrap_or("inline"))?;
-    if nesting == Nesting::Blocks {
-        super::planned::observe(&graph)?;
-    }
-    let placed = super::legacy::place(&graph, nesting, host)?;
+    let planned = if nesting == Nesting::Blocks {
+        super::planned::lay_out(&graph)?
+    } else {
+        None
+    };
+    let placed = match planned {
+        Some(placed) => placed,
+        None => super::legacy::place(&graph, nesting, host)?,
+    };
     Ok(answer(
         &graph,
         placed.width,

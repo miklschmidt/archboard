@@ -543,6 +543,23 @@ Pairwise sharing cannot combine two fans into a larger trunk.
 Focused Rust fixtures cover mixed treatments, transitive pairwise sharing, grouped source labels, and direct parent-header endpoints.
 This checkpoint still selects no new coordinates.
 
+### Build checkpoint: conservative emission
+
+Step 4 selects planned geometry for isolated measured scopes and flat, unlabelled chains whose relationships join adjacent authored siblings.
+Each chain reserves one straight channel between consecutive cards before emission.
+Its cards retain their measured sizes, and the route needs no ranker or general router.
+Isolated scopes compare three measured shelves and preserve exact headers, captions, semantic parents, and frame depth.
+Other graph classes retain the existing implementation.
+
+This deliberately small selection establishes a drawable replacement boundary before four-wall routing and branching enter it.
+The large reference boards remain on the retained implementation at this checkpoint.
+
+The first candidate exposed two useful constraints in the existing fixtures.
+Empty space below a header or caption needs only the owning frame's inset, without an extra routing band.
+The initial fit penalty also preferred one tall column of ten independent cards over a readable grid.
+The candidate now charges twice the magnification above the pane's natural fit.
+This calibration applies to every scope and keeps the original compact-inset assertions intact.
+
 ## Risks and decisions left to evidence
 
 The largest risk is conservative over-reservation.
