@@ -284,7 +284,14 @@ function titleRow(
 	lone: Lone | undefined,
 ): Record<string, string> {
 	const { centre, height, words, steps } = head;
-	const row = [bounds.x, centre - height / 2, bounds.width, height, words];
+	const row = [
+		bounds.x,
+		centre - height / 2,
+		bounds.width,
+		height,
+		words,
+		lone === undefined ? 0 : bandOf(lone),
+	];
 	return {
 		[TRACK_TITLE]: row.join(","),
 		...(steps === undefined
