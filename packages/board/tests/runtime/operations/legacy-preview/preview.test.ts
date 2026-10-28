@@ -215,10 +215,10 @@ test("mapped flows preserve one explicit recursive definition and retain collect
 			}),
 		),
 	});
-	const conflict = mapped.conflicts.find((conflict) =>
+	const flowConflict = mapped.conflicts.find((conflict) =>
 		conflict.options.some((option) => option.subject === "Shop/Other#Buy"),
 	);
-	expect(conflict).toBeDefined();
+	expect(flowConflict).toBeDefined();
 	await savePreviewPlan(vault, {
 		...mapped.plan,
 		choices: mapped.conflicts.map((conflict) => ({

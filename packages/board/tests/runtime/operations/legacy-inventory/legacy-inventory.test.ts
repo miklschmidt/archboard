@@ -257,9 +257,8 @@ test("explicit canonical choices persist separately and stale source or plan wri
 	).toMatchObject({ success: false, code: "MAPPING_STALE" });
 });
 
-test("mapping reports definition, parent, sibling order, relationship owner and policy decisions", async () => {
-	const { vault, document } = fixture();
-	const content = (right: boolean) => ({
+function conflictingContent(right: boolean) {
+	return {
 		nodes: [
 			{
 				id: right ? "ParentB" : "ParentA",
@@ -290,7 +289,11 @@ test("mapping reports definition, parent, sibling order, relationship owner and 
 		],
 		flows: [],
 		walkthroughs: [],
-	});
+	};
+}
+
+test("mapping reports definition, parent, sibling order, relationship owner and policy decisions", async () => {
+	const { vault, document } = fixture();
 	for (const right of [false, true]) {
 		const board = {
 			...document,
@@ -298,7 +301,14 @@ test("mapping reports definition, parent, sibling order, relationship owner and 
 			name: right ? "Details" : "Shop",
 			formerNames: right ? ["Old details"] : ["Store"],
 			views: [],
-			variants: [{ id: "Now", name: "Implemented", lifecycle: "current", content: content(right) }],
+			variants: [
+				{
+					id: "Now",
+					name: "Implemented",
+					lifecycle: "current",
+					content: conflictingContent(right),
+				},
+			],
 			adoptions: undefined,
 			shelvings: undefined,
 		};
