@@ -13,14 +13,14 @@
       "state": "vKEsyHFk/qKGcB6vZ#O1N446cC"
     },
     "reason": "Preserve this independent proposal and its original predecessor and conflict base.",
-    "checkpoint": "cbb9e1713c103450ab4114b30051fde3191a527a"
+    "checkpoint": "a46dd0318a5ca42be33526026b375282234eb6f2"
   },
-  "predecessorCheckpoint": "986d501177ced17ab67a4870fd04f88474407a1a",
+  "predecessorCheckpoint": "4350c7cf02e9eba4dd9ba325e409c490538dbb2c",
   "schemaVersion": 1,
   "lifecycle": "draft",
   "predecessor": "O1N446cC",
   "predecessorRevision": "ebda3e437e4ca9b8e709a648c5d675f8af8708c47191446ab3427bb8c06989a1",
-  "baseline": "f0cc0b93a79d25cf8610fc7e8bcf457b03b6ade6",
+  "baseline": "3b62c5aa70e64c716609ca512ca709a499217b90",
   "changes": [
     {
       "type": "assign",
