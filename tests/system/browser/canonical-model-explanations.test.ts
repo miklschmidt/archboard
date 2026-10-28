@@ -239,6 +239,21 @@ test("keyboard and context actions expose unavailable agents, captured retry, an
 		fixture.controlPath,
 		JSON.stringify({ ordinaryOnly: true, explanationQueue: true, completeWorkhorseTurn: true }),
 	);
+	await browser.eval(`(() => {
+		const original = window.fetch;
+		window.__restoreExplanationRead = () => { window.fetch = original; };
+		window.fetch = async (input, init) => {
+			const url = new URL(typeof input === 'string' ? input : input.url, location.href);
+			const method = init?.method ?? (input instanceof Request ? input.method : 'GET');
+			if (url.pathname === '/api/architecture/explanations' && method === 'GET') {
+				return new Response(JSON.stringify({
+					success: false, code: 'AGENT_UNAVAILABLE',
+					error: 'The local agent is unavailable. Reconnect it and retry.'
+				}), { status: 503, headers: { 'Content-Type': 'application/json' } });
+			}
+			return original.call(window, input, init);
+		};
+	})()`);
 	const invoked = await fetch(`${server.base}/api/architecture/explanations`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -250,6 +265,20 @@ test("keyboard and context actions expose unavailable agents, captured retry, an
 		}),
 	});
 	expect(invoked.status).toBe(200);
+	const recovery = '[role="alert"]:has(+ [data-slot="model-explanation"]) button';
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector('${recovery}') !== null`),
+		Boolean,
+		"the failed explanation read with its cached answer and recovery action",
+		WAIT,
+	);
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('[data-slot="model-explanation"]')?.getAttribute('data-action-id') ?? null`,
+		),
+	).toBe(result.action.actionId);
+	await browser.eval("window.__restoreExplanationRead()");
+	await browser.run(["click", recovery]);
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(

@@ -304,8 +304,8 @@ name needs its token here and its name in `PaletteColorSchema` in
 `packages/board/src/shared/schemas/semantic-policy.ts`.
 
 A picture in the page paints with the tokens themselves, so a theme switch
-redraws nothing. A standalone SVG or PNG from `semantic render` or
-`semantic rasterize` is drawn in one theme. Its root sets `color-scheme` and
+redraws nothing. A standalone SVG or PNG from `model render` or
+`model rasterize` is drawn in one theme. Its root sets `color-scheme` and
 every token that it uses. An SVG drawn with `--theme auto` sets
 `color-scheme: light dark` and each token whose themes differ as
 `light-dark(<light>, <dark>)`, so the reader's colour scheme chooses. Lightning CSS converts those tokens to sRGB.

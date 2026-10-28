@@ -116,7 +116,7 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(
-				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"] > span')?.textContent ?? null`,
+				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"] [data-slot="model-module-name"]')?.textContent ?? null`,
 			),
 		(name) => name === "Queued API",
 		"the draft module definition",
@@ -213,7 +213,7 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(
-				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"] > span')?.textContent ?? null`,
+				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"] [data-slot="model-module-name"]')?.textContent ?? null`,
 			),
 		(name) => name === "Queued API revised",
 		"the live selected draft update",

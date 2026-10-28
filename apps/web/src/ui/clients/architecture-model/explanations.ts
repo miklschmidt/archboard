@@ -38,8 +38,11 @@ function explanationQuery(vault: string, tab: string) {
 		 * @param context.signal Abort an obsolete read.
 		 * @returns The latest action snapshot or refusal.
 		 */
-		queryFn: ({ signal }) =>
-			explanationRequest(vault, { type: "latest", tabSessionId: tab }, signal),
+		queryFn: async ({ signal }) => {
+			const result = await explanationRequest(vault, { type: "latest", tabSessionId: tab }, signal);
+			if (!result.success && result.code !== "ACTION_NOT_FOUND") throw new Error(result.error);
+			return result;
+		},
 		staleTime: Infinity,
 		retry: false,
 		refetchOnWindowFocus: false,

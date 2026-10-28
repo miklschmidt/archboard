@@ -117,7 +117,7 @@ test("reading filters preserve selection and authored meaning with an explicit r
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-hidden-selection"]') === null && document.querySelector('[data-slot="model-connections"] [data-connection-id="Shop#Dispatch"]') !== null`,
+				`document.querySelector('[data-slot="model-hidden-selection"]') === null && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Dispatch"]') !== null`,
 			),
 		Boolean,
 		"the revealed selection",

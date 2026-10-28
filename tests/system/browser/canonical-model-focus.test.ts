@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { openModelSidebar } from "./support/canonical-page.ts";
 import type { z } from "zod";
 import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
@@ -112,6 +113,7 @@ test("focus keeps selected ancestors and descendants with only necessary paths a
 	await openModule(browser, "Shop#Gateway");
 	await openModule(browser, "Shop#Handler");
 	await browser.run(["click", '[data-slot="module-context"] [data-module-id="Shop#Gateway"]']);
+	await openModelSidebar(browser);
 	await browser.eval(
 		`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Decode"]').dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true }))`,
 	);
