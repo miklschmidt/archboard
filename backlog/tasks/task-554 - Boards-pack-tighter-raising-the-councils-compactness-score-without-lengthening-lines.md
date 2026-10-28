@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-28T10:48:00Z'
+updated_date: '2026-10-28T11:59:00Z'
 labels:
   - renderer
   - layout
@@ -53,4 +53,6 @@ The final council of TASK-548.08 (2026-10-28, 40 blind pairs against c147b73c8, 
 2026-10-28, the explorations ended. sideports (explore/blocks-sideports 2f71e981): placement fixed, four-wall ports and a bend-penalty router cut bends per route 2.35 to 2.13, routes with four or more bends 31.1% to 27.0%, route length 3.6%, no new hard finding, but two shared-trunk tests fail (lines into one parent no longer share an entry, a fan crosses itself) and Blocks gets slower. labels (explore/blocks-labels c1049b84): 30% of labels on horizontal runs, area -0.5%, bends 2.35 to 2.31, no new finding, labels 49% farther from their endpoints. speed (explore/blocks-speed 76c63e12): trunk path search held 47% of the Blocks solve; a bucket queue, reused search arrays and range-marked obstacles cut first renders 30 to 38% (Board viewer 1535 to 1048 ms, Board persistence 988 to 613 ms, Archboard server routes 1136 to 791 ms) with every Blocks and Track drawing byte-identical; applied as 5a1d3d866 and the corpus re-checked identical. Common finding of all five: the empty frames and long trunks come from the composition, so placement, port walls, label slots and shared trunks must be planned together before routing, and routing along planned corridors would also remove most of the path search that makes Blocks slow.
 
 2026-10-28, the owner approved the direction 'plan, then route' for Blocks: one planning stage chooses card order inside blocks, line walls on all four sides, label slots and shared trunks together; packing places blocks by measured size and planned ports; routing assigns lanes along planned corridors with search only as a fallback. Work continues until readability has meaningfully improved and the three Blocks first renders and growing edits are under 500 ms. First a design document and ADR proven by a spike, then implementation in steps.
+
+2026-10-28: design committed as 5b82ce00d (docs/design/blocks-planned-layout.md, ADR 0063 proposed). Its spike (explore/blocks-planned-spike 9b91136d) proved the planned solve takes 6 ms instead of 888 ms on Board viewer, but its conservative portals doubled area and quadrupled route length, and crossing marks made painting 3.6 s. Build steps 1 to 6 run on feat/blocks-planned, with a checkpoint report at /tmp/blocks-explore/build/report-1.md.
 <!-- SECTION:NOTES:END -->
