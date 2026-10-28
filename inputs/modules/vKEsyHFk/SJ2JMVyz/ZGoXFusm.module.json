@@ -1,0 +1,81 @@
+{
+  "order": 10000,
+  "name": "Thread tool calls",
+  "kind": "module",
+  "responsibility": "Runs the archboard_app calls a thread makes on the server's other threads: list, read, create, fork, message, and the waits",
+  "description": "A creation, fork or message runs only once the user approves it, under the generation that may act; a wait registers its edges first. A thread it creates or forks works in the checkout of its caller, as the epoch ledger recorded it when the caller started.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/services/dynamic-tools"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
+  "parent": "vKEsyHFk/SJ2JMVyz#FZjiPawv",
+  "outgoing": [
+    {
+      "order": 12000,
+      "kind": "call",
+      "label": "register and release a wait edge",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
+        "symbol": "addEdgeSet"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#CHkvrU1f",
+      "to": "vKEsyHFk/SJ2JMVyz#abHx4peq"
+    },
+    {
+      "order": 13000,
+      "kind": "call",
+      "label": "the generation that may act",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
+        "symbol": "stageOperation"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#Uflv9hM7",
+      "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS"
+    },
+    {
+      "order": 19000,
+      "kind": "dependency",
+      "label": "the archboard_app tools it answers",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/dynamic-tools/authority/classification.ts",
+        "symbol": "GeneralThreadToolNameSchema"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#t5YUCWX1",
+      "to": "vKEsyHFk/SJ2JMVyz#Fxm7RW2x"
+    },
+    {
+      "order": 20000,
+      "kind": "dependency",
+      "label": "the workhorse instructions, by digest",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
+        "symbol": "WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#VOPbBx8O",
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
+    },
+    {
+      "order": 23000,
+      "kind": "rpc",
+      "label": "thread/start, fork and turn/start for a tool call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutations.ts",
+        "symbol": "threadStart"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#r1jVxlwm",
+      "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+    }
+  ]
+}
