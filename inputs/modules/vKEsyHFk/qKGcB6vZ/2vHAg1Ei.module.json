@@ -1,0 +1,72 @@
+{
+  "order": 3000,
+  "name": "Realtime voice",
+  "kind": "module",
+  "responsibility": "The realtime leg of that thread: the offer, the answer, the channel rule, a narrated walkthrough's steps, and the transcript",
+  "description": "Archboard never reaches a voice provider itself. The child brokers the session; the media travels between the tab and the provider over the peer connection the tab made. The start tells the coordinator the [FINAL] and [COMMENTARY] channel rule, or for a recording to write only commentary; the board catalogue, read from the vault of the pane the session presents through, is kept on the coordinator's thread for the session's life.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/services/realtime"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#2vHAg1Ei",
+  "parent": "vKEsyHFk/qKGcB6vZ#CkB9Bygm",
+  "outgoing": [
+    {
+      "order": 4000,
+      "kind": "call",
+      "label": "start the realtime leg",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/realtime/negotiation.ts",
+        "symbol": "realtimeStart"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#eRYh0zYO",
+      "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+    },
+    {
+      "order": 5000,
+      "kind": "call",
+      "label": "the brief this start records",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/realtime/adapter.ts",
+        "symbol": "freshSemanticBrief"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#jKgud5yQ",
+      "to": "vKEsyHFk/qKGcB6vZ#qZsXIuQG"
+    },
+    {
+      "order": 6000,
+      "kind": "event",
+      "label": "the answer, then the transcript",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/browser-state/owner-projection.ts",
+        "symbol": "transcript"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#oyurpL2B",
+      "to": "vKEsyHFk/qKGcB6vZ#0eYa0szs"
+    },
+    {
+      "order": 14000,
+      "kind": "event",
+      "label": "the user's spoken reply, as transcript events",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/spoken-approval/gate.ts",
+        "symbol": "onSemanticEvent"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#AkgtBxFY",
+      "to": "vKEsyHFk/qKGcB6vZ#fEiupnAD"
+    }
+  ]
+}

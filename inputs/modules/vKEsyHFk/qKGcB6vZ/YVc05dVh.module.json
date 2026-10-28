@@ -1,0 +1,14 @@
+{
+  "order": 10000,
+  "name": "Authored instructions",
+  "kind": "module",
+  "responsibility": "The coordinator's own developer instructions, which neither contain nor refer to the workhorse's, pinned by digest",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/rules/instructions"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+  "parent": "vKEsyHFk/qKGcB6vZ#CkB9Bygm",
+  "outgoing": []
+}
