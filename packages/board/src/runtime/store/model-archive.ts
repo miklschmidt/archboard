@@ -1,5 +1,5 @@
 import { MigrationInstallationSchema } from "#shared/schemas/migration-installation.ts";
-import { checkpointBlobs, tree } from "#runtime/store/model-archive-blobs.ts";
+import { checkpointBlobs, tree, type ArchiveContext } from "#runtime/store/model-archive-blobs.ts";
 import { FamilyStandingSchema } from "#shared/schemas/model-proposals.ts";
 import { modelRevision } from "#runtime/store/model-files.ts";
 import {
@@ -58,8 +58,6 @@ const ArchiveRecordSchema = z.discriminatedUnion("kind", [
 	CheckpointRecordSchema,
 	z.object({ schemaVersion: z.literal(1), kind: z.literal("synchronization") }).strict(),
 ]);
-
-type ArchiveContext = Awaited<ReturnType<typeof archiveContext>>;
 
 /**
  * Read an optional Git value without hiding other failures.
@@ -122,7 +120,11 @@ async function readBlob(context: ArchiveContext, object: string): Promise<string
  * @returns The checkpoint or synchronization record.
  */
 async function readRecord(context: ArchiveContext, id: string) {
-	return ArchiveRecordSchema.parse(JSON.parse(await readBlob(context, `${id}:record.json`)));
+	const bytes =
+		context.reader === undefined
+			? await readBlob(context, `${id}:record.json`)
+			: (await checkpointBlobs(context, [`${id}:record.json`]))[0]!.toString();
+	return ArchiveRecordSchema.parse(JSON.parse(bytes));
 }
 
 /**
@@ -207,14 +209,16 @@ async function isArchiveAncestor(
 	ancestor: string,
 	descendant: string,
 ): Promise<boolean> {
-	try {
-		await git(context.root, ["merge-base", "--is-ancestor", ancestor, descendant]);
-		return true;
-	} catch (error) {
-		if (error instanceof GitCommandError && error.failure === "exit" && error.exitCode === 1)
-			return false;
-		throw error;
-	}
+	const retained = context.ancestor?.(ancestor, descendant);
+	if (retained !== undefined) return retained;
+	return git(context.root, ["merge-base", "--is-ancestor", ancestor, descendant]).then(
+		() => true,
+		(error: unknown) => {
+			if (error instanceof GitCommandError && error.failure === "exit" && error.exitCode === 1)
+				return false;
+			throw error;
+		},
+	);
 }
 
 /**
@@ -462,11 +466,17 @@ function checkpointInput(entry: string) {
  * @returns Exact bytes, input fingerprints and empty discovery diagnostics.
  */
 async function readCheckpointInputs(context: ArchiveContext, checkpoint: string) {
-	const listing = await git(context.root, ["ls-tree", "-r", "-z", checkpoint, "--", "inputs"], {
-		trimOutput: false,
-		maxOutputBytes: Infinity,
-	});
-	const entries = (listing ?? "").split("\0").filter(Boolean).map(checkpointInput);
+	const listing =
+		context.reader === undefined
+			? await git(context.root, ["ls-tree", "-r", "-z", checkpoint, "--", "inputs"], {
+					trimOutput: false,
+					maxOutputBytes: Infinity,
+				})
+			: await context.reader.listing(checkpoint);
+	const entries = (listing ?? "")
+		.split("\0")
+		.filter((entry) => entry.slice(entry.indexOf("\t") + 1).startsWith("inputs/"))
+		.map(checkpointInput);
 	const blobs = await checkpointBlobs(
 		context,
 		entries.map((entry) => entry.object),
@@ -513,13 +523,27 @@ async function archiveRecords(context: ArchiveContext, tips?: string[]) {
 	const tip = tips === undefined ? await archiveTip(context) : undefined;
 	const roots = tips ?? (tip === undefined ? [] : [tip]);
 	if (roots.length === 0) return [];
-	const history = await git(context.root, ["rev-list", ...roots], { maxOutputBytes: Infinity });
-	return settledValues(
-		(history ?? "")
-			.split("\n")
-			.filter(Boolean)
-			.map(async (id) => ({ id, record: await readRecord(context, id) })),
+	const history = await git(
+		context.root,
+		["rev-list", "--format=%H%x20%T", "--no-commit-header", ...roots],
+		{ maxOutputBytes: Infinity },
 	);
+	const ids = (history ?? "")
+		.split("\n")
+		.filter(Boolean)
+		.map((line) => {
+			const [id, rootTree] = line.split(" ");
+			context.reader?.treeIds.set(id!, rootTree!);
+			return id!;
+		});
+	const records = await checkpointBlobs(
+		context,
+		ids.map((id) => `${id}:record.json`),
+	);
+	return ids.map((id, index) => ({
+		id,
+		record: ArchiveRecordSchema.parse(JSON.parse(records[index]!.toString())),
+	}));
 }
 
 export {

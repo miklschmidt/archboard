@@ -1,7 +1,21 @@
 import { git } from "@archboard/process/git";
 import { ArchiveError, type archiveContext } from "#runtime/store/model-archive-location.ts";
 
-type ArchiveContext = Awaited<ReturnType<typeof archiveContext>>;
+type ArchiveLocation = Awaited<ReturnType<typeof archiveContext>>;
+type ArchiveContext = ArchiveLocation & {
+	reader?: ReturnType<typeof archiveReader>;
+	ancestor?: (ancestor: string, descendant: string) => boolean | undefined;
+};
+
+/**
+ * Match a discovered identity or let Git resolve an immutable record selector.
+ * @param object The requested blob or commit path.
+ * @param identity The resolved blob identity.
+ * @returns Whether the response names the requested object.
+ */
+function matchesBlob(object: string, identity: string) {
+	return object.endsWith(":record.json") || identity === object;
+}
 
 /**
  * Decode one length-delimited Git blob without interpreting content as protocol lines.
@@ -24,7 +38,7 @@ function batchBlob(output: Buffer, offset: number, object: string) {
 	const size = Number(header[2]);
 	const start = end + 1,
 		next = start + size;
-	if (!Number.isSafeInteger(size) || output[next] !== 10 || header[1] !== object)
+	if (!Number.isSafeInteger(size) || output[next] !== 10 || !matchesBlob(object, header[1]!))
 		throw new ArchiveError(
 			"CHECKPOINT_INVALID",
 			"Retained blob framing disagrees with its immutable identity or length.",
@@ -40,6 +54,7 @@ function batchBlob(output: Buffer, offset: number, object: string) {
  * @returns Every exact blob in that same order.
  */
 async function checkpointBlobs(context: ArchiveContext, objects: string[]) {
+	if (context.reader !== undefined) return context.reader.blobs(objects);
 	if (objects.length === 0) return [];
 	const output = Buffer.from(
 		(await git(context.root, ["cat-file", "--batch"], {
@@ -54,6 +69,69 @@ async function checkpointBlobs(context: ArchiveContext, objects: string[]) {
 		offset = retained.next;
 		return retained.bytes;
 	});
+}
+
+/**
+ * Share immutable reads within one inspection and bound supervised Git work.
+ * @param context The operation's archive location without a reader.
+ * @returns Its disposable blob and tree readers.
+ */
+function archiveReader(context: ArchiveLocation) {
+	const location = { root: context.root, vault: context.vault, sourceRoot: context.sourceRoot };
+	const retainedBlobs = new Map<string, Promise<Buffer>>();
+	const trees = new Map<string, Promise<string | undefined>>();
+	const treeIds = new Map<string, string>();
+	let pending: Promise<unknown> = Promise.resolve();
+	/**
+	 * Finish each read before starting another supervised command.
+	 * @param read The next immutable read.
+	 * @returns Its complete result.
+	 */
+	function command<T>(read: () => Promise<T>): Promise<T> {
+		const result = pending.then(read);
+		pending = result.catch(() => undefined);
+		return result;
+	}
+	return {
+		treeIds,
+		/**
+		 * Read each immutable object once, including shared pending reads.
+		 * @param objects Exact blob identities or immutable commit path selectors.
+		 * @returns The requested exact bytes in input order.
+		 */
+		blobs(objects: string[]) {
+			const missing = [...new Set(objects.filter((object) => !retainedBlobs.has(object)))];
+			if (missing.length !== 0) {
+				const batch = command(() => checkpointBlobs(location, missing));
+				missing.forEach((object, index) =>
+					retainedBlobs.set(
+						object,
+						batch.then((values) => values[index]!),
+					),
+				);
+			}
+			return Promise.all(objects.map((object) => retainedBlobs.get(object)!));
+		},
+		/**
+		 * Reuse one complete tree listing for validation and input discovery.
+		 * @param id The immutable commit identity.
+		 * @returns Its complete NUL-delimited recursive listing.
+		 */
+		listing(id: string) {
+			const rootTree = treeIds.get(id) ?? id;
+			let listing = trees.get(rootTree);
+			if (listing === undefined) {
+				listing = command(() =>
+					git(location.root, ["ls-tree", "-r", "-z", rootTree], {
+						trimOutput: false,
+						maxOutputBytes: Infinity,
+					}),
+				);
+				trees.set(rootTree, listing);
+			}
+			return listing;
+		},
+	};
 }
 
 /**
@@ -127,4 +205,4 @@ async function tree(context: ArchiveContext, inputs: Map<string, Buffer>): Promi
 	);
 }
 
-export { checkpointBlobs, tree };
+export { archiveReader, checkpointBlobs, tree, type ArchiveContext };

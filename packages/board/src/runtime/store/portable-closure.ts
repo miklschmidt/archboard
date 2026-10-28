@@ -1,5 +1,6 @@
 import { retainedMigrationPreview } from "#runtime/operations/legacy-inventory/retained.ts";
 import { git } from "@archboard/process/git";
+import { archiveReader } from "#runtime/store/model-archive-blobs.ts";
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import { ArchitecturePortableBundleSchema } from "#shared/schemas/model-portable.ts";
 import { requireCompleteArchive } from "#runtime/store/model-publication.ts";
@@ -123,7 +124,8 @@ async function archiveAncestry(context: ArchiveContext, tips: string[]) {
 			for (const ancestor of closure(parent)) result.add(ancestor);
 		return result;
 	}
-	return (ancestor: string, descendant: string) => closure(descendant).has(ancestor);
+	return (ancestor: string, descendant: string) =>
+		parents.has(descendant) ? closure(descendant).has(ancestor) : undefined;
 }
 /**
  * Require one regular architecture blob rather than an executable, link, or unrelated file.
@@ -167,10 +169,12 @@ async function requireArchitectureTree(
 	record: Awaited<ReturnType<typeof requireCompleteArchive>>[number]["record"],
 ): Promise<void> {
 	const listing =
-		(await git(context.root, ["ls-tree", "-r", "-z", id], {
-			maxOutputBytes: Infinity,
-			trimOutput: false,
-		})) ?? "";
+		(await (context.reader === undefined
+			? git(context.root, ["ls-tree", "-r", "-z", id], {
+					maxOutputBytes: Infinity,
+					trimOutput: false,
+				})
+			: context.reader.listing(id))) ?? "";
 	const entries = listing.split("\0").filter(Boolean);
 	entries.forEach((entry) =>
 		requireArchitectureEntry(
@@ -224,29 +228,30 @@ async function requireMaterializations(
 	model: ArchitectureModel,
 ): Promise<void> {
 	await walkthroughDependencies(context, model);
-	await Promise.all(
-		model.proposals.map(async (proposal) => {
-			const baseline = await proposalBaseline(context, model, proposal);
-			if (!baseline.success)
-				throw new ArchiveError(baseline.code, baseline.diagnostics[0]!.message, proposal.baseline);
-			const reading = decodeProposal(baseline, proposal, model);
-			if (!reading.success)
-				throw new ArchiveError(reading.code, reading.diagnostics[0]!.message, proposal.baseline);
-			await walkthroughDependencies(context, reading);
-		}),
-	);
+	for (const proposal of model.proposals) {
+		// oxlint-disable-next-line no-await-in-loop -- complete one materialization before starting another archive read
+		const baseline = await proposalBaseline(context, model, proposal);
+		if (!baseline.success)
+			throw new ArchiveError(baseline.code, baseline.diagnostics[0]!.message, proposal.baseline);
+		const reading = decodeProposal(baseline, proposal, model);
+		if (!reading.success)
+			throw new ArchiveError(reading.code, reading.diagnostics[0]!.message, proposal.baseline);
+		// oxlint-disable-next-line no-await-in-loop -- shared narrative targets must settle before the next proposal
+		await walkthroughDependencies(context, reading);
+	}
 }
 /**
  * Prove that the complete closure preserves every local dependency through actual Git parents.
- * @param context The archive under inspection.
+ * @param location The archive under inspection.
  * @param tips The portable roots.
  * @param model The live authored catalogue.
  */
 async function requirePortableClosure(
-	context: ArchiveContext,
+	location: ArchiveContext,
 	tips: string[],
 	model: ArchitectureModel,
 ): Promise<void> {
+	const context: ArchiveContext = { ...location, reader: archiveReader(location) };
 	const records = [
 		...new Map(
 			(await Promise.all(tips.map((tip) => requireCompleteArchive(context, tip, true))))
@@ -256,6 +261,7 @@ async function requirePortableClosure(
 	];
 	const known = new Map(records.map((entry) => [entry.id, entry.record]));
 	const ancestor = await archiveAncestry(context, tips);
+	context.ancestor = ancestor;
 	/**
 	 * Require matching local records without borrowing another model's state.
 	 * @param dependencies The complete local reference set.
@@ -294,23 +300,20 @@ async function requirePortableClosure(
 			);
 	}
 
-	await Promise.all(
-		records.map(async ({ id, record }) => {
-			await requireArchitectureTree(context, id, record);
-			if (record.kind !== "checkpoint") return;
-			if (record.vault !== context.vault)
-				throw new ArchiveError(
-					"ARCHIVE_NOT_PORTABLE",
-					"An archive checkpoint names another vault address.",
-					id,
-				);
-			requireReferences(
-				recordDependencies(record, await retainedModel(context, id, record)),
-				record.model,
+	for (const { id, record } of records) {
+		// oxlint-disable-next-line no-await-in-loop -- finish decoding before another supervised read starts
+		await requireArchitectureTree(context, id, record);
+		if (record.kind !== "checkpoint") continue;
+		if (record.vault !== context.vault)
+			throw new ArchiveError(
+				"ARCHIVE_NOT_PORTABLE",
+				"An archive checkpoint names another vault address.",
 				id,
 			);
-		}),
-	);
+		// oxlint-disable-next-line no-await-in-loop -- large retained decodes must not starve pending Git readers
+		const retained = await retainedModel(context, id, record);
+		requireReferences(recordDependencies(record, retained), record.model, id);
+	}
 	requireReferences(modelDependencies(model), model.manifest.id);
 	await requireMaterializations(context, model);
 }
