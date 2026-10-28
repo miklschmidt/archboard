@@ -194,6 +194,9 @@ fn edge_of(
     points: Option<&Vec<(&'static str, String)>>,
 ) -> J {
     let mut options = edge_options(edge, standing, by_look);
+    if !by_look && let Some(kind) = measured.held_kinds.get(&edge.id) {
+        options.push(("archboard.relationship.held-kind".to_owned(), J::str(kind)));
+    }
     for (name, value) in points.into_iter().flatten() {
         options.push(((*name).to_owned(), J::str(value)));
     }

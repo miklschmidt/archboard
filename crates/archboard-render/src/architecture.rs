@@ -88,6 +88,7 @@ fn measured(laid: &Reading, policy: &Policy, steps: &HashSet<&str>) -> Measured 
         labels,
         lines,
         groups,
+        held_kinds: BTreeMap::new(),
     }
 }
 
@@ -148,6 +149,12 @@ fn layout_key(
         names,
         looks,
         entries,
+        request
+            .held()
+            .edges
+            .iter()
+            .map(|edge| (&edge.id, &edge.kind))
+            .collect::<Vec<_>>(),
     ))
     .expect("what a layout is laid out from always writes as JSON")
 }
@@ -205,7 +212,13 @@ async fn laid_out<H: Host>(
     let stepping: HashSet<&str> = steps.iter().map(String::as_str).collect();
     let standings = standings_of(request, laid);
     let entries = entry_points_of(laid, request.variant());
-    let measure = measured(laid, &request.policy, &stepping);
+    let mut measure = measured(laid, &request.policy, &stepping);
+    measure.held_kinds = request
+        .held()
+        .edges
+        .iter()
+        .map(|edge| (edge.id.clone(), edge.kind.clone()))
+        .collect();
     let key = layout_key(request, laid, steps, standings.as_ref(), &entries);
     let content = laid.content();
     let solving = draw(

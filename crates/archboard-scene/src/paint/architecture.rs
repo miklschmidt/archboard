@@ -35,7 +35,12 @@ use crate::scene::{Atlas, Colour, Definition, Item, SubjectKind};
 type Boxed<'edge> = Vec<(&'edge str, Rect)>;
 
 /// Each line's inked box, and each of its words' box.
-fn line_boxes(edges: &[Edge]) -> (Boxed<'_>, Boxed<'_>) {
+fn line_boxes(drawing: &Painted) -> (Boxed<'_>, Boxed<'_>) {
+    let edges = if drawing.frozen {
+        &drawing.drawing.edges
+    } else {
+        &drawing.bridged.edges
+    };
     let inked = edges
         .iter()
         .map(|routed| {
@@ -43,7 +48,11 @@ fn line_boxes(edges: &[Edge]) -> (Boxed<'_>, Boxed<'_>) {
                 routed.edge.id.as_str(),
                 inflate(
                     curve_bounds(&routed.curve),
-                    stroke_width(routed.edge.emphasis) / 2.0,
+                    if drawing.frozen {
+                        18.0
+                    } else {
+                        stroke_width(routed.edge.emphasis) / 2.0
+                    },
                 ),
             )
         })
@@ -62,7 +71,7 @@ fn line_boxes(edges: &[Edge]) -> (Boxed<'_>, Boxed<'_>) {
 
 /// What the page must hold of a drawing.
 fn extent_of(drawing: &Painted, standings: &Standings, unsettled: &Unsettled) -> Option<Rect> {
-    let (inked, labelled) = line_boxes(&drawing.bridged.edges);
+    let (inked, labelled) = line_boxes(drawing);
     let mut boxes: Vec<Rect> = drawing
         .drawing
         .cards
@@ -479,7 +488,7 @@ pub(super) fn paint_architecture(
         DIAGRAM_MARGIN,
     );
     let painted = painting.layers(&Stacked::of(drawing), &traffic);
-    let (inked, labelled) = line_boxes(edges);
+    let (inked, labelled) = line_boxes(drawing);
     let mut node_entries = carded.clone();
     node_entries.extend(framed.iter().copied());
     let mut edge_entries = inked;

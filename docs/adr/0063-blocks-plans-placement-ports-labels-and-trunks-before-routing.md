@@ -15,9 +15,13 @@ Packing compares measured sizes and the routes that those planned ports require.
 Channel routing then assigns lanes inside that reserved space.
 A bounded local grid search handles exceptional junctions while preserving locked obstacles, ports, and prior lanes.
 A conservative channel plan handles search exhaustion without an unchecked route.
+Each child exports complete routes to its boundary before the parent reserves its channels.
+Crossings contribute to cost when straight approaches keep them clear of labels, bends, and arrowheads.
+A crossing does not require legacy placement.
 
 A shared trunk must name the source or target common to every member relationship.
 Coincident ports and pairwise compatibility cannot establish that identity.
+Trunk compatibility includes the visible kind when removed comparison context changes an overview’s majority kind.
 Each label remains part of one real relationship and receives no arrowhead or semantic node ID.
 Every label stays near its source, on its own horizontal run, inside one containing scope.
 
@@ -26,6 +30,8 @@ Those decisions retain their Track clauses.
 ADR 0062 still supplies exact normal header sizes.
 The Rust core, text shaping, scene, Solver interface, worker pool, and vendored Graphviz remain under ADRs 0059 and 0060.
 Graphviz can provide local rank hints, but it does not own the complete compound drawing.
+Planned crossing decoration uses at most four fixed-radius arc attempts per crossing.
+The atlas uses the frozen routes with fixed decoration padding.
 Track must remain byte-identical.
 
 The explorations reject isolated packing changes, post-placement side-port repair, distant label relocation, and unrestricted whole-graph layered placement.

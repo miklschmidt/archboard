@@ -54,6 +54,14 @@ fn bands(
     scope: usize,
     shape: &super::shape::Shape,
 ) -> Bands {
+    let boxes: Vec<_> = model.scopes[scope]
+        .children
+        .iter()
+        .map(|child| match child {
+            super::model::Child::Endpoint(id) => shape.cells[id],
+            super::model::Child::Scope(id) => shape.scopes[id].bounds,
+        })
+        .collect();
     let mut groups = Bands::new();
     for (edge, _) in topology
         .routes
@@ -62,9 +70,11 @@ fn bands(
         .filter(|(_, route)| route.scope == scope)
     {
         let (from, to) = model.ends[edge];
-        if let Some((horizontal, low, high, interval)) =
-            band(shape.endpoints[&from], shape.endpoints[&to])
-        {
+        if let Some((horizontal, low, high, interval)) = band(
+            facing_box(model, scope, shape, from),
+            facing_box(model, scope, shape, to),
+            &boxes,
+        ) {
             let group = groups
                 .entry((horizontal, low.to_bits(), high.to_bits()))
                 .or_default();
@@ -172,14 +182,55 @@ pub(super) fn corridors(
     hints
 }
 
+fn facing_box(
+    model: &super::model::Model<'_>,
+    scope: usize,
+    shape: &super::shape::Shape,
+    endpoint: usize,
+) -> crate::geometry::Rect {
+    let mut owner = model.endpoints[endpoint].scope;
+    if owner == scope {
+        return shape.cells[&endpoint];
+    }
+    while model.scopes[owner].parent != Some(scope) {
+        owner = model.scopes[owner].parent.expect("an ancestor scope");
+    }
+    shape.scopes[&owner].bounds
+}
+
 fn band(
     source: crate::geometry::Rect,
     target: crate::geometry::Rect,
+    boxes: &[crate::geometry::Rect],
 ) -> Option<(bool, f64, f64, Interval)> {
     let vertical = (source.y + source.height).min(target.y + target.height);
-    let bottom = source.y.max(target.y);
+    let mut bottom = source.y.max(target.y);
+    let mut vertical = vertical;
+    let upper = if source.y < target.y { source } else { target };
+    vertical = boxes
+        .iter()
+        .filter(|r| (r.y - upper.y).abs() < 1e-6)
+        .map(|r| r.y + r.height)
+        .fold(vertical, f64::max);
+    bottom = boxes
+        .iter()
+        .filter(|r| r.y >= vertical + 2.0 * super::shape::CLEAR)
+        .map(|r| r.y)
+        .fold(bottom, f64::min);
     let horizontal = (source.x + source.width).min(target.x + target.width);
-    let right = source.x.max(target.x);
+    let mut right = source.x.max(target.x);
+    let mut horizontal = horizontal;
+    let left = if source.x < target.x { source } else { target };
+    horizontal = boxes
+        .iter()
+        .filter(|r| (r.x - left.x).abs() < 1e-6)
+        .map(|r| r.x + r.width)
+        .fold(horizontal, f64::max);
+    right = boxes
+        .iter()
+        .filter(|r| r.x >= horizontal + 2.0 * super::shape::CLEAR)
+        .map(|r| r.x)
+        .fold(right, f64::min);
     if bottom - vertical >= 2.0 * super::shape::CLEAR {
         let a = source.x + source.width / 2.0;
         let b = target.x + target.width / 2.0;

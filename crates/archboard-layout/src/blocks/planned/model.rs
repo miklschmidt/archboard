@@ -38,6 +38,9 @@ pub(super) struct Model<'a> {
     pub endpoints: Vec<Endpoint<'a>>,
     pub edges: Vec<&'a Edge>,
     pub ends: Vec<(usize, usize)>,
+    pub treatments: Vec<String>,
+    pub outgoing: Vec<Vec<usize>>,
+    pub incoming: Vec<Vec<usize>>,
 }
 
 impl<'a> Model<'a> {
@@ -62,6 +65,9 @@ impl<'a> Model<'a> {
             endpoints: Vec::new(),
             edges: graph.edges.iter().flatten().map(AsRef::as_ref).collect(),
             ends: Vec::new(),
+            treatments: Vec::new(),
+            outgoing: Vec::new(),
+            incoming: Vec::new(),
         };
         model.edges.sort_by(|a, b| {
             semantic_order(a.layout_options.as_ref())
@@ -85,6 +91,24 @@ impl<'a> Model<'a> {
                 ));
             };
             model.ends.push((from, to));
+        }
+        model.treatments = model
+            .edges
+            .iter()
+            .map(|edge| {
+                format!(
+                    "{}|{}",
+                    crate::track::route::trunk_kind(edge),
+                    edge.option("archboard.relationship.held-kind")
+                        .unwrap_or("")
+                )
+            })
+            .collect();
+        model.outgoing = vec![Vec::new(); model.endpoints.len()];
+        model.incoming = vec![Vec::new(); model.endpoints.len()];
+        for (edge, &(from, to)) in model.ends.iter().enumerate() {
+            model.outgoing[from].push(edge);
+            model.incoming[to].push(edge);
         }
         Ok(model)
     }

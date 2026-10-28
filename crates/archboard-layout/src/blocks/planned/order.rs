@@ -122,7 +122,7 @@ pub(super) fn fan_order(
     topology: &Topology,
     scope: usize,
     shape: &super::shape::Shape,
-) -> Option<Vec<usize>> {
+) -> Vec<usize> {
     let edges: Vec<_> = topology
         .routes
         .iter()
@@ -161,15 +161,19 @@ pub(super) fn fan_order(
     }
     let mut ordered = Vec::new();
     while ordered.len() < edges.len() {
-        let next = edges.iter().find(|edge| {
-            !ordered.contains(*edge)
-                && before
-                    .iter()
-                    .all(|(a, b)| b != *edge || ordered.contains(a))
-        })?;
+        let next = edges
+            .iter()
+            .find(|edge| {
+                !ordered.contains(*edge)
+                    && before
+                        .iter()
+                        .all(|(a, b)| b != *edge || ordered.contains(a))
+            })
+            .or_else(|| edges.iter().find(|edge| !ordered.contains(*edge)))
+            .expect("an unordered branch remains");
         ordered.push(*next);
     }
-    Some(ordered)
+    ordered
 }
 #[cfg(test)]
 mod tests {

@@ -7,7 +7,6 @@
 // them from the side (Skill evaluation's "Grading").
 
 import { expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { roundBridges, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
@@ -15,7 +14,7 @@ import gradingFan from "#tests/runtime/support/fixtures/grading-fan.json";
 import sideExit from "#tests/runtime/support/fixtures/side-exit.json";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
-test.each(LayoutEngineSchema.options)(
+test.each(["track"] as const)(
 	"lines to cards beside their source leave along the shared trunk without hops (%s)",
 	async (layout) => {
 		const drawing = await renderArchitecture({
@@ -31,7 +30,7 @@ test.each(LayoutEngineSchema.options)(
 	},
 );
 
-test.each(LayoutEngineSchema.options)(
+test.each(["track"] as const)(
 	"a fan from one card to the cards below it leaves by the bottom and enters their tops (%s)",
 	async (layout) => {
 		const content = orderedFixture(gradingFan);

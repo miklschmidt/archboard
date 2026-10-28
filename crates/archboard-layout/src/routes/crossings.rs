@@ -505,6 +505,23 @@ pub(crate) fn bridge_unfolded(
     drawing: &ArchitectureDrawing<NodeFacts, EdgeFacts>,
     lines: &BTreeMap<String, LineLook>,
 ) -> Bridged<EdgeFacts> {
+    settle(drawing, lines, false)
+}
+
+/// Planned routes reserve crossings already. Each crossing gets at most four
+/// fixed-radius hop attempts, without competing cluster plans or route changes.
+pub(crate) fn bridge_planned(
+    drawing: &ArchitectureDrawing<NodeFacts, EdgeFacts>,
+    lines: &BTreeMap<String, LineLook>,
+) -> Bridged<EdgeFacts> {
+    settle(drawing, lines, true)
+}
+
+fn settle(
+    drawing: &ArchitectureDrawing<NodeFacts, EdgeFacts>,
+    lines: &BTreeMap<String, LineLook>,
+    planned: bool,
+) -> Bridged<EdgeFacts> {
     let edges = &drawing.edges;
     let runs = straight_runs(edges);
     let crossings = drawn_crossings(edges, &runs);
@@ -523,11 +540,13 @@ pub(crate) fn bridge_unfolded(
         bridges: Vec::new(),
         replacements: vec![BTreeMap::new(); edges.len()],
     };
-    let plans: Vec<Plan> = (0..state.clusters.all.len())
-        .flat_map(|cluster| state.plans_of(cluster))
-        .collect();
-    for plan in sorted_by(&plans, by_key) {
-        state.attempt(&plan);
+    if !planned {
+        let plans: Vec<Plan> = (0..state.clusters.all.len())
+            .flat_map(|cluster| state.plans_of(cluster))
+            .collect();
+        for plan in sorted_by(&plans, by_key) {
+            state.attempt(&plan);
+        }
     }
     for crossing in 0..state.crossings.len() {
         if !state.settled[crossing] && !state.hop_alone(crossing) {

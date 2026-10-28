@@ -1,7 +1,6 @@
 //! Ownership before coordinates: labels, exact obstacles, portals, and whole fans.
 
 use crate::geometry::Rect;
-use crate::track::route::trunk_kind;
 
 use super::model::Model;
 
@@ -73,7 +72,7 @@ impl Topology {
                 });
             }
             for common in [CommonEndpoint::Source(from), CommonEndpoint::Target(to)] {
-                let treatment = trunk_kind(edge);
+                let treatment = model.treatments[index].clone();
                 if let Some(fan) = topology
                     .fans
                     .iter_mut()
@@ -101,7 +100,7 @@ impl Topology {
                     (match fan.common {
                         CommonEndpoint::Source(from) => ends.0 == from,
                         CommonEndpoint::Target(to) => ends.1 == to,
-                    }) && trunk_kind(model.edges[edge]) == fan.treatment
+                    }) && model.treatments[edge] == fan.treatment
                 })
             })
             && self.labels.iter().all(|label| {

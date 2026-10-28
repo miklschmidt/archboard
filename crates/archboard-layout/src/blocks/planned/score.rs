@@ -41,13 +41,22 @@ pub(super) fn cost(model: &Model<'_>, topology: &Topology, shape: &Shape, frozen
                 .iter()
                 .position(|edge| edge.id == line.id)
                 .expect("a real relationship");
-            let axis = shape.scopes[&topology.routes[edge].scope].axis;
+            let axis = shape
+                .scopes
+                .get(&topology.routes[edge].scope)
+                .map_or(shape.axis, |scope| scope.axis);
             steps(&line.points, axis)
         })
         .sum();
+    let travelled: f64 = shape
+        .drawing
+        .edges
+        .iter()
+        .map(|line| length(&line.points))
+        .sum();
     30.0 * shape.empty / shape.occupied.max(1.0)
-        + 25.0 * frozen.owned_length() / (edges * width)
-        + 18.0 * frozen.junctions() as f64 / edges
+        + 25.0 * (frozen.owned_length() + travelled) / (2.0 * edges * width)
+        + 18.0 * (frozen.junctions() + frozen.crossings()) as f64 / edges
         + 10.0 * label_distance / (labels * width)
         + 10.0 * backwards / edges
         + 7.0 * (1.0 / fit_in(shape.drawing.width, shape.drawing.height).max(0.001) - 1.0)

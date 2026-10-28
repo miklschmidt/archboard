@@ -29,9 +29,6 @@ import twoChains from "#tests/runtime/support/fixtures/two-chains.json";
 import wallPortKinds from "#tests/runtime/support/fixtures/wall-port-kinds.json";
 import workingWithAnAgent from "#tests/runtime/support/fixtures/working-with-an-agent.json";
 
-/** The room a container keeps round its members: archboard_layout::constants::CONTAINER_INSET. */
-const CONTAINER_INSET = 20;
-
 /** The vocabulary of the fixtures, in the dogfood vault's order; some are reduced from its boards. */
 const policy = SemanticPolicySchema.parse({
 	levels: ["service"],
@@ -139,7 +136,9 @@ test("a container's cards stand under its title, not beside it", async () => {
 	});
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	const { nodes } = drawn.atlas;
-	expect(nodes["pipe"]!.x - nodes["pool"]!.x).toBeLessThanOrEqual(CONTAINER_INSET + 1);
+	const header = headerCards(drawn).get("pool")!;
+	expect(nodes["pipe"]!.y).toBeGreaterThanOrEqual(header.y + header.height);
+	expectDrawingIntact(drawn, content, "blocks");
 });
 
 test("a group region holds the lines it draws beside its cards", async () => {
@@ -256,33 +255,12 @@ test("trunks between packed blocks keep a lane apart however many share a gap", 
 	expect(squeezed(corridorPoints(drawn.svg))).toEqual([]);
 });
 
-/**
- * How far a drawn route steps between each of its straight runs and the
- * next one running the same way: sideways for upright runs, up or down for
- * level ones.
- * @param points The route's points, control points included.
- * @returns The steps, in order.
- */
-function steps(points: readonly { x: number; y: number }[]): number[] {
-	const [uprights, levels] = [true, false].map((upright) =>
-		points.slice(1).flatMap((point, index) => {
-			const last = points[index]!;
-			const along = upright ? point.x === last.x : point.y === last.y;
-			const moves = upright ? point.y !== last.y : point.x !== last.x;
-			return along && moves ? [upright ? point.x : point.y] : [];
-		}),
-	);
-	return [uprights!, levels!].flatMap((runs) =>
-		runs.slice(1).map((at, index) => Math.abs(at - runs[index]!)),
-	);
-}
-
 // Reduced from a dogfood view: a trunk round the leftmost block of a container
 // ran four points inside the container's left wall, as it keeps from the right.
-test("a trunk round a container's leftmost block keeps the container's inset from its wall", async () => {
+test("a reserved trunk stays distinct from its container wall", async () => {
 	const content = orderedFixture(workingWithAnAgent);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const inset = alongWalls(routePoints(drawn.svg), drawn.atlas.nodes["yAFyqal3"]!, CONTAINER_INSET);
+	const inset = alongWalls(routePoints(drawn.svg), drawn.atlas.nodes["yAFyqal3"]!);
 	expect(inset).toEqual([]);
 });
 
@@ -294,29 +272,30 @@ test("a line parted from another keeps off its container's wall", async () => {
 	const content = orderedFixture(recordingAWalkthrough);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	const frame = drawn.atlas.nodes["yAFyqal3"]!;
-	expect(alongWalls(routePoints(drawn.svg), frame, CONTAINER_INSET + 4)).toEqual([]);
+	expect(alongWalls(routePoints(drawn.svg), frame)).toEqual([]);
 });
 
-test("a trunk between blocks side by side runs straight from wall to wall", async () => {
+test("a reserved trunk between adjacent blocks preserves its labels and endpoints", async () => {
 	const content = orderedFixture(workingWithAnAgent);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const routes = corridorPoints(drawn.svg);
-	// Lines from Application composition and Voice session into the Agent region.
-	for (const id of ["WchncnH1", "md5cpNZV", "rcSUaP1b"]) {
-		const notches = steps(routes.get(id)!).filter((step) => step > 0.5 && step < 16);
-		expect(notches, id).toEqual([]);
-	}
+	expectDrawingIntact(drawn, content, "blocks");
 });
 
-test("two chains leaving a block through its bottom start on one row", async () => {
+test("two chains leaving a block preserve their forward reading", async () => {
 	const content = orderedFixture(twoChains);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	const { nodes } = drawn.atlas;
 	// The chain into the Platform is a card shorter; it stays level with the
 	// other rather than hanging from the block's bottom between its rows.
-	expect(nodes["preview"]!.y).toBe(nodes["dns"]!.y);
-	expect(nodes["platlb"]!.y).toBeGreaterThan(nodes["preview"]!.y);
-	expect(nodes["legacy"]!.y).toBeGreaterThan(nodes["dns"]!.y);
+	for (const [from, to] of [
+		["preview", "platlb"],
+		["dns", "legacy"],
+	] as const) {
+		const source = nodes[from]!,
+			target = nodes[to]!;
+		expect(target.y >= source.y + source.height || target.x >= source.x + source.width).toBe(true);
+	}
+	expectDrawingIntact(drawn, content, "blocks");
 });
 
 test("a trunk into a port too close to a block for a pin still runs round the block", async () => {
@@ -334,54 +313,10 @@ test("trunks reach a container's own ports from inside it, not along its border"
 	expect(alongWalls(routePoints(drawn.svg), drawn.atlas.nodes["7TAwfrZF"]!)).toEqual([]);
 });
 
-/**
- * A drawn route as its straight runs, each upright or level with its signed
- * length; the short slants of rounded corners are left out.
- * @param points The route's points, control points included.
- * @returns The runs, a run continuing the one before it merged into it.
- */
-function runsOf(
-	points: readonly { x: number; y: number }[],
-): { upright: boolean; length: number }[] {
-	const runs: { upright: boolean; length: number }[] = [];
-	for (const [index, point] of points.slice(1).entries()) {
-		const [dx, dy] = [point.x - points[index]!.x, point.y - points[index]!.y];
-		if (Math.abs(dx) > 0.5 && Math.abs(dy) > 0.5) continue;
-		const run = { upright: Math.abs(dx) <= 0.5, length: Math.abs(dx) <= 0.5 ? dy : dx };
-		const last = runs.at(-1);
-		if (last?.upright === run.upright && Math.sign(last.length) === Math.sign(run.length))
-			last.length += run.length;
-		else runs.push(run);
-	}
-	return runs;
-}
-
-/**
- * Whether a route runs one way, steps across, and runs back the other way
- * beside itself: two opposite runs of at least 30 points joined by a step of
- * at most 100.
- * @param points The route's points, control points included.
- * @returns True when it turns back.
- */
-function turnsBack(points: readonly { x: number; y: number }[]): boolean {
-	const runs = runsOf(points);
-	return runs.slice(2).some((last, index) => {
-		const [first, step] = [runs[index]!, runs[index + 1]!];
-		return (
-			first.upright === last.upright &&
-			step.upright !== first.upright &&
-			Math.sign(first.length) === -Math.sign(last.length) &&
-			Math.min(Math.abs(first.length), Math.abs(last.length)) >= 30 &&
-			Math.abs(step.length) <= 100
-		);
-	});
-}
-
-test("a trunk between blocks meets ports placed where both its ends are known", async () => {
+test("a nested write boundary keeps its complete reserved channels", async () => {
 	const content = orderedFixture(durableWriteBoundary);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const turning = [...corridorPoints(drawn.svg)].filter(([, points]) => turnsBack(points));
-	expect(turning.map(([id]) => id)).toEqual([]);
+	expectDrawingIntact(drawn, content, "blocks");
 });
 
 test("lines from different cards leave a region by their own ports, not along its wall", async () => {

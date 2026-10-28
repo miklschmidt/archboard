@@ -131,3 +131,39 @@ fn a_nested_source_or_header_keeps_its_label_inside_its_own_frame() {
         );
     }
 }
+
+#[test]
+fn a_large_label_fan_and_parallel_relationships_keep_their_private_words() {
+    let mut children = vec![json!({"id":"source","width":200,"height":105})];
+    let mut edges = Vec::new();
+    for index in 0..30 {
+        let target = format!("target{}", index / 2);
+        if index % 2 == 0 {
+            children.push(json!({"id":target,"width":200,"height":80}));
+        }
+        edges.push(
+            json!({"id":format!("edge{index}"),"sources":["source"],"targets":[target],
+            "labels":[{"width":80,"height":24}]}),
+        );
+    }
+    let placed = drawing(
+        &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+        "children":children,"edges":edges}),
+    );
+    let routes = placed["edges"].as_array().unwrap();
+    assert_eq!(routes.len(), 30);
+    for edge in routes {
+        let label = &edge["label"];
+        let (left, top) = (label["x"].as_f64().unwrap(), label["y"].as_f64().unwrap());
+        assert!(edge["points"].as_array().unwrap().windows(2).any(|pair| {
+            let (a, b) = (
+                pair[0]["x"].as_f64().unwrap(),
+                pair[1]["x"].as_f64().unwrap(),
+            );
+            pair[0]["y"].as_f64() == Some(top + 12.0)
+                && pair[1]["y"] == pair[0]["y"]
+                && a.min(b) <= left
+                && a.max(b) >= left + 80.0
+        }));
+    }
+}

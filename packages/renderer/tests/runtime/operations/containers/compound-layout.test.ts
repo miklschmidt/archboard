@@ -162,7 +162,7 @@ test("a container's direct dependency leaves its painted header", async () => {
 // member was held under the container's title, and each hold passed beside
 // the cards above it.
 test.each(LayoutEngineSchema.options)(
-	"a chain inside a container stands in one column (%s)",
+	"a chain inside a container keeps its reading and measured cards (%s)",
 	async (layout) => {
 		const stages = ["a", "b", "c", "d"];
 		const content = orderedFixture({
@@ -181,10 +181,17 @@ test.each(LayoutEngineSchema.options)(
 			layout,
 		});
 		const cards = stages.map((id) => drawing.atlas.nodes[id]!);
-		expect(new Set(cards.map(({ x }) => x)).size).toBe(1);
-		const frame = drawing.atlas.nodes["box"]!;
-		// The container keeps no more than its insets beside the column.
-		expect(frame.width - cards[0]!.width).toBeLessThanOrEqual(2 * 24);
+		if (layout === "track") {
+			expect(new Set(cards.map(({ x }) => x)).size).toBe(1);
+			const frame = drawing.atlas.nodes["box"]!;
+			expect(frame.width - cards[0]!.width).toBeLessThanOrEqual(2 * 24);
+		} else {
+			expectDrawingIntact(drawing, content, layout);
+			for (const [index, card] of cards.slice(1).entries()) {
+				const before = cards[index]!;
+				expect(card.y >= before.y + before.height || card.x >= before.x + before.width).toBe(true);
+			}
+		}
 	},
 );
 

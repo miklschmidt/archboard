@@ -7,7 +7,6 @@ use super::model::Model;
 use super::topology::CommonEndpoint;
 use crate::blocks::assembly::{Placed, PlacedLine};
 use crate::geometry::{Point, Rect};
-use crate::track::route::trunk_kind;
 
 #[derive(Clone, Copy)]
 enum Ownership {
@@ -53,6 +52,24 @@ impl Frozen {
             .iter()
             .map(|run| super::geometry::length(&run.points))
             .sum()
+    }
+
+    /// A crossing is counted once even when many relationships share its ink.
+    pub(super) fn crossings(&self) -> usize {
+        let mut points = std::collections::BTreeSet::new();
+        for (index, run) in self.runs.iter().enumerate() {
+            for other in &self.runs[..index] {
+                if super::junctions::crossings(&run.points, &other.points) > 0 {
+                    let (h, v) = if run.points[0].y == run.points[1].y {
+                        (&run.points, &other.points)
+                    } else {
+                        (&other.points, &run.points)
+                    };
+                    points.insert((v[0].x.to_bits(), h[0].y.to_bits()));
+                }
+            }
+        }
+        points.len()
     }
 
     /// A junction is a tracing decision where more than two owned runs meet.
@@ -151,12 +168,30 @@ pub(super) fn freeze(model: &Model<'_>, drawing: &Placed) -> Option<Frozen> {
             }
         })
         .collect();
-    let frozen = Frozen { runs, paths };
+    let mut frozen = Frozen { runs, paths };
+    assign_suffixes(model, &mut frozen);
     frozen
         .paths
         .iter()
         .all(|path| ordered_fans(&frozen, path))
         .then_some(frozen)
+}
+
+fn assign_suffixes(model: &Model<'_>, frozen: &mut Frozen) {
+    // Parallel relationships can share both ends. After their private labels,
+    // a common suffix belongs to the target rather than a reunited source fan.
+    let targets: Vec<_> = frozen.runs.iter().enumerate().filter_map(|(index,run)| {
+        let Ownership::Shared(CommonEndpoint::Source(source)) = run.common else {return None};
+        let target=model.ends[run.members[0]].1;
+        if !run.members.iter().all(|&edge|model.ends[edge].1==target) {return None;}
+        let after_split=frozen.paths.iter().filter(|path|run.members.contains(&path.edge)).any(|path| {
+            path.runs.iter().take_while(|piece|piece.run!=index).any(|piece| !matches!(frozen.runs[piece.run].common, Ownership::Shared(CommonEndpoint::Source(owner)) if owner==source))
+        });
+        after_split.then_some((index,target))
+    }).collect();
+    for (run, target) in targets {
+        frozen.runs[run].common = Ownership::Shared(CommonEndpoint::Target(target));
+    }
 }
 
 fn split(
@@ -224,10 +259,10 @@ fn ownership(model: &Model<'_>, members: &[usize]) -> Option<Ownership> {
         return Some(Ownership::Private);
     }
     let (source, target) = model.ends[members[0]];
-    let treatment = trunk_kind(model.edges[members[0]]);
+    let treatment = &model.treatments[members[0]];
     if members
         .iter()
-        .any(|&edge| trunk_kind(model.edges[edge]) != treatment)
+        .any(|&edge| &model.treatments[edge] != treatment)
     {
         return None;
     }

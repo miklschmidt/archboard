@@ -1,7 +1,12 @@
 //! Private measured planning with a temporary dispatcher for unmigrated graph classes.
 
+mod cells;
 mod channel;
+mod conservative;
+mod fallback;
 mod geometry;
+mod guard;
+mod hierarchy;
 mod junctions;
 mod lanes;
 mod model;
@@ -37,9 +42,21 @@ fn selected(
     if !channel::eligible(model, topology) {
         return None;
     }
-    let (shape, counts) = shape::plan(model, topology);
-    debug_assert!(counts.within_limits(model.scopes.len(), model.edges.len()));
-    shape.and_then(|shape| {
-        runs::freeze(model, &shape.drawing).map(|frozen| frozen.emit(model, shape.drawing))
-    })
+    // Larger diagrams reserve boundary channels directly. Repeated failed local
+    // candidates otherwise spend the whole budget before the same construction.
+    let shape = if model.edges.len() > 24 {
+        None
+    } else {
+        let (shape, counts) = shape::plan(model, topology);
+        debug_assert!(counts.within_limits(model.scopes.len(), model.edges.len()));
+        shape
+    };
+    let shape = shape
+        .filter(|shape| guard::complete(model, topology, shape))
+        .or_else(|| conservative::plan(model, topology));
+    shape
+        .filter(|shape| guard::complete(model, topology, shape))
+        .and_then(|shape| {
+            runs::freeze(model, &shape.drawing).map(|frozen| frozen.emit(model, shape.drawing))
+        })
 }

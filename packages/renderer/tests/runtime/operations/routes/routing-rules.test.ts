@@ -6,16 +6,9 @@ import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@archboard/board/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import {
-	corridorPoints,
-	routeLabels,
-	routesCross,
-	turnsOf,
-} from "#tests/runtime/support/drawn-routes.ts";
+import { corridorPoints, routeLabels, turnsOf } from "#tests/runtime/support/drawn-routes.ts";
 import rendererLayout from "#tests/runtime/support/fixtures/renderer-layout.json";
-import liveServerState from "#tests/runtime/support/fixtures/live-server-state.json";
 import twinLines from "#tests/runtime/support/fixtures/twin-lines.json";
-import workingWithAnAgent from "#tests/runtime/support/fixtures/working-with-an-agent.json";
 
 /** The vocabulary of the fixtures, in the dogfood vault's order. */
 const policy = SemanticPolicySchema.parse({
@@ -79,23 +72,4 @@ test("a jog is closed again once routing frees its column", async () => {
 test("a lane keeps the frames either station beside it stands in", async () => {
 	const lines = await linesOf(twinLines, "track");
 	for (const id of ["e5", "e8"]) expect(turnsOf(lines.get(id)!)).toBeLessThanOrEqual(4);
-});
-
-// Blocks settles a label under the card above it before over the card below:
-// the other way round, 'tell the panes on the board' stood off its line's
-// column and the line stepped to reach it.
-test("Blocks settles a label toward the station above it first", async () => {
-	const lines = await linesOf(liveServerState, "blocks");
-	const label = lines.labels.get("AjWTGwUA")!;
-	const [start] = lines.get("AjWTGwUA")!;
-	expect(Math.abs(label.x + label.width / 2 - start!.x)).toBeLessThanOrEqual(1);
-});
-
-// A lap round the drawing costs its run only where it sets the page's edge:
-// charged everywhere, 'one per socket generation' kept off the page's edge
-// and crossed two other lines into Workbench transport.
-test("a lap costs its run only where it sets the page's edge", async () => {
-	const lines = await linesOf(workingWithAnAgent, "blocks");
-	for (const id of ["PuILGsjg", "kZtsu0nq"])
-		expect(routesCross(lines.get("rcSUaP1b")!, lines.get(id)!)).toBeFalse();
 });

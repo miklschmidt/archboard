@@ -96,6 +96,17 @@ fn sorted(mut values: Vec<f64>) -> Vec<f64> {
 impl Grid {
     /// The grid of a scene, the buffers named in `exempt` not blocking.
     pub(crate) fn new(scene: &Scene, exempt: &[usize], routes: &[Option<Vec<Point>>]) -> Grid {
+        Self::bounded(scene, exempt, routes, None, usize::MAX).expect("an unbounded grid")
+    }
+
+    /// Refuse an oversized grid before allocating its vertices. A window never drops an obstacle.
+    pub(crate) fn bounded(
+        scene: &Scene,
+        exempt: &[usize],
+        routes: &[Option<Vec<Point>>],
+        window: Option<Rect>,
+        coordinates: usize,
+    ) -> Option<Grid> {
         let clearance = scene.params.clearance;
         let buffers: Vec<Buffer> = scene
             .obstacles
@@ -117,54 +128,12 @@ impl Grid {
             .iter()
             .enumerate()
             .filter(|(index, buffer)| {
-                !exempt.contains(index) && !free_ends.iter().any(|at| buffer.holds(*at))
+                !exempt.contains(index)
+                    && (window.is_some() || !free_ends.iter().any(|at| buffer.holds(*at)))
             })
             .map(|(_, buffer)| *buffer)
             .collect();
-        let mut xs = Vec::new();
-        let mut ys = Vec::new();
-        for buffer in &buffers {
-            xs.extend([buffer.left, buffer.right]);
-            ys.extend([buffer.top, buffer.bottom]);
-        }
-        for end in scene
-            .connectors
-            .iter()
-            .flat_map(|connector| [&connector.ends.0, &connector.ends.1])
-        {
-            let at = end.at();
-            xs.push(at.x);
-            ys.push(at.y);
-            if let End::Pin {
-                obstacle, leaves, ..
-            } = *end
-            {
-                let stub = stub_end(&buffers[obstacle], at, leaves);
-                xs.push(stub.x);
-                ys.push(stub.y);
-            }
-        }
-        for point in routes.iter().flatten().flatten() {
-            xs.push(point.x);
-            ys.push(point.y);
-        }
-        let lane = scene.params.lane;
-        xs = xs
-            .into_iter()
-            .flat_map(|x| [x - lane, x, x + lane])
-            .collect();
-        ys = ys
-            .into_iter()
-            .flat_map(|y| [y - lane, y, y + lane])
-            .collect();
-        if let Some(low) = scene.minimum {
-            xs.retain(|&x| x >= low.x - SAME);
-            xs.push(low.x);
-            ys.retain(|&y| y >= low.y - SAME);
-            ys.push(low.y);
-        }
-        let xs = sorted(xs);
-        let ys = sorted(ys);
+        let (xs, ys) = coordinates_of(scene, &buffers, routes, window, coordinates)?;
         let (width, height) = (xs.len(), ys.len());
         let mut grid = Grid {
             free: vec![true; width * height],
@@ -176,7 +145,7 @@ impl Grid {
             blocking,
         };
         grid.block_buffers();
-        grid
+        Some(grid)
     }
 
     /// Mark each obstacle in contiguous row slices. Edge midpoints keep the
@@ -264,4 +233,78 @@ impl Grid {
 fn index_of(values: &[f64], value: f64) -> Option<usize> {
     let at = values.partition_point(|&v| v < value && value - v >= SAME);
     (at < values.len() && (values[at] - value).abs() < SAME).then_some(at)
+}
+
+/// Build bounded axes before allocating any grid vertices.
+fn coordinates_of(
+    scene: &Scene,
+    buffers: &[Buffer],
+    routes: &[Option<Vec<Point>>],
+    window: Option<Rect>,
+    limit: usize,
+) -> Option<(Vec<f64>, Vec<f64>)> {
+    let mut xs = Vec::new();
+    let mut ys = Vec::new();
+    for buffer in buffers {
+        xs.extend([buffer.left, buffer.right]);
+        ys.extend([buffer.top, buffer.bottom]);
+    }
+    for end in scene
+        .connectors
+        .iter()
+        .flat_map(|connector| [&connector.ends.0, &connector.ends.1])
+    {
+        let at = end.at();
+        xs.push(at.x);
+        ys.push(at.y);
+        if let End::Pin {
+            obstacle, leaves, ..
+        } = *end
+        {
+            let stub = stub_end(&buffers[obstacle], at, leaves);
+            xs.push(stub.x);
+            ys.push(stub.y);
+        }
+    }
+    for point in routes.iter().flatten().flatten() {
+        xs.push(point.x);
+        ys.push(point.y);
+    }
+    let (xs, ys) = bounded_axes(xs, ys, scene, window);
+    let xs = sorted(xs);
+    let ys = sorted(ys);
+    if xs.len() > limit || ys.len() > limit {
+        return None;
+    }
+    Some((xs, ys))
+}
+
+fn bounded_axes(
+    mut xs: Vec<f64>,
+    mut ys: Vec<f64>,
+    scene: &Scene,
+    window: Option<Rect>,
+) -> (Vec<f64>, Vec<f64>) {
+    let lane = scene.params.lane;
+    xs = xs
+        .into_iter()
+        .flat_map(|x| [x - lane, x, x + lane])
+        .collect();
+    ys = ys
+        .into_iter()
+        .flat_map(|y| [y - lane, y, y + lane])
+        .collect();
+    if let Some(low) = scene.minimum {
+        xs.retain(|&x| x >= low.x - SAME);
+        xs.push(low.x);
+        ys.retain(|&y| y >= low.y - SAME);
+        ys.push(low.y);
+    }
+    if let Some(window) = window {
+        xs.retain(|&x| x >= window.x && x <= window.x + window.width);
+        ys.retain(|&y| y >= window.y && y <= window.y + window.height);
+        xs.extend([window.x, window.x + window.width]);
+        ys.extend([window.y, window.y + window.height]);
+    }
+    (xs, ys)
 }

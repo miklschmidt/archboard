@@ -281,7 +281,7 @@ Start with this dimensionless cost:
 
 ```text
 C = 30 * emptyArea / occupiedArea
-  + 25 * privateAndSharedLength / (edgeCount * typicalCardWidth)
+  + 25 * (ownedLength + travelledLength) / (2 * edgeCount * typicalCardWidth)
   + 18 * (crossings + crowdedJunctions) / max(1, edgeCount)
   + 10 * labelSourceDistance / (labelCount * typicalCardWidth)
   + 10 * backwardSteps / max(1, edgeCount)
@@ -294,8 +294,9 @@ Occupied area includes measured words, protected labels, cards, and required hea
 It excludes routes and surplus corridors.
 Count nested empty space in its immediate owning scope, without counting it again at ancestors.
 
-Count shared geometric length once in the space term.
-Also record complete per-relationship length for the reported route measure.
+Count shared geometric length once in `ownedLength`.
+Count the complete path of every relationship in `travelledLength`.
+Their mean charges both occupied space and the distance that a reader follows.
 Charge crowded junctions for the council's tracing stop points.
 The bend term breaks close alternatives without treating every bend as a defect.
 Pane shrink measures lost card-name size at the supported 1920×1080 pane.
@@ -338,9 +339,10 @@ Give it the exact locked ports, obstacle rectangles, and earlier lane reservatio
 Bound the window to the owning scope and neighboring corridor junctions.
 Reject rather than truncate a window that omits an intersecting obstacle.
 
-Initial limits are 128 obstacles, 96 coordinates per axis, and 32,768 expanded search states per local fallback.
+The local limits are 128 obstacles, 192 coordinates per axis, and 32,768 expanded search states per fallback.
+The initial 96-coordinate limit refused useful local windows before search began.
 Permit at most four fallback windows per solve.
-These are starting engineering limits, not measured performance claims.
+These are operation limits, not measured performance claims.
 Add explicit limits to the router interface because the current search has no such contract.
 Never stop based on a wall-clock deadline, because that changes geometry across hosts.
 
@@ -674,6 +676,70 @@ Those pairs name Board viewer, Board persistence, and Archboard server routes, r
 None reaches the 500 ms target.
 The raw measurements and individual picture judgments live in `/tmp/blocks-explore/build/report-1.md`.
 Steps 7 and 8 still need to establish compactness, large-board speed, and visual acceptance before production adoption.
+
+### Build checkpoint: bounded routing and complete geometry
+
+Step 7 permits transverse crossings with sixteen units of straight room on every arm.
+The complete guard protects every card, header, caption, source label, and unrelated frame.
+A shared stroke still needs one common endpoint and the same treatment across all members.
+The treatment now includes the visible relationship kind when comparison context changes an overview’s majority kind.
+
+The local router keeps all obstacle buffers that intersect its window.
+It refuses oversized windows before allocating vertices and stops after the declared search-state limit.
+One solve shares a budget of four windows.
+The bound remains deterministic and does not use elapsed time.
+
+Each conservative child exports complete source and target boundary paths.
+Its parent places those paths with the child and reserves distinct row lanes and target-owned rails.
+This prevents a parent from searching through an already frozen child’s interior.
+Three shelf widths compete on the emitted paths.
+Direct shortcuts compete before the scope freezes and must preserve all earlier paths and words.
+Diagrams above twenty-four relationships use this construction directly to avoid repeated failed local searches.
+Smaller diagrams retain eight four-wall candidates before the three conservative choices.
+
+The cost now averages owned ink length and complete relationship length.
+Owned length alone favored shared routes that were expensive for a reader to follow.
+Crossings are counted once per geometric location, independent of how many relationships share a trunk.
+Neither crossings nor failure to fit the pane at native text size selects legacy placement.
+
+Crossing decoration tries at most four fixed-radius arcs per crossing.
+It does not enumerate competing cluster plans for a frozen drawing.
+The atlas reserves eighteen units around the frozen route, independent of visible comparison context.
+An attachment keeps a 0.02-unit outward allowance for independent SVG coordinate rounding.
+Track retains its previous geometry, decoration, and atlas calculation.
+
+The second full run draws 4,043 pictures per engine.
+Track matches every baseline SVG.
+The corrected integrity inventory reports six existing geometry findings and no new finding, against twenty-three at baseline.
+Sixty-seven drawings fail intactness, including the sixty-one historical subject-set mismatches.
+The planner owns all six references and 1,218 of 1,425 distinct measured Blocks solves.
+The remaining 207 solves still use the temporary dispatcher until step 8 migrates their port-capacity and junction cases.
+These counts describe distinct solves, not cache hits or authored drawings.
+
+The first broad measurement still misses the readability targets.
+Mean area is 4,330,803, mean route length is 2,203.2, and bends average 3.346.
+Board viewer still takes about 649 ms including paint.
+Board persistence takes about 447 ms, and server routes takes about 222 ms.
+The conservative diagrams show excessive margin detours and empty space.
+This checkpoint establishes guarded ownership and bounded work, not production visual acceptance.
+
+The router fixtures cover intersecting buffers, coordinate and search exhaustion, and fixed unrelated strokes.
+The planner fixture covers thirty separately labelled relationships with repeated endpoints.
+The tests now retain Track’s fixed columns, forced faces, bridge counts, and band alignment only for Track.
+This affects `tracks/track-steps`, `containers/compound-layout`, `containers/shared-span`, `ports/fan-faces`, and `ports/side-hook`.
+Blocks fixtures retain forward reading and complete drawing integrity.
+
+`containers/container-packing` now permits asymmetric fan channels while retaining minimum card insets and containment.
+`blocks/blocks-engine` replaces fixed twenty-unit routing insets with the existing prohibition against routes on the frame outline.
+It keeps card and header clearance, distinct trunks, visible attachments, and intactness.
+The same file replaces synchronized chain rows and forbidden short coordinate steps with forward reading and complete geometry.
+
+`blocks/block-packing`, `blocks/held-orders`, and `routes/walls-straight` now test complete channels instead of a fixed direction or zero crossings.
+`labels/label-runs` retains label ownership, label separation, and card clearance instead of midpoint placement.
+The removed `routes/turn-back` fixture and two Blocks cases in `routes/routing-rules` encoded the replaced jog and lap policies.
+Backward travel remains a measured cost, not a forbidden geometry class.
+No hard-defect helper, Track assertion, lint rule, or type rule changes.
+A comparison regression also proves that visible kinds cannot share a trunk and that toggling context preserves atlas bounds.
 
 ## Risks and decisions left to evidence
 
