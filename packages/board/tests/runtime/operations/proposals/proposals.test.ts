@@ -192,6 +192,7 @@ test("retained comparisons identify the live base revision independently of the 
 		action: "explain-proposal" as const,
 		model: current.manifest.id,
 		expectedRevision: created.checkpoint.revision.digest,
+		expectedComparisonRevision: retained.comparison!.revision.digest,
 		subjects: ["Shop#Gateway"],
 		reading: {
 			focus: [],
@@ -229,6 +230,42 @@ test("retained comparisons identify the live base revision independently of the 
 			explain,
 		}),
 	).toMatchObject({ success: false, code: "MODEL_INVALID" });
+	const { expectedComparisonRevision: _comparison, ...unguarded } = explain;
+	expect(
+		await readArchitectureModel(vault, undefined, undefined, {
+			checkpoint: created.checkpoint.id,
+			explain: unguarded,
+		}),
+	).toMatchObject({ success: false, code: "MODEL_CHANGED" });
+	const changed = await editArchitectureModule(vault, {
+		...(await familyRequest(vault)),
+		changes: [
+			{
+				type: "edit-module",
+				subject: "Shop#Gateway",
+				set: { description: "The comparison changed after the pane captured its reading." },
+			},
+		],
+	});
+	if (!changed.success) throw new Error(JSON.stringify(changed));
+	expect(
+		await readArchitectureModel(vault, undefined, undefined, {
+			checkpoint: created.checkpoint.id,
+			explain,
+		}),
+	).toMatchObject({ success: false, code: "MODEL_CHANGED" });
+	expect(
+		await readArchitectureModel(vault, undefined, undefined, {
+			checkpoint: created.checkpoint.id,
+			explain: { ...explain, expectedComparisonRevision: changed.after.digest },
+		}),
+	).toMatchObject({
+		success: true,
+		explanation: {
+			revision: created.checkpoint.revision,
+			comparison: { revision: changed.after },
+		},
+	});
 }, 20_000);
 
 test("compact proposals store narrative beats as independent stable subjects and materialize exact retained playback inputs", async () => {

@@ -10,7 +10,7 @@ The context source reports canonical models and explicit refusal states. Discove
 
 For pointing questions such as "this" or "what is selected", run browser panes during this turn. Read panes[].architecture and tabSessionId. Resolve the focused pane's unambiguous selection unless the user names another pane. A failed read differs from an empty selection. Ask one concise clarification if several subjects remain. Never infer pointing, gaze, geometry, or meaning from layout.
 
-Carry the exact vault, model, state or checkpoint, selected subjects, reading intent, and observed revision with the resolved question. A later pane change cannot retarget it. Read containment, source-owned relationships, flow membership, descriptions, responsibilities, and bindings before explaining. Distinguish architectural intent from source behavior.
+Carry the pane's exact architecture capture with the resolved question. Preserve its selectors, selected subjects, reading intent, target revision, comparison revision, and optional narrative source revision. A later pane change cannot retarget it. Read containment, source-owned relationships, flow membership, descriptions, responsibilities, and bindings before explaining. Distinguish architectural intent from source behavior.
 
 Use browser show with canonical selectors to open a model, module, scope, reading, or walkthrough in a named pane. It uses the existing pane and checkout routing. Agent navigation cannot change the tab's shown conversation. The browser's activation action focuses that checkout's workhorse. Keep agents and rendering local.
 
