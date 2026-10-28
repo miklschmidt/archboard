@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T01:42:00Z'
+updated_date: '2026-10-28T01:52:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -282,4 +282,6 @@ Canonical hero now explicitly compares against current and requires a nonempty c
 Shelved the three obsolete leaf TASK-549.03 drafts through the old .23 public CLI against the explicitly addressed integration vault: Routes Yfd3oFmv v211->212, Persistence 8W0ty0Om v231->232, Command D7KLrOPr v248->249. Their implementation already exists in later adopted states. All other variant objects and adoption records remain identical. Original retained checkpoint5c732a3853a575ba954c5abfc08584bb37a03f84 remains available. Each claim was released, and owned server2857945 was stopped. Receipt: task-549.24-root-disposition-receipt.json. Fresh public inventory is task-549.24-root-inventory-disposed.json; no mapping/cutover/adoption occurred.
 
 Saved the explicit root mapping plan through saveLegacyMappingPlan. Source remains17798d5e92b5272cb4f8eb08fee8cbf23309747954af9b12128b88b347900913; saved plan12495cf712344330f745b9a71db0cf7c3efd9a8874b2b68e4495cdd685811076. The public preview succeeds with 656 modules,1361 relationships,17 flow collections,18 current walkthroughs and148 temporary roots. All15 independent drafts have explicit original baseline conversions. The50 mapping conflicts are resolved and reading diagnostics are empty. Plan merges34 duplicate occurrences through237 explicit mapping entries, preserves distinct responsibilities, and supplies64 explicit reference destinations. Existing Layer groups remain authored dependency groups, not numeric module depth. Recursive containment and .24 meaning/adoption remain pending after cutover. Evidence task-549.24-root-preview.json and summary beside external parent state.
+
+Root installation attempt canonical-root-cutover-549-24-1 refused before application with MODEL_WRITE_FAILED: Git command timeout. No recovery field was returned; public authority remains LEGACY_AUTHORITY with unchanged source17798d5e and plan12495cf. Source tree remains unchanged. Candidate size is656 modules/15 draft baselines. Likely unbounded Git blob fanout in the existing archive tree writer needs a disposable public-seam reproduction; no timeout or process-cleanup rule will be weakened. Complete originals are signed at803ea654db5bc1b0106ef9ddc64be04b51e2eca8 and all19 files reopen byte for byte. Brief/evidence: task-549.24-archive-write-scale-blocker.md outside repository. No retry or recovery was attempted.
 <!-- SECTION:NOTES:END -->
