@@ -20,10 +20,7 @@ import {
 	cornerHeader,
 	holdResizedChildren,
 	leavesOf,
-	letPortsSlide,
-	markRegions,
 	pinnedLeaf,
-	rimOf,
 	settledLeaf,
 } from "#shared/rules/blocks/folds/leaves.ts";
 import {
@@ -44,7 +41,7 @@ import {
 	type Join,
 } from "#shared/rules/track/scene/graphviz.ts";
 import { FROM_POINTS } from "#shared/rules/layout/compound-graph.ts";
-import { routeScene, trunkKind } from "#shared/rules/track/routes/route.ts";
+import { prepareCardRouting } from "#shared/rules/blocks/cards/card-routing.ts";
 import { fitSides } from "#shared/rules/track/routes/sides.ts";
 import { Clusters, isTitle, titleOf } from "#shared/rules/blocks/cards/clusters.ts";
 import { frameShape } from "#shared/rules/blocks/tree/lone.ts";
@@ -54,16 +51,12 @@ import { leavingPull } from "#shared/rules/blocks/cards/leaving.ts";
 import { gridEdges, wrapEdges } from "#shared/rules/track/channels/grid.ts";
 import { anchored, lapsOf } from "#shared/rules/track/scene/score.ts";
 import {
-	besidePoints,
-	besideWalls,
 	entersBy,
 	innerPoints,
 	labelledOut,
-	markBesides,
 	ranks,
 	itemsOf,
 	wallLines,
-	wallsOf,
 } from "#shared/rules/blocks/packing/walls.ts";
 import { Scene, TRACK_POLYLINE, TRACK_REGIONS } from "#shared/rules/track/scene/scene.ts";
 
@@ -107,6 +100,8 @@ class CardLayout {
 	readonly arranged: Required<Arrangement>;
 	/** The size its header took once Graphviz laid it out, if it has one (`headers.ts`). */
 	taken: TakenHeader | undefined;
+	/** Card widths reserved for independent ports during this placement. */
+	private readonly portWidths = new Map<string, number>();
 
 	/**
 	 * Start a block's layout.
@@ -172,7 +167,19 @@ class CardLayout {
 		if (title !== undefined) return title;
 		if (name === headerOf(this.block)) return this.block.header!;
 		if (name.startsWith("port:") || name.startsWith("stub:")) return { width: PORT, height: PORT };
-		return this.laid.get(name) ?? this.tree.cards.get(name)!;
+		const size = this.laid.get(name) ?? this.tree.cards.get(name)!;
+		return this.portSize(name, size);
+	}
+
+	/**
+	 * A measured card's size with any reserved port capacity.
+	 * @param name The card.
+	 * @param size Its measured size.
+	 * @returns The size placement must keep.
+	 */
+	private portSize(name: string, size: Size): Size {
+		const width = this.portWidths.get(name);
+		return width === undefined ? size : { ...size, width: Math.max(size.width, width) };
 	}
 
 	/**
@@ -358,9 +365,34 @@ class CardLayout {
 	 * @returns The laid-out block.
 	 */
 	lay(viz: Graphviz): Laid {
-		const { placed, centres } = this.lined(viz);
-		const laid = this.routed(placed, 0);
-		return { ...laid, reroute: this.rerouted.bind(this, placed, laid.width, centres) };
+		let placement = this.lined(viz);
+		for (;;) {
+			const { placed, centres } = placement;
+			const routing = prepareCardRouting(this, placed, 0);
+			if (!this.reservePorts(routing.widths)) {
+				const laid = routing.lay();
+				return { ...laid, reroute: this.rerouted.bind(this, placed, laid.width, centres) };
+			}
+			placement = this.place(viz);
+		}
+	}
+
+	/**
+	 * Reserve crowded cards' widths in the graph before placing it again.
+	 * Widths only grow, and actual port counts bound their size.
+	 * @param widths Required widths of cards in the last routing.
+	 * @returns Whether placement needs to run again.
+	 */
+	private reservePorts(widths: ReadonlyMap<string, number>): boolean {
+		const crowded = [...widths].filter(
+			([name, width]) => this.tree.cards.has(name) && width > this.sizeOf(name).width,
+		);
+		if (crowded.length === 0) return false;
+		for (const [name, width] of crowded) this.portWidths.set(name, width);
+		for (const node of nodesIn(this.graph))
+			if (this.portWidths.has(node.name))
+				node.attributes = { ...node.attributes, ...this.nodeOf(node.name).attributes };
+		return true;
 	}
 
 	/**
@@ -376,6 +408,15 @@ class CardLayout {
 		boxes: ReadonlyMap<string, Box>;
 	} {
 		this.build();
+		return this.place(viz);
+	}
+
+	/**
+	 * Place the built graph with its current measured card widths.
+	 * @param viz The initialized Graphviz instance.
+	 * @returns The placed block, vendor centres and boxes.
+	 */
+	private place(viz: Graphviz): ReturnType<CardLayout["lined"]> {
 		// JSON without the drawing operations Graphviz's `json` format adds,
 		// which nothing reads: the same layout in about a seventh less time.
 		const answer = viz.renderString(this.graph, { yInvert: true, format: "json0" });
@@ -403,52 +444,6 @@ class CardLayout {
 	}
 
 	/**
-	 * Whether the block's sides are the page's: the board, drawn inline.
-	 * @returns True when they are.
-	 */
-	edgesPage(): boolean {
-		return this.block.kind === "root" && this.tree.nesting !== "blocks";
-	}
-
-	/**
-	 * Route the placed block's lines on tracks and read it back.
-	 * @param placed The placed block.
-	 * @param held The width the block keeps at least.
-	 * @returns The laid-out block.
-	 */
-	routed(placed: ElkNode & { edges: ElkExtendedEdge[] }, held: number): Laid {
-		const scene = new Scene(placed);
-		scene.edgesPage = this.edgesPage();
-		scene.inline = this.tree.nesting !== "blocks";
-		markRegions(scene, this.block, this.tree);
-		letPortsSlide(scene, this.block, this.tree.nesting);
-		const beside = besideWalls(this.block, this.tree, scene);
-		const straight = new Set(beside.map(({ key }) => key));
-		markBesides(scene, beside);
-		const lines = routeScene(
-			scene,
-			placed.edges
-				.filter((edge) => !straight.has(edge.id))
-				.map((edge) => {
-					const line = this.block.lines.get(edge.id)!;
-					return {
-						id: edge.id,
-						order: Number(edge.layoutOptions?.["archboard.order"] ?? 0),
-						kind: trunkKind(edge),
-						placed: edge,
-						...wallsOf(this.block, line),
-					};
-				}),
-			this.insets.side,
-			this.insets.top,
-			rimOf(this.block, this.insets),
-		);
-		for (const [key, points] of besidePoints(scene, beside, this.insets.side))
-			lines.set(key, points);
-		return this.read(scene, lines, new Map(placed.edges.map((edge) => [edge.id, edge])), held);
-	}
-
-	/**
 	 * The block routed again with some of its ports moved along their edges,
 	 * where its parent settled them, and every pin on a block inside it where
 	 * that block's settled port now stands, and every block inside it as large
@@ -472,7 +467,7 @@ class CardLayout {
 			else Object.assign(leaf, settledLeaf(this.tree, this.laid, leaf.id, centres));
 		}
 		holdResizedChildren(placed.children ?? []);
-		return this.routed(placed, held);
+		return prepareCardRouting(this, placed, held).lay();
 	}
 
 	/**

@@ -13,6 +13,7 @@ import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { SemanticPolicySchema } from "@archboard/board/policy";
 import { LAYOUT_ASPECT } from "#shared/constants/shell-geometry.ts";
+import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import {
 	corridorPoints,
 	routeLabels,
@@ -36,6 +37,26 @@ import wrappedBlocker from "#tests/runtime/support/fixtures/wrapped-blocker.json
 function centre({ x, width }: { x: number; width: number }): number {
 	return x + width / 2;
 }
+
+// Reduced from the canonical root: parallel labeled relationships keep their
+// own ports, whose pitch compressed when their card face ran out of room.
+test("independent requests keep a full lane between their ports", async () => {
+	const content = orderedFixture({
+		nodes: ["client", "server"].map((id) => ({ id, name: id, kind: "service" })),
+		edges: Array.from({ length: 16 }, (_, index) => ({
+			id: `r${index}`,
+			from: "client",
+			to: "server",
+			kind: "call",
+			label: `request ${index}`,
+		})),
+	});
+	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	expectDrawingIntact(drawing, content, "track");
+	const routes = [...routePoints(drawing.svg).values()];
+	for (const end of [0, -1])
+		expect(new Set(routes.map((points) => points.at(end)!.x)).size).toBe(content.edges.length);
+});
 
 // Reduced from a real hosting board, names replaced: two mirrored pairs of
 // servers, each pair feeding one database through labelled lines. Graphviz
