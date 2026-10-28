@@ -213,7 +213,7 @@ test("canonical aggregates draw compact counts while retaining authored relation
 	const texts = new dom.DOMParser()
 		.parseFromString(picture.svg, "image/svg+xml")
 		.querySelectorAll('[data-semantic-id="Shop#Dispatch"] text');
-	expect([...texts].map((element) => element.textContent).join(" ")).toBe(aggregate.line.label);
+	expect([...texts].map((element) => element.textContent).join(" ")).toBe(aggregate.line.label!);
 });
 
 test("canonical exports retain default comparison and unresolved subject marks through exact recipes", async () => {
