@@ -8,41 +8,17 @@ drawing is the change, and the scores decide which reads better to a person.
 
 ## Making the pairs
 
-Run this inside `nix develop` from the repository root. Each checkout must have
-its own dependencies installed and its own built core (`bun run build:core`).
-The before side is usually a detached worktree of the parent commit.
+The council's tools are scratch tooling and live outside this repository.
+They draw each side with its own checkout's `scripts/render-corpus.ts`, the
+before side usually from a detached worktree of the parent commit, and pair
+the drawings whose bytes differ.
 
-```sh
-bun scripts/council-pairs.ts <before-checkout> <after-checkout> <out> \
-  [--vault .archboard/vault] [--variants current|all] [--engines track,blocks] \
-  [--limit N [--sample]] [--seed 1] [--max-side 4096]
-```
-
-- Each checkout draws its own side with its own `scripts/render-corpus.ts`:
-  the current variants, the light theme, with and without comparison. A
-  theme does not change a layout, so only light is drawn. A comparison
-  drawing is kept only where it is a different picture from its plain one.
-- The drawings of `--vault` whose bytes differ become pairs. A drawing that
-  only one side has, for example after a variant rename, is listed in
-  `key.json` and is not paired.
-- `--limit N` keeps the first N pairs. Add `--sample` to pick the N at random.
-  A large change can differ in hundreds of drawings, so grade a sample first.
-  `--seed` repeats the same sample and the same sides.
-- One rasterizer turns both SVGs of a pair into PNGs at the same scale: native
-  size, shrunk only when the longest side is over `--max-side`.
-
-What it writes:
-
-```text
-<out>/pairs/NNN/A.png, B.png   the two sides, before at A or B by the seed
-<out>/pairs/NNN/about.json     board, view and engine, nothing more
-<out>/key.json                 which side of each pair is before, and its full key
-<out>/runs/{before,after}/     each side's corpus run with its SVGs
-```
-
-Give the graders a copy of `<out>/pairs` in a directory of its own, such as
-`cp -r <out>/pairs /tmp/grading-<run>/`, never `<out>` itself: `key.json` and
-`runs/` show which side is which.
+- Only the light theme is drawn, because a theme does not change a layout.
+- A large change can differ in hundreds of drawings, so grade a sample: the
+  drawings known to be at risk, and a seeded random draw of the rest.
+- Each pair holds the two sides as `A.png` and `B.png`, in a random order, at
+  one shared scale, and an `about.json` with board, view and engine only.
+- A key that says which side is before stays outside the graders' copy.
 
 ## The owner's weighting
 
@@ -95,23 +71,16 @@ rereads that file before each run.
    what decided the scores.
 
 3. **Rulings.** Look at every defect a grader reports yourself, in the
-   full-size SVG under `<out>/runs/`. Record whether each side of the pair has a
+   full-size SVG of its side. Record whether each side of the pair has a
    real defect in `/tmp/grading-<run>/rulings.json`, for example
    `{ "001": { "A": false, "B": true } }`. A defect found real counts for
    every grader, and a defect found false is dropped.
-4. **Tally.** Run
-
-   ```sh
-   bun scripts/council-tally.ts <out> /tmp/grading-<run>
-   ```
-
-   It requires four grader files and all four scores for every selected pair.
-   It refuses while a reported defect has no ruling. For each pair it prints
-   the verdict for the change (`better`, `worse`, `same` or `both fail`) and
-   each grader's margin of the after picture over the before picture. The
-   median margin decides, and a margin under 0.40 is `same`. The last line
-   says whether the change passes, and the command exits 1 when it fails.
-   Record the output and the graders' notes in the task notes.
+4. **Tally.** Once every reported defect has a ruling, unblind the scores.
+   For each pair, take each of the four graders' weighted margin of the after
+   picture over the before picture. The median margin decides, and a margin
+   under 0.40 is `same`. Each pair's verdict for the change is `better`,
+   `worse`, `same` or `both fail`. Record the verdicts, the margins and the
+   graders' notes in the task notes.
 
 5. **Outcome.** A change passes when no pair is `worse` and no after picture
    has a real defect that its before picture lacks.

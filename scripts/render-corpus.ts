@@ -39,7 +39,7 @@ import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
 import { renderArchitecture, renderBoard } from "@archboard/renderer/bun";
 
 /** One drawing of the corpus, as a run recorded it. */
-export interface Drawn {
+interface Drawn {
 	readonly sha256: string;
 	readonly ms: number;
 	readonly width: number;
@@ -63,7 +63,7 @@ interface Job {
 type Policy = ReturnType<typeof readSemanticBoardConfiguration>["configuration"];
 
 /** What a drawing's key names, in the order the key names it. */
-export interface DrawingKey {
+interface DrawingKey {
 	readonly vault: string;
 	readonly board: string;
 	/** The variant's name. */
@@ -83,7 +83,7 @@ const KEY_SEPARATOR = " | ";
  * @param drawing What the drawing is.
  * @returns The key.
  */
-export function keyOf(drawing: DrawingKey): string {
+function keyOf(drawing: DrawingKey): string {
 	const { vault, board, variant, view, engine, theme, comparison } = drawing;
 	return [vault, board, variant, view, engine, theme, comparison ? "comparison" : "plain"].join(
 		KEY_SEPARATOR,
@@ -95,7 +95,7 @@ export function keyOf(drawing: DrawingKey): string {
  * @param key A key a run recorded.
  * @returns Its fields.
  */
-export function drawingOf(key: string): DrawingKey {
+function drawingOf(key: string): DrawingKey {
 	const [vault, board, variant, view, engine, theme, comparison] = key.split(KEY_SEPARATOR);
 	return {
 		vault: vault!,
@@ -113,7 +113,7 @@ export function drawingOf(key: string): DrawingKey {
  * @param key The drawing's key.
  * @returns The file name.
  */
-export function svgFileOf(key: string): string {
+function svgFileOf(key: string): string {
 	return `${key.replaceAll(/[^\w-]+/gu, "_")}.svg`;
 }
 
@@ -208,7 +208,7 @@ function listOf(value: string | boolean | undefined, fallback: string): string[]
  * @param dir The run's directory.
  * @returns Each drawing by its key.
  */
-export function runOf(dir: string): Record<string, Drawn> {
+function runOf(dir: string): Record<string, Drawn> {
 	return JSON.parse(readFileSync(join(dir, "corpus.json"), "utf8"));
 }
 
@@ -397,5 +397,4 @@ async function main() {
 	process.exit(0);
 }
 
-// council-pairs.ts reads a run's key format from here without running a command.
-if (import.meta.main) await main();
+await main();
