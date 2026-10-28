@@ -16,7 +16,9 @@ A render asks the `Solver` port for solves. Each solve is one call of
 solve waits for the answer of another.
 
 Two tools measure the critical path of the `timing.ts` boards. Run both
-inside `nix develop`.
+inside `nix develop`. They left the repository after TASK-548, because a
+render now asks for one solve. `git show db13151cb:<path>` restores either
+one.
 
 1. After `bun run build:core`, write the render request of each board, with
    the icons the core was given:
