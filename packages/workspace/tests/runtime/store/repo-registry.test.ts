@@ -186,6 +186,25 @@ test("a worktree whose own config names an origin is another repository", async 
 	});
 });
 
+test("a conditional Git include can give one listed worktree another repository identity", async () => {
+	const base = repository(join(scratch, "conditional"));
+	git(base, "remote", "remove", "origin");
+	const same = addWorktree(base, "conditional-same");
+	const own = addWorktree(base, "conditional-own");
+	const included = join(scratch, "conditional-origin");
+	writeFileSync(included, '[remote "origin"]\n\turl = https://github.com/test/fork.git\n');
+	git(base, "config", "includeIf.onbranch:conditional-own.path", included);
+	await declareDirectory(base);
+	expect(listRegistry().checkouts.map((each) => [each.repo, each.root])).toEqual([
+		["conditional", base],
+		["conditional", same],
+	]);
+	expect(await declareDirectory(own)).toMatchObject({
+		checkout: { repo: "github.com/test/fork", root: own },
+		worktrees: [],
+	});
+});
+
 test("a worktree whose own config moves its root is recorded where Git says it is", async () => {
 	const base = repository(join(scratch, "moved"));
 	const side = addWorktree(base, "moved-side");

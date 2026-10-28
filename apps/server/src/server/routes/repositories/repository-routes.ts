@@ -25,6 +25,7 @@ import type { Express, Request, Response } from "express";
 
 import { logger } from "@archboard/diagnostics/logger";
 import { readArchitectureModel } from "@archboard/board/store-read";
+import type { ArchitectureModelRead } from "@archboard/board/model";
 import { parseBoardKey } from "@archboard/board/address";
 import { chooseKnownCheckout, listRegistry, registryPath } from "@archboard/workspace/checkouts";
 import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
@@ -177,17 +178,22 @@ function followRegistry(): void {
 	broadcastEverywhere({ type: "repositories_changed" });
 }
 
+type CapturedArchitecture = NonNullable<ReturnType<typeof semanticPaneContextFor>>["architecture"];
+
 /**
  * Preserve the pane's reported canonical presentation when its checkout changes.
  * @param key The canonical presentation key.
  * @param captured The optional exact pane capture.
+ * @param model The chosen checkout's available policy.
  * @returns Its stable selectors or the initial structural reading.
  */
 function followedReading(
 	key: string,
-	captured: NonNullable<ReturnType<typeof semanticPaneContextFor>>["architecture"],
+	captured: CapturedArchitecture,
+	model: ArchitectureModelRead,
 ) {
 	if (captured == null) return { model: key.slice(6), grammar: "architecture" as const };
+	const { relationshipKinds, groups } = captured.reading;
 	return {
 		...captured.selection,
 		model: key.slice(6),
@@ -195,6 +201,16 @@ function followedReading(
 		scope: captured.reading.scope,
 		focus: captured.reading.focus,
 		flow: captured.reading.flow,
+		hideKinds: model.success
+			? Object.keys(model.policy.relationshipKinds).filter(
+					(kind) => !relationshipKinds.includes(kind),
+				)
+			: undefined,
+		hideGroups: model.success
+			? Object.keys(model.policy.groups).filter(
+					(group) => groups !== true && (groups === false || !groups.includes(group)),
+				)
+			: undefined,
 	};
 }
 /**
@@ -210,14 +226,10 @@ function moveCanonicalPane(
 	to: string,
 	repository: string | null,
 	key: string,
-	captured: ReturnType<typeof semanticPaneContextFor> extends infer T
-		? T extends { architecture?: infer A }
-			? A
-			: never
-		: never,
+	captured: CapturedArchitecture,
 ): void {
-	const reading = followedReading(key, captured);
 	const model = readArchitectureModel(to);
+	const reading = followedReading(key, captured, model);
 	sendToPane(
 		clientId,
 		{
