@@ -193,9 +193,9 @@ scope of this task:
 
 ## Every drawing is the same
 
-`bun scripts/render-corpus.ts render /tmp/t548/03-after --variants current --jobs 1`,
+`bun scripts/render-corpus.ts render <out> --variants current --jobs 1`,
 then `compare` against a render of the base commit: 0 of 2,344 drawings
-differ. Against the older render `/tmp/t548/base`, the only differences are
+differ. Against an older render, the only differences are
 216 drawings that only one side has, under variant names that the vault
 renamed since then. The base commit's own render shows the same 216.
 
