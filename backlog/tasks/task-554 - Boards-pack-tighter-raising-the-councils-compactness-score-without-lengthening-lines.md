@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-28T03:13:00Z'
+updated_date: '2026-10-28T03:15:00Z'
 labels:
   - renderer
   - layout
@@ -31,6 +31,14 @@ The final council of TASK-548.08 (2026-10-28, 40 blind pairs against c147b73c8, 
 - [ ] #5 Every Track drawing of the corpus is byte-identical to the base branch
 - [ ] #6 Compactness measurements of the complete corpus before and after are recorded in docs/design
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Four parallel gpt-6-astra explorations, one idea each, on local branches explore/blocks-<idea> in their own worktrees: packing (order, rows, columns and grids as free variables), sideports (ports on all four walls and an orthogonal router with a bend penalty), labels (a label as a layout element with ports), layered (a clean-slate layered compound layout behind the Blocks entry). Each measures the complete Blocks corpus against one shared baseline (area, aspect, frame occupancy, route length, detour, bends per route, share of routes with four or more bends, hard-check failures, the three first-render timings) and judges dark Blocks pictures of six named drawings.
+2. Compare the four reports, look at the pictures, and propose one direction, or a combination, to the owner for approval.
+3. Implement the approved direction on feat/blocks-layout, keeping Track byte-identical, then verify every acceptance criterion, including a fresh council sample.
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
