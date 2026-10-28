@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T01:03:00Z'
+updated_date: '2026-10-28T01:18:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -134,6 +134,8 @@ Bounded flow-removal repair: use the approved public architecture runtime with r
 Continue parent README transitions through existing real producers. Demonstrate canonical subject claims, human take-back, CLAIM_REVOKED refusal, and unchanged authored revision. Keep retained history and narration on canonical captured readings. Merge bounded repairs through merger agents, then complete root migration and final acceptance.
 
 Bounded checkpoint metadata repair: reproduce strict public decoding through existing local-reference runtime owner with real temporary files/Git; prove durable edit and exact retry independently of decoding; exclude private referenceDependencies in existing history conversion; extend existing CLI/HTTP reference owner; run affected tests, source types, scoped lint and formatting. Reuse Board persistence proposal NyesaQPQ (family 0T9enjhi, predecessor LSsVMn3j); parent owns final architecture authoring. Contract: /home/msc/.local/state/archboard-implementation/task-549/task-549.24-checkpoint-metadata-contract.md. Keep parent/.24 status, assignee, and acceptance unchanged.
+
+Finish canonical narrated recipes using exact retained checkpoints. Extend the existing public narrative retention owner to cover strict result decoding with an exact walkthrough dependency. Repair only the existing private-to-public metadata conversion if that owner reproduces the same private-field leak. Keep public schemas and stored dependency ancestry unchanged.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -268,4 +270,6 @@ Parent ported the code-evidence, module-interfaces and git-history producer comm
 Bounded checkpoint metadata repair reproduces the exact private-field decoder failure through the approved public runtime seam and the shipped CLI. Before decoding, the runtime reproduction proves the proposal edit is durable and its exact retry returns the same receipt. The existing public conversion now excludes private referenceDependencies. Signed archive records, dependency ancestry, and strict schemas stay unchanged. The local-reference owner passes 4 cases and 22 assertions. The CLI/HTTP reference owner passes 2 cases and 15 assertions, including successful CLI decoding, HTTP exact retry, retained CLI read, and existing foreign/unavailable behavior. The unavailable-reference fixture now restores its original manifest after its refusal assertions. Affected existing Board persistence proposal NyesaQPQ identities: Bd4GPG6d (conversion), ZLJy8ivl (strict public contract), ZRq51Ecz (private record), Zeo3aQWz and CLdaoYy3 (durable receipts). Existing relationship identities fupHXbVx, RavprwX4, Ei40PGJf, and 06G2g8VM retain their meaning. Root model discovery returns LEGACY_AUTHORITY. No source-vault authoring or claims occur. Parent owns final mapping and authoring. Parent scratch remains untouched. Status, assignee, and acceptance remain unchanged.
 
 Final bounded metadata evidence: 27 affected tests pass with 129 assertions. This includes 4 local-reference runtime cases, 2 CLI/HTTP reference cases, and 21 existing checkpoint/foreign-reference cases. Source TypeScript passes after the final test fixture change. Scoped source lint, test lint, formatting, and git diff whitespace pass without warnings. Both strict decoder failures were reproduced before the one-line conversion repair. Private reference ancestry and signed retention remain covered by existing owners. Signed implementation commit is 4d50a05bf4b6ac20ad47d3d963476fec5955e29c. Latest local feat/canonical-module-model remains signed b14f3a759 and is already included. A final simplification pass keeps the existing conversion and strict schemas, with no new abstraction or public API. No full gate, model evaluation, source-vault write, parent scratch write, UI work, server restart, push, or PR runs. Final contract and backend evidence are task-549.24-checkpoint-metadata-contract.md and task-549.24-checkpoint-metadata-backend.md beside the blocker. Parent and .24 status, assignee, and acceptance remain unchanged.
+
+While porting narrated recipes, the parent reproduced a second private metadata leak through the existing exact-narrative-target public owner. Strict retention decoding failed on checkpoint.narrativeDependencies. One line in the existing checkpointMetadata conversion now excludes that private field beside referenceDependencies. Stored target ancestry and all public schemas stay unchanged. RED then GREEN recorded; all 5 walkthrough cases/33 assertions, both type projects, focused source/test lint, format and diff checks pass. Existing Board persistence NyesaQPQ/Bd4GPG6d remains the affected architecture subject. No new abstraction or proposal needed.
 <!-- SECTION:NOTES:END -->

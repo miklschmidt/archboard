@@ -1,7 +1,10 @@
 import { afterEach, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { ArchitectureModuleEditSchema } from "@archboard/board/model";
+import {
+	ArchitectureModuleEditSchema,
+	ArchitectureCheckpointRetainSchema,
+} from "@archboard/board/model";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/board/store-read";
 import {
 	retainArchitectureCheckpoint,
@@ -294,6 +297,21 @@ test("exact narrative targets retain their history and unavailable targets never
 	expect(playback.success && playback.playback?.checkpoint).toBe(baseline.checkpoint.id);
 	const read = readArchitectureModel(vault);
 	if (!read.success) throw new Error(JSON.stringify(read));
+	const retention = {
+		target: "current" as const,
+		operationId: "retain-exact-tour",
+		writer: "agent",
+		doing: "Retain the walkthrough with its exact target",
+		expectedRevision: read.revision.digest,
+		dependencies: [],
+	};
+	const retained = ArchitectureCheckpointRetainSchema.parse(
+		await retainArchitectureCheckpoint(vault, retention),
+	);
+	expect(retained.success).toBe(true);
+	expect(
+		ArchitectureCheckpointRetainSchema.parse(await retainArchitectureCheckpoint(vault, retention)),
+	).toEqual(retained);
 	const walk = read.walkthroughs[0]!;
 	const { file, ...definition } = walk;
 	if (!playback.success || !playback.playback) throw new Error(JSON.stringify(playback));
