@@ -10,8 +10,8 @@
         "vKEsyHFk/9ncuT5DP#tzyaOHwF",
         "vKEsyHFk/9ncuT5DP#u2LFaG7R",
         "vKEsyHFk/9ncuT5DP#jylkTBp7",
-        "vKEsyHFk/9ncuT5DP#FxzIjbIO",
-        "vKEsyHFk/9ncuT5DP#giL6EI28"
+        "vKEsyHFk/wAHh0HTa#ql0DevMk",
+        "vKEsyHFk/vKEsyHFk#xr1MHYE7"
       ],
       "steps": [
         {
@@ -79,7 +79,7 @@
                 {
                   "id": "vKEsyHFk/9ncuT5DP#1R2ZA4zt",
                   "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
-                  "to": "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+                  "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
                   "label": "request thread/read",
                   "kind": "sync",
                   "anchor": {
@@ -90,8 +90,8 @@
                 },
                 {
                   "id": "vKEsyHFk/9ncuT5DP#tRcBpEcU",
-                  "from": "vKEsyHFk/9ncuT5DP#FxzIjbIO",
-                  "to": "vKEsyHFk/9ncuT5DP#giL6EI28",
+                  "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+                  "to": "vKEsyHFk/vKEsyHFk#xr1MHYE7",
                   "label": "JSON-RPC frame over stdio",
                   "kind": "sync",
                   "anchor": {
@@ -102,8 +102,8 @@
                 },
                 {
                   "id": "vKEsyHFk/9ncuT5DP#cZXGs8Br",
-                  "from": "vKEsyHFk/9ncuT5DP#giL6EI28",
-                  "to": "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+                  "from": "vKEsyHFk/vKEsyHFk#xr1MHYE7",
+                  "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
                   "label": "the thread and its status",
                   "kind": "return",
                   "anchor": {
@@ -114,7 +114,7 @@
                 },
                 {
                   "id": "vKEsyHFk/9ncuT5DP#iKOHetA7",
-                  "from": "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+                  "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
                   "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "label": "decoded response",
                   "kind": "return",
@@ -176,7 +176,7 @@
                         {
                           "id": "vKEsyHFk/9ncuT5DP#gQjSjv1d",
                           "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
-                          "to": "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+                          "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
                           "label": "request turn/start or turn/steer",
                           "kind": "sync",
                           "anchor": {
@@ -187,8 +187,8 @@
                         },
                         {
                           "id": "vKEsyHFk/9ncuT5DP#6LnEoErP",
-                          "from": "vKEsyHFk/9ncuT5DP#FxzIjbIO",
-                          "to": "vKEsyHFk/9ncuT5DP#giL6EI28",
+                          "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+                          "to": "vKEsyHFk/vKEsyHFk#xr1MHYE7",
                           "label": "JSON-RPC frame over stdio",
                           "kind": "sync",
                           "anchor": {
@@ -199,8 +199,8 @@
                         },
                         {
                           "id": "vKEsyHFk/9ncuT5DP#VBIITwQ7",
-                          "from": "vKEsyHFk/9ncuT5DP#giL6EI28",
-                          "to": "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+                          "from": "vKEsyHFk/vKEsyHFk#xr1MHYE7",
+                          "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
                           "label": "turn accepted",
                           "kind": "return",
                           "anchor": {
@@ -211,7 +211,7 @@
                         },
                         {
                           "id": "vKEsyHFk/9ncuT5DP#YcjArnsa",
-                          "from": "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+                          "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
                           "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                           "label": "decoded response",
                           "kind": "return",
@@ -267,7 +267,7 @@
         "vKEsyHFk/9ncuT5DP#byMaoUe0",
         "vKEsyHFk/9ncuT5DP#Uz2qReYK",
         "vKEsyHFk/9ncuT5DP#jylkTBp7",
-        "vKEsyHFk/9ncuT5DP#giL6EI28"
+        "vKEsyHFk/vKEsyHFk#xr1MHYE7"
       ],
       "formerNames": [
         "A board change reaches a workhorse"
@@ -581,7 +581,7 @@
                                 {
                                   "id": "vKEsyHFk/9ncuT5DP#cvG5Sh5Q",
                                   "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
-                                  "to": "vKEsyHFk/9ncuT5DP#giL6EI28",
+                                  "to": "vKEsyHFk/vKEsyHFk#xr1MHYE7",
                                   "label": "thread/inject_items over the transport",
                                   "kind": "sync",
                                   "anchor": {
@@ -592,7 +592,7 @@
                                 },
                                 {
                                   "id": "vKEsyHFk/9ncuT5DP#DSobstio",
-                                  "from": "vKEsyHFk/9ncuT5DP#giL6EI28",
+                                  "from": "vKEsyHFk/vKEsyHFk#xr1MHYE7",
                                   "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                                   "label": "items added",
                                   "kind": "return",

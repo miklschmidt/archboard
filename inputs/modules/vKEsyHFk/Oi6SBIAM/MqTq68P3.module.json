@@ -50,33 +50,7 @@
         "symbol": "publishPaneContext"
       },
       "id": "vKEsyHFk/Oi6SBIAM#dHRkaEZq",
-      "to": "vKEsyHFk/HBlhIeSD#3LoKNA2g"
-    },
-    {
-      "order": 26000,
-      "kind": "call",
-      "label": "who holds the board a pane arrives on",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
-        "symbol": "tellPaneAboutLock"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#Y5c0eIar",
-      "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
-    },
-    {
-      "order": 29000,
-      "kind": "call",
-      "description": "the file it arrives on, as it is now",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
-        "symbol": "noteBoardShown"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#yYx1C8Dw",
-      "to": "vKEsyHFk/Oi6SBIAM#TCMBvDpL"
+      "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
     },
     {
       "order": 40000,

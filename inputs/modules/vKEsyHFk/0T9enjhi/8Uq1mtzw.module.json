@@ -13,7 +13,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#8Uq1mtzw",
-  "parent": "vKEsyHFk/0T9enjhi#1VHRyajb",
+  "parent": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -36,6 +36,19 @@
     }
   ],
   "outgoing": [
+    {
+      "order": 70013,
+      "kind": "call",
+      "label": "prepare exact architecture trees",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
+        "symbol": "tree"
+      },
+      "id": "vKEsyHFk#RnWLqued",
+      "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+    },
     {
       "order": 130000,
       "kind": "call",

@@ -1,11 +1,14 @@
 {
   "order": 11006,
-  "name": "Board vault",
+  "name": "Architecture inputs",
   "kind": "datastore",
-  "responsibility": "One document per board, holding every variant of it",
-  "description": "Tracked in the repository. The file is the board and nothing holds a copy of it: an accepted write is on disk, fsync included, before it is answered (ADR 0015, ADR 0023).",
+  "responsibility": "Stores canonical modules, relationships, flows, proposals, and walkthroughs",
+  "description": "Modules own their outgoing relationships. Independent flow collections describe exchanges. Compact proposals and authored narratives refer to stable subjects, while exact history lives in the signed archive.",
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#8XKRkSHl",
+  "formerNames": [
+    "Board vault"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

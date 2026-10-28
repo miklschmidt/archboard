@@ -35,14 +35,6 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
-      "state": "current"
-    }
-  ],
   "outgoing": [
     {
       "order": 1000,
@@ -60,49 +52,6 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#9m47dJzG",
       "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
-    },
-    {
-      "order": 3000,
-      "kind": "http",
-      "label": "read a board",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-routes.ts",
-        "symbol": "readRoute"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#JdGbavCR",
-      "to": "vKEsyHFk/HBlhIeSD#r6IpmadI"
-    },
-    {
-      "order": 4000,
-      "kind": "http",
-      "label": "one stated batch",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
-        "symbol": "editRoute"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#I4TF2ANT",
-      "to": "vKEsyHFk/HBlhIeSD#iwrhchml"
-    },
-    {
-      "order": 5000,
-      "kind": "http",
-      "label": "claim and release",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/semantic-boards/semantic-lock-routes.ts",
-        "symbol": "claimRoute"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#sUwTQnzU",
-      "to": "vKEsyHFk/HBlhIeSD#TW3uG9Uh"
     },
     {
       "order": 7000,
@@ -144,49 +93,6 @@
       "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
     },
     {
-      "order": 13000,
-      "kind": "http",
-      "label": "rename a board or a variant",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-rename.ts",
-        "symbol": "renameRoute"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#5j3tGRoW",
-      "to": "vKEsyHFk/HBlhIeSD#kFQJkivd"
-    },
-    {
-      "order": 14000,
-      "kind": "http",
-      "label": "every board operation",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
-        "symbol": "editRoute"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#BiJamQt9",
-      "to": "vKEsyHFk/6E6hL0Zk#Y70KOm9C"
-    },
-    {
-      "order": 14000,
-      "kind": "http",
-      "label": "delete a board, or discard a recorded one",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-discard.ts",
-        "symbol": "discardRoute"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#z4OClFMn",
-      "to": "vKEsyHFk/HBlhIeSD#GXtY3Xsd"
-    },
-    {
       "order": 14000,
       "kind": "data",
       "label": "register its checkout; choose and forget checkouts",
@@ -197,7 +103,7 @@
         "symbol": "declareDirectory"
       },
       "id": "vKEsyHFk/vKEsyHFk#J5WjwmUn",
-      "to": "vKEsyHFk/vKEsyHFk#19855Ply"
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     },
     {
       "order": 15000,
@@ -265,32 +171,6 @@
       "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5"
     },
     {
-      "order": 25000,
-      "kind": "http",
-      "label": "semantic locality",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/locality/locality-route.ts",
-        "symbol": "answerLocality"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#Ay6WqVtR",
-      "to": "vKEsyHFk/HBlhIeSD#k9h1zv1s"
-    },
-    {
-      "order": 28000,
-      "kind": "http",
-      "label": "semantic footprint",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/footprint/footprint-route.ts",
-        "symbol": "answerFootprint"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#FgzRwXWp",
-      "to": "vKEsyHFk/HBlhIeSD#Z57AabPn"
-    },
-    {
       "order": 43000,
       "kind": "http",
       "description": "open, close and show panes",
@@ -315,32 +195,6 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#b3mWnCLw",
       "to": "vKEsyHFk/Oi6SBIAM#Am1mLDP5"
-    },
-    {
-      "order": 69000,
-      "kind": "http",
-      "label": "move a board to another repository's vault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-move.ts",
-        "symbol": "moveRoute"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#QuTl35TC",
-      "to": "vKEsyHFk/HBlhIeSD#7fHOSn27"
-    },
-    {
-      "order": 93000,
-      "kind": "http",
-      "label": "list a tracked embed on a board",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-track.ts",
-        "symbol": "trackEmbedRoute"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#DYQjtdbH",
-      "to": "vKEsyHFk/HBlhIeSD#BJfoPqd6"
     },
     {
       "order": 100000,

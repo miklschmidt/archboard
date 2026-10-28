@@ -13,7 +13,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#k9hxdLjq",
-  "parent": "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+  "parent": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -21,6 +21,19 @@
     }
   ],
   "outgoing": [
+    {
+      "order": 70049,
+      "kind": "call",
+      "label": "install generation hooks",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+        "symbol": "createProductionHooks"
+      },
+      "id": "vKEsyHFk#DGC0nyAH",
+      "to": "vKEsyHFk/9ncuT5DP#wkvnbMs8"
+    },
     {
       "order": 80000,
       "kind": "call",

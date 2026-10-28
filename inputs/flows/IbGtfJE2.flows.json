@@ -281,7 +281,6 @@
         "vKEsyHFk/IbGtfJE2#IsMHIzoa",
         "vKEsyHFk/IbGtfJE2#8NS6WwkH",
         "vKEsyHFk/IbGtfJE2#PEfE7dCL",
-        "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
         "vKEsyHFk/IbGtfJE2#IFhUy8C6",
         "vKEsyHFk/IbGtfJE2#WbFIRpiE"
       ],
@@ -402,9 +401,9 @@
         {
           "id": "vKEsyHFk/IbGtfJE2#HIrlYAPT",
           "from": "vKEsyHFk/IbGtfJE2#PEfE7dCL",
-          "to": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+          "to": "vKEsyHFk/IbGtfJE2#PEfE7dCL",
           "label": "start it on a free port",
-          "kind": "sync",
+          "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
             "path": "packages/skills/src/runtime/processes/server.ts",
@@ -413,10 +412,10 @@
         },
         {
           "id": "vKEsyHFk/IbGtfJE2#K0ubWGBY",
-          "from": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+          "from": "vKEsyHFk/IbGtfJE2#PEfE7dCL",
           "to": "vKEsyHFk/IbGtfJE2#PEfE7dCL",
           "label": "/health answers with its pid",
-          "kind": "return",
+          "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
             "path": "packages/skills/src/runtime/processes/server.ts",
@@ -585,7 +584,7 @@
         "vKEsyHFk/IbGtfJE2#w4qCQkDU",
         "vKEsyHFk/IbGtfJE2#1snXnK3G",
         "vKEsyHFk/IbGtfJE2#fRFvnVRE",
-        "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+        "vKEsyHFk/IbGtfJE2#PEfE7dCL",
         "vKEsyHFk/IbGtfJE2#TJmrdpKj",
         "vKEsyHFk/IbGtfJE2#WbFIRpiE",
         "vKEsyHFk/IbGtfJE2#RqoYaLTK",
@@ -626,7 +625,7 @@
             {
               "id": "vKEsyHFk/IbGtfJE2#mcrr34OM",
               "from": "vKEsyHFk/IbGtfJE2#fRFvnVRE",
-              "to": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+              "to": "vKEsyHFk/IbGtfJE2#PEfE7dCL",
               "label": "reads and writes, each naming its vault",
               "kind": "sync",
               "anchor": {
@@ -637,7 +636,7 @@
             },
             {
               "id": "vKEsyHFk/IbGtfJE2#XRnNichB",
-              "from": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+              "from": "vKEsyHFk/IbGtfJE2#PEfE7dCL",
               "to": "vKEsyHFk/IbGtfJE2#fRFvnVRE",
               "label": "the answer",
               "kind": "return",

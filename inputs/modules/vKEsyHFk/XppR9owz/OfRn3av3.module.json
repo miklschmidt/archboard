@@ -1,15 +1,20 @@
 {
   "order": 6000,
-  "name": "Board client",
+  "name": "Vault inspection client",
   "kind": "module",
-  "responsibility": "The board routes: reads, writes, renders and the vault check, and the refusals they come back with",
+  "responsibility": "Reads canonical vault coherence and vocabulary diagnostics",
+  "description": "The remaining client calls the vault diagnostic route through the shared request transport. Canonical model reads, writes, and rendering use their dedicated client.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/clients/server/semantic-boards.ts"
+    "path": "apps/cli/src/cli/clients/server/semantic-boards.ts",
+    "symbol": "checkSemanticVaultOnServer"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#OfRn3av3",
   "parent": "vKEsyHFk/XppR9owz#dHZeNcMs",
+  "formerNames": [
+    "Board client"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -48,19 +53,6 @@
       },
       "id": "vKEsyHFk/XppR9owz#EBy8Rjwh",
       "to": "vKEsyHFk/XppR9owz#yHgIapK7"
-    },
-    {
-      "order": 78000,
-      "kind": "call",
-      "label": "reads the write version, doing line and session",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/clients/server/semantic-boards.ts",
-        "symbol": "statedInvocation"
-      },
-      "id": "vKEsyHFk/XppR9owz#y4wp6XOf",
-      "to": "vKEsyHFk/XppR9owz#fF4A9uvU"
     }
   ]
 }

@@ -2,10 +2,11 @@
   "order": 48000,
   "name": "Legacy board documents",
   "kind": "module",
-  "responsibility": "Reads and changes legacy board families while canonical models coexist",
-  "description": "Owns legacy document reading, configuration, migration inventory, transitions, durable writes, and moves. The overview separates this legacy document path from the canonical model path. Both paths use the shared semantic reconciliation rules.",
+  "responsibility": "Decodes legacy board documents only for explicit migration inventory and exact retained-original readings.",
+  "description": "Retains the legacy decoder for explicit migration and exact originals. Legacy public authoring, ownership, moves, and automatic schema persistence retire.",
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#EekL5c17",
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
   "formerNames": [
     "Legacy board writes"
   ],
@@ -30,5 +31,19 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 70028,
+      "kind": "call",
+      "label": "retain original migration trees",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/legacy-inventory/install-candidate.ts",
+        "symbol": "tree"
+      },
+      "id": "vKEsyHFk#N8bivOLt",
+      "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+    }
+  ]
 }

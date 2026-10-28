@@ -12,7 +12,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#I6RAbOlG",
-  "parent": "vKEsyHFk/XppR9owz#QKs0tycT",
+  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -32,14 +32,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/XppR9owz#I6RAbOlG",
-      "state": "current"
     }
   ],
   "outgoing": []

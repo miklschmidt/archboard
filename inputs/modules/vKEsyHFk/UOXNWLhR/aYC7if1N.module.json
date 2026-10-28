@@ -1,16 +1,19 @@
 {
   "order": 11000,
-  "name": "Viewer entry point",
+  "name": "Retained stage entry",
   "kind": "function",
-  "responsibility": "Mount queries and reading state",
-  "description": "SemanticBoardStage, mounted by ApplicationPane. It asks the query cache for the picture of the reading on screen, owns the reading hooks (drill trail, level, variant, walkthrough, fit, report) and hands the answer to renderedView. It keeps the open tab, and how far down the About page was, with the board on screen. Its one show picks a subject, opens the diagram and fits the camera to the subject after the pick's own camera moves. A subject that the view on screen does not draw opens the whole board first.",
+  "responsibility": "Mounts queries and presentation state for an exact retained diagram",
+  "description": "The retained stage receives its original content through a captured provider. Ordinary panes mount the canonical model stage. Camera, selection, and presentation controls remain read-only.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#aYC7if1N",
-  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "formerNames": [
+    "Viewer entry point"
+  ],
   "outgoing": [
     {
       "order": 1500,

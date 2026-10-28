@@ -13,6 +13,32 @@
   "parent": "vKEsyHFk/gbyqW4H3#ld6jjHND",
   "outgoing": [
     {
+      "order": 2000,
+      "kind": "call",
+      "label": "prepare and wrap",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/text/measurement.ts",
+        "symbol": "prepareWithSegments"
+      },
+      "id": "vKEsyHFk/OjRLKb74#19pjtjrv",
+      "to": "vKEsyHFk/OjRLKb74#RvOyWmEb"
+    },
+    {
+      "order": 5000,
+      "kind": "call",
+      "label": "the width of a painted line",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/text/measurement.ts",
+        "symbol": "canvasWidth"
+      },
+      "id": "vKEsyHFk/OjRLKb74#TSsnxsV9",
+      "to": "vKEsyHFk/gbyqW4H3#gUN928v4"
+    },
+    {
       "order": 23000,
       "kind": "call",
       "label": "measure every painted line",

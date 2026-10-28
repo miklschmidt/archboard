@@ -5,5 +5,20 @@
   "responsibility": "Turns a walkthrough into a narrated video: records the talk in a live page, then draws it frame by frame and encodes it with the voice, or draws a kept talk again",
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#gTwVYQo9",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#5zIYNuw1",
+  "outgoing": [
+    {
+      "order": 70047,
+      "kind": "call",
+      "label": "record and replay exact walkthroughs",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+        "symbol": "WalkthroughRecordingError"
+      },
+      "id": "vKEsyHFk#YAA7XugC",
+      "to": "vKEsyHFk/XppR9owz#XAJYaUnv"
+    }
+  ]
 }

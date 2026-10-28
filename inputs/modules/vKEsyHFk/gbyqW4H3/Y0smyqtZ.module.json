@@ -14,14 +14,6 @@
   "formerNames": [
     "Compound layout"
   ],
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
-      "state": "current"
-    }
-  ],
   "outgoing": [
     {
       "order": 2000,

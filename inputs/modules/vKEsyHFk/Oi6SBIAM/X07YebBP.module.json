@@ -38,7 +38,7 @@
         "symbol": "handleBrowserMessage"
       },
       "id": "vKEsyHFk/Oi6SBIAM#UxINwpn6",
-      "to": "vKEsyHFk/HBlhIeSD#3LoKNA2g"
+      "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
     },
     {
       "order": 15000,
@@ -64,7 +64,7 @@
         "symbol": "noteTabSession"
       },
       "id": "vKEsyHFk/Oi6SBIAM#1MfDpq9X",
-      "to": "vKEsyHFk/Oi6SBIAM#mAwzQrjT"
+      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
     },
     {
       "order": 21000,
@@ -78,19 +78,6 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#4fPIYyd3",
       "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG"
-    },
-    {
-      "order": 27000,
-      "kind": "call",
-      "label": "who holds a new pane's board",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
-        "symbol": "tellPaneAboutLock"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#DomT7qYj",
-      "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
     },
     {
       "order": 38000,
@@ -129,7 +116,7 @@
         "symbol": "placeOfVault"
       },
       "id": "vKEsyHFk/Oi6SBIAM#FrlPt4zQ",
-      "to": "vKEsyHFk/Oi6SBIAM#4smEPsmF"
+      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
     },
     {
       "order": 84000,

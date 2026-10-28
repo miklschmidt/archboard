@@ -3,14 +3,14 @@
   "name": "Foreign model references",
   "kind": "module",
   "responsibility": "Reads explicit foreign models and states without expanding or transferring ownership",
-  "description": "Uses the existing checkout resolver and selected-state reader for explicit model, subject, and state identities. Available references carry authored subject, model, and state names from that exact reading. Historical navigation requires the retained foreign pin. Missing destinations remain explicit and never substitute current content. A follow writes neither model.",
+  "description": "Resolves explicit repository, model, subject, and state references. Same-model reads use the captured candidate without reopening its public write barrier. Foreign reads retain their normal ownership checks.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/operations/read/model-references.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#Mv3r4IsX",
-  "parent": "vKEsyHFk/0T9enjhi#1VHRyajb",
+  "parent": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -33,6 +33,19 @@
     }
   ],
   "outgoing": [
+    {
+      "order": 70023,
+      "kind": "call",
+      "label": "resolve selected proposal content",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-references.ts",
+        "symbol": "readSelectedState"
+      },
+      "id": "vKEsyHFk#bNZaCkOt",
+      "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
+    },
     {
       "order": 206000,
       "kind": "call",

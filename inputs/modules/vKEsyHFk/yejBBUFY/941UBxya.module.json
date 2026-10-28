@@ -12,7 +12,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#941UBxya",
-  "parent": "vKEsyHFk/yejBBUFY#W0EmXnR9",
+  "parent": "vKEsyHFk/vKEsyHFk#lU0khwR0",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -39,7 +39,7 @@
         "symbol": "send"
       },
       "id": "vKEsyHFk/yejBBUFY#EAT8ges2",
-      "to": "vKEsyHFk/yejBBUFY#G4NHQC25"
+      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     }
   ]
 }

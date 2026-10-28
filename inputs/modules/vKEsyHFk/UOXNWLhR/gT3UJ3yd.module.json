@@ -14,19 +14,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#gT3UJ3yd",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
-  "outgoing": [
-    {
-      "order": 28000,
-      "kind": "call",
-      "label": "board, variant, view, selection, step",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-reported-reading.ts",
-        "symbol": "report"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#Pz4KA2iT",
-      "to": "vKEsyHFk/UOXNWLhR#xJIh6Jdp"
-    }
-  ]
+  "outgoing": []
 }

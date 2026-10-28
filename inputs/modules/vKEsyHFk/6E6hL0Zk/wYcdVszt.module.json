@@ -1,17 +1,23 @@
 {
   "order": 3000,
-  "name": "Semantic board store",
+  "name": "Architecture runtime API",
   "kind": "module",
-  "responsibility": "The one place a board is read or written",
+  "responsibility": "Exposes canonical architecture operations through the shared runtime boundary",
+  "description": "Local CLI and HTTP adapters share canonical reads, edits, subject claims, proposals, migration, archive retention, and recovery. Legacy decoding serves explicit migration and exact retained originals.",
   "groups": [
     "writes"
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime"
+    "path": "packages/board/src/runtime/api"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "formerNames": [
+    "Semantic board store",
+    "Architecture store"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -37,54 +43,7 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
-      "state": "current"
-    }
-  ],
   "outgoing": [
-    {
-      "order": 34000,
-      "kind": "call",
-      "label": "hold the board for each write",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/write/write.ts",
-        "symbol": "withBoardLock"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#7HmEZgi5",
-      "to": "vKEsyHFk/6E6hL0Zk#8imgDQSw"
-    },
-    {
-      "order": 39000,
-      "kind": "call",
-      "label": "hold the board for each write",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/write/write.ts",
-        "symbol": "withBoardLock"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#HfrzUYSB",
-      "to": "vKEsyHFk/6E6hL0Zk#8imgDQSw"
-    },
-    {
-      "order": 57000,
-      "kind": "call",
-      "label": "the checkout of a repository a link or a binding names",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/check/drill-down.ts",
-        "symbol": "checkoutsReadFrom"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#ThwotCTt",
-      "to": "vKEsyHFk/HBlhIeSD#QNCwmrh5"
-    },
     {
       "order": 104000,
       "kind": "call",

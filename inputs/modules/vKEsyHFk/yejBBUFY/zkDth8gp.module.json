@@ -27,19 +27,6 @@
   ],
   "outgoing": [
     {
-      "order": 62000,
-      "kind": "call",
-      "label": "resolve the repositories a drill-down opens",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
-        "symbol": "useDrillRepositories"
-      },
-      "id": "vKEsyHFk/yejBBUFY#cHxuRI45",
-      "to": "vKEsyHFk/yejBBUFY#WWPvFeLg"
-    },
-    {
       "order": 65000,
       "kind": "render",
       "label": "Read an authored model",
@@ -103,6 +90,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#gkl1U5a9",
       "to": "vKEsyHFk/yejBBUFY#Dobe4vE1"
+    },
+    {
+      "order": 107000,
+      "kind": "call",
+      "label": "the pane's vault check, to redraw on a policy move",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "symbol": "useVaultPolicyRefresh"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#g00kNnNx",
+      "to": "vKEsyHFk/UOXNWLhR#j9uyTKyA"
     }
   ]
 }

@@ -2,15 +2,15 @@
   "order": 21000,
   "name": "Code check",
   "kind": "module",
-  "responsibility": "Holds each board's anchors, bound symbols, relationships, interfaces and document references to the code they name, at the current variant or the named draft; one run gives behind beside it",
-  "description": "ADR 0046's code pass over the files Git does not ignore in the vault's own checkout and the chosen ones, through code facts: a bound symbol must be a definition, an anchor's symbol a definition or a use that supports its relationship (in the bound code of an end, of an evidence kind the relationship's kind accepts), and on a named draft a bound path must be in its checkout. Each document reference of the variant read must name a file at its branch or commit (ADR 0054). Evidence between a board's bound parts comes from the code facts of every bound file, owned by the narrowest binding (a C, C++ or Objective-C file's part owns its pair): a run-time use through an import or include is a call, a type-only use an import. It joins an environment value that bound code reads with the compose service, Kubernetes workload or Terraform resource that runs that code (by its build, or a part drawn inside the part bound to it) and sets the value to another part's address: configured-path evidence. It reports the part code reaches with no relationship, and as information a relationship with no anchor whose accepted evidence runs only backwards or is missing (across a network hop, the side without evidence). For a container bound to a module it holds ADR 0044's interface to what the module exposes, and reads a Terraform module's pass-through variables and whether it is shallow. A binding to a Terraform root module names an address there; references join resource-bound parts, and --plan names plan JSON files. Kubernetes Service selectors and NetworkPolicies join workload-bound parts by labels, and a reference to a Service no part binds reaches the workloads it picks. A language server resolves the uses no import resolves, and a C use an include leads only to a declaration; the servers each checkout's registration holds decide which one runs there. It lists what it skipped and why. src/shared/code-check/index.ts names each finding code.",
+  "responsibility": "Checks selected canonical architecture against source evidence",
+  "description": "The checker reads current architecture, one selected state, or independent drafts. It reports bindings, anchors, declared relationships, interfaces, and document references with canonical identities. Git locality and branch footprint use separate requested history operations.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/operations/code-check"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#5SMX69gS",
-  "parent": "vKEsyHFk/HBlhIeSD#KovkhwZi",
+  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -34,30 +34,69 @@
   ],
   "outgoing": [
     {
-      "order": 24000,
-      "kind": "call",
-      "label": "how far each board is behind",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
-        "symbol": "createBehindReading"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#WPeZchzr",
-      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
-    },
-    {
       "order": 43000,
       "kind": "call",
-      "label": "every board at its variant, and the relationship kinds",
+      "label": "read selected canonical states",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
-        "symbol": "readSemanticBoardAt"
+        "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/HBlhIeSD#3hokVf0H",
       "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    },
+    {
+      "order": 66000,
+      "kind": "call",
+      "label": "read selected canonical states",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#rCuDH1LU",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    },
+    {
+      "order": 69000,
+      "kind": "call",
+      "label": "the facts of each file, and what each module exposes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/check.ts",
+        "symbol": "createCodeFacts"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#osnkOhpk",
+      "to": "vKEsyHFk/6E6hL0Zk#mR7wPSei"
+    },
+    {
+      "order": 70018,
+      "kind": "call",
+      "label": "apply source-reading policy",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/checkouts.ts",
+        "symbol": "neverRead"
+      },
+      "id": "vKEsyHFk#inAwwoLx",
+      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
+    },
+    {
+      "order": 71000,
+      "kind": "call",
+      "label": "where a use no import resolves is defined",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/resolution.ts",
+        "symbol": "openLanguageServers"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#uZdil5lI",
+      "to": "vKEsyHFk/6E6hL0Zk#1aoB46lM"
     },
     {
       "order": 87000,
@@ -70,6 +109,19 @@
         "symbol": "nodesAtOwnRef"
       },
       "id": "vKEsyHFk/HBlhIeSD#m1F0u7X1",
+      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+    },
+    {
+      "order": 122000,
+      "kind": "call",
+      "label": "each draft at its own ref; how far each board is behind",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/ref-code.ts",
+        "symbol": "nodesAtOwnRef"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#eW22MD6a",
       "to": "vKEsyHFk/HBlhIeSD#radK8osF"
     }
   ]

@@ -2,7 +2,8 @@
   "order": 63000,
   "name": "Model render commands",
   "kind": "module",
-  "responsibility": "Exports an explicitly selected canonical flow as sequence or flowchart SVG with an exact reading receipt",
+  "responsibility": "Exports scoped canonical architecture or a complete explicitly selected flow as SVG with an exact reading receipt.",
+  "description": "Exports structural and behavioral canonical readings through the shared projection and existing renderer. The existing render recipe records exact selectors and revision for reproducible embeds.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/operations/model/render.ts"

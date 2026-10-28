@@ -20,12 +20,12 @@
     {
       "order": 27000,
       "kind": "dependency",
-      "label": "the boards to check",
+      "label": "read the inspected canonical state",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
-        "symbol": "currentVariant"
+        "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/vKEsyHFk#fVxcoo6Q",
       "to": "vKEsyHFk/vKEsyHFk#DmbKboxU"
@@ -42,6 +42,45 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#K7yg89u4",
       "to": "vKEsyHFk/vKEsyHFk#w9zvoSFD"
+    },
+    {
+      "order": 70053,
+      "kind": "call",
+      "label": "report source inspection failures",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/checkouts.ts",
+        "symbol": "errorMessage"
+      },
+      "id": "vKEsyHFk#o6iMuevP",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 70054,
+      "kind": "call",
+      "label": "measure source inspection work",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/check.ts",
+        "symbol": "createElapsedClock"
+      },
+      "id": "vKEsyHFk#zAB848k7",
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    },
+    {
+      "order": 70055,
+      "kind": "call",
+      "label": "resolve configured source tooling",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/resolution.ts",
+        "symbol": "configureCommand"
+      },
+      "id": "vKEsyHFk#73DTR15V",
+      "to": "vKEsyHFk/vKEsyHFk#tdKalihR"
     }
   ]
 }

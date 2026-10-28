@@ -5,6 +5,7 @@
   "responsibility": "Owns the private Codex child and what outlives each generation of it: the process, the transport, the protocol session, the ledger of which generation owns a thread, and unloading idle threads",
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+  "parent": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

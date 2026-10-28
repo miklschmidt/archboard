@@ -2,15 +2,15 @@
   "order": 31000,
   "name": "Architecture context input",
   "kind": "module",
-  "responsibility": "Read canonical runtime facts after cutover, require exact capture for a different reported state, and retain legacy board context for unmigrated vaults",
-  "description": "Accept ordered pane reports and notify the coordinator context source directly when canonical reading intent changes. Resolve explanation actions from that explicit canonical report, never from the initial legacy board.",
+  "responsibility": "Publishes canonical reading context and exact-capture requirements; legacy-authority refusals return explicit migration guidance.",
+  "description": "Publishes canonical model context and exact captured reading selectors to local agents. Unmigrated vaults expose migration guidance instead of board authoring or fixed levels.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ",
-  "parent": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "formerNames": [
     "Semantic context input"
   ],
@@ -28,43 +28,30 @@
   ],
   "outgoing": [
     {
-      "order": 74000,
+      "order": 70005,
       "kind": "call",
-      "label": "the board a pane shows",
-      "emphasis": "normal",
+      "label": "subscribe to durable changes",
+      "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
-        "symbol": "boardForPane"
+        "symbol": "semanticChangeFeed"
       },
-      "id": "vKEsyHFk/Oi6SBIAM#uiV0btMb",
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+      "id": "vKEsyHFk#GSMazGUv",
+      "to": "vKEsyHFk/Oi6SBIAM#mStVd7fZ"
     },
     {
       "order": 76000,
       "kind": "call",
-      "label": "read the board for the brief",
+      "label": "compose the captured canonical context",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
-        "symbol": "readSemanticBoard"
+        "symbol": "canonicalContext"
       },
       "id": "vKEsyHFk/Oi6SBIAM#Q85nTD4V",
-      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
-    },
-    {
-      "order": 77000,
-      "kind": "call",
-      "label": "who holds the board",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
-        "symbol": "boardLockState"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#FrzjCHPF",
-      "to": "vKEsyHFk/6E6hL0Zk#8imgDQSw"
+      "to": "vKEsyHFk/6E6hL0Zk#C9EOzoYB"
     }
   ]
 }

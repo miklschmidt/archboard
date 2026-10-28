@@ -2,14 +2,15 @@
   "order": 76000,
   "name": "Portable model operations",
   "kind": "module",
-  "responsibility": "Export exact inputs and complete archive history. Install verified bundles through the existing journal.",
+  "responsibility": "Exports and restores a complete canonical model with its retained history",
+  "description": "Portable inspection validates every retained record, authored input, local dependency, and materialized proposal. It bounds reads and historical decoding without skipping older records. Import uses the shared signed installer and preserves exact retry, source HEAD, and the index.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/operations/history/portable.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#2gFwMLTT",
-  "parent": "vKEsyHFk/0T9enjhi#1VHRyajb",
+  "parent": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -32,6 +33,19 @@
     }
   ],
   "outgoing": [
+    {
+      "order": 70033,
+      "kind": "call",
+      "label": "inspect portable history trees",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/portable.ts",
+        "symbol": "tree"
+      },
+      "id": "vKEsyHFk#IAJ0ChHL",
+      "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+    },
     {
       "order": 248000,
       "kind": "call",

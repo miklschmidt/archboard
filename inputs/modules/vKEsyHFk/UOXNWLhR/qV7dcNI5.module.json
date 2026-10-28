@@ -16,16 +16,16 @@
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
   "outgoing": [
     {
-      "order": 32000,
+      "order": 70009,
       "kind": "call",
-      "label": "the read routes, on a live page",
-      "emphasis": "normal",
+      "label": "read retained content and refusals",
+      "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-reads.ts",
-        "symbol": "fetchSemanticBoardDocument"
+        "symbol": "SemanticBoardError"
       },
-      "id": "vKEsyHFk/UOXNWLhR#888B84Js",
+      "id": "vKEsyHFk#vOEGQ4ga",
       "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
     }
   ]

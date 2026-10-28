@@ -1,16 +1,19 @@
 {
   "order": 5000,
-  "name": "Render stage states",
+  "name": "Diagram presentation components",
   "kind": "function",
-  "responsibility": "Present every reachable state",
-  "description": "The pane's components. stageBody in SemanticStageView.tsx presents the waiting, problem, empty and drawn states, and says when the picture on screen is old, from the entry point's query and reading state. SemanticDiagram draws the picture and mounts its transition, gestures, lighting and marks. SemanticStageView lays the header with its way back and its two tabs, Diagram and About, the variant's standing, the About page over the picture while its tab is open, and the sidebar around them. The About page reads the board document the pane already holds: the variant's walkthroughs step by step, its parts in their containment, its relationships and the board's variants. A row picks its subject in the pane, a step presents its walkthrough from there, and a variant is read in the pane. The page writes nothing. SemanticBoardStage.tsx and Peek.tsx in the same directory are parts of their own. The header shows the board warning count and steps through each finding. A finding, like the control at the end of a row of the About page, asks the entry point to show its subject on the diagram.",
+  "responsibility": "Presents diagram surfaces, legends, details, and reachable display states",
+  "description": "Canonical readers reuse the picture controls and legend. The retained stage also presents original headers, variants, and walkthroughs through an explicit captured provider. These components contain no live legacy authoring path.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/semantic-board-canvas"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
-  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "parent": "vKEsyHFk/yejBBUFY#POloYnX3",
+  "formerNames": [
+    "Render stage states"
+  ],
   "outgoing": [
     {
       "order": 6000,
@@ -129,6 +132,19 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#eKc3FaJx",
       "to": "vKEsyHFk/UOXNWLhR#WT3s42AE"
+    },
+    {
+      "order": 70022,
+      "kind": "call",
+      "label": "apply picture and camera interaction",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "moveCameraByKey"
+      },
+      "id": "vKEsyHFk#MtvcBtx6",
+      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
     },
     {
       "order": 72000,

@@ -1,15 +1,19 @@
 {
   "order": 10000,
-  "name": "Comparison",
+  "name": "Model comparison",
   "kind": "module",
-  "responsibility": "compare: what one variant changed about the one it came from",
+  "responsibility": "Compares canonical states by stable subject identity",
+  "description": "The comparison command selects explicit canonical states and returns their exact revisions and semantic differences through the public model reader.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/semantic/compare/compare.ts"
+    "path": "apps/cli/src/cli/operations/model/read.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#e8DKQF2E",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "formerNames": [
+    "Comparison"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -31,19 +35,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 15000,
-      "kind": "call",
-      "label": "board operation",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/semantic/compare/compare.ts",
-        "symbol": "readSemanticBoardAnswerOnServer"
-      },
-      "id": "vKEsyHFk/XppR9owz#8bgnBTp4",
-      "to": "vKEsyHFk/XppR9owz#OfRn3av3"
-    }
-  ]
+  "outgoing": []
 }

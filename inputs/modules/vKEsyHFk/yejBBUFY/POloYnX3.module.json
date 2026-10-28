@@ -1,10 +1,15 @@
 {
   "order": 24004,
-  "name": "Board drawing",
+  "name": "Architecture drawing",
   "kind": "module",
-  "responsibility": "Shows one board in a pane: the viewer keeps the camera and what somebody picked out, the browser renderer draws the board in this tab, and the frame clock moves what is drawn over time",
+  "responsibility": "Draws canonical readings and retained original diagrams",
+  "description": "The canonical reader projects a module scope or complete flow and renders it locally. Exact retained originals use the existing historical diagram viewer. Shared camera, selection, and picture owners keep interaction local.",
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#POloYnX3",
+  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+  "formerNames": [
+    "Board drawing"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

@@ -5,6 +5,7 @@
   "responsibility": "What a command produces as a picture or a video outside the server: a headless browser makes the PNG, the recorder makes the narrated video, and the clipboard takes the image",
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#QKs0tycT",
+  "parent": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

@@ -3,7 +3,7 @@
   "name": "Pane session",
   "kind": "module",
   "responsibility": "Keeps each pane in server contact",
-  "description": "Owns the pane's socket and its generations, registration and pane reports, board news, taking back a claim, opening code, saying which checkout the person activated, and the workbench transport each socket generation carries. Starts in the vault its pane opens in, then holds the vault and repository the server last put the pane in, and names that vault on every call and on its socket's address. Every socket names the tab session, so the server knows which panes share a conversation.",
+  "description": "Each pane owns its admitted vault, socket, registration, and reading publisher. A vault change clears the prior reading cache, including canonical arrivals without a legacy board key. Returning to an unchanged visible picture still republishes the capture that the server discarded.",
   "groups": [
     "panes"
   ],
@@ -30,6 +30,19 @@
   ],
   "outgoing": [
     {
+      "order": 5000,
+      "kind": "http",
+      "label": "reports, readings and calls, each naming the pane's vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
+        "symbol": "reportPane"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#wH0rE1x7",
+      "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
+    },
+    {
       "order": 6000,
       "kind": "event",
       "label": "the pane socket, naming its vault: registration and news",
@@ -40,7 +53,7 @@
         "symbol": "WebSocket"
       },
       "id": "vKEsyHFk/yejBBUFY#PuILGsjg",
-      "to": "vKEsyHFk/yejBBUFY#G4NHQC25"
+      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     },
     {
       "order": 7000,
@@ -54,6 +67,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#Cw08FQeQ",
       "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+    },
+    {
+      "order": 14000,
+      "kind": "event",
+      "label": "one socket per page, naming its vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
+        "symbol": "socketUrl"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#yG8Hyadm",
+      "to": "vKEsyHFk/Oi6SBIAM#X07YebBP"
     },
     {
       "order": 17000,
@@ -106,6 +132,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#w9Qrw2Xe",
       "to": "vKEsyHFk/yejBBUFY#aG0rP4SX"
+    },
+    {
+      "order": 67000,
+      "kind": "http",
+      "label": "the person activated a checkout, naming the pane's vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
+        "symbol": "showConversation"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#MCGiGynf",
+      "to": "vKEsyHFk/Oi6SBIAM#80IozszZ"
     }
   ]
 }

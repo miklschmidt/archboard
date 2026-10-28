@@ -2,14 +2,15 @@
   "order": 20000,
   "name": "History lens",
   "kind": "module",
-  "responsibility": "Maps checkout commits onto bound paths for behind and bound declarations for locality and footprint; reads the board a request names and chooses the variants it reads; labels path-wide fallback",
+  "responsibility": "Relates canonical modules to explicit local Git evidence",
+  "description": "The history interface reads canonical states and their bound source declarations. Locality reports change frequency and coupling. Footprint compares explicit local refs and the selected proposal baseline. Missing source stays unavailable rather than being replaced with current code.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/operations/history-lens"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#radK8osF",
-  "parent": "vKEsyHFk/HBlhIeSD#KovkhwZi",
+  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -33,19 +34,6 @@
   ],
   "outgoing": [
     {
-      "order": 29000,
-      "kind": "call",
-      "label": "the board a request names, read by name",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/history-lens/admission.ts",
-        "symbol": "readSemanticBoard"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#3PjkOHSv",
-      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
-    },
-    {
       "order": 44000,
       "kind": "call",
       "label": "decodes historical board bytes without writes",
@@ -57,6 +45,46 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#FqPWGmDd",
       "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    },
+    {
+      "order": 51000,
+      "kind": "call",
+      "label": "historical JSON bytes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/history-lens/last-change.ts",
+        "symbol": "decodeSemanticBoardDocument"
+      },
+      "id": "vKEsyHFk/0T9enjhi#tb0ZJK9U",
+      "to": "vKEsyHFk/0T9enjhi#R3ldC44x"
+    },
+    {
+      "order": 100000,
+      "kind": "call",
+      "label": "decodes historical board bytes without writes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/history-lens/last-change.ts",
+        "symbol": "decodeSemanticBoardDocument"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#AMHnFhbq",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    },
+    {
+      "order": 113000,
+      "kind": "call",
+      "label": "reads declarations from historical source bytes",
+      "description": "TASK-448 reuses code facts and Terraform module resolution to attribute Git changes to symbol bindings.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/history-lens/symbol-attribution.ts",
+        "symbol": "terraformConfiguration"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#kXzRYl25",
+      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
     }
   ]
 }

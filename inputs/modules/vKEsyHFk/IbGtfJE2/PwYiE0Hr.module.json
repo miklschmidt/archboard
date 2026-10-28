@@ -92,6 +92,19 @@
       },
       "id": "vKEsyHFk/IbGtfJE2#s7YzBWCX",
       "to": "vKEsyHFk/IbGtfJE2#wOZsx1lS"
+    },
+    {
+      "order": 70026,
+      "kind": "call",
+      "label": "deliver captured grading images",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+        "symbol": "imagesForRun"
+      },
+      "id": "vKEsyHFk#7IJFtNQk",
+      "to": "vKEsyHFk/SMjRfwN3#5ut3UjV6"
     }
   ]
 }

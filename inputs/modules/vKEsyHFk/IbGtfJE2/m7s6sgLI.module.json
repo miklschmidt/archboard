@@ -14,5 +14,19 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#m7s6sgLI",
   "parent": "vKEsyHFk/IbGtfJE2#RrIatpuG",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 70024,
+      "kind": "call",
+      "label": "reuse delivered image evidence",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/grading/grading-retry.ts",
+        "symbol": "combinedDelivery"
+      },
+      "id": "vKEsyHFk#OFpAXpvp",
+      "to": "vKEsyHFk/SMjRfwN3#5ut3UjV6"
+    }
+  ]
 }

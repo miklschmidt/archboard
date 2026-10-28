@@ -1,21 +1,17 @@
 {
   "order": 31002,
-  "name": "Skill evaluation",
+  "name": "Grader image delivery",
   "kind": "service",
-  "responsibility": "Grades captured images using their PNG dimensions",
+  "responsibility": "Prepares captured images and delivery receipts for the grading run",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/store/grading-images.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#5ut3UjV6",
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
-      "state": "current"
-    }
+  "parent": "vKEsyHFk/IbGtfJE2#RrIatpuG",
+  "formerNames": [
+    "Skill evaluation"
   ],
   "outgoing": [
     {

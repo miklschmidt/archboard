@@ -5,6 +5,7 @@
   "responsibility": "Every reach to the Archboard server: the one request path, the board, claim and pane routes with their refusals, starting, stopping and restarting it, and what answers at its address",
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#dHZeNcMs",
+  "parent": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

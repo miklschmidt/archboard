@@ -10,6 +10,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+  "parent": "vKEsyHFk/9ncuT5DP#jylkTBp7",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -32,7 +33,7 @@
         "symbol": "mutate"
       },
       "id": "vKEsyHFk/wAHh0HTa#jhNZqAiD",
-      "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg"
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "order": 20000,

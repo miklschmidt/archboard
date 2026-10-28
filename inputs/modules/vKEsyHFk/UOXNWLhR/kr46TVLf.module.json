@@ -1,9 +1,28 @@
 {
   "order": 49001,
-  "name": "Stage and reads",
+  "name": "Retained reads",
   "kind": "module",
-  "responsibility": "Mounts the viewer in a pane and reads the board, its vault and the code findings from the server. Presents every reachable state of the answer and reports what is on screen.",
+  "responsibility": "Reads exact captured documents and reports their displayed subjects",
+  "description": "The original diagram viewer receives immutable content through the retained read provider. It has no live board authoring or fallback route. Shared diagnostics remain reusable by canonical readers.",
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#kr46TVLf",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+  "formerNames": [
+    "Stage and reads"
+  ],
+  "outgoing": [
+    {
+      "order": 70043,
+      "kind": "call",
+      "label": "identify the retained reading",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-refresh.ts",
+        "symbol": "sameBoardName"
+      },
+      "id": "vKEsyHFk#GsciFned",
+      "to": "vKEsyHFk/yejBBUFY#DW1hIFRx"
+    }
+  ]
 }

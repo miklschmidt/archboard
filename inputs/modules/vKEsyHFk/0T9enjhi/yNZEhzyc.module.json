@@ -3,13 +3,14 @@
   "name": "Canonical flow candidate",
   "kind": "module",
   "responsibility": "Applies stable flow and step edits, exact nested placements, affected claims and module reference repairs",
+  "description": "Applies flow and message changes within one complete model edit. Explicitly removed messages do not block endpoint removal. Surviving edited or moved messages still require valid endpoints.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/operations/model-edit/flows.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#yNZEhzyc",
-  "parent": "vKEsyHFk/0T9enjhi#1VHRyajb",
+  "parent": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

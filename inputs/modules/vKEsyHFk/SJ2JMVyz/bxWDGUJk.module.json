@@ -10,7 +10,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SJ2JMVyz#bxWDGUJk",
-  "parent": "vKEsyHFk/SJ2JMVyz#WkOwgUIR",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -40,7 +40,7 @@
         "symbol": "readyWorkhorse"
       },
       "id": "vKEsyHFk/SJ2JMVyz#QvQYycYS",
-      "to": "vKEsyHFk/SJ2JMVyz#mWD948LG"
+      "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4"
     },
     {
       "order": 45000,
@@ -52,7 +52,45 @@
         "symbol": "interrupt"
       },
       "id": "vKEsyHFk/SJ2JMVyz#rCIdAV06",
-      "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 70014,
+      "kind": "call",
+      "label": "resolve the captured tab",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/actions.ts",
+        "symbol": "tabSessionOf"
+      },
+      "id": "vKEsyHFk#DxnUwbpm",
+      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+    },
+    {
+      "order": 70015,
+      "kind": "call",
+      "label": "resolve the captured pane",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/actions.ts",
+        "symbol": "panes"
+      },
+      "id": "vKEsyHFk#3YLhUCde",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "order": 126000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/actions.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#yBgqPUx8",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
     }
   ]
 }

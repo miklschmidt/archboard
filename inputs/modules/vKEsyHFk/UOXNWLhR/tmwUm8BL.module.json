@@ -11,20 +11,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
-  "outgoing": [
-    {
-      "order": 20000,
-      "kind": "http",
-      "label": "semantic read routes, each naming its vault",
-      "description": "The browser sends HTTP semantic reads to the handled server routes. This is a network entry point, not an import of semantic-board-routes.ts.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
-        "symbol": "fetch"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#V9ngTrE9",
-      "to": "vKEsyHFk/UOXNWLhR#J6P3Mhjb"
-    }
-  ]
+  "outgoing": []
 }

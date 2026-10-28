@@ -3,7 +3,7 @@
   "name": "Canonical installation",
   "kind": "module",
   "responsibility": "Resumes exact logged images and completes retention before announcing a write",
-  "description": "Preserves foreign bytes and refuses changed branch context. Prepares archive synchronization signing before file installation. A conditional append conflict leaves recovery work instead of invoking a signer after file changes.",
+  "description": "Installs canonical initialization, portable imports, and explicit migration through one signed archive, journal, atomic writer, and recovery mechanism.",
   "groups": [
     "writes"
   ],

@@ -12,19 +12,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#3KtX2jdA",
   "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
-  "outgoing": [
-    {
-      "order": 110000,
-      "kind": "call",
-      "label": "move the pane into another repository's vault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-down.ts",
-        "symbol": "dive"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#LNQ7VROS",
-      "to": "vKEsyHFk/UOXNWLhR#xJIh6Jdp"
-    }
-  ]
+  "outgoing": []
 }

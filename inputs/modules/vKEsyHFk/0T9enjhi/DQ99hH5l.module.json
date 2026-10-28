@@ -1,15 +1,19 @@
 {
   "order": 46050,
-  "name": "Retained blob reads",
+  "name": "Archive object I/O",
   "kind": "module",
-  "responsibility": "Reads discovered immutable blobs in one Git process and preserves exact byte boundaries.",
+  "responsibility": "Reads exact retained objects and builds immutable trees",
+  "description": "Archive writes batch blobs through one supervised Git operation. Each closure inspection reuses immutable blobs and tree listings within that operation and bounds pending reads. It preserves exact bytes, modes, and the existing process deadline.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/store/model-archive-blobs.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#DQ99hH5l",
-  "parent": "vKEsyHFk/0T9enjhi#1VHRyajb",
+  "parent": "vKEsyHFk/0T9enjhi#ZRq51Ecz",
+  "formerNames": [
+    "Retained blob reads"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

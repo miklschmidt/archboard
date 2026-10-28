@@ -8,7 +8,7 @@
       "name": "Start the session",
       "participants": [
         "vKEsyHFk/wAHh0HTa#xtHoCCnF",
-        "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7",
         "vKEsyHFk/wAHh0HTa#ql0DevMk",
         "vKEsyHFk/wAHh0HTa#Ly6hUU5o"
       ],
@@ -16,7 +16,7 @@
         {
           "id": "vKEsyHFk/wAHh0HTa#b6erA2Tf",
           "from": "vKEsyHFk/wAHh0HTa#xtHoCCnF",
-          "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
           "label": "initialize, once",
           "kind": "sync",
           "anchor": {
@@ -27,7 +27,7 @@
         },
         {
           "id": "vKEsyHFk/wAHh0HTa#4Acu1SX1",
-          "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
           "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
           "label": "initialize",
           "kind": "sync",
@@ -40,7 +40,7 @@
         {
           "id": "vKEsyHFk/wAHh0HTa#VfIo7G0A",
           "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
-          "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
           "label": "the child's initialize result",
           "kind": "return",
           "anchor": {
@@ -51,7 +51,7 @@
         },
         {
           "id": "vKEsyHFk/wAHh0HTa#sccMFQws",
-          "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
           "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
           "label": "initialized",
           "kind": "async",
@@ -63,7 +63,7 @@
         },
         {
           "id": "vKEsyHFk/wAHh0HTa#FydWPELu",
-          "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
           "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
           "label": "configRequirements/read",
           "kind": "sync",
@@ -76,7 +76,7 @@
         {
           "id": "vKEsyHFk/wAHh0HTa#O9yI0oEi",
           "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
-          "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
           "label": "the managed requirements",
           "kind": "return",
           "anchor": {
@@ -87,7 +87,7 @@
         },
         {
           "id": "vKEsyHFk/wAHh0HTa#HJFMXHZg",
-          "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
           "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
           "label": "config/read",
           "kind": "sync",
@@ -101,7 +101,7 @@
         {
           "id": "vKEsyHFk/wAHh0HTa#m5Dj2NDi",
           "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
-          "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
           "label": "the effective config",
           "kind": "return",
           "anchor": {
@@ -112,7 +112,7 @@
         },
         {
           "id": "vKEsyHFk/wAHh0HTa#VxixWw4P",
-          "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
           "to": "vKEsyHFk/wAHh0HTa#Ly6hUU5o",
           "label": "prove storage after config/read",
           "kind": "sync",
@@ -133,7 +133,7 @@
                 {
                   "id": "vKEsyHFk/wAHh0HTa#RCfqVyvU",
                   "from": "vKEsyHFk/wAHh0HTa#Ly6hUU5o",
-                  "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "label": "storage proved",
                   "kind": "return",
                   "anchor": {
@@ -144,8 +144,8 @@
                 },
                 {
                   "id": "vKEsyHFk/wAHh0HTa#T83dFret",
-                  "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
-                  "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "label": "login-capable: publish the notifications held back",
                   "kind": "self",
                   "anchor": {
@@ -156,7 +156,7 @@
                 },
                 {
                   "id": "vKEsyHFk/wAHh0HTa#P3DvDy0o",
-                  "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "to": "vKEsyHFk/wAHh0HTa#xtHoCCnF",
                   "label": "the initialize result",
                   "kind": "return",
@@ -174,7 +174,7 @@
                 {
                   "id": "vKEsyHFk/wAHh0HTa#nzycdJYU",
                   "from": "vKEsyHFk/wAHh0HTa#Ly6hUU5o",
-                  "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "label": "a root disagrees with the prepared one",
                   "kind": "return",
                   "anchor": {
@@ -185,8 +185,8 @@
                 },
                 {
                   "id": "vKEsyHFk/wAHh0HTa#TBX0QwFp",
-                  "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
-                  "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "label": "phase failed: drop the held notifications, mark the failure",
                   "kind": "self",
                   "note": "a failed session is replaced, never retried",
@@ -198,7 +198,7 @@
                 },
                 {
                   "id": "vKEsyHFk/wAHh0HTa#CFOW8oZc",
-                  "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "to": "vKEsyHFk/wAHh0HTa#xtHoCCnF",
                   "label": "the storage error",
                   "kind": "return",
@@ -218,9 +218,9 @@
       "id": "vKEsyHFk/wAHh0HTa#zSCvXJVY",
       "name": "Send one request",
       "participants": [
-        "vKEsyHFk/wAHh0HTa#FPKa6YCR",
+        "vKEsyHFk/9ncuT5DP#6Jjha6LN",
         "vKEsyHFk/wAHh0HTa#JBu1uGdl",
-        "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7",
         "vKEsyHFk/wAHh0HTa#X6j6fViI",
         "vKEsyHFk/wAHh0HTa#Sk7GfGta",
         "vKEsyHFk/wAHh0HTa#ql0DevMk",
@@ -230,7 +230,7 @@
       "steps": [
         {
           "id": "vKEsyHFk/wAHh0HTa#iXfRgmHg",
-          "from": "vKEsyHFk/wAHh0HTa#FPKa6YCR",
+          "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
           "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
           "label": "thread/start for a new workhorse",
           "kind": "sync",
@@ -243,7 +243,7 @@
         {
           "id": "vKEsyHFk/wAHh0HTa#PslWUElL",
           "from": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
-          "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
           "label": "mutate thread/start behind its gate",
           "kind": "sync",
           "anchor": {
@@ -262,7 +262,7 @@
               "steps": [
                 {
                   "id": "vKEsyHFk/wAHh0HTa#aRvOGbjB",
-                  "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "to": "vKEsyHFk/wAHh0HTa#8QpDaiD6",
                   "label": "classify the refused gate",
                   "kind": "sync",
@@ -275,7 +275,7 @@
                 {
                   "id": "vKEsyHFk/wAHh0HTa#1CH2cwHK",
                   "from": "vKEsyHFk/wAHh0HTa#8QpDaiD6",
-                  "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "label": "not_delivered",
                   "kind": "return",
                   "anchor": {
@@ -286,7 +286,7 @@
                 },
                 {
                   "id": "vKEsyHFk/wAHh0HTa#XVmgDPWm",
-                  "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
                   "label": "mutation error: not delivered",
                   "kind": "return",
@@ -299,7 +299,7 @@
                 {
                   "id": "vKEsyHFk/wAHh0HTa#uwJqMDXn",
                   "from": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
-                  "to": "vKEsyHFk/wAHh0HTa#FPKa6YCR",
+                  "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
                   "label": "mutation error: not delivered",
                   "kind": "return",
                   "anchor": {
@@ -315,7 +315,7 @@
               "steps": [
                 {
                   "id": "vKEsyHFk/wAHh0HTa#awtzkYnk",
-                  "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "to": "vKEsyHFk/wAHh0HTa#X6j6fViI",
                   "label": "serialize issued identities",
                   "kind": "sync",
@@ -328,7 +328,7 @@
                 {
                   "id": "vKEsyHFk/wAHh0HTa#0BaNzvbf",
                   "from": "vKEsyHFk/wAHh0HTa#X6j6fViI",
-                  "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "label": "wire parameters",
                   "kind": "return",
                   "anchor": {
@@ -339,7 +339,7 @@
                 },
                 {
                   "id": "vKEsyHFk/wAHh0HTa#RPVnxIvU",
-                  "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
                   "label": "decode the parameters",
                   "kind": "sync",
@@ -352,7 +352,7 @@
                 {
                   "id": "vKEsyHFk/wAHh0HTa#E4nd56dR",
                   "from": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
-                  "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "label": "decoded parameters",
                   "kind": "return",
                   "anchor": {
@@ -371,7 +371,7 @@
                       "steps": [
                         {
                           "id": "vKEsyHFk/wAHh0HTa#wSmpnhYv",
-                          "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                           "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
                           "label": "mutation error: rejected before delivery",
                           "kind": "return",
@@ -384,7 +384,7 @@
                         {
                           "id": "vKEsyHFk/wAHh0HTa#Yxq9FoIy",
                           "from": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
-                          "to": "vKEsyHFk/wAHh0HTa#FPKa6YCR",
+                          "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
                           "label": "mutation error: not delivered",
                           "kind": "return",
                           "anchor": {
@@ -400,7 +400,7 @@
                       "steps": [
                         {
                           "id": "vKEsyHFk/wAHh0HTa#bujwXKF0",
-                          "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                           "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
                           "label": "one request frame",
                           "kind": "sync",
@@ -421,7 +421,7 @@
                                 {
                                   "id": "vKEsyHFk/wAHh0HTa#G9QTO3xJ",
                                   "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
-                                  "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                                   "label": "the response",
                                   "kind": "return",
                                   "anchor": {
@@ -432,7 +432,7 @@
                                 },
                                 {
                                   "id": "vKEsyHFk/wAHh0HTa#ml5NhzbA",
-                                  "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                                   "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
                                   "label": "decode the response",
                                   "kind": "sync",
@@ -445,7 +445,7 @@
                                 {
                                   "id": "vKEsyHFk/wAHh0HTa#Hgh6LaId",
                                   "from": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
-                                  "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                                   "label": "the decoded result",
                                   "kind": "return",
                                   "anchor": {
@@ -456,7 +456,7 @@
                                 },
                                 {
                                   "id": "vKEsyHFk/wAHh0HTa#eeXOLtoL",
-                                  "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                                   "to": "vKEsyHFk/wAHh0HTa#M3mPynLe",
                                   "label": "adopt returned identities",
                                   "kind": "sync",
@@ -469,7 +469,7 @@
                                 {
                                   "id": "vKEsyHFk/wAHh0HTa#AGHY3heC",
                                   "from": "vKEsyHFk/wAHh0HTa#M3mPynLe",
-                                  "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                                   "label": "the result with its identities adopted",
                                   "kind": "return",
                                   "anchor": {
@@ -480,7 +480,7 @@
                                 },
                                 {
                                   "id": "vKEsyHFk/wAHh0HTa#KF0V9M4W",
-                                  "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                                   "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
                                   "label": "the result",
                                   "kind": "return",
@@ -493,7 +493,7 @@
                                 {
                                   "id": "vKEsyHFk/wAHh0HTa#45WxPXqM",
                                   "from": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
-                                  "to": "vKEsyHFk/wAHh0HTa#FPKa6YCR",
+                                  "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
                                   "label": "the thread/start result",
                                   "kind": "return",
                                   "anchor": {
@@ -509,7 +509,7 @@
                               "steps": [
                                 {
                                   "id": "vKEsyHFk/wAHh0HTa#zydH1TTi",
-                                  "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                                   "to": "vKEsyHFk/wAHh0HTa#8QpDaiD6",
                                   "label": "classify the failure",
                                   "kind": "sync",
@@ -523,7 +523,7 @@
                                 {
                                   "id": "vKEsyHFk/wAHh0HTa#kzhVobn4",
                                   "from": "vKEsyHFk/wAHh0HTa#8QpDaiD6",
-                                  "to": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                                   "label": "not_delivered or outcome_unknown",
                                   "kind": "return",
                                   "anchor": {
@@ -534,7 +534,7 @@
                                 },
                                 {
                                   "id": "vKEsyHFk/wAHh0HTa#wvdkZRyI",
-                                  "from": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+                                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                                   "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
                                   "label": "mutation error with its outcome",
                                   "kind": "return",
@@ -547,7 +547,7 @@
                                 {
                                   "id": "vKEsyHFk/wAHh0HTa#H0efa6Oc",
                                   "from": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
-                                  "to": "vKEsyHFk/wAHh0HTa#FPKa6YCR",
+                                  "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
                                   "label": "mutation error with its outcome",
                                   "kind": "return",
                                   "anchor": {

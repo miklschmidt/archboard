@@ -10,6 +10,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "parent": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -31,45 +32,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 49000,
-      "kind": "call",
-      "label": "define each command",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/claim/claim.ts",
-        "symbol": "defineCommand"
-      },
-      "id": "vKEsyHFk/XppR9owz#vLSjCUqE",
-      "to": "vKEsyHFk/XppR9owz#o5zkAtUT"
-    },
-    {
-      "order": 50000,
-      "kind": "call",
-      "label": "board reply schema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/semantic/input/write-answer.ts",
-        "symbol": "ReconciliationReportSchema"
-      },
-      "id": "vKEsyHFk/XppR9owz#Mv8PiJEJ",
-      "to": "vKEsyHFk/XppR9owz#OfRn3av3"
-    },
-    {
-      "order": 51000,
-      "kind": "call",
-      "label": "the stated version, read before a write opens its input",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/semantic/input/semantic-input.ts",
-        "symbol": "statedInvocation"
-      },
-      "id": "vKEsyHFk/XppR9owz#wRsRzFtD",
-      "to": "vKEsyHFk/XppR9owz#fF4A9uvU"
-    }
-  ]
+  "outgoing": []
 }

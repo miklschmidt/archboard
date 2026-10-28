@@ -9,7 +9,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#yHgIapK7",
-  "parent": "vKEsyHFk/XppR9owz#dHZeNcMs",
+  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -47,7 +47,7 @@
         "symbol": "fetch"
       },
       "id": "vKEsyHFk/XppR9owz#pB6BrbXY",
-      "to": "vKEsyHFk/XppR9owz#MUs4pwRq"
+      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     },
     {
       "order": 63000,
@@ -61,6 +61,19 @@
       },
       "id": "vKEsyHFk/XppR9owz#WxUHKpD6",
       "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+    },
+    {
+      "order": 70042,
+      "kind": "call",
+      "label": "retain invocation claims",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "withWriteClaims"
+      },
+      "id": "vKEsyHFk#PlQAGfVL",
+      "to": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
     },
     {
       "order": 76000,

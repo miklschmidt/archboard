@@ -5,6 +5,7 @@
   "responsibility": "Gives each browser tab its own session: finds the one a call names, knows each chat's tab, ends a tab no chat returns to, records where each coordinator turn shows, and announces context changes",
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+  "parent": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

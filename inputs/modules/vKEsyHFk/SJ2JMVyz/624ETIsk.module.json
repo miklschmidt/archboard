@@ -1,15 +1,20 @@
 {
   "order": 30000,
-  "name": "Archboard role policy",
+  "name": "Authored role instructions",
   "kind": "module",
-  "responsibility": "Supply board workflow, skills, and persona instructions",
+  "responsibility": "Composes and checks the authored coordinator and workhorse instructions",
+  "description": "One instruction owner loads the two role documents, composes their policy, and exposes their text and digests. Callers use the same integrity checks for both roles.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/runtime/rules/instructions"
+    "path": "packages/workbench/src/runtime/rules/instructions/authored.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SJ2JMVyz#624ETIsk",
-  "parent": "vKEsyHFk/SJ2JMVyz#5Pg20iSq",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "formerNames": [
+    "Archboard role policy",
+    "Workhorse instructions"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -42,6 +47,32 @@
       },
       "id": "vKEsyHFk/SJ2JMVyz#9ymbrMYT",
       "to": "vKEsyHFk/SJ2JMVyz#sWw1Z9kM"
+    },
+    {
+      "order": 45000,
+      "kind": "dependency",
+      "label": "domain instructions for each role's profile",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/host/archboard.ts",
+        "symbol": "COORDINATOR_DOMAIN_INSTRUCTIONS"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#qU9USAdL",
+      "to": "vKEsyHFk/qKGcB6vZ#En8mB6jo"
+    },
+    {
+      "order": 46000,
+      "kind": "dependency",
+      "label": "build domain turns through the shared input contract",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/instructions/bodies.ts",
+        "symbol": "createTextUserInput"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#6wH1TupJ",
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
     }
   ]
 }

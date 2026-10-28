@@ -1,16 +1,19 @@
 {
   "order": 50000,
-  "name": "Stated change",
+  "name": "Stated JSON input",
   "kind": "function",
-  "responsibility": "Reads the change a write states, once for edit and resolve: the version first, then the input as a JSON object, then the variant it names, saying an override at once",
+  "responsibility": "Reads one explicit JSON value from a file or standard input",
+  "description": "The shared input helper parses the stated text. Each canonical command validates that value against its public operation schema.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/semantic/input/semantic-input.ts",
-    "symbol": "readVariantChange"
+    "path": "apps/cli/src/cli/operations/model/input.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#dWtStgA6",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "formerNames": [
+    "Stated change"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

@@ -5,6 +5,7 @@
   "responsibility": "Accepts each page's socket and pane, keeps which pane shows what in which tab, reports what the panes show, and moves a pane to the checkout a person chooses",
   "schemaVersion": 1,
   "id": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+  "parent": "vKEsyHFk/6E6hL0Zk#cuOguqkZ",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

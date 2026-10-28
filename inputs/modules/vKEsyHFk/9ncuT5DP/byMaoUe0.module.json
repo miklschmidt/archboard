@@ -21,6 +21,45 @@
   ],
   "outgoing": [
     {
+      "order": 21000,
+      "kind": "call",
+      "label": "prove the linked thread current",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/thread-link/binding.ts",
+        "symbol": "assertCurrent"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#CT2H47EW",
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    },
+    {
+      "order": 24000,
+      "kind": "rpc",
+      "label": "thread/read and thread/list to classify a link",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/thread-link/classifier.ts",
+        "symbol": "threadRead"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#xOvqFYUE",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 25000,
+      "kind": "dependency",
+      "label": "the link reasons the context policy orders",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/thread-link/link-shape.ts",
+        "symbol": "ADDITIONAL_CONTEXT_POLICY"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#qdsTcqWf",
+      "to": "vKEsyHFk/SJ2JMVyz#sWw1Z9kM"
+    },
+    {
       "order": 52000,
       "kind": "rpc",
       "label": "thread/read and thread/list to classify a link",

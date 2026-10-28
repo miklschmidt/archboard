@@ -9,7 +9,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
-  "parent": "vKEsyHFk/qKGcB6vZ#B0SAnbtM",
+  "parent": "vKEsyHFk/9ncuT5DP#08zJvPJq",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -41,7 +41,7 @@
         "symbol": "createTellCoordinator"
       },
       "id": "vKEsyHFk/qKGcB6vZ#z89BWp39",
-      "to": "vKEsyHFk/qKGcB6vZ#AahDTiw9"
+      "to": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
     },
     {
       "order": 21000,

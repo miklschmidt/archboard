@@ -5,6 +5,7 @@
   "responsibility": "Boots and stops the server, mounts every route, and holds each call to the vault it names",
   "schemaVersion": 1,
   "id": "vKEsyHFk/Oi6SBIAM#xwAgUBmW",
+  "parent": "vKEsyHFk/6E6hL0Zk#Wcng1nxx",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

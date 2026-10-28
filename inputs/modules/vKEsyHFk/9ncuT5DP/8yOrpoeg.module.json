@@ -2,7 +2,7 @@
   "order": 51000,
   "name": "Context announcements",
   "kind": "module",
-  "responsibility": "Tells the live tab sessions a context change a host announces, each audience it names: the workhorse of each named checkout, the coordinator and the live voice, with one receipt for each",
+  "responsibility": "Routes captured context changes to the requested live thread and voice audiences",
   "description": "VoiceAgent.announce is its entry. It refuses a malformed change before anybody is told, and reads every identity itself: each told workhorse's link, child and threads, and the coordinator paired with it. A workhorse hears the change through its own context delivery, and a tab with no workhorse in a named checkout answers no_workhorse. The coordinator and the voice hear it through the tab's one callback queue, and only while voice is live: with none, the receipt says voice_inactive. The audiences are told at the same time, in no fixed order.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
@@ -32,6 +32,20 @@
       "to": "vKEsyHFk/9ncuT5DP#08zJvPJq"
     },
     {
+      "order": 25000,
+      "kind": "call",
+      "label": "the coordinator's and the voice's parts of a change",
+      "description": "The voice agent's announce gives each audience a change names its own callback on the tab's queue, while voice is live.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+        "symbol": "enqueue"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#wyliCZzQ",
+      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI"
+    },
+    {
       "order": 26000,
       "kind": "call",
       "label": "each named checkout's workhorse, under identities it reads",
@@ -43,6 +57,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#7LxiPZOi",
       "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb"
+    },
+    {
+      "order": 53000,
+      "kind": "dependency",
+      "label": "the execution context's keys, which a payload cannot use",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+        "symbol": "EXECUTION_CONTEXT_KEYS"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#j3Td3x8x",
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
     }
   ]
 }

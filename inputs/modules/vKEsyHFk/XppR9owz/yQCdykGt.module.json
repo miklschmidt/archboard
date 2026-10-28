@@ -2,8 +2,8 @@
   "order": 12000,
   "name": "Vault check",
   "kind": "module",
-  "responsibility": "check with its subcommands all, semantics and code, and semantic config: each check fills its own part of one answer, and the vault's vocabulary and everything wrong with its boards",
-  "description": "In a Git checkout that holds no vault, check, check all and check embeds run the embeds check alone, and the answer's skipped says why the semantics and code checks did not run.",
+  "responsibility": "Runs canonical model and policy checks, with code and embed checks owned by their existing operations.",
+  "description": "In a Git checkout with no vault, check, check all and check embeds run embeds alone and report why semantics/code were skipped. With a vault, check semantics reads canonical model diagnostics and authored policy; legacy authority returns migration guidance without changing source. Code and embed checks keep their existing owners.",
   "groups": [
     "checks"
   ],

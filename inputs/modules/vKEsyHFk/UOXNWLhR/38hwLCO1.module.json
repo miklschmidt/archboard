@@ -26,19 +26,6 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#1BAA71RA",
       "to": "vKEsyHFk/UOXNWLhR#IJkVbMK2"
-    },
-    {
-      "order": 18000,
-      "kind": "call",
-      "label": "the render route, otherwise",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/picture-source.ts",
-        "symbol": "fetchSemanticRender"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#YjZLgBKG",
-      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
     }
   ]
 }

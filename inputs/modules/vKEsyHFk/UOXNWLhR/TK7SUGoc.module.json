@@ -55,29 +55,16 @@
       "to": "vKEsyHFk/UOXNWLhR#38hwLCO1"
     },
     {
-      "order": 19000,
+      "order": 70044,
       "kind": "call",
-      "label": "the listing",
-      "emphasis": "normal",
+      "label": "share captured read queries",
+      "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
-        "symbol": "fetchSemanticBoards"
+        "symbol": "boardReads"
       },
-      "id": "vKEsyHFk/UOXNWLhR#pS1HsY9g",
-      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
-    },
-    {
-      "order": 31000,
-      "kind": "call",
-      "label": "document, vault check, code findings, locality of a vault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
-        "symbol": "localityQuery"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#nvPI9Op2",
+      "id": "vKEsyHFk#f43RMTLN",
       "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
     },
     {

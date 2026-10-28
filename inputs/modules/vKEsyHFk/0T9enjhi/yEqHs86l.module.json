@@ -2,15 +2,15 @@
   "order": 60000,
   "name": "Archive publication storage",
   "kind": "module",
-  "responsibility": "Owns private destinations, publication refs and complete named fetches",
-  "description": "The Git common directory owns destination configuration per portable vault address. Pending refs retain intended publication closure. Receipt refs retain acknowledged closure. Temporary incoming refs are released after the consuming operation retains its result. Git transport cannot establish host retention protection.",
+  "responsibility": "Publishes and fetches complete retained architecture history",
+  "description": "Publication uses the batched archive reader to inspect complete records and actual ancestry. Explicit destinations, shallow-history refusal, and concurrent append recovery remain unchanged.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/store/model-publication.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#yEqHs86l",
-  "parent": "vKEsyHFk/0T9enjhi#1VHRyajb",
+  "parent": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

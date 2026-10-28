@@ -10,5 +10,19 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#GSL08xvL",
   "parent": "vKEsyHFk/gbyqW4H3#0XCanbzp",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 70011,
+      "kind": "call",
+      "label": "install the drawing host",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/operations/measure.ts",
+        "symbol": "installBunHost"
+      },
+      "id": "vKEsyHFk#uOeTTOcP",
+      "to": "vKEsyHFk/gbyqW4H3#eMXdmcWP"
+    }
+  ]
 }

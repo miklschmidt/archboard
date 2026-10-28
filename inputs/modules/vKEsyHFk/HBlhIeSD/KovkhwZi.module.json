@@ -5,6 +5,7 @@
   "responsibility": "Runs the code check, locality and footprint when somebody asks, as checkout work, and keeps the last code findings in memory.",
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#KovkhwZi",
+  "parent": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
