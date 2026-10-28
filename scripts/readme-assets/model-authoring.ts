@@ -59,10 +59,12 @@ async function editModel(
 	const model = await readModel(server, state);
 	const target = modelTarget(model);
 	const operationId = crypto.randomUUID();
-	const input = join(scratch("takes", take), `${operationId}.json`);
+	const work = scratch("takes", take);
+	const claimInput = join(work, `${operationId}.claim.json`);
+	const input = join(work, `${operationId}.edit.json`);
 	const writer = "readme";
 	writeFileSync(
-		input,
+		claimInput,
 		JSON.stringify({
 			target,
 			writer,
@@ -72,6 +74,7 @@ async function editModel(
 					model.manifest.id,
 					...(target.state === null ? [] : [target.state]),
 					...model.proposals.map(({ id }) => id),
+					...model.collections.map(({ id }) => `${model.manifest.id}#${id}`),
 					...[...subjectsOf(modelContent(model))].map(({ id }) => id),
 					...model.walkthroughs.flatMap((walkthrough) => [
 						walkthrough.id,
@@ -82,7 +85,7 @@ async function editModel(
 		}),
 	);
 	const claimed = ArchitectureClaimResultSchema.parse(
-		modelResult(await server.cli(["model", "claim", "--input", input])),
+		modelResult(await server.cli(["model", "claim", "--input", claimInput])),
 	);
 	if (!claimed.success) throw new Error(JSON.stringify(claimed));
 	try {
@@ -113,8 +116,9 @@ async function editModel(
 		if (!result.success) throw new Error(JSON.stringify(result));
 		return result;
 	} finally {
-		writeFileSync(input, JSON.stringify({ claim: claimed.claim.id, writer }));
-		await server.cli(["model", "release", "--input", input]);
+		const releaseInput = join(work, `${operationId}.release.json`);
+		writeFileSync(releaseInput, JSON.stringify({ claim: claimed.claim.id, writer }));
+		await server.cli(["model", "release", "--input", releaseInput]);
 	}
 }
 

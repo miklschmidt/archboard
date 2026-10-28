@@ -54,7 +54,11 @@
 				"scripts/readme-assets/stage/terminal.html",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"scripts/readme-assets/model-authoring.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts"
 			],
 			"hash": "826016ab528d12fe8752fa44445b5878e7ef68d3b4e9c90efea768843b110a8b"
 		},

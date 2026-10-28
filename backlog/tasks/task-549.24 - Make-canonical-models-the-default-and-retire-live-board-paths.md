@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T00:15:00Z'
+updated_date: '2026-10-28T00:35:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -126,6 +126,8 @@ Repair the observed same-model reference failure during canonical edits after mi
 Bounded local-reference repair: reproduce at the approved public runtime owner with signed temporary Git repositories. Keep same-state local references inside their complete captured snapshot. Retain exact local current targets for proposal references through the existing archive and dependency closure. Preserve foreign references, barriers, signing, claims, and recovery. Use focused reference/history owners and types, lint, and formatting. Parent owns NyesaQPQ and final authoring, status, assignee, and acceptance.
 
 Complete the web-shop fixture transition from the public scratch migration and proposal workflow. Track canonical inputs plus a public history.import.json request because original history cannot be reconstructed from current inputs. Make the existing README take harness initialize a disposable Git repository and restore that exact archive through importArchitectureModel. Keep the fixture serializer authoritative and refuse mismatched authored inputs. Port visual recipes to canonical addresses, selectors, claims, proposals, exports and history.
+
+Repair the observed whole-batch removal refusal through the existing flow owner. The canonical hero explicitly removes Timeout guard and its timer message in one batch. removeStep marks the identity in both edited and removals; repairReferences then treats that explicit removal as an edited surviving message with a removed endpoint. Delegate a bounded real-files/Git public-runtime RED/GREEN repair. Preserve refusal for a genuinely surviving edited or moved message with a removed endpoint. Parent owns the hero input, frontend, root migration and acceptance.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -248,4 +250,6 @@ Merged signed local-reference repair c0566e62b through signed 9e01df6d3. The pre
 Ported shared filming readiness and camera fitting to canonical model stages. Plan uses complete browser reading inputs with its exact Starting point comparison, so competing recommendations show only relevant changes. Drill-down traverses Inventory and Stock API and waits for both exact scope addresses. The ask recipe uses a canonical URL but was not run. Types/lint/format and both non-Codex producer runs pass. Parent inspected the generated images; the corrected plan image removes unrelated shop comparisons. Receipt sources now include the exact shared bootstrap and authoring helpers used by those verified runs. Clips remain local, with no upload or PR update. Canonical authoring helper also claims shared flow/step and walkthrough/beat scopes. Remaining recipes and root migration stay open.
 
 Ported README SVG/raster recipes and banner rendering to canonical structural/flow requests and selected states. Removed retired view, track, and legend flags; repository SVGs keep recipes for Git-discovered embed checks. Receipt dimensions derive from the shared render result schema. Updated source dependencies to canonical example inputs and actual shared helpers. Types, lint, format and the banner/web-shop/sequence producers pass. Parent inspected the banner and both thumbnails; generated SVGs and images are committed with their receipts. README quick-start and export instructions now use canonical imports and exports. No narrated or Codex producer ran. Remaining authoring/history/evidence/narrated recipes and root architecture migration remain open.
+
+Canonical hero source and authored operation batch are checkpointed, not accepted. Types, focused lint and formatting pass. The actual producer exposed source-label ambiguity, which the fixture now resolves by explicit source module plus label. The next run reproduced a public runtime removal conflict for an explicitly removed incident message. No hero asset was accepted or uploaded. The authoring helper now keeps separate claim/edit/release input files for diagnosis and exact retries, and qualifies collection claim scopes as model#localCollectionID. Backend removal repair remains open.
 <!-- SECTION:NOTES:END -->

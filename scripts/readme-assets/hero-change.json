@@ -1,148 +1,210 @@
-{
-	"nodes": [
-		{
-			"id": "@N:Place order",
-			"name": "Place order",
-			"kind": "route",
-			"parent": "Checkout API",
+[
+	{
+		"type": "edit-module",
+		"subject": "@N:Place order",
+		"set": {
 			"responsibility": "POST /orders: saves the order as pending and starts the payment, then answers"
-		},
-		{
+		}
+	},
+	{
+		"type": "add-module",
+		"module": {
 			"name": "Payment webhook",
 			"kind": "route",
 			"parent": "Checkout API",
 			"groups": ["payments"],
-			"responsibility": "POST /payments/webhook: records the outcome the payment provider reports"
-		},
-		{
+			"responsibility": "POST /payments/webhook: records the outcome the payment provider reports",
+			"order": 12000
+		}
+	},
+	{
+		"type": "add-module",
+		"module": {
 			"name": "Order events",
 			"kind": "queue",
 			"groups": ["fulfilment"],
-			"responsibility": "Carries each paid order to the work that follows it"
-		},
-		{
+			"responsibility": "Carries each paid order to the work that follows it",
+			"order": 13000
+		}
+	},
+	{
+		"type": "add-module",
+		"module": {
 			"name": "Fulfilment worker",
 			"kind": "job",
 			"groups": ["fulfilment"],
-			"responsibility": "Reserves the stock and sends the receipt for each paid order, retrying on its own"
+			"responsibility": "Reserves the stock and sends the receipt for each paid order, retrying on its own",
+			"order": 14000
 		}
-	],
-	"removeNodes": ["Timeout guard"],
-	"removeWalkthroughs": ["How an order is placed today"],
-	"edges": [
-		{
-			"id": "@E:reserve stock, and wait",
-			"from": "Fulfilment worker",
+	},
+	{
+		"type": "remove-module",
+		"subject": "@N:Timeout guard"
+	},
+	{
+		"type": "remove-walkthrough",
+		"subject": "@W:How an order is placed today"
+	},
+	{
+		"type": "edit-relationship",
+		"subject": "@E:Place order:reserve stock, and wait",
+		"source": "Fulfilment worker",
+		"set": {
 			"to": "Inventory service",
 			"kind": "http",
 			"label": "reserve stock",
 			"traffic": {}
-		},
-		{
-			"id": "@E:charge the card, and wait",
-			"from": "Place order",
+		}
+	},
+	{
+		"type": "edit-relationship",
+		"subject": "@E:Place order:charge the card, and wait",
+		"source": "Place order",
+		"set": {
 			"to": "Payment provider",
 			"kind": "http",
 			"label": "start the payment",
 			"emphasis": "hero",
 			"traffic": {}
-		},
-		{
-			"id": "@E:write the paid order",
-			"from": "Place order",
+		}
+	},
+	{
+		"type": "edit-relationship",
+		"subject": "@E:Place order:write the paid order",
+		"source": "Place order",
+		"set": {
 			"to": "Orders DB",
 			"kind": "data",
 			"label": "write the order as pending",
 			"traffic": {}
-		},
-		{
-			"id": "@E:send the receipt, and wait",
-			"from": "Fulfilment worker",
+		}
+	},
+	{
+		"type": "edit-relationship",
+		"subject": "@E:Place order:send the receipt, and wait",
+		"source": "Fulfilment worker",
+		"set": {
 			"to": "Email provider",
 			"kind": "http",
 			"label": "send the receipt",
 			"traffic": {},
 			"description": "Retried with backoff until the email provider accepts it; the shopper already has their confirmation page."
-		},
-		{
-			"from": "Payment provider",
+		}
+	},
+	{
+		"type": "add-relationship",
+		"source": "Payment provider",
+		"relationship": {
 			"to": "Payment webhook",
 			"kind": "event",
 			"label": "payment succeeded",
 			"emphasis": "hero",
-			"traffic": {}
-		},
-		{
-			"from": "Payment webhook",
+			"traffic": {},
+			"order": 34000
+		}
+	},
+	{
+		"type": "add-relationship",
+		"source": "Payment webhook",
+		"relationship": {
 			"to": "Orders DB",
 			"kind": "data",
-			"label": "mark the order paid"
-		},
-		{
-			"from": "Payment webhook",
+			"label": "mark the order paid",
+			"order": 35000
+		}
+	},
+	{
+		"type": "add-relationship",
+		"source": "Payment webhook",
+		"relationship": {
 			"to": "Order events",
 			"kind": "queue",
 			"label": "publish order paid",
 			"emphasis": "hero",
-			"traffic": {}
-		},
-		{
-			"from": "Order events",
+			"traffic": {},
+			"order": 36000
+		}
+	},
+	{
+		"type": "add-relationship",
+		"source": "Order events",
+		"relationship": {
 			"to": "Fulfilment worker",
 			"kind": "queue",
 			"label": "deliver order paid",
-			"traffic": {}
+			"traffic": {},
+			"order": 37000
 		}
-	],
-	"flows": [
-		{
-			"id": "@F:Place an order",
-			"name": "Place an order",
+	},
+	{
+		"type": "edit-flow",
+		"subject": "@F:Place an order",
+		"set": {
 			"summary": "One press of Pay, from the basket to the order-received page.",
-			"participants": ["Storefront", "Place order", "Orders DB", "Payment provider"],
-			"steps": [
-				{
-					"id": "@S:Place an order:POST /orders",
-					"from": "Storefront",
-					"to": "Place order",
-					"label": "POST /orders"
-				},
-				{
-					"id": "@S:Place an order:load and price the basket",
-					"from": "Place order",
-					"to": "Place order",
-					"kind": "self",
-					"label": "load and price the basket"
-				},
-				{
-					"id": "@S:Place an order:write the paid order",
-					"from": "Place order",
-					"to": "Orders DB",
-					"label": "write the order as pending"
-				},
-				{
-					"id": "@S:Place an order:charge the card",
-					"from": "Place order",
-					"to": "Payment provider",
-					"label": "start the payment"
-				},
-				{
-					"id": "@S:Place an order:paid",
-					"from": "Payment provider",
-					"to": "Place order",
-					"kind": "return",
-					"label": "payment started"
-				},
-				{
-					"id": "@S:Place an order:order confirmed",
-					"from": "Place order",
-					"to": "Storefront",
-					"kind": "return",
-					"label": "order received"
-				}
-			]
+			"participants": ["Storefront", "Place order", "Orders DB", "Payment provider"]
+		}
+	},
+	{
+		"type": "remove-step",
+		"subject": "@S:Place an order:start the 10 s clock"
+	},
+	{
+		"type": "remove-step",
+		"subject": "@S:Place an order:reserve the items"
+	},
+	{
+		"type": "remove-step",
+		"subject": "@S:Place an order:reserved"
+	},
+	{
+		"type": "remove-step",
+		"subject": "@S:Place an order:send the receipt"
+	},
+	{
+		"type": "remove-step",
+		"subject": "@S:Place an order:accepted"
+	},
+	{
+		"type": "edit-step",
+		"subject": "@S:Place an order:write the paid order",
+		"set": {
+			"label": "write the order as pending"
+		}
+	},
+	{
+		"type": "edit-step",
+		"subject": "@S:Place an order:charge the card",
+		"set": {
+			"label": "start the payment"
 		},
-		{
+		"clear": ["note"]
+	},
+	{
+		"type": "edit-step",
+		"subject": "@S:Place an order:paid",
+		"set": {
+			"label": "payment started"
+		}
+	},
+	{
+		"type": "edit-step",
+		"subject": "@S:Place an order:order confirmed",
+		"set": {
+			"label": "order received"
+		}
+	},
+	{
+		"type": "move-step",
+		"subject": "@S:Place an order:write the paid order",
+		"placement": {
+			"holder": "@F:Place an order",
+			"before": "@S:Place an order:charge the card"
+		}
+	},
+	{
+		"type": "add-flow",
+		"collection": "Web shop",
+		"flow": {
 			"name": "Fulfil a paid order",
 			"summary": "What happens once the card is paid, off the shopper's clock.",
 			"participants": [
@@ -165,7 +227,8 @@
 				{
 					"from": "Payment webhook",
 					"to": "Orders DB",
-					"label": "mark the order paid"
+					"label": "mark the order paid",
+					"kind": "sync"
 				},
 				{
 					"from": "Payment webhook",
@@ -188,7 +251,8 @@
 				{
 					"from": "Fulfilment worker",
 					"to": "Inventory service",
-					"label": "reserve the items"
+					"label": "reserve the items",
+					"kind": "sync"
 				},
 				{
 					"from": "Inventory service",
@@ -200,7 +264,8 @@
 					"from": "Fulfilment worker",
 					"to": "Email provider",
 					"label": "send the receipt",
-					"note": "retried with backoff until accepted; the shopper already has their page"
+					"note": "retried with backoff until accepted; the shopper already has their page",
+					"kind": "sync"
 				},
 				{
 					"from": "Email provider",
@@ -210,5 +275,5 @@
 				}
 			]
 		}
-	]
-}
+	}
+]

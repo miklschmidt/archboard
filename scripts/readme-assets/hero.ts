@@ -1,51 +1,46 @@
-// The hero clip: a person asks for a change, and an agent claims the board, branches a proposal,
-// writes the change, compares it with today and shows it, while the pane beside its terminal
-// redraws on every write. Every command the terminal shows ran against the server as shown.
-//
-// The change is hero-change.json, written as an agent writes one: a part, relationship, sequence
-// or step that continues names its id, read from the proposal it branched. Here each such id is
-// a placeholder, filled in from `semantic show`: @N:<node>, @E:<relationship label>,
-// @F:<sequence> and @S:<sequence>:<step label>.
+// Film one complete canonical proposal through the public CLI, with no model call.
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { z } from "zod";
+import { ArchitectureModuleEditSchema, ArchitectureModelReadSchema } from "@archboard/board/model";
 
 import { messagesOf } from "@archboard/board/flow";
-import type { VariantContent } from "@archboard/board/content";
+import { modelContent, type Model } from "@archboard/board/content";
 
 import {
 	Terminal,
 	encodeTake,
 	filmTogether,
 	present,
-	readBoard,
 	attachmentFile,
-	scratch,
 	withTake,
 	type Producer,
 	type TakeServer,
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./kit.ts";
 
-const BOARD = "Web shop";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
+import { readModel, editModel, modelResult } from "./model-authoring.ts";
+
+const MODEL = "Shop";
 const PROPOSAL = "Off the request path";
 const REQUEST =
 	"Checkout waits on stock, the card and the receipt email. Propose taking fulfilment off the request path, and show me.";
 const CLIP = attachmentFile("hero.webp");
 const PANE = { width: 1320, height: 1080 } as const;
-const PLACEHOLDER = /^@[NEFS]:/;
+const PLACEHOLDER = /^@[NEFSW]:/;
 
 /**
  * The subjects of a variant a placeholder can name, by kind: a list of name and id pairs.
- * @param content The variant's content.
+ * @param model The canonical model.
  * @param kind The placeholder's kind.
  * @param key What it names.
  * @returns The subjects it matches.
  */
-function matches(content: VariantContent, kind: string, key: string): readonly { id: string }[] {
+function matches(model: Model, kind: string, key: string): readonly { id: string }[] {
+	const content = modelContent(model);
 	if (kind === "N") return content.nodes.filter((node) => node.name === key);
-	if (kind === "E") return content.edges.filter((edge) => edge.label === key);
+	if (kind === "E") return ownedRelationships(model, key);
 	if (kind === "F") return content.flows.filter((flow) => flow.name === key);
 	const split = key.indexOf(":");
 	const flow = content.flows.find((one) => one.name === key.slice(0, split));
@@ -53,14 +48,34 @@ function matches(content: VariantContent, kind: string, key: string): readonly {
 }
 
 /**
- * The id one placeholder names in a variant.
+ * A relationship label belongs to its explicit source module.
+ * @param model The current canonical reading.
+ * @param key The source module name followed by its relationship label.
+ * @returns Matching source-owned relationships; ambiguity remains an explicit refusal.
+ */
+function ownedRelationships(model: Model, key: string) {
+	const split = key.indexOf(":");
+	const sources = new Set(
+		model.modules.filter((module) => module.name === key.slice(0, split)).map(({ id }) => id),
+	);
+	return model.relationships.filter(
+		(relationship) => sources.has(relationship.from) && relationship.label === key.slice(split + 1),
+	);
+}
+
+/**
+ * The id one placeholder names in the model.
  * @param placeholder The placeholder, such as `@N:Place order`.
- * @param content The variant the change lands on.
+ * @param model The canonical reading that the change affects.
  * @returns The id.
  * @throws {Error} When it names no subject, or more than one.
  */
-function idOf(placeholder: string, content: VariantContent): string {
-	const found = matches(content, placeholder.charAt(1), placeholder.slice(3));
+function idOf(placeholder: string, model: Model): string {
+	const key = placeholder.slice(3);
+	const found =
+		placeholder.charAt(1) === "W"
+			? model.walkthroughs.filter((walkthrough) => walkthrough.name === key)
+			: matches(model, placeholder.charAt(1), key);
 	const [only, ...more] = found;
 	if (only === undefined || more.length > 0) {
 		throw new Error(`${placeholder} names ${found.length} subjects of the proposal, not one.`);
@@ -69,65 +84,64 @@ function idOf(placeholder: string, content: VariantContent): string {
 }
 
 /**
- * Fill each id placeholder of a change with the id it names in a variant.
+ * Fill each id placeholder of a change with its canonical identity.
  * @param value The change, or a part of it.
- * @param content The variant the change lands on.
+ * @param model The canonical reading that the change affects.
  * @returns The change with ids.
  */
-function filled(value: unknown, content: VariantContent): unknown {
-	if (Array.isArray(value)) return value.map((item: unknown) => filled(item, content));
+function filled(value: unknown, model: Model): unknown {
+	if (Array.isArray(value)) return value.map((item: unknown) => filled(item, model));
 	if (typeof value === "object" && value !== null) {
 		return Object.fromEntries(
-			Object.entries(value).map(([key, item]) => [key, filled(item, content)]),
+			Object.entries(value).map(([key, item]) => [key, filled(item, model)]),
 		);
 	}
-	return typeof value === "string" && PLACEHOLDER.test(value) ? idOf(value, content) : value;
-}
-
-/** What a board write answers: the board, at its new version. */
-const WriteAnswerSchema = z.object({ board: z.object({ version: z.number() }) });
-
-/**
- * The version a write answered with.
- * @param answer The answer.
- * @returns The board's version.
- */
-function versionOf(answer: unknown): number {
-	return WriteAnswerSchema.parse(answer).board.version;
+	return typeof value === "string" && PLACEHOLDER.test(value) ? idOf(value, model) : value;
 }
 
 /**
- * Write the change an agent would write to the proposal it just branched, and say where it is.
- * @param server The take's server.
- * @returns The change's file.
- * @throws {Error} When the proposal is not there.
+ * Show the exact arguments that the take executes through its CLI.
+ * @param server The isolated source and transport.
+ * @param terminal The filmed terminal.
+ * @returns The same server with visible command progress.
  */
-async function writeChange(server: TakeServer): Promise<string> {
-	const board = await readBoard(server, BOARD);
-	const proposal = board.variants.find((variant) => variant.name === PROPOSAL);
-	if (proposal === undefined) throw new Error(`${BOARD} has no proposal named ${PROPOSAL}.`);
+function filmedCommands(server: TakeServer, terminal: Terminal): TakeServer {
+	return {
+		...server,
+		/**
+		 * Show and run one actual command.
+		 * @param args The CLI arguments.
+		 * @returns Its successful JSON result.
+		 */
+		cli: async (args) => {
+			await terminal.command(["archboard", ...args.map(shellWord)].join(" "));
+			const answer = await server.cli(args);
+			await terminal.done("Completed");
+			await Bun.sleep(700);
+			return answer;
+		},
+	};
+}
+
+/**
+ * Quote a displayed command argument without changing its shell value.
+ * @param value The argument passed to the CLI.
+ * @returns Copyable shell syntax.
+ */
+function shellWord(value: string): string {
+	return /^[\w./:@-]+$/u.test(value) ? value : "'" + value.replaceAll("'", "'\\''") + "'";
+}
+
+/**
+ * Read the authored operation batch and resolve only continuing identities.
+ * @param model The current canonical reading.
+ * @returns The public operation shapes for one complete proposal.
+ */
+function proposalChanges(model: Model) {
 	const template: unknown = JSON.parse(
 		readFileSync(join(import.meta.dir, "hero-change.json"), "utf8"),
 	);
-	const file = join(scratch("takes", "hero"), "change.json");
-	writeFileSync(file, `${JSON.stringify(filled(template, proposal.content), null, "\t")}\n`);
-	return file;
-}
-
-/** How `semantic compare` starts the line that counts what it found besides the interfaces. */
-const OTHER_CHANGES = "Other changes: ";
-
-/**
- * The parts and relationships clauses of the counts `semantic compare` says after its
- * interface lines.
- * @param said What the command said on stderr.
- * @returns The clauses, one line each.
- * @throws {Error} When the command said no counts.
- */
-function comparedLines(said: string): readonly string[] {
-	const counts = said.split("\n").find((line) => line.startsWith(OTHER_CHANGES));
-	if (counts === undefined) throw new Error(`semantic compare said no counts: ${said.trim()}`);
-	return counts.slice(OTHER_CHANGES.length).split("; ").slice(0, 2);
+	return ArchitectureModuleEditSchema.options[1].shape.changes.parse(filled(template, model));
 }
 
 const hero: Producer = {
@@ -137,99 +151,47 @@ const hero: Producer = {
 	attachments: [CLIP],
 	needs: ["chromium", "ffmpeg"],
 	plan: [
-		`Start an Archboard server over a copy of examples/web-shop; open the agent's terminal page and the shell on ${BOARD}, presented, side by side in a private headless Chromium, dark.`,
-		`Film the agent's commands: archboard claim, semantic branch "${PROPOSAL}", semantic edit with scripts/readme-assets/hero-change.json (its ids read from semantic show), semantic compare, browser show and release, while the pane redraws on each write.`,
-		"Encode the two windows side by side as a 1280 px lossless WebP at 30 frames a second, opening on its last frame, in the scratch directory to attach by hand.",
+		"Open the canonical shop model beside a terminal in an isolated take.",
+		"Film the actual read, claim, complete proposal edit, release, comparison, and pane commands.",
+		"Create the proposal through hero-change.json with continuing IDs from the current public reading.",
+		"Encode the two windows as a 1280 px WebP in scratch storage for attachment.",
 	],
 	/**
-	 * Film the take and encode it.
-	 * @returns Once the files are written.
+	 * Film the public authoring workflow and its resulting proposal.
+	 * @returns After the clip is encoded.
 	 */
 	make: async () =>
 		withTake("hero", "examples/web-shop", false, async (server, browser) => {
 			const terminal = await Terminal.open(browser, "dark", PANE.height);
 			const page = await browser.open({
-				url: `${server.url}/?paneA=${encodeURIComponent(BOARD)}`,
+				url: `${server.url}/?modelA=${MODEL}`,
 				theme: "dark",
 				...PANE,
 			});
 			await page.atRest();
 			await present(page);
-			await Bun.sleep(1200);
-			const today = (await readBoard(server, BOARD)).version;
+			const commands = filmedCommands(server, terminal);
 			const take = await filmTogether("hero", [terminal.page, page], async () => {
-				await Bun.sleep(500);
 				await terminal.you(REQUEST);
-				await Bun.sleep(700);
-				const reason = "proposing to take fulfilment off the request path";
-				await terminal.command(`archboard claim --board "${BOARD}" --reason "${reason}"`);
-				await server.cli(["claim", "--board", BOARD, "--reason", reason, "--for", "10m"]);
-				await terminal.done(`claimed ${BOARD} · every pane now says so`);
-				await Bun.sleep(1400);
-				const doing = "branching a proposal";
-				await terminal.command(
-					`archboard semantic branch "${BOARD}" --as "${PROPOSAL}" --expect-version ${today} --doing "${doing}"`,
+				const current = await readModel(commands);
+				const result = await editModel(commands, "hero", null, proposalChanges(current), {
+					type: "create",
+					name: PROPOSAL,
+					summary: "Move stock reservations and receipt delivery to a worker.",
+				});
+				const state = result.target.state!;
+				const compared = ArchitectureModelReadSchema.parse(
+					modelResult(await commands.cli(["model", "compare", "--state", state])),
 				);
-				const branched = versionOf(
-					await server.cli([
-						"semantic",
-						"branch",
-						BOARD,
-						"--as",
-						PROPOSAL,
-						"--expect-version",
-						String(today),
-						"--doing",
-						doing,
-					]),
-				);
-				await terminal.done(`draft "${PROPOSAL}" · version ${branched}`);
-				await Bun.sleep(900);
-				const change = await writeChange(server);
-				const moving = "moving stock and the receipt to a worker";
-				await terminal.command(
-					`archboard semantic edit "${BOARD}" --variant "${PROPOSAL}" --expect-version ${branched} --doing "${moving}" --input change.json`,
-				);
-				const edited = versionOf(
-					await server.cli([
-						"semantic",
-						"edit",
-						BOARD,
-						"--variant",
-						PROPOSAL,
-						"--expect-version",
-						String(branched),
-						"--doing",
-						moving,
-						"--input",
-						change,
-					]),
-				);
-				await terminal.done(`version ${edited} · the proposal is saved`);
-				await Bun.sleep(500);
-				await terminal.command(`archboard semantic compare "${BOARD}" --variant "${PROPOSAL}"`);
-				const compared = await server.attempt([
-					"semantic",
-					"compare",
-					BOARD,
-					"--variant",
-					PROPOSAL,
-				]);
-				if (compared.status !== 0) {
-					throw new Error(`semantic compare exited ${compared.status}: ${compared.stderr.trim()}`);
-				}
-				await terminal.done(...comparedLines(compared.stderr));
-				await Bun.sleep(1200);
-				await terminal.command(`archboard browser show "${BOARD}@${PROPOSAL}"`);
-				await server.cli(["browser", "show", `${BOARD}@${PROPOSAL}`, "--pane", "primary"]);
-				await terminal.done("pane A shows the proposal against today");
-				await Bun.sleep(3200);
-				await terminal.command(`archboard release --board "${BOARD}"`);
-				await server.cli(["release", "--board", BOARD]);
-				await terminal.done("released");
-				await Bun.sleep(500);
+				if (!compared.success) throw new Error(JSON.stringify(compared));
+				const changed =
+					compared.comparison?.subjects.filter((subject) => subject.kind !== "unchanged").length ??
+					0;
+				await terminal.say(`${changed} subjects differ from current architecture.`);
+				await commands.cli(["browser", "show", MODEL, "--state", state, "--pane", "A"]);
+				await page.atRest();
 				await terminal.say(
-					"Done. The proposal is on your screen, drawn against today: green is new, orange changed, red goes away. Nothing is built until you adopt it.",
+					"The proposal is saved and shown against current architecture. Current architecture remains unchanged.",
 				);
 				await Bun.sleep(2600);
 				return null;
