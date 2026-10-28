@@ -1,0 +1,44 @@
+{
+  "order": 17000,
+  "name": "Coordinator callbacks",
+  "kind": "module",
+  "responsibility": "While voice is live, workhorse news for the coordinator, naming the checkout of its workhorse, and pane news for the voice model, each once and in order",
+  "groups": [
+    "voice"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/services/coordinator-callbacks"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+  "parent": "vKEsyHFk/9ncuT5DP#3vO7eN8L",
+  "outgoing": [
+    {
+      "order": 24000,
+      "kind": "rpc",
+      "label": "news as a coordinator turn/start; pane news appended",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/coordinator-callbacks/realtime.ts",
+        "symbol": "realtimeAppendText"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#biUWQZMB",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 53000,
+      "kind": "call",
+      "label": "check the link of the workhorse the news names",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/coordinator-callbacks/deliver.ts",
+        "symbol": "classify"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#NasuLye5",
+      "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
+    }
+  ]
+}
