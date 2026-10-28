@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T01:27:00Z'
+updated_date: '2026-10-28T01:42:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -138,6 +138,8 @@ Bounded checkpoint metadata repair: reproduce strict public decoding through exi
 Finish canonical narrated recipes using exact retained checkpoints. Extend the existing public narrative retention owner to cover strict result decoding with an exact walkthrough dependency. Repair only the existing private-to-public metadata conversion if that owner reproduces the same private-field leak. Keep public schemas and stored dependency ancestry unchanged.
 
 Before saving root migration mappings, shelve the three obsolete leaf TASK-549.03 drafts through the retained .23 public writer: Routes/Yfd3oFmv, Persistence/8W0ty0Om, Command/D7KLrOPr. Later current states already include their implementation. Preserve all other states, adoption records and original retained bytes. Release each claim, stop the temporary writer, then inventory the new source fingerprint for canonical mapping.
+
+Record root identity choices against source17798d5e: combine 34 duplicate occurrences into reviewed existing owners, explicitly preserve other suggested identities, resolve 50 definition/parent/order conflicts, preserve all 15 draft baselines, and replace 64 current drill links with explicit same-model references. Save only the mapping plan through the public runtime and inspect the canonical preview before retention or installation. Final recursive containment and current meaning remain a separate authored change.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -278,4 +280,6 @@ While porting narrated recipes, the parent reproduced a second private metadata 
 Canonical hero now explicitly compares against current and requires a nonempty comparison; the real clip shows 41 changed subjects. All three real code/interface/Git-history producers pass after using visible sidebar controls and optional pinning for floating panels. Parent inspected thumbnails, full scene captures, and encoded first frames. Hero, code-evidence, module-interfaces, git-history, and the earlier accepted plan/drill clips are uploaded once and linked in README. Narrated recipes use model record/replay, retain current before recording, or name an explicit proposal checkpoint. The imported Queued fulfilment checkpoint f4ae77d823d935570198b3c0be53dd1803db8aba resolves all five beats ready through the public reader. No new voice/model recording was run. Source/frontend types, scoped lint and format pass. Root migration, history producer, narration refresh, final integration gate/review/PR remain open.
 
 Shelved the three obsolete leaf TASK-549.03 drafts through the old .23 public CLI against the explicitly addressed integration vault: Routes Yfd3oFmv v211->212, Persistence 8W0ty0Om v231->232, Command D7KLrOPr v248->249. Their implementation already exists in later adopted states. All other variant objects and adoption records remain identical. Original retained checkpoint5c732a3853a575ba954c5abfc08584bb37a03f84 remains available. Each claim was released, and owned server2857945 was stopped. Receipt: task-549.24-root-disposition-receipt.json. Fresh public inventory is task-549.24-root-inventory-disposed.json; no mapping/cutover/adoption occurred.
+
+Saved the explicit root mapping plan through saveLegacyMappingPlan. Source remains17798d5e92b5272cb4f8eb08fee8cbf23309747954af9b12128b88b347900913; saved plan12495cf712344330f745b9a71db0cf7c3efd9a8874b2b68e4495cdd685811076. The public preview succeeds with 656 modules,1361 relationships,17 flow collections,18 current walkthroughs and148 temporary roots. All15 independent drafts have explicit original baseline conversions. The50 mapping conflicts are resolved and reading diagnostics are empty. Plan merges34 duplicate occurrences through237 explicit mapping entries, preserves distinct responsibilities, and supplies64 explicit reference destinations. Existing Layer groups remain authored dependency groups, not numeric module depth. Recursive containment and .24 meaning/adoption remain pending after cutover. Evidence task-549.24-root-preview.json and summary beside external parent state.
 <!-- SECTION:NOTES:END -->
