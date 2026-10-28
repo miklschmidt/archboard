@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-27T12:13:00Z'
-updated_date: '2026-10-27T13:29:00Z'
+updated_date: '2026-10-28T01:10:00Z'
 labels:
   - renderer
   - tooling
@@ -38,6 +38,8 @@ The owner added Gemini 4 Argon, through Cursor, as a fourth grader beside Opus, 
 2. Proposal round: each of the four graders reads all four criteria files and the owner's weighting and proposes one shared list: criteria with a test, anchors for 1, 4, 7 and 10, and a weight; defects stay a gate outside the scores; a rule from scores to a verdict.
 3. Agreement rounds: merge the proposals into one draft that keeps each grader's wording where it differs; each grader accepts or amends every item; repeat until all four accept, at most three rounds, else 3 of 4 with the dissent recorded.
 4. Record the agreed criteria as docs/design/grading-council/criteria.md, replacing the per-grader files; rewrite the procedure for scores, defects and four graders; make the tally a script if counting by hand is no longer practical.
+
+Spec review: reproduce the exact 0.40 boundary and incomplete four-grader inputs at the tally command. Keep weighted totals exact until after the median. Refuse incomplete council input before deciding pairs. Cover both behaviors through the command. These fixes leave the architecture boards and consumer workflow accurate. Keep task statuses unchanged.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -50,6 +52,8 @@ Agreement: round 1, each grader proposed one shared list (4 to 7 criteria, ancho
 Calibration on the twelve samples: scores more than 2 apart between any two graders fell from 31 of 72 (round 2) to 6 of 72 (round 3). All four graders reached the same verdict on every pair in both rounds: Board persistence blocks better, Live panes track better, Archboard server routes both fail (lines through the Pane state header, found by all four), the other three same. L is 10 on almost every sample (layout gaps are about 15 px against a 7 px threshold), so it only catches touching stacks today. Argon missed the header defects in round 1 and found them in round 2, after reading Opus's round-1 proposal, so its own eye for fine defects is not yet shown; the rulings step covers any grader's misses only if another grader reports the defect.
 
 scripts/council-tally.ts unblinds verdicts/<grader>.json with key.json, refuses while a reported defect has no ruling in rulings.json, and prints each pair's verdict, the graders' margins and whether the change passes (exit 1 when it fails). Checked on synthetic verdicts: an unruled defect stops it (exit 2); a malformed score is refused with the field; a new defect in an after picture makes the pair worse and fails the change; the documented example parses. Policy lint passes. Artifacts: /tmp/council/agree (sources, r1, r2, r3, drafts).
+
+Spec review: three command regressions reproduce exact 0.40 margins classified as same, including a worse change that exits zero. Weighted totals now stay in integer hundredths through the median. The three regressions pass in both before-side orientations and at a split median. No drawing, board meaning, consumer workflow, acceptance state, or task status changes.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

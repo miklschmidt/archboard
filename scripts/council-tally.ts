@@ -78,15 +78,13 @@ function readJson<Schema extends z.ZodType>(path: string, schema: Schema): z.inf
 }
 
 /**
- * A side's weighted score on the 1 to 10 scale.
+ * A side's weighted score in hundredths, exact until after the median.
  * @param scores The side's scores.
- * @returns The weighted mean.
+ * @returns The weighted total.
  */
 function weighted(scores: Scores): number {
 	const { K, R, T, L, O, W } = WEIGHTS;
-	return (
-		(K * scores.K + R * scores.R + T * scores.T + L * scores.L + O * scores.O + W * scores.W) / 100
-	);
+	return K * scores.K + R * scores.R + T * scores.T + L * scores.L + O * scores.O + W * scores.W;
 }
 
 /**
@@ -195,14 +193,19 @@ function tally(
 	rulings: Rulings,
 ): Tallied {
 	const after: Side = before === "A" ? "B" : "A";
-	const margins = [...graders.values()].flatMap((pairs) => {
+	const hundredths = [...graders.values()].flatMap((pairs) => {
 		const graded = pairs[pair];
 		return graded ? [weighted(graded[after]) - weighted(graded[before])] : [];
 	});
-	if (margins.length === 0) refuse(`No grader scored pair ${pair}.`);
+	if (hundredths.length === 0) refuse(`No grader scored pair ${pair}.`);
 	const ruling = rulings[pair] ?? {};
 	const defective = { before: ruling[before] === true, after: ruling[after] === true };
-	return { pair, verdict: decide(defective, median(margins)), margins, defective };
+	return {
+		pair,
+		verdict: decide(defective, median(hundredths) / 100),
+		margins: hundredths.map((margin) => margin / 100),
+		defective,
+	};
 }
 
 /**
