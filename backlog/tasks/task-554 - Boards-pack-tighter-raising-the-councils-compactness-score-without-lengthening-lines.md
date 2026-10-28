@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-28T01:01:00Z'
+updated_date: '2026-10-28T01:03:00Z'
 labels:
   - renderer
   - layout
@@ -28,4 +28,11 @@ The final council of TASK-548.08 (2026-10-28, 40 blind pairs against c147b73c8, 
 - [ ] #3 Every hard check of expectDrawingIntact passes on the complete corpus and every whole board, in both engines
 - [ ] #4 First and growing-edit renders of Board viewer, Board persistence and Archboard server routes stay under 500 ms on a quiet machine
 - [ ] #5 compare-compactness.ts measurements of the complete corpus before and after are recorded in docs/design
+- [ ] #6 Every Track drawing of the corpus is byte-identical to the base branch
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-10-28, the owner: leave the Track engine as it is and work on Blocks exclusively. The council samples Blocks drawings only, and Track drawings stay byte-identical.
+<!-- SECTION:NOTES:END -->

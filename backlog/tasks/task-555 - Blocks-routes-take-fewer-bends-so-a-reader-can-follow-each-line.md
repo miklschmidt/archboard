@@ -4,6 +4,7 @@ title: Blocks routes take fewer bends, so a reader can follow each line
 status: To Do
 assignee: []
 created_date: '2026-10-28T01:02:00Z'
+updated_date: '2026-10-28T01:03:00Z'
 labels:
   - renderer
   - layout
@@ -25,4 +26,11 @@ The owner saw very squiggly routing in Blocks drawings (2026-10-28, Command inte
 - [ ] #3 On a fresh blind sample judged against the base branch, the council's mean R and T scores of the after pictures are not lower than of the before pictures, no pair is worse, and no after picture has a new defect
 - [ ] #4 Every hard check of expectDrawingIntact passes on the complete corpus and every whole board
 - [ ] #5 First and growing-edit renders of Board viewer, Board persistence and Archboard server routes stay under 500 ms on a quiet machine
+- [ ] #6 Every Track drawing of the corpus is byte-identical to the base branch
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-10-28, the owner: leave the Track engine as it is and work on Blocks exclusively. The council samples Blocks drawings only, and Track drawings stay byte-identical.
+<!-- SECTION:NOTES:END -->
