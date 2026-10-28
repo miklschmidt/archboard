@@ -4,9 +4,9 @@
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 126,
+	"version": 127,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-10-28T00:24:18.919Z",
+	"updatedAt": "2026-10-28T02:23:13.336Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -23439,7 +23439,7 @@
 			"name": "TASK-548.08",
 			"lifecycle": "draft",
 			"parent": "yeaF7hVY",
-			"summary": "Proposed deterministic layout: one Solver call, one card graph, and one packing routed after estimation. Semantic lane reservations replace the later nudge phase. Parent frames, words, and line ends retain strict geometry owners. Council acceptance remains pending.",
+			"summary": "Proposed deterministic layout: one Solver call, one card graph, and one packing routed after estimation. Semantic lane reservations replace the later nudge phase. Parent frames, words, and line ends retain strict geometry owners. A blind council sample judged no changed drawing worse than before.",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",

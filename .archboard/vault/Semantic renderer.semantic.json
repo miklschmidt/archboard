@@ -4,9 +4,9 @@
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
 	"level": "module",
-	"version": 167,
+	"version": 173,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-10-28T00:24:19.388Z",
+	"updatedAt": "2026-10-28T02:36:46.989Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -66630,7 +66630,7 @@
 			"name": "TASK-548.08",
 			"lifecycle": "draft",
 			"parent": "zZV4las8",
-			"summary": "Proposed deterministic layout: one Solver call, one card graph, and one packing routed after estimation. Semantic lane reservations replace the later nudge phase. Parent frames, words, and line ends retain strict geometry owners. Council acceptance remains pending.",
+			"summary": "Proposed deterministic layout: one Solver call, one card graph, and one packing routed after estimation. Semantic lane reservations replace the later nudge phase. Parent frames, words, and line ends retain strict geometry owners. A blind council sample judged no changed drawing worse than before.",
 			"documents": [
 				{
 					"repo": "github.com/miklschmidt/archboard",
