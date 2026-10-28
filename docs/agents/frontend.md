@@ -230,6 +230,7 @@ Each behavior keeps its existing public boundary and one state owner.
   Reconnect and repository changes refresh discovery through the existing catalogue owner.
 - Define freshness, cancellation, retry, and unavailable states for each resource.
   Preserve healthy exact checkpoints when mutable architecture changes.
+  A retained reading with a live comparison base refreshes its comparison metadata through the same reader.
   Retry interrupted reads only after a coherent completion event or an explicit reader action.
   Browser controls never retry authoring or maintain optimistic architecture copies.
 
@@ -329,7 +330,7 @@ Leaving a remote presentation clears its request in the pane arrival owner, so a
 Narrative buttons start playback directly and create no popup outside the suspended reader.
 
 A coherent model event resumes exact reads interrupted by an installation barrier.
-Healthy immutable readings keep their cached data without another read.
+Healthy immutable readings with no live comparison keep their cached data without another read.
 A fresh selected set represents another pick, including a repeated choice of the same module.
 The existing sidebar opens Selection for that pick.
 Module navigation labels comparison context with its standing, including removed reference modules.

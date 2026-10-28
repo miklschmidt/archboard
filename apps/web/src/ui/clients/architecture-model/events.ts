@@ -1,4 +1,4 @@
-import { hashKey, type QueryClient } from "@tanstack/react-query";
+import { hashKey, type Query, type QueryClient } from "@tanstack/react-query";
 import {
 	ArchitectureEventSchema,
 	type ArchitectureEvent,
@@ -53,7 +53,6 @@ function createFeed(client: QueryClient, vault: string) {
 	let claimsGeneration = 0;
 	const currentKey = architectureModelKeys.reading(vault, null);
 	const currentHash = hashKey(currentKey);
-	const mutableKey = architectureModelKeys.mutable(vault);
 	const claimsKey = architectureModelKeys.claims(vault);
 	/**
 	 * Publish transport state, without copying any model content.
@@ -94,22 +93,31 @@ function createFeed(client: QueryClient, vault: string) {
 		event: Exclude<ArchitectureEvent, { type: "architecture_claims" }>,
 	): Promise<void> {
 		const accepted = ++generation;
-		await client.cancelQueries({ queryKey: mutableKey });
+		const changingReadings = {
+			queryKey: architectureModelKeys.readings(vault),
+			/**
+			 * Preserve healthy retained reads until live inputs are coherent again.
+			 * @param query A reading owned by this vault.
+			 * @returns Whether this event can refresh its complete response.
+			 */
+			predicate: (query: Query) => followsChanges(client, query, failureOf(event) === null),
+		};
+		await client.cancelQueries(changingReadings);
 		if (!isCurrent(accepted)) return;
 		const snapshot = coherentSnapshot(event);
 		if (snapshot !== null) {
 			client.setQueryData(currentKey, snapshot);
 			await client.invalidateQueries({
-				queryKey: mutableKey,
+				...changingReadings,
 				/**
 				 * The snapshot replaces only the default current read; other states need their own result.
 				 * @param query A cached mutable reading.
 				 * @returns Whether its selected state or comparison requires a fresh read.
 				 */
-				predicate: (query) => query.queryHash !== currentHash,
+				predicate: (query) => query.queryHash !== currentHash && changingReadings.predicate(query),
 			});
 		} else {
-			await client.invalidateQueries({ queryKey: mutableKey });
+			await client.invalidateQueries(changingReadings);
 		}
 		if (!isCurrent(accepted)) return;
 		await resumeInterruptedHistory(client, vault, event);
@@ -184,6 +192,25 @@ function createFeed(client: QueryClient, vault: string) {
  */
 function coherentSnapshot(event: ArchitectureEvent) {
 	return event.type === "architecture_snapshot" && event.reading.success ? event.reading : null;
+}
+
+/**
+ * Exact selected inputs still need fresh metadata when their comparison base is mutable.
+ * @param client The owner of the typed model reading cache.
+ * @param query A reading from this vault's typed query family.
+ * @param coherent Whether the event permits a fresh comparison against live inputs.
+ * @returns Whether a model event can change its complete response.
+ */
+function followsChanges(client: QueryClient, query: Query, coherent: boolean): boolean {
+	if (query.queryKey[3] === null) return true;
+	if (!coherent) return false;
+	const reading = client.getQueryData<Extract<ArchitectureModelRead, { success: true }>>(
+		query.queryKey,
+	);
+	const comparison = reading?.comparison;
+	return (
+		comparison !== undefined && comparison.against !== null && comparison.checkpoint === undefined
+	);
 }
 
 /**
