@@ -13,7 +13,12 @@ import {
 	decodeSubjects,
 	predecessorRevision,
 } from "#runtime/operations/proposals/read.ts";
-import { subjectsOf, heldSubjects, type Subjects } from "#runtime/operations/proposals/subjects.ts";
+import {
+	subjectsOf,
+	heldSubjects,
+	type Subjects,
+	type Subject,
+} from "#runtime/operations/proposals/subjects.ts";
 import {
 	proposalDependencies,
 	retainBaseline,
@@ -55,9 +60,60 @@ function takeSubject(result: Subjects, source: Subjects, id: string): void {
 			.map(([key]) => key),
 	);
 	const entry = source.get(id);
-	if (entry === undefined) result.delete(id);
-	else result.set(id, structuredClone(entry));
+	if (entry === undefined) removeSubject(result, id);
+	else placeSubject(result, source, id, structuredClone(entry));
 	for (const child of children) takeSubject(result, source, child);
+}
+/**
+ * Remove one chosen subject and preserve the order of its continuing siblings.
+ * @param subjects The mutable settled subjects.
+ * @param id The identity explicitly removed by this choice.
+ */
+function removeSubject(subjects: Subjects, id: string): void {
+	const next = subjects.get(id)?.placement?.before;
+	for (const subject of subjects.values()) {
+		const placement = subject.placement;
+		if (placement?.before !== id) continue;
+		setNextSibling(placement, next);
+	}
+	subjects.delete(id);
+}
+/**
+ * State the next sibling or remove the instruction at the end.
+ * @param placement The continuing subject placement.
+ * @param next The next continuing sibling, when present.
+ */
+function setNextSibling(
+	placement: NonNullable<Subject["placement"]>,
+	next: string | undefined,
+): void {
+	if (next === undefined) delete placement.before;
+	else placement.before = next;
+}
+/**
+ * Install a chosen placement between continuing siblings from that side.
+ * @param result The mutable settled subjects.
+ * @param source The complete side that supplies the placement.
+ * @param id The continuing identity.
+ * @param subject Its chosen fields and placement.
+ */
+function placeSubject(result: Subjects, source: Subjects, id: string, subject: Subject): void {
+	removeSubject(result, id);
+	const placement = subject.placement;
+	if (placement !== undefined && ["step", "beat", "flow"].includes(subject.kind)) {
+		const ordered = heldSubjects(source, placement.holder, placement.alternative);
+		const at = ordered.findIndex(([key]) => key === id);
+		const next = ordered.slice(at + 1).find(([key]) => {
+			const held = result.get(key)?.placement;
+			return held?.holder === placement.holder && held.alternative === placement.alternative;
+		})?.[0];
+		const previous = heldSubjects(result, placement.holder, placement.alternative).find(
+			([, entry]) => entry.placement?.before === next,
+		)?.[1].placement;
+		if (previous !== undefined) previous.before = id;
+		setNextSibling(placement, next);
+	}
+	result.set(id, subject);
 }
 /**
  * Take one disputed value through the same canonical subject representation.
@@ -81,7 +137,7 @@ function takeTheirs(result: Subjects, theirs: Subjects, issue: Issue): void {
 		takeSubject(result, theirs, issue.subject);
 		return;
 	}
-	takeField(mine, source, issue.field);
+	takeField(result, theirs, issue.subject, issue.field);
 }
 /**
  * Settle an order through the complete disputed holder.
@@ -126,18 +182,22 @@ function takeSiblingOrder(
 }
 /**
  * Copy only the chosen field or placement, preserving unrelated proposal fields.
- * @param mine The continuing proposal subject.
- * @param source The coherent predecessor subject.
+ * @param result The mutable settled subjects.
+ * @param theirs The coherent predecessor subjects.
+ * @param id The continuing identity.
  * @param field The exact disputed field.
  */
-function takeField(
-	mine: NonNullable<ReturnType<Subjects["get"]>>,
-	source: NonNullable<ReturnType<Subjects["get"]>>,
-	field: string,
-): void {
-	if (["parent", "from", "collection", "within", "flow"].includes(field)) {
-		if (source.placement === undefined) delete mine.placement;
-		else mine.placement = structuredClone(source.placement);
+function takeField(result: Subjects, theirs: Subjects, id: string, field: string): void {
+	const mine = result.get(id)!,
+		source = theirs.get(id)!;
+	if (
+		["parent", "collection", "within", "flow"].includes(field) ||
+		(field === "from" && mine.kind === "relationship")
+	) {
+		const chosen = structuredClone(mine);
+		if (source.placement === undefined) delete chosen.placement;
+		else chosen.placement = structuredClone(source.placement);
+		placeSubject(result, theirs, id, chosen);
 		return;
 	}
 	const value = source.value[field];

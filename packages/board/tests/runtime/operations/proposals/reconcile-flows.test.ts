@@ -149,6 +149,105 @@ test("incompatible flow and nested-holder moves keep the complete proposal side"
 	expect(reading.collections[0]!.flows[1]!.steps).toMatchObject([{ id: "Shop#Notify" }]);
 });
 
+test("take-theirs placement settlement preserves siblings in both holders", async () => {
+	const { vault } = behaviorFixture();
+	const expanded = await editArchitectureModule(vault, {
+		...(await request(vault)),
+		changes: [
+			{
+				type: "add-step",
+				placement: { holder: "Shop#Other" },
+				step: { kind: "sync", from: "Shop#Gateway", to: "Shop#Worker", label: "Finish" },
+			},
+		],
+	});
+	if (!expanded.success) throw new Error(JSON.stringify(expanded));
+	const draft = await proposal(vault, "Notify before decision", "Current", [
+		{
+			type: "move-step",
+			subject: "Shop#Notify",
+			placement: { holder: "Shop#Checkout", before: "Shop#Decide" },
+		},
+	]);
+	const moved = await editArchitectureModule(vault, {
+		...(await request(vault)),
+		changes: [
+			{
+				type: "move-step",
+				subject: "Shop#Notify",
+				placement: { holder: "Shop#Repeat", before: "Shop#Result" },
+			},
+		],
+	});
+	expect(moved).toMatchObject({ success: true, reconciliation: true });
+	const settled = await editArchitectureModule(vault, {
+		...(await request(vault, draft.target.state!)),
+		proposal: {
+			type: "settle",
+			resolutions: [{ subject: "Shop#Notify", field: "within", take: "theirs" }],
+		},
+		changes: [],
+	});
+	expect(settled).toMatchObject({ success: true, reconciliation: false });
+	expect(
+		(await selected(vault, draft.target.state!)).collections[0]!.flows[0]!.steps,
+	).toMatchObject([
+		{ id: "Shop#Send" },
+		{
+			id: "Shop#Decide",
+			alternatives: [
+				{ steps: [{ id: "Shop#Repeat", steps: [{ id: "Shop#Notify" }, { id: "Shop#Result" }] }] },
+				{ steps: [] },
+			],
+		},
+	]);
+});
+
+test("take-theirs message source settlement changes the endpoint rather than the step holder", async () => {
+	const { vault } = behaviorFixture();
+	const added = await editArchitectureModule(vault, {
+		...(await request(vault)),
+		changes: [{ type: "add-module", module: { name: "Caller", kind: "service", order: 40 } }],
+	});
+	if (!added.success) throw new Error(JSON.stringify(added));
+	const caller = (await selected(vault, "Current")).modules.find(
+		(module) => module.name === "Caller",
+	)!.id;
+	const participants = ["Shop#Gateway", "Shop#Worker", "Shop#Handler", caller];
+	const draft = await proposal(vault, "Worker dispatch", "Current", [
+		{ type: "edit-flow", subject: "Shop#Checkout", set: { participants } },
+		{ type: "edit-step", subject: "Shop#Send", set: { from: "Shop#Handler" } },
+	]);
+	const changed = await editArchitectureModule(vault, {
+		...(await request(vault)),
+		changes: [
+			{
+				type: "edit-flow",
+				subject: "Shop#Checkout",
+				set: { participants },
+			},
+			{ type: "edit-step", subject: "Shop#Send", set: { from: caller } },
+		],
+	});
+	expect(changed).toMatchObject({ success: true, reconciliation: true });
+	const settled = await editArchitectureModule(vault, {
+		...(await request(vault, draft.target.state!)),
+		proposal: {
+			type: "settle",
+			resolutions: [{ subject: "Shop#Send", field: "from", take: "theirs" }],
+		},
+		changes: [],
+	});
+	expect(settled).toMatchObject({ success: true, reconciliation: false });
+	expect(
+		(await selected(vault, draft.target.state!)).collections[0]!.flows[0]!.steps[0],
+	).toMatchObject({
+		id: "Shop#Send",
+		from: caller,
+		to: "Shop#Worker",
+	});
+});
+
 test("take-theirs order settlement also updates the unchanged middle sibling", async () => {
 	const { vault } = behaviorFixture();
 	const { readFileSync, writeFileSync } = await import("node:fs");
