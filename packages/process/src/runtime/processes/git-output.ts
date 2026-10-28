@@ -6,6 +6,7 @@
 // caller to decide that the command is over.
 
 import { asError } from "@archboard/diagnostics/thrown-error";
+import { GitCommandError } from "#runtime/processes/git-failure.ts";
 
 const GIT_OUTPUT_LIMIT_BYTES = 64 * 1024;
 
@@ -18,6 +19,21 @@ interface DrainOutcome {
 interface BoundedDrain {
 	readonly result: Promise<DrainOutcome>;
 	cancel(reason: Error): Promise<void>;
+}
+
+/**
+ * Decode exact UTF-8 text without consuming an authored byte-order mark.
+ * @param bytes The complete command output.
+ * @param exitCode The successful command's reported exit status.
+ * @returns The exact text.
+ * @throws {GitCommandError} When the output is not valid UTF-8.
+ */
+function decodeGitOutput(bytes: Uint8Array, exitCode: number | undefined): string {
+	try {
+		return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
+	} catch {
+		throw new GitCommandError("output", "Git command output is not valid UTF-8.", exitCode);
+	}
 }
 
 /**
@@ -129,4 +145,4 @@ function drainBounded(
 	};
 }
 
-export { type BoundedDrain, type DrainOutcome, drainBounded };
+export { type BoundedDrain, type DrainOutcome, decodeGitOutput, drainBounded };

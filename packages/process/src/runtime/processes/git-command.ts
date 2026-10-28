@@ -21,7 +21,7 @@ import { stopAndKillOwnedGroup } from "#runtime/processes/git-group-termination.
 import { asError, errorMessage } from "@archboard/diagnostics/thrown-error";
 import { GitCommandError } from "#runtime/processes/git-failure.ts";
 import type { GitFailure } from "#runtime/processes/git-failure.ts";
-import { drainBounded } from "#runtime/processes/git-output.ts";
+import { decodeGitOutput, drainBounded } from "#runtime/processes/git-output.ts";
 import type { BoundedDrain, DrainOutcome } from "#runtime/processes/git-output.ts";
 
 // The owner script is an export of this package, which Bun resolves to its file.
@@ -474,7 +474,7 @@ function commandOutput(
 	}
 	refuseOwnerReport(commandResult);
 	refuseExitStatus(commandResult, err);
-	const output = new TextDecoder("utf-8", { fatal: true }).decode(out.bytes);
+	const output = decodeGitOutput(out.bytes, commandResult.exitCode);
 	return (trimOutput ? output.trim() : output) || undefined;
 }
 

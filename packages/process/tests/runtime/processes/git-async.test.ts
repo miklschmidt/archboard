@@ -274,6 +274,19 @@ test("real detached Git commands settle for success and nonzero exit", async () 
 		await expect(git(root, ["cat-file", "-e", "missing^{commit}"])).rejects.toMatchObject({
 			failure: "exit",
 		});
+		const source = "\uFEFF  exact model input Ω\n";
+		const object = await git(root, ["hash-object", "-w", "--stdin"], {
+			input: Buffer.from(source),
+		});
+		if (object === undefined) throw new Error("Git did not retain its input object.");
+		expect(await git(root, ["cat-file", "blob", object], { trimOutput: false })).toBe(source);
+		const invalid = await git(root, ["hash-object", "-w", "--stdin"], {
+			input: Buffer.from([0xff]),
+		});
+		if (invalid === undefined) throw new Error("Git did not retain its invalid UTF-8 object.");
+		await expect(git(root, ["cat-file", "blob", invalid])).rejects.toMatchObject({
+			failure: "output",
+		});
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
