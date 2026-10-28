@@ -191,9 +191,11 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	);
 	const reading = canonicalReading ?? NOTHING_READ;
 	useEffect(() => {
+		if (reading.architecture?.vault !== undefined && reading.architecture.vault !== vault) return;
+		// A late vault arrival clears the session capture without remounting this reader.
 		readingChanged(reading);
 		onRecordedReading?.(reading);
-	}, [reading, readingChanged, onRecordedReading]);
+	}, [reading, readingChanged, onRecordedReading, vault]);
 
 	return (
 		<div
