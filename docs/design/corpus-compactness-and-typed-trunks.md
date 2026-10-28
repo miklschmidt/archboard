@@ -42,6 +42,7 @@ It retains the complete arrowhead and rounded-bend requirements.
 ## Measuring every picture
 
 `bun packages/renderer/tests/runtime/support/compare-compactness.ts <before> <after> <out>` reads every SVG in both corpus directories.
+The measuring tool left the repository after TASK-548. `git show db13151cb:<path>` restores it and `drawn-compactness.ts` beside it.
 It also reads their recorded dimensions and keys.
 It needs no atlas, so the same measurements apply to saved historical pictures.
 The script writes complete before/after metrics, per-drawing comparisons, a report by board and engine, and every whole-board comparison.
