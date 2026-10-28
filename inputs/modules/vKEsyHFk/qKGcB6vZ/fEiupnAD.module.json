@@ -1,0 +1,54 @@
+{
+  "order": 7000,
+  "name": "Spoken approval",
+  "kind": "module",
+  "responsibility": "The gate that lets an approval be answered out loud, and the reasons it falls back to the pane",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/services/spoken-approval"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+  "parent": "vKEsyHFk/qKGcB6vZ#CjiN3z5a",
+  "outgoing": [
+    {
+      "order": 11000,
+      "kind": "call",
+      "label": "answer the one it was armed for",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/spoken-approval/resolver-turn.ts",
+        "symbol": "resolve"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#0yGbIQl9",
+      "to": "vKEsyHFk/qKGcB6vZ#C3wBXyPG"
+    },
+    {
+      "order": 35000,
+      "kind": "call",
+      "label": "parse the resolve call's input",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/spoken-approval/resolver-turn.ts",
+        "symbol": "ResolveSpokenApprovalInputSchema"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#JGOJBUyI",
+      "to": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P"
+    },
+    {
+      "order": 36000,
+      "kind": "call",
+      "label": "the classifier turn, as authored",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/spoken-approval/classifier-turn.ts",
+        "symbol": "createTurnStartParams"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#ZSSbttgn",
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
+    }
+  ]
+}

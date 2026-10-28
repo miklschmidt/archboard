@@ -1,0 +1,9 @@
+{
+  "order": 25000,
+  "name": "Tools and work",
+  "kind": "module",
+  "responsibility": "What the coordinator may ask for: the frozen tool contract, the tool calls it runs once each, a spoken approval, and where each turn that gave work is shown",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#CjiN3z5a",
+  "outgoing": []
+}

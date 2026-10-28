@@ -1,0 +1,29 @@
+{
+  "order": 20000,
+  "name": "Thread unload",
+  "kind": "module",
+  "responsibility": "Unsubscribes a thread once no turn and no voice session runs on it, so Codex unloads it",
+  "description": "It reads the thread's status first, then follows the child's notifications until the thread is idle and its voice session has closed. The thread keeps its history on disk either way. The module is reached through createCodexThreadUnload from its root; the returned unload method implements this responsibility.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/operations/thread-unload"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+  "parent": "vKEsyHFk/qKGcB6vZ#CkB9Bygm",
+  "outgoing": [
+    {
+      "order": 29000,
+      "kind": "call",
+      "label": "thread/read, then thread/unsubscribe once idle",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/thread-unload/unload.ts",
+        "symbol": "threadRead"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#XB5TwXA3",
+      "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+    }
+  ]
+}
