@@ -1,0 +1,15 @@
+{
+  "order": 15000,
+  "name": "Workhorse news",
+  "kind": "function",
+  "responsibility": "A turn on one of the tab session's workhorses that ended or began waiting on the user, whoever started it, as one plain sentence that names its checkout",
+  "description": "Read from each workhorse thread's own turn/completed and thread/status/changed notifications: completed, failed, stopped or waiting, and a message from tell_coordinator. The sentence names the checkout of the workhorse, which is the one argument every workhorse tool takes, and carries no identity; the coordinator reads the rest through inspect_workhorse.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/rules/coordinator-callbacks/workhorse-news.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#hxZxt8Wy",
+  "parent": "vKEsyHFk/qKGcB6vZ#B0SAnbtM",
+  "outgoing": []
+}

@@ -1,0 +1,31 @@
+{
+  "order": 1000,
+  "name": "Browser pane",
+  "kind": "service",
+  "responsibility": "Where a user speaks: the tab makes the peer connection and carries the audio itself",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/ui/state/voice-session"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#0eYa0szs",
+  "outgoing": [
+    {
+      "order": 3000,
+      "kind": "event",
+      "label": "the offer this tab made",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/voice/realtime-actions.ts",
+        "symbol": "createOffer"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#ntLLD7Df",
+      "to": "vKEsyHFk/qKGcB6vZ#2vHAg1Ei"
+    }
+  ]
+}
