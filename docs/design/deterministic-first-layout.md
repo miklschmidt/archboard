@@ -19,21 +19,21 @@ The owner targets first renders and size-changing edits below 500 ms.
 The current slow boards are Board viewer, Board persistence, and Archboard server routes.
 The grading council of TASK-548.09 decides whether changed drawings can land.
 
-## Commit and corpus map
+## Commit map
 
-| Checkpoint                      | Commits on this branch                                      | Corpus                                         | Standing                                                  |
-| ------------------------------- | ----------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------- |
-| Unsupported wrap filter         | `f2b679f63`                                                 | `/tmp/548-08/after-1`                          | Later removed with the speculative solves.                |
-| Unconditional packing prototype | No retained code commit                                     | `/tmp/548-08/after-2`                          | Dropped for routing defects.                              |
-| Packing with a size cutoff      | `42c7f6c1a`, `a984ae2e1`, `dafbb76da`                       | `/tmp/548-08/after-3` and `after-3-full-vault` | Council rejects hidden Browser application parent frames. |
-| Packed parent frames            | `adc7bc3de`                                                 | `/tmp/548-08/round-2/after-4`                  | Retained, then extended by the header repair.             |
-| Stacking eligibility            | `f0674f18d`                                                 | `/tmp/548-08/post-553/after-5`                 | Retained.                                                 |
-| One solve and semantic lanes    | `2cc0ae9f0`, `de398584a`                                    | `/tmp/548-08/post-553/after-6`                 | Header defects require the next checkpoint.               |
-| Visible header cards            | `66dcc7dd4`, `68fd895c6`, `b5a4b498a`, `d461d37e9`          | `/tmp/548-08/post-553/after-7-delivery`        | Delivery candidate, council pending.                      |
-| First local ports               | Proposal `e455b15c3`, rejection and restoration `d461d37e9` | `/tmp/548-08/post-553/after-8`                 | No rejected code retained.                                |
+| Checkpoint                      | Commits on this branch                                      | Standing                                                  |
+| ------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
+| Unsupported wrap filter         | `f2b679f63`                                                 | Later removed with the speculative solves.                |
+| Unconditional packing prototype | No retained code commit                                     | Dropped for routing defects.                              |
+| Packing with a size cutoff      | `42c7f6c1a`, `a984ae2e1`, `dafbb76da`                       | Council rejects hidden Browser application parent frames. |
+| Packed parent frames            | `adc7bc3de`                                                 | Retained, then extended by the header repair.             |
+| Stacking eligibility            | `f0674f18d`                                                 | Retained.                                                 |
+| One solve and semantic lanes    | `2cc0ae9f0`, `de398584a`                                    | Header defects require the next checkpoint.               |
+| Visible header cards            | `66dcc7dd4`, `68fd895c6`, `b5a4b498a`, `d461d37e9`          | Delivery candidate, council pending.                      |
+| First local ports               | Proposal `e455b15c3`, rejection and restoration `d461d37e9` | No rejected code retained.                                |
 
 The early runs use the sources and tools available when those runs occur.
-The post-TASK-553 parent baseline is `/tmp/548-08/post-553/base` at `f06fa5317`.
+The post-TASK-553 parent baseline is `f06fa5317`.
 The detailed sections distinguish quiet measurements from historical runs under orphan load.
 
 ## Measurement reset after TASK-553
@@ -48,7 +48,6 @@ All wall-clock comparisons need fresh measurements after this fix.
 The branch rebases onto `f06fa5317` before further work.
 The frame-fix checkpoint becomes `adc7bc3de`, previously `e2cfd77e7`.
 The core rebuild succeeds, and the process inventory finds no Git owner worker.
-Fresh measurements and complete corpora stay under `/tmp/548-08/post-553`.
 Their parent baseline uses `f06fa5317` and the matching core source hash `ce42bd12e4ee9ccb`.
 The corpus tool still includes every whole board beside the authored views.
 
@@ -83,7 +82,6 @@ Its simpler control flow replaces the old assumption that any graph with several
 The layout crate passes 102 tests, and Clippy passes with warnings denied.
 The renderer suite reports 662 passes, one platform skip, and no failures.
 The extended corpus changes zero of 2452 drawings against the frame-fix checkpoint.
-The fresh parent and candidate corpora are `/tmp/548-08/post-553/base` and `/tmp/548-08/post-553/after-5`.
 Their 22 changed drawings match the frame-fix changes, with every whole-board SVG present on both sides.
 The next experiment removes the numerical cutoff and tests Groups directly on every graph that contains a multi-member region.
 
@@ -92,7 +90,6 @@ The next experiment removes the numerical cutoff and tests Groups directly on ev
 ### Unconditional Groups and routing probes
 
 The next candidate packs every multi-member region, without a card-count cutoff.
-The raw corpus is `/tmp/548-08/post-553/after-6-raw`.
 It changes 130 of 2452 drawings, including 26 complete-board drawings.
 It still fails nine renderer tests, so it is not a milestone for adoption.
 
@@ -100,7 +97,6 @@ A packed region loses two pieces of context from its inline form.
 Its metadata omits an inline enclosing parent.
 Its group-level callers also lose the ordering that holds them above the headers of containers they enter.
 The repairs retain the parent and add those dependency constraints when they close no cycle.
-The context corpus is `/tmp/548-08/post-553/after-6-context`.
 The three-node ordering regression goes from a 654-unit page to a 547-unit page.
 Walkthrough video's raw Track page narrows from 2432 to 1644 units.
 The reduced members fixture now places two independent members beside each other.
@@ -124,18 +120,17 @@ A block's router can also put a lane left of its declared boundary.
 The candidate carries that horizontal shift through every returned shape and through later port movement.
 A native Live panes trace locates the original two-unit wall gap after port settling.
 Final line simplification preserves it.
-The trace files stay under `/tmp/548-08/post-553/wallhug` and the adjacent debug logs.
 The temporary instrumentation is removed from the source.
 
 Raster inspection finds a caption background across three lines in the repaired Board rasterizer picture.
 The caption words are already clear of the lines.
 The painter expands their background back to a corner, across the routes that the layout avoided.
 The painter now limits the background to the free span around those words.
-The new header check passes all four council cases in `/tmp/548-08/post-553/caption-clear`.
+The new header check passes all four council cases.
 
 The endpoint check also finds an Archboard arrow 20 units beyond the Workspace packages frame.
 Frame fitting ignores terminal points on ordinary frames while it pulls their walls inward.
-Keeping those points repairs the native replay in `/tmp/548-08/post-553/frame-end`.
+Keeping those points repairs the native replay.
 Internal relationships can still meet a parent header inside its visible frame.
 
 The full-face probe increases the complete Board viewer drawing from 12 ambiguous pairs to 15 and adds a wall overlap.
@@ -200,7 +195,6 @@ The council rejects `f55ca07dc` on 2026-10-26.
 All three graders prefer its complete Command interface drawing.
 All three reject its complete Browser application drawing because parent frames disappear.
 The lines into those parents end beside bare titles.
-The vote and blind artifacts stay in `/tmp/grading-548-08` and `/tmp/548-08/council`.
 
 The old geometry helpers only compare line endpoints with atlas boxes.
 The atlas still contains each hidden frame, so those helpers miss this defect.
@@ -220,14 +214,12 @@ The corpus command previously drew an implicit overview through the board's defa
 That overview does not always include every part.
 The command now also draws each complete architecture directly, under a synthetic `(whole board)` key.
 It draws the whole board on both engines and both themes, without comparison.
-The expanded parent baseline is `/tmp/548-08/round-2/base`.
 It preserves all 2376 previous drawings and adds 76 complete drawings, for 2452 drawings in total.
 The current vault contributes 68 complete drawings from its 17 boards.
 The example vaults contribute the other eight.
 
 ### Frame-fix checkpoint
 
-The frame-fix corpus is `/tmp/548-08/round-2/after-4`.
 Its core source hash is `eafa399121717f42`.
 It changes 22 of 2452 pictures against the expanded parent baseline.
 Eighteen changes are whole-board Track drawings from nine boards in two themes.
@@ -269,7 +261,6 @@ The baseline is the code before these experiments.
 Both builds use the same current vault and fixtures.
 The corpus includes every current view under both engines, both themes, and both comparison modes.
 Each corpus run uses one job and preserves its SVG files.
-The baseline directory is `/tmp/548-08/base`.
 
 This shared 24-thread machine has substantial unrelated work.
 The initial native runs report load averages from 50.95 to 52.94.
@@ -278,9 +269,7 @@ Instruction counts provide a separate measure of work.
 The native critical path is the longest dependent chain of solves.
 The example simulates one available worker for each solve.
 
-The baseline native binary is `/tmp/548-08/base-critical-path`.
-The first requests in `/tmp/548-08/early-requests` use the real request writer with a capture host.
-The prescribed capture script supplies `/tmp/548-08/requests`.
+The first requests use the real request writer with a capture host.
 Its render requests equal those from the capture host.
 The capture host supplied extra unused icons, which do not affect layout.
 The capture host records the request before the core loads.
@@ -296,7 +285,6 @@ A separate pinned run records 152.717 billion `cpu_core/instructions/u` across a
 The process uses CPU 2, a performance core.
 The hybrid processor also prints a `cpu_atom` counter with zero running time.
 Only the performance-core counter above measures this pinned process.
-The full output stays in `/tmp/548-08/base-instructions.txt`.
 That run reports paths of 794, 1577, and 1863 ms, respectively.
 The difference between runs illustrates why elapsed time needs qualification.
 
@@ -343,7 +331,6 @@ The baseline renderer suite reports 659 passes, one skip, and three failures.
 All failures are the existing 3000 ms bound in `wide-boards.test.ts`.
 Board persistence takes 3932 ms, Board viewer 4864 ms, and Codex realtime voice 3124 ms in that run.
 The geometry assertions pass.
-The log stays in `/tmp/548-08/base-renderer-tests.log`.
 
 Chromium rasterizes the baseline samples and proves cleanup of its process and temporary directory.
 The full drawings and details stay beside the corpus SVGs.
@@ -357,7 +344,7 @@ The existing geometric sink test still decides whether a supported row actually 
 The rule preserved the fallback that lets a group start below another group.
 Two focused Rust cases hold rejection and that fallback.
 
-The corpus at `/tmp/548-08/after-1` changes zero of 2376 drawings.
+The corpus changes zero of 2376 drawings.
 The layout crate passes 102 tests, and Clippy passes with warnings denied.
 The renderer suite reports 660 passes, one skip, and two timing failures.
 Board persistence takes 3665 ms and Board viewer 4297 ms against the 3000 ms limit.
@@ -401,8 +388,7 @@ The retained path keeps the geometric sink test and reuses ranked geometry for t
 
 ## Dropped: unconditional group packing
 
-The unconditional experiment is `/tmp/548-08/after-2`.
-It changes 100 of 2376 corpus drawings, all in Track.
+The experiment changes 100 of 2376 corpus drawings, all in Track.
 The six fixed drawing-integrity cases pass, but the full renderer suite fails nine cases.
 Live panes gains a route that hugs a container wall.
 Small fixtures lose column alignment, clean bends, or the reading that their existing tests require.
@@ -432,7 +418,6 @@ Merge commit `bd02b970e` includes those tools for the handoff.
 
 Forcing all small grouped graphs inline fixes the unconditional rule's original failures.
 It also fails three reduced fixtures that need packing, so that rule is dropped too.
-The command and red output stay in `/tmp/548-08/small-inline-probe-tests.log`.
 The probe runs 60 cases in 5.15 seconds, with 57 passes and three failures.
 
 The retained candidate preserves the existing comparison below 32 leaf cards.
@@ -455,8 +440,8 @@ A future change can replace more choices after the parent judges this milestone.
 
 ## First candidate results, rejected by the council
 
-The final corpus is `/tmp/548-08/after-3`, rendered with the parent council tools merged at `bd02b970e`.
-It changes zero of 2376 drawings against `/tmp/548-08/base`.
+The final corpus is rendered with the parent council tools merged at `bd02b970e`.
+It changes zero of 2376 drawings against the base.
 Blocks and Track each contribute 1188 drawings.
 The complete source diagrams of viewer, persistence, and routes also match the baseline SVGs byte for byte.
 Their full drawings and cropped Chromium captures remain in both directories.
@@ -475,9 +460,7 @@ Those helpers exclude container headers.
 Both versions pass the same geometry assertions, and their repeated SVG hashes match the timing captures.
 The initial inspection misses the hidden frames.
 The council rejects this first candidate, as recorded above.
-The manifests and SVGs stay in `/tmp/548-08/base-full-vault` and `/tmp/548-08/after-3-full-vault`.
 
-The native binary is `/tmp/548-08/after-3-critical-path`.
 The pinned counter run records 58.131 billion instructions, 61.9% below the baseline's 152.711 billion.
 The virtual-clock caveat above still applies, so each result includes its solve count.
 The full three-round run completes and records the following best paths.
@@ -528,14 +511,11 @@ The six fixed drawing-integrity cases pass separately.
 The changed Rust crates pass 106 tests, and Clippy passes with warnings denied.
 The complete `bun run check` gate passes, including types, lint, formatting, Rust tests, frontend builds, and all 19 browser files.
 Its module lane passes 4949 tests and skips one.
-The full log stays in `/tmp/548-08/after-3-gate.log`.
 
 ## Rejected drawing inventory
 
 The unconditional experiment changes 100 Track drawings across the following boards.
 Each count includes themes and comparison modes.
-The complete keys stay in `/tmp/548-08/after-2-changed.json`.
-The unblinded inspection captures stay in `/tmp/548-08/after-2-inspection`.
 These drawings are not the retained result.
 
 | Board                   | Changed drawings |
@@ -572,7 +552,6 @@ The code check reads the proposals through this checkout's server and reports no
 Its existing Crossing pass caller warning and Scene relationship warning remain on unmodified parts.
 Its information about unused native helpers and viewer exports also predates this work.
 The source inspection confirms the new leaf count, early packed return, and unchanged compact comparison.
-The full output is `/tmp/548-08/proposals-final-code-check.json`.
 
 The next measurement is the same cold and size-changing workload on a quiet machine.
 The next layout lever is the remaining stacking and joins choices of large grouped graphs.
@@ -673,7 +652,6 @@ The prior matching core `428cee50bb7380ad` differs only in source descriptions.
 
 The alternating parent run uses the complete `f06fa5317` crate sources and its matching core `ce42bd12e4ee9ccb`.
 The script restores the candidate sources and core before the candidate run starts.
-The saved script is `/tmp/548-08/post-553/alternate-baseline-6.sh`.
 The parent load ranges from 18.81 to 20.61.
 The candidate load ranges from 20.37 to 20.59.
 
@@ -695,7 +673,6 @@ The next exact optimization targets repeated construction of the simplifier's un
 The saved native binaries use the same captured requests and CPU 2.
 The fresh parent executes 152,722,597,050 user instructions.
 Milestone 6 executes 10,402,976,071, a reduction of 93.2%.
-The counter files are `/tmp/548-08/post-553/base-6-instructions.txt` and `after-6-instructions.txt`.
 The native measurement pair reports load 21.81 to 19.84.
 
 | Board                   | Parent solves | Candidate solves | Parent native path, ms | Candidate native path, ms |
@@ -711,12 +688,11 @@ Those candidate costs are 54, 118, and 118 ms in the table's order.
 The parent costs are 32, 74, and 79 ms.
 The new drawing uses more paint work while it removes most layout work.
 
-The complete candidate corpus is `/tmp/548-08/post-553/after-6` at `de398584a`.
-Its parent corpus is `/tmp/548-08/post-553/base` from `f06fa5317`.
+The complete candidate corpus is drawn at `de398584a`.
+Its parent corpus is drawn at `f06fa5317`.
 Both retain all 2452 SVGs, including 76 whole-board drawings across the vaults and examples.
 The comparison changes 712 drawings: 348 Track and 364 Blocks.
 It changes 72 whole-board drawings.
-The complete changed keys stay in `/tmp/548-08/post-553/after-6-changed.json`.
 
 | Board                   | Changed drawings |
 | ----------------------- | ---------------: |
@@ -786,7 +762,6 @@ The existing contract then passes all three nestings without weaker assertions.
 
 The stronger helper replaces the word-only helper rather than adding a second owner of the same behavior.
 It rejects a route through any part of a parent header and an arrowhead that stops on its surrounding frame.
-All whole-board artifacts and failed probes remain under `/tmp/548-08/post-553/header-*`.
 
 A separate exact-work optimization retains the simplifier's static obstacles between slides.
 Only the spans of moved routes change after a slide.
@@ -799,11 +774,9 @@ All 149 affected Rust tests and strict Clippy pass.
 All 648 renderer tests pass, with one platform skip.
 The endpoint tests now measure the painted header card and retain their square approach, bend, and arrowhead requirements.
 
-The complete corpus is `/tmp/548-08/post-553/after-7`.
 It contains 2452 SVGs, including all 76 whole-board drawings.
 Against the fresh parent, 744 drawings change: 364 Track and 380 Blocks.
 The 18-board inventory stays the same as milestone 6.
-The complete changed SVG pairs and their key manifest stay in `/tmp/548-08/post-553/changed-7-svg`.
 All prior corpus directories remain available.
 
 Fresh pinned native instructions fall from 152.729 billion to 9.654 billion, a 93.68% reduction.
@@ -829,7 +802,6 @@ The proposals remain drafts pending the parent's council verdict.
 The parent remains `f06fa5317`.
 The final core source hash is `cba5643b6e09f19f` after a comment-only correction to the source length limit.
 The route file now contains 599 lines.
-The final corpus is `/tmp/548-08/post-553/after-7-final`.
 It changes zero of 2452 drawings against the header checkpoint corpus.
 Both directories retain all SVGs, including the 76 whole-board drawings.
 The changed pair directory therefore remains valid for this final core.
@@ -862,7 +834,6 @@ The user authorizes cleanup only for this worktree, so these processes remain un
 These wall times describe this loaded box and do not satisfy the quiet-box criterion.
 The instruction counts establish the work reduction independently of scheduling.
 
-The relevant logs use the `base-7`, `after-7`, and `native-7` prefixes under `/tmp/548-08/post-553`.
 A host-phase diagnostic separately records a cold viewer at 1134 ms and its growing edit at 489 ms.
 Its first solve occupies 693 ms, versus 379 ms for the edit, and painting afterward occupies 280 versus 103 ms.
 This diagnostic illustrates startup and scheduling variation, not a replacement for the alternating timing pair.
@@ -958,7 +929,6 @@ The cache needs additional state and does not justify that cost.
 A static obstacle list moves the same debug total from 2840 to 2833 ms.
 Reusing existing route spans for shared-trunk comparisons moves it from 2840 to 2814 ms.
 The latter probe changes none of the three target SVGs.
-All four probes are dropped, and their source and logs remain under `/tmp/548-08/post-553`.
 These debug totals screen the ideas and do not establish release performance gains.
 The port-plan probe instead removes repeated routing.
 
@@ -995,8 +965,6 @@ The speed result cannot justify these failures.
 The branch restores milestone 7, including its port-settling pass and port-order comparison.
 It keeps the seven-card caption fixture because the restored path passes that case on both engines.
 That fixture also fails on the rejected candidate before its attempted caption repair.
-The complete failed corpus remains at `/tmp/548-08/post-553/after-8`.
-Its rejected core, source patch, measurements, and logs remain beside it.
 No rejected layout code stays in production.
 
 ### WebAssembly optimization probe
@@ -1023,13 +991,10 @@ The parent still convenes the council, and TASK-548.08 remains In Progress.
 ### Delivery after dropping both probes
 
 The delivery keeps layout code `66dcc7dd4` and core source hash `cba5643b6e09f19f`.
-The complete corpus is `/tmp/548-08/post-553/after-7-delivery`.
 It contains 2452 drawings from 2508 jobs, including all 76 complete architecture drawings.
-Every SVG matches `/tmp/548-08/post-553/after-7-final` exactly.
+Every SVG matches the final corpus exactly.
 The parent comparison still changes 744 drawings across 18 boards, including 72 complete architecture drawings.
 
-Both sides of every changed drawing are SVGs under `/tmp/548-08/post-553/changed-delivery-svg`.
-Its manifest maps every corpus key to the two SVG paths.
 The board counts remain those in the milestone 7 inventory above.
 The final renderer run passes 650 tests with one platform skip and no failures.
 The two new tests cover the reduced folded-caption case without a vault dependency or a time limit.
@@ -1060,7 +1025,6 @@ The final complete `bun run check` retry exits zero with 20 of 20 tasks successf
 Its module lane passes 4938 tests with one platform skip.
 It also passes all 285 system tests, 161 repository tests, and 19 serial browser files.
 The real Rust server case passes in that complete retry.
-The full log is `/tmp/548-08/post-553/delivery-gate-retry.log`.
 This supersedes the incomplete-gate limitation for delivery without removing the earlier failure record.
 
 The third council round uses compact parent headers and local member ranks.

@@ -61,8 +61,6 @@ Other parents remain inline, and no card-count cutoff decides the choice.
 
 The saved requests reproduce the exact four failed pairs.
 Their IDs remain 003, 022, 028, and 038.
-The baseline requests, pictures, and measurements are under `/tmp/548-08/round-3/baseline-cases` and `/tmp/548-08/round-3/baseline-native`.
-Each probe keeps its native drawings and metrics under `compact-N-native` in the same directory.
 These probes diagnose geometry and composition.
 Their debug-build durations are not performance evidence.
 A native run uses the compiled Rust core directly.
@@ -160,7 +158,6 @@ It builds core `bcef85a5dd93aa25`.
 The affected Rust crates pass their tests and Clippy.
 The matching-core renderer suite passes 653 tests, skips one platform-only test, and fails none.
 The complete `bun run check` gate passes all 20 tasks and all 19 browser files.
-Its log is `/tmp/548-08/round-3/retained-full-check.log`.
 The proposal code check retains the same 41 finding identities, with no new finding.
 Those findings predate this round.
 The manual source reading also covers the layout and painter descriptions that the code check cannot assess.
@@ -177,8 +174,7 @@ It adds no old/new switch or board-name exception.
 The original parent remains at `5f36973df`, with core `ce42bd12e4ee9ccb`.
 Its Rust and build inputs match `f06fa5317`, which supplied the saved original native binary.
 The previous candidate uses the saved `after-7-critical-path` binary.
-The new binary is `/tmp/548-08/round-3/retained-critical-path`.
-All three read the same captured requests in `/tmp/548-08/post-553/requests`.
+All three read the same captured requests.
 No build, test, corpus render, or owned server runs beside these measurements.
 The process audit finds no Git owner before measurement.
 
@@ -194,7 +190,6 @@ Unpinned counters on this hybrid CPU report separately scaled core and atom valu
 | This round         |                   9,206,551,892 |
 
 This round uses 94.0% fewer instructions than the original and 4.7% fewer than the previous candidate.
-The counter logs end in `-pinned-instructions.txt` under `/tmp/548-08/round-3`.
 
 The native timing uses the shortest critical path from three renders per board.
 The critical path is the longest dependent chain of layout solves.
@@ -245,14 +240,11 @@ All measured candidate first renders and growing edits stay below 500 ms.
 The earlier quiet parent measurements remain the previous candidate's reference, rather than a matched run in this alternation.
 In particular, Board persistence's earlier 229/224 ms is faster than this round's 299/289 ms.
 The new round improves Board viewer and retains the owner's threshold on all three targets.
-Raw results, load records, and source hashes are in `pool-and-growth-runs.json` and `pool-and-growth-summary.json` under `/tmp/548-08/round-3`.
-The scratch `measure-growth.ts` and `measure-pool.py` files preserve the measurement procedure.
 
 ## Corpus and council delivery
 
-The before corpus is `/tmp/548-08/round-3/base`, from the previous candidate after merge `3f573f10a`.
-The after corpus is `/tmp/548-08/round-3/after-1`, from implementation `9a6d1c147`.
-Both keep every SVG beside `corpus.json`.
+The before corpus is drawn from the previous candidate after merge `3f573f10a`.
+The after corpus is drawn from implementation `9a6d1c147`.
 Each contains 2,452 drawings from 2,508 jobs.
 Each includes 76 whole-board drawings: both engines and themes for all 17 vault boards and both example boards.
 The corpus comparison changes 1,204 drawings across 19 boards, including 72 whole-board drawings.
@@ -280,16 +272,11 @@ Its elapsed render times overlap other validation work and are not speed evidenc
 | Voice coordinator       |               68 |
 | Web shop                |                4 |
 
-`/tmp/548-08/round-3/changed-svg-pairs.json` names both SVGs for every changed drawing.
-`whole-board-svg-pairs.json` names all 76 whole-board pairs, including unchanged pictures.
-`acceptance-svg/manifest.json` names the four failed council pairs and the extra feedback tradeoff.
 Their after pictures come from the matching Bun core and match the retained native geometry.
 The four failed pairs contain no measured hard defect.
 The extra feedback example records the ordinary crossing described above.
-All earlier probe and render directories remain available.
 
 The final visual inspection also covers dark Browser application and Board viewer whole boards in both engines.
-The PNGs remain under `/tmp/548-08/round-3/inspection`.
 Board viewer's area falls 28.7% in Track and 14.1% in Blocks.
 Browser application's area falls 22.6% in Track but grows 93.2% in Blocks.
 That Blocks picture spreads the top-level families more widely, despite tighter compact headers inside each family.

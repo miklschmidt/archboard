@@ -63,11 +63,8 @@ The report also measures the frame area outside that envelope.
 Nested frames are measured separately, and union area prevents overlapping cards from inflating coverage.
 
 The initial scan covers all 2,452 drawings and all 76 whole-board pictures.
-Its reference is `/tmp/548-08/round-3/base`, and its candidate is `/tmp/548-08/round-3/after-1`.
-The first checkpoint's complete SVG corpus is `/tmp/548-08/round-4/after-1`.
-Its reports are `after-1-vs-council-reference` and `after-1-vs-round-3` under `/tmp/548-08/round-4`.
+Its reference is the round-three base corpus, and its candidate is the round-three after corpus.
 Every report includes all 19 boards and both engines.
-The original render directories remain unchanged.
 
 ## The composition candidate
 
@@ -160,7 +157,6 @@ The retained graph restrictions and port reach address the layout failures.
 The broad closed-work probe also shortens the tall rasterizer fixture below its viewport boundary.
 An expanded 48-stage fixture preserves that boundary during diagnosis.
 The final graph rule keeps isolated frames inline, so the original 24-stage fixture and every assertion stay unchanged.
-Every probe directory remains under `/tmp/548-08/round-4`.
 
 The first complete compactness report also exposes flowcharts at 1.80 times their former area.
 The queue-edit picture gains a large empty right side and a diagonal staircase.
@@ -194,17 +190,14 @@ It adds no runtime package export or dependency on test code from production scr
 ## Second checkpoint
 
 The matching core is `a444102b6641c731`.
-The complete corpus is `/tmp/548-08/round-4/after-6`.
-It contains 2,452 SVGs, including all 76 whole-board pictures.
+The complete corpus contains 2,452 SVGs, including all 76 whole-board pictures.
 Compared with round three, 232 drawings change across 18 boards.
 Changed boards include Archboard, Archboard server, Archboard server routes, Board persistence, Board rasterizer, and Board viewer.
 Browser application, Codex realtime voice, Codex workhorse, Command dispatch, Command interface, and Live panes also change.
 Renderer layout, Semantic renderer, Skill evaluation, Voice coordinator, Inventory service, and Web shop complete the list.
 `milestone-2-after-6` contains both SVG sides, every whole-board pair, and the 13 selected council cases.
-All earlier directories remain intact.
 
-The complete reports are `after-6-vs-round-3`, `after-6-vs-checkpoint`, and `after-6-vs-council-reference` under `/tmp/548-08/round-4`.
-Each contains per-drawing values, every route and frame, all whole boards, and a report for all 38 board/engine combinations.
+The reports contain per-drawing values, every route and frame, all whole boards, and a report for all 38 board/engine combinations.
 The largest remaining area increase is Tools and work at 9.6%.
 Its longest route falls from 2382 to 1074 units.
 Every other drawing grows by at most 2.3%.
@@ -325,8 +318,7 @@ The final current-vault captures cover all 17 boards in both engines and contain
 Board viewer in Blocks retains four optional lane-spacing observations under the existing Track-only rule.
 
 The final core is `65e48764d0efbd32`.
-Its corpus is `/tmp/548-08/round-4/after-15`.
-It retains 2452 SVGs, including 76 whole-board drawings across both engines and themes.
+Its corpus retains 2452 SVGs, including 76 whole-board drawings across both engines and themes.
 Compared with round three, 272 drawings change across 18 boards.
 The paired SVGs are in `milestone-4-after-15`, with 13 selected acceptance cases and a manifest for every whole board.
 Reports against round three, the third checkpoint, and the older council reference retain every drawing, frame, and route measure.
@@ -413,9 +405,7 @@ All hard geometry readers pass on that reduced input.
 The renderer suite passes 683 tests, with one platform-only skip.
 The layout crate tests, strict clippy, and complete repository gate pass inside `nix develop`.
 
-The new corpus is `/tmp/548-08/round-4/after-16`.
-Every one of its 2452 SVGs matches `after-15` byte for byte, including all 76 whole-board drawings.
-The complete compactness comparison is `after-16-vs-after-15`.
+The new corpus matches the previous one byte for byte in all 2452 SVGs, including all 76 whole-board drawings.
 The manifests in `milestone-5-after-16` list zero changed drawings, with light/plain pictures separate.
 That directory also retains the reduced regression's before and after SVG paths.
 
@@ -458,9 +448,8 @@ The layout Rust tests and strict clippy pass inside `nix develop`.
 Every hard reader also passes on the actual Tools and work drawing.
 No routing code or hard assertion changes.
 
-The complete corpus is `/tmp/548-08/round-5/after-1`.
-It retains all 2452 SVGs and all 76 whole-board drawings.
-Exactly four drawings change against `round-4/after-16`, all Tools and work in Track: light and dark, plain and comparison.
+The complete corpus retains all 2452 SVGs and all 76 whole-board drawings.
+Exactly four drawings change against the previous corpus, all Tools and work in Track: light and dark, plain and comparison.
 The other 2448 SVGs, including every whole board, match byte for byte.
 Both SVG sides, all eight inspected rasters, and separate light/plain and other manifests are in `round-5/milestone-1`.
 The inspection finds no defect or clear readability regression.
@@ -486,5 +475,4 @@ Three fresh runs give median first/growing-edit times of Viewer 282/204 ms, Pers
 All 18 timed renders stay below 500 ms, with a maximum of 301 ms.
 Every edit grows a measured card, and every run reports core `097cda3d474917c2`.
 The runs start at one-minute loads of 2.71 to 2.85 after the gate exits.
-`/tmp/548-08/round-5/measurements.json` retains every sample, source hash, height change, and load.
 TASK-548.08 stays In Progress for the parent's next council verdict.
