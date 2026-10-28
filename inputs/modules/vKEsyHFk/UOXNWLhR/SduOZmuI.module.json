@@ -1,0 +1,53 @@
+{
+  "order": 40001,
+  "name": "Catalogue queries",
+  "kind": "function",
+  "responsibility": "Reads the board listing for catalogue navigation",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/hooks/board-catalog/use-board-catalog.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#SduOZmuI",
+  "outgoing": [
+    {
+      "order": 90000,
+      "kind": "call",
+      "description": "Reads the listing query and cache keys",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/board-catalog/use-board-catalog.ts",
+        "symbol": "semanticBoardListQuery"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#vgoqcrrb",
+      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
+    },
+    {
+      "order": 92000,
+      "kind": "call",
+      "description": "Subscribes through the public board-change notification entry point",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/board-catalog/use-board-catalog.ts",
+        "symbol": "onSemanticBoardChange"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#FF0WvkLM",
+      "to": "vKEsyHFk/UOXNWLhR#bx5fJdP8"
+    },
+    {
+      "order": 127000,
+      "kind": "call",
+      "label": "boards written or let go, listings, repositories, a reload",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/board-catalog/use-board-catalog.ts",
+        "symbol": "boardsChanged"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#4Dov0K46",
+      "to": "vKEsyHFk/UOXNWLhR#OeUYLDxp"
+    }
+  ]
+}

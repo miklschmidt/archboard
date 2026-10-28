@@ -1,0 +1,49 @@
+{
+  "order": 53000,
+  "name": "Model read",
+  "kind": "module",
+  "responsibility": "Reads current, active and completed states with exact comparisons and retained lifecycle metadata.",
+  "description": "Passes current, proposal, exact checkpoint, scope, and flow selections through the shared architecture reader. Walkthrough and shared selectors resolve pinned narrative playback through the same command. Migration previews name their origin and can combine a qualified original state with an exact migration checkpoint. Original histories retain their own board coverage without borrowing current surroundings.\n\nPreview reads translate explicit legacyAddress and bookmark selectors. Converted walkthroughs reuse the existing playback contract. The runtime resolves identity, original coverage, and unavailable references.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/model/read.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/XppR9owz#66xX05dW",
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 92000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/model/read.ts",
+        "symbol": "readArchitectureModelOnServer"
+      },
+      "id": "vKEsyHFk/XppR9owz#TeLAhdej",
+      "to": "vKEsyHFk/XppR9owz#TsCise1I"
+    }
+  ]
+}

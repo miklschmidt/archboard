@@ -1,0 +1,85 @@
+{
+  "order": 33000,
+  "name": "Historical correction routes",
+  "kind": "module",
+  "responsibility": "Prepares a historical correction through the store, reads the code at the revisions it cites with no lease held, and commits exactly the prepared candidate",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/routes/semantic-boards/semantic-board-correction.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/HBlhIeSD#XSLgfg1m",
+  "parent": "vKEsyHFk/HBlhIeSD#I6MrfGUg",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 88000,
+      "kind": "call",
+      "label": "prepare the correction, then commit exactly it",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-correction.ts",
+        "symbol": "prepareSemanticBoardWrite"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#KH9xxFgW",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    },
+    {
+      "order": 89000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/candidate.ts",
+        "symbol": "checkCandidateCode"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#8WACAmCE",
+      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+    },
+    {
+      "order": 91000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-correction.ts",
+        "symbol": "answerWrite"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#ijjfX3dW",
+      "to": "vKEsyHFk/HBlhIeSD#iwrhchml"
+    },
+    {
+      "order": 92000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-correction.ts",
+        "symbol": "vaultOfRequest"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#ujYiodpp",
+      "to": "vKEsyHFk/HBlhIeSD#fs2ehN0i"
+    }
+  ]
+}

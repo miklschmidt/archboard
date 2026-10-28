@@ -1,0 +1,50 @@
+{
+  "order": 41000,
+  "name": "Read a variant",
+  "kind": "function",
+  "responsibility": "Reads a board by name and opens the variant an address states",
+  "description": "readBoardVariant reads the board by its name or a former name, then opens the variant the address states: an id, a name or current. A bare name, an empty variant and current all open what the bare name opens. When the address opens no variant the answer carries the board it read and says whether the variant is missing or the name chooses none.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/read/variant.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/0T9enjhi#R84q0IT2",
+  "parent": "vKEsyHFk/0T9enjhi#ZqkmwupZ",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 99000,
+      "kind": "call",
+      "label": "read the board by its name",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/variant.ts",
+        "symbol": "readSemanticBoard"
+      },
+      "id": "vKEsyHFk/0T9enjhi#NXfFLlou",
+      "to": "vKEsyHFk/0T9enjhi#tcwsrSQv"
+    }
+  ]
+}

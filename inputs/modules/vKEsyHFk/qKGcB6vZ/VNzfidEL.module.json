@@ -1,0 +1,93 @@
+{
+  "order": 19003,
+  "name": "Tab sessions",
+  "kind": "module",
+  "responsibility": "Sends each tool call and notification to the tab session whose thread it names: that session's coordinator tools and callbacks, and its workhorses",
+  "description": "Each tab session has its own coordinator, coordinator tools, callbacks, realtime voice and spoken approval, and one workhorse for each checkout, so two tabs can talk at the same time. A notification for a thread that no tab session owns yet goes to every session. A tool call from such a thread is refused, so a running turn never waits on nobody. It stops the workhorses of its tab session for the coordinator's stop tool, and it notes the conversation shown when each coordinator turn starts.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#VNzfidEL",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 7000,
+      "kind": "event",
+      "label": "a tool call from the coordinator",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "symbol": "onServerRequest"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#NfthRpE6",
+      "to": "vKEsyHFk/qKGcB6vZ#5sWG4uuq"
+    },
+    {
+      "order": 15000,
+      "kind": "event",
+      "label": "workhorse notifications, tell_coordinator calls",
+      "description": "The callback queue subscribes to the operations and host-context ports passed to the public createCodexCoordinatorCallbacks factory. The incoming event reaches its subscribed callback, not a private import by the publisher.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "symbol": "onServerRequest"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#yjIBH8F4",
+      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI"
+    },
+    {
+      "order": 28000,
+      "kind": "call",
+      "label": "unload an ended tab's threads",
+      "description": "The caller receives the unload method of the public createCodexThreadUnload factory imported from the module root; the module is drawn whole.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "symbol": "unload"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#CPG4pMzU",
+      "to": "vKEsyHFk/9ncuT5DP#YxDrzJtI"
+    },
+    {
+      "order": 34000,
+      "kind": "call",
+      "label": "refuse a call no session owns",
+      "description": "The server imports answerUnownedTellCoordinator from the callbacks root, which re-exports the implementation in tell-coordinator.ts.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "symbol": "answerUnownedTellCoordinator"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#pXUOBmiu",
+      "to": "vKEsyHFk/qKGcB6vZ#AahDTiw9"
+    },
+    {
+      "order": 41000,
+      "kind": "call",
+      "label": "note a turn's start and the work its operations give",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "symbol": "noteCoordinatorTurnStart"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#etaTfLee",
+      "to": "vKEsyHFk/9ncuT5DP#qTmIytbT"
+    }
+  ]
+}

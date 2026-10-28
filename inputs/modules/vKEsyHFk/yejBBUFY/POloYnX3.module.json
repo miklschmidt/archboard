@@ -1,0 +1,23 @@
+{
+  "order": 24004,
+  "name": "Board drawing",
+  "kind": "module",
+  "responsibility": "Shows one board in a pane: the viewer keeps the camera and what somebody picked out, the browser renderer draws the board in this tab, and the frame clock moves what is drawn over time",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#POloYnX3",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.13 - Explain-the-captured-reading-through-local-agent-actions.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
+    }
+  ],
+  "outgoing": []
+}

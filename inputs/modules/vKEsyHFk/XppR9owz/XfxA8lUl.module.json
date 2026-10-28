@@ -1,0 +1,49 @@
+{
+  "order": 55000,
+  "name": "Model checkpoint commands",
+  "kind": "module",
+  "responsibility": "Retains observed revisions and lists local checkpoint metadata",
+  "description": "Passes explicit migration origin, scoped original state, and retained checkpoint selectors through shared architecture operations. Original retention uses configured signing and exact retry without installing a model.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/model/checkpoints.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/XppR9owz#XfxA8lUl",
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 94000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/model/checkpoints.ts",
+        "symbol": "retainArchitectureCheckpointOnServer"
+      },
+      "id": "vKEsyHFk/XppR9owz#0PBRM9B2",
+      "to": "vKEsyHFk/XppR9owz#TsCise1I"
+    }
+  ]
+}
