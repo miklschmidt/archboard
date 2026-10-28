@@ -1,0 +1,453 @@
+{
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/OjRLKb74#5fTFmh80",
+  "name": "Why the drawing settles once",
+  "target": {
+    "state": "current"
+  },
+  "beats": [
+    {
+      "id": "vKEsyHFk/OjRLKb74#4gGw0YbA",
+      "title": "Words first, then space",
+      "narrative": "Nothing is placed before it is measured. The size a name needs is a fact the layout is handed, in the face the SVG will paint, so no later pass has to make room it did not reserve.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/OjRLKb74#nmyK8UOO",
+            "vKEsyHFk/OjRLKb74#kHpIix5b",
+            "vKEsyHFk/OjRLKb74#H0xU45vp",
+            "vKEsyHFk/OjRLKb74#RvOyWmEb",
+            "vKEsyHFk/gbyqW4H3#gUN928v4",
+            "vKEsyHFk/OjRLKb74#ZRFUJrjD",
+            "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+            "vKEsyHFk/OjRLKb74#KdNM1Q56",
+            "vKEsyHFk/OjRLKb74#LCcblgyC",
+            "vKEsyHFk/OjRLKb74#mHYMkWdE",
+            "vKEsyHFk/OjRLKb74#oycxx6G2",
+            "vKEsyHFk/OjRLKb74#qtwaBhit",
+            "vKEsyHFk/OjRLKb74#Wp2usbe5",
+            "vKEsyHFk/OjRLKb74#mkxpJuY7",
+            "vKEsyHFk/OjRLKb74#skrvk25Y",
+            "vKEsyHFk/OjRLKb74#jLUi9ZuH",
+            "vKEsyHFk/OjRLKb74#5UnSr8ZQ",
+            "vKEsyHFk/OjRLKb74#e10t6gst",
+            "vKEsyHFk/OjRLKb74#tppVDaSZ"
+          ],
+          "relationships": [
+            "vKEsyHFk/OjRLKb74#TPRWw9F4",
+            "vKEsyHFk/OjRLKb74#19pjtjrv",
+            "vKEsyHFk/OjRLKb74#aESGqkun",
+            "vKEsyHFk/OjRLKb74#notKnIIz",
+            "vKEsyHFk/OjRLKb74#TSsnxsV9",
+            "vKEsyHFk/OjRLKb74#lbUaPzWc",
+            "vKEsyHFk/OjRLKb74#wCXK6KYw",
+            "vKEsyHFk/OjRLKb74#oYEzQ4k5",
+            "vKEsyHFk/OjRLKb74#T4hTbGVM",
+            "vKEsyHFk/OjRLKb74#Md6tqK1p",
+            "vKEsyHFk/OjRLKb74#PYJsIDYm",
+            "vKEsyHFk/OjRLKb74#EOOPngnB",
+            "vKEsyHFk/OjRLKb74#Gejk3C1W",
+            "vKEsyHFk/OjRLKb74#fFiMvo56",
+            "vKEsyHFk/OjRLKb74#luMz0TJo",
+            "vKEsyHFk/OjRLKb74#JBISovVb",
+            "vKEsyHFk/OjRLKb74#c6EtTjBt",
+            "vKEsyHFk/OjRLKb74#4lrR3GdH",
+            "vKEsyHFk/OjRLKb74#IDoV3QxP",
+            "vKEsyHFk/OjRLKb74#lQFfcKXc"
+          ],
+          "flows": [
+            "vKEsyHFk/OjRLKb74#EnnH7t3r",
+            "vKEsyHFk/OjRLKb74#8bDSfxwQ",
+            "vKEsyHFk/OjRLKb74#zSKT3nqZ",
+            "vKEsyHFk/OjRLKb74#KBB38tYG"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/OjRLKb74#kHpIix5b",
+          "vKEsyHFk/OjRLKb74#RvOyWmEb",
+          "vKEsyHFk/gbyqW4H3#gUN928v4"
+        ],
+        "focus": [
+          "vKEsyHFk/OjRLKb74#nmyK8UOO",
+          "vKEsyHFk/OjRLKb74#kHpIix5b",
+          "vKEsyHFk/OjRLKb74#H0xU45vp",
+          "vKEsyHFk/OjRLKb74#RvOyWmEb",
+          "vKEsyHFk/gbyqW4H3#gUN928v4",
+          "vKEsyHFk/OjRLKb74#ZRFUJrjD",
+          "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+          "vKEsyHFk/OjRLKb74#KdNM1Q56",
+          "vKEsyHFk/OjRLKb74#LCcblgyC",
+          "vKEsyHFk/OjRLKb74#mHYMkWdE",
+          "vKEsyHFk/OjRLKb74#oycxx6G2",
+          "vKEsyHFk/OjRLKb74#qtwaBhit",
+          "vKEsyHFk/OjRLKb74#Wp2usbe5",
+          "vKEsyHFk/OjRLKb74#mkxpJuY7",
+          "vKEsyHFk/OjRLKb74#skrvk25Y",
+          "vKEsyHFk/OjRLKb74#jLUi9ZuH",
+          "vKEsyHFk/OjRLKb74#5UnSr8ZQ",
+          "vKEsyHFk/OjRLKb74#e10t6gst",
+          "vKEsyHFk/OjRLKb74#tppVDaSZ"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/OjRLKb74#rNW1w4av",
+      "title": "Pretext breaks lines; the renderer owns card policy",
+      "narrative": "Pretext is given a prepared string and a width and hands back lines. Padding, icon space, baselines and the bounds a card may take are the renderer's, not the library's.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/OjRLKb74#nmyK8UOO",
+            "vKEsyHFk/OjRLKb74#kHpIix5b",
+            "vKEsyHFk/OjRLKb74#H0xU45vp",
+            "vKEsyHFk/OjRLKb74#RvOyWmEb",
+            "vKEsyHFk/gbyqW4H3#gUN928v4",
+            "vKEsyHFk/OjRLKb74#ZRFUJrjD",
+            "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+            "vKEsyHFk/OjRLKb74#KdNM1Q56",
+            "vKEsyHFk/OjRLKb74#LCcblgyC",
+            "vKEsyHFk/OjRLKb74#mHYMkWdE",
+            "vKEsyHFk/OjRLKb74#oycxx6G2",
+            "vKEsyHFk/OjRLKb74#qtwaBhit",
+            "vKEsyHFk/OjRLKb74#Wp2usbe5",
+            "vKEsyHFk/OjRLKb74#mkxpJuY7",
+            "vKEsyHFk/OjRLKb74#skrvk25Y",
+            "vKEsyHFk/OjRLKb74#jLUi9ZuH",
+            "vKEsyHFk/OjRLKb74#5UnSr8ZQ",
+            "vKEsyHFk/OjRLKb74#e10t6gst",
+            "vKEsyHFk/OjRLKb74#tppVDaSZ"
+          ],
+          "relationships": [
+            "vKEsyHFk/OjRLKb74#TPRWw9F4",
+            "vKEsyHFk/OjRLKb74#19pjtjrv",
+            "vKEsyHFk/OjRLKb74#aESGqkun",
+            "vKEsyHFk/OjRLKb74#notKnIIz",
+            "vKEsyHFk/OjRLKb74#TSsnxsV9",
+            "vKEsyHFk/OjRLKb74#lbUaPzWc",
+            "vKEsyHFk/OjRLKb74#wCXK6KYw",
+            "vKEsyHFk/OjRLKb74#oYEzQ4k5",
+            "vKEsyHFk/OjRLKb74#T4hTbGVM",
+            "vKEsyHFk/OjRLKb74#Md6tqK1p",
+            "vKEsyHFk/OjRLKb74#PYJsIDYm",
+            "vKEsyHFk/OjRLKb74#EOOPngnB",
+            "vKEsyHFk/OjRLKb74#Gejk3C1W",
+            "vKEsyHFk/OjRLKb74#fFiMvo56",
+            "vKEsyHFk/OjRLKb74#luMz0TJo",
+            "vKEsyHFk/OjRLKb74#JBISovVb",
+            "vKEsyHFk/OjRLKb74#c6EtTjBt",
+            "vKEsyHFk/OjRLKb74#4lrR3GdH",
+            "vKEsyHFk/OjRLKb74#IDoV3QxP",
+            "vKEsyHFk/OjRLKb74#lQFfcKXc"
+          ],
+          "flows": [
+            "vKEsyHFk/OjRLKb74#EnnH7t3r",
+            "vKEsyHFk/OjRLKb74#8bDSfxwQ",
+            "vKEsyHFk/OjRLKb74#zSKT3nqZ",
+            "vKEsyHFk/OjRLKb74#KBB38tYG"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/OjRLKb74#RvOyWmEb",
+          "vKEsyHFk/OjRLKb74#kHpIix5b"
+        ],
+        "focus": [
+          "vKEsyHFk/OjRLKb74#nmyK8UOO",
+          "vKEsyHFk/OjRLKb74#kHpIix5b",
+          "vKEsyHFk/OjRLKb74#H0xU45vp",
+          "vKEsyHFk/OjRLKb74#RvOyWmEb",
+          "vKEsyHFk/gbyqW4H3#gUN928v4",
+          "vKEsyHFk/OjRLKb74#ZRFUJrjD",
+          "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+          "vKEsyHFk/OjRLKb74#KdNM1Q56",
+          "vKEsyHFk/OjRLKb74#LCcblgyC",
+          "vKEsyHFk/OjRLKb74#mHYMkWdE",
+          "vKEsyHFk/OjRLKb74#oycxx6G2",
+          "vKEsyHFk/OjRLKb74#qtwaBhit",
+          "vKEsyHFk/OjRLKb74#Wp2usbe5",
+          "vKEsyHFk/OjRLKb74#mkxpJuY7",
+          "vKEsyHFk/OjRLKb74#skrvk25Y",
+          "vKEsyHFk/OjRLKb74#jLUi9ZuH",
+          "vKEsyHFk/OjRLKb74#5UnSr8ZQ",
+          "vKEsyHFk/OjRLKb74#e10t6gst",
+          "vKEsyHFk/OjRLKb74#tppVDaSZ"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/OjRLKb74#FWMgjXxD",
+      "title": "One engine places and routes",
+      "narrative": "Track or Blocks lays the board out, one block at a time from the innermost. Graphviz ranks a block's cards and its lines run on tracks between the ranks; libavoid routes the trunks between packed blocks. Nothing after it may repair a coordinate, which is why there is no second geometry to keep in step.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/OjRLKb74#nmyK8UOO",
+            "vKEsyHFk/OjRLKb74#kHpIix5b",
+            "vKEsyHFk/OjRLKb74#H0xU45vp",
+            "vKEsyHFk/OjRLKb74#RvOyWmEb",
+            "vKEsyHFk/gbyqW4H3#gUN928v4",
+            "vKEsyHFk/OjRLKb74#ZRFUJrjD",
+            "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+            "vKEsyHFk/OjRLKb74#KdNM1Q56",
+            "vKEsyHFk/OjRLKb74#LCcblgyC",
+            "vKEsyHFk/OjRLKb74#mHYMkWdE",
+            "vKEsyHFk/OjRLKb74#oycxx6G2",
+            "vKEsyHFk/OjRLKb74#qtwaBhit",
+            "vKEsyHFk/OjRLKb74#Wp2usbe5",
+            "vKEsyHFk/OjRLKb74#mkxpJuY7",
+            "vKEsyHFk/OjRLKb74#skrvk25Y",
+            "vKEsyHFk/OjRLKb74#jLUi9ZuH",
+            "vKEsyHFk/OjRLKb74#5UnSr8ZQ",
+            "vKEsyHFk/OjRLKb74#e10t6gst",
+            "vKEsyHFk/OjRLKb74#tppVDaSZ"
+          ],
+          "relationships": [
+            "vKEsyHFk/OjRLKb74#TPRWw9F4",
+            "vKEsyHFk/OjRLKb74#19pjtjrv",
+            "vKEsyHFk/OjRLKb74#aESGqkun",
+            "vKEsyHFk/OjRLKb74#notKnIIz",
+            "vKEsyHFk/OjRLKb74#TSsnxsV9",
+            "vKEsyHFk/OjRLKb74#lbUaPzWc",
+            "vKEsyHFk/OjRLKb74#wCXK6KYw",
+            "vKEsyHFk/OjRLKb74#oYEzQ4k5",
+            "vKEsyHFk/OjRLKb74#T4hTbGVM",
+            "vKEsyHFk/OjRLKb74#Md6tqK1p",
+            "vKEsyHFk/OjRLKb74#PYJsIDYm",
+            "vKEsyHFk/OjRLKb74#EOOPngnB",
+            "vKEsyHFk/OjRLKb74#Gejk3C1W",
+            "vKEsyHFk/OjRLKb74#fFiMvo56",
+            "vKEsyHFk/OjRLKb74#luMz0TJo",
+            "vKEsyHFk/OjRLKb74#JBISovVb",
+            "vKEsyHFk/OjRLKb74#c6EtTjBt",
+            "vKEsyHFk/OjRLKb74#4lrR3GdH",
+            "vKEsyHFk/OjRLKb74#IDoV3QxP",
+            "vKEsyHFk/OjRLKb74#lQFfcKXc"
+          ],
+          "flows": [
+            "vKEsyHFk/OjRLKb74#EnnH7t3r",
+            "vKEsyHFk/OjRLKb74#8bDSfxwQ",
+            "vKEsyHFk/OjRLKb74#zSKT3nqZ",
+            "vKEsyHFk/OjRLKb74#KBB38tYG"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/OjRLKb74#oycxx6G2",
+          "vKEsyHFk/OjRLKb74#wCXK6KYw",
+          "vKEsyHFk/OjRLKb74#T4hTbGVM",
+          "vKEsyHFk/OjRLKb74#Wp2usbe5",
+          "vKEsyHFk/OjRLKb74#skrvk25Y"
+        ],
+        "focus": [
+          "vKEsyHFk/OjRLKb74#nmyK8UOO",
+          "vKEsyHFk/OjRLKb74#kHpIix5b",
+          "vKEsyHFk/OjRLKb74#H0xU45vp",
+          "vKEsyHFk/OjRLKb74#RvOyWmEb",
+          "vKEsyHFk/gbyqW4H3#gUN928v4",
+          "vKEsyHFk/OjRLKb74#ZRFUJrjD",
+          "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+          "vKEsyHFk/OjRLKb74#KdNM1Q56",
+          "vKEsyHFk/OjRLKb74#LCcblgyC",
+          "vKEsyHFk/OjRLKb74#mHYMkWdE",
+          "vKEsyHFk/OjRLKb74#oycxx6G2",
+          "vKEsyHFk/OjRLKb74#qtwaBhit",
+          "vKEsyHFk/OjRLKb74#Wp2usbe5",
+          "vKEsyHFk/OjRLKb74#mkxpJuY7",
+          "vKEsyHFk/OjRLKb74#skrvk25Y",
+          "vKEsyHFk/OjRLKb74#jLUi9ZuH",
+          "vKEsyHFk/OjRLKb74#5UnSr8ZQ",
+          "vKEsyHFk/OjRLKb74#e10t6gst",
+          "vKEsyHFk/OjRLKb74#tppVDaSZ"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/OjRLKb74#AOPSXwkc",
+      "title": "The drawing that reads best is kept",
+      "narrative": "A board is solved more than one way, and the answers are weighed as drawn: crossings, line length and how well it fits the reference pane, which is as wide as the shell gives a drawing and as tall as the tuned 1.4 page shape makes that width, not the shell's own pane (ADR 0043). A block of cards wraps a wide rank or folds tall ranks into columns only where that reads better. Nobody authors the reading, and every variant is laid out fresh.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/OjRLKb74#nmyK8UOO",
+            "vKEsyHFk/OjRLKb74#kHpIix5b",
+            "vKEsyHFk/OjRLKb74#H0xU45vp",
+            "vKEsyHFk/OjRLKb74#RvOyWmEb",
+            "vKEsyHFk/gbyqW4H3#gUN928v4",
+            "vKEsyHFk/OjRLKb74#ZRFUJrjD",
+            "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+            "vKEsyHFk/OjRLKb74#KdNM1Q56",
+            "vKEsyHFk/OjRLKb74#LCcblgyC",
+            "vKEsyHFk/OjRLKb74#mHYMkWdE",
+            "vKEsyHFk/OjRLKb74#oycxx6G2",
+            "vKEsyHFk/OjRLKb74#qtwaBhit",
+            "vKEsyHFk/OjRLKb74#Wp2usbe5",
+            "vKEsyHFk/OjRLKb74#mkxpJuY7",
+            "vKEsyHFk/OjRLKb74#skrvk25Y",
+            "vKEsyHFk/OjRLKb74#jLUi9ZuH",
+            "vKEsyHFk/OjRLKb74#5UnSr8ZQ",
+            "vKEsyHFk/OjRLKb74#e10t6gst",
+            "vKEsyHFk/OjRLKb74#tppVDaSZ"
+          ],
+          "relationships": [
+            "vKEsyHFk/OjRLKb74#TPRWw9F4",
+            "vKEsyHFk/OjRLKb74#19pjtjrv",
+            "vKEsyHFk/OjRLKb74#aESGqkun",
+            "vKEsyHFk/OjRLKb74#notKnIIz",
+            "vKEsyHFk/OjRLKb74#TSsnxsV9",
+            "vKEsyHFk/OjRLKb74#lbUaPzWc",
+            "vKEsyHFk/OjRLKb74#wCXK6KYw",
+            "vKEsyHFk/OjRLKb74#oYEzQ4k5",
+            "vKEsyHFk/OjRLKb74#T4hTbGVM",
+            "vKEsyHFk/OjRLKb74#Md6tqK1p",
+            "vKEsyHFk/OjRLKb74#PYJsIDYm",
+            "vKEsyHFk/OjRLKb74#EOOPngnB",
+            "vKEsyHFk/OjRLKb74#Gejk3C1W",
+            "vKEsyHFk/OjRLKb74#fFiMvo56",
+            "vKEsyHFk/OjRLKb74#luMz0TJo",
+            "vKEsyHFk/OjRLKb74#JBISovVb",
+            "vKEsyHFk/OjRLKb74#c6EtTjBt",
+            "vKEsyHFk/OjRLKb74#4lrR3GdH",
+            "vKEsyHFk/OjRLKb74#IDoV3QxP",
+            "vKEsyHFk/OjRLKb74#lQFfcKXc"
+          ],
+          "flows": [
+            "vKEsyHFk/OjRLKb74#EnnH7t3r",
+            "vKEsyHFk/OjRLKb74#8bDSfxwQ",
+            "vKEsyHFk/OjRLKb74#zSKT3nqZ",
+            "vKEsyHFk/OjRLKb74#KBB38tYG"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/OjRLKb74#oycxx6G2",
+          "vKEsyHFk/OjRLKb74#qtwaBhit"
+        ],
+        "focus": [
+          "vKEsyHFk/OjRLKb74#nmyK8UOO",
+          "vKEsyHFk/OjRLKb74#kHpIix5b",
+          "vKEsyHFk/OjRLKb74#H0xU45vp",
+          "vKEsyHFk/OjRLKb74#RvOyWmEb",
+          "vKEsyHFk/gbyqW4H3#gUN928v4",
+          "vKEsyHFk/OjRLKb74#ZRFUJrjD",
+          "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+          "vKEsyHFk/OjRLKb74#KdNM1Q56",
+          "vKEsyHFk/OjRLKb74#LCcblgyC",
+          "vKEsyHFk/OjRLKb74#mHYMkWdE",
+          "vKEsyHFk/OjRLKb74#oycxx6G2",
+          "vKEsyHFk/OjRLKb74#qtwaBhit",
+          "vKEsyHFk/OjRLKb74#Wp2usbe5",
+          "vKEsyHFk/OjRLKb74#mkxpJuY7",
+          "vKEsyHFk/OjRLKb74#skrvk25Y",
+          "vKEsyHFk/OjRLKb74#jLUi9ZuH",
+          "vKEsyHFk/OjRLKb74#5UnSr8ZQ",
+          "vKEsyHFk/OjRLKb74#e10t6gst",
+          "vKEsyHFk/OjRLKb74#tppVDaSZ"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/OjRLKb74#xfpajsvv",
+      "title": "The painter decides no geometry",
+      "narrative": "By the time the painter runs, every box, port, route and label box is settled. It paints what it is given, so the picture a reader points at and the atlas the inspector reads are the same geometry.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/OjRLKb74#nmyK8UOO",
+            "vKEsyHFk/OjRLKb74#kHpIix5b",
+            "vKEsyHFk/OjRLKb74#H0xU45vp",
+            "vKEsyHFk/OjRLKb74#RvOyWmEb",
+            "vKEsyHFk/gbyqW4H3#gUN928v4",
+            "vKEsyHFk/OjRLKb74#ZRFUJrjD",
+            "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+            "vKEsyHFk/OjRLKb74#KdNM1Q56",
+            "vKEsyHFk/OjRLKb74#LCcblgyC",
+            "vKEsyHFk/OjRLKb74#mHYMkWdE",
+            "vKEsyHFk/OjRLKb74#oycxx6G2",
+            "vKEsyHFk/OjRLKb74#qtwaBhit",
+            "vKEsyHFk/OjRLKb74#Wp2usbe5",
+            "vKEsyHFk/OjRLKb74#mkxpJuY7",
+            "vKEsyHFk/OjRLKb74#skrvk25Y",
+            "vKEsyHFk/OjRLKb74#jLUi9ZuH",
+            "vKEsyHFk/OjRLKb74#5UnSr8ZQ",
+            "vKEsyHFk/OjRLKb74#e10t6gst",
+            "vKEsyHFk/OjRLKb74#tppVDaSZ"
+          ],
+          "relationships": [
+            "vKEsyHFk/OjRLKb74#TPRWw9F4",
+            "vKEsyHFk/OjRLKb74#19pjtjrv",
+            "vKEsyHFk/OjRLKb74#aESGqkun",
+            "vKEsyHFk/OjRLKb74#notKnIIz",
+            "vKEsyHFk/OjRLKb74#TSsnxsV9",
+            "vKEsyHFk/OjRLKb74#lbUaPzWc",
+            "vKEsyHFk/OjRLKb74#wCXK6KYw",
+            "vKEsyHFk/OjRLKb74#oYEzQ4k5",
+            "vKEsyHFk/OjRLKb74#T4hTbGVM",
+            "vKEsyHFk/OjRLKb74#Md6tqK1p",
+            "vKEsyHFk/OjRLKb74#PYJsIDYm",
+            "vKEsyHFk/OjRLKb74#EOOPngnB",
+            "vKEsyHFk/OjRLKb74#Gejk3C1W",
+            "vKEsyHFk/OjRLKb74#fFiMvo56",
+            "vKEsyHFk/OjRLKb74#luMz0TJo",
+            "vKEsyHFk/OjRLKb74#JBISovVb",
+            "vKEsyHFk/OjRLKb74#c6EtTjBt",
+            "vKEsyHFk/OjRLKb74#4lrR3GdH",
+            "vKEsyHFk/OjRLKb74#IDoV3QxP",
+            "vKEsyHFk/OjRLKb74#lQFfcKXc"
+          ],
+          "flows": [
+            "vKEsyHFk/OjRLKb74#EnnH7t3r",
+            "vKEsyHFk/OjRLKb74#8bDSfxwQ",
+            "vKEsyHFk/OjRLKb74#zSKT3nqZ",
+            "vKEsyHFk/OjRLKb74#KBB38tYG"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/OjRLKb74#H0xU45vp"
+        ],
+        "focus": [
+          "vKEsyHFk/OjRLKb74#nmyK8UOO",
+          "vKEsyHFk/OjRLKb74#kHpIix5b",
+          "vKEsyHFk/OjRLKb74#H0xU45vp",
+          "vKEsyHFk/OjRLKb74#RvOyWmEb",
+          "vKEsyHFk/gbyqW4H3#gUN928v4",
+          "vKEsyHFk/OjRLKb74#ZRFUJrjD",
+          "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+          "vKEsyHFk/OjRLKb74#KdNM1Q56",
+          "vKEsyHFk/OjRLKb74#LCcblgyC",
+          "vKEsyHFk/OjRLKb74#mHYMkWdE",
+          "vKEsyHFk/OjRLKb74#oycxx6G2",
+          "vKEsyHFk/OjRLKb74#qtwaBhit",
+          "vKEsyHFk/OjRLKb74#Wp2usbe5",
+          "vKEsyHFk/OjRLKb74#mkxpJuY7",
+          "vKEsyHFk/OjRLKb74#skrvk25Y",
+          "vKEsyHFk/OjRLKb74#jLUi9ZuH",
+          "vKEsyHFk/OjRLKb74#5UnSr8ZQ",
+          "vKEsyHFk/OjRLKb74#e10t6gst",
+          "vKEsyHFk/OjRLKb74#tppVDaSZ"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    }
+  ]
+}

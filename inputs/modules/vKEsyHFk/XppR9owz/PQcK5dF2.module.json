@@ -1,0 +1,113 @@
+{
+  "order": 3000,
+  "name": "Command routing",
+  "kind": "module",
+  "responsibility": "Addresses one command, captures the global flags and bounds the run",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/invocation"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/XppR9owz#PQcK5dF2",
+  "parent": "vKEsyHFk/XppR9owz#OM6pX371",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "references": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "model": "vKEsyHFk",
+      "subject": "vKEsyHFk/XppR9owz#PQcK5dF2",
+      "state": "current"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 3000,
+      "kind": "call",
+      "label": "the selected contract",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/invocation/session.ts",
+        "symbol": "runCommand"
+      },
+      "id": "vKEsyHFk/XppR9owz#jKqNz2j3",
+      "to": "vKEsyHFk/XppR9owz#gt1eCpcS"
+    },
+    {
+      "order": 24000,
+      "kind": "call",
+      "label": "the stated board, doing, version and the found vault",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/invocation/session.ts",
+        "symbol": "stateInvocation"
+      },
+      "id": "vKEsyHFk/XppR9owz#REIYPxdO",
+      "to": "vKEsyHFk/XppR9owz#fF4A9uvU"
+    },
+    {
+      "order": 53000,
+      "kind": "call",
+      "label": "shared options, usage errors",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/rules/routing/dispatch.ts",
+        "symbol": "CliUsageError"
+      },
+      "id": "vKEsyHFk/XppR9owz#pVNsw2ko",
+      "to": "vKEsyHFk/XppR9owz#o5zkAtUT"
+    },
+    {
+      "order": 54000,
+      "kind": "call",
+      "label": "is it a help request",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/invocation/session.ts",
+        "symbol": "isHelpInvocation"
+      },
+      "id": "vKEsyHFk/XppR9owz#4aWZZKkA",
+      "to": "vKEsyHFk/XppR9owz#vAQwlVuz"
+    },
+    {
+      "order": 77000,
+      "kind": "call",
+      "label": "formats board refusals for the command result",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
+        "symbol": "formatBoardRefusal"
+      },
+      "id": "vKEsyHFk/XppR9owz#PDFACmp1",
+      "to": "vKEsyHFk/XppR9owz#iIJ5MRhi"
+    }
+  ]
+}

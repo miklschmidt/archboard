@@ -1,0 +1,66 @@
+{
+  "order": 15000,
+  "name": "Adopt",
+  "kind": "function",
+  "responsibility": "Makes a settled draft current, or gives a board nobody had built its first current variant; refuses a draft derived from an architecture a later adoption superseded unless forced",
+  "description": "Adoption renames nothing and rewrites no history: the variant that was current becomes a historical state under its own name. On a board with no current variant nothing becomes history (ADR 0031). A draft standing on a historical variant would drop what was adopted over it, so it is refused as PARENT_SUPERSEDED unless the request forces it, and the adoption record then says it was forced (ADR 0037).",
+  "groups": [
+    "writes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/variant/adopt.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/0T9enjhi#803TfwDf",
+  "parent": "vKEsyHFk/0T9enjhi#VCoMuJnP",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 46000,
+      "kind": "call",
+      "label": "refuse under an unsettled line",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/variant/adopt.ts",
+        "symbol": "unsettledAncestor"
+      },
+      "id": "vKEsyHFk/0T9enjhi#Qu0KAH53",
+      "to": "vKEsyHFk/0T9enjhi#8CAH6rSD"
+    },
+    {
+      "order": 50000,
+      "kind": "data",
+      "label": "the advice to branch instead",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/variant/adopt.ts",
+        "symbol": "BRANCH_INSTEAD"
+      },
+      "id": "vKEsyHFk/0T9enjhi#npbK2Koq",
+      "to": "vKEsyHFk/0T9enjhi#eCpnhcUh"
+    }
+  ]
+}

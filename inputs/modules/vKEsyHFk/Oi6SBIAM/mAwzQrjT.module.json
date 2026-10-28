@@ -1,0 +1,47 @@
+{
+  "order": 14000,
+  "name": "Pane tab adapter",
+  "kind": "module",
+  "responsibility": "Attach pane registration and browser conversation activation to the shared tab session owner",
+  "description": "The Archboard adapter selects the initial checkout from pane focus and forwards registrations, shown-conversation reads, and browser activation to the core-owned tab store. The store outlives Codex child generations.",
+  "groups": [
+    "panes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/services/panes/tab-sessions.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/Oi6SBIAM#mAwzQrjT",
+  "parent": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+  "formerNames": [
+    "Tab session presence"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 78000,
+      "kind": "dependency",
+      "label": "forward pane presence and shown conversation operations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+        "symbol": "installWorkbenchTabSessions"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#HO533F7P",
+      "to": "vKEsyHFk/Oi6SBIAM#Bfh2rRfX"
+    }
+  ]
+}
