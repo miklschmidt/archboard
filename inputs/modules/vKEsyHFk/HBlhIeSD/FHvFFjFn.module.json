@@ -1,0 +1,101 @@
+{
+  "order": 24000,
+  "name": "Repository routes",
+  "kind": "route",
+  "responsibility": "Lists the repositories the navigator shows, chooses a repository's checkout for the whole machine, and watches the registry file so every pane follows each change, whoever made it",
+  "description": "GET /api/repositories answers under the settings-read browser-origin guard; PUT /api/repositories/chosen {repository, root} answers under the mutation guard, as the opener settings do. Neither names a vault, because the list and the choice belong to the machine. A root that is not a known checkout of the repository is refused (CHECKOUT_UNKNOWN, 404): the page offers nothing else, and the route never registers one. The server watches the registry file from start to stop and follows every change it has not followed yet: the menu's choice, an agent's show or a finished move that chose, a repo command or the first command in a checkout, and another server's show. Then every pane in the vault of a checkout that is not chosen moves to the chosen one, keeping its board, every other pane hears the name its repository goes by now, and every tab hears repositories_changed.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/routes/repositories/repository-routes.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+  "parent": "vKEsyHFk/HBlhIeSD#8fMA8lHI",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 60000,
+      "kind": "call",
+      "label": "list the repositories",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "symbol": "listRepositories"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#HbR02k8Z",
+      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    },
+    {
+      "order": 61000,
+      "kind": "call",
+      "label": "chooses a known checkout and watches the registry file",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "symbol": "chooseKnownCheckout"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#yqfoZW5w",
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "order": 63000,
+      "kind": "call",
+      "label": "move each pane out of an unchosen checkout, with its board",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "symbol": "movePaneVault"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#pBu0Et3y",
+      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+    },
+    {
+      "order": 64000,
+      "kind": "event",
+      "label": "repositories_changed to every tab",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "symbol": "broadcastEverywhere"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#e5ud8ccd",
+      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+    },
+    {
+      "order": 101000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "symbol": "parseBoardKey"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#qqzbmw2N",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    }
+  ]
+}

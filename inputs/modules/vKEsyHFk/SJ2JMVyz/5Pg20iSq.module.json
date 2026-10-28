@@ -1,0 +1,15 @@
+{
+  "order": 19001,
+  "name": "Thread start",
+  "kind": "module",
+  "responsibility": "Opens a workhorse's thread with its authored instructions and tool manifest, binds it to its tab session and checkout, and records which child generation owns it",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#5Pg20iSq",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

@@ -1,0 +1,66 @@
+{
+  "order": 37000,
+  "name": "Move",
+  "kind": "module",
+  "responsibility": "semantic move: the whole board into the vault found from --to, as -C finds one, and every drill-down the move rewrote",
+  "description": "TASK-472.15, ADR 0051. --expect-version is required, as for every write. A --to holder the registry does not know is registered, and the answer says so. A move that stopped part way names the drill-downs it rewrote already; the same move run again finishes it.",
+  "groups": [
+    "writes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/semantic/board/move.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/XppR9owz#Hoz5AbBB",
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 66000,
+      "kind": "call",
+      "label": "board operation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/semantic/board/move.ts",
+        "symbol": "moveSemanticBoardOnServer"
+      },
+      "id": "vKEsyHFk/XppR9owz#PtOjefYY",
+      "to": "vKEsyHFk/XppR9owz#OfRn3av3"
+    },
+    {
+      "order": 67000,
+      "kind": "call",
+      "label": "the --to vault, found as -C finds one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/semantic/board/move.ts",
+        "symbol": "findVaultOf"
+      },
+      "id": "vKEsyHFk/XppR9owz#nJzL7FNY",
+      "to": "vKEsyHFk/XppR9owz#PQcK5dF2"
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "order": 20000,
+  "name": "Tab sessions",
+  "kind": "module",
+  "responsibility": "What each browser tab owns: its coordinator and voice, and one workhorse for each checkout it works in, found by the thread a notification or tool call names",
+  "description": "One record per tab session, opened when a chat socket of the tab connects and built by sessions/factories.ts. The coordinator, voice, spoken approval, coordinator tools and callbacks are the tab's; the workhorses are built on first use, one for each checkout. A notification goes to the session that owns its thread, or to every session when no session owns the thread yet, and a workhorse thread belongs to its workhorse. A tool call from a thread that no session owns is refused, so a running turn never waits on nobody. It notes the conversation shown when each coordinator turn starts and the work each workhorse's operations give. When a session ends, every link is cleared, its approvals are cancelled, its voice and context delivery stop, and its threads are unsubscribed once no turn runs on them.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#iay14AUl",
+  "parent": "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 23000,
+      "kind": "event",
+      "label": "workhorse notifications, tell_coordinator calls",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "symbol": "onServerRequest"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#NztvEtjX",
+      "to": "vKEsyHFk/9ncuT5DP#08zJvPJq"
+    },
+    {
+      "order": 30000,
+      "kind": "event",
+      "label": "its coordinator's notifications and tool calls",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "symbol": "onNotification"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#9kvKfu7U",
+      "to": "vKEsyHFk/9ncuT5DP#Fg9dkGj3"
+    },
+    {
+      "order": 36000,
+      "kind": "call",
+      "label": "cancel an ended session's approvals",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "symbol": "endApprovals"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#ELaAYJKS",
+      "to": "vKEsyHFk/9ncuT5DP#QGVPyMwG"
+    },
+    {
+      "order": 39000,
+      "kind": "call",
+      "label": "unload an ended tab's threads",
+      "description": "The caller receives the unload method of the public createCodexThreadUnload factory imported from the module root; the module is drawn whole.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "symbol": "unload"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#AoYD3SWj",
+      "to": "vKEsyHFk/9ncuT5DP#YxDrzJtI"
+    },
+    {
+      "order": 58000,
+      "kind": "call",
+      "label": "build one workhorse for each checkout, on first use",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "symbol": "freshWorkhorseState"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#wMqJn1nW",
+      "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4"
+    },
+    {
+      "order": 59000,
+      "kind": "call",
+      "label": "a delegation starts the named checkout's workhorse first",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/bindings.ts",
+        "symbol": "readyDelegatedWorkhorse"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#Ikp3Fwwc",
+      "to": "vKEsyHFk/9ncuT5DP#rOgOf2bo"
+    },
+    {
+      "order": 72000,
+      "kind": "call",
+      "label": "note a turn's start and the work its operations give",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "symbol": "noteCoordinatorTurnStart"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#eSE4XLJl",
+      "to": "vKEsyHFk/9ncuT5DP#qTmIytbT"
+    },
+    {
+      "order": 73000,
+      "kind": "call",
+      "label": "the conversation shown when a coordinator turn starts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "symbol": "shownConversationOf"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#azMem83I",
+      "to": "vKEsyHFk/9ncuT5DP#hCKEBd5f"
+    },
+    {
+      "order": 99000,
+      "kind": "call",
+      "label": "own the voice start trace",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "symbol": "sessionVoiceStartTrace"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#fa4FSkpO",
+      "to": "vKEsyHFk/9ncuT5DP#yt8fa9w3"
+    }
+  ]
+}

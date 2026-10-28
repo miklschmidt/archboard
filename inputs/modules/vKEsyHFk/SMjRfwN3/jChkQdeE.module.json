@@ -1,0 +1,96 @@
+{
+  "order": 1000,
+  "name": "Rasterize command",
+  "kind": "service",
+  "responsibility": "Asks the Archboard server for the SVG, then photographs it here and writes the receipt",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SMjRfwN3#jChkQdeE",
+  "parent": "vKEsyHFk/SMjRfwN3#KeEVHJEm",
+  "references": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "model": "vKEsyHFk",
+      "subject": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+      "state": "current"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "one SVG, a scale and a region",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+        "symbol": "createSemanticRasterizer"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#RPqD1PrA",
+      "to": "vKEsyHFk/SMjRfwN3#KyQxypRC"
+    },
+    {
+      "order": 11000,
+      "kind": "data",
+      "label": "what the picture is of",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+        "symbol": "SemanticRasterReceiptSchema"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#2nhl0tv0",
+      "to": "vKEsyHFk/SMjRfwN3#EqEyDg2D"
+    },
+    {
+      "order": 15000,
+      "kind": "http",
+      "label": "the SVG with its recipe, faces embedded",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+        "symbol": "semanticRasterizeContract"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#DIvMjVOy",
+      "to": "vKEsyHFk/SMjRfwN3#2UcHnREN"
+    },
+    {
+      "order": 45000,
+      "kind": "data",
+      "label": "the scale range --scale accepts",
+      "description": "The CLI reads RASTER_MIN_SCALE from the semantic-rasterizer root; the exported constant is implemented by Bounds and limits.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+        "symbol": "RASTER_MIN_SCALE"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#djyu83ia",
+      "to": "vKEsyHFk/SMjRfwN3#7N0JLb2b"
+    },
+    {
+      "order": 53000,
+      "kind": "call",
+      "label": "the SVG's recipe with the scale and region, in the PNG",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
+        "symbol": "embedRecipeInPng"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#TIjtkPvX",
+      "to": "vKEsyHFk/SMjRfwN3#H2MUNwiC"
+    }
+  ]
+}

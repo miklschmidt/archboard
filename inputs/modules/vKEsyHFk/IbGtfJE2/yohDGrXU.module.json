@@ -1,0 +1,28 @@
+{
+  "order": 28000,
+  "name": "Version pins",
+  "kind": "module",
+  "responsibility": "Rewrites the pinned versions of the author and grader executables from what is on PATH, and says which change starts a new baseline",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/skills/src/runtime/operations/runs/pin-versions.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#yohDGrXU",
+  "parent": "vKEsyHFk/IbGtfJE2#PCxTuzNW",
+  "outgoing": [
+    {
+      "order": 49000,
+      "kind": "dependency",
+      "label": "the grader names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/pin-versions.ts",
+        "symbol": "GRADER_NAMES"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#Vm6nSiIe",
+      "to": "vKEsyHFk/IbGtfJE2#k8wziYS4"
+    }
+  ]
+}

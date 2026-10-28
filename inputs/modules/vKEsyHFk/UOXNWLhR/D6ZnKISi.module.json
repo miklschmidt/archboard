@@ -1,0 +1,85 @@
+{
+  "order": 42000,
+  "name": "Camera controller",
+  "kind": "function",
+  "responsibility": "Owns the pane's camera controls, immediate pinches, eased wheel and key moves, and when the camera rests",
+  "description": "useBoardCamera creates one external camera store, delegates arithmetic to camera.ts and easing to useCameraMotion, and exposes camera reads and subscriptions to the diagram and its surface. A hand's move rests after cameraRest and after its ease ends. A zoom drops its compositor layer first, then releases the far reading on the next frame; a pan rests immediately.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-board-camera.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
+  "outgoing": [
+    {
+      "order": 36000,
+      "kind": "call",
+      "label": "glide there, a frame at a time",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-board-camera.ts",
+        "symbol": "useCameraGlide"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#Iwat3bQG",
+      "to": "vKEsyHFk/UOXNWLhR#GnoK0EuT"
+    },
+    {
+      "order": 46000,
+      "kind": "call",
+      "label": "ease wheel and key moves",
+      "description": "useBoardCamera creates useCameraMotion(stage, reducedMotion); wheel and key controls call its zoomAt and ease, while pinches write immediately.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-board-camera.ts",
+        "symbol": "useCameraMotion"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#OgfM5Zfx",
+      "to": "vKEsyHFk/UOXNWLhR#ZTOokYub"
+    },
+    {
+      "order": 93000,
+      "kind": "call",
+      "label": "pan, pinch and zoom arithmetic",
+      "description": "use-board-camera.ts panBy calls panCamera, pinch calls pinchCamera and ctrl-wheel calls zoomCameraAbout.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-board-camera.ts",
+        "symbol": "panCamera"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#9gYlic2p",
+      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
+    },
+    {
+      "order": 94000,
+      "kind": "call",
+      "label": "create, write, settle, hold and subscribe",
+      "description": "useBoardCamera creates createCameraStore; its controls call write, comeToRest calls settle and hold, and useCameraView/useCameraWith expose subscriptions.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-board-camera.ts",
+        "symbol": "createCameraStore"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#HTxBOFb9",
+      "to": "vKEsyHFk/UOXNWLhR#JYR55KwD"
+    },
+    {
+      "order": 95000,
+      "kind": "call",
+      "label": "rest timer, then one frame after zoom",
+      "description": "restLater calls frameClock().after(cameraRest); comeToRest calls requestFrame to release the held rest after the layer drops.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-board-camera.ts",
+        "symbol": "frameClock"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#4snMrMQ0",
+      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
+    }
+  ]
+}

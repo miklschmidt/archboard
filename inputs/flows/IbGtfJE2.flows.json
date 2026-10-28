@@ -1,0 +1,1669 @@
+{
+  "schemaVersion": 1,
+  "id": "IbGtfJE2",
+  "name": "Skill evaluation",
+  "flows": [
+    {
+      "id": "vKEsyHFk/IbGtfJE2#mCkjIHMA",
+      "name": "One batch",
+      "participants": [
+        "vKEsyHFk/IbGtfJE2#JaLEafPa",
+        "vKEsyHFk/IbGtfJE2#k8wziYS4",
+        "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+        "vKEsyHFk/IbGtfJE2#wOZsx1lS",
+        "vKEsyHFk/IbGtfJE2#IFhUy8C6",
+        "vKEsyHFk/IbGtfJE2#8NS6WwkH",
+        "vKEsyHFk/IbGtfJE2#w4qCQkDU"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/IbGtfJE2#8BqsaGZ7",
+          "from": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+          "to": "vKEsyHFk/IbGtfJE2#k8wziYS4",
+          "label": "load and validate the inputs",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/evaluation/command.ts",
+            "symbol": "loadSuite"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#5QU4Vtsn",
+          "from": "vKEsyHFk/IbGtfJE2#k8wziYS4",
+          "to": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+          "label": "the suite and its fixtures",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/schemas/suite.ts",
+            "symbol": "loadSuite"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#VQh4sN0u",
+          "kind": "decision",
+          "question": "Does every fixture lay through the store?",
+          "alternatives": [
+            {
+              "label": "no",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#aInKuR6h",
+                  "from": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+                  "to": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+                  "label": "stop before any model call, naming the fixtures",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/evaluation/command.ts",
+                    "symbol": "loadedSuite"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "yes",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#jOIlG02P",
+                  "from": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+                  "to": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+                  "label": "run the selected arms",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/evaluation/command.ts",
+                    "symbol": "runBatch"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#zXdiWKIR",
+                  "kind": "decision",
+                  "question": "Does the Codex executable report the pinned version?",
+                  "alternatives": [
+                    {
+                      "label": "no",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/IbGtfJE2#dJ5QaW9I",
+                          "from": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+                          "to": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+                          "label": "refused: repin, and start a new baseline",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/skills/src/runtime/operations/runs/batch.ts",
+                            "symbol": "runBatch"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "yes",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/IbGtfJE2#3ETOf8Av",
+                          "kind": "decision",
+                          "question": "Is the batch a resume?",
+                          "alternatives": [
+                            {
+                              "label": "resume",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/IbGtfJE2#WUD7noRh",
+                                  "from": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+                                  "to": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+                                  "label": "refuse changed inputs or another job selection",
+                                  "kind": "self",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/skills/src/runtime/operations/runs/batch.ts",
+                                    "symbol": "validateResume"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "label": "new",
+                              "steps": []
+                            }
+                          ]
+                        },
+                        {
+                          "id": "vKEsyHFk/IbGtfJE2#vrNsyQDH",
+                          "from": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+                          "to": "vKEsyHFk/IbGtfJE2#wOZsx1lS",
+                          "label": "keep the candidate skill this batch runs",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/skills/src/runtime/operations/runs/batch.ts",
+                            "symbol": "keepBatchSkill"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/IbGtfJE2#u3U4TMfl",
+                          "from": "vKEsyHFk/IbGtfJE2#wOZsx1lS",
+                          "to": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+                          "label": "the kept copy",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/skills/src/runtime/services/citations.ts",
+                            "symbol": "keepBatchSkill"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/IbGtfJE2#XYG97jtH",
+                          "from": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+                          "to": "vKEsyHFk/IbGtfJE2#IFhUy8C6",
+                          "label": "digest the kept skill",
+                          "kind": "sync",
+                          "note": "a resumed batch refuses a copy that differs from the digest it recorded",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/skills/src/runtime/operations/runs/batch.ts",
+                            "symbol": "digestOf"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/IbGtfJE2#R9Uyupil",
+                          "from": "vKEsyHFk/IbGtfJE2#IFhUy8C6",
+                          "to": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+                          "label": "the digest",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/skills/src/runtime/operations/runs/install.ts",
+                            "symbol": "digestOf"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/IbGtfJE2#RHgiyi2m",
+                          "from": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+                          "to": "vKEsyHFk/IbGtfJE2#8NS6WwkH",
+                          "label": "fill the bare cache",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/skills/src/runtime/operations/runs/batch.ts",
+                            "symbol": "ensureFlaskCache"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/IbGtfJE2#JuBz3z6h",
+                          "kind": "loop",
+                          "condition": "for each planned job, in a pool of the batch's width",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/IbGtfJE2#Yn5dVNiK",
+                              "kind": "decision",
+                              "question": "Did a resumed batch complete this job already?",
+                              "alternatives": [
+                                {
+                                  "label": "completed",
+                                  "steps": [
+                                    {
+                                      "id": "vKEsyHFk/IbGtfJE2#Ni0eXogT",
+                                      "from": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+                                      "to": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+                                      "label": "keep it and log it",
+                                      "kind": "self",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/skills/src/runtime/operations/runs/batch.ts",
+                                        "symbol": "alreadyDone"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "label": "not yet",
+                                  "steps": [
+                                    {
+                                      "id": "vKEsyHFk/IbGtfJE2#24GSKlxx",
+                                      "from": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+                                      "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                                      "label": "one arm, one scenario, one repetition",
+                                      "kind": "sync",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/skills/src/runtime/operations/runs/batch.ts",
+                                        "symbol": "executeRun"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/IbGtfJE2#uYumLU7i",
+                                      "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                                      "to": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+                                      "label": "the completed run",
+                                      "kind": "return",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/skills/src/runtime/operations/runs/author.ts",
+                                        "symbol": "executeRun"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "id": "vKEsyHFk/IbGtfJE2#go3VxLu0",
+                          "from": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+                          "to": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+                          "label": "the batch directory and its runs",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/skills/src/runtime/operations/runs/batch.ts",
+                            "symbol": "runBatch"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/IbGtfJE2#lZsh600a",
+      "name": "Bringing up a run's world",
+      "participants": [
+        "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+        "vKEsyHFk/IbGtfJE2#IsMHIzoa",
+        "vKEsyHFk/IbGtfJE2#8NS6WwkH",
+        "vKEsyHFk/IbGtfJE2#PEfE7dCL",
+        "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+        "vKEsyHFk/IbGtfJE2#IFhUy8C6",
+        "vKEsyHFk/IbGtfJE2#WbFIRpiE"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/IbGtfJE2#FF1jJaBM",
+          "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "to": "vKEsyHFk/IbGtfJE2#IsMHIzoa",
+          "label": "a private world and its CLI on the path",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/author.ts",
+            "symbol": "prepareRunDirectory"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#ksORQVxd",
+          "from": "vKEsyHFk/IbGtfJE2#IsMHIzoa",
+          "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "label": "the run's paths",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/processes/isolation.ts",
+            "symbol": "prepareRunDirectory"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#wa0iEv0R",
+          "kind": "decision",
+          "question": "Does the scenario name a Flask revision?",
+          "alternatives": [
+            {
+              "label": "yes",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#ElJmz9q7",
+                  "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "to": "vKEsyHFk/IbGtfJE2#8NS6WwkH",
+                  "label": "the commit this scenario is about",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/author.ts",
+                    "symbol": "checkoutFlask"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#gcrKBvaP",
+                  "from": "vKEsyHFk/IbGtfJE2#8NS6WwkH",
+                  "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "label": "the commit",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/processes/flask.ts",
+                    "symbol": "checkoutFlask"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "no: a planning scenario",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#UyqeUccy",
+                  "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "to": "vKEsyHFk/IbGtfJE2#8NS6WwkH",
+                  "label": "an empty repository",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/author.ts",
+                    "symbol": "emptyCheckout"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#aD4e1l7x",
+                  "from": "vKEsyHFk/IbGtfJE2#8NS6WwkH",
+                  "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "label": "the empty checkout",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/processes/flask.ts",
+                    "symbol": "emptyCheckout"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#EkBM5K3E",
+          "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "to": "vKEsyHFk/IbGtfJE2#IsMHIzoa",
+          "label": "a Codex home with the operator's auth and the pinned config",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/author.ts",
+            "symbol": "fillCodexHome"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#tZgrQgHK",
+          "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "to": "vKEsyHFk/IbGtfJE2#PEfE7dCL",
+          "label": "a server of its own",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/author.ts",
+            "symbol": "startServer"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#HIrlYAPT",
+          "from": "vKEsyHFk/IbGtfJE2#PEfE7dCL",
+          "to": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+          "label": "start it on a free port",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/processes/server.ts",
+            "symbol": "startServer"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#K0ubWGBY",
+          "from": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+          "to": "vKEsyHFk/IbGtfJE2#PEfE7dCL",
+          "label": "/health answers with its pid",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/processes/server.ts",
+            "symbol": "healthPid"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#HBZixk2A",
+          "from": "vKEsyHFk/IbGtfJE2#PEfE7dCL",
+          "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "label": "the owned server",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/processes/server.ts",
+            "symbol": "startServer"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#2zSJBSOE",
+          "kind": "decision",
+          "question": "Which arm is this run?",
+          "alternatives": [
+            {
+              "label": "baseline",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#ZgPk7dDM",
+                  "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "to": "vKEsyHFk/IbGtfJE2#IFhUy8C6",
+                  "label": "install the frozen baseline package",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/author.ts",
+                    "symbol": "installSkill"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#pGRAatUC",
+                  "from": "vKEsyHFk/IbGtfJE2#IFhUy8C6",
+                  "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "label": "what was installed",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/install.ts",
+                    "symbol": "installSkill"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "candidate",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#NeLhY723",
+                  "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "to": "vKEsyHFk/IbGtfJE2#IFhUy8C6",
+                  "label": "install the batch's kept candidate copy",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/author.ts",
+                    "symbol": "installSkill"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#7VrOQxuT",
+                  "from": "vKEsyHFk/IbGtfJE2#IFhUy8C6",
+                  "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "label": "what was installed",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/install.ts",
+                    "symbol": "installSkill"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#dseX9vH8",
+          "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "to": "vKEsyHFk/IbGtfJE2#WbFIRpiE",
+          "label": "lay the fixture through the CLI",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/author.ts",
+            "symbol": "layFixture"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#JCNhjr8Q",
+          "from": "vKEsyHFk/IbGtfJE2#WbFIRpiE",
+          "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "label": "laid, with every id the product minted",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/vault.ts",
+            "symbol": "layFixture"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#OkqkSOpX",
+          "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "to": "vKEsyHFk/IbGtfJE2#WbFIRpiE",
+          "label": "read the vault back as the snapshot",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/author.ts",
+            "symbol": "readVault"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#U51iAg1H",
+          "from": "vKEsyHFk/IbGtfJE2#WbFIRpiE",
+          "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "label": "the boards before the author",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/vault.ts",
+            "symbol": "readVault"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#xS2CtE2Q",
+          "kind": "decision",
+          "question": "Does the fixture register the repository?",
+          "alternatives": [
+            {
+              "label": "no",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#6XAff2GO",
+                  "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "to": "vKEsyHFk/IbGtfJE2#WbFIRpiE",
+                  "label": "forget the unregistered checkout",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/author.ts",
+                    "symbol": "forgetCheckout"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "yes",
+              "steps": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/IbGtfJE2#ccyEofmP",
+      "name": "One author run",
+      "participants": [
+        "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+        "vKEsyHFk/IbGtfJE2#1snXnK3G",
+        "vKEsyHFk/IbGtfJE2#fRFvnVRE",
+        "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+        "vKEsyHFk/IbGtfJE2#TJmrdpKj",
+        "vKEsyHFk/IbGtfJE2#WbFIRpiE",
+        "vKEsyHFk/IbGtfJE2#RqoYaLTK",
+        "vKEsyHFk/IbGtfJE2#xzOQOY33",
+        "vKEsyHFk/IbGtfJE2#7LcGoxWH"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/IbGtfJE2#u3otJcgl",
+          "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "to": "vKEsyHFk/IbGtfJE2#1snXnK3G",
+          "label": "one author turn with the scenario's prompt",
+          "kind": "sync",
+          "note": "ends at the pinned timeout, or when the batch is cancelled",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/author.ts",
+            "symbol": "authorArgv"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#i6D9yf0a",
+          "kind": "loop",
+          "condition": "for each archboard command the author runs",
+          "steps": [
+            {
+              "id": "vKEsyHFk/IbGtfJE2#O5iymV0i",
+              "from": "vKEsyHFk/IbGtfJE2#1snXnK3G",
+              "to": "vKEsyHFk/IbGtfJE2#fRFvnVRE",
+              "label": "the author's archboard command",
+              "kind": "sync",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/skills/src/runtime/processes/isolation.ts",
+                "symbol": "writeCliWrapper"
+              }
+            },
+            {
+              "id": "vKEsyHFk/IbGtfJE2#mcrr34OM",
+              "from": "vKEsyHFk/IbGtfJE2#fRFvnVRE",
+              "to": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+              "label": "reads and writes, each naming its vault",
+              "kind": "sync",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+                "symbol": "fetch"
+              }
+            },
+            {
+              "id": "vKEsyHFk/IbGtfJE2#XRnNichB",
+              "from": "vKEsyHFk/IbGtfJE2#EJ2b3Szn",
+              "to": "vKEsyHFk/IbGtfJE2#fRFvnVRE",
+              "label": "the answer",
+              "kind": "return",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+                "symbol": "fetch"
+              }
+            },
+            {
+              "id": "vKEsyHFk/IbGtfJE2#VJTMZab6",
+              "from": "vKEsyHFk/IbGtfJE2#fRFvnVRE",
+              "to": "vKEsyHFk/IbGtfJE2#1snXnK3G",
+              "label": "the command's output",
+              "kind": "return",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/skills/src/runtime/processes/isolation.ts",
+                "symbol": "writeCliWrapper"
+              }
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#1VKC3dsz",
+          "from": "vKEsyHFk/IbGtfJE2#1snXnK3G",
+          "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "label": "the events and the last message",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/author.ts",
+            "symbol": "runAuthorProcess"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#VCOzM6bi",
+          "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "to": "vKEsyHFk/IbGtfJE2#TJmrdpKj",
+          "label": "class and exposure of each command",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/author.ts",
+            "symbol": "classifyCommands"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#fsqc9AkU",
+          "from": "vKEsyHFk/IbGtfJE2#TJmrdpKj",
+          "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "label": "each command classed",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/rules/audit/classify.ts",
+            "symbol": "classifyCommands"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#MgBlFpYq",
+          "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "to": "vKEsyHFk/IbGtfJE2#WbFIRpiE",
+          "label": "read the boards the author left",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/author.ts",
+            "symbol": "readVault"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#49CRWHzz",
+          "from": "vKEsyHFk/IbGtfJE2#WbFIRpiE",
+          "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "label": "the boards, renders and diagnostics",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/vault.ts",
+            "symbol": "readVault"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#K0HW8QpU",
+          "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "to": "vKEsyHFk/IbGtfJE2#RqoYaLTK",
+          "label": "photograph everything declared",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/author.ts",
+            "symbol": "captureDeclared"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#rdHdaNu9",
+          "from": "vKEsyHFk/IbGtfJE2#RqoYaLTK",
+          "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "label": "the pictures",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/captures.ts",
+            "symbol": "captureDeclared"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#7E4SYcDS",
+          "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "to": "vKEsyHFk/IbGtfJE2#xzOQOY33",
+          "label": "what the vault now says",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/author.ts",
+            "symbol": "evaluateOutcomes"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#aYWmuO3s",
+          "from": "vKEsyHFk/IbGtfJE2#xzOQOY33",
+          "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "label": "the outcome verdicts",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/rules/outcomes/outcomes.ts",
+            "symbol": "evaluateOutcomes"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#boa7DMzH",
+          "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "to": "vKEsyHFk/IbGtfJE2#7LcGoxWH",
+          "label": "what the run was not allowed to do",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/author.ts",
+            "symbol": "evaluateGuardrails"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#aJXW1xS9",
+          "from": "vKEsyHFk/IbGtfJE2#7LcGoxWH",
+          "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "label": "the guardrail verdicts",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/rules/audit/guardrails.ts",
+            "symbol": "evaluateGuardrails"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#TZRTECy7",
+          "kind": "decision",
+          "question": "How did the author process end?",
+          "alternatives": [
+            {
+              "label": "cancelled",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#9DXGgDCA",
+                  "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "label": "status cancelled",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/author.ts",
+                    "symbol": "statusOf"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "timed out",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#szztI7DG",
+                  "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "label": "status timed-out",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/author.ts",
+                    "symbol": "statusOf"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "exit 0 and no failure in its events",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#Dp7T82ay",
+                  "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "label": "status completed",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/author.ts",
+                    "symbol": "statusOf"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "anything else",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#BFdD0CoI",
+                  "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "label": "status failed",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/author.ts",
+                    "symbol": "statusOf"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#tMjD7T3l",
+          "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "label": "write the run directory: verdicts, bundle and manifest",
+          "kind": "self",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/author.ts",
+            "symbol": "assemble"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/IbGtfJE2#B2GJ39Ug",
+      "name": "A run that fails",
+      "participants": [
+        "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+        "vKEsyHFk/IbGtfJE2#WbFIRpiE",
+        "vKEsyHFk/IbGtfJE2#RqoYaLTK",
+        "vKEsyHFk/IbGtfJE2#PEfE7dCL"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/IbGtfJE2#RX7Zu38p",
+          "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "label": "a step of the run throws",
+          "kind": "self",
+          "note": "the world, the install, the fixture, the author process or the reading after it",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/author.ts",
+            "symbol": "executeRun"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#YfA1QdTP",
+          "kind": "decision",
+          "question": "Why can the declared diagrams not be taken?",
+          "alternatives": [
+            {
+              "label": "the batch was cancelled",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#ebl4ifAI",
+                  "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "label": "record that the run was cancelled",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/author.ts",
+                    "symbol": "partialCaptures"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "the world never came up",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#dkmPKVHJ",
+                  "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "label": "record that its server was never ready",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/author.ts",
+                    "symbol": "partialCaptures"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "the server is still there",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#Tv7LBJ1Q",
+                  "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "to": "vKEsyHFk/IbGtfJE2#WbFIRpiE",
+                  "label": "read the vault as it stands",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/author.ts",
+                    "symbol": "readVault"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#hfraLZLe",
+                  "from": "vKEsyHFk/IbGtfJE2#WbFIRpiE",
+                  "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "label": "the boards, or none when unreadable",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/vault.ts",
+                    "symbol": "readVault"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#xmovlDUo",
+                  "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "to": "vKEsyHFk/IbGtfJE2#RqoYaLTK",
+                  "label": "take each declared diagram",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/author.ts",
+                    "symbol": "captureDeclared"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#wcrlYpUh",
+                  "from": "vKEsyHFk/IbGtfJE2#RqoYaLTK",
+                  "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "label": "the pictures, or why one was not taken",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/captures.ts",
+                    "symbol": "captureDeclared"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#UTvGxanq",
+          "kind": "decision",
+          "question": "Was the batch cancelled?",
+          "alternatives": [
+            {
+              "label": "yes",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#DaXSlg3z",
+                  "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "label": "status cancelled",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/author.ts",
+                    "symbol": "failedRun"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "no",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#5i4ycJR9",
+                  "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+                  "label": "status failed",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/author.ts",
+                    "symbol": "failedRun"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#kU3MO3KM",
+          "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "label": "write the failed run's manifest and bundle",
+          "kind": "self",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/author.ts",
+            "symbol": "failedRun"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#B4ulg01c",
+          "from": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+          "to": "vKEsyHFk/IbGtfJE2#PEfE7dCL",
+          "label": "stop the server, whatever happened",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/author.ts",
+            "symbol": "executeRun"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/IbGtfJE2#VpJQRW95",
+      "name": "Grading a batch",
+      "participants": [
+        "vKEsyHFk/IbGtfJE2#JaLEafPa",
+        "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+        "vKEsyHFk/IbGtfJE2#m7s6sgLI",
+        "vKEsyHFk/IbGtfJE2#IFhUy8C6",
+        "vKEsyHFk/IbGtfJE2#8NS6WwkH",
+        "vKEsyHFk/IbGtfJE2#gwU9cyGm",
+        "vKEsyHFk/IbGtfJE2#1snXnK3G",
+        "vKEsyHFk/IbGtfJE2#bgEcePXZ",
+        "vKEsyHFk/IbGtfJE2#9TIT63Qz"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/IbGtfJE2#5PgngFzw",
+          "from": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+          "to": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+          "label": "grade what has not been graded",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/evaluation/command.ts",
+            "symbol": "gradeBatch"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#JpnTUcdZ",
+          "kind": "decision",
+          "question": "Does the grader's executable report the pinned version?",
+          "alternatives": [
+            {
+              "label": "no",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#TsOdaRec",
+                  "from": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                  "to": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+                  "label": "refused: name the pinned one, or repin",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+                    "symbol": "assertPinnedVersion"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "yes",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#TSmM4MEH",
+                  "from": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                  "to": "vKEsyHFk/IbGtfJE2#IFhUy8C6",
+                  "label": "digest the kept skill",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+                    "symbol": "digestOf"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#s52iiYJA",
+                  "from": "vKEsyHFk/IbGtfJE2#IFhUy8C6",
+                  "to": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                  "label": "the digest",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/operations/runs/install.ts",
+                    "symbol": "digestOf"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#MoQXEOwp",
+                  "kind": "decision",
+                  "question": "Does the kept skill match the digest the batch recorded?",
+                  "alternatives": [
+                    {
+                      "label": "no",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/IbGtfJE2#X0GyGynU",
+                          "from": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                          "to": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+                          "label": "refused: restore the kept copy",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+                            "symbol": "stageSkill"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "yes",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/IbGtfJE2#n0s3rvyH",
+                          "from": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                          "to": "vKEsyHFk/IbGtfJE2#8NS6WwkH",
+                          "label": "the Flask sources the grader reads",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+                            "symbol": "checkoutFlask"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/IbGtfJE2#kSB7TRk7",
+                          "from": "vKEsyHFk/IbGtfJE2#8NS6WwkH",
+                          "to": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                          "label": "the checkouts",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/skills/src/runtime/processes/flask.ts",
+                            "symbol": "checkoutFlask"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/IbGtfJE2#n3dKWORX",
+                          "kind": "loop",
+                          "condition": "for each chunk of runs without a verdict",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/IbGtfJE2#gfvj7Kz5",
+                              "kind": "decision",
+                              "question": "Which grader was chosen?",
+                              "alternatives": [
+                                {
+                                  "label": "codex",
+                                  "steps": [
+                                    {
+                                      "id": "vKEsyHFk/IbGtfJE2#ycZJyHNw",
+                                      "from": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                                      "to": "vKEsyHFk/IbGtfJE2#gwU9cyGm",
+                                      "label": "one chunk of blinded runs",
+                                      "kind": "sync",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+                                        "symbol": "codexGrader"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/IbGtfJE2#kRljP1VZ",
+                                      "from": "vKEsyHFk/IbGtfJE2#gwU9cyGm",
+                                      "to": "vKEsyHFk/IbGtfJE2#1snXnK3G",
+                                      "label": "resume the grading thread",
+                                      "kind": "sync",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/skills/src/runtime/clients/codex-grader.ts",
+                                        "symbol": "codexGraderArgv"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/IbGtfJE2#Fo4s6I06",
+                                      "from": "vKEsyHFk/IbGtfJE2#1snXnK3G",
+                                      "to": "vKEsyHFk/IbGtfJE2#gwU9cyGm",
+                                      "label": "the verdict file, events and usage",
+                                      "kind": "return",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/skills/src/runtime/clients/codex-grader.ts",
+                                        "symbol": "codexGrader"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/IbGtfJE2#ZB8gQNfD",
+                                      "from": "vKEsyHFk/IbGtfJE2#gwU9cyGm",
+                                      "to": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                                      "label": "the call's outcome",
+                                      "kind": "return",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/skills/src/runtime/clients/codex-grader.ts",
+                                        "symbol": "codexGrader"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "label": "claude",
+                                  "steps": [
+                                    {
+                                      "id": "vKEsyHFk/IbGtfJE2#AhMbU2uB",
+                                      "from": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                                      "to": "vKEsyHFk/IbGtfJE2#bgEcePXZ",
+                                      "label": "one chunk of blinded runs",
+                                      "kind": "sync",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+                                        "symbol": "claudeGrader"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/IbGtfJE2#ErqKzPup",
+                                      "from": "vKEsyHFk/IbGtfJE2#bgEcePXZ",
+                                      "to": "vKEsyHFk/IbGtfJE2#9TIT63Qz",
+                                      "label": "resume the grading thread",
+                                      "kind": "sync",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/skills/src/runtime/clients/claude-grader.ts",
+                                        "symbol": "claudeGraderArgv"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/IbGtfJE2#CuLT8yqr",
+                                      "from": "vKEsyHFk/IbGtfJE2#9TIT63Qz",
+                                      "to": "vKEsyHFk/IbGtfJE2#bgEcePXZ",
+                                      "label": "the verdict file, events and usage",
+                                      "kind": "return",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/skills/src/runtime/clients/claude-grader.ts",
+                                        "symbol": "claudeGrader"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/IbGtfJE2#dlbcyJmJ",
+                                      "from": "vKEsyHFk/IbGtfJE2#bgEcePXZ",
+                                      "to": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                                      "label": "the call's outcome",
+                                      "kind": "return",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/skills/src/runtime/clients/claude-grader.ts",
+                                        "symbol": "claudeGrader"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "id": "vKEsyHFk/IbGtfJE2#WRenSpXP",
+                              "from": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                              "to": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                              "label": "file each verdict and record the call",
+                              "kind": "self",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+                                "symbol": "recordCall"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/IbGtfJE2#nBCeaZdT",
+                              "kind": "decision",
+                              "question": "Did an answer fall short, with a session to re-ask?",
+                              "alternatives": [
+                                {
+                                  "label": "yes",
+                                  "steps": [
+                                    {
+                                      "id": "vKEsyHFk/IbGtfJE2#xJ08CBZJ",
+                                      "from": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                                      "to": "vKEsyHFk/IbGtfJE2#m7s6sgLI",
+                                      "label": "which answers fell short",
+                                      "kind": "sync",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+                                        "symbol": "shortAnswers"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/IbGtfJE2#Dj9RhIto",
+                                      "from": "vKEsyHFk/IbGtfJE2#m7s6sgLI",
+                                      "to": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                                      "label": "what each lacks",
+                                      "kind": "return",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/skills/src/runtime/operations/grading/grading-retry.ts",
+                                        "symbol": "shortAnswers"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/IbGtfJE2#3zWdtXH8",
+                                      "from": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                                      "to": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                                      "label": "re-ask the same session once for those runs",
+                                      "kind": "self",
+                                      "note": "through the chosen grader",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+                                        "symbol": "retryShortAnswers"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/IbGtfJE2#Is6MZ385",
+                                      "from": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                                      "to": "vKEsyHFk/IbGtfJE2#m7s6sgLI",
+                                      "label": "does the new answer replace the first",
+                                      "kind": "sync",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+                                        "symbol": "settleRetry"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/IbGtfJE2#Ho7vWPJy",
+                                      "from": "vKEsyHFk/IbGtfJE2#m7s6sgLI",
+                                      "to": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                                      "label": "the retry record, and the verdict if it mends",
+                                      "kind": "return",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/skills/src/runtime/operations/grading/grading-retry.ts",
+                                        "symbol": "settleRetry"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "label": "no",
+                                  "steps": []
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "id": "vKEsyHFk/IbGtfJE2#ZU4N3lTP",
+                          "from": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                          "to": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                          "label": "ask once for each verdict still owed its retry",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+                            "symbol": "retryOwed"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/IbGtfJE2#A9YLVbTn",
+                          "from": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+                          "to": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+                          "label": "the session and the grader's usage",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+                            "symbol": "gradeBatch"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/IbGtfJE2#4JiqqpnZ",
+      "name": "Reporting a batch",
+      "participants": [
+        "vKEsyHFk/IbGtfJE2#JaLEafPa",
+        "vKEsyHFk/IbGtfJE2#LcKROPw0",
+        "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+        "vKEsyHFk/IbGtfJE2#zZTYX1sf",
+        "vKEsyHFk/IbGtfJE2#TJmrdpKj",
+        "vKEsyHFk/IbGtfJE2#wOZsx1lS",
+        "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+        "vKEsyHFk/IbGtfJE2#mwlOEUS8"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/IbGtfJE2#uxY4ZlWE",
+          "from": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+          "to": "vKEsyHFk/IbGtfJE2#LcKROPw0",
+          "label": "write the report",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/evaluation/command.ts",
+            "symbol": "writeReport"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#Zm7bmEdo",
+          "from": "vKEsyHFk/IbGtfJE2#LcKROPw0",
+          "to": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+          "label": "the selection the batch saved",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/store/records.ts",
+            "symbol": "resumeSelection"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#JfPkIkvJ",
+          "from": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+          "to": "vKEsyHFk/IbGtfJE2#LcKROPw0",
+          "label": "arms, scenarios and repetitions",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/operations/runs/batch.ts",
+            "symbol": "resumeSelection"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#37hN1Drb",
+          "kind": "loop",
+          "condition": "for each grader that graded the batch, or once when none did",
+          "steps": [
+            {
+              "id": "vKEsyHFk/IbGtfJE2#tffsUUEn",
+              "from": "vKEsyHFk/IbGtfJE2#LcKROPw0",
+              "to": "vKEsyHFk/IbGtfJE2#zZTYX1sf",
+              "label": "exposure as today's classifier reads it",
+              "kind": "sync",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/skills/src/runtime/store/records.ts",
+                "symbol": "exposureAudit"
+              }
+            },
+            {
+              "id": "vKEsyHFk/IbGtfJE2#9kWSqsZY",
+              "from": "vKEsyHFk/IbGtfJE2#zZTYX1sf",
+              "to": "vKEsyHFk/IbGtfJE2#TJmrdpKj",
+              "label": "classify the stored commands",
+              "kind": "sync",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/skills/src/runtime/operations/runs/reaudit.ts",
+                "symbol": "classifyCommands"
+              }
+            },
+            {
+              "id": "vKEsyHFk/IbGtfJE2#LElqWQN3",
+              "from": "vKEsyHFk/IbGtfJE2#TJmrdpKj",
+              "to": "vKEsyHFk/IbGtfJE2#zZTYX1sf",
+              "label": "each command classed",
+              "kind": "return",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/skills/src/runtime/rules/audit/classify.ts",
+                "symbol": "classifyCommands"
+              }
+            },
+            {
+              "id": "vKEsyHFk/IbGtfJE2#yR1NP8Zr",
+              "from": "vKEsyHFk/IbGtfJE2#zZTYX1sf",
+              "to": "vKEsyHFk/IbGtfJE2#LcKROPw0",
+              "label": "the exposure audit",
+              "kind": "return",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/skills/src/runtime/operations/runs/reaudit.ts",
+                "symbol": "exposureAudit"
+              }
+            },
+            {
+              "id": "vKEsyHFk/IbGtfJE2#T9RnWc8W",
+              "from": "vKEsyHFk/IbGtfJE2#LcKROPw0",
+              "to": "vKEsyHFk/IbGtfJE2#wOZsx1lS",
+              "label": "resolve each finding's passage",
+              "kind": "sync",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/skills/src/runtime/store/records.ts",
+                "symbol": "citationProblem"
+              }
+            },
+            {
+              "id": "vKEsyHFk/IbGtfJE2#AsCImWuv",
+              "from": "vKEsyHFk/IbGtfJE2#wOZsx1lS",
+              "to": "vKEsyHFk/IbGtfJE2#LcKROPw0",
+              "label": "found, or the problem",
+              "kind": "return",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/skills/src/runtime/services/citations.ts",
+                "symbol": "citationProblem"
+              }
+            },
+            {
+              "id": "vKEsyHFk/IbGtfJE2#0gVVcL3o",
+              "from": "vKEsyHFk/IbGtfJE2#LcKROPw0",
+              "to": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+              "label": "who graded, and each verdict filed",
+              "kind": "sync",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/skills/src/runtime/store/records.ts",
+                "symbol": "graderIdentity"
+              }
+            },
+            {
+              "id": "vKEsyHFk/IbGtfJE2#C7PYPzUh",
+              "from": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+              "to": "vKEsyHFk/IbGtfJE2#LcKROPw0",
+              "label": "the grader's identity and verdicts",
+              "kind": "return",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+                "symbol": "graderIdentity"
+              }
+            },
+            {
+              "id": "vKEsyHFk/IbGtfJE2#SMFPm1v8",
+              "from": "vKEsyHFk/IbGtfJE2#LcKROPw0",
+              "to": "vKEsyHFk/IbGtfJE2#mwlOEUS8",
+              "label": "build one grader's report",
+              "kind": "sync",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/skills/src/runtime/store/records.ts",
+                "symbol": "buildReport"
+              }
+            },
+            {
+              "id": "vKEsyHFk/IbGtfJE2#FxswqU9D",
+              "from": "vKEsyHFk/IbGtfJE2#mwlOEUS8",
+              "to": "vKEsyHFk/IbGtfJE2#LcKROPw0",
+              "label": "the report",
+              "kind": "return",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/skills/src/runtime/rules/reports/report.ts",
+                "symbol": "buildReport"
+              }
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#pt63gFGR",
+          "kind": "decision",
+          "question": "Did two graders grade the batch?",
+          "alternatives": [
+            {
+              "label": "yes",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/IbGtfJE2#PYJGI3yZ",
+                  "from": "vKEsyHFk/IbGtfJE2#LcKROPw0",
+                  "to": "vKEsyHFk/IbGtfJE2#LcKROPw0",
+                  "label": "set their verdicts side by side",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/skills/src/runtime/store/records.ts",
+                    "symbol": "buildBatchReport"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "no",
+              "steps": []
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#z47d1y4S",
+          "from": "vKEsyHFk/IbGtfJE2#LcKROPw0",
+          "to": "vKEsyHFk/IbGtfJE2#LcKROPw0",
+          "label": "write report.md and report.json",
+          "kind": "self",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/store/records.ts",
+            "symbol": "writeReport"
+          }
+        },
+        {
+          "id": "vKEsyHFk/IbGtfJE2#gAPlSfcA",
+          "from": "vKEsyHFk/IbGtfJE2#LcKROPw0",
+          "to": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+          "label": "where they were written",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/skills/src/runtime/store/records.ts",
+            "symbol": "writeReport"
+          }
+        }
+      ]
+    }
+  ]
+}

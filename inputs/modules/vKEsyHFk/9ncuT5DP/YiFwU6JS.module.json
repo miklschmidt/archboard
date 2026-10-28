@@ -1,0 +1,48 @@
+{
+  "order": 46000,
+  "name": "Voice agent",
+  "kind": "module",
+  "responsibility": "The host's one entry: createVoiceAgent turns its storage, Codex, checkouts, instructions, identity and extensions into one workbench, serves sockets on node:http or Bun.serve, and announces changes",
+  "description": "start, status, shutdown and the browser port come from the workbench it creates. attach admits sockets on one path of a node:http server, and bunHandlers wraps the fetch and websocket handlers of Bun.serve; both admit an upgrade only from the one origin and on the one path the host names, and work in the checkout the host names for that path. The role profiles are composed here from the host's instructions, tools and identity, so every thread Codex is given carries the host's names and no other.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/services/agent"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+  "parent": "vKEsyHFk/9ncuT5DP#eOG7Eo1U",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 86000,
+      "kind": "call",
+      "label": "one workbench, with the host's role profiles",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/agent/voice-agent.ts",
+        "symbol": "createCodexWorkbench"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#0TffzzEo",
+      "to": "vKEsyHFk/9ncuT5DP#k9hxdLjq"
+    },
+    {
+      "order": 87000,
+      "kind": "call",
+      "label": "each admitted socket's requests and its close",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/agent/admission.ts",
+        "symbol": "openBrowserSocket"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#WdRZGA7w",
+      "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R"
+    }
+  ]
+}

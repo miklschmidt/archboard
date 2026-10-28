@@ -1,0 +1,110 @@
+{
+  "order": 16000,
+  "name": "Local pictures",
+  "kind": "function",
+  "responsibility": "Draws a picture in this page from the board and policy the cache holds, and keeps it",
+  "description": "Shows a kept picture only when its stamp matches the board's version, the policy and the renderer build; forgets pictures of boards that moved when the server lists them; draws a changed board's readings again ahead of time. Passes the variant a request names to read against on to the renderer.",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
+  "parent": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
+  "outgoing": [
+    {
+      "order": 13000,
+      "kind": "data",
+      "label": "the board and policy it draws from",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
+        "symbol": "semanticBoardDocumentQuery"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#rlrH32yx",
+      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
+    },
+    {
+      "order": 14000,
+      "kind": "call",
+      "label": "a drawing stamped for this version, kept under its vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
+        "symbol": "readCachedPicture"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#R4zJCAXX",
+      "to": "vKEsyHFk/UOXNWLhR#AaCxSfhT"
+    },
+    {
+      "order": 15000,
+      "kind": "call",
+      "label": "draw it here",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
+        "symbol": "DrawBoard"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#9yW8SET1",
+      "to": "vKEsyHFk/UOXNWLhR#F90402mH"
+    },
+    {
+      "order": 76000,
+      "kind": "call",
+      "description": "A board the page cannot read is refused as the reads' own error, so the stage shows one kind of failure.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
+        "symbol": "SemanticBoardError"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#2euPzA3Q",
+      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
+    },
+    {
+      "order": 117000,
+      "kind": "call",
+      "label": "drop pictures of a moved board",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
+        "symbol": "onSemanticBoardChange"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#AVy3q4Ja",
+      "to": "vKEsyHFk/UOXNWLhR#bx5fJdP8"
+    },
+    {
+      "order": 125000,
+      "kind": "call",
+      "label": "mark a board stale, with no read, before drawing ahead",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
+        "symbol": "boardGoneStale"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#tpK411FR",
+      "to": "vKEsyHFk/UOXNWLhR#OeUYLDxp"
+    },
+    {
+      "order": 126000,
+      "kind": "call",
+      "label": "every picture and document held, by view",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
+        "symbol": "cachedReadings"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#ld2PjHvA",
+      "to": "vKEsyHFk/UOXNWLhR#nMKLaMje"
+    }
+  ]
+}
