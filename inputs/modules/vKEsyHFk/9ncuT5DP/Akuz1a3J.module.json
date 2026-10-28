@@ -1,0 +1,9 @@
+{
+  "order": 30000,
+  "name": "Per-tab sessions",
+  "kind": "module",
+  "responsibility": "Gives each browser tab its own session: finds the session a call names, knows which tab each pane belongs to, ends a tab no pane returns to, and remembers where each coordinator turn is shown",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+  "outgoing": []
+}

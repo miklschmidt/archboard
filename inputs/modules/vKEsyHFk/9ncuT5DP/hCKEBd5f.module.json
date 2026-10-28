@@ -1,0 +1,58 @@
+{
+  "order": 21000,
+  "name": "Tab session presence",
+  "kind": "module",
+  "responsibility": "Knows which browser tab each pane on screen belongs to, which checkout's conversation the tab shows, and ends a tab session when no pane of it comes back within 60 seconds",
+  "description": "It lives as long as the server process, not as long as one child. A pane of the tab that comes back within the grace cancels the end, so a reload keeps the conversation. The shown checkout is pinned on the first read to the checkout of the tab's focused pane, else of the pane that asked, and only the person's own act in the page changes it, through the activation route: an agent's browser show never does, so the dock never moves while somebody types. It ends with the tab.",
+  "groups": [
+    "panes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/services/panes/tab-sessions.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+  "parent": "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+  "outgoing": [
+    {
+      "order": 34000,
+      "kind": "call",
+      "label": "end a tab no pane came back to in 60 s",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+        "symbol": "end"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#f4o4iE3G",
+      "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
+    },
+    {
+      "order": 38000,
+      "kind": "call",
+      "label": "forget the ended tab's lease",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+        "symbol": "endSession"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#02ywpfgL",
+      "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R"
+    },
+    {
+      "order": 68000,
+      "kind": "event",
+      "label": "the shown conversation changed: present the panes again",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/generation/gateway-binding.ts",
+        "symbol": "onShownChange"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#EVC1aGxx",
+      "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "order": 10000,
+  "name": "Codex app-server",
+  "kind": "external",
+  "responsibility": "The Codex binary, run as one private child over stdio in the Archboard-only Codex home",
+  "description": "Spawned as `app-server --stdio --strict-config`. Its threads are each tab session's coordinator and one workhorse for each checkout, and every thread runs in its auto-review mode. Nothing here describes its internals.",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#giL6EI28",
+  "outgoing": []
+}
