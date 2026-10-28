@@ -24,7 +24,7 @@ archboard model render --checkpoint <checkpoint-id> --scope '<qualified-module-i
 archboard model rasterize --checkpoint <checkpoint-id> --scope '<qualified-module-id>' --out <artifact-directory>/look.png -C <checkout>
 ```
 
-Add `--state <proposal-id>` only when an explicit state selection is needed within that retained input set.
+Use `--checkpoint` without `--state` because the checkpoint selects its recorded architectural state.
 Use the same selectors for SVG and PNG.
 Keep artifacts in a temporary directory outside the checkout unless the repository intentionally tracks them.
 Git-tracked SVG and PNG files carry reproducible canonical render recipes.
