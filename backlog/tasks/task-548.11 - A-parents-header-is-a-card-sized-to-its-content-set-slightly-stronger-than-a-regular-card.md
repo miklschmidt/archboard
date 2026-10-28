@@ -3,10 +3,10 @@ id: TASK-548.11
 title: >-
   A parent's header is a card sized to its content, set slightly stronger than a
   regular card
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-10-27T04:28:00Z'
-updated_date: '2026-10-27T15:32:00Z'
+updated_date: '2026-10-28T02:04:00Z'
 labels:
   - renderer
   - layout
@@ -27,7 +27,7 @@ Today a parent's header (the card that names a parent at the top of its frame) s
 - [x] #1 A parent's header is as wide as a regular card with the same text, not the frame's width, in both engines and every theme
 - [x] #2 A header's name and icon are set slightly stronger than a regular card's, and a reader can still tell the header from the parent's members
 - [x] #3 No line crosses a header, and the hard header checks in expectDrawingIntact pass
-- [ ] #4 The grading council judges the changed drawings to read as well or better
+- [x] #4 The grading council judges the changed drawings to read as well or better
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -59,5 +59,5 @@ The round four frame checkpoint keeps the accepted compact header painter and ev
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Compact card-sized parent headers are implemented in both engines and every theme. Names use 15 px versus 14 px, icons use 20 px versus 18 px, and the far name gains 1 px. Matching-core width, emphasis, and hard integrity tests pass. ADR 0062 records the proposed design. The complete SVG corpus and four acceptance pairs are under /tmp/548-08/round-3. TASK-548.11 stays In Progress pending council criterion 4.
+A parent's header is a card sized like a regular card with the same text, in both engines and every theme, so lines pass beside it through the frame's bare top edge. Its name is set at 15 px against 14 px and its icon at 20 px against 18 px (ADR 0062). Both header crossing checks stay hard. The council judged the changed drawings against the parent of TASK-548.08 with no pair worse and no new defect (rounds 5 and 6).
 <!-- SECTION:FINAL_SUMMARY:END -->

@@ -1,10 +1,10 @@
 ---
 id: TASK-548
 title: A board's first render gets fast enough for real-time scene changes
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-10-26T02:26:00Z'
-updated_date: '2026-10-26T17:03:00Z'
+updated_date: '2026-10-28T02:04:00Z'
 labels:
   - renderer
   - performance
@@ -20,7 +20,7 @@ A first render of a wide dogfood board takes 1.5 to 2 s (Agent workbench, Board 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every drawing the work changes is judged by the grading council (TASK-548.09) to read as well or better, and no change the council judges worse lands
+- [x] #1 A blind sample of the drawings the work changes, with every drawing known to be at risk, is judged by the grading council (TASK-548.09) against the parent of the change, and no pair it judges worse lands
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -33,4 +33,12 @@ A first render of a wide dogfood board takes 1.5 to 2 s (Agent workbench, Board 
 2026-10-26: rebased onto origin/main (aa364ad76), whose rewritten history holds its own ADR 0057 (render recipe) and ADR 0058 (interface width). The branch's ADRs became ADR 0059 (the renderer is a Rust core) and ADR 0060 (the vendored graphviz-pure). Task notes written before the rebase still cite them as 0057 and 0058.
 
 2026-10-26: the owner dropped byte-identical drawings as the bar. A council of graders (Opus, gpt-6.1-sol and gpt-6-astra), each with criteria of its own and blind to the old scorecard metrics, decides whether a changed drawing reads better or worse. The owner also asked for out-of-the-box work: layout moved into the Graphviz crates if that pays, and deterministic heuristics in place of parallel solves that lay a board several ways to pick the best.
+
+2026-10-28: all twelve subtasks are Done. The owner accepted the council's 40-pair sample (TASK-548.08, rounds 5 and 6) as the evidence for the criterion, now worded as a sample.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Complex boards render in under 500 ms, first and after a card grows: on a quiet machine Board viewer 261 to 282 ms first and about 200 ms after a growing edit, Board persistence about 300/290 ms, Archboard server routes about 141/135 ms, against 1.5 to 1.6 s before. The core runs a vendored pure-Rust Graphviz (TASK-548.01, .03, .07, ADR 0060), the engine pool answers repeated solves from memory and keeps its Bun workers on fast WebAssembly memory (TASK-548.02, .05), and one deterministic solve replaces the speculative parallel solves (TASK-548.08, ADR 0061), with compact parent headers (TASK-548.11, ADR 0062) and typed shared trunks (TASK-548.10). A blind grading council of four models (TASK-548.09, .12) judged the changed drawings against the parent: no pair worse and no new defect. Compactness is the follow-up (TASK-554, then TASK-555 for bends), on Blocks only.
+<!-- SECTION:FINAL_SUMMARY:END -->

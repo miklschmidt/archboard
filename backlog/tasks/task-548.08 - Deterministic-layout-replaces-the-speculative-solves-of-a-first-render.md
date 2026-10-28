@@ -1,11 +1,11 @@
 ---
 id: TASK-548.08
 title: Deterministic layout replaces the speculative solves of a first render
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-26T16:24:00Z'
-updated_date: '2026-10-28T00:56:00Z'
+updated_date: '2026-10-28T02:04:00Z'
 labels:
   - renderer
   - performance
@@ -23,8 +23,8 @@ The owner's goal is real-time scene changes, with complex boards (Board viewer, 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 First renders of the slowest vault boards are measured before and after on a quiet box, and recorded in docs/design
-- [ ] #2 Every changed drawing passes the grading council of TASK-548.09, and the council's verdicts are recorded
-- [x] #3 The design and the levers tried, kept or dropped are recorded in docs/design, with ADRs for any decision that replaces ADR 0059 or ADR 0060
+- [x] #2 The design and the levers tried, kept or dropped are recorded in docs/design, with ADRs for any decision that replaces ADR 0059 or ADR 0060
+- [x] #3 A blind council sample of the changed drawings, which includes every drawing known to be at risk, judges no pair worse against the parent and finds no new defect, and the verdicts are recorded
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -183,10 +183,12 @@ Renderer layout@TASK-548.08 and Semantic renderer@TASK-548.08 describe the retai
 Council round 5, 2026-10-28, against the true parent of the whole change (c147b73c8, before any TASK-548.08 layout code) rather than against round 3, on 87155338f. 40 blind pairs: the 13 known problem drawings (the eight round-3 worse pairs, the four round-2 acceptance cases still changed, the Voice coordinator Track whole board) and 27 sampled from 325 changed plain drawings (seed 51). The parent checkout's corpus script was given the current whole-board step so whole boards pair on both sides. Graders Opus, gpt-6.1-sol, gpt-6-astra and Gemini 4 Argon. Every after picture redraws byte-identical in this branch and passes the hard checks; 20 before pictures have lines through parent or group headers, confirmed by the same checks run on the parent's pictures and reported by every grader. Tally: better 20, same 19, worse 1 (Voice coordinator, Tools and work, Track: Tab sessions a full rank above the frame, margins -0.67 to -1.12), no new defect. On scores alone the after pictures average lower (weighted 6.55 to 6.38, K 4.89 to 4.50, R 6.10 to 5.96); the 20 better verdicts come from the header defects of the before pictures. TASK-554 follows up on packing. Evidence in /tmp/548-08/council-r5.
 
 Council round 6, 2026-10-28, on 81196a4cb (merged in dce88ba6c), which changes only Tools and work in Track (four theme and comparison variants; every other SVG byte-identical). Muse Wonder replaced Argon (docs/design/grading-council.md). One blind pair against c147b73c8: same (margins 0.00, -0.30, -0.30, -0.30), no defect. With round 5 the change stands at 20 better, 20 same, 0 worse and no new defect against its parent. Evidence in /tmp/548-08/council-r6.
+
+2026-10-28: the owner accepted the 40-pair sample of round 5 with round 6 as the council evidence (every after picture also redrawn and passing the hard checks), and the criterion now says a sample. The Standards and Spec reviews of the code-review skill (78b8e3422 to bcadad904) found three issues in the council tally, all fixed, and nothing in the layout code. The council tools and the investigation's measuring tools then left the repository (db13151cb, 1f6f312a5), and the design notes no longer cite scratch paths. The complete gate passes on 1f6f312a5.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Round 3 is ready for the parent council. Compact parent headers and graph-based local member ranks replace full-width barriers and their placement constraints. The four acceptance cases pass hard geometry checks. Median first/growth times are 280/203, 299/289, and 140/134 ms for Viewer, Persistence, and Routes. The complete gate passes. Before/after SVG corpora and the four exact pairs are under /tmp/548-08/round-3. The comparison changes 1204 drawings across 19 boards. Browser Blocks growth, long outer Voice routes, and one added ordinary crossing remain council tradeoffs. See docs/design/compact-parent-headers-and-local-composition.md. The task remains In Progress until that verdict.
+One deterministic layout solve replaces the speculative parallel solves of a first render. Nesting, entry constraints, fan-in labels, card graphs and packing are chosen before the solve, group regions are packed before solving (ADR 0061), and parent headers are compact cards (ADR 0062, TASK-548.11). Instructions for the three slowest first renders fell 94% (152.7 to 9.2 billion), and their native critical paths from 1,054, 1,093 and 326 ms to 81, 84 and 73 ms. On a quiet machine Board viewer renders in 261 to 282 ms first and about 200 ms after a card grows, Board persistence about 300/290 ms and Archboard server routes about 141/135 ms, all under the 500 ms goal. Against its parent c147b73c8 the council judged 20 of 40 sampled pairs better, 20 the same and none worse, with no new defect; on scores alone the after pictures average slightly lower on compactness, which TASK-554 takes up for Blocks. Every hard check of expectDrawingIntact passes, and the complete gate passes.
 <!-- SECTION:FINAL_SUMMARY:END -->
