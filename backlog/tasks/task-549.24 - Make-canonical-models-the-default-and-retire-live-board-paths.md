@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T15:11:00Z'
+updated_date: '2026-10-28T15:35:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -394,4 +394,6 @@ Frontend repair acceptance is green. Canonical cache owner passes6 assertions af
 Signed merge d2d44aa98 integrates all30 backend gate repairs with the independent frontend repair. Combined source/browser types pass. Full gate v3 stopped before tests because the new UI cache owner imported the Bun renderer and omitted required function documentation. The owner now uses a scene fixture typed from the actual cache draw contract. It preserves readingDirection, exact-key reuse, malformed-entry refusal, and refused-storage assertions. Focused strict source lint passes and all6 assertions pass in34ms. No lint exception or renderer boundary changes are added.
 
 Full gatev4 passes all lint, format, types and builds, plus4768 package/app tests with1 platform skip and0 failures. The system stage reports207 passes,12 failures and1 unhandled timeout across62 owners. Exact extraction is task-549.24-full-gate-v4-failures.json/.md. Signed port-capacity source89661da61 is merged through8606723d7 with an identical tree. Its156 affected geometry cases pass; the corpus is267pass1wallfail. All3prior lane drawings now meet the unchanged lane and timing limits, and131other Track drawings remain byte-identical. Root inspected3whole drawings and3details and accepts the lane geometry. Root also proves the remaining lone-frame label defect: the routing scene omits the60pixel caption offset inside a fitted139pixel combined header, placing a31pixel label6pixels across the inner top border. An external selective boundary prototype removes the exact failure without changing tracked source. Diagnosis and brief use task-549.24-track-wall prefixes. No full-gate completion, task acceptance, publication or PR action is claimed.
+
+Signed wall repair e0f5187fc is integrated through a53ab4c9a with identical trees and passing signatures. All 193 affected geometry cases and all 268 corpus cases pass under unchanged limits. Only the Codex session Track drawing changes; the other 267 SVGs remain byte-identical. Root inspected the complete drawing and before/after details. The label now clears the inner frame, and the routed connection stays readable. Visual acceptance of this repair is complete. No architecture proposal is needed because Card blocks vKEsyHFk/OjRLKb74#Wp2usbe5 already owns this clearance contract. The next bounded delegate repairs the 12 system failures and related unhandled timeout from gate v4. Its exact scope is task-549.24-system-gate-repair-brief.md in the external state directory. Full integration acceptance, remaining test lanes, final review, assets, archive publication, and PR 19 remain open.
 <!-- SECTION:NOTES:END -->
