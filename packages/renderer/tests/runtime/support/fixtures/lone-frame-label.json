@@ -1,0 +1,224 @@
+{
+	"content": {
+		"nodes": [
+			{
+				"order": 2001,
+				"name": "Gate protocol operations",
+				"kind": "function",
+				"responsibility": "Expose allowed reads and mutations",
+				"id": "JBu1uGdl",
+				"parent": "jylkTBp7"
+			},
+			{
+				"order": 4000,
+				"name": "Serialize request identities",
+				"kind": "function",
+				"responsibility": "Prove IDs before wire encoding",
+				"id": "X6j6fViI",
+				"parent": "jylkTBp7"
+			},
+			{
+				"order": 5000,
+				"name": "Response contracts",
+				"kind": "function",
+				"responsibility": "Which identity kinds each method's result carries, derived from the protocol schemas",
+				"id": "aRDbMlep",
+				"parent": "jylkTBp7"
+			},
+			{
+				"order": 5001,
+				"name": "Adopt response identities",
+				"kind": "function",
+				"responsibility": "Brand returned IDs atomically",
+				"id": "M3mPynLe",
+				"parent": "jylkTBp7"
+			},
+			{
+				"order": 6000,
+				"name": "Codex session",
+				"kind": "module",
+				"responsibility": "Owns one initialized protocol session and its reviewed operations",
+				"groups": ["child"],
+				"id": "jylkTBp7"
+			},
+			{
+				"order": 6001,
+				"name": "Answer reverse requests",
+				"kind": "function",
+				"responsibility": "Handle child-originated calls",
+				"id": "3FR6mev4",
+				"parent": "jylkTBp7"
+			},
+			{
+				"order": 9002,
+				"name": "Codex transport",
+				"kind": "module",
+				"responsibility": "The wire under the session: one newline-framed JSON object at a time, each way",
+				"id": "ql0DevMk"
+			},
+			{
+				"order": 20000,
+				"name": "Layer 6",
+				"kind": "other",
+				"responsibility": "Imports only the layers below it, 0 to 5",
+				"id": "TQNCxSiT"
+			},
+			{
+				"order": 21000,
+				"name": "Layer 7",
+				"kind": "other",
+				"responsibility": "Imports only the layers below it, 0 to 6",
+				"id": "zjBzk8pe"
+			}
+		],
+		"edges": [
+			{
+				"order": 3000,
+				"kind": "call",
+				"label": "serialize issued identities",
+				"emphasis": "hero",
+				"traffic": {
+					"speed": 40,
+					"volume": 0.5
+				},
+				"id": "SI5PTs6X",
+				"to": "X6j6fViI",
+				"from": "jylkTBp7"
+			},
+			{
+				"id": "FZnS78FX",
+				"order": 3000,
+				"from": "jylkTBp7",
+				"to": "ql0DevMk",
+				"kind": "rpc",
+				"label": "2 relationships",
+				"emphasis": "normal"
+			},
+			{
+				"order": 9000,
+				"kind": "call",
+				"label": "thread/start for a new workhorse",
+				"emphasis": "hero",
+				"traffic": {
+					"speed": 40,
+					"volume": 0.5
+				},
+				"id": "7dDHchT9",
+				"to": "JBu1uGdl",
+				"from": "TQNCxSiT"
+			},
+			{
+				"order": 12000,
+				"kind": "event",
+				"label": "a request the child made of us",
+				"emphasis": "normal",
+				"id": "blvoJ8p8",
+				"to": "3FR6mev4",
+				"from": "ql0DevMk"
+			},
+			{
+				"order": 13000,
+				"kind": "call",
+				"label": "read or mutate, behind its gate",
+				"emphasis": "hero",
+				"traffic": {
+					"speed": 40,
+					"volume": 0.5
+				},
+				"id": "jhNZqAiD",
+				"to": "jylkTBp7",
+				"from": "JBu1uGdl"
+			},
+			{
+				"order": 15000,
+				"kind": "dependency",
+				"label": "which identities each result holds",
+				"emphasis": "muted",
+				"id": "JOmIweJF",
+				"to": "aRDbMlep",
+				"from": "M3mPynLe"
+			},
+			{
+				"id": "r1jVxlwm",
+				"order": 23000,
+				"from": "zjBzk8pe",
+				"to": "jylkTBp7",
+				"kind": "rpc",
+				"label": "2 relationships",
+				"emphasis": "normal"
+			},
+			{
+				"id": "xOvqFYUE",
+				"order": 24000,
+				"from": "TQNCxSiT",
+				"to": "jylkTBp7",
+				"kind": "rpc",
+				"label": "19 relationships",
+				"emphasis": "normal"
+			},
+			{
+				"order": 45000,
+				"kind": "call",
+				"emphasis": "normal",
+				"id": "rCIdAV06",
+				"to": "jylkTBp7",
+				"from": "zjBzk8pe"
+			}
+		],
+		"flows": [],
+		"walkthroughs": []
+	},
+	"policy": {
+		"levels": ["system", "service", "module"],
+		"nodeKinds": {
+			"module": {
+				"name": "Module",
+				"icon": "RiBox3Line",
+				"color": "violet"
+			},
+			"function": {
+				"name": "Function",
+				"icon": "RiCodeLine",
+				"color": "cyan"
+			},
+			"other": {
+				"name": "Other",
+				"icon": "RiPuzzleLine"
+			}
+		},
+		"relationshipKinds": {
+			"call": {
+				"name": "Call",
+				"dash": "solid",
+				"arrowhead": "filled",
+				"evidence": ["call"]
+			},
+			"rpc": {
+				"name": "RPC",
+				"color": "violet",
+				"dash": "solid",
+				"arrowhead": "filled",
+				"evidence": ["call", "configured-path"]
+			},
+			"event": {
+				"name": "Event",
+				"color": "fuchsia",
+				"dash": "dashed",
+				"arrowhead": "open",
+				"evidence": ["call", "configured-path"]
+			},
+			"dependency": {
+				"name": "Dependency",
+				"dash": "dotted",
+				"arrowhead": "open",
+				"evidence": ["call", "configured-path", "import", "build-dependency"]
+			}
+		},
+		"groups": {
+			"child": {
+				"name": "Codex child",
+				"color": "indigo"
+			}
+		}
+	}
+}
