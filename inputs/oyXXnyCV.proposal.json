@@ -64,6 +64,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/0T9enjhi#hx5UtSvH"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#lcZxhHuv"
     },
     {
@@ -129,6 +133,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/Oi6SBIAM#YX6joWZa"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/6E6hL0Zk#Oc8KW7No"
     },
     {
       "type": "remove",
@@ -384,7 +392,15 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#gMK54vsq"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/Oi6SBIAM#KpSOz34r"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#vNyjT5NQ"
     },
     {
       "type": "remove",
@@ -540,6 +556,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/XppR9owz#y4wp6XOf"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/qKGcB6vZ#B0SAnbtM"
     },
     {
@@ -612,6 +632,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#Y5c0eIar"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/Oi6SBIAM#yYx1C8Dw"
     },
     {
@@ -673,6 +697,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/HBlhIeSD#VLxmcHk5"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#DomT7qYj"
     },
     {
       "type": "remove",
@@ -1064,6 +1092,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/HBlhIeSD#WPeZchzr"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/Oi6SBIAM#etiWAAKH"
     },
     {
@@ -1093,6 +1125,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#jeIWvgMU"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#7wxK5YUi"
     },
     {
       "type": "remove",
@@ -1312,6 +1348,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#uiV0btMb"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/Oi6SBIAM#FrzjCHPF"
     },
     {
@@ -1361,6 +1401,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/HBlhIeSD#AWeZBxUU"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/0T9enjhi#XI1dBAG5"
     },
     {
       "type": "remove",
@@ -2748,6 +2792,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/6E6hL0Zk#ns3gRNXE"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/6E6hL0Zk#b5OKpCS1"
     },
     {
@@ -2864,6 +2912,14 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/6E6hL0Zk#21b80Utt"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/6E6hL0Zk#vAIWvaXI"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/6E6hL0Zk#JIPOoQg4"
     },
     {
@@ -2901,6 +2957,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/6E6hL0Zk#LPk6dAFb"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/6E6hL0Zk#tTlOSMGl"
     },
     {
       "type": "remove",
@@ -3533,6 +3593,14 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/HBlhIeSD#Y8jaNz41"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/HBlhIeSD#cqbe7KFP"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/HBlhIeSD#vb9ou5EI"
     },
     {
       "type": "remove",
@@ -5175,6 +5243,22 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#C9PQBOwg",
+      "field": "label",
+      "value": "mount canonical model routes"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#C9PQBOwg",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "mountArchitectureModelRoutes"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/Oi6SBIAM#5x06MUNV",
       "field": "to",
       "value": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
@@ -5312,6 +5396,16 @@
       "subject": "vKEsyHFk/Oi6SBIAM#2QfUVQT9",
       "field": "to",
       "value": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#TVFLwNL6",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "symbol": "modelClaimContract"
+      }
     },
     {
       "type": "assign",
@@ -5506,6 +5600,28 @@
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#6kzjcG2u",
+      "field": "label",
+      "value": "confirm model readability"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#6kzjcG2u",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/registry.ts",
+        "symbol": "readArchitectureModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#6kzjcG2u",
+      "field": "description",
+      "value": "Pane registration checks whether canonical architecture remains readable. It does not establish that a legacy board or variant exists."
     },
     {
       "type": "clear",
@@ -5726,6 +5842,42 @@
       "value": "vKEsyHFk/wAHh0HTa#ql0DevMk"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#OfRn3av3",
+      "field": "name",
+      "value": "Vault inspection client"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#OfRn3av3",
+      "field": "responsibility",
+      "value": "Reads canonical vault coherence and vocabulary diagnostics"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#OfRn3av3",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/clients/server/semantic-boards.ts",
+        "symbol": "checkSemanticVaultOnServer"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#OfRn3av3",
+      "field": "description",
+      "value": "The remaining client calls the vault diagnostic route through the shared request transport. Canonical model reads, writes, and rendering use their dedicated client."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#OfRn3av3",
+      "field": "formerNames",
+      "value": [
+        "Board client"
+      ]
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/yejBBUFY#0x47EMoO",
       "field": "references"
@@ -5886,6 +6038,22 @@
       "subject": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#7hdbqGFn"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#oYfZ2qnC",
+      "field": "label",
+      "value": "resolve the canonical module code target"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#oYfZ2qnC",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/projections/model-target.ts",
+        "symbol": "readArchitectureModel"
       }
     },
     {
@@ -6233,13 +6401,6 @@
       "type": "clear",
       "subject": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
       "field": "references"
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/0T9enjhi#hx5UtSvH",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
-      }
     },
     {
       "type": "place",
@@ -7030,6 +7191,38 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#3hokVf0H",
+      "field": "label",
+      "value": "read selected canonical states"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#3hokVf0H",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+        "symbol": "readArchitectureModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#rCuDH1LU",
+      "field": "label",
+      "value": "read selected canonical states"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#rCuDH1LU",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+        "symbol": "readArchitectureModel"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/6E6hL0Zk#rCuDH1LU",
       "placement": {
@@ -7739,6 +7932,28 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#Q85nTD4V",
+      "field": "label",
+      "value": "compose the captured canonical context"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#Q85nTD4V",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+        "symbol": "canonicalContext"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#Q85nTD4V",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#C9EOzoYB"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/XppR9owz#MrE3v2T6",
       "field": "name",
       "value": "Model footprint"
@@ -7771,6 +7986,22 @@
       "value": [
         "Footprint"
       ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#fVxcoo6Q",
+      "field": "label",
+      "value": "read the inspected canonical state"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#fVxcoo6Q",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+        "symbol": "readArchitectureModel"
+      }
     },
     {
       "type": "place",
@@ -7912,6 +8143,22 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#q1ENQYcO",
+      "field": "label",
+      "value": "resolve a module code binding"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#q1ENQYcO",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/projections/model-target.ts",
+        "symbol": "readArchitectureModel"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/SMjRfwN3#gTwVYQo9",
       "placement": {
@@ -7929,6 +8176,28 @@
       "subject": "vKEsyHFk/0T9enjhi#mYtOhgML",
       "field": "description",
       "value": "Scans chosen checkouts and registered untracked vaults, then reads canonical model and proposal modules. LEGACY_AUTHORITY produces no match; discovery does not decode or rewrite legacy board files."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#1Rd0xfYJ",
+      "field": "label",
+      "value": "read models bound to a repository"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#1Rd0xfYJ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/bound-vaults.ts",
+        "symbol": "readArchitectureModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#1Rd0xfYJ",
+      "field": "to",
+      "value": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
     },
     {
       "type": "place",
@@ -7985,6 +8254,32 @@
       "subject": "vKEsyHFk/gbyqW4H3#bm9AWXkW",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#U1k5hdA7",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/replay.ts",
+        "symbol": "keepTalk"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#wSGdfYDg",
+      "field": "label",
+      "value": "validate canonical evaluation inputs"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#wSGdfYDg",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/laying.ts",
+        "symbol": "readArchitectureModel"
       }
     },
     {
@@ -8139,6 +8434,22 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#BNTbGuis",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/canonical-context.ts",
+        "symbol": "readArchitectureModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#BNTbGuis",
+      "field": "label",
+      "value": "capture the exact model reading"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/HBlhIeSD#NKyQrZnS",
       "field": "to",
       "value": "vKEsyHFk/SJ2JMVyz#bxWDGUJk"
@@ -8227,6 +8538,16 @@
       "subject": "vKEsyHFk/0T9enjhi#ZRq51Ecz",
       "field": "description",
       "value": "The archive owner batches record reads and supplies immutable tree identities. An operation-local parent graph proves actual dependency ancestry without repeated Git commands. Signed commits, source exclusion, and exact input fingerprints remain mandatory."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#QrFo5jjd",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-archive-location.ts",
+        "symbol": "archiveContext"
+      }
     },
     {
       "type": "assign",
@@ -9638,9 +9959,27 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#bdciL0XK",
+      "field": "label",
+      "value": "check the canonical model against source"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/6E6hL0Zk#4f5nsDWm",
       "field": "to",
       "value": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#4f5nsDWm",
+      "field": "label",
+      "value": "inspect selected states and stated plans"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#2nd4qIC8",
+      "field": "condition",
+      "value": "for each selected canonical state"
     },
     {
       "type": "assign",
@@ -9650,12 +9989,44 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#Jk1gMRuI",
+      "field": "label",
+      "value": "read the selected canonical state"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#Jk1gMRuI",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+        "symbol": "readArchitectureModel"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/6E6hL0Zk#PjWBQChd",
       "field": "to",
       "value": "vKEsyHFk/HBlhIeSD#5SMX69gS"
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#PjWBQChd",
+      "field": "label",
+      "value": "coherent model and exact revision"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#PjWBQChd",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+        "symbol": "readArchitectureModel"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/6E6hL0Zk#6PpYR7ZP",
       "field": "from",
       "value": "vKEsyHFk/HBlhIeSD#5SMX69gS"
@@ -9668,9 +10039,21 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#6PpYR7ZP",
+      "field": "label",
+      "value": "the selected states or an explicit refusal"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/6E6hL0Zk#mz13Gcrp",
       "field": "from",
       "value": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#mz13Gcrp",
+      "field": "label",
+      "value": "the selected architecture is unavailable"
     },
     {
       "type": "assign",
@@ -9703,38 +10086,23 @@
       "value": "vKEsyHFk/HBlhIeSD#5SMX69gS"
     },
     {
-      "type": "assign",
-      "subject": "vKEsyHFk/6E6hL0Zk#le1xvi4P",
-      "field": "from",
-      "value": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#fGicYKbN",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#bze87EBh",
+        "alternative": "readable",
+        "before": "vKEsyHFk/6E6hL0Zk#5p6VBZvu"
+      }
     },
     {
       "type": "assign",
       "subject": "vKEsyHFk/6E6hL0Zk#le1xvi4P",
-      "field": "to",
-      "value": "vKEsyHFk/HBlhIeSD#5SMX69gS"
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/6E6hL0Zk#21b80Utt",
       "field": "from",
       "value": "vKEsyHFk/HBlhIeSD#5SMX69gS"
     },
     {
       "type": "assign",
-      "subject": "vKEsyHFk/6E6hL0Zk#21b80Utt",
-      "field": "to",
-      "value": "vKEsyHFk/HBlhIeSD#radK8osF"
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/6E6hL0Zk#vAIWvaXI",
-      "field": "from",
-      "value": "vKEsyHFk/HBlhIeSD#radK8osF"
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/6E6hL0Zk#vAIWvaXI",
+      "subject": "vKEsyHFk/6E6hL0Zk#le1xvi4P",
       "field": "to",
       "value": "vKEsyHFk/HBlhIeSD#5SMX69gS"
     },
@@ -9750,6 +10118,46 @@
       "placement": {
         "holder": "vKEsyHFk#6E6hL0Zk",
         "before": "vKEsyHFk/6E6hL0Zk#zeZA4CvA"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#TH34Y0en",
+      "field": "label",
+      "value": "resolve the module binding"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#TH34Y0en",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/projections/model-target.ts",
+        "symbol": "canonicalModelTarget"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#iDYLhMnI",
+      "field": "label",
+      "value": "the exact source target"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#iDYLhMnI",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/projections/model-target.ts",
+        "symbol": "canonicalModelTarget"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#MtgrEVHR",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#nAWRKg6a",
+        "alternative": "readable"
       }
     },
     {
@@ -9819,6 +10227,38 @@
         "holder": "vKEsyHFk#HBlhIeSD",
         "before": "vKEsyHFk/HBlhIeSD#dTfYgmVn"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#IKl4SagV",
+      "field": "label",
+      "value": "inspect canonical anchors, bindings, and relationships"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/HBlhIeSD#IKl4SagV",
+      "field": "note"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#IKl4SagV",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#GBiO6IaH",
+        "alternative": "all read",
+        "before": "vKEsyHFk/HBlhIeSD#dZ5w2Aoa"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#dZ5w2Aoa",
+      "field": "label",
+      "value": "models, findings, and skipped evidence"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#ofg1Dxh5",
+      "field": "label",
+      "value": "models, findings, and skipped evidence"
     },
     {
       "type": "place",
@@ -11328,11 +11768,25 @@
     {
       "type": "assign",
       "subject": "vKEsyHFk/XppR9owz#Xlfo3lAv",
+      "field": "name",
+      "value": "Read canonical vault diagnostics"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#Xlfo3lAv",
       "field": "participants",
       "value": [
         "vKEsyHFk/XppR9owz#OfRn3av3",
         "vKEsyHFk/XppR9owz#yHgIapK7",
         "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#Xlfo3lAv",
+      "field": "formerNames",
+      "value": [
+        "A request reaches the server"
       ]
     },
     {
@@ -11355,9 +11809,31 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#eizWExyA",
+      "field": "label",
+      "value": "GET /api/vault/check with the vault"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/XppR9owz#246hJJey",
       "field": "from",
       "value": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#8OvW4mS5",
+      "field": "label",
+      "value": "canonical vault diagnostics"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#8OvW4mS5",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/clients/server/semantic-boards.ts",
+        "symbol": "checkSemanticVaultOnServer"
+      }
     },
     {
       "type": "assign",
@@ -12880,6 +13356,23 @@
     "vKEsyHFk/qKGcB6vZ#BC9wK59M",
     "vKEsyHFk/Oi6SBIAM#mAwzQrjT",
     "vKEsyHFk/nAmiQ3Vc#HXDhzWiE",
-    "vKEsyHFk/HBlhIeSD#YRHoGRbV"
+    "vKEsyHFk/HBlhIeSD#YRHoGRbV",
+    "vKEsyHFk/6E6hL0Zk#Oc8KW7No",
+    "vKEsyHFk/Oi6SBIAM#gMK54vsq",
+    "vKEsyHFk/Oi6SBIAM#vNyjT5NQ",
+    "vKEsyHFk/XppR9owz#y4wp6XOf",
+    "vKEsyHFk/Oi6SBIAM#Y5c0eIar",
+    "vKEsyHFk/Oi6SBIAM#DomT7qYj",
+    "vKEsyHFk/0T9enjhi#hx5UtSvH",
+    "vKEsyHFk/HBlhIeSD#WPeZchzr",
+    "vKEsyHFk/Oi6SBIAM#7wxK5YUi",
+    "vKEsyHFk/Oi6SBIAM#uiV0btMb",
+    "vKEsyHFk/0T9enjhi#XI1dBAG5",
+    "vKEsyHFk/6E6hL0Zk#ns3gRNXE",
+    "vKEsyHFk/6E6hL0Zk#21b80Utt",
+    "vKEsyHFk/6E6hL0Zk#vAIWvaXI",
+    "vKEsyHFk/6E6hL0Zk#tTlOSMGl",
+    "vKEsyHFk/HBlhIeSD#cqbe7KFP",
+    "vKEsyHFk/HBlhIeSD#vb9ou5EI"
   ]
 }
