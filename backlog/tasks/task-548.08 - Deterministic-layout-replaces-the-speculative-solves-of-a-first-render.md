@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T16:24:00Z'
-updated_date: '2026-10-28T00:47:00Z'
+updated_date: '2026-10-28T00:56:00Z'
 labels:
   - renderer
   - performance
@@ -179,6 +179,10 @@ The complete corpus is /tmp/548-08/round-5/after-1, compared with /tmp/548-08/ro
 Three fresh first/growing-edit medians are Board viewer 282/204 ms, Board persistence 300/295 ms and Archboard server routes 141/138 ms. All 18 timed renders stay below 500 ms, with a maximum of 301 ms. Every edit grows a card and every run reports the matching source hash. Loads range from 2.71 to 2.85 after the gate exits. /tmp/548-08/round-5/measurements.json keeps all samples. docs/design/corpus-compactness-and-typed-trunks.md and ADR 0061 record the cause, retained rule, rejected probes, comparisons and remaining true-parent height difference.
 
 Renderer layout@TASK-548.08 and Semantic renderer@TASK-548.08 describe the retained rule and keep unchanged interfaces. Their code check retains 41 old finding identities with none new. The consumer workflow stays unchanged, so the consumer skill needs no edit. Both board claims are released and the owned server is stopped. The Git-owner audit finds no remaining owner process. The task stays In Progress, and the parent grades the new result.
+
+Council round 5, 2026-10-28, against the true parent of the whole change (c147b73c8, before any TASK-548.08 layout code) rather than against round 3, on 87155338f. 40 blind pairs: the 13 known problem drawings (the eight round-3 worse pairs, the four round-2 acceptance cases still changed, the Voice coordinator Track whole board) and 27 sampled from 325 changed plain drawings (seed 51). The parent checkout's corpus script was given the current whole-board step so whole boards pair on both sides. Graders Opus, gpt-6.1-sol, gpt-6-astra and Gemini 4 Argon. Every after picture redraws byte-identical in this branch and passes the hard checks; 20 before pictures have lines through parent or group headers, confirmed by the same checks run on the parent's pictures and reported by every grader. Tally: better 20, same 19, worse 1 (Voice coordinator, Tools and work, Track: Tab sessions a full rank above the frame, margins -0.67 to -1.12), no new defect. On scores alone the after pictures average lower (weighted 6.55 to 6.38, K 4.89 to 4.50, R 6.10 to 5.96); the 20 better verdicts come from the header defects of the before pictures. TASK-554 follows up on packing. Evidence in /tmp/548-08/council-r5.
+
+Council round 6, 2026-10-28, on 81196a4cb (merged in dce88ba6c), which changes only Tools and work in Track (four theme and comparison variants; every other SVG byte-identical). Muse Wonder replaced Argon (docs/design/grading-council.md). One blind pair against c147b73c8: same (margins 0.00, -0.30, -0.30, -0.30), no defect. With round 5 the change stands at 20 better, 20 same, 0 worse and no new defect against its parent. Evidence in /tmp/548-08/council-r6.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
