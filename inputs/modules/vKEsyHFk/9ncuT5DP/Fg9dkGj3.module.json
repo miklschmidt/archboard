@@ -1,0 +1,71 @@
+{
+  "order": 9000,
+  "name": "Voice coordinator",
+  "kind": "module",
+  "responsibility": "The separate fast thread each tab session's voice attaches to, started with the tab's first message or Talk: the voice model's subconscious, which routes sustained work to a named checkout's workhorse",
+  "groups": [
+    "voice"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/services/coordinator"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+  "parent": "vKEsyHFk/9ncuT5DP#3vO7eN8L",
+  "outgoing": [
+    {
+      "order": 7000,
+      "kind": "rpc",
+      "label": "thread/start and settings for the coordinator",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/coordinator/start.ts",
+        "symbol": "threadStart"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#XAd3chIR",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 16000,
+      "kind": "call",
+      "label": "delegate, steer, inspect, queue in the named checkout",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
+        "symbol": "delegate"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#mhknqBOz",
+      "to": "vKEsyHFk/9ncuT5DP#7XZtb0wb"
+    },
+    {
+      "order": 40000,
+      "kind": "call",
+      "label": "unload a replaced coordinator",
+      "description": "The caller receives the unload method of the public createCodexThreadUnload factory imported from the module root; the module is drawn whole.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/coordinator/coordinator.ts",
+        "symbol": "unload"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#uQcYd3Nh",
+      "to": "vKEsyHFk/9ncuT5DP#YxDrzJtI"
+    },
+    {
+      "order": 74000,
+      "kind": "call",
+      "label": "stop_workhorses: stop every running workhorse of the tab",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
+        "symbol": "stopWork"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#ITcuqCHT",
+      "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4"
+    }
+  ]
+}

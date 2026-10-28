@@ -1,0 +1,31 @@
+{
+  "order": 39000,
+  "name": "Operation lifecycle",
+  "kind": "module",
+  "responsibility": "Stages operations, follows their workhorse turns and settles their outcomes once",
+  "groups": [
+    "workhorse"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#8CuNvBuG",
+  "parent": "vKEsyHFk/9ncuT5DP#tlC2W839",
+  "outgoing": [
+    {
+      "order": 15000,
+      "kind": "call",
+      "label": "stage, commit or roll back",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/workhorse-operations/events.ts",
+        "symbol": "stageOperation"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#2ed6AqSF",
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    }
+  ]
+}

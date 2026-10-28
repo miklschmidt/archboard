@@ -1,0 +1,18 @@
+{
+  "order": 41000,
+  "name": "Start contract",
+  "kind": "module",
+  "responsibility": "Defines the starter port that exposes thread creation and its current snapshot",
+  "groups": [
+    "workhorse"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/protocol/workhorse-start/contract.ts",
+    "symbol": "CodexWorkhorseStart"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#SsiEBdik",
+  "parent": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+  "outgoing": []
+}
