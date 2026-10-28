@@ -65,6 +65,7 @@ import {
 	validateWorkspaceSearch,
 } from "#ui/rules/board-routing/search.ts";
 import type { OpenedBoard, WorkspacePort } from "#ui/rules/board-routing/contracts.ts";
+import type { modelReading } from "#ui/rules/board-routing/model-address.ts";
 
 /** What a user's own board open reports back when it is over. */
 interface NavigationClaim {
@@ -84,7 +85,11 @@ type NavigationPermission = { readonly kind: "granted"; readonly move: Navigatio
 /** What the shell tells the address bar about the user's own gestures. */
 interface WorkspaceAddressing {
 	/** Consume the matching user open when its canonical socket arrival reaches the router. */
-	readonly modelArriving: (paneId: string, model: string, repository: string | null) => boolean;
+	readonly modelArriving: (
+		paneId: string,
+		reading: ReturnType<typeof modelReading>,
+		repository: string | null,
+	) => "push" | "replace" | "keep";
 	/**
 	 * A user changed the workspace themselves, without asking the server: they
 	 * opened or closed a pane. The change pushes a history entry.
@@ -457,16 +462,22 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 			/**
 			 * Match the socket arrival against the existing user operation once.
 			 * @param paneId The addressed pane.
-			 * @param model The resolved model identity.
+			 * @param reading The complete resolved reading.
 			 * @param repository The resolved repository.
-			 * @returns Whether this arrival creates a user history entry.
+			 * @returns How this acknowledgement affects the current reader location.
 			 */
-			modelArriving: (paneId: string, model: string, repository: string | null): boolean => {
-				const operation = state.current.operation;
-				if (!matchesModelArrival(operation, paneId, model, repository)) return false;
+			modelArriving: (paneId, reading, repository) => {
+				const current = state.current;
+				const operation = current.operation;
+				if (!matchesModelArrival(operation, paneId, reading, repository)) return "replace";
 				// Keep the command object that its pending HTTP completion captured.
 				operation.modelArrived = true;
-				return true;
+				if (operation.operator.kind !== "restore") return "push";
+				// The router already displays this restore. A later acknowledgement
+				// must preserve any selection or navigation the reader made meanwhile.
+				current.restore = retargetRestore(current.restore, current.wanted);
+				reconcile(current);
+				return "keep";
 			},
 			/**
 			 * A user changed the workspace themselves.

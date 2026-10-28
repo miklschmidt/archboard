@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T17:16:00Z'
+updated_date: '2026-10-28T18:02:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -182,6 +182,8 @@ Repair the reproduced Track label-station contract before final acceptance. Read
 Repair the full-gate integration findings before final acceptance. Root owns all frontend owners, their replacement browser evidence, and final visual acceptance. Delegate the bounded non-frontend fixture and contract repairs in a separate signed worktree. Preserve canonical-only authoring, real signed archive tests, strict diagnostic behavior, and existing lint/type/timing limits. Reuse focused evidence, then resume the full gate. The Track label repair is integrated; three lane-clearance cases and one container-wall label remain open.
 
 Repair the final Track container-wall defect through the existing private scene and label-clearance contract, using the saved causal probe and public renderer regression. Then repair the12 bounded system-test failures from full gatev4 without changing signer requirements, process cleanup, or timing limits. The root retains visual acceptance, assets and final review.
+
+Repair the reproduced initial canonical restore race at the existing workspace navigation owner. Recognize the matching complete restore acknowledgement, settle its existing operation, and preserve the reader location and transient selection. Keep explicit user/agent arrivals under the same command owner. Prove the repair with the existing real-server foreign-reference browser owner and affected navigation owners, then remove diagnostics and simplify.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -406,4 +408,8 @@ The resumed browser lane passes selection, gestures, focus, filters, modes, walk
 Signed merge aa70f3eef integrates the two canonical read-contract review fixes with matching source and merge trees, passing signatures, and one passing combined type run. Browser remainder v4 passes the three current preview workflows. Its fourth case targets the retired live-board navigator entry, which ADR0062 removes. That obsolete case is removed. Retained original addresses, their browser history, and old pane URL migration remain owned by canonical-preview-history, canonical-preview-navigation and canonical-model-migration. Scoped test lint and formatting pass. The next browser owner is canonical-preview-history.test.ts. Durable edit and claim review is active in its isolated worktree.
 
 The sidebar helper now waits for its mounted control before deciding whether to open it. This removes the reload race that treated an absent control as closed. The focused original-navigation case passes eight assertions. Reconciliation now uses the visible Architecture and Selection tabs for their separate content. Browser remainder v7 passes reconciliation, both explanation cases, comparison, planning, import and code: seven cases with 44 assertions. Both fixture repairs pass lint and formatting. Foreign-reference navigation is the next failing owner; it reports the source Shop address after following Ledger, with no error. Root will diagnose that route before continuing. Final acceptance remains open.
+
+Reference diagnosis reproduces four times through the real browser seam. The initial Shop restore sends a pane_model acknowledgement after the user starts following Ledger. That acknowledgement remounts the reader and aborts the in-flight reference action before it can return. Existing Workspace routing vKEsyHFk/yejBBUFY#HCghQa6I and Pending board operation vKEsyHFk/yejBBUFY#nTwJDWl8 already own ordered navigation and transient reader state. The repair restores those contracts without a new architecture proposal or public schema. It will distinguish a matching restore acknowledgement from an explicit user or external navigation request through the existing operation owner.
+
+The reference repair now passes 11 browser cases with 70 assertions across references, workspace addresses, module navigation, agent navigation, and preview navigation. The affected routing unit owners pass 46 cases with 120 assertions. Both TypeScript projects, scoped source and test lint, formatting, and whitespace checks pass. Matching restore acknowledgements retain the current reader and its selection. Session vault updates no longer remount the same resolved reader. Ordinary architecture grammar stays implicit in URLs. The added repository-open-after-reload regression waits for the new public pane registration before its action. Diagnosis confirms earlier attempts hit the existing reconnect refusal, not a pending navigation operation. Temporary traces are removed. The simplification pass keeps one existing navigation operation owner and adds no public schema or second routing state. Existing Workspace routing and Pending board operation architecture remain accurate. A fresh origin/main fetch remains a98f28811, already an ancestor. Final acceptance remains open.
 <!-- SECTION:NOTES:END -->

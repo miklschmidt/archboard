@@ -51,12 +51,12 @@ function addressingOver(binding: LiveBinding<WorkspaceAddressing>): WorkspaceAdd
 		/**
 		 * Hand the matching canonical arrival to the existing navigation owner.
 		 * @param paneId The addressed pane.
-		 * @param model The resolved model.
+		 * @param reading The complete resolved reading.
 		 * @param repository The destination repository.
-		 * @returns Whether the arrival answers a user open.
+		 * @returns How the acknowledgement affects the current reader location.
 		 */
-		modelArriving: (paneId, model, repository) =>
-			binding.read().modelArriving(paneId, model, repository),
+		modelArriving: (paneId, reading, repository) =>
+			binding.read().modelArriving(paneId, reading, repository),
 		/**
 		 * A person asked for a move.
 		 * @param intent What they asked for.

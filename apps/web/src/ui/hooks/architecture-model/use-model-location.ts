@@ -185,7 +185,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					legacyAddress: reading.legacyAddress,
 					against: reading.against,
 					subject: reading.module,
-					grammar: reading.grammar,
+					grammar: requestedGrammar(reading),
 					flow: reading.flow,
 					focus: reading.focus,
 					hideKinds: reading.hideKinds,
@@ -391,6 +391,17 @@ function searchValue(value: ModelAddress[keyof ModelAddress]): string | undefine
 }
 
 export { useModelLocation };
+
+/**
+ * Omit the ordinary default while preserving an explicit override of a bookmark's grammar.
+ * @param reading The resolved navigation request.
+ * @returns The grammar needed in the portable address.
+ */
+function requestedGrammar(reading: PaneModelRequest["reading"]): ModelAddress["grammar"] {
+	return reading.grammar === "architecture" && reading.bookmark === undefined
+		? undefined
+		: reading.grammar;
+}
 
 /**
  * Read bookmark defaults through the same parameter representation as explicit navigation.
