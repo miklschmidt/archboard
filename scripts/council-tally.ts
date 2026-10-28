@@ -108,7 +108,10 @@ function gradersOf(grading: string): Map<string, Graded> {
 	if (!existsSync(dir))
 		return refuse(`${dir} is missing; each grader writes verdicts/<grader>.json.`);
 	const files = readdirSync(dir).filter((name) => name.endsWith(".json"));
-	if (files.length === 0) return refuse(`${dir} holds no grader's verdicts.`);
+	if (files.length !== 4)
+		return refuse(
+			`${dir} must hold four graders' verdict files, but holds ${files.length}. Finish all four files and remove files from other runs.`,
+		);
 	return new Map(
 		files
 			.toSorted()
@@ -193,11 +196,11 @@ function tally(
 	rulings: Rulings,
 ): Tallied {
 	const after: Side = before === "A" ? "B" : "A";
-	const hundredths = [...graders.values()].flatMap((pairs) => {
+	const hundredths = [...graders].map(([grader, pairs]) => {
 		const graded = pairs[pair];
-		return graded ? [weighted(graded[after]) - weighted(graded[before])] : [];
+		if (!graded) refuse(`${grader} has no scores for pair ${pair}. Finish that grader's file.`);
+		return weighted(graded[after]) - weighted(graded[before]);
 	});
-	if (hundredths.length === 0) refuse(`No grader scored pair ${pair}.`);
 	const ruling = rulings[pair] ?? {};
 	const defective = { before: ruling[before] === true, after: ruling[after] === true };
 	return {

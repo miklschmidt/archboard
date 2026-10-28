@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-27T12:13:00Z'
-updated_date: '2026-10-28T01:10:00Z'
+updated_date: '2026-10-28T01:21:00Z'
 labels:
   - renderer
   - tooling
@@ -54,6 +54,10 @@ Calibration on the twelve samples: scores more than 2 apart between any two grad
 scripts/council-tally.ts unblinds verdicts/<grader>.json with key.json, refuses while a reported defect has no ruling in rulings.json, and prints each pair's verdict, the graders' margins and whether the change passes (exit 1 when it fails). Checked on synthetic verdicts: an unruled defect stops it (exit 2); a malformed score is refused with the field; a new defect in an after picture makes the pair worse and fails the change; the documented example parses. Policy lint passes. Artifacts: /tmp/council/agree (sources, r1, r2, r3, drafts).
 
 Spec review: three command regressions reproduce exact 0.40 margins classified as same, including a worse change that exits zero. Weighted totals now stay in integer hundredths through the median. The three regressions pass in both before-side orientations and at a split median. No drawing, board meaning, consumer workflow, acceptance state, or task status changes.
+
+Spec review: the command accepted one, three, or five grader files, and silently omitted a grader that skipped a pair. Four failing command regressions verify this. The tally now requires exactly four files and names the grader and pair when a score is missing. All seven tally regressions pass. The procedure states the input requirement. Task statuses and council acceptance remain unchanged.
+
+Review validation: nix develop --command bun run check passes all 20 tasks, including all 19 browser files. The module, system, and repository lanes report 4975, 285, and 168 passing tests with no failures. The repository lane includes all seven tally regressions. Final simplification replaces skipped scores with a required score in one map. The architecture boards and consumer skill remain accurate. Task statuses and acceptance states remain unchanged.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
