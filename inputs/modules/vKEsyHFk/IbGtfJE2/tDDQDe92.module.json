@@ -1,9 +1,0 @@
-{
-  "order": 27000,
-  "name": "Reporting",
-  "kind": "module",
-  "responsibility": "Joins each run with the verdict of every grader that graded it, says where two graders agree, and compares the arms per scenario and workflow",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/IbGtfJE2#tDDQDe92",
-  "outgoing": []
-}

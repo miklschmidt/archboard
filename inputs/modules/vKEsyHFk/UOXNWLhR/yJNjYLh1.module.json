@@ -1,9 +1,0 @@
-{
-  "order": 48001,
-  "name": "Picture supply",
-  "kind": "module",
-  "responsibility": "Decides where a pane's picture is drawn, in this page or by the server's render route. Keeps each drawing only as a read-only cache stamped with the board version it came from.",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
-  "outgoing": []
-}

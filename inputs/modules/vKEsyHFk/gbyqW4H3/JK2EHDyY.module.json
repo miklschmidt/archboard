@@ -1,9 +1,0 @@
-{
-  "order": 28001,
-  "name": "Render entry",
-  "kind": "module",
-  "responsibility": "Takes a render request in any host: resolves variant, view and scope from one board, chooses the grammar and returns the document, through the seam each host fills",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
-  "outgoing": []
-}

@@ -1,9 +1,0 @@
-{
-  "order": 49001,
-  "name": "Stage and reads",
-  "kind": "module",
-  "responsibility": "Mounts the viewer in a pane and reads the board, its vault and the code findings from the server. Presents every reachable state of the answer and reports what is on screen.",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/UOXNWLhR#kr46TVLf",
-  "outgoing": []
-}

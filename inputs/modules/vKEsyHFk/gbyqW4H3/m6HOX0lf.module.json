@@ -1,9 +1,0 @@
-{
-  "order": 30003,
-  "name": "Painting",
-  "kind": "module",
-  "responsibility": "Paints a settled drawing as SVG: architecture and sequence marks, the surfaces and ports of cards, the theme's colours, the atlas of where every subject landed, and the self-contained document",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
-  "outgoing": []
-}
