@@ -48,21 +48,6 @@ impl Buffer {
     }
 }
 
-/// Mark the vertices and the edges to their right in one row of the grid
-/// that lie inside a buffer the row runs through.
-fn block_row(xs: &[f64], buffer: &Buffer, free: &mut [bool], across: &mut [bool]) {
-    for (i, &x) in xs.iter().enumerate() {
-        if buffer.spans_x(x) {
-            free[i] = false;
-        }
-        if let Some(&next) = xs.get(i + 1)
-            && buffer.spans_x(f64::midpoint(x, next))
-        {
-            across[i] = false;
-        }
-    }
-}
-
 /// Where a pin's route leaves its own obstacle's buffer, going the way the
 /// pin leaves.
 pub(crate) fn stub_end(buffer: &Buffer, at: Point, leaves: Dir) -> Point {
@@ -190,34 +175,41 @@ impl Grid {
             buffers,
             blocking,
         };
-        grid.block_rows();
-        grid.block_columns();
+        grid.block_buffers();
         grid
     }
 
-    /// Mark the vertices and horizontal edges that lie inside a buffer.
-    fn block_rows(&mut self) {
+    /// Mark each obstacle in contiguous row slices. Edge midpoints keep the
+    /// same strict buffer predicate as vertices, including its tolerance.
+    fn block_buffers(&mut self) {
+        let midpoints = |coordinates: &[f64]| -> Vec<f64> {
+            coordinates
+                .windows(2)
+                .map(|pair| f64::midpoint(pair[0], pair[1]))
+                .collect()
+        };
+        let (across, down) = (midpoints(&self.xs), midpoints(&self.ys));
         let width = self.xs.len();
-        for (j, &y) in self.ys.iter().enumerate() {
-            let row = j * width..(j + 1) * width;
-            for buffer in self.blocking.iter().filter(|buffer| buffer.spans_y(y)) {
-                let (free, across) = (&mut self.free[row.clone()], &mut self.across[row.clone()]);
-                block_row(&self.xs, buffer, free, across);
+        for buffer in &self.blocking {
+            let left = self.xs.partition_point(|&x| x <= buffer.left + SAME);
+            let right = self
+                .xs
+                .partition_point(|&x| x < buffer.right - SAME)
+                .max(left);
+            let top = self.ys.partition_point(|&y| y <= buffer.top + SAME);
+            let bottom = self.ys.partition_point(|&y| y < buffer.bottom - SAME);
+            let edge_left = across.partition_point(|&x| x <= buffer.left + SAME);
+            let edge_right = across
+                .partition_point(|&x| x < buffer.right - SAME)
+                .max(edge_left);
+            for j in top..bottom {
+                self.free[j * width + left..j * width + right].fill(false);
+                self.across[j * width + edge_left..j * width + edge_right].fill(false);
             }
-        }
-    }
-
-    /// Mark the vertical edges that lie inside a buffer.
-    fn block_columns(&mut self) {
-        let width = self.xs.len();
-        let height = self.ys.len();
-        for (i, &x) in self.xs.iter().enumerate() {
-            for buffer in self.blocking.iter().filter(|buffer| buffer.spans_x(x)) {
-                for j in 0..height.saturating_sub(1) {
-                    if buffer.spans_y(f64::midpoint(self.ys[j], self.ys[j + 1])) {
-                        self.down[j * width + i] = false;
-                    }
-                }
+            let edge_top = down.partition_point(|&y| y <= buffer.top + SAME);
+            let edge_bottom = down.partition_point(|&y| y < buffer.bottom - SAME);
+            for j in edge_top..edge_bottom {
+                self.down[j * width + left..j * width + right].fill(false);
             }
         }
     }

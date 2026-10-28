@@ -174,6 +174,7 @@ fn started_inside(buffers: &[grid::Buffer], ends: [End; 2]) -> Vec<usize> {
 /// Route each connector in order, with earlier paths and every fixed pin reserved.
 pub fn route(scene: &Scene) -> Vec<Route> {
     let mut found: Vec<Option<Vec<Point>>> = Vec::with_capacity(scene.connectors.len());
+    let mut memory = search::Memory::default();
     for (index, connector) in scene.connectors.iter().enumerate() {
         let (tail, head) = connector.ends;
         let grid = grid::Grid::new(scene, &[], &found);
@@ -185,7 +186,13 @@ pub fn route(scene: &Scene) -> Vec<Route> {
                 taken.add(&grid, points, previous.subjects);
             }
         }
-        let path = search::shortest(own.as_ref().unwrap_or(&grid), scene, connector, &taken);
+        let path = search::shortest(
+            own.as_ref().unwrap_or(&grid),
+            scene,
+            connector,
+            &taken,
+            &mut memory,
+        );
         found.push(path);
     }
     found

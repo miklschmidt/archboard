@@ -2,8 +2,7 @@
 //! first cost. Distance, bends and perpendicular crossings break ties.
 //! Fixed pins reserve an exit before earlier paths can occupy it.
 
-use std::cmp::Ordering;
-use std::collections::BinaryHeap;
+use std::collections::{BTreeMap, VecDeque};
 
 use crate::grid::{Grid, SAME, close, stub_end};
 use crate::{Connector, Dir, End, Point, Scene};
@@ -155,37 +154,130 @@ fn reserve_run(grid: &Grid, edges: &mut [u8], a: Point, b: Point, lane: f64) {
     }
 }
 
-/// One item of the search's queue: a state, or the finished route through
-/// the goal state that it names.
-#[derive(Clone, Copy)]
+/// Encode the exact total order of two floating-point costs as one integer.
+fn priority(estimate: (f64, f64)) -> u128 {
+    let ordered = |value: f64| {
+        let bits = value.to_bits();
+        if bits >> 63 == 0 {
+            bits ^ (1 << 63)
+        } else {
+            !bits
+        }
+    };
+    (u128::from(ordered(estimate.0)) << 64) | u128::from(ordered(estimate.1))
+}
+
 struct Item {
-    estimate: (f64, f64),
-    seq: u64,
+    priority: u128,
     state: usize,
     done: bool,
 }
 
-impl PartialEq for Item {
-    fn eq(&self, other: &Self) -> bool {
-        self.cmp(other) == Ordering::Equal
+/// A monotone queue groups estimates by the highest bit that differs from
+/// the last estimate. Equal estimates remain FIFO, as in the former heap.
+/// Floating-point roundoff can lower an estimate. Those entries use an
+/// ordered queue below the last bucket, without rebuilding the other buckets.
+struct Queue {
+    buckets: Vec<VecDeque<Item>>,
+    last: u128,
+    occupied: u128,
+    earlier: BTreeMap<u128, VecDeque<Item>>,
+}
+
+impl Default for Queue {
+    fn default() -> Self {
+        Self {
+            buckets: (0..129).map(|_| VecDeque::new()).collect(),
+            last: 0,
+            occupied: 0,
+            earlier: BTreeMap::new(),
+        }
     }
 }
-impl Eq for Item {}
-impl PartialOrd for Item {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
+
+impl Queue {
+    fn insert(&mut self, item: Item) {
+        let bucket = (128 - (item.priority ^ self.last).leading_zeros()) as usize;
+        if bucket > 0 {
+            self.occupied |= 1 << (bucket - 1);
+        }
+        self.buckets[bucket].push_back(item);
+    }
+
+    fn push(&mut self, estimate: (f64, f64), state: usize, done: bool) {
+        let priority = priority(estimate);
+        if priority < self.last {
+            self.earlier.entry(priority).or_default().push_back(Item {
+                priority,
+                state,
+                done,
+            });
+            return;
+        }
+        self.insert(Item {
+            priority,
+            state,
+            done,
+        });
+    }
+
+    fn pop(&mut self) -> Option<Item> {
+        if let Some(mut first) = self.earlier.first_entry() {
+            let item = first.get_mut().pop_front();
+            if first.get().is_empty() {
+                first.remove_entry();
+            }
+            return item;
+        }
+        if self.buckets[0].is_empty() {
+            if self.occupied == 0 {
+                return None;
+            }
+            let bucket = self.occupied.trailing_zeros() as usize + 1;
+            self.last = self.buckets[bucket]
+                .iter()
+                .map(|item| item.priority)
+                .min()?;
+            self.occupied &= !(1 << (bucket - 1));
+            while let Some(item) = self.buckets[bucket].pop_front() {
+                self.insert(item);
+            }
+        }
+        self.buckets[0].pop_front()
     }
 }
-impl Ord for Item {
-    // The heap pops the greatest, so the cheapest estimate, then the earliest
-    // pushed, compares greatest.
-    fn cmp(&self, other: &Self) -> Ordering {
-        other
-            .estimate
-            .0
-            .total_cmp(&self.estimate.0)
-            .then(other.estimate.1.total_cmp(&self.estimate.1))
-            .then(other.seq.cmp(&self.seq))
+
+/// Search storage shared by the paths of one scene.
+/// A new grid changes indices, so reset every state the preceding search touched.
+#[derive(Default)]
+pub(crate) struct Memory {
+    cost: Vec<(f64, f64)>,
+    prev: Vec<usize>,
+    finished: Vec<bool>,
+    touched: Vec<usize>,
+}
+
+const UNREACHED: (f64, f64) = (f64::INFINITY, f64::INFINITY);
+
+impl Memory {
+    fn prepare(&mut self, states: usize) {
+        for state in self.touched.drain(..) {
+            self.cost[state] = UNREACHED;
+            self.prev[state] = usize::MAX;
+            self.finished[state] = false;
+        }
+        if states > self.cost.len() {
+            self.cost.resize(states, UNREACHED);
+            self.prev.resize(states, usize::MAX);
+            self.finished.resize(states, false);
+        }
+    }
+
+    fn reach(&mut self, state: usize, cost: (f64, f64)) {
+        if self.cost[state] == UNREACHED {
+            self.touched.push(state);
+        }
+        self.cost[state] = cost;
     }
 }
 
@@ -283,22 +375,14 @@ struct Search<'s> {
     reserved: Vec<u8>,
     start: Start,
     target: Point,
-    cost: Vec<(f64, f64)>,
-    prev: Vec<usize>,
-    queue: BinaryHeap<Item>,
-    seq: u64,
+    memory: &'s mut Memory,
+    queue: Queue,
 }
 
 impl Search<'_> {
     /// Queue a state at an estimate, behind every state queued before it at the same estimate.
     fn push(&mut self, estimate: (f64, f64), state: usize, done: bool) {
-        self.queue.push(Item {
-            estimate,
-            seq: self.seq,
-            state,
-            done,
-        });
-        self.seq += 1;
+        self.queue.push(estimate, state, done);
     }
 
     /// The length still to go from a vertex, as the crow flies on the grid.
@@ -311,15 +395,14 @@ impl Search<'_> {
         let (vertex, paid) = (self.start.vertex, self.start.paid);
         for index in 0..self.start.dirs.len() {
             let state = vertex * 4 + self.start.dirs[index] as usize;
-            self.cost[state] = (0.0, paid);
+            self.memory.reach(state, (0.0, paid));
             self.push((0.0, paid + self.heuristic(vertex)), state, false);
         }
     }
 
     /// What one step from a vertex in a direction costs a route that arrived
     /// in another: its length, a turn, or a crossing of an earlier route.
-    fn step_cost(&self, vertex: usize, next: usize, dir: Dir, arrived: Dir) -> f64 {
-        let length = distance(self.grid.point(vertex), self.grid.point(next));
+    fn step_cost(&self, vertex: usize, length: f64, dir: Dir, arrived: Dir) -> f64 {
         if dir != arrived {
             return length + self.scene.params.bend;
         }
@@ -333,6 +416,7 @@ impl Search<'_> {
     /// cheaply than any route before.
     fn step_on(&mut self, state: usize, here: (f64, f64)) {
         let (vertex, arrived) = (state / 4, DIRS[state % 4]);
+        let at = self.grid.point(vertex);
         for dir in DIRS {
             let next = self
                 .grid
@@ -341,21 +425,27 @@ impl Search<'_> {
             let Some(next) = next else {
                 continue;
             };
+            let point = self.grid.point(next);
+            let length = distance(at, point);
             let bit = if dir.horizontal() { 1 } else { 2 };
             let reused = if self.reserved[vertex.min(next)] & bit != 0 {
-                distance(self.grid.point(vertex), self.grid.point(next))
+                length
             } else {
                 0.0
             };
             let reached = (
                 here.0 + reused,
-                here.1 + self.step_cost(vertex, next, dir, arrived),
+                here.1 + self.step_cost(vertex, length, dir, arrived),
             );
             let onward = next * 4 + dir as usize;
-            if reached < self.cost[onward] {
-                self.cost[onward] = reached;
-                self.prev[onward] = state;
-                self.push((reached.0, reached.1 + self.heuristic(next)), onward, false);
+            if reached < self.memory.cost[onward] {
+                self.memory.reach(onward, reached);
+                self.memory.prev[onward] = state;
+                self.push(
+                    (reached.0, reached.1 + distance(point, self.target)),
+                    onward,
+                    false,
+                );
             }
         }
     }
@@ -368,11 +458,12 @@ pub(crate) fn shortest(
     scene: &Scene,
     connector: &Connector,
     taken: &Taken,
+    memory: &mut Memory,
 ) -> Option<Vec<Point>> {
     let (tail, head) = connector.ends;
     let start = start_of(grid, tail)?;
     let goal = goal_of(grid, head)?;
-    let states = grid.len() * 4;
+    memory.prepare(grid.len() * 4);
     let mut search = Search {
         grid,
         scene,
@@ -380,20 +471,17 @@ pub(crate) fn shortest(
         reserved: taken.reserved(grid, connector, scene),
         start,
         target: grid.point(goal.vertex),
-        cost: vec![(f64::INFINITY, f64::INFINITY); states],
-        prev: vec![usize::MAX; states],
-        queue: BinaryHeap::new(),
-        seq: 0,
+        memory,
+        queue: Queue::default(),
     };
     search.set_off();
-    let mut finished = vec![false; states];
     while let Some(item) = search.queue.pop() {
         if item.done {
-            return Some(path_of(grid, tail, head, &search.prev, item.state));
+            return Some(path_of(grid, tail, head, &search.memory.prev, item.state));
         }
-        if !finished[item.state] {
-            finished[item.state] = true;
-            let here = search.cost[item.state];
+        if !search.memory.finished[item.state] {
+            search.memory.finished[item.state] = true;
+            let here = search.memory.cost[item.state];
             let turn = (item.state / 4 == goal.vertex)
                 .then(|| goal.turn(DIRS[item.state % 4], scene.params.bend))
                 .flatten();
@@ -441,4 +529,41 @@ pub(crate) fn simplified(points: Vec<Point>) -> Vec<Point> {
         kept.push(point);
     }
     kept
+}
+
+#[cfg(test)]
+mod queue_tests {
+    use super::Queue;
+
+    #[test]
+    fn estimates_keep_total_order_and_fifo_ties_even_after_a_decrease() {
+        let mut queue = Queue::default();
+        let mut expected: Vec<((f64, f64), usize, bool)> = Vec::new();
+        for state in 0..512 {
+            let secondary = ((state * 7 % 19) as f64).to_bits() + (state % 3) as u64;
+            let estimate = ((state % 5) as f64 * 16.0, f64::from_bits(secondary));
+            let done = state % 11 == 0;
+            queue.push(estimate, state, done);
+            expected.push((estimate, state, done));
+            expected.sort_by(|a, b| {
+                a.0.0
+                    .total_cmp(&b.0.0)
+                    .then(a.0.1.total_cmp(&b.0.1))
+                    .then(a.1.cmp(&b.1))
+            });
+            if state % 3 == 0 {
+                let (_, state, done) = expected.remove(0);
+                let actual = queue.pop().expect("the queue holds the inserted states");
+                assert_eq!((actual.state, actual.done), (state, done));
+            }
+        }
+        let actual: Vec<_> = std::iter::from_fn(|| queue.pop())
+            .map(|item| (item.state, item.done))
+            .collect();
+        let expected: Vec<_> = expected
+            .into_iter()
+            .map(|(_, state, done)| (state, done))
+            .collect();
+        assert_eq!(actual, expected);
+    }
 }
