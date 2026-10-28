@@ -320,6 +320,30 @@ function portRequests(nets: readonly Net[]): Map<Item, PortRequest[]> {
 }
 
 /**
+ * The width each crowded face needs for its actual independent ports.
+ * Trunks consume one port, and fixed one-point ports keep their own contract.
+ * @param nets Every net, with its trunks bundled.
+ * @returns Required item widths, including any inset around their faces.
+ */
+function requiredPortWidths(nets: readonly Net[]): Map<Item, number> {
+	const widths = new Map<Item, number>();
+	for (const [item, requests] of portRequests(nets)) {
+		if (onePoint(item)) continue;
+		const count = Math.max(
+			...(["top", "bottom"] as const).map(
+				(side) =>
+					requests.filter(
+						(request) => request.side === side && request.nets[0]![side].at === undefined,
+					).length,
+			),
+		);
+		const width = 2 * PORT_MARGIN + (count - 1) * LANE;
+		if (width > cardFace(item).width) widths.set(item, width + 2 * (item.inset ?? 0));
+	}
+	return widths;
+}
+
+/**
  * The trunk whose port one end of a net shares, if any: its trunk on the side
  * the trunk shares, or on both sides of a whole trunk.
  * @param net The net.
@@ -510,6 +534,7 @@ export {
 	bundleTrunks,
 	onePoint,
 	portReach,
+	requiredPortWidths,
 	sharedAt,
 	spreadAlong,
 	spreadPorts,
