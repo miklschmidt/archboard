@@ -158,8 +158,9 @@ function captureFailure(model: ArchitectureModel, request: Request) {
 function unavailableReadingPolicy(model: ArchitectureModel, request: Request): boolean {
 	const groups = Array.isArray(request.reading.groups) ? request.reading.groups : [];
 	return (
-		request.reading.relationshipKinds.some((kind) => !(kind in model.policy.relationshipKinds)) ||
-		groups.some((group) => !(group in model.policy.groups))
+		request.reading.relationshipKinds.some(
+			(kind) => !Object.hasOwn(model.policy.relationshipKinds, kind),
+		) || groups.some((group) => !Object.hasOwn(model.policy.groups, group))
 	);
 }
 /**

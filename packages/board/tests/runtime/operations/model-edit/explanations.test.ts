@@ -41,11 +41,16 @@ test("an explanation captures the complete reading without changing authored inp
 			explain: { ...explain, reading: { ...explain.reading, groups } },
 		}),
 	).toMatchObject({ success: true, explanation: { request: { reading: { groups } } } });
-	expect(
-		await readArchitectureModel(vault, undefined, undefined, {
-			explain: { ...explain, reading: { ...explain.reading, groups: ["missing"] } },
-		}),
-	).toMatchObject({ success: false, code: "MODEL_INVALID" });
+	for (const unavailable of [
+		{ groups: ["missing"] },
+		{ groups: ["constructor"] },
+		{ relationshipKinds: ["toString"] },
+	])
+		expect(
+			await readArchitectureModel(vault, undefined, undefined, {
+				explain: { ...explain, reading: { ...explain.reading, ...unavailable } },
+			}),
+		).toMatchObject({ success: false, code: "MODEL_INVALID" });
 	writeFileSync(join(vault, "gateway.module.json"), `${before.toString()}\n`);
 	expect(await readArchitectureModel(vault, undefined, undefined, { explain })).toMatchObject({
 		success: false,
