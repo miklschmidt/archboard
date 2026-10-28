@@ -2,7 +2,7 @@ import type { VariantContent } from "#shared/schemas/content.ts";
 import type { ModelFlow, projectModel } from "#shared/rules/model-projection.ts";
 
 /**
- * Behavioral diagrams always include the complete selected exchange.
+ * Behavioral diagrams retain the complete selected exchange and its comparison.
  * @param architecture The underlying architecture reading.
  * @param flow The explicit flow from the same model state.
  * @returns All participants and steps without structural filters or invented messages.
@@ -11,8 +11,9 @@ function projectFlow(
 	architecture: ReturnType<typeof projectModel>,
 	flow: ModelFlow,
 ): ReturnType<typeof projectModel> {
+	const depicted = architecture.depicted.flows.find((entry) => entry.id === flow.id) ?? flow;
 	const byId = new Map(architecture.depicted.nodes.map((module) => [module.id, module]));
-	const nodes = flow.participants.flatMap((id) => byId.get(id) ?? []);
+	const nodes = depicted.participants.flatMap((id) => byId.get(id) ?? []);
 	return {
 		...architecture,
 		flow,
@@ -29,7 +30,7 @@ function projectFlow(
 		content: {
 			nodes: nodes.map(({ parent: _parent, ...module }) => module),
 			edges: [],
-			flows: [flow],
+			flows: [depicted],
 			walkthroughs: [],
 		},
 	};

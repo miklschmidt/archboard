@@ -70,7 +70,7 @@ beforeAll(async () => {
 				{
 					id: "Shop#Request",
 					name: "Request",
-					participants: ["Shop#Gateway", "Shop#Worker"],
+					participants: ["Shop#Gateway", "Shop#Worker", "Shop#Obsolete"],
 					steps: [
 						{
 							id: "Shop#Send",
@@ -78,6 +78,13 @@ beforeAll(async () => {
 							to: "Shop#Worker",
 							kind: "sync",
 							label: "Dispatch",
+						},
+						{
+							id: "Shop#Retired",
+							from: "Shop#Worker",
+							to: "Shop#Obsolete",
+							kind: "return",
+							label: "Legacy response",
 						},
 					],
 				},
@@ -263,7 +270,8 @@ test("canonical exports retain default comparison and unresolved subject marks t
 			focus: ["Shop#Obsolete"],
 			hideKinds: ["call"],
 		});
-		expect(picture.placed).toEqual(expect.arrayContaining(["Shop#Send"]));
+		expect(picture.placed).toEqual(expect.arrayContaining(["Shop#Send", "Shop#Retired"]));
+		expect(group(picture.svg, "Shop#Retired")).toContain('data-semantic-standing="removed"');
 		if (grammar === "sequence") expect(group(picture.svg, "Shop#Gateway")).toContain('d="M0,-5.2');
 		expect(group(picture.svg, "Shop#Send")).toContain('d="M0,-5.2');
 	}
