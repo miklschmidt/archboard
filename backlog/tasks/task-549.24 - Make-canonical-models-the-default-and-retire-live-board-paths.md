@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T19:16:00Z'
+updated_date: '2026-10-28T19:34:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -428,4 +428,6 @@ The two-pane workbench owner now passes capture restoration after reload. Pane c
 The final workbench browser lane passes six cases with 147 assertions across typed sign-in, two-pane capture restoration, live voice, references, and agent navigation. Both TypeScript projects and scoped test lint/format pass. Fullscreen diagnosis proves the inactive inspector is absent and the mounted sidebar is hidden; the test now checks that sidebar. The fake external sign-in URL now receives a browser network fixture instead of depending on DNS and an error navigation. The real local sign-in protocol and exact destination assertions remain. Both fixture changes leave product architecture unchanged. Every executable browser inventory owner now has a passing run across the recorded serial batches. The complete final gate, remaining backend/boundary reviews, asset refresh and publication remain open.
 
 Eleven non-Codex README producers completed. Root inspected both banners, the social card, light/dark example diagrams, nine thumbnails, and four composited frames for each of eight clips, including their exact endings. A brightened empty canvas region stays one color. The two code diagnostics now use module terminology without changing machine fields; 18 existing code-check cases and 51 assertions pass. The code-evidence thumbnail includes the full module heading through its existing crop selector. Scoped source lint, formatting and whitespace pass. All eight refreshed clips are below 10 MB and returned attachment URLs; README links now name those uploads. The upload receipt wrapper failed after URL creation, so it records missing exit codes and no upload was repeated. Twelve of sixteen assets are current; three narrated replays and the ask clip remain. Code check subject vKEsyHFk/HBlhIeSD#5SMX69gS keeps the same meaning. No architecture proposal or source-vault edit is needed. Proposal lifecycle review fixes are ready for their merger; final acceptance remains open.
+
+The proposal lifecycle review is integrated at signed b2ea7a71. Root reviewed eight remaining shared browser files with no material Standards or Spec findings. Exact file versions and reused browser/type evidence are in task-549.24-shared-browser-review.json. Three narrated README videos now replay with the current renderer. Their speech and talk bytes remain exact. Root inspected the first, middle, and final beat of each video, then uploaded each accepted file once. README links now name those uploads. The ask clip refresh and migration review remain active. No acceptance criteria, lifecycle, source vault, archive publication, or PR state changed.
 <!-- SECTION:NOTES:END -->

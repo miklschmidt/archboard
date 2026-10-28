@@ -28,7 +28,7 @@ Plan the next step before anyone writes code. Ask for a change and see it drawn 
 
 **Hear Archboard explain itself**. Its own architecture, narrated by the Codex voice. Turn the sound on.
 
-https://github.com/user-attachments/assets/a4b2dcf6-957d-4e20-8414-2f6a678a35f5
+https://github.com/user-attachments/assets/9ae051ef-0405-4032-98f6-c0660637fb0e
 
 ## What you can do with it
 
@@ -138,7 +138,7 @@ gh pr comment 128 --attach pr-128.mp4 --body "A narrated walkthrough of this cha
 
 **A pull request, explained to its reviewers**: why the change exists, what it changed, and where to look closely. Turn the sound on.
 
-https://github.com/user-attachments/assets/025e7d76-2ad5-43b5-82d9-8a587994243f
+https://github.com/user-attachments/assets/3c899030-220c-4ad9-b0d1-aac9eaa9a1af
 
 <p align="center"><sub>Each video is an Archboard recording.</sub></p>
 
@@ -167,7 +167,7 @@ Add a sequence diagram of what happens when a shopper places an order, from the 
 
 Give the tour once, and every new hire can play it back. A newcomer's walkthrough starts with two parts and adds one piece at a time until the whole path is on screen. It stops at the place where things go wrong and ends on the one sentence worth remembering.
 
-https://github.com/user-attachments/assets/11dfdf87-a243-45a2-a024-38deffba1212
+https://github.com/user-attachments/assets/cea6ace8-0aa0-4cb5-9039-9693006a5736
 
 <p align="center"><sub>"How stock is reserved", six steps inside the example Inventory service module. Turn the sound on.</sub></p>
 
