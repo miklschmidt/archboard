@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T12:15:00Z'
+updated_date: '2026-10-28T12:18:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -174,6 +174,8 @@ Finish the root model with source-backed module dependencies, after shared owner
 Fix the reproduced canonical pane capture race at the existing arrival owner. A canonical move uses a null legacy board key, so a vault change currently skips the reading reset. Returning to the same visible model can then suppress the report after the server clears it. Reset reading state on a vault change even without a legacy board key. Reuse the failing foreign-repository conversation browser case as the regression owner; remove temporary diagnostics.
 
 Visual acceptance found that aggregate line labels stack every joined relationship label. Keep all underlying identities, kinds, standing, and inspector evidence, but give canonical aggregate lines bounded summary labels. Delegate this bounded shared-projection repair with public runtime/render TDD. Parent owns browser acceptance. Also place private runtime parts under their existing read, edit, archive, installation, and contract owners so the first runtime scope shows responsibilities rather than thirty peer files.
+
+Close the measured renderer corpus consumer: wide-boards.test.ts still discovers only .semantic.json files, so canonical cutover silently removes the repository model from benchmark coverage. Delegate a bounded port of that existing benchmark to public canonical reads and recursive projections. Preserve fixed fixtures, drawing assertions, and established timing limits. Keep it outside the normal gate, add no product exports, and leave historical investigation scripts unchanged.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
