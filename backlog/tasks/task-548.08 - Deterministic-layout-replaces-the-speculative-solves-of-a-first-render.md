@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-26T16:24:00Z'
-updated_date: '2026-10-27T16:51:00Z'
+updated_date: '2026-10-28T00:47:00Z'
 labels:
   - renderer
   - performance
@@ -53,6 +53,10 @@ Narrow the new Track packing case to complete parent frames. Packing organizatio
 Restrict the private hierarchy rule to a closed collection of transparent parent frames. Each nested parent contains one leaf card, and every leaf belongs to one of those nested parents. This is a wrapper property rather than a board-size threshold. It avoids isolating multi-part scopes whose entry rows belong to the existing shared ranking. Both the original service entry-row test and a new nested service regression must pass.
 
 Post-council boundary fix: preserve the six reviewer commits, reproduce the reduced Track label crossing, and give that behavior one renderer regression. Correct frame containment at its cause without weakening any hard reader. Rebuild the core, compare the complete SVG corpus with after-15, list every changed drawing and light/plain pair, and retain both SVG sides. Run the complete repository gate, affected Rust tests and strict clippy inside nix develop. Record fresh first/growing-edit medians for Viewer, Persistence and Routes, then commit and audit orphaned Git owners. This bounds correction leaves the architecture proposals and consumer workflow accurate.
+
+Round 5: reproduce Tools and work in Track from the current sources and inspect only the two permitted council SVGs. Reduce the outside caller placement to a renderer regression. Fix its rank or band relationship to the parent header from the graph, without changing routing or hard checks. Rebuild the core, run crate tests, strict clippy, renderer tests and the complete gate inside nix develop. Compare the complete standard and whole-board SVG corpus with round-4/after-16, retain both sides and inspect every changed light/plain raster. Drop any clear readability regression. Measure fresh first/growing-edit medians on Viewer, Persistence and Routes. Keep the task In Progress, sign every commit and do not push.
+
+The rank-equality prototype is dropped: a tall opaque parent routes same-band pins under its full height. Keep the existing route model. Instead, exclude a private caller-feedback loop from the paths that force a parent into a local block. The outside root leaf must have a reciprocal relationship with a member and every neighbor must belong to that parent. Genuine outside pipelines retain local composition, as the existing Rust regression requires. Other local-shape rules remain unchanged.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -163,6 +167,16 @@ The single renderer regression owns the reduced ten-node input and labelsAcrossW
 The complete corpus is /tmp/548-08/round-4/after-16. All 2452 SVGs match after-15 byte for byte, including all 76 whole boards. The complete per-board comparison is /tmp/548-08/round-4/after-16-vs-after-15. Every changed drawing is listed in /tmp/548-08/round-4/milestone-5-after-16/changed-svg-pairs.json, which is empty. changed-light-plain-svg-pairs.json and changed-other-svg-pairs.json separate the empty light/plain and other lists. reduced-regression-svg-pair.json retains both sides of the new regression.
 
 Three fresh first/growing-edit medians are Board viewer 281/204 ms, Board persistence 299/289 ms and Archboard server routes 142/134 ms. Every edit grows a card, and the source hash matches this checkout. Runs start at load 2.96 after the gate ends. /tmp/548-08/round-4/boundary-fix/measurements.json keeps all samples. No Git owner process remains after the gate. The task stays In Progress, with no push.
+
+Round 5 fixes the remaining Tools and work Track composition failure against the true parent c147b73c8. The outside caller has relationships both ways with a member, and every neighbor belongs to the parent. That private feedback loop now shares the members' rank context instead of forcing an opaque parent. Real outside pipelines and every other local-shape rule stay unchanged. No routing code or hard assertion changes. The shared-rank opaque-block prototype is dropped after card strikes and an ambiguous trunk.
+
+Core 097cda3d474917c2 passes both reduced real-renderer cases, which fail before the fix. One case has four cards and three relationships; the other also includes the existing outside-worker row. All 685 renderer tests pass with one platform skip. Layout Rust tests and strict clippy pass inside nix develop. The final complete bun run check gate passes all 20 tasks and all 19 browser files. Earlier attempts hit the untouched rust-analyzer deadline and a separate concurrent-start skill-symlink race; both pass focused reruns and the final full run without a code change.
+
+The complete corpus is /tmp/548-08/round-5/after-1, compared with /tmp/548-08/round-4/after-16. Exactly four of 2452 SVGs change: Voice coordinator, Tools and work, Track, in light/plain, light/comparison, dark/plain and dark/comparison. All 2448 other SVGs, including all 76 whole boards, match byte for byte. Both SVG sides and all eight inspected rasters are in /tmp/548-08/round-5/milestone-1, with changed-svg-pairs.json, changed-light-plain-svg-pairs.json, changed-other-svg-pairs.json and changed-drawings.md. Every changed drawing passes expectDrawingIntact. The picture falls from 1521x1108 to 1188x972, with 31.5% less page area and 21.4% less total route length.
+
+Three fresh first/growing-edit medians are Board viewer 282/204 ms, Board persistence 300/295 ms and Archboard server routes 141/138 ms. All 18 timed renders stay below 500 ms, with a maximum of 301 ms. Every edit grows a card and every run reports the matching source hash. Loads range from 2.71 to 2.85 after the gate exits. /tmp/548-08/round-5/measurements.json keeps all samples. docs/design/corpus-compactness-and-typed-trunks.md and ADR 0061 record the cause, retained rule, rejected probes, comparisons and remaining true-parent height difference.
+
+Renderer layout@TASK-548.08 and Semantic renderer@TASK-548.08 describe the retained rule and keep unchanged interfaces. Their code check retains 41 old finding identities with none new. The consumer workflow stays unchanged, so the consumer skill needs no edit. Both board claims are released and the owned server is stopped. The Git-owner audit finds no remaining owner process. The task stays In Progress, and the parent grades the new result.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

@@ -53,6 +53,42 @@ fn leaves_and_returns(members: &Set<&str>, next: &Map<&str, Vec<&str>>) -> bool 
     })
 }
 
+/// An outside leaf used only by one parent's members shares their rank context.
+/// A loop through that private collaborator does not need an opaque parent block.
+fn context_members<'a>(
+    members: &Set<&'a str>,
+    graph: &'a Node,
+    next: &Map<&str, Vec<&str>>,
+) -> Set<&'a str> {
+    let mut context = members.clone();
+    for node in graph.kids().iter().filter(|node| !node.has_children()) {
+        let id = node.id.as_str();
+        let feedback = next.get(id).into_iter().flatten().any(|target| {
+            next.get(target)
+                .is_some_and(|targets| targets.contains(&id))
+        });
+        if !feedback {
+            continue;
+        }
+        let exclusive = graph
+            .edges
+            .iter()
+            .flatten()
+            .filter(|edge| edge.source() == node.id || edge.target() == node.id)
+            .all(|edge| {
+                members.contains(if edge.source() == node.id {
+                    edge.target()
+                } else {
+                    edge.source()
+                })
+            });
+        if exclusive {
+            context.insert(&node.id);
+        }
+    }
+    context
+}
+
 /// A parent and its direct members form one caller context.
 fn context_of<'a>(id: &'a str, frames: &Map<&'a str, Set<&'a str>>) -> Option<&'a str> {
     if frames.contains_key(id) {
@@ -234,7 +270,7 @@ pub(crate) fn local_frames(graph: &Node) -> Set<String> {
     let mut local: Set<String> = members
         .iter()
         .filter(|(parent, inside)| {
-            leaves_and_returns(inside, &next)
+            leaves_and_returns(&context_members(inside, graph, &next), &next)
                 || local_shape(parent, inside, &members, graph, &exclusive)
         })
         .map(|(parent, _)| (*parent).to_owned())
