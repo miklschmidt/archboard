@@ -2,14 +2,15 @@
   "order": 1005,
   "name": "Application composition",
   "kind": "module",
-  "responsibility": "Connects pane and feature owners",
-  "description": "Mounts one pane per pane id (its session and its stage together, ApplicationPane), composes the agent's owners over the focused pane's transport, keeps voice on the pane it was started for, lays its subtitles or voice box over that pane (over the presented pane in a fullscreen presentation, and then tells the dock and the box that no dock is on screen), and connects routing, the catalog, notices, settings, narration, subtitles and a recording page. Both panes carry the tab's session, so the agent is the same whichever pane has focus. A pane opens in the vault the server was started with and then follows the vault its session reports, and its stage is given that vault. A board the person opens in the navigator is shown in the vault of the repository it was listed under, and a checkout the person chooses there is chosen through the catalog. The person's own acts decide which workhorse's conversation the dock shows: focusing a pane, opening a board in one, picking a workhorse from the dock's list and Fix with Codex tell the server through the one activation the application builds, and what an agent does to a pane never does. Fix with Codex activates the pane in front, reads the workbench again, and only then asks, so the repair goes to the workhorse of the repository diagnosed. It holds no board content.",
+  "responsibility": "Connects canonical pane and feature owners",
+  "description": "Mounts canonical readers and captured recordings. It never opens a live legacy board. Existing legacy addresses resolve through retained originals after migration. Unmigrated vaults expose explicit migration guidance. The shared pane session reports captured canonical readings to local agents.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/clients/application"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -52,19 +53,6 @@
       "to": "vKEsyHFk/yejBBUFY#xsn0RvSi"
     },
     {
-      "order": 9000,
-      "kind": "render",
-      "label": "one stage per pane, its overlay, and each repository's vault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
-        "symbol": "SemanticBoardStage"
-      },
-      "id": "vKEsyHFk/yejBBUFY#VbLQ6rfX",
-      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
-    },
-    {
       "order": 11000,
       "kind": "render",
       "label": "dock, conversation, voice box, the presentation's voice key",
@@ -93,12 +81,12 @@
     {
       "order": 14000,
       "kind": "call",
-      "label": "the repositories and boards, read again on news; choose one",
+      "label": "read canonical repository summaries",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/components/application/Application.tsx",
-        "symbol": "useBoardCatalog"
+        "symbol": "useModelCatalog"
       },
       "id": "vKEsyHFk/yejBBUFY#ep2NF6Z5",
       "to": "vKEsyHFk/yejBBUFY#zWQG6LJZ"
@@ -180,19 +168,6 @@
       },
       "id": "vKEsyHFk/yejBBUFY#ZISV4NoQ",
       "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
-    },
-    {
-      "order": 49000,
-      "kind": "render",
-      "label": "gives the stage the vault of its pane",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
-        "symbol": "PaneVaultContext"
-      },
-      "id": "vKEsyHFk/yejBBUFY#m0p0GrIc",
-      "to": "vKEsyHFk/yejBBUFY#p5UCow7F"
     },
     {
       "order": 52000,

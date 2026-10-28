@@ -6,6 +6,7 @@
   "description": "Browser listings, board snapshots and vault diagnostics normalize older schemas in memory. Those inspection requests preserve the original files and their migration fingerprints.",
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#ETrslazw",
+  "parent": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

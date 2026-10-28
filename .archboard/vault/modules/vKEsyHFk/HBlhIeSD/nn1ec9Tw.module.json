@@ -3,7 +3,7 @@
   "name": "Canonical model routes",
   "kind": "module",
   "responsibility": "Exposes current, draft, and exact architecture with comparisons, proposal standing, source resolution, and foreign navigation",
-  "description": "Every request names its vault. The shared reader resolves current, draft, completed, and exact architecture with lifecycle metadata, source associations, foreign pins, and reconciliation standing. Shared operations own claims, durable edits, recovery, and local archive setup. A vault-scoped event stream sends coherent readings and durable news. Routes interpret no archive ordering or ancestry.\n\nThe model endpoint also resolves one complete narrative target and reports unavailable beats without substituting content. Explanation capture retains the selected source and target evidence.\n\nMigration previews name an origin and optionally a qualified original state and exact migration checkpoint. The shared runtime composes the candidate or preserves inspectable originals with diagnostics. Scoped original histories never borrow current surroundings. The existing checkpoint route retains complete original inputs without installing a model or changing legacy authority.\n\nThe model query accepts explicit legacyAddress and bookmark selectors for migration previews. Converted narrative playback uses the same shared reader and immutable playback metadata. Routes reconstruct no original content.",
+  "description": "Adapts canonical discovery, initialization, exact readings, archive history, and the existing change feed. Unmigrated vaults receive explicit migration guidance.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/routes/architecture/model-routes.ts"
@@ -55,7 +55,7 @@
         "symbol": "vaultOfRequest"
       },
       "id": "vKEsyHFk/HBlhIeSD#2lwNLxzO",
-      "to": "vKEsyHFk/HBlhIeSD#fs2ehN0i"
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
     },
     {
       "order": 108000,

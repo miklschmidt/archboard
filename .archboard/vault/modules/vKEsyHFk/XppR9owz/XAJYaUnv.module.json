@@ -13,7 +13,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#XAJYaUnv",
-  "parent": "vKEsyHFk/XppR9owz#QKs0tycT",
+  "parent": "vKEsyHFk/vKEsyHFk#5zIYNuw1",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -35,14 +35,6 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/vKEsyHFk#5zIYNuw1",
-      "state": "current"
-    }
-  ],
   "outgoing": [
     {
       "order": 38000,
@@ -55,7 +47,7 @@
         "symbol": "recordingPageUrl"
       },
       "id": "vKEsyHFk/XppR9owz#mLWF1WuB",
-      "to": "vKEsyHFk/XppR9owz#MUs4pwRq"
+      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     }
   ]
 }

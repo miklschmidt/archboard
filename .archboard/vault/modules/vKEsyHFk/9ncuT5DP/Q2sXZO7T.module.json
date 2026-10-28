@@ -9,7 +9,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#Q2sXZO7T",
-  "parent": "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -17,6 +17,19 @@
     }
   ],
   "outgoing": [
+    {
+      "order": 78000,
+      "kind": "dependency",
+      "label": "forward pane presence and shown conversation operations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+        "symbol": "installWorkbenchTabSessions"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#HO533F7P",
+      "to": "vKEsyHFk/9ncuT5DP#hCKEBd5f"
+    },
     {
       "order": 84000,
       "kind": "dependency",

@@ -5,6 +5,7 @@
   "responsibility": "Records a walkthrough's talk in a page of its own and draws the recorded talk again, one frame at a time",
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#01sVgqBF",
+  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

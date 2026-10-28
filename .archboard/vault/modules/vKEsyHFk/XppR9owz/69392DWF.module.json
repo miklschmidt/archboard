@@ -1,19 +1,22 @@
 {
   "order": 11000,
-  "name": "Rasterize",
+  "name": "Model rasterize",
   "kind": "module",
-  "responsibility": "rasterize: one board as a PNG, headlessly, at native scale",
-  "description": "Asks the Archboard server for the SVG, as render does, then takes that SVG into a headless browser here and photographs it. With --clipboard, rasterize publishes PNG and self-contained HTML to the local desktop through a native clipboard helper. With --against it draws relative to the variant named, as render does. Its receipt names what the picture draws and marks, as render's does.",
+  "responsibility": "Captures a selected canonical diagram as a reproducible PNG",
+  "description": "The command renders the complete canonical reading, captures its SVG through the local rasterizer, and embeds its exact recipe in the PNG.",
   "groups": [
     "drawing"
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts"
+    "path": "apps/cli/src/cli/operations/model/rasterize.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#69392DWF",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "formerNames": [
+    "Rasterize"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -35,58 +38,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 16000,
-      "kind": "call",
-      "label": "the drawn SVG",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
-        "symbol": "renderSemanticBoardOnServer"
-      },
-      "id": "vKEsyHFk/XppR9owz#I2CofSP0",
-      "to": "vKEsyHFk/XppR9owz#OfRn3av3"
-    },
-    {
-      "order": 20000,
-      "kind": "call",
-      "label": "photograph it headlessly",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
-        "symbol": "createSemanticRasterizer"
-      },
-      "id": "vKEsyHFk/XppR9owz#uwbAloqv",
-      "to": "vKEsyHFk/XppR9owz#I6RAbOlG"
-    },
-    {
-      "order": 60000,
-      "kind": "call",
-      "label": "copy the captured board",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/semantic/draw/image-clipboard.ts",
-        "symbol": "copyImageToClipboard"
-      },
-      "id": "vKEsyHFk/XppR9owz#XaWtUC7O",
-      "to": "vKEsyHFk/XppR9owz#X4OD7oEH"
-    },
-    {
-      "order": 90000,
-      "kind": "call",
-      "label": "with --track, the file to list",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/semantic/draw/rasterize.ts",
-        "symbol": "plannedFile"
-      },
-      "id": "vKEsyHFk/XppR9owz#WH98nqbm",
-      "to": "vKEsyHFk/XppR9owz#6Zj53jA8"
-    }
-  ]
+  "outgoing": []
 }

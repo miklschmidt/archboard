@@ -59,19 +59,6 @@
       "to": "vKEsyHFk/XppR9owz#XAJYaUnv"
     },
     {
-      "order": 115000,
-      "kind": "call",
-      "label": "semanticRecordContract",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/model/record.ts",
-        "symbol": "semanticRecordContract"
-      },
-      "id": "vKEsyHFk/XppR9owz#nayrDZvG",
-      "to": "vKEsyHFk/XppR9owz#4oWqpsOB"
-    },
-    {
       "order": 118000,
       "kind": "call",
       "label": "resolve the canonical talk destination",

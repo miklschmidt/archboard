@@ -19,13 +19,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/9ncuT5DP#tlC2W839",
-      "state": "current"
-    }
-  ],
   "outgoing": []
 }

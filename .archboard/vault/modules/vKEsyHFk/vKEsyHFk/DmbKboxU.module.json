@@ -41,19 +41,45 @@
         "symbol": "chosenCheckouts"
       },
       "id": "vKEsyHFk/vKEsyHFk#fDI8NrtW",
-      "to": "vKEsyHFk/vKEsyHFk#19855Ply"
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     },
     {
-      "order": 47000,
-      "kind": "dependency",
-      "label": "durable board file operations",
-      "emphasis": "normal",
+      "order": 70050,
+      "kind": "call",
+      "label": "report structured failures",
+      "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/move/move.ts",
-        "symbol": "unlinkDurably"
+        "path": "packages/board/src/runtime/operations/history/result.ts",
+        "symbol": "errorMessage"
       },
-      "id": "vKEsyHFk/vKEsyHFk#gnnoRaHy",
+      "id": "vKEsyHFk#PxGHOuMG",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 70051,
+      "kind": "call",
+      "label": "inspect the signed Git archive",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-portable.ts",
+        "symbol": "git"
+      },
+      "id": "vKEsyHFk#EXqmey6d",
+      "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
+    },
+    {
+      "order": 70052,
+      "kind": "call",
+      "label": "resolve bound repository vaults",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/bound-vaults.ts",
+        "symbol": "isVaultLayout"
+      },
+      "id": "vKEsyHFk#CZjzqbF1",
       "to": "vKEsyHFk/vKEsyHFk#tdKalihR"
     }
   ]

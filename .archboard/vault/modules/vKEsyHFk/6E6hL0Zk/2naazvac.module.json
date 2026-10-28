@@ -56,12 +56,12 @@
     {
       "order": 3000,
       "kind": "dependency",
-      "label": "mounts the route handlers",
+      "label": "mount canonical model routes",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/wiring/application/application.ts",
-        "symbol": "mountSemanticBoardRoutes"
+        "symbol": "mountArchitectureModelRoutes"
       },
       "id": "vKEsyHFk/6E6hL0Zk#C9PQBOwg",
       "to": "vKEsyHFk/6E6hL0Zk#Y70KOm9C"
@@ -91,19 +91,6 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#ibCZHaRq",
       "to": "vKEsyHFk/6E6hL0Zk#6a2R1ddu"
-    },
-    {
-      "order": 31000,
-      "kind": "call",
-      "description": "watch the boards on screen",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/application/application.ts",
-        "symbol": "watchSemanticBoardFiles"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#YX6joWZa",
-      "to": "vKEsyHFk/Oi6SBIAM#TCMBvDpL"
     },
     {
       "order": 35000,
@@ -155,7 +142,7 @@
         "symbol": "mountRepositoryRoutes"
       },
       "id": "vKEsyHFk/Oi6SBIAM#5x06MUNV",
-      "to": "vKEsyHFk/Oi6SBIAM#etiWAAKH"
+      "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
     },
     {
       "order": 72000,
@@ -195,19 +182,6 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#4P3PNJ5d",
       "to": "vKEsyHFk/6E6hL0Zk#cZ1UH0xU"
-    },
-    {
-      "order": 107000,
-      "kind": "call",
-      "description": "watch the boards on screen",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/application/application.ts",
-        "symbol": "watchSemanticBoardFiles"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#Oc8KW7No",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
     },
     {
       "order": 119000,

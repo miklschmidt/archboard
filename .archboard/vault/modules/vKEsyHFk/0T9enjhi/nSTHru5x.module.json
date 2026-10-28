@@ -2,13 +2,15 @@
   "order": 34000,
   "name": "Command dispatch",
   "kind": "module",
-  "responsibility": "Reads boards directly once: in a checkout with no vault, to name the known vaults that hold boards of its code",
+  "responsibility": "Selects and invokes the declared CLI contract",
+  "description": "The dispatcher finds the explicitly addressed vault and invokes the selected command. Canonical model operations pass through their public command contracts.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/operations/invocation"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#nSTHru5x",
+  "parent": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -28,14 +30,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/XppR9owz#PQcK5dF2",
-      "state": "current"
     }
   ],
   "outgoing": [

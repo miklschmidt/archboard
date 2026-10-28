@@ -32,7 +32,7 @@
         "symbol": "classifyAndBind"
       },
       "id": "vKEsyHFk/SJ2JMVyz#5B5ZeO2k",
-      "to": "vKEsyHFk/SJ2JMVyz#p05yEm5U"
+      "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
     },
     {
       "order": 8000,
@@ -45,7 +45,7 @@
         "symbol": "stageOperation"
       },
       "id": "vKEsyHFk/SJ2JMVyz#uiPv1wnk",
-      "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS"
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
     },
     {
       "order": 9000,
@@ -58,7 +58,25 @@
         "symbol": "threadStart"
       },
       "id": "vKEsyHFk/SJ2JMVyz#W87z7uEB",
-      "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 9000,
+      "kind": "call",
+      "label": "thread/start for a new workhorse",
+      "description": "The caller invokes threadStart on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file.",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+        "symbol": "threadStart"
+      },
+      "id": "vKEsyHFk/wAHh0HTa#7dDHchT9",
+      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
     },
     {
       "order": 39000,

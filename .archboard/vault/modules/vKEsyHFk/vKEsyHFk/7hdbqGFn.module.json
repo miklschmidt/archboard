@@ -85,12 +85,12 @@
     {
       "order": 53000,
       "kind": "dependency",
-      "label": "read the canonical node binding",
+      "label": "resolve a module code binding",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-opener/src/server/routes/code-opener.ts",
-        "symbol": "readBoardVariant"
+        "path": "packages/code-opener/src/server/projections/model-target.ts",
+        "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/vKEsyHFk#q1ENQYcO",
       "to": "vKEsyHFk/vKEsyHFk#DmbKboxU"

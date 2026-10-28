@@ -2,9 +2,11 @@
   "order": 25003,
   "name": "Panes and workspace",
   "kind": "module",
-  "responsibility": "Gives the tab its panes: each pane's session with the server, the address that restores them, the catalog of boards to choose from, the move of a board to another repository, and the code a part opens",
+  "responsibility": "Owns pane sessions, repository discovery, reading addresses, and local source navigation",
+  "description": "The tab restores each reading from its address and keeps pane ownership separate from architecture. Model discovery uses the canonical catalogue. Moving architecture ownership between models is unavailable.",
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#wlbLOPSH",
+  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -19,5 +21,19 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 70030,
+      "kind": "call",
+      "label": "address the selected reading",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/rules/board-catalog/listing.ts",
+        "symbol": "boardKeyFor"
+      },
+      "id": "vKEsyHFk#YZOiFcZt",
+      "to": "vKEsyHFk/yejBBUFY#POloYnX3"
+    }
+  ]
 }

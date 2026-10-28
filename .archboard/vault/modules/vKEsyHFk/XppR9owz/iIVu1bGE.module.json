@@ -57,7 +57,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/cli/src/cli/operations/invocation/run.ts",
-        "symbol": "claimContract"
+        "symbol": "modelClaimContract"
       },
       "id": "vKEsyHFk/XppR9owz#TVFLwNL6",
       "to": "vKEsyHFk/XppR9owz#bLpk2XKU"

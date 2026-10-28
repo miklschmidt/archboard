@@ -2,15 +2,11 @@
   "order": 10000,
   "name": "Thread tool calls",
   "kind": "module",
-  "responsibility": "Runs the archboard_app calls a thread makes on the server's other threads: list, read, create, fork, message, and the waits",
-  "description": "A creation, fork or message runs only once the user approves it, under the generation that may act; a wait registers its edges first. A thread it creates or forks works in the checkout of its caller, as the epoch ledger recorded it when the caller started.",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/runtime/services/dynamic-tools"
-  },
+  "responsibility": "Answers the shared thread tools through one generation-owned dispatcher",
+  "description": "The dispatcher runs reads, writes, and waits through the same request cache and quarantine boundary. Its private services retain mutation settlements and waiting state. One generation owns its lifetime.",
   "schemaVersion": 1,
   "id": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
-  "parent": "vKEsyHFk/SJ2JMVyz#FZjiPawv",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -42,7 +38,7 @@
         "symbol": "stageOperation"
       },
       "id": "vKEsyHFk/SJ2JMVyz#Uflv9hM7",
-      "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS"
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
     },
     {
       "order": 19000,
@@ -56,6 +52,19 @@
       },
       "id": "vKEsyHFk/SJ2JMVyz#t5YUCWX1",
       "to": "vKEsyHFk/SJ2JMVyz#Fxm7RW2x"
+    },
+    {
+      "order": 20000,
+      "kind": "call",
+      "label": "the generation that may act",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
+        "symbol": "stageOperation"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#mxl6bmYW",
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
     },
     {
       "order": 20000,
@@ -81,7 +90,34 @@
         "symbol": "threadStart"
       },
       "id": "vKEsyHFk/SJ2JMVyz#r1jVxlwm",
-      "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 32000,
+      "kind": "call",
+      "label": "the calling thread's tab session",
+      "description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/dynamic-tools/authority/authority-classification.ts",
+        "symbol": "resolveExactLogicalCaller"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#IxtTYfQ6",
+      "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
+    },
+    {
+      "order": 51000,
+      "kind": "rpc",
+      "label": "thread/start, fork and turn/start for a tool call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutations.ts",
+        "symbol": "threadStart"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#zOHsZyzc",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     }
   ]
 }

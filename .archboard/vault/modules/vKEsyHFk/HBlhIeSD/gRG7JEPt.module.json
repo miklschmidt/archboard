@@ -2,7 +2,8 @@
   "order": 41000,
   "name": "Canonical flow render routes",
   "kind": "module",
-  "responsibility": "Reads one explicitly selected current or retained flow and renders its complete behavior through the existing renderer",
+  "responsibility": "Renders a canonical structural reading or a complete explicitly selected flow as architecture, sequence, or flowchart.",
+  "description": "Renders architecture, sequence, and flowchart from canonical readings through the shared client-local projection and existing Bun renderer.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/routes/architecture/flow-routes.ts"
@@ -69,7 +70,7 @@
         "symbol": "mountArchitectureFlowRoutes"
       },
       "id": "vKEsyHFk/HBlhIeSD#7fKX6THX",
-      "to": "vKEsyHFk/HBlhIeSD#fs2ehN0i"
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
     }
   ]
 }

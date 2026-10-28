@@ -5,6 +5,7 @@
   "responsibility": "Lists the repositories the navigator shows, chooses a repository's checkout for the machine, and knows which checkout holds each repository identity.",
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#8fMA8lHI",
+  "parent": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

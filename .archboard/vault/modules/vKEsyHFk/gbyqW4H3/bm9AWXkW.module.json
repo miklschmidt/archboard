@@ -3,12 +3,27 @@
   "name": "Render recipe",
   "kind": "module",
   "responsibility": "Writes and reads the render recipe that a board render carries",
-  "description": "Fingerprints the input that the picture is drawn from, hashes the picture without the recipe, and writes the recipe into the SVG metadata element or a PNG text chunk. It reads a recipe back from the bytes of a file, for the embeds check.",
+  "description": "Carries canonical model selectors and the exact input revision in the existing SVG metadata recipe. The embed checker reuses canonical reading and rendering owners.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/runtime/operations/recipe"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#bm9AWXkW",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+  "outgoing": [
+    {
+      "order": 70039,
+      "kind": "call",
+      "label": "read image dimensions from recipes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/operations/recipe/read-recipe.ts",
+        "symbol": "readPngDimensions"
+      },
+      "id": "vKEsyHFk#wsEMWmNJ",
+      "to": "vKEsyHFk/SMjRfwN3#KeEVHJEm"
+    }
+  ]
 }

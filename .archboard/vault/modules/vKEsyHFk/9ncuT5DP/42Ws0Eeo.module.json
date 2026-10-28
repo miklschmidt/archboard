@@ -1,8 +1,8 @@
 {
   "order": 19000,
-  "name": "Semantic context",
+  "name": "Architecture context publisher",
   "kind": "module",
-  "responsibility": "One per tab session: turns its panes' gestures and every settled change of the boards in its panes' vaults into briefs and events",
+  "responsibility": "Publishes captured pane gestures and durable architecture changes to local agents",
   "description": "Each brief names its board's vault, so a thread passes it to the CLI with -C. It hears the board changes of the vaults its tab session's panes are in, and drops a cosmetic one, which is no news. Archboard's announcements tell each change only to the workhorse of the board's checkout, so a workhorse is told about the boards it works on.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
@@ -10,7 +10,10 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
-  "parent": "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "formerNames": [
+    "Semantic context"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -18,6 +21,19 @@
     }
   ],
   "outgoing": [
+    {
+      "order": 50000,
+      "kind": "event",
+      "label": "each settled board change, focus and selection",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+        "symbol": "subscribeSettledChange"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#at9JRETZ",
+      "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE"
+    },
     {
       "order": 91000,
       "kind": "event",

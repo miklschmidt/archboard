@@ -9,7 +9,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#nLp2hILd",
-  "parent": "vKEsyHFk/HBlhIeSD#8fMA8lHI",
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -31,5 +31,19 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 18000,
+      "kind": "call",
+      "label": "the vault an untracked holder keeps",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/store/repo-registry.ts",
+        "symbol": "vaultHolder"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#CsZo87Fp",
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    }
+  ]
 }

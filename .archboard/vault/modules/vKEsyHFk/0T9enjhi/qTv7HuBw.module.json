@@ -2,8 +2,8 @@
   "order": 8003,
   "name": "Atomic file replacement",
   "kind": "function",
-  "responsibility": "Fsyncs every change to a board file: a replacement, a move and an unlink",
-  "description": "writeFileAtomic writes a temporary sibling, fsyncs file content, renames it over the destination, and fsyncs the directory; moveFileDurably and unlinkDurably sync the directory the same way, so accepted board writes are committed before callers receive success.",
+  "responsibility": "Durably replaces or removes one file",
+  "description": "The workspace owner writes exact bytes and fsyncs changes. Canonical model installation coordinates these file operations through its journal before reporting completion.",
   "groups": [
     "writes"
   ],
@@ -13,6 +13,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#qTv7HuBw",
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

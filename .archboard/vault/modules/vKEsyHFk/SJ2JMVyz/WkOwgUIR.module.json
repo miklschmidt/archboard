@@ -5,6 +5,7 @@
   "responsibility": "Where a pane's command and the coordinator's tool calls reach the workhorse of a checkout, and where the coordinator is told what happens",
   "schemaVersion": 1,
   "id": "vKEsyHFk/SJ2JMVyz#WkOwgUIR",
+  "parent": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

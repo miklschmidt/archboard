@@ -2,8 +2,8 @@
   "order": 35000,
   "name": "Bound vaults",
   "kind": "function",
-  "responsibility": "Which known vaults hold boards that bind one repository's code, read without a lease and without a write",
-  "description": "TASK-480. The known vaults are the ones the navigator lists: the vault of each chosen checkout and each untracked vault that exist. A board counts when a node of any variant binds the repository. A board that needs a migration is migrated in memory only, because the vault belongs to another repository.",
+  "responsibility": "Lists known canonical models whose current or active proposed modules bind a repository.",
+  "description": "Scans chosen checkouts and registered untracked vaults, then reads canonical model and proposal modules. LEGACY_AUTHORITY produces no match; discovery does not decode or rewrite legacy board files.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/store/bound-vaults.ts",
@@ -35,30 +35,43 @@
   ],
   "outgoing": [
     {
-      "order": 76000,
+      "order": 21000,
       "kind": "call",
-      "label": "the boards of each known vault",
+      "label": "the chosen checkouts and untracked vaults",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/store/bound-vaults.ts",
-        "symbol": "listSemanticBoards"
+        "symbol": "listRegistry"
       },
-      "id": "vKEsyHFk/0T9enjhi#1Rd0xfYJ",
-      "to": "vKEsyHFk/0T9enjhi#NM28UA5U"
+      "id": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     },
     {
-      "order": 77000,
+      "order": 22000,
       "kind": "call",
-      "label": "read each in memory, without a lease or a write",
+      "label": "the vault layout",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/store/bound-vaults.ts",
-        "symbol": "decodeSemanticBoardDocument"
+        "symbol": "isVaultLayout"
       },
-      "id": "vKEsyHFk/0T9enjhi#XI1dBAG5",
-      "to": "vKEsyHFk/0T9enjhi#R3ldC44x"
+      "id": "vKEsyHFk/nAmiQ3Vc#7hxRgVwY",
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    },
+    {
+      "order": 76000,
+      "kind": "call",
+      "label": "read models bound to a repository",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/bound-vaults.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/0T9enjhi#1Rd0xfYJ",
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
     }
   ]
 }

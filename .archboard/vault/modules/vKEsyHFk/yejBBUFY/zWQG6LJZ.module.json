@@ -1,16 +1,19 @@
 {
   "order": 5000,
-  "name": "Board catalog",
+  "name": "Model catalogue",
   "kind": "module",
-  "responsibility": "Lists the repositories and the boards of each",
-  "description": "Owns the tab's query cache and the live panes' inventory query. Reads the repositories of the machine, one board listing for each repository with a vault, and composes them with the inventory into what the navigator shows. Chooses the checkout a repository is read from, and holds the invalidations the application calls when pane news says a board moved or a checkout was chosen.\n\nReads each vault through the existing architecture authority query. Migrated repositories expose their canonical model instead of a legacy board listing. A refused canonical read never authorizes legacy fallback.",
+  "responsibility": "Lists repositories and their canonical architecture authority",
+  "description": "Reads repository identities and canonical model authority through the shared query cache. The navigator opens each model in the active pane. Legacy authority exposes migration guidance instead of fetching live board listings or levels.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/board-catalog"
+    "path": "apps/web/src/ui/hooks/architecture-model/use-model-catalog.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
   "parent": "vKEsyHFk/yejBBUFY#wlbLOPSH",
+  "formerNames": [
+    "Board catalog"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -27,43 +30,30 @@
   ],
   "outgoing": [
     {
-      "order": 4000,
+      "order": 5010,
       "kind": "call",
-      "label": "one board listing for each repository's vault",
+      "label": "read registered repositories",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/board-catalog/use-board-catalog.ts",
-        "symbol": "semanticBoardListQuery"
+        "path": "apps/web/src/ui/hooks/architecture-model/use-model-catalog.ts",
+        "symbol": "repositoriesQuery"
       },
-      "id": "vKEsyHFk/yejBBUFY#4iVsoxG0",
-      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+      "id": "vKEsyHFk#i32p6taI",
+      "to": "vKEsyHFk#dneK7oM5"
     },
     {
-      "order": 15000,
+      "order": 5020,
       "kind": "call",
-      "label": "the live panes' inventory",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/board-catalog/queries.ts",
-        "symbol": "fetchPaneInventory"
-      },
-      "id": "vKEsyHFk/yejBBUFY#fbpFPAWn",
-      "to": "vKEsyHFk/yejBBUFY#xsn0RvSi"
-    },
-    {
-      "order": 51000,
-      "kind": "call",
-      "label": "read the repositories; choose a checkout",
+      "label": "read model authority",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/board-catalog/repositories.ts",
-        "symbol": "requestJson"
+        "path": "apps/web/src/ui/hooks/architecture-model/use-model-catalog.ts",
+        "symbol": "architectureModelQuery"
       },
-      "id": "vKEsyHFk/yejBBUFY#n41AFv0z",
-      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
+      "id": "vKEsyHFk#7EsWuSSD",
+      "to": "vKEsyHFk/yejBBUFY#AIp6YN1P"
     }
   ]
 }

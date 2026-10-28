@@ -3,10 +3,10 @@
   "name": "Canonical model reader",
   "kind": "module",
   "responsibility": "Explores recursive module scopes and their connections",
-  "description": "Reads one coherent canonical model. Opening a module changes attention without creating a board or changing architecture. Legacy vaults keep their board reader.",
+  "description": "Reads one coherent canonical model and its selected state. Opening a module changes attention without copying architecture. Unmigrated vaults expose explicit migration guidance. Exact retained originals use their captured viewer.",
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#TLCeNkdh",
-  "parent": "vKEsyHFk/yejBBUFY#wlbLOPSH",
+  "parent": "vKEsyHFk/yejBBUFY#POloYnX3",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -21,5 +21,32 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 70016,
+      "kind": "call",
+      "label": "show shared reading controls",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelCodeFindings.tsx",
+        "symbol": "WarningCount"
+      },
+      "id": "vKEsyHFk#5Fd9qq2B",
+      "to": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
+    },
+    {
+      "order": 70017,
+      "kind": "call",
+      "label": "cache and interact with pictures",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/architecture-model/drawing.ts",
+        "symbol": "browserPictureStorage"
+      },
+      "id": "vKEsyHFk#f0RC9khM",
+      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+    }
+  ]
 }

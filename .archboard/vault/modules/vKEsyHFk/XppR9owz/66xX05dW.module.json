@@ -3,7 +3,7 @@
   "name": "Model read",
   "kind": "module",
   "responsibility": "Reads current, active and completed states with exact comparisons and retained lifecycle metadata.",
-  "description": "Passes current, proposal, exact checkpoint, scope, and flow selections through the shared architecture reader. Walkthrough and shared selectors resolve pinned narrative playback through the same command. Migration previews name their origin and can combine a qualified original state with an exact migration checkpoint. Original histories retain their own board coverage without borrowing current surroundings.\n\nPreview reads translate explicit legacyAddress and bookmark selectors. Converted walkthroughs reuse the existing playback contract. The runtime resolves identity, original coverage, and unavailable references.",
+  "description": "Canonical models are the one live authoring format. Model commands own discovery, recursive readings, proposals, history, code inspection, and walkthroughs. Legacy commands retire.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/operations/model/read.ts"

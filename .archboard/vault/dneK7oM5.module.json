@@ -1,0 +1,41 @@
+{
+  "order": 5010,
+  "name": "Repository queries",
+  "kind": "module",
+  "responsibility": "Shares repository requests and the tab query cache",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/board-catalog"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#dneK7oM5",
+  "parent": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+  "outgoing": [
+    {
+      "order": 15000,
+      "kind": "call",
+      "label": "the live panes' inventory",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/board-catalog/queries.ts",
+        "symbol": "fetchPaneInventory"
+      },
+      "id": "vKEsyHFk/yejBBUFY#fbpFPAWn",
+      "to": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    },
+    {
+      "order": 51000,
+      "kind": "call",
+      "label": "read the repositories; choose a checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/board-catalog/repositories.ts",
+        "symbol": "requestJson"
+      },
+      "id": "vKEsyHFk/yejBBUFY#n41AFv0z",
+      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
+    }
+  ]
+}

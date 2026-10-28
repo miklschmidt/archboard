@@ -9,14 +9,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
-      "state": "current"
-    }
-  ],
+  "parent": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
   "outgoing": [
     {
       "order": 7000,

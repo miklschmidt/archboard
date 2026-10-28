@@ -1,21 +1,18 @@
 {
   "order": 13004,
-  "name": "Draw here",
+  "name": "Browser drawing",
   "kind": "module",
-  "responsibility": "Draws the board in this tab, with the tab's own canvas and worker pool",
+  "responsibility": "Draws a prepared reading through the installed browser renderer",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/ui/state/browser-renderer.ts"
+    "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+    "symbol": "drawBoardHere"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#F90402mH",
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/vKEsyHFk#OHywsFXm",
-      "state": "current"
-    }
+  "parent": "vKEsyHFk/yejBBUFY#hDWpDois",
+  "formerNames": [
+    "Draw here"
   ],
   "outgoing": []
 }

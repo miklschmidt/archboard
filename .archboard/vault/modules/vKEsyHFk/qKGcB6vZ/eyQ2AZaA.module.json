@@ -9,7 +9,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
-  "parent": "vKEsyHFk/qKGcB6vZ#B0SAnbtM",
+  "parent": "vKEsyHFk/9ncuT5DP#08zJvPJq",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -28,7 +28,7 @@
         "symbol": "realtimeAppendText"
       },
       "id": "vKEsyHFk/qKGcB6vZ#1joDYyhX",
-      "to": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "order": 22000,

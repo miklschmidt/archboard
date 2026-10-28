@@ -5,5 +5,6 @@
   "responsibility": "Photographs a board into a bounded PNG: the command fetches the board's SVG from the server, and the rasterizer draws it in a browser page that it keeps for the next job",
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#KeEVHJEm",
+  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
   "outgoing": []
 }

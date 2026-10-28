@@ -19,6 +19,23 @@
   ],
   "outgoing": [
     {
+      "order": 2000,
+      "kind": "call",
+      "label": "of the named checkout; a delegation starts it first",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/tool-execution.ts",
+        "symbol": "delegate"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#e1viO4QT",
+      "to": "vKEsyHFk/9ncuT5DP#7XZtb0wb"
+    },
+    {
       "order": 8000,
       "kind": "call",
       "label": "validate against the frozen manifest",
@@ -46,7 +63,7 @@
         "symbol": "delegate"
       },
       "id": "vKEsyHFk/qKGcB6vZ#gxWbt0Mt",
-      "to": "vKEsyHFk/qKGcB6vZ#LIpURyJE"
+      "to": "vKEsyHFk/9ncuT5DP#tlC2W839"
     },
     {
       "order": 10000,
@@ -62,6 +79,19 @@
       "to": "vKEsyHFk/qKGcB6vZ#fEiupnAD"
     },
     {
+      "order": 34000,
+      "kind": "call",
+      "label": "stop_workhorses: stop every running workhorse of the tab",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/tool-execution.ts",
+        "symbol": "stopWork"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#bK9QB2R5",
+      "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4"
+    },
+    {
       "order": 40000,
       "kind": "call",
       "label": "stop_workhorses: stop every running workhorse of the tab",
@@ -72,7 +102,7 @@
         "symbol": "stopWork"
       },
       "id": "vKEsyHFk/qKGcB6vZ#au7MY0Yt",
-      "to": "vKEsyHFk/qKGcB6vZ#VNzfidEL"
+      "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
     },
     {
       "order": 42000,

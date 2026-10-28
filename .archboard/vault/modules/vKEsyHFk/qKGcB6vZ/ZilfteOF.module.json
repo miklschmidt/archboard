@@ -10,12 +10,26 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#ZilfteOF",
-  "parent": "vKEsyHFk/qKGcB6vZ#hshxlvQL",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 70008,
+      "kind": "call",
+      "label": "refresh after durable changes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/host/archboard-context-source.ts",
+        "symbol": "semanticChangeFeed"
+      },
+      "id": "vKEsyHFk#zeayswzH",
+      "to": "vKEsyHFk/Oi6SBIAM#mStVd7fZ"
+    }
+  ]
 }

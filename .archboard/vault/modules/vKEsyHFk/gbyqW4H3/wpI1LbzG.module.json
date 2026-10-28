@@ -1,8 +1,8 @@
 {
   "order": 2000,
-  "name": "View dispatcher",
+  "name": "Diagram rendering",
   "kind": "function",
-  "responsibility": "Chooses the grammar, lays out each distinct content once, and returns the document",
+  "responsibility": "Selects diagram grammar and composes measurement, layout, and painting",
   "description": "renderSemanticView picks architecture or data flow. renderArchitecture turns flow steps into lines, measures, lays out, paints and wraps, and frames the page as planned when the board has nothing built. The last 64 layouts are remembered by content and comparison standing, independent of theme, so a repeated render or a theme switch does not lay out again. Every variant is laid out fresh; nothing is carried over from a predecessor (ADR 0032).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
@@ -11,6 +11,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
   "parent": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
+  "formerNames": [
+    "View dispatcher"
+  ],
   "outgoing": [
     {
       "order": 3000,

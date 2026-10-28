@@ -41,7 +41,20 @@
         "symbol": "listRegistry"
       },
       "id": "vKEsyHFk/vKEsyHFk#7YCu9h8P",
-      "to": "vKEsyHFk/vKEsyHFk#19855Ply"
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "order": 70058,
+      "kind": "call",
+      "label": "read registry fields",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/store/registry-file.ts",
+        "symbol": "stringAt"
+      },
+      "id": "vKEsyHFk#LfkZEor0",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
     }
   ]
 }

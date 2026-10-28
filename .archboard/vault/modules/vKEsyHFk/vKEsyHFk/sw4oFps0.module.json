@@ -107,6 +107,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#hfMj0fMk",
       "to": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+    },
+    {
+      "order": 70057,
+      "kind": "call",
+      "label": "publish structured local diagnostics",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/dispatch.ts",
+        "symbol": "logger"
+      },
+      "id": "vKEsyHFk#e00V8dhv",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
     }
   ]
 }

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T11:54:00Z'
+updated_date: '2026-10-28T12:15:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -366,4 +366,6 @@ The existing foreign-repository conversation case reproduces the missing capture
 Simplification after inspection: keep the historical wide-layout investigation scripts unchanged. They use frozen renderer fixtures and test-owned scorecards; converting them would expand the public renderer interface for research tooling. The existing engine-gallery.ts already provides canonical current, scoped, and flow measurements. The root model names both consumers, with their different purposes. The experimental reader helper was removed. Source lint for the product changes remains the required owner.
 
 Signed merge 85f9f2526 integrates aggregate labels from dba5be542. The merge tree equals the validated source. The four-line canonical projection change retains complete joins and leaves single labels, flows, legacy readings, and exact visibility intact. Parent acceptance removes fixed prose from the new assertion and checks count, one-line format, and rendered agreement instead. Browser acceptance follows on the real repository model.
+
+Adopted completion state oyXXnyCV through canonical-root-adoption-549-24-1 at signed archive checkpoint 5e863b979b895b04575b67d68b3e9c6eb332f608. Shelved only the seven superseded TASK-549.24 fragments through explicit retained lifecycle operations. Public post-adoption acceptance opens all eight unrelated drafts with unchanged bytes, all seven shelved fragments, and all 19 walkthroughs with 110 ready beats. Current has 540 modules, 19 roots, 1113 relationships, and 72 flows. Claims are empty. Current code inspection has no warnings, 34 informational unused exposures, and 15 explicit analysis limits. Exact acceptance and code evidence are task-549.24-root-current-acceptance.json and task-549.24-root-current-code.json outside the repository. Full gate, remaining assets, final review, archive publication, and PR readiness remain open.
 <!-- SECTION:NOTES:END -->

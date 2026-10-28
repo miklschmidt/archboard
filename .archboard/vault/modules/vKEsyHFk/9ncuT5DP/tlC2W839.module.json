@@ -19,15 +19,47 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/9ncuT5DP#tlC2W839",
-      "state": "current"
-    }
-  ],
   "outgoing": [
+    {
+      "order": 12000,
+      "kind": "event",
+      "label": "operation events; only an unknown outcome is told",
+      "description": "The callback queue subscribes to the operations and host-context ports passed to the public createCodexCoordinatorCallbacks factory. The incoming event reaches its subscribed callback, not a private import by the publisher.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/callbacks.ts",
+        "symbol": "subscribe"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#5QnOXTuc",
+      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI"
+    },
+    {
+      "order": 32000,
+      "kind": "rpc",
+      "label": "turn/start when idle, turn/steer",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+        "symbol": "turnStart"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#68SS2fPT",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 37000,
+      "kind": "call",
+      "label": "a delegation as the authored user input",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+        "symbol": "createTextUserInput"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#qxT5sHit",
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
+    },
     {
       "order": 56000,
       "kind": "event",

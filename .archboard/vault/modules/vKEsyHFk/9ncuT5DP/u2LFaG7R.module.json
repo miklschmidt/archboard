@@ -33,6 +33,32 @@
       "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
     },
     {
+      "order": 14000,
+      "kind": "call",
+      "label": "edit the queue of the shown checkout's workhorse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/browser-gateway.ts",
+        "symbol": "add"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#FWJMAVKj",
+      "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn"
+    },
+    {
+      "order": 15000,
+      "kind": "call",
+      "label": "start the workhorse of the shown checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+        "symbol": "start"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#NALNPztL",
+      "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN"
+    },
+    {
       "order": 21000,
       "kind": "call",
       "label": "edit the queue of the shown checkout's workhorse",
@@ -44,6 +70,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#EZEiVlsE",
       "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn"
+    },
+    {
+      "order": 29000,
+      "kind": "call",
+      "label": "the workhorse of the shown checkout, built on first use",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/browser-gateway.ts",
+        "symbol": "workhorse"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#mK9SfZDk",
+      "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4"
     },
     {
       "order": 31000,

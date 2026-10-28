@@ -31,6 +31,19 @@
   "outgoing": [
     {
       "order": 33000,
+      "kind": "render",
+      "label": "mount on the talk's board, its step driven",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "symbol": "SemanticBoardStage"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#Ntxc6nJp",
+      "to": "vKEsyHFk/UOXNWLhR#aYC7if1N"
+    },
+    {
+      "order": 33000,
       "kind": "call",
       "label": "install the stepped clock; step it a frame at a time",
       "emphasis": "normal",
@@ -44,6 +57,20 @@
     },
     {
       "order": 34000,
+      "kind": "call",
+      "label": "read boards from the talk",
+      "description": "The page or replay imports the semantic-board-canvas root. It re-exports readBoardsFrom from the implementing child, so the relationship ends on that public entry point.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "symbol": "readBoardsFrom"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#r0RVKR0o",
+      "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
+    },
+    {
+      "order": 34000,
       "kind": "render",
       "label": "one stage, at the talk's step",
       "emphasis": "normal",
@@ -54,6 +81,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#o3xHmMmJ",
       "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+    },
+    {
+      "order": 35000,
+      "kind": "call",
+      "label": "install the stepped clock; step it each frame",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "symbol": "driveFramesFrom"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#qu6pVEXF",
+      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
     },
     {
       "order": 35000,
@@ -132,6 +172,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#tLxlPuMO",
       "to": "vKEsyHFk/yejBBUFY#p5UCow7F"
+    },
+    {
+      "order": 120000,
+      "kind": "call",
+      "label": "draw every picture against the talk's variant",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "symbol": "drawAgainst"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#VIqC762A",
+      "to": "vKEsyHFk/UOXNWLhR#38hwLCO1"
     }
   ]
 }

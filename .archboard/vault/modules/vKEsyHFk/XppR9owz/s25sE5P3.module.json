@@ -33,45 +33,6 @@
   ],
   "outgoing": [
     {
-      "order": 87000,
-      "kind": "call",
-      "label": "each vault's boards, and each embed drawn again",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/vault/embeds/embed-drawing.ts",
-        "symbol": "renderSemanticBoardOnServer"
-      },
-      "id": "vKEsyHFk/XppR9owz#GGBLhCzn",
-      "to": "vKEsyHFk/XppR9owz#OfRn3av3"
-    },
-    {
-      "order": 88000,
-      "kind": "call",
-      "label": "draw a PNG embed again, with --fix",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/vault/embeds/embed-drawing.ts",
-        "symbol": "createSemanticRasterizer"
-      },
-      "id": "vKEsyHFk/XppR9owz#5LmZgSAE",
-      "to": "vKEsyHFk/XppR9owz#I6RAbOlG"
-    },
-    {
-      "order": 93000,
-      "kind": "call",
-      "label": "the embeds this vault's boards track",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/vault/embeds/tracked-embeds.ts",
-        "symbol": "requestJson"
-      },
-      "id": "vKEsyHFk/XppR9owz#XZwXo4nT",
-      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
-    },
-    {
       "order": 95000,
       "kind": "data",
       "label": "the default branch vault, shallow and sparse",

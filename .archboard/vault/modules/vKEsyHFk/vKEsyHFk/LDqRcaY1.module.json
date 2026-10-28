@@ -24,7 +24,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/vault.ts",
+        "path": "packages/skills/src/runtime/operations/runs/replay.ts",
         "symbol": "keepTalk"
       },
       "id": "vKEsyHFk/vKEsyHFk#U1k5hdA7",
@@ -46,12 +46,12 @@
     {
       "order": 55000,
       "kind": "dependency",
-      "label": "build evaluation board fixtures",
+      "label": "validate canonical evaluation inputs",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/skills/src/runtime/operations/runs/laying.ts",
-        "symbol": "branchVariantTransition"
+        "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/vKEsyHFk#wSGdfYDg",
       "to": "vKEsyHFk/vKEsyHFk#DmbKboxU"

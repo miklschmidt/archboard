@@ -2,8 +2,8 @@
   "order": 13000,
   "name": "Tell coordinator",
   "kind": "module",
-  "responsibility": "The tell_coordinator tool of the coordinator namespace a workhorse is started with, named by the host: tell the coordinator one thing while it works",
-  "description": "Its manifest is the reviewed template filled with the host's namespace and product name, pinned by the digest of those bytes. While voice is live, a call becomes workhorse news for the coordinator of the workhorse's tab session. With no voice session nothing is sent, and the workhorse is told nobody is listening.",
+  "responsibility": "Defines and answers the workhorse tool that sends news to the coordinator",
+  "description": "One tool owner publishes its reviewed manifest and answers the corresponding requests. It validates the message, reports unavailable listeners, and queues news for the live coordinator.",
   "groups": [
     "voice"
   ],
@@ -13,20 +13,56 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
-  "parent": "vKEsyHFk/SJ2JMVyz#j8IHgWO5",
+  "parent": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+  "formerNames": [
+    "Tell coordinator",
+    "Coordinator callback manifest"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "references": [
+  "outgoing": [
     {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
-      "state": "current"
+      "order": 18000,
+      "kind": "call",
+      "label": "the news this message is",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+        "symbol": "news"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#kK1YexMf",
+      "to": "vKEsyHFk/qKGcB6vZ#hxZxt8Wy"
+    },
+    {
+      "order": 19000,
+      "kind": "call",
+      "label": "queue it, wait for its delivery",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+        "symbol": "enqueue"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#35DJDouE",
+      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI"
+    },
+    {
+      "order": 20000,
+      "kind": "call",
+      "label": "answer the workhorse",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+        "symbol": "respond"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#5EeoHuyh",
+      "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu"
     }
-  ],
-  "outgoing": []
+  ]
 }

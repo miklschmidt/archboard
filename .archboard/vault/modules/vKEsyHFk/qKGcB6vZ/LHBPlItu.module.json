@@ -1,17 +1,22 @@
 {
   "order": 9001,
-  "name": "Codex transport",
+  "name": "Inbound protocol router",
   "kind": "module",
-  "responsibility": "Where a tool call or notification from the child arrives, routed to the owner registered for it",
+  "responsibility": "Routes decoded child requests and notifications to their registered owners",
   "groups": [
     "child"
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-app-server/src/runtime/clients"
+    "path": "packages/codex-app-server/src/runtime/operations/inbound-router.ts",
+    "symbol": "createInboundRouter"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+  "parent": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+  "formerNames": [
+    "Codex transport"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -35,7 +40,7 @@
         "symbol": "routeCoordinatorTool"
       },
       "id": "vKEsyHFk/qKGcB6vZ#xzGv4R2g",
-      "to": "vKEsyHFk/qKGcB6vZ#VNzfidEL"
+      "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
     }
   ]
 }

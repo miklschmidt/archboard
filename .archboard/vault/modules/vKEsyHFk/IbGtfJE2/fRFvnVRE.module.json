@@ -10,14 +10,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#fRFvnVRE",
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
-      "state": "current"
-    }
-  ],
+  "parent": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
   "outgoing": [
     {
       "order": 32000,
@@ -30,7 +23,7 @@
         "symbol": "fetch"
       },
       "id": "vKEsyHFk/IbGtfJE2#Tt8yC8yW",
-      "to": "vKEsyHFk/IbGtfJE2#EJ2b3Szn"
+      "to": "vKEsyHFk/IbGtfJE2#PEfE7dCL"
     }
   ]
 }

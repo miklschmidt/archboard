@@ -8,10 +8,10 @@
       "name": "Measure, settle, paint",
       "participants": [
         "vKEsyHFk/OjRLKb74#nmyK8UOO",
-        "vKEsyHFk/OjRLKb74#kHpIix5b",
+        "vKEsyHFk/gbyqW4H3#J3yMo4ag",
         "vKEsyHFk/OjRLKb74#mHYMkWdE",
         "vKEsyHFk/OjRLKb74#oycxx6G2",
-        "vKEsyHFk/OjRLKb74#H0xU45vp"
+        "vKEsyHFk/gbyqW4H3#J7mPrUeP"
       ],
       "formerNames": [
         "Today: fit text after choosing seats"
@@ -47,7 +47,7 @@
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "packages/renderer/src/shared/rules/render/diagram.ts",
-                    "symbol": "layoutRemembered"
+                    "symbol": "renderArchitecture"
                   }
                 }
               ]
@@ -58,7 +58,7 @@
                 {
                   "id": "vKEsyHFk/OjRLKb74#86rBqUC3",
                   "from": "vKEsyHFk/OjRLKb74#nmyK8UOO",
-                  "to": "vKEsyHFk/OjRLKb74#kHpIix5b",
+                  "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
                   "label": "Names, responsibilities and edge labels",
                   "kind": "sync",
                   "anchor": {
@@ -69,7 +69,7 @@
                 },
                 {
                   "id": "vKEsyHFk/OjRLKb74#VvuVMt2N",
-                  "from": "vKEsyHFk/OjRLKb74#kHpIix5b",
+                  "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
                   "to": "vKEsyHFk/OjRLKb74#nmyK8UOO",
                   "label": "Card sizes, wrapped lines, label sizes",
                   "kind": "return",
@@ -152,7 +152,7 @@
         {
           "id": "vKEsyHFk/OjRLKb74#WLZ1TpXI",
           "from": "vKEsyHFk/OjRLKb74#nmyK8UOO",
-          "to": "vKEsyHFk/OjRLKb74#H0xU45vp",
+          "to": "vKEsyHFk/gbyqW4H3#J7mPrUeP",
           "label": "The settled drawing, its text runs and the theme",
           "kind": "sync",
           "anchor": {
@@ -163,8 +163,8 @@
         },
         {
           "id": "vKEsyHFk/OjRLKb74#fGx4kjfR",
-          "from": "vKEsyHFk/OjRLKb74#H0xU45vp",
-          "to": "vKEsyHFk/OjRLKb74#H0xU45vp",
+          "from": "vKEsyHFk/gbyqW4H3#J7mPrUeP",
+          "to": "vKEsyHFk/gbyqW4H3#J7mPrUeP",
           "label": "Paint the supplied lines and geometry",
           "kind": "self",
           "anchor": {
@@ -175,7 +175,7 @@
         },
         {
           "id": "vKEsyHFk/OjRLKb74#UMqwdfOH",
-          "from": "vKEsyHFk/OjRLKb74#H0xU45vp",
+          "from": "vKEsyHFk/gbyqW4H3#J7mPrUeP",
           "to": "vKEsyHFk/OjRLKb74#nmyK8UOO",
           "label": "SVG marks and the matching atlas",
           "kind": "return",
@@ -192,7 +192,7 @@
       "name": "Sizing a card",
       "participants": [
         "vKEsyHFk/OjRLKb74#nmyK8UOO",
-        "vKEsyHFk/OjRLKb74#kHpIix5b",
+        "vKEsyHFk/gbyqW4H3#J3yMo4ag",
         "vKEsyHFk/OjRLKb74#RvOyWmEb",
         "vKEsyHFk/gbyqW4H3#gUN928v4"
       ],
@@ -200,7 +200,7 @@
         {
           "id": "vKEsyHFk/OjRLKb74#K9SFgjvi",
           "from": "vKEsyHFk/OjRLKb74#nmyK8UOO",
-          "to": "vKEsyHFk/OjRLKb74#kHpIix5b",
+          "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
           "label": "Measure title, responsibility and labels",
           "kind": "sync",
           "anchor": {
@@ -219,8 +219,8 @@
               "steps": [
                 {
                   "id": "vKEsyHFk/OjRLKb74#2leWQWCZ",
-                  "from": "vKEsyHFk/OjRLKb74#kHpIix5b",
-                  "to": "vKEsyHFk/OjRLKb74#kHpIix5b",
+                  "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+                  "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
                   "label": "Size a header slab, narrower by its inset each side",
                   "kind": "self",
                   "anchor": {
@@ -236,8 +236,8 @@
               "steps": [
                 {
                   "id": "vKEsyHFk/OjRLKb74#bmSCOd8q",
-                  "from": "vKEsyHFk/OjRLKb74#kHpIix5b",
-                  "to": "vKEsyHFk/OjRLKb74#kHpIix5b",
+                  "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+                  "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
                   "label": "Size a card, at least 260 wide and 72 tall",
                   "kind": "self",
                   "anchor": {
@@ -260,8 +260,8 @@
               "steps": [
                 {
                   "id": "vKEsyHFk/OjRLKb74#jzt1WWkm",
-                  "from": "vKEsyHFk/OjRLKb74#kHpIix5b",
-                  "to": "vKEsyHFk/OjRLKb74#kHpIix5b",
+                  "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+                  "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
                   "label": "Keep the name clear of the mark in the corner",
                   "kind": "self",
                   "anchor": {
@@ -285,7 +285,7 @@
           "steps": [
             {
               "id": "vKEsyHFk/OjRLKb74#25HE191y",
-              "from": "vKEsyHFk/OjRLKb74#kHpIix5b",
+              "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
               "to": "vKEsyHFk/OjRLKb74#RvOyWmEb",
               "label": "prepareWithSegments(text, font)",
               "kind": "sync",
@@ -312,7 +312,7 @@
             {
               "id": "vKEsyHFk/OjRLKb74#4VDj3O5C",
               "from": "vKEsyHFk/OjRLKb74#RvOyWmEb",
-              "to": "vKEsyHFk/OjRLKb74#kHpIix5b",
+              "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
               "label": "A reusable prepared handle",
               "kind": "return",
               "anchor": {
@@ -323,7 +323,7 @@
             },
             {
               "id": "vKEsyHFk/OjRLKb74#5BB225La",
-              "from": "vKEsyHFk/OjRLKb74#kHpIix5b",
+              "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
               "to": "vKEsyHFk/OjRLKb74#RvOyWmEb",
               "label": "measureNaturalWidth(handle)",
               "kind": "sync",
@@ -336,7 +336,7 @@
             {
               "id": "vKEsyHFk/OjRLKb74#mYPHaKGi",
               "from": "vKEsyHFk/OjRLKb74#RvOyWmEb",
-              "to": "vKEsyHFk/OjRLKb74#kHpIix5b",
+              "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
               "label": "The widest line, unbroken",
               "kind": "return",
               "anchor": {
@@ -349,8 +349,8 @@
         },
         {
           "id": "vKEsyHFk/OjRLKb74#mY1hDmn2",
-          "from": "vKEsyHFk/OjRLKb74#kHpIix5b",
-          "to": "vKEsyHFk/OjRLKb74#kHpIix5b",
+          "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+          "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
           "label": "Clamp the width: cards 260 to 340",
           "kind": "self",
           "note": "a relationship label is clamped the same way, 40 to 200 wide",
@@ -367,7 +367,7 @@
           "steps": [
             {
               "id": "vKEsyHFk/OjRLKb74#pg7iuzfp",
-              "from": "vKEsyHFk/OjRLKb74#kHpIix5b",
+              "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
               "to": "vKEsyHFk/OjRLKb74#RvOyWmEb",
               "label": "layoutWithLines(handle, width, lineHeight)",
               "kind": "sync",
@@ -380,7 +380,7 @@
             {
               "id": "vKEsyHFk/OjRLKb74#Q7y55Dyj",
               "from": "vKEsyHFk/OjRLKb74#RvOyWmEb",
-              "to": "vKEsyHFk/OjRLKb74#kHpIix5b",
+              "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
               "label": "Lines, widths, line count and height",
               "kind": "return",
               "anchor": {
@@ -396,7 +396,7 @@
               "steps": [
                 {
                   "id": "vKEsyHFk/OjRLKb74#A3bYq29V",
-                  "from": "vKEsyHFk/OjRLKb74#kHpIix5b",
+                  "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
                   "to": "vKEsyHFk/gbyqW4H3#gUN928v4",
                   "label": "Measure each wrapped line whole",
                   "kind": "sync",
@@ -410,7 +410,7 @@
                 {
                   "id": "vKEsyHFk/OjRLKb74#rLH2nWZg",
                   "from": "vKEsyHFk/gbyqW4H3#gUN928v4",
-                  "to": "vKEsyHFk/OjRLKb74#kHpIix5b",
+                  "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
                   "label": "Its width in the painted face",
                   "kind": "return",
                   "anchor": {
@@ -425,8 +425,8 @@
         },
         {
           "id": "vKEsyHFk/OjRLKb74#dcc2Zdl3",
-          "from": "vKEsyHFk/OjRLKb74#kHpIix5b",
-          "to": "vKEsyHFk/OjRLKb74#kHpIix5b",
+          "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+          "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
           "label": "Add padding, icon space and baselines",
           "kind": "self",
           "anchor": {
@@ -437,7 +437,7 @@
         },
         {
           "id": "vKEsyHFk/OjRLKb74#k46CuhtA",
-          "from": "vKEsyHFk/OjRLKb74#kHpIix5b",
+          "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
           "to": "vKEsyHFk/OjRLKb74#nmyK8UOO",
           "label": "Outer card size and the exact text runs",
           "kind": "return",

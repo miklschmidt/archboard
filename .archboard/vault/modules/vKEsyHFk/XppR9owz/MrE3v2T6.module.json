@@ -1,15 +1,19 @@
 {
   "order": 31000,
-  "name": "Footprint",
+  "name": "Model footprint",
   "kind": "module",
-  "responsibility": "Prints the parts a commit range changed against a proposal, with declaration attribution or explicit path-wide fallback",
+  "responsibility": "Relates a local source branch change to canonical modules",
+  "description": "The command passes explicit local source refs and selected architecture to the existing history interface. Proposal comparisons use their identified baseline.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/operations/semantic/history/footprint.ts"
+    "path": "apps/cli/src/cli/operations/model/history.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#MrE3v2T6",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "formerNames": [
+    "Footprint"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -31,19 +35,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 46000,
-      "kind": "call",
-      "label": "the footprint, from the server",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/semantic/history/footprint.ts",
-        "symbol": "requestJson"
-      },
-      "id": "vKEsyHFk/XppR9owz#xVdE7NdL",
-      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
-    }
-  ]
+  "outgoing": []
 }

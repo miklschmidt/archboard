@@ -68,6 +68,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#o56610zg",
       "to": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+    },
+    {
+      "order": 70056,
+      "kind": "call",
+      "label": "report local request failures",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "isRecord"
+      },
+      "id": "vKEsyHFk#V2ti26xJ",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
     }
   ]
 }

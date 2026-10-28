@@ -325,7 +325,7 @@
         "vKEsyHFk/nAmiQ3Vc#zUIObqwQ",
         "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
         "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
-        "vKEsyHFk/nAmiQ3Vc#HXDhzWiE",
+        "vKEsyHFk/HBlhIeSD#nLp2hILd",
         "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
       ],
       "steps": [
@@ -457,7 +457,7 @@
                         {
                           "id": "vKEsyHFk/nAmiQ3Vc#igdJQtV4",
                           "from": "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
-                          "to": "vKEsyHFk/nAmiQ3Vc#HXDhzWiE",
+                          "to": "vKEsyHFk/HBlhIeSD#nLp2hILd",
                           "label": "does the registry know the holder",
                           "kind": "sync",
                           "anchor": {
@@ -476,7 +476,7 @@
                               "steps": [
                                 {
                                   "id": "vKEsyHFk/nAmiQ3Vc#zEDw78jh",
-                                  "from": "vKEsyHFk/nAmiQ3Vc#HXDhzWiE",
+                                  "from": "vKEsyHFk/HBlhIeSD#nLp2hILd",
                                   "to": "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
                                   "label": "nothing to register",
                                   "kind": "return",
@@ -505,8 +505,8 @@
                               "steps": [
                                 {
                                   "id": "vKEsyHFk/nAmiQ3Vc#wGESCI9a",
-                                  "from": "vKEsyHFk/nAmiQ3Vc#HXDhzWiE",
-                                  "to": "vKEsyHFk/nAmiQ3Vc#HXDhzWiE",
+                                  "from": "vKEsyHFk/HBlhIeSD#nLp2hILd",
+                                  "to": "vKEsyHFk/HBlhIeSD#nLp2hILd",
                                   "label": "declare the checkout or the untracked vault",
                                   "kind": "self",
                                   "anchor": {
@@ -517,7 +517,7 @@
                                 },
                                 {
                                   "id": "vKEsyHFk/nAmiQ3Vc#SEmV1E8l",
-                                  "from": "vKEsyHFk/nAmiQ3Vc#HXDhzWiE",
+                                  "from": "vKEsyHFk/HBlhIeSD#nLp2hILd",
                                   "to": "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
                                   "label": "what was registered",
                                   "kind": "return",
@@ -558,7 +558,7 @@
                               "steps": [
                                 {
                                   "id": "vKEsyHFk/nAmiQ3Vc#GBpKou6R",
-                                  "from": "vKEsyHFk/nAmiQ3Vc#HXDhzWiE",
+                                  "from": "vKEsyHFk/HBlhIeSD#nLp2hILd",
                                   "to": "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
                                   "label": "the registry error",
                                   "kind": "return",

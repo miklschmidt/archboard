@@ -5,6 +5,7 @@
   "responsibility": "Reads and edits one canonical model with durable history and explicit sharing",
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#1VHRyajb",
+  "parent": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

@@ -9,5 +9,33 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/OjRLKb74#tppVDaSZ",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+  "outgoing": [
+    {
+      "order": 70006,
+      "kind": "call",
+      "label": "measure internal routes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
+        "symbol": "selfLoop"
+      },
+      "id": "vKEsyHFk#7VR3bTTE",
+      "to": "vKEsyHFk/gbyqW4H3#ld6jjHND"
+    },
+    {
+      "order": 70007,
+      "kind": "call",
+      "label": "use the installed drawing host",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/blocks/tree/solves.ts",
+        "symbol": "rendererHost"
+      },
+      "id": "vKEsyHFk#tSupPsEh",
+      "to": "vKEsyHFk/gbyqW4H3#JK2EHDyY"
+    }
+  ]
 }

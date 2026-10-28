@@ -5,6 +5,7 @@
   "responsibility": "What a chat sees and says: the gateway with its lease, snapshots and commands, the start of a conversation, the list of the tab's workhorses, and the approvals raised to the person",
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+  "parent": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
   "formerNames": [
     "Pane conversations"
   ],

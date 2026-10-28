@@ -2,7 +2,8 @@
   "order": 25000,
   "name": "Decode board bytes",
   "kind": "function",
-  "responsibility": "Parses and migrates a board document entirely in memory",
+  "responsibility": "Decodes legacy board bytes in memory for explicit migration and exact retained-original readings.",
+  "description": "The decoder is used by legacy inventory and retained-original readers. It keeps source text for comparison and recovery and does not persist ordinary schema upgrades.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/store/format/decode.ts",

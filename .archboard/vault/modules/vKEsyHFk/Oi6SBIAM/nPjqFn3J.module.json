@@ -28,19 +28,6 @@
   ],
   "outgoing": [
     {
-      "order": 54000,
-      "kind": "call",
-      "label": "re-key the pane's sockets; renew the lease watch",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/state/pane-vaults/pane-vaults.ts",
-        "symbol": "syncLockWatch"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#7wxK5YUi",
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
-    },
-    {
       "order": 55000,
       "kind": "event",
       "label": "repositories_changed to every tab",
@@ -51,7 +38,7 @@
         "symbol": "broadcastEverywhere"
       },
       "id": "vKEsyHFk/Oi6SBIAM#HZkTRFtf",
-      "to": "vKEsyHFk/Oi6SBIAM#K385etzX"
+      "to": "vKEsyHFk/yejBBUFY#xsn0RvSi"
     }
   ]
 }

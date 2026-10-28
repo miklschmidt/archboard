@@ -7,8 +7,8 @@
       "id": "vKEsyHFk/SJ2JMVyz#PzwdxC3t",
       "name": "A chat sends a typed message",
       "participants": [
-        "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
-        "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+        "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ],
       "formerNames": [
         "A pane sends a typed message"
@@ -16,8 +16,8 @@
       "steps": [
         {
           "id": "vKEsyHFk/SJ2JMVyz#l6SoB6SF",
-          "from": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
-          "to": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
+          "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
           "label": "admit the command under the tab session's lease",
           "kind": "self",
           "anchor": {
@@ -28,8 +28,8 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#pvmEnArI",
-          "from": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
-          "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+          "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
           "label": "thread/read: is the thread idle or active?",
           "kind": "sync",
           "anchor": {
@@ -40,8 +40,8 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#sOqOXXCb",
-          "from": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
-          "to": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
+          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
           "label": "thread status",
           "kind": "return",
           "anchor": {
@@ -60,8 +60,8 @@
               "steps": [
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#NRylZIzf",
-                  "from": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
-                  "to": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
+                  "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+                  "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
                   "label": "refuse the command as not delivered",
                   "kind": "self",
                   "note": "a start needs an idle thread and a steer needs an active one",
@@ -78,8 +78,8 @@
               "steps": [
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#wPrKQGjT",
-                  "from": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
-                  "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+                  "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "label": "turn/start (idle) or turn/steer (active), with context",
                   "kind": "sync",
                   "anchor": {
@@ -90,8 +90,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#6HZiBf3N",
-                  "from": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
-                  "to": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
                   "label": "the turn",
                   "kind": "return",
                   "anchor": {
@@ -106,8 +106,8 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#LAcgzO4x",
-          "from": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
-          "to": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
+          "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
           "label": "record the outcome as the chat's operation outcome",
           "kind": "self",
           "anchor": {
@@ -122,10 +122,10 @@
       "id": "vKEsyHFk/SJ2JMVyz#f9ntEBs4",
       "name": "A chat edits the queue",
       "participants": [
-        "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
-        "vKEsyHFk/SJ2JMVyz#mWD948LG",
+        "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+        "vKEsyHFk/9ncuT5DP#kEF4DfR4",
         "vKEsyHFk/9ncuT5DP#2ffhMTdn",
-        "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ],
       "formerNames": [
         "A pane edits the queue"
@@ -133,8 +133,8 @@
       "steps": [
         {
           "id": "vKEsyHFk/SJ2JMVyz#k0nbaPUP",
-          "from": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
-          "to": "vKEsyHFk/SJ2JMVyz#mWD948LG",
+          "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
           "label": "the workhorse of the shown checkout, built on first use",
           "kind": "sync",
           "anchor": {
@@ -145,8 +145,8 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#iraGU2yy",
-          "from": "vKEsyHFk/SJ2JMVyz#mWD948LG",
-          "to": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
+          "from": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+          "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
           "label": "the workhorse",
           "kind": "return",
           "anchor": {
@@ -157,7 +157,7 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#cVwUJapB",
-          "from": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
+          "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
           "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
           "label": "add, update, delete, reorder or start one submission",
           "kind": "sync",
@@ -175,7 +175,7 @@
             {
               "id": "vKEsyHFk/SJ2JMVyz#V8C5yabL",
               "from": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
-              "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+              "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
               "label": "thread/queue/list a page",
               "kind": "sync",
               "anchor": {
@@ -186,7 +186,7 @@
             },
             {
               "id": "vKEsyHFk/SJ2JMVyz#XElthiIm",
-              "from": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+              "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
               "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
               "label": "page of submissions",
               "kind": "return",
@@ -201,7 +201,7 @@
         {
           "id": "vKEsyHFk/SJ2JMVyz#LwdSuWHn",
           "from": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
-          "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
           "label": "thread/queue add, update, delete, reorder or start",
           "kind": "sync",
           "anchor": {
@@ -212,7 +212,7 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#C502RS5p",
-          "from": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
           "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
           "label": "accepted or failed",
           "kind": "return",
@@ -230,7 +230,7 @@
             {
               "id": "vKEsyHFk/SJ2JMVyz#xmr3rKN4",
               "from": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
-              "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+              "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
               "label": "thread/queue/list a page",
               "kind": "sync",
               "anchor": {
@@ -241,7 +241,7 @@
             },
             {
               "id": "vKEsyHFk/SJ2JMVyz#pPdca1ez",
-              "from": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+              "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
               "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
               "label": "page of submissions",
               "kind": "return",
@@ -264,7 +264,7 @@
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#wVVhCNH8",
                   "from": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
-                  "to": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
+                  "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
                   "label": "delivered, with the queue as it is",
                   "kind": "return",
                   "anchor": {
@@ -281,7 +281,7 @@
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#pu99BPAG",
                   "from": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
-                  "to": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
+                  "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
                   "label": "outcome unknown, with the queue as it is",
                   "kind": "return",
                   "anchor": {
@@ -296,8 +296,8 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#fbVWqzdu",
-          "from": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
-          "to": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
+          "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
           "label": "answer the chat with the outcome and a fresh snapshot",
           "kind": "self",
           "anchor": {
@@ -312,18 +312,18 @@
       "id": "vKEsyHFk/SJ2JMVyz#LcGiwa22",
       "name": "The coordinator delegates work",
       "participants": [
-        "vKEsyHFk/SJ2JMVyz#npbOHMgi",
-        "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-        "vKEsyHFk/SJ2JMVyz#p05yEm5U",
-        "vKEsyHFk/SJ2JMVyz#6T3oOpxS",
+        "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+        "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "vKEsyHFk/9ncuT5DP#byMaoUe0",
+        "vKEsyHFk/9ncuT5DP#Uz2qReYK",
         "vKEsyHFk/9ncuT5DP#2ffhMTdn",
-        "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ],
       "steps": [
         {
           "id": "vKEsyHFk/SJ2JMVyz#E12xGhkU",
-          "from": "vKEsyHFk/SJ2JMVyz#npbOHMgi",
-          "to": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
+          "from": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+          "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
           "label": "delegate to the workhorse of the named checkout",
           "kind": "sync",
           "anchor": {
@@ -334,8 +334,8 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#q3O33gDt",
-          "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-          "to": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
+          "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+          "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
           "label": "wait behind every earlier operation",
           "kind": "self",
           "note": "one operation at a time, so two effects never interleave on one thread",
@@ -347,8 +347,8 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#VLVM9Crq",
-          "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-          "to": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
+          "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+          "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
           "label": "classify the coordinator's and the workhorse's links",
           "kind": "sync",
           "anchor": {
@@ -359,8 +359,8 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#6n3nDRhS",
-          "from": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
-          "to": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
+          "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
           "label": "each link, with the workhorse active or idle",
           "kind": "return",
           "anchor": {
@@ -379,8 +379,8 @@
               "steps": [
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#H8BzLPJT",
-                  "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-                  "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
                   "label": "stage the queue add",
                   "kind": "sync",
                   "anchor": {
@@ -391,8 +391,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#d8mRRxjb",
-                  "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-                  "to": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
                   "label": "classify again before the queue add",
                   "kind": "sync",
                   "anchor": {
@@ -403,8 +403,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#OnLkCMQo",
-                  "from": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
-                  "to": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
+                  "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                  "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
                   "label": "still active",
                   "kind": "return",
                   "anchor": {
@@ -415,7 +415,7 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#LGQD5x4u",
-                  "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
                   "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
                   "label": "queue the delegation behind the running turn",
                   "kind": "sync",
@@ -428,7 +428,7 @@
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#vnbVQklz",
                   "from": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
-                  "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "label": "thread/queue/add",
                   "kind": "sync",
                   "anchor": {
@@ -439,7 +439,7 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#S5Lq2I87",
-                  "from": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
                   "label": "accepted",
                   "kind": "return",
@@ -452,7 +452,7 @@
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#mVW6dgdM",
                   "from": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
-                  "to": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
+                  "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
                   "label": "the queue, holding the submission",
                   "kind": "return",
                   "anchor": {
@@ -463,8 +463,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#Dxj3p6bV",
-                  "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-                  "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
                   "label": "commit the add that the queue names, else mark it unknown",
                   "kind": "sync",
                   "anchor": {
@@ -480,8 +480,8 @@
               "steps": [
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#Lfz5QA2y",
-                  "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-                  "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
                   "label": "stage the turn",
                   "kind": "sync",
                   "anchor": {
@@ -492,8 +492,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#ez9YyTfQ",
-                  "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-                  "to": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
                   "label": "classify again before delivery",
                   "kind": "sync",
                   "anchor": {
@@ -504,8 +504,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#uTPXo2lc",
-                  "from": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
-                  "to": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
+                  "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                  "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
                   "label": "still idle",
                   "kind": "return",
                   "anchor": {
@@ -516,8 +516,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#K8QItqME",
-                  "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-                  "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "label": "turn/start with the authored input and the board's context",
                   "kind": "sync",
                   "anchor": {
@@ -528,8 +528,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#COY9kp7z",
-                  "from": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
-                  "to": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
                   "label": "the started turn",
                   "kind": "return",
                   "anchor": {
@@ -540,8 +540,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#pkNdlAiL",
-                  "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-                  "to": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
                   "label": "classify again: does the answer belong to the current link?",
                   "kind": "sync",
                   "anchor": {
@@ -552,8 +552,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#TOVKduuW",
-                  "from": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
-                  "to": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
+                  "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                  "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
                   "label": "the link stands",
                   "kind": "return",
                   "anchor": {
@@ -564,8 +564,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#Zw5mYljb",
-                  "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-                  "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
                   "label": "commit the start",
                   "kind": "sync",
                   "anchor": {
@@ -580,8 +580,8 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#XowYNLZH",
-          "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-          "to": "vKEsyHFk/SJ2JMVyz#npbOHMgi",
+          "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+          "to": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
           "label": "the started turn or the queued submission",
           "kind": "return",
           "anchor": {
@@ -596,17 +596,17 @@
       "id": "vKEsyHFk/SJ2JMVyz#4dRHD7sM",
       "name": "The coordinator steers a turn",
       "participants": [
-        "vKEsyHFk/SJ2JMVyz#npbOHMgi",
-        "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-        "vKEsyHFk/SJ2JMVyz#p05yEm5U",
-        "vKEsyHFk/SJ2JMVyz#6T3oOpxS",
-        "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+        "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+        "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "vKEsyHFk/9ncuT5DP#byMaoUe0",
+        "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ],
       "steps": [
         {
           "id": "vKEsyHFk/SJ2JMVyz#wwhhLwEk",
-          "from": "vKEsyHFk/SJ2JMVyz#npbOHMgi",
-          "to": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
+          "from": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+          "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
           "label": "steer the turn the coordinator names",
           "kind": "sync",
           "anchor": {
@@ -617,8 +617,8 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#RZnmSbso",
-          "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-          "to": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
+          "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+          "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
           "label": "wait behind every earlier operation",
           "kind": "self",
           "anchor": {
@@ -629,8 +629,8 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#sllr6oDh",
-          "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-          "to": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
+          "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+          "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
           "label": "classify the coordinator's and the workhorse's links",
           "kind": "sync",
           "anchor": {
@@ -641,8 +641,8 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#eiHIz9R8",
-          "from": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
-          "to": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
+          "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
           "label": "each link, with the turn running",
           "kind": "return",
           "anchor": {
@@ -661,8 +661,8 @@
               "steps": [
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#BefJSSzE",
-                  "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-                  "to": "vKEsyHFk/SJ2JMVyz#npbOHMgi",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
                   "label": "refused: the workhorse is busy with another turn",
                   "kind": "return",
                   "anchor": {
@@ -678,8 +678,8 @@
               "steps": [
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#NOZUUbnL",
-                  "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-                  "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
                   "label": "stage the steer",
                   "kind": "sync",
                   "anchor": {
@@ -690,8 +690,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#VybS5UDz",
-                  "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-                  "to": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
                   "label": "classify again before delivery",
                   "kind": "sync",
                   "anchor": {
@@ -702,8 +702,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#5DYg2VQH",
-                  "from": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
-                  "to": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
+                  "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                  "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
                   "label": "still the same turn",
                   "kind": "return",
                   "anchor": {
@@ -714,8 +714,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#leK8yIhI",
-                  "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-                  "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                   "label": "turn/steer, expecting that turn",
                   "kind": "sync",
                   "anchor": {
@@ -726,8 +726,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#1oy8JRwd",
-                  "from": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
-                  "to": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
                   "label": "the turn id",
                   "kind": "return",
                   "anchor": {
@@ -738,8 +738,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#yqMbBBd4",
-                  "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-                  "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
                   "label": "commit the steer",
                   "kind": "sync",
                   "anchor": {
@@ -750,8 +750,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#BCo9eMM2",
-                  "from": "vKEsyHFk/SJ2JMVyz#glxfDGYq",
-                  "to": "vKEsyHFk/SJ2JMVyz#npbOHMgi",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
                   "label": "delivered",
                   "kind": "return",
                   "anchor": {
@@ -770,15 +770,15 @@
       "id": "vKEsyHFk/SJ2JMVyz#MedLccOG",
       "name": "The coordinator stops its workhorses",
       "participants": [
-        "vKEsyHFk/SJ2JMVyz#npbOHMgi",
-        "vKEsyHFk/SJ2JMVyz#mWD948LG",
-        "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+        "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+        "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ],
       "steps": [
         {
           "id": "vKEsyHFk/SJ2JMVyz#zN7XjnGX",
-          "from": "vKEsyHFk/SJ2JMVyz#npbOHMgi",
-          "to": "vKEsyHFk/SJ2JMVyz#mWD948LG",
+          "from": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+          "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
           "label": "stop every workhorse of the tab session",
           "kind": "sync",
           "anchor": {
@@ -802,8 +802,8 @@
                   "steps": [
                     {
                       "id": "vKEsyHFk/SJ2JMVyz#h0BKG447",
-                      "from": "vKEsyHFk/SJ2JMVyz#mWD948LG",
-                      "to": "vKEsyHFk/SJ2JMVyz#mWD948LG",
+                      "from": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+                      "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
                       "label": "report it idle",
                       "kind": "self",
                       "anchor": {
@@ -819,8 +819,8 @@
                   "steps": [
                     {
                       "id": "vKEsyHFk/SJ2JMVyz#7TzJNwiF",
-                      "from": "vKEsyHFk/SJ2JMVyz#mWD948LG",
-                      "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+                      "from": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+                      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                       "label": "turn/interrupt the running turn",
                       "kind": "sync",
                       "anchor": {
@@ -831,8 +831,8 @@
                     },
                     {
                       "id": "vKEsyHFk/SJ2JMVyz#rP5D38QT",
-                      "from": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
-                      "to": "vKEsyHFk/SJ2JMVyz#mWD948LG",
+                      "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                      "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
                       "label": "interrupt sent",
                       "kind": "return",
                       "anchor": {
@@ -849,8 +849,8 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#gpHySpmK",
-          "from": "vKEsyHFk/SJ2JMVyz#mWD948LG",
-          "to": "vKEsyHFk/SJ2JMVyz#npbOHMgi",
+          "from": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+          "to": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
           "label": "what each workhorse did",
           "kind": "return",
           "anchor": {
@@ -865,16 +865,16 @@
       "id": "vKEsyHFk/SJ2JMVyz#MTUfHdHP",
       "name": "A workhorse is started",
       "participants": [
-        "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
+        "vKEsyHFk/9ncuT5DP#u2LFaG7R",
         "vKEsyHFk/9ncuT5DP#6Jjha6LN",
-        "vKEsyHFk/SJ2JMVyz#6T3oOpxS",
-        "vKEsyHFk/SJ2JMVyz#4slFgCMu",
-        "vKEsyHFk/SJ2JMVyz#p05yEm5U"
+        "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "vKEsyHFk/9ncuT5DP#byMaoUe0"
       ],
       "steps": [
         {
           "id": "vKEsyHFk/SJ2JMVyz#3mmAvMb5",
-          "from": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
+          "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
           "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
           "label": "start the workhorse of the shown checkout",
           "kind": "sync",
@@ -887,7 +887,7 @@
         {
           "id": "vKEsyHFk/SJ2JMVyz#TjFu0ZZW",
           "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
-          "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS",
+          "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
           "label": "stage the start",
           "kind": "sync",
           "anchor": {
@@ -898,7 +898,7 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#1dPrVxJW",
-          "from": "vKEsyHFk/SJ2JMVyz#6T3oOpxS",
+          "from": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
           "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
           "label": "the staged operation",
           "kind": "return",
@@ -923,7 +923,7 @@
         {
           "id": "vKEsyHFk/SJ2JMVyz#aZmwJ3fD",
           "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
-          "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
           "label": "thread/start",
           "kind": "sync",
           "anchor": {
@@ -934,7 +934,7 @@
         },
         {
           "id": "vKEsyHFk/SJ2JMVyz#r16g8YCf",
-          "from": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
           "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
           "label": "the new thread, or an error",
           "kind": "return",
@@ -955,7 +955,7 @@
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#DpAA5gwo",
                   "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
-                  "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS",
+                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
                   "label": "roll the staged start back",
                   "kind": "sync",
                   "anchor": {
@@ -972,7 +972,7 @@
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#mSjFmtM8",
                   "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
-                  "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS",
+                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
                   "label": "mark the outcome unknown; never retry",
                   "kind": "sync",
                   "anchor": {
@@ -989,7 +989,7 @@
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#b9BXsjfI",
                   "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
-                  "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS",
+                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
                   "label": "commit the thread as owned by this child generation",
                   "kind": "sync",
                   "anchor": {
@@ -1001,7 +1001,7 @@
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#W3ZONXmF",
                   "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
-                  "to": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
+                  "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
                   "label": "classify and bind the checkout's link to the thread",
                   "kind": "sync",
                   "anchor": {
@@ -1012,7 +1012,7 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#V8Uzd8yN",
-                  "from": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
+                  "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
                   "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
                   "label": "the binding",
                   "kind": "return",
@@ -1033,7 +1033,7 @@
                         {
                           "id": "vKEsyHFk/SJ2JMVyz#6Y4qe7P4",
                           "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
-                          "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+                          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                           "label": "thread/delete the new thread",
                           "kind": "sync",
                           "anchor": {
@@ -1044,7 +1044,7 @@
                         },
                         {
                           "id": "vKEsyHFk/SJ2JMVyz#JZNI044M",
-                          "from": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+                          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
                           "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
                           "label": "deleted",
                           "kind": "return",
@@ -1069,7 +1069,7 @@
         {
           "id": "vKEsyHFk/SJ2JMVyz#DL0KHo5f",
           "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
-          "to": "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
+          "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
           "label": "the workhorse: ready, failed or outcome unknown",
           "kind": "return",
           "anchor": {
@@ -1085,8 +1085,8 @@
       "name": "A workhorse tells the coordinator",
       "participants": [
         "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
-        "vKEsyHFk/SJ2JMVyz#j8IHgWO5",
-        "vKEsyHFk/SJ2JMVyz#p05yEm5U"
+        "vKEsyHFk/9ncuT5DP#08zJvPJq",
+        "vKEsyHFk/9ncuT5DP#byMaoUe0"
       ],
       "steps": [
         {
@@ -1130,7 +1130,7 @@
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#CiS0Vw9B",
                   "from": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
-                  "to": "vKEsyHFk/SJ2JMVyz#j8IHgWO5",
+                  "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
                   "label": "enqueue the news",
                   "kind": "sync",
                   "anchor": {
@@ -1141,8 +1141,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#CbndgHEc",
-                  "from": "vKEsyHFk/SJ2JMVyz#j8IHgWO5",
-                  "to": "vKEsyHFk/SJ2JMVyz#j8IHgWO5",
+                  "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                  "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
                   "label": "deliver one callback at a time, in order",
                   "kind": "self",
                   "anchor": {
@@ -1153,8 +1153,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#bOZw0Tx7",
-                  "from": "vKEsyHFk/SJ2JMVyz#j8IHgWO5",
-                  "to": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
+                  "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                  "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
                   "label": "is the workhorse's link still current?",
                   "kind": "sync",
                   "anchor": {
@@ -1165,8 +1165,8 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#FKhUEZyL",
-                  "from": "vKEsyHFk/SJ2JMVyz#p05yEm5U",
-                  "to": "vKEsyHFk/SJ2JMVyz#j8IHgWO5",
+                  "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                  "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
                   "label": "the link's classification",
                   "kind": "return",
                   "anchor": {
@@ -1185,8 +1185,8 @@
                       "steps": [
                         {
                           "id": "vKEsyHFk/SJ2JMVyz#cG6ofDp7",
-                          "from": "vKEsyHFk/SJ2JMVyz#j8IHgWO5",
-                          "to": "vKEsyHFk/SJ2JMVyz#j8IHgWO5",
+                          "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                          "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
                           "label": "refuse before any attempt: stale link",
                           "kind": "self",
                           "anchor": {
@@ -1202,8 +1202,8 @@
                       "steps": [
                         {
                           "id": "vKEsyHFk/SJ2JMVyz#cl02wcuD",
-                          "from": "vKEsyHFk/SJ2JMVyz#j8IHgWO5",
-                          "to": "vKEsyHFk/SJ2JMVyz#j8IHgWO5",
+                          "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                          "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
                           "label": "ask the coordinator to take a turn on the news",
                           "kind": "self",
                           "anchor": {
@@ -1218,7 +1218,7 @@
                 },
                 {
                   "id": "vKEsyHFk/SJ2JMVyz#ED10vPur",
-                  "from": "vKEsyHFk/SJ2JMVyz#j8IHgWO5",
+                  "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
                   "to": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
                   "label": "delivered, outcome unknown or not delivered",
                   "kind": "return",

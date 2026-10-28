@@ -1,17 +1,20 @@
 {
   "order": 42000,
-  "name": "Architecture context input",
+  "name": "Canonical context capture",
   "kind": "module",
-  "responsibility": "Read architecture from its authoritative runtime for each pane; report canonical recovery and exact capture needs without consulting former board claims",
+  "responsibility": "Resolves the exact canonical model and reading captured by a pane",
+  "description": "The context projection reads current or retained architecture through the public runtime. It preserves the captured subjects, revision, and explicit recovery information for the local agent.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts"
+    "path": "packages/workbench/src/server/projections/semantic-context/canonical-context.ts",
+    "symbol": "canonicalContext"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#C9EOzoYB",
-  "parent": "vKEsyHFk/6E6hL0Zk#cuOguqkZ",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "formerNames": [
-    "Semantic context input"
+    "Semantic context input",
+    "Architecture context input"
   ],
   "documents": [
     {
@@ -33,28 +36,16 @@
     {
       "order": 104000,
       "kind": "call",
+      "label": "capture the exact model reading",
       "description": "read that board for the agent's brief",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
-        "symbol": "readSemanticBoard"
+        "path": "packages/workbench/src/server/projections/semantic-context/canonical-context.ts",
+        "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/6E6hL0Zk#BNTbGuis",
       "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
-    },
-    {
-      "order": 105000,
-      "kind": "call",
-      "description": "who holds it",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
-        "symbol": "boardLockState"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#g3I9VtBU",
-      "to": "vKEsyHFk/6E6hL0Zk#8imgDQSw"
     }
   ]
 }

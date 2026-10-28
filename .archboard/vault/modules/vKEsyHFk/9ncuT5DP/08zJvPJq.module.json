@@ -19,15 +19,33 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
-      "state": "current"
-    }
-  ],
   "outgoing": [
+    {
+      "order": 18000,
+      "kind": "call",
+      "label": "check the link of the workhorse the news names",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+        "symbol": "classify"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#kJ4DsUAw",
+      "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
+    },
+    {
+      "order": 22000,
+      "kind": "rpc",
+      "label": "a context change: realtime/appendText for the voice",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+        "symbol": "realtimeAppendText"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#4DGyP7RO",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
     {
       "order": 24000,
       "kind": "rpc",
@@ -40,6 +58,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#biUWQZMB",
       "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 42000,
+      "kind": "call",
+      "label": "a callback as canonical JSON, kept on its record",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+        "symbol": "canonicalJson"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#HiOX9Fc5",
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
     },
     {
       "order": 53000,

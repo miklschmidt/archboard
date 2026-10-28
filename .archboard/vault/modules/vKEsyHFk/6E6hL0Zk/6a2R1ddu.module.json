@@ -10,7 +10,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
-  "parent": "vKEsyHFk/6E6hL0Zk#nU6dNHBE",
+  "parent": "vKEsyHFk/vKEsyHFk#7hdbqGFn",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -31,12 +31,12 @@
     {
       "order": 11000,
       "kind": "call",
-      "label": "read the pane's variant; resolve a node's binding",
+      "label": "resolve the canonical module code target",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-opener/src/server/routes/code-opener.ts",
-        "symbol": "readBoardVariant"
+        "path": "packages/code-opener/src/server/projections/model-target.ts",
+        "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/6E6hL0Zk#oYfZ2qnC",
       "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
@@ -53,6 +53,19 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#ZAbHs2zZ",
       "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
+    },
+    {
+      "order": 70019,
+      "kind": "call",
+      "label": "enforce the local browser origin",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/routes/code-opener.ts",
+        "symbol": "createBrowserOriginGuard"
+      },
+      "id": "vKEsyHFk#6MddSKIu",
+      "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
     },
     {
       "order": 98000,

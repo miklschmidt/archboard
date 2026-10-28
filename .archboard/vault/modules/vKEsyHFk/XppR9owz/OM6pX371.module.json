@@ -5,6 +5,7 @@
   "responsibility": "Takes argv from the process to one selected command: hands over to the checkout whose source runs, refuses a removed environment variable, finds the command in the table and bounds its run",
   "schemaVersion": 1,
   "id": "vKEsyHFk/XppR9owz#OM6pX371",
+  "parent": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

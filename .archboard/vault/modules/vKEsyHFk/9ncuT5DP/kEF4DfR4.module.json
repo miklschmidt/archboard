@@ -19,6 +19,58 @@
   ],
   "outgoing": [
     {
+      "order": 30000,
+      "kind": "rpc",
+      "label": "turn/interrupt the turn each stopped workhorse runs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/workhorses.ts",
+        "symbol": "turnInterrupt"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#k5kBhD3O",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 31000,
+      "kind": "dependency",
+      "label": "its own queue",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/workhorses.ts",
+        "symbol": "CodexWorkhorseQueue"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#vEdJ2e3Z",
+      "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn"
+    },
+    {
+      "order": 32000,
+      "kind": "dependency",
+      "label": "the workhorse operations port",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/workhorses.ts",
+        "symbol": "CodexWorkhorseOperations"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#AscFDt7l",
+      "to": "vKEsyHFk/9ncuT5DP#iLWBCObu"
+    },
+    {
+      "order": 33000,
+      "kind": "dependency",
+      "label": "the workhorse starter port",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/workhorses.ts",
+        "symbol": "CodexWorkhorseStart"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#incCs60x",
+      "to": "vKEsyHFk/9ncuT5DP#SsiEBdik"
+    },
+    {
       "order": 61000,
       "kind": "rpc",
       "label": "turn/interrupt the turn each stopped workhorse runs",

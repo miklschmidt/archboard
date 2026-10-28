@@ -39,6 +39,19 @@
       "to": "vKEsyHFk/gbyqW4H3#y8vuJJKu"
     },
     {
+      "order": 27000,
+      "kind": "call",
+      "label": "the size far names are set at",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
+        "symbol": "farSizeFor"
+      },
+      "id": "vKEsyHFk/OjRLKb74#lQFfcKXc",
+      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
+    },
+    {
       "order": 34000,
       "kind": "call",
       "label": "the size far names are set at",

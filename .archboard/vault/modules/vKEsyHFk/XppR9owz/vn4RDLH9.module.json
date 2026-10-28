@@ -2,8 +2,8 @@
   "order": 14000,
   "name": "Panes",
   "kind": "module",
-  "responsibility": "browser: the live session, its panes with the repository and checkout of each, and pointing one at a board, which makes the caller's checkout the chosen one",
-  "description": "browser show from a known checkout that is not the chosen one of its repository makes it the chosen one for the whole machine, and its answer's chose names the checkout it replaced. browser panes reports each pane's vault, repository and checkout, and own: whether the pane shows the vault a command run here finds. The checkout of a pane or of a shown board is always the directory that holds its vault: the checkout root, or the holder of an untracked vault. It finds that vault without refusing or registering, so it still needs no vault.",
+  "responsibility": "Lists pane captures and shows an explicit canonical model reading in one pane, reporting any repository checkout choice.",
+  "description": "browser show resolves exact model, module, state, flow, and walkthrough selectors before moving the pane. A successful request may select the model repository checkout; its receipt reports that choice. browser panes reports vault, repository, checkout, tab, and exact reading capture.",
   "groups": [
     "panes"
   ],

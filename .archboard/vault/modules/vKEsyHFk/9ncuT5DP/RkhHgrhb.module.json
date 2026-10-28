@@ -62,6 +62,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#zEsrkAfC",
       "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    },
+    {
+      "order": 70021,
+      "kind": "call",
+      "label": "share thread context policy",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/refusal-reasons.ts",
+        "symbol": "ADDITIONAL_CONTEXT_POLICY"
+      },
+      "id": "vKEsyHFk#lBMb2LoN",
+      "to": "vKEsyHFk/SJ2JMVyz#5Pg20iSq"
     }
   ]
 }

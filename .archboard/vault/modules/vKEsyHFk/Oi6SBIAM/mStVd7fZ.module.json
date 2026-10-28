@@ -2,7 +2,8 @@
   "order": 13000,
   "name": "Change feed",
   "kind": "module",
-  "responsibility": "Every settled board change, filed under its vault, as one stream with a cursor, read off the panes' announcements, for the agent's context",
+  "responsibility": "Streams durable canonical model changes by addressed vault into agent context with revision cursors and receipt attribution.",
+  "description": "Follows watchArchitectureModel once per vault and emits only completed architecture_changed events. External file changes have no writer or doing attribution. The cursor belongs to the process feed and starts again after restart.",
   "groups": [
     "panes"
   ],
@@ -12,7 +13,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/Oi6SBIAM#mStVd7fZ",
-  "parent": "vKEsyHFk/Oi6SBIAM#YXy1uQYC",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

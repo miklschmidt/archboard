@@ -3,7 +3,7 @@
   "name": "Repository setup",
   "kind": "function",
   "responsibility": "Makes the .archboard/vault of the git checkout that holds the directory when it has none, and takes the block an earlier version wrote out of CLAUDE.md and AGENTS.md, changing nothing else in the file",
-  "description": "Only a begin marker and an end marker that each stand on a line of their own bound a block, across CRLF line endings and never past another begin marker. A marker quoted inside a line is prose and stays, and so does a begin marker whose end marker is gone.",
+  "description": "The existing installer initializes new vaults through the shared canonical initializer. Existing vaults receive an explicit migration route without automatic rewriting.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/operations/install-skill/repo-setup.ts",

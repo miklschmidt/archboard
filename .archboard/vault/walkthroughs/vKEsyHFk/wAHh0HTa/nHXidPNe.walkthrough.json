@@ -1,9 +1,13 @@
 {
   "schemaVersion": 1,
   "id": "vKEsyHFk/wAHh0HTa#nHXidPNe",
-  "name": "Guard one app-server exchange",
+  "name": "Original Codex session: Guard one app-server exchange",
+  "formerNames": [
+    "Guard one app-server exchange"
+  ],
+  "summary": "This narrative preserves the architecture before canonical module ownership. It reads the exact retained migration baseline.",
   "target": {
-    "state": "current"
+    "checkpoint": "6bc124a8ca521df89dd84fe13922798bf8065914"
   },
   "beats": [
     {

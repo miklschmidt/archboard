@@ -2,27 +2,16 @@
   "order": 500,
   "name": "Page start",
   "kind": "function",
-  "responsibility": "Starts this page's renderer and hands the viewer its picture source and cache once; learns the vault the server serves before the application renders, or replays a recorded talk",
+  "responsibility": "Starts the local renderer and mounts the application or captured replay",
+  "description": "The page loads the renderer independently, resolves its served vault, and mounts the application router. A replay address lazily loads the captured-talk entry instead.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/main.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#LMJVhlqw",
+  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
   "outgoing": [
-    {
-      "order": 80000,
-      "kind": "call",
-      "description": "At page start, the viewer takes its pictures from this page's own source, once. The page or replay imports the semantic-board-canvas root. It re-exports takePicturesFrom from the implementing child, so the relationship ends on that public entry point.",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/main.tsx",
-        "symbol": "takePicturesFrom"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#lY46AzzM",
-      "to": "vKEsyHFk/UOXNWLhR#38hwLCO1"
-    },
     {
       "order": 81000,
       "kind": "call",
@@ -34,7 +23,7 @@
         "symbol": "startBrowserRenderer"
       },
       "id": "vKEsyHFk/UOXNWLhR#eK0DABEt",
-      "to": "vKEsyHFk/UOXNWLhR#F90402mH"
+      "to": "vKEsyHFk/yejBBUFY#hDWpDois"
     },
     {
       "order": 82000,
@@ -47,33 +36,7 @@
         "symbol": "startWalkthroughReplay"
       },
       "id": "vKEsyHFk/UOXNWLhR#pszRWvFQ",
-      "to": "vKEsyHFk/UOXNWLhR#G6arm4oI"
-    },
-    {
-      "order": 84000,
-      "kind": "call",
-      "description": "At page start, the source that draws pictures in this page is made from its renderer and storage. The page or replay imports the semantic-board-canvas root. It re-exports createLocalPictureSource from the implementing child, so the relationship ends on that public entry point.",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/main.tsx",
-        "symbol": "createLocalPictureSource"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#c46lXXPe",
-      "to": "vKEsyHFk/UOXNWLhR#IJkVbMK2"
-    },
-    {
-      "order": 85000,
-      "kind": "call",
-      "description": "At page start, this browser's store for kept pictures is opened. The page or replay imports the semantic-board-canvas root. It re-exports browserPictureStorage from the implementing child, so the relationship ends on that public entry point.",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/main.tsx",
-        "symbol": "browserPictureStorage"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#g8fulpEe",
-      "to": "vKEsyHFk/UOXNWLhR#AaCxSfhT"
+      "to": "vKEsyHFk/yejBBUFY#aixSjfNe"
     }
   ]
 }

@@ -2,8 +2,8 @@
   "order": 46000,
   "name": "Canonical archive objects",
   "kind": "module",
-  "responsibility": "Stores architecture-only Git objects, joins concurrent ancestry, and retains exact foreign pins",
-  "description": "Configured identity and signing govern checkpoints and marked synchronization commits. Required checkpoints remain actual Git parents. Retention refs preserve operations before conditional archive appends. Common Git objects and refs serve linked worktrees without changing current files, index or HEAD. Reads retained input blobs in one Git batch with exact object identity and length framing.",
+  "responsibility": "Retains exact architecture and reads its immutable records",
+  "description": "The archive owner batches record reads and supplies immutable tree identities. An operation-local parent graph proves actual dependency ancestry without repeated Git commands. Signed commits, source exclusion, and exact input fingerprints remain mandatory.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/store/model-archive.ts"
@@ -77,7 +77,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-archive.ts",
+        "path": "packages/board/src/runtime/store/model-archive-location.ts",
         "symbol": "archiveContext"
       },
       "id": "vKEsyHFk/0T9enjhi#QrFo5jjd",
@@ -99,7 +99,8 @@
     {
       "order": 221000,
       "kind": "call",
-      "label": "read exact input blobs",
+      "label": "read inputs and build trees",
+      "description": "Uses checkpointBlobs for retained reads and tree for exact batched writes.",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

@@ -2,8 +2,8 @@
   "order": 36000,
   "name": "Live panes",
   "kind": "module",
-  "responsibility": "Keeps the panes on screen, their sockets and tabs, and board announcements live",
-  "description": "Pane routes, Pane socket, Pane registry, Board announcements, Change feed, Tab session presence and Disk change watcher form this server subsystem. Board content stays on disk; the subsystem holds only screen and session state.",
+  "responsibility": "Keeps pane sockets and tab sessions live; existing publishers send canonical change and activity snapshots.",
+  "description": "Pane routes and sockets retain presentation state. The canonical change feed carries model events to agent context, while the activity tracker broadcasts vault-keyed subject claims and durable action attribution.",
   "groups": [
     "panes"
   ],
@@ -35,28 +35,7 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
-      "state": "current"
-    }
-  ],
   "outgoing": [
-    {
-      "order": 8000,
-      "kind": "call",
-      "description": "locate watched file; the vault's first board",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/watchers/semantic-boards/semantic-disk-watch.ts",
-        "symbol": "locateSemanticBoard"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#sgeiS1Hj",
-      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
-    },
     {
       "order": 10000,
       "kind": "event",
@@ -148,19 +127,6 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#epRLrdt6",
       "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
-    },
-    {
-      "order": 84000,
-      "kind": "call",
-      "description": "watch the leases of the boards on screen",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/registry.ts",
-        "symbol": "watchBoardLocks"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#E5B3q1D8",
-      "to": "vKEsyHFk/6E6hL0Zk#8imgDQSw"
     },
     {
       "order": 99000,

@@ -4,464 +4,6 @@
   "name": "Board viewer",
   "flows": [
     {
-      "id": "vKEsyHFk/UOXNWLhR#ZTAqSaOi",
-      "name": "A pane opens a board",
-      "participants": [
-        "vKEsyHFk/UOXNWLhR#xJIh6Jdp",
-        "vKEsyHFk/UOXNWLhR#aYC7if1N",
-        "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-        "vKEsyHFk/UOXNWLhR#38hwLCO1",
-        "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-        "vKEsyHFk/UOXNWLhR#AaCxSfhT",
-        "vKEsyHFk/UOXNWLhR#F90402mH",
-        "vKEsyHFk/UOXNWLhR#tmwUm8BL",
-        "vKEsyHFk/UOXNWLhR#3KqRuOEN",
-        "vKEsyHFk/UOXNWLhR#gT3UJ3yd"
-      ],
-      "steps": [
-        {
-          "id": "vKEsyHFk/UOXNWLhR#RPO0E0Mf",
-          "from": "vKEsyHFk/UOXNWLhR#xJIh6Jdp",
-          "to": "vKEsyHFk/UOXNWLhR#aYC7if1N",
-          "label": "mount the stage on the board its key names",
-          "kind": "sync",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
-            "symbol": "SemanticBoardStage"
-          }
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#aWCS0N6w",
-          "from": "vKEsyHFk/UOXNWLhR#aYC7if1N",
-          "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-          "label": "the picture of this reading",
-          "kind": "sync",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
-            "symbol": "semanticRenderQuery"
-          }
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#PE8Xasv1",
-          "from": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-          "to": "vKEsyHFk/UOXNWLhR#38hwLCO1",
-          "label": "draw this reading",
-          "kind": "sync",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
-            "symbol": "pictureSource"
-          }
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#QKg8y3ih",
-          "kind": "decision",
-          "question": "Did the page start its own renderer?",
-          "alternatives": [
-            {
-              "label": "own renderer",
-              "steps": [
-                {
-                  "id": "vKEsyHFk/UOXNWLhR#kPLYXFbJ",
-                  "from": "vKEsyHFk/UOXNWLhR#38hwLCO1",
-                  "to": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-                  "label": "the page's own renderer",
-                  "kind": "sync",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/picture-source.ts",
-                    "symbol": "takePicturesFrom"
-                  }
-                },
-                {
-                  "id": "vKEsyHFk/UOXNWLhR#3LGHYYgR",
-                  "from": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-                  "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-                  "label": "the board and the vault policy it draws from",
-                  "kind": "sync",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
-                    "symbol": "semanticBoardDocumentQuery"
-                  }
-                },
-                {
-                  "id": "vKEsyHFk/UOXNWLhR#OsKC6N8t",
-                  "from": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-                  "to": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-                  "label": "the board document and the vault check",
-                  "kind": "return",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
-                    "symbol": "semanticBoardDocumentQuery"
-                  }
-                },
-                {
-                  "id": "vKEsyHFk/UOXNWLhR#UOONl3rd",
-                  "from": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-                  "to": "vKEsyHFk/UOXNWLhR#AaCxSfhT",
-                  "label": "a drawing kept for this version",
-                  "kind": "sync",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
-                    "symbol": "readCachedPicture"
-                  }
-                },
-                {
-                  "id": "vKEsyHFk/UOXNWLhR#XcgkMgVO",
-                  "from": "vKEsyHFk/UOXNWLhR#AaCxSfhT",
-                  "to": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-                  "label": "the kept drawing, or none",
-                  "kind": "return",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/picture-cache.ts",
-                    "symbol": "readCachedPicture"
-                  }
-                },
-                {
-                  "id": "vKEsyHFk/UOXNWLhR#BbBNQuue",
-                  "kind": "decision",
-                  "question": "Is a drawing kept under this version, policy and build?",
-                  "alternatives": [
-                    {
-                      "label": "kept",
-                      "steps": []
-                    },
-                    {
-                      "label": "not kept",
-                      "steps": [
-                        {
-                          "id": "vKEsyHFk/UOXNWLhR#fjAKaiBP",
-                          "from": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-                          "to": "vKEsyHFk/UOXNWLhR#F90402mH",
-                          "label": "draw it here",
-                          "kind": "sync",
-                          "anchor": {
-                            "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
-                            "symbol": "DrawBoard"
-                          }
-                        },
-                        {
-                          "id": "vKEsyHFk/UOXNWLhR#8k52PsuK",
-                          "from": "vKEsyHFk/UOXNWLhR#F90402mH",
-                          "to": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-                          "label": "the drawing",
-                          "kind": "return",
-                          "anchor": {
-                            "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/renderer/src/ui/state/browser-renderer.ts",
-                            "symbol": "drawBoardHere"
-                          }
-                        },
-                        {
-                          "id": "vKEsyHFk/UOXNWLhR#qQTUO4gV",
-                          "from": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-                          "to": "vKEsyHFk/UOXNWLhR#AaCxSfhT",
-                          "label": "keep it for next time",
-                          "kind": "async",
-                          "anchor": {
-                            "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
-                            "symbol": "writeCachedPicture"
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "id": "vKEsyHFk/UOXNWLhR#PTZp8nJM",
-                  "from": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-                  "to": "vKEsyHFk/UOXNWLhR#38hwLCO1",
-                  "label": "the drawing",
-                  "kind": "return",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
-                    "symbol": "drawHere"
-                  }
-                }
-              ]
-            },
-            {
-              "label": "no renderer",
-              "steps": [
-                {
-                  "id": "vKEsyHFk/UOXNWLhR#NfluGmWF",
-                  "from": "vKEsyHFk/UOXNWLhR#38hwLCO1",
-                  "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
-                  "label": "ask the render route",
-                  "kind": "sync",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/picture-source.ts",
-                    "symbol": "fetchSemanticRender"
-                  }
-                },
-                {
-                  "id": "vKEsyHFk/UOXNWLhR#ay39rvq7",
-                  "from": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
-                  "to": "vKEsyHFk/UOXNWLhR#38hwLCO1",
-                  "label": "the drawing, or an empty board",
-                  "kind": "return",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
-                    "symbol": "fetchSemanticRender"
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#cX3i1Obo",
-          "from": "vKEsyHFk/UOXNWLhR#38hwLCO1",
-          "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-          "label": "the drawing",
-          "kind": "return",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
-            "symbol": "pictureSource"
-          }
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#SpD8IjDb",
-          "from": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-          "to": "vKEsyHFk/UOXNWLhR#aYC7if1N",
-          "label": "the drawing, or the news that none is",
-          "kind": "return",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
-            "symbol": "semanticRenderQuery"
-          }
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#mN3YJbJ7",
-          "from": "vKEsyHFk/UOXNWLhR#aYC7if1N",
-          "to": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
-          "label": "the answer, the reading and its moves",
-          "kind": "sync",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
-            "symbol": "SemanticStageView"
-          }
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#cOi9I7fn",
-          "from": "vKEsyHFk/UOXNWLhR#aYC7if1N",
-          "to": "vKEsyHFk/UOXNWLhR#gT3UJ3yd",
-          "label": "what is on screen",
-          "kind": "sync",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
-            "symbol": "useReported"
-          }
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#ighJPfc0",
-          "from": "vKEsyHFk/UOXNWLhR#gT3UJ3yd",
-          "to": "vKEsyHFk/UOXNWLhR#xJIh6Jdp",
-          "label": "board, variant, view, selection, step",
-          "kind": "sync",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-reported-reading.ts",
-            "symbol": "report"
-          }
-        }
-      ]
-    },
-    {
-      "id": "vKEsyHFk/UOXNWLhR#9fLaLTyg",
-      "name": "A board changes under its readers",
-      "participants": [
-        "vKEsyHFk/UOXNWLhR#J6P3Mhjb",
-        "vKEsyHFk/UOXNWLhR#bx5fJdP8",
-        "vKEsyHFk/UOXNWLhR#VC7yvPZB",
-        "vKEsyHFk/UOXNWLhR#OeUYLDxp",
-        "vKEsyHFk/UOXNWLhR#nMKLaMje",
-        "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-        "vKEsyHFk/UOXNWLhR#IJkVbMK2"
-      ],
-      "steps": [
-        {
-          "id": "vKEsyHFk/UOXNWLhR#iGRKstQC",
-          "from": "vKEsyHFk/UOXNWLhR#J6P3Mhjb",
-          "to": "vKEsyHFk/UOXNWLhR#bx5fJdP8",
-          "label": "a board has a new version",
-          "kind": "async",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/state/semantic-board-canvas/board-changes.ts",
-            "symbol": "announceSemanticBoardChange"
-          }
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#6Iz1VCCx",
-          "kind": "loop",
-          "condition": "for each pane showing a board",
-          "steps": [
-            {
-              "id": "vKEsyHFk/UOXNWLhR#hZN1QWaP",
-              "from": "vKEsyHFk/UOXNWLhR#bx5fJdP8",
-              "to": "vKEsyHFk/UOXNWLhR#VC7yvPZB",
-              "label": "the vault, the board and its version",
-              "kind": "sync",
-              "anchor": {
-                "repo": "github.com/miklschmidt/archboard",
-                "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-semantic-board-changes.ts",
-                "symbol": "onSemanticBoardChange"
-              }
-            },
-            {
-              "id": "vKEsyHFk/UOXNWLhR#JHNo11U0",
-              "kind": "decision",
-              "question": "Is it the board on screen, in this pane's vault?",
-              "alternatives": [
-                {
-                  "label": "the board on screen",
-                  "steps": [
-                    {
-                      "id": "vKEsyHFk/UOXNWLhR#QUMAWrm1",
-                      "from": "vKEsyHFk/UOXNWLhR#VC7yvPZB",
-                      "to": "vKEsyHFk/UOXNWLhR#OeUYLDxp",
-                      "label": "one changed board, in this vault",
-                      "kind": "sync",
-                      "anchor": {
-                        "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-semantic-board-changes.ts",
-                        "symbol": "boardChanged"
-                      }
-                    },
-                    {
-                      "id": "vKEsyHFk/UOXNWLhR#elCUsFdx",
-                      "from": "vKEsyHFk/UOXNWLhR#OeUYLDxp",
-                      "to": "vKEsyHFk/UOXNWLhR#nMKLaMje",
-                      "label": "the readings held, by every name the board was asked by",
-                      "kind": "sync",
-                      "anchor": {
-                        "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-refresh.ts",
-                        "symbol": "cachedReadings"
-                      }
-                    },
-                    {
-                      "id": "vKEsyHFk/UOXNWLhR#xNqTessT",
-                      "from": "vKEsyHFk/UOXNWLhR#OeUYLDxp",
-                      "to": "vKEsyHFk/UOXNWLhR#OeUYLDxp",
-                      "label": "cancel reads in flight; documents stale before pictures",
-                      "kind": "self",
-                      "anchor": {
-                        "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-refresh.ts",
-                        "symbol": "readAgain"
-                      }
-                    },
-                    {
-                      "id": "vKEsyHFk/UOXNWLhR#tTzVFTB7",
-                      "from": "vKEsyHFk/UOXNWLhR#OeUYLDxp",
-                      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-                      "label": "the readings on screen are read again",
-                      "kind": "async",
-                      "anchor": {
-                        "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-refresh.ts",
-                        "symbol": "readAgain"
-                      }
-                    }
-                  ]
-                },
-                {
-                  "label": "another board or vault",
-                  "steps": []
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#cOFPn1V8",
-          "from": "vKEsyHFk/UOXNWLhR#bx5fJdP8",
-          "to": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-          "label": "the same news, for pictures drawn ahead",
-          "kind": "sync",
-          "note": "The picture source listens from the first picture it draws.",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
-            "symbol": "onSemanticBoardChange"
-          }
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#G0E10MvW",
-          "from": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-          "to": "vKEsyHFk/UOXNWLhR#OeUYLDxp",
-          "label": "mark the board's readings stale, with no read",
-          "kind": "sync",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
-            "symbol": "boardGoneStale"
-          }
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#FxHgYCY4",
-          "from": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-          "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-          "label": "read the board's new document",
-          "kind": "sync",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
-            "symbol": "boardFor"
-          }
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#siEPgnRL",
-          "from": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-          "to": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-          "label": "the new document",
-          "kind": "return",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
-            "symbol": "semanticBoardDocumentQuery"
-          }
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#LmySGDC5",
-          "kind": "loop",
-          "condition": "for each variant and view this tab has read, one at a time",
-          "steps": [
-            {
-              "id": "vKEsyHFk/UOXNWLhR#HGxjlXbP",
-              "from": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-              "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-              "label": "draw that reading ahead",
-              "kind": "sync",
-              "note": "The query draws it through the picture source, as a pane's does.",
-              "anchor": {
-                "repo": "github.com/miklschmidt/archboard",
-                "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
-                "symbol": "semanticRenderQuery"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "vKEsyHFk/UOXNWLhR#hzYlFfAp",
       "name": "A reader opens a card's board",
       "participants": [
@@ -472,8 +14,7 @@
         "vKEsyHFk/UOXNWLhR#TK7SUGoc",
         "vKEsyHFk/UOXNWLhR#gIakrnWa",
         "vKEsyHFk/UOXNWLhR#hc77pwzB",
-        "vKEsyHFk/UOXNWLhR#3KtX2jdA",
-        "vKEsyHFk/UOXNWLhR#xJIh6Jdp"
+        "vKEsyHFk/UOXNWLhR#3KtX2jdA"
       ],
       "steps": [
         {
@@ -679,18 +220,6 @@
                                             "repo": "github.com/miklschmidt/archboard",
                                             "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-moves.ts",
                                             "symbol": "open"
-                                          }
-                                        },
-                                        {
-                                          "id": "vKEsyHFk/UOXNWLhR#ikAznTym",
-                                          "from": "vKEsyHFk/UOXNWLhR#3KtX2jdA",
-                                          "to": "vKEsyHFk/UOXNWLhR#xJIh6Jdp",
-                                          "label": "move the pane into that vault",
-                                          "kind": "sync",
-                                          "anchor": {
-                                            "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-down.ts",
-                                            "symbol": "dive"
                                           }
                                         }
                                       ]
@@ -1775,7 +1304,7 @@
       "id": "vKEsyHFk/UOXNWLhR#8y13ofdf",
       "name": "A replay draws a talk frame by frame",
       "participants": [
-        "vKEsyHFk/UOXNWLhR#G6arm4oI",
+        "vKEsyHFk/yejBBUFY#aixSjfNe",
         "vKEsyHFk/UOXNWLhR#qV7dcNI5",
         "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
         "vKEsyHFk/UOXNWLhR#aYC7if1N"
@@ -1783,7 +1312,7 @@
       "steps": [
         {
           "id": "vKEsyHFk/UOXNWLhR#B7t6AbnH",
-          "from": "vKEsyHFk/UOXNWLhR#G6arm4oI",
+          "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
           "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5",
           "label": "read the boards from the talk",
           "kind": "sync",
@@ -1795,7 +1324,7 @@
         },
         {
           "id": "vKEsyHFk/UOXNWLhR#rEMVUaSW",
-          "from": "vKEsyHFk/UOXNWLhR#G6arm4oI",
+          "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
           "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
           "label": "install the stepped clock",
           "kind": "sync",
@@ -1807,7 +1336,7 @@
         },
         {
           "id": "vKEsyHFk/UOXNWLhR#SNxH5IuT",
-          "from": "vKEsyHFk/UOXNWLhR#G6arm4oI",
+          "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
           "to": "vKEsyHFk/UOXNWLhR#aYC7if1N",
           "label": "mount the viewer on the talk's board",
           "kind": "sync",
@@ -1824,7 +1353,7 @@
           "steps": [
             {
               "id": "vKEsyHFk/UOXNWLhR#d1iquVJp",
-              "from": "vKEsyHFk/UOXNWLhR#G6arm4oI",
+              "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
               "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
               "label": "advance to the frame's time",
               "kind": "sync",
@@ -1836,8 +1365,8 @@
             },
             {
               "id": "vKEsyHFk/UOXNWLhR#urWtDY15",
-              "from": "vKEsyHFk/UOXNWLhR#G6arm4oI",
-              "to": "vKEsyHFk/UOXNWLhR#G6arm4oI",
+              "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+              "to": "vKEsyHFk/yejBBUFY#aixSjfNe",
               "label": "play the talk to this frame's step",
               "kind": "self",
               "anchor": {
@@ -1854,7 +1383,7 @@
                 {
                   "id": "vKEsyHFk/UOXNWLhR#NP2VXtuV",
                   "from": "vKEsyHFk/UOXNWLhR#aYC7if1N",
-                  "to": "vKEsyHFk/UOXNWLhR#G6arm4oI",
+                  "to": "vKEsyHFk/yejBBUFY#aixSjfNe",
                   "label": "board, version and step on screen",
                   "kind": "return",
                   "anchor": {
@@ -1867,7 +1396,7 @@
             },
             {
               "id": "vKEsyHFk/UOXNWLhR#XyXsOCuZ",
-              "from": "vKEsyHFk/UOXNWLhR#G6arm4oI",
+              "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
               "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
               "label": "run the frame, stand animations at the clock",
               "kind": "sync",
@@ -1887,8 +1416,8 @@
                   "steps": [
                     {
                       "id": "vKEsyHFk/UOXNWLhR#avHI5NZl",
-                      "from": "vKEsyHFk/UOXNWLhR#G6arm4oI",
-                      "to": "vKEsyHFk/UOXNWLhR#G6arm4oI",
+                      "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+                      "to": "vKEsyHFk/yejBBUFY#aixSjfNe",
                       "label": "fail the frame",
                       "kind": "self",
                       "anchor": {
@@ -1904,7 +1433,7 @@
                   "steps": [
                     {
                       "id": "vKEsyHFk/UOXNWLhR#oSCXYjlZ",
-                      "from": "vKEsyHFk/UOXNWLhR#G6arm4oI",
+                      "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
                       "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
                       "label": "let the browser draw once",
                       "kind": "sync",
@@ -1915,109 +1444,6 @@
                       }
                     }
                   ]
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "vKEsyHFk/UOXNWLhR#T0usTStm",
-      "name": "The page starts drawing pictures",
-      "participants": [
-        "vKEsyHFk/UOXNWLhR#LMJVhlqw",
-        "vKEsyHFk/UOXNWLhR#F90402mH",
-        "vKEsyHFk/UOXNWLhR#AaCxSfhT",
-        "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-        "vKEsyHFk/UOXNWLhR#38hwLCO1",
-        "vKEsyHFk/UOXNWLhR#G6arm4oI"
-      ],
-      "steps": [
-        {
-          "id": "vKEsyHFk/UOXNWLhR#oyf70QsA",
-          "from": "vKEsyHFk/UOXNWLhR#LMJVhlqw",
-          "to": "vKEsyHFk/UOXNWLhR#F90402mH",
-          "label": "start the renderer in this page",
-          "kind": "sync",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/main.tsx",
-            "symbol": "startBrowserRenderer"
-          }
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#FRZQScbk",
-          "from": "vKEsyHFk/UOXNWLhR#LMJVhlqw",
-          "to": "vKEsyHFk/UOXNWLhR#AaCxSfhT",
-          "label": "open the browser's picture store",
-          "kind": "sync",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/main.tsx",
-            "symbol": "browserPictureStorage"
-          }
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#P5RyCLF8",
-          "from": "vKEsyHFk/UOXNWLhR#LMJVhlqw",
-          "to": "vKEsyHFk/UOXNWLhR#IJkVbMK2",
-          "label": "draw pictures in this page",
-          "kind": "sync",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/main.tsx",
-            "symbol": "createLocalPictureSource"
-          }
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#iGyvVBr5",
-          "from": "vKEsyHFk/UOXNWLhR#LMJVhlqw",
-          "to": "vKEsyHFk/UOXNWLhR#38hwLCO1",
-          "label": "take pictures from it",
-          "kind": "sync",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/main.tsx",
-            "symbol": "takePicturesFrom"
-          }
-        },
-        {
-          "id": "vKEsyHFk/UOXNWLhR#DBfYjZm0",
-          "kind": "decision",
-          "question": "Does the address ask for a recorded talk?",
-          "alternatives": [
-            {
-              "label": "a talk",
-              "steps": [
-                {
-                  "id": "vKEsyHFk/UOXNWLhR#Re1ptIpq",
-                  "from": "vKEsyHFk/UOXNWLhR#LMJVhlqw",
-                  "to": "vKEsyHFk/UOXNWLhR#G6arm4oI",
-                  "label": "render the talk",
-                  "kind": "sync",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/main.tsx",
-                    "symbol": "startWalkthroughReplay"
-                  }
-                }
-              ]
-            },
-            {
-              "label": "the application",
-              "steps": [
-                {
-                  "id": "vKEsyHFk/UOXNWLhR#YzVwoasm",
-                  "from": "vKEsyHFk/UOXNWLhR#LMJVhlqw",
-                  "to": "vKEsyHFk/UOXNWLhR#LMJVhlqw",
-                  "label": "learn the served vault, then mount the application",
-                  "kind": "self",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/main.tsx",
-                    "symbol": "root"
-                  }
                 }
               ]
             }

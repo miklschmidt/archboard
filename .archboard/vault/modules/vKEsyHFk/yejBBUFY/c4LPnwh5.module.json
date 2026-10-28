@@ -2,14 +2,15 @@
   "order": 8002,
   "name": "Shell",
   "kind": "ui",
-  "responsibility": "The desktop frame in columns: the navigator with the agent dock at its foot, the conversation beside it while open, and the panes",
-  "description": "No row runs across the frame: each column has its own 40px top row (the brand bar over the navigator, a pane's header, the conversation's header), and the rows line up. The pane centre is the fullscreen root, so presenting a pane never remounts it, and a presented pane gets a slim bar with its exit and the one voice key. The navigator lists every repository with the boards of its chosen checkout under it, says in a repository's row when its checkout is gone or has no vault, and offers a menu of the repository's known checkouts. The migrated repository action opens its current canonical model in the active pane through the shared router.",
+  "responsibility": "Connects repository navigation, local agents, and canonical panes",
+  "description": "The desktop frame keeps the repository navigator, local agent controls, conversation, and canonical panes. Repository actions open current modules through the shared router. Unmigrated repositories show their migration state. Board ownership and level controls are retired.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/shell"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#c4LPnwh5",
+  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -25,45 +26,6 @@
     }
   ],
   "outgoing": [
-    {
-      "order": 16000,
-      "kind": "call",
-      "label": "each repository's outline",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/shell/Navigator.tsx",
-        "symbol": "listedBoard"
-      },
-      "id": "vKEsyHFk/yejBBUFY#NcFmPj3W",
-      "to": "vKEsyHFk/yejBBUFY#zWQG6LJZ"
-    },
-    {
-      "order": 44000,
-      "kind": "render",
-      "label": "each board's level mark in the navigator",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/shell/BoardLine.tsx",
-        "symbol": "LevelMark"
-      },
-      "id": "vKEsyHFk/yejBBUFY#pFEndLvU",
-      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
-    },
-    {
-      "order": 55000,
-      "kind": "render",
-      "label": "the move control in each pane's header",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/shell/PaneControls.tsx",
-        "symbol": "MoveBoardControl"
-      },
-      "id": "vKEsyHFk/yejBBUFY#1wY1628T",
-      "to": "vKEsyHFk/yejBBUFY#HQWPLutt"
-    },
     {
       "order": 73000,
       "kind": "render",

@@ -3,6 +3,7 @@
   "name": "Foreign revision pins",
   "kind": "module",
   "responsibility": "Requires existing exact foreign checkpoints before local signed preparation",
+  "description": "Retains exact reference dependencies through Git ancestry. A proposal reference to current uses the captured current checkpoint. A checkpoint does not embed its own future identity.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/operations/history/reference-pins.ts"

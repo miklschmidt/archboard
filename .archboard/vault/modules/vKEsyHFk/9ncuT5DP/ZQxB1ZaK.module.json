@@ -22,6 +22,62 @@
   ],
   "outgoing": [
     {
+      "order": 4000,
+      "kind": "call",
+      "label": "start the realtime leg",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/realtime/negotiation.ts",
+        "symbol": "realtimeStart"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#eRYh0zYO",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 5000,
+      "kind": "call",
+      "label": "the start's brief: the host's coordinator context",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/realtime/adapter.ts",
+        "symbol": "coordinatorContext"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#jKgud5yQ",
+      "to": "vKEsyHFk/qKGcB6vZ#ZilfteOF"
+    },
+    {
+      "order": 6000,
+      "kind": "event",
+      "label": "the answer, then the transcript",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/projections/browser-state/owner-projection.ts",
+        "symbol": "transcript"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#oyurpL2B",
+      "to": "vKEsyHFk/yejBBUFY#0SRnYXnC"
+    },
+    {
+      "order": 14000,
+      "kind": "event",
+      "label": "the user's spoken reply, as transcript events",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/spoken-approval/gate.ts",
+        "symbol": "onSemanticEvent"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#AkgtBxFY",
+      "to": "vKEsyHFk/qKGcB6vZ#fEiupnAD"
+    },
+    {
       "order": 17000,
       "kind": "rpc",
       "label": "thread/realtime/start, append, stop",

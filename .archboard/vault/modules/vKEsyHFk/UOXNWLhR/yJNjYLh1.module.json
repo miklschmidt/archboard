@@ -2,8 +2,37 @@
   "order": 48001,
   "name": "Picture supply",
   "kind": "module",
-  "responsibility": "Decides where a pane's picture is drawn, in this page or by the server's render route. Keeps each drawing only as a read-only cache stamped with the board version it came from.",
+  "responsibility": "Caches and draws captured diagram content through the local renderer",
+  "description": "Picture identity follows its captured content. Canonical drawing reuses the picture cache while retained readers supply their original content through an explicit provider.",
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+  "outgoing": [
+    {
+      "order": 70031,
+      "kind": "call",
+      "label": "identify the captured picture",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
+        "symbol": "sameBoardName"
+      },
+      "id": "vKEsyHFk#J52Bs9ep",
+      "to": "vKEsyHFk/yejBBUFY#DW1hIFRx"
+    },
+    {
+      "order": 70032,
+      "kind": "call",
+      "label": "preserve retained read refusals",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/picture-source.ts",
+        "symbol": "SemanticBoardError"
+      },
+      "id": "vKEsyHFk#A87QndqZ",
+      "to": "vKEsyHFk/UOXNWLhR#kr46TVLf"
+    }
+  ]
 }

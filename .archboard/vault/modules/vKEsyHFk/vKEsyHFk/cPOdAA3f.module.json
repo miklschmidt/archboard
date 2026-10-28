@@ -2,8 +2,8 @@
   "order": 11004,
   "name": "Archboard server",
   "kind": "service",
-  "responsibility": "Serves the Archboard browser and CLI. Each Archboard checkout runs its own server on its own port.",
-  "description": "One process for each archboard checkout, running that checkout's source: the main checkout's listens on port 3000, a linked worktree's on a port from 10000 to 19999 that its path decides. Board persistence, the renderer, the pane sockets and the voice agent all live in it; the Codex app-server is its private child.",
+  "responsibility": "Hosts the local HTTP and socket service for architecture and local agents",
+  "description": "One server app serves canonical model operations, code evidence, exports, retained playback, repository selection, and pane routing. Its route and lifecycle children own those details. Reader and rendering roles do not create separate copies of this app.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server"
@@ -16,45 +16,7 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
-      "state": "current"
-    }
-  ],
   "outgoing": [
-    {
-      "order": 3000,
-      "kind": "data",
-      "label": "read / commit",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
-        "symbol": "writeSemanticBoard"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#mjjIPV4U",
-      "to": "vKEsyHFk/vKEsyHFk#8XKRkSHl"
-    },
-    {
-      "order": 4000,
-      "kind": "event",
-      "label": "board and agent news",
-      "emphasis": "hero",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/projections/board-announcements/board-announcements.ts",
-        "symbol": "announceDoing"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#4p2LMrOt",
-      "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
-    },
     {
       "order": 5000,
       "kind": "rpc",
@@ -79,7 +41,7 @@
         "symbol": "chosenCheckouts"
       },
       "id": "vKEsyHFk/vKEsyHFk#oK9fPKdv",
-      "to": "vKEsyHFk/vKEsyHFk#19855Ply"
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     },
     {
       "order": 11000,
@@ -106,6 +68,133 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#mm4DLsd2",
       "to": "vKEsyHFk/vKEsyHFk#fssx6Gaq"
+    },
+    {
+      "order": 92000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/0T9enjhi#lbpfmZQK",
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+    },
+    {
+      "order": 98000,
+      "kind": "call",
+      "label": "retains exact local checkpoints",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "symbol": "retainArchitectureCheckpoint"
+      },
+      "id": "vKEsyHFk/0T9enjhi#iXs0a5bj",
+      "to": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
+    },
+    {
+      "order": 108000,
+      "kind": "call",
+      "label": "derive the checkpoint request contract",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "symbol": "ArchitectureCheckpointRequestSchema"
+      },
+      "id": "vKEsyHFk/0T9enjhi#ZWlFN4et",
+      "to": "vKEsyHFk/0T9enjhi#ZLJy8ivl"
+    },
+    {
+      "order": 122000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/migration-routes.ts",
+        "symbol": "readLegacyInventory"
+      },
+      "id": "vKEsyHFk/0T9enjhi#VoM3JXyO",
+      "to": "vKEsyHFk/0T9enjhi#7mTerd6Y"
+    },
+    {
+      "order": 124000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/migration-routes.ts",
+        "symbol": "LegacyMappingWriteSchema"
+      },
+      "id": "vKEsyHFk/0T9enjhi#LF1VUIUY",
+      "to": "vKEsyHFk/0T9enjhi#O3Pczt31"
+    },
+    {
+      "order": 127000,
+      "kind": "call",
+      "label": "edit and recover canonical modules",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+        "symbol": "editArchitectureModule"
+      },
+      "id": "vKEsyHFk/0T9enjhi#SuACli3y",
+      "to": "vKEsyHFk/0T9enjhi#Zeo3aQWz"
+    },
+    {
+      "order": 143000,
+      "kind": "call",
+      "label": "vault-scoped current event stream",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+        "symbol": "watchArchitectureModel"
+      },
+      "id": "vKEsyHFk/0T9enjhi#tDk3zmci",
+      "to": "vKEsyHFk/0T9enjhi#hLWF9OC5"
+    },
+    {
+      "order": 158000,
+      "kind": "call",
+      "label": "claimArchitectureSubjects",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+        "symbol": "claimArchitectureSubjects"
+      },
+      "id": "vKEsyHFk/0T9enjhi#gCSSYsMT",
+      "to": "vKEsyHFk/0T9enjhi#ov7pPg21"
+    },
+    {
+      "order": 184000,
+      "kind": "call",
+      "label": "ArchitectureFlowRenderRequestSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/flow-routes.ts",
+        "symbol": "flowPicture"
+      },
+      "id": "vKEsyHFk/0T9enjhi#txWnt33L",
+      "to": "vKEsyHFk/0T9enjhi#W6wFcSQz"
+    },
+    {
+      "order": 256000,
+      "kind": "call",
+      "label": "exportArchitectureModel",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/portable-routes.ts",
+        "symbol": "exportArchitectureModel"
+      },
+      "id": "vKEsyHFk/0T9enjhi#NdGIaM6r",
+      "to": "vKEsyHFk/0T9enjhi#2gFwMLTT"
     }
   ]
 }

@@ -13,7 +13,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#0SRnYXnC",
-  "parent": "vKEsyHFk/yejBBUFY#W0EmXnR9",
+  "parent": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -28,15 +28,24 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
-      "state": "current"
-    }
-  ],
   "outgoing": [
+    {
+      "order": 3000,
+      "kind": "event",
+      "label": "the offer this tab made",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/voice/realtime-actions.ts",
+        "symbol": "createOffer"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#ntLLD7Df",
+      "to": "vKEsyHFk/9ncuT5DP#ZQxB1ZaK"
+    },
     {
       "order": 26000,
       "kind": "data",

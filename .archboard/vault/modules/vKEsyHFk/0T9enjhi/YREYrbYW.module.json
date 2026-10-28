@@ -13,7 +13,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#YREYrbYW",
-  "parent": "vKEsyHFk/0T9enjhi#1VHRyajb",
+  "parent": "vKEsyHFk/0T9enjhi#CLdaoYy3",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -48,19 +48,6 @@
       },
       "id": "vKEsyHFk/0T9enjhi#ROJixHYk",
       "to": "vKEsyHFk/0T9enjhi#qTv7HuBw"
-    },
-    {
-      "order": 146000,
-      "kind": "call",
-      "label": "holdBoard",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-state.ts",
-        "symbol": "holdBoard"
-      },
-      "id": "vKEsyHFk/0T9enjhi#Fr0oDPug",
-      "to": "vKEsyHFk/0T9enjhi#UFO3ulXp"
     },
     {
       "order": 154000,

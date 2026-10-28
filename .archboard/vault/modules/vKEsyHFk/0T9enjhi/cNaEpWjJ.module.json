@@ -3,7 +3,7 @@
   "name": "Canonical model read",
   "kind": "function",
   "responsibility": "Reads current, draft, and retained architecture before resolving explicit references and bound source",
-  "description": "The canonical reader validates complete models and refuses live legacy authority. An explicit preview selection instead composes the saved migration plan through the same schemas, coherence rules, and subject selectors. The result carries its original source fingerprint and exact planning revision.\n\nNarrative reads resolve a complete target once through the same state, navigation, and explanation pipeline. Reports distinguish the narrative source revision from its target revision.\n\nMigration preview converts stable narratives and complete reading instructions. Unused views become content-free bookmarks. Exact original aliases select qualified original states. Current composition applies saved identity choices. Original history and retained playback preserve original coverage and never borrow current surroundings.",
+  "description": "Reads one live canonical model or an exact retained reading. The shared decoder orders collections and walkthroughs consistently. Legacy bytes serve explicit migration and original history only.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/operations/read/model-read.ts"

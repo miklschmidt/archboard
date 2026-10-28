@@ -3,7 +3,7 @@
   "name": "Legacy migration",
   "kind": "function",
   "responsibility": "Preview explicit mappings and install owner-authorized cutover with retained originals, compact proposal baselines, and the shared recovery boundary",
-  "description": "Inventories exact originals and previews composed current architecture, scoped legacy histories, and explicitly mapped compact draft changes. Independent histories keep board coverage. Standing bases and lifecycle evidence remain original.\n\nMigration preview converts stable narratives and complete reading instructions. Unused views become content-free bookmarks. Exact original aliases select qualified original states. Current composition applies saved identity choices. Original history and retained playback preserve original coverage and never borrow current surroundings.\n\nEvery converted beat requires an explicit original view. Missing views stop their affected beat with an owner correction diagnostic. The original decoder retains omitted fields and exact bytes. Conversion never inherits another view or selects an implicit overview.",
+  "description": "Installs an explicitly approved mapping through the existing signed archive, journal, and recovery owner. Canonical decoding normalizes proposal baselines before fingerprinting. Original bytes, addresses, and independent drafts remain available.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/operations/legacy-inventory"
@@ -59,18 +59,6 @@
       },
       "id": "vKEsyHFk/0T9enjhi#yTYxw24a",
       "to": "vKEsyHFk/0T9enjhi#qTv7HuBw"
-    },
-    {
-      "order": 114000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/legacy-inventory/save-plan.ts",
-        "symbol": "withBoardLock"
-      },
-      "id": "vKEsyHFk/0T9enjhi#czjf7II5",
-      "to": "vKEsyHFk/0T9enjhi#UFO3ulXp"
     },
     {
       "order": 116000,

@@ -5,6 +5,7 @@
   "responsibility": "The separate fast coordinator thread of a tab session, its realtime voice leg, and the callbacks that tell it and the voice model workhorse news and context changes while voice is live",
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#3vO7eN8L",
+  "parent": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

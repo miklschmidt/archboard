@@ -1,9 +1,13 @@
 {
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#rKhJWXwz",
-  "name": "How the backend serves a board",
+  "name": "Original Archboard server: How the backend serves a board",
+  "formerNames": [
+    "How the backend serves a board"
+  ],
+  "summary": "This narrative preserves the architecture before canonical module ownership. It reads the exact retained migration baseline.",
   "target": {
-    "state": "current"
+    "checkpoint": "6bc124a8ca521df89dd84fe13922798bf8065914"
   },
   "beats": [
     {

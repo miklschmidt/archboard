@@ -32,6 +32,19 @@
       "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R"
     },
     {
+      "order": 31000,
+      "kind": "rpc",
+      "label": "answer the approval request",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/approvals/settlement.ts",
+        "symbol": "respond"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#XuK4e69W",
+      "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu"
+    },
+    {
       "order": 41000,
       "kind": "call",
       "label": "the live tab session that holds the asking thread",
@@ -56,7 +69,7 @@
         "symbol": "respond"
       },
       "id": "vKEsyHFk/9ncuT5DP#5gcxxoqv",
-      "to": "vKEsyHFk/9ncuT5DP#FxzIjbIO"
+      "to": "vKEsyHFk/wAHh0HTa#ql0DevMk"
     }
   ]
 }

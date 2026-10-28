@@ -3,7 +3,7 @@
   "name": "Codex app-server",
   "kind": "external",
   "responsibility": "Runs each host's tab sessions as one private child over stdio.",
-  "description": "Its own process group, spoken to over stdio; what it keeps is in the Codex home. Its threads author boards the way any agent does, by running the CLI from a sandbox that reaches the server over localhost. The child's environment names the URL of the server that started it and no vault, so that CLI talks to that server and never starts another. A thread finds each board's vault in its board context and names it with -C. Archboard's side of it is the agent workbench inside the Archboard server.",
+  "description": "Each host owns one private Codex child over stdio. Its threads use the local CLI and the server URL supplied by that host. Every architecture command names its vault through checkout discovery. The host owns authentication, conversation lifetime, and process cleanup.",
   "groups": [
     "agent"
   ],
@@ -32,7 +32,7 @@
     {
       "order": 13000,
       "kind": "call",
-      "label": "a thread's board commands",
+      "label": "run local architecture commands",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

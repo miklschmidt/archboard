@@ -1,26 +1,20 @@
 {
   "order": 1000,
-  "name": "View dispatcher",
+  "name": "Architecture rendering",
   "kind": "module",
-  "responsibility": "Measures, settles and paints one drawing, in that order",
+  "responsibility": "Measures, lays out, and paints one structural reading",
   "description": "The renderer's entry point, drawn here only as the caller of the layout. Follow it for the rest of the renderer.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/render/diagram.ts"
+    "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+    "symbol": "renderArchitecture"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/OjRLKb74#nmyK8UOO",
-  "parent": "vKEsyHFk/OjRLKb74#5UnSr8ZQ",
+  "parent": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
   "formerNames": [
-    "Render driver"
-  ],
-  "references": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "model": "vKEsyHFk",
-      "subject": "vKEsyHFk/vKEsyHFk#OHywsFXm",
-      "state": "current"
-    }
+    "Render driver",
+    "View dispatcher"
   ],
   "outgoing": [
     {
@@ -38,7 +32,7 @@
         "symbol": "measureArchitecture"
       },
       "id": "vKEsyHFk/OjRLKb74#TPRWw9F4",
-      "to": "vKEsyHFk/OjRLKb74#kHpIix5b"
+      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
     },
     {
       "order": 4000,
@@ -72,7 +66,7 @@
         "symbol": "paintArchitecture"
       },
       "id": "vKEsyHFk/OjRLKb74#oYEzQ4k5",
-      "to": "vKEsyHFk/OjRLKb74#H0xU45vp"
+      "to": "vKEsyHFk/gbyqW4H3#J7mPrUeP"
     },
     {
       "order": 19000,

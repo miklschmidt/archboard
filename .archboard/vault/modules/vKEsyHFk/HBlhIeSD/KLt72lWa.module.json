@@ -10,7 +10,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/HBlhIeSD#KLt72lWa",
-  "parent": "vKEsyHFk/HBlhIeSD#8fMA8lHI",
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -45,6 +45,19 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#SvY26YAN",
       "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "order": 70041,
+      "kind": "call",
+      "label": "recognize the canonical vault layout",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/server/projections/repository-listing.ts",
+        "symbol": "isVaultLayout"
+      },
+      "id": "vKEsyHFk#SyLH2N4H",
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
     }
   ]
 }

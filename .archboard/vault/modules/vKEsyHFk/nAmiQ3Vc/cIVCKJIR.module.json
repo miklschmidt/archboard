@@ -1,8 +1,8 @@
 {
   "order": 17002,
-  "name": "Board refusal formatter",
+  "name": "Architecture refusal formatter",
   "kind": "function",
-  "responsibility": "Formats a refused board write for the reader",
+  "responsibility": "Formats an architecture refusal for the CLI reader",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
@@ -10,5 +10,9 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",
+  "parent": "vKEsyHFk/XppR9owz#iIJ5MRhi",
+  "formerNames": [
+    "Board refusal formatter"
+  ],
   "outgoing": []
 }

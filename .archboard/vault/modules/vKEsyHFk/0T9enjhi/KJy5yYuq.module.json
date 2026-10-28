@@ -3,7 +3,7 @@
   "name": "Compact proposals",
   "kind": "module",
   "responsibility": "Materializes compact proposals, reconciles families, and prepares explicit adoption or shelving through the same durable writer.",
-  "description": "The existing identity-based subject engine materializes correction changes and compares corrected history. Family reconciliation advances only local drafts that directly follow the corrected logical state, then visits their draft descendants.\n\nWalkthroughs and beats remain independent compact subjects. Existing identity and ordered-list rules reconcile narrative text, complete reading instructions, and beat order. Family propagation and settlement retain exact targets referenced by following narratives.",
+  "description": "Stores compact changes against exact retained predecessors. Consistent decoding keeps predecessor fingerprints stable across live and retained inputs. Changed predecessors require explicit reconciliation or replacement decisions.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/operations/proposals"
@@ -33,6 +33,19 @@
     }
   ],
   "outgoing": [
+    {
+      "order": 70020,
+      "kind": "call",
+      "label": "materialize exact proposal trees",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+        "symbol": "tree"
+      },
+      "id": "vKEsyHFk#c0DxX92y",
+      "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+    },
     {
       "order": 193000,
       "kind": "call",
