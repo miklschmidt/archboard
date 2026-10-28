@@ -1,3 +1,4 @@
+import { walkthroughDependencies } from "#runtime/operations/history/walkthrough-targets.ts";
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts";
 import { CorrectionSchema } from "#shared/schemas/model-proposals.ts";
@@ -123,7 +124,10 @@ async function correctionCandidate(
 		subjects: structure.subjects,
 		scopes,
 		selection: { ...selection, corrections: undefined },
-		dependencies: [request.correction.previous],
+		dependencies: [
+			request.correction.previous,
+			...(await walkthroughDependencies(await archiveContext(vault), model)),
+		],
 		correction: CorrectionSchema.parse({
 			...request.correction,
 			at: new Date().toISOString(),
