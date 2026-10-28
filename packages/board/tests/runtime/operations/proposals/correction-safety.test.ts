@@ -89,6 +89,28 @@ test("corrections require completed targets, immutable evidence and the exact pr
 			changes: [{ type: "edit-module", subject: "Shop#Gateway", set: { name: "Gateway" } }],
 		}),
 	).toMatchObject({ success: false, code: "MODEL_INVALID", applied: false });
+	expect(
+		await editArchitectureModule(vault, {
+			...input,
+			operationId: crypto.randomUUID(),
+			changes: [
+				{
+					type: "add-walkthrough",
+					walkthrough: {
+						name: "Corrected tour",
+						target: { checkpoint: "f".repeat(40) },
+						beats: [
+							{
+								title: "Recorded routing",
+								narrative: "Read the recorded gateway.",
+								reading: { grammar: "architecture" },
+							},
+						],
+					},
+				},
+			],
+		}),
+	).toMatchObject({ success: false, applied: false });
 	const result = await editArchitectureModule(vault, input);
 	if (!result.success) throw new Error(JSON.stringify(result));
 	expect(
