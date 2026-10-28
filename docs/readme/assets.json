@@ -88,7 +88,9 @@
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets plan",
-			"files": ["docs/readme/idx-plan.webp"],
+			"files": [
+				"docs/readme/idx-plan.webp"
+			],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -103,16 +105,22 @@
 				"scripts/readme-assets/plan.ts",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "c3131e15476a7c8824c6cff2d918cc4e755327dc5d70e23c9a9f099ab32ba21c"
+			"hash": "d1e3e06b42b1eeab3dfb97ecce5f9f49aa438823cc7cc55e37682f7b2ea9fe7d"
 		},
 		{
 			"name": "history",
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets history",
-			"files": ["docs/readme/idx-history.webp"],
+			"files": [
+				"docs/readme/idx-history.webp"
+			],
 			"sources": [
 				".archboard/vault/Renderer layout.semantic.json",
 				".archboard/vault/.archboard/config.yaml",
@@ -138,7 +146,9 @@
 			"kind": "narrated",
 			"codex": true,
 			"command": "bun run readme:assets pr-walkthrough",
-			"files": ["docs/readme/idx-voice.webp"],
+			"files": [
+				"docs/readme/idx-voice.webp"
+			],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -189,7 +199,9 @@
 			"kind": "narrated",
 			"codex": true,
 			"command": "bun run readme:assets newcomer",
-			"files": ["docs/readme/idx-newcomer.webp"],
+			"files": [
+				"docs/readme/idx-newcomer.webp"
+			],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -216,7 +228,9 @@
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets drill-down",
-			"files": ["docs/readme/idx-drill.webp"],
+			"files": [
+				"docs/readme/idx-drill.webp"
+			],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -231,16 +245,21 @@
 				"scripts/readme-assets/drill-down.ts",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "f3552de4a2a8fc76ef578a5650fb44765abb0a634ae5643541743e6e5ed78e00"
+			"hash": "004903b8a326207e37bcaa0b99b7527fb39f1af62ec28658be8fea2d5d495d27"
 		},
 		{
 			"name": "ask",
 			"kind": "clip",
 			"codex": true,
 			"command": "bun run readme:assets ask",
-			"files": ["docs/readme/idx-ask.webp"],
+			"files": [
+				"docs/readme/idx-ask.webp"
+			],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -264,7 +283,9 @@
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets take-back",
-			"files": ["docs/readme/idx-safety.webp"],
+			"files": [
+				"docs/readme/idx-safety.webp"
+			],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -316,8 +337,14 @@
 			"kind": "svg",
 			"codex": false,
 			"command": "bun run readme:assets architecture",
-			"files": ["docs/readme/architecture-light.svg", "docs/readme/architecture-dark.svg"],
-			"sources": ["scripts/readme-assets/svg.ts", "scripts/readme-assets/server.ts"],
+			"files": [
+				"docs/readme/architecture-light.svg",
+				"docs/readme/architecture-dark.svg"
+			],
+			"sources": [
+				"scripts/readme-assets/svg.ts",
+				"scripts/readme-assets/server.ts"
+			],
 			"hash": "c5de20b3cf677cd7e0ed79424d68dcd6bcffeeeab23e38168320bb6e9892f55b"
 		},
 		{
@@ -325,7 +352,9 @@
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets code-evidence",
-			"files": ["docs/readme/idx-code-evidence.webp"],
+			"files": [
+				"docs/readme/idx-code-evidence.webp"
+			],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -357,7 +386,9 @@
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets module-interfaces",
-			"files": ["docs/readme/idx-module-interfaces.webp"],
+			"files": [
+				"docs/readme/idx-module-interfaces.webp"
+			],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",
@@ -389,7 +420,9 @@
 			"kind": "clip",
 			"codex": false,
 			"command": "bun run readme:assets git-history",
-			"files": ["docs/readme/idx-git-history.webp"],
+			"files": [
+				"docs/readme/idx-git-history.webp"
+			],
 			"sources": [
 				"examples/web-shop",
 				"apps/web",

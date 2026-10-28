@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-27T23:48:00Z'
+updated_date: '2026-10-28T00:04:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -244,4 +244,6 @@ Parent-owned Board persistence proposal NyesaQPQ under board 0T9enjhi remains un
 Final timing follow-up: all four reference cases that hit deadlines pass the focused retry with unchanged source and existing deadlines. That retry passes four cases and 22 assertions. Together with the final local owner and the other existing cases, all 37 affected cases have passing evidence. No source changes follow signed implementation cfc057aba89099ec1ec992973e8ae34bcfe545e7. Final local integration remains signed d95f79c58 and includes required main a98f28811. The branch is fix/same-model-reference-repair. Parent status, assignee, and acceptance remain unchanged.
 
 Merged signed local-reference repair c0566e62b through signed 9e01df6d3. The previously refused real shop settlement now passes. The shop example migrated through public inventory, plan, migration, claim, settlement, proposal and adoption operations in an isolated Git repository. Current architecture has 8 roots and recursive inventory internals; four independent proposals and exact original readings remain. Canonical inputs and a 217 kB public import request replace the legacy fixture files. The archive is a tracked historical dependency because current inputs cannot reconstruct it. The README take harness restores that archive through the public importer with configured Git identity/signing. Actual bootstrap and all five state reads plus an exact original alias pass; its server stopped in finally. Full types and focused lint/format pass. TESTING now describes canonical discovery, proposals, exports and navigation. Asset recipe ports, root migration, bundle warning, final gate/review and PR publication remain open.
+
+Ported shared filming readiness and camera fitting to canonical model stages. Plan uses complete browser reading inputs with its exact Starting point comparison, so competing recommendations show only relevant changes. Drill-down traverses Inventory and Stock API and waits for both exact scope addresses. The ask recipe uses a canonical URL but was not run. Types/lint/format and both non-Codex producer runs pass. Parent inspected the generated images; the corrected plan image removes unrelated shop comparisons. Receipt sources now include the exact shared bootstrap and authoring helpers used by those verified runs. Clips remain local, with no upload or PR update. Canonical authoring helper also claims shared flow/step and walkthrough/beat scopes. Remaining recipes and root migration stay open.
 <!-- SECTION:NOTES:END -->

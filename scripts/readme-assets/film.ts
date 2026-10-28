@@ -167,14 +167,14 @@ async function present(page: Page): Promise<void> {
  */
 async function fit(page: Page): Promise<void> {
 	const panes = await page.evaluate(
-		`document.querySelectorAll("[data-slot='semantic-board-viewport']").length`,
+		`document.querySelectorAll("[data-slot='model-diagram']").length`,
 	);
 	// One pane takes the key at a time: the key goes to the pane just focused.
 	await inOrder(
 		Array.from({ length: Number(panes) }, (_, index) => index),
 		async (index) => {
 			await page.evaluate(
-				`document.querySelectorAll("[data-slot='semantic-board-viewport']")[${index}].focus()`,
+				`document.querySelectorAll("[data-slot='model-diagram']")[${index}].focus()`,
 			);
 			await page.key("0");
 		},

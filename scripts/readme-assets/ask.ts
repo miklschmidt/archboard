@@ -15,7 +15,7 @@ import {
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./kit.ts";
 
-const BOARD = "Web shop";
+const MODEL = "Shop";
 const PART = "Timeout guard";
 const QUESTION = "Why does this part exist, and what would break without it?";
 const CLIP = attachmentFile("ask.webp");
@@ -104,7 +104,7 @@ const ask: Producer = {
 	attachments: [CLIP],
 	needs: ["chromium", "ffmpeg", "codex"],
 	plan: [
-		`Start an Archboard server over a copy of examples/web-shop that uses this machine's Archboard Codex sign-in, and open the shell on ${BOARD} at 1920x1080, light, with the conversation open; refuse when Codex is not signed in.`,
+		`Start an Archboard server over a copy of examples/web-shop that uses this machine's Archboard Codex sign-in, and open the shell on ${MODEL} at 1920x1080, light, with the conversation open; refuse when Codex is not signed in.`,
 		`Film the pointer picking ${PART} out and typing "${QUESTION}" into the agent dock, and the Codex agent's answer; this spends Codex usage.`,
 		`Encode the take as a 1440 px lossless WebP at 30 frames a second, in the scratch directory to attach by hand, with the wait for the answer played in about ${FAST_WAIT_SECONDS} seconds, and cut ${THUMBNAIL} from the answer.`,
 	],
@@ -115,7 +115,7 @@ const ask: Producer = {
 	make: async () =>
 		withTake("ask", "examples/web-shop", true, async (server, browser) => {
 			const page = await browser.open({
-				url: `${server.url}/?paneA=${encodeURIComponent(BOARD)}`,
+				url: `${server.url}/?modelA=${MODEL}`,
 				theme: "light",
 				cursor: true,
 			});

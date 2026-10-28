@@ -300,11 +300,14 @@ You need Linux or macOS, Bun 1.4.3 or newer, and Git. Chromium or Google Chrome 
 git clone https://github.com/miklschmidt/archboard.git && cd archboard
 bun install && bun run build
 mkdir -p ~/archboard-example/.archboard && cp -r examples/web-shop ~/archboard-example/.archboard/vault
-./bin/archboard -C ~/archboard-example semantic
+git -C ~/archboard-example init
+git -C ~/archboard-example remote add origin https://example.invalid/web-shop.git
+./bin/archboard -C ~/archboard-example model import \
+  --input ~/archboard-example/.archboard/vault/history.import.json
 ./bin/archboard start
 ```
 
-The copy is the vault of `~/archboard-example`, which is where a command finds it, and the `semantic` command registers it so that the browser lists it. Then open <http://127.0.0.1:3000/?paneA=Web%20shop>. The history, the proposals, the drill-down and the walkthroughs are all there.
+The copy is the vault of `~/archboard-example`. Use your configured Git identity and signer for this example. The import restores its architecture history and registers the repository. The synthetic origin identifies local references and is never fetched. Open <http://127.0.0.1:3000/?modelA=Shop> to explore the modules, proposals, retained originals, and walkthroughs.
 
 **Use it on your own code**. Put the CLI on your `PATH` and set up the repository you want mapped:
 
@@ -317,8 +320,8 @@ archboard install-skill --agent claude-code     # omit --agent for Codex
 The installer copies the `archboard` and `archboard-pr` skills to `~/.claude/skills` (`~/.agents/skills` for Codex). It makes `.archboard/vault` in the repository and adds nothing else to it. Commit the vault with your code. A command finds that vault from the directory it runs in, the way git finds a repository, or from `-C <dir>`. Then ask your agent:
 
 ```text
-Map this repository's architecture onto a board named "Overview", bind every part to its code,
-and add a short walkthrough for a new team member.
+Describe this repository with canonical modules, their responsibilities, and their relationships.
+Bind each implemented module to its code and add a short walkthrough for a new team member.
 ```
 
 See [INSTALL.md](INSTALL.md) for how a command finds its vault, code bindings and the configuration.

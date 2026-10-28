@@ -1,6 +1,8 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
+import { modelContent, subjectsOf } from "@archboard/board/content";
+import type { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
 import {
 	ArchitectureModelReadSchema,
 	ArchitectureClaimResultSchema,
@@ -70,8 +72,11 @@ async function editModel(
 					model.manifest.id,
 					...(target.state === null ? [] : [target.state]),
 					...model.proposals.map(({ id }) => id),
-					...model.modules.map(({ id }) => id),
-					...model.relationships.map(({ id }) => id),
+					...[...subjectsOf(modelContent(model))].map(({ id }) => id),
+					...model.walkthroughs.flatMap((walkthrough) => [
+						walkthrough.id,
+						...walkthrough.beats.map(({ id }) => id),
+					]),
 				]),
 			],
 		}),
@@ -125,4 +130,22 @@ function modelTarget(model: Awaited<ReturnType<typeof readModel>>) {
 	};
 }
 
-export { readModel, editModel, modelResult };
+/**
+ * Open a complete authored reading through the existing CLI input contract.
+ * @param server The take's server.
+ * @param take The directory that holds the reading instruction.
+ * @param pane The addressed browser pane.
+ * @param reading The canonical reading, including its explicit comparison when needed.
+ */
+async function showModel(
+	server: TakeServer,
+	take: string,
+	pane: string,
+	reading: z.input<typeof ArchitecturePaneReadingSchema>,
+): Promise<void> {
+	const input = join(scratch("takes", take), `${crypto.randomUUID()}.reading.json`);
+	writeFileSync(input, JSON.stringify(reading));
+	await server.cli(["browser", "show", "--input", input, "--pane", pane]);
+}
+
+export { readModel, editModel, modelResult, showModel };
