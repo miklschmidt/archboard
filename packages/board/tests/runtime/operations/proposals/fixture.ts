@@ -23,6 +23,7 @@ function stepIds(
 async function request(
 	vault: string,
 	state: ArchitectureModuleEdit["target"]["state"] = "Current",
+	additionalSubjects: string[] = [],
 ) {
 	const model = readArchitectureModel(vault);
 	if (!model.success) throw new Error(JSON.stringify(model));
@@ -32,6 +33,7 @@ async function request(
 		await releaseArchitectureClaim(vault, { claim: claim.id, writer: claim.writer });
 	const target = { model: model.manifest.id, state };
 	const scopes = [
+		...additionalSubjects,
 		model.manifest.id,
 		...(state === null ? [] : [state]),
 		...model.modules.map((m) => m.id),

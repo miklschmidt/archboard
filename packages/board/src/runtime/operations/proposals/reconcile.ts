@@ -64,28 +64,13 @@ function ownerDiagnostics(
 	const owners = new Set(collections.map((collection) => `${mine.manifest.id}#${collection.id}`));
 	const missingEdges = content.edges.filter((edge) => !modules.has(edge.from));
 	const missingFlows = content.flows.filter((flow) => !owners.has(Reflect.get(flow, "collection")));
-	const lost = [...missingEdges, ...missingFlows].map((subject) => ({
+	return [...missingEdges, ...missingFlows].map((subject) => ({
 		code: "REFERENCE_LOST",
 		file: "model.json",
 		subjects: [subject.id],
 		message: "A subject lost its exact owner.",
 		recovery: "Restore its owner, explicitly move the subject, or remove it.",
 	}));
-	const empty = collections
-		.filter(
-			(collection) =>
-				!content.flows.some(
-					(flow) => Reflect.get(flow, "collection") === `${mine.manifest.id}#${collection.id}`,
-				),
-		)
-		.map((collection) => ({
-			code: "LEFT_EMPTY",
-			file: collection.file,
-			subjects: [`${mine.manifest.id}#${collection.id}`],
-			message: "The combined deletions leave the collection empty.",
-			recovery: "State the collection contents or remove the collection.",
-		}));
-	return [...lost, ...empty];
 }
 /**
  * Serialize independent flows under their reconciled collections.
@@ -139,15 +124,16 @@ function canonicalContent(
 	);
 	writeModules(inputs, mine, theirs, content);
 	writeCollections(inputs, mine.manifest.id, content, collections);
-	const live = new Set(
-		[
+	const live = new Set([
+		...[
 			...content.nodes,
 			...content.edges,
 			...content.flows,
 			...content.flows.flatMap((flow) => everyStep(flow.steps)),
 			...walkthroughs.flatMap((walk) => [walk, ...walk.beats]),
 		].map((subject) => subject.id),
-	);
+		...collections.map((collection) => `${mine.manifest.id}#${collection.id}`),
+	]);
 	const retiredIds = [
 		...new Set([...(mine.manifest.retiredIds ?? []), ...(theirs.manifest.retiredIds ?? [])]),
 	].filter((id) => !live.has(id));
