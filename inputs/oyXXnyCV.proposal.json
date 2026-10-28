@@ -204,6 +204,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/wAHh0HTa#tFTiAUKg"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/HBlhIeSD#r6IpmadI"
     },
     {
@@ -608,6 +612,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/gbyqW4H3#wskEBeIy"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#DJXluInA"
     },
     {
@@ -704,7 +712,15 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/XppR9owz#8bgnBTp4"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
     },
     {
       "type": "remove",
@@ -729,6 +745,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/qKGcB6vZ#LIpURyJE"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/HBlhIeSD#3LoKNA2g"
     },
     {
       "type": "remove",
@@ -1292,6 +1312,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/qKGcB6vZ#r7P2iu6H"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/yejBBUFY#cHxuRI45"
     },
     {
@@ -1365,6 +1389,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#zYwmlbj8"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/yejBBUFY#TY7m2mtd"
     },
     {
       "type": "remove",
@@ -5379,13 +5407,6 @@
       }
     },
     {
-      "type": "place",
-      "subject": "vKEsyHFk/wAHh0HTa#tFTiAUKg",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
-      }
-    },
-    {
       "type": "assign",
       "subject": "vKEsyHFk/9ncuT5DP#7Hqt9ysu",
       "field": "to",
@@ -5431,7 +5452,7 @@
       "type": "place",
       "subject": "vKEsyHFk/wAHh0HTa#Ly6hUU5o",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+        "holder": "vKEsyHFk/9ncuT5DP#jylkTBp7"
       }
     },
     {
@@ -5475,8 +5496,14 @@
       "type": "place",
       "subject": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+        "holder": "vKEsyHFk/9ncuT5DP#jylkTBp7"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#jhNZqAiD",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "assign",
@@ -5664,7 +5691,7 @@
       "type": "place",
       "subject": "vKEsyHFk/wAHh0HTa#X6j6fViI",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+        "holder": "vKEsyHFk/9ncuT5DP#jylkTBp7"
       }
     },
     {
@@ -5675,10 +5702,43 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+      "field": "name",
+      "value": "Diagram presentation components"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+      "field": "responsibility",
+      "value": "Presents diagram surfaces, legends, details, and reachable display states"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+      "field": "description",
+      "value": "Canonical readers reuse the picture controls and legend. The retained stage also presents original headers, variants, and walkthroughs through an explicit captured provider. These components contain no live legacy authoring path."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+      "field": "formerNames",
+      "value": [
+        "Render stage states"
+      ]
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#POloYnX3"
+      }
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/wAHh0HTa#aRDbMlep",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+        "holder": "vKEsyHFk/9ncuT5DP#jylkTBp7"
       }
     },
     {
@@ -5770,7 +5830,7 @@
       "type": "place",
       "subject": "vKEsyHFk/wAHh0HTa#M3mPynLe",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+        "holder": "vKEsyHFk/9ncuT5DP#jylkTBp7"
       }
     },
     {
@@ -5824,9 +5884,21 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+      "field": "responsibility",
+      "value": "Owns one initialized protocol session and its reviewed operations"
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/9ncuT5DP#jylkTBp7",
       "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+      "field": "description",
+      "value": "The session performs the handshake and owns request identity serialization, response adoption, reverse requests, and failure classification. Coordinator and workhorse callers share this same implementation boundary."
     },
     {
       "type": "place",
@@ -5840,6 +5912,55 @@
       "subject": "vKEsyHFk/9ncuT5DP#FZnS78FX",
       "field": "to",
       "value": "vKEsyHFk/wAHh0HTa#ql0DevMk"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#SI5PTs6X",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#HlhfxXJm",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#mpJAeANo",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#EAKN00R4",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#d2caVqCr",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#JTrBju8L",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/wAHh0HTa#cDYih9Cs",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      }
     },
     {
       "type": "assign",
@@ -5893,14 +6014,14 @@
       "type": "place",
       "subject": "vKEsyHFk/wAHh0HTa#3FR6mev4",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+        "holder": "vKEsyHFk/9ncuT5DP#jylkTBp7"
       }
     },
     {
       "type": "place",
       "subject": "vKEsyHFk/wAHh0HTa#8QpDaiD6",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+        "holder": "vKEsyHFk/9ncuT5DP#jylkTBp7"
       }
     },
     {
@@ -5915,6 +6036,12 @@
       "placement": {
         "holder": "vKEsyHFk/9ncuT5DP#byMaoUe0"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#xOvqFYUE",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "place",
@@ -5970,6 +6097,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#zgS5gisx",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt",
       "placement": {
@@ -6022,18 +6155,6 @@
       }
     },
     {
-      "type": "clear",
-      "subject": "vKEsyHFk/gbyqW4H3#wskEBeIy",
-      "field": "references"
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/gbyqW4H3#wskEBeIy",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
-      }
-    },
-    {
       "type": "place",
       "subject": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
       "placement": {
@@ -6062,6 +6183,12 @@
       "field": "references"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#uWKB5oF9",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/qKGcB6vZ#uWKB5oF9",
       "placement": {
@@ -6088,6 +6215,12 @@
       "placement": {
         "holder": "vKEsyHFk/9ncuT5DP#Fg9dkGj3"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#dHRkaEZq",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
     },
     {
       "type": "assign",
@@ -6181,9 +6314,29 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
+      "field": "name",
+      "value": "Archboard workbench host"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
+      "field": "responsibility",
+      "value": "Adapts local panes, context, tools, and narration to the voice agent"
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
       "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
+      "field": "formerNames",
+      "value": [
+        "Codex workbench"
+      ]
     },
     {
       "type": "place",
@@ -6193,22 +6346,70 @@
       }
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#52NUP6Ut",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      }
+    },
+    {
       "type": "assign",
-      "subject": "vKEsyHFk/Oi6SBIAM#1MfDpq9X",
+      "subject": "vKEsyHFk/Oi6SBIAM#AfSjx649",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
     },
     {
-      "type": "clear",
-      "subject": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
-      "field": "references"
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#AfSjx649",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      }
     },
     {
       "type": "place",
-      "subject": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+      "subject": "vKEsyHFk/Oi6SBIAM#HgatVqjT",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+        "holder": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
       }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#ouRI3SQQ",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#IFPR1GJT",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#tVlpYNk8",
+      "field": "to",
+      "value": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#rjPvChtI",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UxINwpn6",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#1MfDpq9X",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
     },
     {
       "type": "place",
@@ -6222,6 +6423,12 @@
       "subject": "vKEsyHFk/SJ2JMVyz#Uflv9hM7",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#r1jVxlwm",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "assign",
@@ -6272,18 +6479,6 @@
       }
     },
     {
-      "type": "clear",
-      "subject": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
-      "field": "references"
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
-      }
-    },
-    {
       "type": "place",
       "subject": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
       "placement": {
@@ -6301,6 +6496,39 @@
       "type": "clear",
       "subject": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
       "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#aYC7if1N",
+      "field": "name",
+      "value": "Retained stage entry"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#aYC7if1N",
+      "field": "responsibility",
+      "value": "Mounts queries and presentation state for an exact retained diagram"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#aYC7if1N",
+      "field": "description",
+      "value": "The retained stage receives its original content through a captured provider. Ordinary panes mount the canonical model stage. Camera, selection, and presentation controls remain read-only."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#aYC7if1N",
+      "field": "formerNames",
+      "value": [
+        "Viewer entry point"
+      ]
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#aYC7if1N",
+      "placement": {
+        "holder": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
+      }
     },
     {
       "type": "assign",
@@ -6338,6 +6566,12 @@
       ]
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#hDWpDois",
+      "field": "responsibility",
+      "value": "Installs the browser host and draws with its canvas and layout workers"
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/yejBBUFY#hDWpDois",
       "field": "references"
@@ -6351,6 +6585,41 @@
     },
     {
       "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#NFop37Ak",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#hDWpDois"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#aN2ABUiR",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#hDWpDois"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#tmrkphkd",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#hDWpDois"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#mKaf3NN2",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#hDWpDois"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#3EvpTPuC",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#hDWpDois"
+      }
+    },
+    {
+      "type": "place",
       "subject": "vKEsyHFk/wAHh0HTa#xtHoCCnF",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
@@ -6358,27 +6627,9 @@
     },
     {
       "type": "assign",
-      "subject": "vKEsyHFk/HBlhIeSD#3LoKNA2g",
-      "field": "description",
-      "value": "Every local-agent context reads canonical model state and the pane’s exact capture. Legacy authority returns migration guidance without supplying legacy board content. Explanations use the registered tab workhorse; latest-action discovery starts no work."
-    },
-    {
-      "type": "clear",
-      "subject": "vKEsyHFk/HBlhIeSD#3LoKNA2g",
-      "field": "references"
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/HBlhIeSD#3LoKNA2g",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
-      }
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/Oi6SBIAM#AfSjx649",
+      "subject": "vKEsyHFk/wAHh0HTa#qQrqNYdt",
       "field": "to",
-      "value": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "clear",
@@ -6631,6 +6882,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#68SS2fPT",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/qKGcB6vZ#68SS2fPT",
       "placement": {
@@ -6697,16 +6954,52 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#F90402mH",
+      "field": "name",
+      "value": "Browser drawing"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#F90402mH",
+      "field": "responsibility",
+      "value": "Draws a prepared reading through the installed browser renderer"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#F90402mH",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "drawBoardHere"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/UOXNWLhR#F90402mH",
       "field": "references"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#F90402mH",
+      "field": "formerNames",
+      "value": [
+        "Draw here"
+      ]
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/UOXNWLhR#F90402mH",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+        "holder": "vKEsyHFk/yejBBUFY#hDWpDois"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#eRYh0zYO",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "place",
@@ -6860,6 +7153,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#4DGyP7RO",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/SJ2JMVyz#4DGyP7RO",
       "placement": {
@@ -6898,6 +7197,12 @@
       "placement": {
         "holder": "vKEsyHFk/9ncuT5DP#08zJvPJq"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#1joDYyhX",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "place",
@@ -6960,6 +7265,12 @@
       "placement": {
         "holder": "vKEsyHFk/IbGtfJE2#8O4XNZOZ"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#kdzh3hrY",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "assign",
@@ -7315,6 +7626,12 @@
       "value": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#W87z7uEB",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/wAHh0HTa#7dDHchT9",
       "placement": {
@@ -7348,6 +7665,12 @@
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#XB5TwXA3",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "place",
@@ -7471,6 +7794,12 @@
       "value": "The decoder is used by legacy inventory and retained-original readers. It keeps source text for comparison and recovery and does not persist ordinary schema upgrades."
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#k5kBhD3O",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/SJ2JMVyz#k5kBhD3O",
       "placement": {
@@ -7524,6 +7853,12 @@
       "subject": "vKEsyHFk/Oi6SBIAM#iUsWhMaM",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#aBvYXyej",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
     },
     {
       "type": "place",
@@ -7678,15 +8013,44 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#CzHSL7yr",
+      "field": "name",
+      "value": "Diagram legend"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#CzHSL7yr",
+      "field": "responsibility",
+      "value": "Shows the meaning of marks in the rendered picture"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#CzHSL7yr",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticLegend.tsx"
+      }
+    },
+    {
       "type": "clear",
       "subject": "vKEsyHFk/gbyqW4H3#CzHSL7yr",
       "field": "references"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#CzHSL7yr",
+      "field": "formerNames",
+      "value": [
+        "Board viewer"
+      ]
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/gbyqW4H3#CzHSL7yr",
       "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+        "holder": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
       }
     },
     {
@@ -7701,43 +8065,6 @@
       "subject": "vKEsyHFk/XppR9owz#bLpk2XKU",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
-      }
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/qKGcB6vZ#r7P2iu6H",
-      "field": "name",
-      "value": "Coordinator instructions"
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/qKGcB6vZ#r7P2iu6H",
-      "field": "responsibility",
-      "value": "Supplies the authored coordinator workflow and persona instructions"
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/qKGcB6vZ#r7P2iu6H",
-      "field": "binding",
-      "value": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/rules/instructions/authored.ts",
-        "symbol": "COORDINATOR_DEVELOPER_INSTRUCTIONS"
-      }
-    },
-    {
-      "type": "assign",
-      "subject": "vKEsyHFk/qKGcB6vZ#r7P2iu6H",
-      "field": "formerNames",
-      "value": [
-        "Archboard role policy"
-      ]
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk/qKGcB6vZ#r7P2iu6H",
-      "placement": {
-        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
       }
     },
     {
@@ -7810,13 +8137,13 @@
       "type": "assign",
       "subject": "vKEsyHFk/SJ2JMVyz#624ETIsk",
       "field": "name",
-      "value": "Workhorse instructions"
+      "value": "Authored role instructions"
     },
     {
       "type": "assign",
       "subject": "vKEsyHFk/SJ2JMVyz#624ETIsk",
       "field": "responsibility",
-      "value": "Supplies the authored workhorse workflow and persona instructions"
+      "value": "Composes and checks the authored coordinator and workhorse instructions"
     },
     {
       "type": "assign",
@@ -7824,16 +8151,22 @@
       "field": "binding",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/rules/instructions/authored.ts",
-        "symbol": "WORKHORSE_DEVELOPER_INSTRUCTIONS"
+        "path": "packages/workbench/src/runtime/rules/instructions/authored.ts"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#624ETIsk",
+      "field": "description",
+      "value": "One instruction owner loads the two role documents, composes their policy, and exposes their text and digests. Callers use the same integrity checks for both roles."
     },
     {
       "type": "assign",
       "subject": "vKEsyHFk/SJ2JMVyz#624ETIsk",
       "field": "formerNames",
       "value": [
-        "Archboard role policy"
+        "Archboard role policy",
+        "Workhorse instructions"
       ]
     },
     {
@@ -7841,6 +8174,20 @@
       "subject": "vKEsyHFk/SJ2JMVyz#624ETIsk",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#qU9USAdL",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#624ETIsk"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/qKGcB6vZ#6wH1TupJ",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#624ETIsk"
       }
     },
     {
@@ -7953,6 +8300,13 @@
       "value": "vKEsyHFk/6E6hL0Zk#C9EOzoYB"
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#bofpU6mt",
+      "placement": {
+        "holder": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/XppR9owz#MrE3v2T6",
       "field": "name",
@@ -8048,6 +8402,12 @@
       "subject": "vKEsyHFk/SJ2JMVyz#QvQYycYS",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#kEF4DfR4"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#rCIdAV06",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "place",
@@ -8230,6 +8590,12 @@
       "field": "references"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#gPWhZQeZ",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
       "type": "place",
       "subject": "vKEsyHFk/XppR9owz#NG7OXLv9",
       "placement": {
@@ -8238,10 +8604,23 @@
     },
     {
       "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#b6D8IxT0",
+      "placement": {
+        "holder": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
+      }
+    },
+    {
+      "type": "place",
       "subject": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#8xJt3Mud",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "assign",
@@ -8700,14 +9079,28 @@
       "type": "place",
       "subject": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
       "placement": {
-        "holder": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+        "holder": "vKEsyHFk/yejBBUFY#POloYnX3"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#9L5uHzND",
+      "field": "name",
+      "value": "Picture transitions"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#9L5uHzND",
+      "field": "formerNames",
+      "value": [
+        "Moves between pictures"
+      ]
     },
     {
       "type": "place",
       "subject": "vKEsyHFk/UOXNWLhR#9L5uHzND",
       "placement": {
-        "holder": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+        "holder": "vKEsyHFk/yejBBUFY#POloYnX3"
       }
     },
     {
@@ -8767,6 +9160,13 @@
       "subject": "vKEsyHFk/yejBBUFY#hO56iL2W",
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#OPt4rjAR",
+      "placement": {
+        "holder": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
       }
     },
     {
@@ -10411,6 +10811,16 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/OjRLKb74#WiMnRPRD",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+        "symbol": "renderArchitecture"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/OjRLKb74#86rBqUC3",
       "field": "to",
       "value": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
@@ -10584,7 +10994,7 @@
         "vKEsyHFk/qKGcB6vZ#0eYa0szs",
         "vKEsyHFk/9ncuT5DP#ZQxB1ZaK",
         "vKEsyHFk/qKGcB6vZ#ZilfteOF",
-        "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ]
     },
     {
@@ -10619,6 +11029,18 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#LT7FY76v",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#3LyXHaaX",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/qKGcB6vZ#3LyXHaaX",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#ZQxB1ZaK"
@@ -10649,7 +11071,7 @@
         "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
         "vKEsyHFk/qKGcB6vZ#YVc05dVh",
         "vKEsyHFk/qKGcB6vZ#ZDMIGM5P",
-        "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ]
     },
     {
@@ -10696,6 +11118,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#JXxi4NiG",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/qKGcB6vZ#VAMFmnai",
       "field": "from",
       "value": "vKEsyHFk/9ncuT5DP#Fg9dkGj3"
@@ -10721,6 +11149,12 @@
     {
       "type": "assign",
       "subject": "vKEsyHFk/qKGcB6vZ#ZgRbVHoo",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#ZgRbVHoo",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#Fg9dkGj3"
     },
@@ -10729,6 +11163,18 @@
       "subject": "vKEsyHFk/qKGcB6vZ#w6WWRMOv",
       "field": "from",
       "value": "vKEsyHFk/9ncuT5DP#Fg9dkGj3"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#w6WWRMOv",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#HCgYKUjw",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "assign",
@@ -10767,7 +11213,7 @@
       "value": [
         "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
         "vKEsyHFk/9ncuT5DP#YxDrzJtI",
-        "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ]
     },
     {
@@ -10775,6 +11221,36 @@
       "subject": "vKEsyHFk/qKGcB6vZ#1268Hs2R",
       "field": "from",
       "value": "vKEsyHFk/9ncuT5DP#Fg9dkGj3"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#XNRXiSmS",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#Yw5AGntV",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#WqaCQpDQ",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#nAQdo0ae",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#47g7UT4Y",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "assign",
@@ -10793,7 +11269,7 @@
         "vKEsyHFk/qKGcB6vZ#ZDMIGM5P",
         "vKEsyHFk/qKGcB6vZ#fEiupnAD",
         "vKEsyHFk/9ncuT5DP#tlC2W839",
-        "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ]
     },
     {
@@ -10831,6 +11307,18 @@
       "subject": "vKEsyHFk/qKGcB6vZ#y5YpIMqj",
       "field": "from",
       "value": "vKEsyHFk/9ncuT5DP#tlC2W839"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#y5YpIMqj",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#klJpVPhB",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "assign",
@@ -10892,7 +11380,7 @@
         "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
         "vKEsyHFk/qKGcB6vZ#AjPVQ0BZ",
         "vKEsyHFk/9ncuT5DP#ZQxB1ZaK",
-        "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ]
     },
     {
@@ -10915,6 +11403,18 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#jpwSNOyR",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#QUMASBae",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/qKGcB6vZ#67E4aMeN",
       "field": "participants",
       "value": [
@@ -10923,7 +11423,7 @@
         "vKEsyHFk/qKGcB6vZ#ccaUoxFa",
         "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
         "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
-        "vKEsyHFk/qKGcB6vZ#4A6j6Xk3"
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ]
     },
     {
@@ -10958,6 +11458,42 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#tLuWM1gd",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#Lm7mnz9k",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#buAki6sT",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#ZRmFcJMU",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#YHpvYVaV",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#9JWa3cQa",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/qKGcB6vZ#7L5gGw1B",
       "field": "participants",
       "value": [
@@ -10986,7 +11522,7 @@
       "field": "participants",
       "value": [
         "vKEsyHFk/9ncuT5DP#u2LFaG7R",
-        "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ]
     },
     {
@@ -11006,6 +11542,18 @@
       "subject": "vKEsyHFk/SJ2JMVyz#pvmEnArI",
       "field": "from",
       "value": "vKEsyHFk/9ncuT5DP#u2LFaG7R"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#pvmEnArI",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#sOqOXXCb",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "assign",
@@ -11033,6 +11581,18 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#wPrKQGjT",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#6HZiBf3N",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/SJ2JMVyz#6HZiBf3N",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#u2LFaG7R"
@@ -11057,7 +11617,7 @@
         "vKEsyHFk/9ncuT5DP#u2LFaG7R",
         "vKEsyHFk/9ncuT5DP#kEF4DfR4",
         "vKEsyHFk/9ncuT5DP#2ffhMTdn",
-        "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ]
     },
     {
@@ -11089,6 +11649,42 @@
       "subject": "vKEsyHFk/SJ2JMVyz#cVwUJapB",
       "field": "from",
       "value": "vKEsyHFk/9ncuT5DP#u2LFaG7R"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#V8C5yabL",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#XElthiIm",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#LwdSuWHn",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#C502RS5p",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#xmr3rKN4",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#pPdca1ez",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "assign",
@@ -11124,7 +11720,7 @@
         "vKEsyHFk/9ncuT5DP#byMaoUe0",
         "vKEsyHFk/9ncuT5DP#Uz2qReYK",
         "vKEsyHFk/9ncuT5DP#2ffhMTdn",
-        "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ]
     },
     {
@@ -11219,6 +11815,18 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#vnbVQklz",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#S5Lq2I87",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/SJ2JMVyz#mVW6dgdM",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#tlC2W839"
@@ -11276,6 +11884,18 @@
       "subject": "vKEsyHFk/SJ2JMVyz#K8QItqME",
       "field": "from",
       "value": "vKEsyHFk/9ncuT5DP#tlC2W839"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#K8QItqME",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#COY9kp7z",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "assign",
@@ -11340,7 +11960,7 @@
         "vKEsyHFk/9ncuT5DP#tlC2W839",
         "vKEsyHFk/9ncuT5DP#byMaoUe0",
         "vKEsyHFk/9ncuT5DP#Uz2qReYK",
-        "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ]
     },
     {
@@ -11447,6 +12067,18 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#leK8yIhI",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#1oy8JRwd",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/SJ2JMVyz#1oy8JRwd",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#tlC2W839"
@@ -11482,7 +12114,7 @@
       "value": [
         "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
         "vKEsyHFk/9ncuT5DP#kEF4DfR4",
-        "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ]
     },
     {
@@ -11517,6 +12149,18 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#7TzJNwiF",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#rP5D38QT",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/SJ2JMVyz#rP5D38QT",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#kEF4DfR4"
@@ -11541,7 +12185,7 @@
         "vKEsyHFk/9ncuT5DP#u2LFaG7R",
         "vKEsyHFk/9ncuT5DP#6Jjha6LN",
         "vKEsyHFk/9ncuT5DP#Uz2qReYK",
-        "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7",
         "vKEsyHFk/9ncuT5DP#byMaoUe0"
       ]
     },
@@ -11562,6 +12206,18 @@
       "subject": "vKEsyHFk/SJ2JMVyz#1dPrVxJW",
       "field": "from",
       "value": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#aZmwJ3fD",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#r16g8YCf",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "assign",
@@ -11592,6 +12248,18 @@
       "subject": "vKEsyHFk/SJ2JMVyz#V8Uzd8yN",
       "field": "from",
       "value": "vKEsyHFk/9ncuT5DP#byMaoUe0"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#6Y4qe7P4",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#JZNI044M",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "assign",
@@ -11714,12 +12382,125 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#3x2lgrhZ",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/wAHh0HTa#xtHoCCnF",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "vKEsyHFk/wAHh0HTa#ql0DevMk",
+        "vKEsyHFk/wAHh0HTa#Ly6hUU5o"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#b6erA2Tf",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#4Acu1SX1",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#VfIo7G0A",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#sccMFQws",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#FydWPELu",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#O9yI0oEi",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#HJFMXHZg",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#m5Dj2NDi",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#VxixWw4P",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#RCfqVyvU",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#T83dFret",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#T83dFret",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#P3DvDy0o",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#nzycdJYU",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#TBX0QwFp",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#TBX0QwFp",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#CFOW8oZc",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/wAHh0HTa#zSCvXJVY",
       "field": "participants",
       "value": [
         "vKEsyHFk/9ncuT5DP#6Jjha6LN",
         "vKEsyHFk/wAHh0HTa#JBu1uGdl",
-        "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7",
         "vKEsyHFk/wAHh0HTa#X6j6fViI",
         "vKEsyHFk/wAHh0HTa#Sk7GfGta",
         "vKEsyHFk/wAHh0HTa#ql0DevMk",
@@ -11735,9 +12516,63 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#PslWUElL",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#aRvOGbjB",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#1CH2cwHK",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#XVmgDPWm",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/wAHh0HTa#uwJqMDXn",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#6Jjha6LN"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#awtzkYnk",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#0BaNzvbf",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#RPVnxIvU",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#E4nd56dR",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#wSmpnhYv",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "assign",
@@ -11747,9 +12582,69 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#bujwXKF0",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#G9QTO3xJ",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#ml5NhzbA",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#Hgh6LaId",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#eeXOLtoL",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#AGHY3heC",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#KF0V9M4W",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/wAHh0HTa#45WxPXqM",
       "field": "to",
       "value": "vKEsyHFk/9ncuT5DP#6Jjha6LN"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#zydH1TTi",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#kzhVobn4",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#wvdkZRyI",
+      "field": "from",
+      "value": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "type": "assign",
@@ -13373,6 +14268,13 @@
     "vKEsyHFk/6E6hL0Zk#vAIWvaXI",
     "vKEsyHFk/6E6hL0Zk#tTlOSMGl",
     "vKEsyHFk/HBlhIeSD#cqbe7KFP",
-    "vKEsyHFk/HBlhIeSD#vb9ou5EI"
+    "vKEsyHFk/HBlhIeSD#vb9ou5EI",
+    "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+    "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+    "vKEsyHFk/qKGcB6vZ#4A6j6Xk3",
+    "vKEsyHFk/HBlhIeSD#3LoKNA2g",
+    "vKEsyHFk/gbyqW4H3#wskEBeIy",
+    "vKEsyHFk/qKGcB6vZ#r7P2iu6H",
+    "vKEsyHFk/yejBBUFY#TY7m2mtd"
   ]
 }
