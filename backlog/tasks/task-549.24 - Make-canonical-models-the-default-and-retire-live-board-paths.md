@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T19:37:00Z'
+updated_date: '2026-10-28T20:01:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -432,4 +432,6 @@ Eleven non-Codex README producers completed. Root inspected both banners, the so
 The proposal lifecycle review is integrated at signed b2ea7a71. Root reviewed eight remaining shared browser files with no material Standards or Spec findings. Exact file versions and reused browser/type evidence are in task-549.24-shared-browser-review.json. Three narrated README videos now replay with the current renderer. Their speech and talk bytes remain exact. Root inspected the first, middle, and final beat of each video, then uploaded each accepted file once. README links now name those uploads. The ask clip refresh and migration review remain active. No acceptance criteria, lifecycle, source vault, archive publication, or PR state changed.
 
 The final README media refresh is complete at this checkpoint. The real-agent ask clip exits successfully and shows the selected Timeout guard with a matching answer. Root inspected four clip frames and the thumbnail. Its accepted upload exits 0, and README now links it. The final readme:check result is 16 current assets and zero stale assets. Narrated and ask receipts, hashes, and visual evidence remain in the shared state directory. This closes the media refresh, but remaining reviews, the complete integration gate, archive publication, task acceptance, and PR readiness remain open.
+
+The adapter review repairs strict explanation HTTP envelopes, CLI usage refusals, and mutation visibility after a caller disconnects. Its signed source is 33fda375c93189ed7f5f87dde36bba582d6808fc. The 11 focused cases pass with 116 assertions, and final types, strict lint, and formatting pass. Root also replaces retired screenshot guidance with model rasterize and uses canonical architecture wording for inject guidance. Actual CLI inspection preserves screenshot exit 2 and confirms that the replacement help exists. These guidance changes need no new behavior test or architecture proposal. Five README assets now have stale source hashes: hero, take-back, code-evidence, module-interfaces, and git-history. Their final refresh waits until the remaining source reviews settle. Acceptance and PR readiness remain open.
 <!-- SECTION:NOTES:END -->
