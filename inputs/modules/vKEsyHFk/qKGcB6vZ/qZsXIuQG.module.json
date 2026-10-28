@@ -1,0 +1,29 @@
+{
+  "order": 9000,
+  "name": "Semantic context",
+  "kind": "module",
+  "responsibility": "What the board says right now and what the user changed on it: the brief a voice start records, and the reports that become pane news",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-app-server/src/runtime/operations/semantic-context-publisher.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#qZsXIuQG",
+  "parent": "vKEsyHFk/qKGcB6vZ#hshxlvQL",
+  "outgoing": [
+    {
+      "order": 25000,
+      "kind": "event",
+      "label": "the user's changes, focus and selection",
+      "description": "The callback queue subscribes to the operations and semantic ports passed to the public createCodexCoordinatorCallbacks factory. The incoming event reaches its subscribed callback, not a private import by the publisher.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+        "symbol": "subscribeSettledChange"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#wyliCZzQ",
+      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI"
+    }
+  ]
+}
