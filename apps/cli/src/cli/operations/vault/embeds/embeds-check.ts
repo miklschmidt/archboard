@@ -84,17 +84,14 @@ async function repair(
 	code: "EMBED_OUTDATED" | "EMBED_RENDERER_CHANGED",
 	signal: AbortSignal,
 ): Promise<Checked> {
-	if (embed.kind === "png") {
+	if (!changed) {
+		const next = { ...canonicalRecipe(fresh.svg), raster: recipe.raster };
+		writeFileAtomic(embed.path, Buffer.from(replaceRenderRecipe(embed.bytes, next)));
+	} else if (embed.kind === "png") {
 		const raster = rasterSettings(recipe);
 		const { png } = await captureArchitecture(fresh, raster.scale, raster.region, signal);
 		writeFileAtomic(embed.path, Buffer.from(png));
-	} else
-		writeFileAtomic(
-			embed.path,
-			changed
-				? fresh.svg
-				: Buffer.from(replaceRenderRecipe(embed.bytes, canonicalRecipe(fresh.svg))),
-		);
+	} else writeFileAtomic(embed.path, fresh.svg);
 	return {
 		findings: [],
 		fixed: [

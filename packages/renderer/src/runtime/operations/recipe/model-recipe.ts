@@ -4,7 +4,7 @@ import type {
 	ArchitectureRenderRequestSchema,
 } from "@archboard/board/model";
 import { ArchitectureRecipeSchema } from "#runtime/operations/recipe/schema.ts";
-import { sha256Of } from "#runtime/operations/recipe/digest.ts";
+import { inputFingerprint, sha256Of } from "#runtime/operations/recipe/digest.ts";
 import { embedRecipeInSvg } from "#runtime/operations/recipe/svg-recipe.ts";
 /**
  * Record exact canonical selectors through the existing render metadata owner.
@@ -30,7 +30,17 @@ function recordArchitectureRecipe(
 			flow: model.selectedFlow ?? undefined,
 			state: reading.state === undefined ? undefined : model.selectedState?.id,
 		},
-		fingerprint: `sha256:${model.revision.digest}`,
+		fingerprint:
+			model.comparison === undefined
+				? `sha256:${model.revision.digest}`
+				: inputFingerprint({
+						revision: model.revision.digest,
+						comparison: {
+							against: model.comparison.against,
+							checkpoint: model.comparison.checkpoint,
+							subjects: model.comparison.subjects,
+						},
+					}),
 		picture: sha256Of(svg),
 	});
 	return embedRecipeInSvg(svg, recipe);

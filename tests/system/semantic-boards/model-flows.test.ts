@@ -1,5 +1,6 @@
 import { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
-import { readRenderRecipe } from "@archboard/renderer/recipe";
+import { readRenderRecipe, replaceRenderRecipe } from "@archboard/renderer/recipe";
+import { crc32 } from "node:zlib";
 import { everyStep } from "@archboard/board/flow";
 import { z } from "zod";
 import { afterAll, beforeAll, expect, test } from "bun:test";
@@ -10,6 +11,7 @@ import {
 	ArchitectureModelReadSchema,
 	ArchitectureClaimResultSchema,
 	ArchitectureModuleEditResultSchema,
+	ArchitectureCheckpointRetainSchema,
 } from "@archboard/board/model";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
@@ -246,6 +248,26 @@ test("structural exports use canonical recursive scope and preserve reproducible
 	const embeds = cli(["check", "embeds"]);
 	expect(embeds.status, embeds.stderr).toBe(0);
 	expect(answer(embeds.stdout)).toMatchObject({ embeds: { findings: [], fixed: [] } });
+	const before = readFileSync(png);
+	const text = Buffer.from("Author\u0000Keep post-processed metadata");
+	const chunk = Buffer.alloc(text.length + 12);
+	chunk.writeUInt32BE(text.length);
+	chunk.write("tEXt", 4);
+	text.copy(chunk, 8);
+	chunk.writeUInt32BE(crc32(chunk.subarray(4, -4)), chunk.length - 4);
+	const annotated = Buffer.concat([before.subarray(0, 33), chunk, before.subarray(33)]);
+	writeFileSync(png, annotated);
+	const modulePath = join(vault, "gateway.module.json");
+	writeFileSync(modulePath, readFileSync(modulePath, "utf8") + "\n");
+	const refreshed = cli(["check", "embeds", "--fix"]);
+	expect(refreshed.status, refreshed.stderr).toBe(0);
+	expect(answer(refreshed.stdout)).toMatchObject({
+		embeds: { fixed: expect.arrayContaining([{ action: "recipe", file: "architecture.png" }]) },
+	});
+	const updated = readFileSync(png);
+	const updatedRecipe = readRenderRecipe(updated);
+	if (updatedRecipe.kind !== "recipe") throw new Error(JSON.stringify(updatedRecipe));
+	expect(updated).toEqual(Buffer.from(replaceRenderRecipe(annotated, updatedRecipe.recipe)));
 	const inspected = cli(["check", "code"]);
 	expect(inspected.status).not.toBeNull();
 	expect([0, 1]).toContain(inspected.status!);
@@ -343,6 +365,33 @@ test("canonical locality and branch footprint retain source analysis without a l
 		throw new Error(JSON.stringify({ local, branch }));
 	expect(local.hotspots.map((part) => part.subject.id)).toContain("Shop#Gateway");
 	expect(branch.changed.map((part) => part.subject.id)).toContain("Shop#Gateway");
+	const current = ArchitectureModelReadSchema.parse(answer(cli(["model", "read"]).stdout));
+	if (!current.success) throw new Error(JSON.stringify(current));
+	const retained = ArchitectureCheckpointRetainSchema.parse(
+		answer(
+			cli([
+				"model",
+				"retain",
+				"--operation-id",
+				"history-comparison",
+				"--writer",
+				"surface-agent",
+				"--expect-revision",
+				current.revision.digest,
+				"--doing",
+				"Retain source comparison",
+			]).stdout,
+		),
+	);
+	if (!retained.success) throw new Error(JSON.stringify(retained));
+	for (const command of [["locality"], ["footprint", "--base", "HEAD~1"]]) {
+		const exact = cli(["model", ...command, "--against", retained.checkpoint.id]);
+		expect(exact.status, exact.stdout + exact.stderr).toBe(0);
+		expect(ArchitectureHistoryResultSchema.parse(answer(exact.stdout))).toMatchObject({
+			success: true,
+			model: "Shop",
+		});
+	}
 	expect(Bun.spawnSync(["git", "-C", home, "rev-parse", "HEAD"]).stdout.toString()).toBe(
 		sourceHead,
 	);

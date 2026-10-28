@@ -292,6 +292,14 @@ test("canonical exports retain default comparison and unresolved subject marks t
 	});
 	expect(cli.status, cli.stderr).toBe(0);
 	expect(readFileSync(out, "utf8")).toBe(pinned.svg);
+	await edit("Current", [
+		{ type: "edit-module", subject: "Shop#Gateway", set: { description: "New comparison input" } },
+	]);
+	const comparedAgain = await render(recipe.recipe.reading);
+	const nextRecipe = readRenderRecipe(Buffer.from(comparedAgain.svg));
+	if (nextRecipe.kind !== "recipe") throw new Error(JSON.stringify(nextRecipe));
+	expect(comparedAgain.revision).toEqual(pinned.revision);
+	expect(nextRecipe.recipe.fingerprint).not.toBe(recipe.recipe.fingerprint);
 }, 30000);
 
 test("scoped exports keep complete container entry points when filters hide incoming relationships", async () => {

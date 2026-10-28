@@ -91,8 +91,9 @@ async function readPredecessor(vault: string, model: Model) {
 	const comparison = model.comparison;
 	if (comparison?.against == null) return undefined;
 	const predecessor = await readArchitectureModel(vault, undefined, undefined, {
-		state: comparison.against.id,
+		state: comparison.checkpoint === undefined ? comparison.against.id : undefined,
 		checkpoint: comparison.checkpoint,
+		compare: false,
 	});
 	if (!predecessor.success) return predecessor;
 	if (predecessor.revision.digest !== comparison.revision.digest)
