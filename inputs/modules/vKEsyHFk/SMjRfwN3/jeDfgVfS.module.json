@@ -1,0 +1,9 @@
+{
+  "order": 33001,
+  "name": "Browser hosting",
+  "kind": "module",
+  "responsibility": "Starts the one private Chromium that archboard draws pictures and video frames in, reaches it only over loopback DevTools, and proves it gone",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SMjRfwN3#jeDfgVfS",
+  "outgoing": []
+}

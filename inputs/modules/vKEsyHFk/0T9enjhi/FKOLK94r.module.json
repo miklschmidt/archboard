@@ -1,0 +1,104 @@
+{
+  "order": 45000,
+  "name": "Move checks",
+  "kind": "function",
+  "responsibility": "Asks the vaults of a move which names are taken and which drill-downs open the board, as they are on disk; a delete asks it which drill-downs open the board",
+  "groups": [
+    "writes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/move/checks.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/0T9enjhi#FKOLK94r",
+  "parent": "vKEsyHFk/0T9enjhi#IbkA2Se8",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 119000,
+      "kind": "call",
+      "label": "which board a drill-down's name opens",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/move/checks.ts",
+        "symbol": "resolveSemanticBoard"
+      },
+      "id": "vKEsyHFk/0T9enjhi#KKbfZzsg",
+      "to": "vKEsyHFk/0T9enjhi#lkf45vPe"
+    },
+    {
+      "order": 121000,
+      "kind": "call",
+      "label": "every board of a vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/move/checks.ts",
+        "symbol": "listSemanticBoards"
+      },
+      "id": "vKEsyHFk/0T9enjhi#kszywnmH",
+      "to": "vKEsyHFk/0T9enjhi#NM28UA5U"
+    },
+    {
+      "order": 123000,
+      "kind": "call",
+      "label": "read each board without a lease or a write",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/move/checks.ts",
+        "symbol": "decodeSemanticBoardDocument"
+      },
+      "id": "vKEsyHFk/0T9enjhi#YwClcz9f",
+      "to": "vKEsyHFk/0T9enjhi#R3ldC44x"
+    },
+    {
+      "order": 125000,
+      "kind": "call",
+      "label": "the vault's own repository identity",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/move/checks.ts",
+        "symbol": "vaultIdentity"
+      },
+      "id": "vKEsyHFk/0T9enjhi#0E19fp3d",
+      "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
+    },
+    {
+      "order": 126000,
+      "kind": "call",
+      "label": "a refusal in a write's shape",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/move/checks.ts",
+        "symbol": "rejected"
+      },
+      "id": "vKEsyHFk/0T9enjhi#LxIxIFZT",
+      "to": "vKEsyHFk/0T9enjhi#FBhApaqP"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "order": 16000,
+  "name": "Thread tool calls",
+  "kind": "module",
+  "responsibility": "The archboard_app tools a thread calls on the server's other threads: list, read, create, fork, message, wait",
+  "description": "A creation, fork or message runs only once the user approves it in a pane of the calling thread's tab session, under the generation that may act. A thread it creates or forks works in the checkout of its caller.",
+  "groups": [
+    "workhorse"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/operations/dynamic-tools"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#DNQTPTxE",
+  "parent": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 20000,
+      "kind": "call",
+      "label": "the generation that may act",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
+        "symbol": "stageOperation"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#mxl6bmYW",
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    },
+    {
+      "order": 32000,
+      "kind": "call",
+      "label": "the calling thread's tab session",
+      "description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/dynamic-tools/authority/authority-classification.ts",
+        "symbol": "resolveExactLogicalCaller"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#IxtTYfQ6",
+      "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
+    },
+    {
+      "order": 51000,
+      "kind": "rpc",
+      "label": "thread/start, fork and turn/start for a tool call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutations.ts",
+        "symbol": "threadStart"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#zOHsZyzc",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    }
+  ]
+}

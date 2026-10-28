@@ -1,0 +1,29 @@
+{
+  "order": 31000,
+  "name": "Ask the picture to show",
+  "kind": "function",
+  "responsibility": "Carries what the sidebar asks of the picture: the relationship a row is pointed at, and a trace of what a part reaches",
+  "description": "The stage provides it over the picture and the sidebar, which are siblings. Both asks belong to the part that is picked out and go when the pick does.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/semantic-board-canvas/Peek.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#bofpU6mt",
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
+  "outgoing": [
+    {
+      "order": 53000,
+      "kind": "data",
+      "label": "the row pointed at, and the trace",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-lighting.ts",
+        "symbol": "LightingInputs"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#Nkoad0P5",
+      "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ"
+    }
+  ]
+}

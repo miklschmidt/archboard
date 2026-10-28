@@ -1,0 +1,77 @@
+{
+  "order": 30000,
+  "name": "renderer",
+  "kind": "package",
+  "responsibility": "Draws a board as a picture, in the browser or under Bun",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+  "parent": "vKEsyHFk/vKEsyHFk#aIT2jJaC",
+  "formerNames": [
+    "Semantic renderer"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "references": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "model": "vKEsyHFk",
+      "subject": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+      "state": "current"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 29000,
+      "kind": "dependency",
+      "label": "the board document",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/render/board.ts",
+        "symbol": "addressedVariant"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#8j8wv5FT",
+      "to": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+    },
+    {
+      "order": 44000,
+      "kind": "dependency",
+      "label": "own the Chromium process group",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
+        "symbol": "createCodexProcessGroupOperations"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#NSENtfOa",
+      "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
+    }
+  ]
+}

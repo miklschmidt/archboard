@@ -1,0 +1,113 @@
+{
+  "order": 10001,
+  "name": "Bun renderer",
+  "kind": "module",
+  "responsibility": "Installs the Bun host, then renders architecture or an explicitly requested sequence or flowchart",
+  "description": "The existing renderArchitecture operation accepts an optional grammar. Its default remains architecture. Public callers derive request and result types from operations. The interface remains 60 exports with its unchanged ceiling.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/runtime/operations/render.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#0XCanbzp",
+  "formerNames": [
+    "Bun host"
+  ],
+  "outgoing": [
+    {
+      "order": 8000,
+      "kind": "call",
+      "label": "drawBoard on the core",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/operations/render.ts",
+        "symbol": "drawBoard"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#4RbEQ6uO",
+      "to": "vKEsyHFk/gbyqW4H3#yOV8Znnv"
+    },
+    {
+      "order": 9000,
+      "kind": "call",
+      "label": "installRendererHost",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/services/bun-host.ts",
+        "symbol": "installRendererHost"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#veScCirT",
+      "to": "vKEsyHFk/gbyqW4H3#4nyk76pY"
+    },
+    {
+      "order": 24000,
+      "kind": "call",
+      "label": "install as OffscreenCanvas, faces registered",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/services/bun-host.ts",
+        "symbol": "nodeOffscreenCanvas"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#V6JJ4OjE",
+      "to": "vKEsyHFk/gbyqW4H3#gUN928v4"
+    },
+    {
+      "order": 27000,
+      "kind": "call",
+      "label": "Bun Workers, as the host's solve",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/services/bun-host.ts",
+        "symbol": "createEnginePool"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#TveKMtfC",
+      "to": "vKEsyHFk/gbyqW4H3#JzHM3KOY"
+    },
+    {
+      "order": 29000,
+      "kind": "call",
+      "label": "a picture with no board around it",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/operations/render.ts",
+        "symbol": "renderArchitectureIn"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#hlcSv0hV",
+      "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG"
+    },
+    {
+      "order": 30000,
+      "kind": "call",
+      "label": "measure under the Bun host, for runtime checks",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/operations/measure.ts",
+        "symbol": "measureArchitectureIn"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#YlwhO14p",
+      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
+    },
+    {
+      "order": 73000,
+      "kind": "call",
+      "label": "the recipe of a render that stands alone",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/operations/render.ts",
+        "symbol": "carryingRecipe"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#PAOQHNdT",
+      "to": "vKEsyHFk/gbyqW4H3#bm9AWXkW"
+    }
+  ]
+}

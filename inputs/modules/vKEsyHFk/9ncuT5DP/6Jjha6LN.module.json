@@ -1,0 +1,116 @@
+{
+  "order": 23000,
+  "name": "Workhorse start",
+  "kind": "module",
+  "responsibility": "Opens the thread one workhorse's link will name, with its instructions and both tool manifests, under a staged epoch operation",
+  "description": "thread/start on gpt-6-astra at medium effort in the workhorse's checkout, which is the thread's working directory and workspace root, so it reads that repository's agent instructions and skills. It carries the workhorse developer instructions and the host's own tools (archboard_app in Archboard) and the coordinator namespace the host names (archboard_coordinator in Archboard); the manifest digest it records covers both.",
+  "groups": [
+    "workhorse"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+  "parent": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 7000,
+      "kind": "call",
+      "label": "classify and bind the checkout's link",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+        "symbol": "classifyAndBind"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#5B5ZeO2k",
+      "to": "vKEsyHFk/SJ2JMVyz#p05yEm5U"
+    },
+    {
+      "order": 8000,
+      "kind": "call",
+      "label": "stage, commit or roll back the start",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+        "symbol": "stageOperation"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#uiPv1wnk",
+      "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS"
+    },
+    {
+      "order": 9000,
+      "kind": "rpc",
+      "label": "thread/start with the authored body",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+        "symbol": "threadStart"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#W87z7uEB",
+      "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+    },
+    {
+      "order": 39000,
+      "kind": "dependency",
+      "label": "capture immutable core and host role evidence",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+        "symbol": "captureThreadProfile"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#joxzVFXq",
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
+    },
+    {
+      "order": 47000,
+      "kind": "call",
+      "label": "classify and bind the checkout's link",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+        "symbol": "classifyAndBind"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#GoJ2PW76",
+      "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
+    },
+    {
+      "order": 48000,
+      "kind": "rpc",
+      "label": "thread/start for the workhorse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+        "symbol": "threadStart"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#MZtuHuMT",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 76000,
+      "kind": "call",
+      "label": "stage, commit or roll back the start",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+        "symbol": "stageOperation"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#o63C7KPd",
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    }
+  ]
+}

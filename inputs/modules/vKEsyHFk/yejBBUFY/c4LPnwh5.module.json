@@ -1,0 +1,94 @@
+{
+  "order": 8002,
+  "name": "Shell",
+  "kind": "ui",
+  "responsibility": "The desktop frame in columns: the navigator with the agent dock at its foot, the conversation beside it while open, and the panes",
+  "description": "No row runs across the frame: each column has its own 40px top row (the brand bar over the navigator, a pane's header, the conversation's header), and the rows line up. The pane centre is the fullscreen root, so presenting a pane never remounts it, and a presented pane gets a slim bar with its exit and the one voice key. The navigator lists every repository with the boards of its chosen checkout under it, says in a repository's row when its checkout is gone or has no vault, and offers a menu of the repository's known checkouts. The migrated repository action opens its current canonical model in the active pane through the shared router.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/shell"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#c4LPnwh5",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.13 - Explain-the-captured-reading-through-local-agent-actions.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 16000,
+      "kind": "call",
+      "label": "each repository's outline",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/shell/Navigator.tsx",
+        "symbol": "listedBoard"
+      },
+      "id": "vKEsyHFk/yejBBUFY#NcFmPj3W",
+      "to": "vKEsyHFk/yejBBUFY#zWQG6LJZ"
+    },
+    {
+      "order": 44000,
+      "kind": "render",
+      "label": "each board's level mark in the navigator",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/shell/BoardLine.tsx",
+        "symbol": "LevelMark"
+      },
+      "id": "vKEsyHFk/yejBBUFY#pFEndLvU",
+      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+    },
+    {
+      "order": 55000,
+      "kind": "render",
+      "label": "the move control in each pane's header",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/shell/PaneControls.tsx",
+        "symbol": "MoveBoardControl"
+      },
+      "id": "vKEsyHFk/yejBBUFY#1wY1628T",
+      "to": "vKEsyHFk/yejBBUFY#HQWPLutt"
+    },
+    {
+      "order": 73000,
+      "kind": "render",
+      "label": "each pane's letter, controls and claim",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/shell/PaneStages.tsx",
+        "symbol": "PaneChromeContext"
+      },
+      "id": "vKEsyHFk/yejBBUFY#6JBVcBmw",
+      "to": "vKEsyHFk/yejBBUFY#OPt4rjAR"
+    },
+    {
+      "order": 93000,
+      "kind": "render",
+      "label": "opens current architecture",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/shell/RepositoryLine.tsx",
+        "symbol": "RepositoryModelLink"
+      },
+      "id": "vKEsyHFk/yejBBUFY#tWVYo1RT",
+      "to": "vKEsyHFk/yejBBUFY#n2ONtqdt"
+    }
+  ]
+}

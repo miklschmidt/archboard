@@ -1,0 +1,134 @@
+{
+  "order": 9000,
+  "name": "Pane routes",
+  "kind": "route",
+  "responsibility": "What each pane shows and where, pushed by the browser, which answers a report naming a vault the pane left as not registered; the CLI opens, closes and shows panes through it",
+  "groups": [
+    "panes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/routes/panes/pane-routes.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/Oi6SBIAM#MqTq68P3",
+  "parent": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 13000,
+      "kind": "call",
+      "label": "record the pane; send it a board",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "symbol": "panes"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#oi6YF8VO",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "order": 22000,
+      "kind": "call",
+      "label": "the pane's focus, for its agent",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "symbol": "publishPaneContext"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#dHRkaEZq",
+      "to": "vKEsyHFk/HBlhIeSD#3LoKNA2g"
+    },
+    {
+      "order": 26000,
+      "kind": "call",
+      "label": "who holds the board a pane arrives on",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "symbol": "tellPaneAboutLock"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#Y5c0eIar",
+      "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
+    },
+    {
+      "order": 29000,
+      "kind": "call",
+      "description": "the file it arrives on, as it is now",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "symbol": "noteBoardShown"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#yYx1C8Dw",
+      "to": "vKEsyHFk/Oi6SBIAM#TCMBvDpL"
+    },
+    {
+      "order": 40000,
+      "kind": "call",
+      "label": "requires a vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "symbol": "requireVault"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#hDNka8yA",
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "order": 61000,
+      "kind": "dependency",
+      "label": "mounts the panes report",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "symbol": "getPanesRoute"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#wX9a448V",
+      "to": "vKEsyHFk/Oi6SBIAM#Am1mLDP5"
+    },
+    {
+      "order": 66000,
+      "kind": "dependency",
+      "label": "mounts the activation route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "symbol": "shownConversationRoute"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#Evb1IqVj",
+      "to": "vKEsyHFk/Oi6SBIAM#80IozszZ"
+    },
+    {
+      "order": 71000,
+      "kind": "call",
+      "label": "only the page reaches the activation route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "symbol": "createBrowserOriginGuard"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#NuehJHbK",
+      "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
+    }
+  ]
+}

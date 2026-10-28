@@ -1,0 +1,30 @@
+{
+  "order": 63000,
+  "name": "Model address",
+  "kind": "module",
+  "responsibility": "Preserves canonical reading intent and deliberate navigation in the shared router",
+  "description": "The existing useModelLocation hook owns scope, focus, filters, grammar, flow, state, comparison, checkpoint, and explicit foreign subject addresses. It updates the same router as legacy workspace restoration. Foreign navigation replaces source filters and preserves other panes. Reload and browser history restore the requested reading. Pointer selection and camera remain temporary. A preview selector remains in the pane address through scope navigation, reload, Back, and Forward. A followed reference replaces the source preview with its explicit destination preview when supplied.\n\nBookmark and former-address choices stay in the shared router. A resolved reference preserves its returned preview origin and paired original state and checkpoint.\n\nAn installed former address adopts the exact returned original destination. Migration completion replaces legacy address intent through the explicit installed map and never guesses a current module.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/hooks/architecture-model/use-model-location.ts",
+    "symbol": "useModelLocation"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#w46oCRoH",
+  "parent": "vKEsyHFk/yejBBUFY#HCghQa6I",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.13 - Explain-the-captured-reading-through-local-agent-actions.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
+    }
+  ],
+  "outgoing": []
+}

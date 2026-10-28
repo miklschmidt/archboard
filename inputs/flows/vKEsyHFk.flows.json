@@ -1,0 +1,465 @@
+{
+  "schemaVersion": 1,
+  "id": "vKEsyHFk",
+  "name": "Archboard",
+  "flows": [
+    {
+      "id": "vKEsyHFk/vKEsyHFk#DMxZKjHM",
+      "name": "One board write",
+      "participants": [
+        "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+        "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+        "vKEsyHFk/vKEsyHFk#8XKRkSHl",
+        "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/vKEsyHFk#LBMNkyEo",
+          "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+          "label": "POST the change with --doing and the version it read",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+            "symbol": "fetch"
+          }
+        },
+        {
+          "id": "vKEsyHFk/vKEsyHFk#32JoE9cj",
+          "kind": "decision",
+          "question": "What does the server's write boundary decide?",
+          "alternatives": [
+            {
+              "label": "no doing line",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#hr750jYf",
+                  "from": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+                  "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "label": "Refused: say what you are doing",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+                    "symbol": "describedWrite"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "board held",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#NCbZuDGL",
+                  "from": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+                  "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "label": "BOARD_HELD (409): somebody else holds the board",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+                    "symbol": "answerRefusal"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "version moved",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#cKAchRAs",
+                  "from": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+                  "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "label": "BOARD_VERSION_CONFLICT (409): read again",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+                    "symbol": "answerRefusal"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "content invalid",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#bqjCXJw3",
+                  "from": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+                  "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "label": "INVALID_CONTENT (422): the board is untouched",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+                    "symbol": "answerRefusal"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "accepted",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#o1hACPLp",
+                  "from": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+                  "to": "vKEsyHFk/vKEsyHFk#8XKRkSHl",
+                  "label": "Take the lease, commit the whole family, fsync",
+                  "kind": "sync",
+                  "note": "one board, one writer at a time; the answer waits for the disk",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+                    "symbol": "writeSemanticBoard"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#FXFwDp1X",
+                  "from": "vKEsyHFk/vKEsyHFk#8XKRkSHl",
+                  "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+                  "label": "Committed",
+                  "kind": "return"
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#PMJmtfe5",
+                  "from": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+                  "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                  "label": "board_note: the board has a new version",
+                  "kind": "async",
+                  "note": "the news carries the version, not the change",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+                    "symbol": "announce"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#fL2rIeIQ",
+                  "from": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+                  "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "label": "The saved family and its new version",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/semantic-boards/semantic-board-writes.ts",
+                    "symbol": "answerWrite"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#6RM5T554",
+                  "from": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                  "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+                  "label": "Read the board again",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/server-requests/src/ui/clients/server-requests.ts",
+                    "symbol": "fetch"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#v7NX2oII",
+                  "from": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+                  "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                  "label": "The board at its new version",
+                  "kind": "return"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/vKEsyHFk#C6LkFhjC",
+      "name": "One recording",
+      "participants": [
+        "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+        "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+        "vKEsyHFk/vKEsyHFk#t7W7wJHv",
+        "vKEsyHFk/vKEsyHFk#VgzgNAGW",
+        "vKEsyHFk/vKEsyHFk#nugpFSIX"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/vKEsyHFk#VmVzsgEa",
+          "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+          "label": "Read the board and the vault policy",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+            "symbol": "fetch"
+          }
+        },
+        {
+          "id": "vKEsyHFk/vKEsyHFk#ACwRzeh0",
+          "from": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+          "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "label": "The board and the policy",
+          "kind": "return"
+        },
+        {
+          "id": "vKEsyHFk/vKEsyHFk#oEtHrYfe",
+          "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "to": "vKEsyHFk/vKEsyHFk#nugpFSIX",
+          "label": "Probe its encoders",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/walkthrough/src/runtime/services/ffmpeg.ts",
+            "symbol": "probeFfmpeg"
+          }
+        },
+        {
+          "id": "vKEsyHFk/vKEsyHFk#AY9Kp1YQ",
+          "from": "vKEsyHFk/vKEsyHFk#nugpFSIX",
+          "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "label": "The encoders it offers",
+          "kind": "return"
+        },
+        {
+          "id": "vKEsyHFk/vKEsyHFk#M8uSAY5f",
+          "kind": "decision",
+          "question": "Does ffmpeg offer the encoders the file needs?",
+          "alternatives": [
+            {
+              "label": "one is missing",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#z9yuZzSy",
+                  "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "label": "Refuse with ENCODER_UNAVAILABLE; no browser starts",
+                  "kind": "self"
+                }
+              ]
+            },
+            {
+              "label": "all offered",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#W2bGXkG1",
+                  "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "to": "vKEsyHFk/vKEsyHFk#t7W7wJHv",
+                  "label": "Launch with a silent microphone; open the recording page",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
+                    "symbol": "spawnChromium"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#HatKBDdh",
+                  "from": "vKEsyHFk/vKEsyHFk#t7W7wJHv",
+                  "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+                  "label": "Load the recording page",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+                    "symbol": "recordingPageUrl"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#dwtrMDrl",
+                  "from": "vKEsyHFk/vKEsyHFk#t7W7wJHv",
+                  "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+                  "label": "Voice for each step, as a recording",
+                  "kind": "async",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+                    "symbol": "WalkthroughRecorder.start"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#VkeGIrKL",
+                  "kind": "loop",
+                  "condition": "until the page says the talk is finished",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/vKEsyHFk#LKviveIO",
+                      "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                      "to": "vKEsyHFk/vKEsyHFk#t7W7wJHv",
+                      "label": "Read the page's state",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
+                        "symbol": "finished"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/vKEsyHFk#q5Cz6Ggv",
+                      "from": "vKEsyHFk/vKEsyHFk#t7W7wJHv",
+                      "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                      "label": "Its phase and step",
+                      "kind": "return"
+                    }
+                  ]
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#UcmzIms5",
+                  "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "to": "vKEsyHFk/vKEsyHFk#t7W7wJHv",
+                  "label": "Take the voice and the talk",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
+                    "symbol": "logOf"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#uADpbTOH",
+                  "from": "vKEsyHFk/vKEsyHFk#t7W7wJHv",
+                  "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "label": "The voice as a WAV file and the talk's events",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+                    "symbol": "pageHandle"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#RsQrHuOG",
+                  "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "to": "vKEsyHFk/vKEsyHFk#t7W7wJHv",
+                  "label": "Stop the browser",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+                    "symbol": "talkedWith"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#bauTjH5g",
+                  "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW",
+                  "label": "Keep talk.json and voice.wav in one rename",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+                    "symbol": "writeTalk"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#R8ISfp9y",
+                  "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "to": "vKEsyHFk/vKEsyHFk#t7W7wJHv",
+                  "label": "Launch a software browser and open the replay page",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+                    "symbol": "startBrowsers"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#LP4Swc4u",
+                  "from": "vKEsyHFk/vKEsyHFk#t7W7wJHv",
+                  "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+                  "label": "Load the replay page",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+                    "symbol": "replayUrl"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#XD00k0F9",
+                  "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "to": "vKEsyHFk/vKEsyHFk#nugpFSIX",
+                  "label": "Start it on the frames to come and the voice",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+                    "symbol": "openVideoEncoder"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#Fog9Lfq2",
+                  "kind": "loop",
+                  "condition": "for each frame of the talk",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/vKEsyHFk#40bkx02R",
+                      "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                      "to": "vKEsyHFk/vKEsyHFk#t7W7wJHv",
+                      "label": "Draw frame n and capture it as JPEG",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+                        "symbol": "drawFrames"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/vKEsyHFk#lRkur17X",
+                      "from": "vKEsyHFk/vKEsyHFk#t7W7wJHv",
+                      "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                      "label": "One JPEG",
+                      "kind": "return"
+                    },
+                    {
+                      "id": "vKEsyHFk/vKEsyHFk#Ug0nliDL",
+                      "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                      "to": "vKEsyHFk/vKEsyHFk#nugpFSIX",
+                      "label": "Write the frame, in order",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/walkthrough/src/runtime/operations/frame-order.ts",
+                        "symbol": "writeFrame"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#9kHWSFuE",
+                  "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "to": "vKEsyHFk/vKEsyHFk#t7W7wJHv",
+                  "label": "Stop the browser",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+                    "symbol": "stopAll"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#sziZI8Bp",
+                  "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "to": "vKEsyHFk/vKEsyHFk#nugpFSIX",
+                  "label": "Finish the file",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+                    "symbol": "renderTalk"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/vKEsyHFk#aXZR9NX7",
+                  "from": "vKEsyHFk/vKEsyHFk#nugpFSIX",
+                  "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "label": "The video file",
+                  "kind": "return"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

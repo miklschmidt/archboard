@@ -1,0 +1,25 @@
+{
+  "order": 40000,
+  "name": "Panes and the workbench",
+  "kind": "module",
+  "responsibility": "Keeps the panes on screen with their sockets, tabs and board news, and owns the private Codex child that is bridged to those panes.",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/6E6hL0Zk#cuOguqkZ",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": []
+}

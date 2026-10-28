@@ -1,0 +1,287 @@
+{
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/nAmiQ3Vc#zDZxpKbX",
+  "name": "Read this board",
+  "target": {
+    "state": "current"
+  },
+  "beats": [
+    {
+      "id": "vKEsyHFk/nAmiQ3Vc#Z2h2pBRk",
+      "title": "Address one command",
+      "narrative": "The catalogue hands the session argv and the one route table. Help is answered first, from that table alone, before any flag is applied or any server contacted. Dispatch finds the named subcommand through the registry's lookup.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/nAmiQ3Vc#qHOothyT",
+            "vKEsyHFk/nAmiQ3Vc#45uNvMac",
+            "vKEsyHFk/nAmiQ3Vc#zs4XwBa9",
+            "vKEsyHFk/nAmiQ3Vc#0R2ysy3p",
+            "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
+            "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+            "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
+            "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
+            "vKEsyHFk/nAmiQ3Vc#ogSW3Rjt",
+            "vKEsyHFk/nAmiQ3Vc#EUV7iaLt",
+            "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
+            "vKEsyHFk/nAmiQ3Vc#zUIObqwQ",
+            "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
+            "vKEsyHFk/nAmiQ3Vc#HXDhzWiE",
+            "vKEsyHFk/nAmiQ3Vc#kQsYPnIq",
+            "vKEsyHFk/nAmiQ3Vc#TuLpnBlQ",
+            "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",
+            "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
+            "vKEsyHFk/nAmiQ3Vc#Gq93nL5x"
+          ],
+          "relationships": [
+            "vKEsyHFk/nAmiQ3Vc#mVCMJYpN",
+            "vKEsyHFk/nAmiQ3Vc#a4PkS2Do",
+            "vKEsyHFk/nAmiQ3Vc#GpvovZkt",
+            "vKEsyHFk/nAmiQ3Vc#Kbtdm1ew",
+            "vKEsyHFk/nAmiQ3Vc#MFROOcqh",
+            "vKEsyHFk/nAmiQ3Vc#HZqRR3f0",
+            "vKEsyHFk/nAmiQ3Vc#Xqy7fxY0",
+            "vKEsyHFk/nAmiQ3Vc#Ba2uml5A",
+            "vKEsyHFk/nAmiQ3Vc#Ml9zYVzq",
+            "vKEsyHFk/nAmiQ3Vc#wMSceuzp",
+            "vKEsyHFk/nAmiQ3Vc#1LCJsaUZ",
+            "vKEsyHFk/nAmiQ3Vc#nYQ1B3GK",
+            "vKEsyHFk/nAmiQ3Vc#0TkUEWO5",
+            "vKEsyHFk/nAmiQ3Vc#zOLMDpzy",
+            "vKEsyHFk/nAmiQ3Vc#BdoA8zg1",
+            "vKEsyHFk/nAmiQ3Vc#5oeVTCuJ",
+            "vKEsyHFk/nAmiQ3Vc#CsZo87Fp",
+            "vKEsyHFk/nAmiQ3Vc#m3zJ1oto",
+            "vKEsyHFk/nAmiQ3Vc#y6ueYYtZ",
+            "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
+            "vKEsyHFk/nAmiQ3Vc#7hxRgVwY",
+            "vKEsyHFk/nAmiQ3Vc#LIOeNd3K",
+            "vKEsyHFk/nAmiQ3Vc#4vu1Jkwi"
+          ],
+          "flows": [
+            "vKEsyHFk/nAmiQ3Vc#bcBloLg6",
+            "vKEsyHFk/nAmiQ3Vc#tnVc95Oc",
+            "vKEsyHFk/nAmiQ3Vc#S1R4z2CE",
+            "vKEsyHFk/nAmiQ3Vc#3nWT5b8k"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/nAmiQ3Vc#qHOothyT",
+          "vKEsyHFk/nAmiQ3Vc#ogSW3Rjt",
+          "vKEsyHFk/nAmiQ3Vc#0R2ysy3p",
+          "vKEsyHFk/nAmiQ3Vc#45uNvMac"
+        ],
+        "focus": [
+          "vKEsyHFk/nAmiQ3Vc#qHOothyT",
+          "vKEsyHFk/nAmiQ3Vc#45uNvMac",
+          "vKEsyHFk/nAmiQ3Vc#zs4XwBa9",
+          "vKEsyHFk/nAmiQ3Vc#0R2ysy3p",
+          "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
+          "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+          "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
+          "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
+          "vKEsyHFk/nAmiQ3Vc#ogSW3Rjt",
+          "vKEsyHFk/nAmiQ3Vc#EUV7iaLt",
+          "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
+          "vKEsyHFk/nAmiQ3Vc#zUIObqwQ",
+          "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
+          "vKEsyHFk/nAmiQ3Vc#HXDhzWiE",
+          "vKEsyHFk/nAmiQ3Vc#kQsYPnIq",
+          "vKEsyHFk/nAmiQ3Vc#TuLpnBlQ",
+          "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",
+          "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
+          "vKEsyHFk/nAmiQ3Vc#Gq93nL5x"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/nAmiQ3Vc#n5fln7Yb",
+      "title": "Capture context before dispatch",
+      "narrative": "Global flags take the board, version, doing text and session out of argv. A shared option the selected command does not read is refused before anything runs; the rest become facts the server client puts on every request.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/nAmiQ3Vc#qHOothyT",
+            "vKEsyHFk/nAmiQ3Vc#45uNvMac",
+            "vKEsyHFk/nAmiQ3Vc#zs4XwBa9",
+            "vKEsyHFk/nAmiQ3Vc#0R2ysy3p",
+            "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
+            "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+            "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
+            "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
+            "vKEsyHFk/nAmiQ3Vc#ogSW3Rjt",
+            "vKEsyHFk/nAmiQ3Vc#EUV7iaLt",
+            "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
+            "vKEsyHFk/nAmiQ3Vc#zUIObqwQ",
+            "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
+            "vKEsyHFk/nAmiQ3Vc#HXDhzWiE",
+            "vKEsyHFk/nAmiQ3Vc#kQsYPnIq",
+            "vKEsyHFk/nAmiQ3Vc#TuLpnBlQ",
+            "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",
+            "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
+            "vKEsyHFk/nAmiQ3Vc#Gq93nL5x"
+          ],
+          "relationships": [
+            "vKEsyHFk/nAmiQ3Vc#mVCMJYpN",
+            "vKEsyHFk/nAmiQ3Vc#a4PkS2Do",
+            "vKEsyHFk/nAmiQ3Vc#GpvovZkt",
+            "vKEsyHFk/nAmiQ3Vc#Kbtdm1ew",
+            "vKEsyHFk/nAmiQ3Vc#MFROOcqh",
+            "vKEsyHFk/nAmiQ3Vc#HZqRR3f0",
+            "vKEsyHFk/nAmiQ3Vc#Xqy7fxY0",
+            "vKEsyHFk/nAmiQ3Vc#Ba2uml5A",
+            "vKEsyHFk/nAmiQ3Vc#Ml9zYVzq",
+            "vKEsyHFk/nAmiQ3Vc#wMSceuzp",
+            "vKEsyHFk/nAmiQ3Vc#1LCJsaUZ",
+            "vKEsyHFk/nAmiQ3Vc#nYQ1B3GK",
+            "vKEsyHFk/nAmiQ3Vc#0TkUEWO5",
+            "vKEsyHFk/nAmiQ3Vc#zOLMDpzy",
+            "vKEsyHFk/nAmiQ3Vc#BdoA8zg1",
+            "vKEsyHFk/nAmiQ3Vc#5oeVTCuJ",
+            "vKEsyHFk/nAmiQ3Vc#CsZo87Fp",
+            "vKEsyHFk/nAmiQ3Vc#m3zJ1oto",
+            "vKEsyHFk/nAmiQ3Vc#y6ueYYtZ",
+            "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
+            "vKEsyHFk/nAmiQ3Vc#7hxRgVwY",
+            "vKEsyHFk/nAmiQ3Vc#LIOeNd3K",
+            "vKEsyHFk/nAmiQ3Vc#4vu1Jkwi"
+          ],
+          "flows": [
+            "vKEsyHFk/nAmiQ3Vc#bcBloLg6",
+            "vKEsyHFk/nAmiQ3Vc#tnVc95Oc",
+            "vKEsyHFk/nAmiQ3Vc#S1R4z2CE",
+            "vKEsyHFk/nAmiQ3Vc#3nWT5b8k"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/nAmiQ3Vc#zs4XwBa9",
+          "vKEsyHFk/nAmiQ3Vc#0R2ysy3p",
+          "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
+        ],
+        "focus": [
+          "vKEsyHFk/nAmiQ3Vc#qHOothyT",
+          "vKEsyHFk/nAmiQ3Vc#45uNvMac",
+          "vKEsyHFk/nAmiQ3Vc#zs4XwBa9",
+          "vKEsyHFk/nAmiQ3Vc#0R2ysy3p",
+          "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
+          "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+          "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
+          "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
+          "vKEsyHFk/nAmiQ3Vc#ogSW3Rjt",
+          "vKEsyHFk/nAmiQ3Vc#EUV7iaLt",
+          "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
+          "vKEsyHFk/nAmiQ3Vc#zUIObqwQ",
+          "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
+          "vKEsyHFk/nAmiQ3Vc#HXDhzWiE",
+          "vKEsyHFk/nAmiQ3Vc#kQsYPnIq",
+          "vKEsyHFk/nAmiQ3Vc#TuLpnBlQ",
+          "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",
+          "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
+          "vKEsyHFk/nAmiQ3Vc#Gq93nL5x"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/nAmiQ3Vc#2cENlO7N",
+      "title": "Bound the invocation lifetime",
+      "narrative": "The interruptible run forwards SIGINT and SIGTERM as an abort and re-raises the signal once cleanup ends, or after a grace period. Failure reporting maps the error to a stable exit code, 5 for any refused board write, and writes the diagnostic.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/nAmiQ3Vc#qHOothyT",
+            "vKEsyHFk/nAmiQ3Vc#45uNvMac",
+            "vKEsyHFk/nAmiQ3Vc#zs4XwBa9",
+            "vKEsyHFk/nAmiQ3Vc#0R2ysy3p",
+            "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
+            "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+            "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
+            "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
+            "vKEsyHFk/nAmiQ3Vc#ogSW3Rjt",
+            "vKEsyHFk/nAmiQ3Vc#EUV7iaLt",
+            "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
+            "vKEsyHFk/nAmiQ3Vc#zUIObqwQ",
+            "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
+            "vKEsyHFk/nAmiQ3Vc#HXDhzWiE",
+            "vKEsyHFk/nAmiQ3Vc#kQsYPnIq",
+            "vKEsyHFk/nAmiQ3Vc#TuLpnBlQ",
+            "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",
+            "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
+            "vKEsyHFk/nAmiQ3Vc#Gq93nL5x"
+          ],
+          "relationships": [
+            "vKEsyHFk/nAmiQ3Vc#mVCMJYpN",
+            "vKEsyHFk/nAmiQ3Vc#a4PkS2Do",
+            "vKEsyHFk/nAmiQ3Vc#GpvovZkt",
+            "vKEsyHFk/nAmiQ3Vc#Kbtdm1ew",
+            "vKEsyHFk/nAmiQ3Vc#MFROOcqh",
+            "vKEsyHFk/nAmiQ3Vc#HZqRR3f0",
+            "vKEsyHFk/nAmiQ3Vc#Xqy7fxY0",
+            "vKEsyHFk/nAmiQ3Vc#Ba2uml5A",
+            "vKEsyHFk/nAmiQ3Vc#Ml9zYVzq",
+            "vKEsyHFk/nAmiQ3Vc#wMSceuzp",
+            "vKEsyHFk/nAmiQ3Vc#1LCJsaUZ",
+            "vKEsyHFk/nAmiQ3Vc#nYQ1B3GK",
+            "vKEsyHFk/nAmiQ3Vc#0TkUEWO5",
+            "vKEsyHFk/nAmiQ3Vc#zOLMDpzy",
+            "vKEsyHFk/nAmiQ3Vc#BdoA8zg1",
+            "vKEsyHFk/nAmiQ3Vc#5oeVTCuJ",
+            "vKEsyHFk/nAmiQ3Vc#CsZo87Fp",
+            "vKEsyHFk/nAmiQ3Vc#m3zJ1oto",
+            "vKEsyHFk/nAmiQ3Vc#y6ueYYtZ",
+            "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
+            "vKEsyHFk/nAmiQ3Vc#7hxRgVwY",
+            "vKEsyHFk/nAmiQ3Vc#LIOeNd3K",
+            "vKEsyHFk/nAmiQ3Vc#4vu1Jkwi"
+          ],
+          "flows": [
+            "vKEsyHFk/nAmiQ3Vc#bcBloLg6",
+            "vKEsyHFk/nAmiQ3Vc#tnVc95Oc",
+            "vKEsyHFk/nAmiQ3Vc#S1R4z2CE",
+            "vKEsyHFk/nAmiQ3Vc#3nWT5b8k"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
+          "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+          "vKEsyHFk/nAmiQ3Vc#bV1RPiKW"
+        ],
+        "focus": [
+          "vKEsyHFk/nAmiQ3Vc#qHOothyT",
+          "vKEsyHFk/nAmiQ3Vc#45uNvMac",
+          "vKEsyHFk/nAmiQ3Vc#zs4XwBa9",
+          "vKEsyHFk/nAmiQ3Vc#0R2ysy3p",
+          "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
+          "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+          "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
+          "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
+          "vKEsyHFk/nAmiQ3Vc#ogSW3Rjt",
+          "vKEsyHFk/nAmiQ3Vc#EUV7iaLt",
+          "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
+          "vKEsyHFk/nAmiQ3Vc#zUIObqwQ",
+          "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
+          "vKEsyHFk/nAmiQ3Vc#HXDhzWiE",
+          "vKEsyHFk/nAmiQ3Vc#kQsYPnIq",
+          "vKEsyHFk/nAmiQ3Vc#TuLpnBlQ",
+          "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",
+          "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
+          "vKEsyHFk/nAmiQ3Vc#Gq93nL5x"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    }
+  ]
+}
