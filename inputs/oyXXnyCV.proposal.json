@@ -11307,11 +11307,8 @@
         "order": 69000,
         "name": "Layout investigation",
         "kind": "module",
-        "responsibility": "Measures layout fixtures and captures their rendered geometry",
-        "binding": {
-          "repo": "github.com/miklschmidt/archboard",
-          "path": "docs/design/wide-board-layout-fixtures"
-        },
+        "responsibility": "Compares layout engines and measures the saved layout fixtures",
+        "description": "The canonical engine gallery reads current module scopes and flows. The two historical investigation scripts measure the saved scorecard and timing fixtures. Fixture data stays shared with renderer tests and is not private implementation.",
         "schemaVersion": 1,
         "id": "vKEsyHFk#F0aENCVG"
       }
@@ -11423,6 +11420,54 @@
     {
       "type": "place",
       "subject": "vKEsyHFk#7xQLokcW",
+      "placement": {
+        "holder": "vKEsyHFk#F0aENCVG"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#S6MFhkV7",
+      "kind": "module",
+      "value": {
+        "order": 74000,
+        "name": "Layout scorecards",
+        "kind": "module",
+        "responsibility": "Measures saved fixture geometry against the drawing scorecard",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "docs/design/wide-board-layout-fixtures/measure.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#S6MFhkV7"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#S6MFhkV7",
+      "placement": {
+        "holder": "vKEsyHFk#F0aENCVG"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#MCVEWRGl",
+      "kind": "module",
+      "value": {
+        "order": 74001,
+        "name": "Layout timing",
+        "kind": "module",
+        "responsibility": "Measures first layout and repeated drawing time for saved fixtures",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "docs/design/wide-board-layout-fixtures/timing.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#MCVEWRGl"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#MCVEWRGl",
       "placement": {
         "holder": "vKEsyHFk#F0aENCVG"
       }
