@@ -162,20 +162,18 @@ fn node_of(
 
 /// A relationship's own options: its order and kind, its look where lines of
 /// another look keep apart, and its standing in a comparison.
-fn edge_options(edge: &Edge, standing: Option<&str>, by_look: bool) -> Vec<(String, J)> {
+fn edge_options(edge: &Edge, standing: Option<&str>) -> Vec<(String, J)> {
     let mut options = vec![
         ("archboard.order".to_owned(), J::Str(text(edge.order))),
         ("archboard.relationship.kind".to_owned(), J::str(&edge.kind)),
     ];
-    if by_look {
-        let emphasis = word(&edge.emphasis);
-        options.push((
-            "archboard.relationship.emphasis".to_owned(),
-            J::str(emphasis),
-        ));
-        let traffic = if edge.traffic.is_some() { "on" } else { "off" };
-        options.push(("archboard.relationship.traffic".to_owned(), J::str(traffic)));
-    }
+    let emphasis = word(&edge.emphasis);
+    options.push((
+        "archboard.relationship.emphasis".to_owned(),
+        J::str(emphasis),
+    ));
+    let traffic = if edge.traffic.is_some() { "on" } else { "off" };
+    options.push(("archboard.relationship.traffic".to_owned(), J::str(traffic)));
     if let Some(standing) = standing {
         options.push((
             "archboard.relationship.standing".to_owned(),
@@ -190,11 +188,11 @@ fn edge_of(
     edge: &Edge,
     measured: &Measured,
     standing: Option<&str>,
-    by_look: bool,
+    inline: bool,
     points: Option<&Vec<(&'static str, String)>>,
 ) -> J {
-    let mut options = edge_options(edge, standing, by_look);
-    if !by_look && let Some(kind) = measured.held_kinds.get(&edge.id) {
+    let mut options = edge_options(edge, standing);
+    if !inline && let Some(kind) = measured.held_kinds.get(&edge.id) {
         options.push(("archboard.relationship.held-kind".to_owned(), J::str(kind)));
     }
     for (name, value) in points.into_iter().flatten() {
@@ -283,13 +281,13 @@ fn nest(id: &str, nodes: &mut IndexMap<String, J>, kids: &IndexMap<String, Vec<S
 /// The graph of a board: its nodes in their containers, its relationships
 /// with their labels and options, and each placing group's caption size.
 ///
-/// `by_look` keeps relationships that differ in emphasis or traffic on separate lanes.
+/// `inline` selects the retained Track input; Blocks also keeps the variant’s own overview kinds.
 pub(crate) fn compound_graph(
     content: &Content,
     measured: &Measured,
     standings: Option<&Standings>,
     entries: &BTreeMap<String, bool>,
-    by_look: bool,
+    inline: bool,
 ) -> Graph {
     let placing = measured.groups.as_ref().map(|groups| &groups.placing);
     let by_id: BTreeMap<&str, &Node> = content
@@ -320,7 +318,7 @@ pub(crate) fn compound_graph(
         .map(|edge| {
             let standing =
                 standings.map(|standings| standings.get(&edge.id).map_or(unchanged, word));
-            edge_of(edge, measured, standing, by_look, points.get(&edge.id))
+            edge_of(edge, measured, standing, inline, points.get(&edge.id))
         })
         .collect();
     let mut body = String::from("\"children\":");

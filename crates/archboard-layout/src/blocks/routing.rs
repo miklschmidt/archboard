@@ -13,7 +13,7 @@ use crate::track::sides::fit_sides;
 use super::laid::{Band, Insets, Laid, LaidMap};
 use super::leaves::{let_ports_slide, mark_regions, rim_of};
 use super::lone::frame_shape;
-use super::tree::{Block, BlockId, BlockTree, Kind, Nesting};
+use super::tree::{Block, BlockId, BlockTree, Kind};
 use super::walls::{
     beside_points, beside_walls, channel_wall, enters_by, inner_points, labelled_out, mark_besides,
     wall_lines,
@@ -42,13 +42,10 @@ pub(super) fn routed(
                 + crate::constants::HEADER_SLAB_INSET;
         }
     }
-    let inline = tree.nesting != Nesting::Blocks;
-    scene.edges_page = inline && block.kind == Kind::Root;
-    scene.inline = inline;
+    scene.edges_page = block.kind == Kind::Root;
+    scene.inline = true;
     mark_regions(&mut scene, block, tree);
-    if inline {
-        let_ports_slide(&mut scene, block);
-    }
+    let_ports_slide(&mut scene, block);
     let edges: Edges<'_> = placed
         .edges
         .iter()

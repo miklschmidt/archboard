@@ -225,15 +225,14 @@ impl CardLayout<'_> {
 
     /// One indivisible row keeps an exclusive peer beside its parent caller.
     fn peer_line(&mut self, line: &Line, tail: &str, head: &str) -> bool {
-        let peers = self.tree.nesting != super::tree::Nesting::Blocks
-            && self
-                .tree
-                .peer_of(line.edge.target())
-                .is_some_and(|(owner, peer)| {
-                    self.tree.get(owner).id == self.block.id
-                        && peer == tail
-                        && line.edge.target() == head
-                });
+        let peers = self
+            .tree
+            .peer_of(line.edge.target())
+            .is_some_and(|(owner, peer)| {
+                self.tree.get(owner).id == self.block.id
+                    && peer == tail
+                    && line.edge.target() == head
+            });
         if !peers {
             return false;
         }

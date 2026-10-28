@@ -13,7 +13,7 @@ use crate::track::spacing::Rim;
 use super::headers::{Room, header_within};
 use super::laid::{Insets, LaidMap};
 use super::lone::{caption_width, frame_width, room_of, side_room};
-use super::tree::{Block, BlockTree, Kind, Nesting, header_of};
+use super::tree::{Block, BlockTree, Kind, header_of};
 
 /// The side of a port's square.
 pub(crate) const PORT: f64 = 1.0;
@@ -120,7 +120,6 @@ pub(crate) fn let_ports_slide(scene: &mut Placement, block: &Block) {
 /// off a card's region there, the lanes beside it pushed the next one along
 /// its container's wall (Recording a walkthrough).
 pub(crate) fn mark_regions(scene: &mut Placement, block: &Block, tree: &BlockTree) {
-    let inline = tree.nesting != Nesting::Blocks;
     for item in &block.items {
         let card = scene.cards.get(item).copied();
         if let Some(lone) = tree.lone.get(item) {
@@ -132,7 +131,7 @@ pub(crate) fn mark_regions(scene: &mut Placement, block: &Block, tree: &BlockTre
         let region = tree
             .block_of(item)
             .is_some_and(|inner| matches!(tree.get(inner).kind, Kind::Region | Kind::Frame));
-        if (inline && tree.lone.contains_key(item)) || region {
+        if tree.lone.contains_key(item) || region {
             scene
                 .region_blocks
                 .insert(card.expect("a region is on its block's scene"));

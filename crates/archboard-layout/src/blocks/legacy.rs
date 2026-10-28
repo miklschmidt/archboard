@@ -49,7 +49,7 @@ fn plain_insets(block: &Block) -> Insets {
                 bottom: PAGE_MARGIN,
             };
         }
-        Kind::Column | Kind::Cluster => {
+        Kind::Column => {
             return Insets {
                 side: 0.0,
                 top: 0.0,
@@ -155,9 +155,8 @@ fn lay_block(
     let packs = !one.items.is_empty()
         && one.clusters.is_empty()
         && one.items.iter().all(|item| {
-            tree.block_of(item).is_some_and(|child| {
-                tree.nesting == Nesting::Blocks || tree.get(child).kind == Kind::Frame
-            })
+            tree.block_of(item)
+                .is_some_and(|child| tree.get(child).kind == Kind::Frame)
         })
         && !tree
             .get(block)
@@ -268,7 +267,7 @@ fn lay_out(gv: &mut Engine<'_>, graph: &Node, way: &Way) -> Result<Board, String
     Ok(chosen)
 }
 
-/// The retained placement path for Track and unmigrated Blocks classes.
+/// The retained placement and repair policies for Track.
 pub(super) fn place(
     graph: &Node,
     nesting: Nesting,

@@ -45,16 +45,14 @@ fn answer(graph: &Node, width: f64, height: f64, told: Vec<(&str, String)>) -> S
 pub fn lay_out_board(graph: &str, host: &mut dyn Graphviz) -> Result<String, String> {
     let graph: Node = serde_json::from_str(graph)
         .map_err(|error| format!("The measured graph is unreadable: {error}"))?;
-    let nesting = Nesting::named(graph.option(BLOCKS_NESTING).unwrap_or("inline"))?;
-    let planned = if nesting == Nesting::Blocks {
-        super::planned::lay_out(&graph)?
+    let mode = graph.option(BLOCKS_NESTING).unwrap_or("inline");
+    let (placed, frozen) = if mode == "blocks" {
+        (super::planned::lay_out(&graph)?, true)
     } else {
-        None
-    };
-    let frozen = planned.is_some();
-    let placed = match planned {
-        Some(placed) => placed,
-        None => super::legacy::place(&graph, nesting, host)?,
+        (
+            super::legacy::place(&graph, Nesting::named(mode)?, host)?,
+            false,
+        )
     };
     let mut told = vec![(BLOCKS_PLACED, placed.json().text())];
     if frozen {

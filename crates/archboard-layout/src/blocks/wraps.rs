@@ -14,7 +14,7 @@ use crate::track::score::{
 
 use super::card_layout::{Arrangement, CardLayout, Engine};
 use super::laid::{Insets, Laid, LaidMap};
-use super::tree::{BlockId, BlockTree, Kind, Nesting};
+use super::tree::{BlockId, BlockTree, Kind};
 
 /// How much better a wrap must fit the page than the board whole.
 const WORTH_WRAPPING: f64 = 1.1;
@@ -99,7 +99,7 @@ pub(crate) fn search_of(
         candidates.push(Candidate::Grid);
     }
     for lowered in wraps_of(laying.whole, tree, block) {
-        for columns in column_choices(&lowered, tree.nesting) {
+        for columns in column_choices(&lowered) {
             candidates.push(Candidate::Lowered {
                 lowered: lowered.clone(),
                 columns,
@@ -230,16 +230,10 @@ fn wraps_better(one: &Weighing, other: &Weighing) -> bool {
 
 /// Whether a wrap's rows may be laid with their columns free, as well as held.
 /// Left free, a lowered card is pushed aside by the lines to every row below
-/// it, so on the track engine's ranks a wrap deeper than two rows keeps its
-/// columns. The blocks engine packs such a block among others, where holding
-/// its columns drew more crossings than it saved.
-fn column_choices(lowered: &Plan, nesting: Nesting) -> Vec<bool> {
+/// it, so a Track wrap deeper than two rows keeps its columns.
+fn column_choices(lowered: &Plan) -> Vec<bool> {
     let deep = lowered.values().copied().max().unwrap_or(0) > 1;
-    if deep && nesting != Nesting::Blocks {
-        vec![true]
-    } else {
-        vec![false, true]
-    }
+    if deep { vec![true] } else { vec![false, true] }
 }
 
 /// The ways to wrap a block's widest rank of items into rows, when the block

@@ -56,58 +56,107 @@ fn key(model: &Model<'_>, edge: usize) -> Key {
 }
 
 pub(super) fn plan(model: &Model<'_>, topology: &Topology) -> Option<Shape> {
-    Some(scope(model, topology, 0)?.shape)
+    scope(model, topology, 0)
+        .into_iter()
+        .min_by(|a, b| a.shape.score.total_cmp(&b.shape.score))
+        .map(|piece| piece.shape)
 }
 
-fn scope(model: &Model<'_>, topology: &Topology, index: usize) -> Option<Piece> {
+fn scope(model: &Model<'_>, topology: &Topology, index: usize) -> Vec<Piece> {
     let one = &model.scopes[index];
-    let children = children_of(model, topology, index)?;
-    let offset = usize::from(one.header.is_some());
-    let hints = super::order::hints(model, topology, index);
-    let order: Vec<_> = (0..offset)
-        .chain(hints.children.into_iter().map(|i| i + offset))
-        .collect();
-    let top = one
-        .caption
-        .map_or(if index == 0 { CLEAR } else { 0.0 }, |(_, h)| h + CLEAR);
-    let area: f64 = children
+    let children = children_of(model, topology, index);
+    if children.iter().any(Vec::is_empty) {
+        return Vec::new();
+    }
+    let mut choices = Vec::new();
+    for alternative in 0..2 {
+        let children: Vec<_> = children
+            .iter()
+            .map(|pieces| pieces[alternative.min(pieces.len() - 1)].clone())
+            .collect();
+        let offset = usize::from(one.header.is_some());
+        let hints = super::order::hints(model, topology, index);
+        let order: Vec<_> = (0..offset)
+            .chain(hints.children.into_iter().map(|i| i + offset))
+            .collect();
+        let top = one
+            .caption
+            .map_or(if index == 0 { CLEAR } else { 0.0 }, |(_, h)| h + CLEAR);
+        let area: f64 = children
+            .iter()
+            .map(|p| {
+                (p.shape.drawing.width
+                    + channels::skirt(model, p, Side::Left)
+                    + channels::skirt(model, p, Side::Right))
+                    * p.shape.drawing.height
+            })
+            .sum();
+        let base = area.sqrt();
+        let min_width = one.caption.map_or(0.0, |(w, _)| w + 2.0 * CLEAR);
+        choices.extend(
+            widths(model, &children, base)
+                .into_iter()
+                .filter_map(|width| {
+                    let rows = rows(model, &children, &order, width);
+                    let plan = channels::plan(model, &children, &rows, top, min_width);
+                    let mut piece = assemble(model, index, children.clone(), plan);
+                    piece.shape.score = refine(model, topology, index, &mut piece)?;
+                    Some(piece)
+                }),
+        );
+    }
+    let mut retained = Vec::new();
+    for wide in [false, true] {
+        if let Some(piece) = choices
+            .iter()
+            .filter(|p| (p.shape.drawing.width >= p.shape.drawing.height) == wide)
+            .min_by(|a, b| a.shape.score.total_cmp(&b.shape.score))
+        {
+            retained.push(piece.clone());
+        }
+    }
+    retained
+}
+
+fn widths(model: &Model<'_>, children: &[Piece], base: f64) -> Vec<f64> {
+    let widest = children
         .iter()
         .map(|p| {
-            (p.shape.drawing.width
+            p.shape.drawing.width
                 + channels::skirt(model, p, Side::Left)
-                + channels::skirt(model, p, Side::Right))
-                * p.shape.drawing.height
+                + channels::skirt(model, p, Side::Right)
         })
-        .sum();
-    let base = area.sqrt();
-    let min_width = one.caption.map_or(0.0, |(w, _)| w + 2.0 * CLEAR);
-    [base * 0.8, base * 1.3, base * 2.0]
-        .into_iter()
-        .enumerate()
-        .filter_map(|(choice, width)| {
-            let rows = rows(model, &children, &order, width);
-            let plan = channels::plan(model, &children, &rows, top, min_width);
-            let mut piece = assemble(model, index, children.clone(), plan);
-            let score = refine(model, topology, index, &mut piece)?;
-            Some((score, choice, piece))
-        })
-        .min_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)))
-        .map(|(_, _, piece)| piece)
+        .fold(0.0, f64::max);
+    if model.edges.len() <= 24 {
+        vec![base * 0.8, (base * 2.0).max(2.0 * widest + 2.0 * CLEAR)]
+    } else {
+        vec![
+            base * 0.8,
+            base * 1.3,
+            (base * 2.0).max(2.0 * widest + 2.0 * CLEAR),
+        ]
+    }
 }
 
-fn children_of(model: &Model<'_>, topology: &Topology, index: usize) -> Option<Vec<Piece>> {
+fn children_of(model: &Model<'_>, topology: &Topology, index: usize) -> Vec<Vec<Piece>> {
     let one = &model.scopes[index];
     let mut children = Vec::new();
     if let Some(header) = one.header {
-        children.push(cells::cell(model, topology, header, true)?);
+        children.push(
+            cells::cell(model, topology, header, true)
+                .into_iter()
+                .collect(),
+        );
     }
     for child in &one.children {
         children.push(match *child {
-            Child::Endpoint(id) => cells::cell(model, topology, id, false)?,
-            Child::Scope(id) => scope(model, topology, id)?,
+            Child::Endpoint(id) => cells::cell(model, topology, id, false)
+                .into_iter()
+                .collect(),
+            Child::Scope(id) => scope(model, topology, id),
         });
     }
-    Some(children)
+    children
 }
 
 fn assemble(
@@ -162,7 +211,11 @@ fn assemble(
     }
     shape.drawing.width = chosen.width;
     shape.drawing.height = chosen.height;
-    shape.empty += (chosen.width * chosen.height - used).max(0.0);
+    let caption = model.scopes[index]
+        .caption
+        .map_or(0.0, |(width, height)| width * height);
+    shape.occupied += caption;
+    shape.empty += (chosen.width * chosen.height - used - caption).max(0.0);
     let bounds = Rect {
         x: 0.0,
         y: 0.0,

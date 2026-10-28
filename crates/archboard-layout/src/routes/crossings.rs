@@ -548,8 +548,11 @@ fn settle(
             state.attempt(&plan);
         }
     }
+    // Each crossing has at most four arc attempts. The complete planned drawing
+    // spends at most 512 attempts; later crossings retain their clear straight runs.
     for crossing in 0..state.crossings.len() {
-        if !state.settled[crossing] && !state.hop_alone(crossing) {
+        let try_hop = !planned || crossing < 128;
+        if !state.settled[crossing] && (!try_hop || !state.hop_alone(crossing)) {
             state.cross(crossing);
         }
     }

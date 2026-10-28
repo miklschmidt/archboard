@@ -3,22 +3,12 @@
 use crate::blocks::assembly::PlacedLine;
 use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS};
 use crate::geometry::{Point, Rect, Side, inflate};
-use crate::graph::FROM_POINTS;
 
 use super::geometry::{clean, contains, crosses_box, intersection, length};
 use super::model::Model;
 use super::ports::{Port, center, port};
 use super::shape::{CLEAR, Shape};
 use super::topology::Topology;
-
-/// Special flow endpoints and loops migrate after local fallback is established.
-pub(super) fn eligible(model: &Model<'_>, _topology: &Topology) -> bool {
-    !model
-        .edges
-        .iter()
-        .any(|edge| edge.option(FROM_POINTS).is_some())
-        && model.ends.iter().all(|&(from, to)| from != to)
-}
 
 /// Only complete routes inside the candidate's reserved space can reach emission.
 pub(super) fn emit(
@@ -378,6 +368,7 @@ pub(super) fn label_escape(model: &Model<'_>, index: usize, shape: &Shape) -> f6
         .filter(|(edge, at)| model.ends[**edge].0 == from && (at.x < source.x) == left)
         .collect();
     siblings.sort_by(|(a, one), (b, other)| one.y.total_cmp(&other.y).then(a.cmp(b)));
+    siblings.sort_by(|(_, one), (_, other)| one.y.total_cmp(&other.y));
     let slot = siblings
         .iter()
         .position(|(edge, _)| **edge == index)
@@ -398,6 +389,9 @@ fn approaches(points: &[Point]) -> bool {
 
 /// Source labels expose one frozen departure to every local channel choice.
 pub(super) fn tails(model: &Model<'_>, index: usize, shape: &Shape) -> Vec<Vec<Point>> {
+    if let Some(points) = super::points::departure(model, index, shape) {
+        return vec![points];
+    }
     if let Some(stem) = shape.stems.get(&index) {
         return vec![stem.clone()];
     }

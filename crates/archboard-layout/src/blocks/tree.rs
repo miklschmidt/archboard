@@ -33,25 +33,21 @@ use super::laid::Size;
 use super::lone::{Card, Lone, captions_of};
 use super::projection::labels_before_joins;
 
-/// How a board's containers and group regions are drawn: each packed as a
-/// block of its own, every one inline as a cluster of the board's layout, or
-/// containers inline with each group's region packed as a block.
+/// Track's containment: inline clusters or group regions packed as blocks.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Nesting {
-    Blocks,
     Inline,
     Groups,
 }
 
 impl Nesting {
-    /// The way a solve's options name: `blocks`, `inline` or `groups`.
+    /// The retained Track nesting modes: `inline` or `groups`.
     ///
     /// # Errors
     ///
     /// When it names another.
     pub(crate) fn named(name: &str) -> Result<Nesting, String> {
         match name {
-            "blocks" => Ok(Nesting::Blocks),
             "inline" => Ok(Nesting::Inline),
             "groups" => Ok(Nesting::Groups),
             other => Err(format!(
@@ -65,15 +61,12 @@ impl Nesting {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct BlockId(pub usize);
 
-/// What a block is: the board, a container, a group region packed whole, the
-/// cluster of cards a block of blocks holds outside every block, or a column a
-/// block folds into.
+/// A Track block: the board, a container, a group region, or a folded column.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Kind {
     Root,
     Frame,
     Region,
-    Cluster,
     Column,
 }
 
@@ -304,8 +297,6 @@ pub(crate) struct BlockTree {
     pub exits: Map<String, Side>,
     pub nesting: Nesting,
     feedback: Set<String>,
-    /// A shared-source fork whose labels follow its incoming boundary.
-    pub(super) fanouts: Set<(BlockId, String)>,
     /// Parents whose graph calls for a local composition.
     pub local_frames: Set<String>,
     /// The ports each block holds in an order on a face, keyed `block|face` (`orders.rs`).
@@ -407,13 +398,11 @@ impl BlockTree {
             exits: kept.exits,
             nesting,
             feedback: Set::default(),
-            fanouts: Set::default(),
             local_frames: super::composition::local_frames(graph),
             orders: kept.orders,
         };
         tree.root = tree.block(":root".to_owned(), Kind::Root, None, None, None);
         tree.fill(tree.root, graph.kids())?;
-        tree.gather(tree.root, graph.edges.as_deref().unwrap_or(&[]));
         tree.projections = graph
             .edges
             .iter()
@@ -425,7 +414,6 @@ impl BlockTree {
         let back = tree.back_edges();
         tree.feedback.clone_from(&back);
         let before = labels_before_joins(&tree.projections, &back);
-        tree.fanouts = super::fanouts::entry_fanouts(&tree, &before, &back);
         for index in 0..tree.projections.len() {
             let projection = tree.projections[index].clone();
             let before = before.contains(&projection.edge.id);

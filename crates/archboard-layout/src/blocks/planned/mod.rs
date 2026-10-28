@@ -1,4 +1,4 @@
-//! Private measured planning with a temporary dispatcher for unmigrated graph classes.
+//! Blocks owns one measured plan from source cells through final route emission.
 
 mod cells;
 mod channel;
@@ -11,6 +11,7 @@ mod junctions;
 mod lanes;
 mod model;
 mod order;
+mod points;
 mod portals;
 mod ports;
 mod runs;
@@ -18,10 +19,10 @@ mod score;
 mod shape;
 mod topology;
 
-/// Emit only classes whose measured channels are complete. Everything else keeps legacy placement.
+/// Emit one complete plan or report the graph that could not reserve clear channels.
 pub(super) fn lay_out(
     graph: &crate::graph::Node,
-) -> Result<Option<crate::blocks::assembly::Placed>, String> {
+) -> Result<crate::blocks::assembly::Placed, String> {
     let model = model::Model::new(graph)?;
     debug_assert!(
         model.complete(),
@@ -32,16 +33,18 @@ pub(super) fn lay_out(
         topology.complete(&model),
         "planned routes and fans retain semantic ownership"
     );
-    Ok(selected(&model, &topology))
+    selected(&model, &topology).ok_or_else(|| {
+        format!(
+            "Blocks could not reserve clear channels for {}. Report this layout failure.",
+            graph.id
+        )
+    })
 }
 
 fn selected(
     model: &model::Model<'_>,
     topology: &topology::Topology,
 ) -> Option<crate::blocks::assembly::Placed> {
-    if !channel::eligible(model, topology) {
-        return None;
-    }
     // Larger diagrams reserve boundary channels directly. Repeated failed local
     // candidates otherwise spend the whole budget before the same construction.
     let shape = if model.edges.len() > 24 {

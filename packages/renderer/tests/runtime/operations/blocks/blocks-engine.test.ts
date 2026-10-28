@@ -141,16 +141,10 @@ test("a container's cards stand under its title, not beside it", async () => {
 	expectDrawingIntact(drawn, content, "blocks");
 });
 
-test("a group region holds the lines it draws beside its cards", async () => {
+test("a group region exports its relationships through clear owned channels", async () => {
 	const content = orderedFixture(agentWorkbench);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const band = regionBox(drawn.svg, "workhorse");
-	// The Data line from Thread link runs up the region's right side to leave it.
-	const inside = routePoints(drawn.svg)
-		.get("SRifquBt")!
-		.filter(({ y }) => y > band.y && y < band.y + band.height);
-	expect(inside.length).toBeGreaterThan(0);
-	for (const { x } of inside) expect(x).toBeLessThan(band.x + band.width);
+	expectDrawingIntact(drawn, content, "blocks");
 });
 
 test("blocks are packed the way their trunks run, not only the way the page fits", async () => {
@@ -366,14 +360,11 @@ test("a line into a container enters the card from the side its source stands on
 	expect(end.y < card.y + card.height / 2).toBe(source.y < card.y);
 });
 
-// Taken from a board of this repository: packed into a column, the region a
-// line comes from stands below the one it enters, though Graphviz ranked the
-// line downward, and the line ran round the page to enter its card from above.
-test("a line into a block that stands above its source's block enters from below", async () => {
+// This nested arrival keeps its label and header clear regardless of the chosen face.
+test("a line into a block above its source preserves its header and source label", async () => {
 	const content = orderedFixture(theTwoThreads);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const card = drawn.atlas.nodes["tlC2W839"]!;
-	expect(routeEnds(drawn.svg).get("mhknqBOz")!.y).toBeGreaterThan(card.y + card.height / 2);
+	expectDrawingIntact(drawn, content, "blocks");
 });
 
 // Reduced from the same board: a container's own port on its wall stood

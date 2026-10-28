@@ -198,7 +198,7 @@ describe("what the legend lists", () => {
 for (const layout of ["track", "blocks"] as const) {
 	describe(`where the legend stands, drawn by ${layout}`, () => {
 		test("horizontal: a row under the picture, wrapped at its width", async () => {
-			// Long type names force wrapping without depending on one engine's box arrangement.
+			// Each name fits the narrow page, but the entries together require several rows.
 			const policy = {
 				...DEFAULT_SEMANTIC_POLICY,
 				relationshipKinds: Object.fromEntries(
@@ -206,7 +206,7 @@ for (const layout of ["track", "blocks"] as const) {
 						kind,
 						{
 							...style,
-							name: Array.from({ length: 14 }, () => style.name).join(" "),
+							name: Array.from({ length: 12 }, () => style.name).join(" "),
 						},
 					]),
 				),

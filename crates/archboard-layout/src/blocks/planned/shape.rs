@@ -35,7 +35,7 @@ pub(super) struct Shape {
     pub occupied: f64,
     pub empty: f64,
     pub fallbacks: usize,
-    score: f64,
+    pub(super) score: f64,
 }
 
 impl Shape {

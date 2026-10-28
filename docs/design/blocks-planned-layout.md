@@ -658,7 +658,7 @@ Its width, placement, wrapping, and unchanged-atlas assertions all remain.
 The fixture no longer depends on the old Blocks drawing being exactly narrow enough to wrap the default names.
 
 The final checkpoint changes 283 of 4,043 Blocks drawings.
-Every Track SVG remains byte-identical, and a fresh process reproduces all 8,086 SVGs with a different request order and worker count.
+Every Track SVG remains byte-identical, and a fresh process reproduces all 8,086 SVGs with a different request order and request concurrency.
 The hard-finding inventory retains the same 23 geometric failures and 61 additional historical subject-set failures.
 The complete repository gate passes.
 
@@ -691,7 +691,9 @@ The bound remains deterministic and does not use elapsed time.
 
 Each conservative child exports complete source and target boundary paths.
 Its parent places those paths with the child and reserves distinct row lanes and target-owned rails.
-This prevents a parent from searching through an already frozen child’s interior.
+The parent reserves its channels against the complete child geometry.
+Direct shortcuts can replace pending boundary legs before their common scope freezes.
+They retain child placement, complete internal routes, labels, and protected objects.
 Three shelf widths compete on the emitted paths.
 Direct shortcuts compete before the scope freezes and must preserve all earlier paths and words.
 Diagrams above twenty-four relationships use this construction directly to avoid repeated failed local searches.
@@ -712,9 +714,10 @@ The second full run draws 4,043 pictures per engine.
 Track matches every baseline SVG.
 The corrected integrity inventory reports six existing geometry findings and no new finding, against twenty-three at baseline.
 Sixty-seven drawings fail intactness, including the sixty-one historical subject-set mismatches.
-The planner owns all six references and 1,218 of 1,425 distinct measured Blocks solves.
+The planner owns all six references and 1,218 of 1,425 measured Blocks solve calls.
 The remaining 207 solves still use the temporary dispatcher until step 8 migrates their port-capacity and junction cases.
-These counts describe distinct solves, not cache hits or authored drawings.
+The calls contain 1,274 distinct graphs: 1,077 planned graphs and 197 graphs that use legacy placement.
+These counts describe solve calls, not authored drawings.
 
 The first broad measurement still misses the readability targets.
 Mean area is 4,330,803, mean route length is 2,203.2, and bends average 3.346.
@@ -740,6 +743,76 @@ The removed `routes/turn-back` fixture and two Blocks cases in `routes/routing-r
 Backward travel remains a measured cost, not a forbidden geometry class.
 No hard-defect helper, Track assertion, lint rule, or type rule changes.
 A comparison regression also proves that visible kinds cannot share a trunk and that toggling context preserves atlas bounds.
+
+### Build checkpoint: complete Blocks ownership
+
+Step 8 removes the temporary dispatcher.
+Every Blocks architecture graph enters the planner, including large label fans, self-loops, and declared flow endpoints.
+A failed complete plan returns a named layout error.
+It never silently calls the former Blocks placement path.
+Track retains its existing implementation.
+
+Source cells first try labels beside the card.
+The planner keeps that compact cell only when its departure paths preserve label clearance and trunk ownership.
+Otherwise, the cell reserves staggered labels below the card.
+Source attachments use eight-unit spacing without arrowheads, while target attachments retain sixteen-unit spacing.
+The complete treatment includes kind, emphasis, traffic, and comparison standing.
+Different visible treatments cannot share a source departure or target arrival.
+
+Flow decisions retain their declared bottom points and inset.
+Their source labels follow those points, and an independent channel brings incoming relationships to the top face.
+Self-loops use the same source cells, channel reservation, and complete guard as other relationships.
+The planner adds no public layout configuration.
+
+The conservative construction retains one tall and one wide child when both exist.
+Large scopes compare three shelf widths for each retained child choice, with at most six candidates.
+Small scopes compare two widths after the eight normal candidates, with at most twelve candidates in total.
+The widest shelf can place two of the largest children together.
+Parents reuse measured children instead of recursively rebuilding them for each candidate.
+
+Crossing decoration now tries arcs at only the first 128 crossings, with at most four radii per crossing.
+Later crossings retain the existing plain crossing and junction cuts.
+This bounds arc collision work across the whole drawing, including dense large boards.
+The bound follows stable route order and does not depend on time.
+
+The final simplicity pass removes the old Blocks nesting mode and its fanout and nested-placement modules.
+It also removes Blocks-only branches from projection, card construction, routing, wrapping, settlement, and endpoint handling.
+The remaining legacy modules serve Track and keep its output contract.
+The tests cover mixed treatments, large source fans, labelled and unlabelled loops, and declared decision points.
+`blocks/blocks-engine` now tests complete geometry for group exits and arrivals from below instead of requiring one wall.
+`routes/skipped-connections` keeps Track’s chain-side rule while Blocks retains card clearance and complete integrity.
+The legend fixture shortens its sample names so each entry fits the narrower drawing.
+Its width, row-wrapping, atlas, and placement assertions remain unchanged.
+
+The final step 8 corpus contains 4,043 drawings per engine and 67,033 routes.
+All 2,395 architecture readings use the planner.
+The 1,425 measured Blocks solve calls contain 1,274 distinct graphs, all planned.
+No Blocks architecture class uses legacy placement.
+All 4,043 Track SVGs match the baseline exactly.
+
+The geometry inventory reports zero findings, down from twenty-three at baseline.
+All 398 whole-board readings pass integrity.
+The same sixty-one historical subject-set mismatches remain in scoped readings.
+Mean area rises 21.93% to 4,754,129 square units.
+Frame occupancy falls from 8.36% to 7.71%.
+Mean route length rises from 1,204.63 to 2,560.30 units, and mean detour rises from 143.53 to 1,246.79 units.
+Bends average 3.4014 per route, and 39.58% of routes have at least four bends.
+These results miss every corpus compactness target.
+
+Three quiet baseline/current timing pairs include SVG painting and actual card growth.
+Board viewer takes 300/260 ms, Board persistence takes 256/231 ms, and Archboard server routes takes 212/188 ms at the median.
+Each pair names first render and growing edit.
+All six medians meet the 500 ms target.
+A fresh process with reversed engine order and three concurrent jobs reproduces all 8,086 SVGs exactly.
+The final complete repository gate passes, including all nineteen browser owners.
+
+The six pictures retain clear source labels but still contain long perimeter routes and empty frames.
+The large conservative construction still exports fixed-side portals and bottom arrivals.
+Choosing nearby portal faces and reusing short corridor intervals remain the main geometric limitations.
+The complete corpus and six pictures still decide compactness and visual acceptance.
+The conservative channels can reserve too much space and produce long trips around nested frames.
+Planner ownership and bounded runtime do not establish better readability.
+Production adoption remains pending the final evidence and visual council.
 
 ## Risks and decisions left to evidence
 

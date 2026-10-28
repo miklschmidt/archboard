@@ -30,9 +30,12 @@ Those decisions retain their Track clauses.
 ADR 0062 still supplies exact normal header sizes.
 The Rust core, text shaping, scene, Solver interface, worker pool, and vendored Graphviz remain under ADRs 0059 and 0060.
 Graphviz can provide local rank hints, but it does not own the complete compound drawing.
-Planned crossing decoration uses at most four fixed-radius arc attempts per crossing.
+Planned crossing decoration handles at most 128 crossings with four fixed-radius arc attempts each.
+Later crossings retain plain crossing and junction cuts.
 The atlas uses the frozen routes with fixed decoration padding.
-Track must remain byte-identical.
+The planner owns every Blocks architecture class after step 8.
+The temporary dispatcher and Blocks-only repair paths are removed.
+Track retains the legacy modules that it needs and must remain byte-identical.
 
 The explorations reject isolated packing changes, post-placement side-port repair, distant label relocation, and unrestricted whole-graph layered placement.
 Each improves one measure while retaining or worsening another cost.
@@ -44,3 +47,17 @@ Its conservative spike proves horizontal label ownership and planned channels on
 It does not prove compactness, full fan behavior, four-wall optimization, or the 500 ms end-to-end target.
 Its weak pictures and failing legacy tests prevent production adoption of that spike.
 This ADR proposes the complete design, not direct adoption of the research branch.
+
+The implementation retains compact source cells when their departures pass the ownership and clearance guards.
+Other fans use staggered source labels within measured cells.
+Declared flow points and self-loops follow the same complete geometry contract.
+Conservative scopes retain two child shapes and compare at most six local candidates.
+Small scopes share a twelve-candidate limit with the normal planner.
+These bounds do not establish visual acceptance.
+The implementation evidence and remaining compactness costs belong to the design checkpoint and build report.
+
+The step 8 corpus draws every Blocks architecture reading without legacy placement.
+It removes all twenty-three baseline geometry findings and preserves every Track SVG.
+All three large references render first layouts and growing edits below 500 ms, including painting.
+Mean area and route length still exceed the baseline, and the six pictures do not establish better readability.
+This decision remains proposed until the compactness and visual acceptance gates pass.

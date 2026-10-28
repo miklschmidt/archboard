@@ -167,3 +167,68 @@ fn a_large_label_fan_and_parallel_relationships_keep_their_private_words() {
         }));
     }
 }
+
+#[test]
+fn mixed_treatments_reserve_a_source_cell_before_any_route_leaves_it() {
+    let children: Vec<_> = std::iter::once(json!({"id":"source","width":200,"height":72}))
+        .chain((0..7).map(|i| json!({"id":format!("target{i}"),"width":180,"height":72})))
+        .collect();
+    let edges: Vec<_> = (0..7).map(|i| json!({"id":format!("edge{i}"),"sources":["source"],"targets":[format!("target{i}")],
+        "layoutOptions":{"archboard.relationship.kind":format!("kind{i}")},"labels":[{"width":100,"height":31}]})).collect();
+    let placed = drawing(
+        &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},"children":children,"edges":edges}),
+    );
+    assert_eq!(placed["edges"].as_array().unwrap().len(), 7);
+}
+
+#[test]
+fn self_loops_keep_their_owned_routes_and_labels_on_cards_and_parent_headers() {
+    for from in ["card", "frame"] {
+        for labelled in [false, true] {
+            let labels: Vec<_> = labelled
+                .then(|| json!({"width":100,"height":24}))
+                .into_iter()
+                .collect();
+            let placed = drawing(
+                &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+                "children":[{"id":"frame","width":240,"height":72,"children":[{"id":"card","width":200,"height":80}]}],
+                "edges":[{"id":"loop","sources":[from],"targets":[from],"labels":labels}]}),
+            );
+            let line = &placed["edges"][0];
+            assert_eq!(line["id"], "loop");
+            assert!(line["points"].as_array().unwrap().len() >= 4);
+            assert_eq!(line["label"].is_object(), labelled);
+        }
+    }
+}
+
+#[test]
+fn decision_answers_keep_their_declared_bottom_points_and_separate_incoming_route() {
+    let placed = drawing(
+        &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+        "children":[{"id":"source","width":180,"height":80},{"id":"decision","width":240,"height":100},
+            {"id":"left","width":180,"height":80},{"id":"right","width":180,"height":80}],
+        "edges":[{"id":"enter","sources":["source"],"targets":["decision"]},
+            {"id":"leftward","sources":["decision"],"targets":["left"],"labels":[{"width":60,"height":24}],
+                "layoutOptions":{"archboard.from-points":"sw","archboard.from-points.inset":"24"}},
+            {"id":"rightward","sources":["decision"],"targets":["right"],"labels":[{"width":60,"height":24}],
+                "layoutOptions":{"archboard.from-points":"se","archboard.from-points.inset":"24"}}]}),
+    );
+    let card = &placed["cards"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["id"] == "decision")
+        .unwrap()["box"];
+    for (id, x) in [("leftward", 24.0), ("rightward", 216.0)] {
+        let line = placed["edges"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|e| e["id"] == id)
+            .unwrap();
+        let first = &line["points"][0];
+        assert!((first["x"].as_f64().unwrap() - card["x"].as_f64().unwrap() - x).abs() < 0.05);
+        assert!((first["y"].as_f64().unwrap() - card["y"].as_f64().unwrap() - 100.0).abs() < 0.05);
+    }
+}

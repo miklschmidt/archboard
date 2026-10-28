@@ -14,8 +14,8 @@ use crate::track::scene::{Map, Set};
 
 use super::cycles::CycleWalk;
 use super::tree::{
-    BlockId, BlockTree, ClusterKind, Ends, Kind, Line, Nesting, Piece, Pin, Projection, Route,
-    exit_key, header_of, holds,
+    BlockId, BlockTree, ClusterKind, Ends, Kind, Line, Piece, Pin, Projection, Route, exit_key,
+    header_of, holds,
 };
 
 impl BlockTree {
@@ -240,17 +240,6 @@ impl BlockTree {
         }
     }
 
-    /// A safe source fork shares one entry; wall and target ports stay distinct.
-    fn entry_subject(&self, block: BlockId, edge: &Edge, side: Side, to: &str) -> String {
-        if matches!(side, Side::Top | Side::Bottom)
-            && self.fanouts.contains(&(block, edge.id.clone()))
-        {
-            format!("fork:{}", edge.source())
-        } else {
-            format!("{}{}", walled(side, to), edge.target())
-        }
-    }
-
     /// A relationship's lines in the blocks it enters, outermost first, and
     /// the end they enter from in the block that holds both ends.
     fn enter(
@@ -273,7 +262,7 @@ impl BlockTree {
             let kind = trunk_kind(edge);
             let along = format!("{}|{kind}", edge.source());
             let side = self.exit_of(block, "in", face, &along);
-            let target = self.entry_subject(block, edge, side, &to);
+            let target = format!("{}{}", walled(side, &to), edge.target());
             let port = self.port(block, &format!("in|{}|{target}|{kind}", side.name()), side);
             let (tail, head) = if side == Side::Bottom {
                 (to.clone(), port.clone())
@@ -302,7 +291,7 @@ impl BlockTree {
     /// its target that can hold one, or with the label before a join its
     /// source's, else the block that holds both ends.
     pub(super) fn label_holder(&self, projection: &Projection, before: bool) -> BlockId {
-        if self.nesting != Nesting::Blocks && self.peer_of(projection.edge.target()).is_some() {
+        if self.peer_of(projection.edge.target()).is_some() {
             return projection.at;
         }
         if projection.edge.label_count() > 0
@@ -320,30 +309,12 @@ impl BlockTree {
                     .is_some_and(|block| self.get(block).kind == Kind::Frame)
             })
         {
-            if self.holds_labels(projection.at) {
-                return projection.at;
-            }
-            if self.holds_labels(own) {
-                return own;
-            }
+            return projection.at;
         }
         if before {
             return own;
         }
-        projection
-            .into
-            .iter()
-            .copied()
-            .find(|&one| self.holds_labels(one))
-            .unwrap_or(own)
-    }
-
-    /// Whether a block can hold a line's label: every block drawn inline can,
-    /// and of the blocks packed each on its own, a block of cards. A block of
-    /// blocks draws only trunks between them (`pack.rs`).
-    fn holds_labels(&self, block: BlockId) -> bool {
-        self.nesting != Nesting::Blocks
-            || !self.get(block).items.iter().any(|item| self.is_block(item))
+        projection.into.first().copied().unwrap_or(own)
     }
 
     /// The edge a port crosses: the wall an earlier layout moved it to, or its

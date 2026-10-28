@@ -21,35 +21,40 @@ pub(super) fn reserve(
         .labels
         .iter()
         .filter_map(|(&edge, &label)| {
-            let source = shape.endpoints[&model.ends[edge].0];
-            let side = if label.x < source.x {
-                Side::Left
-            } else {
-                Side::Right
-            };
-            let port = port(model, edge, true, side, shape, center(label))?;
-            let siblings = shape
-                .labels
-                .iter()
-                .filter(|(other, at)| {
-                    model.ends[**other].0 == model.ends[edge].0
-                        && (at.x < source.x) == (label.x < source.x)
-                })
-                .count();
-            let escape = super::channel::label_escape(model, edge, shape);
-            let mut points = super::channel::departures(source, side, Some(label), port, escape)
-                .into_iter()
-                .next()?;
-            if siblings > 1 {
-                let cell = shape.cells[&model.ends[edge].0];
-                points.push(Point {
-                    x: points.last()?.x,
-                    y: cell.y + cell.height + 16.0,
-                });
-            }
-            Some((edge, super::geometry::clean(points)))
+            super::points::departure(model, edge, shape)
+                .or_else(|| label_stem(model, edge, shape, label))
+                .map(|points| (edge, points))
         })
         .collect()
+}
+
+fn label_stem(model: &Model<'_>, edge: usize, shape: &Shape, label: Rect) -> Option<Vec<Point>> {
+    let source = shape.endpoints[&model.ends[edge].0];
+    let side = if label.x < source.x {
+        Side::Left
+    } else {
+        Side::Right
+    };
+    let port = port(model, edge, true, side, shape, center(label))?;
+    let siblings = shape
+        .labels
+        .iter()
+        .filter(|(other, at)| {
+            model.ends[**other].0 == model.ends[edge].0 && (at.x < source.x) == (label.x < source.x)
+        })
+        .count();
+    let escape = super::channel::label_escape(model, edge, shape);
+    let mut points = super::channel::departures(source, side, Some(label), port, escape)
+        .into_iter()
+        .next()?;
+    if siblings > 1 {
+        let cell = shape.cells[&model.ends[edge].0];
+        points.push(Point {
+            x: points.last()?.x,
+            y: cell.y + cell.height + 16.0,
+        });
+    }
+    Some(super::geometry::clean(points))
 }
 
 pub(super) fn reserved(model: &Model<'_>, edge: usize, shape: &Shape, points: &[Point]) -> bool {
@@ -109,6 +114,26 @@ pub(super) fn port(
     shape: &Shape,
     toward: Point,
 ) -> Option<Port> {
+    if source
+        && model.edges[edge]
+            .option(crate::graph::FROM_POINTS)
+            .is_some()
+    {
+        return (side == Side::Bottom)
+            .then(|| super::points::source_port(model, edge, shape))
+            .flatten();
+    }
+    choose_port(model, edge, source, side, shape, toward)
+}
+
+fn choose_port(
+    model: &Model<'_>,
+    edge: usize,
+    source: bool,
+    side: Side,
+    shape: &Shape,
+    toward: Point,
+) -> Option<Port> {
     let (endpoint, incidents) = if source {
         let endpoint = model.ends[edge].0;
         (endpoint, &model.outgoing[endpoint])
@@ -116,34 +141,51 @@ pub(super) fn port(
         let endpoint = model.ends[edge].1;
         (endpoint, &model.incoming[endpoint])
     };
+    if !source && super::points::pointed(model, endpoint) && side != Side::Top {
+        return None;
+    }
     let at = shape.endpoints[&endpoint];
     let kinds = kinds_of(model, incidents);
-    if !room(at, side, kinds.len()) {
+    if !room(at, side, kinds.len(), source) {
         return None;
     }
     let index = kinds
         .iter()
         .position(|kind| *kind == model.treatments[edge])?;
     let aligned = source && aligned_labels(model, edge, endpoint, side, shape, at);
+    let margin = if source { 12.0 } else { 20.0 };
     let point = if aligned {
         toward
-    } else if kinds.len() > 1 {
-        fraction_of(at, index, kinds.len())
-    } else if incidents.len() > 1 {
-        center(at)
     } else {
-        toward
+        distributed(at, index, kinds.len(), incidents.len(), toward, margin)
     };
-    let mut port = on_wall(at, side, point);
+    let mut port = on_wall(at, side, point, margin);
     port.offset = index as f64 * LANE;
     Some(port)
 }
 
-fn fraction_of(at: Rect, index: usize, count: usize) -> Point {
-    let fraction = (index + 1) as f64 / (count + 1) as f64;
+fn distributed(
+    at: Rect,
+    index: usize,
+    kinds: usize,
+    incidents: usize,
+    toward: Point,
+    margin: f64,
+) -> Point {
+    if kinds > 1 {
+        fraction_of(at, index, kinds, margin)
+    } else if incidents > 1 {
+        center(at)
+    } else {
+        toward
+    }
+}
+
+fn fraction_of(at: Rect, index: usize, count: usize, margin: f64) -> Point {
+    let fraction = index as f64 / (count - 1) as f64;
     Point {
-        x: at.x + at.width * fraction,
-        y: at.y + at.height * fraction,
+        x: at.x + margin + (at.width - 2.0 * margin) * fraction,
+        y: at.y + margin + (at.height - 2.0 * margin) * fraction,
     }
 }
 
@@ -165,7 +207,7 @@ fn aligned_labels(
             })
             .all(|(_, label)| {
                 let y = center(*label).y;
-                y >= at.y + 20.0 && y <= at.y + at.height - 20.0
+                y >= at.y + 12.0 && y <= at.y + at.height - 12.0
             })
 }
 
@@ -186,14 +228,14 @@ pub(super) fn center(at: Rect) -> Point {
     }
 }
 
-fn on_wall(at: Rect, side: Side, toward: Point) -> Port {
+fn on_wall(at: Rect, side: Side, toward: Point, margin: f64) -> Port {
     let x = toward.x.clamp(
-        at.x + at.width.min(40.0) / 2.0,
-        at.x + at.width - at.width.min(40.0) / 2.0,
+        at.x + at.width.min(2.0 * margin) / 2.0,
+        at.x + at.width - at.width.min(2.0 * margin) / 2.0,
     );
     let y = toward.y.clamp(
-        at.y + at.height.min(40.0) / 2.0,
-        at.y + at.height - at.height.min(40.0) / 2.0,
+        at.y + at.height.min(2.0 * margin) / 2.0,
+        at.y + at.height - at.height.min(2.0 * margin) / 2.0,
     );
     let (attachment, by) = match side {
         Side::Top => (Point { x, y: at.y }, Point { x: 0.0, y: -CLEAR }),
@@ -240,11 +282,80 @@ fn kinds_of<'a>(model: &'a Model<'_>, incidents: &[usize]) -> Vec<&'a str> {
     kinds
 }
 
-fn room(at: Rect, side: Side, count: usize) -> bool {
+fn room(at: Rect, side: Side, count: usize, source: bool) -> bool {
     let span = if matches!(side, Side::Top | Side::Bottom) {
         at.width
     } else {
         at.height
     };
-    count <= 1 || (span - 40.0) / ((count - 1) as f64) >= LANE
+    let (margin, spacing) = if source { (12.0, 8.0) } else { (20.0, LANE) };
+    count <= 1 || (span - 2.0 * margin) / ((count - 1) as f64) >= spacing
+}
+
+pub(super) fn source_kinds<'a>(model: &'a Model<'_>, endpoint: usize) -> Vec<&'a str> {
+    kinds_of(model, &model.outgoing[endpoint])
+}
+
+pub(super) fn source_paths(
+    model: &Model<'_>,
+    index: usize,
+    shape: &Shape,
+) -> Option<std::collections::BTreeMap<usize, Vec<Point>>> {
+    let card = shape.endpoints[&index];
+    let mut tails = std::collections::BTreeMap::new();
+    let stems = reserve(model, shape);
+    for &edge in &model.outgoing[index] {
+        let mut path = if let Some(stem) = stems
+            .get(&edge)
+            .cloned()
+            .or_else(|| super::points::departure(model, edge, shape))
+        {
+            stem
+        } else {
+            let port = port(model, edge, true, Side::Right, shape, center(card))?;
+            let x =
+                card.x + card.width + (source_gap(model, index) - CLEAR - port.offset).max(CLEAR);
+            vec![
+                port.attachment,
+                Point {
+                    x,
+                    y: port.attachment.y,
+                },
+            ]
+        };
+        path.push(Point {
+            x: path.last().expect("a departure").x,
+            y: shape.drawing.height,
+        });
+        tails.insert(edge, super::geometry::clean(path));
+    }
+    Some(tails)
+}
+
+/// A compact cell is accepted only when all its source prefixes coexist.
+/// Continue the boundary ends so they are not mistaken for final bends.
+pub(super) fn safe_sources(model: &Model<'_>, endpoint: usize, shape: &Shape) -> bool {
+    source_paths(model, endpoint, shape).is_some_and(|mut paths| {
+        for path in paths.values_mut() {
+            if let Some(last) = path.last_mut() {
+                last.y += CLEAR;
+            }
+        }
+        paths.iter().all(|(&edge, path)| {
+            !super::geometry::crosses_box(path, shape.endpoints[&endpoint])
+                && shape.labels.iter().all(|(&other, &label)| {
+                    other == edge
+                        || !super::geometry::crosses_box(
+                            path,
+                            crate::geometry::inflate(label, 12.0),
+                        )
+                })
+                && paths.iter().all(|(&other, next)| {
+                    edge >= other
+                        || ((model.treatments[edge] == model.treatments[other]
+                            || !super::geometry::intersection(path, next).0)
+                            && super::junctions::ordered(path, next))
+                })
+        })
+    })
 }
