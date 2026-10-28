@@ -520,6 +520,18 @@ The parent owns the Renderer layout and Semantic renderer proposals and Backlog 
 This implementation does not edit the vault or Backlog.
 The consumer interface and skill remain unchanged.
 
+### Build checkpoint: measured input
+
+Step 2 separates parsing and dispatch in `blocks/place.rs` from the unchanged placement sequence in `blocks/legacy.rs`.
+Track and the temporary Blocks path still call that same sequence.
+No layout policy moves into a second copy.
+
+`blocks/planned/model.rs` normalizes semantic frames, placing groups, and painted header endpoints.
+Each group keeps its semantic parent separately from its visual parent.
+Each endpoint exposes all four candidate walls and its exact measured protected rectangle.
+The model sorts by authored order before identity and resolves every relationship to local endpoint handles.
+This checkpoint observes the model but selects no planned geometry.
+
 ## Risks and decisions left to evidence
 
 The largest risk is conservative over-reservation.
