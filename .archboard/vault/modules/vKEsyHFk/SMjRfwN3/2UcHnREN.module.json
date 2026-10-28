@@ -1,0 +1,21 @@
+{
+  "order": 10004,
+  "name": "Archboard server",
+  "kind": "service",
+  "responsibility": "Draws the SVG, serves the recording and replay pages, and starts the voice that narrates a recording",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SMjRfwN3#2UcHnREN",
+  "references": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "model": "vKEsyHFk",
+      "subject": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+      "state": "current"
+    }
+  ],
+  "outgoing": []
+}

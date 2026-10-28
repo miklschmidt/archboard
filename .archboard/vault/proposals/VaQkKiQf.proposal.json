@@ -1,0 +1,117 @@
+{
+  "id": "VaQkKiQf",
+  "name": "TASK-549.24",
+  "summary": "Use canonical architecture and explicit migration guidance across the browser",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.13 - Explain-the-captured-reading-through-local-agent-actions.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
+    }
+  ],
+  "migration": {
+    "legacy": "vKEsyHFk/yejBBUFY#VaQkKiQf",
+    "predecessor": "vKEsyHFk/yejBBUFY#UxEQDTFg",
+    "baseline": {
+      "kind": "content",
+      "state": "vKEsyHFk/yejBBUFY#UxEQDTFg"
+    },
+    "reason": "Preserve this independent proposal and its original predecessor and conflict base.",
+    "checkpoint": "a46dd0318a5ca42be33526026b375282234eb6f2"
+  },
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "predecessor": "vKEsyHFk",
+  "predecessorRevision": "91ab9cb477463752494d878af8e06f6df4086fe45c2dbbf56067e52f44995d35",
+  "baseline": "49f588408b04c93f476965da3eb8cd6b2e97116d",
+  "changes": [
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#HggZR41l",
+      "field": "responsibility",
+      "value": "Connects canonical pane and feature owners"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#HggZR41l",
+      "field": "description",
+      "value": "Mounts canonical readers and captured recordings. It never opens a live legacy board. Existing legacy addresses resolve through retained originals after migration. Unmigrated vaults expose explicit migration guidance. The shared pane session reports captured canonical readings to local agents."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+      "field": "responsibility",
+      "value": "Lists repository architecture and migration availability"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+      "field": "description",
+      "value": "Reads repository identities and canonical model authority through the shared query cache. The navigator opens each model in the active pane. Legacy authority exposes migration guidance instead of fetching live board listings or levels."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/yejBBUFY#0x47EMoO",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/yejBBUFY#G4NHQC25",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#c4LPnwh5",
+      "field": "responsibility",
+      "value": "Connects repository navigation, local agents, and canonical panes"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#c4LPnwh5",
+      "field": "description",
+      "value": "The desktop frame keeps the repository navigator, local agent controls, conversation, and canonical panes. Repository actions open current modules through the shared router. Unmigrated repositories show their migration state. Board ownership and level controls are retired."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/yejBBUFY#hDWpDois",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#IgYndyJd",
+      "field": "responsibility",
+      "value": "Projects canonical readings through the shared content interface"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#IgYndyJd",
+      "field": "description",
+      "value": "Consumes the shared projectModel, modelContent, and projectFlow implementation exposed by @archboard/board/content. Browser and structural export share one projection with exact scope, focus, visibility, and behavioral flow semantics."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#WJBL4I5O",
+      "field": "target",
+      "value": {
+        "state": "VaQkKiQf"
+      }
+    }
+  ]
+}

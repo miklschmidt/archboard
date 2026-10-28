@@ -1,0 +1,139 @@
+{
+  "id": "D0qvstE4",
+  "name": "TASK-319 after TASK-482.07",
+  "formerNames": [
+    "TASK-319 with flows"
+  ],
+  "summary": "The per-tab workbench, browser gateway and session lifetimes, with the voice coordinator's turns and delegations in the snapshot",
+  "migration": {
+    "legacy": "vKEsyHFk/9ncuT5DP#D0qvstE4",
+    "predecessor": "vKEsyHFk/9ncuT5DP#qdsrL4tY",
+    "baseline": {
+      "kind": "content",
+      "state": "vKEsyHFk/9ncuT5DP#qdsrL4tY"
+    },
+    "reason": "Preserve this independent proposal and its original predecessor and conflict base.",
+    "checkpoint": "a46dd0318a5ca42be33526026b375282234eb6f2"
+  },
+  "predecessorCheckpoint": "602261c2e7376b5c2d7aac36d528e622e4debb29",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "predecessor": "qdsrL4tY",
+  "predecessorRevision": "cbe235960cf0a1baff64da37a72496da00ff9079637c6257e02785c121b6707e",
+  "baseline": "397119f8c9e59bd841e52d57495f85f5ce2db7dc",
+  "changes": [
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+      "field": "responsibility",
+      "value": "The one door a browser has into the workbench: snapshots out, with the coordinator's turns beside the workhorse's, admitted commands in, one lease per tab session, for the checkout the tab shows"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#vScn8k62",
+      "field": "label",
+      "value": "the shown conversation's coordinator turns; who delegated"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#Ax6gkcLa",
+      "kind": "relationship",
+      "value": {
+        "order": 77000,
+        "kind": "event",
+        "label": "a delegation started a workhorse turn",
+        "description": "Each tab session's builder subscribes the recorder to its operations' events once; an event of delegate_to_workhorse whose correlation names the workhorse turn is recorded against the coordinator turn it also names.",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/services/sessions/factories.ts",
+          "symbol": "recordDelegations"
+        },
+        "id": "vKEsyHFk/9ncuT5DP#Ax6gkcLa",
+        "to": "vKEsyHFk/9ncuT5DP#qTmIytbT"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#Ax6gkcLa",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#tlC2W839"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#qTmIytbT",
+      "field": "responsibility",
+      "value": "Remembers where each coordinator turn shows (the conversation shown when it started, the checkouts it gave work to) and which coordinator turn delegated each workhorse turn"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#qTmIytbT",
+      "field": "description",
+      "value": "A turn that delivered, steered or queued work, or whose delivery may have reached the workhorse, shows in the conversation of each workhorse it reached. A delegation the workhorse refused as busy or with an invalid body gave it nothing, and moves the turn nowhere. A turn that gave work to none shows in the conversation shown while it ran. A turn with no record shows in whatever conversation is shown. The timeline keeps only the turns of the shown conversation before it spends its budget. It also keeps which voice coordinator turn delegated each workhorse turn: a listener on the tab session's workhorse operations records a workhorse turn only from a delegate operation's event that names that turn, because a steer must not mark a turn the user began. It keeps the 256 newest records in the tab session's state. The browser gateway hands that record to the projection of the workhorse timeline, and a recorded turn then carries delegatedBy."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#aLUB44Jp",
+      "field": "order",
+      "value": 79000
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#sIsqpJmw",
+      "field": "target",
+      "value": {
+        "state": "D0qvstE4"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#ILeym7Ex",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+        "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "vKEsyHFk/9ncuT5DP#byMaoUe0",
+        "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+        "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "vKEsyHFk/9ncuT5DP#qTmIytbT"
+      ]
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#HABlToF8",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#vDD2NoAE",
+        "alternative": "accepted",
+        "before": "vKEsyHFk/9ncuT5DP#DT8gAR1I"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#DT8gAR1I",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#DT8gAR1I",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#qTmIytbT",
+        "label": "the delegate's turn, against the coordinator turn that asked",
+        "kind": "async",
+        "note": "a queued delegate is recorded when its turn starts; a steer is never recorded",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/services/sessions/factories.ts",
+          "symbol": "recordDelegations"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#DT8gAR1I",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#vDD2NoAE",
+        "alternative": "accepted"
+      }
+    }
+  ]
+}

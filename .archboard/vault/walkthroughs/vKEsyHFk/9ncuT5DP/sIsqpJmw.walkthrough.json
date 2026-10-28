@@ -1,0 +1,639 @@
+{
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#sIsqpJmw",
+  "name": "One bound workbench generation",
+  "target": {
+    "state": "current"
+  },
+  "beats": [
+    {
+      "id": "vKEsyHFk/9ncuT5DP#mOYZ6CRi",
+      "title": "A private child, composed once",
+      "narrative": "The workbench proves the executable and prepares the Codex home in the storage the host names. Archboard names an Archboard-only home that every Archboard server on the machine shares, so one sign-in serves them all; it fills in the auto-review defaults its config.toml lacks and keeps what Codex or a person set. The owner lock and epoch ledger are the server's own. Then it starts the child and builds one generation's parts in the order they depend on each other.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/9ncuT5DP#skyIeErO",
+            "vKEsyHFk/9ncuT5DP#9diqPrFw",
+            "vKEsyHFk/9ncuT5DP#byMaoUe0",
+            "vKEsyHFk/9ncuT5DP#giL6EI28",
+            "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+            "vKEsyHFk/9ncuT5DP#iay14AUl",
+            "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+            "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+            "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+            "vKEsyHFk/9ncuT5DP#Fvl3uDPi"
+          ],
+          "relationships": [
+            "vKEsyHFk/9ncuT5DP#hwJPR59O",
+            "vKEsyHFk/9ncuT5DP#9GaG5ItC",
+            "vKEsyHFk/9ncuT5DP#f4o4iE3G",
+            "vKEsyHFk/9ncuT5DP#PqSkt9px",
+            "vKEsyHFk/9ncuT5DP#mAyzTmDD",
+            "vKEsyHFk/9ncuT5DP#azMem83I"
+          ],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/9ncuT5DP#skyIeErO",
+          "vKEsyHFk/9ncuT5DP#9diqPrFw",
+          "vKEsyHFk/9ncuT5DP#giL6EI28"
+        ],
+        "focus": [
+          "vKEsyHFk/9ncuT5DP#skyIeErO",
+          "vKEsyHFk/9ncuT5DP#9diqPrFw",
+          "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "vKEsyHFk/9ncuT5DP#giL6EI28",
+          "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+          "vKEsyHFk/9ncuT5DP#iay14AUl",
+          "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+          "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+          "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+          "vKEsyHFk/9ncuT5DP#Fvl3uDPi"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#9y7kbjzD",
+      "title": "Only reviewed methods reach the wire",
+      "narrative": "The session publishes the methods that have been reviewed against the pinned contract, and the transport carries one framed object at a time each way. A reply that does not decode is a refusal, not a guess.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+            "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+            "vKEsyHFk/9ncuT5DP#jylkTBp7",
+            "vKEsyHFk/9ncuT5DP#giL6EI28",
+            "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+            "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+            "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+            "vKEsyHFk/9ncuT5DP#SScV6EZR"
+          ],
+          "relationships": [
+            "vKEsyHFk/9ncuT5DP#FZnS78FX",
+            "vKEsyHFk/9ncuT5DP#3vlSu8a3",
+            "vKEsyHFk/9ncuT5DP#Lo6Q7GDB"
+          ],
+          "flows": [
+            "vKEsyHFk/9ncuT5DP#tp4aDqct"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+          "vKEsyHFk/9ncuT5DP#tp4aDqct"
+        ],
+        "focus": [
+          "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+          "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "vKEsyHFk/9ncuT5DP#giL6EI28",
+          "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+          "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+          "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+          "vKEsyHFk/9ncuT5DP#SScV6EZR"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/9ncuT5DP#tp4aDqct"
+      }
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#9Ee1KNBg",
+      "title": "A tab holds one coordinator and a workhorse for each checkout",
+      "narrative": "Each browser tab is a tab session with its own lease and its own coordinator. A chat's first message or Talk starts its conversation: the coordinator first, then the workhorse of the checkout the tab shows, which that checkout's link then names. The chat that holds the lease sends its typed message straight to that workhorse as a turn or a steer, and edits that thread's queue. When the tab shows another checkout, its chats reach the workhorse there instead. The coordinator's work goes through the four operations, each staged in the epoch ledger so a child that dies mid-flight leaves a stated outcome rather than a guess.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+            "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+            "vKEsyHFk/9ncuT5DP#jylkTBp7",
+            "vKEsyHFk/9ncuT5DP#byMaoUe0",
+            "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+            "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+            "vKEsyHFk/9ncuT5DP#QGVPyMwG",
+            "vKEsyHFk/9ncuT5DP#DNQTPTxE",
+            "vKEsyHFk/9ncuT5DP#08zJvPJq",
+            "vKEsyHFk/9ncuT5DP#iay14AUl",
+            "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+            "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+            "vKEsyHFk/9ncuT5DP#rOgOf2bo",
+            "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+            "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+            "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+            "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+            "vKEsyHFk/9ncuT5DP#3vO7eN8L",
+            "vKEsyHFk/9ncuT5DP#SScV6EZR"
+          ],
+          "relationships": [
+            "vKEsyHFk/9ncuT5DP#FZnS78FX",
+            "vKEsyHFk/9ncuT5DP#XAd3chIR",
+            "vKEsyHFk/9ncuT5DP#3C7aLx0q",
+            "vKEsyHFk/9ncuT5DP#Lo6Q7GDB",
+            "vKEsyHFk/9ncuT5DP#YOaSBuBr",
+            "vKEsyHFk/9ncuT5DP#aoHKAkWD",
+            "vKEsyHFk/9ncuT5DP#NztvEtjX",
+            "vKEsyHFk/9ncuT5DP#biUWQZMB",
+            "vKEsyHFk/9ncuT5DP#xPCxyO70",
+            "vKEsyHFk/9ncuT5DP#9kvKfu7U",
+            "vKEsyHFk/9ncuT5DP#89ivSTaM",
+            "vKEsyHFk/9ncuT5DP#IxtTYfQ6",
+            "vKEsyHFk/9ncuT5DP#f4o4iE3G",
+            "vKEsyHFk/9ncuT5DP#ELaAYJKS",
+            "vKEsyHFk/9ncuT5DP#02ywpfgL",
+            "vKEsyHFk/9ncuT5DP#YrKMY0LM",
+            "vKEsyHFk/9ncuT5DP#5gcxxoqv",
+            "vKEsyHFk/9ncuT5DP#zOHsZyzc",
+            "vKEsyHFk/9ncuT5DP#yhm3JUJQ",
+            "vKEsyHFk/9ncuT5DP#NasuLye5",
+            "vKEsyHFk/9ncuT5DP#ENHiJpTb",
+            "vKEsyHFk/9ncuT5DP#wMqJn1nW",
+            "vKEsyHFk/9ncuT5DP#Ikp3Fwwc",
+            "vKEsyHFk/9ncuT5DP#PfZvhB8I",
+            "vKEsyHFk/9ncuT5DP#j1PGjoTR",
+            "vKEsyHFk/9ncuT5DP#fVScKEoP",
+            "vKEsyHFk/9ncuT5DP#EVC1aGxx",
+            "vKEsyHFk/9ncuT5DP#azMem83I",
+            "vKEsyHFk/9ncuT5DP#ITcuqCHT"
+          ],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "vKEsyHFk/9ncuT5DP#iay14AUl",
+          "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+          "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+          "vKEsyHFk/9ncuT5DP#b9yFBXHz",
+          "vKEsyHFk/9ncuT5DP#NxCpSlMJ",
+          "vKEsyHFk/9ncuT5DP#nRRQSBu7",
+          "vKEsyHFk/9ncuT5DP#GoJ2PW76",
+          "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "vKEsyHFk/9ncuT5DP#Qh7VZ9MQ",
+          "vKEsyHFk/9ncuT5DP#EZEiVlsE",
+          "vKEsyHFk/9ncuT5DP#tlC2W839",
+          "vKEsyHFk/9ncuT5DP#rOBpux5i",
+          "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+        ],
+        "focus": [
+          "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+          "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+          "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+          "vKEsyHFk/9ncuT5DP#QGVPyMwG",
+          "vKEsyHFk/9ncuT5DP#DNQTPTxE",
+          "vKEsyHFk/9ncuT5DP#08zJvPJq",
+          "vKEsyHFk/9ncuT5DP#iay14AUl",
+          "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+          "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+          "vKEsyHFk/9ncuT5DP#rOgOf2bo",
+          "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+          "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+          "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+          "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+          "vKEsyHFk/9ncuT5DP#3vO7eN8L",
+          "vKEsyHFk/9ncuT5DP#SScV6EZR"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#ISHYhZ6k",
+      "title": "Voice is a separate thread that works in no checkout",
+      "narrative": "Each tab session has its own coordinator, a thread with its own model and settings, started with the tab's first message or Talk. It runs in a directory of its own that holds no vault, so every command it runs names its checkout with -C. It is the voice model's subconscious: it reads the boards, follows the workhorses and decides what the voice model says, and it runs only while voice is live. It does bounded work itself and routes anything sustained to the workhorse of the checkout it names, starting that workhorse when there is none. Two tabs can talk at the same time, each to its own coordinator.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+            "vKEsyHFk/9ncuT5DP#jylkTBp7",
+            "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+            "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+            "vKEsyHFk/9ncuT5DP#tlC2W839",
+            "vKEsyHFk/9ncuT5DP#ZQxB1ZaK",
+            "vKEsyHFk/9ncuT5DP#08zJvPJq",
+            "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+            "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+            "vKEsyHFk/9ncuT5DP#3vO7eN8L"
+          ],
+          "relationships": [
+            "vKEsyHFk/9ncuT5DP#FZnS78FX",
+            "vKEsyHFk/9ncuT5DP#b9HU99hH",
+            "vKEsyHFk/9ncuT5DP#XAd3chIR",
+            "vKEsyHFk/9ncuT5DP#TFjDY5zE",
+            "vKEsyHFk/9ncuT5DP#biUWQZMB",
+            "vKEsyHFk/9ncuT5DP#9V9fQDIT"
+          ],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+          "vKEsyHFk/9ncuT5DP#ZQxB1ZaK",
+          "vKEsyHFk/9ncuT5DP#mhknqBOz",
+          "vKEsyHFk/9ncuT5DP#rOgOf2bo"
+        ],
+        "focus": [
+          "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+          "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+          "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+          "vKEsyHFk/9ncuT5DP#tlC2W839",
+          "vKEsyHFk/9ncuT5DP#ZQxB1ZaK",
+          "vKEsyHFk/9ncuT5DP#08zJvPJq",
+          "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+          "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+          "vKEsyHFk/9ncuT5DP#3vO7eN8L"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#mvh59frt",
+      "title": "The coordinator hears the workhorse at once",
+      "narrative": "While voice is live, a workhorse turn that ends or begins waiting on the user, and anything the workhorse says through tell_coordinator, reaches the coordinator as one sentence in a turn/start: Codex adds it to the coordinator's running turn or starts one. With no voice session, or while an unattended session holds the voice, nothing is sent.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+            "vKEsyHFk/9ncuT5DP#jylkTBp7",
+            "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+            "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+            "vKEsyHFk/9ncuT5DP#tlC2W839",
+            "vKEsyHFk/9ncuT5DP#ZQxB1ZaK",
+            "vKEsyHFk/9ncuT5DP#08zJvPJq",
+            "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+            "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+            "vKEsyHFk/9ncuT5DP#3vO7eN8L"
+          ],
+          "relationships": [
+            "vKEsyHFk/9ncuT5DP#FZnS78FX",
+            "vKEsyHFk/9ncuT5DP#b9HU99hH",
+            "vKEsyHFk/9ncuT5DP#XAd3chIR",
+            "vKEsyHFk/9ncuT5DP#TFjDY5zE",
+            "vKEsyHFk/9ncuT5DP#biUWQZMB",
+            "vKEsyHFk/9ncuT5DP#9V9fQDIT"
+          ],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/9ncuT5DP#08zJvPJq",
+          "vKEsyHFk/9ncuT5DP#NztvEtjX",
+          "vKEsyHFk/9ncuT5DP#biUWQZMB",
+          "vKEsyHFk/9ncuT5DP#Fg9dkGj3"
+        ],
+        "focus": [
+          "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+          "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+          "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+          "vKEsyHFk/9ncuT5DP#tlC2W839",
+          "vKEsyHFk/9ncuT5DP#ZQxB1ZaK",
+          "vKEsyHFk/9ncuT5DP#08zJvPJq",
+          "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+          "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+          "vKEsyHFk/9ncuT5DP#3vO7eN8L"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#RS10vddw",
+      "title": "Context changes reach each workhorse quietly",
+      "narrative": "A host announces a change with agent.announce and names the checkouts whose workhorses hear it: Archboard announces each settled board change to the workhorse of the checkout that holds the board. It goes into that workhorse's history as one developer message, after the child, epoch, link and freshness are checked again, and it starts no turn. A workhorse hears a feed's sequence once. Each delivery settles as delivered, not delivered or unknown, is never retried, and comes back as a receipt.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/9ncuT5DP#jylkTBp7",
+            "vKEsyHFk/9ncuT5DP#byMaoUe0",
+            "vKEsyHFk/9ncuT5DP#giL6EI28",
+            "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+            "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+            "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
+            "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+            "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+            "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+            "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+            "vKEsyHFk/9ncuT5DP#eOG7Eo1U",
+            "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+            "vKEsyHFk/9ncuT5DP#SQjLwRvE"
+          ],
+          "relationships": [
+            "vKEsyHFk/9ncuT5DP#7LxiPZOi",
+            "vKEsyHFk/9ncuT5DP#8g1SNngD",
+            "vKEsyHFk/9ncuT5DP#jbxp553Z",
+            "vKEsyHFk/9ncuT5DP#yhm3JUJQ",
+            "vKEsyHFk/9ncuT5DP#zEsrkAfC",
+            "vKEsyHFk/9ncuT5DP#mAyzTmDD",
+            "vKEsyHFk/9ncuT5DP#yql8mIiB",
+            "vKEsyHFk/9ncuT5DP#GFyFbH49"
+          ],
+          "flows": [
+            "vKEsyHFk/9ncuT5DP#UmUjUWRv"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/9ncuT5DP#SQjLwRvE",
+          "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+          "vKEsyHFk/9ncuT5DP#GOADij5y",
+          "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+          "vKEsyHFk/9ncuT5DP#UmUjUWRv"
+        ],
+        "focus": [
+          "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "vKEsyHFk/9ncuT5DP#giL6EI28",
+          "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+          "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+          "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
+          "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+          "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+          "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+          "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+          "vKEsyHFk/9ncuT5DP#eOG7Eo1U",
+          "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+          "vKEsyHFk/9ncuT5DP#SQjLwRvE"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/9ncuT5DP#UmUjUWRv"
+      }
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#64RUkciN",
+      "title": "The coordinator and the voice hear a change as the host words it",
+      "narrative": "The coordinator and the voice hear a context change through the tab's one callback queue, and only while voice is live. The host words each one's part or withholds it. Archboard tells the voice what changed on a board on screen, as speech when it stops the narration, and tells the coordinator only what an agent outside the session did, as a developer message that starts no turn. Nobody hears a change that their own tab made.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/9ncuT5DP#jylkTBp7",
+            "vKEsyHFk/9ncuT5DP#byMaoUe0",
+            "vKEsyHFk/9ncuT5DP#08zJvPJq",
+            "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
+            "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+            "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+            "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+            "vKEsyHFk/9ncuT5DP#3vO7eN8L",
+            "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+            "vKEsyHFk/9ncuT5DP#eOG7Eo1U",
+            "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+            "vKEsyHFk/9ncuT5DP#SQjLwRvE"
+          ],
+          "relationships": [
+            "vKEsyHFk/9ncuT5DP#biUWQZMB",
+            "vKEsyHFk/9ncuT5DP#Tqxin6z5",
+            "vKEsyHFk/9ncuT5DP#yhm3JUJQ",
+            "vKEsyHFk/9ncuT5DP#NasuLye5",
+            "vKEsyHFk/9ncuT5DP#yql8mIiB",
+            "vKEsyHFk/9ncuT5DP#GFyFbH49"
+          ],
+          "flows": [
+            "vKEsyHFk/9ncuT5DP#fNauRzDy"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/9ncuT5DP#SQjLwRvE",
+          "vKEsyHFk/9ncuT5DP#Tqxin6z5",
+          "vKEsyHFk/9ncuT5DP#08zJvPJq",
+          "vKEsyHFk/9ncuT5DP#fNauRzDy"
+        ],
+        "focus": [
+          "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "vKEsyHFk/9ncuT5DP#08zJvPJq",
+          "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
+          "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+          "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+          "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+          "vKEsyHFk/9ncuT5DP#3vO7eN8L",
+          "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+          "vKEsyHFk/9ncuT5DP#eOG7Eo1U",
+          "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+          "vKEsyHFk/9ncuT5DP#SQjLwRvE"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/9ncuT5DP#fNauRzDy"
+      }
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#HdGCnvev",
+      "title": "Each thread belongs to one tab session",
+      "narrative": "The tab sessions know which session owns each thread. A notification or tool call from a thread goes to that session alone, and an approval goes to the chats of that session (a workhorse's to those of its checkout), so one tab's news and approvals never reach another tab. A notification for a thread that no session owns yet goes to every session. A tool call from such a thread is refused, so a running turn never waits on nobody.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+            "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+            "vKEsyHFk/9ncuT5DP#jylkTBp7",
+            "vKEsyHFk/9ncuT5DP#byMaoUe0",
+            "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+            "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+            "vKEsyHFk/9ncuT5DP#QGVPyMwG",
+            "vKEsyHFk/9ncuT5DP#DNQTPTxE",
+            "vKEsyHFk/9ncuT5DP#08zJvPJq",
+            "vKEsyHFk/9ncuT5DP#iay14AUl",
+            "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+            "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+            "vKEsyHFk/9ncuT5DP#rOgOf2bo",
+            "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+            "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+            "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+            "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+            "vKEsyHFk/9ncuT5DP#3vO7eN8L",
+            "vKEsyHFk/9ncuT5DP#SScV6EZR"
+          ],
+          "relationships": [
+            "vKEsyHFk/9ncuT5DP#FZnS78FX",
+            "vKEsyHFk/9ncuT5DP#XAd3chIR",
+            "vKEsyHFk/9ncuT5DP#3C7aLx0q",
+            "vKEsyHFk/9ncuT5DP#Lo6Q7GDB",
+            "vKEsyHFk/9ncuT5DP#YOaSBuBr",
+            "vKEsyHFk/9ncuT5DP#aoHKAkWD",
+            "vKEsyHFk/9ncuT5DP#NztvEtjX",
+            "vKEsyHFk/9ncuT5DP#biUWQZMB",
+            "vKEsyHFk/9ncuT5DP#xPCxyO70",
+            "vKEsyHFk/9ncuT5DP#9kvKfu7U",
+            "vKEsyHFk/9ncuT5DP#89ivSTaM",
+            "vKEsyHFk/9ncuT5DP#IxtTYfQ6",
+            "vKEsyHFk/9ncuT5DP#f4o4iE3G",
+            "vKEsyHFk/9ncuT5DP#ELaAYJKS",
+            "vKEsyHFk/9ncuT5DP#02ywpfgL",
+            "vKEsyHFk/9ncuT5DP#YrKMY0LM",
+            "vKEsyHFk/9ncuT5DP#5gcxxoqv",
+            "vKEsyHFk/9ncuT5DP#zOHsZyzc",
+            "vKEsyHFk/9ncuT5DP#yhm3JUJQ",
+            "vKEsyHFk/9ncuT5DP#NasuLye5",
+            "vKEsyHFk/9ncuT5DP#ENHiJpTb",
+            "vKEsyHFk/9ncuT5DP#wMqJn1nW",
+            "vKEsyHFk/9ncuT5DP#Ikp3Fwwc",
+            "vKEsyHFk/9ncuT5DP#PfZvhB8I",
+            "vKEsyHFk/9ncuT5DP#j1PGjoTR",
+            "vKEsyHFk/9ncuT5DP#fVScKEoP",
+            "vKEsyHFk/9ncuT5DP#EVC1aGxx",
+            "vKEsyHFk/9ncuT5DP#azMem83I",
+            "vKEsyHFk/9ncuT5DP#ITcuqCHT"
+          ],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/9ncuT5DP#iay14AUl",
+          "vKEsyHFk/9ncuT5DP#xPCxyO70",
+          "vKEsyHFk/9ncuT5DP#NztvEtjX",
+          "vKEsyHFk/9ncuT5DP#9kvKfu7U",
+          "vKEsyHFk/9ncuT5DP#IxtTYfQ6",
+          "vKEsyHFk/9ncuT5DP#YrKMY0LM"
+        ],
+        "focus": [
+          "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+          "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+          "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+          "vKEsyHFk/9ncuT5DP#QGVPyMwG",
+          "vKEsyHFk/9ncuT5DP#DNQTPTxE",
+          "vKEsyHFk/9ncuT5DP#08zJvPJq",
+          "vKEsyHFk/9ncuT5DP#iay14AUl",
+          "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+          "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+          "vKEsyHFk/9ncuT5DP#rOgOf2bo",
+          "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+          "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+          "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+          "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+          "vKEsyHFk/9ncuT5DP#3vO7eN8L",
+          "vKEsyHFk/9ncuT5DP#SScV6EZR"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#XARzanTh",
+      "title": "A tab session ends 60 seconds after its last chat closes",
+      "narrative": "Every chat names its tab when its socket opens; in Archboard a chat is a pane, and its tab adapter notes it. When no chat of the tab comes back for 60 seconds, the session ends: its lease and link go, its pending approvals are cancelled, voice and context delivery stop, and each of its threads is unsubscribed once no turn runs on it, so Codex unloads it. A reload within that time keeps the conversation and its approvals. When the child exits, every session is dropped, and a tab's next message starts a new workhorse.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+            "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+            "vKEsyHFk/9ncuT5DP#jylkTBp7",
+            "vKEsyHFk/9ncuT5DP#byMaoUe0",
+            "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+            "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+            "vKEsyHFk/9ncuT5DP#QGVPyMwG",
+            "vKEsyHFk/9ncuT5DP#DNQTPTxE",
+            "vKEsyHFk/9ncuT5DP#08zJvPJq",
+            "vKEsyHFk/9ncuT5DP#iay14AUl",
+            "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+            "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+            "vKEsyHFk/9ncuT5DP#rOgOf2bo",
+            "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+            "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+            "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+            "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+            "vKEsyHFk/9ncuT5DP#3vO7eN8L",
+            "vKEsyHFk/9ncuT5DP#SScV6EZR"
+          ],
+          "relationships": [
+            "vKEsyHFk/9ncuT5DP#FZnS78FX",
+            "vKEsyHFk/9ncuT5DP#XAd3chIR",
+            "vKEsyHFk/9ncuT5DP#3C7aLx0q",
+            "vKEsyHFk/9ncuT5DP#Lo6Q7GDB",
+            "vKEsyHFk/9ncuT5DP#YOaSBuBr",
+            "vKEsyHFk/9ncuT5DP#aoHKAkWD",
+            "vKEsyHFk/9ncuT5DP#NztvEtjX",
+            "vKEsyHFk/9ncuT5DP#biUWQZMB",
+            "vKEsyHFk/9ncuT5DP#xPCxyO70",
+            "vKEsyHFk/9ncuT5DP#9kvKfu7U",
+            "vKEsyHFk/9ncuT5DP#89ivSTaM",
+            "vKEsyHFk/9ncuT5DP#IxtTYfQ6",
+            "vKEsyHFk/9ncuT5DP#f4o4iE3G",
+            "vKEsyHFk/9ncuT5DP#ELaAYJKS",
+            "vKEsyHFk/9ncuT5DP#02ywpfgL",
+            "vKEsyHFk/9ncuT5DP#YrKMY0LM",
+            "vKEsyHFk/9ncuT5DP#5gcxxoqv",
+            "vKEsyHFk/9ncuT5DP#zOHsZyzc",
+            "vKEsyHFk/9ncuT5DP#yhm3JUJQ",
+            "vKEsyHFk/9ncuT5DP#NasuLye5",
+            "vKEsyHFk/9ncuT5DP#ENHiJpTb",
+            "vKEsyHFk/9ncuT5DP#wMqJn1nW",
+            "vKEsyHFk/9ncuT5DP#Ikp3Fwwc",
+            "vKEsyHFk/9ncuT5DP#PfZvhB8I",
+            "vKEsyHFk/9ncuT5DP#j1PGjoTR",
+            "vKEsyHFk/9ncuT5DP#fVScKEoP",
+            "vKEsyHFk/9ncuT5DP#EVC1aGxx",
+            "vKEsyHFk/9ncuT5DP#azMem83I",
+            "vKEsyHFk/9ncuT5DP#ITcuqCHT"
+          ],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+          "vKEsyHFk/9ncuT5DP#egDoJ9fH",
+          "vKEsyHFk/9ncuT5DP#f4o4iE3G",
+          "vKEsyHFk/9ncuT5DP#02ywpfgL",
+          "vKEsyHFk/9ncuT5DP#ELaAYJKS",
+          "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+          "vKEsyHFk/9ncuT5DP#AoYD3SWj",
+          "vKEsyHFk/9ncuT5DP#jcfXg6TV"
+        ],
+        "focus": [
+          "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+          "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+          "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+          "vKEsyHFk/9ncuT5DP#QGVPyMwG",
+          "vKEsyHFk/9ncuT5DP#DNQTPTxE",
+          "vKEsyHFk/9ncuT5DP#08zJvPJq",
+          "vKEsyHFk/9ncuT5DP#iay14AUl",
+          "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+          "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+          "vKEsyHFk/9ncuT5DP#rOgOf2bo",
+          "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+          "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+          "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+          "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+          "vKEsyHFk/9ncuT5DP#3vO7eN8L",
+          "vKEsyHFk/9ncuT5DP#SScV6EZR"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    }
+  ]
+}

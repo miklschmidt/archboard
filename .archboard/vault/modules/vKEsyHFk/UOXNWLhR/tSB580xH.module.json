@@ -1,0 +1,14 @@
+{
+  "order": 52000,
+  "name": "Variant timeline",
+  "kind": "module",
+  "responsibility": "A board's variants as one timeline from its own record: the adopted line newest first, drafts branching off, a shelved variant ending its branch",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/rules/semantic-board-canvas/board/variant-timeline.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#tSB580xH",
+  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "outgoing": []
+}

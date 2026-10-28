@@ -1,0 +1,79 @@
+{
+  "id": "NyesaQPQ",
+  "name": "TASK-549.24",
+  "summary": "Canonical models own live authoring and consumers. Legacy inputs remain only for explicit migration and retained originals.",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "migration": {
+    "legacy": "vKEsyHFk/0T9enjhi#NyesaQPQ",
+    "predecessor": "vKEsyHFk/0T9enjhi#LSsVMn3j",
+    "baseline": {
+      "kind": "content",
+      "state": "vKEsyHFk/0T9enjhi#LSsVMn3j"
+    },
+    "reason": "Preserve this independent proposal and its original predecessor and conflict base.",
+    "checkpoint": "a46dd0318a5ca42be33526026b375282234eb6f2"
+  },
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "predecessor": "vKEsyHFk",
+  "predecessorRevision": "91ab9cb477463752494d878af8e06f6df4086fe45c2dbbf56067e52f44995d35",
+  "baseline": "3243bf4cb9baa35d50240265d5b4e8d3302e918a",
+  "changes": [
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/0T9enjhi#4P7YZdnj",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/0T9enjhi#nSTHru5x",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
+      "field": "description",
+      "value": "Reads one live canonical model. Legacy bytes remain private to migration inventory, previews, and exact retained originals. Unmigrated vaults refuse ordinary reads with explicit migration recovery."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#EekL5c17",
+      "field": "description",
+      "value": "Retains the legacy decoder for explicit migration and exact originals. Legacy public authoring, ownership, moves, and automatic schema persistence retire."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#CLdaoYy3",
+      "field": "description",
+      "value": "Installs canonical initialization, portable imports, and explicit migration through one signed archive, journal, atomic writer, and recovery mechanism."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#P7V1u4aN",
+      "field": "target",
+      "value": {
+        "state": "NyesaQPQ"
+      }
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "order": 4000,
+  "name": "Architecture painter",
+  "kind": "function",
+  "responsibility": "Paints the settled drawing and decides no geometry of its own",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/OjRLKb74#H0xU45vp",
+  "parent": "vKEsyHFk/OjRLKb74#5UnSr8ZQ",
+  "formerNames": [
+    "SVG marks"
+  ],
+  "outgoing": [
+    {
+      "order": 27000,
+      "kind": "call",
+      "label": "the size far names are set at",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
+        "symbol": "farSizeFor"
+      },
+      "id": "vKEsyHFk/OjRLKb74#lQFfcKXc",
+      "to": "vKEsyHFk/OjRLKb74#kHpIix5b"
+    }
+  ]
+}

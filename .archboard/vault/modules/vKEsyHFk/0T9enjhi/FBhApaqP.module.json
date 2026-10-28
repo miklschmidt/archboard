@@ -1,0 +1,118 @@
+{
+  "order": 37000,
+  "name": "Check a candidate",
+  "kind": "function",
+  "responsibility": "What every write passes before a file changes: the board read, the stated version checked, the change applied and the candidate admitted",
+  "description": "checkedCandidate reads the board through a reader its caller chooses, refuses a change that states no version or the wrong one, applies the transition, finds where the name puts the file, and admits the result under the vault's vocabulary and the board's own address. It takes no lease and writes nothing. The write pass runs it under the lease, a prepared write runs it with a read that holds none, and a discard and a move use boardBefore for the same version check.",
+  "groups": [
+    "writes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/write/candidate.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/0T9enjhi#FBhApaqP",
+  "parent": "vKEsyHFk/0T9enjhi#0z23E66v",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 10000,
+      "kind": "call",
+      "label": "read under lease",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/write/candidate.ts",
+        "symbol": "readSemanticBoardAtUnderLease"
+      },
+      "id": "vKEsyHFk/0T9enjhi#9O4o9jcE",
+      "to": "vKEsyHFk/0T9enjhi#tcwsrSQv"
+    },
+    {
+      "order": 11000,
+      "kind": "call",
+      "label": "apply transition",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/write/candidate.ts",
+        "symbol": "apply"
+      },
+      "id": "vKEsyHFk/0T9enjhi#VWo4vJh0",
+      "to": "vKEsyHFk/0T9enjhi#i2CrY6Xj"
+    },
+    {
+      "order": 35000,
+      "kind": "call",
+      "label": "refuse a new unknown key",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/write/candidate.ts",
+        "symbol": "readSemanticBoardConfiguration"
+      },
+      "id": "vKEsyHFk/0T9enjhi#pbX3QKug",
+      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe"
+    },
+    {
+      "order": 82000,
+      "kind": "call",
+      "label": "where the name puts the file",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/write/candidate.ts",
+        "symbol": "relocation"
+      },
+      "id": "vKEsyHFk/0T9enjhi#bkVmmmZk",
+      "to": "vKEsyHFk/0T9enjhi#uZ8BMtTA"
+    },
+    {
+      "order": 83000,
+      "kind": "call",
+      "label": "a board answers to the address it is at",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/write/candidate.ts",
+        "symbol": "semanticBoardAddress"
+      },
+      "id": "vKEsyHFk/0T9enjhi#sdPR22Ti",
+      "to": "vKEsyHFk/0T9enjhi#hoh4xPWb"
+    },
+    {
+      "order": 111000,
+      "kind": "call",
+      "label": "apply the track",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/write/candidate.ts",
+        "symbol": "apply"
+      },
+      "id": "vKEsyHFk/0T9enjhi#dHhYOJDN",
+      "to": "vKEsyHFk/0T9enjhi#umBb2VAo"
+    }
+  ]
+}

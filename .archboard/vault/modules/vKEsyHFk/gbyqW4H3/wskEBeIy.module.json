@@ -1,0 +1,88 @@
+{
+  "order": 8004,
+  "name": "Browser application",
+  "kind": "service",
+  "responsibility": "Prepares and draws scoped content or boards through the same browser host",
+  "description": "startBrowserRenderer loads fonts and icons and starts the existing worker pool. prepareContentHere computes a scene key from visible content and the renderer-owned entry point classification. Its draw operation uses the same core as drawBoardHere. Hidden evidence changes reuse geometry while changed interface layout facts produce another key.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/ui/state/browser-renderer.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#wskEBeIy",
+  "references": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "model": "vKEsyHFk",
+      "subject": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+      "state": "current"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 10000,
+      "kind": "call",
+      "label": "renderBoard, linked faces",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "renderBoard"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#NFop37Ak",
+      "to": "vKEsyHFk/gbyqW4H3#yOV8Znnv"
+    },
+    {
+      "order": 11000,
+      "kind": "call",
+      "label": "installRendererHost",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "installRendererHost"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#aN2ABUiR",
+      "to": "vKEsyHFk/gbyqW4H3#4nyk76pY"
+    },
+    {
+      "order": 25000,
+      "kind": "call",
+      "label": "load the diagram faces into the tab",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "loadDiagramFaces"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#tmrkphkd",
+      "to": "vKEsyHFk/gbyqW4H3#gUN928v4"
+    },
+    {
+      "order": 28000,
+      "kind": "call",
+      "label": "Web Workers, as the host's solve",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "createEnginePool"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#mKaf3NN2",
+      "to": "vKEsyHFk/gbyqW4H3#JzHM3KOY"
+    },
+    {
+      "order": 74000,
+      "kind": "call",
+      "label": "render scoped semantic content",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "renderSemanticView"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#3EvpTPuC",
+      "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG"
+    }
+  ]
+}
