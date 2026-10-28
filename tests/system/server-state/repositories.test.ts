@@ -1,4 +1,4 @@
-import { seedCanonicalFixture } from "../support/canonical-fixture.ts";
+import { canonicalCapture, seedCanonicalFixture } from "../support/canonical-fixture.ts";
 // The repositories the navigator lists, and choosing a checkout from the page
 // (ADR 0050, TASK-472.05). One owned server with a registry of its own knows a
 // repository with two checkouts, each with a vault. A pane shows a board of the
@@ -6,10 +6,11 @@ import { seedCanonicalFixture } from "../support/canonical-fixture.ts";
 // a show of another vault's board moves a named pane into that vault.
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, realpathSync, symlinkSync } from "node:fs";
+import { cpSync, mkdirSync, realpathSync, symlinkSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { WebSocket, type RawData } from "ws";
+import { readArchitectureModel } from "@archboard/board/store-read";
 
 import {
 	createRepositoryFixture,
@@ -277,6 +278,72 @@ describe.serial("the repositories of the navigator", () => {
 			vault: string | null;
 		};
 		expect(opening.vault).not.toBe(realpathSync.native(elsewhere));
+	});
+
+	test("choosing a checkout preserves the captured canonical reading and its filters", async () => {
+		await using resources = new AsyncDisposableStack();
+		const mainVault = vaultOf(main);
+		const worktreeVault = vaultOf(worktree);
+		for (const vault of [mainVault, worktreeVault]) {
+			cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, {
+				recursive: true,
+			});
+		}
+		const model = readArchitectureModel(mainVault);
+		if (!model.success) throw new Error(JSON.stringify(model));
+		expect((await choose(main)).status).toBe(200);
+		const inMain = createRequester({ ...server, vault: mainVault });
+		const pane = await openPaneSession(server.base, inMain, { clientId: "canonical-checkout" });
+		resources.defer(() => pane.close());
+		const reading = {
+			model: "Shop",
+			grammar: "architecture",
+			state: "Current",
+			scope: "Shop#Gateway",
+			focus: ["Shop#Gateway"],
+			hideKinds: ["call"],
+			hideGroups: ["public"],
+		};
+		const shown = await inMain("/api/panes/show", {
+			method: "POST",
+			doing: false,
+			body: { pane: pane.clientId, reading },
+		});
+		expect(shown.status).toBe(200);
+		const capture = canonicalCapture(mainVault, model, ["Shop#Gateway"]);
+		const reported = await inMain("/api/panes/semantic-context", {
+			method: "POST",
+			doing: false,
+			body: {
+				clientId: pane.clientId,
+				paneId: pane.clientId,
+				board: null,
+				variant: null,
+				view: null,
+				selection: [],
+				version: null,
+				at: new Date().toISOString(),
+				sequence: 1,
+				architecture: {
+					...capture,
+					reading: {
+						...capture.reading,
+						scope: reading.scope,
+						relationshipKinds: [],
+						groups: false,
+					},
+				},
+			},
+		});
+		expect(reported.status).toBe(200);
+		const mark = pane.mark();
+		expect((await choose(worktree)).status).toBe(200);
+		expect(await pane.waitFor("pane_model", mark)).toMatchObject({
+			model: "Shop",
+			vault: worktreeVault,
+			repository: ORDERS,
+			reading,
+		});
 	});
 });
 
