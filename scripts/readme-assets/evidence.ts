@@ -97,9 +97,10 @@ async function selectPart(page: Page, id: string, pane = "A"): Promise<void> {
  * @param pane The pane that owns the inspector.
  */
 async function pinInspector(page: Page, pane = "A"): Promise<void> {
-	await page.click(
-		`[data-slot='pane-stage'][data-pane='${pane}'] [data-slot='semantic-sidebar-pin']`,
-	);
+	const control = `[data-slot='pane-stage'][data-pane='${pane}'] [data-slot='semantic-sidebar-pin']`;
+	if (await page.evaluate(`document.querySelector(${JSON.stringify(control)}) !== null`)) {
+		await page.click(control);
+	}
 	await Bun.sleep(500);
 	await fit(page);
 	await Bun.sleep(900);
@@ -134,6 +135,7 @@ async function filmCode(server: TakeServer, browser: Browser, fixture: Fixture):
 				`The example did not produce its resolved missing-call warning: ${checked.stderr}`,
 			);
 		await terminal.done(finding.code, finding.message, `${evidence.path}:${evidence.line}`);
+		await page.click("[data-pane='A'] [data-slot='semantic-sidebar-toggle']");
 		await page.waitFor(
 			"document.querySelector('[data-slot=code-warning-count]')?.getAttribute('data-count') === '1'",
 			"one visible code warning",

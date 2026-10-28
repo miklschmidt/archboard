@@ -181,12 +181,17 @@ const hero: Producer = {
 				});
 				const state = result.target.state!;
 				const compared = ArchitectureModelReadSchema.parse(
-					modelResult(await commands.cli(["model", "compare", "--state", state])),
+					modelResult(
+						await commands.cli(["model", "compare", "--state", state, "--against", "current"]),
+					),
 				);
 				if (!compared.success) throw new Error(JSON.stringify(compared));
-				const changed =
-					compared.comparison?.subjects.filter((subject) => subject.kind !== "unchanged").length ??
-					0;
+				if (compared.comparison === undefined)
+					throw new Error("The proposal comparison is missing.");
+				const changed = compared.comparison.subjects.filter(
+					(subject) => subject.kind !== "unchanged",
+				).length;
+				if (changed === 0) throw new Error("The authored proposal changes no subjects.");
 				await terminal.say(`${changed} subjects differ from current architecture.`);
 				await commands.cli(["browser", "show", MODEL, "--state", state, "--pane", "A"]);
 				await page.atRest();

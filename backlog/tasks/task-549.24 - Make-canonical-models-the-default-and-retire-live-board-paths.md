@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T01:18:00Z'
+updated_date: '2026-10-28T01:21:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -272,4 +272,6 @@ Bounded checkpoint metadata repair reproduces the exact private-field decoder fa
 Final bounded metadata evidence: 27 affected tests pass with 129 assertions. This includes 4 local-reference runtime cases, 2 CLI/HTTP reference cases, and 21 existing checkpoint/foreign-reference cases. Source TypeScript passes after the final test fixture change. Scoped source lint, test lint, formatting, and git diff whitespace pass without warnings. Both strict decoder failures were reproduced before the one-line conversion repair. Private reference ancestry and signed retention remain covered by existing owners. Signed implementation commit is 4d50a05bf4b6ac20ad47d3d963476fec5955e29c. Latest local feat/canonical-module-model remains signed b14f3a759 and is already included. A final simplification pass keeps the existing conversion and strict schemas, with no new abstraction or public API. No full gate, model evaluation, source-vault write, parent scratch write, UI work, server restart, push, or PR runs. Final contract and backend evidence are task-549.24-checkpoint-metadata-contract.md and task-549.24-checkpoint-metadata-backend.md beside the blocker. Parent and .24 status, assignee, and acceptance remain unchanged.
 
 While porting narrated recipes, the parent reproduced a second private metadata leak through the existing exact-narrative-target public owner. Strict retention decoding failed on checkpoint.narrativeDependencies. One line in the existing checkpointMetadata conversion now excludes that private field beside referenceDependencies. Stored target ancestry and all public schemas stay unchanged. RED then GREEN recorded; all 5 walkthrough cases/33 assertions, both type projects, focused source/test lint, format and diff checks pass. Existing Board persistence NyesaQPQ/Bd4GPG6d remains the affected architecture subject. No new abstraction or proposal needed.
+
+Canonical hero now explicitly compares against current and requires a nonempty comparison; the real clip shows 41 changed subjects. All three real code/interface/Git-history producers pass after using visible sidebar controls and optional pinning for floating panels. Parent inspected thumbnails, full scene captures, and encoded first frames. Hero, code-evidence, module-interfaces, git-history, and the earlier accepted plan/drill clips are uploaded once and linked in README. Narrated recipes use model record/replay, retain current before recording, or name an explicit proposal checkpoint. The imported Queued fulfilment checkpoint f4ae77d823d935570198b3c0be53dd1803db8aba resolves all five beats ready through the public reader. No new voice/model recording was run. Source/frontend types, scoped lint and format pass. Root migration, history producer, narration refresh, final integration gate/review/PR remain open.
 <!-- SECTION:NOTES:END -->

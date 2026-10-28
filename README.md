@@ -18,7 +18,7 @@
 
 </div>
 
-<img alt="On the left: the commands that a coding agent runs for this request. It claims the Web shop board, branches a proposal, edits it and compares it with today. On the right: the browser pane shows the claim and then redraws the board as the proposal. It shows new parts in green and a moved call in orange. The removed timeout guard is a red ghost." src="https://github.com/user-attachments/assets/2380c2e3-cb45-4a3f-9efd-e246c848c5df" width="100%">
+<img alt="The CLI reads and claims the shop architecture, creates one proposal, releases its claim, and compares 41 changed subjects with current architecture. The browser shows the proposal with new modules in green and changed or removed relationships marked." src="https://github.com/user-attachments/assets/4ecfeda7-e742-4b4a-834c-6159053c8227" width="100%">
 
 <p align="center"><sub>Filmed live against a real Archboard server. The terminal on the left replays the commands an agent runs for this request, and each one ran against the server as shown. The pane on the right is the real browser, redrawing on every write. Nothing here was dragged into place.</sub></p>
 
@@ -63,11 +63,11 @@ A proposal starts with a map of what exists. Archboard brings code, module bound
 
 ### Find where the map and the code disagree
 
-Give each part a link to its file or a named function, class, or value. A relationship can cite the source that supports it. With `archboard check code`, your agent finds broken source links, relationships drawn backwards, and dependencies between mapped parts that the board leaves out.
+Give each part a link to its file or a named function, class, or value. A relationship can cite the source that supports it. With `archboard check code`, your agent finds broken source links, relationships drawn backwards, and dependencies between mapped parts that the architecture leaves out.
 
 Warnings mark the affected parts and relationships in the canvas. Select a warning to read the finding and open its source when available. Each piece of source evidence says whether analysis resolved it or matched it only by name.
 
-<img src="https://github.com/user-attachments/assets/04b20cce-5866-46d1-8557-3200f16b7800" width="100%" alt="The code check finds a resolved call from Place order to Save order that the example board leaves out. Selecting its warning opens the source evidence in the inspector. The terminal shows the actual call in the source file.">
+<img src="https://github.com/user-attachments/assets/a2281f7d-9678-47c7-a3fc-ae922012b189" width="100%" alt="The code check finds a resolved call from Place order to Save order that the example architecture leaves out. Selecting its warning opens the source evidence in the inspector. The terminal shows the actual call in the source file.">
 
 <p align="center"><sub>A small example checkout with real analysis results. The terminal replays the command and summarizes its answer. The live browser selects the warning, and the source excerpt shows the missing call.</sub></p>
 
@@ -79,30 +79,30 @@ A module's interface on the map is what its outside callers reach. Archboard sho
 
 Compare competing proposals side by side. The comparison lists interface changes before internal changes, so you can see which design asks more of its callers. The code check reports callers that reach parts the module does not expose. It identifies exposed names with no outside use in the checked code.
 
-<img src="https://github.com/user-attachments/assets/5a1d15cc-66e4-4927-95f2-b966026436ba" width="100%" alt="Two proposals for the same checkout example. Selecting Orders in each opens its interface inspector. Entry per job exposes three parts. One entry point exposes Place order and keeps two parts hidden.">
+<img src="https://github.com/user-attachments/assets/3720e0b1-d5d8-4a28-ae95-5d07ca006736" width="100%" alt="Two proposals for the same checkout example. Opening Orders in each reveals its interface. Entry per job exposes three parts. One entry point exposes Place order and keeps two parts hidden.">
 
 <p align="center"><sub>The same six parts, with different boundaries. Orders exposes three entry points on the left. On the right, one entry point keeps two internal parts hidden. Both inspectors come from the live browser.</sub></p>
 
 ### Read the change through the architecture
 
-Git records changes to files. Archboard maps their commits onto the parts of your system. See which parts change most often and which repeatedly change together, including pairs that the board does not connect. Pick a part to read its recent commits and the parts that change with it.
+Git records changes to files. Archboard maps their commits onto the parts of your system. See which parts change most often and which repeatedly change together, including pairs without an authored relationship. Pick a part to read its recent commits and the parts that change with it.
 
-Set a branch's commits against its proposal. See which parts the commits changed, which parts the plan named, and where the two differ. Your agent can spot changes to mapped parts outside the plan before it adopts the proposal. Archboard also reports commits to bound files since the board last described them, so you can choose what to inspect next.
+Set a branch's commits against its proposal. See which parts the commits changed, which parts the plan named, and where the two differ. Your agent can spot changes to mapped parts outside the plan before it adopts the proposal. Archboard also reports commits to bound files since the selected architecture described them, so you can choose what to inspect next.
 
-<img src="https://github.com/user-attachments/assets/dbe1c866-8f30-4693-adb1-11e2cd707df2" width="100%" alt="The inspector shows recent commits and a pair of parts that change together. The terminal reports seven shared commits for Validate order and Save order. A branch comparison then lists planned changes, changes outside the plan, and planned parts with no code change.">
+<img src="https://github.com/user-attachments/assets/522c8c86-1ff7-4315-9b30-3c926e733e08" width="100%" alt="The inspector shows recent commits and a pair of parts that change together. The terminal reports seven shared commits for Validate order and Save order. A branch comparison then lists planned changes, changes outside the plan, and planned parts with no code change.">
 
-<p align="center"><sub>Fixed example commits make this demonstration repeatable. Validate order and Save order change together in seven commits. The branch also changes Validate order outside the proposal. The terminal summarizes real Git analysis beside the live board.</sub></p>
+<p align="center"><sub>Fixed example commits make this demonstration repeatable. Validate order and Save order change together in seven commits. The branch also changes Validate order outside the proposal. The terminal summarizes real Git analysis beside the live architecture.</sub></p>
 
 ## Plan the next architecture with your agent
 
-See a change before anyone builds it. Ask your agent for one and you get a **proposal**: the same board, redrawn as its difference from what exists. New parts arrive green, changed ones orange, and removed ones stay on the page as red ghosts. A call that moves is shown as one change, not as a deletion beside an addition.
+See a change before anyone builds it. Ask your agent for one and you get a **proposal**: a proposed architecture, drawn against what exists. New parts arrive green, changed ones orange, and removed ones stay on the page as red ghosts. A call that moves is shown as one change, not as a deletion beside an addition.
 
-<img src="https://github.com/user-attachments/assets/8de02233-e1de-4266-933c-046095c2aa05" width="100%" alt="A board that nobody has built yet, marked not built, opened in two panes. The left pane turns into the Nightly batch proposal. The right pane turns into the Live events proposal. Both are marked against their shared starting point.">
+<img src="https://github.com/user-attachments/assets/d80b0379-ec7d-42ba-ba01-00107b98c3b0" width="100%" alt="An independent planning draft opens in two panes. The left pane turns into the Nightly batch proposal. The right pane turns into the Live events proposal. Both are marked against their shared starting point.">
 
-<p align="center"><sub>Two competing proposals for a recommendations service that does not exist yet, one per pane. The header names the proposal in the focused pane and says <code>not built</code>: nothing here pretends to exist before somebody adopts it.</sub></p>
+<p align="center"><sub>Two competing proposals for a recommendations service that does not exist yet, one per pane. Each header names its draft. Both compare against the same planning root, without adding the proposed service to current architecture.</sub></p>
 
-- **Competing options, side by side**. Branch two drafts from one starting point and open them in two panes. `archboard semantic compare` lists every part and relationship that differs.
-- **Honest about what exists**. A board for a system that nobody has built yet is marked `not built`. It stays that way until your agent adopts a proposal after it ships.
+- **Competing options, side by side**. Branch two drafts from one starting point and open them in two panes. `archboard model compare --state "Nightly batch" --against "Starting point"` reports the changes.
+- **Honest about what exists**. Planning drafts remain separate from current architecture. Your agent adopts a draft only after it ships.
 - **Proposals keep up**. When today's architecture changes under an open proposal, the proposal is brought up to date. Where both changed the same thing, the agent is asked to settle it. Neither side wins silently.
 
 ```text
@@ -130,7 +130,7 @@ Most diagrams show what changed. This one also remembers why. When a proposal sh
 A **walkthrough** is a short tour of a board that your agent writes: a few steps, each with a heading, a point, and the parts it is about. Press **Narrate** and the Codex voice explains each step as it reaches your screen. The camera glides to the parts that matter, and the rest fades back. Or let one command film the whole talk:
 
 ```bash
-archboard semantic record "Web shop" --variant "Queued fulfilment" --theme dark --out pr-128.mp4
+archboard model record --checkpoint <checkpoint-id> --walkthrough "Why checkout stops waiting" --theme dark --out pr-128.mp4
 gh pr comment 128 --attach pr-128.mp4 --body "A narrated walkthrough of this change."   # gh 2.99 or newer
 ```
 
@@ -138,7 +138,7 @@ gh pr comment 128 --attach pr-128.mp4 --body "A narrated walkthrough of this cha
 
 https://github.com/user-attachments/assets/025e7d76-2ad5-43b5-82d9-8a587994243f
 
-<p align="center"><sub>Each video is what <code>archboard semantic record</code> wrote.</sub></p>
+<p align="center"><sub>Each video is an Archboard recording.</sub></p>
 
 - **Pull-request videos**. Your agent maps the code before the change, branches a proposal for the pull request, and writes three to six steps for its reviewers. The talk runs one to three minutes, small enough to attach to the pull request.
 - **Paced by the voice**. Each time the voice finishes a step, the recording moves on. There is no timeline to edit and no silent slide.
@@ -152,7 +152,7 @@ Ask "what happens as a shopper pays?" and get the answer as a sequence diagram: 
   <img alt="Sequence diagram 'Place an order': the storefront posts an order. Place order loads the basket, starts a 10 second clock, reserves the items and charges the card. It writes the paid order and sends the receipt up to three times. Then it answers the storefront." src="docs/readme/sequence-light.svg" width="100%">
 </picture>
 
-<p align="center"><sub>An SVG drawn by <code>archboard semantic render "Web shop" --view "Place an order" --out place-an-order.svg</code>. The pulse that travels down the exchange is part of the file.</sub></p>
+<p align="center"><sub>An SVG drawn by <code>archboard model render --flow "Place an order" --grammar sequence --out place-an-order.svg</code>. The pulse that travels down the exchange is part of the file.</sub></p>
 
 ```text
 Add a sequence diagram of what happens when a shopper places an order, from the storefront to the receipt email.
@@ -175,9 +175,11 @@ I'm new here. Walk me through what happens to stock when a shopper presses Pay.
 
 ## Zoom from the system into a service
 
-One map, from the whole system down to the file. Boards link to boards: hover a part that has its own board and a tip offers to open it. Double-click and the view dives in, with a breadcrumb back. Parts are bound to their code. **Open code** takes you to a file or a named function or class in VS Code, Cursor, Zed or on GitHub. A system spread over several repositories can share one vault, with each part bound to its own repository.
+Open a module to see its children and boundary connections. Open a child to continue deeper. Breadcrumbs lead back through the same model. Navigation changes your scope without copying modules or creating another document.
 
-<img src="https://github.com/user-attachments/assets/c1c1ea48-4136-455b-9b27-bb0773d4bd62" width="100%" alt="The Web shop board: the pointer rests on Inventory service, and a tip says double-click to open it. The view dives into the Inventory service board with the breadcrumb Web shop › Inventory service.">
+Modules can link to source files, functions, or classes. **Open code** follows that binding. Explicit references connect modules across repository models without copying their definitions.
+
+<img src="https://github.com/user-attachments/assets/3d839b09-8080-4a7f-8f80-b624d41015a3" width="100%" alt="The reader opens Inventory service, then Stock API, within the same Shop model. Breadcrumbs return to the repository roots.">
 
 ## Ask your architecture
 
@@ -375,7 +377,7 @@ In a vault: a directory of `.semantic.json` files, one per board, holding every 
 <details><summary><b>Does the diagram stay in sync with the code?</b></summary>
 <br>
 
-Your agent keeps it in sync. `archboard check code` reports broken source evidence, missing dependencies between mapped parts, and disagreements between drawn module boundaries and code. It also shows which parts have commits to their bound files since the board last described them. Your agent reads the findings and updates the map. Archboard never rewrites a board on its own.
+Your agent keeps it in sync. `archboard check code` reports broken source evidence, missing dependencies between mapped parts, and disagreements between drawn module boundaries and code. It also shows which parts have commits to their bound files since the selected architecture described them. Your agent reads the findings and updates the map. Archboard never rewrites a board on its own.
 </details>
 
 <details><summary><b>Is the traffic animation real traffic?</b></summary>

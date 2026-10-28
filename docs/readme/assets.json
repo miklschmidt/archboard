@@ -60,7 +60,7 @@
 				"scripts/readme-assets/fixture-history.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "826016ab528d12fe8752fa44445b5878e7ef68d3b4e9c90efea768843b110a8b"
+			"hash": "ab13c05827e1d8e8aa33bffcf2ca351f3ee76b1a5571a3762fdd122ff3b1c7b0"
 		},
 		{
 			"name": "explainer",
@@ -69,7 +69,6 @@
 			"command": "bun run readme:assets explainer",
 			"files": [],
 			"sources": [
-				".archboard/vault/Archboard.semantic.json",
 				".archboard/vault/.archboard/config.yaml",
 				"apps/web",
 				"packages/ui-kit/src/ui",
@@ -85,7 +84,12 @@
 				"packages/workbench/src/runtime/rules/realtime",
 				"packages/codex-realtime-voice/src",
 				"packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
-				"scripts/readme-assets/narrated.ts"
+				"scripts/readme-assets/narrated.ts",
+				"scripts/readme-assets/model-authoring.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/assets.ts"
 			],
 			"hash": "4414a45cca43106c803596062013b14a871af13f92175ce63b2a70e6d3a4e33f"
 		},
@@ -166,7 +170,12 @@
 				"packages/codex-realtime-voice/src",
 				"packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"scripts/readme-assets/model-authoring.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/assets.ts"
 			],
 			"hash": "927c165d03fee606c56d1fd1f30b3c0a5d622ac2d40a6810f9bdb126b543db52"
 		},
@@ -220,7 +229,12 @@
 				"packages/codex-realtime-voice/src",
 				"packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"scripts/readme-assets/model-authoring.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/assets.ts"
 			],
 			"hash": "927c165d03fee606c56d1fd1f30b3c0a5d622ac2d40a6810f9bdb126b543db52"
 		},
@@ -374,7 +388,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "b9219a23122af457ac8b28a91b6360adf548b439cfa04580931e030843aaf420"
+			"hash": "930a4b6a875a5cb5610a543a5795e22366228577254877772bd20c7254a440d5"
 		},
 		{
 			"name": "module-interfaces",
@@ -407,7 +421,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "8a27864d90cd7d071eb666d4157fd44e3fd451dbc7d3ce05bfa31ce3ce4c0a03"
+			"hash": "930a4b6a875a5cb5610a543a5795e22366228577254877772bd20c7254a440d5"
 		},
 		{
 			"name": "git-history",
@@ -440,7 +454,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "a789e03dcca0f808bfa21341c32b93002734c6fc2e0f84c81df70677def9187e"
+			"hash": "930a4b6a875a5cb5610a543a5795e22366228577254877772bd20c7254a440d5"
 		}
 	]
 }
