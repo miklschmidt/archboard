@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T17:07:00Z'
+updated_date: '2026-10-28T17:16:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -404,4 +404,6 @@ The explanation browser owner reproduced two visible defects. Selecting a module
 The resumed browser lane passes selection, gestures, focus, filters, modes, walkthroughs, narration, proposal playback, proposals and lifecycle. Filter reveal already drew the selected connection; its fixture now inspects that canvas edge instead of a closed sidebar list. Module-name fixtures now read the existing name element without the standing badge. The correction fixture opens Architecture and its history disclosure before inspecting or navigating that content. Its focused owner passes 10 assertions. All four changed browser owners pass scoped test lint, formatting and the earlier combined types. No product behavior, assertion value or deadline was weakened. Canonical read-contract review covers 21 source owners and fixes two Spec findings in signed source 2d7671805: qualified collection identity collisions and inherited policy property acceptance. That source awaits its merger. Remaining browser inventory starts at canonical-model-preview.test.ts. Final review, asset refresh, full gate, archive publication and PR readiness remain open.
 
 Signed merge aa70f3eef integrates the two canonical read-contract review fixes with matching source and merge trees, passing signatures, and one passing combined type run. Browser remainder v4 passes the three current preview workflows. Its fourth case targets the retired live-board navigator entry, which ADR0062 removes. That obsolete case is removed. Retained original addresses, their browser history, and old pane URL migration remain owned by canonical-preview-history, canonical-preview-navigation and canonical-model-migration. Scoped test lint and formatting pass. The next browser owner is canonical-preview-history.test.ts. Durable edit and claim review is active in its isolated worktree.
+
+The sidebar helper now waits for its mounted control before deciding whether to open it. This removes the reload race that treated an absent control as closed. The focused original-navigation case passes eight assertions. Reconciliation now uses the visible Architecture and Selection tabs for their separate content. Browser remainder v7 passes reconciliation, both explanation cases, comparison, planning, import and code: seven cases with 44 assertions. Both fixture repairs pass lint and formatting. Foreign-reference navigation is the next failing owner; it reports the source Shop address after following Ledger, with no error. Root will diagnose that route before continuing. Final acceptance remains open.
 <!-- SECTION:NOTES:END -->
