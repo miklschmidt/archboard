@@ -1,0 +1,28 @@
+{
+  "order": 14002,
+  "name": "Move command",
+  "kind": "module",
+  "responsibility": "semantic move, which finds the vault it moves a board to from --to, as the command's own vault is found from -C",
+  "description": "TASK-472.15. A --to that finds no vault is refused naming --to; a holder the registry does not know is registered.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/semantic/board/move.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/nAmiQ3Vc#kQsYPnIq",
+  "outgoing": [
+    {
+      "order": 19000,
+      "kind": "call",
+      "label": "the --to vault, found as -C finds one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/semantic/board/move.ts",
+        "symbol": "findVaultOf"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#m3zJ1oto",
+      "to": "vKEsyHFk/nAmiQ3Vc#zUIObqwQ"
+    }
+  ]
+}

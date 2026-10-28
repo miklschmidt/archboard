@@ -1,0 +1,15 @@
+{
+  "order": 7000,
+  "name": "Select semantic subjects",
+  "kind": "function",
+  "responsibility": "Map gestures through the atlas",
+  "description": "Accepts only semantic IDs present in the server atlas and toggles the shared attention mark on rendered groups.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/semantic-board-canvas/subjects/subjects.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#UDkL7Tn6",
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
+  "outgoing": []
+}

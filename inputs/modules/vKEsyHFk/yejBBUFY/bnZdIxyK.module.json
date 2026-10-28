@@ -1,0 +1,28 @@
+{
+  "order": 43000,
+  "name": "Recording voice source",
+  "kind": "module",
+  "responsibility": "Reads voice readiness, status and output level for the recorder",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/rules/walkthrough-recording/voice-sources.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#bnZdIxyK",
+  "parent": "vKEsyHFk/yejBBUFY#fscW90Xt",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.13 - Explain-the-captured-reading-through-local-agent-actions.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
+    }
+  ],
+  "outgoing": []
+}

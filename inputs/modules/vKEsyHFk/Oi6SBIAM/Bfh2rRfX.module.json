@@ -1,0 +1,29 @@
+{
+  "order": 33000,
+  "name": "Shared tab sessions",
+  "kind": "module",
+  "responsibility": "Own browser tab presence, disconnect grace, shown checkout, and session end notifications",
+  "groups": [
+    "panes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/services/sessions/browser-tabs.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/Oi6SBIAM#Bfh2rRfX",
+  "parent": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": []
+}

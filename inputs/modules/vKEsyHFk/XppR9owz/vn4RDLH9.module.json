@@ -1,0 +1,53 @@
+{
+  "order": 14000,
+  "name": "Panes",
+  "kind": "module",
+  "responsibility": "browser: the live session, its panes with the repository and checkout of each, and pointing one at a board, which makes the caller's checkout the chosen one",
+  "description": "browser show from a known checkout that is not the chosen one of its repository makes it the chosen one for the whole machine, and its answer's chose names the checkout it replaced. browser panes reports each pane's vault, repository and checkout, and own: whether the pane shows the vault a command run here finds. The checkout of a pane or of a shown board is always the directory that holds its vault: the checkout root, or the holder of an untracked vault. It finds that vault without refusing or registering, so it still needs no vault.",
+  "groups": [
+    "panes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/pane/pane.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/XppR9owz#vn4RDLH9",
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 19000,
+      "kind": "call",
+      "label": "browser operation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/pane/pane.ts",
+        "symbol": "openPane"
+      },
+      "id": "vKEsyHFk/XppR9owz#b7q8WlCg",
+      "to": "vKEsyHFk/XppR9owz#dt6chxIP"
+    }
+  ]
+}
