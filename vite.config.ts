@@ -374,6 +374,36 @@ export default defineConfig({
 		// The server serves SOURCE_CHECKOUT/dist/frontend. It lies outside the root, so it is emptied on purpose.
 		outDir: join(repositoryRoot, "dist", "frontend"),
 		emptyOutDir: true,
+		rolldownOptions: {
+			output: {
+				// Application edits preserve cached framework, controls, and agent code.
+				// Entry-aware groups retain the renderer and replay's lazy boundaries.
+				codeSplitting: {
+					groups: [
+						{
+							name: "react-platform",
+							test: /node_modules[\\/](react(?:-dom)?|scheduler|@tanstack)[\\/]/,
+							entriesAware: true,
+						},
+						{
+							name: "controls",
+							test: /(?:node_modules[\\/](?:@base-ui|@floating-ui|@remixicon)|packages[\\/](?:ui-kit|cn))[\\/]/,
+							entriesAware: true,
+						},
+						{
+							name: "conversation-runtime",
+							test: /node_modules[\\/](?:@assistant-ui|assistant-stream)[\\/]/,
+							entriesAware: true,
+						},
+						{
+							name: "agent",
+							test: /packages[\\/](?:workbench|codex-realtime-voice)[\\/]/,
+							entriesAware: true,
+						},
+					],
+				},
+			},
+		},
 	},
 	server: {
 		fs: {

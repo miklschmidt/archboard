@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T10:55:00Z'
+updated_date: '2026-10-28T11:40:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -166,6 +166,14 @@ Consolidate four former-board views of the same local server app into existing b
 Use the source ownership audit to consolidate26 duplicate occurrences of shared backend implementations into their existing canonical owners. Preserve relationship and flow-step identities, exact original tours, and the separate evaluation server. Keep inbound routing, role instructions, engine selection, architecture rendering, and context capture as distinct functions with precise bindings. Group canonical implementations behind the existing runtime API. Root owns and reviews the complete authored intent.
 
 Consolidate the repeated session, workbench, renderer, instruction-owner, and retained-stage occurrences after reading their actual shared factories. Keep the session private operations beneath its one interface, preserve distinct browser drawing and shared presentation components, and correct the remaining source anchors. Original tours remain pinned to their exact pre-transition model. No runtime diagnostic rule changes.
+
+Keep the browser bundle warning visible and reduce update downloads by separating stable React, UI controls, and agent dependencies from application code. Use the installed Rolldown grouping contract with entry-aware chunks so existing lazy boundaries remain. Measure the production output and run the existing browser workflow owners. Do not raise the warning limit or add a new dependency.
+
+Finish the root model with source-backed module dependencies, after shared ownership and containment remove duplicate call targets. Preserve exact original walkthroughs. Treat the measured layout script as its actual renderer consumer. Keep the read-only audit recommendations distinct from root identity decisions: callback manifest and handling remain one complete tool owner, and nested runtime helpers remain private responsibilities.
+
+Fix the reproduced canonical pane capture race at the existing arrival owner. A canonical move uses a null legacy board key, so a vault change currently skips the reading reset. Returning to the same visible model can then suppress the report after the server clears it. Reset reading state on a vault change even without a legacy board key. Reuse the failing foreign-repository conversation browser case as the regression owner; remove temporary diagnostics.
+
+Visual acceptance found that aggregate line labels stack every joined relationship label. Keep all underlying identities, kinds, standing, and inspector evidence, but give canonical aggregate lines bounded summary labels. Delegate this bounded shared-projection repair with public runtime/render TDD. Parent owns browser acceptance. Also place private runtime parts under their existing read, edit, archive, installation, and contract owners so the first runtime scope shows responsibilities rather than thirty peer files.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -350,4 +358,10 @@ Portable archive inspection is integrated through signed2e80e7350 with a tree id
 The completion proposal now retires66 obsolete live modules,46 obsolete flows, and37 relationships whose source paths were removed. Continuing CLI identities keep their source-backed responsibilities. All18 original walkthroughs target exact checkpoint6bc124a8ca521df89dd84fe13922798bf8065914. A new current tour has seven complete readings, including flow37yCryrX through the durable edit owners. Public playback reports19 successful walkthroughs and110 ready beats, with no claims. The code-check operation succeeds but reports source findings requiring another curation pass:66 missing symbols,17 anchor mismatches,221 undrawn relationships, two undrawn callers, and two inherited dropped parts. No warning waiver or acceptance is claimed. History producer now creates a fresh Delivery tracking proposal in the copied Shop example and adopts its returned state, avoiding forced adoption of an older queued draft. The final producer, types, focused lint, and visual inspection pass. The before and after pictures compare against their own exact checkpoints. The inspected clip was uploaded once as d18c639c-1000-4afe-9a79-ea57d30e473a and linked in README. README and the asset/vault guides now describe canonical inputs and independent archive sharing. Parent still owns source-warning cleanup, adoption, final assets, integration gates, review, and PR readiness.
 
 Root curation now uses one shared session, workbench, browser renderer, pane session, and recording owner per implementation. The latest public intent canonical-curation-browser-owners-549-24-1 succeeded at checkpoint 1998dcd8e18bbd46df58fdf344c054505179a066 with cleanup complete. Original tours stay pinned to the migration baseline. Missing source symbols are resolved; remaining dependency and identity inspection is active. The portable inspection repair is integrated through 2e80e7350, and the actual README history clip is recorded and published in f154355de. Acceptance and adoption remain open.
+
+Production build passes without bundle warnings. Both type projects pass. The existing shell layout owner passes all 290 assertions. The existing conversation owner passes sign-in and approvals but times out during a human repository open after agent navigation. Root is diagnosing the addressed pane capture before accepting the bundle and final browser behavior.
+
+The existing foreign-repository conversation case reproduces the missing capture twice. Its observational network trace shows pane movement and successful registration without a new reading report. Canonical arrival now resets the reading publisher when its vault changes, even with no legacy board key. The original case passes after the fix: 1 case, 9 assertions, normal cleanup. Temporary instrumentation is removed. The final root evidence intent also describes this boundary and the navigation helpers. Historical layout measurement scripts now consume the canonical root projection and optional active proposals through the public reader.
+
+Simplification after inspection: keep the historical wide-layout investigation scripts unchanged. They use frozen renderer fixtures and test-owned scorecards; converting them would expand the public renderer interface for research tooling. The existing engine-gallery.ts already provides canonical current, scoped, and flow measurements. The root model names both consumers, with their different purposes. The experimental reader helper was removed. Source lint for the product changes remains the required owner.
 <!-- SECTION:NOTES:END -->
