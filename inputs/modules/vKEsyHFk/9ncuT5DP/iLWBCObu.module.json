@@ -1,0 +1,18 @@
+{
+  "order": 40000,
+  "name": "Operations contract",
+  "kind": "module",
+  "responsibility": "Defines the requests, results and notifications of the four workhorse operations",
+  "groups": [
+    "workhorse"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/protocol/workhorse-operations/contract.ts",
+    "symbol": "CodexWorkhorseOperations"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#iLWBCObu",
+  "parent": "vKEsyHFk/9ncuT5DP#tlC2W839",
+  "outgoing": []
+}

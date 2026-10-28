@@ -1,0 +1,42 @@
+{
+  "order": 19000,
+  "name": "Semantic context",
+  "kind": "module",
+  "responsibility": "One per tab session for voice and one per workhorse for the boards of its checkout: turns the panes' gestures and every settled board change into briefs and events",
+  "description": "Each brief names its board's vault, so a thread passes it to the CLI with -C. The voice side hears the board changes of the vaults its tab session's panes are in, and a workhorse hears only those of the vaults in its own checkout, so it is told about the boards it works on.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-app-server/src/runtime/operations/semantic-context-publisher.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
+  "parent": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+  "outgoing": [
+    {
+      "order": 25000,
+      "kind": "event",
+      "label": "the user's changes, focus and selection",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/coordinator-callbacks/callbacks.ts",
+        "symbol": "subscribeSettledChange"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#Tqxin6z5",
+      "to": "vKEsyHFk/9ncuT5DP#08zJvPJq"
+    },
+    {
+      "order": 26000,
+      "kind": "event",
+      "label": "a settled board change",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/thread-context/controller.ts",
+        "symbol": "subscribeSettledChange"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#7LxiPZOi",
+      "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb"
+    }
+  ]
+}

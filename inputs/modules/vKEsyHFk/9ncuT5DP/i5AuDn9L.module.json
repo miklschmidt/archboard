@@ -1,0 +1,9 @@
+{
+  "order": 31000,
+  "name": "Pane conversations",
+  "kind": "module",
+  "responsibility": "What a pane sees and says: the gateway with its lease, snapshots and commands, the start of a conversation, the dock's list of workhorses, and the approvals raised to the person",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+  "outgoing": []
+}
