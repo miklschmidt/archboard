@@ -1,7 +1,7 @@
 # The grading council
 
 A layout change that alters drawings is judged by a council of four graders
-(Opus, gpt-6.1-sol, gpt-6-astra and Gemini 4 Argon), not by byte-identical
+(Opus, gpt-6.1-sol, gpt-6-astra and Muse Wonder), not by byte-identical
 drawings (TASK-548, TASK-548.09, TASK-548.12). Each grader scores both
 drawings of a pair on the council's agreed criteria without knowing which
 drawing is the change, and the scores decide which reads better to a person.
@@ -65,7 +65,10 @@ The criteria, their anchors, the defects and the decision rules are in
 rereads that file before each run.
 
 1. **Graders.** Run Opus, gpt-6.1-sol and gpt-6-astra at `xhigh` effort and
-   Gemini 4 Argon through Cursor at `high`, the highest it offers. Each grader
+   Muse Wonder (`muse-wonder-1.0`) through Cursor at `xhigh`. Muse Wonder
+   replaced Gemini 4 Argon on 2026-10-28. In round 4 none of Argon's 22
+   reported defects was real and its margins spread widest. In round 5 its
+   weighted scores averaged 8.0 against about 6.0 for the other three. Each grader
    gets the grading copy, the criteria file and the owner's weighting above,
    and nothing else. It does not use the old scorecard metrics
    (`drawn-scorecard.ts` and the `drawn-*` checks), and it does not see the

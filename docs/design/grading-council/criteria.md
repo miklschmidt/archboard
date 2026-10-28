@@ -1,6 +1,6 @@
 # The council's criteria
 
-The four graders of the grading council (Opus, gpt-6.1-sol, gpt-6-astra and Gemini 4 Argon) agreed on this list on 2026-10-27 (TASK-548.12). Each grader first wrote its own criteria from the same twelve sample pictures. Those four lists are in this directory's history at commit e62d75d4e. Each grader then proposed one shared list, and three rounds of votes settled it with every item accepted by all four. The owner's weighting in [grading-council.md](../grading-council.md) comes first: defects are defects, and among pictures without defects, tight composition counts most.
+The four graders of the grading council (Opus, gpt-6.1-sol, gpt-6-astra and Gemini 4 Argon) agreed on this list on 2026-10-27 (TASK-548.12). Each grader first wrote its own criteria from the same twelve sample pictures. Those four lists are in this directory's history at commit e62d75d4e. Each grader then proposed one shared list, and three rounds of votes settled it with every item accepted by all four. The owner's weighting in [grading-council.md](../grading-council.md) comes first: defects are defects, and among pictures without defects, tight composition counts most. On 2026-10-28 Muse Wonder replaced Gemini 4 Argon on the council. It grades with this list as agreed.
 
 ## How to look
 
