@@ -14,9 +14,10 @@ const CodeTargetOpenRequestSchema = z.union([
 		})
 		.refine(
 			(request) =>
-				[request.state, request.checkpoint, request.preview].filter((value) => value !== undefined)
-					.length <= 1,
-			"Select one state, checkpoint, or migration preview.",
+				request.preview !== undefined ||
+				request.state === undefined ||
+				request.checkpoint === undefined,
+			"Select one state or checkpoint outside a migration preview.",
 		),
 ]);
 type CodeTargetOpenRequest = z.infer<typeof CodeTargetOpenRequestSchema>;
