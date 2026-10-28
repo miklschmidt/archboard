@@ -50,7 +50,7 @@ https://github.com/user-attachments/assets/a4b2dcf6-957d-4e20-8414-2f6a678a35f5
 </tr>
 <tr>
 <td align="center"><a href="#ask-your-architecture"><img src="docs/readme/idx-ask.webp" alt="Ask: the agent answers a question about a selected part"></a><br><b><a href="#ask-your-architecture">Ask your architecture</a></b></td>
-<td align="center"><a href="#agents-work-in-plain-sight"><img src="docs/readme/idx-safety.webp" alt="Claims: a pane that shows an agent's claim on the board"></a><br><b><a href="#agents-work-in-plain-sight">Agents in plain sight</a></b></td>
+<td align="center"><a href="#agents-work-in-plain-sight"><img src="docs/readme/idx-safety.webp" alt="A pane shows the writer and purpose of a claim on Checkout API"></a><br><b><a href="#agents-work-in-plain-sight">Agents in plain sight</a></b></td>
 <td align="center"><a href="#pictures-for-docs-adrs-and-pull-requests"><img src="docs/readme/idx-docs.webp" alt="Docs: a board rendered for a document"></a><br><b><a href="#pictures-for-docs-adrs-and-pull-requests">Pictures for your docs</a></b></td>
 </tr>
 </table>
@@ -189,12 +189,13 @@ Select a part and ask. The Codex agent in the conversation reads the board and y
 
 ## Agents work in plain sight
 
-Let agents work on the map without wondering what they touched. When an agent **claims** a board, every pane that has it open shows who, why, and since when. The pane also has one button to take the board back. Every write says in one line what it is doing, and every change to an existing board names the version it read. If the board moved since then, the write is refused, so two agents never overwrite each other.
+An agent claims the subjects it plans to change. Each pane shows the writer, purpose, subjects, and start time. Take back control ends that claim. The server then refuses the former intent.
 
-<img src="https://github.com/user-attachments/assets/381c3a25-0bc8-4b07-a419-2e82541c04ea" width="100%" alt="An agent claims the Web shop board and the pane shows the claim. The pointer presses Take back control, and the banner goes. The agent's next write is refused with exit code 5.">
+Each write names its intent and the exact architecture revision that it read. If the architecture changed, the server refuses the stale write. Agents can claim different subjects without copying the model.
 
-<p align="center"><sub>You take the board back, and the agent's next write is refused. Nothing is half written. Every accepted write is on disk before the agent hears back.
-</sub></p>
+<img src="https://github.com/user-attachments/assets/f7ca7c76-5709-46f4-b918-7a63ce0f9d09" width="100%" alt="An agent claims Checkout API. The reader presses Take back control. The next edit returns CLAIM_REVOKED, and the architecture stays unchanged.">
+
+<p align="center"><sub>The actual CLI refusal leaves the authored revision unchanged. Every accepted write reaches disk before the server acknowledges it.</sub></p>
 
 ## Pictures for docs, ADRs and pull requests
 
