@@ -1,0 +1,74 @@
+{
+  "order": 37000,
+  "name": "Turn execution",
+  "kind": "module",
+  "responsibility": "Implements delegation, steering, inspection and queue changes through the shared operation runtime",
+  "groups": [
+    "workhorse"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/operations/workhorse-operations"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#7XZtb0wb",
+  "parent": "vKEsyHFk/9ncuT5DP#tlC2W839",
+  "outgoing": [
+    {
+      "order": 13000,
+      "kind": "call",
+      "label": "queue a delegation behind the running turn",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+        "symbol": "add"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#uK6QAuru",
+      "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn"
+    },
+    {
+      "order": 22000,
+      "kind": "rpc",
+      "label": "turn/start when idle, turn/steer",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+        "symbol": "turnStart"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#rOBpux5i",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 77000,
+      "kind": "call",
+      "label": "classify and recheck the captured links",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+        "symbol": "classify"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#aLUB44Jp",
+      "to": "vKEsyHFk/9ncuT5DP#75E6lJHK"
+    },
+    {
+      "order": 78000,
+      "kind": "call",
+      "label": "stage and follow the operation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/workhorse-operations/turns.ts",
+        "symbol": "stage"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#0ULeTEej",
+      "to": "vKEsyHFk/9ncuT5DP#8CuNvBuG"
+    }
+  ]
+}
