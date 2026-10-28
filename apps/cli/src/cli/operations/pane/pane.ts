@@ -505,7 +505,7 @@ const browserShowContract = defineCommand({
 		const reading =
 			file === undefined
 				? flags
-				: ArchitecturePaneReadingSchema.parse(await statedJson({ input: file }, context));
+				: context.parse(ArchitecturePaneReadingSchema, await statedJson({ input: file }, context));
 		await context.require("browser", "Show architecture");
 		const result = await showBoardInPane(reading, pane);
 		return { result: ShowResultSchema.parse(result), diagnostics: choiceLine(result) };
