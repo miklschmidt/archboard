@@ -148,7 +148,7 @@ async function setUpRepository(options: SetupOptions): Promise<SetupResult> {
 	const vault = path.join(repo, VAULT_DIRECTORY);
 	const vaultCreated = !fs.existsSync(vault);
 	fs.mkdirSync(vault, { recursive: true });
-	if (vaultCreated) await initializeNewVault(repo, vault);
+	if (fs.readdirSync(vault).length === 0) await initializeNewVault(repo, vault);
 	const removedBlocks = removeOldBlocks(repo);
 	const vaultIgnored = gitIgnores(repo, vault);
 
