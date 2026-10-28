@@ -1,0 +1,28 @@
+{
+  "order": 8000,
+  "name": "Theme palette",
+  "kind": "function",
+  "responsibility": "Resolves every drawn colour for the ground being drawn on",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/rules/svg/page/theme.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#u1OXg3Yy",
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "outgoing": [
+    {
+      "order": 6000,
+      "kind": "data",
+      "label": "each role's colour, as page tokens",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+        "symbol": "PALETTE"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#I1lGjMES",
+      "to": "vKEsyHFk/gbyqW4H3#J7mPrUeP"
+    }
+  ]
+}

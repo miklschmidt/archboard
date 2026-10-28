@@ -1,0 +1,31 @@
+{
+  "order": 40000,
+  "name": "Operations contract",
+  "kind": "module",
+  "responsibility": "Defines the requests, results and notifications of the four workhorse operations",
+  "groups": [
+    "workhorse"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/protocol/workhorse-operations/contract.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#iLWBCObu",
+  "parent": "vKEsyHFk/9ncuT5DP#tlC2W839",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "references": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "model": "vKEsyHFk",
+      "subject": "vKEsyHFk/9ncuT5DP#tlC2W839",
+      "state": "current"
+    }
+  ],
+  "outgoing": []
+}

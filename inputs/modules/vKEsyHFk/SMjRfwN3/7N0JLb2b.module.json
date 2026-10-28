@@ -1,0 +1,17 @@
+{
+  "order": 3000,
+  "name": "Bounds and limits",
+  "kind": "function",
+  "responsibility": "The region, the bitmap size, and the refusal when either is past what may be drawn",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/runtime/operations/rasterizer/bounds.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SMjRfwN3#7N0JLb2b",
+  "parent": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
+  "outgoing": []
+}

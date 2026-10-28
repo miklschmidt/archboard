@@ -1,0 +1,35 @@
+{
+  "order": 35000,
+  "name": "Command dispatch",
+  "kind": "module",
+  "responsibility": "Routes each admitted command to its account, thread, text, queue, approval or voice action",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/operations/command/command-dispatch.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#dEfJJFtS",
+  "parent": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 42000,
+      "kind": "call",
+      "label": "create, on the tab's first message or Talk",
+      "description": "The server passes a BrowserThreadLinkActions port to Browser gateway. command-dispatch invokes its create method; the implementation remains inside the Archboard server private thread-link composition.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/operations/command/command-dispatch.ts",
+        "symbol": "create"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#b9yFBXHz",
+      "to": "vKEsyHFk/9ncuT5DP#JHbKEH3A"
+    }
+  ]
+}

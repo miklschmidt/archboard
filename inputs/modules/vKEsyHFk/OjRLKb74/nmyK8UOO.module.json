@@ -1,0 +1,104 @@
+{
+  "order": 1000,
+  "name": "View dispatcher",
+  "kind": "module",
+  "responsibility": "Measures, settles and paints one drawing, in that order",
+  "description": "The renderer's entry point, drawn here only as the caller of the layout. Follow it for the rest of the renderer.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/rules/render/diagram.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/OjRLKb74#nmyK8UOO",
+  "parent": "vKEsyHFk/OjRLKb74#5UnSr8ZQ",
+  "formerNames": [
+    "Render driver"
+  ],
+  "references": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "model": "vKEsyHFk",
+      "subject": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+      "state": "current"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "measure every word",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+        "symbol": "measureArchitecture"
+      },
+      "id": "vKEsyHFk/OjRLKb74#TPRWw9F4",
+      "to": "vKEsyHFk/OjRLKb74#kHpIix5b"
+    },
+    {
+      "order": 4000,
+      "kind": "call",
+      "label": "content and measured sizes",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/layout/engines.ts",
+        "symbol": "layoutTracks"
+      },
+      "id": "vKEsyHFk/OjRLKb74#notKnIIz",
+      "to": "vKEsyHFk/OjRLKb74#oycxx6G2"
+    },
+    {
+      "order": 13000,
+      "kind": "render",
+      "label": "paint the settled drawing",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+        "symbol": "paintArchitecture"
+      },
+      "id": "vKEsyHFk/OjRLKb74#oYEzQ4k5",
+      "to": "vKEsyHFk/OjRLKb74#H0xU45vp"
+    },
+    {
+      "order": 19000,
+      "kind": "call",
+      "label": "the engine the render names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+        "symbol": "layoutEngine"
+      },
+      "id": "vKEsyHFk/OjRLKb74#EOOPngnB",
+      "to": "vKEsyHFk/OjRLKb74#mHYMkWdE"
+    },
+    {
+      "order": 25000,
+      "kind": "call",
+      "label": "each container's entry points on the whole variant",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+        "symbol": "entryPointsOf"
+      },
+      "id": "vKEsyHFk/OjRLKb74#4lrR3GdH",
+      "to": "vKEsyHFk/OjRLKb74#ZRFUJrjD"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "order": 21001,
+  "name": "Engine and graph",
+  "kind": "module",
+  "responsibility": "States the board as one graph of containment, sizes and relationship kinds, and lays it out through the engine a render names, inside a layout worker",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/OjRLKb74#e10t6gst",
+  "outgoing": []
+}

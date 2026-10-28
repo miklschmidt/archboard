@@ -1,0 +1,109 @@
+{
+  "order": 9000,
+  "name": "Architecture painter",
+  "kind": "function",
+  "responsibility": "Paints a settled drawing as SVG marks and standing",
+  "description": "Paints neutral container wells, unfilled group frames, member-tagged shadows, lines and port interiors, traffic, card bodies, labels and header content in that order. Ports clip a card in its own box coordinates and traffic runs to the lid. Every card shadow lies below every line and card.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#J7mPrUeP",
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "outgoing": [
+    {
+      "order": 7000,
+      "kind": "data",
+      "label": "the painted body",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
+        "symbol": "shifted"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#qDiEFiIT",
+      "to": "vKEsyHFk/gbyqW4H3#eECDrhMc"
+    },
+    {
+      "order": 21000,
+      "kind": "call",
+      "label": "where every subject landed",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
+        "symbol": "atlasBoxes"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#WMtzvSOO",
+      "to": "vKEsyHFk/gbyqW4H3#y8vuJJKu"
+    },
+    {
+      "order": 34000,
+      "kind": "call",
+      "label": "the size far names are set at",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
+        "symbol": "farSizeFor"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#R3iBvVWQ",
+      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
+    },
+    {
+      "order": 36000,
+      "kind": "call",
+      "label": "slab labels and member-tagged card shadows",
+      "description": "architecture.ts paintEdgeWords calls slab for a relationship label; paintArchitecture calls shadowUnder before all lines and cards. measured-cards.ts draws card bodies with slab, while container headers are delegated to tray.ts.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
+        "symbol": "slab"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#xKJERQyv",
+      "to": "vKEsyHFk/gbyqW4H3#Ga3k1AaP"
+    },
+    {
+      "order": 43000,
+      "kind": "call",
+      "label": "slots, clips, inside paint and pulse rides",
+      "description": "architecture.ts paintArchitecture calls portsOf and portPlan, paintEdgeLine calls portInside, and its traffic uses endsInPort and rideInto.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
+        "symbol": "portsOf"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#pYtAAlpK",
+      "to": "vKEsyHFk/gbyqW4H3#Oqsd6MyT"
+    },
+    {
+      "order": 47000,
+      "kind": "call",
+      "description": "Delegates measured architecture cards, frames and headers to their direct painter.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
+        "symbol": "paintMeasuredFrame"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#s3eeTdzY",
+      "to": "vKEsyHFk/gbyqW4H3#Man3LVIp"
+    },
+    {
+      "order": 69000,
+      "kind": "call",
+      "label": "mark the subject and its standing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
+        "symbol": "subjectGroup"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#Mi41O26J",
+      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
+    }
+  ]
+}
