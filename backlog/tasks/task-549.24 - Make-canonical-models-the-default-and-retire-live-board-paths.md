@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T00:41:00Z'
+updated_date: '2026-10-28T00:52:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -130,6 +130,8 @@ Complete the web-shop fixture transition from the public scratch migration and p
 Repair the observed whole-batch removal refusal through the existing flow owner. The canonical hero explicitly removes Timeout guard and its timer message in one batch. removeStep marks the identity in both edited and removals; repairReferences then treats that explicit removal as an edited surviving message with a removed endpoint. Delegate a bounded real-files/Git public-runtime RED/GREEN repair. Preserve refusal for a genuinely surviving edited or moved message with a removed endpoint. Parent owns the hero input, frontend, root migration and acceptance.
 
 Bounded flow-removal repair: use the approved public architecture runtime with real temporary files and Git. Reproduce explicit incident-message removal plus module removal while preserving another message. Repair the existing flow-removal owner, preserve surviving-message refusal and durable contracts, then run focused tests, types, lint and formatting. Contract: /home/msc/.local/state/archboard-implementation/task-549/task-549.24-flow-removal-contract.md. Reuse Board persistence proposal NyesaQPQ, predecessor LSsVMn3j, subject yNZEhzyc. Parent retains final architecture authoring and acceptance.
+
+Continue parent README transitions through existing real producers. Demonstrate canonical subject claims, human take-back, CLAIM_REVOKED refusal, and unchanged authored revision. Keep retained history and narration on canonical captured readings. Merge bounded repairs through merger agents, then complete root migration and final acceptance.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -256,4 +258,6 @@ Ported README SVG/raster recipes and banner rendering to canonical structural/fl
 Canonical hero source and authored operation batch are checkpointed, not accepted. Types, focused lint and formatting pass. The actual producer exposed source-label ambiguity, which the fixture now resolves by explicit source module plus label. The next run reproduced a public runtime removal conflict for an explicitly removed incident message. No hero asset was accepted or uploaded. The authoring helper now keeps separate claim/edit/release input files for diagnosis and exact retries, and qualifies collection claim scopes as model#localCollectionID. Backend removal repair remains open.
 
 Bounded flow-removal backend repair on fix/flow-removal-blocker starts at signed 4bbf3679e with 9e01df6 and required main a98f28811 in its ancestry. The public flows runtime owner reproduced MODEL_INVALID for explicit incident-message removal with module removal. The existing incident-message predicate now excludes identities already marked for removal. The retained flow keeps its surviving message and participants, deleted identities retire, and exact retry reopens the durable result. Existing refusal batches cover edited and moved surviving messages with deleted endpoints. The interrupted flow-repair owner now includes explicit step removal and preserves recovery conflicts, affected identities, retained content, and exact retry. Focused flows and structure-recovery owners: 12 pass. Both TypeScript projects, scoped source/test lint, formatting, and git diff whitespace pass. Board persistence proposal NyesaQPQ (predecessor LSsVMn3j, family 0T9enjhi) remains the provenance. Affected subject yNZEhzyc keeps its identity and existing relationships UHKlormM and yUvd87du. Runtime discovery reports LEGACY_AUTHORITY, so no source-vault authoring or claims occur. Parent owns final authoring, migration, and acceptance. Contract and evidence logs live in /home/msc/.local/state/archboard-implementation/task-549 under task-549.24-flow-removal-*. No full gate, model evaluation, parent hero take, frontend, example, or README asset work ran.
+
+Merged signed flow-removal repair719c3815e through signed8b5f850b; merge tree equals validated source. The next real hero run exposed checkpoint.referenceDependencies leaking through public checkpoint metadata. Exact blocker is task-549.24-checkpoint-metadata-blocker.md outside the repository. Canonical take-back producer now claims Checkout API, uses the actual human control, requires CLI exit2/CLAIM_REVOKED, and proves unchanged authored revision.digest. Real producer, both types, scoped lint and formatting pass. Parent inspected the generated thumbnail, source frames and encoded clip first frame. Clip is 3.76MiB in scratch, not uploaded. No acceptance or migration status changed.
 <!-- SECTION:NOTES:END -->

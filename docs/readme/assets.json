@@ -299,9 +299,13 @@
 				"scripts/readme-assets/stage/terminal.html",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"scripts/readme-assets/model-authoring.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "b8356075fd518f345aa1b2851e1977000520f083a7833620b7410af38deeec1c"
+			"hash": "f1847e062533f372cefd181eaf8f3d19158dff42ea5848ee82db276892ad1f42"
 		},
 		{
 			"name": "web-shop",
