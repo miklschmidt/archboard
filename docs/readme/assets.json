@@ -128,7 +128,6 @@
 			"command": "bun run readme:assets history",
 			"files": ["docs/readme/idx-history.webp"],
 			"sources": [
-				".archboard/vault/Renderer layout.semantic.json",
 				".archboard/vault/.archboard/config.yaml",
 				"apps/web",
 				"packages/ui-kit/src/ui",
@@ -143,7 +142,12 @@
 				"scripts/readme-assets/stage/timeline.html",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				".archboard/vault",
+				"scripts/readme-assets/model-authoring.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts"
 			],
 			"hash": "177d0dd05376ff8d5776f81b1bf2c73b393c97da7c7c091fbb7453cd828adc68"
 		},

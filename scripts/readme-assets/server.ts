@@ -1,22 +1,12 @@
-// One Archboard server for one take, over a fresh copy of a tracked vault or over the checkout's
-// own vault.
-//
-// A copy holds the vault's tracked files and nothing else, so a take shows what the checkout
-// holds and its writes never reach the repository. The copy is the `.archboard/vault` of a
-// directory of its own, which the take's commands run in. The checkout's own vault is served in
-// place for a picture that its board lists as a tracked embed: the picture's recipe then names
-// this repository, so `archboard check` here finds its board, and the write that tracks it lands
-// in the vault. Either way a registry of the take's own lists the directory, so the machine's
-// registry never sees a take. The server listens on a free port. A take that
-// needs no Codex gets a state directory of its own in the scratch directory (on Linux, through
-// XDG_STATE_HOME), so it starts without a Codex sign-in and leaves the machine's state alone. A
-// take that needs Codex uses the machine's state directory and its Archboard Codex sign-in, which
-// every Archboard server on the machine shares.
+// Each take serves a disposable copy of canonical inputs and their retained archive.
+// Repository SVG exports serve the checkout vault in place so their recipes name that repository.
+// Exports write their output files without changing authored architecture.
+// Each take keeps its own repository registry and server port.
+// Takes without Codex use a private state directory and no account sign-in.
+// Narrated takes use the machine's shared Archboard Codex sign-in.
 
 import { copyFileSync, mkdirSync, rmSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
-
-import { parseSemanticBoard, type SemanticBoard } from "@archboard/board/document";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { ROOT, attempt, run, scratch, type Ran } from "./tools.ts";
@@ -152,27 +142,4 @@ async function launch(home: string, holder: string, codex: boolean): Promise<Tak
 	};
 }
 
-/**
- * A board as `semantic show` reports it, read through the board's own schema.
- * @param server The server.
- * @param name The board.
- * @returns The board.
- * @throws {Error} When the answer holds no board.
- */
-async function readBoard(server: TakeServer, name: string): Promise<SemanticBoard> {
-	const shown = await server.cli(["semantic", "show", name]);
-	const parsed = parseSemanticBoard(
-		typeof shown === "object" && shown !== null && "board" in shown ? shown.board : undefined,
-	);
-	if (!parsed.ok) throw new Error(`semantic show "${name}" held no board: ${parsed.problem}`);
-	return parsed.board;
-}
-
-export {
-	readBoard,
-	startCheckoutServer,
-	startServer,
-	type TakeServer,
-	type TrackedVault,
-	type TakeSource,
-};
+export { startCheckoutServer, startServer, type TakeServer, type TrackedVault, type TakeSource };
