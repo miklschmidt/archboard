@@ -8,6 +8,8 @@ assignee:
   - '@claude'
 created_date: '2026-10-27T12:13:00Z'
 updated_date: '2026-10-28T01:20:00Z'
+
+updated_date: '2026-10-28T01:21:00Z'
 labels:
   - renderer
   - tooling
@@ -38,6 +40,8 @@ The owner added Gemini 4 Argon, through Cursor, as a fourth grader beside Opus, 
 2. Proposal round: each of the four graders reads all four criteria files and the owner's weighting and proposes one shared list: criteria with a test, anchors for 1, 4, 7 and 10, and a weight; defects stay a gate outside the scores; a rule from scores to a verdict.
 3. Agreement rounds: merge the proposals into one draft that keeps each grader's wording where it differs; each grader accepts or amends every item; repeat until all four accept, at most three rounds, else 3 of 4 with the dissent recorded.
 4. Record the agreed criteria as docs/design/grading-council/criteria.md, replacing the per-grader files; rewrite the procedure for scores, defects and four graders; make the tally a script if counting by hand is no longer practical.
+
+Spec review: reproduce the exact 0.40 boundary and incomplete four-grader inputs at the tally command. Keep weighted totals exact until after the median. Refuse incomplete council input before deciding pairs. Cover both behaviors through the command. These fixes leave the architecture boards and consumer workflow accurate. Keep task statuses unchanged.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -54,6 +58,12 @@ scripts/council-tally.ts unblinds verdicts/<grader>.json with key.json, refuses 
 Standards review, 2026-10-28: malformed JSON in the key, grader verdicts, or rulings exits 1 without naming the input file. The review will use the existing refusal path and add one process test table for these three inputs. This repair changes no architecture board meaning or consumer skill workflow.
 
 Standards review complete: readJson now routes JSON read and parse failures through the command refusal. It names the input file and exits 2. The three process cases fail before the fix and pass afterward. They test the exit status, empty stdout, and file path without locking diagnostic wording. All 17 focused renderer and rasterizer cases pass. The complete nix develop gate passes all 20 tasks, including all 19 browser files. The full log is /tmp/archboard-standards-review-check.log. Lint and type rules remain unchanged. The final simplification pass keeps the fix in the existing reader.
+
+Spec review: three command regressions reproduce exact 0.40 margins classified as same, including a worse change that exits zero. Weighted totals now stay in integer hundredths through the median. The three regressions pass in both before-side orientations and at a split median. No drawing, board meaning, consumer workflow, acceptance state, or task status changes.
+
+Spec review: the command accepted one, three, or five grader files, and silently omitted a grader that skipped a pair. Four failing command regressions verify this. The tally now requires exactly four files and names the grader and pair when a score is missing. All seven tally regressions pass. The procedure states the input requirement. Task statuses and council acceptance remain unchanged.
+
+Review validation: nix develop --command bun run check passes all 20 tasks, including all 19 browser files. The module, system, and repository lanes report 4975, 285, and 168 passing tests with no failures. The repository lane includes all seven tally regressions. Final simplification replaces skipped scores with a required score in one map. The architecture boards and consumer skill remain accurate. Task statuses and acceptance states remain unchanged.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
