@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T14:28:00Z'
+updated_date: '2026-10-28T15:11:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -180,6 +180,8 @@ Close the measured renderer corpus consumer: wide-boards.test.ts still discovers
 Repair the reproduced Track label-station contract before final acceptance. Read-only diagnosis pins one real case to chainOf omitting a label whose placed band is outside the endpoint span. Normalize coherent label placement before chain construction, keeping every label on its routed segment and preserving geometry assertions. Delegate this bounded renderer repair. Existing architecture responsibility vKEsyHFk/OjRLKb74#Wp2usbe5 remains accurate: this restores its declared layout invariant and needs no new architecture proposal.
 
 Repair the full-gate integration findings before final acceptance. Root owns all frontend owners, their replacement browser evidence, and final visual acceptance. Delegate the bounded non-frontend fixture and contract repairs in a separate signed worktree. Preserve canonical-only authoring, real signed archive tests, strict diagnostic behavior, and existing lint/type/timing limits. Reuse focused evidence, then resume the full gate. The Track label repair is integrated; three lane-clearance cases and one container-wall label remain open.
+
+Repair the final Track container-wall defect through the existing private scene and label-clearance contract, using the saved causal probe and public renderer regression. Then repair the12 bounded system-test failures from full gatev4 without changing signer requirements, process cleanup, or timing limits. The root retains visual acceptance, assets and final review.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -390,4 +392,6 @@ The canonical cache RED/GREEN owner now passes6 assertions. Strict private valid
 Frontend repair acceptance is green. Canonical cache owner passes6 assertions after its observed two-layout RED. The existing viewer owner passes authored details, claim/take-back with the same mounted scene, and retained-history recovery. Its current-refresh case passes after waiting for the exact refusal, and now also proves that a real claim released through the public runtime while the server is down disappears from the activity row on reconnect. Both agent-navigation cases pass, including neighboring-scene identity. All owned browser processes stop. Scoped source/test lint, formatting, diff whitespace, both types and browser build pass; the later reconnect fixture uses the existing public release operation. The final merge will type-check combined changes. Retired owner mapping and exact logs are in task-549.24-gate-frontend-repair.md outside the repository. Full-gate acceptance, four Track corpus failures, final review and publication remain open.
 
 Signed merge d2d44aa98 integrates all30 backend gate repairs with the independent frontend repair. Combined source/browser types pass. Full gate v3 stopped before tests because the new UI cache owner imported the Bun renderer and omitted required function documentation. The owner now uses a scene fixture typed from the actual cache draw contract. It preserves readingDirection, exact-key reuse, malformed-entry refusal, and refused-storage assertions. Focused strict source lint passes and all6 assertions pass in34ms. No lint exception or renderer boundary changes are added.
+
+Full gatev4 passes all lint, format, types and builds, plus4768 package/app tests with1 platform skip and0 failures. The system stage reports207 passes,12 failures and1 unhandled timeout across62 owners. Exact extraction is task-549.24-full-gate-v4-failures.json/.md. Signed port-capacity source89661da61 is merged through8606723d7 with an identical tree. Its156 affected geometry cases pass; the corpus is267pass1wallfail. All3prior lane drawings now meet the unchanged lane and timing limits, and131other Track drawings remain byte-identical. Root inspected3whole drawings and3details and accepts the lane geometry. Root also proves the remaining lone-frame label defect: the routing scene omits the60pixel caption offset inside a fitted139pixel combined header, placing a31pixel label6pixels across the inner top border. An external selective boundary prototype removes the exact failure without changing tracked source. Diagnosis and brief use task-549.24-track-wall prefixes. No full-gate completion, task acceptance, publication or PR action is claimed.
 <!-- SECTION:NOTES:END -->
