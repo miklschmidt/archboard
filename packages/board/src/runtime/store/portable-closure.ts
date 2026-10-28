@@ -79,7 +79,6 @@ function lifecycleDependencies(lifecycle: Record["lifecycle"]): string[] {
  */
 function recordDependencies(record: Record, model: ArchitectureModel): string[] {
 	return [
-		...record.request.dependencies,
 		...(record.narrativeDependencies ?? []),
 		...modelDependencies(model),
 		...selectionDependencies(record.selection),
@@ -267,10 +266,17 @@ async function requirePortableClosure(
 	 * @param dependencies The complete local reference set.
 	 * @param owner The stable model identity.
 	 * @param checkpoint The child that must retain every dependency, when present.
+	 * @param archiveRoots Whether synchronization roots can retain imported history.
 	 */
-	function requireReferences(dependencies: string[], owner: string, checkpoint?: string): void {
+	function requireReferences(
+		dependencies: string[],
+		owner: string,
+		checkpoint?: string,
+		archiveRoots = false,
+	): void {
 		for (const dependency of dependencies) {
-			requireLocalRecord(dependency, owner);
+			if (archiveRoots) requireImportedRoot(dependency, owner);
+			else requireLocalRecord(dependency, owner);
 			if (checkpoint !== undefined && !ancestor(dependency, checkpoint))
 				throw new ArchiveError(
 					"CHECKPOINT_INVALID",
@@ -299,6 +305,15 @@ async function requirePortableClosure(
 				dependency,
 			);
 	}
+	/**
+	 * Accept synchronization roots only for complete imported archive ancestry.
+	 * @param dependency The imported root identity.
+	 * @param owner The stable model identity.
+	 */
+	function requireImportedRoot(dependency: string, owner: string): void {
+		if (known.get(dependency)?.kind === "synchronization") return;
+		requireLocalRecord(dependency, owner);
+	}
 
 	for (const { id, record } of records) {
 		// oxlint-disable-next-line no-await-in-loop -- finish decoding before another supervised read starts
@@ -312,6 +327,12 @@ async function requirePortableClosure(
 			);
 		// oxlint-disable-next-line no-await-in-loop -- large retained decodes must not starve pending Git readers
 		const retained = await retainedModel(context, id, record);
+		requireReferences(
+			record.request.dependencies,
+			record.model,
+			id,
+			record.installation?.type === "import",
+		);
 		requireReferences(recordDependencies(record, retained), record.model, id);
 	}
 	requireReferences(modelDependencies(model), model.manifest.id);
