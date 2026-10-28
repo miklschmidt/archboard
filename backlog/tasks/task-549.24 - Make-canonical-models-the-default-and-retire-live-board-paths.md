@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T18:40:00Z'
+updated_date: '2026-10-28T19:16:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -190,6 +190,8 @@ Repair historical comparison refresh through the existing canonical event owner.
 Repair canonical pane capture after a late vault arrival. The two-pane workbench browser owner proves that restored Shop has the correct pane vault but no architecture capture, while Orders is correct. Republish the existing current reading when the session vault changes, and require the captured vault to match before publishing. Keep reader and selection identity stable. Use the existing workbench browser owner and reference/navigation owners for acceptance. This restores the existing pane publisher contract and requires no new public schema or architecture proposal.
 
 Finish the two workbench browser owners. Fullscreen diagnosis proves model-inspector is absent because Selection is inactive, while the mounted semantic-sidebar is hidden. Assert that existing sidebar instead of requiring an inactive panel. The signed-out case uses an uncontrolled external example.test login URL and intermittently leaves the popup at about:blank. Fulfill only that fake provider navigation through the browser network fixture, preserving the real local sign-in protocol and exact destination assertion. Run these existing owners, the pending reference/agent-navigation guards, and scoped checks. No product or architecture change is planned.
+
+Visual README inspection found legacy board-authoring wording in current code diagnostics. Update RELATIONSHIP_UNDRAWN and CALLER_UNDRAWN guidance to describe modules and model relationships, preserving codes, subjects, evidence and severity. This is a small consumer-transition review fix, not new architecture. Run scoped source lint and existing code-check owners without wording assertions. Regenerate the three evidence clips whose source hash includes code-intel, then inspect outputs before publishing.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -424,4 +426,6 @@ Historical comparison diagnosis confirms that the runtime returns the new curren
 The two-pane workbench owner now passes capture restoration after reload. Pane composition vKEsyHFk/yejBBUFY#zkDth8gp republishes the existing reading when the session vault changes, without remounting the reader. A capture from another vault waits for matching content. Both TypeScript projects, scoped strict source lint, formatting and whitespace pass. The simplification uses the existing effect and publisher. No new state, public schema, proposal or source-vault edit is needed. The same browser run exposed a separate intermittent sign-in popup timeout. The final live-voice owner then found the model inspector still visible during presentation. Those two remaining browser findings stay open. Archive/history review is complete with one signed portable-import repair, pending its merger.
 
 The final workbench browser lane passes six cases with 147 assertions across typed sign-in, two-pane capture restoration, live voice, references, and agent navigation. Both TypeScript projects and scoped test lint/format pass. Fullscreen diagnosis proves the inactive inspector is absent and the mounted sidebar is hidden; the test now checks that sidebar. The fake external sign-in URL now receives a browser network fixture instead of depending on DNS and an error navigation. The real local sign-in protocol and exact destination assertions remain. Both fixture changes leave product architecture unchanged. Every executable browser inventory owner now has a passing run across the recorded serial batches. The complete final gate, remaining backend/boundary reviews, asset refresh and publication remain open.
+
+Eleven non-Codex README producers completed. Root inspected both banners, the social card, light/dark example diagrams, nine thumbnails, and four composited frames for each of eight clips, including their exact endings. A brightened empty canvas region stays one color. The two code diagnostics now use module terminology without changing machine fields; 18 existing code-check cases and 51 assertions pass. The code-evidence thumbnail includes the full module heading through its existing crop selector. Scoped source lint, formatting and whitespace pass. All eight refreshed clips are below 10 MB and returned attachment URLs; README links now name those uploads. The upload receipt wrapper failed after URL creation, so it records missing exit codes and no upload was repeated. Twelve of sixteen assets are current; three narrated replays and the ask clip remain. Code check subject vKEsyHFk/HBlhIeSD#5SMX69gS keeps the same meaning. No architecture proposal or source-vault edit is needed. Proposal lifecycle review fixes are ready for their merger; final acceptance remains open.
 <!-- SECTION:NOTES:END -->

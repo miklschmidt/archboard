@@ -18,7 +18,7 @@
 
 </div>
 
-<img alt="The CLI reads and claims the shop architecture, creates one proposal, releases its claim, and compares 41 changed subjects with current architecture. The browser shows the proposal with new modules in green and changed or removed relationships marked." src="https://github.com/user-attachments/assets/4ecfeda7-e742-4b4a-834c-6159053c8227" width="100%">
+<img alt="The CLI reads and claims the shop architecture, creates one proposal, releases its claim, and compares 41 changed subjects with current architecture. The browser shows the proposal with new modules in green and changed or removed relationships marked." src="https://github.com/user-attachments/assets/647bbdfb-4d47-429e-b296-5098e17a9941" width="100%">
 
 <p align="center"><sub>Filmed live against a real Archboard server. The terminal on the left replays the commands an agent runs for this request, and each one ran against the server as shown. The pane on the right is the real browser, redrawing on every write. Nothing here was dragged into place.</sub></p>
 
@@ -67,7 +67,7 @@ Give each part a link to its file or a named function, class, or value. A relati
 
 Warnings mark the affected parts and relationships in the canvas. Select a warning to read the finding and open its source when available. Each piece of source evidence says whether analysis resolved it or matched it only by name.
 
-<img src="https://github.com/user-attachments/assets/a2281f7d-9678-47c7-a3fc-ae922012b189" width="100%" alt="The code check finds a resolved call from Place order to Save order that the example architecture leaves out. Selecting its warning opens the source evidence in the inspector. The terminal shows the actual call in the source file.">
+<img src="https://github.com/user-attachments/assets/37fcfa2b-dbd8-465b-b234-702ca1fb3acc" width="100%" alt="The code check finds a resolved call from Place order to Save order that the example architecture leaves out. Selecting its warning opens the source evidence in the inspector. The terminal shows the actual call in the source file.">
 
 <p align="center"><sub>A small example checkout with real analysis results. The terminal replays the command and summarizes its answer. The live browser selects the warning, and the source excerpt shows the missing call.</sub></p>
 
@@ -79,7 +79,7 @@ A module's interface on the map is what its outside callers reach. Archboard sho
 
 Compare competing proposals side by side. The comparison lists interface changes before internal changes, so you can see which design asks more of its callers. The code check reports callers that reach parts the module does not expose. It identifies exposed names with no outside use in the checked code.
 
-<img src="https://github.com/user-attachments/assets/3720e0b1-d5d8-4a28-ae95-5d07ca006736" width="100%" alt="Two proposals for the same checkout example. Opening Orders in each reveals its interface. Entry per job exposes three parts. One entry point exposes Place order and keeps two parts hidden.">
+<img src="https://github.com/user-attachments/assets/c8a4a734-0bd0-4257-8462-df44a0317b22" width="100%" alt="Two proposals for the same checkout example. Opening Orders in each reveals its interface. Entry per job exposes three parts. One entry point exposes Place order and keeps two parts hidden.">
 
 <p align="center"><sub>The same six parts, with different boundaries. Orders exposes three entry points on the left. On the right, one entry point keeps two internal parts hidden. Both inspectors come from the live browser.</sub></p>
 
@@ -89,7 +89,7 @@ Git records changes to files. Archboard maps their commits onto the parts of you
 
 Set a branch's commits against its proposal. See which parts the commits changed, which parts the plan named, and where the two differ. Your agent can spot changes to mapped parts outside the plan before it adopts the proposal. Use `model locality` for source history and `model footprint --base <ref>` to compare branch changes with the selected architecture.
 
-<img src="https://github.com/user-attachments/assets/522c8c86-1ff7-4315-9b30-3c926e733e08" width="100%" alt="The inspector shows recent commits and a pair of parts that change together. The terminal reports seven shared commits for Validate order and Save order. A branch comparison then lists planned changes, changes outside the plan, and planned parts with no code change.">
+<img src="https://github.com/user-attachments/assets/f6f4b363-6c86-4b28-b61d-1c3393781268" width="100%" alt="The inspector shows recent commits and a pair of parts that change together. The terminal reports seven shared commits for Validate order and Save order. A branch comparison then lists planned changes, changes outside the plan, and planned parts with no code change.">
 
 <p align="center"><sub>Fixed example commits make this demonstration repeatable. Validate order and Save order change together in seven commits. The branch also changes Validate order outside the proposal. The terminal summarizes real Git analysis beside the live architecture.</sub></p>
 
@@ -97,7 +97,7 @@ Set a branch's commits against its proposal. See which parts the commits changed
 
 See a change before anyone builds it. Ask your agent for one and you get a **proposal**: a proposed architecture, drawn against what exists. New parts arrive green, changed ones orange, and removed ones stay on the page as red ghosts. A call that moves is shown as one change, not as a deletion beside an addition.
 
-<img src="https://github.com/user-attachments/assets/d80b0379-ec7d-42ba-ba01-00107b98c3b0" width="100%" alt="An independent planning draft opens in two panes. The left pane turns into the Nightly batch proposal. The right pane turns into the Live events proposal. Both are marked against their shared starting point.">
+<img src="https://github.com/user-attachments/assets/8bb33d79-14ec-42d8-8c92-b0d9c923ad5a" width="100%" alt="An independent planning draft opens in two panes. The left pane turns into the Nightly batch proposal. The right pane turns into the Live events proposal. Both are marked against their shared starting point.">
 
 <p align="center"><sub>Two competing proposals for a recommendations service that does not exist yet, one per pane. Each header names its draft. Both compare against the same planning root, without adding the proposed service to current architecture.</sub></p>
 
@@ -114,7 +114,7 @@ off the request path, compare it with today, and show me both side by side.
 
 When a proposal ships, your agent adopts it as current architecture and records the decision. The preceding architecture remains available through an exact checkpoint. Shelving keeps a rejected proposal and its reason in retained history.
 
-<img src="https://github.com/user-attachments/assets/d18c639c-1000-4afe-9a79-ea57d30e473a" width="100%" alt="The Shop example reopens exact checkpoints before and after adopting delivery tracking. The timeline names each retained state and the recorded decision.">
+<img src="https://github.com/user-attachments/assets/4f628776-8115-471c-9a37-4e25fa7af5e7" width="100%" alt="The Shop example reopens exact checkpoints before and after adopting delivery tracking. The timeline names each retained state and the recorded decision.">
 
 <p align="center"><sub>A disposable copy of the Shop example records a real proposal and adoption through the public CLI. The timeline strip is added for this README. Its date and reason come from the accepted checkpoint metadata.</sub></p>
 
@@ -181,7 +181,7 @@ Open a module to see its children and boundary connections. Open a child to cont
 
 Modules can link to source files, functions, or classes. **Open code** follows that binding. Explicit references connect modules across repository models without copying their definitions.
 
-<img src="https://github.com/user-attachments/assets/3d839b09-8080-4a7f-8f80-b624d41015a3" width="100%" alt="The reader opens Inventory service, then Stock API, within the same Shop model. Breadcrumbs return to the repository roots.">
+<img src="https://github.com/user-attachments/assets/1c134a1b-3cc1-4167-8bdb-60f25af8c650" width="100%" alt="The reader opens Inventory service, then Stock API, within the same Shop model. Breadcrumbs return to the repository roots.">
 
 ## Ask your architecture
 
@@ -197,7 +197,7 @@ An agent claims the subjects it plans to change. Each pane shows the writer, pur
 
 Each write names its intent and the exact architecture revision that it read. If the architecture changed, the server refuses the stale write. Agents can claim different subjects without copying the model.
 
-<img src="https://github.com/user-attachments/assets/f7ca7c76-5709-46f4-b918-7a63ce0f9d09" width="100%" alt="An agent claims Checkout API. The reader presses Take back control. The next edit returns CLAIM_REVOKED, and the architecture stays unchanged.">
+<img src="https://github.com/user-attachments/assets/35c02e82-b2ab-4a9b-8aac-077fbfee21ee" width="100%" alt="An agent claims Checkout API. The reader presses Take back control. The next edit returns CLAIM_REVOKED, and the architecture stays unchanged.">
 
 <p align="center"><sub>The actual CLI refusal leaves the authored revision unchanged. Every accepted write reaches disk before the server acknowledges it.</sub></p>
 

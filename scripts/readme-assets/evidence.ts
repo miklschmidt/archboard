@@ -157,7 +157,11 @@ async function filmCode(server: TakeServer, browser: Browser, fixture: Fixture):
 		await page.screenshot(join(scratch("takes", "code-evidence"), "evidence.png"));
 		const still = await moment(
 			page,
-			[FINDINGS, `[data-semantic-kind='node'][data-semantic-id='${fixture.nodes.save}']`],
+			[
+				"[data-slot='module-details'] > header > h3",
+				FINDINGS,
+				`[data-semantic-kind='node'][data-semantic-id='${fixture.nodes.save}']`,
+			],
 			720,
 			{ x: 600, y: 0 },
 		);
