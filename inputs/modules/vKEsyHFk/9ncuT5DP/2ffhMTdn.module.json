@@ -1,0 +1,31 @@
+{
+  "order": 8000,
+  "name": "Workhorse queue",
+  "kind": "module",
+  "responsibility": "Codex's queue of messages waiting for the workhorse: list, add, edit, reorder, delete, or start one now",
+  "groups": [
+    "workhorse"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/services/workhorse-queue"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+  "parent": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+  "outgoing": [
+    {
+      "order": 6000,
+      "kind": "rpc",
+      "label": "thread/queue/add, update, reorder, delete, start",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
+        "symbol": "queueAdd"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#b9HU99hH",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    }
+  ]
+}
