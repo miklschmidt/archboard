@@ -3,10 +3,11 @@ id: TASK-554
 title: >-
   Boards pack tighter, raising the council's compactness score without
   lengthening lines
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-28T01:34:00Z'
+updated_date: '2026-10-28T03:13:00Z'
 labels:
   - renderer
   - layout
@@ -35,4 +36,6 @@ The final council of TASK-548.08 (2026-10-28, 40 blind pairs against c147b73c8, 
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-10-28, the owner: leave the Track engine as it is and work on Blocks exclusively. The council samples Blocks drawings only, and Track drawings stay byte-identical.
+
+2026-10-28, the owner: the goal is clean, fast, well packed and clearly routed diagrams on the Blocks renderer. No layout rule about ordering or packing is set in stone. Ports may stand on the left and right walls as well as the top and bottom. A label may become an element with ports that no arrow points at, in place of a property of its line, and labels may stand on horizontal lines. Existing constraints and compositions are negotiable. Parallel gpt-6-astra explorations try different ideas first; the owner approves a direction before it is implemented.
 <!-- SECTION:NOTES:END -->
