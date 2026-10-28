@@ -3,11 +3,11 @@ id: TASK-548.10
 title: >-
   A shared trunk never joins lines from different sources that go to different
   targets
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-10-26T17:03:00Z'
-updated_date: '2026-10-27T12:51:00Z'
+updated_date: '2026-10-28T02:04:00Z'
 labels:
   - renderer
   - layout
@@ -25,9 +25,9 @@ In the grading council's first run (TASK-548.09, 2026-10-26) all three graders, 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A trunk carries only lines that share their source or share their target
-- [ ] #2 No line crosses a group's header card, and every arrowhead ends on a card
-- [ ] #3 The grading council judges the changed drawings to read as well or better
+- [x] #1 A trunk carries only lines that share their source or share their target
+- [x] #2 No line crosses a group's header card, and every arrowhead ends on a card
+- [x] #3 The grading council judges the changed drawings to read as well or better
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -61,3 +61,9 @@ The canonical scripts/layout-compactness.ts measures every saved SVG for area, a
 
 TASK-548.08 checkpoint 2 retains the mixed-kind trunk repair from a771b0529. The stronger checker and real nine-card regression pass, and the 17 current boards plus six fixtures per engine contain no hard trunk finding. Source fan-out grouping at parent boundaries is the next probe. It must keep labels after their fork, distinct relationship treatments, visible header entries, and physical point ports. No council acceptance is claimed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Shared trunks keep the identity and relationship kind of each line's source and target card, so a trunk carries only lines that share a source or a target of the same kind. Lines no longer cross parent or group headers, and arrowheads end on cards: routesThroughParentHeaders, routesThroughGroupHeaders, endsOffCards and ambiguousTrunks are hard checks of expectDrawingIntact, and every after picture of council rounds 5 and 6 passes them. The four original council cases are regressions. The council judged the change against its parent with no pair worse and no new defect (TASK-548.08, rounds 5 and 6).
+<!-- SECTION:FINAL_SUMMARY:END -->
