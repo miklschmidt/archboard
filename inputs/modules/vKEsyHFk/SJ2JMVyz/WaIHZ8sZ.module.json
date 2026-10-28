@@ -1,0 +1,18 @@
+{
+  "order": 13000,
+  "name": "Tell coordinator",
+  "kind": "module",
+  "responsibility": "The archboard_coordinator tool a workhorse is started with: tell the coordinator one thing while it works",
+  "description": "Its manifest is pinned by digest like archboard_app's. While voice is live, a call becomes workhorse news for the coordinator of the workhorse's tab session. With no voice session nothing is sent, and the workhorse is told nobody is listening.",
+  "groups": [
+    "voice"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/services/coordinator-callbacks/tell-coordinator.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
+  "parent": "vKEsyHFk/SJ2JMVyz#j8IHgWO5",
+  "outgoing": []
+}

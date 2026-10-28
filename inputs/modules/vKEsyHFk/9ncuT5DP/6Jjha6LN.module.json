@@ -1,0 +1,55 @@
+{
+  "order": 4000,
+  "name": "Workhorse start",
+  "kind": "module",
+  "responsibility": "Opens the thread one workhorse's link will name, with its instructions and both tool manifests, under a staged epoch operation",
+  "description": "thread/start on gpt-6-astra at medium effort in the workhorse's checkout, which is the thread's working directory and workspace root, so it reads that repository's agent instructions and skills. It carries the workhorse developer instructions and the archboard_app and archboard_coordinator tool namespaces; the manifest digest it records covers both.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/services/workhorse-start"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+  "parent": "vKEsyHFk/SJ2JMVyz#5Pg20iSq",
+  "outgoing": [
+    {
+      "order": 7000,
+      "kind": "call",
+      "label": "classify and bind the checkout's link",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+        "symbol": "classifyAndBind"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#5B5ZeO2k",
+      "to": "vKEsyHFk/SJ2JMVyz#p05yEm5U"
+    },
+    {
+      "order": 8000,
+      "kind": "call",
+      "label": "stage, commit or roll back the start",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+        "symbol": "stageOperation"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#uiPv1wnk",
+      "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS"
+    },
+    {
+      "order": 9000,
+      "kind": "rpc",
+      "label": "thread/start with the authored body",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+        "symbol": "threadStart"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#W87z7uEB",
+      "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+    }
+  ]
+}

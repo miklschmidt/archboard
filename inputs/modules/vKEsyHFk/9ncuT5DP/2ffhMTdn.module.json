@@ -1,0 +1,42 @@
+{
+  "order": 5000,
+  "name": "Workhorse queue",
+  "kind": "module",
+  "responsibility": "Codex's queue of messages waiting for the workhorse: list, add, edit, reorder, delete, or start one now",
+  "description": "Each change is checked against the queue it expected before and after the remote effect. Codex itself runs one turn at a time and takes the next queued message when a turn ends.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/services/workhorse-queue"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+  "parent": "vKEsyHFk/SJ2JMVyz#QkrB0Q3B",
+  "outgoing": [
+    {
+      "order": 6000,
+      "kind": "rpc",
+      "label": "thread/queue/add, update, reorder, delete, start",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/workhorse-queue/queue.ts",
+        "symbol": "queueAdd"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#zgS5gisx",
+      "to": "vKEsyHFk/SJ2JMVyz#4slFgCMu"
+    },
+    {
+      "order": 28000,
+      "kind": "call",
+      "label": "a queued message as the authored user input",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/workhorse-queue/mutation-inputs.ts",
+        "symbol": "createTextUserInput"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#XkZUEZcj",
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
+    }
+  ]
+}

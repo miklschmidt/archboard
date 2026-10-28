@@ -1,0 +1,9 @@
+{
+  "order": 19000,
+  "name": "Thread start",
+  "kind": "module",
+  "responsibility": "Opens a workhorse's thread with its authored instructions and tool manifest, binds it to its tab session and checkout, and records which child generation owns it",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#5Pg20iSq",
+  "outgoing": []
+}
