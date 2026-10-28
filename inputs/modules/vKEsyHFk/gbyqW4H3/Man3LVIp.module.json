@@ -1,0 +1,69 @@
+{
+  "order": 23000,
+  "name": "Measured card painter",
+  "kind": "function",
+  "responsibility": "Paints measured architecture cards, frames and headers through shared surface and content helpers",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/rules/svg/parts/measured-cards.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#Man3LVIp",
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "outgoing": [
+    {
+      "order": 40000,
+      "kind": "call",
+      "label": "the measured frame well and its header slab",
+      "description": "paintMeasuredFrame calls tray for the neutral container well.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/svg/parts/measured-cards.ts",
+        "symbol": "tray"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#0dHSQwEC",
+      "to": "vKEsyHFk/gbyqW4H3#zPI3vU4A"
+    },
+    {
+      "order": 45000,
+      "kind": "call",
+      "label": "shared card and header content",
+      "description": "paintMeasuredCard and paintMeasuredHeader call paintCardViews.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/svg/parts/measured-cards.ts",
+        "symbol": "paintCardViews"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#WBfvIs2I",
+      "to": "vKEsyHFk/gbyqW4H3#8jYL9wH6"
+    },
+    {
+      "order": 48000,
+      "kind": "call",
+      "description": "Draws the measured card body, selection seat and removed shadow through shared slabs.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/svg/parts/measured-cards.ts",
+        "symbol": "slab"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#sUAWU5K9",
+      "to": "vKEsyHFk/gbyqW4H3#Ga3k1AaP"
+    },
+    {
+      "order": 70000,
+      "kind": "call",
+      "label": "color words for the standing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/svg/parts/measured-cards.ts",
+        "symbol": "standingPalette"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#djrx53Aq",
+      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
+    }
+  ]
+}

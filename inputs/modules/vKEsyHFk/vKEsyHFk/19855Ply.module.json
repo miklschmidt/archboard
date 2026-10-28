@@ -1,0 +1,20 @@
+{
+  "order": 12001,
+  "name": "Repository checkout",
+  "kind": "datastore",
+  "responsibility": "Every checkout known here, the one chosen for each repository that bindings resolve in, and untracked vaults; each checkout holds its configured language servers",
+  "description": "A binding names a repository identity and a path inside it, which are the same in every clone; a machine-local registry is the only place a directory on one machine is written down. It holds every known checkout (clones, and the worktrees of its identity that git lists for a known one), each with its identity, and every registered directory outside a checkout that holds .archboard/vault, under a registry name. For each identity one checkout is chosen: the first known one, then only repo use changes it, and repo add never does. A reader that turns an identity into a directory asks code-target, which reads the chosen checkouts and so never sees the others, with one exception: a binding that names the identity of the checkout that holds the vault being read resolves in that checkout, registered or chosen or not (ADR 0049). An identity whose chosen checkout was forgotten resolves as unregistered, unless the vault stands in it. Each checkout's entry also holds the language servers an agent set with repo language-server (TASK-433): a command and its arguments for Python, C (which covers C++ and Objective-C), C# or Swift, kept with the checkout and removed with it.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workspace/src/runtime/store/repo-registry.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/vKEsyHFk#19855Ply",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

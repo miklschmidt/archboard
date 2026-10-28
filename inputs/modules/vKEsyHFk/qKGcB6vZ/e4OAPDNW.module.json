@@ -1,0 +1,20 @@
+{
+  "order": 21000,
+  "name": "Workhorse links",
+  "kind": "function",
+  "responsibility": "Finds the workhorse a callback is about: the ready link whose thread the event names",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/rules/coordinator-callbacks/workhorse-links.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#e4OAPDNW",
+  "parent": "vKEsyHFk/qKGcB6vZ#B0SAnbtM",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

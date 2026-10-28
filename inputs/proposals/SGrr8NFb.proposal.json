@@ -1,0 +1,79 @@
+{
+  "id": "SGrr8NFb",
+  "name": "TASK-549.24",
+  "summary": "Canonical models own live authoring and consumers. Legacy inputs remain only for explicit migration and retained originals.",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "migration": {
+    "legacy": "vKEsyHFk/Oi6SBIAM#SGrr8NFb",
+    "predecessor": "vKEsyHFk/Oi6SBIAM#PDW2eHvg",
+    "baseline": {
+      "kind": "content",
+      "state": "vKEsyHFk/Oi6SBIAM#PDW2eHvg"
+    },
+    "reason": "Preserve this independent proposal and its original predecessor and conflict base.",
+    "checkpoint": "cbb9e1713c103450ab4114b30051fde3191a527a"
+  },
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "predecessor": "vKEsyHFk",
+  "predecessorRevision": "1692a596dafddd15bc23bbafe7ed419549838e727b0f727deab44607ec1c2500",
+  "baseline": "9c78f8047a2de6664456c2c0f0cb3a8557545713",
+  "changes": [
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/HBlhIeSD#3LoKNA2g",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+      "field": "description",
+      "value": "Canonical completed operations refresh readers through the existing feed. Legacy live board ownership and content announcements retire."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/Oi6SBIAM#Qyu8T7UT",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ",
+      "field": "description",
+      "value": "Publishes canonical model context and exact captured reading selectors to local agents. Unmigrated vaults expose migration guidance instead of board authoring or fixed levels."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#kRgKQV8N",
+      "field": "target",
+      "value": {
+        "state": "SGrr8NFb"
+      }
+    }
+  ]
+}

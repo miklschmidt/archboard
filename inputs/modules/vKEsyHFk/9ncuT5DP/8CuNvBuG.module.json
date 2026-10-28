@@ -1,0 +1,50 @@
+{
+  "order": 39000,
+  "name": "Operation lifecycle",
+  "kind": "module",
+  "responsibility": "Stages operations, follows their workhorse turns and settles their outcomes once",
+  "groups": [
+    "workhorse"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-operations/events.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#8CuNvBuG",
+  "parent": "vKEsyHFk/9ncuT5DP#tlC2W839",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 5000,
+      "kind": "call",
+      "label": "stage and settle the operation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-operations/events.ts",
+        "symbol": "stageOperation"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#yR5sjMnY",
+      "to": "vKEsyHFk/SJ2JMVyz#6T3oOpxS"
+    },
+    {
+      "order": 15000,
+      "kind": "call",
+      "label": "stage, commit or roll back",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-operations/events.ts",
+        "symbol": "stageOperation"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#2ed6AqSF",
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    }
+  ]
+}

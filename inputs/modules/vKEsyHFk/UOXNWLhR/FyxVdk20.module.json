@@ -1,0 +1,43 @@
+{
+  "order": 28000,
+  "name": "Diagram gestures",
+  "kind": "function",
+  "responsibility": "Turns a press, a drag, a two-finger pinch and a click into a pan, a zoom, a pick or an open",
+  "description": "A press within the pick tolerance selects what it landed on. A drag pans immediately and stops where released. A second touch pointer hands the gesture to useTouchPinch, which calls the camera controller with both fingers before and after each move. A press stops an eased move already under way.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-diagram-gestures.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#FyxVdk20",
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
+  "outgoing": [
+    {
+      "order": 43000,
+      "kind": "call",
+      "label": "what a press landed on",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-diagram-gestures.ts",
+        "symbol": "subjectAt"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#DtoJyBxi",
+      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6"
+    },
+    {
+      "order": 44000,
+      "kind": "call",
+      "label": "pan immediately, and delegate touch pinch",
+      "description": "useDiagramGestures calls camera.panBy; its useTouchPinch helper calls camera.pinch for two touch pointers.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-diagram-gestures.ts",
+        "symbol": "panBy"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#RSxtiSv5",
+      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "order": 21000,
+  "name": "Record",
+  "kind": "module",
+  "responsibility": "record: one walkthrough, narrated by the Codex voice, to a video file",
+  "description": "Reads the board and the vault policy through the Archboard server and hands the walkthrough to the recorder, which keeps the talk it records in the state directory, or where --talk says. With --discard it deletes a board made only to be recorded once the file is written, and keeps one somebody changed meanwhile. With --against every frame marks only what the variant changes over the one named, resolved as compare resolves it, and the talk keeps that variant. Its --out checks and its refusals of the browser and ffmpeg are the ones replay uses (lib/recording-output.ts). The page it records names the found vault's repository as repoA, and a checkout that is not the chosen one of its repository is refused.",
+  "groups": [
+    "walkthrough"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/semantic/draw/record.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/XppR9owz#4oWqpsOB",
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 36000,
+      "kind": "call",
+      "label": "read the board and the vault check; discard with --discard",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+        "symbol": "readSemanticBoardOnServer"
+      },
+      "id": "vKEsyHFk/XppR9owz#2CGrRQ78",
+      "to": "vKEsyHFk/XppR9owz#OfRn3av3"
+    },
+    {
+      "order": 37000,
+      "kind": "call",
+      "label": "keep the talk here; record the walkthrough",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+        "symbol": "recordWalkthrough"
+      },
+      "id": "vKEsyHFk/XppR9owz#e0tKOIVM",
+      "to": "vKEsyHFk/XppR9owz#XAJYaUnv"
+    },
+    {
+      "order": 85000,
+      "kind": "call",
+      "label": "whether --doing was stated, before --discard",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+        "symbol": "statedInvocation"
+      },
+      "id": "vKEsyHFk/XppR9owz#fpFNyxS0",
+      "to": "vKEsyHFk/XppR9owz#fF4A9uvU"
+    },
+    {
+      "order": 116000,
+      "kind": "call",
+      "label": "resolve the talk destination",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/semantic/draw/record.ts",
+        "symbol": "talkPlaceOf"
+      },
+      "id": "vKEsyHFk/XppR9owz#mbKplK0c",
+      "to": "vKEsyHFk/XppR9owz#RsiktrF8"
+    }
+  ]
+}

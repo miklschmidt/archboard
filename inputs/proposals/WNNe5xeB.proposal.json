@@ -1,0 +1,98 @@
+{
+  "id": "WNNe5xeB",
+  "name": "TASK-549.24",
+  "summary": "Canonical models own live authoring and consumers. Legacy inputs remain only for explicit migration and retained originals.",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "migration": {
+    "legacy": "vKEsyHFk/6E6hL0Zk#WNNe5xeB",
+    "predecessor": "vKEsyHFk/6E6hL0Zk#bKG3RiFr",
+    "baseline": {
+      "kind": "content",
+      "state": "vKEsyHFk/6E6hL0Zk#bKG3RiFr"
+    },
+    "reason": "Preserve this independent proposal and its original predecessor and conflict base.",
+    "checkpoint": "cbb9e1713c103450ab4114b30051fde3191a527a"
+  },
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "predecessor": "vKEsyHFk",
+  "predecessorRevision": "1692a596dafddd15bc23bbafe7ed419549838e727b0f727deab44607ec1c2500",
+  "baseline": "6eb1e0c24920cc86e05030a9e019e1d29630effd",
+  "changes": [
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+      "field": "description",
+      "value": "Canonical initialization, reads, edits, proposals, claims, history, and recovery own live architecture. Legacy decoding remains only for migration and exact retained originals."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+      "field": "references"
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#C9EOzoYB",
+      "field": "description",
+      "value": "Publishes canonical model and captured reading context to the existing local agents. Unmigrated vault context exposes migration instructions without legacy live content."
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
+      "field": "references"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#rKhJWXwz",
+      "field": "target",
+      "value": {
+        "state": "WNNe5xeB"
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "order": 51000,
+  "name": "Moves between pictures",
+  "kind": "module",
+  "responsibility": "Carries one picture into the next, with the traffic each picture runs. Steps a walkthrough and follows a card's drill-down, in this vault or another repository's.",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#9L5uHzND",
+  "outgoing": []
+}
