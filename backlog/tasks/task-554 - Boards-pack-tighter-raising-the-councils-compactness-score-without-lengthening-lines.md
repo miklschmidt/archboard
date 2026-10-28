@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-28T11:59:00Z'
+updated_date: '2026-10-28T16:58:00Z'
 labels:
   - renderer
   - layout
@@ -55,4 +55,6 @@ The final council of TASK-548.08 (2026-10-28, 40 blind pairs against c147b73c8, 
 2026-10-28, the owner approved the direction 'plan, then route' for Blocks: one planning stage chooses card order inside blocks, line walls on all four sides, label slots and shared trunks together; packing places blocks by measured size and planned ports; routing assigns lanes along planned corridors with search only as a fallback. Work continues until readability has meaningfully improved and the three Blocks first renders and growing edits are under 500 ms. First a design document and ADR proven by a spike, then implementation in steps.
 
 2026-10-28: design committed as 5b82ce00d (docs/design/blocks-planned-layout.md, ADR 0063 proposed). Its spike (explore/blocks-planned-spike 9b91136d) proved the planned solve takes 6 ms instead of 888 ms on Board viewer, but its conservative portals doubled area and quadrupled route length, and crossing marks made painting 3.6 s. Build steps 1 to 6 run on feat/blocks-planned, with a checkpoint report at /tmp/blocks-explore/build/report-1.md.
+
+2026-10-28: build checkpoint after step 6 (feat/blocks-planned 1d7b865e): gate green, Track identical, no new hard finding, but the planner was selected for only 283 drawings and every large board and all six references fell back to the legacy path, so means moved slightly worse (area +0.04%, bends 2.355 to 2.363) and timings stayed ~1.08/0.66/0.82 s. Steps 7 and 8 continue with selection by 'no hard defect' instead of 'noncrossing plan', targets: planner draws every Blocks architecture drawing, area -15%, bends per route <= 2.0, routes with four or more bends <= 22%, timings under 500 ms.
 <!-- SECTION:NOTES:END -->
