@@ -1,0 +1,14 @@
+{
+  "order": 46000,
+  "name": "Replay stage",
+  "kind": "module",
+  "responsibility": "Hosts the recorded board stage and reports when it is drawn",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#3WdEEXWG",
+  "parent": "vKEsyHFk/yejBBUFY#aixSjfNe",
+  "outgoing": []
+}

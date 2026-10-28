@@ -1,0 +1,55 @@
+{
+  "order": 6000,
+  "name": "Board catalog",
+  "kind": "module",
+  "responsibility": "Lists the repositories and the boards of each",
+  "description": "Owns the tab's query cache and the live panes' inventory query. Reads the repositories of the machine, one board listing for each repository with a vault, and composes them with the inventory into what the navigator shows. Chooses the checkout a repository is read from, and holds the invalidations the application calls when pane news says a board moved or a checkout was chosen.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/board-catalog"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+  "parent": "vKEsyHFk/yejBBUFY#wlbLOPSH",
+  "outgoing": [
+    {
+      "order": 4000,
+      "kind": "call",
+      "label": "one board listing for each repository's vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/board-catalog/use-board-catalog.ts",
+        "symbol": "semanticBoardListQuery"
+      },
+      "id": "vKEsyHFk/yejBBUFY#4iVsoxG0",
+      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+    },
+    {
+      "order": 17000,
+      "kind": "call",
+      "label": "the live panes' inventory",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/board-catalog/queries.ts",
+        "symbol": "fetchPaneInventory"
+      },
+      "id": "vKEsyHFk/yejBBUFY#fbpFPAWn",
+      "to": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    },
+    {
+      "order": 54000,
+      "kind": "call",
+      "label": "read the repositories; choose a checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/board-catalog/repositories.ts",
+        "symbol": "json"
+      },
+      "id": "vKEsyHFk/yejBBUFY#n41AFv0z",
+      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
+    }
+  ]
+}

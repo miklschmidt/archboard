@@ -1,0 +1,14 @@
+{
+  "order": 40000,
+  "name": "Recording stage",
+  "kind": "module",
+  "responsibility": "Hosts the recording workflow on its board stage",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/walkthrough-recording/RecordingStage.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#H17EYQ6u",
+  "parent": "vKEsyHFk/yejBBUFY#fscW90Xt",
+  "outgoing": []
+}

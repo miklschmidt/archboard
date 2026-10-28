@@ -1,0 +1,71 @@
+{
+  "order": 17000,
+  "name": "Walkthrough recording",
+  "kind": "module",
+  "responsibility": "A page recording one walkthrough's talk: it moves the pane a step at a time as the voice paces it, and keeps the voice and each step and subtitle line on one clock",
+  "description": "Asked for by the page's address. The page shows the one pane (RecordingStage) instead of the shell and publishes its contract on the window for the recorder that drives it (drawn on Board rasterizer). The page is its own tab session, so voice that is live in another tab does not refuse it. The voice's audio element is muted, so nobody hears it, and its stream is tapped through Web Audio. The talk's lines are the voice's own lines of the transcript on the pane's transport, and its drawn versions are what the pane reports. The page captures no picture: the replay draws every frame again from the talk.",
+  "groups": [
+    "walkthrough"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/state/walkthrough-recording"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#fscW90Xt",
+  "parent": "vKEsyHFk/yejBBUFY#01sVgqBF",
+  "outgoing": [
+    {
+      "order": 31000,
+      "kind": "call",
+      "label": "Talk as a recording, in its own tab session",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "symbol": "talk"
+      },
+      "id": "vKEsyHFk/yejBBUFY#UEuRPGRJ",
+      "to": "vKEsyHFk/yejBBUFY#zs2QxCu7"
+    },
+    {
+      "order": 32000,
+      "kind": "call",
+      "label": "live and loud yet; stop",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/rules/walkthrough-recording/voice-sources.ts",
+        "symbol": "level"
+      },
+      "id": "vKEsyHFk/yejBBUFY#5y8UuVhP",
+      "to": "vKEsyHFk/yejBBUFY#0SRnYXnC"
+    },
+    {
+      "order": 33000,
+      "kind": "data",
+      "label": "the step to show",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "symbol": "recordedStep"
+      },
+      "id": "vKEsyHFk/yejBBUFY#Gxh1Pbx3",
+      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
+    },
+    {
+      "order": 43000,
+      "kind": "event",
+      "label": "each change of the voice's transcript",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "symbol": "subscribe"
+      },
+      "id": "vKEsyHFk/yejBBUFY#pNlMVRMt",
+      "to": "vKEsyHFk/yejBBUFY#941UBxya"
+    }
+  ]
+}

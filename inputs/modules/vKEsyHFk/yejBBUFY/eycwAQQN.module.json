@@ -1,0 +1,14 @@
+{
+  "order": 45000,
+  "name": "Talk playback",
+  "kind": "module",
+  "responsibility": "Advances a recorded talk to each frame and exposes its current moment",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/state/walkthrough-replay/talk-playback.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#eycwAQQN",
+  "parent": "vKEsyHFk/yejBBUFY#aixSjfNe",
+  "outgoing": []
+}

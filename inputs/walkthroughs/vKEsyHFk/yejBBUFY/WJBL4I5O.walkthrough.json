@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#WJBL4I5O",
+  "name": "Reading a board in the browser",
+  "target": {
+    "state": "6C82GLIe"
+  },
+  "beats": [
+    {
+      "id": "vKEsyHFk/yejBBUFY#Xd4nFMUy",
+      "title": "Restore the workspace",
+      "narrative": "Routing reads the address and restores it through the workspace port: application composition opens each board in its pane with the same command the navigator runs, and writes the address only once the pane reports its new board.",
+      "reading": {
+        "visibility": {
+          "modules": [],
+          "relationships": [],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/yejBBUFY#HCghQa6I",
+          "vKEsyHFk/yejBBUFY#HggZR41l",
+          "vKEsyHFk/yejBBUFY#xsn0RvSi"
+        ],
+        "focus": [],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#tHpt14lf",
+      "title": "Read the board, draw it here",
+      "narrative": "The semantic viewer reads the board document from the server and the browser renderer draws it in this tab. The viewer owns camera, selection, views, variants, walkthroughs and drill-down only, and writes nothing.",
+      "reading": {
+        "visibility": {
+          "modules": [],
+          "relationships": [],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/yejBBUFY#dtYjWvlf",
+          "vKEsyHFk/yejBBUFY#hDWpDois",
+          "vKEsyHFk/yejBBUFY#G4NHQC25"
+        ],
+        "focus": [],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#y2YVfOOs",
+      "title": "Carry the active context",
+      "narrative": "The pane socket brings a board's new version to the viewer and carries the workbench transport. The pane reports what is on screen, and opens bound code through the code target.",
+      "reading": {
+        "visibility": {
+          "modules": [],
+          "relationships": [],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/yejBBUFY#xsn0RvSi",
+          "vKEsyHFk/yejBBUFY#941UBxya",
+          "vKEsyHFk/yejBBUFY#4LDuKQvq",
+          "vKEsyHFk/yejBBUFY#6uWT4mUj"
+        ],
+        "focus": [],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#TVrlXIEC",
+      "title": "Talk without setup",
+      "narrative": "A message, Talk or Narrate goes to the agent setup, which carries it through sign-in, Codex starting and the creation of the tab's conversation, then delivers it or starts voice for the focused pane. Each tab has its own conversation and voice, so two tabs can talk at the same time. A reload keeps the conversation. The voice's words appear as subtitles over that pane.",
+      "reading": {
+        "visibility": {
+          "modules": [],
+          "relationships": [],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/yejBBUFY#0x47EMoO",
+          "vKEsyHFk/yejBBUFY#zs2QxCu7",
+          "vKEsyHFk/yejBBUFY#0SRnYXnC",
+          "vKEsyHFk/yejBBUFY#0yb2VbKc",
+          "vKEsyHFk/yejBBUFY#aG0rP4SX"
+        ],
+        "focus": [],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#WHOtxYjT",
+      "title": "Record a walkthrough",
+      "narrative": "A page opened to record asks for voice as a recording and moves its one pane a step at a time as the voice paces it. It keeps the talk: the voice's sound, and each step and subtitle line on the same clock. It captures no picture. The page is its own tab session, so voice that is live in another tab does not refuse it. The voice is never played aloud.",
+      "reading": {
+        "visibility": {
+          "modules": [],
+          "relationships": [],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/yejBBUFY#fscW90Xt",
+          "vKEsyHFk/yejBBUFY#zs2QxCu7",
+          "vKEsyHFk/yejBBUFY#0SRnYXnC",
+          "vKEsyHFk/yejBBUFY#dtYjWvlf"
+        ],
+        "focus": [],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#kLkXLnI4",
+      "title": "Replay a talk frame by frame",
+      "narrative": "A page opened to replay draws a recorded talk again. It mounts the recording's stage, the viewer and the subtitles, with no workbench and no socket, and reads the board only from the talk. Every glide, picture transition and subtitle linger reads the frame clock, which the replay steps 1/30 s at a time.",
+      "reading": {
+        "visibility": {
+          "modules": [],
+          "relationships": [],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/yejBBUFY#aixSjfNe",
+          "vKEsyHFk/yejBBUFY#rouptSyK",
+          "vKEsyHFk/yejBBUFY#dtYjWvlf"
+        ],
+        "focus": [],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#sQ12FZsK",
+      "title": "A person moves a board, after seeing what it rewrites",
+      "narrative": "The control in a pane header opens the board move dialog. Board move lists the repositories Board catalog reads, asks the server what moving to the chosen one would rewrite, and shows it before anything is written. The move states the version that preview read, so a board written since is refused, and the browser keeps only the choice and the answer it was given.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+            "vKEsyHFk/yejBBUFY#G4NHQC25",
+            "vKEsyHFk/yejBBUFY#c4LPnwh5",
+            "vKEsyHFk/yejBBUFY#6uWT4mUj",
+            "vKEsyHFk/yejBBUFY#HQWPLutt",
+            "vKEsyHFk/yejBBUFY#wlbLOPSH"
+          ],
+          "relationships": [
+            "vKEsyHFk/yejBBUFY#chjmKQLj",
+            "vKEsyHFk/yejBBUFY#NcFmPj3W",
+            "vKEsyHFk/yejBBUFY#n41AFv0z",
+            "vKEsyHFk/yejBBUFY#1wY1628T",
+            "vKEsyHFk/yejBBUFY#I1j6psfN",
+            "vKEsyHFk/yejBBUFY#vZBFJ5at"
+          ],
+          "flows": [
+            "vKEsyHFk/yejBBUFY#2UbNBuFP"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/yejBBUFY#c4LPnwh5",
+          "vKEsyHFk/yejBBUFY#HQWPLutt",
+          "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+          "vKEsyHFk/yejBBUFY#6uWT4mUj"
+        ],
+        "focus": [
+          "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+          "vKEsyHFk/yejBBUFY#G4NHQC25",
+          "vKEsyHFk/yejBBUFY#c4LPnwh5",
+          "vKEsyHFk/yejBBUFY#6uWT4mUj",
+          "vKEsyHFk/yejBBUFY#HQWPLutt",
+          "vKEsyHFk/yejBBUFY#wlbLOPSH"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/yejBBUFY#2UbNBuFP"
+      }
+    }
+  ]
+}

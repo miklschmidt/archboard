@@ -1,0 +1,29 @@
+{
+  "order": 9000,
+  "name": "Code target",
+  "kind": "module",
+  "responsibility": "Opens the code a subject is bound to",
+  "description": "Sends the board, the subject's id and the vault of the pane it is in to the Archboard server, which owns the binding, the opener and the checkout registry, and opens the code at the branch or commit the binding pins. The browser never reads a local path. Also reads, tests and saves the opener settings.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/code-opener/src/ui"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#4LDuKQvq",
+  "parent": "vKEsyHFk/yejBBUFY#wlbLOPSH",
+  "outgoing": [
+    {
+      "order": 10000,
+      "kind": "call",
+      "label": "request activation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/ui/clients/code-target-requests.ts",
+        "symbol": "mutation"
+      },
+      "id": "vKEsyHFk/yejBBUFY#ygbcyDVT",
+      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
+    }
+  ]
+}
