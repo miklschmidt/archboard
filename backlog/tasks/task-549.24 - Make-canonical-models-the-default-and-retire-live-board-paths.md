@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T04:29:00Z'
+updated_date: '2026-10-28T04:35:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -334,4 +334,6 @@ Merged the signed portable Base64 repair ed5dee9ab through signed dd0fd3d91. The
 Portable inspection repair starts from signed bfccdffd4a5d8a11127637ad4b68f8b75bdd4897 with a98f28811 ancestry. External contract: /home/msc/.local/state/archboard-implementation/task-549/task-549.24-portable-closure-scale-contract.md. Existing persistence provenance vKEsyHFk/0T9enjhi#NyesaQPQ; affected archive objects #ZRq51Ecz, blob reads #DQ99hH5l, publication storage #yEqHs86l, portable operations #2gFwMLTT. Parent owns proposal oyXXnyCV. Original public replay reproduces ARCHIVE_WRITE_FAILED / Git command timeout before import.
 
 Portable inspection RED: original replay fails before import with Git command timeout. A reduced public export with 110 checkpoints sharing 62 MB reproduces the same refusal; one identical checkpoint exports in 860 ms. The existing portable round-trip owner fails its unchanged 15-second deadline with 110 shared 8 MB inputs. GREEN uses operation-local immutable blob/tree reuse, batched records, bounded reads, sequential retained decoding/materialization, and actual parent-graph reuse. The focused owner passes, and the complete 710-input export succeeds. Full import evidence remains pending. Both TypeScript projects and scoped source lint pass.
+
+Portable archive inspection handoff: signed implementation d2b528f54e21e331d787845ba8ca1f22faa08f4f. Newest local feat/canonical-module-model remains bfccdffd4a5d8a11127637ad4b68f8b75bdd4897 and merges as already up to date. Final real replay exports 710 inputs in 60.019 seconds, then imports 656 modules and completes retained-reading, signature, exact-byte, exact-retry, HEAD/index, parent-ref, and cleanup assertions in 180.413 seconds. Signed disposable import checkpoint: 08c8e3aa3113959ba7d86875f846467e4bc1952b. All 31 batch readers exit; maximum Git batch duration is 0.104 seconds. Focused shared-history regression passes. Affected portable/archive owners pass, including isolated fetch deepening after an initial non-isolated combined-run timeout. Both types, scoped source/test lint, formatting, and diff whitespace pass. Base64 language and generated schema remain unchanged. Simplification keeps one operation-local reader and one existing installer, with no persistent cache or new public API. No architecture claims or source-vault writes were created. Full evidence: /home/msc/.local/state/archboard-implementation/task-549/task-549.24-portable-closure-scale-backend.md. Parent owns proposal oyXXnyCV, architecture updates, acceptance, and lifecycle.
 <!-- SECTION:NOTES:END -->
