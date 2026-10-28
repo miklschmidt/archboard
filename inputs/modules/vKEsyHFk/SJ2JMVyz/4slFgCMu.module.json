@@ -1,0 +1,16 @@
+{
+  "order": 12000,
+  "name": "Codex session",
+  "kind": "module",
+  "responsibility": "The reviewed methods a turn is actually sent on",
+  "groups": [
+    "child"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-app-server/src/runtime/services/session.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#4slFgCMu",
+  "outgoing": []
+}
