@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T12:48:00Z'
+updated_date: '2026-10-28T13:28:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -374,4 +374,6 @@ Signed merge 85f9f2526 integrates aggregate labels from dba5be542. The merge tre
 Adopted completion state oyXXnyCV through canonical-root-adoption-549-24-1 at signed archive checkpoint 5e863b979b895b04575b67d68b3e9c6eb332f608. Shelved only the seven superseded TASK-549.24 fragments through explicit retained lifecycle operations. Public post-adoption acceptance opens all eight unrelated drafts with unchanged bytes, all seven shelved fragments, and all 19 walkthroughs with 110 ready beats. Current has 540 modules, 19 roots, 1113 relationships, and 72 flows. Claims are empty. Current code inspection has no warnings, 34 informational unused exposures, and 15 explicit analysis limits. Exact acceptance and code evidence are task-549.24-root-current-acceptance.json and task-549.24-root-current-code.json outside the repository. Full gate, remaining assets, final review, archive publication, and PR readiness remain open.
 
 The restored benchmark runs 268 cases: all 134 Blocks cases and all fixed fixtures pass, while twelve Track cases expose geometry or speed failures. No assertion or deadline is waived. Root fixed the optional-label assertion type error; both TypeScript projects now pass. The architecture, ask, explainer, PR walkthrough, and newcomer producers all completed. Root inspected standalone light/dark SVGs, ask output, nine video frames, and complete transcripts. Uploads remain deferred until renderer acceptance. The recordings retain their captured talks for replay without another voice run.
+
+The first full integration gate stopped on an unbound-method source lint error in the server shutdown resource. The callback now invokes agentActivity.dispose through its owner. The declared lifecycle and architecture remain unchanged. Test lint passed before the refusal. No lint rule or gate is weakened. The Track label repair remains separate.
 <!-- SECTION:NOTES:END -->

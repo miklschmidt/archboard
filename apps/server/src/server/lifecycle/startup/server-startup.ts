@@ -296,7 +296,10 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 			},
 			{
 				name: "agent-activity",
-				stop: agentActivity.dispose,
+				/** Stop the activity tracker with its owning receiver. */
+				stop: () => {
+					agentActivity.dispose();
+				},
 			},
 			{
 				name: "http-server",
