@@ -1,0 +1,105 @@
+{
+  "order": 6000,
+  "name": "Discard route",
+  "kind": "route",
+  "responsibility": "Lets a whole board go under the write's admission and lease, answers its tracked embeds or the nodes that open it, and tells every pane on it the board is gone",
+  "description": "semantic delete (TASK-526.06, ADR 0057) and semantic record --discard (TASK-304.02). A BOARD_OPENED_BY refusal carries openedBy. The pane hears board_note with discarded, reads the board again and finds it missing, as after a move; the browser offers no delete.",
+  "groups": [
+    "writes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/routes/semantic-boards/semantic-board-discard.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/HBlhIeSD#GXtY3Xsd",
+  "parent": "vKEsyHFk/HBlhIeSD#I6MrfGUg",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 19000,
+      "kind": "call",
+      "label": "discard under the board's lease",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-discard.ts",
+        "symbol": "discardSemanticBoard"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#VuqFhb4g",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    },
+    {
+      "order": 20000,
+      "kind": "call",
+      "label": "the write envelope and refusal",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-discard.ts",
+        "symbol": "answerRefusal"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#C0qksVg8",
+      "to": "vKEsyHFk/HBlhIeSD#iwrhchml"
+    },
+    {
+      "order": 21000,
+      "kind": "event",
+      "label": "the board is gone",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-discard.ts",
+        "symbol": "broadcast"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#4XnSzjXx",
+      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+    },
+    {
+      "order": 36000,
+      "kind": "call",
+      "label": "what the discarder said it was doing",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-discard.ts",
+        "symbol": "announceDoing"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#tw3GPstl",
+      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+    },
+    {
+      "order": 52000,
+      "kind": "call",
+      "label": "requires a vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-discard.ts",
+        "symbol": "vaultOfRequest"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#nQhWWvFA",
+      "to": "vKEsyHFk/HBlhIeSD#fs2ehN0i"
+    }
+  ]
+}

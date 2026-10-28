@@ -1,0 +1,49 @@
+{
+  "order": 57000,
+  "name": "Canonical model client",
+  "kind": "module",
+  "responsibility": "Translates state selection, comparison, navigation, and durable proposal intents through shared server schemas",
+  "description": "Translates the shared canonical model requests without interpreting patches or history. model edit --input accepts an explicit historical correction with a prior checkpoint, reason and immutable source revisions. model read, compare and proposals expose corrected logical readings and exact original checkpoints.\n\nNarrative authoring and playback use the existing model edit and read schemas, including separate source and target revisions.\n\nPreview reads translate explicit legacyAddress and bookmark selectors. Converted walkthroughs reuse the existing playback contract. The runtime resolves identity, original coverage, and unavailable references.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/clients/server/architecture-model.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/XppR9owz#TsCise1I",
+  "parent": "vKEsyHFk/XppR9owz#dHZeNcMs",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 96000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/clients/server/architecture-model.ts",
+        "symbol": "requestJson"
+      },
+      "id": "vKEsyHFk/XppR9owz#ZglcNYUQ",
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    }
+  ]
+}

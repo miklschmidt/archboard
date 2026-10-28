@@ -1,0 +1,73 @@
+{
+  "order": 33000,
+  "name": "server-lifecycle",
+  "kind": "package",
+  "responsibility": "Starts, finds, restarts and stops the server, and the request transport and pane rules its callers share",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/server-lifecycle"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/vKEsyHFk#doujM3ih",
+  "parent": "vKEsyHFk/vKEsyHFk#TQNCxSiT",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 33000,
+      "kind": "dependency",
+      "label": "the Codex executable",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+        "symbol": "resolveCodexExecutable"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#z5LT96h1",
+      "to": "vKEsyHFk/vKEsyHFk#vEVm326r"
+    },
+    {
+      "order": 45000,
+      "kind": "dependency",
+      "label": "observe and stop the server process",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+        "symbol": "readProcessObservation"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#q7GKxqKL",
+      "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
+    },
+    {
+      "order": 49000,
+      "kind": "dependency",
+      "label": "locate the server pidfile",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/store/pidfile.ts",
+        "symbol": "stateDir"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#WJFn6A3p",
+      "to": "vKEsyHFk/vKEsyHFk#tdKalihR"
+    },
+    {
+      "order": 54000,
+      "kind": "dependency",
+      "label": "the board addresses of panes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/rules/panes.ts",
+        "symbol": "paneBoardAddress"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#o56610zg",
+      "to": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+    }
+  ]
+}

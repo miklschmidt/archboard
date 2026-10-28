@@ -1,0 +1,15 @@
+{
+  "order": 17001,
+  "name": "Pane and coordinator doors",
+  "kind": "module",
+  "responsibility": "Where a pane's command and the coordinator's tool calls reach the workhorse of a checkout, and where the coordinator is told what happens",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#WkOwgUIR",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

@@ -1,0 +1,40 @@
+{
+  "order": 1003,
+  "name": "Archboard server",
+  "kind": "service",
+  "responsibility": "Answers a render request with one board's drawing",
+  "description": "The read side of the semantic-board HTTP surface. It imports the Bun host's renderBoard; the CLI's render and rasterize commands reach the renderer only through this route.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/routes/semantic-boards/semantic-board-routes.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#LgbAlvMN",
+  "references": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "model": "vKEsyHFk",
+      "subject": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+      "state": "current"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "renderBoard, with the vault of a render that stands alone",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/semantic-boards/semantic-board-routes.ts",
+        "symbol": "renderBoard"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#fl3z5Duy",
+      "to": "vKEsyHFk/gbyqW4H3#0XCanbzp"
+    }
+  ]
+}

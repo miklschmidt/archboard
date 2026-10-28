@@ -1,0 +1,87 @@
+{
+  "order": 22000,
+  "name": "Conversation start",
+  "kind": "module",
+  "responsibility": "Starts a conversation on a chat's first message or Talk: the tab's coordinator ready first, then the workhorse of the shown checkout, then its context delivery bound to it",
+  "description": "A coordinator that cannot start refuses the message or Talk with its reason, and no workhorse starts. New conversation replaces the workhorse of the shown checkout only and keeps the tab's coordinator, which speaks for every workhorse of the tab. The old workhorse thread is given up and Codex unloads it once no turn runs on it. A delegation to a checkout whose workhorse has no thread that can run turns starts that thread the same way, but leaves the coordinator alone: it is running the turn that gives the work.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+  "parent": "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 43000,
+      "kind": "call",
+      "label": "make the tab coordinator ready first, keep it after",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+        "symbol": "ensure"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#NxCpSlMJ",
+      "to": "vKEsyHFk/9ncuT5DP#Fg9dkGj3"
+    },
+    {
+      "order": 44000,
+      "kind": "call",
+      "label": "then start the workhorse of the shown checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+        "symbol": "start"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#nRRQSBu7",
+      "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN"
+    },
+    {
+      "order": 45000,
+      "kind": "call",
+      "label": "move context delivery to the new workhorse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+        "symbol": "compareAndSwap"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#ukZDYnKd",
+      "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb"
+    },
+    {
+      "order": 46000,
+      "kind": "call",
+      "label": "claim its threads, retire the old workhorse",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+        "symbol": "claimThread"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#ZGfdJlmG",
+      "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
+    },
+    {
+      "order": 75000,
+      "kind": "call",
+      "label": "read the link the chat named before starting anything",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+        "symbol": "assertBrowserLinkStands"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#dOVhNk7R",
+      "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
+    }
+  ]
+}

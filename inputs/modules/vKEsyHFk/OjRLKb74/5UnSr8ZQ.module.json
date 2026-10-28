@@ -1,0 +1,9 @@
+{
+  "order": 20002,
+  "name": "Draw and measure",
+  "kind": "module",
+  "responsibility": "Measures every card and label with the host's canvas, then paints the settled drawing, and decides no geometry of its own",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/OjRLKb74#5UnSr8ZQ",
+  "outgoing": []
+}
