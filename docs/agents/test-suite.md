@@ -24,10 +24,13 @@ native lanes in this order:
   inventory through the strict adapter.
 
 `bun run benchmark` runs the renderer corpus separately and never caches results.
-It renders the current variant of every board in this checkout’s `.archboard/vault`,
-plus three fixed wide-board fixtures, on both layout engines.
+It reads the current canonical model in this checkout's `.archboard/vault` through `readArchitectureModel`.
+It renders the root and every module with children through the shared `projectModel` rule.
+Each reading carries the complete model for container interface context.
+It also renders three fixed wide-board fixtures on both registered layout engines.
 It retains the drawing assertions and first-layout speed limits.
-It does not scan other repositories or historical variants.
+Unreadable canonical inputs or an absent current state stop the benchmark.
+It reads no other repository, historical state, or proposal selection.
 The normal gate also renders three fixed fixtures on both engines in
 `packages/renderer/tests/runtime/operations/blocks/drawing-integrity.test.ts`.
 They cover labeled dependencies, dense cross-links, and nested containers.
@@ -182,14 +185,9 @@ uses a 60-second case deadline when `CI=true`. Its default engine also gets
 60 seconds for a first render. GitHub Actions recorded first renders up to
 45.3 seconds (TASK-451). Local runs keep the 20-second case deadline and
 3-second first-render limit. Both engines keep all picture correctness assertions.
-The preload still applies its 60-second wall-clock ceiling. Only three Blocks
-cases declare a real-time exception, each with its own case deadline on CI and
-locally. Browser application and Board viewer get `TEST_HEAVY_BLOCKS_CASE_MS`:
-their layout alone took 47.85 seconds on CI, past 60 on a slower runner, and
-52.9 seconds locally on a loaded machine. Codex realtime voice gets
-`TEST_HEAVIEST_BLOCKS_CASE_MS`: it went past 60 seconds on CI, and locally it
-takes about three and a half times as long as Browser application (TASK-536).
-TASK-377 owns the cause.
+The preload still applies its 60-second wall-clock ceiling.
+The former board-specific Blocks exceptions no longer apply to the recursive canonical corpus.
+No current corpus case has a separate deadline.
 
 Keep a real-time exception inside its exact test callback. Its first statement calls
 `declareTestWallClockBudget` with the exact test name, a concrete reason, a `TEST_*`
