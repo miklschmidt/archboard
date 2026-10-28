@@ -207,10 +207,15 @@ async function openModelSidebar(
 	scope = "",
 ): Promise<void> {
 	const toggle = `${scope} [data-slot="semantic-sidebar-toggle"]`;
-	const expanded = await browser.eval<boolean>(
-		`document.querySelector(${JSON.stringify(toggle)})?.getAttribute('aria-expanded') === 'true'`,
+	const expanded = await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector(${JSON.stringify(toggle)})?.getAttribute('aria-expanded') ?? null`,
+			),
+		(value) => value !== null,
+		"the mounted model sidebar control",
 	);
-	if (!expanded) await browser.run(["click", toggle]);
+	if (expanded === "false") await browser.run(["click", toggle]);
 	const choice = `${scope} [data-slot="semantic-sidebar-tab"][data-tab="${tab}"]`;
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector(${JSON.stringify(choice)}) !== null`),
