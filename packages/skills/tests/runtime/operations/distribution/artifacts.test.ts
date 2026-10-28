@@ -7,6 +7,7 @@ import { join } from "node:path";
 import {
 	ArchitectureInitializationRequestSchema,
 	ArchitectureModuleEditSchema,
+	ArchitectureImportRequestSchema,
 } from "@archboard/board/model";
 import { prepareSkillArtifacts } from "#runtime/operations/distribution/prepare.ts";
 
@@ -45,6 +46,56 @@ test("installed canonical input schemas accept and refuse the same expressible i
 			const invalid = { ...item.input, operationId: 42 };
 			expect(item.schema.safeParse(invalid).success).toBe(false);
 			expect(validate(invalid)).toBe(false);
+		}
+		const portableFile = prepared.files.find((file) => file.endsWith("model-import.schema.json"));
+		if (portableFile === undefined) throw new Error("The portable schema is unavailable.");
+		const portableSchema = readFileSync(join(skill, portableFile), "utf8");
+		const validatePortable = ajv.compile(JSON.parse(portableSchema));
+		const encodings = [
+			["", true],
+			["AAAA", true],
+			["AA==", true],
+			["AAA=", true],
+			["AB==", true],
+			["AAB=", true],
+			["aZ09+/==", true],
+			["A", false],
+			["AAA", false],
+			["AAAAA", false],
+			["A===", false],
+			["====", false],
+			["AA=A", false],
+			["AA==AAAA", false],
+			["AAAA====", false],
+			["AAAA\n", false],
+			["AA A", false],
+			["AA_A", false],
+			["AA-A", false],
+		] as const;
+		for (const [bytes, accepted] of encodings) {
+			const input = {
+				bundle: {
+					format: "archboard-model",
+					schemaVersion: 1,
+					model: "Shop",
+					revision: { digest: "abc", files: [] },
+					inputs: [{ path: "model.json", bytes }],
+					history: { tips: [], bundle: null },
+				},
+				expectedRevision: { digest: "abc", files: [] },
+				operationId: "portable",
+				writer: "agent",
+				doing: "Import model",
+			};
+			expect(ArchitectureImportRequestSchema.safeParse(input).success).toBe(accepted);
+			expect(validatePortable(input)).toBe(accepted);
+			input.bundle.inputs = [];
+			const historyInput = {
+				...input,
+				bundle: { ...input.bundle, history: { tips: [], bundle: bytes } },
+			};
+			expect(ArchitectureImportRequestSchema.safeParse(historyInput).success).toBe(accepted);
+			expect(validatePortable(historyInput)).toBe(accepted);
 		}
 	} finally {
 		rmSync(skill, { recursive: true, force: true });

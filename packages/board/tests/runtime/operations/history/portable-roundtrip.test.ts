@@ -1,5 +1,5 @@
 import { beforeAll, afterAll, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/board/store-read";
 import {
@@ -24,16 +24,6 @@ async function roundtripFixture() {
 	if (!retained.success) throw new Error(JSON.stringify(retained));
 	const exported = await exportArchitectureModel(source.vault);
 	if (!exported.success) throw new Error(JSON.stringify(exported));
-	return { source, current, retained, exported };
-}
-let evidence: Awaited<ReturnType<typeof roundtripFixture>> | undefined;
-beforeAll(async () => {
-	evidence = await roundtripFixture();
-});
-afterAll(cleanPortableFixtures);
-test("portable import preserves current bytes and exact retained identities without repository source", async () => {
-	if (evidence === undefined) throw new Error("The round-trip fixture is unavailable.");
-	const { source, current, retained, exported } = evidence;
 	const target = destination();
 	const request = {
 		bundle: exported.bundle,
@@ -44,6 +34,16 @@ test("portable import preserves current bytes and exact retained identities with
 	};
 	const installed = await importArchitectureModel(target.vault, request);
 	if (!installed.success) throw new Error(JSON.stringify(installed));
+	return { source, current, retained, target, request, installed };
+}
+let evidence: Awaited<ReturnType<typeof roundtripFixture>> | undefined;
+beforeAll(async () => {
+	evidence = await roundtripFixture();
+});
+afterAll(cleanPortableFixtures);
+test("portable import preserves current bytes and exact retained identities without repository source", async () => {
+	if (evidence === undefined) throw new Error("The round-trip fixture is unavailable.");
+	const { source, current, retained, target, request, installed } = evidence;
 	expect(installed.success).toBe(true);
 	const reopened = readArchitectureModel(target.vault);
 	expect(reopened.success).toBe(true);
@@ -57,4 +57,22 @@ test("portable import preserves current bytes and exact retained identities with
 	expect(exact).toMatchObject({ success: true, sourceEvidence: [{ status: "unavailable" }] });
 	expect(git(target.root, "rev-list", "--all", "--", "code.ts")).toBe("");
 	expect(await importArchitectureModel(target.vault, request)).toEqual(installed);
+});
+test("portable export preserves large valid input bytes without changing source HEAD or index", async () => {
+	const source = fixture();
+	const head = git(source.root, "rev-parse", "HEAD");
+	const index = readFileSync(join(source.root, ".git/index"));
+	const file = join(source.vault, "gateway.module.json");
+	const bytes = Buffer.concat([readFileSync(file), Buffer.alloc(8_000_000, " ")]);
+	writeFileSync(file, bytes);
+	const largeCurrent = readArchitectureModel(source.vault);
+	if (!largeCurrent.success) throw new Error(JSON.stringify(largeCurrent));
+	const large = await exportArchitectureModel(source.vault);
+	if (!large.success) throw new Error(JSON.stringify(large));
+	expect(large.bundle.revision).toEqual(largeCurrent.revision);
+	const encoded = large.bundle.inputs.find((input) => input.path === "gateway.module.json");
+	if (encoded === undefined) throw new Error("The exported module is unavailable.");
+	expect(Buffer.from(encoded.bytes, "base64")).toEqual(bytes);
+	expect(git(source.root, "rev-parse", "HEAD")).toBe(head);
+	expect(readFileSync(join(source.root, ".git/index"))).toEqual(index);
 });

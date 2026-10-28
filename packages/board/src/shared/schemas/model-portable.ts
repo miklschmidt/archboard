@@ -18,7 +18,13 @@ const PortablePathSchema = z
 	);
 const Base64Schema = z
 	.string()
-	.regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u);
+	// Repeated quartets exhaust the regex engine on large valid bundles.
+	.refine(
+		(value) => value.length % 4 === 0 && /^[A-Za-z0-9+/]*={0,2}$/u.test(value),
+		"Use complete Base64 groups with terminal padding.",
+	)
+	// Keep the same declarative encoding contract in distributed JSON schemas.
+	.meta({ pattern: "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$" });
 const ArchitecturePortableBundleSchema = z.strictObject({
 	format: z.literal("archboard-model"),
 	schemaVersion: z.literal(1),
