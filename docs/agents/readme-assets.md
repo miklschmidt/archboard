@@ -22,7 +22,7 @@ bun run readme:assets --replay            # render the narrated videos again fro
 
 An asset is stale when the kit never made it, when its sources changed since
 it was made, or when one of its files is missing. The `architecture` SVGs are
-the exception: `archboard check` owns their staleness (see Tracked embeds
+the exception: `archboard check embeds` owns their staleness (see Tracked embeds
 below), so their manifest sources are only the kit code that draws them. The hash covers the content
 of every file the asset's sources name, tracked or new, except files under a
 `tests` directory and Markdown files. `readme:check` also reports a source that names no file and
@@ -42,14 +42,14 @@ Refresh an asset when `readme:check` lists it after your change. Then:
 
 ## The assets
 
-| Asset                                                | What makes it                                                                                                                  | Codex |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----- |
-| `architecture`, `sequence`, `web-shop`               | `semantic render` in light and dark, faces cut to the characters drawn; two add a thumbnail; `architecture` is a tracked embed | no    |
-| `hero`, `plan`, `history`, `drill-down`, `take-back` | the real shell filmed in headless Chromium while the CLI writes, encoded to a WebP to attach                                   | no    |
-| `code-evidence`, `module-interfaces`, `git-history`  | the real shell and CLI results from a generated checkout, encoded to a WebP with an index still                                | no    |
-| `ask`                                                | the shell filmed while a Codex agent answers a question typed into the conversation                                            | yes   |
-| `explainer`, `pr-walkthrough`, `newcomer`            | `semantic record`, narrated by the Codex voice; the MP4 is attached                                                            | yes   |
-| `banner`                                             | `semantic render` of a web-shop proposal, laid as vector beside the lockup in Chromium                                         | no    |
+| Asset                                                | What makes it                                                                                       | Codex |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ----- |
+| `architecture`, `sequence`, `web-shop`               | `model render` in light and dark, with embedded font subsets; `architecture` keeps its exact recipe | no    |
+| `hero`, `plan`, `history`, `drill-down`, `take-back` | the real shell filmed in headless Chromium while the CLI writes, encoded to a WebP to attach        | no    |
+| `code-evidence`, `module-interfaces`, `git-history`  | the real shell and CLI results from a generated checkout, encoded to a WebP with an index still     | no    |
+| `ask`                                                | the shell filmed while a Codex agent answers a question typed into the conversation                 | yes   |
+| `explainer`, `pr-walkthrough`, `newcomer`            | `model record` at an exact checkpoint, narrated by the Codex voice; the MP4 is attached             | yes   |
+| `banner`                                             | `model render` of a web-shop proposal, laid as vector beside the lockup in Chromium                 | no    |
 
 Most assets also write an index thumbnail (`idx-*.webp`), which stays in the
 repository. The manifest lists the files of each asset in the repository. The
@@ -86,7 +86,7 @@ agent writes one.
 The three code and history demonstrations add a small checkout example to their
 copied vault. `scripts/readme-assets/evidence-fixture.ts` holds its source and fixed
 Git history. The harness creates the source repository under the take's scratch
-directory. It registers that repository and authors the board through the CLI.
+directory. It registers that repository and authors canonical modules through the CLI.
 It leaves Archboard's source files and tracked vault unchanged.
 
 `code-evidence` runs `archboard check code` and selects its resolved missing-call
@@ -94,7 +94,13 @@ warning in the browser. Its terminal shows the source lines behind the finding.
 `module-interfaces` opens two proposals and selects Orders in each. Their
 inspectors show three entry points versus one entry point and two hidden parts.
 `git-history` shows recent commits and two parts that change together. It then
-compares the branch with a proposal through `semantic footprint`.
+compares the branch with a proposal through `model footprint`.
+
+The `history` take uses a separate copy of the canonical Shop example.
+It retains current architecture, creates a delivery-tracking proposal, and adopts that proposal through the public CLI.
+The clip opens both exact checkpoints and quotes the accepted decision metadata.
+Each stop compares against itself, so a later state cannot add comparison marks to an earlier picture.
+The timeline strip is an explanatory overlay for this recording.
 
 Each take uses real command answers and the live browser. The terminal summarizes
 those answers. The sample code and commits are synthetic. Each scene stops if
@@ -103,27 +109,25 @@ the key moments stay under `takes/<asset>` in the scratch directory for inspecti
 
 ## Tracked embeds
 
-The `architecture` SVGs are tracked embeds (ADR 0057). The kit draws the
-`Archboard` board from `.archboard/vault` in place, on a server of its own,
-with `semantic render --track`, straight into `docs/readme`. The board lists
-both files, and each file keeps its render recipe. `archboard check` in this
-repository reads that recipe, draws the board again, and warns
-`EMBED_OUTDATED` when the board changed what the picture shows. After a
-renderer change alone, it names `EMBED_RENDERER_CHANGED` as information. The first run
-on a board writes the list and raises its version, so commit
-`.archboard/vault` with the files.
+The `architecture` SVGs are tracked embeds under ADR 0062.
+The kit reads the canonical model from `.archboard/vault` on its own server.
+It writes the selected diagrams into `docs/readme` through `model render`.
+Each artifact carries its exact render recipe, and Git supplies the tracked artifact list.
+Rendering does not change authored architecture or maintain a board-owned tracking list.
+Run `archboard check embeds` to compare the artifacts with their recorded readings.
+An unavailable reading remains an explicit failure with recovery instructions.
 
 The kit then cuts the faces of each file down to the characters it draws.
 That cut keeps the recipe, and the recipe's picture digest is of the drawing
 before the recipe went in and before the cut, so a cut file still compares.
-`archboard check --fix` draws an outdated file again from its recipe, as the
+`archboard check embeds --fix` draws an outdated file again from its recipe, as the
 full render with whole faces. Run `bun run readme:assets architecture` after
 it to cut the faces again.
 
 The `sequence` and `web-shop` SVGs are drawn from a copy of
 `examples/web-shop`. That example is no vault in place: inside a Git checkout
 only `<root>/.archboard/vault` is a vault, and a recipe names its vault only by
-the repository identity. No check can find their board, so the kit leaves
+the repository identity. No check can resolve that disposable model later, so the kit leaves
 their recipe out, and the manifest's source hash says when they are stale.
 
 ## What needs Codex, and what it spends
@@ -134,13 +138,13 @@ the account's Codex usage.
 - `ask`, `explainer`, `pr-walkthrough` and `newcomer` run on a server that uses
   the machine's Archboard Codex sign-in. If Codex is not signed in, they stop
   before anything is spent. Sign in from the agent dock of any Archboard server.
-- A recording keeps its talk (the board, the steps, the words and the voice)
+- A recording keeps its talk (the exact model, steps, words, and voice)
   in the scratch directory. When only the renderer changed, the walkthrough and
   the voice did not, so `--replay` renders the kept talk again with
-  `semantic replay`, cuts the thumbnail from it, and spends no
+  `model replay`, cuts the thumbnail from it, and spends no
   Codex usage. It stops when no recording kept a talk. Record again only when
-  the walkthrough or the voice should change. A replay records the hash of all
-  the sources, so `readme:check` cannot tell that the board or the walkthrough
+  the walkthrough or voice changes. A replay records the hash of all
+  the sources, so `readme:check` cannot tell that the model or the walkthrough
   changed after the talk was recorded: check that yourself before you replay.
 - GitHub plays a video with sound only from an attachment, so the narrated
   MP4s are attached like the clips (see below).
@@ -178,7 +182,9 @@ Add a producer to `scripts/readme-assets/assets.ts` and an entry to the
 manifest with `"hash": null`. The kit refuses to run, and the repository lane's
 test fails, while the two disagree about an asset's kind, Codex need or files.
 
-The web-shop fixture now stores canonical inputs and `history.import.json`.
+## Canonical fixtures
+
+The web-shop fixture stores canonical inputs and `history.import.json`.
 That file is a public model import request with a portable archive.
 It preserves original readings and proposal baselines that current inputs cannot reproduce.
 The archive is a tracked dependency of this historical example, not a render artifact.

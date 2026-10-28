@@ -128,7 +128,7 @@
 			"command": "bun run readme:assets history",
 			"files": ["docs/readme/idx-history.webp"],
 			"sources": [
-				".archboard/vault/.archboard/config.yaml",
+				"examples/web-shop",
 				"apps/web",
 				"packages/ui-kit/src/ui",
 				"packages/server-requests/src/ui",
@@ -143,13 +143,12 @@
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts",
-				".archboard/vault",
 				"scripts/readme-assets/model-authoring.ts",
 				"scripts/readme-assets/server.ts",
 				"scripts/readme-assets/fixture-history.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "177d0dd05376ff8d5776f81b1bf2c73b393c97da7c7c091fbb7453cd828adc68"
+			"hash": "4772f656f2716510f8ef296644197bf9bdd48347792bd0647f6e4e0e893a8cd4"
 		},
 		{
 			"name": "pr-walkthrough",
