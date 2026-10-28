@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { cpSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import type { buildPanesReport } from "@archboard/server-lifecycle/panes";
 import type {
 	ArchitectureModelRead,
 	ArchitectureModuleEditResult,
@@ -20,6 +21,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { initializeSource, fixtureGit, selectReading } from "./support/canonical-model.ts";
+import { openModelSidebar } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -48,6 +50,7 @@ function modelFixture(root: string, model: string, repository: string): string {
 }
 
 async function selectGateway(browser: AgentBrowserSession): Promise<void> {
+	await openModelSidebar(browser);
 	await pollUntil(
 		() =>
 			browser.eval<{
@@ -282,6 +285,7 @@ test("foreign references preserve explicit addresses and recover pinned architec
 		stateA: "Current",
 		subjectA: "Ledger#Gateway",
 	});
+	const beforeReload = await request<ReturnType<typeof buildPanesReport>>("/api/panes");
 	await browser.run(["reload"]);
 	await pollUntil(
 		() =>
@@ -290,6 +294,42 @@ test("foreign references preserve explicit addresses and recover pinned architec
 			),
 		Boolean,
 		"the foreign subject after reload",
+		WAIT,
+	);
+	// A completed restore leaves the reader free to open another repository.
+	await pollUntil(
+		() => request<ReturnType<typeof buildPanesReport>>("/api/panes"),
+		(result) =>
+			result.body.panes.some(
+				(pane) =>
+					pane.paneId === "A" &&
+					!beforeReload.body.panes.some((old) => old.clientId === pane.clientId),
+			),
+		"the reloaded pane registration",
+		WAIT,
+	);
+	const shopOpen = `[data-slot="repository-model-open"][title=${JSON.stringify(`Open ${before.body.manifest.name}`)}]`;
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector(${JSON.stringify(shopOpen)}) !== null`),
+		Boolean,
+		"the source repository action",
+		WAIT,
+	);
+	await browser.run(["click", shopOpen]);
+	await pollUntil(
+		() => browser.eval<string | null>(`new URLSearchParams(location.search).get('modelA')`),
+		(model) => model === "Shop",
+		"the repository opened after restoring a foreign subject",
+		WAIT,
+	);
+	await browser.run(["back"]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="module-details"][data-module-id="Ledger#Gateway"]') !== null`,
+			),
+		Boolean,
+		"Back to the restored foreign subject",
 		WAIT,
 	);
 	await browser.run(["back"]);
@@ -367,6 +407,7 @@ test("foreign references preserve explicit addresses and recover pinned architec
 	expect(
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('checkpointA')`),
 	).toBe(retained.body.checkpoint.id);
+	await openModelSidebar(browser);
 	expect(
 		await browser.eval<boolean>(
 			`document.querySelector('[data-slot="model-state-details"][data-lifecycle="historical"]') !== null`,

@@ -27,11 +27,10 @@ function useModelArrival(paneId: string, onError: (message: string) => void) {
 	);
 	const onModelRequest = useCallback(
 		(request: PaneModelRequest): void => {
+			const effect = modelArriving?.(paneId, request.reading, request.repository) ?? "replace";
+			if (effect === "keep") return;
 			const current = ++generation.current;
-			void openRequested(
-				request,
-				modelArriving?.(paneId, request.reading.model, request.repository) ?? false,
-			)
+			void openRequested(request, effect === "push")
 				.then(() => {
 					if (current !== generation.current) return null;
 					setArrival(current);

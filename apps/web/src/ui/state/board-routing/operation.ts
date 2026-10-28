@@ -19,6 +19,7 @@
 import { boardIn, repositoryIn, type WorkspaceAddress } from "#ui/rules/board-routing/address.ts";
 import type { AskedBoard, OpenedBoard } from "#ui/rules/board-routing/contracts.ts";
 import type { NavigationIntent } from "#ui/state/board-routing/intent.ts";
+import { modelReading } from "#ui/rules/board-routing/model-address.ts";
 
 /** Who asked for an operation. */
 type Operator = { readonly kind: "restore"; readonly target: number } | { readonly kind: "user" };
@@ -153,13 +154,22 @@ function operationMovedPane(operation: Operation, displayed: WorkspaceAddress): 
 }
 
 /**
- * Read the explicit canonical target from the existing user operation.
+ * Read the complete canonical target from the existing navigation operation.
  * @param operation The pending workspace open.
  * @returns Its canonical destination, when present.
  */
 function canonicalDestination(operation: Operation) {
+	const asked = operation.asked;
+	if (asked?.model !== undefined)
+		return { reading: modelReading(asked.model), repository: asked.repository };
 	const intent = operation.intent;
-	return intent?.kind === "board" ? intent.destination : undefined;
+	const destination = intent?.kind === "board" ? intent.destination : undefined;
+	return destination === undefined
+		? undefined
+		: {
+				reading: modelReading({ id: destination.model, scope: null, checkpoint: null }),
+				repository: destination.repository,
+			};
 }
 
 /**
@@ -176,40 +186,47 @@ function atOpenedDestination(operation: Operation, displayed: WorkspaceAddress):
 }
 
 /**
- * Consume only the canonical arrival that the user operation requested.
+ * Consume only the complete canonical arrival that this operation requested.
  * @param operation The one pending navigation operation.
  * @param paneId The addressed pane.
- * @param model The resolved model identity.
+ * @param reading The resolved canonical reading.
  * @param repository The resolved repository.
  * @returns Whether this is the matching user arrival, once.
  */
 function matchesModelArrival(
 	operation: Operation | null,
 	paneId: string,
-	model: string,
+	reading: ReturnType<typeof modelReading>,
 	repository: string | null,
 ): operation is Operation {
 	if (operation === null) return false;
 	if (operation.paneId !== paneId || operation.modelArrived) return false;
 	const destination = canonicalDestination(operation);
 	if (destination === undefined) return false;
-	if (!sameModelDestination(destination, model, repository)) return false;
+	if (!sameModelDestination(destination, reading, repository)) return false;
 	return true;
 }
 
 /**
- * Match the model and repository together rather than a model name alone.
+ * Match the repository and every requested reading field.
  * @param destination The user operation's destination.
- * @param model The arriving model.
+ * @param reading The arriving canonical reading.
  * @param repository The arriving repository.
  * @returns Whether both identities match.
  */
 function sameModelDestination(
 	destination: NonNullable<ReturnType<typeof canonicalDestination>>,
-	model: string,
+	reading: ReturnType<typeof modelReading>,
 	repository: string | null,
 ): boolean {
-	return destination.model === model && destination.repository === repository;
+	if (destination.repository !== null && destination.repository !== repository) return false;
+	// The server opens a module-only request in that module's scope.
+	const expected = {
+		...destination.reading,
+		scope: destination.reading.scope ?? destination.reading.module,
+	};
+	const keys = Object.keys({ ...expected, ...reading }).toSorted();
+	return JSON.stringify(expected, keys) === JSON.stringify(reading, keys);
 }
 
 export {

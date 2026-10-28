@@ -80,9 +80,9 @@ function picker() {
 		addressing: {
 			/**
 			 * This fixture exercises legacy shell commands without a canonical arrival.
-			 * @returns False because no canonical navigation is pending.
+			 * @returns An external arrival because no canonical navigation is pending.
 			 */
-			modelArriving: () => false,
+			modelArriving: () => "replace",
 			expect: unrelated,
 			/**
 			 * Read the fixture state.
