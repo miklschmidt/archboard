@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-27T12:13:00Z'
-updated_date: '2026-10-27T13:29:00Z'
+updated_date: '2026-10-28T01:20:00Z'
 labels:
   - renderer
   - tooling
@@ -50,6 +50,10 @@ Agreement: round 1, each grader proposed one shared list (4 to 7 criteria, ancho
 Calibration on the twelve samples: scores more than 2 apart between any two graders fell from 31 of 72 (round 2) to 6 of 72 (round 3). All four graders reached the same verdict on every pair in both rounds: Board persistence blocks better, Live panes track better, Archboard server routes both fail (lines through the Pane state header, found by all four), the other three same. L is 10 on almost every sample (layout gaps are about 15 px against a 7 px threshold), so it only catches touching stacks today. Argon missed the header defects in round 1 and found them in round 2, after reading Opus's round-1 proposal, so its own eye for fine defects is not yet shown; the rulings step covers any grader's misses only if another grader reports the defect.
 
 scripts/council-tally.ts unblinds verdicts/<grader>.json with key.json, refuses while a reported defect has no ruling in rulings.json, and prints each pair's verdict, the graders' margins and whether the change passes (exit 1 when it fails). Checked on synthetic verdicts: an unruled defect stops it (exit 2); a malformed score is refused with the field; a new defect in an after picture makes the pair worse and fails the change; the documented example parses. Policy lint passes. Artifacts: /tmp/council/agree (sources, r1, r2, r3, drafts).
+
+Standards review, 2026-10-28: malformed JSON in the key, grader verdicts, or rulings exits 1 without naming the input file. The review will use the existing refusal path and add one process test table for these three inputs. This repair changes no architecture board meaning or consumer skill workflow.
+
+Standards review complete: readJson now routes JSON read and parse failures through the command refusal. It names the input file and exits 2. The three process cases fail before the fix and pass afterward. They test the exit status, empty stdout, and file path without locking diagnostic wording. All 17 focused renderer and rasterizer cases pass. The complete nix develop gate passes all 20 tasks, including all 19 browser files. The full log is /tmp/archboard-standards-review-check.log. Lint and type rules remain unchanged. The final simplification pass keeps the fix in the existing reader.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
