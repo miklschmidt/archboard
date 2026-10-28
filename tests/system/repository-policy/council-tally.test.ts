@@ -57,3 +57,17 @@ test("the two middle margins decide an exact 0.40 median", () => {
 	expect(result.verdict).toBe("better");
 	expect(result.exitCode).toBe(0);
 });
+
+test.each([1, 3, 5])("%i grader files cannot decide for the four-grader council", (count) => {
+	const result = runTally(Array.from({ length: count }, () => grade()));
+	expect(result.exitCode).toBe(2);
+	expect(result.verdict).toBeUndefined();
+});
+
+test("every grader must score every selected pair", () => {
+	const result = runTally([grade(), grade(), grade(), {}]);
+	expect(result.exitCode).toBe(2);
+	expect(result.verdict).toBeUndefined();
+	expect(result.stderr).toContain("001");
+	expect(result.stderr).toContain("3");
+});
