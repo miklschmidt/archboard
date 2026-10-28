@@ -740,16 +740,24 @@ The capture includes stable subjects, the complete revision, and the selected st
 A proposal capture also preserves its actual comparison base and that base's separate revision.
 Later navigation cannot change the capture.
 
+For a compared reading, set `request.expectedComparisonRevision` to the observed `model.comparison.revision.digest`.
+Omit this field only when the observed model has no comparison.
+Keep it with the target revision and any narrative-source revision from that same reading.
+A changed, missing, or newly appeared comparison returns `MODEL_CHANGED` before the action starts.
+
 Use `browser panes` to read the canonical `architecture` report and `tabSessionId` for the selected pane.
 If the report is absent, ask the person to open the canonical reading before resolving a pointing request.
 Use its actual `architecture.vault`, including after navigation to another repository.
 Keep `reading.referenceSubject` separate from the temporary pointer selection.
 Do not infer canonical architecture from the pane's legacy board field.
 
-Pass the action to the existing local workhorse with `model explain`.
+Use `model explain` to request a new action from the existing local workhorse.
 Use `-C` with the directory that holds the reported vault.
-Read the model before an invocation and use its complete revision digest.
-Use the report's state or checkpoint selector when reading it.
+Keep the report's complete `selection` and revision guards together.
+If you read more context, use those selectors without replacing the captured guards.
+
+If the workhorse queue supplies a model with `explanation` metadata, answer that capture directly.
+That input already represents an accepted action and needs no new invocation.
 
 ```json
 {

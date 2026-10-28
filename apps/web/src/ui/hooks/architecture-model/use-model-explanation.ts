@@ -47,6 +47,7 @@ function useModelExplanation(
 		[state, checkpoint, against, model],
 	);
 	const referenceSubject = subject ?? undefined;
+	const comparisonRevision = model.comparison?.revision.digest;
 	const capture = useMemo(() => {
 		const mode = DiagramGrammarSchema.safeParse(grammar);
 		if (!mode.success || model.migrationPreview !== undefined) return null;
@@ -54,6 +55,7 @@ function useModelExplanation(
 			vault,
 			model: model.manifest.id,
 			expectedRevision: model.revision.digest,
+			expectedComparisonRevision: comparisonRevision,
 			subjects: [...selected],
 			...source,
 			reading: {
@@ -70,7 +72,19 @@ function useModelExplanation(
 				referenceSubject,
 			},
 		};
-	}, [vault, model, selected, scope, focus, filters, grammar, flow, referenceSubject, source]);
+	}, [
+		vault,
+		model,
+		selected,
+		scope,
+		focus,
+		filters,
+		grammar,
+		flow,
+		referenceSubject,
+		source,
+		comparisonRevision,
+	]);
 	useModelReadingReport(capture, reporting);
 	const invoke = host?.invoke;
 	const act = useCallback(
