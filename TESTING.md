@@ -209,6 +209,11 @@ speakers:
   `tests/system/server-state/canonical-walkthrough-recording.test.ts` records against a
   fake Codex, and `canonical-walkthrough-replay.test.ts` beside it renders a kept talk.
 
+Run `bun run benchmark` for the separate, uncached renderer corpus.
+It draws the current repository root and every module with children, plus three fixed fixtures, on both layout engines.
+The public model reader refuses unreadable canonical inputs.
+This command retains drawing assertions and speed limits outside the normal gate.
+
 ## 8. When something fails
 
 - Read the structured `code`, `diagnostics`, and recovery fields when a model operation refuses.
