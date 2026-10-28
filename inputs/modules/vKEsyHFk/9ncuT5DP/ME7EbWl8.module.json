@@ -1,0 +1,29 @@
+{
+  "order": 27000,
+  "name": "Workhorse list",
+  "kind": "module",
+  "responsibility": "Lists the tab session's live workhorses by repository and checkout, with the shown one and a mark for each that waits for an approval or for the person",
+  "description": "The shown checkout is listed even before its first message, as not live, because a typed message goes there. A workhorse is live once its start has a thread. The list is bounded so a snapshot always fits the browser contract, and it is read into the owner projection that every pane of the tab receives.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/projections/browser-state/workhorse-list.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#ME7EbWl8",
+  "parent": "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+  "outgoing": [
+    {
+      "order": 70000,
+      "kind": "call",
+      "label": "which workhorse waits for an approval or an answer",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/browser-state/workhorse-list.ts",
+        "symbol": "inspect"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#95g4rJnq",
+      "to": "vKEsyHFk/9ncuT5DP#QGVPyMwG"
+    }
+  ]
+}
