@@ -1,0 +1,49 @@
+{
+  "id": "oyXXnyCV",
+  "name": "TASK-549.24 canonical module ownership",
+  "summary": "Integrate the seven reviewed implementation fragments into one canonical architecture, with recursive module ownership and retained original history.",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
+      "path": ".archboard/vault/proposals/8PuyaYA8.proposal.json"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
+      "path": ".archboard/vault/proposals/aolPYfP5.proposal.json"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
+      "path": ".archboard/vault/proposals/KzJ2iXIq.proposal.json"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
+      "path": ".archboard/vault/proposals/NyesaQPQ.proposal.json"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
+      "path": ".archboard/vault/proposals/SGrr8NFb.proposal.json"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
+      "path": ".archboard/vault/proposals/VaQkKiQf.proposal.json"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "6771e26712ab1036cdda6bb0363f895419a9e46a",
+      "path": ".archboard/vault/proposals/WNNe5xeB.proposal.json"
+    }
+  ],
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-10-28T03:20:52.153Z",
+  "predecessor": "vKEsyHFk",
+  "predecessorRevision": "91ab9cb477463752494d878af8e06f6df4086fe45c2dbbf56067e52f44995d35",
+  "baseline": "c74474411ecf69a357e88c786dd1e475114b1fba",
+  "changes": []
+}
