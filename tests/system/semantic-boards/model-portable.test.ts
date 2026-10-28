@@ -1,5 +1,14 @@
 import { beforeAll, afterAll, expect, test } from "bun:test";
-import { readFileSync, writeFileSync, cpSync, mkdtempSync, mkdirSync, rmSync } from "node:fs";
+import {
+	chmodSync,
+	readFileSync,
+	writeFileSync,
+	cpSync,
+	mkdtempSync,
+	mkdirSync,
+	rmSync,
+} from "node:fs";
+import { createServer, type Socket } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
@@ -10,6 +19,7 @@ import {
 import { readArchitectureModel } from "@archboard/board/store-read";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
+import { waitFor } from "../server-state/support/http.ts";
 const repoRoot = resolve(import.meta.dir, "../../..");
 const home = mkdtempSync(join(tmpdir(), "archboard-portable-surface-"));
 const empty = {
@@ -137,3 +147,81 @@ test("CLI and HTTP share strict portable contracts, explicit vaults, exact retry
 	expect(refused.status).toBe(2);
 	expect(readFileSync(file, "utf8")).toBe("preserve refused output\n");
 }, 30000);
+
+test("an accepted import remains visible as mutation work after its caller disconnects", async () => {
+	if (server === undefined || source === undefined)
+		throw new Error("The portable server fixture is unavailable.");
+	const target = destination();
+	const exported = ArchitectureExportResultSchema.parse(
+		await (
+			await fetch(`${server.base}/api/architecture/export`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ vault: source.vault }),
+			})
+		).json(),
+	);
+	if (!exported.success) throw new Error(JSON.stringify(exported));
+	const key = join(target.root, ".git/signing");
+	expect(Bun.spawnSync(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", key]).exitCode).toBe(
+		0,
+	);
+	git(target.root, "config", "gpg.format", "ssh");
+	git(target.root, "config", "user.signingkey", key);
+	git(target.root, "config", "commit.gpgsign", "true");
+	const socketPath = join(target.root, ".git/signing.sock");
+	const connected = Promise.withResolvers<Socket>();
+	const barrier = createServer((socket) => connected.resolve(socket));
+	await new Promise<void>((ready) => barrier.listen(socketPath, ready));
+	const signer = join(target.root, ".git/signer");
+	writeFileSync(
+		signer,
+		`#!${process.execPath}
+import { createConnection } from "node:net";
+await new Promise((resolve, reject) => { const socket = createConnection(${JSON.stringify(socketPath)}); socket.once("data", () => { socket.destroy(); resolve(); }); socket.once("error", reject); });
+const child = Bun.spawn(["ssh-keygen", ...process.argv.slice(2)], { stdin: "inherit", stdout: "inherit", stderr: "inherit" });
+process.exit(await child.exited);
+`,
+	);
+	chmodSync(signer, 0o700);
+	git(target.root, "config", "gpg.ssh.program", signer);
+	const controller = new AbortController();
+	const request = fetch(`${server.base}/api/architecture/import`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		signal: controller.signal,
+		body: JSON.stringify({
+			vault: target.vault,
+			bundle: exported.bundle,
+			expectedRevision: empty,
+			operationId: "disconnected-import",
+			writer: "agent",
+			doing: "Restore after response loss",
+		}),
+	}).catch((error: unknown) => error);
+	const socket = await connected.promise;
+	try {
+		controller.abort();
+		await request;
+		const active = await waitFor(async () => {
+			const health = z
+				.object({
+					application: z.object({ activeMutations: z.array(z.object({ kind: z.string() })) }),
+				})
+				.parse(await (await fetch(`${server!.base}/health`)).json());
+			return health.application.activeMutations.some((entry) => entry.kind === "request")
+				? undefined
+				: health.application.activeMutations;
+		}, "the disconnected request to leave admission");
+		expect(active).toContainEqual({ kind: "work" });
+	} finally {
+		socket.end("release");
+		await new Promise<void>((closed, reject) =>
+			barrier.close((error) => (error ? reject(error) : closed())),
+		);
+		await waitFor(
+			() => readArchitectureModel(target.vault).success,
+			"the accepted import to finish",
+		);
+	}
+});
