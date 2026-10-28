@@ -1,0 +1,28 @@
+{
+  "order": 38000,
+  "name": "Light the whole route",
+  "kind": "function",
+  "responsibility": "Gives a lit relationship its own ink on a stretch of a shared lane that the picture has another relationship draw, so the line is lit from its source to its target",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/semantic-board-canvas/subjects/lit-ink.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#WT3s42AE",
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
+  "outgoing": [
+    {
+      "order": 71000,
+      "kind": "data",
+      "label": "which subjects are lit and which are picked",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/subjects/lit-ink.ts",
+        "symbol": "LIT_CLASS"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#UAnbIRqG",
+      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6"
+    }
+  ]
+}

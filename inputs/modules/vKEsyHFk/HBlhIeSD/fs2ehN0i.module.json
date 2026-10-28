@@ -1,0 +1,36 @@
+{
+  "order": 22000,
+  "name": "Vault requirement",
+  "kind": "module",
+  "responsibility": "Refuses a call that names no vault, a vault the server cannot read, or a directory that is not the .archboard/vault of one, before any handler runs",
+  "description": "ADR 0049: every call names its vault as ?vault=<directory> or a vault field in its body. The refusal says how to name one (VAULT_REQUIRED, 400; VAULT_UNREADABLE, 404) and creates nothing. TASK-472.09: a vault whose real path is not <dir>/.archboard/vault is VAULT_UNREADABLE too, and the refusal says to move the boards there, because a workhorse works in the directory that holds the vault (ADR 0050) and such a vault has none. A handler reads the canonical vault with vaultOfRequest.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/services/request/vault.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/HBlhIeSD#fs2ehN0i",
+  "parent": "vKEsyHFk/HBlhIeSD#ETrslazw",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": []
+}

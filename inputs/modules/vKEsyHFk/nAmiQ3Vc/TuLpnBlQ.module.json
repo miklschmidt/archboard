@@ -1,0 +1,41 @@
+{
+  "order": 16002,
+  "name": "Bound vaults",
+  "kind": "function",
+  "responsibility": "Lists the known vaults whose boards bind one repository, reading each board in memory without writing it",
+  "description": "TASK-480. The known vaults are the ones the navigator lists: the vault of each chosen checkout and each untracked vault that exist, in the .archboard/vault layout. A board counts when a node of any variant binds the repository. Each file is decoded in memory, so no lease is taken and no migration is written in another repository's vault.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/store/bound-vaults.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/nAmiQ3Vc#TuLpnBlQ",
+  "outgoing": [
+    {
+      "order": 21000,
+      "kind": "call",
+      "label": "the chosen checkouts and untracked vaults",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/bound-vaults.ts",
+        "symbol": "listRegistry"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
+      "to": "vKEsyHFk/nAmiQ3Vc#HXDhzWiE"
+    },
+    {
+      "order": 22000,
+      "kind": "call",
+      "label": "the vault layout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/bound-vaults.ts",
+        "symbol": "isVaultLayout"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#7hxRgVwY",
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    }
+  ]
+}

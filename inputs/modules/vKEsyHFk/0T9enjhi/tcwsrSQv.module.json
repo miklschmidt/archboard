@@ -1,0 +1,115 @@
+{
+  "order": 4000,
+  "name": "Read and validate",
+  "kind": "function",
+  "responsibility": "Reads a coherent aggregate from disk, by its name or a name it used to have",
+  "description": "readSemanticBoard asks Former names which board a name answers to; readSemanticBoardAt synchronously reads fresh bytes, asks Decode board bytes to parse and migrate the shared semantic schema, distinguishes missing from unreadable files, and rejects a document whose internal name disagrees with its address. A document of an older contract is migrated, and persisted when its lease is free, before it is answered. readSemanticBoardAtAsLeased, for a question asked before a write, answers a board that awaits its migration as the migration would leave it, at the version the migration commits, and persists nothing. An explicit migrate:false read normalizes older schemas in memory and preserves exact source bytes. Browser snapshots and listings use this form. Ordinary CLI reads retain automatic schema migration.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/read/read.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/0T9enjhi#tcwsrSQv",
+  "parent": "vKEsyHFk/0T9enjhi#ZqkmwupZ",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 19000,
+      "kind": "call",
+      "label": "a former name opens the board",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/read.ts",
+        "symbol": "resolveSemanticBoard"
+      },
+      "id": "vKEsyHFk/0T9enjhi#CfW74kWK",
+      "to": "vKEsyHFk/0T9enjhi#lkf45vPe"
+    },
+    {
+      "order": 20000,
+      "kind": "call",
+      "label": "migrate only if the lease is free",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/read.ts",
+        "symbol": "withBoardLockIfFreeSync"
+      },
+      "id": "vKEsyHFk/0T9enjhi#Wv77mINZ",
+      "to": "vKEsyHFk/0T9enjhi#UFO3ulXp"
+    },
+    {
+      "order": 21000,
+      "kind": "data",
+      "label": "a migrated document",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/read.ts",
+        "symbol": "writeFileAtomic"
+      },
+      "id": "vKEsyHFk/0T9enjhi#C0t1t0gb",
+      "to": "vKEsyHFk/0T9enjhi#qTv7HuBw"
+    },
+    {
+      "order": 34000,
+      "kind": "call",
+      "label": "the vocabulary a read checks",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/read.ts",
+        "symbol": "readSemanticBoardConfiguration"
+      },
+      "id": "vKEsyHFk/0T9enjhi#VW04N67h",
+      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe"
+    },
+    {
+      "order": 41000,
+      "kind": "call",
+      "label": "a document answers to one address",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/read.ts",
+        "symbol": "semanticBoardAddress"
+      },
+      "id": "vKEsyHFk/0T9enjhi#Lx4UR9Ha",
+      "to": "vKEsyHFk/0T9enjhi#hoh4xPWb"
+    },
+    {
+      "order": 52000,
+      "kind": "call",
+      "label": "fresh disk bytes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/read.ts",
+        "symbol": "decodeSemanticBoardDocument"
+      },
+      "id": "vKEsyHFk/0T9enjhi#SEXS1QZ1",
+      "to": "vKEsyHFk/0T9enjhi#R3ldC44x"
+    }
+  ]
+}

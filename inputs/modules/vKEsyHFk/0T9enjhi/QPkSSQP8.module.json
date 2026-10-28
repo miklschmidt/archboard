@@ -1,0 +1,105 @@
+{
+  "order": 20000,
+  "name": "Discard",
+  "kind": "function",
+  "responsibility": "Removes a whole board under the lease and version check a write takes, refused while another board of the vault opens it; answers its tracked embeds and gives back its claim",
+  "description": "semantic delete (TASK-526.06, ADR 0057) and semantic record --discard (TASK-304.02). BOARD_OPENED_BY names each node on a current or draft variant that opens the board by its name or a former name; history and shelved proposals do not refuse, and another repository's vault cannot be seen. The note holds the name and the former names, so they are free afterwards. A board somebody else holds is refused with the words a write gets.",
+  "groups": [
+    "writes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/write/discard.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/0T9enjhi#QPkSSQP8",
+  "parent": "vKEsyHFk/0T9enjhi#0z23E66v",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 29000,
+      "kind": "call",
+      "label": "the same lease a write takes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/write/discard.ts",
+        "symbol": "underBoardLease"
+      },
+      "id": "vKEsyHFk/0T9enjhi#8TcPZofq",
+      "to": "vKEsyHFk/0T9enjhi#1gdbsn6M"
+    },
+    {
+      "order": 30000,
+      "kind": "call",
+      "label": "unlink and sync the directory",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/write/discard.ts",
+        "symbol": "unlinkDurably"
+      },
+      "id": "vKEsyHFk/0T9enjhi#WhfWPohX",
+      "to": "vKEsyHFk/0T9enjhi#qTv7HuBw"
+    },
+    {
+      "order": 31000,
+      "kind": "call",
+      "label": "give back its claim",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/write/discard.ts",
+        "symbol": "releaseClaim"
+      },
+      "id": "vKEsyHFk/0T9enjhi#zaZzD0Ti",
+      "to": "vKEsyHFk/0T9enjhi#UFO3ulXp"
+    },
+    {
+      "order": 93000,
+      "kind": "call",
+      "label": "the same version check a write takes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/write/discard.ts",
+        "symbol": "boardBefore"
+      },
+      "id": "vKEsyHFk/0T9enjhi#CKknbKgQ",
+      "to": "vKEsyHFk/0T9enjhi#FBhApaqP"
+    },
+    {
+      "order": 113000,
+      "kind": "call",
+      "label": "which drill-downs of the vault open it",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/write/discard.ts",
+        "symbol": "drillDownsOpening"
+      },
+      "id": "vKEsyHFk/0T9enjhi#bkiduZjD",
+      "to": "vKEsyHFk/0T9enjhi#FKOLK94r"
+    }
+  ]
+}
