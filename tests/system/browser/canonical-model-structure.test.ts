@@ -125,6 +125,15 @@ test("structural writes refresh current modules while exact history and selected
 	expect(await selectedName(browser)).toBe("Gateway");
 	await openModelSidebar(browser);
 	expect(await roots(browser)).toEqual(["Shop#Worker", "Shop#Gateway"]);
+	await pollUntil(
+		() =>
+			browser.eval<string[]>(
+				`[...document.querySelectorAll('[data-slot="module-list"] [data-standing="removed"] [data-slot="model-module-name"]')].map(node=>node.textContent)`,
+			),
+		(value) => value.includes("Cache"),
+		"the updated historical comparison",
+		WAIT,
+	);
 	expect(
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-slot="module-list"] [data-standing="removed"] [data-slot="model-module-name"]')].map(node=>node.textContent)`,

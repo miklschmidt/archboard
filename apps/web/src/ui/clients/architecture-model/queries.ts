@@ -75,11 +75,11 @@ const architectureModelKeys = {
 			...READING_FIELDS.map((field) => selection[field] ?? null),
 		] as const,
 	/**
-	 * Every mutable state and comparison follows completed model edits.
+	 * Every reading in the vault, including retained content with a live comparison.
 	 * @param vault The explicit vault.
-	 * @returns Current-input reading keys, excluding exact checkpoints.
+	 * @returns Reading keys without claims or checkpoint catalogue metadata.
 	 */
-	mutable: (vault: string) => ["architecture-model", vault, "reading", null] as const,
+	readings: (vault: string) => ["architecture-model", vault, "reading"] as const,
 	/**
 	 * The retained metadata in one vault.
 	 * @param vault The explicitly addressed vault.
