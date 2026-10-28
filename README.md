@@ -187,7 +187,7 @@ Modules can link to source files, functions, or classes. **Open code** follows t
 
 Select a module or relationship and ask for an explanation. The local agent receives the exact reading and selected subjects. Toolbar and context-menu actions keep the answer beside that captured architecture. Press **Talk** to ask the same question aloud.
 
-<img src="https://github.com/user-attachments/assets/ad57bbb2-0ed1-4b9d-8e37-27de8c5d764b" width="100%" alt="The Timeout guard is selected. A question about why this part exists and what breaks without it is typed into the composer of the conversation, which opens beside the navigator. The conversation fills with an answer about the selected architecture.">
+<img src="https://github.com/user-attachments/assets/375a2075-a445-4ec7-89f8-4d22dd87b908" width="100%" alt="The Timeout guard is selected. A question about why this part exists and what breaks without it is typed into the composer of the conversation, which opens beside the navigator. The conversation fills with an answer about the selected architecture.">
 
 <p align="center"><sub>A real answer from a Codex agent, typed in the conversation. The wait for the answer is sped up.</sub></p>
 
