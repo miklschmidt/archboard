@@ -1,0 +1,57 @@
+{
+  "order": 23000,
+  "name": "Workhorse start",
+  "kind": "module",
+  "responsibility": "Opens the thread one workhorse's link will name, with its instructions and both tool manifests, under a staged epoch operation",
+  "groups": [
+    "workhorse"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/services/workhorse-start"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+  "parent": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+  "outgoing": [
+    {
+      "order": 47000,
+      "kind": "call",
+      "label": "classify and bind the checkout's link",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+        "symbol": "classifyAndBind"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#GoJ2PW76",
+      "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
+    },
+    {
+      "order": 48000,
+      "kind": "rpc",
+      "label": "thread/start for the workhorse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+        "symbol": "threadStart"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#MZtuHuMT",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 76000,
+      "kind": "call",
+      "label": "stage, commit or roll back the start",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/workhorse-start/start.ts",
+        "symbol": "stageOperation"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#o63C7KPd",
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    }
+  ]
+}
