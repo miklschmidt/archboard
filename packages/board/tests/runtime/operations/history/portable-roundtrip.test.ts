@@ -58,7 +58,7 @@ test("portable import preserves current bytes and exact retained identities with
 	expect(git(target.root, "rev-list", "--all", "--", "code.ts")).toBe("");
 	expect(await importArchitectureModel(target.vault, request)).toEqual(installed);
 });
-test("portable export preserves large valid input bytes without changing source HEAD or index", async () => {
+test("portable history shares large exact inputs without changing source HEAD or index", async () => {
 	const source = fixture();
 	const head = git(source.root, "rev-parse", "HEAD");
 	const index = readFileSync(join(source.root, ".git/index"));
@@ -67,6 +67,28 @@ test("portable export preserves large valid input bytes without changing source 
 	writeFileSync(file, bytes);
 	const largeCurrent = readArchitectureModel(source.vault);
 	if (!largeCurrent.success) throw new Error(JSON.stringify(largeCurrent));
+	const retained = await retainArchitectureCheckpoint(source.vault, {
+		target: "current",
+		expectedRevision: largeCurrent.revision.digest,
+		operationId: "shared-large-inputs",
+		writer: "agent",
+		doing: "retaining shared architecture inputs",
+		dependencies: [],
+	});
+	if (!retained.success) throw new Error(JSON.stringify(retained));
+	const tree = git(source.root, "rev-parse", `${retained.checkpoint.id}^{tree}`);
+	let tip = retained.checkpoint.id;
+	for (let sequence = 1; sequence < 110; sequence++)
+		tip = git(
+			source.root,
+			"commit-tree",
+			tree,
+			"-p",
+			tip,
+			"-m",
+			`test: retain shared inputs ${sequence}`,
+		);
+	git(source.root, "update-ref", "refs/heads/archboard-history", tip);
 	const large = await exportArchitectureModel(source.vault);
 	if (!large.success) throw new Error(JSON.stringify(large));
 	expect(large.bundle.revision).toEqual(largeCurrent.revision);
@@ -75,4 +97,17 @@ test("portable export preserves large valid input bytes without changing source 
 	expect(Buffer.from(encoded.bytes, "base64")).toEqual(bytes);
 	expect(git(source.root, "rev-parse", "HEAD")).toBe(head);
 	expect(readFileSync(join(source.root, ".git/index"))).toEqual(index);
+	const target = destination();
+	const installed = await importArchitectureModel(target.vault, {
+		bundle: large.bundle,
+		expectedRevision: empty,
+		operationId: "shared-large-import",
+		writer: "agent",
+		doing: "restoring shared retained inputs",
+	});
+	if (!installed.success) throw new Error(JSON.stringify(installed));
+	const first = await readArchitectureCheckpoint(target.vault, retained.checkpoint.id);
+	const last = await readArchitectureCheckpoint(target.vault, tip);
+	expect(first.success && first.revision).toEqual(largeCurrent.revision);
+	expect(last.success && last.revision).toEqual(largeCurrent.revision);
 });
