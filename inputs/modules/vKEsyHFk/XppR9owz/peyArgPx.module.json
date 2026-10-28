@@ -1,0 +1,97 @@
+{
+  "order": 16000,
+  "name": "Entry point",
+  "kind": "module",
+  "responsibility": "Hands the command to the archboard checkout it stands in, if that is not the running source; else takes --url out before configuration loads, refuses a removed environment variable and runs the table",
+  "description": "TASK-472.09. EXPRESS_SERVER_URL and a set ARCHBOARD_VAULT are refused with exit 2, unless the call asks for help, so a variable that is no longer read never addresses another vault or server than the person means.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/bin.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/XppR9owz#peyArgPx",
+  "parent": "vKEsyHFk/XppR9owz#OM6pX371",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "argv, and what bootstrap took",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/bin.ts",
+        "symbol": "runCli"
+      },
+      "id": "vKEsyHFk/XppR9owz#SWg7BPZu",
+      "to": "vKEsyHFk/XppR9owz#iIVu1bGE"
+    },
+    {
+      "order": 22000,
+      "kind": "call",
+      "label": "take --url",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/bin.ts",
+        "symbol": "applyCliBootstrap"
+      },
+      "id": "vKEsyHFk/XppR9owz#VN95JmCC",
+      "to": "vKEsyHFk/XppR9owz#vAQwlVuz"
+    },
+    {
+      "order": 62000,
+      "kind": "call",
+      "label": "hand off to the checkout it stands in",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/bin.ts",
+        "symbol": "handOff"
+      },
+      "id": "vKEsyHFk/XppR9owz#6eWsf9T9",
+      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+    },
+    {
+      "order": 68000,
+      "kind": "call",
+      "label": "refuse a removed variable",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/bin.ts",
+        "symbol": "removedEnvironmentMessage"
+      },
+      "id": "vKEsyHFk/XppR9owz#4y3I6aju",
+      "to": "vKEsyHFk/XppR9owz#e5UQUj78"
+    }
+  ]
+}

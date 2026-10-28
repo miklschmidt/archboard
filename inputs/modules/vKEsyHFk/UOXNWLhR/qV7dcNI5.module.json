@@ -1,0 +1,32 @@
+{
+  "order": 23000,
+  "name": "Board reads",
+  "kind": "function",
+  "responsibility": "Where a board's document, the vault check, the code findings and a board's locality are read from: the server's routes, or a replay's talk",
+  "description": "Swapped once with readBoardsFrom, before anything is read, as the picture source is. On a replay page every read answers the talk's snapshot, so a refetch returns the same board, and a read of any other board is a violation. A replay reads no findings and no locality.",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-reads.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#qV7dcNI5",
+  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "outgoing": [
+    {
+      "order": 32000,
+      "kind": "call",
+      "label": "the read routes, on a live page",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-reads.ts",
+        "symbol": "fetchSemanticBoardDocument"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#888B84Js",
+      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
+    }
+  ]
+}

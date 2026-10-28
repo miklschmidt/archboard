@@ -1,0 +1,41 @@
+{
+  "order": 18003,
+  "name": "Vault address",
+  "kind": "function",
+  "responsibility": "Finds a command's vault and registers what holds it unless the registry knows it, as one answer; a registry that cannot be written is said in the answer, never refused",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workspace/src/runtime/services/vault-address.ts",
+    "symbol": "findAndRegisterVault"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
+  "outgoing": [
+    {
+      "order": 15000,
+      "kind": "call",
+      "label": "-C or the working directory",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/services/vault-address.ts",
+        "symbol": "findVault"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#zOLMDpzy",
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    },
+    {
+      "order": 16000,
+      "kind": "call",
+      "label": "register it on first use",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/services/vault-address.ts",
+        "symbol": "declareIfUnknown"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#BdoA8zg1",
+      "to": "vKEsyHFk/nAmiQ3Vc#HXDhzWiE"
+    }
+  ]
+}

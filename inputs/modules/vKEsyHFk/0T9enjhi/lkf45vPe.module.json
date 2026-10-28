@@ -1,0 +1,63 @@
+{
+  "order": 18000,
+  "name": "Former names",
+  "kind": "function",
+  "responsibility": "Which board a name answers to: the board that carries it, else the one that used to",
+  "description": "A board's own name always wins. Only a miss looks through the vault's formerNames, so a drill-down, a saved pane address or a command written before a rename keeps opening the board it meant; nothing is cached (ADR 0036).",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/store/former-names.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/0T9enjhi#lkf45vPe",
+  "parent": "vKEsyHFk/0T9enjhi#ZqkmwupZ",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 22000,
+      "kind": "call",
+      "label": "look through every board",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/former-names.ts",
+        "symbol": "listSemanticBoards"
+      },
+      "id": "vKEsyHFk/0T9enjhi#Vo0aT7uz",
+      "to": "vKEsyHFk/0T9enjhi#NM28UA5U"
+    },
+    {
+      "order": 39000,
+      "kind": "call",
+      "label": "the board's own file first",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/former-names.ts",
+        "symbol": "locateSemanticBoard"
+      },
+      "id": "vKEsyHFk/0T9enjhi#gZweHb5q",
+      "to": "vKEsyHFk/0T9enjhi#hoh4xPWb"
+    }
+  ]
+}

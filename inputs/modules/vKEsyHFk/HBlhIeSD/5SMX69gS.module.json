@@ -1,0 +1,76 @@
+{
+  "order": 21000,
+  "name": "Code check",
+  "kind": "module",
+  "responsibility": "Holds each board's anchors, bound symbols, relationships, interfaces and document references to the code they name, at the current variant or the named draft; one run gives behind beside it",
+  "description": "ADR 0046's code pass over the files Git does not ignore in the vault's own checkout and the chosen ones, through code facts: a bound symbol must be a definition, an anchor's symbol a definition or a use that supports its relationship (in the bound code of an end, of an evidence kind the relationship's kind accepts), and on a named draft a bound path must be in its checkout. Each document reference of the variant read must name a file at its branch or commit (ADR 0054). Evidence between a board's bound parts comes from the code facts of every bound file, owned by the narrowest binding (a C, C++ or Objective-C file's part owns its pair): a run-time use through an import or include is a call, a type-only use an import. It joins an environment value that bound code reads with the compose service, Kubernetes workload or Terraform resource that runs that code (by its build, or a part drawn inside the part bound to it) and sets the value to another part's address: configured-path evidence. It reports the part code reaches with no relationship, and as information a relationship with no anchor whose accepted evidence runs only backwards or is missing (across a network hop, the side without evidence). For a container bound to a module it holds ADR 0044's interface to what the module exposes, and reads a Terraform module's pass-through variables and whether it is shallow. A binding to a Terraform root module names an address there; references join resource-bound parts, and --plan names plan JSON files. Kubernetes Service selectors and NetworkPolicies join workload-bound parts by labels, and a reference to a Service no part binds reaches the workloads it picks. A language server resolves the uses no import resolves, and a C use an include leads only to a declaration; the servers each checkout's registration holds decide which one runs there. It lists what it skipped and why. src/shared/code-check/index.ts names each finding code.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/code-intel/src/runtime/operations/code-check"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+  "parent": "vKEsyHFk/HBlhIeSD#KovkhwZi",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 24000,
+      "kind": "call",
+      "label": "how far each board is behind",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+        "symbol": "createBehindReading"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#WPeZchzr",
+      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+    },
+    {
+      "order": 43000,
+      "kind": "call",
+      "label": "every board at its variant, and the relationship kinds",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+        "symbol": "readSemanticBoardAt"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#3hokVf0H",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    },
+    {
+      "order": 87000,
+      "kind": "call",
+      "label": "reads each draft at its own ref",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/ref-code.ts",
+        "symbol": "nodesAtOwnRef"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#m1F0u7X1",
+      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+    }
+  ]
+}

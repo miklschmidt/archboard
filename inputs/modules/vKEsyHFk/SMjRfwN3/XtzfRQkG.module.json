@@ -1,0 +1,18 @@
+{
+  "order": 22000,
+  "name": "Talk files",
+  "kind": "function",
+  "responsibility": "Keeps voice and one exact legacy or canonical playback payload for offline replay.",
+  "description": "Every recording keeps its talk under the state directory's recordings, where the newest 10 stay. --talk keeps it in a new directory of its own that is never pruned. A place that already exists is refused before anything starts. A talk read back must parse as a talk and its voice.wav must hold as many samples as talk.json says, or it is refused before a browser starts.",
+  "groups": [
+    "walkthrough"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/walkthrough/src/runtime/store/talk-files.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SMjRfwN3#XtzfRQkG",
+  "parent": "vKEsyHFk/SMjRfwN3#ZAj4RMzN",
+  "outgoing": []
+}

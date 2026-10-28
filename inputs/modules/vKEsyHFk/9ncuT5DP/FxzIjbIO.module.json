@@ -1,0 +1,69 @@
+{
+  "order": 5000,
+  "name": "Codex transport",
+  "kind": "module",
+  "responsibility": "One newline-framed JSON object at a time each way, correlated to its request, and each tool call routed to the owner registered for its namespace",
+  "description": "The versioned wire contract it decodes against lives beside it in codex-protocol. A dynamic tool call reaches the owner registered for its namespace and manifest digest: the thread tools, the coordinator tools, or tell_coordinator.",
+  "groups": [
+    "child"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-app-server/src/runtime/clients"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+  "parent": "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 4000,
+      "kind": "rpc",
+      "label": "JSON-RPC over stdio",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/clients/transport.ts",
+        "symbol": "createFrameWriter"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#3vlSu8a3",
+      "to": "vKEsyHFk/9ncuT5DP#giL6EI28"
+    },
+    {
+      "order": 19000,
+      "kind": "event",
+      "label": "a tool call from a thread",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/dynamic-tools/quarantine/quarantine-dispatch.ts",
+        "symbol": "ownsPendingReverseRequest"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#aoHKAkWD",
+      "to": "vKEsyHFk/9ncuT5DP#DNQTPTxE"
+    },
+    {
+      "order": 29000,
+      "kind": "event",
+      "label": "notifications and tool calls, routed by thread",
+      "description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "symbol": "onNotification"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#xPCxyO70",
+      "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
+    }
+  ]
+}

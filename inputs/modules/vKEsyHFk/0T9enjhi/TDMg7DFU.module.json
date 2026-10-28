@@ -1,0 +1,79 @@
+{
+  "order": 39000,
+  "name": "Carry a rename",
+  "kind": "function",
+  "responsibility": "Writes a rename, then carries this server's claim and the lines agents wrote to the board's new name",
+  "description": "renameSemanticBoard states the rename as a transition and writes it. When the write moved the board to a new name, the lines agents wrote about the board stay with it and this server's claim follows, for the reason it was taken. A claim that could not follow adds a CLAIM_NOT_CARRIED warning to the answer. The server only points its panes at the new name.",
+  "groups": [
+    "writes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/rename/carry.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/0T9enjhi#TDMg7DFU",
+  "parent": "vKEsyHFk/0T9enjhi#0z23E66v",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 74000,
+      "kind": "call",
+      "label": "state the rename as a transition",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/rename/carry.ts",
+        "symbol": "renameTransition"
+      },
+      "id": "vKEsyHFk/0T9enjhi#W1XFvhja",
+      "to": "vKEsyHFk/0T9enjhi#GWg2Fads"
+    },
+    {
+      "order": 90000,
+      "kind": "call",
+      "label": "write the rename",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/rename/carry.ts",
+        "symbol": "writeSemanticBoard"
+      },
+      "id": "vKEsyHFk/0T9enjhi#64uivDPd",
+      "to": "vKEsyHFk/0T9enjhi#1gdbsn6M"
+    },
+    {
+      "order": 91000,
+      "kind": "call",
+      "label": "carry the claim to the new name",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/rename/carry.ts",
+        "symbol": "claimBoard"
+      },
+      "id": "vKEsyHFk/0T9enjhi#P3ZaxJ1C",
+      "to": "vKEsyHFk/0T9enjhi#UFO3ulXp"
+    }
+  ]
+}
