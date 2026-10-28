@@ -142,6 +142,12 @@ test("invalid portable bytes and different destination content refuse without ch
 	};
 	const bytes = readFileSync(file);
 	const refs = git(target.root, "for-each-ref", "--format=%(refname) %(objectname)");
+	for (const bundle of [
+		{ ...exported.bundle, inputs: [{ path: "model.json", bytes: "AA=A" }] },
+		{ ...exported.bundle, history: { ...exported.bundle.history, bundle: "AAAA\n" } },
+	]) {
+		await expect(importArchitectureModel(target.vault, { ...request, bundle })).rejects.toThrow();
+	}
 	expect(await importArchitectureModel(target.vault, request)).toMatchObject({
 		success: false,
 		code: "TARGET_CHANGED",
@@ -150,7 +156,9 @@ test("invalid portable bytes and different destination content refuse without ch
 	const corrupt = {
 		...exported.bundle,
 		inputs: exported.bundle.inputs.map((input, index) =>
-			index === 0 ? { ...input, bytes: Buffer.from("corrupt").toString("base64") } : input,
+			index === 0
+				? Object.assign({}, input, { bytes: Buffer.from("corrupt").toString("base64") })
+				: input,
 		),
 	};
 	expect(
