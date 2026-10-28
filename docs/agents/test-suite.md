@@ -363,11 +363,9 @@ Run owners through the adapter, which keeps browser work serial, headless and cl
 `BROWSER_TEST_PATHS` is the inventory and the order of the package command.
 The runner accepts the package command or a focused selection from this inventory.
 
-### Board reading and claims
+### Canonical readings and claims
 
-`semantic-board-viewer.test.ts` proves that a board opens in the shell, camera
-controls work, server edits reach the page, and presentation writes no board content.
-`canonical-model-viewer.test.ts` uses the same browser adapter for current modules and retained readings.
+`canonical-model-viewer.test.ts` uses the browser adapter for current modules and retained readings.
 Its temporary Git repository supplies real checkpoints through the public API.
 It covers selection, changed or missing current inputs, source evidence, archive recovery, and unchanged retention records.
 `canonical-model-publication.test.ts` covers explicit destination choice, network failure, retry, and missing-history recovery through a real local Git remote.
@@ -381,9 +379,8 @@ It also proves that a hidden metadata edit preserves the mounted scene while the
 `canonical-model-modes.test.ts` covers explicit flow choices, complete behavioral diagrams, architecture restoration, and selection across modes.
 `canonical-model-structure.test.ts` covers current structural updates through real claims and the public writer.
 It covers pinned history, stable selection through renames, relationship transfer, parent changes, and removal without replacement selection.
-`semantic-claim.test.ts` proves that a claimed board keeps drawing and shows the claim.
-Its take-back control ends the claim, and the next agent write receives the revocation once.
-The board keeps every accepted edit after take-back.
+`canonical-model-viewer.test.ts` also proves visible subject claims and human take-back through the public writer.
+The next write receives `CLAIM_REVOKED`, and the architecture keeps every accepted edit.
 
 ### Controlled text workbench (TASK-143.03.13)
 
@@ -481,7 +478,7 @@ The slice adds no browser behavior.
   system CLI cases continue through the real Commander adapter and the package binary.
 - The CLI owners in `test:system` resolve `bin.archboard` from `package.json` and drive
   that executable from outside the checkout. They cover vault lookup, checkout hand-off,
-  repository selection, skill installation, board moves and resource cleanup.
+  repository selection, skill installation, canonical operations, and resource cleanup.
   `apps/cli/tests/cli/rules/routing/help.test.ts` discovers command topics from
   `cliContractRegistry()` and tests their help through the real parser.
 - Normal lock owners prove reachable one-server exclusion. The opt-in topology

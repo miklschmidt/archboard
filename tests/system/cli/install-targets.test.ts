@@ -188,6 +188,24 @@ describe("install targets", () => {
 		expect(() => fixture.assertSkillBytes(fixture.skillRoot), secondDiagnostic).not.toThrow();
 	});
 
+	test("retries canonical setup after the configured signer fails", async () => {
+		using fixture = createInstallFixture();
+		const repo = fixture.repo("signing-retry");
+		fixture.git(repo, "init", "--quiet");
+		fixture.git(repo, "config", "gpg.ssh.program", join(fixture.root, "missing-signer"));
+		const refused = fixture.run(repo);
+		expect(refused.status, installFailure(refused)).toBe(2);
+		const vault = join(repo, ".archboard", "vault");
+		expect(existsSync(join(vault, "model.json"))).toBe(false);
+		fixture.git(repo, "config", "--unset", "gpg.ssh.program");
+		const retried = fixture.install(repo);
+		expect(existsSync(join(vault, "model.json")), installFailure(retried.spawn)).toBe(true);
+		const retained = await listArchitectureCheckpoints(vault);
+		if (!retained.success) throw new Error(JSON.stringify(retained));
+		expect(retained.checkpoints).toHaveLength(1);
+		fixture.git(repo, "verify-commit", retained.checkpoints[0]!.id);
+	});
+
 	test("removes the block of an earlier version, says so, and leaves every other byte of the document", () => {
 		using fixture = createInstallFixture();
 		const authored = "# House rules\n\nRun the tests.\n\n";

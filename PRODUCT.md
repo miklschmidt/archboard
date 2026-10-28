@@ -145,7 +145,7 @@ Archboard server. Nothing here was dragged into place."
 - `examples/web-shop`: the example vault with history, proposals, drill-down
   and walkthroughs.
 - `.archboard/vault`: Archboard's architecture inputs.
-  Exact legacy originals remain authoritative until explicit migration.
+  Exact legacy originals remain available through retained migration history.
 - `docs/design/assets/`: the shell reference image and rendered captures of the
   shell.
 - `docs/assets/`: the social card, cut from the banner.

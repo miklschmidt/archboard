@@ -2,7 +2,7 @@
 	"name": "@archboard/board",
 	"version": "0.0.0",
 	"private": true,
-	"description": "The board: its document and policy, the wire contracts and pure rules (comparison, reconciliation, coherence) that the browser and the server both run, the id mint, and the runtime store that is the one reader and writer of a board file, with the one-writer lease lock.",
+	"description": "The canonical architecture model, shared semantic rules, coherent reader, and durable writer. Legacy decoding supports explicit migration and exact retained originals.",
 	"license": "BUSL-1.1",
 	"type": "module",
 	"imports": {

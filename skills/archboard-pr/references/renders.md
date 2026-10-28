@@ -1,9 +1,10 @@
 # Render a canonical reading
 
 Use the proposal's complete comparison to identify changed subjects before selecting a picture.
-A render shows a selected architectural state.
+A render shows the selected state against its default comparison base.
+It includes removed subjects and marks unresolved subjects.
 The shipped canonical render schema accepts no comparison base, named view, title, legend, or layout flag.
-Keep change evidence in `model compare` and describe the picture's state in its caption.
+Use `model compare` to identify that base and describe both states in the caption.
 
 ## Select and retain
 

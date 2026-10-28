@@ -77,8 +77,8 @@ Codex. The installer does these things:
    Codex reads. With `--agent claude-code` it is `~/.claude/skills`. Each copy
    replaces an earlier copy. If a target is a symlink, the installer stops and
    changes nothing.
-2. If the repository has no `.archboard/vault`, it creates that directory, with a
-   `.archboard/config.yaml` file that holds the default vocabulary.
+2. If the repository has no `.archboard/vault`, the installer creates that directory.
+   An empty vault receives a `.archboard/config.yaml` file with the default vocabulary.
    It initializes a canonical planning model through the signed model installer.
    The new model has no implemented current state.
    Existing vaults keep their inputs and require explicit migration when they contain legacy boards.
