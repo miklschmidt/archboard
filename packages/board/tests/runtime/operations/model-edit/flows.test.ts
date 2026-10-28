@@ -4,7 +4,7 @@ import {
 } from "#tests/runtime/operations/model-edit/flow-fixture.ts";
 import type { ArchitectureModuleEdit } from "@archboard/board/model";
 import { afterEach, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/board/store-read";
 import { editArchitectureModule } from "@archboard/board/store-write";
@@ -93,7 +93,6 @@ test("independent collections author ordered cross-module behavior without creat
 
 test("flow reads reject duplicate subject identities and absent participant references", async () => {
 	const { vault } = fixture();
-	const { writeFileSync } = await import("node:fs");
 	const document = {
 		schemaVersion: 1,
 		id: "Behavior",
@@ -178,7 +177,7 @@ test("steps move by identity between flows and nested holders with atomic altern
 	]);
 }, 15_000);
 
-test("missing holders, orphaned alternatives, conflicting placements and cyclic sibling order refuse the complete batch", async () => {
+test("invalid placements and surviving messages with removed endpoints refuse the complete batch", async () => {
 	const { vault } = await behaviorFixture();
 	const input = await structureIntent(vault, allBehaviorSubjects);
 	const original = readArchitectureModel(vault);
@@ -212,6 +211,14 @@ test("missing holders, orphaned alternatives, conflicting placements and cyclic 
 				subject: "Shop#Send",
 				placement: { holder: "Shop#Checkout", before: "Shop#Notify" },
 			},
+		],
+		[
+			{ type: "remove-module", subject: "Shop#Worker" },
+			{ type: "edit-step", subject: "Shop#Send", set: { label: "Changed dispatch" } },
+		],
+		[
+			{ type: "remove-module", subject: "Shop#Worker" },
+			{ type: "move-step", subject: "Shop#Send", placement: { holder: "Shop#Other" } },
 		],
 	];
 	for (const changes of batches) {
@@ -282,6 +289,84 @@ test("a module removal repairs nested messages and claims every affected flow in
 	});
 	expect(await editArchitectureModule(vault, request)).toEqual(result);
 }, 15_000);
+
+test("one batch explicitly removes an incident message and its module while preserving another message", async () => {
+	const { vault } = fixture();
+	const surviving = {
+		id: "Shop#Keep",
+		from: "Shop#Gateway",
+		to: "Shop#Handler",
+		kind: "sync" as const,
+		label: "Handle request",
+		note: "Keep this behavior",
+	};
+	writeFileSync(
+		join(vault, "checkout.flows.json"),
+		JSON.stringify({
+			schemaVersion: 1,
+			id: "Behavior",
+			name: "Behavior",
+			flows: [
+				{
+					id: "Shop#Checkout",
+					name: "Checkout",
+					participants: ["Shop#Gateway", "Shop#Worker", "Shop#Handler"],
+					steps: [
+						{
+							id: "Shop#Send",
+							from: "Shop#Gateway",
+							to: "Shop#Worker",
+							kind: "sync",
+							label: "Dispatch",
+						},
+						surviving,
+					],
+				},
+			],
+		}),
+	);
+	const input = await structureIntent(vault, [
+		"Shop",
+		"Shop#Gateway",
+		"Shop#Worker",
+		"Shop#Handler",
+		"Shop#Dispatch",
+		"Shop#Checkout",
+		"Shop#Send",
+		"Shop#Keep",
+	]);
+	const request = {
+		...input,
+		changes: [
+			{ type: "remove-module", subject: "Shop#Worker" },
+			{ type: "remove-step", subject: "Shop#Send" },
+		],
+	} satisfies ArchitectureModuleEdit;
+	const result = await editArchitectureModule(vault, request);
+	expect(result).toMatchObject({ success: true });
+	if (!result.success) throw new Error(JSON.stringify(result));
+	const reading = readArchitectureModel(vault);
+	if (!reading.success) throw new Error(JSON.stringify(reading));
+	expect(reading.collections[0]!.flows).toEqual([
+		{
+			id: "Shop#Checkout",
+			name: "Checkout",
+			participants: ["Shop#Gateway", "Shop#Handler"],
+			steps: [surviving],
+		},
+	]);
+	expect(reading.modules.map((module) => module.id)).not.toContain("Shop#Worker");
+	expect(reading.manifest.retiredIds).toEqual(
+		expect.arrayContaining(["Shop#Worker", "Shop#Dispatch", "Shop#Send"]),
+	);
+	expect(reading.manifest.retiredIds).not.toContain("Shop#Keep");
+	expect(await readArchitectureCheckpoint(vault, result.checkpoint.id)).toMatchObject({
+		success: true,
+		collections: reading.collections,
+		manifest: reading.manifest,
+	});
+	expect(await editArchitectureModule(vault, request)).toEqual(result);
+});
 
 test("collection transfers and step field edits keep identity while removals reserve subjects and untouched bytes", async () => {
 	const { vault } = await behaviorFixture();
