@@ -1,0 +1,19 @@
+{
+  "order": 22000,
+  "name": "Pane vault",
+  "kind": "function",
+  "responsibility": "The vault of the pane around a reader",
+  "description": "The pane provides its vault once, around its stage, and every read the pane draws takes it from here and names it, because two panes of a tab can show two repositories. In the application the pane session is its one source. A replay names the recorded talk instead, whose reads never reach a server. This only hands the value down.",
+  "groups": [
+    "panes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/state/semantic-board-canvas/pane-vault.ts",
+    "symbol": "PaneVaultContext"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#p5UCow7F",
+  "parent": "vKEsyHFk/yejBBUFY#POloYnX3",
+  "outgoing": []
+}

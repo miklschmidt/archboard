@@ -1,0 +1,14 @@
+{
+  "order": 35000,
+  "name": "Board change announcements",
+  "kind": "module",
+  "responsibility": "Publishes board changes by vault and board",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/state/semantic-board-canvas/board-changes.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#RKEuUGxw",
+  "parent": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+  "outgoing": []
+}

@@ -1,0 +1,19 @@
+{
+  "order": 20000,
+  "name": "Frame clock",
+  "kind": "module",
+  "responsibility": "The one clock that glides, picture transitions and subtitle lingers read: the browser's own on a live page, a stepped one on a replay",
+  "description": "A replay swaps it once, before it mounts anything. Its stepped clock runs frame callbacks and timers at their due times, and takes over the browser's own requestAnimationFrame, so a library's frames run on it too. It pauses and stands every Web Animation and CSS transition at the frame's time, a picture's traffic at where its picture's clock stands, and records a violation for an animation on a timeline it cannot stand. A lint rule keeps the viewer and the subtitles on it.",
+  "groups": [
+    "drawing",
+    "walkthrough"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/ui-kit/src/ui/state/frame-clock"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#rouptSyK",
+  "parent": "vKEsyHFk/yejBBUFY#POloYnX3",
+  "outgoing": []
+}

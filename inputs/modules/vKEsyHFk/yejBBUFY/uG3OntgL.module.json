@@ -1,0 +1,14 @@
+{
+  "order": 41000,
+  "name": "Talk capture",
+  "kind": "module",
+  "responsibility": "Captures voice samples and talk events on one audio clock",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/walkthrough-recording/talk-capture.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#uG3OntgL",
+  "parent": "vKEsyHFk/yejBBUFY#fscW90Xt",
+  "outgoing": []
+}

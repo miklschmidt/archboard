@@ -1,0 +1,14 @@
+{
+  "order": 49000,
+  "name": "Pending board operation",
+  "kind": "module",
+  "responsibility": "Tracks a board open until the pane reports that it moved",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/state/board-routing/operation.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#nTwJDWl8",
+  "parent": "vKEsyHFk/yejBBUFY#HCghQa6I",
+  "outgoing": []
+}

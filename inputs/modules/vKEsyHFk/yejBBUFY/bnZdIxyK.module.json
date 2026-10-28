@@ -1,0 +1,14 @@
+{
+  "order": 44000,
+  "name": "Recording voice source",
+  "kind": "module",
+  "responsibility": "Reads voice readiness, status and output level for the recorder",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/rules/walkthrough-recording/voice-sources.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#bnZdIxyK",
+  "parent": "vKEsyHFk/yejBBUFY#fscW90Xt",
+  "outgoing": []
+}

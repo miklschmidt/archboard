@@ -1,0 +1,14 @@
+{
+  "order": 32000,
+  "name": "Pane messages",
+  "kind": "module",
+  "responsibility": "Applies server board and version messages to a pane",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/rules/pane-session/socket-messages.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#8yYKWsmB",
+  "parent": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+  "outgoing": []
+}

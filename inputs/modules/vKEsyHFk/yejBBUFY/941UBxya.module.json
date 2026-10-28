@@ -1,0 +1,31 @@
+{
+  "order": 15000,
+  "name": "Workbench transport",
+  "kind": "module",
+  "responsibility": "The agent's channel on one pane socket: the server's agent state in, the controllers' commands out",
+  "groups": [
+    "agent"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/ui/clients/transport"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#941UBxya",
+  "parent": "vKEsyHFk/yejBBUFY#W0EmXnR9",
+  "outgoing": [
+    {
+      "order": 22000,
+      "kind": "event",
+      "label": "agent commands and snapshots",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/clients/transport/socket-run.ts",
+        "symbol": "send"
+      },
+      "id": "vKEsyHFk/yejBBUFY#EAT8ges2",
+      "to": "vKEsyHFk/yejBBUFY#G4NHQC25"
+    }
+  ]
+}

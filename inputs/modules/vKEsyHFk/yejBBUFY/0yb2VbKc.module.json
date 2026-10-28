@@ -1,0 +1,32 @@
+{
+  "order": 16000,
+  "name": "Voice subtitles",
+  "kind": "ui",
+  "responsibility": "The voice's words, faded in one at a time over the pane it runs for, measured into two lines",
+  "description": "Cut into cues from the transcript on the pane's transport, or from a talk's lines on a replay; each word fades in, a cue gives way to the next without a cut, and a subtitle that stops growing lingers on the frame clock, then fades out. A person can turn them off, which moves the voice from the box that carries it back to the dock; in a fullscreen presentation, which has no dock, it only takes the words away and the voice stays in its box. A recording always has them, and a recording and a replay draw them bare, in the pill of a walkthrough's box.",
+  "groups": [
+    "voice"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/ui/components/subtitles"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#0yb2VbKc",
+  "parent": "vKEsyHFk/yejBBUFY#W0EmXnR9",
+  "outgoing": [
+    {
+      "order": 41000,
+      "kind": "call",
+      "label": "a line's linger and its fades",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/hooks/subtitles/use-subtitle-fade.ts",
+        "symbol": "frameClock"
+      },
+      "id": "vKEsyHFk/yejBBUFY#1LB0Qkb3",
+      "to": "vKEsyHFk/yejBBUFY#rouptSyK"
+    }
+  ]
+}

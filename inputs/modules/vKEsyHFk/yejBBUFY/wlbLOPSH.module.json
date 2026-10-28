@@ -1,0 +1,9 @@
+{
+  "order": 26000,
+  "name": "Panes and workspace",
+  "kind": "module",
+  "responsibility": "Gives the tab its panes: each pane's session with the server, the address that restores them, the catalog of boards to choose from, the move of a board to another repository, and the code a part opens",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#wlbLOPSH",
+  "outgoing": []
+}

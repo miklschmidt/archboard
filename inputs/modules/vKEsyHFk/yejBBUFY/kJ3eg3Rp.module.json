@@ -1,0 +1,14 @@
+{
+  "order": 43000,
+  "name": "Recording pace",
+  "kind": "module",
+  "responsibility": "Decides when the recording starts, advances, finishes or fails",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/rules/walkthrough-recording/pacing.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#kJ3eg3Rp",
+  "parent": "vKEsyHFk/yejBBUFY#fscW90Xt",
+  "outgoing": []
+}

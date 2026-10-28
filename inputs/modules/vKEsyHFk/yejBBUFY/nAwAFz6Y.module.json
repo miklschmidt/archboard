@@ -1,0 +1,14 @@
+{
+  "order": 52000,
+  "name": "Move lifecycle",
+  "kind": "module",
+  "responsibility": "Reads move targets and preview, then follows the requested move",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/hooks/board-move/use-board-move.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#nAwAFz6Y",
+  "parent": "vKEsyHFk/yejBBUFY#HQWPLutt",
+  "outgoing": []
+}

@@ -1,0 +1,32 @@
+{
+  "order": 8000,
+  "name": "Voice session",
+  "kind": "module",
+  "responsibility": "The live voice this tab holds for one pane: availability, start and stop, mute, recovery",
+  "description": "Made by the application's VoiceStore for the pane voice runs for. The peer connection and the audio element belong to that pane's media owner (codex-workbench-media), negotiated over the pane's workbench transport.",
+  "groups": [
+    "voice"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/ui/state/voice-session"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+  "parent": "vKEsyHFk/yejBBUFY#W0EmXnR9",
+  "outgoing": [
+    {
+      "order": 28000,
+      "kind": "data",
+      "label": "the pane's agent and media state",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/state/voice-session/session.ts",
+        "symbol": "capabilities"
+      },
+      "id": "vKEsyHFk/yejBBUFY#DTRtWKab",
+      "to": "vKEsyHFk/yejBBUFY#941UBxya"
+    }
+  ]
+}
