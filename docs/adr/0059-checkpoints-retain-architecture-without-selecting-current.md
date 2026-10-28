@@ -4,6 +4,11 @@ status: accepted
 
 # Checkpoints retain architecture without selecting current
 
+[ADR 0062](0062-one-live-canonical-model-and-consumer-path.md) supersedes the temporary live legacy compatibility below.
+It remains proposed pending TASK-549.24 parent acceptance.
+Legacy decoding now serves explicit migration and exact retained originals.
+The earlier delivery decisions remain historical evidence.
+
 A source branch can change or disappear while an architectural decision remains relevant.
 A historical reading must preserve its original architecture without borrowing current modules or policy.
 TASK-549.02 adds local checkpoints for canonical models.
