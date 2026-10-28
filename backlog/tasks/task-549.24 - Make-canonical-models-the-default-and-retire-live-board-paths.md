@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T20:01:00Z'
+updated_date: '2026-10-28T20:57:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -434,4 +434,6 @@ The proposal lifecycle review is integrated at signed b2ea7a71. Root reviewed ei
 The final README media refresh is complete at this checkpoint. The real-agent ask clip exits successfully and shows the selected Timeout guard with a matching answer. Root inspected four clip frames and the thumbnail. Its accepted upload exits 0, and README now links it. The final readme:check result is 16 current assets and zero stale assets. Narrated and ask receipts, hashes, and visual evidence remain in the shared state directory. This closes the media refresh, but remaining reviews, the complete integration gate, archive publication, task acceptance, and PR readiness remain open.
 
 The adapter review repairs strict explanation HTTP envelopes, CLI usage refusals, and mutation visibility after a caller disconnects. Its signed source is 33fda375c93189ed7f5f87dde36bba582d6808fc. The 11 focused cases pass with 116 assertions, and final types, strict lint, and formatting pass. Root also replaces retired screenshot guidance with model rasterize and uses canonical architecture wording for inject guidance. Actual CLI inspection preserves screenshot exit 2 and confirms that the replacement help exists. These guidance changes need no new behavior test or architecture proposal. Five README assets now have stale source hashes: hero, take-back, code-evidence, module-interfaces, and git-history. Their final refresh waits until the remaining source reviews settle. Acceptance and PR readiness remain open.
+
+The rendering and source-evidence review repairs four Spec findings in signed source f0e39d14087e67e3aab076f8076cc5d68d63800b. Public route evidence reproduces and fixes the historical Open code selector mismatch reported by root. Other repairs preserve exact comparison reads, PNG bytes during metadata-only refresh, and comparison meaning in export fingerprints. The 11 combined cases pass with 119 assertions, plus both types, strict lint, formatting, and whitespace. Geometry blobs remain exact, so the 268-case corpus is reused. Root reviewed the three frontend consumers with no intrinsic defect and no required frontend change. Fifteen README assets now need final regeneration because the renderer source hash changed. The refresh stays deferred until source reviews settle. No task acceptance, source-vault change, archive publication, or PR publication is claimed.
 <!-- SECTION:NOTES:END -->
