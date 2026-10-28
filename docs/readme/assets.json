@@ -91,7 +91,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "4414a45cca43106c803596062013b14a871af13f92175ce63b2a70e6d3a4e33f"
+			"hash": "e1d2f9987977afc0bd9ece189976c9f2e0604f13f2b2c57ee2745fea8eb4e210"
 		},
 		{
 			"name": "plan",
@@ -180,7 +180,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "927c165d03fee606c56d1fd1f30b3c0a5d622ac2d40a6810f9bdb126b543db52"
+			"hash": "0c3fa8266924d76452ba436c2b85c790ae777e2a8064464af87a94e9eec1b5f5"
 		},
 		{
 			"name": "sequence",
@@ -239,7 +239,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "927c165d03fee606c56d1fd1f30b3c0a5d622ac2d40a6810f9bdb126b543db52"
+			"hash": "0c3fa8266924d76452ba436c2b85c790ae777e2a8064464af87a94e9eec1b5f5"
 		},
 		{
 			"name": "drill-down",
@@ -290,7 +290,7 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts"
 			],
-			"hash": "fe55cef1637a404b3820e1bc8bc48ba3b699d35e77bb0a605020d17f0cf8b184"
+			"hash": "0cbd8b6eb640833b0dbf57662444df3dabcee52cb8dfad6b8c030d17ca64c2aa"
 		},
 		{
 			"name": "take-back",
@@ -358,7 +358,7 @@
 			"command": "bun run readme:assets architecture",
 			"files": ["docs/readme/architecture-light.svg", "docs/readme/architecture-dark.svg"],
 			"sources": ["scripts/readme-assets/svg.ts", "scripts/readme-assets/server.ts"],
-			"hash": "c5de20b3cf677cd7e0ed79424d68dcd6bcffeeeab23e38168320bb6e9892f55b"
+			"hash": "184b056335e4f6ab70194a43e9f653c583d6307dccac6e6278a5ffa7b48aad12"
 		},
 		{
 			"name": "code-evidence",
