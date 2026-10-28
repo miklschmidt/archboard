@@ -1,0 +1,32 @@
+{
+  "order": 14000,
+  "name": "Realtime voice",
+  "kind": "module",
+  "responsibility": "Starts the realtime leg on the coordinator's thread, hands a narrated walkthrough's steps to the voice model, and carries its transcript back",
+  "description": "Archboard never speaks to a voice endpoint itself: the child brokers it, and the media travels browser to provider over the peer connection the tab made.",
+  "groups": [
+    "voice"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/services/realtime"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#ZQxB1ZaK",
+  "parent": "vKEsyHFk/9ncuT5DP#3vO7eN8L",
+  "outgoing": [
+    {
+      "order": 17000,
+      "kind": "rpc",
+      "label": "thread/realtime/start, append, stop",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/realtime/negotiation.ts",
+        "symbol": "realtimeStart"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#TFjDY5zE",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    }
+  ]
+}
