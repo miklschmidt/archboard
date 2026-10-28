@@ -1,7 +1,9 @@
-import { openModelSidebar } from "./support/canonical-page.ts";
+import { editCanonicalModel, openModelSidebar } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import type { ArchitectureModelRead, ArchitectureCheckpointRetain } from "@archboard/board/model";
+import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { prepareProductionFixture } from "../server-state/support/codex-production.ts";
 import { productionServer } from "../server-state/support/production-server.ts";
@@ -12,13 +14,37 @@ import {
 	serverTestEnvironment,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { initializeSource } from "./support/canonical-model.ts";
+import { initializeSource, selectReading } from "./support/canonical-model.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
 
-test("an explanation keeps its captured selection after scope navigation", async () => {
+test("an explanation keeps its captured comparison and selection after scope navigation", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { fixture, server, browser } = await openReader(resources);
+	const request = createJsonRequester(server);
+	const initial = await request<ArchitectureModelRead>("/api/architecture/model");
+	if (!initial.body.success) throw new Error(JSON.stringify(initial.body));
+	const retained = await request<ArchitectureCheckpointRetain>("/api/architecture/checkpoints", {
+		method: "POST",
+		body: {
+			vault: fixture.vault,
+			target: "current",
+			operationId: "before-explanation",
+			writer: "fixture-agent",
+			doing: "Retaining the architecture to explain",
+			expectedRevision: initial.body.revision.digest,
+			dependencies: [],
+		},
+	});
+	if (!retained.body.success) throw new Error(JSON.stringify(retained.body));
+	const changed = await editCanonicalModel(request, fixture.vault, "change-comparison", [
+		{
+			type: "edit-module",
+			subject: "Shop#Worker",
+			set: { responsibility: "Processes delayed shopping requests" },
+		},
+	]);
+	await selectReading(browser, retained.body.checkpoint.id);
 	await openModelSidebar(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await pollUntil(
@@ -99,6 +125,8 @@ test("an explanation keeps its captured selection after scope navigation", async
 	expect(paneContext).toMatchObject({
 		model: "Shop",
 		vault: fixture.vault,
+		expectedRevision: initial.body.revision.digest,
+		expectedComparisonRevision: changed.after.digest,
 		reading: { scope: "Shop#Gateway", groups: ["public"] },
 	});
 	expect(await browser.run(["errors"])).toBe("");
@@ -150,10 +178,10 @@ async function openReader(resources: AsyncDisposableStack) {
 async function actionStatus(browser: AgentBrowserSession, expected: string) {
 	await pollUntil(
 		() =>
-			browser.eval<string | null>(
-				`document.querySelector('[data-slot="model-explanation"]')?.getAttribute('data-status') ?? null`,
+			browser.eval<{ status: string | null; alerts: string[] }>(
+				`({ status: document.querySelector('[data-slot="model-explanation"]')?.getAttribute('data-status') ?? null, alerts: [...document.querySelectorAll('[role="alert"]')].map(element => element.textContent ?? '') })`,
 			),
-		(status) => status === expected,
+		(result) => result.status === expected,
 		`the ${expected} explanation`,
 		WAIT,
 	);

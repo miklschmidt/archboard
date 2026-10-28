@@ -71,11 +71,15 @@ async function explanationRequest(
 		path += `?${new URLSearchParams({ tabSessionId: input.tabSessionId })}`;
 		init = { signal: signal ?? null };
 	} else {
-		if (input.type !== "invoke") path += `/${encodeURIComponent(input.actionId)}/${type}`;
+		let payload = { vault, ...body };
+		if (input.type !== "invoke") {
+			path += `/${encodeURIComponent(input.actionId)}/${type}`;
+			payload = { vault, tabSessionId: input.tabSessionId };
+		}
 		init = {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ vault, ...body }),
+			body: JSON.stringify(payload),
 		};
 	}
 	const response = await fetch(inVault(path, vault), init);

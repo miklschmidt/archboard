@@ -198,6 +198,8 @@ Each behavior keeps its existing public boundary and one state owner.
   A change of source context cancels its pending activation.
   An unavailable base stays explicit, and the selected reading supplies its own complete interface facts.
   Toolbar, keyboard, and context-menu explanations use the same visible selection and captured reading.
+  The capture carries `expectedComparisonRevision` from that model's comparison, beside the target and optional narrative-source guards.
+  An absent comparison omits that guard. Later reads never replace a captured guard.
   One tab-scoped query reads temporary answers from the existing local action owner.
   The pane socket announces changes, and reconnect refreshes the same query.
   Answer controls use the captured vault after navigation. The result labels its original model, state, subjects, and revision.

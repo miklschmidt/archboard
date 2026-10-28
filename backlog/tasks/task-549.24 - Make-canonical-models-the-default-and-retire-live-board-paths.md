@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T22:11:00Z'
+updated_date: '2026-10-28T23:00:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -192,6 +192,10 @@ Repair canonical pane capture after a late vault arrival. The two-pane workbench
 Finish the two workbench browser owners. Fullscreen diagnosis proves model-inspector is absent because Selection is inactive, while the mounted semantic-sidebar is hidden. Assert that existing sidebar instead of requiring an inactive panel. The signed-out case uses an uncontrolled external example.test login URL and intermittently leaves the popup at about:blank. Fulfill only that fake provider navigation through the browser network fixture, preserving the real local sign-in protocol and exact destination assertion. Run these existing owners, the pending reference/agent-navigation guards, and scoped checks. No product or architecture change is planned.
 
 Visual README inspection found legacy board-authoring wording in current code diagnostics. Update RELATIONSHIP_UNDRAWN and CALLER_UNDRAWN guidance to describe modules and model relationships, preserving codes, subjects, evidence and severity. This is a small consumer-transition review fix, not new architecture. Run scoped source lint and existing code-check owners without wording assertions. Regenerate the three evidence clips whose source hash includes code-intel, then inspect outputs before publishing.
+
+Finish CAPTURE-1 at the approved browser seam. Extend the existing explanation owner to open a retained reading against changed current architecture, then invoke an explanation and keep its captured comparison through navigation. Add expectedComparisonRevision from the same coherent browser model as expectedRevision. Preserve the existing report/action schemas and temporary answer owner. Update affected consumer guidance. The shared runtime regression already owns stale-comparison refusal. Existing capture and model contracts retain their meaning, so no new architecture proposal is needed.
+
+Repair the browser retry/cancel envelope exposed by the existing explanation owner. The strict HTTP route takes actionId from the URL and rejects its duplicate body field. Preserve the shared action identity, send only vault and tabSessionId in control bodies, and keep invocation bodies complete. Use the existing browser retry/cancellation case for RED/GREEN. Remove temporary probes and the disproven interaction-readiness guard. Existing explanation actions retain their architecture responsibility.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -438,4 +442,6 @@ The adapter review repairs strict explanation HTTP envelopes, CLI usage refusals
 The rendering and source-evidence review repairs four Spec findings in signed source f0e39d14087e67e3aab076f8076cc5d68d63800b. Public route evidence reproduces and fixes the historical Open code selector mismatch reported by root. Other repairs preserve exact comparison reads, PNG bytes during metadata-only refresh, and comparison meaning in export fingerprints. The 11 combined cases pass with 119 assertions, plus both types, strict lint, formatting, and whitespace. Geometry blobs remain exact, so the 268-case corpus is reused. Root reviewed the three frontend consumers with no intrinsic defect and no required frontend change. Fifteen README assets now need final regeneration because the renderer source hash changed. The refresh stays deferred until source reviews settle. No task acceptance, source-vault change, archive publication, or PR publication is claimed.
 
 Root reviewed the complete README manifest delta. The explainer omitted canonical architecture inputs after removal of its legacy file. Its source dependency now covers .archboard/vault through the existing directory hasher. All 11 manifest cases and 26 assertions pass, with formatting and whitespace checks. No freshness hash or architecture content changed. No proposal is needed because this restores media tracking without changing architectural meaning. Exact review coverage is task-549.24-readme-manifest-review.json. Fifteen asset refreshes remain deferred until source review completion.
+
+CAPTURE-1 now carries the observed comparison revision through browser reports and explanation requests. The existing browser case opens a retained target against changed current architecture and preserves capture through navigation. Root also repaired strict retry/cancel bodies: actionId belongs in the URL, while the body carries vault and tabSessionId. The failed readiness hypothesis and temporary probes are removed. Four affected browser cases pass with 22 assertions. Final source passes both types, strict lint, formatting, whitespace, and the two explanation cases with 12 assertions. Consumer guidance distinguishes an accepted capture from a new invocation. Existing architecture meaning remains accurate and no proposal or vault edit is needed. Exact composed coverage and failed evidence are in task-549.24-capture-consumer-review.json. Remaining reviews, full gate, media, archive publication and final acceptance stay open.
 <!-- SECTION:NOTES:END -->
