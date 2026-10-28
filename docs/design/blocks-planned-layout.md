@@ -532,6 +532,17 @@ Each endpoint exposes all four candidate walls and its exact measured protected 
 The model sorts by authored order before identity and resolves every relationship to local endpoint handles.
 This checkpoint observes the model but selects no planned geometry.
 
+### Build checkpoint: ownership before placement
+
+Step 3 builds route ancestry, source-owned label reservations, and explicit source and target fans beside the retained layout.
+Each label records four adjacent slot alternatives, with two rows on either side of its source.
+Each route names its common scope and the ordered scopes that it leaves and enters.
+Fan membership requires the same endpoint, direction, and treatment key, including comparison standing.
+Pairwise sharing cannot combine two fans into a larger trunk.
+
+Focused Rust fixtures cover mixed treatments, transitive pairwise sharing, grouped source labels, and direct parent-header endpoints.
+This checkpoint still selects no new coordinates.
+
 ## Risks and decisions left to evidence
 
 The largest risk is conservative over-reservation.
