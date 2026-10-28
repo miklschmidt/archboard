@@ -3,7 +3,7 @@
 
 /** The description of `check code`. */
 const CHECK_CODE_HELP = [
-	"Compares the boards with the code that their bindings and anchors name. It reads the current variant of every board, or the drafts that --state or --every-draft name. It reads the checkout that holds the vault for its own repository, and the chosen checkout of every other repository, and only files that Git does not ignore.",
+	"Compares canonical modules and relationships with their bound source and evidence anchors. It reads current architecture, the state named by --state, or proposals selected by --every-draft. Source comes from the vault's checkout or another repository's chosen checkout. Git-ignored files are excluded.",
 	"",
 	"Warnings:",
 	"- ANCHOR_PATH_MISSING, ANCHOR_SYMBOL_MISSING: an anchor whose file is not in its checkout, or does not hold its symbol.",
@@ -13,7 +13,7 @@ const CHECK_CODE_HELP = [
 	"- ENTRY_POINT_UNEXPOSED: in a container bound to a module, an entry point that owns nothing the module exposes, while a caller drawn to it reaches it from outside the module.",
 	"- CALLER_UNDRAWN: a hidden part whose exposed code a file outside the module runs, and no part binds that file.",
 	"- DOCUMENT_PATH_MISSING: a document reference whose file is not at the branch or commit that the reference names (ADR 0054).",
-	"- INHERITED_PART_DROPPED: a draft that lacks a bound part of the variant it was branched from, while the code still holds that part's path and symbol. Its dropped field names the earlier variant, the ref, the commit and where the code holds it.",
+	"- INHERITED_PART_DROPPED: a proposal removes a bound part from its predecessor, while that source path or symbol still exists. The dropped field identifies the predecessor and source evidence.",
 	"",
 	"Information, which never changes the exit status:",
 	"- RELATIONSHIP_BACKWARDS: a relationship with no anchor whose evidence runs only the other way.",
@@ -45,18 +45,18 @@ const CHECK_CODE_HELP = [
 	"Drafts:",
 	"- --state reads one exact canonical state by identity or unique name. It also warns about a bound path that the draft names and its checkout does not hold.",
 	"- --every-draft reads each independent canonical proposal by identity.",
-	"- A draft is read at the ref that its bindings name and no earlier variant names, else at the one ref that they name. It is read from Git, without a checkout, or from the checkout's files when the bindings name no ref. A part that pins a ref that the draft's ref does not hold is read at its own ref.",
+	"- Source bindings with explicit refs read Git objects without changing the checkout. Unpinned bindings read the selected checkout's files. Unavailable source stays explicit.",
 	"",
-	"Exit 1 means the code check has a warning. No board is changed.",
+	"Exit 1 means the code check has a warning. No architecture input changes.",
 ].join("\n");
 
 /** The description of `check all`, which `check` runs. */
 const CHECK_ALL_HELP = [
 	"Runs the semantics check, the code check and the embeds check, in that order, and answers with one part for each (ADR 0057). --state, --every-draft and --plan say what the code check reads, as `check code` describes. --fix draws outdated embeds again, as `check embeds` describes, and the other checks still run and report.",
 	"",
-	"In a Git checkout without a vault, such as a documentation repository that embeds the boards of another repository's vault, only the embeds check runs. The answer's skipped names the semantics and code checks and why, the answer names no vault, and the exit status comes from the embeds check alone.",
+	"In a Git checkout without a vault, only the embeds check runs. The result identifies skipped semantic and code checks, names no vault, and uses the embed result for its exit status.",
 	"",
-	"Exit 1 means the semantics check has a diagnostic or a warning, or the code check or the embeds check has a warning. Information never changes the exit status. No board is changed.",
+	"Exit 1 means a semantic diagnostic or a warning remains in any check. Information never changes the exit status. No architecture input changes.",
 ].join("\n");
 
 /** What the embeds check reads and reports. */

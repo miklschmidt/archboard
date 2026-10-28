@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T05:17:00Z'
+updated_date: '2026-10-28T10:55:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -160,6 +160,12 @@ Repair the reproduced portable archive inspection timeout at the actual reposito
 Portable inspection repair: reproduce and minimize through public export/import with real Git, add one focused RED regression, batch or bound immutable archive reads with operation-local reuse, and retain full repository replay as external evidence. Run affected owners, both types, scoped lint and formatting. Merge newest local integration and hand off signed commits without changing lifecycle or architecture.
 
 Retire removed live board subjects and obsolete flow definitions from completion proposal oyXXnyCV. Keep their original narratives available at the exact retained migration baseline, with explicit Original titles, and add a current canonical walkthrough. Continuing CLI responsibilities retain their identities with source-backed bindings. Use a copied canonical Shop example for the history README demo: retain current, adopt its queued proposal, and reopen both exact checkpoints with the actual recorded decision.
+
+Consolidate four former-board views of the same local server app into existing boundary cPOdAA3f. Preserve relationship and flow-step identities while retargeting their endpoints. Remove redundant internal relationships that become containment. Keep the separate per-run evaluation instance EJ2b3Szn and bind it precisely to its owned launcher. Retained original tours keep their original identities and checkpoint targets.
+
+Use the source ownership audit to consolidate26 duplicate occurrences of shared backend implementations into their existing canonical owners. Preserve relationship and flow-step identities, exact original tours, and the separate evaluation server. Keep inbound routing, role instructions, engine selection, architecture rendering, and context capture as distinct functions with precise bindings. Group canonical implementations behind the existing runtime API. Root owns and reviews the complete authored intent.
+
+Consolidate the repeated session, workbench, renderer, instruction-owner, and retained-stage occurrences after reading their actual shared factories. Keep the session private operations beneath its one interface, preserve distinct browser drawing and shared presentation components, and correct the remaining source anchors. Original tours remain pinned to their exact pre-transition model. No runtime diagnostic rule changes.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -342,4 +348,6 @@ Portable archive inspection handoff: signed implementation d2b528f54e21e331d7878
 Portable archive inspection is integrated through signed2e80e7350 with a tree identical to validated source56890b144. Full disposable export/import of710 inputs and656 modules passes with signatures, retained readings, exact retry, and preserved HEAD/index. Actual history filming now reaches the browser. A screenshot and DOM capture show the correct refusal for an original Renderer layout state whose historical drill-down lacks an exact mapping. That is retained evidence, not a renderer defect. The history demo will use canonical checkpoint history from a copied Shop example. Root mapping, archive originals, and unavailable historical references remain unchanged.
 
 The completion proposal now retires66 obsolete live modules,46 obsolete flows, and37 relationships whose source paths were removed. Continuing CLI identities keep their source-backed responsibilities. All18 original walkthroughs target exact checkpoint6bc124a8ca521df89dd84fe13922798bf8065914. A new current tour has seven complete readings, including flow37yCryrX through the durable edit owners. Public playback reports19 successful walkthroughs and110 ready beats, with no claims. The code-check operation succeeds but reports source findings requiring another curation pass:66 missing symbols,17 anchor mismatches,221 undrawn relationships, two undrawn callers, and two inherited dropped parts. No warning waiver or acceptance is claimed. History producer now creates a fresh Delivery tracking proposal in the copied Shop example and adopts its returned state, avoiding forced adoption of an older queued draft. The final producer, types, focused lint, and visual inspection pass. The before and after pictures compare against their own exact checkpoints. The inspected clip was uploaded once as d18c639c-1000-4afe-9a79-ea57d30e473a and linked in README. README and the asset/vault guides now describe canonical inputs and independent archive sharing. Parent still owns source-warning cleanup, adoption, final assets, integration gates, review, and PR readiness.
+
+Root curation now uses one shared session, workbench, browser renderer, pane session, and recording owner per implementation. The latest public intent canonical-curation-browser-owners-549-24-1 succeeded at checkpoint 1998dcd8e18bbd46df58fdf344c054505179a066 with cleanup complete. Original tours stay pinned to the migration baseline. Missing source symbols are resolved; remaining dependency and identity inspection is active. The portable inspection repair is integrated through 2e80e7350, and the actual README history clip is recorded and published in f154355de. Acceptance and adoption remain open.
 <!-- SECTION:NOTES:END -->
