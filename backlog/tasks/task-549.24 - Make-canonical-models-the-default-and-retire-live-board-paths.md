@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T14:18:00Z'
+updated_date: '2026-10-28T14:28:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -388,4 +388,6 @@ The new canonical cache owner reproduces an actual product defect before the fix
 The canonical cache RED/GREEN owner now passes6 assertions. Strict private validation preserves readingDirection and still rejects incomplete scenes. Source/test lint, both types and the production browser build pass. The existing claim owner passes its new scene-preservation assertion. A separate current-refresh case exposed a synchronization error in the test: its stale marker can still belong to the prior valid refresh before the invalid-file refusal arrives. The owner now waits for the exact MODEL_INVALID diagnostic under the unchanged deadline, then asserts stale content remains. No product behavior or assertion is weakened. The neighboring-pane owner remains to run.
 
 Frontend repair acceptance is green. Canonical cache owner passes6 assertions after its observed two-layout RED. The existing viewer owner passes authored details, claim/take-back with the same mounted scene, and retained-history recovery. Its current-refresh case passes after waiting for the exact refusal, and now also proves that a real claim released through the public runtime while the server is down disappears from the activity row on reconnect. Both agent-navigation cases pass, including neighboring-scene identity. All owned browser processes stop. Scoped source/test lint, formatting, diff whitespace, both types and browser build pass; the later reconnect fixture uses the existing public release operation. The final merge will type-check combined changes. Retired owner mapping and exact logs are in task-549.24-gate-frontend-repair.md outside the repository. Full-gate acceptance, four Track corpus failures, final review and publication remain open.
+
+Signed merge d2d44aa98 integrates all30 backend gate repairs with the independent frontend repair. Combined source/browser types pass. Full gate v3 stopped before tests because the new UI cache owner imported the Bun renderer and omitted required function documentation. The owner now uses a scene fixture typed from the actual cache draw contract. It preserves readingDirection, exact-key reuse, malformed-entry refusal, and refused-storage assertions. Focused strict source lint passes and all6 assertions pass in34ms. No lint exception or renderer boundary changes are added.
 <!-- SECTION:NOTES:END -->
