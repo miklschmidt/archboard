@@ -1,6 +1,12 @@
 // Controlled external-provider queue behavior used by the production fixture.
 import type { FixtureThread } from "./fake-codex-production-data.ts";
 import { promptItem, unixSeconds } from "./fake-codex-production-data.ts";
+import type { CodexServerNotificationParamsByMethod } from "@archboard/codex-app-server/contract";
+
+type EventMethod = "turn/started" | "turn/completed" | "item/started" | "item/completed";
+export type ExplanationNotification = {
+	[M in EventMethod]: { method: M; params: CodexServerNotificationParamsByMethod[M] };
+}[EventMethod];
 
 type Frame = { id?: unknown; method?: string; params?: Record<string, unknown> };
 export function explanationQueue(
@@ -12,7 +18,42 @@ export function explanationQueue(
 ) {
 	const queues = new Map<string, Record<string, unknown>[]>();
 	let sequence = 0;
-	return (frame: Frame): boolean => {
+	let sentNotifications = 0;
+	const start = (threadId: string, submission: Record<string, unknown>, automatic: boolean) => {
+		const queue = queues.get(threadId) ?? [];
+		queues.set(
+			threadId,
+			queue.filter((item) => item !== submission),
+		);
+		const prompt = {
+			...promptItem(`${submission["id"]}-prompt`, submission["input"]),
+			clientId: submission["clientUserMessageId"],
+		};
+		const turn = {
+			id: `explain-${submission["id"]}`,
+			items: [prompt],
+			itemsView: "full",
+			status: "inProgress",
+			error: null,
+			startedAt: unixSeconds(),
+			completedAt: null,
+			durationMs: null,
+		};
+		const thread = threads.get(threadId);
+		if (thread) {
+			thread.turns = [turn];
+			thread.status = { type: "active", activeFlags: [] };
+		}
+		if (automatic) {
+			// Codex 0.160.0 sends an unloaded lifecycle and separate item notifications.
+			turn.items = [];
+			turn.itemsView = "notLoaded";
+			notify("turn/started", { threadId, turn });
+			notify("item/started", { threadId, turnId: turn.id, item: prompt, startedAtMs: Date.now() });
+		}
+		return turn;
+	};
+	const handle = (frame: Frame): boolean => {
 		const params = frame.params ?? {};
 		const threadId = String(params["threadId"]);
 		const queue = queues.get(threadId) ?? [];
@@ -45,34 +86,28 @@ export function explanationQueue(
 			respond(frame as never, { deleted: true });
 		} else if (frame.method === "thread/queue/start") {
 			const submission = queue.find((item) => item["id"] === params["queuedSubmissionId"]);
-			queues.set(
-				threadId,
-				queue.filter((item) => item !== submission),
-			);
-			const prompt = {
-				...promptItem(`explain-${sequence}-prompt`, submission?.["input"]),
-				clientId: submission?.["clientUserMessageId"],
-			};
-			const turn = {
-				id: `explain-${sequence}`,
-				items: [prompt],
-				itemsView: "full",
-				status: "inProgress",
-				error: null,
-				startedAt: unixSeconds(),
-				completedAt: null,
-				durationMs: null,
-			};
-			const thread = threads.get(threadId);
-			if (thread) {
-				thread.turns = [turn];
-				thread.status = { type: "active", activeFlags: [] };
-			}
+			if (!submission) throw new Error("Cannot start a missing queued submission.");
+			const turn = start(threadId, submission, false);
 			respond(frame as never, { turn });
 			notify("turn/started", { threadId, turn });
 		} else return false;
 		return true;
 	};
+	return Object.assign(handle, {
+		advance() {
+			const current = control();
+			const events = (current["explanationNotifications"] ?? []) as ExplanationNotification[];
+			for (; sentNotifications < events.length; sentNotifications++) {
+				const event = events[sentNotifications]!;
+				notify(event.method, event.params);
+			}
+			if (current["autoConsumeExplanationQueue"] !== true) return;
+			for (const [threadId, queue] of queues) {
+				if (threads.get(threadId)?.status.type === "idle" && queue[0])
+					start(threadId, queue[0], true);
+			}
+		},
+	});
 }
 
 /** Emit the one controlled final answer through the ordinary provider protocol. */

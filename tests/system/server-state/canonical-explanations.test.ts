@@ -1,7 +1,12 @@
 import { expect, test } from "bun:test";
 import { cpSync, writeFileSync, readFileSync, existsSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
-import { seedGit, deliveredCapture, changeDescription } from "./support/explanation-captures.ts";
+import {
+	seedGit,
+	deliveredCapture,
+	changeDescription,
+	startExplanationServer,
+} from "./support/explanation-captures.ts";
 import { retainArchitectureCheckpoint } from "@archboard/board/store-write";
 import { readArchitectureModel } from "@archboard/board/store-read";
 import { startOwnedServer } from "../support/owned-server.ts";
@@ -27,31 +32,15 @@ test("local explanations share captured text, cancellation, and retry through th
 		fixture.controlPath,
 		JSON.stringify({ ordinaryOnly: true, explanationQueue: true }),
 	);
-	const server = await startOwnedServer({
-		...productionServer,
-		vault: fixture.vault,
-		env: {
-			ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
-			ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
-			ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
-			XDG_STATE_HOME: join(fixture.root, "state"),
-		},
-	});
-	resources.defer(() => server.dispose());
-	const socket = await openApplicationSocket(server.base, "explain-client", {
-		vault: fixture.vault,
-		tabSession: "explain-tab",
-	});
-	resources.defer(() => socket.close());
+	const { server, socket, invoke, read, latestAction } = await startExplanationServer(
+		resources,
+		fixture,
+		"explain",
+	);
 	const announcements: unknown[] = [];
 	socket.socket.on("message", (raw) => {
 		const message = JSON.parse(raw.toString());
 		if (message.type === "architecture_explanations_changed") announcements.push(message);
-	});
-	await fetch(`${server.base}/api/panes?vault=${encodeURIComponent(fixture.vault)}`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(productionPane("explain-client", "explain-pane", true, true)),
 	});
 	const model = readArchitectureModel(fixture.vault);
 	if (!model.success) throw new Error(JSON.stringify(model));
@@ -97,30 +86,6 @@ test("local explanations share captured text, cancellation, and retry through th
 		tabSessionId: "explain-tab",
 		architecture: report.architecture,
 	});
-	const invoke = async (path = "", body: unknown = {}) =>
-		(
-			await fetch(`${server.base}/api/architecture/explanations${path}`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					vault: fixture.vault,
-					tabSessionId: "explain-tab",
-					...(body as object),
-				}),
-			})
-		).json();
-	const read = async (actionId = "capture-1") =>
-		(
-			await fetch(
-				`${server.base}/api/architecture/explanations/${encodeURIComponent(actionId)}?${new URLSearchParams({ vault: fixture.vault, tabSessionId: "explain-tab" })}`,
-			)
-		).json();
-	const latestAction = async () =>
-		(
-			await fetch(
-				`${server.base}/api/architecture/explanations?${new URLSearchParams({ vault: fixture.vault, tabSessionId: "explain-tab" })}`,
-			)
-		).json();
 	expect(await latestAction()).toMatchObject({ success: false, code: "ACTION_NOT_FOUND" });
 	const [started, duplicate] = await Promise.all([
 		invoke("", { request }),
@@ -419,35 +384,7 @@ test("comparison and narrative deliveries retain exact readings after current an
 		fixture.controlPath,
 		JSON.stringify({ ordinaryOnly: true, explanationQueue: true }),
 	);
-	const server = await startOwnedServer({
-		...productionServer,
-		vault: fixture.vault,
-		env: {
-			ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
-			ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
-			ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
-			XDG_STATE_HOME: join(fixture.root, "state"),
-		},
-	});
-	resources.defer(() => server.dispose());
-	const socket = await openApplicationSocket(server.base, "exact-client", {
-		vault: fixture.vault,
-		tabSession: "exact-tab",
-	});
-	resources.defer(() => socket.close());
-	await fetch(`${server.base}/api/panes?vault=${encodeURIComponent(fixture.vault)}`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(productionPane("exact-client", "exact-pane", true, true)),
-	});
-	const invoke = async (path: string, body: object = {}) =>
-		(
-			await fetch(`${server.base}/api/architecture/explanations${path}`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ vault: fixture.vault, tabSessionId: "exact-tab", ...body }),
-			})
-		).json();
+	const { invoke } = await startExplanationServer(resources, fixture, "exact");
 	const captures: { actionId: string; file: string; payload: string }[] = [];
 	for (const selection of [
 		{ checkpoint: retained.checkpoint.id, against: "current" },

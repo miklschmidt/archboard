@@ -24,16 +24,21 @@ function finish(entry: Entry, turn: Turn) {
 /**
  * Correlate a turn using the queue's stable client message identity.
  * @param entry The captured action.
- * @param turn The lifecycle notification.
+ * @param turnId The provider turn identity.
+ * @param items The lifecycle or item notification's items.
  * @returns Whether this turn belongs to the action.
  */
-function ownsTurn(entry: Entry, turn: Turn) {
+function ownsTurn(entry: Entry, turnId: string, items: Turn["items"]) {
 	if (
 		entry.turnId === undefined &&
-		turn.items.some((item) => item.type === "userMessage" && item.clientId === entry.clientId)
-	)
-		entry.turnId = turn.id;
-	return entry.turnId === turn.id;
+		entry.clientId !== undefined &&
+		items.some((item) => item.type === "userMessage" && item.clientId === entry.clientId)
+	) {
+		entry.turnId = turnId;
+		delete entry.submission;
+		entry.action.status = "running";
+	}
+	return entry.turnId === turnId;
 }
 /**
  * Project provider notifications into one temporary answer.
@@ -51,8 +56,9 @@ function noteExplanation(entry: Entry, notification: Notification) {
 		case "turn/completed":
 			noteTurn(entry, notification);
 			break;
+		case "item/started":
 		case "item/completed":
-			if (notification.params.turnId === entry.turnId) noteText(entry, notification.params.item);
+			noteItem(entry, notification);
 			break;
 		default:
 			break;
@@ -64,12 +70,22 @@ function noteExplanation(entry: Entry, notification: Notification) {
 	].some(Boolean);
 }
 /**
- * Keep the provider's final textual item for a partial completion notification.
+ * Correlate user items and keep completed final text from that exact turn.
  * @param entry The captured action.
- * @param item The completed provider item.
+ * @param notification The provider item lifecycle event.
  */
-function noteText(entry: Entry, item: Turn["items"][number]) {
-	if (item.type === "agentMessage" && item.phase !== "commentary") entry.action.text = item.text;
+function noteItem(
+	entry: Entry,
+	notification: Extract<Notification, { method: "item/started" | "item/completed" }>,
+) {
+	const { turnId, item } = notification.params;
+	if (!ownsTurn(entry, turnId, [item])) return;
+	if (
+		notification.method === "item/completed" &&
+		item.type === "agentMessage" &&
+		item.phase !== "commentary"
+	)
+		entry.action.text = item.text;
 }
 export { noteExplanation };
 
@@ -93,7 +109,8 @@ function noteTurn(
 	entry: Entry,
 	notification: Extract<Notification, { method: "turn/started" | "turn/completed" }>,
 ) {
-	if (!ownsTurn(entry, notification.params.turn)) return;
+	const turn = notification.params.turn;
+	if (!ownsTurn(entry, turn.id, turn.items)) return;
 	delete entry.submission;
 	if (notification.method === "turn/started") entry.action.status = "running";
 	else finish(entry, notification.params.turn);
