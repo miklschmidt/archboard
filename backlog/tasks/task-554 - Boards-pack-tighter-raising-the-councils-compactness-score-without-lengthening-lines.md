@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-29T09:11:00Z'
+updated_date: '2026-10-29T09:33:00Z'
 labels:
   - renderer
   - layout
@@ -73,4 +73,6 @@ The final council of TASK-548.08 (2026-10-28, 40 blind pairs against c147b73c8, 
 Council of the hybrid (1f60b6e06) against 8cdedb1c3, four graders (Opus, gpt-6.1-sol, gpt-6-astra, Muse Wonder), 40 Blocks pairs: 7 better, 30 same, 3 worse (019, 027, 038), 0 both fail. The change fails. Rulings on reported defects: only 027 B is real, a stack of 20 labels parked in the top-left corner away from its route (type 4). False: 004 A/B, 005 A, 008 A, 023 B, 026 B, 032 A, 037 B. The graders' notes name one recurring weakness: a route goes around the outside of the drawing instead of straight to its target (019 Browser gateway to Workhorse queue, 027 Commands to Server access, 015 and 020 side detours), and 038 loses on a long cross-board Guardrails line and a knot of junctions under Author run. Next: route without perimeter detours and keep a label stack on its own run, then run the council again.
 
 2026-10-29: the owner removed Muse Wonder from the council, because none of its nine reported defects in council 554 was real. The council is Opus, gpt-6.1-sol and gpt-6-astra, and the median of their three margins decides. Council 554 read with three graders: 9 better, 28 same, 3 worse (019, 027, 038); 010 and 013 move from same to better. The hybrid still fails.
+
+Merged feat/blocks-speed2 (9683c6725) as a16b5c77e: the hybrid's routing reuses obstacle and label indexes and stops candidate searches at the first success, with every drawing unchanged. Verified: the 8,086 corpus SVGs of the builder's oracle and after runs hash the same; the merged core builds to 7f300d8f6fc3747c, the builder's final core. My three timing runs on the merge with two builders running (load about 3): Board viewer 391-433 / 329-337 ms (first render / growing edit), Board persistence 298-305 / 292-299, Archboard server routes 205-213 / 197-201, all drawings intact. Every sample is under the 500 ms threshold. The builder's quiet-machine run kept all 18 samples under 400 ms (worst 396.65).
 <!-- SECTION:NOTES:END -->
