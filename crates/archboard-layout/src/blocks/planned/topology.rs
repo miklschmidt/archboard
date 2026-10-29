@@ -33,6 +33,7 @@ pub(super) struct Route {
 
 pub(super) struct Topology {
     pub fans: Vec<Fan>,
+    pub memberships: Vec<[Option<usize>; 2]>,
     pub labels: Vec<Label>,
     pub routes: Vec<Route>,
 }
@@ -41,6 +42,7 @@ impl Topology {
     pub(super) fn new(model: &Model<'_>) -> Self {
         let mut topology = Self {
             fans: Vec::new(),
+            memberships: vec![[None, None]; model.edges.len()],
             labels: Vec::new(),
             routes: Vec::new(),
         };
@@ -72,24 +74,37 @@ impl Topology {
                 });
             }
             for common in [CommonEndpoint::Source(from), CommonEndpoint::Target(to)] {
-                let treatment = model.treatments[index].clone();
-                if let Some(fan) = topology
-                    .fans
-                    .iter_mut()
-                    .find(|fan| fan.common == common && fan.treatment == treatment)
-                {
-                    fan.members.push(index);
-                } else {
-                    topology.fans.push(Fan {
-                        common,
-                        treatment,
-                        members: vec![index],
-                    });
-                }
+                topology.add_fan(index, common, &model.treatments[index]);
             }
         }
         topology.fans.retain(|fan| fan.members.len() > 1);
+        topology.assign_memberships();
         topology
+    }
+
+    fn assign_memberships(&mut self) {
+        for (index, fan) in self.fans.iter().enumerate() {
+            let side = usize::from(matches!(fan.common, CommonEndpoint::Target(_)));
+            for &edge in &fan.members {
+                self.memberships[edge][side] = Some(index);
+            }
+        }
+    }
+    fn add_fan(&mut self, index: usize, common: CommonEndpoint, treatment: &str) {
+        let treatment = treatment.to_owned();
+        if let Some(fan) = self
+            .fans
+            .iter_mut()
+            .find(|fan| fan.common == common && fan.treatment == treatment)
+        {
+            fan.members.push(index);
+        } else {
+            self.fans.push(Fan {
+                common,
+                treatment,
+                members: vec![index],
+            });
+        }
     }
 
     pub(super) fn complete(&self, model: &Model<'_>) -> bool {

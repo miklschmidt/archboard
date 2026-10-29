@@ -36,11 +36,7 @@ type Boxed<'edge> = Vec<(&'edge str, Rect)>;
 
 /// Each line's inked box, and each of its words' box.
 fn line_boxes(drawing: &Painted) -> (Boxed<'_>, Boxed<'_>) {
-    let edges = if drawing.frozen {
-        &drawing.drawing.edges
-    } else {
-        &drawing.bridged.edges
-    };
+    let edges = &drawing.bridged.edges;
     let inked = edges
         .iter()
         .map(|routed| {
@@ -48,11 +44,7 @@ fn line_boxes(drawing: &Painted) -> (Boxed<'_>, Boxed<'_>) {
                 routed.edge.id.as_str(),
                 inflate(
                     curve_bounds(&routed.curve),
-                    if drawing.frozen {
-                        18.0
-                    } else {
-                        stroke_width(routed.edge.emphasis) / 2.0
-                    },
+                    stroke_width(routed.edge.emphasis) / 2.0,
                 ),
             )
         })

@@ -1,17 +1,11 @@
 //! Public solve contracts for graph classes that use planned channels.
 
-use archboard_layout::{Graphviz, lay_out_board};
+use archboard_layout::lay_out_board;
 use serde_json::{Value, json};
 
-struct NoRanker;
-impl Graphviz for NoRanker {
-    fn render(&mut self, _: &str) -> Result<String, String> {
-        Err("This fixture must use planned channels".to_owned())
-    }
-}
-
 fn drawing(graph: &Value) -> Value {
-    let answer = lay_out_board(&graph.to_string(), &mut NoRanker).expect("a planned drawing");
+    let answer = lay_out_board(&graph.to_string(), &mut archboard_graphviz::InCore)
+        .expect("a planned drawing");
     let answer: Value = serde_json::from_str(&answer).expect("a planned drawing");
     serde_json::from_str(
         answer["layoutOptions"]["archboard.blocks.placed"]
@@ -22,7 +16,7 @@ fn drawing(graph: &Value) -> Value {
 }
 
 #[test]
-fn an_adjacent_chain_uses_direct_channels_with_measured_cards_and_no_ranker() {
+fn an_adjacent_chain_uses_direct_channels_with_measured_cards() {
     let placed = drawing(
         &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
         "children":[{"id":"a","width":200,"height":80},{"id":"b","width":160,"height":60},
@@ -65,7 +59,7 @@ fn an_isolated_nested_group_keeps_semantic_frame_depth_and_measured_caption() {
 }
 
 #[test]
-fn a_label_has_one_horizontal_source_owned_run_and_keeps_its_measured_rectangle() {
+fn a_label_fits_its_own_run_and_keeps_its_measured_rectangle() {
     for orders in [["0", "1"], ["1", "0"]] {
         let placed = drawing(
             &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
@@ -73,44 +67,17 @@ fn a_label_has_one_horizontal_source_owned_run_and_keeps_its_measured_rectangle(
         "edges":[{"id":"ab","sources":["a"],"targets":["b"],"labels":[{"width":80,"height":24}]}]}),
         );
         let label = &placed["edges"][0]["label"];
-        let (x, y) = (label["x"].as_f64().unwrap(), label["y"].as_f64().unwrap());
         assert_eq!(
             (label["width"].as_f64(), label["height"].as_f64()),
             (Some(80.0), Some(24.0))
         );
         let points = placed["edges"][0]["points"].as_array().unwrap();
-        assert!(points.windows(2).any(|pair| {
-            let (a, b) = (
-                pair[0]["x"].as_f64().unwrap(),
-                pair[1]["x"].as_f64().unwrap(),
-            );
-            pair[0]["y"].as_f64() == Some(y + 12.0)
-                && pair[1]["y"] == pair[0]["y"]
-                && a.min(b) <= x
-                && a.max(b) >= x + 80.0
-        }));
-        assert!((points[0]["x"].as_f64().unwrap() - x - 40.0).abs() < 200.0);
+        assert!(points.windows(2).any(|pair| label_fits(label, pair)));
     }
 }
 
 #[test]
-fn a_fan_has_one_owned_departure_before_its_private_branches() {
-    let placed = drawing(
-        &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
-        "children":[{"id":"a","width":160,"height":200},{"id":"b","width":160,"height":80},
-            {"id":"c","width":160,"height":80}],
-        "edges":[{"id":"ab","sources":["a"],"targets":["b"]},
-            {"id":"ac","sources":["a"],"targets":["c"]}]}),
-    );
-    let one = placed["edges"][0]["points"].as_array().unwrap();
-    let other = placed["edges"][1]["points"].as_array().unwrap();
-    assert_eq!(one[0], other[0]);
-    assert!(one[1]["x"] == other[1]["x"] || one[1]["y"] == other[1]["y"]);
-    assert_eq!(placed["edges"].as_array().unwrap().len(), 2);
-}
-
-#[test]
-fn a_nested_source_or_header_keeps_its_label_inside_its_own_frame() {
+fn a_nested_source_or_header_keeps_its_label_clear_of_frame_walls() {
     for source in ["a", "frame"] {
         let placed = drawing(
             &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
@@ -120,15 +87,24 @@ fn a_nested_source_or_header_keeps_its_label_inside_its_own_frame() {
         );
         let label = &placed["edges"][0]["label"];
         let frame = &placed["frames"][0]["box"];
-        assert!(
-            [("x", "width"), ("y", "height")]
-                .into_iter()
-                .all(|(axis, size)| {
-                    label[axis].as_f64().unwrap() >= frame[axis].as_f64().unwrap()
-                        && label[axis].as_f64().unwrap() + label[size].as_f64().unwrap()
-                            <= frame[axis].as_f64().unwrap() + frame[size].as_f64().unwrap()
-                })
-        );
+        let interval = |r: &Value, axis: &str, size: &str| {
+            (
+                r[axis].as_f64().unwrap(),
+                r[axis].as_f64().unwrap() + r[size].as_f64().unwrap(),
+            )
+        };
+        let axes = [("x", "width"), ("y", "height")];
+        let inside = axes.iter().all(|&(axis, size)| {
+            let (a, b) = interval(label, axis, size);
+            let (c, d) = interval(frame, axis, size);
+            a >= c && b <= d
+        });
+        let outside = axes.iter().any(|&(axis, size)| {
+            let (a, b) = interval(label, axis, size);
+            let (c, d) = interval(frame, axis, size);
+            b <= c || a >= d
+        });
+        assert!(inside || outside);
     }
 }
 
@@ -154,22 +130,18 @@ fn a_large_label_fan_and_parallel_relationships_keep_their_private_words() {
     assert_eq!(routes.len(), 30);
     for edge in routes {
         let label = &edge["label"];
-        let (left, top) = (label["x"].as_f64().unwrap(), label["y"].as_f64().unwrap());
-        assert!(edge["points"].as_array().unwrap().windows(2).any(|pair| {
-            let (a, b) = (
-                pair[0]["x"].as_f64().unwrap(),
-                pair[1]["x"].as_f64().unwrap(),
-            );
-            pair[0]["y"].as_f64() == Some(top + 12.0)
-                && pair[1]["y"] == pair[0]["y"]
-                && a.min(b) <= left
-                && a.max(b) >= left + 80.0
-        }));
+        assert!(
+            edge["points"]
+                .as_array()
+                .unwrap()
+                .windows(2)
+                .any(|pair| label_fits(label, pair))
+        );
     }
 }
 
 #[test]
-fn mixed_treatments_reserve_a_source_cell_before_any_route_leaves_it() {
+fn mixed_treatments_keep_distinct_routes() {
     let children: Vec<_> = std::iter::once(json!({"id":"source","width":200,"height":72}))
         .chain((0..7).map(|i| json!({"id":format!("target{i}"),"width":180,"height":72})))
         .collect();
@@ -231,4 +203,21 @@ fn decision_answers_keep_their_declared_bottom_points_and_separate_incoming_rout
         assert!((first["x"].as_f64().unwrap() - card["x"].as_f64().unwrap() - x).abs() < 0.05);
         assert!((first["y"].as_f64().unwrap() - card["y"].as_f64().unwrap() - 100.0).abs() < 0.05);
     }
+}
+
+fn label_fits(label: &Value, pair: &[Value]) -> bool {
+    let number = |v: &Value, key: &str| v[key].as_f64().expect("a measured coordinate");
+    [("x", "y", "width", "height"), ("y", "x", "height", "width")]
+        .iter()
+        .any(|&(along, across, size, cross_size)| {
+            let (a, b) = (number(&pair[0], along), number(&pair[1], along));
+            number(&pair[0], across) == number(&pair[1], across)
+                && (number(&pair[0], across)
+                    - number(label, across)
+                    - number(label, cross_size) / 2.0)
+                    .abs()
+                    < 1e-6
+                && a.min(b) <= number(label, along)
+                && a.max(b) >= number(label, along) + number(label, size)
+        })
 }

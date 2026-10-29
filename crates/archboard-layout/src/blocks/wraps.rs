@@ -14,7 +14,7 @@ use crate::track::score::{
 
 use super::card_layout::{Arrangement, CardLayout, Engine};
 use super::laid::{Insets, Laid, LaidMap};
-use super::tree::{BlockId, BlockTree, Kind};
+use super::tree::{BlockId, BlockTree, Kind, Nesting};
 
 /// How much better a wrap must fit the page than the board whole.
 const WORTH_WRAPPING: f64 = 1.1;
@@ -99,12 +99,17 @@ pub(crate) fn search_of(
         candidates.push(Candidate::Grid);
     }
     for lowered in wraps_of(laying.whole, tree, block) {
-        for columns in column_choices(&lowered) {
-            candidates.push(Candidate::Lowered {
-                lowered: lowered.clone(),
-                columns,
-            });
+        if !try_wrap(&lowered, tree.nesting, laying.whole.boxes.len()) {
+            continue;
         }
+        candidates.extend(
+            column_choices(&lowered, tree.nesting)
+                .into_iter()
+                .map(|columns| Candidate::Lowered {
+                    lowered: lowered.clone(),
+                    columns,
+                }),
+        );
     }
     (!candidates.is_empty()).then_some(Search { needed, candidates })
 }
@@ -229,11 +234,15 @@ fn wraps_better(one: &Weighing, other: &Weighing) -> bool {
 }
 
 /// Whether a wrap's rows may be laid with their columns free, as well as held.
-/// Left free, a lowered card is pushed aside by the lines to every row below
-/// it, so a Track wrap deeper than two rows keeps its columns.
-fn column_choices(lowered: &Plan) -> Vec<bool> {
+/// Track keeps the existing free-column candidates. Blocks holds columns
+/// because its final router chooses the departures after placement.
+fn column_choices(lowered: &Plan, nesting: Nesting) -> Vec<bool> {
     let deep = lowered.values().copied().max().unwrap_or(0) > 1;
-    if deep { vec![true] } else { vec![false, true] }
+    if deep || nesting == Nesting::Blocks {
+        vec![true]
+    } else {
+        vec![false, true]
+    }
 }
 
 /// The ways to wrap a block's widest rank of items into rows, when the block
@@ -297,4 +306,18 @@ fn peer_runs(
     runs.into_iter()
         .map(|(_, ids, width)| (ids, width))
         .collect()
+}
+
+fn try_wrap(lowered: &Plan, nesting: Nesting, boxes: usize) -> bool {
+    if nesting != Nesting::Blocks || boxes <= 24 {
+        return true;
+    }
+    let rows = lowered.values().copied().max().unwrap_or(0) + 1;
+    let dealt = rows == 3
+        && lowered
+            .values()
+            .enumerate()
+            .all(|(index, &row)| row == index % rows);
+    let cut = rows == 4 && lowered.values().is_sorted();
+    dealt || cut
 }

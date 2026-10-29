@@ -45,7 +45,7 @@ fn common_prefix(a: &[Point], b: &[Point]) -> f64 {
         let sign = |d: f64| if d.abs() < 1e-6 { 0.0 } else { d.signum() };
         let dir = |p: Point| (sign(p.x - at.x), sign(p.y - at.y));
         let (dx, dy) = dir(a[i]);
-        if (dx, dy) != dir(b[j]) {
+        if dx != 0.0 && dy != 0.0 || dx == 0.0 && dy == 0.0 || (dx, dy) != dir(b[j]) {
             break;
         }
         let distance =
@@ -65,18 +65,21 @@ fn common_prefix(a: &[Point], b: &[Point]) -> f64 {
     shared
 }
 
-pub(super) fn ordered(a: &[Point], b: &[Point]) -> bool {
-    let shared: Vec<_> = a
-        .windows(2)
-        .flat_map(|p| b.windows(2).filter_map(move |q| shared_ends(p, q)))
-        .flatten()
-        .collect();
+pub(super) fn ordered(a: &[Point], b: &[Point], sharing: bool) -> bool {
+    let shared: Vec<_> = if sharing {
+        a.windows(2)
+            .flat_map(|p| b.windows(2).filter_map(move |q| shared_ends(p, q)))
+            .flatten()
+            .collect()
+    } else {
+        Vec::new()
+    };
     a.windows(2).all(|p| {
         b.windows(2).all(|q| {
             let ph = p[0].y == p[1].y;
             let qh = q[0].y == q[1].y;
             if ph == qh {
-                return !near_parallel(p, q, ph);
+                return (sharing || shared_ends(p, q).is_none()) && !near_parallel(p, q, ph);
             }
             let (h, v) = if ph { (p, q) } else { (q, p) };
             let point = Point {
@@ -167,5 +170,23 @@ fn near_parallel(one: &[Point], other: &[Point], horizontal: bool) -> bool {
             (one[0].x - other[0].x).abs(),
         )
     };
-    gap > 0.0 && gap <= 1.0 && a.min(b).max(c.min(d)) < a.max(b).min(c.max(d))
+    gap > 0.0
+        && ((gap <= 1.01 && a.max(b).min(c.max(d)) > a.min(b).max(c.min(d)))
+            || (gap < 12.0 && a.max(b).min(c.max(d)) - a.min(b).max(c.min(d)) > 16.0))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn a_diagonal_or_zero_length_piece_cannot_stall_shared_prefix_detection() {
+        let diagonal = [Point { x: 0.0, y: 0.0 }, Point { x: 10.0, y: 10.0 }];
+        assert_eq!(common_prefix(&diagonal, &diagonal), 0.0);
+        let repeated = [
+            Point { x: 0.0, y: 0.0 },
+            Point { x: 0.0, y: 0.0 },
+            Point { x: 10.0, y: 0.0 },
+        ];
+        assert_eq!(common_prefix(&repeated, &repeated), 0.0);
+    }
 }

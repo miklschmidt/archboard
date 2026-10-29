@@ -33,7 +33,11 @@ use super::wraps::{Unwrapped, Wrapping, best_wrap, weighed};
 /// The insets a block keeps: left and right, above its first rank, below its
 /// last, grown round a container alone in its region.
 pub(crate) fn insets_of(block: &Block) -> Insets {
-    grown_insets(plain_insets(block), block.lone.as_ref())
+    let mut insets = grown_insets(plain_insets(block), block.lone.as_ref());
+    insets.side += block.routing_room;
+    insets.top += block.routing_room;
+    insets.bottom += block.routing_room;
+    insets
 }
 
 /// The room a block keeps around what it holds, alone in no region: the page
@@ -49,7 +53,7 @@ fn plain_insets(block: &Block) -> Insets {
                 bottom: PAGE_MARGIN,
             };
         }
-        Kind::Column => {
+        Kind::Column | Kind::Cluster => {
             return Insets {
                 side: 0.0,
                 top: 0.0,
@@ -155,8 +159,9 @@ fn lay_block(
     let packs = !one.items.is_empty()
         && one.clusters.is_empty()
         && one.items.iter().all(|item| {
-            tree.block_of(item)
-                .is_some_and(|child| tree.get(child).kind == Kind::Frame)
+            tree.block_of(item).is_some_and(|child| {
+                tree.nesting == Nesting::Blocks || tree.get(child).kind == Kind::Frame
+            })
         })
         && !tree
             .get(block)
@@ -182,7 +187,8 @@ fn lay_all(
     earlier: &Earlier,
     way: &Way,
 ) -> Result<Board, String> {
-    let tree = BlockTree::new(graph, earlier.kept.clone(), way.nesting)?;
+    let mut tree = BlockTree::new(graph, earlier.kept.clone(), way.nesting)?;
+    reserve_room(&mut tree, way);
     let mut board = Board {
         tree,
         laid: LaidMap::default(),
@@ -267,17 +273,136 @@ fn lay_out(gv: &mut Engine<'_>, graph: &Node, way: &Way) -> Result<Board, String
     Ok(chosen)
 }
 
-/// The retained placement and repair policies for Track.
+/// The retained placement path for Track and unmigrated Blocks classes.
 pub(super) fn place(
     graph: &Node,
     nesting: Nesting,
     host: &mut dyn Graphviz,
 ) -> Result<super::assembly::Placed, String> {
     let mut gv = Engine::new(host);
-    let board = lay_out(&mut gv, graph, &Way { nesting })?;
+    let board = lay_out(
+        &mut gv,
+        graph,
+        &Way {
+            nesting,
+            room: Vec::new(),
+            extra: 0.0,
+        },
+    )?;
     Ok(Assembly::new(&board.tree, &board.laid).placed().unstepped())
+}
+
+/// Legacy placements, with port settlement deferred until the first plans fail.
+pub(super) struct Candidates {
+    ready: std::vec::IntoIter<super::assembly::Placed>,
+    unsettled: Option<Vec<Board>>,
+    seen: rustc_hash::FxHashSet<String>,
+}
+
+fn drawings(boards: &[Board]) -> std::vec::IntoIter<super::assembly::Placed> {
+    let mut drawings: Vec<_> = boards
+        .iter()
+        .map(|board| Assembly::new(&board.tree, &board.laid).placed())
+        .collect();
+    drawings.sort_by(|a, b| (a.width * a.height).total_cmp(&(b.width * b.height)));
+    drawings.into_iter()
+}
+
+impl Iterator for Candidates {
+    type Item = super::assembly::Placed;
+    fn next(&mut self) -> Option<Self::Item> {
+        for next in self.ready.by_ref() {
+            let mut placement = next.clone();
+            placement.edges.clear();
+            if self.seen.insert(placement.json().text()) {
+                return Some(next);
+            }
+        }
+        let settled: Vec<_> = self
+            .unsettled
+            .take()?
+            .into_iter()
+            .map(settled_board)
+            .collect();
+        self.ready = drawings(&settled);
+        self.next()
+    }
+}
+
+pub(super) fn candidates(
+    graph: &Node,
+    host: &mut dyn Graphviz,
+    room: &[String],
+    extra: f64,
+) -> Result<Candidates, String> {
+    let mut graph = graph.clone();
+    for edge in graph.edges.iter_mut().flatten() {
+        if let Some(options) = Rc::make_mut(edge).layout_options.as_mut() {
+            options.shift_remove("archboard.relationship.emphasis");
+            options.shift_remove("archboard.relationship.traffic");
+        }
+    }
+    let mut gv = Engine::new(host);
+    let way = Way {
+        nesting: Nesting::Blocks,
+        room: room.to_vec(),
+        extra,
+    };
+    let mut first = lay_all(&mut gv, &graph, &Earlier::default(), &way)?;
+    let orders = held_orders(&first.settling());
+    let packings = first.packings.clone();
+    let ordered = if orders.is_empty() {
+        None
+    } else {
+        Some(lay_all(
+            &mut gv,
+            &graph,
+            &Earlier {
+                packings,
+                kept: Kept {
+                    orders,
+                    ..Kept::default()
+                },
+            },
+            &way,
+        )?)
+    };
+    let mut unsettled: Vec<_> = std::iter::once(first).chain(ordered).collect();
+    let area = |board: &Board| {
+        let root = &board.laid[&board.tree.get(board.tree.root).id];
+        root.width * root.height
+    };
+    unsettled.sort_by(|a, b| area(a).total_cmp(&area(b)));
+    let best = unsettled.remove(0);
+    let mut ready = vec![Assembly::new(&best.tree, &best.laid).placed()];
+    let best = settled_board(best);
+    ready.push(Assembly::new(&best.tree, &best.laid).placed());
+    ready.extend(drawings(&unsettled));
+    ready.sort_by(|a, b| (a.width * a.height).total_cmp(&(b.width * b.height)));
+    Ok(Candidates {
+        ready: ready.into_iter(),
+        unsettled: Some(unsettled),
+        seen: rustc_hash::FxHashSet::default(),
+    })
 }
 
 struct Way {
     nesting: Nesting,
+    room: Vec<String>,
+    extra: f64,
+}
+
+fn reserve_room(tree: &mut BlockTree, way: &Way) {
+    let mut affected = rustc_hash::FxHashSet::default();
+    for node in &way.room {
+        if let Some(&id) = tree.blocks.get(node) {
+            affected.insert(id);
+        }
+        if let Some(&id) = tree.above(node).first() {
+            affected.insert(id);
+        }
+    }
+    for block in affected {
+        tree.get_mut(block).routing_room = way.extra;
+    }
 }

@@ -58,7 +58,7 @@ fn bands(
         .children
         .iter()
         .map(|child| match child {
-            super::model::Child::Endpoint(id) => shape.cells[id],
+            super::model::Child::Endpoint(id) => shape.endpoints[id],
             super::model::Child::Scope(id) => shape.scopes[id].bounds,
         })
         .collect();
@@ -126,37 +126,6 @@ fn lanes(requests: &[Reservation]) -> Vec<usize> {
     )
 }
 
-pub(super) struct Room {
-    pub gap: crate::geometry::Point,
-    pub peak: usize,
-}
-
-/// Grow each axis only to its peak simultaneous occupancy, before the candidate freezes.
-pub(super) fn room(
-    model: &super::model::Model<'_>,
-    topology: &super::topology::Topology,
-    scope: usize,
-    shape: &super::shape::Shape,
-) -> Room {
-    let mut peak = 0;
-    let mut room = crate::geometry::Point {
-        x: 2.0 * super::shape::CLEAR,
-        y: 2.0 * super::shape::CLEAR,
-    };
-    for ((horizontal, _, _), requests) in bands(model, topology, scope, shape) {
-        let count = lanes(&requests).into_iter().max().unwrap_or(0) + 1;
-        peak = peak.max(count);
-        let extra = count.saturating_sub(1) as f64 * LANE;
-        let gap = 2.0 * super::shape::CLEAR + extra;
-        if horizontal {
-            room.y = room.y.max(gap);
-        } else {
-            room.x = room.x.max(gap);
-        }
-    }
-    Room { gap: room, peak }
-}
-
 /// Assign only intervals that share the same free band. Disjoint bands are independent.
 pub(super) fn corridors(
     model: &super::model::Model<'_>,
@@ -190,7 +159,7 @@ fn facing_box(
 ) -> crate::geometry::Rect {
     let mut owner = model.endpoints[endpoint].scope;
     if owner == scope {
-        return shape.cells[&endpoint];
+        return shape.endpoints[&endpoint];
     }
     while model.scopes[owner].parent != Some(scope) {
         owner = model.scopes[owner].parent.expect("an ancestor scope");

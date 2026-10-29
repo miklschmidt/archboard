@@ -29,6 +29,7 @@ dependencies = [
 name = "archboard-layout"
 version = "0.0.0"
 dependencies = [
+ "archboard-graphviz",
  "archboard-router",
  "archboard-scene",
  "indexmap",

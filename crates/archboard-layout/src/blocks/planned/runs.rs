@@ -46,43 +46,6 @@ struct Stroke {
 type Chunks = BTreeMap<usize, Vec<(usize, f64, Directed)>>;
 
 impl Frozen {
-    /// Each shared segment contributes once to the packing cost.
-    pub(super) fn owned_length(&self) -> f64 {
-        self.runs
-            .iter()
-            .map(|run| super::geometry::length(&run.points))
-            .sum()
-    }
-
-    /// A crossing is counted once even when many relationships share its ink.
-    pub(super) fn crossings(&self) -> usize {
-        let mut points = std::collections::BTreeSet::new();
-        for (index, run) in self.runs.iter().enumerate() {
-            for other in &self.runs[..index] {
-                if super::junctions::crossings(&run.points, &other.points) > 0 {
-                    let (h, v) = if run.points[0].y == run.points[1].y {
-                        (&run.points, &other.points)
-                    } else {
-                        (&other.points, &run.points)
-                    };
-                    points.insert((v[0].x.to_bits(), h[0].y.to_bits()));
-                }
-            }
-        }
-        points.len()
-    }
-
-    /// A junction is a tracing decision where more than two owned runs meet.
-    pub(super) fn junctions(&self) -> usize {
-        let mut degrees = BTreeMap::<(u64, u64), usize>::new();
-        for point in self.runs.iter().flat_map(|run| run.points) {
-            *degrees
-                .entry((point.x.to_bits(), point.y.to_bits()))
-                .or_default() += 1;
-        }
-        degrees.values().filter(|&&degree| degree > 2).count()
-    }
-
     /// Expand the tree into real relationships without changing any chosen bend.
     pub(super) fn emit(self, model: &Model<'_>, mut drawing: Placed) -> Placed {
         drawing.edges = self
@@ -112,15 +75,10 @@ impl Frozen {
     }
 }
 
-pub(super) fn freeze(model: &Model<'_>, drawing: &Placed) -> Option<Frozen> {
-    let ids: BTreeMap<_, _> = model
-        .edges
-        .iter()
-        .enumerate()
-        .map(|(i, edge)| (edge.id.as_str(), i))
-        .collect();
+pub(super) fn freeze(model: &Model<'_>, lines: &[PlacedLine]) -> Option<Frozen> {
+    let ids = &model.edge_index;
     let mut groups: BTreeMap<(bool, u64), Vec<Stroke>> = BTreeMap::new();
-    for line in &drawing.edges {
+    for line in lines {
         let edge = *ids.get(line.id.as_str())?;
         for (order, points) in line.points.windows(2).enumerate() {
             let (a, b) = (points[0], points[1]);
@@ -154,8 +112,7 @@ pub(super) fn freeze(model: &Model<'_>, drawing: &Placed) -> Option<Frozen> {
             &mut chunks,
         )?;
     }
-    let paths: Vec<_> = drawing
-        .edges
+    let paths: Vec<_> = lines
         .iter()
         .map(|line| {
             let edge = ids[line.id.as_str()];
@@ -306,6 +263,67 @@ fn ordered_end(frozen: &Frozen, pieces: impl Iterator<Item = usize>, source: boo
     true
 }
 
+/// Previously accepted routes already have ordered fans. Pairwise junction
+/// checks preserve that order, so insertion only needs to test new shared runs.
+/// The final drawing still passes the complete freeze before emission.
+pub(super) fn accepts(model: &Model<'_>, lines: &[PlacedLine], next: &PlacedLine) -> bool {
+    let edge = model.edge_index[next.id.as_str()];
+    next.points.windows(2).all(|pair| {
+        let horizontal = pair[0].y == pair[1].y;
+        let coordinate = |p: Point| if horizontal { p.x } else { p.y };
+        let (start, end) = (coordinate(pair[0]), coordinate(pair[1]));
+        let (low, high) = (start.min(end), start.max(end));
+        let mut strokes = Vec::new();
+        for line in lines {
+            for other in line
+                .points
+                .windows(2)
+                .filter(|other| same_axis(pair, other, horizontal))
+            {
+                let (a, b) = (coordinate(other[0]), coordinate(other[1]));
+                strokes.push((
+                    model.edge_index[line.id.as_str()],
+                    a.min(b),
+                    a.max(b),
+                    a < b,
+                ));
+            }
+        }
+        accepts_spans(model, edge, (low, high, start < end), &strokes)
+    })
+}
+fn same_axis(one: &[Point], other: &[Point], horizontal: bool) -> bool {
+    if horizontal {
+        one[0].y == other[0].y && other[0].y == other[1].y
+    } else {
+        one[0].x == other[0].x && other[0].x == other[1].x
+    }
+}
+fn accepts_spans(
+    model: &Model<'_>,
+    edge: usize,
+    (low, high, forward): (f64, f64, bool),
+    strokes: &[(usize, f64, f64, bool)],
+) -> bool {
+    let mut stops = vec![low, high];
+    for &(_, a, b, _) in strokes.iter().filter(|&&(_, a, b, _)| a < high && b > low) {
+        stops.extend([a.max(low), b.min(high)]);
+    }
+    stops.sort_by(f64::total_cmp);
+    stops.dedup();
+    stops.windows(2).all(|span| {
+        let cover: Vec<_> = strokes
+            .iter()
+            .filter(|&&(_, a, b, _)| a <= span[0] && b >= span[1])
+            .collect();
+        let mut members = vec![edge];
+        members.extend(cover.iter().map(|s| s.0));
+        members.sort_unstable();
+        members.dedup();
+        cover.iter().all(|s| s.3 == forward) && ownership(model, &members).is_some()
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -339,11 +357,12 @@ mod tests {
                 })
                 .collect(),
         };
-        assert!(freeze(&model, &drawing).is_none());
+        assert!(freeze(&model, &drawing.edges).is_none());
+        assert!(!accepts(&model, &drawing.edges[..2], &drawing.edges[2]));
+        assert!(accepts(&model, &drawing.edges[..1], &drawing.edges[1]));
         let mut fan = drawing;
         fan.edges.pop();
-        let frozen = freeze(&model, &fan).expect("a complete common-source fan");
-        assert_eq!(frozen.owned_length(), 100.0);
+        let frozen = freeze(&model, &fan.edges).expect("a complete common-source fan");
         let emitted = frozen.emit(&model, fan.clone());
         for (before, after) in fan.edges.iter().zip(emitted.edges) {
             assert_eq!(before.points, after.points);

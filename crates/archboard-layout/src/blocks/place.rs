@@ -47,7 +47,7 @@ pub fn lay_out_board(graph: &str, host: &mut dyn Graphviz) -> Result<String, Str
         .map_err(|error| format!("The measured graph is unreadable: {error}"))?;
     let mode = graph.option(BLOCKS_NESTING).unwrap_or("inline");
     let (placed, frozen) = if mode == "blocks" {
-        (super::planned::lay_out(&graph)?, true)
+        (hybrid(&graph, host)?, true)
     } else {
         (
             super::legacy::place(&graph, Nesting::named(mode)?, host)?,
@@ -59,4 +59,40 @@ pub fn lay_out_board(graph: &str, host: &mut dyn Graphviz) -> Result<String, Str
         told.push((BLOCKS_PLANNED, "true".to_owned()));
     }
     Ok(answer(&graph, placed.width, placed.height, told))
+}
+
+fn hybrid(graph: &Node, host: &mut dyn Graphviz) -> Result<super::assembly::Placed, String> {
+    let mut result = Err(super::planned::Refused::from("No guarded Blocks drawing"));
+    let mut room = Vec::new();
+    for extra in [0.0, 32.0, 64.0] {
+        result = try_placements(graph, host, &room, extra)?;
+        if result.is_ok() {
+            break;
+        }
+        if let Err(failure) = &result {
+            if failure.blocked.is_empty() {
+                break;
+            }
+            room.extend(failure.blocked.iter().cloned());
+            room.sort();
+            room.dedup();
+        }
+    }
+    result.map_err(|failure| failure.message)
+}
+
+fn try_placements(
+    graph: &Node,
+    host: &mut dyn Graphviz,
+    room: &[String],
+    extra: f64,
+) -> Result<Result<super::assembly::Placed, super::planned::Refused>, String> {
+    let mut result = Err(super::planned::Refused::from("No guarded Blocks drawing"));
+    for placed in super::legacy::candidates(graph, host, room, extra)? {
+        result = super::planned::route_fixed(graph, placed);
+        if result.is_ok() {
+            break;
+        }
+    }
+    Ok(result)
 }

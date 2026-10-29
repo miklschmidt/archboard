@@ -28,7 +28,7 @@ pub(crate) struct Node {
 }
 
 /// A relationship.
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub(crate) struct Edge {
     pub id: String,
     pub sources: Vec<String>,

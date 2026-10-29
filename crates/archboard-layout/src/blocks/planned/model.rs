@@ -37,6 +37,7 @@ pub(super) struct Model<'a> {
     pub scopes: Vec<Scope<'a>>,
     pub endpoints: Vec<Endpoint<'a>>,
     pub edges: Vec<&'a Edge>,
+    pub edge_index: rustc_hash::FxHashMap<&'a str, usize>,
     pub ends: Vec<(usize, usize)>,
     pub treatments: Vec<String>,
     pub outgoing: Vec<Vec<usize>>,
@@ -64,6 +65,7 @@ impl<'a> Model<'a> {
             }],
             endpoints: Vec::new(),
             edges: graph.edges.iter().flatten().map(AsRef::as_ref).collect(),
+            edge_index: rustc_hash::FxHashMap::default(),
             ends: Vec::new(),
             treatments: Vec::new(),
             outgoing: Vec::new(),
@@ -74,6 +76,12 @@ impl<'a> Model<'a> {
                 .total_cmp(&semantic_order(b.layout_options.as_ref()))
                 .then_with(|| a.id.cmp(&b.id))
         });
+        model.edge_index = model
+            .edges
+            .iter()
+            .enumerate()
+            .map(|(index, edge)| (edge.id.as_str(), index))
+            .collect();
         model.children(graph.kids(), 0, None, 0, &captions);
         let ids: BTreeMap<_, _> = model
             .endpoints

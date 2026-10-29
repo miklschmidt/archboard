@@ -28,7 +28,7 @@ use super::packing::{
     separate_facing_ports, spread,
 };
 use super::place::insets_of;
-use super::tree::{Block, BlockId, BlockTree, Line, header_of};
+use super::tree::{Block, BlockId, BlockTree, Line, Nesting, header_of};
 
 /// A box's middle across.
 fn middle(at: &Rect) -> f64 {
@@ -110,7 +110,7 @@ impl Settling<'_> {
     /// Whether a block is a block of cards the track engine draws inline: it
     /// holds cards and other blocks, laid out and routed as one, not packed.
     fn cards_inline(&self, block: &Block) -> bool {
-        !self.packings.contains_key(&block.id)
+        self.tree.nesting != Nesting::Blocks && !self.packings.contains_key(&block.id)
     }
 
     /// The columns some lines first turn to from one of their ends, as the

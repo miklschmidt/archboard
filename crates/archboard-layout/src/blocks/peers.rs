@@ -4,7 +4,7 @@ use crate::geometry::{Point, Side};
 use crate::track::scene::{Item, ItemId, Map, Placement};
 
 use super::laid::LaidMap;
-use super::tree::{Block, BlockTree, Line};
+use super::tree::{Block, BlockTree, Line, Nesting};
 
 /// The source's actual face, including a port inside an opaque parent.
 fn source(
@@ -68,6 +68,9 @@ pub(super) fn arrange(
     centres: &mut Map<String, Point>,
     boxes: &mut Map<String, crate::geometry::Rect>,
 ) {
+    if tree.nesting == Nesting::Blocks {
+        return;
+    }
     let rows: Vec<_> = block
         .lines
         .values()
@@ -97,7 +100,7 @@ pub(super) fn arrange(
 
 /// The collaborator and its words occupy one measured box in the rank graph.
 pub(super) fn room(tree: &BlockTree, id: &str) -> f64 {
-    if tree.peer_of(id).is_none() {
+    if tree.nesting == Nesting::Blocks || tree.peer_of(id).is_none() {
         return 0.0;
     }
     tree.projections
@@ -187,6 +190,9 @@ impl Peers {
         laid: &LaidMap,
         scene: &mut Placement,
     ) -> Self {
+        if tree.nesting == Nesting::Blocks {
+            return Self::default();
+        }
         let keys = prepare(tree, block, laid, scene);
         let mut cards = Vec::new();
         for key in &keys {

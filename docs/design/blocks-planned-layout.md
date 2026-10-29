@@ -1,20 +1,78 @@
 # Planned Blocks layout
 
-Status: proposed for TASK-554 on 2026-10-28.
-The owner revised the readability contract on 2026-10-29.
-Iteration 3 retains the step 8 implementation because no tested layout change passed the six-reference gate.
-The requirements below describe the revised target, not completed implementation.
+Status: proposed for TASK-554 on 2026-10-28, revised for the hybrid iteration on 2026-10-29.
+The owner selected legacy Blocks placement with planned routing after three placement trials failed the visual gates.
+The hybrid contract below supersedes the original placement proposal.
+The remaining sections preserve the investigation and its earlier checkpoints.
 
-Blocks will choose placement, ports, labels, and shared trunks in one plan before it routes lines.
-The plan will reserve physical space for each choice.
-Routing will assign coordinates inside those reservations.
-This replaces the repeated placement and repair sequence for Blocks.
-Track keeps its current geometry and behavior.
+## Hybrid contract
 
-The affected readers are architects who trace dense boards and agents who maintain the renderer.
-The intended improvements are shorter lines, tighter frames, and first renders and growing edits below 500 ms.
-The design has one private planning interface and fewer geometry repair passes.
-The spike establishes some contracts, but it does not establish acceptance of the complete design.
+The legacy placer owns card positions, dependency order, block packing, frames, folds, and wraps.
+The planner owns every final Blocks route and label.
+Track retains its existing placement and routing behavior.
+The public Solver interface, text measurement, and authored board format stay the same.
+
+Legacy placement uses the new routes to estimate its actual gap needs.
+Smaller placements are accepted when the six references retain their reading order and pass the geometry and route gates.
+Report raw placement area separately from the rendered page area and routing measures.
+The original one-percent rule does not require identical card coordinates or prevent smaller placements.
+
+The placer supplies bounded candidates from its first hierarchy and its hierarchy with held port orders.
+It compares their raw and settled geometry by area.
+It settles the second candidate only if the earlier candidates fail.
+Duplicate placements are skipped.
+The obsolete side-exit hierarchy pass does not run for Blocks.
+Dense scopes compare a three-row deal and a four-row cut, with columns held.
+Smaller scopes retain the wider legacy wrap search.
+
+Fixed placement supplies measured endpoints, exact headers, region captions, walls, and route ancestry to the planner.
+The planner considers four endpoint walls and the provisional routes as geometric guides.
+It starts with straight, elbow, and single-channel templates.
+It adds two-channel templates when the simpler templates fail.
+Those templates sample nearby and distant channels so that a nearby coordinate limit cannot hide an outer passage.
+Declared flow points remain exact endpoint constraints.
+
+The planner selects routes in a deterministic order and reserves complete source and target fan membership.
+Every shared run has one common semantic endpoint and one full line treatment across all its members.
+A source fan only splits, and a target fan only merges.
+Unrelated lines cross only on straight portions with room around their bends and arrow approaches.
+Parallel lanes and frame walls retain the established visual clearances.
+The old Blocks trunk router and its unrestricted grid search never run for Blocks.
+
+A label uses the midpoint of the longest clear private run that holds its complete measured plate.
+The run can be horizontal or vertical.
+The words stay horizontal.
+A label never covers a shared trunk, crosses a wall, or lies under a foreign line.
+If no qualifying midpoint exists, the label uses the nearest clear private spot along the route from its source.
+Count those final selected placements separately from routing fallbacks.
+Label placement never adds a bend or changes an endpoint.
+Small clearance margins protect the result from SVG rounding.
+
+Connected conflict repair reconsiders at most three earlier routes, to depth three.
+Each route-order attempt permits eight repairs, each with ninety-six conflict attempts and six distinct conflict sets per level.
+Local grid windows retain limits of 128 obstacles, 192 coordinates per axis, and 32,768 search states.
+Final routing shares four grid windows across its four route-order attempts for each placement candidate.
+Packed-block gap estimates also use at most four local windows per packed scene.
+After a complete placement refusal, the legacy placer can add 32 then 64 units around the blocked endpoints.
+These are two bounded placement repairs, not a second placement algorithm or an unchecked drawing fallback.
+
+The complete guard and fan-tree freeze must accept every emitted relationship.
+Labels use a spatial index for fixed obstacles and current label rectangles.
+These indexes accelerate clearance queries without changing candidate order or the label contract.
+The painter measures the actual decorated ink instead of adding blanket route padding.
+Crossing decoration retains its existing finite bounds.
+
+The six reference gates require lower route length and bend counts, no area increase, zero hard findings, and clearer pictures.
+The complete corpus must improve routing measures and area while retaining Track output and deterministic drawings.
+First renders and growing edits on the three timing boards must include painting in the 500 ms budget.
+Iteration evidence belongs in `/tmp/blocks-explore/build/report-4.md`.
+
+## Original proposal and investigation
+
+The original proposal gave one planner ownership of placement, ports, labels, and shared trunks.
+It reserved physical space before assigning route coordinates.
+That placement direction is superseded by the hybrid contract above.
+The affected readers remain architects who trace dense boards and agents who maintain the renderer.
 
 ## Evidence and scope
 

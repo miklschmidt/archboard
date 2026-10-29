@@ -28,9 +28,14 @@ pub(super) fn local(
         subjects,
     };
     let subjects = |other: usize| {
+        let treatment = model
+            .treatments
+            .iter()
+            .position(|treatment| *treatment == model.treatments[other])
+            .expect("a relationship treatment");
         (
-            None,
-            (model.treatments[edge] == model.treatments[other]).then_some(model.ends[other].1),
+            Some(model.ends[other].0 * model.edges.len() + treatment),
+            Some(model.ends[other].1 * model.edges.len() + treatment),
         )
     };
     let scene = router::Scene {
@@ -45,11 +50,10 @@ pub(super) fn local(
         },
     };
     let fixed: Vec<_> = shape
-        .drawing
-        .edges
+        .routes
         .iter()
         .filter_map(|line| {
-            let other = model.edges.iter().position(|edge| edge.id == line.id)?;
+            let other = *model.edge_index.get(line.id.as_str())?;
             Some((
                 connector(*line.points.first()?, *line.points.last()?, subjects(other)),
                 line.points.iter().copied().map(point).collect(),
@@ -94,7 +98,7 @@ fn obstacles(model: &Model<'_>, shape: &Shape, scope: usize) -> Vec<Rect> {
         .children
         .iter()
         .map(|child| match child {
-            super::model::Child::Endpoint(id) => shape.cells[id],
+            super::model::Child::Endpoint(id) => shape.endpoints[id],
             super::model::Child::Scope(id) => shape.scopes[id].bounds,
         })
         .map(|r| inflate(r, 16.0))
@@ -106,7 +110,7 @@ fn obstacles(model: &Model<'_>, shape: &Shape, scope: usize) -> Vec<Rect> {
                 .labels
                 .iter()
                 .filter(|(e, _)| model.ends[**e].0 == header)
-                .map(|(_, r)| inflate(*r, 12.0)),
+                .map(|(_, r)| inflate(*r, 4.0)),
         );
     }
     if let Some(group) = model.scopes[scope].group {
