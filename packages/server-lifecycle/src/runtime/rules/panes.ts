@@ -82,6 +82,9 @@ function advice(
  * @returns The lines.
  */
 function boardAdvice(panes: readonly PaneReport[], sameBoard: boolean): string[] {
+	if (panes.some((pane) => pane.board?.startsWith("model:"))) {
+		return ["Each pane reports its own reading. Use `browser show --pane <pane>` to change one."];
+	}
 	if (!sameBoard) {
 		// The consequence of disagreement, said where the disagreement is visible:
 		// a caller that names no board is refused rather than guessed at (ADR 0009).
@@ -150,7 +153,7 @@ function paneReport(
 		place,
 		focused: pane.focused,
 		primary: pane.primary,
-		board: identity === null ? null : paneBoardAddress(identity),
+		board: identity === null ? pane.board : paneBoardAddress(identity),
 		identity,
 		vault: pane.vault,
 		repository,
@@ -166,10 +169,10 @@ function paneReport(
  * What board a pane is on, when it is on one.
  * @param board The board key the pane reported, or null.
  * @param context Where board keys are resolved.
- * @returns The identity, or null when the pane is showing no board.
+ * @returns The legacy identity, or null for a canonical model or empty pane.
  */
 function identityOf(board: string | null, context: PaneContext): BoardIdentity | null {
-	if (board === null) {
+	if (board === null || board.startsWith("model:")) {
 		return null;
 	}
 	return context.identity(board) ?? parseBoardKey(board);
@@ -289,6 +292,9 @@ function plural(word: string, count: number): string {
  */
 function shownPhrase(pane: PaneReport): string {
 	const named = pane.reading.variant?.name;
+	if (pane.board?.startsWith("model:")) {
+		return [`model ${pane.board.slice(6)}`, named].filter(Boolean).join(" / ");
+	}
 	if (pane.identity === null || named === undefined) {
 		return boardPhrase(pane.identity);
 	}
@@ -367,7 +373,7 @@ function buildPanesReport(registrations: PaneRegistration[], context: PaneContex
 	// proposal against what is current are reading one document, and a command
 	// that names no board is not ambiguous between them — it is the comparison
 	// this tool exists for.
-	const sameBoard = new Set(panes.map((p) => p.identity?.board ?? null)).size === 1;
+	const sameBoard = new Set(panes.map((p) => p.identity?.board ?? p.board)).size === 1;
 	const focused = panes.find((p) => p.focused)?.paneId ?? null;
 	const summary = `${layoutPhrase(arrangement, panes.length)}${showingPhrase(panes, sameBoard)}.`;
 	const lines = [
