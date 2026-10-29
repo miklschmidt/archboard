@@ -859,7 +859,7 @@
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
                         "path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
-                        "symbol": "routed"
+                        "symbol": "lay"
                       }
                     },
                     {
