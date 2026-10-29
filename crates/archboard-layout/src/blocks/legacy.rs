@@ -187,7 +187,14 @@ fn lay_all(
     earlier: &Earlier,
     way: &Way,
 ) -> Result<Board, String> {
-    let mut tree = BlockTree::new(graph, earlier.kept.clone(), way.nesting)?;
+    let mut tree = BlockTree::new(
+        graph,
+        Kept {
+            expanded: way.expanded,
+            ..earlier.kept.clone()
+        },
+        way.nesting,
+    )?;
     reserve_room(&mut tree, way);
     let mut board = Board {
         tree,
@@ -285,6 +292,7 @@ pub(super) fn place(
         graph,
         &Way {
             nesting,
+            expanded: false,
             room: Vec::new(),
             extra: 0.0,
         },
@@ -312,9 +320,8 @@ impl Iterator for Candidates {
     type Item = super::assembly::Placed;
     fn next(&mut self) -> Option<Self::Item> {
         for next in self.ready.by_ref() {
-            let mut placement = next.clone();
-            placement.edges.clear();
-            if self.seen.insert(placement.json().text()) {
+            // The planner reads the provisional routes as well as the card positions.
+            if self.seen.insert(next.json().text()) {
                 return Some(next);
             }
         }
@@ -345,6 +352,7 @@ pub(super) fn candidates(
     let mut gv = Engine::new(host);
     let way = Way {
         nesting: Nesting::Blocks,
+        expanded: false,
         room: room.to_vec(),
         extra,
     };
@@ -367,6 +375,11 @@ pub(super) fn candidates(
             &way,
         )?)
     };
+    let alternatives = if super::planned::refines(&graph) {
+        expanded_candidates(&mut gv, &graph, way)?
+    } else {
+        Vec::new()
+    };
     let mut unsettled: Vec<_> = std::iter::once(first).chain(ordered).collect();
     let area = |board: &Board| {
         let root = &board.laid[&board.tree.get(board.tree.root).id];
@@ -379,6 +392,8 @@ pub(super) fn candidates(
     ready.push(Assembly::new(&best.tree, &best.laid).placed());
     ready.extend(drawings(&unsettled));
     ready.sort_by(|a, b| (a.width * a.height).total_cmp(&(b.width * b.height)));
+    ready.extend(drawings(&alternatives));
+    unsettled.extend(alternatives);
     Ok(Candidates {
         ready: ready.into_iter(),
         unsettled: Some(unsettled),
@@ -386,8 +401,27 @@ pub(super) fn candidates(
     })
 }
 
+/// Compare the wider wrap search with axial frame approaches and its settled port order.
+fn expanded_candidates(
+    gv: &mut Engine<'_>,
+    graph: &Node,
+    mut way: Way,
+) -> Result<Vec<Board>, String> {
+    way.expanded = true;
+    let mut earlier = Earlier::default();
+    let mut expanded = lay_all(gv, graph, &earlier, &way)?;
+    earlier.kept.orders = held_orders(&expanded.settling());
+    earlier.packings.clone_from(&expanded.packings);
+    let mut candidates = vec![expanded];
+    if !earlier.kept.orders.is_empty() {
+        candidates.push(lay_all(gv, graph, &earlier, &way)?);
+    }
+    Ok(candidates)
+}
+
 struct Way {
     nesting: Nesting,
+    expanded: bool,
     room: Vec<String>,
     extra: f64,
 }

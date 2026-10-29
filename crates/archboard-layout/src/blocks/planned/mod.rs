@@ -2,6 +2,8 @@
 
 // A bounded readability search keeps dense solves within their render budget.
 const REFINEMENT_LIMIT: usize = 32;
+// Medium views also need placement alternatives; large boards keep one routed candidate.
+const PLACEMENT_REFINEMENT_LIMIT: usize = 64;
 
 mod channel;
 mod choices;
@@ -19,9 +21,14 @@ mod points;
 mod port_spacing;
 mod portals;
 mod ports;
+mod reading;
 mod runs;
 mod shape;
 mod topology;
+
+pub(super) fn refines(graph: &crate::graph::Node) -> bool {
+    graph.edges.as_deref().unwrap_or_default().len() <= PLACEMENT_REFINEMENT_LIMIT
+}
 
 #[derive(Debug)]
 pub(super) struct Refused {
@@ -43,11 +50,33 @@ impl From<&str> for Refused {
 }
 
 mod fixed;
-pub(super) fn route_fixed(
+/// Rank guarded candidates against one fixed reference, so an intermediate
+/// winner cannot tighten the area budget of the remaining candidates.
+pub(super) fn route_candidates(
     graph: &crate::graph::Node,
-    drawing: crate::blocks::assembly::Placed,
+    candidates: impl Iterator<Item = crate::blocks::assembly::Placed>,
 ) -> Result<crate::blocks::assembly::Placed, Refused> {
-    fixed::route(graph, drawing)
+    let mut failure = Refused::from("No guarded Blocks drawing");
+    let mut reference = None;
+    let mut best = None;
+    let mut score = (usize::MAX, u64::MAX);
+    for drawing in candidates {
+        match fixed::route(graph, drawing) {
+            Ok(next) => {
+                if !refines(graph) {
+                    return Ok(next);
+                }
+                let next_score = reading::rank(&next.edges);
+                let first = reference.get_or_insert_with(|| next.clone());
+                if next_score < score && reading::worth_placing(&next, first, graph) {
+                    score = next_score;
+                    best = Some(next);
+                }
+            }
+            Err(error) => failure = error,
+        }
+    }
+    best.ok_or(failure)
 }
 
 mod direct;

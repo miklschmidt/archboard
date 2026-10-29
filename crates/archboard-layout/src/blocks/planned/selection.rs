@@ -48,23 +48,37 @@ fn improve(
     chosen: Shape,
     windows: &mut usize,
 ) -> Shape {
-    // Bound the second ordering to small views that already contain a greedy detour.
+    // Compare the existing route orders when a small view has a detour or a crowded approach.
     if variant != 1 || paths.len() > super::REFINEMENT_LIMIT {
         return chosen;
     }
     let score = quality(&chosen.routes, paths, model);
-    if score.0 == 0 {
+    if score.0 == 0 && score.1 == 0 {
         return chosen;
     }
-    match ordered(model, topology, base, paths, 2, windows) {
-        Ok(short) if quality(&short.routes, paths, model) < score => short,
-        _ => chosen,
+    let mut best = chosen;
+    let mut score = score;
+    for variant in [2, 0, 3] {
+        if variant != 2 && score.0 == 0 {
+            break;
+        }
+        if let Ok(next) = ordered(model, topology, base, paths, variant, windows) {
+            let next_score = quality(&next.routes, paths, model);
+            if next_score < score {
+                best = next;
+                score = next_score;
+            }
+        }
     }
+    best
 }
 
-fn quality(lines: &[PlacedLine], paths: &[Vec<PlacedLine>], model: &Model<'_>) -> (usize, u64) {
+fn quality(
+    lines: &[PlacedLine],
+    paths: &[Vec<PlacedLine>],
+    model: &Model<'_>,
+) -> (usize, usize, u64) {
     let mut detours = 0;
-    let mut cost = 0.0;
     for line in lines {
         let shortest = paths[model.edge_index[line.id.as_str()]]
             .iter()
@@ -72,9 +86,9 @@ fn quality(lines: &[PlacedLine], paths: &[Vec<PlacedLine>], model: &Model<'_>) -
             .fold(f64::INFINITY, f64::min);
         let length = super::geometry::length(&line.points);
         detours += usize::from(length > shortest * 1.5 && length > shortest + 120.0);
-        cost += route_cost(&line.points);
     }
-    (detours, cost.to_bits())
+    let (approaches, cost) = super::reading::rank(lines);
+    (approaches, detours, cost)
 }
 
 fn order(

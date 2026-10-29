@@ -17,15 +17,29 @@ Smaller placements are accepted when the six references retain their reading ord
 Report raw placement area separately from the rendered page area and routing measures.
 The original one-percent rule does not require identical card coordinates or prevent smaller placements.
 
-The placer supplies bounded candidates from its first hierarchy and its hierarchy with held port orders.
-It compares their raw and settled geometry by area.
-It settles the second candidate only if the earlier candidates fail.
-Duplicate placements are skipped.
-The obsolete side-exit hierarchy pass does not run for Blocks.
+The placer starts with its first hierarchy and its hierarchy with held port orders.
+Dense views keep the first guarded drawing, with candidates ordered by area.
+Views with at most sixty-four relationships also compare a wider wrap search with vertical frame approaches.
+That search keeps both held and free columns, and compares its first and settled port orders.
+It lets the final planner choose frame attachments instead of forcing header calls onto side walls before placement.
+It packs its own child shapes, then holds that packing while it settles port order.
+Each hierarchy supplies raw geometry and geometry with settled ports.
+Duplicate detection includes provisional routes, because those routes guide the final planner.
+
+The planner compares complete guarded drawings by crossings close to card attachments, then by route cost.
+A crossing within two lanes of an attachment counts as a crowded approach.
+The cost adds route length, 120 units per bend, and 300 units per crossing.
+Every candidate uses the first guarded drawing as its fixed reference.
+A candidate cannot add over 300 units of detour to a route that exceeds its direct distance by fifty percent.
+A larger candidate must satisfy `candidateCost * relativeArea * 1.1 < referenceCost`.
+This margin rejects small route gains that leave a larger empty frame.
+An overall saving cannot spread a caller’s cards across more rows while increasing that caller’s route cost.
+The comparison uses no legacy coordinates, board names, or subject identities as preferences.
+
 Dense scopes compare a three-row deal and a four-row cut, with columns held.
 A board with at most twenty-four cards also retains the two-row cut.
 Labels and boundary ports can push a small fan over the dense-scope limit.
-Smaller scopes retain the wider legacy wrap search.
+Smaller scopes retain the wider wrap search.
 
 Fixed placement supplies measured endpoints, exact headers, region captions, walls, and route ancestry to the planner.
 The planner considers four endpoint walls and the provisional routes as geometric guides.
@@ -65,8 +79,10 @@ A simple candidate that exceeds the direct distance by 300 units and 50 percent 
 Reciprocal calls can reuse the bounded conflict repair when an earlier route forces that much extra travel.
 The repaired route set must reduce the combined route cost.
 A successful greedy plan with a route 120 units and 50 percent beyond its shortest candidate also tries the short-first order.
-The planner keeps the order with fewer such detours, then the lower combined route cost.
-Both attempts share the existing grid-window budget.
+A crowded approach also triggers that comparison.
+If a crowded approach remains, the planner tries the other two existing route orders.
+It prefers fewer crowded approaches, then fewer detours, then lower route cost with crossing penalties.
+All attempts share the existing grid-window budget.
 Dense drawings retain their existing candidate ranking and route-order search because wider refinement exceeds the render-time budget.
 The label-stack rule and complete geometry guards apply at every size.
 
