@@ -532,10 +532,15 @@ mod tests {
         .unwrap();
         let model = Model::new(&graph).unwrap();
         let shape = drawing(&[("ab", &[(100.0, 100.0), (900.0, 100.0), (900.0, 500.0)])]);
-        let (label, _) = slot(&model, 0, &shape, &shape.routes[0].points).unwrap();
+        let slots = Slots::new(&model, &shape);
+        let (label, _) = slots.slot(&model, 0, &shape.routes[0].points).unwrap();
         assert_eq!(label.x + label.width / 2.0, 900.0);
         assert!(label.y > 100.0 && label.y + label.height < 500.0);
-        assert!(slot(&model, 0, &shape, &shape.routes[0].points[..2]).is_none());
+        assert!(
+            slots
+                .slot(&model, 0, &shape.routes[0].points[..2])
+                .is_none()
+        );
     }
 
     #[test]
