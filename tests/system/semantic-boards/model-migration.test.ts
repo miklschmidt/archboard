@@ -4,6 +4,8 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { createInterface } from "node:readline";
+import { Readable } from "node:stream";
 import { z } from "zod";
 import {
 	ArchitectureModelReadSchema,
@@ -94,14 +96,28 @@ test("CLI and HTTP share explicit migration authority, strict authorization, exa
 		doing: "Install explicit migration",
 	};
 	const controller = new AbortController();
+	let stream: Readable | undefined;
+	let lines: ReturnType<typeof createInterface> | undefined;
 	try {
 		const events = await fetch(
 			`${base}/api/architecture/events?${new URLSearchParams({ vault })}`,
 			{ signal: controller.signal },
 		);
-		const reader = events.body!.getReader();
-		const first = new TextDecoder().decode((await reader.read()).value);
-		expect(first).toContain('"LEGACY_AUTHORITY"');
+		stream = Readable.from(events.body!);
+		lines = createInterface({ input: stream, crlfDelay: Infinity });
+		const reader = lines[Symbol.asyncIterator]();
+		async function nextEvent() {
+			for (;;) {
+				const line = await reader.next();
+				if (line.done) throw new Error("Event stream ended before completion");
+				if (line.value.startsWith("data: "))
+					return ArchitectureEventSchema.parse(JSON.parse(line.value.slice(6)));
+			}
+		}
+		expect(await nextEvent()).toMatchObject({
+			type: "architecture_snapshot",
+			reading: { success: false, code: "LEGACY_AUTHORITY" },
+		});
 		const endpoint = `${base}/api/architecture/migration/apply`;
 		for (const body of [
 			{ ...request, vault, authorization: "agent" },
@@ -138,22 +154,15 @@ test("CLI and HTTP share explicit migration authority, strict authorization, exa
 		});
 		let completion = false;
 		while (!completion) {
-			const chunk = await reader.read();
-			if (chunk.done) throw new Error("Event stream ended before completion");
-			for (const line of new TextDecoder()
-				.decode(chunk.value)
-				.split("\n")
-				.filter((v) => v.startsWith("data: "))) {
-				const event = ArchitectureEventSchema.parse(JSON.parse(line.slice(6)));
-				if (event.type === "architecture_changed") {
-					expect(event).toMatchObject({
-						model: "Shop",
-						reason: "completed",
-						revision: applied.after,
-						operation: { operationId: request.operationId, applied: true },
-					});
-					completion = true;
-				}
+			const event = await nextEvent();
+			if (event.type === "architecture_changed") {
+				expect(event).toMatchObject({
+					model: "Shop",
+					reason: "completed",
+					revision: applied.after,
+					operation: { operationId: request.operationId, applied: true },
+				});
+				completion = true;
 			}
 		}
 		const legacy = cli(["semantic", "new", "Other", "--doing", "Try legacy authoring"], {
@@ -162,6 +171,8 @@ test("CLI and HTTP share explicit migration authority, strict authorization, exa
 		});
 		expect(legacy.status, legacy.stderr).not.toBe(0);
 	} finally {
+		lines?.close();
+		stream?.destroy();
 		controller.abort();
 	}
 }, 15000);

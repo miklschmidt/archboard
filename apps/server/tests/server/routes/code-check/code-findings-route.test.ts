@@ -184,9 +184,9 @@ test("what a pass found in one vault is not shown for a board of the same name i
 	}
 });
 
-test("canonical findings keep the exact model revision and replace only the selected state", () => {
-	const memory = createCodeFindingsMemory();
+test("canonical findings keep the exact model revision and replace only the selected state", async () => {
 	const revision = { digest: "a".repeat(64), files: [] };
+	const updatedRevision = { digest: "b".repeat(64), files: [] };
 	const answer: CodeCheckAnswer = {
 		timings: [],
 		boards: [],
@@ -204,15 +204,62 @@ test("canonical findings keep the exact model revision and replace only the sele
 		skipped: [],
 		behind: [],
 	};
-	memory.remember(ownVault, answer, new Date("2026-10-27T00:00:00Z"));
-	expect(memory.recall(ownVault)).toMatchObject({
-		models: [{ model: "Shop", state: "Now", revision, findings: answer.findings }],
-	});
-	memory.remember(
-		ownVault,
-		{ ...answer, models: [{ model: "Shop", state: "Draft", revision }], findings: [] },
-		new Date("2026-10-27T00:00:01Z"),
+	const draft = {
+		...answer,
+		models: [{ model: "Shop", state: "Draft", revision }],
+		findings: answer.findings.map((finding) => ({ ...finding, state: "Draft" })),
+	};
+	const { base, passes } = await serverWith([
+		answer,
+		draft,
+		{
+			...answer,
+			models: [{ model: "Shop", state: "Now", revision: updatedRevision }],
+			findings: [],
+		},
+	]);
+	async function models(vault = ownVault) {
+		const reply = await fetch(`${base}/api/vault/code-findings?${named(vault)}`);
+		expect(reply.status).toBe(200);
+		return RememberedFindingsSchema.parse(await reply.json()).models;
+	}
+	for (let pass = 0; pass < 2; pass += 1) {
+		const response = await fetch(`${base}/api/vault/code-check?${named()}`);
+		expect(response.status).toBe(200);
+		await response.json();
+	}
+	expect(await models()).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({ model: "Shop", state: "Now", revision, findings: answer.findings }),
+			expect.objectContaining({
+				model: "Shop",
+				state: "Draft",
+				revision,
+				findings: draft.findings,
+			}),
+		]),
 	);
-	expect(memory.recall(ownVault).models).toHaveLength(2);
-	expect(memory.recall(vaultIn(join(scratch, "other"))).models).toEqual([]);
+	const refreshed = await fetch(`${base}/api/vault/code-check?${named()}`);
+	expect(refreshed.status).toBe(200);
+	await refreshed.json();
+	const kept = await models();
+	expect(kept).toHaveLength(2);
+	expect(kept).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({
+				model: "Shop",
+				state: "Now",
+				revision: updatedRevision,
+				findings: [],
+			}),
+			expect.objectContaining({
+				model: "Shop",
+				state: "Draft",
+				revision,
+				findings: draft.findings,
+			}),
+		]),
+	);
+	expect(await models(vaultIn(join(scratch, "other")))).toEqual([]);
+	expect(passes()).toBe(3);
 });
