@@ -36,13 +36,13 @@ test("another process announces an archive-only correction for its addressed log
 	};
 	const file = join(root, "request.json");
 	writeFileSync(file, JSON.stringify(intent));
-	let receive: (event: ArchitectureEvent) => void = () => {};
+	let receive: ((event: ArchitectureEvent) => void) | undefined;
 	const changed = new Promise<ArchitectureEvent>((resolve) => {
 		receive = resolve;
 	});
 	const stop = watchArchitectureModel(vault, (event) => {
 		if (event.type === "architecture_changed" && event.state === parent.target.state)
-			receive(event);
+			receive?.(event);
 	});
 	try {
 		const child = Bun.spawn(

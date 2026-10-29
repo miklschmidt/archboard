@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { git, disposeFixtures } from "../model-edit/fixture.ts";
+import { git, disposeFixtures } from "#tests/runtime/operations/model-edit/fixture.ts";
 const destinations: string[] = [];
 function cleanPortableFixtures() {
 	disposeFixtures();

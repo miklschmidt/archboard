@@ -17,7 +17,7 @@ afterEach(() => {
 	disposeFixtures();
 });
 
-test("interrupted proposal creation resumes one signed checkpoint and never installs draft additions as current", async () => {
+test("interrupted proposal creation resumes one retained checkpoint and never installs draft additions as current", async () => {
 	const { root, vault } = fixture();
 	const input = await structureIntent(vault, ["Shop"]);
 	const request = {

@@ -42,14 +42,6 @@ test("another process cannot enter installation, completed retries stay availabl
 	git(root, "config", "gpg.ssh.program", signer);
 	const request = join(root, ".git/request.json");
 	writeFileSync(request, JSON.stringify(next));
-	const arrived = new Promise<void>((resolve) => {
-		const watcher = watch(join(root, ".git"), () => {
-			if (existsSync(ready)) {
-				watcher.close();
-				resolve();
-			}
-		});
-	});
 	const child = Bun.spawn(
 		[
 			process.execPath,
@@ -63,8 +55,8 @@ test("another process cannot enter installation, completed retries stay availabl
 			stderr: "pipe",
 		},
 	);
-	await arrived;
 	try {
+		await waitForGate(root, ready, child);
 		expect(readArchitectureModel(vault)).toMatchObject({ success: false, code: "MODEL_BUSY" });
 		expect(
 			await editArchitectureModule(vault, { ...next, operationId: "racing-writer" }),
@@ -76,7 +68,7 @@ test("another process cannot enter installation, completed retries stay availabl
 			JSON.stringify({ ...worker, description: "External owner" }),
 		);
 	} finally {
-		writeFileSync(gate, "release\n");
+		if (child.exitCode === null) writeFileSync(gate, "release\n");
 		await child.exited;
 	}
 	const output = await new Response(child.stdout).text();
@@ -103,14 +95,6 @@ test("a durable completed retry stays applied while another process finishes its
 	chmodSync(hook, 0o755);
 	const request = join(root, ".git/cleanup-request.json");
 	writeFileSync(request, JSON.stringify(input));
-	const arrived = new Promise<void>((resolve) => {
-		const watcher = watch(join(root, ".git"), () => {
-			if (existsSync(ready)) {
-				watcher.close();
-				resolve();
-			}
-		});
-	});
 	const child = Bun.spawn(
 		[
 			process.execPath,
@@ -124,9 +108,9 @@ test("a durable completed retry stays applied while another process finishes its
 			stderr: "pipe",
 		},
 	);
-	await arrived;
 	let retry;
 	try {
+		await waitForGate(root, ready, child);
 		expect(readArchitectureModel(vault)).toMatchObject({ success: false, code: "MODEL_BUSY" });
 		const retained = await listArchitectureCheckpoints(vault);
 		if (!retained.success) throw new Error(JSON.stringify(retained));
@@ -139,7 +123,7 @@ test("a durable completed retry stays applied while another process finishes its
 			checkpoint: { id: retained.checkpoints[0]!.id },
 		});
 	} finally {
-		writeFileSync(gate, "release\n");
+		if (child.exitCode === null) writeFileSync(gate, "release\n");
 		await child.exited;
 	}
 	const output = await new Response(child.stdout).text();
@@ -149,3 +133,26 @@ test("a durable completed retry stays applied while another process finishes its
 	expect(completed).toEqual({ ...retry, cleanup: "complete" });
 	expect(await editArchitectureModule(vault, input)).toEqual(completed);
 }, 15_000);
+
+async function waitForGate(
+	root: string,
+	ready: string,
+	child: Pick<ReturnType<typeof Bun.spawn>, "exited">,
+) {
+	const signal = Promise.withResolvers<void>();
+	const watcher = watch(join(root, ".git"), () => {
+		if (existsSync(ready)) signal.resolve();
+	});
+	watcher.once("error", signal.reject);
+	if (existsSync(ready)) signal.resolve();
+	try {
+		await Promise.race([
+			signal.promise,
+			child.exited.then(() => {
+				throw new Error("The fixture child exited before reaching its gate.");
+			}),
+		]);
+	} finally {
+		watcher.close();
+	}
+}

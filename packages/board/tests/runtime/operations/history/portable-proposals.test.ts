@@ -5,9 +5,13 @@ import {
 	importArchitectureModel,
 	editArchitectureModule,
 } from "@archboard/board/store-write";
-import { fixture } from "../model-edit/fixture.ts";
-import { proposal, request, selected } from "../proposals/fixture.ts";
-import { destination, empty, cleanPortableFixtures } from "./portable-fixture.ts";
+import { fixture } from "#tests/runtime/operations/model-edit/fixture.ts";
+import { proposal, request, selected } from "#tests/runtime/operations/proposals/fixture.ts";
+import {
+	destination,
+	empty,
+	cleanPortableFixtures,
+} from "#tests/runtime/operations/history/portable-fixture.ts";
 async function standingFixture() {
 	const source = fixture();
 	const first = await proposal(source.vault, "Queued", "Current", [
