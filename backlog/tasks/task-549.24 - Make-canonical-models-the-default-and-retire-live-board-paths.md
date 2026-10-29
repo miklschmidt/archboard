@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-29T02:04:00Z'
+updated_date: '2026-10-29T02:29:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -212,6 +212,8 @@ Repair the second demonstrated ask failure: automatic queue consumption complete
 Repair the remaining pane-context review gap. Prove that the old two-pane test accepts the wrong canonical selection, replace retired board distinctions with exact canonical reports, and prove that the repaired owner rejects that same defect. Preserve existing case deadlines and the public server seam.
 
 The canonical pane fixture exposes two product failures before its selection assertion: GET /api/panes parses model keys as legacy boards, and a later socket inherits that key and fails admission. Repair canonical report identity and initial socket messages, then retain exact selections in the existing owner. Keep legacy retained reading compatibility and all deadlines.
+
+Resolve final gate v6 failures in the existing proposal owners. Replace the loose Git-object count with retained-history evidence that survives packing. Diagnose the correction-safety timeout without relaxing deadlines or weakening its behavior contracts. Keep the failed full-gate receipt, use focused regression evidence, then complete the remaining validation lanes.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
