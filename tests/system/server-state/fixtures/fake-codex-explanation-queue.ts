@@ -7,6 +7,8 @@ export function explanationQueue(
 	threads: Map<string, FixtureThread>,
 	respond: (frame: never, value: unknown) => void,
 	notify: (method: string, params: unknown) => void,
+	control: () => Record<string, unknown>,
+	reject: (frame: never, message: string) => void,
 ) {
 	const queues = new Map<string, Record<string, unknown>[]>();
 	let sequence = 0;
@@ -25,8 +27,16 @@ export function explanationQueue(
 				source: "user",
 				createdAt: unixSeconds(),
 			};
+			if (control()["rejectExplanationQueueAdd"] === true) {
+				reject(frame as never, "Controlled queue rejection");
+				return true;
+			}
 			queue.push(submission);
-			respond(frame as never, { queuedSubmission: submission });
+			const response =
+				control()["uncertainExplanationQueueAdd"] === true
+					? { ...submission, clientUserMessageId: "uncorrelated-message" }
+					: submission;
+			respond(frame as never, { queuedSubmission: response });
 		} else if (frame.method === "thread/queue/delete") {
 			queues.set(
 				threadId,

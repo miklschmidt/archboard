@@ -76,7 +76,8 @@ type WireFrame = {
 	readonly error?: unknown;
 };
 const threads = new Map<string, FixtureThread>();
-const handleExplanationQueue = explanationQueue(threads, respond, notify);
+const queueControl = () => JSON.parse(readFileSync(controlPath, "utf8"));
+const handleExplanationQueue = explanationQueue(threads, respond, notify, queueControl, reject);
 let threadSequence = readFileSync(logPath, "utf8").split('"thread/start","result"').length - 1;
 let turnSequence = 0;
 // Every thread started on the coordinator's model. As in Codex, any number of them may run, one
