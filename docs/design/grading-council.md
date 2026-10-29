@@ -46,8 +46,14 @@ rereads that file before each run.
    its margins spread widest. In round 5 its weighted scores averaged 8.0
    against about 6.0 for the other three. Muse Wonder replaced it on
    2026-10-28. In the council of TASK-554 none of Muse Wonder's nine reported
-   defects was real, and the owner removed it on 2026-10-29. Each grader
-   gets the grading copy, the criteria file and the owner's weighting above,
+   defects was real, and the owner removed it on 2026-10-29. A grader must
+   see the pictures itself. Cursor's file reader gives a model a written
+   description of a picture instead of the picture. A trial of DeepSeek V4.1
+   Flash through Cursor graded from such descriptions and pixel scripts, and
+   its margins did not follow the council's (correlation -0.08 with the
+   median, against 0.58 to 0.66 for each grader with the other two). Before
+   a new grader counts, read its transcript and make sure that it opened the
+   pictures. Each grader gets the grading copy, the criteria file and the owner's weighting above,
    and nothing else. It does not use the old scorecard metrics
    (`drawn-scorecard.ts` and the `drawn-*` checks), and it does not see the
    other graders' files.

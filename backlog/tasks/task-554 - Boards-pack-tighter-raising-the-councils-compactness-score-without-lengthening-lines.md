@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-29T09:33:00Z'
+updated_date: '2026-10-29T10:15:00Z'
 labels:
   - renderer
   - layout
@@ -75,4 +75,6 @@ Council of the hybrid (1f60b6e06) against 8cdedb1c3, four graders (Opus, gpt-6.1
 2026-10-29: the owner removed Muse Wonder from the council, because none of its nine reported defects in council 554 was real. The council is Opus, gpt-6.1-sol and gpt-6-astra, and the median of their three margins decides. Council 554 read with three graders: 9 better, 28 same, 3 worse (019, 027, 038); 010 and 013 move from same to better. The hybrid still fails.
 
 Merged feat/blocks-speed2 (9683c6725) as a16b5c77e: the hybrid's routing reuses obstacle and label indexes and stops candidate searches at the first success, with every drawing unchanged. Verified: the 8,086 corpus SVGs of the builder's oracle and after runs hash the same; the merged core builds to 7f300d8f6fc3747c, the builder's final core. My three timing runs on the merge with two builders running (load about 3): Board viewer 391-433 / 329-337 ms (first render / growing edit), Board persistence 298-305 / 292-299, Archboard server routes 205-213 / 197-201, all drawings intact. Every sample is under the 500 ms threshold. The builder's quiet-machine run kept all 18 samples under 400 ms (worst 396.65).
+
+2026-10-29: trial of DeepSeek V4.1 Flash 1017 through Cursor as a council grader, on the 40 pairs of council 554. Its transcript shows that Cursor's file reader gave it written descriptions of the pictures, not the pictures, so it graded from descriptions and ImageMagick pixel scripts. It reported no defects (it missed the real one in 027 B). Its margins correlate -0.08 with the median of the three graders, against 0.58 to 0.66 for each grader with the other two; its verdict agrees on 21 of 40 pairs; its weighted scores average 7.41 against 6.17 to 6.59. It does not join the council. Muse Wonder ran through the same Cursor harness, which likely explains its false defects. grading-council.md now says that a grader must see the pictures and that its transcript is read before it counts.
 <!-- SECTION:NOTES:END -->
