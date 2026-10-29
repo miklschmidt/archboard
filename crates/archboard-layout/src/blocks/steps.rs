@@ -20,7 +20,7 @@ use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS};
 use crate::ecma::{abs, js_max, js_min, number_key, round, sign, via_text};
 use crate::geometry::{Point, Rect, inflate};
 use crate::track::chains::{LANE, REGION_CLEARANCE};
-use crate::track::scene::{Map, Set};
+use crate::track::scene::Map;
 
 use super::laid::corners;
 
@@ -67,11 +67,8 @@ fn span_of(from: Point, to: Point) -> Span {
 }
 
 /// A line's runs, each read along its axis.
-fn spans_of(points: &[Point]) -> Vec<Span> {
-    points
-        .windows(2)
-        .map(|pair| span_of(pair[0], pair[1]))
-        .collect()
+fn spans_of(points: &[Point]) -> impl Iterator<Item = Span> {
+    points.windows(2).map(|pair| span_of(pair[0], pair[1]))
 }
 
 /// How far along two spans share; negative when they are apart.
@@ -110,9 +107,8 @@ fn uncovered(span: Span, cover: &[Span]) -> Vec<Span> {
 
 /// The stretches of one line's runs another line's runs do not cover.
 fn fresh(line: &[Point], cover: &[Point]) -> Vec<Span> {
-    let covering = spans_of(cover);
+    let covering: Vec<_> = spans_of(cover).collect();
     spans_of(line)
-        .into_iter()
         .flat_map(|span| uncovered(span, &covering))
         .collect()
 }
@@ -205,17 +201,11 @@ pub(crate) struct Surroundings<'a> {
 /// The lines one slide moves, by index, with their points after it.
 type Moved = Map<usize, Vec<Point>>;
 
-/// Everything a slide of one line is weighed against.
-struct Weighing<'w> {
-    /// Every other line's runs.
+/// Everything a slide is weighed against. All its moved lines share the same
+/// other runs; obstacle lists stay borrowed from the drawing.
+struct Weighing<'a, 'w> {
     others: Vec<Span>,
-    /// Every box the line keeps clear of, grown by the room it keeps.
-    boxes: Vec<Rect>,
-    walls: &'w [Rect],
-    /// Every title band, grown by a lane.
-    bands: &'w [Rect],
-    /// The line's own label, grown by a bend's radius: what its turns keep clear of.
-    label: Option<Rect>,
+    weigher: &'a Weigher<'w>,
 }
 
 /// What one line is weighed against, given the lines a slide moves.
@@ -230,30 +220,17 @@ struct Weigher<'w> {
 }
 
 impl Weigher<'_> {
-    /// What one line is weighed against: every line a slide does not move as
-    /// it stands now, and every box, other lines' labels among them.
-    fn weigh(&self, moved: &Set<usize>, line: usize) -> Weighing<'_> {
-        let others = self
-            .runs
-            .iter()
-            .enumerate()
-            .filter(|(at, _)| !moved.contains(at))
-            .flat_map(|(_, spans)| spans.iter().copied())
-            .collect();
-        let mut boxes = self.boxes.clone();
-        boxes.extend(
-            self.labels
+    /// Read unchanged runs once for the whole slide, for both clearance and cost.
+    fn weigh(&self, moved: &Moved) -> Weighing<'_, '_> {
+        Weighing {
+            others: self
+                .runs
                 .iter()
                 .enumerate()
-                .filter(|&(at, _)| at != line)
-                .filter_map(|(_, label)| *label),
-        );
-        Weighing {
-            others,
-            boxes,
-            walls: self.walls,
-            bands: &self.bands,
-            label: self.own[line],
+                .filter(|(at, _)| !moved.contains_key(at))
+                .flat_map(|(_, spans)| spans.iter().copied())
+                .collect(),
+            weigher: self,
         }
     }
 }
@@ -302,7 +279,7 @@ fn crowds(span: &Span, others: &[Span]) -> bool {
 
 /// How many times a line crosses each wall.
 fn wall_crossings(points: &[Point], walls: &[Rect]) -> Vec<usize> {
-    let spans = spans_of(points);
+    let spans: Vec<_> = spans_of(points).collect();
     walls
         .iter()
         .map(|at| {
@@ -338,24 +315,15 @@ fn keeps_ends(next: &[Point], old: &[Point]) -> bool {
 /// Whether every run between two turns a slide made or changed has room for
 /// its bends, and the last run after a turn room for its bend and its arrowhead.
 fn roomy(next: &[Point], old: &[Point]) -> bool {
-    let was = spans_of(old);
-    let kept = |from: Point, to: Point| was.iter().any(|span| same_span(span, &span_of(from, to)));
-    let runs: Vec<(Point, Point)> = next.windows(2).map(|pair| (pair[0], pair[1])).collect();
-    let arrival = if runs.len() > 1 {
-        runs.last().copied()
-    } else {
-        None
-    };
-    let middles = if runs.len() >= 2 {
-        &runs[1..runs.len() - 1]
-    } else {
-        &[][..]
-    };
-    middles
-        .iter()
-        .all(|&(from, to)| length_of(from, to) >= SHORTEST || kept(from, to))
-        && arrival
-            .is_none_or(|(from, to)| length_of(from, to) >= SHORTEST_ARRIVAL || kept(from, to))
+    next.windows(2).enumerate().skip(1).all(|(index, pair)| {
+        let shortest = if index + 2 == next.len() {
+            SHORTEST_ARRIVAL
+        } else {
+            SHORTEST
+        };
+        length_of(pair[0], pair[1]) >= shortest
+            || spans_of(old).any(|span| same_span(&span, &span_of(pair[0], pair[1])))
+    })
 }
 
 /// A line with the run between two turns slid onto the axis of a run two before or after it.
@@ -422,7 +390,12 @@ fn run_in(route: &[Point], run: (Point, Point)) -> Option<usize> {
 
 /// The lines one slide moves: the line, and every line sharing a stretch it
 /// moves, which slides the same run with it; nothing when a sharer cannot follow.
-fn trunk_of(routes: &[Vec<Point>], line: usize, slide: &Slide) -> Option<Moved> {
+fn trunk_of(
+    routes: &[Vec<Point>],
+    line: usize,
+    slide: &Slide,
+    runs: &[Vec<Span>],
+) -> Option<Moved> {
     let route = &routes[line];
     let run = (route[slide.at], route[slide.at + 1]);
     let mut moved: Moved = Map::default();
@@ -432,7 +405,7 @@ fn trunk_of(routes: &[Vec<Point>], line: usize, slide: &Slide) -> Option<Moved> 
         let (&index, next) = moved.get_index(member).expect("a moved line");
         let gone = fresh(&routes[index], next);
         for (other, points) in routes.iter().enumerate() {
-            if moved.contains_key(&other) || !shares_any(points, &gone) {
+            if moved.contains_key(&other) || !shares_any(&runs[other], &gone) {
                 continue;
             }
             let at = run_in(points, run)?;
@@ -444,34 +417,40 @@ fn trunk_of(routes: &[Vec<Point>], line: usize, slide: &Slide) -> Option<Moved> 
 }
 
 /// Whether a line runs along any of some stretches.
-fn shares_any(points: &[Point], stretches: &[Span]) -> bool {
-    spans_of(points)
-        .iter()
+fn shares_any(runs: &[Span], stretches: &[Span]) -> bool {
+    runs.iter()
         .any(|run| stretches.iter().any(|span| on_one(span, run)))
 }
 
 /// Whether a slide keeps a line clear of everything around it.
-fn keeps_clear(next: &[Point], old: &[Point], weighing: &Weighing<'_>) -> bool {
-    moves_clear(&fresh(next, old), &fresh(old, next), weighing)
+fn keeps_clear(next: &[Point], old: &[Point], weighing: &Weighing<'_, '_>, line: usize) -> bool {
+    moves_clear(&fresh(next, old), &fresh(old, next), weighing, line)
         && crossings(next, &weighing.others) <= crossings(old, &weighing.others)
-        && wall_crossings(next, weighing.walls) == wall_crossings(old, weighing.walls)
+        && wall_crossings(next, weighing.weigher.walls)
+            == wall_crossings(old, weighing.weigher.walls)
 }
 
 /// Whether what a slide adds to a line and takes from it stays clear.
-fn moves_clear(added: &[Span], gone: &[Span], weighing: &Weighing<'_>) -> bool {
+fn moves_clear(added: &[Span], gone: &[Span], weighing: &Weighing<'_, '_>, line: usize) -> bool {
     let labelled = added
         .iter()
         .chain(gone)
-        .any(|span| weighing.label.is_some_and(|label| through(span, &label)));
-    !labelled && !added.iter().any(|span| blocked(span, weighing))
+        .any(|span| weighing.weigher.own[line].is_some_and(|label| through(span, &label)));
+    !labelled && !added.iter().any(|span| blocked(span, weighing, line))
 }
 
 /// Whether a new stretch runs through a box, runs level through a title band,
 /// runs along a wall, or crowds another line.
-fn blocked(span: &Span, weighing: &Weighing<'_>) -> bool {
-    weighing.boxes.iter().any(|at| through(span, at))
-        || (span.level && weighing.bands.iter().any(|band| through(span, band)))
-        || weighing.walls.iter().any(|at| hugs(span, at))
+fn blocked(span: &Span, weighing: &Weighing<'_, '_>, line: usize) -> bool {
+    let weigher = weighing.weigher;
+    weigher.boxes.iter().any(|at| through(span, at))
+        || weigher
+            .labels
+            .iter()
+            .enumerate()
+            .any(|(at, label)| at != line && label.is_some_and(|at| through(span, &at)))
+        || (span.level && weigher.bands.iter().any(|band| through(span, band)))
+        || weigher.walls.iter().any(|at| hugs(span, at))
         || crowds(span, &weighing.others)
 }
 
@@ -502,43 +481,55 @@ fn on_axes(points: &[Point]) -> bool {
         .all(|pair| abs(pair[0].x - pair[1].x) < SAME || abs(pair[0].y - pair[1].y) < SAME)
 }
 
-/// Whether every line a slide moves keeps its shape and stays clear of the lines it does not move.
-fn fits(moved: &Moved, routes: &[Vec<Point>], weigher: &Weigher<'_>) -> bool {
-    let lines: Set<usize> = moved.keys().copied().collect();
+/// Whether every line a slide moves keeps its shape, end directions and bend room.
+fn fits(moved: &Moved, routes: &[Vec<Point>]) -> bool {
     moved.iter().all(|(&line, next)| {
         let old = &routes[line];
         on_axes(next)
             && reach(next) <= reach(old) + CARRIED
             && keeps_ends(next, old)
             && roomy(next, old)
-            && keeps_clear(next, old, &weigher.weigh(&lines, line))
     })
 }
 
 /// What a slide costs: every line it moves, among the lines it does not.
-fn slide_cost(moved: &Moved, weigher: &Weigher<'_>) -> f64 {
-    let lines: Set<usize> = moved.keys().copied().collect();
-    moved.iter().fold(0.0, |sum, (&line, next)| {
-        sum + cost_of(next, &weigher.weigh(&lines, line).others)
-    })
+fn slide_cost(moved: &Moved, others: &[Span]) -> f64 {
+    moved
+        .values()
+        .fold(0.0, |sum, next| sum + cost_of(next, others))
 }
 
 /// The best slide that takes a step out of a line, if any keeps every line it
 /// moves clear: the one crossing fewest lines, then the shortest.
 fn best_slide(routes: &[Vec<Point>], line: usize, weigher: &Weigher<'_>) -> Option<Moved> {
-    let kept: Vec<Moved> = slides_of(&routes[line])
-        .iter()
-        .filter_map(|slide| {
-            trunk_of(routes, line, slide).filter(|moved| fits(moved, routes, weigher))
-        })
-        .collect();
-    let costs: Vec<f64> = kept
-        .iter()
-        .map(|moved| slide_cost(moved, weigher))
-        .collect();
-    let least = costs.iter().copied().fold(f64::INFINITY, js_min);
-    let at = costs.iter().position(|&cost| cost == least)?;
-    kept.into_iter().nth(at)
+    let mut best = None;
+    let mut least = f64::INFINITY;
+    for slide in slides_of(&routes[line]) {
+        let Some(moved) = trunk_of(routes, line, &slide, &weigher.runs) else {
+            continue;
+        };
+        if !fits(&moved, routes) {
+            continue;
+        }
+        let weighing = weigher.weigh(&moved);
+        if !moved
+            .iter()
+            .all(|(&line, next)| keeps_clear(next, &routes[line], &weighing, line))
+        {
+            continue;
+        }
+        let cost = slide_cost(&moved, &weighing.others);
+        // The original minimum is NaN if any candidate costs NaN, and picks
+        // the first candidate for every tie, including an infinite minimum.
+        if cost.is_nan() {
+            return None;
+        }
+        if best.is_none() || cost < least {
+            least = cost;
+            best = Some(moved);
+        }
+    }
+    best
 }
 
 /// What every line is weighed against as the lines stand now.
@@ -548,7 +539,10 @@ fn weigher_of<'w>(
     around: &Surroundings<'w>,
 ) -> Weigher<'w> {
     Weigher {
-        runs: routes.iter().map(|route| spans_of(route)).collect(),
+        runs: routes
+            .iter()
+            .map(|route| spans_of(route).collect())
+            .collect(),
         boxes: around
             .boxes
             .iter()
@@ -580,7 +574,7 @@ pub(crate) fn unstepped<'w>(lines: &'w [Drawn<'w>], around: &Surroundings<'w>) -
         for line in 0..routes.len() {
             while let Some(moved) = best_slide(&routes, line, &weigher) {
                 for (one, next) in moved {
-                    weigher.runs[one] = spans_of(&next);
+                    weigher.runs[one] = spans_of(&next).collect();
                     routes[one] = next;
                 }
                 slides += 1;

@@ -172,10 +172,12 @@ pub fn pshortestpath(
     // Triangulate.
     let mut tris: Vec<Triangle> = Vec::new();
     let mut pts: Vec<usize> = (0..pnll).collect();
+    // archboard: removing an ear changes only its middle point. Keep the
+    // coordinate array beside the identities instead of rebuilding it per ear.
+    let mut coords = pnl.pp[..pnll].to_vec();
     loop {
         let n = pts.len();
         if n > 3 {
-            let coords: Vec<Ppoint> = pts.iter().map(|&k| pnl.pp[k]).collect();
             let mut found = false;
             for i in 0..n {
                 let ip1 = (i + 1) % n;
@@ -183,6 +185,7 @@ pub fn pshortestpath(
                 if isdiagonal(i, ip2, &coords) {
                     tris.push(make_tri(pts[i], pts[ip1], pts[ip2]));
                     pts.remove(ip1);
+                    coords.remove(ip1);
                     found = true;
                     break;
                 }

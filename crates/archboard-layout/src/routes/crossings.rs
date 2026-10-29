@@ -28,8 +28,8 @@ use super::drawn_lines::{
 };
 use super::folded::unfold_crossings;
 use super::hops::{
-    Bulge, HOP_MARGIN, Hop, HopScene, carried, crest_along, crowded, keepouts_of, look_of,
-    near_own_head, passes_beneath, replace_runs,
+    Bulge, HOP_MARGIN, Hop, HopScene, carried, crest_along, crowded, look_of, near_own_head,
+    passes_beneath, replace_runs,
 };
 use super::{BRIDGE_RADIUS, LineLook};
 
@@ -152,7 +152,7 @@ impl Settling<'_> {
                 return;
             };
             let axis = self.scene.runs[self.cluster(rise.cluster).run].axis;
-            crests.push(Hop { curve, axis });
+            crests.push(Hop::new(curve, axis));
         }
         for (rise, crest) in plan.rises.iter().zip(crests) {
             self.stand(rise, crest.curve);
@@ -195,7 +195,7 @@ impl Settling<'_> {
                 .push(carried(&curve, run, member));
         }
         let axis = run.axis;
-        self.scene.hops.push(Hop { curve, axis });
+        self.scene.hops.push(Hop::new(curve, axis));
     }
 
     /// The ids of the routes a drawn line holds, each once.
@@ -525,14 +525,15 @@ fn settle(
     let edges = &drawing.edges;
     let runs = straight_runs(edges);
     let crossings = drawn_crossings(edges, &runs);
+    if crossings.is_empty() {
+        return Bridged {
+            edges: edges.clone(),
+            bridges: Vec::new(),
+        };
+    }
     let clusters = clusters_of(&runs, &crossings);
     let mut state = Settling {
-        scene: HopScene {
-            drawing,
-            runs,
-            keepouts: keepouts_of(drawing, lines),
-            hops: Vec::new(),
-        },
+        scene: HopScene::new(drawing, runs, lines),
         lines,
         settled: vec![false; crossings.len()],
         crossings,
