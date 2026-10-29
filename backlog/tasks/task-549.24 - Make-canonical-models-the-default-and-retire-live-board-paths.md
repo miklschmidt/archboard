@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-29T00:29:00Z'
+updated_date: '2026-10-29T00:58:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -204,6 +204,8 @@ Restore missing current binding diagnostics through the existing code inspection
 Align the already implemented TASK-549 architecture after source review through the public current writer. Preserve the adopted state and all unrelated proposals. Update the renderer flow anchor to prepareCardRouting and document four route dependencies on Mutation work. This is documentation of the implemented proposal, so no second proposal is needed. Claim exact affected subjects and model allocation scope, retain the signed edit, then inspect current code evidence again.
 
 Preserve the documented opt-in two-server topology behavior after retirement. The system review owns a canonical replacement test using real owned servers, shared temporary vault/Git, subject-claim exclusion, foreign claim/release news, and revoked-writer refusal after take-back. Root replaces the stale normal-lane exclusion and opt-in command in vite.config.ts after active README generation. Product failures require exact evidence before any expanded source repair. Keep this topology outside the normal gate.
+
+Repair the demonstrated large-capture delivery failure from the real README ask run. The existing workhorse queue rejects the full serialized model above its 16,384-byte prompt limit. Delegate a bounded backend repair through the existing workhorse delivery/materialization owners, preserving complete captured meaning and the existing limit. Root repairs the ask producer to reject failed or unfinished captured actions, owns manual QA and all frontend changes, and keeps the rejected clip unpublished. Reuse existing public action and real queue owners with a supported model-sized capture.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -460,4 +462,6 @@ Restored missing current binding diagnostics through the existing code inspectio
 Aligned five authored files through the public writer after source review. Four route dependencies now cite asyncEndpoint, and the renderer flow cites the local CardLayout.lay method. Signed checkpoint d919dff6f070b9cff6c6c260bd34fd4e85ec7607 retains the final reading. Current code inspection exits 0 with zero warnings, 34 informational findings and 15 explicit limits. The adopted state and all eight unrelated proposal files remain exact. Claims are empty and the owned server is stopped. Exact authored review and prior refused attempts are in task-549.24-review-architecture-alignment.json. Full gate, media, archive publication and final acceptance remain open.
 
 The system retirement review found the deleted opt-in cross-process lock test still named by Vite. Root replaces both the normal-lane exclusion and the opt-in command with cross-process-model-claims.test.ts. The reviewer ports the advertised two-server contract to canonical public claims and news, with one passing case and 17 assertions against unchanged product. Root configuration formatting and strict lint pass. The replacement remains opt-in; existing event and case deadlines remain. The signed source handoff and executable lane validation remain with the reviewer.
+
+Regenerated and inspected the non-agent README media. Eight accepted clips upload once with successful receipts. Three narrated videos are byte-identical to prior accepted uploads, and their talk/voice bytes remain exact. README links now name the accepted clips. The live ask producer exited 0, but root visual QA found a failed captured explanation. The server log proves that complete model JSON exceeds the existing 16,384-byte workhorse prompt limit. The failed clip stays unpublished and its prior accepted thumbnail/URL remain. Root repaired the producer to wait for captured completion and reject failure or empty results, using existing status attributes and deadline. Ask input hashes now include its delivery, instructions and command owners. Both types, strict lint and 11 manifest cases pass. Fifteen of 16 assets are current. The isolated backend repair and final acceptance remain open. Exact review is task-549.24-final-media-ask-acceptance-review.json.
 <!-- SECTION:NOTES:END -->
