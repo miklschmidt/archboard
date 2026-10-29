@@ -1,6 +1,9 @@
 # Planned Blocks layout
 
 Status: proposed for TASK-554 on 2026-10-28.
+The owner revised the readability contract on 2026-10-29.
+Iteration 3 retains the step 8 implementation because no tested layout change passed the six-reference gate.
+The requirements below describe the revised target, not completed implementation.
 
 Blocks will choose placement, ports, labels, and shared trunks in one plan before it routes lines.
 The plan will reserve physical space for each choice.
@@ -24,7 +27,7 @@ These temporary paths identify this investigation's evidence, not required input
 | Packing        | Mean area falls 5.57%, but route length rises 1.24%. It introduces 21 failing historical drawings. | A size-only packing estimate is insufficient. Score the actual planned corridors and port positions.          |
 | Layered        | Route length falls 9.20%, but area rises 1.02%. The final candidate has 5,905 geometric findings.  | Use ranks as local order hints. Keep measured containment, exact headers, and owned lanes outside the ranker. |
 | Side ports     | Bends fall from 2.3546 to 2.1276. Two shared-trunk tests fail.                                     | Plan source and target fans together. Do not reroute each line independently after placement.                 |
-| Label elements | 29.82% of labels become horizontal. Area falls 0.48%, while endpoint distance rises 48.9%.         | Reserve a source-owned label slot before packing. A free distant run is not an adequate label home.           |
+| Label elements | 29.82% of labels become horizontal. Area falls 0.48%, while endpoint distance rises 48.9%.         | Keep ownership and clearance. Iteration 3 replaces source-side reservations with centered on-run labels.      |
 | Speed          | Every saved Blocks and Track SVG stays identical. Blocks first renders remain above 500 ms.        | Keep the exact-output optimization. Remove general grid search from the normal Blocks path.                   |
 
 The packing report used an earlier integrity harness.
@@ -114,6 +117,9 @@ Build dependencies between each scope's immediate children.
 Collapse each strongly connected set for ranking.
 A strongly connected set contains parts that reach each other.
 Keep its return edges as real routes, with authored order as the initial internal order.
+In a downward scope, a dependency rank occupies one row.
+An acyclic dependency places its target below its source.
+Keep each chain in one column where geometry permits.
 
 The existing Graphviz adapter can supply ranks and crossing-reduction hints for one local graph.
 Read ranks and relative order, not global cluster coordinates.
@@ -127,6 +133,8 @@ A parent compares their dimensions and external port signatures.
 It does not recursively recompute a child for every packing candidate.
 Each child shape exposes admissible portal intervals on all four walls and its required capacity.
 The parent chooses a shape and binds those intervals to peer-facing walls before coordinates freeze.
+This contract applies to every scope, including the largest scopes.
+Connections between neighboring frames use their facing walls and the gap between them.
 A top-down pass resolves the chosen portals inside the child's reserved corridors.
 If no interval can carry the connection, reject that parent candidate before emission.
 
@@ -149,23 +157,29 @@ Reject a wall without room for its port, straight approach, arrowhead, and round
 Reject a portal whose approach crosses a header or caption.
 The planner knows the real protected rectangles before it compares walls.
 
-For each relationship, reserve its horizontal label slot near its source before final packing.
-Prefer the first private horizontal run after its source stem.
-If the source leaves vertically, reserve a short horizontal departure beside the source.
-The label precedes any fan-in merge.
-It follows any fan-out split that carries labels with different meanings.
+Choose the route topology before choosing the label's position.
+Place each label at the midpoint of its longest straight run between source and target.
+That run can be horizontal or vertical.
+The words remain horizontal in both cases.
+Never add a bend to reach a label reservation beside the source.
 
-Keep the label inside one declared containing scope.
-Its complete padded rectangle must fit there without crossing any frame wall.
+A label needs a private part of its relationship's route.
+It follows a fan-out split and precedes a fan-in merge when differently labelled relationships share the surrounding trunks.
+Reject a label position that overlaps a wall, header, card, other label, or foreign route.
+If several runs share the maximum length, use a clear midpoint.
+If no longest run can hold the padded label, reject the candidate.
+Do not slide the label away from that run's midpoint to make it fit.
+A proposed route with no valid label position remains infeasible.
+
+Keep the complete padded label rectangle inside one containing scope along the route.
+That scope need not be the source's own scope.
 The padding includes line clearance and the existing label background.
-A label's slot counts as occupied space when a shelf or scope measures its size.
-An unlabelled edge reserves no label row.
+Count reserved label space when measuring the route's corridor.
+An unlabelled edge reserves no label space.
 
-Prefer a label within one card width of its source.
-If several source labels cannot fit there, compare a second adjacent label row or a different source wall.
-Measure the resulting source distance in the cost.
-Do not stack an unbounded label tower and call that compact packing.
-The spike demonstrates that this simple tower becomes expensive on high-degree cards.
+Source proximity is no longer a label-placement objective.
+The step 8 source cells demonstrate that nearby labels can force sideways departures and long return paths.
+A label remains source-owned through relationship identity, not through a rectangle attached to the source card.
 
 ### Plan explicit fan trees
 
@@ -235,7 +249,7 @@ struct LabelSlot {
     scope: ScopeIndex,
     bounds: Rect,
     run: RunIndex,
-    pins: [Point; 2], // horizontal, no arrowheads
+    pins: [Point; 2], // on the owning straight run, no arrowheads
 }
 
 struct TrunkPlan {
@@ -283,7 +297,6 @@ Start with this dimensionless cost:
 C = 30 * emptyArea / occupiedArea
   + 25 * (ownedLength + travelledLength) / (2 * edgeCount * typicalCardWidth)
   + 18 * (crossings + crowdedJunctions) / max(1, edgeCount)
-  + 10 * labelSourceDistance / (labelCount * typicalCardWidth)
   + 10 * backwardSteps / max(1, edgeCount)
   +  7 * paneShrink
   +  2 * bends / max(1, edgeCount)
@@ -299,6 +312,8 @@ Count the complete path of every relationship in `travelledLength`.
 Their mean charges both occupied space and the distance that a reader follows.
 Charge crowded junctions for the council's tracing stop points.
 The bend term breaks close alternatives without treating every bend as a defect.
+Iteration 3 removes source distance from the proposed cost.
+The retained step 8 implementation still uses that term until a replacement passes the readability gate.
 Pane shrink measures lost card-name size at the supported 1920×1080 pane.
 
 These weights express the council priorities but do not reproduce its human score.
@@ -349,6 +364,8 @@ Never stop based on a wall-clock deadline, because that changes geometry across 
 After fallback, make sure that the result respects every protected object in the complete drawing.
 Reserve its accepted strokes before routing another window.
 If fallback exhausts its work bound, select a conservative channel plan for the affected scope.
+Graph size alone does not select conservative construction in the revised target.
+Count each selected conservative construction and its scope visits.
 That plan keeps distinct lanes and extra room rather than drawing an unchecked dogleg.
 The spike is evidence for this conservative construction, not for its visual quality.
 A capacity failure must remain inspectable through the solve's diagnostic counters.
@@ -362,7 +379,7 @@ The label receives no semantic node ID and no arrowhead.
 The existing scene, hit target, glyph painting, and relationship identity remain usable.
 
 The label's protected rectangle excludes every foreign route, including a perpendicular crossing.
-Its own route passes through the reserved center line.
+Its own route passes through the reserved center line, horizontally or vertically.
 A label cannot sit over a trunk shared by differently labelled branches.
 Keep branch and merge points outside its protected rectangle.
 
@@ -384,22 +401,22 @@ The current `blocks/` directory also implements Track's inline and packed-group 
 A file's location does not establish that it belongs only to Blocks.
 Use the complete Track corpus as the byte oracle during extraction.
 
-| Existing owner                                                      | Planned Blocks replacement                     | Deletion or retained responsibility                                                                                        |
-| ------------------------------------------------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `place.rs`: `lay_all`, `lay_out`, `Earlier`, port-order competition | `planned::plan` and one emission               | Remove these calls from Blocks. Keep the unchanged path for Track until extraction.                                        |
-| `tree.rs`, `nested.rs`, `inline.rs`, `composition.rs`               | A normalized scope tree with exact containment | Keep semantic input projection. Retire local-frame heuristics from Blocks. Move Track-specific rules with Track.           |
-| `card_graph.rs`, `card_layout.rs`, `cycles.rs`                      | Local rank hints and orientation candidates    | Reuse the Graphviz adapter and cycle semantics. Stop using ranked coordinates and label ranks for Blocks.                  |
-| `label_rules.rs`, `fanouts.rs`, `holding.rs`                        | Source label slots and explicit fan trees      | Remove Blocks label-before/after candidate remedies and implicit join identities.                                          |
-| `packing/pack.rs`, `packings.rs`, `slides.rs`                       | Port-aware candidate packing                   | Remove post-route block sliding and fit-only prefilters from Blocks.                                                       |
-| `packing/capacity.rs`, `port_room.rs`, `port_columns.rs`            | Peak interval occupancy per corridor axis      | Remove route-then-grow capacity discovery from Blocks. Reuse the independent-axis concept from packing.                    |
-| `packing/trunks.rs`, `routing.rs`                                   | Planned channels and bounded local fallback    | Remove general trunk grid search and unchecked dogleg fallback from the normal Blocks path.                                |
-| `settle.rs`, `orders.rs`, `sides.rs`, `walls.rs`                    | One port order and explicit portal contracts   | Remove repeated facing and port-settlement passes for Blocks.                                                              |
-| `fold.rs`, `fold_layout.rs`, `wraps.rs`, `peers.rs`                 | Local orientation and shelf candidates         | Delete Blocks-specific fold, wrap, and exclusive-peer special cases after their callers disappear.                         |
-| `headers.rs`, `clusters.rs`, `lone.rs`, `leaves.rs`                 | Exact measured protected objects               | Retain measurement and appearance contracts. Retire Blocks layout exceptions for lone wrappers and projected title widths. |
-| `assembly.rs`, `projection.rs`, `readback.rs`, `laid.rs`            | Emission into the existing `Placed` shape      | Reuse conversion and geometry primitives. Remove obsolete block-fragment assembly only after Track stops depending on it.  |
-| `steps.rs`                                                          | Lane-aware normalization during emission       | Keep duplicate and collinear-point removal. Do not run unconstrained post-plan route simplification.                       |
-| `choosing.rs`                                                       | Fixed Blocks planning entry                    | Keep shared metrics and Track region decisions. No new user-facing engine mode.                                            |
-| `routes/fans.rs`, `routes/folded.rs`                                | Planned junction ordering                      | Stop invoking them for Blocks. Keep them unchanged for Track.                                                              |
+| Existing owner                                                      | Planned Blocks replacement                         | Deletion or retained responsibility                                                                                        |
+| ------------------------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `place.rs`: `lay_all`, `lay_out`, `Earlier`, port-order competition | `planned::plan` and one emission                   | Remove these calls from Blocks. Keep the unchanged path for Track until extraction.                                        |
+| `tree.rs`, `nested.rs`, `inline.rs`, `composition.rs`               | A normalized scope tree with exact containment     | Keep semantic input projection. Retire local-frame heuristics from Blocks. Move Track-specific rules with Track.           |
+| `card_graph.rs`, `card_layout.rs`, `cycles.rs`                      | Local rank hints and orientation candidates        | Reuse the Graphviz adapter and cycle semantics. Stop using ranked coordinates and label ranks for Blocks.                  |
+| `label_rules.rs`, `fanouts.rs`, `holding.rs`                        | Route-owned label positions and explicit fan trees | Remove Blocks label-before/after candidate remedies and implicit join identities.                                          |
+| `packing/pack.rs`, `packings.rs`, `slides.rs`                       | Port-aware candidate packing                       | Remove post-route block sliding and fit-only prefilters from Blocks.                                                       |
+| `packing/capacity.rs`, `port_room.rs`, `port_columns.rs`            | Peak interval occupancy per corridor axis          | Remove route-then-grow capacity discovery from Blocks. Reuse the independent-axis concept from packing.                    |
+| `packing/trunks.rs`, `routing.rs`                                   | Planned channels and bounded local fallback        | Remove general trunk grid search and unchecked dogleg fallback from the normal Blocks path.                                |
+| `settle.rs`, `orders.rs`, `sides.rs`, `walls.rs`                    | One port order and explicit portal contracts       | Remove repeated facing and port-settlement passes for Blocks.                                                              |
+| `fold.rs`, `fold_layout.rs`, `wraps.rs`, `peers.rs`                 | Local orientation and shelf candidates             | Delete Blocks-specific fold, wrap, and exclusive-peer special cases after their callers disappear.                         |
+| `headers.rs`, `clusters.rs`, `lone.rs`, `leaves.rs`                 | Exact measured protected objects                   | Retain measurement and appearance contracts. Retire Blocks layout exceptions for lone wrappers and projected title widths. |
+| `assembly.rs`, `projection.rs`, `readback.rs`, `laid.rs`            | Emission into the existing `Placed` shape          | Reuse conversion and geometry primitives. Remove obsolete block-fragment assembly only after Track stops depending on it.  |
+| `steps.rs`                                                          | Lane-aware normalization during emission           | Keep duplicate and collinear-point removal. Do not run unconstrained post-plan route simplification.                       |
+| `choosing.rs`                                                       | Fixed Blocks planning entry                        | Keep shared metrics and Track region decisions. No new user-facing engine mode.                                            |
+| `routes/fans.rs`, `routes/folded.rs`                                | Planned junction ordering                          | Stop invoking them for Blocks. Keep them unchanged for Track.                                                              |
 
 The end state contains one Blocks planner and the existing Track implementation.
 Temporary replacement stages do not add a permanent old/new Blocks option.
@@ -412,19 +429,19 @@ Do not weaken geometry assertions or generic renderer tests.
 Several tests under `operations/blocks/` actually render the default Track engine.
 Their folder name is not permission to change their expectations.
 
-| Test owner                                                                                              | Treatment                                                                                                                                                      |
-| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `blocks/block-packing.test.ts`                                                                          | Replace exact vertical positions and zero-bend chain expectations for Blocks with orientation-aware directness and intactness. Preserve forward reading.       |
-| `blocks/held-orders.test.ts`, `ports/fan-faces.test.ts`                                                 | Retire incidental face coordinates and blanket bridge counts. Preserve explicit fan identity, valid shared stems, and traceability.                            |
-| `blocks/folded-parent-line.test.ts`, `routes/walls-straight.test.ts`                                    | Preserve visible header attachment, square approaches, and clearance. Reconsider only fixed bend ceilings tied to the old fold.                                |
-| `blocks/entry-fork.test.ts`, `blocks/trunks.test.ts`                                                    | Preserve common-source and common-target meaning. Replace forced entry-wall locations only when the new plan proves the same ownership.                        |
-| `labels/label-runs.test.ts`, `labels/relayed-labels.test.ts`, `tracks/leaving-label-frame.test.ts`      | Inspect the engine parameter. Preserve horizontal or vertical on-run ownership and wall clearance. Keep Track-specific label ranks.                            |
-| `blocks/automatic-columns.test.ts`, `blocks/rank.test.ts`, `blocks/sibling-order.test.ts`               | Their inspected cases use default Track. Keep their column count, downward ranks, and sibling-order contracts unchanged.                                       |
-| `ports/side-hook.test.ts`, `labels/label-runs.test.ts`                                                  | Replace forced top entries and midpoint labels for Blocks with feasible four-wall approaches and source-owned horizontal slots. Keep attachment and clearance. |
-| `containers/container-packing.test.ts`, `containers/region-room.test.ts`, `blocks/packed-frame.test.ts` | Replace exact old inset and shelf coordinates. Preserve compactness with measured occupied space and no avoidable route detours.                               |
-| `blocks/placement-order.test.ts`, `blocks/candidate-cancellation.test.ts`                               | Preserve array-order independence, authored-order influence, and the one-solve host contract.                                                                  |
-| `crates/archboard-layout/tests/solve.rs`                                                                | Keep Graphviz refusal and invocation requirements for Track. Blocks can plan a simple scope without asking Graphviz.                                           |
-| `support/drawing-integrity.ts` and its geometry helpers                                                 | Preserve every hard assertion. Add the cheapest missing plan contract where an observed failure requires it.                                                   |
+| Test owner                                                                                              | Treatment                                                                                                                                                |
+| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `blocks/block-packing.test.ts`                                                                          | Replace exact vertical positions and zero-bend chain expectations for Blocks with orientation-aware directness and intactness. Preserve forward reading. |
+| `blocks/held-orders.test.ts`, `ports/fan-faces.test.ts`                                                 | Retire incidental face coordinates and blanket bridge counts. Preserve explicit fan identity, valid shared stems, and traceability.                      |
+| `blocks/folded-parent-line.test.ts`, `routes/walls-straight.test.ts`                                    | Preserve visible header attachment, square approaches, and clearance. Reconsider only fixed bend ceilings tied to the old fold.                          |
+| `blocks/entry-fork.test.ts`, `blocks/trunks.test.ts`                                                    | Preserve common-source and common-target meaning. Replace forced entry-wall locations only when the new plan proves the same ownership.                  |
+| `labels/label-runs.test.ts`, `labels/relayed-labels.test.ts`, `tracks/leaving-label-frame.test.ts`      | Inspect the engine parameter. Preserve horizontal or vertical on-run ownership and wall clearance. Keep Track-specific label ranks.                      |
+| `blocks/automatic-columns.test.ts`, `blocks/rank.test.ts`, `blocks/sibling-order.test.ts`               | Their inspected cases use default Track. Keep their column count, downward ranks, and sibling-order contracts unchanged.                                 |
+| `ports/side-hook.test.ts`, `labels/label-runs.test.ts`                                                  | Allow four-wall Blocks approaches and require labels on centered clear straight runs. Keep attachment and clearance.                                     |
+| `containers/container-packing.test.ts`, `containers/region-room.test.ts`, `blocks/packed-frame.test.ts` | Replace exact old inset and shelf coordinates. Preserve compactness with measured occupied space and no avoidable route detours.                         |
+| `blocks/placement-order.test.ts`, `blocks/candidate-cancellation.test.ts`                               | Preserve array-order independence, authored-order influence, and the one-solve host contract.                                                            |
+| `crates/archboard-layout/tests/solve.rs`                                                                | Keep Graphviz refusal and invocation requirements for Track. Blocks can plan a simple scope without asking Graphviz.                                     |
+| `support/drawing-integrity.ts` and its geometry helpers                                                 | Preserve every hard assertion. Add the cheapest missing plan contract where an observed failure requires it.                                             |
 
 Keep focused fixtures for mixed-treatment fans, parent-header endpoints, loops, nested groups, and labels beside frame walls.
 A plan test must catch a behavioral regression, such as transitive trunk merging or an under-reserved junction.
@@ -813,6 +830,57 @@ The complete corpus and six pictures still decide compactness and visual accepta
 The conservative channels can reserve too much space and produce long trips around nested frames.
 Planner ownership and bounded runtime do not establish better readability.
 Production adoption remains pending the final evidence and visual council.
+
+### Iteration 3: rejected readability trials
+
+No layout change from this iteration is retained.
+All six reference pictures must improve against the original baseline before a layout change can remain on the branch.
+Ownership, zero geometry findings, Track equality, determinism, and the 500 ms timing target remain required.
+The report and pictures live under `/tmp/blocks-explore/build/report-3.md` and `pictures-3/`.
+
+The trials removed normal source-label cells and placed words on clear horizontal or vertical route segments.
+They tested dependency rows, nearby treatment ports, four-wall frame entrances, and scope-local conservative fallback.
+Later trials used the existing Graphviz adapter for local alignment and measured spacing, without using the old Blocks repair pipeline.
+They also tested private bounded joins and packed independent components.
+Some diagnostic variants placed labels within clear subintervals rather than at whole-run midpoints.
+That differs from the requested midpoint rule.
+These mechanisms remained experimental and were removed after measurement.
+
+The first rendered trial increased the six references' combined area by 17.99% and route length by 105.01%.
+Bends rose from 1,953 to 2,527.
+The second increased combined area by 22.30% and route length by 108.37%.
+Its bend count was 2,585.
+Both rendered trials had zero geometry findings on the six references.
+Neither passed the retention gate.
+
+The second trial shortened Semantic renderer's routes by 25.75% and reduced its bends from nineteen to fourteen.
+Its area still rose 5.23%.
+The three large boards still selected conservative construction and retained long perimeter routes.
+Some native solves exceeded 500 ms before painting.
+Local gains did not produce a complete improvement against the baseline.
+
+Greedy label placement can block later fan members.
+Deferring all labels can instead leave a valid route without a long enough private segment for its words.
+The trials exposed both failures.
+A replacement must coordinate label room and external portals before freezing the affected child geometry.
+Adding more route templates alone did not resolve that composition problem within the speed budget.
+
+A temporary counter measured the retained planner across the complete corpus.
+Conservative construction handles 604 of 1,274 distinct Blocks graphs and visits 3,429 scopes.
+It handles all 488 distinct graphs above twenty-four relationships and 116 smaller graphs.
+Including repeated solve calls, it handles 634 of 1,425 calls and visits 3,557 scopes.
+These counts exclude speculative candidates inside each scope.
+They describe solves, not authored boards or rendered views.
+
+The six references use conservative construction for Board viewer, Board persistence, server routes, and Command interface.
+Their scope counts are twelve, twelve, eleven, and nine, respectively.
+Renderer layout and Semantic renderer use the normal planner.
+The counting build reproduces all 8,086 step 8 SVGs exactly.
+The temporary instrumentation is removed after measurement.
+
+The retained code remains at the step 8 geometry contract.
+This includes source cells and the large-graph conservative path.
+The revised label, rank, and portal requirements remain unimplemented acceptance work.
 
 ## Risks and decisions left to evidence
 

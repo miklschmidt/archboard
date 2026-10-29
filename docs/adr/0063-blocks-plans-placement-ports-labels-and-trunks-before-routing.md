@@ -9,7 +9,7 @@ The owner approved the direction after five Blocks explorations.
 The complete implementation still needs corpus, speed, and visual council acceptance.
 
 Blocks will create one deterministic plan from measured content before it emits routes.
-The plan chooses local card order, reading direction, all four endpoint walls, source-owned horizontal label slots, and explicit shared trunks.
+The plan chooses local dependency order, reading direction, all four endpoint walls, route-owned label positions, and explicit shared trunks.
 It reserves the corridors and their capacity before it packs the final blocks.
 Packing compares measured sizes and the routes that those planned ports require.
 Channel routing then assigns lanes inside that reserved space.
@@ -23,7 +23,12 @@ A shared trunk must name the source or target common to every member relationshi
 Coincident ports and pairwise compatibility cannot establish that identity.
 Trunk compatibility includes the visible kind when removed comparison context changes an overview’s majority kind.
 Each label remains part of one real relationship and receives no arrowhead or semantic node ID.
-Every label stays near its source, on its own horizontal run, inside one containing scope.
+Each label sits at the midpoint of its longest straight run between source and target.
+The run can be horizontal or vertical, while the words remain horizontal.
+A line never gains a bend to reach a source-side label slot.
+The label stays inside one containing scope and clear of foreign lines and frame walls.
+Each downward dependency rank forms one row, with acyclic targets below their sources.
+All scopes expose peer-facing portals, including the largest scopes.
 
 This replaces the Blocks placement, facing, settlement, fold, wrap, and route-repair sequence described in ADRs 0033, 0040, and 0061.
 Those decisions retain their Track clauses.
@@ -61,3 +66,9 @@ It removes all twenty-three baseline geometry findings and preserves every Track
 All three large references render first layouts and growing edits below 500 ms, including painting.
 Mean area and route length still exceed the baseline, and the six pictures do not establish better readability.
 This decision remains proposed until the compactness and visual acceptance gates pass.
+
+The owner revised the readability contract on 2026-10-29.
+Iteration 3 tested route-centered labels, dependency rows, local rank alignment, and wider portal choices.
+Neither rendered trial improved all six references against the original baseline.
+Those layout changes were rejected, and the step 8 implementation remains intact.
+This revision records the required direction without claiming that the retained code implements it.
