@@ -295,7 +295,7 @@
 				"apps/server/src/server/routes/architecture/explanation-routes.ts",
 				"apps/cli/src/cli/clients/server/architecture-model.ts"
 			],
-			"hash": "62401a4e939e0cfda003e0ab3568371264acab2a795b1cebd5d58fd530d58c4a"
+			"hash": "f7a9834f469ca6fe1d43e2595f16bd8f405e9fe5e2aee62f10356be4f38bdefa"
 		},
 		{
 			"name": "take-back",

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-29T01:53:00Z'
+updated_date: '2026-10-29T02:04:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -476,4 +476,6 @@ Merged the final system review and complete explanation delivery repair at signe
 The socket refusal came from a fixture that omitted the existing reading=canonical socket mode. The fixture now uses the shipped mode. Product repair stays in canonical pane reporting: preserve the model key without a fabricated board identity, and retain the reported selection. No socket product change is needed.
 
 Closed the last original coverage gap in codex-pane-context.test.ts. The old owner passes a forced wrong-tab context; the repaired owner fails at Gateway versus Ledger. Canonical pane registration also exposed GET /api/panes parsing model keys as legacy boards. The report now preserves the key and exact selection without inventing a board identity. Three affected cases pass with 50 assertions. Both type projects, strict focused source/test lint, format, and whitespace pass. Exact review and mutation evidence: task-549.24-pane-context-review.json. The automatic explanation repair, media, full gate, archive publication, and final acceptance remain open.
+
+Integrated automatic explanation correlation at signed 28b7a93d. The real ask v3 recording exits 0 and shows the completed captured answer. Root inspected its thumbnail and four clip samples, then uploaded the exact accepted bytes once. README now links that accepted attachment. All 16 assets are current. Formatting and whitespace pass. Focused review coverage composes the pane and notification repairs. Final normal gate and history publication remain open.
 <!-- SECTION:NOTES:END -->
