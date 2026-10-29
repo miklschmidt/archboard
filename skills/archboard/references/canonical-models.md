@@ -768,7 +768,9 @@ Use `-C` with the directory that holds the reported vault.
 Keep the report's complete `selection` and revision guards together.
 If you read more context, use those selectors without replacing the captured guards.
 
-If the workhorse queue supplies a model with `explanation` metadata, answer that capture directly.
+If the workhorse queue names `captureFile`, read its complete JSON before answering.
+The server owns the temporary file and its cleanup.
+If that model includes `explanation` metadata, answer its capture directly.
 That input already represents an accepted action and needs no new invocation.
 
 ```json

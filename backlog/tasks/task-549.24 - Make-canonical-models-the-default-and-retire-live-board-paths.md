@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-29T00:58:00Z'
+updated_date: '2026-10-29T01:12:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -464,4 +464,6 @@ Aligned five authored files through the public writer after source review. Four 
 The system retirement review found the deleted opt-in cross-process lock test still named by Vite. Root replaces both the normal-lane exclusion and the opt-in command with cross-process-model-claims.test.ts. The reviewer ports the advertised two-server contract to canonical public claims and news, with one passing case and 17 assertions against unchanged product. Root configuration formatting and strict lint pass. The replacement remains opt-in; existing event and case deadlines remain. The signed source handoff and executable lane validation remain with the reviewer.
 
 Regenerated and inspected the non-agent README media. Eight accepted clips upload once with successful receipts. Three narrated videos are byte-identical to prior accepted uploads, and their talk/voice bytes remain exact. README links now name the accepted clips. The live ask producer exited 0, but root visual QA found a failed captured explanation. The server log proves that complete model JSON exceeds the existing 16,384-byte workhorse prompt limit. The failed clip stays unpublished and its prior accepted thumbnail/URL remain. Root repaired the producer to wait for captured completion and reject failure or empty results, using existing status attributes and deadline. Ask input hashes now include its delivery, instructions and command owners. Both types, strict lint and 11 manifest cases pass. Fifteen of 16 assets are current. The isolated backend repair and final acceptance remain open. Exact review is task-549.24-final-media-ask-acceptance-review.json.
+
+Merged the final system review and complete explanation delivery repair at signed 18d80fef. The two-server topology owner passes through the actual opt-in command. A private local file now carries each complete captured model through the unchanged bounded workhorse queue. Six focused delivery/profile cases and 79 assertions pass; both type projects pass after composition. Root reviewed all new delivery, lifecycle, test and consumer hunks with no remaining Standards or Spec finding. Exact review is task-549.24-explanation-delivery-review.json. The shipped guide now explains captureFile and cleanup ownership. Real ask acceptance and two recorded unchanged walkthrough deadline failures remain for focused disposition before the final gate.
 <!-- SECTION:NOTES:END -->
