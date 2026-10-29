@@ -2,7 +2,64 @@ import { expect } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { SessionUserInput } from "@archboard/codex-app-server/session";
-import { productionRecords } from "./codex-production.ts";
+import {
+	productionRecords,
+	openApplicationSocket,
+	productionPane,
+	type ProductionFixture,
+} from "./codex-production.ts";
+import { startOwnedServer } from "../../support/owned-server.ts";
+import { productionServer } from "./production-server.ts";
+
+async function startExplanationServer(
+	resources: AsyncDisposableStack,
+	fixture: ProductionFixture,
+	prefix: string,
+) {
+	const server = await startOwnedServer({
+		...productionServer,
+		vault: fixture.vault,
+		env: {
+			ARCHBOARD_TEST_CODEX_EXECUTABLE: fixture.executablePath,
+			ARCHBOARD_TEST_CODEX_LOG: fixture.logPath,
+			ARCHBOARD_TEST_CODEX_CONTROL: fixture.controlPath,
+			XDG_STATE_HOME: join(fixture.root, "state"),
+		},
+	});
+	resources.defer(() => server.dispose());
+	const tabSessionId = `${prefix}-tab`;
+	const socket = await openApplicationSocket(server.base, `${prefix}-client`, {
+		vault: fixture.vault,
+		tabSession: tabSessionId,
+	});
+	resources.defer(() => socket.close());
+	await fetch(`${server.base}/api/panes?vault=${encodeURIComponent(fixture.vault)}`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(productionPane(`${prefix}-client`, `${prefix}-pane`, true, true)),
+	});
+	const invoke = async (path = "", body: object = {}) =>
+		(
+			await fetch(`${server.base}/api/architecture/explanations${path}`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ vault: fixture.vault, tabSessionId, ...body }),
+			})
+		).json();
+	const read = async (actionId = "capture-1") =>
+		(
+			await fetch(
+				`${server.base}/api/architecture/explanations/${encodeURIComponent(actionId)}?${new URLSearchParams({ vault: fixture.vault, tabSessionId })}`,
+			)
+		).json();
+	const latestAction = async () =>
+		(
+			await fetch(
+				`${server.base}/api/architecture/explanations?${new URLSearchParams({ vault: fixture.vault, tabSessionId })}`,
+			)
+		).json();
+	return { server, socket, invoke, read, latestAction };
+}
 
 function seedGit(root: string): void {
 	const commands = [
@@ -41,4 +98,4 @@ function changeDescription(file: string, description: string): void {
 	writeFileSync(file, JSON.stringify({ ...module, description }));
 }
 
-export { seedGit, deliveredCapture, changeDescription };
+export { seedGit, deliveredCapture, changeDescription, startExplanationServer };

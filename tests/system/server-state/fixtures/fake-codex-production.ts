@@ -462,6 +462,7 @@ const controlTimer = setInterval(() => {
 			process.exit(17);
 		}
 		speakAgain(notify, realtimeSessions, control.speaks);
+		if (initialControl.explanationQueue) handleExplanationQueue.advance();
 		const workhorse = threads.get(workhorseThreadId ?? "");
 		const turn = workhorse?.turns[0];
 		if (control.completeWorkhorseTurn === true && workhorse && turn?.["status"] === "inProgress") {
