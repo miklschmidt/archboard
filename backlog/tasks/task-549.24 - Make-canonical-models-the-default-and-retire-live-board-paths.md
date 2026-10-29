@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-29T00:07:00Z'
+updated_date: '2026-10-29T00:29:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -202,6 +202,8 @@ Restore the preserved proposal inheritance confirmations exposed by runtime reti
 Restore missing current binding diagnostics through the existing code inspection owner. Remove the obsolete named-draft-only binding-path split and include every selected binding, including current bindings without a symbol. Keep missing checkouts or unavailable refs as skips and real absent paths as BINDING_PATH_MISSING. Extend the existing canonical CLI code-inspection assertion and adjust the existing analyzer expectation for its missing current path. Preserve canonical model/state/subject metadata and source immutability. No new checker, browser path, or semantic scan.
 
 Align the already implemented TASK-549 architecture after source review through the public current writer. Preserve the adopted state and all unrelated proposals. Update the renderer flow anchor to prepareCardRouting and document four route dependencies on Mutation work. This is documentation of the implemented proposal, so no second proposal is needed. Claim exact affected subjects and model allocation scope, retain the signed edit, then inspect current code evidence again.
+
+Preserve the documented opt-in two-server topology behavior after retirement. The system review owns a canonical replacement test using real owned servers, shared temporary vault/Git, subject-claim exclusion, foreign claim/release news, and revoked-writer refusal after take-back. Root replaces the stale normal-lane exclusion and opt-in command in vite.config.ts after active README generation. Product failures require exact evidence before any expanded source repair. Keep this topology outside the normal gate.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -456,4 +458,6 @@ Restored RUNTIME-RETIRE-1 and RUNTIME-RETIRE-2 through the existing canonical pr
 Restored missing current binding diagnostics through the existing code inspection pass. Current bindings without symbols now report absent paths, while unavailable repositories and revisions remain explicit skips. The canonical CLI regression now requires warning exit 1. Eleven affected cases pass with 41 assertions, plus both types, strict repository lint and formatting. Replaced four stale macOS lane paths with canonical read, structure, proposal/correction and dynamic approval owners. All 16 selected paths exist; macOS execution remains a hosted platform limit. Exact evidence is task-549.24-current-binding-review.json. Real current inspection has no missing bindings, but two review-caused architecture warnings remain for root alignment: one renderer flow anchor and four Mutation work relationships. Acceptance remains open.
 
 Aligned five authored files through the public writer after source review. Four route dependencies now cite asyncEndpoint, and the renderer flow cites the local CardLayout.lay method. Signed checkpoint d919dff6f070b9cff6c6c260bd34fd4e85ec7607 retains the final reading. Current code inspection exits 0 with zero warnings, 34 informational findings and 15 explicit limits. The adopted state and all eight unrelated proposal files remain exact. Claims are empty and the owned server is stopped. Exact authored review and prior refused attempts are in task-549.24-review-architecture-alignment.json. Full gate, media, archive publication and final acceptance remain open.
+
+The system retirement review found the deleted opt-in cross-process lock test still named by Vite. Root replaces both the normal-lane exclusion and the opt-in command with cross-process-model-claims.test.ts. The reviewer ports the advertised two-server contract to canonical public claims and news, with one passing case and 17 assertions against unchanged product. Root configuration formatting and strict lint pass. The replacement remains opt-in; existing event and case deadlines remain. The signed source handoff and executable lane validation remain with the reviewer.
 <!-- SECTION:NOTES:END -->

@@ -274,7 +274,7 @@ export default defineConfig({
 					"--path-ignore-patterns",
 					"tests/system/process-contracts/git-opener-sequence-watchdog.test.ts",
 					"--path-ignore-patterns",
-					"tests/system/process-contracts/cross-process-lock.test.ts",
+					"tests/system/process-contracts/cross-process-model-claims.test.ts",
 					"tests/system/cli",
 					"tests/system/server-state",
 					"tests/system/process-contracts",
@@ -335,7 +335,7 @@ export default defineConfig({
 			},
 			"test:opt-in:topology": {
 				command:
-					"bun test --isolate --max-concurrency=1 tests/system/process-contracts/cross-process-lock.test.ts",
+					"bun test --isolate --max-concurrency=1 tests/system/process-contracts/cross-process-model-claims.test.ts",
 				cache: testCache,
 			},
 		},
