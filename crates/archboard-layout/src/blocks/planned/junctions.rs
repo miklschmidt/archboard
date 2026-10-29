@@ -16,13 +16,10 @@ impl Envelope {
             |a, p| Self(a.0.min(p.x), a.1.min(p.y), a.2.max(p.x), a.3.max(p.y)),
         )
     }
+    /// Disjoint envelopes cannot share ink, cross, or violate the twelve-point lane gap.
     pub(super) fn apart(self, b: Self) -> bool {
         b.0 - self.2 >= 12.0 || self.0 - b.2 >= 12.0 || b.1 - self.3 >= 12.0 || self.1 - b.3 >= 12.0
     }
-}
-/// Disjoint envelopes cannot share ink, cross, or violate the twelve-point lane gap.
-pub(super) fn apart(a: &[Point], b: &[Point]) -> bool {
-    Envelope::new(a).apart(Envelope::new(b))
 }
 
 /// Sharing is a common prefix or suffix, never an accidental reunion in the middle.

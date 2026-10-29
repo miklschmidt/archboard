@@ -5,6 +5,13 @@ use crate::geometry::{Point, Rect};
 /// Remove duplicates and collinear vertices without moving a bend.
 pub(super) fn clean(points: Vec<Point>) -> Vec<Point> {
     let mut out: Vec<Point> = Vec::new();
+    clean_into(points, &mut out);
+    out
+}
+
+/// Reuse a candidate buffer while preserving the same normalization order.
+pub(super) fn clean_into(points: impl IntoIterator<Item = Point>, out: &mut Vec<Point>) {
+    out.clear();
     for point in points {
         if out.last() == Some(&point) {
             continue;
@@ -14,7 +21,6 @@ pub(super) fn clean(points: Vec<Point>) -> Vec<Point> {
         }
         out.push(point);
     }
-    out
 }
 
 fn collinear(a: Point, b: Point, c: Point) -> bool {
