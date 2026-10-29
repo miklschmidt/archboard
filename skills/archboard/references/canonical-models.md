@@ -1144,6 +1144,8 @@ It never chooses a replacement model by name.
 `--every-draft` reads independent proposals by identity.
 The result's `models` list carries model identity, state identity, and complete revision.
 Findings carry `model` and `state` beside stable subject identities.
+`BINDING_PATH_MISSING` reports an absent bound path in the current or selected state, including bindings without symbols.
+Unavailable repositories and source revisions appear as skips instead of missing-path warnings.
 Remembered findings use that same revision and remain empty until a code pass completes.
 
 ## Navigate a local agent pane

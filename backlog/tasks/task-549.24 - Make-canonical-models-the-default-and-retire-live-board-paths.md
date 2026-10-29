@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-28T23:51:00Z'
+updated_date: '2026-10-29T00:00:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -450,4 +450,6 @@ Root reviewed the complete README manifest delta. The explainer omitted canonica
 CAPTURE-1 now carries the observed comparison revision through browser reports and explanation requests. The existing browser case opens a retained target against changed current architecture and preserves capture through navigation. Root also repaired strict retry/cancel bodies: actionId belongs in the URL, while the body carries vault and tabSessionId. The failed readiness hypothesis and temporary probes are removed. Four affected browser cases pass with 22 assertions. Final source passes both types, strict lint, formatting, whitespace, and the two explanation cases with 12 assertions. Consumer guidance distinguishes an accepted capture from a new invocation. Existing architecture meaning remains accurate and no proposal or vault edit is needed. Exact composed coverage and failed evidence are in task-549.24-capture-consumer-review.json. Remaining reviews, full gate, media, archive publication and final acceptance stay open.
 
 Restored RUNTIME-RETIRE-1 and RUNTIME-RETIRE-2 through the existing canonical proposal operation. proposal.confirm admits deliberate inheritance removal and possible name/exact-binding recreation; receipts retain only performed confirmed codes through recovery and exact retry. Names and bindings remain warnings rather than identity assignment. Public safety tests prove the exact-half boundary, majority refusal, grandparent/name/binding warnings, distinct confirmed identity, unchanged files on refusal and strict receipt compatibility. All 62 affected cases pass with 384 assertions across separate focused runs. Both types, strict touched lint, formatting, whitespace and ignored schema generation pass. Exact evidence is task-549.24-proposal-confirmations-review.json. No source-vault content or architecture responsibility changes. Missing current-binding diagnostics remain root-owned, with its CLI regression now RED.
+
+Restored missing current binding diagnostics through the existing code inspection pass. Current bindings without symbols now report absent paths, while unavailable repositories and revisions remain explicit skips. The canonical CLI regression now requires warning exit 1. Eleven affected cases pass with 41 assertions, plus both types, strict repository lint and formatting. Replaced four stale macOS lane paths with canonical read, structure, proposal/correction and dynamic approval owners. All 16 selected paths exist; macOS execution remains a hosted platform limit. Exact evidence is task-549.24-current-binding-review.json. Real current inspection has no missing bindings, but two review-caused architecture warnings remain for root alignment: one renderer flow anchor and four Mutation work relationships. Acceptance remains open.
 <!-- SECTION:NOTES:END -->
