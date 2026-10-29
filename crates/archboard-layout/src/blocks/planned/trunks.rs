@@ -56,7 +56,7 @@ pub(super) fn route(scene: &Scene) -> Vec<Route> {
         let a = approach(scene, connector.ends.0);
         let b = approach(scene, connector.ends.1);
         let middles = templates(scene, &boxes, &fixed, a, b);
-        let mut choices = Vec::new();
+        let mut best: Option<(f64, Vec<Point>)> = None;
         for middle in middles.into_iter().filter(|middle| {
             !boxes.iter().any(|&r| crosses_box(middle, r))
                 && !scene
@@ -69,31 +69,23 @@ pub(super) fn route(scene: &Scene) -> Vec<Route> {
                     .chain([point(connector.ends.1.at())])
                     .collect(),
             );
-            let good = fixed.iter().all(|(other, p)| {
-                let points = p;
-                let source =
-                    connector.subjects.0.is_some() && connector.subjects.0 == other.subjects.0;
-                let target =
-                    connector.subjects.1.is_some() && connector.subjects.1 == other.subjects.1;
-                (!(source || target) || super::junctions::sharing(&path, points, source, target))
-                    && super::junctions::ordered(&path, points, source || target)
-            });
-            if !good {
+            let Some(cost) = cost(
+                scene,
+                &fixed,
+                *connector,
+                &path,
+                best.as_ref().map(|(cost, _)| *cost),
+            ) else {
                 continue;
+            };
+            if best
+                .as_ref()
+                .is_none_or(|(old, _)| cost.total_cmp(old).is_lt())
+            {
+                best = Some((cost, path));
             }
-            let crossing: usize = fixed
-                .iter()
-                .map(|(_, p)| super::junctions::crossings(&path, p))
-                .sum();
-            let cost = length(&path)
-                + scene.params.bend * path.len().saturating_sub(2) as f64
-                + scene.params.crossing * crossing as f64;
-            choices.push((cost, path));
         }
-        choices.sort_by(|a, b| a.0.total_cmp(&b.0));
-        let path = choices
-            .into_iter()
-            .next()
+        let path = best
             .map(|(_, p)| p)
             .or_else(|| bounded(scene, &boxes, &fixed, *connector, a, b, &mut windows));
         match path {
@@ -105,6 +97,39 @@ pub(super) fn route(scene: &Scene) -> Vec<Route> {
         }
     }
     result
+}
+
+/// An admissible template's cost, unless its base already loses to the best route.
+fn cost(
+    scene: &Scene,
+    fixed: &[(Connector, Vec<Point>)],
+    connector: Connector,
+    path: &[Point],
+    best: Option<f64>,
+) -> Option<f64> {
+    let base = length(path) + scene.params.bend * path.len().saturating_sub(2) as f64;
+    // Crossing costs are nonnegative. A more expensive base cannot win.
+    if scene.params.crossing >= 0.0 && best.is_some_and(|cost| base > cost) {
+        return None;
+    }
+    let good = fixed.iter().all(|(other, p)| {
+        let points = p;
+        if super::junctions::apart(path, points) {
+            return true;
+        }
+        let source = connector.subjects.0.is_some() && connector.subjects.0 == other.subjects.0;
+        let target = connector.subjects.1.is_some() && connector.subjects.1 == other.subjects.1;
+        (!(source || target) || super::junctions::sharing(path, points, source, target))
+            && super::junctions::ordered(path, points, source || target)
+    });
+    if !good {
+        return None;
+    }
+    let crossing: usize = fixed
+        .iter()
+        .map(|(_, p)| super::junctions::crossings(path, p))
+        .sum();
+    Some(base + scene.params.crossing * crossing as f64)
 }
 
 fn templates(
@@ -204,5 +229,48 @@ fn bounded(
     {
         Route::Routed(points) => Some(points.into_iter().map(point).collect()),
         Route::Unroutable => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn equal_cost_detours_keep_the_first_template() {
+        let scene = Scene {
+            obstacles: vec![archboard_router::Rect {
+                x: 0.0,
+                y: 0.0,
+                width: 100.0,
+                height: 100.0,
+            }],
+            connectors: vec![Connector {
+                ends: (
+                    End::Free {
+                        at: archboard_router::Point { x: -50.0, y: 50.0 },
+                    },
+                    End::Free {
+                        at: archboard_router::Point { x: 150.0, y: 50.0 },
+                    },
+                ),
+                subjects: (None, None),
+            }],
+            minimum: None,
+            params: archboard_router::Params {
+                clearance: 0.0,
+                lane: 16.0,
+                bend: 60.0,
+                crossing: 300.0,
+            },
+        };
+        let routes = route(&scene);
+        let Route::Routed(points) = &routes[0] else {
+            panic!("a clear detour");
+        };
+        assert_eq!(
+            points.iter().map(|p| (p.x, p.y)).collect::<Vec<_>>(),
+            vec![(-50.0, 50.0), (-50.0, 0.0), (150.0, 0.0), (150.0, 50.0)]
+        );
     }
 }

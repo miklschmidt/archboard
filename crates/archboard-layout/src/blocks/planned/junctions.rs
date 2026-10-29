@@ -2,6 +2,25 @@
 
 use crate::geometry::Point;
 
+/// Disjoint envelopes cannot share ink, cross, or violate the twelve-point lane gap.
+pub(super) fn apart(a: &[Point], b: &[Point]) -> bool {
+    let bounds = |path: &[Point]| {
+        path.iter().fold(
+            (
+                f64::INFINITY,
+                f64::INFINITY,
+                f64::NEG_INFINITY,
+                f64::NEG_INFINITY,
+            ),
+            |(left, top, right, bottom), p| {
+                (left.min(p.x), top.min(p.y), right.max(p.x), bottom.max(p.y))
+            },
+        )
+    };
+    let (a, b) = (bounds(a), bounds(b));
+    b.0 - a.2 >= 12.0 || a.0 - b.2 >= 12.0 || b.1 - a.3 >= 12.0 || a.1 - b.3 >= 12.0
+}
+
 /// Sharing is a common prefix or suffix, never an accidental reunion in the middle.
 pub(super) fn sharing(a: &[Point], b: &[Point], source: bool, target: bool) -> bool {
     let prefix = if source { common_prefix(a, b) } else { 0.0 };

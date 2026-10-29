@@ -2,6 +2,7 @@
 
 mod channel;
 mod choices;
+mod clearance;
 mod corridors;
 mod endpoint_choices;
 mod fallback;
