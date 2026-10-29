@@ -269,12 +269,18 @@ test("structural exports use canonical recursive scope and preserve reproducible
 	if (updatedRecipe.kind !== "recipe") throw new Error(JSON.stringify(updatedRecipe));
 	expect(updated).toEqual(Buffer.from(replaceRenderRecipe(annotated, updatedRecipe.recipe)));
 	const inspected = cli(["check", "code"]);
-	expect(inspected.status).not.toBeNull();
-	expect([0, 1]).toContain(inspected.status!);
+	expect(inspected.status, inspected.stderr).toBe(1);
 	expect(answer(inspected.stdout)).toMatchObject({
 		code: {
 			models: [{ model: "Shop", state: "Current", revision: expect.any(Object) }],
 			findings: expect.arrayContaining([
+				expect.objectContaining({
+					code: "BINDING_PATH_MISSING",
+					model: "Shop",
+					state: "Current",
+					file: "gateway.module.json",
+					subject: expect.objectContaining({ id: "Shop#Gateway" }),
+				}),
 				expect.objectContaining({
 					code: "ANCHOR_PATH_MISSING",
 					model: "Shop",

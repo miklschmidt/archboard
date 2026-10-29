@@ -7,6 +7,10 @@ import { ArchiveError, ARCHIVE_REF, CheckpointRecordSchema } from "#runtime/stor
 
 type Failure = Extract<ArchitectureModelRead, { success: false }>;
 const recovery: Partial<Record<Failure["code"], string>> = {
+	INHERITANCE_DROPPED:
+		"Keep at least half of the inherited modules, or include INHERITANCE_DROPPED in proposal.confirm for a deliberate redesign.",
+	PART_RECREATED:
+		"Preserve the existing module identity, or include PART_RECREATED in proposal.confirm when the new module represents a different part.",
 	SOURCE_EVIDENCE_UNAVAILABLE:
 		"Supply an available immutable source commit for every referenced repository. Restore missing source history before retrying the correction.",
 	REFERENCE_UNAVAILABLE:
@@ -141,6 +145,7 @@ function checkpointMetadata(
 		installation: _installation,
 		subjects: _subjects,
 		reconciliations: _reconciliations,
+		confirmed: _confirmed,
 		referenceDependencies: _referenceDependencies,
 		narrativeDependencies: _narrativeDependencies,
 		...metadata
@@ -194,6 +199,7 @@ function editResult(
 		applied: true,
 		reconciliation: standingRemains(record),
 		reconciliations: record.reconciliations,
+		confirmed: record.confirmed,
 		operationId: request.operationId,
 		target: request.target,
 		...selectedEdit(record),

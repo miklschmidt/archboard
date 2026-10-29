@@ -272,7 +272,7 @@ function found(outcome: CodeCheckOutcome): string[] {
 	return outcome.findings.map((finding) => `${finding.code} ${finding.subject?.id}`);
 }
 
-test("the current variant reports a missing anchored file, anchor symbol and bound symbol", async () => {
+test("the current variant reports missing binding and anchor paths and symbols", async () => {
 	const { read, outcome } = await pass();
 	expect(read.boards.map((one) => [one.board.name, one.variant.id]).toSorted()).toEqual([
 		["Ops", "v1"],
@@ -280,6 +280,7 @@ test("the current variant reports a missing anchored file, anchor symbol and bou
 	]);
 	expect(found(outcome).toSorted()).toEqual(
 		[
+			"BINDING_PATH_MISSING pG",
 			"BINDING_SYMBOL_MISSING pR",
 			// Only an ignored file below the directory, and the ignored file and
 			// the variable file the links below it lead to, hold the name.

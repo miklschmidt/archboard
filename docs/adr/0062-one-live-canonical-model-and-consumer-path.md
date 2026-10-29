@@ -31,6 +31,9 @@ Git discovers embedded artifacts, and explicit repair uses the same renderer and
 No board-owned tracking list or name-based identity repair remains live.
 
 Code inspection reads canonical content through the existing language and infrastructure algorithms.
+It reports missing bound paths for the current state and an explicitly selected proposal, including bindings without symbols.
+Unavailable repositories and source revisions remain explicit skips.
+The semantic reader no longer owns a separate source path scan.
 Locality and branch footprint retain the existing Git analysis through canonical counterparts.
 Their results identify the actual canonical model, state, and revision.
 They introduce no source-history retention or new analysis engine.

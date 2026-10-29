@@ -144,6 +144,7 @@ const StructureChangeSchema = z.discriminatedUnion("type", [
 		})
 		.strict(),
 ]);
+const ProposalConfirmationsSchema = z.array(z.enum(["INHERITANCE_DROPPED", "PART_RECREATED"]));
 const ProposalIntentSchema = z.discriminatedUnion("type", [
 	z.strictObject({
 		type: z.literal("adopt"),
@@ -167,10 +168,12 @@ const ProposalIntentSchema = z.discriminatedUnion("type", [
 	}),
 	z.strictObject({
 		type: z.literal("create"),
+		confirm: ProposalConfirmationsSchema.optional(),
 		...StateMetadataSchema.omit({ id: true, formerNames: true }).shape,
 	}),
 	z.strictObject({
 		type: z.literal("edit"),
+		confirm: ProposalConfirmationsSchema.optional(),
 		set: StateMetadataSchema.omit({ id: true, formerNames: true }).partial().optional(),
 		clear: z.array(z.enum(["summary", "documents"])).optional(),
 	}),
@@ -202,6 +205,7 @@ const ArchitectureEditSuccessSchema = z
 		applied: z.literal(true),
 		reconciliation: z.boolean(),
 		reconciliations: FamilyStandingSchema.optional(),
+		confirmed: ProposalConfirmationsSchema.optional(),
 		operationId: z.string(),
 		target: ArchitectureTargetSchema,
 		subjects: z.array(QualifiedSubjectIdSchema),

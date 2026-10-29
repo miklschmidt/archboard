@@ -683,6 +683,18 @@ A metadata-only edit uses `changes:[]`.
 An ordinary draft edit keeps its immutable baseline.
 A settled reconciliation retains the updated predecessor as its new baseline.
 
+Creating or editing a proposal preserves the existing inheritance confirmations.
+`INHERITANCE_DROPPED` refuses removal of more than half of the modules still shared with its direct predecessor.
+Removing exactly half needs no confirmation.
+`PART_RECREATED` warns when a new identity repeats an absent ancestor module's name or exact repository, path, and symbol binding.
+The warning identifies possible duplicates. A confirmed new module keeps its separately allocated identity.
+
+Inspect the affected subjects before confirming a deliberate redesign or a different part.
+For an authorized change, add the refusal code to `proposal.confirm`, such as `"confirm":["INHERITANCE_DROPPED"]`.
+Use a new operation identity for that changed request.
+The receipt's `confirmed` array names only the acts that occurred, and exact retries preserve it.
+Current-state edits and automatic reconciliation keep their existing separate behavior.
+
 Stored changes distinguish `add`, `remove`, `assign`, `clear`, and `place`.
 Agents continue to submit the normal module and flow operations.
 Archboard derives the compact representation and requires exact materialization before installation.
@@ -1132,6 +1144,8 @@ It never chooses a replacement model by name.
 `--every-draft` reads independent proposals by identity.
 The result's `models` list carries model identity, state identity, and complete revision.
 Findings carry `model` and `state` beside stable subject identities.
+`BINDING_PATH_MISSING` reports an absent bound path in the current or selected state, including bindings without symbols.
+Unavailable repositories and source revisions appear as skips instead of missing-path warnings.
 Remembered findings use that same revision and remain empty until a code pass completes.
 
 ## Navigate a local agent pane
