@@ -86,7 +86,8 @@ export function collinearPorts(drawing: RenderedDiagram, content: VariantContent
 						one.edge !== other.edge &&
 						one.axis === other.axis &&
 						one.side !== other.side &&
-						Math.abs(one.at - other.at) < APART,
+						// Decimal SVG coordinates can subtract a few binary rounding units below a lane.
+						Math.abs(one.at - other.at) < APART - 1e-7,
 				)
 				.map((other) => `${node}: ${one.edge} / ${other.edge}`),
 		),
