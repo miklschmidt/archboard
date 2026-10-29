@@ -6,7 +6,7 @@ use crate::paint::Ctx;
 use crate::paint::appearance::tray_look;
 use crate::paint::build::{Items, group, lines};
 use crate::paint::cards::{halo, paint_slab_card};
-use crate::paint::design::{ARCHITECTURE_CARD_PADDING, BAND_RADIUS, CARD_THICKNESS};
+use crate::paint::design::{ARCHITECTURE_CARD_PADDING, BAND_RADIUS, CARD_THICKNESS, SLAB_RADIUS};
 use crate::paint::far_card::{NearCard, Part, paint_card_views, words_in};
 use crate::paint::palette::Palette;
 use crate::paint::slab::{Lift, slab_seat, slab_shadow};
@@ -71,7 +71,11 @@ pub(super) fn paint_measured_frame(
             slab_seat(rect, BAND_RADIUS),
             slab_shadow(rect, BAND_RADIUS, Lift::Tray, palette, standing),
             halo(rect, BAND_RADIUS, &styles, standing),
-            tray(rect, &look, palette, standing),
+            if standing == Some(Standing::Removed) {
+                slab_shadow(look.header, SLAB_RADIUS, Lift::Card, palette, standing)
+            } else {
+                tray(rect, &look, palette, standing)
+            },
             standing_pin(rect, standing, palette),
         ]),
     )
@@ -117,4 +121,79 @@ pub(super) fn paint_measured_header(
             warning_badge(header, unsettled, palette),
         ]),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{header_of, paint_measured_frame};
+    use crate::drawing::Node;
+    use crate::paint::palette::Palette;
+    use crate::request::{NodeAppearance, Standing};
+    use crate::scene::{Geometry, Item, Paint, Purpose, Shape};
+
+    /// Shapes in a frame, without the scene's grouping and line breaks.
+    fn shapes(items: &[Item]) -> Vec<&Shape> {
+        items
+            .iter()
+            .flat_map(|item| match item {
+                Item::Shape(shape) => vec![shape],
+                Item::Group(group) => shapes(&group.items),
+                _ => Vec::new(),
+            })
+            .collect()
+    }
+
+    #[test]
+    fn a_removed_container_keeps_its_header_as_a_flat_ghost() {
+        // The contents widen the frame, but its header keeps its measured width.
+        let placed: Node = serde_json::from_str(
+            r#"{
+            "measured": {"node": {"id": "box", "order": 0, "name": "Container"},
+                "width": 240, "height": 80, "headerHeight": 80, "runs": []},
+            "box": {"x": 20, "y": 40, "width": 600, "height": 300}, "depth": 1
+        }"#,
+        )
+        .expect("a measured container");
+        let appearance: NodeAppearance = serde_json::from_str(
+            r#"{
+            "container": true, "icon": "RiServerLine", "typeName": "System",
+            "typeKind": "system", "drill": null
+        }"#,
+        )
+        .expect("a container appearance");
+        let palette = Palette::of_page();
+        let plain = paint_measured_frame(&placed, &palette, None, &appearance);
+        let removed = paint_measured_frame(&placed, &palette, Some(Standing::Removed), &appearance);
+        let header = header_of(&placed);
+        let removed_shapes = shapes(&removed);
+        let face = removed_shapes
+            .iter()
+            .find(|shape| {
+                shape.purpose == Purpose::Plate
+                    && matches!(shape.geometry, Geometry::Rect { rect, .. } if rect == header)
+            })
+            .expect("a removed container paints its header slab");
+        assert!(
+            shapes(&plain)
+                .iter()
+                .any(|shape| shape.geometry == face.geometry),
+            "the ghost keeps the plain header's box and corners"
+        );
+        assert_eq!(face.fill, Some(Paint::from(&palette.slab_face)));
+        assert_eq!(face.fill_opacity, Some(0.5));
+        assert!(
+            removed_shapes.iter().any(|shape| {
+                shape.purpose == Purpose::Border
+                    && shape.stroke.as_ref().is_some_and(|stroke| {
+                        stroke.paint == Paint::from(&palette.standing_removed)
+                            && !stroke.dashes.is_empty()
+                    })
+                    && matches!(shape.geometry, Geometry::Rect { rect, .. }
+                    if rect.x >= header.x && rect.y >= header.y
+                        && rect.x + rect.width <= header.x + header.width
+                        && rect.y + rect.height <= header.y + header.height)
+            }),
+            "the header has a removed outline inside its box"
+        );
+    }
 }
