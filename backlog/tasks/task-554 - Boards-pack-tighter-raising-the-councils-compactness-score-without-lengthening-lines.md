@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-29T19:20:00Z'
+updated_date: '2026-10-29T19:36:00Z'
 labels:
   - renderer
   - layout
@@ -87,4 +87,6 @@ Council 558: 63bea7a73 (one-lane rule) against legacy Blocks (8cdedb1c3), the sa
 Correction to the note on 63bea7a73: my corpus run and timing of the one-lane rule ran on a stale core (8588c9714a52f60a), built while the gap was two lanes (32 units). I changed the source to one lane without rebuilding, and the measuring tools load the wasm directly, so nothing refused the stale core. The numbers I recorded (bends per route 1.290, four-bend share 4.98%, detour +5.7%, long detours 2,174, Board viewer 384-390 / 391-395 ms) belong to the two-lane rule. The committed one-lane core is a33457168bd7ded4 (bun run check rebuilt it before council 558, so council 558 judged the right code). Measured on it: bends per route 1.2602, four-bend share 4.64%, long detours 2,086, detached labels 0 (builder, report-8). My own timing at load about 1: Board viewer 446-451 / 354-358 ms (first render / growing edit), Board persistence 252-266 / 260-261, server routes 207-210 / 200-205. All under the 500 ms threshold, but Board viewer's first render is over the 400 ms margin.
 
 Council 559: 179c9017c (placement fix merged) against legacy Blocks, the same 40 boards, three graders. 10 better, 29 same, 1 worse (040), 0 both fail, no defect reported by any grader (Opus checked full-size crops of every header on the large pictures). 023 is same again (+0.18, 0.00, -0.25). 040 (Voice coordinator, Tools and work) is worse (-0.43, -0.43, +0.05). Its two pictures are byte-identical in councils 557, 558 and 559, which judged them same (0.00, -0.68, +0.05), same (-0.25, -0.38, +0.65) and worse: pair verdicts near 0.40 vary between councils on the same pictures. The weakness is consistent in the notes: the hybrid routes Coordinator tools' calls through jogs and along the top of Coordinator turn homes, with crossings near arrowheads, where legacy fans them from one trunk almost straight. Next: fix that routing; a speed pass (feat/blocks-speed3) runs in parallel.
+
+Merged feat/blocks-speed3 (49579d0d2) as 7f0d82312: faster planned trunk and junction routing with unchanged drawings. Verified: core 99a8f9099b570b48 rebuilt from the merged sources; all 8,086 corpus drawings equal to 179c9017c's. My timing while another builder ran (load about 3): Board viewer 382-405 / 298-303 ms, Board persistence 234-238 / 241-247, server routes 192-196 / 184-186. The builder's quiet run kept all 18 samples under 400 ms (worst 394.78).
 <!-- SECTION:NOTES:END -->
