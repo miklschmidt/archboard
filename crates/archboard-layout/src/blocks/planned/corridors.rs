@@ -1,5 +1,5 @@
 //! Straight, elbow, and bounded two-channel templates.
-use super::{geometry::crosses_box, shape::Shape};
+use super::{clearance::Clearance, shape::Shape};
 use crate::{
     blocks::assembly::PlacedLine,
     geometry::{Point, Rect},
@@ -10,7 +10,7 @@ pub(super) fn joins(
     bounds: Rect,
     shape: &Shape,
     guidance: (Option<&PlacedLine>, Option<super::lanes::Hint>),
-    obstacles: &[Rect],
+    obstacles: &Clearance,
     simple: bool,
 ) -> Vec<Vec<Point>> {
     let (guide, hint) = guidance;
@@ -19,7 +19,7 @@ pub(super) fn joins(
         vec![a, Point { x: b.x, y: a.y }, b],
     ];
     let (xs, ys) = coordinates(a, b, bounds, shape, guide, hint);
-    let clear = |path: &[Point]| !obstacles.iter().any(|&r| crosses_box(path, r));
+    let clear = |path: &[Point]| obstacles.clear(path);
     for &x in &xs {
         let path = [a, Point { x, y: a.y }, Point { x, y: b.y }, b];
         if clear(&path) {
@@ -134,9 +134,9 @@ fn two_channels(
     xs: &[f64],
     ys: &[f64],
     shape: &Shape,
-    obstacles: &[Rect],
+    obstacles: &Clearance,
 ) -> Vec<Vec<Point>> {
-    let clear = |path: &[Point]| !obstacles.iter().any(|&r| crosses_box(path, r));
+    let clear = |path: &[Point]| obstacles.clear(path);
     let mut start_x: Vec<_> = xs
         .iter()
         .copied()
@@ -188,7 +188,7 @@ fn paired(
     b: Point,
     starts: &[f64],
     ends: &[f64],
-    obstacles: &[Rect],
+    obstacles: &Clearance,
     transpose: bool,
 ) -> Vec<Vec<Point>> {
     let flip = |p: Point| {
@@ -203,7 +203,7 @@ fn paired(
     for &x in starts {
         for &y in ends {
             let inner = [Point { x, y: a.y }, Point { x, y }, Point { x: b.x, y }].map(flip);
-            if !obstacles.iter().any(|&r| crosses_box(&inner, r)) {
+            if obstacles.clear(&inner) {
                 paths.push(vec![flip(a), inner[0], inner[1], inner[2], flip(b)]);
             }
         }

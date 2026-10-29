@@ -14,23 +14,20 @@ struct Span {
     before: f64,
 }
 
-fn subtract(parts: Vec<(f64, f64)>, a: f64, b: f64) -> Vec<(f64, f64)> {
-    parts
-        .into_iter()
-        .flat_map(|(lo, hi)| {
-            if b <= lo || a >= hi {
-                return vec![(lo, hi)];
-            }
-            let mut left = Vec::new();
-            if lo < a {
-                left.push((lo, a));
-            }
-            if b < hi {
-                left.push((b, hi));
-            }
-            left
-        })
-        .collect()
+fn subtract(parts: &mut Vec<(f64, f64)>, a: f64, b: f64) {
+    let mut index = 0;
+    while index < parts.len() {
+        let (lo, hi) = parts[index];
+        if b <= lo || a >= hi {
+            index += 1;
+            continue;
+        }
+        let left = (lo < a).then_some((lo, a));
+        let right = (b < hi).then_some((b, hi));
+        let retained = usize::from(left.is_some()) + usize::from(right.is_some());
+        parts.splice(index..=index, left.into_iter().chain(right));
+        index += retained;
+    }
 }
 
 type Strokes = std::collections::BTreeMap<(bool, i64), Vec<(usize, f64, f64, f64)>>;
@@ -137,7 +134,7 @@ impl StrokeIndex {
                     .iter()
                     .filter(|&&(other, at, _, _)| other != edge && (at - across).abs() < 1e-6)
                 {
-                    parts = subtract(parts, lo, hi);
+                    subtract(&mut parts, lo, hi);
                 }
             }
             for (lo, hi) in parts {
@@ -193,20 +190,28 @@ fn at(span: Span, position: f64, size: Rect) -> Rect {
     }
 }
 
-pub(super) fn slot(
-    model: &Model<'_>,
-    edge: usize,
-    shape: &Shape,
-    path: &[Point],
-) -> Option<(Rect, bool)> {
-    slot_index(
-        model,
-        edge,
-        shape,
-        path,
-        &StrokeIndex::new(model, shape),
-        &super::label_space::Labels::new(&shape.labels),
-    )
+/// One immutable candidate set shares its stroke and label indexes.
+pub(super) struct Slots<'a> {
+    shape: &'a Shape,
+    strokes: StrokeIndex,
+    labels: super::label_space::Labels,
+}
+impl<'a> Slots<'a> {
+    pub(super) fn new(model: &Model<'_>, shape: &'a Shape) -> Self {
+        Self {
+            shape,
+            strokes: StrokeIndex::new(model, shape),
+            labels: super::label_space::Labels::new(&shape.labels),
+        }
+    }
+    pub(super) fn slot(
+        &self,
+        model: &Model<'_>,
+        edge: usize,
+        path: &[Point],
+    ) -> Option<(Rect, bool)> {
+        slot_index(model, edge, self.shape, path, &self.strokes, &self.labels)
+    }
 }
 
 fn slot_index(
@@ -246,13 +251,30 @@ fn slot_index(
             return Some((label, false));
         }
     }
-    let spots = spans
-        .into_iter()
-        .flat_map(|span| spots_for(span, size, shape, edge, index, labels));
+    nearest(&spans, size, shape, edge, index, labels).map(|at| (at, true))
+}
 
-    spots
-        .min_by(|a, b| a.0.total_cmp(&b.0))
-        .map(|(_, at)| (at, true))
+fn nearest(
+    spans: &[Span],
+    size: Rect,
+    shape: &Shape,
+    edge: usize,
+    index: &StrokeIndex,
+    labels: &super::label_space::Labels,
+) -> Option<Rect> {
+    let mut best: Option<(f64, Rect)> = None;
+    for &span in spans {
+        // Every spot lies at or beyond the start of its private span.
+        if best.is_some_and(|(distance, _)| span.before > distance) {
+            continue;
+        }
+        for spot in spots_for(span, size, shape, edge, index, labels) {
+            if best.is_none_or(|(distance, _)| spot.0.total_cmp(&distance).is_lt()) {
+                best = Some(spot);
+            }
+        }
+    }
+    best.map(|(_, at)| at)
 }
 
 fn spots_for(
@@ -278,19 +300,13 @@ fn spots_for(
             (r.y, r.y + r.height, r.x, r.x + r.width)
         };
         if across + across_half >= left && across - across_half <= right {
-            free = subtract(
-                std::mem::take(&mut free),
-                low - along_half,
-                high + along_half,
-            );
+            subtract(&mut free, low - along_half, high + along_half);
         }
     };
     let geometry = shape
         .label_geometry
         .get_or_init(|| super::label_space::Protection::new(shape));
-    for &r in &geometry.obstacles {
-        protect(r);
-    }
+    geometry.nearby(horizontal, across, across_half, &mut protect);
     for &r in shape.labels.values() {
         protect(inflate(r, 8.02));
     }
@@ -529,7 +545,9 @@ mod tests {
                 ],
             ),
         ]);
-        let (label, fallback) = slot(&model, 0, &shape, &shape.routes[0].points).unwrap();
+        let (label, fallback) = Slots::new(&model, &shape)
+            .slot(&model, 0, &shape.routes[0].points)
+            .unwrap();
         assert!(!fallback);
         assert_eq!(
             (label.x + label.width / 2.0, label.y + label.height / 2.0),
@@ -545,7 +563,7 @@ mod tests {
             ("ac", &[(500.0, 450.0), (500.0, 550.0)]),
         ]);
         let path = shape.routes[0].points.clone();
-        let (label, fallback) = slot(&model, 0, &shape, &path).unwrap();
+        let (label, fallback) = Slots::new(&model, &shape).slot(&model, 0, &path).unwrap();
         assert!(fallback);
         assert!((label.x - 116.01).abs() < 1e-6);
         assert_eq!(label.y, 488.0);

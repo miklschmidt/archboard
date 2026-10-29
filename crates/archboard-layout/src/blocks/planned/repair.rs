@@ -75,7 +75,7 @@ fn extra(
         return None;
     }
     work.generated += 1;
-    super::fixed::choose(
+    super::choices::search(
         model,
         topology,
         edge,
@@ -84,8 +84,7 @@ fn extra(
         None,
         super::fixed::Search::Ports,
     )
-    .iter()
-    .find_map(|line| append(model, topology, shape, line))
+    .find_map(|line| append(model, topology, shape, &line))
 }
 fn conflicts<'a>(
     model: &Model<'_>,

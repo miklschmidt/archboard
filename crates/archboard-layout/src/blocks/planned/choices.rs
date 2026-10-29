@@ -1,7 +1,7 @@
 //! Candidate channels between fixed endpoint ports.
 use super::{
     fixed::{page_bounds, page_cost, route_cost},
-    geometry::{clean, contains, crosses_box, length},
+    geometry::{clean, contains, length},
     model::Model,
     ports::center,
     shape::Shape,
@@ -28,9 +28,22 @@ pub(super) fn choose(
     hint: Option<super::lanes::Hint>,
     search: Search,
 ) -> Vec<PlacedLine> {
+    self::search(model, topology, edge, shape, guide, hint, search).collect()
+}
+
+/// Check candidates on demand, preserving the pool order and its limits.
+pub(super) fn search<'a>(
+    model: &'a Model<'_>,
+    topology: &'a Topology,
+    edge: usize,
+    shape: &'a Shape,
+    guide: Option<&PlacedLine>,
+    hint: Option<super::lanes::Hint>,
+    search: Search,
+) -> impl Iterator<Item = PlacedLine> + 'a {
     let bounds = shape.scopes[&topology.routes[edge].scope].bounds;
     let mut paths = guide_paths(guide);
-    let obstacles = obstacles(model, topology, edge, shape);
+    let obstacles = super::clearance::Clearance::new(obstacles(model, topology, edge, shape));
     let usable = |port: &super::ports::Port| {
         contains(
             bounds,
@@ -40,9 +53,7 @@ pub(super) fn choose(
                 width: 0.0,
                 height: 0.0,
             },
-        ) && !obstacles
-            .iter()
-            .any(|&r| crosses_box(&[port.attachment, port.approach], r))
+        ) && obstacles.clear(&[port.attachment, port.approach])
     };
     let sources: Vec<_> = super::endpoint_choices::ends(model, edge, true, shape, guide, search)
         .into_iter()
@@ -71,13 +82,13 @@ pub(super) fn choose(
     select(model, topology, edge, shape, paths)
 }
 
-fn select(
-    model: &Model<'_>,
-    topology: &Topology,
+fn select<'a>(
+    model: &'a Model<'_>,
+    topology: &'a Topology,
     edge: usize,
-    shape: &Shape,
+    shape: &'a Shape,
     mut paths: Vec<Vec<Point>>,
-) -> Vec<PlacedLine> {
+) -> impl Iterator<Item = PlacedLine> + 'a {
     let bounds = shape.scopes[&topology.routes[edge].scope].bounds;
     let ink_bounds = page_bounds(shape);
     paths.sort_by_cached_key(|path| {
@@ -88,12 +99,13 @@ fn select(
     });
     paths.dedup();
     let mut pool = Pool::default();
+    let slots = super::route_labels::Slots::new(model, shape);
+    let probe = super::channel::Probe::new(model, topology, edge, shape, bounds);
     let limit = if model.edges.len() > 64 { 64 } else { 128 };
     paths
         .into_iter()
-        .filter_map(|points| pool.keep(model, topology, edge, shape, bounds, points))
+        .filter_map(move |points| pool.keep(model, edge, &slots, &probe, points))
         .take(limit)
-        .collect()
 }
 
 #[derive(Default)]
@@ -105,16 +117,15 @@ impl Pool {
     fn keep(
         &mut self,
         model: &Model<'_>,
-        topology: &Topology,
         edge: usize,
-        shape: &Shape,
-        bounds: Rect,
+        slots: &super::route_labels::Slots<'_>,
+        probe: &super::channel::Probe<'_, '_>,
         points: Vec<Point>,
     ) -> Option<PlacedLine> {
-        if super::channel::refusal(model, topology, edge, shape, &points, bounds).is_some() {
+        if probe.refusal(&points).is_some() {
             return None;
         }
-        let label = label_for(model, edge, shape, &points).ok()?;
+        let label = label_for(model, edge, &points, slots).ok()?;
         let longest = points
             .windows(2)
             .max_by(|a, b| length(a).total_cmp(&length(b)))
@@ -261,7 +272,7 @@ fn connect(
     shape: &Shape,
     pair: (super::ports::Port, super::ports::Port),
     guidance: (Rect, Option<&PlacedLine>, Option<super::lanes::Hint>),
-    obstacles: &[Rect],
+    obstacles: &super::clearance::Clearance,
     search: Search,
 ) -> Vec<Vec<Point>> {
     let (tail, head) = pair;
@@ -299,13 +310,14 @@ fn connect(
 fn label_for(
     model: &Model<'_>,
     edge: usize,
-    shape: &Shape,
     points: &[Point],
+    slots: &super::route_labels::Slots<'_>,
 ) -> Result<Option<Rect>, ()> {
     if model.edges[edge].label().is_none() {
         return Ok(None);
     }
-    super::route_labels::slot(model, edge, shape, points)
+    slots
+        .slot(model, edge, points)
         .map(|(label, _)| Some(label))
         .ok_or(())
 }

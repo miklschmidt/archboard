@@ -91,9 +91,8 @@ fn dynamic(
     edge: usize,
     search: super::fixed::Search,
 ) -> Option<Shape> {
-    super::fixed::choose(model, topology, edge, shape, None, None, search)
-        .iter()
-        .find_map(|line| append(model, topology, shape, line))
+    super::choices::search(model, topology, edge, shape, None, None, search)
+        .find_map(|line| append(model, topology, shape, &line))
 }
 fn repair(
     model: &Model<'_>,
@@ -194,22 +193,32 @@ fn fan_join(
                 .iter()
                 .map(|p| [p.x.to_bits(), p.y.to_bits()])
                 .collect::<Vec<_>>(),
-        ) && super::fixed::feasible(model, topology, edge, &corridors, points)
+        )
     });
     joined.sort_by(|a, b| route_cost(a).total_cmp(&route_cost(b)));
     joined.dedup();
-    joined.into_iter().find_map(|points| {
-        append(
-            model,
-            topology,
-            shape,
-            &PlacedLine {
-                id: model.edges[edge].id.clone(),
-                points,
-                label: None,
-            },
-        )
-    })
+    let probe = super::channel::Probe::new(
+        model,
+        topology,
+        edge,
+        &corridors,
+        corridors.scopes[&topology.routes[edge].scope].bounds,
+    );
+    joined
+        .into_iter()
+        .filter(|points| probe.refusal(points).is_none())
+        .find_map(|points| {
+            append(
+                model,
+                topology,
+                shape,
+                &PlacedLine {
+                    id: model.edges[edge].id.clone(),
+                    points,
+                    label: None,
+                },
+            )
+        })
 }
 fn same_end(model: &Model<'_>, one: usize, other: usize, source: bool) -> bool {
     if source {

@@ -3,13 +3,15 @@
 use super::shape::Shape;
 use crate::geometry::{Rect, inflate};
 use rustc_hash::FxHashMap;
+use std::cell::RefCell;
 
 const CELL: f64 = 128.0;
 
 #[derive(Default)]
 pub(super) struct Protection {
     cells: FxHashMap<(i64, i64), Vec<Rect>>,
-    pub(super) obstacles: Vec<Rect>,
+    obstacles: Vec<Rect>,
+    strips: RefCell<FxHashMap<(bool, u64, u64), Vec<Rect>>>,
 }
 
 #[expect(
@@ -60,6 +62,36 @@ impl Protection {
             }
         }
         protection
+    }
+
+    /// Fallback runs on the same axis reuse the same fixed obstacles in their original order.
+    pub(super) fn nearby(
+        &self,
+        horizontal: bool,
+        across: f64,
+        half: f64,
+        mut visit: impl FnMut(Rect),
+    ) {
+        let mut strips = self.strips.borrow_mut();
+        let boxes = strips
+            .entry((horizontal, across.to_bits(), half.to_bits()))
+            .or_insert_with(|| {
+                self.obstacles
+                    .iter()
+                    .copied()
+                    .filter(|r| {
+                        let (left, right) = if horizontal {
+                            (r.y, r.y + r.height)
+                        } else {
+                            (r.x, r.x + r.width)
+                        };
+                        across + half >= left && across - half <= right
+                    })
+                    .collect()
+            });
+        for &r in boxes.iter() {
+            visit(r);
+        }
     }
 
     pub(super) fn clear(&self, at: Rect) -> bool {
