@@ -17,6 +17,8 @@ pub struct Measured {
     pub labels: IndexMap<String, MeasuredLabel>,
     /// How each line is drawn, by relationship id.
     pub lines: BTreeMap<String, LineLook>,
+    /// The variant's own relationship kinds before removed comparison context changes an overview's majority kind.
+    pub held_kinds: BTreeMap<String, String>,
     /// The group each part is placed with, and each placing group's caption.
     pub groups: Option<MeasuredGroups>,
 }

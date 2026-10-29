@@ -14,8 +14,12 @@
 
 #![forbid(unsafe_code)]
 
+mod bounded;
 mod grid;
+mod reservations;
 mod search;
+
+pub use bounded::{Limits, route_bounded};
 
 /// A point in diagram units.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -209,3 +213,6 @@ mod tests;
 
 #[cfg(test)]
 mod subject_tests;
+
+#[cfg(test)]
+mod bounded_tests;

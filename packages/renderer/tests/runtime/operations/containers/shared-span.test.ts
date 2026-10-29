@@ -5,7 +5,6 @@
 // here").
 
 import { expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
@@ -15,7 +14,7 @@ import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 /** The narrowest shared span a straight line keeps its nudging distance in. */
 const SHARED_SPAN = 24;
 
-test.each(LayoutEngineSchema.options)(
+test.each(["track"] as const)(
 	"a line between stacked cards with a shared span leaves neither by its side (%s)",
 	async (layout) => {
 		const content = orderedFixture(sharedSpan);

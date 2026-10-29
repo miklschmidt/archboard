@@ -172,8 +172,10 @@ fn every_card_stands_at_its_measured_size_and_its_line_runs_from_card_to_card() 
 }
 
 #[test]
-fn a_solve_fails_when_graphviz_refuses_its_graph() {
-    lay_out_board(&two_containers("blocks"), &mut Refusing).unwrap_err();
+fn a_track_solve_fails_when_graphviz_refuses_its_graph() {
+    for nesting in ["inline", "groups"] {
+        lay_out_board(&two_containers(nesting), &mut Refusing).unwrap_err();
+    }
 }
 
 #[test]

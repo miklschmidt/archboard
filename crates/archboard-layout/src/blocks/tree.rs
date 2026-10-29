@@ -137,6 +137,7 @@ pub(crate) struct Ends {
 #[derive(Clone, Debug)]
 pub(crate) struct Block {
     pub id: String,
+    pub routing_room: f64,
     pub kind: Kind,
     pub parent: Option<BlockId>,
     /// The group, for a region.
@@ -466,6 +467,7 @@ impl BlockTree {
         let made = BlockId(self.arena.len());
         self.arena.push(Block {
             id: id.clone(),
+            routing_room: 0.0,
             kind,
             parent,
             group,

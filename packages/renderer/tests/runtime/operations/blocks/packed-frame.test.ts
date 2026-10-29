@@ -3,6 +3,12 @@
 // short row above had room, and a block alone on its row stood centred under
 // a wide one, not under the block its line comes from.
 import { expect, test } from "bun:test";
+import type { DiagramBox } from "@archboard/board/render-reply";
+import {
+	distanceToFrame,
+	routeCrosses,
+	type DrawnPoint,
+} from "#tests/runtime/support/drawn-routes.ts";
 import { loadCore } from "#runtime/services/core.ts";
 
 /** What these tests read of a solved graph: its root options. */
@@ -56,7 +62,7 @@ test("a small block late in the order fills the room a short row leaves", () => 
 	expect(box("c").y + box("c").height).toBeLessThan(box("b").y);
 });
 
-test("a block alone on its row stands under the block its line comes from", () => {
+test("a block connects to its caller through a direct clear route", () => {
 	const solved = layoutEngine();
 	const placed = solved({
 		id: "root",
@@ -84,13 +90,22 @@ test("a block alone on its row stands under the block its line comes from", () =
 		],
 	});
 	const { cards, edges } = JSON.parse(placed.layoutOptions!["archboard.blocks.placed"]!) as {
-		cards: { id: string; box: { x: number; width: number } }[];
-		edges: { id: string; points: { x: number; y: number }[] }[];
+		cards: { id: string; box: DiagramBox }[];
+		edges: { id: string; points: DrawnPoint[] }[];
 	};
-	const centre = (id: string) => {
-		const { box } = cards.find((one) => one.id === id)!;
-		return box.x + box.width / 2;
-	};
-	expect(centre("c")).toBeCloseTo(centre("a"), 5);
-	expect(edges.find((one) => one.id === "ac")!.points).toHaveLength(2);
+	const route = edges.find((one) => one.id === "ac")!.points;
+	const [first, last] = [route[0]!, route.at(-1)!];
+	const box = (id: string) => cards.find((card) => card.id === id)!.box;
+	expect(distanceToFrame(first, box("a"))).toBeLessThan(1);
+	expect(distanceToFrame(last, box("c"))).toBeLessThan(1);
+	const length = route
+		.slice(1)
+		.reduce(
+			(sum, end, index) =>
+				sum + Math.abs(end.x - route[index]!.x) + Math.abs(end.y - route[index]!.y),
+			0,
+		);
+	expect(length).toBeCloseTo(Math.abs(last.x - first.x) + Math.abs(last.y - first.y), 5);
+	expect(route.length).toBeLessThanOrEqual(4);
+	expect(routeCrosses(route, box("b"))).toBe(false);
 });

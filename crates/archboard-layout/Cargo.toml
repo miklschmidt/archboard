@@ -22,3 +22,6 @@ rustc-hash = "2"
 serde = { version = "1", features = ["derive", "rc"] }
 # Every number the host writes is read back to the same double.
 serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[dev-dependencies]
+archboard-graphviz = { path = "../archboard-graphviz" }

@@ -2,39 +2,46 @@
 status: proposed
 ---
 
-# Blocks plans placement, ports, labels and trunks before it routes
+# Blocks keeps legacy placement and plans its routes
 
-TASK-554 proposes this decision on 2026-10-28.
-The owner approved the direction after five Blocks explorations.
-The complete implementation still needs corpus, speed, and visual council acceptance.
+TASK-554 proposes this decision on 2026-10-28 and revises it on 2026-10-29.
+The owner selected the hybrid direction after three iterations failed to improve the six reference pictures with planner-owned placement.
+The legacy placer composes the boards better, while planned routing supplies explicit ownership, complete geometry guards, and bounded search.
 
-Blocks will create one deterministic plan from measured content before it emits routes.
-The plan chooses local card order, reading direction, all four endpoint walls, source-owned horizontal label slots, and explicit shared trunks.
-It reserves the corridors and their capacity before it packs the final blocks.
-Packing compares measured sizes and the routes that those planned ports require.
-Channel routing then assigns lanes inside that reserved space.
-A bounded local grid search handles exceptional junctions while preserving locked obstacles, ports, and prior lanes.
-A conservative channel plan handles search exhaustion without an unchecked route.
+Legacy Blocks placement owns card positions, dependency order, packing, frames, folds, and wraps.
+The planner replaces Blocks routing, including the old trunk router and its unrestricted grid search.
+The placer can respond to the new routes with smaller gaps.
+A placement change must preserve the reading order and pass the per-reference gates.
+Dense scopes use a smaller wrap search, and Blocks omits the repeated side-exit hierarchy pass.
 
-A shared trunk must name the source or target common to every member relationship.
-Coincident ports and pairwise compatibility cannot establish that identity.
-Each label remains part of one real relationship and receives no arrowhead or semantic node ID.
-Every label stays near its source, on its own horizontal run, inside one containing scope.
+The planner routes fixed measured geometry through four-wall ports, private lanes, and explicit source and target fans.
+Every shared run names one endpoint common to all its members and preserves the full line treatment.
+Pairwise compatibility alone cannot establish trunk ownership.
+A source fan only splits, and a target fan only merges.
+Local conflict repair and grid windows have explicit work limits.
+A failed candidate can request bounded extra room from the legacy placer.
+No unchecked route reaches the painter.
 
-This replaces the Blocks placement, facing, settlement, fold, wrap, and route-repair sequence described in ADRs 0033, 0040, and 0061.
-Those decisions retain their Track clauses.
-ADR 0062 still supplies exact normal header sizes.
-The Rust core, text shaping, scene, Solver interface, worker pool, and vendored Graphviz remain under ADRs 0059 and 0060.
-Graphviz can provide local rank hints, but it does not own the complete compound drawing.
-Track must remain byte-identical.
+Each label belongs to one real relationship and receives no semantic node ID or arrowhead.
+It occupies the midpoint of the longest clear private run that holds its measured plate.
+When no qualifying midpoint exists, it occupies the nearest clear private spot along the route from the source.
+The implementation counts those cases.
+Words remain horizontal on horizontal or vertical runs.
+The label never covers shared ink, crosses a frame wall, or lies under a foreign line.
+A route never gains a bend to reach a label slot.
 
-The explorations reject isolated packing changes, post-placement side-port repair, distant label relocation, and unrestricted whole-graph layered placement.
-Each improves one measure while retaining or worsening another cost.
-Planning puts those costs in one place before route geometry becomes final.
-The private plan adds an internal data structure but removes repeated whole-hierarchy decisions and post-route repairs.
+The complete geometry guard protects cards, headers, captions, walls, labels, endpoints, and fan ownership before emission.
+The painter measures actual decorated ink for page bounds.
+Planned crossing decoration retains its finite search limits.
+The Solver interface, text shaping, Rust core, worker pool, and Graphviz remain under ADRs 0059 and 0060.
+Track retains its existing behavior and must remain byte-identical.
+ADRs 0033, 0040, 0061, and 0062 retain their placement and measured-header decisions.
 
-The [design](../design/blocks-planned-layout.md) defines the plan, cost, fallback bounds, module replacement, and staged adoption gates.
-Its conservative spike proves horizontal label ownership and planned channels on the six references.
-It does not prove compactness, full fan behavior, four-wall optimization, or the 500 ms end-to-end target.
-Its weak pictures and failing legacy tests prevent production adoption of that spike.
-This ADR proposes the complete design, not direct adoption of the research branch.
+The original proposal replaced placement as well as routing.
+Step 8 removed all twenty-three baseline geometry findings and met the three speed budgets.
+It still increased mean area and route length.
+Iteration 3 rejected its readability trials because none passed all six references.
+The hybrid removes that planner-owned placement and keeps its useful routing and guard contracts.
+
+The [design](../design/blocks-planned-layout.md) records the work limits, historical trials, and acceptance gates.
+This decision remains proposed until corpus, speed, and visual acceptance are complete.

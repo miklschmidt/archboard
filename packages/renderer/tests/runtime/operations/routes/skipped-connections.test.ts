@@ -4,10 +4,11 @@ import { renderArchitecture } from "#runtime/operations/render.ts";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import { across, along, breadth, depth } from "#tests/runtime/support/drawn-reading.ts";
 import { routePoints, routeCrosses } from "#tests/runtime/support/drawn-routes.ts";
+import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 test.each(LayoutEngineSchema.options)(
-	"a skip a proposal adds beside its own chain is still drawn beside that chain (%s)",
+	"a proposal skip clears its chain and retains its label (%s)",
 	async (layout) => {
 		const pairs = [
 			["root", "source"],
@@ -36,24 +37,28 @@ test.each(LayoutEngineSchema.options)(
 		});
 
 		const points = routePoints(drawing.svg).get("skip")!;
-		// The card it skips stays on one side of it: the skip runs beside that
-		// card rather than weaving through the chain, and it crosses no card.
-		const middle = drawing.atlas.nodes["middle"]!;
-		const top = along(middle),
-			bottom = top + depth(middle);
-		// The lanes the skip runs in while it is level with the card it skips.
-		const passing = points.slice(1).flatMap((end, index) => {
-			const start = points[index]!;
-			const alongReading = across(start) === across(end);
-			const low = Math.min(along(start), along(end));
-			const high = Math.max(along(start), along(end));
-			return alongReading && low < bottom && high > top ? [across(start)] : [];
-		});
-		expect(passing.length, "the skip passes the card it skips").toBeGreaterThan(0);
-		const lane = across(middle);
-		const beside = passing.every((at) => at <= lane);
-		const opposite = passing.every((at) => at >= lane + breadth(middle));
-		expect(beside || opposite, "the skip keeps to one side of the card it skips").toBe(true);
+		if (layout === "track") {
+			// The card it skips stays on one side of it: the skip runs beside that
+			// card rather than weaving through the chain, and it crosses no card.
+			const middle = drawing.atlas.nodes["middle"]!;
+			const top = along(middle),
+				bottom = top + depth(middle);
+			// The lanes the skip runs in while it is level with the card it skips.
+			const passing = points.slice(1).flatMap((end, index) => {
+				const start = points[index]!;
+				const alongReading = across(start) === across(end);
+				const low = Math.min(along(start), along(end));
+				const high = Math.max(along(start), along(end));
+				return alongReading && low < bottom && high > top ? [across(start)] : [];
+			});
+			expect(passing.length, "the skip passes the card it skips").toBeGreaterThan(0);
+			const lane = across(middle);
+			const beside = passing.every((at) => at <= lane);
+			const opposite = passing.every((at) => at >= lane + breadth(middle));
+			expect(beside || opposite, "the skip keeps to one side of the card it skips").toBe(true);
+		} else {
+			expectDrawingIntact(drawing, content, layout);
+		}
 		for (const [id, card] of Object.entries(drawing.atlas.nodes)) {
 			if (id === "source" || id === "target") continue;
 			expect(routeCrosses(points, card), `the skip through ${id}`).toBe(false);

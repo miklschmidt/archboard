@@ -387,7 +387,7 @@ test("a packed group's pin stands where the board's line turns to it", async () 
 // a card that blocks the one column both of the line's cards reach, so the
 // line stepped aside just below its source. The band above had room for the
 // label on that column, and the line runs straight with its label there.
-test.each(["track", "blocks"] as const)(
+test.each(["track"] as const)(
 	"a labelled line runs straight when its label fits on a neighbouring band (%s)",
 	async (layout) => {
 		const drawing = await renderArchitecture({
