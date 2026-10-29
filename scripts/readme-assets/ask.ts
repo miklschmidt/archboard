@@ -22,6 +22,8 @@ const QUESTION = "Why does this part exist, and what would break without it?";
 const CLIP = attachmentFile("ask.webp");
 const THUMBNAIL = readmeFile("idx-ask.webp");
 const STATUS = "document.querySelector(\"[data-slot='agent-status']\")?.textContent.trim() ?? ''";
+const EXPLANATION_STATUS =
+	"document.querySelector(\"[data-slot='model-explanation']\")?.getAttribute('data-status') ?? ''";
 
 /** How long the wait for the answer lasts once it is played faster. */
 const FAST_WAIT_SECONDS = 7;
@@ -98,6 +100,38 @@ async function requireSignedIn(
 	return requireSignedIn(page, calm, deadline);
 }
 
+/**
+ * Await the answer and any captured action that the workhorse queues for itself.
+ * @param page The live conversation and captured explanation.
+ */
+async function requireAnswer(page: Page): Promise<void> {
+	await page.waitFor(
+		`(() => {
+			const agent = (${STATUS});
+			const explanation = (${EXPLANATION_STATUS});
+			return /^(Failed|Stopped)/.test(agent) ||
+				['failed', 'cancelled', 'unavailable'].includes(explanation) ||
+				(agent.startsWith('Done') && ['', 'completed'].includes(explanation));
+		})()`,
+		"the completed answer",
+		ANSWER_MS,
+	);
+	const explanation = String(await page.evaluate(EXPLANATION_STATUS));
+	if (explanation !== "" && explanation !== "completed")
+		throw new Error(`The captured explanation did not complete: ${explanation}.`);
+	if (!String(await page.evaluate(STATUS)).startsWith("Done"))
+		throw new Error("The agent did not finish its answer.");
+	if (
+		explanation === "completed" &&
+		!String(
+			await page.evaluate(
+				"document.querySelector(\"[data-slot='model-explanation-text']\")?.textContent.trim() ?? ''",
+			),
+		)
+	)
+		throw new Error("The completed explanation contains no answer.");
+}
+
 const ask: Producer = {
 	kind: "clip",
 	codex: true,
@@ -139,11 +173,8 @@ const ask: Producer = {
 				const sent = now();
 				await page.moveTo({ x: 1300, y: 640 }, 20);
 				await Bun.sleep(1500);
-				await page.waitFor(`/^(Done|Failed|Stopped)/.test(${STATUS})`, "the answer", ANSWER_MS);
+				await requireAnswer(page);
 				const done = now();
-				if (!String(await page.evaluate(STATUS)).startsWith("Done")) {
-					throw new Error("The agent did not finish its answer.");
-				}
 				await page.evaluate("document.activeElement && document.activeElement.blur()");
 				await Bun.sleep(1000);
 				const answered = await moment(page, ["[data-slot='agent-panel']"], 960);
