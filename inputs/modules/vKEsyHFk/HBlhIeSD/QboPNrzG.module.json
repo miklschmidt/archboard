@@ -56,6 +56,19 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#qRuxyaeW",
       "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "order": 128000,
+      "kind": "call",
+      "label": "Track accepted work",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/explanation-routes.ts",
+        "symbol": "asyncEndpoint"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8",
+      "id": "vKEsyHFk#Cs9bKFjC"
     }
   ]
 }
