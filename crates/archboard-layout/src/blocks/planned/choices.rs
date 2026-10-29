@@ -1,6 +1,6 @@
 //! Candidate channels between fixed endpoint ports.
 use super::{
-    fixed::{page_bounds, page_cost, route_cost},
+    fixed::{page_bounds, route_rank},
     geometry::{clean, contains, crosses_box, length},
     model::Model,
     ports::center,
@@ -80,12 +80,7 @@ fn select(
 ) -> Vec<PlacedLine> {
     let bounds = shape.scopes[&topology.routes[edge].scope].bounds;
     let ink_bounds = page_bounds(shape);
-    paths.sort_by_cached_key(|path| {
-        (
-            page_cost(ink_bounds, path).to_bits(),
-            route_cost(path).to_bits(),
-        )
-    });
+    paths.sort_by_cached_key(|path| route_rank(model, ink_bounds, path));
     paths.dedup();
     let mut pool = Pool::default();
     let limit = if model.edges.len() > 64 { 64 } else { 128 };

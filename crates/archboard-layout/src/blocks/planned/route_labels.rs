@@ -225,6 +225,8 @@ fn slot_index(
         height: label.height.unwrap_or(0.0),
     };
     let mut spans = index.private(edge, path);
+    // Every plate in a stack must meet its own line, not only the stack's envelope.
+    spans.retain(|span| !label.stacked || span.a.x == span.b.x);
     spans.sort_by(|a, b| {
         length(&[b.a, b.b])
             .total_cmp(&length(&[a.a, a.b]))
@@ -505,6 +507,21 @@ mod tests {
             {"id":"ac","sources":["a"],"targets":["c"]}]}))
         .unwrap()
     }
+    #[test]
+    fn stacked_labels_follow_a_vertical_run_even_when_the_horizontal_run_is_longer() {
+        let graph: Node = serde_json::from_value(json!({"id":"root","children":[
+            {"id":"a","width":100,"height":60},{"id":"b","width":100,"height":60}],
+            "edges":[{"id":"ab","sources":["a"],"targets":["b"],
+                "labels":[{"width":80,"height":180,"stacked":true}]}]}))
+        .unwrap();
+        let model = Model::new(&graph).unwrap();
+        let shape = drawing(&[("ab", &[(100.0, 100.0), (900.0, 100.0), (900.0, 500.0)])]);
+        let (label, _) = slot(&model, 0, &shape, &shape.routes[0].points).unwrap();
+        assert_eq!(label.x + label.width / 2.0, 900.0);
+        assert!(label.y > 100.0 && label.y + label.height < 500.0);
+        assert!(slot(&model, 0, &shape, &shape.routes[0].points[..2]).is_none());
+    }
+
     #[test]
     fn words_use_the_longest_private_run_after_the_fan_splits() {
         let graph = graph();

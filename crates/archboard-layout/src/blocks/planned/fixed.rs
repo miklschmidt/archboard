@@ -163,6 +163,16 @@ pub(super) fn route_cost(path: &[Point]) -> f64 {
     length(path) + 120.0 * path.len().saturating_sub(2) as f64
 }
 
+pub(super) fn route_rank(model: &Model<'_>, bounds: Rect, path: &[Point]) -> (u64, u64) {
+    let page = page_cost(bounds, path).to_bits();
+    let route = route_cost(path).to_bits();
+    if model.edges.len() <= super::REFINEMENT_LIMIT {
+        (route, page)
+    } else {
+        (page, route)
+    }
+}
+
 pub(super) fn page_bounds(shape: &Shape) -> Rect {
     let boxes = shape.endpoints.values().chain(
         shape
@@ -230,8 +240,17 @@ fn candidates(
             hints.get(&edge).copied(),
             Search::Simple,
         );
-        if choices.is_empty() {
-            choices = choose(
+        let (from, to) = model.ends[edge];
+        let direct = length(&[
+            super::ports::center(shape.endpoints[&from]),
+            super::ports::center(shape.endpoints[&to]),
+        ]);
+        if choices.first().is_none_or(|line| {
+            model.edges.len() <= super::REFINEMENT_LIMIT
+                && length(&line.points) > direct + 300.0
+                && length(&line.points) > 1.5 * direct
+        }) {
+            choices.extend(choose(
                 model,
                 topology,
                 edge,
@@ -239,7 +258,7 @@ fn candidates(
                 guide,
                 hints.get(&edge).copied(),
                 Search::Channels,
-            );
+            ));
         }
         if choices.len() < 4 {
             choices.extend(
@@ -261,11 +280,7 @@ fn candidates(
         if choices.is_empty() {
             return Err(blocked(model, edge));
         }
-        choices.sort_by(|a, b| {
-            page_cost(bounds, &a.points)
-                .total_cmp(&page_cost(bounds, &b.points))
-                .then(route_cost(&a.points).total_cmp(&route_cost(&b.points)))
-        });
+        choices.sort_by_cached_key(|line| route_rank(model, bounds, &line.points));
         candidates.push(choices);
     }
     Ok(candidates)

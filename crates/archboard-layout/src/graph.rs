@@ -42,6 +42,9 @@ pub(crate) struct Edge {
 /// A relationship's measured label.
 #[derive(Clone, Debug, Deserialize)]
 pub(crate) struct Label {
+    /// Separate label plates stacked from top to bottom.
+    #[serde(default)]
+    pub stacked: bool,
     #[serde(default)]
     pub width: Option<f64>,
     #[serde(default)]

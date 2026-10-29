@@ -208,6 +208,7 @@ fn edge_of(
                 ("text", J::Str(words.join("\n"))),
                 ("width", J::Num(label.width)),
                 ("height", J::Num(label.height)),
+                ("stacked", J::Bool(label.chips.len() > 1)),
             ])]
         });
     J::obj([

@@ -48,6 +48,21 @@ Count those final selected placements separately from routing fallbacks.
 Label placement never adds a bend or changes an endpoint.
 Small clearance margins protect the result from SVG rounding.
 
+A stack of labels must follow a vertical run that holds its full measured height.
+Measurement carries the stack flag to layout, so the planner protects each visible plate rather than only their combined rectangle.
+Single labels can still use either run direction.
+
+Readability refinement has a limit of 32 relationships per view.
+Within that limit, route length and bends rank before added page area.
+A simple candidate that exceeds the direct distance by 300 units and 50 percent also tries the existing two-channel templates.
+Reciprocal calls can reuse the bounded conflict repair when an earlier route forces that much extra travel.
+The repaired route set must reduce the combined route cost.
+A successful greedy plan with a route 120 units and 50 percent beyond its shortest candidate also tries the short-first order.
+The planner keeps the order with fewer such detours, then the lower combined route cost.
+Both attempts share the existing grid-window budget.
+Dense drawings retain their existing candidate ranking and route-order search because wider refinement exceeds the render-time budget.
+The label-stack rule and complete geometry guards apply at every size.
+
 Connected conflict repair reconsiders at most three earlier routes, to depth three.
 Each route-order attempt permits eight repairs, each with ninety-six conflict attempts and six distinct conflict sets per level.
 Local grid windows retain limits of 128 obstacles, 192 coordinates per axis, and 32,768 search states.

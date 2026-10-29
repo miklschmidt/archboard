@@ -221,3 +221,37 @@ fn label_fits(label: &Value, pair: &[Value]) -> bool {
                 && a.max(b) >= number(label, along) + number(label, size)
         })
 }
+
+#[test]
+fn reciprocal_labeled_calls_keep_the_short_gap_between_neighbors() {
+    let placed = drawing(&json!({"id":"root","layoutOptions":{
+        "archboard.blocks.nesting":"blocks",
+        "archboard.group.captions":"[[\"panes\",126.44,42]]"},
+        "children":[
+            {"id":"session","width":340,"height":122,"layoutOptions":{"archboard.order":"0"}},
+            {"id":"presence","width":340,"height":122,"layoutOptions":{"archboard.order":"1","archboard.group":"panes"}},
+            {"id":"history","width":340,"height":122,"layoutOptions":{"archboard.order":"2"}}],
+        "edges":[
+            {"id":"return","sources":["presence"],"targets":["session"],"layoutOptions":{"archboard.order":"0"},"labels":[{"width":118.5,"height":46}]},
+            {"id":"record","sources":["session"],"targets":["history"],"layoutOptions":{"archboard.order":"1"},"labels":[{"width":144.9,"height":46}]},
+            {"id":"show","sources":["session"],"targets":["presence"],"layoutOptions":{"archboard.order":"2"},"labels":[{"width":163.49,"height":46}]}]}));
+    for edge in placed["edges"].as_array().unwrap() {
+        let points = edge["points"].as_array().unwrap();
+        let length: f64 = points
+            .windows(2)
+            .map(|pair| {
+                (pair[0]["x"].as_f64().unwrap() - pair[1]["x"].as_f64().unwrap()).abs()
+                    + (pair[0]["y"].as_f64().unwrap() - pair[1]["y"].as_f64().unwrap()).abs()
+            })
+            .sum();
+        assert!(
+            length < 300.0,
+            "a neighboring call takes a perimeter detour: {edge}"
+        );
+        assert!(
+            points
+                .windows(2)
+                .any(|pair| label_fits(&edge["label"], pair))
+        );
+    }
+}
