@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-29T01:34:00Z'
+updated_date: '2026-10-29T02:26:00Z'
 labels:
   - renderer
   - layout
@@ -63,4 +63,6 @@ The final council of TASK-548.08 (2026-10-28, 40 blind pairs against c147b73c8, 
 2026-10-29: iteration 3 kept nothing: both trials failed the six-reference gate (best: area +18%, route length x2). All 488 graphs above 24 relationships used the planner's conservative construction. Course change: legacy Blocks placement composes better, the planner routes better and faster. Iteration 4 (feat/blocks-hybrid) keeps legacy placement and replaces only Blocks routing with the planner's lanes, fans, label runs and guard. In parallel, explore/blocks-placespeed speeds up the remaining legacy solve (Graphviz and placement steps) with byte-identical drawings.
 
 2026-10-29: explore/blocks-placespeed applied as c88285604 (slide spans reused, crossing-decoration bounds cached, Graphviz polygon work trimmed); corpus re-checked byte-identical in both engines. First renders 1094/658/821 to 1027/605/769 ms. Native budget outside the trunk router: 385/147/371 ms full render; Graphviz 176/27/208 ms of it. explore/blocks-gvspeed now cuts Graphviz time with identical drawings.
+
+2026-10-29: explore/blocks-gvspeed applied as a0f65d38a (Graphviz returns only the geometry layout reads; native Graphviz -19 to -21%); corpus re-checked byte-identical in both engines. First renders gain only 2 to 4%. Cause found: one Blocks solve makes 88/24/77 Graphviz calls, mostly wrap candidates each routed and scored, plus repeated hierarchy passes for side-wall exits and port order. The hybrid builder may cut those passes, a drawing change under its per-reference gates.
 <!-- SECTION:NOTES:END -->
