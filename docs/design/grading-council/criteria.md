@@ -111,5 +111,5 @@ The council:
 
 1. Every defect any grader reports is looked at full size by the person running the council. A defect found real counts for every grader. A defect found false is dropped.
 2. The defect rules of one grader then apply to the real defects.
-3. For two pictures without a real defect, sort the four Δ values and take the mean of the middle two (the median). Apply the same ±0.40 thresholds. This settles a 2–2 split without a special case.
+3. For two pictures without a real defect, take the median of the three Δ values. Apply the same ±0.40 thresholds.
 4. The change fails when any pair is `worse`, or when an after picture has a real defect that its before picture lacks.
