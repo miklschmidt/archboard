@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-29T00:38:00Z'
+updated_date: '2026-10-29T01:34:00Z'
 labels:
   - renderer
   - layout
@@ -61,4 +61,6 @@ The final council of TASK-548.08 (2026-10-28, 40 blind pairs against c147b73c8, 
 2026-10-28: steps 7 and 8 (feat/blocks-planned a6826516): the planner draws every Blocks architecture drawing, geometric findings 23 to 0, Track identical, timings 300/257/212 ms first (was 1073/614/822). Readability worse: area +22%, route length x2.1, bends per route 2.35 to 3.40, four-or-more-bend routes 31% to 40%. Faults seen in the pictures: labels in cells beside their source force sideways departures and loops; dependency order inside scopes lost; lines between frames circle them through fixed-side exports and bottom arrivals. Iteration 3 fixes these three, keeping a change only when the six references improve against the baseline.
 
 2026-10-29: iteration 3 kept nothing: both trials failed the six-reference gate (best: area +18%, route length x2). All 488 graphs above 24 relationships used the planner's conservative construction. Course change: legacy Blocks placement composes better, the planner routes better and faster. Iteration 4 (feat/blocks-hybrid) keeps legacy placement and replaces only Blocks routing with the planner's lanes, fans, label runs and guard. In parallel, explore/blocks-placespeed speeds up the remaining legacy solve (Graphviz and placement steps) with byte-identical drawings.
+
+2026-10-29: explore/blocks-placespeed applied as c88285604 (slide spans reused, crossing-decoration bounds cached, Graphviz polygon work trimmed); corpus re-checked byte-identical in both engines. First renders 1094/658/821 to 1027/605/769 ms. Native budget outside the trunk router: 385/147/371 ms full render; Graphviz 176/27/208 ms of it. explore/blocks-gvspeed now cuts Graphviz time with identical drawings.
 <!-- SECTION:NOTES:END -->
