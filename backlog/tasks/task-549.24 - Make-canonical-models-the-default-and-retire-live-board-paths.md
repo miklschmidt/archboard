@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-29T01:12:00Z'
+updated_date: '2026-10-29T01:53:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -206,6 +206,12 @@ Align the already implemented TASK-549 architecture after source review through 
 Preserve the documented opt-in two-server topology behavior after retirement. The system review owns a canonical replacement test using real owned servers, shared temporary vault/Git, subject-claim exclusion, foreign claim/release news, and revoked-writer refusal after take-back. Root replaces the stale normal-lane exclusion and opt-in command in vite.config.ts after active README generation. Product failures require exact evidence before any expanded source repair. Keep this topology outside the normal gate.
 
 Repair the demonstrated large-capture delivery failure from the real README ask run. The existing workhorse queue rejects the full serialized model above its 16,384-byte prompt limit. Delegate a bounded backend repair through the existing workhorse delivery/materialization owners, preserving complete captured meaning and the existing limit. Root repairs the ask producer to reject failed or unfinished captured actions, owns manual QA and all frontend changes, and keeps the rejected clip unpublished. Reuse existing public action and real queue owners with a supported model-sized capture.
+
+Repair the second demonstrated ask failure: automatic queue consumption completes its captured turn, but the explanation action remains queued. Preserve the stable queue client-message identity and correlate the actual provider item/lifecycle notifications, including unloaded turn envelopes. Add focused public action evidence using the existing external-provider fixture, without polling or timing guesses. Root keeps the current recording deadline and all frontend/media ownership.
+
+Repair the remaining pane-context review gap. Prove that the old two-pane test accepts the wrong canonical selection, replace retired board distinctions with exact canonical reports, and prove that the repaired owner rejects that same defect. Preserve existing case deadlines and the public server seam.
+
+The canonical pane fixture exposes two product failures before its selection assertion: GET /api/panes parses model keys as legacy boards, and a later socket inherits that key and fails admission. Repair canonical report identity and initial socket messages, then retain exact selections in the existing owner. Keep legacy retained reading compatibility and all deadlines.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -466,4 +472,8 @@ The system retirement review found the deleted opt-in cross-process lock test st
 Regenerated and inspected the non-agent README media. Eight accepted clips upload once with successful receipts. Three narrated videos are byte-identical to prior accepted uploads, and their talk/voice bytes remain exact. README links now name the accepted clips. The live ask producer exited 0, but root visual QA found a failed captured explanation. The server log proves that complete model JSON exceeds the existing 16,384-byte workhorse prompt limit. The failed clip stays unpublished and its prior accepted thumbnail/URL remain. Root repaired the producer to wait for captured completion and reject failure or empty results, using existing status attributes and deadline. Ask input hashes now include its delivery, instructions and command owners. Both types, strict lint and 11 manifest cases pass. Fifteen of 16 assets are current. The isolated backend repair and final acceptance remain open. Exact review is task-549.24-final-media-ask-acceptance-review.json.
 
 Merged the final system review and complete explanation delivery repair at signed 18d80fef. The two-server topology owner passes through the actual opt-in command. A private local file now carries each complete captured model through the unchanged bounded workhorse queue. Six focused delivery/profile cases and 79 assertions pass; both type projects pass after composition. Root reviewed all new delivery, lifecycle, test and consumer hunks with no remaining Standards or Spec finding. Exact review is task-549.24-explanation-delivery-review.json. The shipped guide now explains captureFile and cleanup ownership. Real ask acceptance and two recorded unchanged walkthrough deadline failures remain for focused disposition before the final gate.
+
+The socket refusal came from a fixture that omitted the existing reading=canonical socket mode. The fixture now uses the shipped mode. Product repair stays in canonical pane reporting: preserve the model key without a fabricated board identity, and retain the reported selection. No socket product change is needed.
+
+Closed the last original coverage gap in codex-pane-context.test.ts. The old owner passes a forced wrong-tab context; the repaired owner fails at Gateway versus Ledger. Canonical pane registration also exposed GET /api/panes parsing model keys as legacy boards. The report now preserves the key and exact selection without inventing a board identity. Three affected cases pass with 50 assertions. Both type projects, strict focused source/test lint, format, and whitespace pass. Exact review and mutation evidence: task-549.24-pane-context-review.json. The automatic explanation repair, media, full gate, archive publication, and final acceptance remain open.
 <!-- SECTION:NOTES:END -->

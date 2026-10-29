@@ -68,13 +68,16 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		});
 		resources.defer(() => server.dispose());
 		const request = createRequester(server);
-		const socket = await openApplicationSocket(server.base, "voice-client");
+		const socket = await openApplicationSocket(`${server.base}?reading=canonical`, "voice-client");
 		resources.defer(() => socket.close());
 		const model = seedCanonicalFixture(fixture.vault, "scratch", [
 			{ name: "Gateway", kind: "service" },
 			{ name: "Ledger", kind: "datastore" },
 		]);
-		const registration = pane("voice-client", "voice-pane", true, true);
+		const registration = {
+			...pane("voice-client", "voice-pane", true, true),
+			board: `model:${model.manifest.id}`,
+		};
 		expect(
 			(await request("/api/panes", { method: "POST", doing: false, body: registration })).status,
 		).toBe(200);
@@ -113,13 +116,17 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 				.filter((entry) => entry.method === "thread/realtime/appendText")
 				// The log holds the answer to each request under the same method, with no text.
 				.map((entry) => entry.params?.["text"])
-				.filter((text): text is string => typeof text === "string")
-				// The board catalogue is appended by its own channel when a board is created.
-				.filter((text) => !text.includes("archboard_board_catalogue"));
-		// What the person picked out, in the board's own words: the id an edit
+				.filter((text): text is string => typeof text === "string");
+		// What the person picked out, in the model's own words: the id an edit
 		// command would take, never anything drawn (ADR 0023).
 		const variant = model.selectedState!;
 		const ids = [model.modules.find((module) => module.name === "Gateway")!.id];
+		const ledger = model.modules.find((module) => module.name === "Ledger")!.id;
+		const capture = canonicalCapture(fixture.vault, model, ids);
+		const ledgerCapture = {
+			...canonicalCapture(fixture.vault, model, []),
+			reading: { ...capture.reading, focus: [], scope: ledger },
+		};
 		expect(
 			(
 				await request(SEMANTIC_PANE_CONTEXT_ROUTE, {
@@ -128,12 +135,12 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 					body: {
 						paneId: "voice-pane",
 						clientId: "voice-client",
-						board: { name: "scratch", key: "scratch" },
+						board: { name: model.manifest.name, key: `model:${model.manifest.id}` },
 						variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
 						view: null,
 						selection: ids.map((id) => ({ id })),
 						version: null,
-						architecture: canonicalCapture(fixture.vault, model, ids),
+						architecture: capture,
 						// The pane says the pick was the user's own hand.
 						byUser: ["selection"],
 						at: new Date().toISOString(),
@@ -164,6 +171,7 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		const live = await request<{
 			panes: Array<{ clientId: string; reading: { selection: Array<{ id: string }> } }>;
 		}>("/api/panes");
+		expect(live.status, live.text).toBe(200);
 		expect(
 			live.body.panes
 				.find((entry) => entry.clientId === "voice-client")
@@ -171,16 +179,23 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		).toEqual(ids);
 		// A pick by hand in another browser tab is that tab's conversation's news, never this
 		// voice's (TASK-373): every tab has a publisher of its own.
-		const otherTab = await openApplicationSocket(server.base, "other-tab-client", {
-			tabSession: "other-tab",
-		});
+		const otherTab = await openApplicationSocket(
+			`${server.base}?reading=canonical`,
+			"other-tab-client",
+			{
+				tabSession: "other-tab",
+			},
+		);
 		resources.defer(() => otherTab.close());
 		expect(
 			(
 				await request("/api/panes", {
 					method: "POST",
 					doing: false,
-					body: pane("other-tab-client", "voice-pane", false, false),
+					body: {
+						...pane("other-tab-client", "voice-pane", false, false),
+						board: registration.board,
+					},
 				})
 			).status,
 		).toBe(200);
@@ -192,12 +207,12 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 					body: {
 						paneId: "voice-pane",
 						clientId: "other-tab-client",
-						board: { name: "scratch", key: "scratch" },
+						board: { name: model.manifest.name, key: `model:${model.manifest.id}` },
 						variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
 						view: null,
 						selection: ids.map((id) => ({ id })),
 						version: null,
-						architecture: canonicalCapture(fixture.vault, model, ids),
+						architecture: capture,
 						byUser: ["selection"],
 						at: new Date().toISOString(),
 						sequence: 0,
@@ -208,11 +223,6 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		await sleep(PANE_TELEMETRY_SETTLE_MS);
 		expect(appended()).toHaveLength(1);
 		await otherTab.close();
-		// A pane that has said what it is reading is read out by the variant's
-		// lasting name rather than its id: "scratch (Initial)" is something an
-		// agent can say to somebody, and an id twice over is not.
-		const named = await request<{ summary: string }>("/api/panes");
-		expect(typeof named.body.summary).toBe("string");
 
 		expect(
 			(
@@ -221,8 +231,8 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 					doing: false,
 					body: {
 						reading: {
-							model: "Fixture",
-							module: model.modules.find((module) => module.name === "Ledger")!.id,
+							model: model.manifest.id,
+							module: ledger,
 						},
 						pane: "primary",
 					},
@@ -239,10 +249,11 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 					body: {
 						paneId: "voice-pane",
 						clientId: "voice-client",
-						board: { name: "payments", key: "payments" },
+						board: { name: model.manifest.name, key: registration.board },
 						variant: null,
 						view: null,
 						selection: [],
+						architecture: ledgerCapture,
 						version: null,
 						at: new Date().toISOString(),
 						sequence: 1,
@@ -260,10 +271,11 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 			body: {
 				paneId: "voice-pane",
 				clientId: "voice-client",
-				board: { name: "scratch", key: "scratch" },
+				board: { name: model.manifest.name, key: `model:${model.manifest.id}` },
 				variant: null,
 				view: null,
 				selection: ids.map((id) => ({ id })),
+				architecture: capture,
 				version: null,
 				at: new Date().toISOString(),
 				sequence: 0,
@@ -272,18 +284,24 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		// Answered, not failed: an overtaken request in flight is not an error.
 		expect(overtaken.status).toBe(200);
 		expect(overtaken.body.kept).toBeFalse();
+		const kept = await request<{
+			panes: Array<{ clientId: string; architecture: typeof ledgerCapture }>;
+		}>("/api/panes");
+		expect(
+			kept.body.panes.find((entry) => entry.clientId === "voice-client")?.architecture,
+		).toMatchObject(ledgerCapture);
 		expect(
 			(
 				await request("/api/panes", {
 					method: "POST",
 					doing: false,
-					body: { ...registration, board: "payments", focused: false },
+					body: { ...registration, focused: false },
 				})
 			).status,
 		).toBe(200);
 		// Which pane the user is in moves only by their own hand, so that is news too. A show that
-		// names no agent (the page's own, which the pane marks itself), a write to a board no pane
-		// showed when it landed, and the two readings no hand was marked on, are not: an append
+		// names no agent (the page's own, which the pane marks itself) and the two readings no hand
+		// was marked on are not: an append
 		// used to follow each of them within a few hundred milliseconds. An agent's show is
 		// codex-outside-change's.
 		await waitFor(() => appended().length === 2, "the user's move to reach live voice", {
@@ -320,7 +338,7 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 
 // Every browser tab presents a pane "A" of its own, so a command's context is read from the exact
 // pane that sent it, by client id (TASK-373). A lookup by "A" took the first tab's pane, and a turn
-// typed in one tab carried the board another tab was showing.
+// typed in one tab carried the selection from another tab.
 test("a command's context is its own pane's while another tab also shows pane A", async () => {
 	const resources = new AsyncDisposableStack();
 	try {
@@ -337,29 +355,55 @@ test("a command's context is its own pane's while another tab also shows pane A"
 		});
 		resources.defer(() => server.dispose());
 		const request = createRequester(server);
-		seedCanonicalFixture(fixture.vault, "scratch", [
+		const model = seedCanonicalFixture(fixture.vault, "scratch", [
 			{ name: "Gateway", kind: "service" },
 			{ name: "Ledger", kind: "service" },
 		]);
-		// The other tab's pane A registers first and shows another board.
-		const other = await openApplicationSocket(server.base, "other-tab-a", {
+		// Both panes show the same model, but their selected subjects differ.
+		const other = await openApplicationSocket(`${server.base}?reading=canonical`, "other-tab-a", {
 			tabSession: "other-tab",
 		});
 		resources.defer(() => other.close());
 		const registerOther = await request("/api/panes", {
 			method: "POST",
 			doing: false,
-			body: { ...pane("other-tab-a", "A", true, true), board: "payments" },
+			body: { ...pane("other-tab-a", "A", true, true), board: `model:${model.manifest.id}` },
 		});
 		expect(registerOther.status).toBe(200);
-		const own = await openApplicationSocket(server.base, "own-tab-a", { tabSession: "own-tab" });
+		const own = await openApplicationSocket(`${server.base}?reading=canonical`, "own-tab-a", {
+			tabSession: "own-tab",
+		});
 		resources.defer(() => own.close());
 		const registerOwn = await request("/api/panes", {
 			method: "POST",
 			doing: false,
-			body: pane("own-tab-a", "A", true, true),
+			body: { ...pane("own-tab-a", "A", true, true), board: `model:${model.manifest.id}` },
 		});
 		expect(registerOwn.status).toBe(200);
+		const gateway = model.modules.find((module) => module.name === "Gateway")!.id;
+		const ledger = model.modules.find((module) => module.name === "Ledger")!.id;
+		for (const [clientId, id] of [
+			["other-tab-a", ledger],
+			["own-tab-a", gateway],
+		] as const) {
+			const reported = await request(SEMANTIC_PANE_CONTEXT_ROUTE, {
+				method: "POST",
+				doing: false,
+				body: {
+					paneId: "A",
+					clientId,
+					board: { name: model.manifest.name, key: `model:${model.manifest.id}` },
+					variant: null,
+					view: null,
+					selection: [{ id }],
+					version: null,
+					architecture: canonicalCapture(fixture.vault, model, [id]),
+					at: new Date().toISOString(),
+					sequence: 0,
+				},
+			});
+			expect(reported.status).toBe(200);
+		}
 		expect(await own.request("connect")).toMatchObject({ ok: true });
 		const command = async (name: string, extra: Record<string, unknown> = {}) =>
 			own.request("command", {
@@ -376,7 +420,10 @@ test("a command's context is its own pane's while another tab also shows pane A"
 		});
 		const link = snapshots(await own.request("snapshot"))["threadLink"] as Record<string, unknown>;
 		expect(
-			await command("start", { threadId: link["threadId"], prompt: "What does this board say?" }),
+			await command("start", {
+				threadId: link["threadId"],
+				prompt: "Explain the selected module.",
+			}),
 		).toMatchObject({ ok: true, value: { outcome: "delivered" } });
 		const turn = records(fixture.logPath).find(
 			(entry) => entry.kind === "frame" && entry.method === "turn/start",
@@ -390,9 +437,10 @@ test("a command's context is its own pane's while another tab also shows pane A"
 			readonly semantic: { readonly brief: string };
 		};
 		expect(context).toMatchObject({ paneId: "A", board: { name: "scratch" } });
-		// The brief names the board's vault, so the thread can pass it as -C (ADR 0050).
+		// The brief names the exact selection and vault for this tab (ADR 0050).
 		expect(JSON.parse(context.semantic.brief)).toMatchObject({
 			board: { vault: realpathSync(fixture.vault) },
+			architecture: { selection: { count: 1, subjects: [{ id: gateway, name: "Gateway" }] } },
 		});
 	} finally {
 		await resources.disposeAsync();
