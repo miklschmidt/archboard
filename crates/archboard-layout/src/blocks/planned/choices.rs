@@ -276,29 +276,30 @@ fn connect(
     let a = shape.endpoints[&from];
     let b = shape.endpoints[&to];
     let mut paths = Vec::new();
-    for middle in super::corridors::joins(
-        tail.approach,
-        head.approach,
+    let mut points = Vec::with_capacity(7);
+    super::corridors::joins(
+        (tail.approach, head.approach),
         bounds,
         shape,
         (guide, hint),
         obstacles,
         search == Search::Simple,
-    ) {
-        let points = clean(
-            std::iter::once(tail.attachment)
-                .chain(middle)
-                .chain([head.attachment])
-                .collect(),
-        );
-        if points.len() >= 2
-            && super::channel::approaches(&points)
-            && super::channel::attached(points[0], points[1], a)
-            && super::channel::attached(points[points.len() - 1], points[points.len() - 2], b)
-        {
-            paths.push(points);
-        }
-    }
+        |middle| {
+            super::geometry::clean_into(
+                std::iter::once(tail.attachment)
+                    .chain(middle.iter().copied())
+                    .chain([head.attachment]),
+                &mut points,
+            );
+            if points.len() >= 2
+                && super::channel::approaches(&points)
+                && super::channel::attached(points[0], points[1], a)
+                && super::channel::attached(points[points.len() - 1], points[points.len() - 2], b)
+            {
+                paths.push(points.clone());
+            }
+        },
+    );
     paths
 }
 

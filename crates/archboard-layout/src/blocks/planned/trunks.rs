@@ -1,8 +1,14 @@
 //! Reserve packed-block corridors with templates before bounded local search.
 
-use super::geometry::{clean, crosses_box, length};
+use super::geometry::{clean_into, length};
 use crate::geometry::{Point, Rect, inflate};
 use archboard_router::{Connector, Dir, End, Route, Scene};
+
+struct Fixed {
+    connector: Connector,
+    points: Vec<Point>,
+    bounds: super::junctions::Envelope,
+}
 
 fn point(p: archboard_router::Point) -> Point {
     Point { x: p.x, y: p.y }
@@ -49,25 +55,28 @@ pub(super) fn route(scene: &Scene) -> Vec<Route> {
         .iter()
         .map(|&r| inflate(rect(r), scene.params.clearance))
         .collect();
-    let mut fixed: Vec<(Connector, Vec<Point>)> = Vec::new();
+    let clearance = super::clearance::Clearance::new(boxes.clone());
+    let mut fixed: Vec<Fixed> = Vec::new();
     let mut result = Vec::new();
     let mut windows = 0;
     for connector in &scene.connectors {
         let a = approach(scene, connector.ends.0);
         let b = approach(scene, connector.ends.1);
-        let middles = templates(scene, &boxes, &fixed, a, b);
         let mut best: Option<(f64, Vec<Point>)> = None;
-        for middle in middles.into_iter().filter(|middle| {
-            !boxes.iter().any(|&r| crosses_box(middle, r))
-                && !scene
+        let mut path = Vec::with_capacity(6);
+        templates(scene, &boxes, &fixed, a, b, |middle| {
+            if !clearance.clear(middle)
+                || scene
                     .minimum
                     .is_some_and(|p| middle.iter().any(|q| q.x < p.x || q.y < p.y))
-        }) {
-            let path = clean(
+            {
+                return;
+            }
+            clean_into(
                 std::iter::once(point(connector.ends.0.at()))
-                    .chain(middle)
-                    .chain([point(connector.ends.1.at())])
-                    .collect(),
+                    .chain(middle.iter().copied())
+                    .chain([point(connector.ends.1.at())]),
+                &mut path,
             );
             let Some(cost) = cost(
                 scene,
@@ -76,21 +85,25 @@ pub(super) fn route(scene: &Scene) -> Vec<Route> {
                 &path,
                 best.as_ref().map(|(cost, _)| *cost),
             ) else {
-                continue;
+                return;
             };
             if best
                 .as_ref()
                 .is_none_or(|(old, _)| cost.total_cmp(old).is_lt())
             {
-                best = Some((cost, path));
+                best = Some((cost, path.clone()));
             }
-        }
+        });
         let path = best
             .map(|(_, p)| p)
             .or_else(|| bounded(scene, &boxes, &fixed, *connector, a, b, &mut windows));
         match path {
             Some(path) => {
-                fixed.push((*connector, path.clone()));
+                fixed.push(Fixed {
+                    connector: *connector,
+                    points: path.clone(),
+                    bounds: super::junctions::Envelope::new(&path),
+                });
                 result.push(Route::Routed(path.into_iter().map(router_point).collect()));
             }
             None => result.push(Route::Unroutable),
@@ -102,23 +115,26 @@ pub(super) fn route(scene: &Scene) -> Vec<Route> {
 /// An admissible template's cost, unless its base already loses to the best route.
 fn cost(
     scene: &Scene,
-    fixed: &[(Connector, Vec<Point>)],
+    fixed: &[Fixed],
     connector: Connector,
     path: &[Point],
     best: Option<f64>,
 ) -> Option<f64> {
     let base = length(path) + scene.params.bend * path.len().saturating_sub(2) as f64;
     // Crossing costs are nonnegative. A more expensive base cannot win.
-    if scene.params.crossing >= 0.0 && best.is_some_and(|cost| base > cost) {
+    if scene.params.crossing >= 0.0 && best.is_some_and(|cost| base >= cost) {
         return None;
     }
-    let good = fixed.iter().all(|(other, p)| {
-        let points = p;
-        if super::junctions::apart(path, points) {
+    let bounds = super::junctions::Envelope::new(path);
+    let good = fixed.iter().all(|other| {
+        let points = &other.points;
+        if bounds.apart(other.bounds) {
             return true;
         }
-        let source = connector.subjects.0.is_some() && connector.subjects.0 == other.subjects.0;
-        let target = connector.subjects.1.is_some() && connector.subjects.1 == other.subjects.1;
+        let source =
+            connector.subjects.0.is_some() && connector.subjects.0 == other.connector.subjects.0;
+        let target =
+            connector.subjects.1.is_some() && connector.subjects.1 == other.connector.subjects.1;
         (!(source || target) || super::junctions::sharing(path, points, source, target))
             && super::junctions::ordered(path, points, source || target)
     });
@@ -127,7 +143,8 @@ fn cost(
     }
     let crossing: usize = fixed
         .iter()
-        .map(|(_, p)| super::junctions::crossings(path, p))
+        .filter(|other| !bounds.apart(other.bounds))
+        .map(|other| super::junctions::crossings(path, &other.points))
         .sum();
     Some(base + scene.params.crossing * crossing as f64)
 }
@@ -135,10 +152,11 @@ fn cost(
 fn templates(
     scene: &Scene,
     boxes: &[Rect],
-    fixed: &[(Connector, Vec<Point>)],
+    fixed: &[Fixed],
     a: Point,
     b: Point,
-) -> Vec<Vec<Point>> {
+    mut visit: impl FnMut(&[Point]),
+) {
     let mut xs = vec![f64::midpoint(a.x, b.x)];
     let mut ys = vec![f64::midpoint(a.y, b.y)];
     for r in boxes {
@@ -155,8 +173,8 @@ fn templates(
             r.y + r.height + scene.params.lane,
         ]);
     }
-    for (_, path) in fixed {
-        for p in path {
+    for line in fixed {
+        for p in &line.points {
             xs.extend([p.x - scene.params.lane, p.x + scene.params.lane]);
             ys.extend([p.y - scene.params.lane, p.y + scene.params.lane]);
         }
@@ -165,23 +183,20 @@ fn templates(
     xs.dedup();
     ys.sort_by(f64::total_cmp);
     ys.dedup();
-    let mut middles = vec![
-        vec![a, Point { x: a.x, y: b.y }, b],
-        vec![a, Point { x: b.x, y: a.y }, b],
-    ];
+    visit(&[a, Point { x: a.x, y: b.y }, b]);
+    visit(&[a, Point { x: b.x, y: a.y }, b]);
     for x in xs {
-        middles.push(vec![a, Point { x, y: a.y }, Point { x, y: b.y }, b]);
+        visit(&[a, Point { x, y: a.y }, Point { x, y: b.y }, b]);
     }
     for y in ys {
-        middles.push(vec![a, Point { x: a.x, y }, Point { x: b.x, y }, b]);
+        visit(&[a, Point { x: a.x, y }, Point { x: b.x, y }, b]);
     }
-    middles
 }
 
 fn bounded(
     scene: &Scene,
     boxes: &[Rect],
-    fixed: &[(Connector, Vec<Point>)],
+    fixed: &[Fixed],
     connector: Connector,
     a: Point,
     b: Point,
@@ -207,7 +222,12 @@ fn bounded(
         + 32.0;
     let fixed: Vec<_> = fixed
         .iter()
-        .map(|(connector, path)| (*connector, path.iter().copied().map(router_point).collect()))
+        .map(|line| {
+            (
+                line.connector,
+                line.points.iter().copied().map(router_point).collect(),
+            )
+        })
         .collect();
     match archboard_router::route_bounded(
         &local,

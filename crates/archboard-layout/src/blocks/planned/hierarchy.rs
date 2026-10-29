@@ -9,7 +9,9 @@ use super::{
 };
 use crate::blocks::assembly::PlacedLine;
 use crate::geometry::{Point, Side, inflate};
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
+
+use rustc_hash::FxHashMap;
 
 struct Channels<'a, 'graph> {
     model: &'a Model<'graph>,
@@ -18,6 +20,7 @@ struct Channels<'a, 'graph> {
     shape: &'a Shape,
     windows: Cell<usize>,
     limit: usize,
+    segments: RefCell<FxHashMap<[u64; 4], bool>>,
 }
 
 fn cost(path: &[Point]) -> f64 {
@@ -119,6 +122,24 @@ impl Channels<'_, '_> {
     }
 
     fn clear(&self, path: &[Point]) -> bool {
+        // Clearance is the conjunction of each segment's obstacle and sharing checks.
+        // The borrowed placement and route set stay fixed for this entire search.
+        path.windows(2).all(|pair| {
+            let key = [
+                pair[0].x.to_bits(),
+                pair[0].y.to_bits(),
+                pair[1].x.to_bits(),
+                pair[1].y.to_bits(),
+            ];
+            *self
+                .segments
+                .borrow_mut()
+                .entry(key)
+                .or_insert_with(|| self.clear_segment(pair))
+        })
+    }
+
+    fn clear_segment(&self, path: &[Point]) -> bool {
         let (model, shape, edge) = (self.model, self.shape, self.edge);
         shape.endpoints.iter().all(|(&id, &at)| {
             !crosses_box(
@@ -267,7 +288,8 @@ impl Channels<'_, '_> {
         obstacles: &[crate::geometry::Rect],
         a: Point,
         b: Point,
-    ) -> Vec<Vec<Point>> {
+        mut visit: impl FnMut(&[Point]),
+    ) {
         let mut xs = vec![a.x, b.x, bounds.x + 16.0, bounds.x + bounds.width - 16.0];
         let mut ys = vec![a.y, b.y, bounds.y + 16.0, bounds.y + bounds.height - 16.0];
         for at in obstacles {
@@ -281,15 +303,13 @@ impl Channels<'_, '_> {
         ys.sort_by(f64::total_cmp);
         ys.dedup();
 
-        let mut paths = Vec::new();
         for x in &xs {
-            paths.push(vec![a, Point { x: *x, y: a.y }, Point { x: *x, y: b.y }, b]);
+            visit(&[a, Point { x: *x, y: a.y }, Point { x: *x, y: b.y }, b]);
         }
         for y in &ys {
-            paths.push(vec![a, Point { x: a.x, y: *y }, Point { x: b.x, y: *y }, b]);
+            visit(&[a, Point { x: a.x, y: *y }, Point { x: b.x, y: *y }, b]);
         }
-        paths.extend(self.perimeter(bounds, obstacles, &ys, a, b));
-        paths
+        self.perimeter(bounds, obstacles, &ys, (a, b), visit);
     }
 
     fn perimeter(
@@ -297,11 +317,11 @@ impl Channels<'_, '_> {
         bounds: crate::geometry::Rect,
         obstacles: &[crate::geometry::Rect],
         ys: &[f64],
-        a: Point,
-        b: Point,
-    ) -> Vec<Vec<Point>> {
+        ends: (Point, Point),
+        mut visit: impl FnMut(&[Point]),
+    ) {
+        let (a, b) = ends;
         let valid = |p: &[Point]| !obstacles.iter().any(|&at| crosses_box(p, at)) && self.clear(p);
-        let mut paths = Vec::new();
         for outer in [bounds.x + 16.0, bounds.x + bounds.width - 16.0] {
             for &one in ys {
                 let first = [a, Point { x: a.x, y: one }, Point { x: outer, y: one }];
@@ -309,7 +329,7 @@ impl Channels<'_, '_> {
                     continue;
                 }
                 for &two in ys {
-                    paths.push(vec![
+                    visit(&[
                         a,
                         Point { x: a.x, y: one },
                         Point { x: outer, y: one },
@@ -320,7 +340,6 @@ impl Channels<'_, '_> {
                 }
             }
         }
-        paths
     }
 
     fn join(&self, scope: usize, a: Point, b: Point) -> Option<Vec<Point>> {
@@ -334,32 +353,35 @@ impl Channels<'_, '_> {
             })
             .collect();
         let valid = |p: &[Point]| !obstacles.iter().any(|&at| crosses_box(p, at)) && self.clear(p);
-        let paths = self.templates(bounds, &obstacles, a, b);
-        let mut ordered: Vec<_> = paths
-            .into_iter()
-            .map(clean)
-            .enumerate()
-            .map(|(index, path)| (cost(&path), index, path))
-            .collect();
-        ordered.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
-        ordered
-            .into_iter()
-            .map(|(_, _, path)| path)
-            .find(|path| valid(path))
-            .or_else(|| {
-                let inside = |p: Point| {
-                    p.x >= bounds.x
-                        && p.x <= bounds.x + bounds.width
-                        && p.y >= bounds.y
-                        && p.y <= bounds.y + bounds.height
-                };
-                if self.windows.get() == self.limit || !inside(a) || !inside(b) {
-                    return None;
-                }
-                self.windows.set(self.windows.get() + 1);
-                super::fallback::local(self.model, self.edge, self.shape, scope, a, b)
-                    .filter(|path| valid(path))
-            })
+        let mut best: Option<(f64, Vec<Point>)> = None;
+        let mut path = Vec::with_capacity(6);
+        self.templates(bounds, &obstacles, a, b, |points| {
+            super::geometry::clean_into(points.iter().copied(), &mut path);
+            let score = cost(&path);
+            // The old stable cost sort selected the first valid minimum.
+            // A later tie cannot win, and guards do not change the search state.
+            if best
+                .as_ref()
+                .is_none_or(|(old, _)| score.total_cmp(old).is_lt())
+                && valid(&path)
+            {
+                best = Some((score, path.clone()));
+            }
+        });
+        best.map(|(_, path)| path).or_else(|| {
+            let inside = |p: Point| {
+                p.x >= bounds.x
+                    && p.x <= bounds.x + bounds.width
+                    && p.y >= bounds.y
+                    && p.y <= bounds.y + bounds.height
+            };
+            if self.windows.get() == self.limit || !inside(a) || !inside(b) {
+                return None;
+            }
+            self.windows.set(self.windows.get() + 1);
+            super::fallback::local(self.model, self.edge, self.shape, scope, a, b)
+                .filter(|path| valid(path))
+        })
     }
 }
 
@@ -386,6 +408,7 @@ pub(super) fn bounded_candidates(
         shape,
         windows: Cell::new(0),
         limit,
+        segments: RefCell::default(),
     };
     let lines = channels.candidates();
     (lines, channels.windows.get())

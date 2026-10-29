@@ -5,39 +5,36 @@ use crate::{
     geometry::{Point, Rect},
 };
 pub(super) fn joins(
-    a: Point,
-    b: Point,
+    ends: (Point, Point),
     bounds: Rect,
     shape: &Shape,
     guidance: (Option<&PlacedLine>, Option<super::lanes::Hint>),
     obstacles: &Clearance,
     simple: bool,
-) -> Vec<Vec<Point>> {
+    mut visit: impl FnMut(&[Point]),
+) {
+    let (a, b) = ends;
     let (guide, hint) = guidance;
-    let mut paths = vec![
-        vec![a, Point { x: a.x, y: b.y }, b],
-        vec![a, Point { x: b.x, y: a.y }, b],
-    ];
+    visit(&[a, Point { x: a.x, y: b.y }, b]);
+    visit(&[a, Point { x: b.x, y: a.y }, b]);
     let (xs, ys) = coordinates(a, b, bounds, shape, guide, hint);
     let clear = |path: &[Point]| obstacles.clear(path);
     for &x in &xs {
         let path = [a, Point { x, y: a.y }, Point { x, y: b.y }, b];
         if clear(&path) {
-            paths.push(path.to_vec());
+            visit(&path);
         }
     }
     for &y in &ys {
         let path = [a, Point { x: a.x, y }, Point { x: b.x, y }, b];
         if clear(&path) {
-            paths.push(path.to_vec());
+            visit(&path);
         }
     }
     if simple {
-        return paths;
+        return;
     }
-    paths.extend(two_channels(a, b, &xs, &ys, shape, obstacles));
-
-    paths
+    two_channels(a, b, &xs, &ys, shape, obstacles, visit);
 }
 
 fn coordinates(
@@ -135,7 +132,8 @@ fn two_channels(
     ys: &[f64],
     shape: &Shape,
     obstacles: &Clearance,
-) -> Vec<Vec<Point>> {
+    mut visit: impl FnMut(&[Point]),
+) {
     let clear = |path: &[Point]| obstacles.clear(path);
     let mut start_x: Vec<_> = xs
         .iter()
@@ -179,9 +177,8 @@ fn two_channels(
         sample(end_x),
         sample(end_y),
     );
-    let mut paths = paired(a, b, &start_x, &end_y, obstacles, false);
-    paths.extend(paired(a, b, &start_y, &end_x, obstacles, true));
-    paths
+    paired(a, b, &start_x, &end_y, obstacles, false, &mut visit);
+    paired(a, b, &start_y, &end_x, obstacles, true, visit);
 }
 fn paired(
     a: Point,
@@ -190,7 +187,8 @@ fn paired(
     ends: &[f64],
     obstacles: &Clearance,
     transpose: bool,
-) -> Vec<Vec<Point>> {
+    mut visit: impl FnMut(&[Point]),
+) {
     let flip = |p: Point| {
         if transpose {
             Point { x: p.y, y: p.x }
@@ -199,16 +197,14 @@ fn paired(
         }
     };
     let (a, b) = (flip(a), flip(b));
-    let mut paths = Vec::new();
     for &x in starts {
         for &y in ends {
             let inner = [Point { x, y: a.y }, Point { x, y }, Point { x: b.x, y }].map(flip);
             if obstacles.clear(&inner) {
-                paths.push(vec![flip(a), inner[0], inner[1], inner[2], flip(b)]);
+                visit(&[flip(a), inner[0], inner[1], inner[2], flip(b)]);
             }
         }
     }
-    paths
 }
 
 fn hinted(hint: Option<super::lanes::Hint>, xs: &mut Vec<f64>, ys: &mut Vec<f64>) {
