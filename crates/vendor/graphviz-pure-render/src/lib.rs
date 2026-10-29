@@ -4,6 +4,7 @@
 
 mod agwrite;
 pub mod emit;
+pub mod geometry;
 pub mod json;
 mod svg_engine;
 mod xdot_engine;

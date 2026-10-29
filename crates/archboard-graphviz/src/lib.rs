@@ -22,14 +22,14 @@ mod dot;
 mod fma;
 mod graph;
 
-/// Graphviz in the core: each graph laid out by `dot` and answered as its
-/// `json0` output, y inverted, as viz-js answered it.
+/// Graphviz in the core: `dot` geometry with json0's precision and y inversion.
+/// The layout needs positions, cluster bounds, and named edge paths alone.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct InCore;
 
 impl archboard_layout::Graphviz for InCore {
     fn render(&mut self, graph: &str) -> Result<String, String> {
-        render(graph)
+        render_as(graph, true)
     }
 }
 
@@ -39,6 +39,11 @@ impl archboard_layout::Graphviz for InCore {
 ///
 /// A graph that does not read, or what Graphviz refused it with.
 pub fn render(graph: &str) -> Result<String, String> {
+    render_as(graph, false)
+}
+
+/// The layout reads geometry alone. The full answer remains the viz-js oracle.
+fn render_as(graph: &str, geometry: bool) -> Result<String, String> {
     // A JSON string without a backslash escapes nothing, so no name or value
     // holds a quote, a backslash, a line break or a NUL, which DOT's quoted
     // strings would carry otherwise. Without those, and without the characters
@@ -53,7 +58,11 @@ pub fn render(graph: &str) -> Result<String, String> {
     let answer = if plain {
         let mut statements = graphviz_pure::Statements::new(true);
         dot::write(&graph, &built, &mut statements);
-        graphviz_pure::render_made(statements.finish(), "dot", "json0")
+        if geometry {
+            graphviz_pure::layout_geometry(statements.finish())
+        } else {
+            graphviz_pure::render_made(statements.finish(), "dot", "json0")
+        }
     } else {
         graphviz_pure::render_dot(&dot::of(&graph, &built), "dot", "json0")
     };

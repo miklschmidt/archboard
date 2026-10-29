@@ -56,6 +56,14 @@ pub fn render_made(graph: Graph, engine: &str, format: &str) -> Result<String> {
     .map_err(error_text)
 }
 
+/// archboard: lay out a made dot graph and write only its geometry, with json0's
+/// coordinate precision and edge order. No drawing model or attribute copy is needed.
+pub fn layout_geometry(mut graph: Graph) -> Result<String> {
+    graphviz_pure_render::reset_render_state();
+    layout_graph(&mut graph, LayoutEngine::Dot)?;
+    Ok(graphviz_pure_render::geometry::render(&graph))
+}
+
 /// Renders every graph in `dot_source`, applying `globals` (`-G`/`-N`/`-E`) before each graph body.
 pub fn render_dot_all(
     dot_source: &str,

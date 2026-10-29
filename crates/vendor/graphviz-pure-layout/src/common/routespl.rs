@@ -177,6 +177,10 @@ fn limit_boxes_by_extremes(boxes: &mut [BoundingBox], control: [Point; 4], num_d
     };
     let mut extents: Vec<Option<(f64, f64)>> = Vec::with_capacity(boxes.len());
     let mut members = Vec::new();
+    // archboard: a nonzero constant x stays exactly that x in every fused
+    // interpolation. Vertical segments need no sample-by-sample x extrema.
+    let x = control[0].x;
+    let constant_x = x != 0.0 && control.iter().all(|p| p.x == x);
     // Every sample is finite here. `p.y - hi` and `lo - p.y`, rounded, rise and fall with
     // `p.y`, so the samples a box's test does not leave out at once are a run of them in
     // this order.
@@ -204,6 +208,10 @@ fn limit_boxes_by_extremes(boxes: &mut [BoundingBox], control: [Point; 4], num_d
         }
         if members.is_empty() {
             extents.push(None);
+            continue;
+        }
+        if constant_x {
+            extents.push(Some((x, x)));
             continue;
         }
         let least = members.iter().fold(f64::INFINITY, |m, &k| m.min(near[k].x));
@@ -865,6 +873,42 @@ pub fn make_straight_edges<S: super::splines::SplineGraph + ?Sized>(
 
 #[cfg(test)]
 mod tests {
+
+    // archboard: the constant-x shortcut retains the fused samples, including
+    // curves that enter a box only in the middle and boxes with no sample.
+    #[test]
+    fn vertical_extents_match_fused_sampling() {
+        for x in [
+            -123.456,
+            -f64::MIN_POSITIVE,
+            -0.0,
+            0.0,
+            f64::MIN_POSITIVE,
+            987.654,
+        ] {
+            for ys in [[0.0, 0.0, 80.0, 80.0], [80.0, -30.0, 120.0, 0.0]] {
+                let points = ys.map(|y| Point::new(x, y));
+                let mut expected: Vec<_> = [-100.0, 0.0, 20.0, 40.0, 80.0]
+                    .into_iter()
+                    .map(|y| BoundingBox::new(f64::INFINITY, y, f64::NEG_INFINITY, y + 10.0))
+                    .collect();
+                let mut actual = expected.clone();
+                let count = 10 * expected.len();
+                for i in 0..=count {
+                    let t = i as f64 / count as f64;
+                    let p = de_casteljau(points, |a, b| t.mul_add(b - a, a));
+                    for b in &mut expected {
+                        if p.y <= b.ur.y + 0.0001 && p.y >= b.ll.y - 0.0001 {
+                            b.ll.x = b.ll.x.min(p.x);
+                            b.ur.x = b.ur.x.max(p.x);
+                        }
+                    }
+                }
+                limit_boxes(&mut actual, &points, 10.0);
+                assert_eq!(actual, expected);
+            }
+        }
+    }
 
     /// Issue #416: a dropped guard closes its routesplinesinit level, on any way out.
     #[test]

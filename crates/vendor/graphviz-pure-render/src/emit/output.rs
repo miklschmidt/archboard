@@ -14,8 +14,19 @@ fn g5(v: f64) -> String {
 }
 
 /// `"%.5g,%.5g"` of `p.x, yDir(p.y, y_off)`.
-fn pt(p: Point, y_off: f64) -> String {
+pub(crate) fn pt(p: Point, y_off: f64) -> String {
     format!("{},{}", g5(p.x), g5(y_dir(p.y, y_off)))
+}
+
+/// archboard: the same box spelling for full json0 and geometry-only output.
+pub(crate) fn bounds(b: graphviz_pure_core::BoundingBox, y_off: f64) -> String {
+    format!(
+        "{},{},{},{}",
+        g5(b.ll.x),
+        g5(y_dir(b.ll.y, y_off)),
+        g5(b.ur.x),
+        g5(y_dir(b.ur.y, y_off))
+    )
 }
 
 fn record_rects(f: &RecordField, c: Point, y_off: f64, out: &mut String) {
@@ -163,15 +174,7 @@ pub(crate) fn attach_attrs(
         }
     }
     // rec_attach_bb
-    let bbs = |b: graphviz_pure_core::BoundingBox| {
-        format!(
-            "{},{},{},{}",
-            g5(b.ll.x),
-            g5(y_dir(b.ll.y, y_off)),
-            g5(b.ur.x),
-            g5(y_dir(b.ur.y, y_off))
-        )
-    };
+    let bbs = |b| bounds(b, y_off);
     g.graph_attrs.set("bb", bbs(m.bb), false);
     if let Some(l) = m.label.as_ref().filter(|l| !l.text.is_empty()) {
         g.graph_attrs.set("lp", pt(l.pos), false);
