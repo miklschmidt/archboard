@@ -11,7 +11,9 @@ The legacy placer composes the boards better, while planned routing supplies exp
 Legacy Blocks placement owns card positions, dependency order, packing, frames, folds, and wraps.
 The planner replaces Blocks routing, including the old trunk router and its unrestricted grid search.
 The placer can respond to the new routes with smaller gaps.
-A placement change must preserve the reading order and pass the per-reference gates.
+A placement change must improve the reading and pass the reference gates.
+Small views compare guarded candidates by clear card approaches, crossings, bends, and route length.
+Extra area and long detours must not erase that gain.
 Dense scopes use a smaller wrap search, and Blocks omits the repeated side-exit hierarchy pass.
 
 The planner routes fixed measured geometry through four-wall ports, private lanes, and explicit source and target fans.

@@ -1,0 +1,222 @@
+{
+	"id": "architecture:root",
+	"layoutOptions": {
+		"archboard.group.captions": "[[\"workhorse\",127.36000061035156,42]]",
+		"archboard.blocks.nesting": "blocks"
+	},
+	"children": [
+		{
+			"id": "worker",
+			"width": 340,
+			"height": 105,
+			"layoutOptions": {
+				"archboard.order": "13000",
+				"archboard.group": "workhorse"
+			}
+		},
+		{
+			"id": "gateway",
+			"width": 340,
+			"height": 105,
+			"layoutOptions": {
+				"archboard.order": "19000"
+			}
+		},
+		{
+			"id": "frame",
+			"width": 356,
+			"height": 130,
+			"layoutOptions": {
+				"archboard.order": "25000",
+				"archboard.header.size": "130"
+			},
+			"children": [
+				{
+					"id": "handler",
+					"width": 340,
+					"height": 122,
+					"layoutOptions": {
+						"archboard.order": "4000",
+						"archboard.entry": "false"
+					}
+				},
+				{
+					"id": "contract",
+					"width": 340,
+					"height": 122,
+					"layoutOptions": {
+						"archboard.order": "5000",
+						"archboard.entry": "false"
+					}
+				},
+				{
+					"id": "approval",
+					"width": 340,
+					"height": 105,
+					"layoutOptions": {
+						"archboard.order": "7000",
+						"archboard.entry": "false"
+					}
+				},
+				{
+					"id": "history",
+					"width": 340,
+					"height": 122,
+					"layoutOptions": {
+						"archboard.order": "22000",
+						"archboard.entry": "false"
+					}
+				}
+			]
+		}
+	],
+	"edges": [
+		{
+			"id": "invoke",
+			"sources": ["gateway"],
+			"targets": ["handler"],
+			"layoutOptions": {
+				"archboard.order": "7000",
+				"archboard.relationship.kind": "event",
+				"archboard.relationship.emphasis": "hero",
+				"archboard.relationship.traffic": "on",
+				"archboard.relationship.held-kind": "event"
+			},
+			"labels": [
+				{
+					"id": "invoke:label",
+					"text": "label",
+					"width": 167,
+					"height": 31,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "validate",
+			"sources": ["handler"],
+			"targets": ["contract"],
+			"layoutOptions": {
+				"archboard.order": "8000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "validate:label",
+					"text": "label",
+					"width": 191,
+					"height": 31,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "work",
+			"sources": ["handler"],
+			"targets": ["worker"],
+			"layoutOptions": {
+				"archboard.order": "9000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "hero",
+				"archboard.relationship.traffic": "on",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "work:label",
+					"text": "label",
+					"width": 139,
+					"height": 46,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "resolve",
+			"sources": ["handler"],
+			"targets": ["approval"],
+			"layoutOptions": {
+				"archboard.order": "10000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "resolve:label",
+					"text": "label",
+					"width": 195,
+					"height": 31,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "parse",
+			"sources": ["approval"],
+			"targets": ["contract"],
+			"layoutOptions": {
+				"archboard.order": "35000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "parse:label",
+					"text": "label",
+					"width": 155,
+					"height": 31,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "stop",
+			"sources": ["handler"],
+			"targets": ["gateway"],
+			"layoutOptions": {
+				"archboard.order": "40000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "stop:label",
+					"text": "label",
+					"width": 159,
+					"height": 46,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "remember",
+			"sources": ["gateway"],
+			"targets": ["history"],
+			"layoutOptions": {
+				"archboard.order": "41000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "remember:label",
+					"text": "label",
+					"width": 145,
+					"height": 46,
+					"stacked": false
+				}
+			]
+		}
+	]
+}

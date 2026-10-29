@@ -87,12 +87,8 @@ fn try_placements(
     room: &[String],
     extra: f64,
 ) -> Result<Result<super::assembly::Placed, super::planned::Refused>, String> {
-    let mut result = Err(super::planned::Refused::from("No guarded Blocks drawing"));
-    for placed in super::legacy::candidates(graph, host, room, extra)? {
-        result = super::planned::route_fixed(graph, placed);
-        if result.is_ok() {
-            break;
-        }
-    }
-    Ok(result)
+    Ok(super::planned::route_candidates(
+        graph,
+        super::legacy::candidates(graph, host, room, extra)?,
+    ))
 }

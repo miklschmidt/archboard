@@ -99,16 +99,18 @@ pub(crate) fn search_of(
         candidates.push(Candidate::Grid);
     }
     for lowered in wraps_of(laying.whole, tree, block) {
-        if !try_wrap(
-            &lowered,
-            tree.nesting,
-            laying.whole.boxes.len(),
-            tree.cards.len(),
-        ) {
+        if !tree.expanded
+            && !try_wrap(
+                &lowered,
+                tree.nesting,
+                laying.whole.boxes.len(),
+                tree.cards.len(),
+            )
+        {
             continue;
         }
         candidates.extend(
-            column_choices(&lowered, tree.nesting)
+            column_choices(&lowered, tree.nesting, tree.expanded)
                 .into_iter()
                 .map(|columns| Candidate::Lowered {
                     lowered: lowered.clone(),
@@ -239,11 +241,11 @@ fn wraps_better(one: &Weighing, other: &Weighing) -> bool {
 }
 
 /// Whether a wrap's rows may be laid with their columns free, as well as held.
-/// Track keeps the existing free-column candidates. Blocks holds columns
-/// because its final router chooses the departures after placement.
-fn column_choices(lowered: &Plan, nesting: Nesting) -> Vec<bool> {
+/// Track keeps its existing choices. The first Blocks hierarchy holds columns;
+/// the bounded placement comparison can also try the hierarchy with free columns.
+fn column_choices(lowered: &Plan, nesting: Nesting, free: bool) -> Vec<bool> {
     let deep = lowered.values().copied().max().unwrap_or(0) > 1;
-    if deep || nesting == Nesting::Blocks {
+    if deep && nesting != Nesting::Blocks || nesting == Nesting::Blocks && !free {
         vec![true]
     } else {
         vec![false, true]

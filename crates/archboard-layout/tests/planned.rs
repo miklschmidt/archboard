@@ -331,3 +331,50 @@ fn a_small_labelled_fan_keeps_its_nearby_first_row() {
             .all(|pair| pair[0] < pair[1])
     );
 }
+
+#[test]
+fn boundary_calls_choose_a_clear_order_before_saving_area() {
+    let graph = serde_json::from_str(include_str!("fixtures/clear-approaches.json")).unwrap();
+    let placed = drawing(&graph);
+    let edges = placed["edges"].as_array().unwrap();
+    let points = |id| {
+        edges.iter().find(|edge| edge["id"] == id).unwrap()["points"]
+            .as_array()
+            .unwrap()
+    };
+    assert_eq!(points("invoke").len(), 2);
+    assert!(points("work").len() <= 4);
+    let arrival = points("invoke").last().unwrap();
+    let x = arrival["x"].as_f64().unwrap();
+    let y = arrival["y"].as_f64().unwrap();
+    assert!(points("remember").windows(2).all(|run| {
+        let a = run[0]["x"].as_f64().unwrap();
+        let b = run[1]["x"].as_f64().unwrap();
+        let height = run[0]["y"].as_f64().unwrap();
+        !(run[0]["y"] == run[1]["y"] && x > a.min(b) && x < a.max(b) && (height - y).abs() < 32.0)
+    }));
+}
+
+#[test]
+fn a_global_saving_keeps_a_callers_compact_fan() {
+    let graph: Value = serde_json::from_str(include_str!("fixtures/compact-fan.json")).unwrap();
+    let placed = drawing(&graph);
+    let cards = placed["cards"].as_array().unwrap();
+    let mut rows: Vec<_> = graph["edges"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|edge| edge["sources"][0] == "n0")
+        .map(|edge| {
+            cards
+                .iter()
+                .find(|card| card["id"] == edge["targets"][0])
+                .unwrap()["box"]["y"]
+                .as_f64()
+                .unwrap()
+        })
+        .collect();
+    rows.sort_by(f64::total_cmp);
+    rows.dedup();
+    assert!(rows.len() <= 3);
+}

@@ -1,0 +1,385 @@
+{
+	"id": "architecture:root",
+	"layoutOptions": {
+		"archboard.blocks.nesting": "blocks"
+	},
+	"children": [
+		{
+			"id": "n0",
+			"width": 340,
+			"height": 88,
+			"layoutOptions": {
+				"archboard.order": "1000"
+			}
+		},
+		{
+			"id": "n2",
+			"width": 340,
+			"height": 105,
+			"layoutOptions": {
+				"archboard.order": "3000"
+			}
+		},
+		{
+			"id": "n3",
+			"width": 260,
+			"height": 72,
+			"layoutOptions": {
+				"archboard.order": "4000"
+			}
+		},
+		{
+			"id": "n6",
+			"width": 260,
+			"height": 72,
+			"layoutOptions": {
+				"archboard.order": "7000"
+			}
+		},
+		{
+			"id": "n7",
+			"width": 340,
+			"height": 88,
+			"layoutOptions": {
+				"archboard.order": "8000"
+			}
+		},
+		{
+			"id": "n8",
+			"width": 340,
+			"height": 88,
+			"layoutOptions": {
+				"archboard.order": "9000"
+			}
+		},
+		{
+			"id": "n9",
+			"width": 340,
+			"height": 88,
+			"layoutOptions": {
+				"archboard.order": "10000"
+			}
+		},
+		{
+			"id": "n10",
+			"width": 340.1300048828125,
+			"height": 105,
+			"layoutOptions": {
+				"archboard.order": "11000"
+			}
+		},
+		{
+			"id": "n11",
+			"width": 340,
+			"height": 105,
+			"layoutOptions": {
+				"archboard.order": "13000"
+			}
+		},
+		{
+			"id": "n12",
+			"width": 340,
+			"height": 122,
+			"layoutOptions": {
+				"archboard.order": "14000"
+			}
+		},
+		{
+			"id": "n14",
+			"width": 340,
+			"height": 105,
+			"layoutOptions": {
+				"archboard.order": "16000"
+			}
+		},
+		{
+			"id": "n16",
+			"width": 340,
+			"height": 122,
+			"layoutOptions": {
+				"archboard.order": "18000"
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "n17",
+			"sources": ["n0"],
+			"targets": ["n8"],
+			"layoutOptions": {
+				"archboard.order": "1000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.standing": "unchanged",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "n17:label",
+					"text": "label",
+					"width": 162.41000366210938,
+					"height": 31,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "n18",
+			"sources": ["n0"],
+			"targets": ["n2"],
+			"layoutOptions": {
+				"archboard.order": "2000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "on",
+				"archboard.relationship.standing": "unchanged",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "n18:label",
+					"text": "label",
+					"width": 82.90999984741211,
+					"height": 31,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "n19",
+			"sources": ["n0"],
+			"targets": ["n3"],
+			"layoutOptions": {
+				"archboard.order": "3000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "hero",
+				"archboard.relationship.traffic": "on",
+				"archboard.relationship.standing": "unchanged",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "n19:label",
+					"text": "label",
+					"width": 48.5,
+					"height": 31,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "n23",
+			"sources": ["n7"],
+			"targets": ["n0"],
+			"layoutOptions": {
+				"archboard.order": "7000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "hero",
+				"archboard.relationship.traffic": "on",
+				"archboard.relationship.standing": "unchanged",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "n23:label",
+					"text": "label",
+					"width": 41.170000076293945,
+					"height": 31,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "n26",
+			"sources": ["n0"],
+			"targets": ["n9"],
+			"layoutOptions": {
+				"archboard.order": "10000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "on",
+				"archboard.relationship.standing": "unchanged",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "n26:label",
+					"text": "label",
+					"width": 190.02999877929688,
+					"height": 31,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "n27",
+			"sources": ["n6"],
+			"targets": ["n9"],
+			"layoutOptions": {
+				"archboard.order": "11000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "muted",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.standing": "changed",
+				"archboard.relationship.held-kind": "call"
+			},
+			"labels": [
+				{
+					"id": "n27:label",
+					"text": "label",
+					"width": 114.91000366210938,
+					"height": 31,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "n28",
+			"sources": ["n7"],
+			"targets": ["n10"],
+			"layoutOptions": {
+				"archboard.order": "13000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.standing": "removed"
+			},
+			"labels": [
+				{
+					"id": "n28:label",
+					"text": "label",
+					"width": 187.61000061035156,
+					"height": 31,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "n29",
+			"sources": ["n0"],
+			"targets": ["n10"],
+			"layoutOptions": {
+				"archboard.order": "14000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.standing": "removed"
+			},
+			"labels": [
+				{
+					"id": "n29:label",
+					"text": "label",
+					"width": 139.4000015258789,
+					"height": 31,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "n32",
+			"sources": ["n10"],
+			"targets": ["n9"],
+			"layoutOptions": {
+				"archboard.order": "17000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.standing": "removed"
+			},
+			"labels": [
+				{
+					"id": "n32:label",
+					"text": "label",
+					"width": 120.5999984741211,
+					"height": 46,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "n33",
+			"sources": ["n12"],
+			"targets": ["n11"],
+			"layoutOptions": {
+				"archboard.order": "18000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.standing": "removed"
+			},
+			"labels": [
+				{
+					"id": "n33:label",
+					"text": "label",
+					"width": 191.05999755859375,
+					"height": 31,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "n35",
+			"sources": ["n10"],
+			"targets": ["n14"],
+			"layoutOptions": {
+				"archboard.order": "20000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.standing": "removed"
+			},
+			"labels": [
+				{
+					"id": "n35:label",
+					"text": "label",
+					"width": 138.4000015258789,
+					"height": 46,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "n36",
+			"sources": ["n14"],
+			"targets": ["n12"],
+			"layoutOptions": {
+				"archboard.order": "21000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.standing": "removed"
+			},
+			"labels": [
+				{
+					"id": "n36:label",
+					"text": "label",
+					"width": 125.18000030517578,
+					"height": 46,
+					"stacked": false
+				}
+			]
+		},
+		{
+			"id": "n38",
+			"sources": ["n10"],
+			"targets": ["n16"],
+			"layoutOptions": {
+				"archboard.order": "23000",
+				"archboard.relationship.kind": "call",
+				"archboard.relationship.emphasis": "normal",
+				"archboard.relationship.traffic": "off",
+				"archboard.relationship.standing": "removed"
+			},
+			"labels": [
+				{
+					"id": "n38:label",
+					"text": "label",
+					"width": 121.69000244140625,
+					"height": 46,
+					"stacked": false
+				}
+			]
+		}
+	]
+}

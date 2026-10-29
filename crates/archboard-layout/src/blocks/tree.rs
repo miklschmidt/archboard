@@ -304,6 +304,8 @@ pub(crate) struct BlockTree {
     /// The wall each port moves to, keyed by `exit_key`.
     pub exits: Map<String, Side>,
     pub nesting: Nesting,
+    /// Whether this candidate compares all wraps and geometric packings.
+    pub expanded: bool,
     feedback: Set<String>,
     /// A shared-source fork whose labels follow its incoming boundary.
     pub(super) fanouts: Set<(BlockId, String)>,
@@ -316,6 +318,8 @@ pub(crate) struct BlockTree {
 /// What an earlier layout of a board decided, which laying it out again keeps.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Kept {
+    /// Try the wider packing and axial frame approaches as a complete candidate.
+    pub expanded: bool,
     /// The wall each port moves to, keyed by `exit_key` (`sides.rs`).
     pub exits: Map<String, Side>,
     /// The ports each block holds in an order on a face, keyed `block|face`.
@@ -407,6 +411,7 @@ impl BlockTree {
             pins: Map::default(),
             exits: kept.exits,
             nesting,
+            expanded: kept.expanded,
             feedback: Set::default(),
             fanouts: Set::default(),
             local_frames: super::composition::local_frames(graph),
