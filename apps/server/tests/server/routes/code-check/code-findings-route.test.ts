@@ -204,9 +204,14 @@ test("canonical findings keep the exact model revision and replace only the sele
 		skipped: [],
 		behind: [],
 	};
+	const draft = {
+		...answer,
+		models: [{ model: "Shop", state: "Draft", revision }],
+		findings: answer.findings.map((finding) => ({ ...finding, state: "Draft" })),
+	};
 	const { base, passes } = await serverWith([
 		answer,
-		{ ...answer, models: [{ model: "Shop", state: "Draft", revision }], findings: [] },
+		draft,
 		{
 			...answer,
 			models: [{ model: "Shop", state: "Now", revision: updatedRevision }],
@@ -226,7 +231,12 @@ test("canonical findings keep the exact model revision and replace only the sele
 	expect(await models()).toEqual(
 		expect.arrayContaining([
 			expect.objectContaining({ model: "Shop", state: "Now", revision, findings: answer.findings }),
-			expect.objectContaining({ model: "Shop", state: "Draft", revision, findings: [] }),
+			expect.objectContaining({
+				model: "Shop",
+				state: "Draft",
+				revision,
+				findings: draft.findings,
+			}),
 		]),
 	);
 	const refreshed = await fetch(`${base}/api/vault/code-check?${named()}`);
@@ -242,7 +252,12 @@ test("canonical findings keep the exact model revision and replace only the sele
 				revision: updatedRevision,
 				findings: [],
 			}),
-			expect.objectContaining({ model: "Shop", state: "Draft", revision, findings: [] }),
+			expect.objectContaining({
+				model: "Shop",
+				state: "Draft",
+				revision,
+				findings: draft.findings,
+			}),
 		]),
 	);
 	expect(await models(vaultIn(join(scratch, "other")))).toEqual([]);
