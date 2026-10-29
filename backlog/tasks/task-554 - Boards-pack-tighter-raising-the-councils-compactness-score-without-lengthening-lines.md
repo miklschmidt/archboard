@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-29T08:03:00Z'
+updated_date: '2026-10-29T08:33:00Z'
 labels:
   - renderer
   - layout
@@ -69,4 +69,6 @@ The final council of TASK-548.08 (2026-10-28, 40 blind pairs against c147b73c8, 
 2026-10-29: hybrid merged as 1f60b6e06 (tree equal to feat/blocks-hybrid 0df95aa1a outside backlog). Corpus vs baseline: bends per route 2.35 to 1.32, routes with four or more bends 31% to 5%, detour -37%, route length -11%, area -7.6%, geometric findings 23 to 0, Track identical. Timings 500.11/483/245 ms first. One third of labels use the nearest-to-source fallback. Next, in parallel: feat/blocks-speed2 for a 400 ms margin with identical drawings, and a council on 40 sampled pairs of the 98 differing current Blocks drawings (before 8cdedb1c3, seed 554). The council runs with three graders, Opus, gpt-6-astra and Muse Wonder, because the owner asked to use gpt-6-astra instead of gpt-6.1-sol for this task.
 
 2026-10-29, correction: the council keeps its four graders, Opus, gpt-6.1-sol, gpt-6-astra and Muse Wonder. The owner's 'gpt-6-astra instead of gpt-6.1-sol' applies to the build work, not to the council. A gpt-6.1-sol grader was added to the same 40 pairs.
+
+Council of the hybrid (1f60b6e06) against 8cdedb1c3, four graders (Opus, gpt-6.1-sol, gpt-6-astra, Muse Wonder), 40 Blocks pairs: 7 better, 30 same, 3 worse (019, 027, 038), 0 both fail. The change fails. Rulings on reported defects: only 027 B is real, a stack of 20 labels parked in the top-left corner away from its route (type 4). False: 004 A/B, 005 A, 008 A, 023 B, 026 B, 032 A, 037 B. The graders' notes name one recurring weakness: a route goes around the outside of the drawing instead of straight to its target (019 Browser gateway to Workhorse queue, 027 Commands to Server access, 015 and 020 side detours), and 038 loses on a long cross-board Guardrails line and a knot of junctions under Author run. Next: route without perimeter detours and keep a label stack on its own run, then run the council again.
 <!-- SECTION:NOTES:END -->
