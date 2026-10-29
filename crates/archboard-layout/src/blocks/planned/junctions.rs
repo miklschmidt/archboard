@@ -2,23 +2,27 @@
 
 use crate::geometry::Point;
 
-/// Disjoint envelopes cannot share ink, cross, or violate the twelve-point lane gap.
-pub(super) fn apart(a: &[Point], b: &[Point]) -> bool {
-    let bounds = |path: &[Point]| {
+#[derive(Clone, Copy)]
+pub(super) struct Envelope(f64, f64, f64, f64);
+impl Envelope {
+    pub(super) fn new(path: &[Point]) -> Self {
         path.iter().fold(
-            (
+            Self(
                 f64::INFINITY,
                 f64::INFINITY,
                 f64::NEG_INFINITY,
                 f64::NEG_INFINITY,
             ),
-            |(left, top, right, bottom), p| {
-                (left.min(p.x), top.min(p.y), right.max(p.x), bottom.max(p.y))
-            },
+            |a, p| Self(a.0.min(p.x), a.1.min(p.y), a.2.max(p.x), a.3.max(p.y)),
         )
-    };
-    let (a, b) = (bounds(a), bounds(b));
-    b.0 - a.2 >= 12.0 || a.0 - b.2 >= 12.0 || b.1 - a.3 >= 12.0 || a.1 - b.3 >= 12.0
+    }
+    pub(super) fn apart(self, b: Self) -> bool {
+        b.0 - self.2 >= 12.0 || self.0 - b.2 >= 12.0 || b.1 - self.3 >= 12.0 || self.1 - b.3 >= 12.0
+    }
+}
+/// Disjoint envelopes cannot share ink, cross, or violate the twelve-point lane gap.
+pub(super) fn apart(a: &[Point], b: &[Point]) -> bool {
+    Envelope::new(a).apart(Envelope::new(b))
 }
 
 /// Sharing is a common prefix or suffix, never an accidental reunion in the middle.

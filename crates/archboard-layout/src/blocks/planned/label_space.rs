@@ -12,6 +12,7 @@ pub(super) struct Protection {
     cells: FxHashMap<(i64, i64), Vec<Rect>>,
     obstacles: Vec<Rect>,
     strips: RefCell<FxHashMap<(bool, u64, u64), Vec<Rect>>>,
+    clearance: RefCell<FxHashMap<[u64; 4], bool>>,
 }
 
 #[expect(
@@ -95,13 +96,16 @@ impl Protection {
     }
 
     pub(super) fn clear(&self, at: Rect) -> bool {
-        cells(at).all(|cell| {
-            self.cells.get(&cell).is_none_or(|boxes| {
-                boxes.iter().all(|r| {
-                    at.x >= r.x + r.width
-                        || r.x >= at.x + at.width
-                        || at.y >= r.y + r.height
-                        || r.y >= at.y + at.height
+        let key = [at.x, at.y, at.width, at.height].map(f64::to_bits);
+        *self.clearance.borrow_mut().entry(key).or_insert_with(|| {
+            cells(at).all(|cell| {
+                self.cells.get(&cell).is_none_or(|boxes| {
+                    boxes.iter().all(|r| {
+                        at.x >= r.x + r.width
+                            || r.x >= at.x + at.width
+                            || at.y >= r.y + r.height
+                            || r.y >= at.y + at.height
+                    })
                 })
             })
         })

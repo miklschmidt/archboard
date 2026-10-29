@@ -30,7 +30,7 @@ pub(super) fn route(graph: &Node, drawing: Placed) -> Result<Placed, super::Refu
         feasible(&model, &topology, edge, &shape, &line.points)
             && (line.label.is_some() == model.edges[edge].label().is_some())
     });
-    if !complete {
+    if !complete || !super::port_spacing::clear(&model, &shape.routes) {
         return Err("The complete hybrid drawing failed its geometry guard".into());
     }
     super::runs::freeze(&model, &shape.routes)
@@ -130,6 +130,9 @@ pub(super) fn compatible(
     a: &PlacedLine,
     b: &PlacedLine,
 ) -> bool {
+    if super::port_spacing::conflicts(model, edge, &a.points, b) {
+        return false;
+    }
     let bounds = |path: &[Point]| {
         let x = path.iter().map(|p| p.x).fold(f64::INFINITY, f64::min);
         let y = path.iter().map(|p| p.y).fold(f64::INFINITY, f64::min);
@@ -299,4 +302,51 @@ fn audit_endpoints(model: &Model<'_>, shape: &Shape) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::blocks::assembly::PlacedCard;
+    use serde_json::json;
+
+    #[test]
+    fn opposite_wall_ports_keep_distinct_routes_off_one_line() {
+        let graph: Node = serde_json::from_value(json!({"id":"root","children":[
+            {"id":"a","width":160,"height":80},
+            {"id":"b","width":160,"height":80},
+            {"id":"c","width":160,"height":80}],
+            "edges":[{"id":"ab","sources":["b"],"targets":["a"]},
+                {"id":"bc","sources":["b"],"targets":["c"]}]}))
+        .unwrap();
+        let drawing = Placed {
+            width: 1000.0,
+            height: 400.0,
+            cards: ["a", "b", "c"]
+                .into_iter()
+                .enumerate()
+                .map(|(i, id)| PlacedCard {
+                    id: id.into(),
+                    bx: Rect {
+                        x: 100.0 + i as f64 * 300.0,
+                        y: 100.0,
+                        width: 160.0,
+                        height: 80.0,
+                    },
+                    depth: 0,
+                    header: None,
+                })
+                .collect(),
+            frames: vec![],
+            regions: vec![],
+            edges: vec![],
+            titles: vec![],
+        };
+        let result = route(&graph, drawing).unwrap();
+        let left = &result.edges.iter().find(|e| e.id == "ab").unwrap().points;
+        let right = &result.edges.iter().find(|e| e.id == "bc").unwrap().points;
+        assert_eq!(left.len(), 2);
+        assert_eq!(right.len(), 2);
+        assert!((left[0].y - right[0].y).abs() > 3.0);
+    }
 }
