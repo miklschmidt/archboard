@@ -1,3 +1,4 @@
+import { releaseCapture, retireCapture } from "#server/services/explanations/capture.ts";
 import { panes, sendBoardlessToPane } from "#server/services/panes/registry.ts";
 import { tabSessionOf } from "#server/services/panes/tab-sessions.ts";
 import { isDeepStrictEqual } from "node:util";
@@ -67,6 +68,7 @@ function mismatch(entry: Entry, vault: string, input: Request) {
  */
 function createExplanationActions(scope: CodexWorkbenchDomainScope) {
 	const tabs = new Map<string, Map<string, Entry>>();
+	let disposed = false;
 	/**
 	 * Run delivery once while other invocations read its captured progress.
 	 * @param entry The captured action.
@@ -97,6 +99,11 @@ function createExplanationActions(scope: CodexWorkbenchDomainScope) {
 			explain: input.request,
 		});
 		if (!model.success) return model;
+		if (disposed || tabs.get(input.tabSessionId) !== entries)
+			return refuse(
+				"AGENT_UNAVAILABLE",
+				"The explanation session ended. Open it again before asking.",
+			);
 		const concurrent = entries.get(input.request.actionId);
 		if (concurrent !== undefined) return existingReply(concurrent, vault, input);
 		const entry = capturedEntry(vault, input, model);
@@ -177,7 +184,11 @@ function createExplanationActions(scope: CodexWorkbenchDomainScope) {
 	};
 	const stopTabs = scope.sessions.onChange(() => {
 		const live = new Set(scope.sessions.list().map((tab) => String(tab.id)));
-		for (const id of tabs.keys()) if (!live.has(id)) tabs.delete(id);
+		for (const [id, entries] of tabs) {
+			if (live.has(id)) continue;
+			for (const entry of entries.values()) retireCapture(entry);
+			tabs.delete(id);
+		}
 	});
 	/**
 	 * Invoke, read, retry, or cancel one explicitly addressed explanation.
@@ -186,7 +197,7 @@ function createExplanationActions(scope: CodexWorkbenchDomainScope) {
 	 * @returns The temporary result or actionable refusal.
 	 */
 	const dispatch = async (vault: string, input: Request): Promise<Result> => {
-		if (!availableTab(scope, input.tabSessionId))
+		if (!availableTab(scope, input.tabSessionId, disposed))
 			return refuse(
 				"AGENT_UNAVAILABLE",
 				"Open an architecture pane in this tab before asking for an explanation.",
@@ -209,7 +220,10 @@ function createExplanationActions(scope: CodexWorkbenchDomainScope) {
 		onNotification,
 		/** Forget temporary answers when this agent generation ends. */
 		dispose() {
+			disposed = true;
 			stopTabs();
+			for (const entries of tabs.values())
+				for (const entry of entries.values()) retireCapture(entry);
 			tabs.clear();
 		},
 	};
@@ -248,6 +262,7 @@ async function cancelQueued(scope: CodexWorkbenchDomainScope, entry: Entry): Pro
 	entry.action.status = "cancelled";
 	entry.action.retryable = true;
 	delete entry.submission;
+	releaseCapture(entry);
 	return reply(entry);
 }
 /**
@@ -306,9 +321,11 @@ function entriesFor(tabs: Map<string, Map<string, Entry>>, tab: string): Map<str
  * Require a registered browser tab or its existing conversation before accepting an action.
  * @param scope The existing generation sessions.
  * @param id The explicit tab identity.
+ * @param disposed Whether this generation ended.
  * @returns Whether this generation can serve the addressed tab.
  */
-function availableTab(scope: CodexWorkbenchDomainScope, id: string): boolean {
+function availableTab(scope: CodexWorkbenchDomainScope, id: string, disposed: boolean): boolean {
+	if (disposed) return false;
 	const tabId = parseTabSessionId(id);
 	if (tabId === null) return false;
 	return (

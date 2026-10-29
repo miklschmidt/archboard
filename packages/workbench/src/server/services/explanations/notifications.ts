@@ -1,3 +1,4 @@
+import { releaseCapture } from "#server/services/explanations/capture.ts";
 import type { Entry, Notification } from "#server/services/explanations/contract.ts";
 
 type Turn = Extract<Notification, { method: "turn/completed" }>["params"]["turn"];
@@ -15,6 +16,7 @@ function finish(entry: Entry, turn: Turn) {
 	if (text) entry.action.text = text;
 	entry.action.status = finalStatus(entry, turn);
 	entry.action.retryable = entry.action.status !== "completed";
+	releaseCapture(entry);
 	if (entry.action.status === "failed")
 		entry.action.error =
 			turn.error?.message ?? "The agent returned no answer. Retry the captured request.";

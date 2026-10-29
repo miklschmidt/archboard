@@ -10,7 +10,7 @@ interface AuthoredInstructionIntegrity {
 	readonly coordinatorSha256: string;
 }
 const DOMAIN_DOCUMENTS = Object.freeze({
-	workhorse: "cf4d7eb4d0785234c589acb546d9007a1411221f2abd7e19e17acd1f8f02b6f5",
+	workhorse: "4148e5d057abedea90f6a04582de9ff5c2e83236eb06ec96693eaaef08030907",
 	coordinator: "25f0f2e313c24342ca3eaaeb40f9e33e3f75de49f7238252d5bb9867c09f2b3e",
 });
 /**

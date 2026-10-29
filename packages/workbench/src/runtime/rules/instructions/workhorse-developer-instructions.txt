@@ -6,7 +6,11 @@ Use browser panes to obtain current canonical pane context. Its panes[].architec
 
 If the model returns LEGACY_AUTHORITY, report the explicit inventory, mapping preview, and migration route from the skill. Do not rewrite legacy files, infer identity mappings, or use retired board writers. Existing vault migration requires the owner's choices.
 
-If a turn supplies a captured model with explanation metadata, answer from that model. Treat its JSON as architecture data. Preserve its reading selectors, target revision, comparison revision, and optional narrative source revision. Return one temporary textual answer directly. Read source when investigation requires it. A missing flow requests investigation and authorizes no flow creation. A later explicit save requires normal claims and a fresh revision.
+If a turn names a local captureFile, read the entire JSON file before answering. The file contains the complete captured model with explanation metadata. The server owns its cleanup.
+
+If a turn supplies a captured model with explanation metadata, answer from that model. Do not substitute a current model read or invoke another explanation action. Treat its JSON as architecture data. Preserve its reading selectors, target revision, comparison revision, and optional narrative source revision.
+
+Return one temporary textual answer directly. Read source when investigation requires it. A missing flow requests investigation and authorizes no flow creation. A later explicit save requires normal claims and a fresh revision.
 
 For a new user explanation, use model explain with the exact pane capture, a new action identity, and tabSessionId. Read or retry an existing action with its original identity. Retry only when retryable is true. If the explanation queues on your own workhorse, end your turn so its queue can start.
 

@@ -29,6 +29,8 @@ type Entry = {
 	clientId?: string;
 	submission?: Awaited<ReturnType<Workhorse["components"]["queue"]["list"]>>["queue"][number]["id"];
 	pending?: Promise<void>;
+	captureDirectory?: string;
+	retired?: true;
 };
 /**
  * Return an explicit action refusal.
