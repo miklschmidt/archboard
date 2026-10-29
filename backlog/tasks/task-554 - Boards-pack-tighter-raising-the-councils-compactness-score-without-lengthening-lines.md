@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-29T19:36:00Z'
+updated_date: '2026-10-29T21:33:00Z'
 labels:
   - renderer
   - layout
@@ -89,4 +89,6 @@ Correction to the note on 63bea7a73: my corpus run and timing of the one-lane ru
 Council 559: 179c9017c (placement fix merged) against legacy Blocks, the same 40 boards, three graders. 10 better, 29 same, 1 worse (040), 0 both fail, no defect reported by any grader (Opus checked full-size crops of every header on the large pictures). 023 is same again (+0.18, 0.00, -0.25). 040 (Voice coordinator, Tools and work) is worse (-0.43, -0.43, +0.05). Its two pictures are byte-identical in councils 557, 558 and 559, which judged them same (0.00, -0.68, +0.05), same (-0.25, -0.38, +0.65) and worse: pair verdicts near 0.40 vary between councils on the same pictures. The weakness is consistent in the notes: the hybrid routes Coordinator tools' calls through jogs and along the top of Coordinator turn homes, with crossings near arrowheads, where legacy fans them from one trunk almost straight. Next: fix that routing; a speed pass (feat/blocks-speed3) runs in parallel.
 
 Merged feat/blocks-speed3 (49579d0d2) as 7f0d82312: faster planned trunk and junction routing with unchanged drawings. Verified: core 99a8f9099b570b48 rebuilt from the merged sources; all 8,086 corpus drawings equal to 179c9017c's. My timing while another builder ran (load about 3): Board viewer 382-405 / 298-303 ms, Board persistence 234-238 / 241-247, server routes 192-196 / 184-186. The builder's quiet run kept all 18 samples under 400 ms (worst 394.78).
+
+Merged feat/blocks-order (aa32524ee) as ad8156c82: placement compares whole guarded candidate drawings by how their lines read (crossings near card attachments first, then length + 120 per bend + 300 per crossing), with an area margin and a caller-local guard, in place of area-first selection. Pair 040: tool call straight, bends 14 to 5, route length 3,358 to 2,927, page +4.24%. 747 Blocks drawings change; 12 change vertical row order. The 556 legacy order differences by cause: header sides 267, settlement 154, interactions 66, coupled packing 24, wraps 18, area-first 13, trunk estimate 10, held columns 4; sample judgments favour the hybrid in G2, G3, G5, G6, G7 and legacy in G4, G8. Verified: the merge on top of feat/blocks-speed3 draws all 8,086 corpus drawings equal to the branch (core ddd6f83e0be695c3); timing at load about 2.7: Board viewer 382-397 / 298-308 ms, Board persistence 235-237 / 241-243, server routes 191-194 / 186-188; bun run check 20/20.
 <!-- SECTION:NOTES:END -->
