@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-29T10:36:00Z'
+updated_date: '2026-10-29T16:33:00Z'
 labels:
   - renderer
   - layout
@@ -79,4 +79,6 @@ Merged feat/blocks-speed2 (9683c6725) as a16b5c77e: the hybrid's routing reuses 
 2026-10-29: trial of DeepSeek V4.1 Flash 1017 through Cursor as a council grader, on the 40 pairs of council 554. Its transcript shows that Cursor's file reader gave it written descriptions of the pictures, not the pictures, so it graded from descriptions and ImageMagick pixel scripts. It reported no defects (it missed the real one in 027 B). Its margins correlate -0.08 with the median of the three graders, against 0.58 to 0.66 for each grader with the other two; its verdict agrees on 21 of 40 pairs; its weighted scores average 7.41 against 6.17 to 6.59. It does not join the council. Muse Wonder ran through the same Cursor harness, which likely explains its false defects. grading-council.md now says that a grader must see the pictures and that its transcript is read before it counts.
 
 Council 557: the merge of feat/blocks-speed2 and feat/blocks-readable (8d1b290ea) against legacy Blocks (8cdedb1c3), the same 40 boards as council 554, three graders (Opus, gpt-6.1-sol, gpt-6-astra). 8 better, 31 same, 1 worse, 0 both fail. 019, 027 and 038 moved from worse to same. Sol and Astra reported no defect. Opus reported one, 012 A (the hybrid side, Codex realtime voice whole board): a dashed line seems to pass through Application policy. Ruled real by criteria line 50 (an ambiguity left after close inspection). The SVG shows two routes that start on the card's left and right walls at the same y (3766), so they read as one line behind the card; the drawing guard sees no route through a card. On scores alone the pair favours the hybrid (+0.00, +0.62, +0.25). The change fails on this one defect. Next: keep routes that leave opposite walls of one card off a shared line, and let the drawing guard catch that ambiguity.
+
+Merged feat/blocks-collinear (b43383e0f) as 75c11de98: a drawing-guard check (drawn-ports.ts, collinearPorts) and port spacing in the planned router. Its 3-unit threshold let a 4-unit nudge pass while the two lines still read as one behind Application policy, so 63bea7a73 raises the router and the guard to one lane (16 units). Two lanes failed the router's three-cards-in-a-row test: one route moves at a time and an 80-unit wall has no room. Corpus at 63bea7a73: Blocks has zero findings (Track keeps 7,803 collinear pairs and is byte-identical); the 61 historical subject failures are unchanged; 1,633 Blocks drawings moved against b43383e0f. Against the 4-unit nudge, bends per route 1.254 to 1.290, routes with four or more bends 4.60% to 4.98%, detour +5.7%, long detours 2,081 to 2,174, detached labels 0. Timing (load about 2.4): Board viewer 384-390 / 391-395 ms, Board persistence 265-268 / 292-294, server routes 202-206 / 199-201. bun run check passes 20/20. Council 558 on the same 40 boards is running.
 <!-- SECTION:NOTES:END -->
