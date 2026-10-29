@@ -44,6 +44,15 @@ fn between(pa: Ppoint, pb: Ppoint, pc: Ppoint) -> bool {
 }
 
 fn intersects(pa: Ppoint, pb: Ppoint, pc: Ppoint, pd: Ppoint) -> bool {
+    // archboard: disjoint coordinate intervals cannot intersect. Routing
+    // polygons have many distant edges, which need no orientation arithmetic.
+    if (pa.x < pc.x && pb.x < pc.x && pa.x < pd.x && pb.x < pd.x)
+        || (pa.x > pc.x && pb.x > pc.x && pa.x > pd.x && pb.x > pd.x)
+        || (pa.y < pc.y && pb.y < pc.y && pa.y < pd.y && pb.y < pd.y)
+        || (pa.y > pc.y && pb.y > pc.y && pa.y > pd.y && pb.y > pd.y)
+    {
+        return false;
+    }
     // archboard: C finds each orientation twice when none is `ISON`; `ccw` answers the
     // same every time, so each is found once.
     let (abc, abd, cda, cdb) = (
