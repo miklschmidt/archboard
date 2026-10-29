@@ -3,6 +3,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/board/store-read";
 import { editArchitectureModule } from "@archboard/board/store-write";
+import { ArchitectureModuleEditResultSchema } from "@archboard/board/model";
+import { proposal, request } from "#tests/runtime/operations/proposals/fixture.ts";
 import {
 	fixture,
 	structureIntent,
@@ -10,6 +12,121 @@ import {
 	git,
 } from "#tests/runtime/operations/model-edit/fixture.ts";
 afterEach(disposeFixtures);
+
+test("recreating an ancestor module under a new identity requires confirmation", async () => {
+	const { vault } = fixture();
+	const binding = { repo: "github.com/acme/shop", path: "code.ts", symbol: "value" };
+	const worker = JSON.parse(readFileSync(join(vault, "worker.module.json"), "utf8"));
+	writeFileSync(join(vault, "worker.module.json"), JSON.stringify({ ...worker, binding }));
+	const removed = await proposal(vault, "Without worker", "Current", [
+		{ type: "remove-module", subject: "Shop#Worker" },
+	]);
+	const child = await proposal(vault, "Next proposal", removed.target.state!);
+	const input = {
+		...(await request(vault, child.target.state)),
+		proposal: { type: "edit" as const },
+		changes: [
+			{ type: "add-module" as const, module: { name: "Worker", kind: "service", order: 40 } },
+		],
+	};
+	expect(await editArchitectureModule(vault, input)).toMatchObject({
+		success: false,
+		applied: false,
+		code: "PART_RECREATED",
+	});
+	expect(
+		await editArchitectureModule(vault, {
+			...input,
+			operationId: "repeated-binding",
+			changes: [
+				{
+					type: "add-module",
+					module: { name: "Background worker", kind: "service", order: 40, binding },
+				},
+			],
+		}),
+	).toMatchObject({ success: false, applied: false, code: "PART_RECREATED" });
+	const confirmed = {
+		...input,
+		operationId: "different-worker",
+		proposal: { type: "edit", confirm: ["PART_RECREATED"] },
+	};
+	const result = await editArchitectureModule(vault, confirmed);
+	expect(result).toMatchObject({ success: true, confirmed: ["PART_RECREATED"] });
+	expect(ArchitectureModuleEditResultSchema.safeParse(result).success).toBe(true);
+	expect(await editArchitectureModule(vault, confirmed)).toEqual(result);
+	const selected = await readArchitectureModel(vault, undefined, undefined, {
+		state: child.target.state!,
+	});
+	if (!selected.success) throw new Error(JSON.stringify(selected));
+	const added = selected.modules.find((module) => module.name === "Worker");
+	if (added === undefined) throw new Error("The confirmed module is missing.");
+	expect(added.id).not.toBe("Shop#Worker");
+});
+
+test("removing most inherited modules requires deliberate proposal confirmation", async () => {
+	const { vault } = fixture();
+	writeFileSync(
+		join(vault, "spare.module.json"),
+		JSON.stringify({
+			schemaVersion: 1,
+			id: "Shop#Spare",
+			name: "Spare",
+			kind: "service",
+			order: 40,
+			outgoing: [],
+		}),
+	);
+	const created = await proposal(vault, "Redesign");
+	expect(
+		await editArchitectureModule(vault, {
+			...(await request(vault, created.target.state)),
+			proposal: { type: "edit" },
+			changes: [
+				{ type: "remove-module", subject: "Shop#Worker" },
+				{ type: "remove-module", subject: "Shop#Spare" },
+			],
+		}),
+	).toMatchObject({ success: true, confirmed: [] });
+	const before = readArchitectureModel(vault);
+	if (!before.success) throw new Error(JSON.stringify(before));
+	const held = await readArchitectureModel(vault, undefined, undefined, {
+		state: created.target.state!,
+	});
+	if (!held.success) throw new Error(JSON.stringify(held));
+	const input = {
+		...(await request(vault, created.target.state)),
+		proposal: { type: "edit" as const },
+		changes: held.modules.map((module) => ({
+			type: "remove-module" as const,
+			subject: module.id,
+		})),
+	};
+	expect(await editArchitectureModule(vault, input)).toMatchObject({
+		success: false,
+		applied: false,
+		code: "INHERITANCE_DROPPED",
+	});
+	expect(readArchitectureModel(vault)).toMatchObject({ success: true, revision: before.revision });
+	const confirmed = {
+		...input,
+		operationId: "confirmed-redesign",
+		proposal: { type: "edit" as const, confirm: ["INHERITANCE_DROPPED"] },
+	};
+	const applied = await editArchitectureModule(vault, confirmed);
+	expect(applied).toMatchObject({
+		success: true,
+		applied: true,
+		confirmed: ["INHERITANCE_DROPPED"],
+	});
+	expect(await editArchitectureModule(vault, confirmed)).toEqual(applied);
+	expect(
+		await readArchitectureModel(vault, undefined, undefined, { state: created.target.state! }),
+	).toMatchObject({
+		success: true,
+		modules: [],
+	});
+});
 
 test("an advanced predecessor blocks drafts while exact proposal checkpoints keep their original reading", async () => {
 	const { root, vault } = fixture();

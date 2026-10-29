@@ -23,7 +23,10 @@ import {
 	type ArchitectureModel,
 } from "#shared/schemas/model.ts";
 
-import { ArchitectureModuleEditSchema } from "#shared/schemas/model-operations.ts";
+import {
+	ArchitectureModuleEditSchema,
+	ArchitectureEditSuccessSchema,
+} from "#shared/schemas/model-operations.ts";
 import { captureBoundSources } from "#runtime/store/model-source.ts";
 
 import {
@@ -47,6 +50,7 @@ const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, pub
 			])
 			.optional(),
 		reconciliations: FamilyStandingSchema.optional(),
+		confirmed: ArchitectureEditSuccessSchema.shape.confirmed,
 		subjects: z.array(QualifiedSubjectIdSchema).optional(),
 	})
 	.strict()

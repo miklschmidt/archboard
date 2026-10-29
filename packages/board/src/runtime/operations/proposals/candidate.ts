@@ -1,4 +1,5 @@
 import { walkthroughDependencies } from "#runtime/operations/history/walkthrough-targets.ts";
+import { proposalConfirmations } from "#runtime/operations/proposals/confirmations.ts";
 import type { z } from "zod";
 import { StateMetadataSchema } from "#shared/schemas/model-definitions.ts";
 import { captureReferencePins } from "#runtime/operations/history/reference-pins.ts";
@@ -334,6 +335,13 @@ async function proposalCandidate(
 	if (!draft.success) return draft;
 	const scopes = proposalScopes(structure.scopes, predecessor.manifest.id, existing);
 	requireSubjectClaim(vault, request, scopes);
+	const confirmed = await proposalConfirmations(
+		vault,
+		predecessor,
+		baseline,
+		draft,
+		request.proposal.confirm,
+	);
 	updateChanges(proposal, baseline, draft);
 	if (existing === undefined) {
 		proposal.baseline = await retainBaseline(vault, request, predecessor, proposal);
@@ -351,6 +359,7 @@ async function proposalCandidate(
 		subjects: structure.subjects,
 		scopes,
 		selection: SelectedStateSchema.strip().parse(proposal),
+		confirmed,
 		dependencies: [
 			...new Set([
 				...proposalDependencies(proposal),

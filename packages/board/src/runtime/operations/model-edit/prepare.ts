@@ -1,6 +1,9 @@
 import { StateMetadataSchema } from "#shared/schemas/model-definitions.ts";
 import { isDeepStrictEqual } from "node:util";
-import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts";
+import type {
+	ArchitectureModuleEdit,
+	ArchitectureModuleEditResult,
+} from "#shared/schemas/model-operations.ts";
 import { editCandidate } from "#runtime/operations/model-edit/candidate.ts";
 import { requireSubjectClaim } from "#runtime/operations/model-edit/claims.ts";
 import { readCurrentModel } from "#runtime/operations/read/model-read.ts";
@@ -17,7 +20,8 @@ import {
 } from "#runtime/store/model-archive.ts";
 import { operationRef, checkoutContext, type ModelJournal } from "#runtime/store/model-state.ts";
 import { captureReferencePins } from "#runtime/operations/history/reference-pins.ts";
-type Candidate = Extract<Awaited<ReturnType<typeof editCandidate>>, { success: true }>;
+type Candidate = Extract<Awaited<ReturnType<typeof editCandidate>>, { success: true }> &
+	Pick<Extract<ArchitectureModuleEditResult, { success: true }>, "confirmed">;
 
 /**
  * Recheck the caller's complete token after the asynchronous signer finishes.
@@ -89,6 +93,7 @@ async function candidateRecord(
 		edit: request,
 		subjects: candidate.subjects,
 		reconciliations: candidate.reconciliations,
+		confirmed: candidate.confirmed,
 		sources:
 			"correction" in request
 				? request.correction.revisions.map((revision) => ({ ...revision, uncommitted: false }))
