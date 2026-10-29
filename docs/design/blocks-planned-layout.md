@@ -34,7 +34,7 @@ Declared flow points remain exact endpoint constraints.
 
 The planner selects routes in a deterministic order and reserves complete source and target fan membership.
 Every shared run has one common semantic endpoint and one full line treatment across all its members.
-Distinct relationships reserve different lines on opposite walls of the same card.
+Distinct relationships on opposite walls of the same card stand at least one lane apart, so they never read as one line behind the card.
 Port assignment slides endpoint runs without adding bends or moving authored flow points.
 Candidates include the usable wall limits and positions beside occupied opposite ports.
 An existing label position remains a starting point when its padded run still fits the shifted route.

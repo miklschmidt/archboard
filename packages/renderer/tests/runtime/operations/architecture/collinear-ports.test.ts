@@ -18,8 +18,8 @@ function drawing(offset: number, vertical = false): RenderedDiagram {
 	const box = (x: number) => ({
 		x: vertical ? 100 : x,
 		y: vertical ? x : 100,
-		width: 40,
-		height: 40,
+		width: vertical ? 80 : 40,
+		height: vertical ? 40 : 80,
 	});
 	return {
 		svg: `<g data-semantic-kind="edge" data-semantic-id="one"><path d="M${point(100, 120)} L${point(40, 120)}" marker-end="url(#head)"/></g><g data-semantic-kind="edge" data-semantic-id="two"><path d="M${point(140, 120 + offset)} L${point(200, 120 + offset)}" marker-end="url(#head)"/></g>`,
@@ -41,9 +41,10 @@ test.each([false, true])(
 	(vertical) => {
 		expect(collinearPorts(drawing(0, vertical), content)).toHaveLength(1);
 		expect(collinearPorts(drawing(2, vertical), content)).toHaveLength(1);
-		expect(collinearPorts(drawing(12, vertical), content)).toEqual([]);
+		expect(collinearPorts(drawing(12, vertical), content)).toHaveLength(1);
+		expect(collinearPorts(drawing(16, vertical), content)).toEqual([]);
 		expect(() => expectDrawingIntact(drawing(0, vertical), content, "blocks")).toThrow();
-		expect(() => expectDrawingIntact(drawing(12, vertical), content, "blocks")).not.toThrow();
+		expect(() => expectDrawingIntact(drawing(16, vertical), content, "blocks")).not.toThrow();
 	},
 );
 

@@ -3,16 +3,12 @@
 use super::{model::Model, shape::Shape};
 use crate::{blocks::assembly::PlacedLine, geometry::Point, track::chains::LANE};
 
-const OFFSETS: [f64; 8] = [
-    LANE / 4.0,
-    -LANE / 4.0,
-    LANE / 2.0,
-    -LANE / 2.0,
-    LANE,
-    -LANE,
-    2.0 * LANE,
-    -2.0 * LANE,
-];
+/// How far apart two lines at opposite walls of one card must stand to read
+/// as two lines, not as one line behind the card: one lane, the gap between
+/// two parallel lines.
+const APART: f64 = LANE;
+
+const OFFSETS: [f64; 4] = [APART, -APART, 2.0 * APART, -2.0 * APART];
 
 fn end(points: &[Point], source: bool) -> (Point, Point) {
     if source {
@@ -54,7 +50,7 @@ fn conflicts_at(
         && [true, false].into_iter().any(|os| {
             endpoint(model, edge, source) == endpoint(model, other, os)
                 && opposite_offset(end(points, source), end(&old.points, os))
-                    .is_some_and(|by| by.abs() <= 3.0)
+                    .is_some_and(|by| by.abs() < APART)
         })
 }
 
@@ -99,7 +95,7 @@ fn offsets(
                 continue;
             }
             if let Some(by) = opposite_offset(end(points, source), end(&old.points, os)) {
-                offsets.extend([by + LANE / 4.0, by - LANE / 4.0]);
+                offsets.extend([by + APART, by - APART]);
             }
         }
     }

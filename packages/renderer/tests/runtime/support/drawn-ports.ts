@@ -4,6 +4,13 @@ import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
 import { routePoints, type DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
 
+/**
+ * How far apart two lines at opposite walls of one card must stand to read as
+ * two lines, not as one line behind the card: one lane, the gap the layout
+ * keeps between two parallel lines.
+ */
+const APART = 16;
+
 /** Each contact holds a perpendicular run at one card wall. */
 interface Contact {
 	readonly edge: string;
@@ -49,7 +56,7 @@ function contact(
  * Find distinct routes that read as one line through opposite card walls.
  * @param drawing The painted architecture.
  * @param content The relationships and their intended cards.
- * @returns Each card and pair of relationships within three units of one line.
+ * @returns Each card and pair of relationships nearer one line than {@link APART}.
  */
 export function collinearPorts(drawing: RenderedDiagram, content: VariantContent): string[] {
 	const routes = routePoints(drawing.svg);
@@ -79,7 +86,7 @@ export function collinearPorts(drawing: RenderedDiagram, content: VariantContent
 						one.edge !== other.edge &&
 						one.axis === other.axis &&
 						one.side !== other.side &&
-						Math.abs(one.at - other.at) <= 3,
+						Math.abs(one.at - other.at) < APART,
 				)
 				.map((other) => `${node}: ${one.edge} / ${other.edge}`),
 		),

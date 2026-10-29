@@ -347,6 +347,6 @@ mod tests {
         let right = &result.edges.iter().find(|e| e.id == "bc").unwrap().points;
         assert_eq!(left.len(), 2);
         assert_eq!(right.len(), 2);
-        assert!((left[0].y - right[0].y).abs() > 3.0);
+        assert!((left[0].y - right[0].y).abs() >= 16.0);
     }
 }
