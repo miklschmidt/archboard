@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-29T21:40:00Z'
+updated_date: '2026-10-29T22:34:00Z'
 labels:
   - renderer
   - layout
@@ -93,4 +93,6 @@ Merged feat/blocks-speed3 (49579d0d2) as 7f0d82312: faster planned trunk and jun
 Merged feat/blocks-order (aa32524ee) as ad8156c82: placement compares whole guarded candidate drawings by how their lines read (crossings near card attachments first, then length + 120 per bend + 300 per crossing), with an area margin and a caller-local guard, in place of area-first selection. Pair 040: tool call straight, bends 14 to 5, route length 3,358 to 2,927, page +4.24%. 747 Blocks drawings change; 12 change vertical row order. The 556 legacy order differences by cause: header sides 267, settlement 154, interactions 66, coupled packing 24, wraps 18, area-first 13, trunk estimate 10, held columns 4; sample judgments favour the hybrid in G2, G3, G5, G6, G7 and legacy in G4, G8. Verified: the merge on top of feat/blocks-speed3 draws all 8,086 corpus drawings equal to the branch (core ddd6f83e0be695c3); timing at load about 2.7: Board viewer 382-397 / 298-308 ms, Board persistence 235-237 / 241-243, server routes 191-194 / 186-188; bun run check 20/20.
 
 Correction to the note on ad8156c82: the first bun run check failed 17/18. walkthrough-recording.test.ts expected the first drawn event at 0 ms and saw 128 ms, at a load of about 2.7. The test passed twice alone, and a full rerun passed 20/20 with no failed test. I take it for a timing flake under load, not proven.
+
+Council 560: cbac3f598 (readable row order and speed3 merged) against legacy Blocks (8cdedb1c3), the same 40 boards, three graders. 7 better, 33 same, 0 worse, 0 both fail, no new defect. The change passes. Better: 004, 005, 010, 016, 017, 021, 032. Lowest medians: 031 and 040 at -0.25, 027 at -0.18. Rulings: Astra reported 010 A (type 6, the bus above Stage and reads). It is byte-identical to the 010 A I ruled false in council 558, where Opus reported it; I now rule it real, because the bus reads as one line carrying three sources to three targets and only junction dots separate them. Not blind: I knew from council 558 that 010 A is legacy, so this ruling favours the change. It decides nothing: 010's scores alone make it better (+0.98, +0.85, +0.55). Opus mentioned, without reporting a defect, arrowheads that end on a shared line in 012 B (legacy side); not ruled.
 <!-- SECTION:NOTES:END -->
