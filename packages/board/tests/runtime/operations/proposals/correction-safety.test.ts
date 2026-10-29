@@ -1,14 +1,22 @@
 import { afterEach, expect, test } from "bun:test";
+import { join } from "node:path";
 import { readArchitectureModel } from "@archboard/board/store-read";
 import { editArchitectureModule } from "@archboard/board/store-write";
 import { ArchitectureModuleEditSchema } from "@archboard/board/model";
 import { fixture, disposeFixtures, git } from "#tests/runtime/operations/model-edit/fixture.ts";
 import { request, proposal, selected } from "#tests/runtime/operations/proposals/fixture.ts";
 
-afterEach(disposeFixtures);
+const originalRegistry = process.env["ARCHBOARD_REPOS"];
+afterEach(() => {
+	if (originalRegistry === undefined) delete process.env["ARCHBOARD_REPOS"];
+	else process.env["ARCHBOARD_REPOS"] = originalRegistry;
+	disposeFixtures();
+});
 
 test("corrections require completed targets, immutable evidence and the exact prior logical reading", async () => {
 	const { root, vault } = fixture();
+	// The unknown source must not inspect the host's registered checkouts.
+	process.env["ARCHBOARD_REPOS"] = join(root, "repos.json");
 	const created = await proposal(vault, "Parked");
 	const correction = {
 		previous: created.checkpoint.id,
