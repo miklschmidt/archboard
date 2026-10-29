@@ -59,7 +59,7 @@ Where things are written down:
 
 [CONTEXT.md](CONTEXT.md) defines the model vocabulary.
 [The consumer skill](skills/archboard/SKILL.md) owns the authoring workflow and command recipes.
-[ADR 0062](docs/adr/0062-one-live-canonical-model-and-consumer-path.md) records the transition pending parent acceptance.
+[ADR 0062](docs/adr/0062-one-live-canonical-model-and-consumer-path.md) records the accepted canonical model transition.
 
 - One vault holds one canonical model. `model.json` identifies it and its optional current designation.
   Each `.module.json` file owns one module and its outgoing relationships.

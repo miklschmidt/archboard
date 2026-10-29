@@ -3,11 +3,11 @@ id: TASK-549
 title: >-
   Replace board documents with a canonical module model and compact proposal
   history
-status: In Progress
+status: Done
 assignee:
   - '@codex-orchestrator'
 created_date: '2026-10-26T04:11:00Z'
-updated_date: '2026-10-27T14:34:00Z'
+updated_date: '2026-10-29T02:52:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -226,20 +226,20 @@ Evidence and design context: [architecture discovery and interaction](../../docs
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Repository and module readings derive from canonical module files and source-owned relationships without boards, copied definitions, or stored levels.
-- [ ] #2 Flow collections and dynamic walkthroughs preserve stable identities, ordered behavior, reading selections, and exact playback revisions.
-- [ ] #3 Active proposals store ID-based changes and retain sibling, ancestry, reconciliation, adoption, shelving, and correction behavior.
-- [ ] #4 One-field edits leave unrelated authored files unchanged, independently of completed archive history length.
-- [ ] #5 Every public mutation validates stale-read tokens and claims, and retries cannot duplicate a completed operation.
-- [ ] #6 Interrupted multi-file writes recover coherently or report a recoverable conflict without overwriting foreign content.
-- [ ] #7 Git checkpoints retain required baselines, respect signing policy, preserve the user index, and never select current architecture by archive order.
-- [ ] #8 Archive publication distinguishes local and shared state, handles divergent histories without rewriting, and restores missing dependencies in shallow clones.
-- [ ] #9 Linked worktrees keep independent current models and recovery state while sharing retained archive objects.
-- [ ] #10 Untracked vaults retain local operation and portable history through explicit private-archive initialization.
-- [ ] #11 Migration preserves legacy IDs and all lifecycle data, blocks ambiguous overlaps, resumes safely, and does not invent repository-wide historical states.
-- [ ] #12 Root navigation, recursive drilldown, multi-selection, focus, filters, grammar switching, and explanation actions satisfy the specified visible contracts.
-- [ ] #13 Existing public read/write and browser seams own behavior coverage without redundant wording tests or arbitrary timing gates.
-- [ ] #14 Domain language, affected ADRs, consumer skill, CLI contracts, and architecture proposals reflect the delivered model before implementation is accepted.
+- [x] #1 Repository and module readings derive from canonical module files and source-owned relationships without boards, copied definitions, or stored levels.
+- [x] #2 Flow collections and dynamic walkthroughs preserve stable identities, ordered behavior, reading selections, and exact playback revisions.
+- [x] #3 Active proposals store ID-based changes and retain sibling, ancestry, reconciliation, adoption, shelving, and correction behavior.
+- [x] #4 One-field edits leave unrelated authored files unchanged, independently of completed archive history length.
+- [x] #5 Every public mutation validates stale-read tokens and claims, and retries cannot duplicate a completed operation.
+- [x] #6 Interrupted multi-file writes recover coherently or report a recoverable conflict without overwriting foreign content.
+- [x] #7 Git checkpoints retain required baselines, respect signing policy, preserve the user index, and never select current architecture by archive order.
+- [x] #8 Archive publication distinguishes local and shared state, handles divergent histories without rewriting, and restores missing dependencies in shallow clones.
+- [x] #9 Linked worktrees keep independent current models and recovery state while sharing retained archive objects.
+- [x] #10 Untracked vaults retain local operation and portable history through explicit private-archive initialization.
+- [x] #11 Migration preserves legacy IDs and all lifecycle data, blocks ambiguous overlaps, resumes safely, and does not invent repository-wide historical states.
+- [x] #12 Root navigation, recursive drilldown, multi-selection, focus, filters, grammar switching, and explanation actions satisfy the specified visible contracts.
+- [x] #13 Existing public read/write and browser seams own behavior coverage without redundant wording tests or arbitrary timing gates.
+- [x] #14 Domain language, affected ADRs, consumer skill, CLI contracts, and architecture proposals reflect the delivered model before implementation is accepted.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -372,4 +372,12 @@ Integrated TASK-549.18 from signed source 936ce06b90cc6fa790047339c49c2dd5d40352
 Integrated TASK-549.22 from signed source cdc5d284f9ddb6817765b5890e523ca8ba515419 using signed no-fast-forward merge 385283713f81725c3bd6cdad13b0a71ab60dc431. Merge parents: integration 9d19307d41d33b328916a9a3ebe6c3bca309a21c and source cdc5d284f9ddb6817765b5890e523ca8ba515419. Merge tree efe916ebaae8ccd3426bfec3ec0496cad7f95cab exactly matches the validated source tree. Source, integration, and merge signatures verify; both checkouts were clean before merge; source claims are released and server 17023 is stopped; integration server 13675 is stopped. Reused source validation because tree equality holds; no tests or checks were rerun. TASK-549.22 is Done with four acceptance and two completion criteria satisfied; TASK-549 remains In Progress. Integration now contains 22/24 completed tickets. TASK-549.23 is newly ready, with the prepared backend brief for parent dispatch. TASK-549.24 still waits on .23. No other task status changed.
 
 Integrated TASK-549.23 from signed source b9e0049afdacbc57d8d38bab6ed28ceb46022f14 using signed no-fast-forward merge e7672f62ef0fbff1593e818124bb90c05d073471. Merge parents: integration 4aed11f76a960af4cbd22cb1515f1c1228712d68 and source b9e0049afdacbc57d8d38bab6ed28ceb46022f14. Merge tree 984b94baf8d44443b7270e250d6c44f368add707 exactly matches the validated source tree. Source, integration, and merge signatures verify, and required main a98f28811f4fa74233ae4a55e52b90d75defd93b is an ancestor. Both checkouts were clean before merge; source claims are released and server 19089 is stopped; integration server 13675 is stopped. Reused completed source validation because tree equality holds; no tests or checks were rerun. TASK-549.23 is Done with four acceptance and two completion criteria satisfied; TASK-549 remains In Progress. Integration now contains 23/24 completed tickets. TASK-549.24 is the sole remaining ready frontier. No other task status changed.
+
+Accepted all 24 approved delivery tickets on 2026-10-29. Criteria 1-3 are covered by canonical reads/structure/flows, dynamic walkthroughs, and proposal lifecycle owners. Criteria 4-6 are covered by exact churn, claim/token/idempotency, and real multi-file recovery owners. Criteria 7-10 are covered by signed retained history, explicit publication/fetch, linked worktrees, untracked archives, and portable closure owners. Criteria 11-12 are covered by explicit identity mapping, disposable full migration/recovery/retry, retained legacy addresses, and the complete canonical browser inventory. Criteria 13-14 are covered by the approved public disk/Git seam, existing browser seam, completed review ledger, accepted ADRs, consumer contracts, and migrated/adopted architecture. Normal validation completed in stages. The full check command passed static stages and 4,779 package/app cases, then stopped on two test-owner failures. Signed 5a2ca53b repairs only those two owners; seven focused cases pass with 71 assertions and unchanged deadlines. The remaining unchanged lanes pass 228 system cases, 154 repository cases, and 60 browser cases across all 42 browser files. Combined coverage is 4,781 passing package/app cases plus those 442 cases, with one macOS-only skip. No later product code changed. The original failed receipt remains recorded; no claim is made that the initial check command exited zero. Types, strict lint, formatting, and whitespace pass. Geometry evidence remains 268 corpus cases and 193 focused cases. Exact reports and receipts are in /home/msc/.local/state/archboard-implementation/task-549.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented the canonical module model and compact proposal history across all 24 tickets. Current files own modules, outgoing relationships, flows, active proposals, and walkthrough instructions. Exact signed history retains completed states, corrections, and migration originals. The browser explores one model recursively, and local agents explain captured readings. The repository migration, runtime/browser validation, consumer transition, and explicit archive publication are accepted. PR 19 remains the single integration PR against main; source publication and worktree cleanup follow this acceptance.
+<!-- SECTION:FINAL_SUMMARY:END -->

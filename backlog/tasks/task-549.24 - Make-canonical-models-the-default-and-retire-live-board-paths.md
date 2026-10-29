@@ -1,11 +1,11 @@
 ---
 id: TASK-549.24
 title: Make canonical models the default and retire live board paths
-status: In Progress
+status: Done
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-29T02:29:00Z'
+updated_date: '2026-10-29T02:52:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -48,17 +48,17 @@ TASK-549.13, TASK-549.16, TASK-549.18, TASK-549.23
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 New vaults use canonical models. Migrate the repository's architecture vault through the delivered workflow and retire the old live authoring paths.
-- [ ] #2 Keep legacy decoding only for migration and retained historical readings. Remaining unmigrated vaults receive an explicit migration route, never an automatic rewrite.
-- [ ] #3 Close the consumer transition across commands, agent context, code inspection, rendering, walkthroughs, and examples. Earlier slices own their functional changes and documentation.
-- [ ] #4 Remove obsolete board ownership and level instructions. Complete the glossary, ADR, skill, and architecture updates without introducing a second storage abstraction.
-- [ ] #5 Demonstrate the local workflow from discovery through proposal, adoption, history, and walkthrough. Reuse the focused evidence already owned by each slice.
+- [x] #1 New vaults use canonical models. Migrate the repository's architecture vault through the delivered workflow and retire the old live authoring paths.
+- [x] #2 Keep legacy decoding only for migration and retained historical readings. Remaining unmigrated vaults receive an explicit migration route, never an automatic rewrite.
+- [x] #3 Close the consumer transition across commands, agent context, code inspection, rendering, walkthroughs, and examples. Earlier slices own their functional changes and documentation.
+- [x] #4 Remove obsolete board ownership and level instructions. Complete the glossary, ADR, skill, and architecture updates without introducing a second storage abstraction.
+- [x] #5 Demonstrate the local workflow from discovery through proposal, adoption, history, and walkthrough. Reuse the focused evidence already owned by each slice.
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Focused tests pass at the agreed public runtime or browser seam.
-- [ ] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
+- [x] #1 Focused tests pass at the agreed public runtime or browser seam.
+- [x] #2 Affected architecture descriptions, ADRs, and consumer instructions match the delivered behavior.
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -480,4 +480,12 @@ The socket refusal came from a fixture that omitted the existing reading=canonic
 Closed the last original coverage gap in codex-pane-context.test.ts. The old owner passes a forced wrong-tab context; the repaired owner fails at Gateway versus Ledger. Canonical pane registration also exposed GET /api/panes parsing model keys as legacy boards. The report now preserves the key and exact selection without inventing a board identity. Three affected cases pass with 50 assertions. Both type projects, strict focused source/test lint, format, and whitespace pass. Exact review and mutation evidence: task-549.24-pane-context-review.json. The automatic explanation repair, media, full gate, archive publication, and final acceptance remain open.
 
 Integrated automatic explanation correlation at signed 28b7a93d. The real ask v3 recording exits 0 and shows the completed captured answer. Root inspected its thumbnail and four clip samples, then uploaded the exact accepted bytes once. README now links that accepted attachment. All 16 assets are current. Formatting and whitespace pass. Focused review coverage composes the pane and notification repairs. Final normal gate and history publication remain open.
+
+Parent acceptance on 2026-10-29. Criteria 1 and 2: canonical initialization and legacy refusal owners pass; the repository migration and adoption completed through the public writer, with exact originals retained and eight independent drafts preserved. Criteria 3 and 4: shared projections, canonical commands and context, code/history inspection, render recipes, walkthrough replay, examples, consumer skills, and the accepted ADR0062 form one live path. Review coverage records 1,077 exact paths with zero gaps, plus the final two test-owner fixes and metadata/media deltas. Criterion 5: public runtime/HTTP/CLI workflows, all 42 browser owners, real local explanation recording, and retained narrative replay provide observed evidence. All 16 README assets are current. Architecture checks report zero semantic/embed findings and no code warnings, with 34 existing informational exposure findings and 15 stated evidence limits. Current model: 540 modules, 19 roots, 1,117 relationships, 72 flows, 19 walkthroughs. Signed checkpoint 9be1d5d14bb4f1c113e037574c7012149259773c is published at origin refs/heads/archboard-history after an exact retry recovered a lost publication response. Host retention protection remains outside Git transport. Normal validation completed in stages. The full check command passed static stages and 4,779 package/app cases, then stopped on two test-owner failures. Signed 5a2ca53b repairs only those two owners; seven focused cases pass with 71 assertions and unchanged deadlines. The remaining unchanged lanes pass 228 system cases, 154 repository cases, and 60 browser cases across all 42 browser files. Combined coverage is 4,781 passing package/app cases plus those 442 cases, with one macOS-only skip. No later product code changed. The original failed receipt remains recorded; no claim is made that the initial check command exited zero. Types, strict lint, formatting, and whitespace pass. Geometry evidence remains 268 corpus cases and 193 focused cases. Exact reports and receipts are in /home/msc/.local/state/archboard-implementation/task-549.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Canonical models now own live architecture. The repository vault migrated explicitly with its original history and independent drafts intact. Commands, browser readings, local explanations, exports, code inspection, and walkthroughs use the shared runtime. Completed architecture lives in signed, explicitly published history. All acceptance evidence is recorded, including the repaired test-owner failures and preserved limits.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -172,7 +172,7 @@ Installation requires explicit authorization and the exact expected source and p
 The existing migration journal retains the original history and supports recovery.
 The runtime never infers full-vault identity mappings from names or bindings.
 
-See [ADR 0062](docs/adr/0062-one-live-canonical-model-and-consumer-path.md) for the transition pending parent acceptance,
+See [ADR 0062](docs/adr/0062-one-live-canonical-model-and-consumer-path.md) for the accepted canonical model transition,
 [ADR 0060](docs/adr/0060-canonical-model-reads-keep-legacy-authority-explicit.md),
 [ADR 0061](docs/adr/0061-active-proposals-store-identity-changes.md), and
 [the canonical consumer reference](skills/archboard/references/canonical-models.md).

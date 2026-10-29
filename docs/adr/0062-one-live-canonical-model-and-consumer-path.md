@@ -1,6 +1,6 @@
 # One live canonical model and consumer path
 
-Status: Proposed for TASK-549.24 parent acceptance.
+Status: Accepted through TASK-549.24 on 2026-10-29.
 
 ## Context
 
@@ -50,5 +50,5 @@ Agents continue to execute locally.
 The backend publishes its operation and projection contract for independent frontend implementation.
 Draft architecture proposals preserve existing board history and unrelated drafts.
 The implementation delegate does not choose repository mappings or adopt architecture proposals.
-The parent accepts the frontend, full-vault mapping, cutover, and final integrated behavior.
-TASK-549.24 remains In Progress until that acceptance completes.
+The parent accepted the frontend, repository mapping, migration, and integrated local behavior on 2026-10-29.
+TASK-549.24 records the runtime, browser, migration, history, and consumer evidence.

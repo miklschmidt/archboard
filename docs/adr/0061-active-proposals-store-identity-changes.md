@@ -196,5 +196,5 @@ The browser submits no correction writes.
 ## Canonical default transition
 
 TASK-549.24 retires live legacy authoring and consumers.
-See [the proposed consumer transition](0062-one-live-canonical-model-and-consumer-path.md) for its backend contract and parent acceptance boundary.
+See [the accepted consumer transition](0062-one-live-canonical-model-and-consumer-path.md) for its consumer contract and acceptance boundary.
 Legacy bytes remain available for explicit migration and exact retained history.
