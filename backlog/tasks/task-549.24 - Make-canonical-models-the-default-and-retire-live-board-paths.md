@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex-parent'
 created_date: '2026-10-26T05:26:00Z'
-updated_date: '2026-10-29T00:00:00Z'
+updated_date: '2026-10-29T00:07:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -200,6 +200,8 @@ Repair the browser retry/cancel envelope exposed by the existing explanation own
 Restore the preserved proposal inheritance confirmations exposed by runtime retirement review. Root owns INHERITANCE_DROPPED and PART_RECREATED through the existing proposal candidate, shared request/result schemas, signed record and receipt. Keep the more-than-half threshold and nearest-ancestor name/exact-binding warning without inferring identity. Add explicit proposal confirmation codes and durable performed-code notices. Prove refusal, no persisted change, deliberate confirmation and exact retry through the public runtime with real disk/Git in the existing proposal safety owner. Preserve current edits, automatic reconciliation, signing, claims and strict rules. Update consumer guidance and generated schemas. Existing proposal responsibility remains accurate; no source-vault rewrite is planned.
 
 Restore missing current binding diagnostics through the existing code inspection owner. Remove the obsolete named-draft-only binding-path split and include every selected binding, including current bindings without a symbol. Keep missing checkouts or unavailable refs as skips and real absent paths as BINDING_PATH_MISSING. Extend the existing canonical CLI code-inspection assertion and adjust the existing analyzer expectation for its missing current path. Preserve canonical model/state/subject metadata and source immutability. No new checker, browser path, or semantic scan.
+
+Align the already implemented TASK-549 architecture after source review through the public current writer. Preserve the adopted state and all unrelated proposals. Update the renderer flow anchor to prepareCardRouting and document four route dependencies on Mutation work. This is documentation of the implemented proposal, so no second proposal is needed. Claim exact affected subjects and model allocation scope, retain the signed edit, then inspect current code evidence again.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -452,4 +454,6 @@ CAPTURE-1 now carries the observed comparison revision through browser reports a
 Restored RUNTIME-RETIRE-1 and RUNTIME-RETIRE-2 through the existing canonical proposal operation. proposal.confirm admits deliberate inheritance removal and possible name/exact-binding recreation; receipts retain only performed confirmed codes through recovery and exact retry. Names and bindings remain warnings rather than identity assignment. Public safety tests prove the exact-half boundary, majority refusal, grandparent/name/binding warnings, distinct confirmed identity, unchanged files on refusal and strict receipt compatibility. All 62 affected cases pass with 384 assertions across separate focused runs. Both types, strict touched lint, formatting, whitespace and ignored schema generation pass. Exact evidence is task-549.24-proposal-confirmations-review.json. No source-vault content or architecture responsibility changes. Missing current-binding diagnostics remain root-owned, with its CLI regression now RED.
 
 Restored missing current binding diagnostics through the existing code inspection pass. Current bindings without symbols now report absent paths, while unavailable repositories and revisions remain explicit skips. The canonical CLI regression now requires warning exit 1. Eleven affected cases pass with 41 assertions, plus both types, strict repository lint and formatting. Replaced four stale macOS lane paths with canonical read, structure, proposal/correction and dynamic approval owners. All 16 selected paths exist; macOS execution remains a hosted platform limit. Exact evidence is task-549.24-current-binding-review.json. Real current inspection has no missing bindings, but two review-caused architecture warnings remain for root alignment: one renderer flow anchor and four Mutation work relationships. Acceptance remains open.
+
+Aligned five authored files through the public writer after source review. Four route dependencies now cite asyncEndpoint, and the renderer flow cites the local CardLayout.lay method. Signed checkpoint d919dff6f070b9cff6c6c260bd34fd4e85ec7607 retains the final reading. Current code inspection exits 0 with zero warnings, 34 informational findings and 15 explicit limits. The adopted state and all eight unrelated proposal files remain exact. Claims are empty and the owned server is stopped. Exact authored review and prior refused attempts are in task-549.24-review-architecture-alignment.json. Full gate, media, archive publication and final acceptance remain open.
 <!-- SECTION:NOTES:END -->
