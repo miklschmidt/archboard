@@ -119,6 +119,7 @@ test("local explanations share captured text, cancellation, and retry through th
 		invoke("", { request }),
 	]);
 	expect(duplicate).toEqual(started);
+	await waitFor(() => announcements.length > 0, "the explanation change notice");
 	expect(announcements).toContainEqual({ type: "architecture_explanations_changed" });
 	expect(await latestAction()).toMatchObject({
 		success: true,
