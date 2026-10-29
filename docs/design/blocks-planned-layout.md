@@ -23,6 +23,8 @@ It settles the second candidate only if the earlier candidates fail.
 Duplicate placements are skipped.
 The obsolete side-exit hierarchy pass does not run for Blocks.
 Dense scopes compare a three-row deal and a four-row cut, with columns held.
+A board with at most twenty-four cards also retains the two-row cut.
+Labels and boundary ports can push a small fan over the dense-scope limit.
 Smaller scopes retain the wider legacy wrap search.
 
 Fixed placement supplies measured endpoints, exact headers, region captions, walls, and route ancestry to the planner.

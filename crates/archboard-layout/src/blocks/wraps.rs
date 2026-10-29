@@ -99,7 +99,12 @@ pub(crate) fn search_of(
         candidates.push(Candidate::Grid);
     }
     for lowered in wraps_of(laying.whole, tree, block) {
-        if !try_wrap(&lowered, tree.nesting, laying.whole.boxes.len()) {
+        if !try_wrap(
+            &lowered,
+            tree.nesting,
+            laying.whole.boxes.len(),
+            tree.cards.len(),
+        ) {
             continue;
         }
         candidates.extend(
@@ -308,7 +313,7 @@ fn peer_runs(
         .collect()
 }
 
-fn try_wrap(lowered: &Plan, nesting: Nesting, boxes: usize) -> bool {
+fn try_wrap(lowered: &Plan, nesting: Nesting, boxes: usize, cards: usize) -> bool {
     if nesting != Nesting::Blocks || boxes <= 24 {
         return true;
     }
@@ -318,6 +323,8 @@ fn try_wrap(lowered: &Plan, nesting: Nesting, boxes: usize) -> bool {
             .values()
             .enumerate()
             .all(|(index, &row)| row == index % rows);
-    let cut = rows == 4 && lowered.values().is_sorted();
+    // Labels and boundary ports can make a small board's fan count as dense.
+    // Keep its two-row cut without widening the search of large boards.
+    let cut = (rows == 4 || rows == 2 && cards <= 24) && lowered.values().is_sorted();
     dealt || cut
 }

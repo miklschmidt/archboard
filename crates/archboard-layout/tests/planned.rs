@@ -255,3 +255,79 @@ fn reciprocal_labeled_calls_keep_the_short_gap_between_neighbors() {
         );
     }
 }
+
+// A labelled fan with boundary ports reaches the dense-scope limit even
+// with only eight cards. It still needs the compact two-row cut.
+fn small_labelled_fan() -> Value {
+    let card = |id: &str, width: u32, height: u32, order: u32| json!({"id":id,"width":width,"height":height,"layoutOptions":{"archboard.order":order.to_string()}});
+    let mut members = vec![
+        card("caller", 340, 88, 1000),
+        card("registry", 340, 88, 2000),
+        card("flags", 340, 105, 3000),
+        card("dispatch", 260, 72, 4000),
+        card("execute", 340, 88, 5000),
+        card("failure", 260, 72, 7000),
+        card("help", 340, 88, 9000),
+        card("vault", 340, 122, 12000),
+    ];
+    members[0]["layoutOptions"]["archboard.entry"] = json!("true");
+    members[1]["layoutOptions"]["archboard.entry"] = json!("false");
+    members[7]["layoutOptions"]["archboard.entry"] = json!("false");
+    let mut frame = card("frame", 356, 113, 11000);
+    frame["layoutOptions"]["archboard.header.size"] = json!("113");
+    frame["children"] = json!(members);
+    let children = vec![
+        card("command", 340, 88, 6000),
+        card("catalogue", 340, 88, 8000),
+        card("context", 340, 105, 10000),
+        frame,
+        card("checkouts", 340, 122, 14000),
+    ];
+    let links = [
+        ("e0", "caller", "help", 1000, 162, 31),
+        ("e1", "caller", "flags", 2000, 83, 31),
+        ("e2", "caller", "dispatch", 3000, 48, 31),
+        ("e3", "caller", "execute", 4000, 58, 31),
+        ("e4", "execute", "command", 5000, 0, 0),
+        ("e5", "caller", "failure", 6000, 65, 31),
+        ("e6", "catalogue", "caller", 7000, 41, 31),
+        ("e7", "dispatch", "registry", 8000, 54, 31),
+        ("e8", "catalogue", "registry", 9000, 176, 31),
+        ("e9", "caller", "context", 10000, 190, 31),
+        ("e11", "caller", "vault", 14000, 139, 31),
+        ("e12", "vault", "context", 17000, 121, 46),
+    ];
+    let edges: Vec<_> = links
+        .into_iter()
+        .map(|(id, from, to, order, width, height)| {
+            let mut edge = json!({"id":id,"sources":[from],"targets":[to],"layoutOptions":{
+            "archboard.order":order.to_string(),"archboard.relationship.kind":"call",
+            "archboard.relationship.held-kind":"call"}});
+            if width > 0 {
+                edge["labels"] = json!([{"width":width,"height":height}]);
+            }
+            edge
+        })
+        .collect();
+    json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},"children":children,"edges":edges})
+}
+
+#[test]
+fn a_small_labelled_fan_keeps_its_nearby_first_row() {
+    let placed = drawing(&small_labelled_fan());
+    let cards = placed["cards"].as_array().unwrap();
+    let y = |id| {
+        cards.iter().find(|card| card["id"] == id).unwrap()["box"]["y"]
+            .as_f64()
+            .unwrap()
+    };
+    let first = ["help", "failure", "vault"].map(&y);
+    let second = ["execute", "dispatch", "flags"].map(&y);
+    assert_eq!(first, [first[0]; 3]);
+    assert_eq!(second, [second[0]; 3]);
+    assert!(
+        [y("caller"), first[0], second[0], y("registry")]
+            .windows(2)
+            .all(|pair| pair[0] < pair[1])
+    );
+}

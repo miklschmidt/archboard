@@ -13,7 +13,7 @@ const content = orderedFixture({
 });
 
 /** Build two outward routes with an optional offset or rotation. */
-function drawing(offset: number, vertical = false): RenderedDiagram {
+function drawing(offset: number, vertical = false, origin = 120): RenderedDiagram {
 	const point = (x: number, y: number) => (vertical ? `${y},${x}` : `${x},${y}`);
 	const box = (x: number) => ({
 		x: vertical ? 100 : x,
@@ -22,7 +22,7 @@ function drawing(offset: number, vertical = false): RenderedDiagram {
 		height: vertical ? 40 : 80,
 	});
 	return {
-		svg: `<g data-semantic-kind="edge" data-semantic-id="one"><path d="M${point(100, 120)} L${point(40, 120)}" marker-end="url(#head)"/></g><g data-semantic-kind="edge" data-semantic-id="two"><path d="M${point(140, 120 + offset)} L${point(200, 120 + offset)}" marker-end="url(#head)"/></g>`,
+		svg: `<g data-semantic-kind="edge" data-semantic-id="one"><path d="M${point(100, origin)} L${point(40, origin)}" marker-end="url(#head)"/></g><g data-semantic-kind="edge" data-semantic-id="two"><path d="M${point(140, origin + offset)} L${point(200, origin + offset)}" marker-end="url(#head)"/></g>`,
 		width: 240,
 		height: 240,
 		appearances: [],
@@ -59,3 +59,12 @@ test("the same relationship can enter and leave a card", () => {
 	};
 	expect(collinearPorts(picture, loop)).toEqual([]);
 });
+
+// Decimal SVG coordinates can subtract to just less than sixteen in binary arithmetic.
+test.each([false, true])(
+	"one painted lane stays clear at fractional coordinates (vertical=%s)",
+	(vertical) => {
+		expect(collinearPorts(drawing(16, vertical, 112.01), content)).toEqual([]);
+		expect(collinearPorts(drawing(15.99, vertical, 112.01), content)).toHaveLength(1);
+	},
+);
