@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-28T22:41:00Z'
+updated_date: '2026-10-29T00:38:00Z'
 labels:
   - renderer
   - layout
@@ -59,4 +59,6 @@ The final council of TASK-548.08 (2026-10-28, 40 blind pairs against c147b73c8, 
 2026-10-28: build checkpoint after step 6 (feat/blocks-planned 1d7b865e): gate green, Track identical, no new hard finding, but the planner was selected for only 283 drawings and every large board and all six references fell back to the legacy path, so means moved slightly worse (area +0.04%, bends 2.355 to 2.363) and timings stayed ~1.08/0.66/0.82 s. Steps 7 and 8 continue with selection by 'no hard defect' instead of 'noncrossing plan', targets: planner draws every Blocks architecture drawing, area -15%, bends per route <= 2.0, routes with four or more bends <= 22%, timings under 500 ms.
 
 2026-10-28: steps 7 and 8 (feat/blocks-planned a6826516): the planner draws every Blocks architecture drawing, geometric findings 23 to 0, Track identical, timings 300/257/212 ms first (was 1073/614/822). Readability worse: area +22%, route length x2.1, bends per route 2.35 to 3.40, four-or-more-bend routes 31% to 40%. Faults seen in the pictures: labels in cells beside their source force sideways departures and loops; dependency order inside scopes lost; lines between frames circle them through fixed-side exports and bottom arrivals. Iteration 3 fixes these three, keeping a change only when the six references improve against the baseline.
+
+2026-10-29: iteration 3 kept nothing: both trials failed the six-reference gate (best: area +18%, route length x2). All 488 graphs above 24 relationships used the planner's conservative construction. Course change: legacy Blocks placement composes better, the planner routes better and faster. Iteration 4 (feat/blocks-hybrid) keeps legacy placement and replaces only Blocks routing with the planner's lanes, fans, label runs and guard. In parallel, explore/blocks-placespeed speeds up the remaining legacy solve (Graphviz and placement steps) with byte-identical drawings.
 <!-- SECTION:NOTES:END -->
