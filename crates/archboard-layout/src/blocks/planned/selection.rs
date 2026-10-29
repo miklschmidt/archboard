@@ -11,28 +11,72 @@ pub(super) fn greedy(
     let mut failed = None;
     let mut windows = base.fallbacks;
     for variant in [1, 0, 2, 3] {
-        let mut repairs = 0;
-        let result = order(model, topology, base, paths, variant)
-            .into_iter()
-            .try_fold(base.clone(), |shape, edge| {
-                next(
-                    model,
-                    topology,
-                    &shape,
-                    paths,
-                    edge,
-                    &mut repairs,
-                    &mut windows,
-                )
-                .ok_or(edge)
-            });
-        match result {
-            Ok(shape) => return Ok(shape.routes),
+        match ordered(model, topology, base, paths, variant, &mut windows) {
+            Ok(shape) => {
+                return Ok(
+                    improve(model, topology, base, paths, variant, shape, &mut windows).routes,
+                );
+            }
             Err(edge) => failed = Some(edge),
         }
     }
     Err(failed.expect("an unfinished route"))
 }
+
+fn ordered(
+    model: &Model<'_>,
+    topology: &Topology,
+    base: &Shape,
+    paths: &[Vec<PlacedLine>],
+    variant: usize,
+    windows: &mut usize,
+) -> Result<Shape, usize> {
+    let mut repairs = 0;
+    order(model, topology, base, paths, variant)
+        .into_iter()
+        .try_fold(base.clone(), |shape, edge| {
+            next(model, topology, &shape, paths, edge, &mut repairs, windows).ok_or(edge)
+        })
+}
+
+fn improve(
+    model: &Model<'_>,
+    topology: &Topology,
+    base: &Shape,
+    paths: &[Vec<PlacedLine>],
+    variant: usize,
+    chosen: Shape,
+    windows: &mut usize,
+) -> Shape {
+    // Bound the second ordering to small views that already contain a greedy detour.
+    if variant != 1 || paths.len() > super::REFINEMENT_LIMIT {
+        return chosen;
+    }
+    let score = quality(&chosen.routes, paths, model);
+    if score.0 == 0 {
+        return chosen;
+    }
+    match ordered(model, topology, base, paths, 2, windows) {
+        Ok(short) if quality(&short.routes, paths, model) < score => short,
+        _ => chosen,
+    }
+}
+
+fn quality(lines: &[PlacedLine], paths: &[Vec<PlacedLine>], model: &Model<'_>) -> (usize, u64) {
+    let mut detours = 0;
+    let mut cost = 0.0;
+    for line in lines {
+        let shortest = paths[model.edge_index[line.id.as_str()]]
+            .iter()
+            .map(|line| super::geometry::length(&line.points))
+            .fold(f64::INFINITY, f64::min);
+        let length = super::geometry::length(&line.points);
+        detours += usize::from(length > shortest * 1.5 && length > shortest + 120.0);
+        cost += route_cost(&line.points);
+    }
+    (detours, cost.to_bits())
+}
+
 fn order(
     model: &Model<'_>,
     topology: &Topology,
@@ -78,12 +122,49 @@ fn next(
     paths[edge]
         .iter()
         .find_map(|line| append(model, topology, shape, line))
+        .map(|chosen| {
+            shorten(model, topology, shape, paths, edge, repairs, &chosen).unwrap_or(chosen)
+        })
         .or_else(|| fan_join(model, topology, shape, &paths[edge], edge))
         .or_else(|| dynamic(model, topology, shape, edge, super::fixed::Search::Channels))
         .or_else(|| repair(model, topology, shape, paths, edge, repairs))
         .or_else(|| hierarchy(model, topology, shape, edge, windows))
         .or_else(|| dynamic(model, topology, shape, edge, super::fixed::Search::Ports))
 }
+fn shorten(
+    model: &Model<'_>,
+    topology: &Topology,
+    shape: &Shape,
+    paths: &[Vec<PlacedLine>],
+    edge: usize,
+    repairs: &mut usize,
+    chosen: &Shape,
+) -> Option<Shape> {
+    let (from, to) = model.ends[edge];
+    let reciprocal = model.outgoing[to]
+        .iter()
+        .any(|&other| model.ends[other].1 == from);
+    if paths.len() > super::REFINEMENT_LIMIT || !reciprocal {
+        return None;
+    }
+    let length = |line: &PlacedLine| super::geometry::length(&line.points);
+    let shortest = paths[edge].iter().map(length).fold(f64::INFINITY, f64::min);
+    let picked = length(chosen.routes.last()?);
+    if picked <= shortest * 1.5 || picked <= shortest + 300.0 {
+        return None;
+    }
+    let mut shorter = paths.to_vec();
+    shorter[edge].retain(|line| length(line) < picked - 300.0);
+    let repaired = repair(model, topology, shape, &shorter, edge, repairs)?;
+    let total = |s: &Shape| {
+        s.routes
+            .iter()
+            .map(|line| route_cost(&line.points))
+            .sum::<f64>()
+    };
+    (total(&repaired) < total(chosen)).then_some(repaired)
+}
+
 fn dynamic(
     model: &Model<'_>,
     topology: &Topology,

@@ -1,5 +1,8 @@
 //! Route legacy Blocks placements through owned fans and guarded channels.
 
+// A bounded readability search keeps dense solves within their render budget.
+const REFINEMENT_LIMIT: usize = 32;
+
 mod channel;
 mod choices;
 mod clearance;

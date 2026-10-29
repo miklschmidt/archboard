@@ -27,6 +27,7 @@ It occupies the midpoint of the longest clear private run that holds its measure
 When no qualifying midpoint exists, it occupies the nearest clear private spot along the route from the source.
 The implementation counts those cases.
 Words remain horizontal on horizontal or vertical runs.
+A stack of separate label plates uses a vertical run long enough to carry every plate.
 The label never covers shared ink, crosses a frame wall, or lies under a foreign line.
 A route never gains a bend to reach a label slot.
 
