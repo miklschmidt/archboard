@@ -1,5 +1,8 @@
 //! Peer-facing wall candidates and local channel templates. No grid search.
 
+use rustc_hash::FxHashMap;
+use std::{cell::RefCell, rc::Rc};
+
 use crate::blocks::assembly::PlacedLine;
 use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS};
 use crate::geometry::{Point, Rect, inflate};
@@ -23,6 +26,16 @@ pub(super) fn feasible(
         .is_none()
 }
 
+/// Every route candidate of one edge uses the same fixed obstacles.
+#[derive(Default)]
+pub(super) struct GeometryCache(RefCell<FxHashMap<usize, Rc<FixedGeometry>>>);
+
+struct FixedGeometry {
+    cards: super::clearance::Clearance,
+    captions: super::clearance::Clearance,
+    foreign: super::clearance::Clearance,
+}
+
 /// The guard borrows one immutable candidate set and indexes its fixed obstacles.
 pub(super) struct Probe<'a, 'g> {
     model: &'a Model<'g>,
@@ -30,10 +43,9 @@ pub(super) struct Probe<'a, 'g> {
     index: usize,
     shape: &'a Shape,
     bounds: Rect,
-    cards: super::clearance::Clearance,
+    fixed: Rc<FixedGeometry>,
     labels: super::clearance::Clearance,
-    captions: super::clearance::Clearance,
-    foreign: super::clearance::Clearance,
+    junctions: Option<Vec<Junction<'a>>>,
 }
 impl<'a, 'g> Probe<'a, 'g> {
     pub(super) fn new(
@@ -43,40 +55,54 @@ impl<'a, 'g> Probe<'a, 'g> {
         shape: &'a Shape,
         bounds: Rect,
     ) -> Self {
-        let (from, to) = model.ends[index];
-        let route = &topology.routes[index];
-        let cards = shape
-            .endpoints
-            .iter()
-            .map(|(&id, &r)| {
-                if id == from || id == to {
-                    r
-                } else {
-                    inflate(r, 16.0)
-                }
-            })
-            .collect();
+        let fixed = Rc::clone(
+            shape
+                .channel_geometry
+                .0
+                .borrow_mut()
+                .entry(index)
+                .or_insert_with(|| {
+                    let (from, to) = model.ends[index];
+                    let route = &topology.routes[index];
+                    let cards = shape
+                        .endpoints
+                        .iter()
+                        .map(|(&id, &r)| {
+                            if id == from || id == to {
+                                r
+                            } else {
+                                inflate(r, 16.0)
+                            }
+                        })
+                        .collect();
+                    let captions = shape
+                        .drawing
+                        .regions
+                        .iter()
+                        .map(|r| inflate(r.caption, 16.0))
+                        .collect();
+                    let foreign = shape
+                        .scopes
+                        .iter()
+                        .filter(|(scope, _)| {
+                            !route.outward.contains(scope)
+                                && !route.inward.contains(scope)
+                                && !ancestor(model, route.scope, **scope)
+                        })
+                        .map(|(_, placed)| inflate(placed.bounds, 16.0))
+                        .collect();
+                    Rc::new(FixedGeometry {
+                        cards: super::clearance::Clearance::new(cards),
+                        captions: super::clearance::Clearance::new(captions),
+                        foreign: super::clearance::Clearance::new(foreign),
+                    })
+                }),
+        );
         let labels = shape
             .labels
             .iter()
             .filter(|(id, _)| **id != index)
             .map(|(_, &r)| inflate(r, 12.01))
-            .collect();
-        let captions = shape
-            .drawing
-            .regions
-            .iter()
-            .map(|r| inflate(r.caption, 16.0))
-            .collect();
-        let foreign = shape
-            .scopes
-            .iter()
-            .filter(|(scope, _)| {
-                !route.outward.contains(scope)
-                    && !route.inward.contains(scope)
-                    && !ancestor(model, route.scope, **scope)
-            })
-            .map(|(_, placed)| inflate(placed.bounds, 16.0))
             .collect();
         Self {
             model,
@@ -84,10 +110,14 @@ impl<'a, 'g> Probe<'a, 'g> {
             index,
             shape,
             bounds,
-            cards: super::clearance::Clearance::new(cards),
+            fixed,
             labels: super::clearance::Clearance::new(labels),
-            captions: super::clearance::Clearance::new(captions),
-            foreign: super::clearance::Clearance::new(foreign),
+            junctions: shape
+                .routes
+                .iter()
+                .filter(|line| line.id != model.edges[index].id)
+                .map(|line| Junction::new(model, topology, index, line))
+                .collect(),
         }
     }
     pub(super) fn refusal(&self, points: &[Point]) -> Option<&'static str> {
@@ -108,29 +138,29 @@ impl<'a, 'g> Probe<'a, 'g> {
         {
             return Some("label run");
         }
-        if !self.cards.clear(points) {
+        if !self.fixed.cards.clear(points) {
             return Some("card");
         }
         if !self.labels.clear(points) {
             return Some("label");
         }
-        if !self.captions.clear(points) {
+        if !self.fixed.captions.clear(points) {
             return Some("caption");
         }
         if hugs_wall(shape, points) {
             return Some("wall lane");
         }
-        if !self.foreign.clear(points) {
+        if !self.fixed.foreign.clear(points) {
             return Some("foreign scope");
         }
         if !super::portals::follows(&topology.routes[index], shape, points) {
             return Some("portal");
         }
-        if !shape
-            .routes
-            .iter()
-            .filter(|line| line.id != model.edges[index].id)
-            .all(|line| shared_junction(model, topology, index, points, line))
+        let bounds = super::junctions::Envelope::new(points);
+        if !self
+            .junctions
+            .as_ref()
+            .is_some_and(|pairs| pairs.iter().all(|pair| pair.clear(points, bounds)))
         {
             return Some("junction");
         }
@@ -151,7 +181,7 @@ pub(super) fn ancestor(model: &Model<'_>, mut inner: usize, outer: usize) -> boo
 }
 
 /// The final polyline must retain both padded label pins after normalization.
-fn label_run(points: &[Point], label: Rect) -> bool {
+pub(super) fn label_run(points: &[Point], label: Rect) -> bool {
     let y = label.y + label.height / 2.0;
     points.windows(2).any(|pair| {
         (pair[0].y - y).abs() < 1e-6
@@ -165,6 +195,39 @@ fn label_run(points: &[Point], label: Rect) -> bool {
     })
 }
 
+struct Junction<'a> {
+    line: &'a PlacedLine,
+    bounds: super::junctions::Envelope,
+    shared: bool,
+    source: bool,
+    target: bool,
+}
+impl<'a> Junction<'a> {
+    fn new(
+        model: &Model<'_>,
+        topology: &Topology,
+        index: usize,
+        line: &'a PlacedLine,
+    ) -> Option<Self> {
+        let &other = model.edge_index.get(line.id.as_str())?;
+        Some(Self {
+            line,
+            bounds: super::junctions::Envelope::new(&line.points),
+            shared: topology.memberships[index]
+                .iter()
+                .flatten()
+                .any(|fan| topology.memberships[other].contains(&Some(*fan))),
+            source: model.ends[index].0 == model.ends[other].0,
+            target: model.ends[index].1 == model.ends[other].1,
+        })
+    }
+    fn clear(&self, points: &[Point], bounds: super::junctions::Envelope) -> bool {
+        bounds.apart(self.bounds)
+            || ((!self.shared
+                || super::junctions::sharing(points, &self.line.points, self.source, self.target))
+                && super::junctions::ordered(points, &self.line.points, self.shared))
+    }
+}
 pub(super) fn shared_junction(
     model: &Model<'_>,
     topology: &Topology,
@@ -172,24 +235,8 @@ pub(super) fn shared_junction(
     points: &[Point],
     line: &PlacedLine,
 ) -> bool {
-    let Some(&other) = model.edge_index.get(line.id.as_str()) else {
-        return false;
-    };
-    if super::junctions::apart(points, &line.points) {
-        return true;
-    }
-    let shared = topology.memberships[index]
-        .iter()
-        .flatten()
-        .any(|fan| topology.memberships[other].contains(&Some(*fan)));
-    (!shared
-        || super::junctions::sharing(
-            points,
-            &line.points,
-            model.ends[index].0 == model.ends[other].0,
-            model.ends[index].1 == model.ends[other].1,
-        ))
-        && super::junctions::ordered(points, &line.points, shared)
+    Junction::new(model, topology, index, line)
+        .is_some_and(|pair| pair.clear(points, super::junctions::Envelope::new(points)))
 }
 
 pub(super) fn shared_fragment(

@@ -34,6 +34,11 @@ Declared flow points remain exact endpoint constraints.
 
 The planner selects routes in a deterministic order and reserves complete source and target fan membership.
 Every shared run has one common semantic endpoint and one full line treatment across all its members.
+Distinct relationships reserve different lines on opposite walls of the same card.
+Port assignment slides endpoint runs without adding bends or moving authored flow points.
+Candidates include the usable wall limits and positions beside occupied opposite ports.
+An existing label position remains a starting point when its padded run still fits the shifted route.
+The label search indexes horizontal and vertical strokes in sorted arrays, preserving their coordinate order.
 A source fan only splits, and a target fan only merges.
 Unrelated lines cross only on straight portions with room around their bends and arrow approaches.
 Parallel lanes and frame walls retain the established visual clearances.

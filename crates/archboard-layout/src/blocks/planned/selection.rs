@@ -196,8 +196,7 @@ fn hierarchy(
     edge: usize,
     windows: &mut usize,
 ) -> Option<Shape> {
-    let mut corridors = shape.clone();
-    corridors.labels.clear();
+    let mut corridors = shape.without_labels();
     for line in &mut corridors.routes {
         line.label = None;
     }
@@ -230,8 +229,7 @@ fn bounded(
             append(model, topology, shape, &line)
         })
 }
-fn directed(points: &[crate::geometry::Point], forward: bool) -> Vec<crate::geometry::Point> {
-    let mut points = points.to_vec();
+fn directed(mut points: Vec<crate::geometry::Point>, forward: bool) -> Vec<crate::geometry::Point> {
     if !forward {
         points.reverse();
     }
@@ -244,6 +242,14 @@ fn fan_join(
     paths: &[PlacedLine],
     edge: usize,
 ) -> Option<Shape> {
+    let branches = [true, false].map(|forward| {
+        paths
+            .iter()
+            .take(32)
+            .map(|line| directed(line.points.clone(), forward))
+            .collect::<Vec<_>>()
+    });
+    let mut seen = rustc_hash::FxHashSet::default();
     let mut joined = Vec::new();
     for old in shape
         .routes
@@ -255,27 +261,25 @@ fn fan_join(
             .into_iter()
             .filter(|&source| same_end(model, edge, other, source))
         {
-            let trunk = directed(&old.points, source);
-            for path in paths.iter().take(32) {
+            let trunk = directed(old.points.clone(), source);
+            for branch in &branches[usize::from(!source)] {
                 joined.extend(
-                    splices(&trunk, &directed(&path.points, source))
+                    splices(&trunk, branch)
                         .into_iter()
-                        .map(|points| super::geometry::clean(directed(&points, source))),
+                        .map(|points| super::geometry::clean(directed(points, source)))
+                        .filter(|points| {
+                            seen.insert(
+                                points
+                                    .iter()
+                                    .map(|p| [p.x.to_bits(), p.y.to_bits()])
+                                    .collect::<Vec<_>>(),
+                            )
+                        }),
                 );
             }
         }
     }
-    let mut seen = rustc_hash::FxHashSet::default();
-    let mut corridors = shape.clone();
-    corridors.labels.clear();
-    joined.retain(|points| {
-        seen.insert(
-            points
-                .iter()
-                .map(|p| [p.x.to_bits(), p.y.to_bits()])
-                .collect::<Vec<_>>(),
-        )
-    });
+    let corridors = shape.without_labels();
     joined.sort_by(|a, b| route_cost(a).total_cmp(&route_cost(b)));
     joined.dedup();
     let probe = super::channel::Probe::new(
@@ -352,6 +356,45 @@ pub(super) fn append(
     line: &PlacedLine,
 ) -> Option<Shape> {
     let edge = model.edge_index[line.id.as_str()];
+    if shape
+        .routes
+        .iter()
+        .any(|old| super::port_spacing::conflicts(model, edge, &line.points, old))
+    {
+        let corridors = shape.without_labels();
+        let probe = super::channel::Probe::new(
+            model,
+            topology,
+            edge,
+            &corridors,
+            corridors.scopes[&topology.routes[edge].scope].bounds,
+        );
+        return super::port_spacing::alternatives(model, shape, line)
+            .iter()
+            .find_map(|candidate| {
+                probe
+                    .refusal(&candidate.points)
+                    .is_none()
+                    .then(|| append_guarded(model, shape, candidate))
+                    .flatten()
+            });
+    }
+    append_reserved(model, topology, shape, line)
+}
+
+fn append_reserved(
+    model: &Model<'_>,
+    topology: &Topology,
+    shape: &Shape,
+    line: &PlacedLine,
+) -> Option<Shape> {
+    let edge = model.edge_index[line.id.as_str()];
+    debug_assert!(
+        shape
+            .routes
+            .iter()
+            .all(|old| !super::port_spacing::conflicts(model, edge, &line.points, old))
+    );
     if !shape
         .routes
         .iter()
@@ -359,7 +402,11 @@ pub(super) fn append(
     {
         return None;
     }
-    let mut next = shape.clone();
+    append_guarded(model, shape, line)
+}
+
+fn append_guarded(model: &Model<'_>, shape: &Shape, line: &PlacedLine) -> Option<Shape> {
+    let mut next = shape.without_labels();
     next.routes.push(line.clone());
     if !super::runs::accepts(model, &shape.routes, line) {
         return None;

@@ -30,7 +30,15 @@ fn subtract(parts: &mut Vec<(f64, f64)>, a: f64, b: f64) {
     }
 }
 
-type Strokes = std::collections::BTreeMap<(bool, i64), Vec<(usize, f64, f64, f64)>>;
+struct Stroke {
+    edge: usize,
+    across: f64,
+    lo: f64,
+    hi: f64,
+    bin: i64,
+}
+
+type Strokes = [Vec<Stroke>; 2];
 
 #[expect(
     clippy::cast_possible_truncation,
@@ -42,10 +50,11 @@ fn bin(at: f64) -> i64 {
 
 struct StrokeIndex {
     strokes: Strokes,
+    clearance: std::cell::RefCell<rustc_hash::FxHashMap<(usize, [u64; 4]), bool>>,
 }
 impl StrokeIndex {
     fn new(model: &Model<'_>, shape: &Shape) -> Self {
-        let mut strokes = std::collections::BTreeMap::new();
+        let mut strokes: Strokes = Default::default();
         for line in &shape.routes {
             let edge = model.edge_index[line.id.as_str()];
             for pair in line.points.windows(2) {
@@ -55,13 +64,29 @@ impl StrokeIndex {
                 } else {
                     (pair[0].x, pair[0].y, pair[1].y)
                 };
-                strokes
-                    .entry((horizontal, bin((across * 1e6).round())))
-                    .or_insert_with(Vec::new)
-                    .push((edge, across, a.min(b), a.max(b)));
+                strokes[usize::from(horizontal)].push(Stroke {
+                    edge,
+                    across,
+                    lo: a.min(b),
+                    hi: a.max(b),
+                    bin: bin((across * 1e6).round()),
+                });
             }
         }
-        Self { strokes }
+        // Stable bins retain the original subtraction order within each coordinate.
+        for axis in &mut strokes {
+            axis.sort_by_key(|stroke| stroke.bin);
+        }
+        Self {
+            strokes,
+            clearance: std::cell::RefCell::default(),
+        }
+    }
+    fn range(&self, horizontal: bool, first: i64, last: i64) -> &[Stroke] {
+        let strokes = &self.strokes[usize::from(horizontal)];
+        let start = strokes.partition_point(|stroke| stroke.bin < first);
+        let end = strokes.partition_point(|stroke| stroke.bin <= last);
+        &strokes[start..end]
     }
     fn crosses(&self, edge: usize, rect: Rect) -> bool {
         for horizontal in [true, false] {
@@ -72,12 +97,14 @@ impl StrokeIndex {
             };
             let first = bin((low * 1e6).floor()) - 1;
             let last = bin((high * 1e6).ceil()) + 1;
-            for (_, strokes) in self.strokes.range((horizontal, first)..=(horizontal, last)) {
-                if strokes.iter().any(|&(other, across, lo, hi)| {
-                    other != edge && across > low && across < high && lo < end && hi > start
-                }) {
-                    return true;
-                }
+            if self.range(horizontal, first, last).iter().any(|stroke| {
+                stroke.edge != edge
+                    && stroke.across > low
+                    && stroke.across < high
+                    && stroke.lo < end
+                    && stroke.hi > start
+            }) {
+                return true;
             }
         }
         false
@@ -91,26 +118,28 @@ impl StrokeIndex {
             };
             let first = bin((low * 1e6).floor()) - 1;
             let last = bin((high * 1e6).ceil()) + 1;
-            for (_, strokes) in self.strokes.range((horizontal, first)..=(horizontal, last)) {
-                for &(_, across, lo, hi) in strokes.iter().filter(|&&(other, across, lo, hi)| {
-                    other != edge && across >= low && across <= high && lo <= end && hi >= start
-                }) {
-                    visit(if horizontal {
-                        Rect {
-                            x: lo,
-                            y: across,
-                            width: hi - lo,
-                            height: 0.0,
-                        }
-                    } else {
-                        Rect {
-                            x: across,
-                            y: lo,
-                            width: 0.0,
-                            height: hi - lo,
-                        }
-                    });
-                }
+            for stroke in self.range(horizontal, first, last).iter().filter(|stroke| {
+                stroke.edge != edge
+                    && stroke.across >= low
+                    && stroke.across <= high
+                    && stroke.lo <= end
+                    && stroke.hi >= start
+            }) {
+                visit(if horizontal {
+                    Rect {
+                        x: stroke.lo,
+                        y: stroke.across,
+                        width: stroke.hi - stroke.lo,
+                        height: 0.0,
+                    }
+                } else {
+                    Rect {
+                        x: stroke.across,
+                        y: stroke.lo,
+                        width: 0.0,
+                        height: stroke.hi - stroke.lo,
+                    }
+                });
             }
         }
     }
@@ -126,16 +155,12 @@ impl StrokeIndex {
             };
             let key = bin((across * 1e6).round());
             let mut parts = vec![(a.min(b), a.max(b))];
-            for (_, strokes) in self
-                .strokes
-                .range((horizontal, key - 1)..=(horizontal, key + 1))
+            for stroke in self
+                .range(horizontal, key - 1, key + 1)
+                .iter()
+                .filter(|stroke| stroke.edge != edge && (stroke.across - across).abs() < 1e-6)
             {
-                for &(_, _, lo, hi) in strokes
-                    .iter()
-                    .filter(|&&(other, at, _, _)| other != edge && (at - across).abs() < 1e-6)
-                {
-                    subtract(&mut parts, lo, hi);
-                }
+                subtract(&mut parts, stroke.lo, stroke.hi);
             }
             for (lo, hi) in parts {
                 let point = |at| {
@@ -168,13 +193,20 @@ fn clear(
     strokes: &StrokeIndex,
     labels: &super::label_space::Labels,
 ) -> bool {
-    contains(shape.scopes[&0].bounds, at)
-        && shape
-            .label_geometry
-            .get_or_init(|| super::label_space::Protection::new(shape))
-            .clear(at)
+    let key = (edge, [at.x, at.y, at.width, at.height].map(f64::to_bits));
+    *strokes
+        .clearance
+        .borrow_mut()
+        .entry(key)
+        .or_insert_with(|| {
+            contains(shape.scopes[&0].bounds, at)
+                && shape
+                    .label_geometry
+                    .get_or_init(|| super::label_space::Protection::new(shape))
+                    .clear(at)
+                && !strokes.crosses(edge, inflate(at, 12.01))
+        })
         && labels.clear(at, &shape.labels)
-        && !strokes.crosses(edge, inflate(at, 12.01))
 }
 
 fn at(span: Span, position: f64, size: Rect) -> Rect {
@@ -371,6 +403,7 @@ pub(super) fn arrange(model: &Model<'_>, shape: &mut Shape) -> Option<usize> {
         .iter()
         .map(|line| model.edge_index.get(line.id.as_str()).copied())
         .collect::<Option<_>>()?;
+    available(model, shape, &indices, &strokes, &labels)?;
     let mut order: Vec<_> = (0..shape.routes.len()).collect();
     order.sort_by(|&a, &b| {
         let area = |index: usize| {
@@ -391,6 +424,26 @@ pub(super) fn arrange(model: &Model<'_>, shape: &mut Shape) -> Option<usize> {
     }
     consistent(model, shape, &indices, &order, &strokes, &labels)?;
     Some(fallbacks)
+}
+
+fn available(
+    model: &Model<'_>,
+    shape: &Shape,
+    indices: &[usize],
+    strokes: &StrokeIndex,
+    labels: &super::label_space::Labels,
+) -> Option<()> {
+    // A new or covered label needs a private spot even before other labels take space.
+    for (line, &edge) in shape.routes.iter().zip(indices) {
+        if model.edges[edge].label().is_some()
+            && line
+                .label
+                .is_none_or(|at| !clear(shape, edge, at, strokes, labels))
+        {
+            slot_index(model, edge, shape, &line.points, strokes, labels)?;
+        }
+    }
+    Some(())
 }
 
 fn consistent(
@@ -474,121 +527,4 @@ fn update(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{
-        blocks::{
-            assembly::{Placed, PlacedLine},
-            planned::shape::ScopePlacement,
-        },
-        graph::Node,
-    };
-    use serde_json::json;
-
-    fn drawing(paths: &[(&str, &[(f64, f64)])]) -> Shape {
-        let mut shape = Shape::new(Placed {
-            width: 1000.0,
-            height: 1000.0,
-            cards: vec![],
-            frames: vec![],
-            regions: vec![],
-            titles: vec![],
-            edges: paths
-                .iter()
-                .map(|(id, points)| PlacedLine {
-                    id: (*id).to_owned(),
-                    label: None,
-                    points: points.iter().map(|&(x, y)| Point { x, y }).collect(),
-                })
-                .collect(),
-        });
-        std::rc::Rc::make_mut(&mut shape.scopes).insert(
-            0,
-            ScopePlacement {
-                bounds: Rect {
-                    x: 0.0,
-                    y: 0.0,
-                    width: 1000.0,
-                    height: 1000.0,
-                },
-            },
-        );
-        shape
-    }
-    fn graph() -> Node {
-        serde_json::from_value(json!({"id":"root","children":[
-            {"id":"a","width":100,"height":60},{"id":"b","width":100,"height":60},
-            {"id":"c","width":100,"height":60}],"edges":[
-            {"id":"ab","sources":["a"],"targets":["b"],"labels":[{"width":80,"height":24}]},
-            {"id":"ac","sources":["a"],"targets":["c"]}]}))
-        .unwrap()
-    }
-    #[test]
-    fn stacked_labels_follow_a_vertical_run_even_when_the_horizontal_run_is_longer() {
-        let graph: Node = serde_json::from_value(json!({"id":"root","children":[
-            {"id":"a","width":100,"height":60},{"id":"b","width":100,"height":60}],
-            "edges":[{"id":"ab","sources":["a"],"targets":["b"],
-                "labels":[{"width":80,"height":180,"stacked":true}]}]}))
-        .unwrap();
-        let model = Model::new(&graph).unwrap();
-        let shape = drawing(&[("ab", &[(100.0, 100.0), (900.0, 100.0), (900.0, 500.0)])]);
-        let slots = Slots::new(&model, &shape);
-        let (label, _) = slots.slot(&model, 0, &shape.routes[0].points).unwrap();
-        assert_eq!(label.x + label.width / 2.0, 900.0);
-        assert!(label.y > 100.0 && label.y + label.height < 500.0);
-        assert!(
-            slots
-                .slot(&model, 0, &shape.routes[0].points[..2])
-                .is_none()
-        );
-    }
-
-    #[test]
-    fn words_use_the_longest_private_run_after_the_fan_splits() {
-        let graph = graph();
-        let model = Model::new(&graph).unwrap();
-        let shape = drawing(&[
-            (
-                "ab",
-                &[
-                    (100.0, 100.0),
-                    (700.0, 100.0),
-                    (700.0, 400.0),
-                    (900.0, 400.0),
-                ],
-            ),
-            (
-                "ac",
-                &[
-                    (100.0, 100.0),
-                    (700.0, 100.0),
-                    (700.0, 200.0),
-                    (500.0, 200.0),
-                ],
-            ),
-        ]);
-        let (label, fallback) = Slots::new(&model, &shape)
-            .slot(&model, 0, &shape.routes[0].points)
-            .unwrap();
-        assert!(!fallback);
-        assert_eq!(
-            (label.x + label.width / 2.0, label.y + label.height / 2.0),
-            (700.0, 300.0)
-        );
-    }
-    #[test]
-    fn blocked_midpoints_use_the_nearest_clear_private_spot_without_rerouting() {
-        let graph = graph();
-        let model = Model::new(&graph).unwrap();
-        let shape = drawing(&[
-            ("ab", &[(100.0, 500.0), (900.0, 500.0)]),
-            ("ac", &[(500.0, 450.0), (500.0, 550.0)]),
-        ]);
-        let path = shape.routes[0].points.clone();
-        let (label, fallback) = Slots::new(&model, &shape).slot(&model, 0, &path).unwrap();
-        assert!(fallback);
-        assert!((label.x - 116.01).abs() < 1e-6);
-        assert_eq!(label.y, 488.0);
-        assert_eq!(shape.routes[0].points, path);
-    }
-}
+mod tests;
