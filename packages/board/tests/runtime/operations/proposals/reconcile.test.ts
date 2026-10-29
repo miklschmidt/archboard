@@ -45,9 +45,7 @@ test("standing keeps the disputed baseline readable and blocks children until ex
 	const child = await proposal(vault, "Batch", first.target.state!);
 	const initial = readArchitectureModel(vault);
 	if (!initial.success) throw new Error(JSON.stringify(initial));
-	const original = initial.proposals.find(
-		(proposal) => proposal.id === first.target.state,
-	)!.baseline;
+	const original = initial.proposals.find((entry) => entry.id === first.target.state)!.baseline;
 	const advance = await request(vault);
 	const result = await editArchitectureModule(vault, {
 		...advance,
@@ -91,9 +89,9 @@ test("standing keeps the disputed baseline readable and blocks children until ex
 	});
 	const blockedCatalogue = readArchitectureModel(vault);
 	if (!blockedCatalogue.success) throw new Error(JSON.stringify(blockedCatalogue));
-	expect(
-		blockedCatalogue.proposals.find((proposal) => proposal.id === child.target.state),
-	).toMatchObject({ standing: { blockedBy: first.target.state } });
+	expect(blockedCatalogue.proposals.find((entry) => entry.id === child.target.state)).toMatchObject(
+		{ standing: { blockedBy: first.target.state } },
+	);
 	expect(
 		await editArchitectureModule(vault, {
 			...advance,

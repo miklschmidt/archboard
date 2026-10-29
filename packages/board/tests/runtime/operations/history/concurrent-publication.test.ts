@@ -71,9 +71,9 @@ test("stale publication joins signed archive ancestry without merging distinct c
 		JSON.stringify({ schemaVersion: 1, kind: "synchronization" }),
 	);
 	expect(git(other, "ls-tree", "--name-only", tip)).toBe("record.json");
-	expect(git(other, "rev-list", "--parents", "-n", "1", tip).split(" ").slice(1).sort()).toEqual(
-		[first.id, second.id].sort(),
-	);
+	expect(
+		git(other, "rev-list", "--parents", "-n", "1", tip).split(" ").slice(1).toSorted(),
+	).toEqual([first.id, second.id].toSorted());
 	expect(await readArchitectureCheckpoint(otherVault, first.id)).toMatchObject({
 		success: true,
 		revision: first.revision,

@@ -17,8 +17,12 @@ import {
 	signing,
 	cleanPublicationFixtures,
 } from "#tests/runtime/support/publication-fixture.ts";
-import { git } from "../model-edit/fixture.ts";
-import { destination, empty, cleanPortableFixtures } from "./portable-fixture.ts";
+import { git } from "#tests/runtime/operations/model-edit/fixture.ts";
+import {
+	destination,
+	empty,
+	cleanPortableFixtures,
+} from "#tests/runtime/operations/history/portable-fixture.ts";
 afterEach(() => {
 	cleanPrivateArchiveFixtures();
 	cleanPublicationFixtures();

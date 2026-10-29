@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { afterEach, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -8,8 +9,12 @@ import {
 	recoverArchitectureModel,
 } from "@archboard/board/store-write";
 import { BOARD_LOCK_MS } from "@archboard/timing";
-import { fixture, git } from "../model-edit/fixture.ts";
-import { destination, empty, cleanPortableFixtures } from "./portable-fixture.ts";
+import { fixture, git } from "#tests/runtime/operations/model-edit/fixture.ts";
+import {
+	destination,
+	empty,
+	cleanPortableFixtures,
+} from "#tests/runtime/operations/history/portable-fixture.ts";
 const now = Date.now;
 afterEach(() => {
 	Date.now = now;
@@ -33,8 +38,10 @@ test("an interrupted portable installation blocks readers and preserves foreign 
 		[
 			process.execPath,
 			"--preload",
-			join(import.meta.dir, "../model-edit/crash-preload.ts"),
-			join(import.meta.dir, "portable-crash-runner.ts"),
+			fileURLToPath(import.meta.resolve("#tests/runtime/operations/model-edit/crash-preload.ts")),
+			fileURLToPath(
+				import.meta.resolve("#tests/runtime/operations/history/portable-crash-runner.ts"),
+			),
 			target.vault,
 			file,
 		],

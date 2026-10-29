@@ -43,8 +43,7 @@ test("one compact proposal changes modules and flows while current authored inpu
 				clear: ["note"],
 			},
 		],
-	});
-	stop();
+	}).finally(stop);
 	expect(result).toMatchObject({ success: true });
 	if (!result.success) throw new Error(JSON.stringify(result));
 	expect(events.find((event) => event.type === "architecture_changed")).toMatchObject({
