@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-29T02:26:00Z'
+updated_date: '2026-10-29T07:43:00Z'
 labels:
   - renderer
   - layout
@@ -65,4 +65,6 @@ The final council of TASK-548.08 (2026-10-28, 40 blind pairs against c147b73c8, 
 2026-10-29: explore/blocks-placespeed applied as c88285604 (slide spans reused, crossing-decoration bounds cached, Graphviz polygon work trimmed); corpus re-checked byte-identical in both engines. First renders 1094/658/821 to 1027/605/769 ms. Native budget outside the trunk router: 385/147/371 ms full render; Graphviz 176/27/208 ms of it. explore/blocks-gvspeed now cuts Graphviz time with identical drawings.
 
 2026-10-29: explore/blocks-gvspeed applied as a0f65d38a (Graphviz returns only the geometry layout reads; native Graphviz -19 to -21%); corpus re-checked byte-identical in both engines. First renders gain only 2 to 4%. Cause found: one Blocks solve makes 88/24/77 Graphviz calls, mostly wrap candidates each routed and scored, plus repeated hierarchy passes for side-wall exits and port order. The hybrid builder may cut those passes, a drawing change under its per-reference gates.
+
+2026-10-29: hybrid merged as 1f60b6e06 (tree equal to feat/blocks-hybrid 0df95aa1a outside backlog). Corpus vs baseline: bends per route 2.35 to 1.32, routes with four or more bends 31% to 5%, detour -37%, route length -11%, area -7.6%, geometric findings 23 to 0, Track identical. Timings 500.11/483/245 ms first. One third of labels use the nearest-to-source fallback. Next, in parallel: feat/blocks-speed2 for a 400 ms margin with identical drawings, and a council on 40 sampled pairs of the 98 differing current Blocks drawings (before 8cdedb1c3, seed 554). The council runs with three graders, Opus, gpt-6-astra and Muse Wonder, because the owner asked to use gpt-6-astra instead of gpt-6.1-sol for this task.
 <!-- SECTION:NOTES:END -->
