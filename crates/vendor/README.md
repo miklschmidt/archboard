@@ -19,7 +19,7 @@ port of Graphviz 16.1.0. The core lays out the graphs of a solve with it
   names Graphviz's authors and the MIT-licensed code inside
   (`graphviz-pure-core/LICENSES`, `graphviz-pure-geom/LICENSES`).
 
-archboard changed five things:
+archboard changed six things:
 
 1. Each `Cargo.toml` names its sibling crates by `path` as well as version.
 2. `graphviz-pure-layout` sorts as musl's `qsort` does. Graphviz sorts with
@@ -83,6 +83,19 @@ archboard changed five things:
    the triangles and the chosen path. Every Blocks and Track corpus SVG stays
    byte-identical in the `explore/blocks-placespeed` comparison.
 
+6. The `explore/blocks-gvspeed` prototype omits Graphviz output work that layout
+   does not consume. `graphviz-pure::layout_geometry` runs the same dot layout.
+   `graphviz-pure-render/src/geometry.rs` writes node positions, registered
+   cluster bounds, and named edge paths in their json0 order.
+   It shares coordinate formatting with `src/emit/output.rs` and retains
+   json0's five-digit precision and y inversion. It builds no drawing model
+   and copies no attribute dictionaries. The existing full json0 writer remains
+   available for the viz-js reference tests and the escaped-DOT path.
+   `graphviz-pure-layout/src/common/routespl.rs` also reads a vertical segment's
+   constant x directly instead of recomputing it at every spline sample.
+   The zero-coordinate cases retain the previous path.
+   Both complete corpora remain byte-identical in the exploration comparison.
+
 ## Why they are not workspace members
 
 The root `Cargo.toml` excludes `crates/vendor`, so these crates keep upstream's
@@ -100,7 +113,7 @@ build lands in the checkout.
 ## Updating
 
 Take the crates.io archives of the new version, replace each folder's files
-with theirs, and apply the five changes again. The `qsort` vectors must come
+with theirs, and apply the six changes again. The `qsort` vectors must come
 from musl's `qsort.c`. Then render the corpus before and after
 (`bun scripts/render-corpus.ts`): every drawing must be unchanged, or each
 change must be one the update means to make.
