@@ -165,7 +165,7 @@ inside-only reading, with a connection reading on request.
 
 The subtasks of TASK-559 carry this order. Each slice removes the path that it replaces.
 
-1. Model data: name, summary, `Architecture inputs`, 29 stale paths and pass-through containers.
+1. Model data: name, `Architecture inputs`, 29 stale paths and pass-through containers.
 2. Content rules and landing. This is the fastest test of the design.
 3. One surface, one accepted scene, and the transitions.
 4. Honest failures and the proposal base.
