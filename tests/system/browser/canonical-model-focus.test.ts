@@ -129,7 +129,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 	await browser.run(["click", '[data-slot="model-focus"]']);
 	await pollUntil(
 		() => drawnModules(browser),
-		(ids) => ids.includes("Shop#Worker"),
+		(ids) => ids.join() === "Shop#Decode,Shop#Gateway,Shop#Worker",
 		"the focused context",
 		WAIT,
 	);
@@ -173,14 +173,14 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 	await browser.eval("window.history.forward()");
 	await pollUntil(
 		() => drawnModules(browser),
-		(ids) => ids.includes("Shop#Worker"),
+		(ids) => ids.join() === "Shop#Decode,Shop#Gateway,Shop#Worker",
 		"the restored focused reading",
 		WAIT,
 	);
 	await browser.run(["reload"]);
 	await pollUntil(
 		() => drawnModules(browser),
-		(ids) => ids.includes("Shop#Worker"),
+		(ids) => ids.join() === "Shop#Decode,Shop#Gateway,Shop#Worker",
 		"the focused reading after reload",
 		WAIT,
 	);
