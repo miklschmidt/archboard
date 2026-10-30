@@ -31,24 +31,44 @@ These rules live in the projection, so the CLI, exports and the reader draw the 
 
 1. One module is open. Its children are parts, and the modules that it touches are doors. A flow and a
    deliberate focus keep their own extent, because they cross branches.
-2. One line joins a directed pair. Reciprocal pairs keep two lines.
+2. One line joins a pair of drawn parts. A pair with relationships in both directions draws one line with an
+   arrow at each end. A door's ends follow rule 5 per direction, so a pair folds only when both directions end on
+   the same two drawn parts. Distinct comparison states stay separate lines. The owner decided this on 2026-10-30,
+   and it replaces the two lines of a reciprocal pair.
 3. A line with one kind wears that kind. A line with mixed kinds wears a neutral style, and its tip and panel
    list the kinds. Filters act on the relationships before they join, so hiding a kind never hides another
    kind.
-4. Words stay on a line that holds one relationship. This changes the stacked labels of
-   [ADR 0052](../adr/0052-a-board-opens-on-its-overview.md), and the owner must accept that change. Each joined
-   line still lists all of its relationships in its tip and panel.
+4. A line that holds one relationship wears its label. A joined line wears one combined label that says what the
+   relationships are, and it replaces the stacked labels of
+   [ADR 0052](../adr/0052-a-board-opens-on-its-overview.md). The first rule that applies gives the words:
+   1. If every relationship has the same one label, the line wears that label.
+   2. Otherwise, the line names the direct parts of the target card that its relationships reach, for example
+      `to Thread tools, Board catalogue +2`. It shows at most two names, then `+N` for the other distinct parts.
+      The part that the most relationships reach comes first, then model order. A line that ends on an open frame
+      names the parts of that frame.
+   3. If no relationship reaches inside the target, the line names the source card the same way, for example
+      `from Decode, Worker +1`.
+   4. If no relationship reaches inside either card, the line wears its first label and `+N` for the other distinct
+      labels.
+   5. A line with no labels and no inner parts wears no words.
+
+   A two-way line names the card with more distinct parts and says `with` in place of `to`, or the far card on a
+   tie. A line never shows a bare count. Each joined line still lists all of its relationships in its tip and panel,
+   each with its real ends.
+
 5. A door is a card with a name only. If exactly one part reaches a door, the line ends on that part.
    Otherwise the line ends on the frame, so a line on the frame means several parts. Selecting a door lists
    its real endpoints, grouped by child.
-6. Above 18 lines, a line leaves the picture if other drawn lines still join its ends. Remove the weakest
-   first, so that the result is deterministic. No connected part loses its last line. The caption states the
-   count, and one control shows every line.
+6. Above 18 lines, a line leaves the picture if other drawn lines still join its ends, each way that it runs.
+   Remove the weakest first, so that the result is deterministic. No connected part loses its last line. The
+   caption states the count, and one control shows every line.
 7. Group regions are off by default. The Key turns them on.
-8. A card shows its code path. A far card shows the path in place of the gist. A long path keeps its tail.
-   An unbound container shows its shared folder with a count, for example `apps/web/src/ui · 14 paths`, so it
-   reads as a span and not as ownership. A path that does not resolve wears the warning mark. An external
-   module shows no path.
+8. A card shows its code path. A far card shows its name, its path, then the start of its responsibility in the
+   room that its box holds. A long path keeps its tail. An unbound container shows its shared folder with a count,
+   for example `apps/web/src/ui · 14 paths`, so it reads as a span and not as ownership. A path that does not
+   resolve wears the warning mark. An external module shows no path. A card is 260 wide, or wider for a long name,
+   unless its note outgrows that width. It then takes the full 340. A short card centers its words, so neither
+   view keeps an empty band.
 9. `Open code` follows an authored binding only. A derived folder never becomes a source action, and a path
    never establishes identity or containment.
 10. A chain of modules with one part each folds, as a code host folds single-child folders. The crumbs show
@@ -145,6 +165,7 @@ of a part inside it counts, and a lone root is exempt.
 | A write refusal for empty containers                               | The owner asked for guidance and detection.                                                                                     |
 | A code path as a link on the card                                  | The picture has no such target, and the row is under 9 px high in 43 of 123 readings.                                           |
 | Removing a stored label reservation first                          | Inside these rules, labels cost 10 percent overall. Revisit the root after the content rules.                                   |
+| A list of labels on a joined line                                  | The median line holds 3 labels of 32 characters, so stacked labels leave 80 of 123 readings at fit 0.6.                         |
 
 ## Gates
 
