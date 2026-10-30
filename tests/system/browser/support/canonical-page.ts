@@ -217,12 +217,22 @@ async function openModelSidebar(
 	);
 	if (expanded === "false") await browser.run(["click", toggle]);
 	const choice = `${scope} [data-slot="semantic-sidebar-tab"][data-tab="${tab}"]`;
+	const chosen = (): Promise<boolean> =>
+		browser.eval<boolean>(
+			`document.querySelector(${JSON.stringify(choice)})?.getAttribute('aria-selected') === 'true'`,
+		);
+	// A sidebar that a new reading just mounted is still moving, so a click can miss its tab.
 	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector(${JSON.stringify(choice)}) !== null`),
+		async () => {
+			const present = await browser.eval<boolean>(
+				`document.querySelector(${JSON.stringify(choice)}) !== null`,
+			);
+			if (present && !(await chosen())) await browser.run(["click", choice]);
+			return await chosen();
+		},
 		Boolean,
 		"the requested model sidebar tab",
 	);
-	await browser.run(["click", choice]);
 }
 
 export { openModelSidebar };
