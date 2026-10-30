@@ -141,6 +141,15 @@ impl<'a, 'g> Probe<'a, 'g> {
         {
             return Some("label run");
         }
+        // Most candidates fall here, so test them before the box indexes.
+        let bounds = super::junctions::Envelope::new(points);
+        if !self
+            .junctions
+            .as_ref()
+            .is_some_and(|pairs| pairs.iter().all(|pair| pair.clear(points, bounds)))
+        {
+            return Some("junction");
+        }
         if !self.fixed.cards.clear(points) {
             return Some("card");
         }
@@ -158,14 +167,6 @@ impl<'a, 'g> Probe<'a, 'g> {
         }
         if !super::portals::follows(&topology.routes[index], shape, points) {
             return Some("portal");
-        }
-        let bounds = super::junctions::Envelope::new(points);
-        if !self
-            .junctions
-            .as_ref()
-            .is_some_and(|pairs| pairs.iter().all(|pair| pair.clear(points, bounds)))
-        {
-            return Some("junction");
         }
         None
     }

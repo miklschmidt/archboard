@@ -27,8 +27,31 @@ mod runs;
 mod shape;
 mod topology;
 
-pub(super) fn refines(graph: &crate::graph::Node) -> bool {
-    graph.edges.as_deref().unwrap_or_default().len() <= PLACEMENT_REFINEMENT_LIMIT
+fn relationships(graph: &crate::graph::Node) -> usize {
+    graph.edges.as_deref().unwrap_or_default().len()
+}
+
+/// How many guarded drawings a view compares before it keeps the best.
+fn comparison(graph: &crate::graph::Node) -> usize {
+    let count = relationships(graph);
+    if count <= REFINEMENT_LIMIT {
+        usize::MAX
+    } else if count <= PLACEMENT_REFINEMENT_LIMIT {
+        2
+    } else {
+        1
+    }
+}
+
+/// Whether the wider placement search can run. A view beyond the readability
+/// limit keeps its first hierarchy once that draws, because the wider search
+/// costs more than its render budget. A refused view still needs it.
+pub(super) fn widens(graph: &crate::graph::Node, drawn: bool, complete_repair: bool) -> bool {
+    if drawn {
+        relationships(graph) <= REFINEMENT_LIMIT
+    } else {
+        complete_repair || relationships(graph) <= PLACEMENT_REFINEMENT_LIMIT
+    }
 }
 
 #[derive(Debug)]
@@ -56,23 +79,31 @@ mod fixed;
 /// winner cannot tighten the area budget of the remaining candidates.
 pub(super) fn route_candidates(
     graph: &crate::graph::Node,
-    candidates: impl Iterator<Item = crate::blocks::assembly::Placed>,
-) -> Result<crate::blocks::assembly::Placed, Refused> {
+    mut candidates: crate::blocks::legacy::Candidates<'_>,
+) -> Result<Result<crate::blocks::assembly::Placed, Refused>, String> {
     let mut failure = Refused::from("No guarded Blocks drawing");
     let mut reference = None;
     let mut best = None;
     let mut score = (usize::MAX, u64::MAX);
-    for drawing in candidates {
-        match fixed::route(graph, drawing) {
+    let mut drawn = 0;
+    while let Some(drawing) = candidates.next(reference.is_some())? {
+        // The other route orders rescue a view that has no drawing yet.
+        let orders = if reference.is_some() {
+            &selection::ORDERS[..1]
+        } else {
+            &selection::ORDERS[..]
+        };
+        match fixed::route(graph, drawing, orders) {
             Ok(next) => {
-                if !refines(graph) {
-                    return Ok(next);
-                }
                 let next_score = reading::rank(&next.edges);
                 let first = reference.get_or_insert_with(|| next.clone());
                 if next_score < score && reading::worth_placing(&next, first, graph) {
                     score = next_score;
                     best = Some(next);
+                }
+                drawn += 1;
+                if drawn == comparison(graph) {
+                    break;
                 }
             }
             Err(mut error) => {
@@ -82,7 +113,7 @@ pub(super) fn route_candidates(
             }
         }
     }
-    best.ok_or(failure)
+    Ok(best.ok_or(failure))
 }
 
 mod direct;

@@ -15,6 +15,38 @@ fn drawing(graph: &Value) -> Value {
     .expect("a planned drawing")
 }
 
+/// Counts the graphs one solve asks Graphviz to lay out.
+struct Counting(usize);
+
+impl archboard_layout::Graphviz for Counting {
+    fn render(&mut self, graph: &str) -> Result<String, String> {
+        self.0 += 1;
+        archboard_layout::Graphviz::render(&mut archboard_graphviz::InCore, graph)
+    }
+}
+
+/// How many graphs a board of labelled relationships costs its solve.
+fn graphs_laid(relationships: usize) -> usize {
+    let cards = (0..9).map(|i| json!({"id":format!("c{i}"),"width":160,"height":60}));
+    let edges = (0..9)
+        .flat_map(|i| (0..9).filter(move |&j| j != i).map(move |j| (i, j)))
+        .take(relationships)
+        .map(|(i, j)| {
+            json!({"id":format!("e{i}{j}"),"sources":[format!("c{i}")],"targets":[format!("c{j}")],
+                "labels":[{"id":format!("l{i}{j}"),"text":"calls","width":40,"height":16}]})
+        });
+    let graph = json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+        "children":cards.collect::<Vec<_>>(),"edges":edges.collect::<Vec<_>>()});
+    let mut host = Counting(0);
+    lay_out_board(&graph.to_string(), &mut host).expect("a planned drawing");
+    host.0
+}
+
+#[test]
+fn a_dense_view_that_draws_skips_the_wider_placement_search() {
+    assert!(graphs_laid(33) < graphs_laid(32));
+}
+
 #[test]
 fn nested_comparison_repairs_channels_through_enclosing_blocks() {
     // Reduced from a whole-board comparison. Its restored calls exceed the

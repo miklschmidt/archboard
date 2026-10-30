@@ -24,8 +24,13 @@ Report raw placement area separately from the rendered page area and routing mea
 The original one-percent rule does not require identical card coordinates or prevent smaller placements.
 
 The placer starts with its first hierarchy and its hierarchy with held port orders.
-Dense views keep the first guarded drawing, with candidates ordered by area.
-Views with at most sixty-four relationships also compare a wider wrap search with vertical frame approaches.
+A view with over sixty-four relationships keeps its first guarded drawing, with candidates ordered by area.
+A view with thirty-three to sixty-four relationships compares its first two guarded drawings.
+Views with at most thirty-two relationships also compare a wider wrap search with vertical frame approaches.
+A denser view runs that search only when its first hierarchy draws nothing.
+After a candidate draws, later candidates try only the longest-first route order.
+The other three orders rescue a view that has no drawing yet.
+A wrap candidate starts from the card widths that the block's whole layout reserved for its ports.
 That search keeps both held and free columns, and compares its first and settled port orders.
 It lets the final planner choose frame attachments instead of forcing header calls onto side walls before placement.
 It packs its own child shapes, then holds that packing while it settles port order.

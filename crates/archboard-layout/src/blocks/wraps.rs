@@ -138,7 +138,7 @@ pub(crate) fn best_wrap(
     };
     let mut tried_out = Vec::new();
     for candidate in &search.candidates {
-        tried_out.push(tried(gv, tree, block, laying.wrapping, candidate)?);
+        tried_out.push(tried(gv, tree, block, laying, candidate)?);
     }
     let weighings: Vec<Option<Weighing>> = tried_out
         .iter()
@@ -197,10 +197,11 @@ fn tried(
     gv: &mut Engine<'_>,
     tree: &BlockTree,
     block: BlockId,
-    wrapping: Wrapping<'_>,
+    laying: &Unwrapped<'_>,
     candidate: &Candidate,
 ) -> Result<Option<Wrapped>, String> {
-    let Wrapping { laid, insets } = wrapping;
+    let Wrapping { laid, insets } = laying.wrapping;
+    let widths = &laying.whole.port_widths;
     let arranged = match candidate {
         Candidate::Grid => Arrangement {
             grid: true,
@@ -214,11 +215,12 @@ fn tried(
     };
     let mut layout = CardLayout::new(tree, laid, block, insets, arranged);
     let Candidate::Lowered { lowered, .. } = candidate else {
-        return Ok(Some(wrap_of(layout.lay(gv)?, None)));
+        let lined = layout.lined(gv, widths)?;
+        return Ok(Some(wrap_of(layout.finish(gv, lined)?, None)));
     };
     let held = tree.get(block);
     let around = |card: &str| held.cluster_of.get(card).cloned();
-    let lined = layout.lined(gv)?;
+    let lined = layout.lined(gv, widths)?;
     if sinks(lowered, &lined.boxes, around) {
         return Ok(None);
     }
