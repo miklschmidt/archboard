@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
@@ -12,7 +13,7 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { addressShowing, pictureAtRest } from "./support/semantic-page.ts";
+import { modelAddress, seedCanonicalModel } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 import { assertThemeParity } from "./support/theme-parity.ts";
 
@@ -34,9 +35,8 @@ const SURFACE = "[data-slot='semantic-board-surface']";
 /** How far a glyph's ink may stand past its run's advance, as a share of the size: a side bearing. */
 const BEARING = 0.2;
 
-/** What the board says: cards with notes, labelled relationships, and one flow in two grammars. */
-const BOARD = {
-	level: "system",
+/** What the model says: cards with notes and labelled relationships. */
+const ARCHITECTURE = {
 	nodes: [
 		{
 			name: "Gateway",
@@ -50,26 +50,51 @@ const BOARD = {
 		{ from: "Gateway", to: "Ledger", kind: "call", label: "transfer with an audit id" },
 		{ from: "Auditor", to: "Ledger", kind: "call", label: "reconcile" },
 	],
-	flows: [
-		{
-			name: "One transfer",
-			participants: ["Gateway", "Ledger", "Auditor"],
-			steps: [
-				{ from: "Gateway", to: "Ledger", label: "transfer" },
-				{ from: "Auditor", to: "Ledger", label: "difficult affix office" },
-				{ from: "Ledger", to: "Gateway", label: "receipt", kind: "return" },
-			],
-		},
-	],
-	views: [
-		{
-			name: "Exchange",
-			grammar: "sequence",
-			scope: { kind: "selection", flows: ["One transfer"] },
-		},
-		{ name: "Steps", grammar: "flowchart", scope: { kind: "selection", flows: ["One transfer"] } },
-	],
-} as const;
+};
+
+/**
+ * One flow, which a sequence and a flowchart each draw.
+ * @param model The model's identity.
+ * @param id The identity of a module by its name.
+ * @returns The authored flow collection.
+ */
+function transfers(model: string, id: (name: string) => string) {
+	return {
+		schemaVersion: 1,
+		id: "Behavior",
+		name: "Transfers",
+		flows: [
+			{
+				id: `${model}#Transfer`,
+				name: "One transfer",
+				participants: ["Gateway", "Ledger", "Auditor"].map(id),
+				steps: [
+					{
+						id: `${model}#Send`,
+						from: id("Gateway"),
+						to: id("Ledger"),
+						kind: "sync",
+						label: "transfer",
+					},
+					{
+						id: `${model}#Audit`,
+						from: id("Auditor"),
+						to: id("Ledger"),
+						kind: "sync",
+						label: "difficult affix office",
+					},
+					{
+						id: `${model}#Receipt`,
+						from: id("Ledger"),
+						to: id("Gateway"),
+						kind: "return",
+						label: "receipt",
+					},
+				],
+			},
+		],
+	};
+}
 
 /** What one picture's runs came to in the page. */
 interface Runs {
@@ -144,38 +169,37 @@ test("every painter draws the glyphs where the core put them, and the words are 
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = vaultIn(join(ownerRoot, "glyph-vault"));
+	const model = await seedCanonicalModel(vault, "Ledger", ARCHITECTURE);
+	const id = (name: string): string => model.modules.find((module) => module.name === name)!.id;
+	const flows = transfers(model.manifest.id, id);
+	writeFileSync(join(vault, "transfers.flows.json"), JSON.stringify(flows));
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
 	const request = createJsonRequester(server);
-	const created = await request<{ success: boolean }>("/api/semantic-boards/create", {
-		method: "POST",
-		doing: "drawing the ledger",
-		body: { board: "ledger", origin: "agent", create: BOARD },
-	});
-	expect(created.body.success).toBeTrue();
 
 	// The Bun core: the picture of each grammar the render route draws.
-	const whole = await request<{ svg: string; views: { id: string }[] }>(
-		"/api/semantic-boards/render?board=ledger",
-	);
-	const drawnByServer = [whole.body.svg];
-	for (const view of whole.body.views) {
-		const one = await request<{ svg: string }>(
-			`/api/semantic-boards/render?board=ledger&view=${view.id}`,
+	const flow = flows.flows[0]!.id;
+	const drawnByServer: string[] = [];
+	for (const reading of [
+		{ grammar: "architecture" },
+		{ grammar: "sequence", flow },
+		{ grammar: "flowchart", flow },
+	]) {
+		const picture = await request<{ svg: string }>(
+			`/api/architecture/render?${new URLSearchParams(reading)}`,
 		);
-		drawnByServer.push(one.body.svg);
+		drawnByServer.push(picture.body.svg);
 	}
-	expect(drawnByServer).toHaveLength(3);
 
 	// The page's core: the picture the pane draws for itself.
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", addressShowing(server.base, "ledger")]);
+	await browser.run(["open", modelAddress(server.base, model)]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
-		() => pictureAtRest(browser.eval.bind(browser)),
-		(atRest) => atRest,
-		"the board to be drawn in the page",
+		() => browser.eval<Runs>(runsUnder(SURFACE)),
+		(runs) => runs.checked > 8 && runs.problems.length === 0,
+		"the model to be drawn in the page",
 		WAIT,
 	);
 	const inPage = await browser.eval<Runs>(runsUnder(SURFACE));
