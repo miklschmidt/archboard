@@ -4,9 +4,9 @@
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
 	"level": "module",
-	"version": 132,
+	"version": 133,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-10-30T02:43:16.297Z",
+	"updatedAt": "2026-10-30T05:40:17.598Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -24970,7 +24970,7 @@
 						"name": "Placement entry",
 						"kind": "module",
 						"responsibility": "Runs legacy placement and sends Blocks candidates to the route planner",
-						"description": "lay_out_board dispatches by nesting. The legacy placer owns dependency order, packing, frames, folds, and wraps. Blocks also tries placement without provisional label boxes while retaining final label measurements. If routing identifies blocked endpoints, hybrid tries 32 then 64 extra units around them. Track calls the existing legacy path.",
+						"description": "lay_out_board dispatches by nesting. The legacy placer owns dependency order, packing, frames, folds, and wraps. Blocks also tries placement without provisional label boxes while retaining final label measurements. If routing identifies blocked endpoints, hybrid tries 32 then 64 extra units around them. If both fail, two more repairs start from every blocked endpoint the attempts found and give each enclosing block the same room. Track calls the existing legacy path.",
 						"parent": "H0PF4BhI",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -25823,7 +25823,7 @@
 											{
 												"id": "V8VGEmcr",
 												"kind": "loop",
-												"condition": "initial placement, then at most two repairs if blocked",
+												"condition": "initial placement, then at most four repairs if blocked",
 												"steps": [
 													{
 														"id": "x8Zrs7GX",
@@ -26337,7 +26337,7 @@
 							{
 								"id": "AOPSXwkc",
 								"heading": "One host solve contains the choices",
-								"body": "Solve dispatch asks the host for one graph solve. The Blocks planner compares complete guarded placement candidates by crowded approaches and route cost, with limits on area and caller detours. Dense views keep the first guarded drawing. A blocked plan can request two bounded placement repairs.",
+								"body": "Solve dispatch asks the host for one graph solve. The Blocks planner compares complete guarded placement candidates by crowded approaches and route cost, with limits on area and caller detours. Dense views keep the first guarded drawing. A blocked plan can request up to four bounded placement repairs.",
 								"subjects": [
 									"oycxx6G2",
 									"3i20NlSQ",
