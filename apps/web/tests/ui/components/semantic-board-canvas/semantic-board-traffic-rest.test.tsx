@@ -164,10 +164,17 @@ test("a camera the stage moves itself leaves the traffic running", async () => {
 	}
 });
 
+/**
+ * A card that reaches under the panel, with room to its left to move.
+ * @returns Where it stands.
+ */
+function reachesUnderThePanel(): DOMRect {
+	return new DOMRect(600, 0, 200, 100);
+}
+
 test("a pick that a panel laid over the picture would cover moves the picture clear and leaves the traffic running", async () => {
 	// Two panes share the centre, so a pick lays the sidebar's panel over the
-	// picture's edge. This DOM lays nothing out, so the card says where it stands:
-	// it reaches under the panel, with room to its left to move.
+	// picture's edge. This DOM lays nothing out, so the card says where it stands.
 	const traffic = await mountWithTraffic({
 		live: true,
 		chrome: {
@@ -184,7 +191,7 @@ test("a pick that a panel laid over the picture would cover moves the picture cl
 	try {
 		const before = cameraNow().x;
 		const card = inPicture("card");
-		card.parentElement!.getBoundingClientRect = () => new DOMRect(600, 0, 200, 100);
+		Object.assign(card.parentElement ?? card, { getBoundingClientRect: reachesUnderThePanel });
 		act(() => {
 			fireEvent.click(card);
 		});
