@@ -16,44 +16,6 @@ interface ProcessGroupIdentity {
 }
 
 /**
- * The identity of a live process.
- * @param pid The process to identify.
- * @returns Its pid paired with its kernel start time.
- */
-function processIdentity(pid: number): ProcessIdentity {
-	const observation = readProcessObservation(pid);
-	if (observation === undefined) {
-		throw new Error(`Process ${pid} vanished before its identity could be captured.`);
-	}
-	return { pid: observation.pid, startTime: observation.startTime };
-}
-
-/**
- * Whether the process an identity names is still the one running under that pid.
- * @param identity A previously captured identity.
- * @returns False when the pid is gone or has been recycled.
- */
-function processIdentityExists(identity: ProcessIdentity): boolean {
-	const observation = readProcessObservation(identity.pid);
-	return observation !== undefined && observation.startTime === identity.startTime;
-}
-
-/**
- * Whether the process an identity names is alive and still leads a group.
- * @param identity The recorded leader.
- * @param group The group it was recorded as owning.
- * @returns False when the pid is gone, recycled, or has changed group.
- */
-function processIdentityOwnsGroup(identity: ProcessIdentity, group: number): boolean {
-	const observation = readProcessObservation(identity.pid);
-	return (
-		observation !== undefined &&
-		observation.startTime === identity.startTime &&
-		observation.pgid === group
-	);
-}
-
-/**
  * Capture the group of a process spawned detached, proving it leads its own
  * group rather than having joined ours.
  * @param leaderPid The detached child's pid.
@@ -76,17 +38,39 @@ function captureDetachedProcessGroup(leaderPid: number): ProcessGroupIdentity {
 }
 
 /**
+ * Ask the kernel whether a group has any member, zombies included. This one
+ * system call spares a census of every process in the usual case of no group.
+ * @param group The process group id.
+ * @returns False only when the group is proven to be empty.
+ */
+function processGroupMayExist(group: number): boolean {
+	try {
+		process.kill(-group, 0);
+	} catch (cause) {
+		return errnoCode(cause) !== "ESRCH";
+	}
+	return true;
+}
+
+/**
  * Whether any process that can still run remains in a group.
  * @param group The process group id.
  * @returns True while the group contains a live or stopped process.
  */
 function processGroupExists(group: number): boolean {
-	return listProcessGroupObservations(group).some((process) => process.state !== "zombie");
+	return (
+		processGroupMayExist(group) &&
+		listProcessGroupObservations(group).some((process) => process.state !== "zombie")
+	);
 }
 
 /**
- * Read the non-zombie members of a captured group while rejecting leader
- * absence, an observed identity/group change, or leader-pid reuse.
+ * Read the non-zombie members of a captured group while rejecting an observed
+ * identity/group change or leader-pid reuse.
+ *
+ * A leader that exited does not end ownership. The kernel never gives a pid to
+ * a new process while a process group with that number has a member, so the
+ * members that remain are the descendants of the recorded leader.
  * @param identity The group and original leader identity.
  * @returns Every member that can still run or is stopped.
  */
@@ -98,12 +82,10 @@ function ownedProcessGroupMembers(identity: ProcessGroupIdentity): readonly Proc
 		return members;
 	}
 	const leader = readProcessObservation(identity.leader.pid);
-	if (leader === undefined) {
-		throw new Error(
-			`Process group ${identity.group} lost its recorded leader before ownership inspection.`,
-		);
-	}
-	if (leader.startTime !== identity.leader.startTime || leader.pgid !== identity.group) {
+	if (
+		leader !== undefined &&
+		(leader.startTime !== identity.leader.startTime || leader.pgid !== identity.group)
+	) {
 		throw new Error(
 			`Process group ${identity.group} no longer belongs to its recorded leader identity.`,
 		);
@@ -146,38 +128,10 @@ function signalOwnedProcessGroup(identity: ProcessGroupIdentity, signal: NodeJS.
 	}
 }
 
-/**
- * Whether any process other than the leader is still in the group.
- * @param identity The group and its recorded leader.
- * @returns True when a second member is found.
- */
-function processGroupHasOtherMember(identity: ProcessGroupIdentity): boolean {
-	if (!processIdentityOwnsGroup(identity.leader, identity.group)) {
-		throw new Error(
-			`Process group ${identity.group} lost its recorded leader before membership inspection.`,
-		);
-	}
-	for (const process of listProcessGroupObservations(identity.group)) {
-		if (
-			process.pid !== identity.leader.pid &&
-			process.pgid === identity.group &&
-			process.state !== "zombie"
-		) {
-			return true;
-		}
-	}
-	return false;
-}
-
 export {
-	type ProcessIdentity,
 	type ProcessGroupIdentity,
-	processIdentity,
-	processIdentityExists,
-	processIdentityOwnsGroup,
 	captureDetachedProcessGroup,
 	processGroupExists,
 	ownedProcessGroupMembers,
 	signalOwnedProcessGroup,
-	processGroupHasOtherMember,
 };

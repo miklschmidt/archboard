@@ -1,31 +1,26 @@
 // Running one Git command without ever blocking Bun's process supervisor.
 //
-// A Git command is spawned into a detached process group owned by a small
-// child process (git-owner.ts), so that a hung or runaway Git can be
-// killed as a group without taking anything else with it. Everything here is
-// about that discipline: bounded output, a timeout, cancellation, and noticing
-// the failures that only show once every handle has settled.
+// A Git command is spawned as the leader of a detached process group, so that
+// a hung or runaway Git can be killed as a group without taking anything else
+// with it, and the orphan guard (git-guard.ts) ends that group if this process
+// dies first. Everything here is about that discipline: bounded output, a
+// timeout, cancellation, and noticing a descendant that outlives Git.
 
-import { fileURLToPath } from "node:url";
 import type { Subprocess } from "bun";
-import { z } from "zod";
 
 import { GIT_MS } from "@archboard/timing";
 import {
 	captureDetachedProcessGroup,
 	processGroupExists,
-	processGroupHasOtherMember,
 	type ProcessGroupIdentity,
 } from "#runtime/processes/group.ts";
 import { stopAndKillOwnedGroup } from "#runtime/processes/git-group-termination.ts";
+import { guardGitGroup, releaseGitGroup } from "#runtime/processes/git-guard.ts";
 import { asError, errorMessage } from "@archboard/diagnostics/thrown-error";
 import { GitCommandError } from "#runtime/processes/git-failure.ts";
 import type { GitFailure } from "#runtime/processes/git-failure.ts";
 import { decodeGitOutput, drainBounded } from "#runtime/processes/git-output.ts";
 import type { BoundedDrain, DrainOutcome } from "#runtime/processes/git-output.ts";
-
-// The owner script is an export of this package, which Bun resolves to its file.
-const GIT_PROCESS_OWNER = fileURLToPath(import.meta.resolve("@archboard/process/git-owner"));
 
 /**
  * Poll until a process group is gone or the cleanup grace runs out.
@@ -46,108 +41,47 @@ async function processGroupDisappeared(pgid: number): Promise<boolean> {
 	}
 }
 
-const gitOwnerResult = z.object({
-	kind: z.literal("result"),
-	exitCode: z.number().int().optional(),
-	signalCode: z.union([z.string(), z.number()]).optional(),
-	spawnError: z.string().optional(),
-});
-
-type GitOwnerResult = z.infer<typeof gitOwnerResult>;
-
-interface GitOwnerExit {
-	readonly kind: "owner-exit";
-	readonly exitCode: number;
-}
-
-type OwnerOutcome = GitOwnerResult | GitOwnerExit;
+type GitProcess = Subprocess<"ignore" | Blob, "pipe", "pipe">;
 
 /**
- * The owner's result message, when an IPC message is one.
- * @param message Whatever arrived over IPC.
- * @returns The parsed result, or undefined for anything else.
- */
-function gitOwnerMessage(message: unknown): GitOwnerResult | undefined {
-	const parsed = gitOwnerResult.safeParse(message);
-	return parsed.success ? parsed.data : undefined;
-}
-
-type OwnerProcess = Subprocess<"ignore", "pipe", "pipe">;
-
-interface SpawnedOwner {
-	readonly child: OwnerProcess;
-	readonly ownerResult: Promise<OwnerOutcome>;
-	readonly finishOwner: (outcome: OwnerOutcome) => void;
-}
-
-/**
- * Start the process owner that will run Git in a detached group of its own.
+ * Start Git as the leader of its own detached process group.
  * @param cwd Where Git runs.
  * @param args Git's arguments.
- * @param executable The Git executable to run.
- * @returns The child and the promise of what the owner reports.
+ * @param options The executable to run, and the input it reads.
+ * @returns The child.
+ * @throws {GitCommandError} When Git could not start.
  */
-function spawnGitOwner(cwd: string, args: readonly string[], executable: string): SpawnedOwner {
-	let finishOwner!: (outcome: OwnerOutcome) => void;
-	let ownerFinished = false;
-	const ownerResult = new Promise<OwnerOutcome>((resolve) => {
-		/**
-		 * Resolve the owner's outcome once, whichever report arrives first.
-		 * @param outcome The IPC result or the owner's own exit.
-		 */
-		finishOwner = (outcome) => {
-			if (ownerFinished) {
-				return;
-			}
-			ownerFinished = true;
-			resolve(outcome);
-		};
-	});
+function spawnGit(cwd: string, args: readonly string[], options: GitOptions): GitProcess {
 	try {
-		const child = Bun.spawn([process.execPath, GIT_PROCESS_OWNER, executable, ...args], {
+		return Bun.spawn([options.executable ?? "git", ...args], {
 			cwd,
 			env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
 			detached: true,
-			/**
-			 * Take the owner's result off the IPC channel.
-			 * @param message Whatever the owner sent.
-			 */
-			ipc: (message) => {
-				const parsed = gitOwnerMessage(message);
-				if (parsed) {
-					finishOwner(parsed);
-				}
-			},
-			stdin: "ignore",
+			stdin: options.input === undefined ? "ignore" : new Blob([Buffer.from(options.input)]),
 			stdout: "pipe",
 			stderr: "pipe",
 		});
-		return { child, ownerResult, finishOwner };
 	} catch (error) {
 		throw new GitCommandError("spawn", `Could not start Git: ${errorMessage(error)}`);
 	}
 }
 
 /**
- * Prove the owner leads its own process group, killing and draining it when
- * that cannot be proven so nothing is left running unsupervised.
- * @param child The spawned owner.
+ * Prove Git leads its own process group and put that group under the orphan
+ * guard, killing Git when either fails so nothing is left running unsupervised.
+ *
+ * This runs in the tick of the spawn. Bun reaps a child only from its event
+ * loop, so even a Git that has already exited can still be read here.
+ * @param child The spawned Git.
  * @returns The group and its leader's identity.
  */
-async function captureOwnerGroup(child: OwnerProcess): Promise<ProcessGroupIdentity> {
+function captureGitGroup(child: GitProcess): ProcessGroupIdentity {
 	try {
-		return captureDetachedProcessGroup(child.pid);
+		const group = captureDetachedProcessGroup(child.pid);
+		guardGitGroup(group.group);
+		return group;
 	} catch (cause) {
-		try {
-			child.kill("SIGKILL");
-		} catch {
-			// The owner may have failed before it received the start message.
-		}
-		await Promise.all([
-			child.exited,
-			new Response(child.stdout).arrayBuffer(),
-			new Response(child.stderr).arrayBuffer(),
-		]);
+		child.kill("SIGKILL");
 		throw new GitCommandError(
 			"cleanup",
 			`Could not capture Git process-group ownership: ${errorMessage(cause)}`,
@@ -170,11 +104,12 @@ class GitRun {
 
 	/**
 	 * Track one command against its detached group.
-	 * @param group The owner's process group.
+	 * @param group Git's process group.
+	 * @param child Git.
 	 */
 	constructor(
 		private readonly group: ProcessGroupIdentity,
-		private readonly child: OwnerProcess,
+		private readonly child: GitProcess,
 	) {
 		this.terminationSignal = new Promise<void>((resolve) => {
 			this.terminationStarted = resolve;
@@ -204,31 +139,25 @@ class GitRun {
 	}
 }
 
-type Settled = [number, OwnerOutcome, DrainOutcome, DrainOutcome];
+type Settled = [number, DrainOutcome, DrainOutcome];
 
 interface RunHandles {
-	readonly leaderExited: Promise<number>;
-	readonly inspectedOwnerResult: Promise<OwnerOutcome>;
+	readonly exited: Promise<number>;
 	readonly stdout: BoundedDrain;
 	readonly stderr: BoundedDrain;
 }
 
 /**
- * Wait for the owner, its group inspection and both output drains, giving a
+ * Wait for Git, its group inspection and both output drains, giving a
  * terminated command only the cleanup grace to finish.
  * @param run The command's termination state.
- * @param handles The four things to wait for.
+ * @param handles The three things to wait for.
  * @returns Every outcome, in order.
  */
 async function settleRun(run: GitRun, handles: RunHandles): Promise<Settled> {
 	let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
 	try {
-		const complete = Promise.all([
-			handles.leaderExited,
-			handles.inspectedOwnerResult,
-			handles.stdout.result,
-			handles.stderr.result,
-		]);
+		const complete = Promise.all([handles.exited, handles.stdout.result, handles.stderr.result]);
 		const cleanupExpired = run.terminationSignal.then(
 			() =>
 				new Promise<null>((resolve) => {
@@ -251,42 +180,25 @@ async function settleRun(run: GitRun, handles: RunHandles): Promise<Settled> {
 }
 
 /**
- * Once the owner reports, either release it or, when something else is still
- * in its group, end the command as unclean.
+ * Once Git has exited, end the command as unclean when anything is left in
+ * its group.
  * @param run The command's termination state.
- * @param child The owner.
- * @param group The owner's group.
- * @param outcome What the owner reported, or its unexpected exit.
- * @returns The same outcome, for the settlement.
+ * @param group Git's group.
  */
-function inspectOwnerOutcome(
-	run: GitRun,
-	child: OwnerProcess,
-	group: ProcessGroupIdentity,
-	outcome: OwnerOutcome,
-): OwnerOutcome {
-	if (outcome.kind === "owner-exit") {
-		if (!run.termination) {
-			run.terminate("cleanup", new Error("Git process owner exited before reporting a result."));
-		}
-		return outcome;
-	}
+function inspectExitedGroup(run: GitRun, group: ProcessGroupIdentity): void {
 	if (run.termination) {
-		return outcome;
+		return;
 	}
 	try {
-		if (processGroupHasOtherMember(group)) {
+		if (processGroupExists(group.group)) {
 			run.terminate(
 				"cleanup",
 				new Error("Git exited while another process remained in its detached group."),
 			);
-		} else {
-			child.send({ kind: "release" });
 		}
 	} catch (cause) {
 		run.terminate("cleanup", cause);
 	}
-	return outcome;
 }
 
 /**
@@ -326,7 +238,7 @@ function terminationMessage(termination: Termination): string {
  * for: a process nobody can account for is the more serious fact.
  * @param run The command's termination state, which must be terminated.
  * @param termination Why it was terminated.
- * @param group The owner's group.
+ * @param group Git's group.
  * @param exitCode Git's exit status, when known.
  * @returns The error to throw.
  */
@@ -361,121 +273,23 @@ function noticeDrainFailure(run: GitRun, out: DrainOutcome, err: DrainOutcome): 
 }
 
 /**
- * Whether the owner itself ended badly, which means nothing it reported can be
- * trusted.
- * @param child The owner.
- * @param ownerExitCode Its exit status.
- * @returns True when it did not exit cleanly.
- */
-function ownerExitedBadly(child: OwnerProcess, ownerExitCode: number): boolean {
-	return ownerExitCode !== 0 || child.signalCode !== null;
-}
-
-/**
- * Notice an owner that did not exit cleanly, or a group that outlived it.
- * @param run The command's termination state.
- * @param child The owner.
- * @param group The owner's group.
- * @param ownerExitCode The owner's exit status.
- */
-function noticeOwnerFailure(
-	run: GitRun,
-	child: OwnerProcess,
-	group: ProcessGroupIdentity,
-	ownerExitCode: number,
-): void {
-	if (!run.termination && ownerExitedBadly(child, ownerExitCode)) {
-		run.terminate("cleanup", new Error("Git process owner did not exit normally."));
-	}
-	if (!run.termination && processGroupExists(group.group)) {
-		run.terminate(
-			"cleanup",
-			new Error("Git exited while its detached process group remained live."),
-		);
-	}
-}
-
-/**
- * Notice, after settlement, the failures that only show once everything has
- * finished: a failed drain, an owner that did not exit cleanly, a group that
- * outlived its leader.
- * @param run The command's termination state.
- * @param child The owner.
- * @param group The owner's group.
- * @param settled Every outcome.
- */
-function noticeLateFailures(
-	run: GitRun,
-	child: OwnerProcess,
-	group: ProcessGroupIdentity,
-	settled: Settled,
-): void {
-	const [ownerExitCode, , out, err] = settled;
-	noticeDrainFailure(run, out, err);
-	noticeOwnerFailure(run, child, group, ownerExitCode);
-}
-
-/**
- * Refuse a command the owner could not even start, or that a signal ended.
- * @param result What the owner reported.
- * @throws {GitCommandError} When Git never ran, or was signalled.
- */
-function refuseOwnerReport(result: GitOwnerResult): void {
-	if (result.spawnError) {
-		throw new GitCommandError("spawn", `Could not start Git: ${result.spawnError}`);
-	}
-	if (result.signalCode !== undefined) {
-		throw new GitCommandError("signal", `Git exited from ${result.signalCode}.`, result.exitCode);
-	}
-}
-
-/**
  * Refuse a Git command that ended in anything but success.
  *
  * Git's own stderr is the message where it wrote one: it says what went wrong
  * in Git's words, which are better than any this could invent.
- * @param result What the owner reported.
+ * @param child Git, which has exited.
+ * @param exitCode Its exit status.
  * @param err The kept stderr.
- * @throws {GitCommandError} When Git reported no status, or a failing one.
+ * @throws {GitCommandError} When a signal ended Git, or its status is failing.
  */
-function refuseExitStatus(result: GitOwnerResult, err: DrainOutcome): void {
-	const settledExitCode = result.exitCode;
-	if (settledExitCode === undefined) {
-		throw new GitCommandError("cleanup", "Git process owner reported no exit status.");
+function refuseExit(child: GitProcess, exitCode: number, err: DrainOutcome): void {
+	if (child.signalCode !== null) {
+		throw new GitCommandError("signal", `Git exited from ${child.signalCode}.`, exitCode);
 	}
-	if (settledExitCode !== 0) {
+	if (exitCode !== 0) {
 		const detail = new TextDecoder().decode(err.bytes).trim();
-		throw new GitCommandError(
-			"exit",
-			detail || `Git exited with status ${settledExitCode}.`,
-			settledExitCode,
-		);
+		throw new GitCommandError("exit", detail || `Git exited with status ${exitCode}.`, exitCode);
 	}
-}
-
-/**
- * Git's output for a command that ended without termination, or the error its
- * own report amounts to.
- * @param commandResult What the owner reported.
- * @param out The kept stdout.
- * @param err The kept stderr.
- * @param trimOutput Whether this is a trimmed probe or exact object output.
- * @returns The requested output, or undefined when it was empty.
- * @throws {GitCommandError} When the command did not succeed.
- */
-function commandOutput(
-	commandResult: OwnerOutcome,
-	out: DrainOutcome,
-	err: DrainOutcome,
-	trimOutput: boolean,
-): string | undefined {
-	if (commandResult.kind !== "result") {
-		throw new GitCommandError("cleanup", "Git process owner exited without a command result.");
-	}
-	refuseOwnerReport(commandResult);
-	refuseExitStatus(commandResult, err);
-	const output = decodeGitOutput(out.bytes, commandResult.exitCode);
-	return (trimOutput ? output.trim() : output) || undefined;
 }
 
 interface GitOptions {
@@ -489,30 +303,26 @@ interface GitOptions {
 
 /** One Git command that has started, and everything it will settle on. */
 interface RunningCommand {
-	child: OwnerProcess;
+	child: GitProcess;
 	group: ProcessGroupIdentity;
 	run: GitRun;
 	handles: RunHandles;
 }
 
 /**
- * Start the owner, take its process group, and wire up every handle the
- * command will be settled on.
+ * Start Git, take its process group, and wire up every handle the command will
+ * be settled on.
  *
- * Git is told to start only once all of that is in place, so nothing it does
- * can happen before somebody is watching for it.
+ * All of it happens in the tick of the spawn, so nothing Git does can be
+ * reported before somebody is watching for it.
  * @param cwd Where Git runs.
  * @param args Git's arguments.
  * @param options Which executable to run.
  * @returns The running command.
  */
-async function startCommand(
-	cwd: string,
-	args: readonly string[],
-	options: GitOptions,
-): Promise<RunningCommand> {
-	const { child, ownerResult, finishOwner } = spawnGitOwner(cwd, args, options.executable ?? "git");
-	const group = await captureOwnerGroup(child);
+function startCommand(cwd: string, args: readonly string[], options: GitOptions): RunningCommand {
+	const child = spawnGit(cwd, args, options);
+	const group = captureGitGroup(child);
 	const run = new GitRun(group, child);
 	const stdout = drainBounded(
 		child.stdout,
@@ -525,18 +335,11 @@ async function startCommand(
 		() => run.terminate("output"),
 		(error) => run.terminate("cleanup", error),
 	);
-	const leaderExited = child.exited.then((exitCode) => {
-		finishOwner({ kind: "owner-exit", exitCode });
+	const exited = child.exited.then((exitCode) => {
+		inspectExitedGroup(run, group);
 		return exitCode;
 	});
-	const inspectedOwnerResult = ownerResult.then((outcome) =>
-		inspectOwnerOutcome(run, child, group, outcome),
-	);
-	child.send({
-		kind: "start",
-		input: options.input === undefined ? undefined : Buffer.from(options.input).toString("base64"),
-	});
-	return { child, group, run, handles: { leaderExited, inspectedOwnerResult, stdout, stderr } };
+	return { child, group, run, handles: { exited, stdout, stderr } };
 }
 
 /**
@@ -566,6 +369,27 @@ async function settleWithLimits(command: RunningCommand, options: GitOptions): P
 }
 
 /**
+ * Wait for a started command and turn how it ended into its output or its error.
+ * @param command The running command.
+ * @param options The limits, and the shape of the output.
+ * @returns The requested output, or undefined when it was empty.
+ * @throws {GitCommandError} When the command did not succeed.
+ */
+async function commandOutput(
+	command: RunningCommand,
+	options: GitOptions,
+): Promise<string | undefined> {
+	const [exitCode, out, err] = await settleWithLimits(command, options);
+	noticeDrainFailure(command.run, out, err);
+	if (command.run.termination) {
+		throw await terminationError(command.run, command.run.termination, command.group, exitCode);
+	}
+	refuseExit(command.child, exitCode, err);
+	const output = decodeGitOutput(out.bytes, exitCode);
+	return (options.trimOutput === false ? output : output.trim()) || undefined;
+}
+
+/**
  * Run one bounded Git command without ever blocking Bun's process supervisor.
  * @param cwd Where Git runs.
  * @param args Git's arguments.
@@ -582,15 +406,12 @@ async function git(
 	if (options.signal?.aborted) {
 		throw new GitCommandError("aborted", "Git command was cancelled.");
 	}
-	const command = await startCommand(cwd, args, options);
-	const settled = await settleWithLimits(command, options);
-	const [, commandResult, out, err] = settled;
-	noticeLateFailures(command.run, command.child, command.group, settled);
-	if (command.run.termination) {
-		const exitCode = commandResult.kind === "result" ? commandResult.exitCode : undefined;
-		throw await terminationError(command.run, command.run.termination, command.group, exitCode);
+	const command = startCommand(cwd, args, options);
+	try {
+		return await commandOutput(command, options);
+	} finally {
+		releaseGitGroup(command.group.group);
 	}
-	return commandOutput(commandResult, out, err, options.trimOutput !== false);
 }
 
 export { type GitOptions, git };

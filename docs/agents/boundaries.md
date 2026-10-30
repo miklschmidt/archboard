@@ -124,7 +124,7 @@ split by behavior.
   Private production files never import an api file, because the api files sit above them. `board`,
   `codex-app-server`, `code-binding` and `code-intel` adopt it for `shared/` and `runtime/`, `workspace` also for
   `server/`, `renderer` for `shared/`, `runtime/` and `ui/`, `code-opener` for `shared/`, `server/` and `ui/`, `walkthrough` for `shared/` and `runtime/`, `process` and `skills` for `runtime/`, `server-lifecycle` for `shared/` and `runtime/`, `codex-realtime-voice` and `workbench` for `shared/`, `runtime/`, `server/` and `ui/`, and `ui-kit` and `server-requests` for `ui/`. An export that is a file to run, not a module to import,
-  is the one exception: `process` exports `./git-owner` as the script itself, and the test names it.
+  would be the one exception, and the test would have to name it. No package has one now.
   `tests/system/repository-policy/package-api.test.ts` holds the three rules.
 - **Another package, an app, a script or a test imports only exported files.** Oxlint refuses a subpath that
   `exports` does not name. It also refuses a relative path that reaches a private file of another
@@ -164,14 +164,15 @@ The third is `process` (`@archboard/process`). It owns a child process group and
 sits in `runtime/processes/`. It adopts the `api/` role for `runtime/` and exposes 4 subpaths,
 where it exposed 6 files. It imports only `timing` and `diagnostics`, so a package that runs
 outside Archboard can carry it. `./observation` reads the process table. `./git` runs one Git
-command, `git`, in a detached group of its own under the owner script, with bounded output, a
-timeout and cancellation, and ends the group TERM-then-KILL. Every failure is a `GitCommandError`
+command, `git`, as the leader of a detached group of its own, with bounded output, a timeout and
+cancellation, and ends the group with a stop and then a kill. One small `/bin/sh` guard per parent
+process (`git-guard.ts`) reads the groups in flight from a pipe. It kills them when the parent dies
+and the pipe closes. An exited leader does not end ownership of its group: the kernel keeps a group's
+number from new processes while the group has a member. Every failure is a `GitCommandError`
 that names its kind, and a non-zero exit is the kind `exit`. The group operations it uses stay
 private. `./codex-group` carries the Codex process-group operations and
 their TERM-then-KILL escalation. The cleanup takes its error type from the caller, so the package
-does not import `codex-app-server`. `./git-owner` is the one export that is not an api file: it is
-the script that a Git command runs under, and callers find it with `import.meta.resolve` and spawn
-it, so it keeps pointing at its file, and `package-api.test.ts` names it as an executable.
+does not import `codex-app-server`.
 
 The fourth is `workspace` (`@archboard/workspace`). It knows where a vault, a checkout and the state
 directory are. It adopts the `api/` role for `shared/`, `runtime/` and `server/` and exposes 8

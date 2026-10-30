@@ -2,7 +2,7 @@
 	"name": "@archboard/process",
 	"version": "0.0.0",
 	"private": true,
-	"description": "Child process groups: observe, signal and end a group, and the Git command owner that runs in its own.",
+	"description": "Child process groups: observe, signal and end a group, and run a Git command in a group of its own.",
 	"license": "MIT",
 	"type": "module",
 	"imports": {
@@ -12,7 +12,6 @@
 	"exports": {
 		"./observation": "./src/runtime/api/observation.ts",
 		"./git": "./src/runtime/api/git.ts",
-		"./codex-group": "./src/runtime/api/codex-group.ts",
-		"./git-owner": "./src/runtime/processes/git-owner.ts"
+		"./codex-group": "./src/runtime/api/codex-group.ts"
 	}
 }
