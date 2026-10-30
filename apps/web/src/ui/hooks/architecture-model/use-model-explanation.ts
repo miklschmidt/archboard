@@ -5,6 +5,7 @@ import { NOTHING_READ, type PaneReading } from "#ui/state/pane-session/pane-read
 import type { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import type { Model } from "@archboard/board/content";
 import type { ExplanationInvocation } from "#ui/clients/architecture-model/explanations.ts";
+import { comparisonIntent } from "#ui/rules/architecture-model/comparison-intent.ts";
 
 type Action = ExplanationInvocation["request"]["action"];
 
@@ -42,7 +43,7 @@ function useModelExplanation(
 			captureSource(model, {
 				state: state ?? undefined,
 				checkpoint: checkpoint ?? undefined,
-				against: against ?? undefined,
+				...comparisonIntent(against),
 			}),
 		[state, checkpoint, against, model],
 	);

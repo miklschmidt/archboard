@@ -8,18 +8,43 @@ GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
 // Vite provides this module. The drawing query only needs a build to key its answers by.
 await mock.module("virtual:archboard-renderer", () => ({ rendererBuild: "test" }));
+/**
+ * A renderer that never finishes.
+ * @returns A drawing that stays pending.
+ */
+function neverDrawn(): Promise<unknown> {
+	return new Promise(() => undefined);
+}
+
+/**
+ * A renderer that fails.
+ * @returns A failed drawing.
+ */
+function noRoute(): Promise<unknown> {
+	return Promise.reject(new Error("no route"));
+}
+
+/**
+ * A renderer that draws the worker.
+ * @returns The drawing.
+ */
+function workerDrawn(): Promise<unknown> {
+	return Promise.resolve({ ...EMPTY_DRAWING, svg: "<svg>worker</svg>" });
+}
+
+let renderer = neverDrawn;
 // Each drawing here arrives when the test says so.
 await mock.module("@archboard/renderer/browser", () => ({
 	/**
-	 * A renderer that never finishes.
-	 * @returns A drawing step that stays pending.
+	 * A renderer that does what the test asks.
+	 * @returns A drawing step.
 	 */
 	prepareContentHere: () => ({
 		/**
-		 * Stay pending.
-		 * @returns A promise that never settles.
+		 * Do what the test asks.
+		 * @returns The test's answer.
 		 */
-		draw: () => new Promise(() => undefined),
+		draw: () => renderer(),
 	}),
 }));
 const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
@@ -65,7 +90,10 @@ async function draw(
 	});
 }
 
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	renderer = neverDrawn;
+});
 afterAll(() => GlobalRegistrator.unregister());
 
 test("a drawing that arrives late never replaces a newer destination", async () => {
@@ -98,4 +126,42 @@ test("a pane is ready only once a picture stands for its destination", async () 
 	expect(pane.result.current.ready).toBe(false);
 	await draw(client, gateway, "<svg>gateway</svg>");
 	expect(pane.result.current.ready).toBe(true);
+});
+
+test("a failed drawing keeps the last picture, stops waiting, and draws on retry", async () => {
+	const client = new QueryClient();
+	const gateway = shopRequest({ scope: "Shop#Gateway" });
+	const worker = shopRequest({ scope: "Shop#Worker" });
+	await draw(client, gateway, "<svg>gateway</svg>");
+	const pane = renderHook(({ asked }) => useAcceptedScene(asked, NOTHING), {
+		initialProps: { asked: gateway },
+		wrapper: withClient(client),
+	});
+	await waitFor(() => expect(pane.result.current.scene?.picture.svg).toBe("<svg>gateway</svg>"));
+	renderer = noRoute;
+	pane.rerender({ asked: worker });
+	await waitFor(() => expect(pane.result.current.failure?.message).toBe("no route"));
+	expect(pane.result.current).toMatchObject({ pending: false, leaving: null });
+	expect(pane.result.current.scene?.picture.svg).toBe("<svg>gateway</svg>");
+	renderer = workerDrawn;
+	await act(async () => {
+		await pane.result.current.retry();
+	});
+	await waitFor(() => expect(pane.result.current.scene?.picture.svg).toBe("<svg>worker</svg>"));
+	expect(pane.result.current.failure).toBeNull();
+});
+
+test("a destination whose read failed leaves the picture where it is", async () => {
+	const client = new QueryClient();
+	const gateway = shopRequest({ scope: "Shop#Gateway" });
+	await draw(client, gateway, "<svg>gateway</svg>");
+	const pane = renderHook(({ asked }) => useAcceptedScene(asked, NOTHING), {
+		initialProps: { asked: gateway },
+		wrapper: withClient(client),
+	});
+	await waitFor(() => expect(pane.result.current.scene?.picture.svg).toBe("<svg>gateway</svg>"));
+	const unread = { ...shopRequest({ scope: "Shop#Worker" }, false), failed: true };
+	pane.rerender({ asked: unread });
+	expect(pane.result.current).toMatchObject({ pending: false, leaving: null });
+	expect(pane.result.current.scene?.picture.svg).toBe("<svg>gateway</svg>");
 });

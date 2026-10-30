@@ -33,18 +33,19 @@ function useSceneDrawing(request: SceneRequest) {
  * Hold one accepted scene while another reading is drawn.
  * @param request The destination the pane asks for.
  * @param selected The selection the pane holds now.
- * @returns The scene on screen, what inspection reads, and the state of the destination.
+ * @returns The scene on screen, what inspection reads, the state of the destination, and how
+ * to draw it again.
  */
 function useAcceptedScene(request: SceneRequest, selected: ReadonlySet<string>) {
 	const { query, drawing } = useSceneDrawing(request);
 	const [accepted, setAccepted] = useState<AcceptedScene | null>(null);
 	const scene = nextScene(accepted, request, drawing, selected);
 	if (scene !== accepted) setAccepted(scene);
-	const pending = scene?.key !== sceneKey(request);
-	const failed = query.isError;
+	// A destination that failed is not on its way, and the picture stays until the reader moves.
+	const pending = scene?.key !== sceneKey(request) && !query.isError && request.failed !== true;
 	const leaving = useMemo(
-		() => (pending && !failed ? leavingTo(scene, request) : null),
-		[pending, failed, scene, request],
+		() => (pending ? leavingTo(scene, request) : null),
+		[pending, scene, request],
 	);
 	return {
 		scene,
@@ -52,6 +53,7 @@ function useAcceptedScene(request: SceneRequest, selected: ReadonlySet<string>) 
 		pending,
 		leaving,
 		failure: query.error,
+		retry: query.refetch,
 	};
 }
 

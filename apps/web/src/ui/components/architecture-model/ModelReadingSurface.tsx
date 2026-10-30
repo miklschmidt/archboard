@@ -29,6 +29,8 @@ interface ModelReadingSurfaceProps {
 	paneId: string;
 	reducedMotion: boolean;
 	reader: Reader;
+	/** What the stage has to say over the picture, which it never moves. */
+	children?: ReactNode;
 }
 
 /**
@@ -132,13 +134,25 @@ function ReadingPicture(props: {
 	const { surface } = props;
 	const { reader, overlay } = surface;
 	const { accepted, location, request, camera, area, moves, sidebar, selection, model } = reader;
+	const { comparison, vault } = reader;
 	return (
 		<ModelReadingCanvas
 			scene={accepted.scene}
 			request={request}
+			vault={vault}
+			paneId={surface.paneId}
 			pending={accepted.pending}
+			comparing={comparison.status === "loading"}
 			leaving={accepted.leaving}
 			failure={accepted.failure}
+			onRetry={accepted.retry}
+			onWholeScope={reader.onWholeScope}
+			notices={
+				<>
+					{surface.children}
+					<ModelComparisonNotice comparison={comparison} />
+				</>
+			}
 			camera={camera}
 			area={area}
 			cut={moves.cut}
@@ -212,10 +226,10 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 				data-slot="model-reading"
 				data-scope={scope ?? ""}
 				data-grammar={grammar}
+				data-comparison={comparison.status}
 				className="flex min-h-0 min-w-0 flex-1"
 			>
 				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-					<ModelComparisonNotice comparison={comparison} />
 					<ReadingCaption reader={reader} code={code} />
 					<ReadingPicture surface={props} warnings={code.warnings} />
 					{reader.page === "about" && <ReadingAbout shown={shown} />}

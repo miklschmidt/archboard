@@ -1,10 +1,5 @@
 // What a variant draws: nodes, edges, drill-downs, walkthroughs, and the reading of its groups.
-export {
-	groupsUsed,
-	inspectGroup,
-	isMemberOf,
-	placingGroups,
-} from "#shared/rules/inspect/groups.ts";
+export { groupsUsed, inspectGroup, isMemberOf } from "#shared/rules/inspect/groups.ts";
 export {
 	DEFAULT_TRAFFIC_SPEED,
 	EdgeTrafficSchema,

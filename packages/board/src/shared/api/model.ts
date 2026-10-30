@@ -12,11 +12,9 @@ export {
 	ArchitectureCheckpointListSchema,
 	ArchitectureCheckpointRowsSchema,
 	ModuleNavigationReadSchema,
+	ArchitectureRetainedModuleSchema,
 } from "#shared/schemas/model.ts";
-export type {
-	ArchitectureCheckpointRequest,
-	ArchitectureCheckpointList,
-} from "#shared/schemas/model.ts";
+export type { ArchitectureCheckpointRequest } from "#shared/schemas/model.ts";
 export {
 	ArchitectureModuleEditSchema,
 	ArchitectureRenderRequestSchema,
@@ -49,8 +47,6 @@ export {
 export { ArchitectureMigrationRequestSchema } from "#shared/schemas/migration-installation.ts";
 
 export { ArchitectureInitializationRequestSchema } from "#shared/schemas/model-portable.ts";
-
-export type { ArchitectureRecoveryResult } from "#shared/schemas/model-operations.ts";
 
 export type { ArchitectureCheckpointRetain } from "#shared/schemas/model.ts";
 

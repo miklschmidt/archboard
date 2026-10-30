@@ -1,11 +1,13 @@
 import { ModelStateHistory } from "#ui/components/architecture-model/ModelStateHistory.tsx";
-import { useMemo, type JSX } from "react";
+import { useCallback, useMemo, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import { Standing } from "#ui/components/semantic-board-canvas/SemanticInspectorStanding.tsx";
 import type { useModelComparison } from "#ui/hooks/architecture-model/use-model-comparison.ts";
 import type { Model } from "@archboard/board/content";
 import { proposalStanding } from "#ui/rules/architecture-model/standing.ts";
 import { ModelReconciliation } from "#ui/components/architecture-model/ModelReconciliation.tsx";
+import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
+import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
 
 /**
  * The selected state, not its retained manifest, decides whether a reading is implemented.
@@ -13,16 +15,19 @@ import { ModelReconciliation } from "#ui/components/architecture-model/ModelReco
  * @param props.model Its state metadata and semantic comparison.
  * @param props.paneId The pane that owns deliberate ancestor navigation.
  * @param props.states The catalogue that names retained ancestors.
+ * @param props.hasCurrent Whether the model has a Current, which the state's base can lack.
  * @returns Explicit lifecycle and comparison context above the diagram.
  */
 function ModelStateDetails({
 	model,
 	paneId,
 	states,
+	hasCurrent,
 }: {
 	model: Model;
 	paneId: string;
 	states: Readonly<NonNullable<Model["states"]>>;
+	hasCurrent: boolean;
 }): JSX.Element {
 	const state = model.selectedState;
 	if (state === null)
@@ -41,7 +46,7 @@ function ModelStateDetails({
 					paneId={paneId}
 					states={states}
 				/>
-				{model.comparison && <ComparisonSummary comparison={model.comparison} />}
+				<ModelComparisonLine model={model} paneId={paneId} hasCurrent={hasCurrent} />
 			</section>
 		);
 	return (
@@ -62,10 +67,77 @@ function ModelStateDetails({
 				paneId={paneId}
 				states={states}
 			/>
-			{model.comparison && <ComparisonSummary comparison={model.comparison} />}
+			<ModelComparisonLine model={model} paneId={paneId} hasCurrent={hasCurrent} />
 			<ModelReconciliation model={model} paneId={paneId} />
 		</section>
 	);
+}
+
+/**
+ * What this reading is compared with, and the one other comparison a reader asks for most.
+ * A reading with its comparison turned off says so, because it looks like any plain state.
+ * @param props The reading.
+ * @param props.model The reading on show.
+ * @param props.paneId The pane that owns the address.
+ * @param props.hasCurrent Whether the model has a Current to compare with.
+ * @returns The line, or nothing for a reading with no comparison.
+ */
+function ModelComparisonLine({
+	model,
+	paneId,
+	hasCurrent,
+}: {
+	model: Model;
+	paneId: string;
+	hasCurrent: boolean;
+}): JSX.Element | null {
+	const { against, compareAgainst } = useModelLocation(paneId);
+	const compareWithCurrent = useCallback((): void => compareAgainst("current"), [compareAgainst]);
+	const { comparison } = model;
+	if (comparison === undefined && against !== AFTER) return null;
+	return (
+		<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+			{comparison === undefined ? (
+				<p data-slot="model-after" className="text-body text-muted-foreground">
+					After, with no comparison
+				</p>
+			) : (
+				<ComparisonSummary comparison={comparison} />
+			)}
+			{hasCurrent && !readsCurrent(model) && (
+				<Button
+					variant="link"
+					size="sm"
+					data-slot="model-compare-current"
+					className="h-auto p-0"
+					onClick={compareWithCurrent}
+				>
+					Compare with current
+				</Button>
+			)}
+		</div>
+	);
+}
+
+/**
+ * Whether a reading has Current on either side already.
+ * @param model The reading.
+ * @returns True for Current itself, or for a comparison with it.
+ */
+function readsCurrent(model: Model): boolean {
+	return [model.selectedState, model.comparison?.against].some(
+		(state) => state?.lifecycle === "current",
+	);
+}
+
+/**
+ * Name the base of a comparison.
+ * @param comparison The comparison.
+ * @returns Its name, marked when it is the proposal's own base.
+ */
+function baseName(comparison: NonNullable<Model["comparison"]>): string {
+	const name = comparison.against?.name ?? "empty planning baseline";
+	return comparison.reason === "predecessor" ? `its base, ${name}` : name;
 }
 
 /**
@@ -87,8 +159,8 @@ function ComparisonSummary({
 			data-reason={comparison.reason}
 			className="text-body text-muted-foreground"
 		>
-			Compared with {comparison.against?.name ?? "empty planning baseline"} · {changed.length}{" "}
-			changed {changed.length === 1 ? "subject" : "subjects"}
+			Compared with {baseName(comparison)} · {changed.length} changed{" "}
+			{changed.length === 1 ? "subject" : "subjects"}
 		</p>
 	);
 }
@@ -110,27 +182,18 @@ const NO_ISSUES = [] as const;
  * A reference that changed between reads never supplies removed definitions.
  * @param props The comparison availability and explicit retry action.
  * @param props.comparison The verified base read.
- * @returns A visible progress or recovery state when comparison is incomplete.
+ * @returns A recovery state when the comparison failed.
  */
 function ModelComparisonNotice({
 	comparison,
 }: {
 	comparison: ReturnType<typeof useModelComparison>;
 }): JSX.Element | null {
-	if (comparison.status === "none" || comparison.status === "ready") return null;
-	if (comparison.status === "loading")
-		return (
-			<output
-				data-slot="model-comparison-loading"
-				className="text-body border-border border-b px-6 py-3"
-			>
-				Reading comparison architecture…
-			</output>
-		);
+	if (comparison.status !== "unavailable" && comparison.status !== "changed") return null;
 	return (
 		<div
 			data-slot="model-comparison-unavailable"
-			className="text-body border-border flex items-center gap-3 border-b px-6 py-3"
+			className="text-body border-border bg-background flex items-center gap-3 border-b px-6 py-3"
 		>
 			<p>
 				{comparison.status === "changed"

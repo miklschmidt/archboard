@@ -23,6 +23,7 @@ import {
 	type BoardCamera,
 } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import { seenFromFar, type FitTarget } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
+import { ModelEmptyReading } from "#ui/components/architecture-model/ModelEmptyReading.tsx";
 import { ModelLineTip } from "#ui/components/architecture-model/ModelLineTip.tsx";
 import { useClearOfPanel } from "#ui/hooks/semantic-board-canvas/use-clear-of-panel.ts";
 import { useDiagramGestures } from "#ui/hooks/semantic-board-canvas/use-diagram-gestures.ts";
@@ -71,6 +72,8 @@ interface ModelDiagramProps {
 	onOpen: (id: string | null) => void;
 	/** The reader's attention rests on a subject, which they may open next. */
 	onAttention?: ((id: string) => void) | undefined;
+	/** Lift the focus and filters of a reading they left empty. */
+	onWholeScope?: (() => void) | undefined;
 }
 
 const NO_AREA: RefObject<HTMLElement | null> = { current: null };
@@ -204,7 +207,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 					presentingMark(presenting)
 				}
 			/>
-			<EmptyReading scene={scene} pending={props.pending} />
+			<ModelEmptyReading scene={scene} pending={props.pending} onWholeScope={props.onWholeScope} />
 			<ModelSubjectTip target={tip.shown} scene={scene} camera={camera} />
 			<ModelLineTip target={tip.shown} model={model} projection={projection} />
 			<LeavingPart departure={leaving} at="spinner" />
@@ -240,26 +243,6 @@ function presentingMark(presenting: boolean): string {
 function diagramClass(leaving: Departure | null): string {
 	const base = "relative min-h-0 min-w-0 flex-1 overflow-hidden";
 	return leaving === null ? base : `${base} pointer-events-none`;
-}
-
-/**
- * An empty coherent reading is a finished picture too. An unavailable one says why itself.
- * @param props The scene and whether another reading is on its way.
- * @param props.scene The scene on screen.
- * @param props.pending Whether another reading is on its way.
- * @returns The statement that nothing is visible, or nothing.
- */
-function EmptyReading(props: { scene: AcceptedScene; pending: boolean }): JSX.Element | null {
-	const { scene, pending } = props;
-	if (hasPicture(scene.picture) !== null || scene.grammar === null || pending) return null;
-	return (
-		<output
-			data-slot="model-empty-diagram"
-			className="text-body text-muted-foreground absolute inset-0 p-8"
-		>
-			No modules are visible in this reading.
-		</output>
-	);
 }
 
 /**

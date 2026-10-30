@@ -1,6 +1,7 @@
 import {
 	ModelHeader,
 	ModelError,
+	ModelFailureActions,
 	type ModelErrorProps,
 } from "#ui/components/architecture-model/ModelFrame.tsx";
 import { ModelPane } from "#ui/components/architecture-model/ModelPane.tsx";
@@ -8,7 +9,14 @@ import { ModelPreviewReader } from "#ui/components/architecture-model/ModelPrevi
 import { ModelOriginalDestination } from "#ui/components/architecture-model/ModelOriginalDestination.tsx";
 import { ModelBookmarkReading } from "#ui/components/architecture-model/ModelBookmarkReading.tsx";
 import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
-import { useCallback, useEffect, type ComponentProps, type JSX, type ReactNode } from "react";
+import {
+	useCallback,
+	useEffect,
+	useState,
+	type ComponentProps,
+	type JSX,
+	type ReactNode,
+} from "react";
 import {
 	keepPreviousData,
 	useQuery,
@@ -27,12 +35,16 @@ import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx
 import { ModelFailedRecords } from "#ui/components/architecture-model/ModelRecords.tsx";
 import { CheckpointEvidence } from "#ui/components/architecture-model/CheckpointEvidence.tsx";
 import { ModelPublication } from "#ui/components/architecture-model/ModelPublication.tsx";
-import { ModelClaims } from "#ui/components/architecture-model/ModelClaims.tsx";
+import { ModelClaims, ModelClaimsFailure } from "#ui/components/architecture-model/ModelClaims.tsx";
 
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import { useModelVault } from "#ui/hooks/architecture-model/use-model-vault.ts";
 
 import { useArchitectureFeed } from "#ui/hooks/architecture-model/use-architecture-feed.ts";
+import { useSlowWait } from "#ui/hooks/architecture-model/use-slow-wait.ts";
+import { retryFailedDrawings } from "#ui/clients/architecture-model/drawing.ts";
+import { comparisonIntent } from "#ui/rules/architecture-model/comparison-intent.ts";
+import { readingIsStale } from "#ui/rules/architecture-model/reading-freshness.ts";
 
 type ModelQuery = UseQueryResult<Extract<ArchitectureModelRead, { success: true }>>;
 
@@ -135,7 +147,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const query = useQuery({
 		...architectureModelQuery(props.vault, checkpoint, {
 			state,
-			against,
+			...comparisonIntent(against),
 			bookmark,
 			legacyAddress,
 		}),
@@ -153,9 +165,10 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const client = useQueryClient();
 	const { vault } = props;
 	const current = checkpoint === null;
-	const stale = currentIsStale(query, current, feed);
+	const stale = readingIsStale(query, current, feed);
 	const refresh = useCallback((): void => {
 		void client.invalidateQueries({ queryKey: architectureModelKeys.vault(vault) });
+		void retryFailedDrawings(client);
 	}, [client, vault]);
 	if (differentModel(resolvedId, requestedModel)) {
 		return (
@@ -192,9 +205,12 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				reducedMotion={props.reducedMotion}
 				query={query}
 				states={stateCatalogue(catalogue.data)}
+				hasCurrent={hasCurrentState(catalogue.data)}
 				current={current}
 				stale={stale}
+				lost={feed.connection === "unavailable"}
 				failure={feed.failure}
+				refresh={refresh}
 				onCodeTargetNotice={props.onCodeTargetNotice}
 				arrival={props.arrival}
 				driven={props.driven}
@@ -204,6 +220,15 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 			/>
 		</section>
 	);
+}
+
+/**
+ * Whether a model has a Current. Only the catalogue knows: a proposal's base can predate it.
+ * @param catalogue The current catalogue.
+ * @returns True when the model has one.
+ */
+function hasCurrentState(catalogue: ModelQuery["data"]): boolean {
+	return catalogue !== undefined && catalogue.manifest.current !== null;
 }
 
 /**
@@ -297,31 +322,27 @@ function readingIdentity(checkpoint: string | null, state: string | null): strin
 }
 
 /**
- * A cached current reading stays visible only with its availability stated.
- * @param query The selected read and its last coherent result.
- * @param current Whether this is a current reading.
- * @param feed The current update stream's availability.
- * @returns Whether the visible cached model lacks fresh confirmation.
- */
-function currentIsStale(
-	query: ModelQuery,
-	current: boolean,
-	feed: ReturnType<typeof useArchitectureFeed>,
-): boolean {
-	if (!current) return false;
-	if (query.data === undefined) return false;
-	return query.isError || feed.connection !== "live" || feed.failure !== null || feed.refreshing;
-}
-
-/**
- * Historical failures never substitute another reading or silently reuse an unavailable checkpoint.
+ * A failed destination keeps the reading it was to replace. A retained reading that the server
+ * refuses is gone, but a server that stopped answering says nothing about it.
  * @param query The selected read.
  * @param current Whether stale current content can remain visible.
  * @returns The coherent content that this surface can show.
  */
-function visibleModel(query: ModelQuery, current: boolean): ModelQuery["data"] {
-	if (!current && query.isError) return undefined;
-	return query.data;
+function useVisibleModel(query: ModelQuery, current: boolean): ModelQuery["data"] {
+	const [kept, keep] = useState(query.data);
+	if (query.data !== undefined && query.data !== kept) keep(query.data);
+	if (query.data === undefined) return kept;
+	return !current && query.error instanceof ArchitectureReadError ? undefined : query.data;
+}
+
+/**
+ * Whether the model on screen answers the address.
+ * @param query The selected read.
+ * @returns That it is the answer, or that the read of the address failed.
+ */
+function readingAnswer(query: ModelQuery) {
+	const answered = query.data !== undefined;
+	return { settled: answered && !query.isPlaceholderData, failed: query.isError && !answered };
 }
 
 /**
@@ -359,9 +380,13 @@ interface ModelResponseProps extends Pick<
 > {
 	query: ModelQuery;
 	states: ReturnType<typeof stateCatalogue>;
+	hasCurrent: boolean;
 	current: boolean;
 	stale: boolean;
+	/** Whether the update stream lost the server. */
+	lost: boolean;
 	failure: Extract<ArchitectureModelRead, { success: false }> | null;
+	refresh: () => void;
 	header: ReactNode;
 }
 
@@ -371,18 +396,18 @@ interface ModelResponseProps extends Pick<
  * @returns The authored model or its unavailable state.
  */
 function ModelResponse(props: ModelResponseProps): JSX.Element {
-	const { query, stale } = props;
-	const model = visibleModel(query, props.current);
+	const { query } = props;
+	const model = useVisibleModel(query, props.current);
 	const problem = readingProblem(query.error, props.current ? props.failure : null);
-	const { paneId, states } = props;
+	const { paneId, states, hasCurrent } = props;
 	const overview = useCallback(
 		(shown: NonNullable<typeof model>): JSX.Element => (
 			<>
-				<ModelStateDetails model={shown} paneId={paneId} states={states} />
+				<ModelStateDetails model={shown} paneId={paneId} states={states} hasCurrent={hasCurrent} />
 				<CheckpointEvidence model={shown} />
 			</>
 		),
-		[paneId, states],
+		[paneId, states, hasCurrent],
 	);
 	// One frame for every answer: its header keeps an open menu while a read fails, retries or arrives.
 	return (
@@ -398,27 +423,14 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			overlay={props.overlay}
 			chrome={props.header}
 		>
-			{query.isPending && (
-				<output className="text-body text-muted-foreground p-10">Reading architecture…</output>
-			)}
-			{stale && (
-				<output
-					data-slot="model-stale"
-					className="border-border bg-status-subtle text-status-foreground text-body border-b px-4 py-2"
-				>
-					Showing the last coherent reading. The selected architecture is not confirmed. Refresh to
-					retry.
-				</output>
-			)}
+			<SlowRead pending={query.isPending} />
+			{model === undefined && problem !== null && <ModelError {...problem} />}
 			{problem !== null && (
-				<>
-					<ModelError {...problem} compact={stale} />
-					<ModelFailedRecords
-						vault={props.vault}
-						paneId={props.paneId}
-						failed={model === undefined}
-					/>
-				</>
+				<ModelFailedRecords
+					vault={props.vault}
+					paneId={props.paneId}
+					failed={model === undefined}
+				/>
 			)}
 			{model !== undefined && (
 				<ModelBookmarkReading model={model}>
@@ -427,14 +439,98 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 						overlay={props.overlay}
 						vault={props.vault}
 						model={model}
-						settled={!query.isPlaceholderData}
+						{...readingAnswer(query)}
 						paneId={props.paneId}
 						reducedMotion={props.reducedMotion}
 						onCodeTargetNotice={props.onCodeTargetNotice}
-					/>
+					>
+						<ReadingNotices {...props} problem={problem} />
+					</ModelReading>
 				</ModelBookmarkReading>
 			)}
 		</ModelWalkthroughReader>
+	);
+}
+
+/**
+ * What the stage has to say over the picture, which it never moves.
+ * @param props The read and the stream.
+ * @returns The notices that hold now.
+ */
+function ReadingNotices(
+	props: Pick<ModelResponseProps, "vault" | "query" | "current" | "stale" | "lost" | "refresh"> & {
+		problem: ModelErrorProps | null;
+	},
+): JSX.Element {
+	const { stale, lost } = props;
+	return (
+		<>
+			{stale && <StaleNotice lost={lost} />}
+			{props.current && !lost && <ModelClaimsFailure vault={props.vault} />}
+			{!serverLost(props) && <ReadFailure problem={props.problem} onRetry={props.refresh} />}
+		</>
+	);
+}
+
+/**
+ * A lost server fails every read, and the stale notice says so once.
+ * @param props The read and the stream.
+ * @param props.stale Whether the reading on screen is unconfirmed.
+ * @param props.lost Whether the stream lost the server.
+ * @param props.query The selected read.
+ * @returns True when the server said nothing, so a failed read adds nothing.
+ */
+function serverLost(props: Pick<ModelResponseProps, "stale" | "lost" | "query">): boolean {
+	return props.stale && props.lost && !(props.query.error instanceof ArchitectureReadError);
+}
+
+/**
+ * Name a failed read over the picture it left in place.
+ * @param props The failure and the way to try again.
+ * @param props.problem The failure, if any.
+ * @param props.onRetry Read again.
+ * @returns The failure, or nothing.
+ */
+function ReadFailure(props: {
+	problem: ModelErrorProps | null;
+	onRetry: () => void;
+}): JSX.Element | null {
+	if (props.problem === null) return null;
+	return (
+		<ModelError {...props.problem} compact>
+			<ModelFailureActions onRetry={props.onRetry} />
+		</ModelError>
+	);
+}
+
+/**
+ * Say so when a first read lasts.
+ * @param props The read.
+ * @param props.pending Whether it has no answer yet.
+ * @returns The message, once the wait is long enough to name.
+ */
+function SlowRead(props: { pending: boolean }): JSX.Element | null {
+	const slow = useSlowWait(props.pending ? "architecture" : null);
+	if (!slow) return null;
+	return <output className="text-body text-muted-foreground p-10">Reading architecture…</output>;
+}
+
+/**
+ * Say what the picture under it no longer knows.
+ * @param props Why.
+ * @param props.lost Whether the server stopped answering.
+ * @returns The notice.
+ */
+function StaleNotice(props: { lost: boolean }): JSX.Element {
+	return (
+		<output
+			data-slot="model-stale"
+			className="border-border bg-status-subtle text-status-foreground text-body border-b px-4 py-2"
+		>
+			{props.lost
+				? "The Archboard server is not answering, so this is the last reading it sent. Start the server, and the reading updates by itself."
+				: "This is the last coherent reading, and the server has not confirmed it. Refresh to retry."}
+		</output>
 	);
 }
 

@@ -28,6 +28,8 @@ interface ReaderInputs {
 	readonly model: Model;
 	/** Whether the model is the answer to this address, not the last answer kept on screen. */
 	readonly settled: boolean;
+	/** Whether the read of this address failed, so that the model only stands in for it. */
+	readonly failed?: boolean | undefined;
 	readonly reducedMotion: boolean;
 }
 
@@ -74,7 +76,13 @@ function useRelevance(model: Model, depicted: VariantContent, opened: string | n
  */
 function useReader(inputs: ReaderInputs) {
 	const { model, reducedMotion } = inputs;
-	const reading = useModelReading(inputs.vault, inputs.paneId, model, inputs.settled);
+	const reading = useModelReading(
+		inputs.vault,
+		inputs.paneId,
+		model,
+		inputs.settled,
+		inputs.failed,
+	);
 	const { location, comparison, structure, request } = reading;
 	const { open, grammar } = location;
 	const { depicted, opened } = structure;

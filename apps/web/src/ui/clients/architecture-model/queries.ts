@@ -7,6 +7,7 @@ import {
 	ArchitectureClaimListSchema,
 	ModuleNavigationReadSchema,
 	type ArchitectureEvent,
+	ArchitectureRetainedModuleSchema,
 	type ArchitectureModelRead,
 } from "@archboard/board/model";
 import { inVault, strictReply, type ReplySchema } from "@archboard/server-requests";
@@ -40,6 +41,12 @@ interface ModuleTarget {
 	readonly preview: string | undefined;
 	readonly code: boolean;
 }
+
+/** Where a removed module was last retained, or null when no reading holds it. */
+type RetainedModule = Extract<
+	z.output<typeof ArchitectureRetainedModuleSchema>,
+	{ success: true }
+>["retained"];
 
 /** A failed read retains its structured diagnostics while Query keeps the last coherent data. */
 class ArchitectureReadError extends Error {
@@ -119,6 +126,14 @@ const architectureModelKeys = {
 	 * @returns Its query key.
 	 */
 	checkpoints: (vault: string) => ["architecture-model", vault, "checkpoints"] as const,
+	/**
+	 * Where a removed module was last retained.
+	 * @param vault The addressed vault.
+	 * @param module The removed module.
+	 * @returns Its query key.
+	 */
+	retainedModule: (vault: string, module: string) =>
+		["architecture-model", vault, "retained-module", module] as const,
 	/**
 	 * Current ownership remains separate from any historical reading.
 	 * @param vault The addressed vault.
@@ -323,6 +338,32 @@ function architectureCheckpointsQuery(vault: string) {
 }
 
 /**
+ * Find the newest retained reading of a removed module. History only grows, so a found answer
+ * stays true until an explicit refresh.
+ * @param vault The addressed vault.
+ * @param module The removed module.
+ * @returns Query options for its checkpoint and name, or null when no reading holds it.
+ */
+function retainedModuleQuery(vault: string, module: string) {
+	return queryOptions({
+		queryKey: architectureModelKeys.retainedModule(vault, module),
+		/**
+		 * Search the retained history.
+		 * @param context The query cancellation signal.
+		 * @returns Where the module was last retained.
+		 */
+		queryFn: async (context) => {
+			const url = `${inVault("/api/architecture/retained-module", vault)}&${new URLSearchParams({ module })}`;
+			const result = await readReply(url, ArchitectureRetainedModuleSchema, context.signal);
+			if (!result.success) throw new ArchitectureReadError(result);
+			return result.retained;
+		},
+		staleTime: Number.POSITIVE_INFINITY,
+		retry: false,
+	});
+}
+
+/**
  * Read current subject ownership independently of architecture content.
  * @param vault The addressed vault.
  * @returns The shared claim outcome.
@@ -368,8 +409,10 @@ export {
 	architectureCheckpointsQuery,
 	architectureRecordQuery,
 	architectureClaimsQuery,
+	retainedModuleQuery,
 	ArchitectureReadError,
 	hasNoCanonicalModel,
 	type CheckpointRows,
 	type ModelSummary,
+	type RetainedModule,
 };

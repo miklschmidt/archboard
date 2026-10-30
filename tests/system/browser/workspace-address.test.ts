@@ -194,6 +194,22 @@ test("canonical workspace history preserves pane identity and isolates proposal 
 			proposal.target.state,
 		"the selected proposal in the pane report",
 	);
+
+	// A reading that narrows nothing leaves nothing in the address to read back as a missing subject.
+	await request("/api/panes/show", {
+		method: "POST",
+		body: {
+			pane: paneB.clientId,
+			agent: true,
+			reading: { scope: id("Worker"), focus: [], hideKinds: [], showGroups: [] },
+		},
+	});
+	const shown = await pollUntil(
+		() => addressSearch(browser),
+		(value) => new URLSearchParams(value).get("scopeB") === id("Worker"),
+		"the reading that narrows nothing",
+	);
+	expect(new URLSearchParams(shown).has("focusB")).toBe(false);
 	await server.assertRunning();
 }, 45_000);
 

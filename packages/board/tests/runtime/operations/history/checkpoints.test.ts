@@ -5,6 +5,7 @@ import { join, resolve as resolvePath } from "node:path";
 import {
 	readArchitectureModel,
 	readArchitectureCheckpoint,
+	readRetainedModule,
 	listArchitectureCheckpoints,
 } from "@archboard/board/store-read";
 import { retainArchitectureCheckpoint } from "@archboard/board/store-write";
@@ -84,6 +85,23 @@ test("retained architecture reopens exact bytes without reading damaged current 
 		success: true,
 		checkpoints: [{ id: retained.checkpoint.id, model: "Shop" }],
 	});
+});
+
+test("a removed module leads to the newest retained reading that holds it", async () => {
+	const { vault } = fixture();
+	await retainArchitectureCheckpoint(vault, request(vault, "first"));
+	const path = join(vault, "worker.module.json");
+	writeFileSync(
+		path,
+		readFileSync(path, "utf8").replace('"name": "Worker"', '"name": "Old worker"'),
+	);
+	const newest = await retainArchitectureCheckpoint(vault, request(vault, "second"));
+	if (!newest.success) throw new Error(JSON.stringify(newest));
+	expect(await readRetainedModule(vault, "Shop#Worker")).toMatchObject({
+		success: true,
+		retained: { checkpoint: newest.checkpoint.id, name: "Old worker" },
+	});
+	expect(await readRetainedModule(vault, "Shop#Never")).toEqual({ success: true, retained: null });
 });
 
 test("retention honors configured signing and identity while preserving a dirty index and checkout", async () => {

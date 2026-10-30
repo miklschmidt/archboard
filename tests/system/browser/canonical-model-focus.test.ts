@@ -219,7 +219,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 		WAIT,
 	);
 	expect(await drawnModules(browser)).toEqual([]);
-	await browser.run(["click", '[data-slot="model-clear-focus"]']);
+	await browser.run(["click", '[data-slot="model-whole-scope"]']);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

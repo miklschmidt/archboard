@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { SemanticPolicySchema } from "@archboard/board/policy";
-import { placingGroups, type VariantContent } from "@archboard/board/content";
+import { isMemberOf, type VariantContent } from "@archboard/board/content";
 import { routesThroughGroupHeaders } from "#tests/runtime/support/drawn-checks.ts";
 import foldedCaption from "#tests/runtime/support/fixtures/folded-caption.json";
 import { routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
@@ -70,7 +70,13 @@ function drawn(content: VariantContent, layout: Engine, under = policy): Promise
  * @returns Their ids.
  */
 function loneNodes(content: VariantContent): string[] {
-	const placing = placingGroups(content.nodes, policy);
+	const configured = Object.keys(policy.groups);
+	const placing = new Map(
+		content.nodes.flatMap((node) => {
+			const group = configured.find((id) => isMemberOf(node, id));
+			return group === undefined ? [] : [[node.id, group] as const];
+		}),
+	);
 	return content.nodes
 		.filter(({ id }) => placing.has(id))
 		.filter(

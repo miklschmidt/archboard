@@ -26,6 +26,10 @@ interface ModelReadingProps {
 	model: Content;
 	/** Whether the model is the answer to this address, not the last answer kept on screen. */
 	settled: boolean;
+	/** Whether the read of this address failed, so that the model only stands in for it. */
+	failed?: boolean | undefined;
+	/** What the stage has to say over the picture, which it never moves. */
+	children?: ReactNode;
 	paneId: string;
 	reducedMotion: boolean;
 }
@@ -139,6 +143,7 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 					<ModelColumn.List value="history">
 						<ModelRecords
 							vault={reader.vault}
+							offersAfter={model.selectedState?.lifecycle !== "current"}
 							checkpoint={location.checkpoint}
 							state={location.state}
 							selected={model.selectedState}

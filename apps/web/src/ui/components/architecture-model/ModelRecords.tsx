@@ -18,6 +18,8 @@ type ModelRecordsProps = Omit<
 	readonly vault: string;
 	readonly against: string | null;
 	readonly onCompare: (against: string | null) => void;
+	/** Whether the reading has a comparison to turn off: Current has none. */
+	readonly offersAfter: boolean;
 };
 
 /**
@@ -26,7 +28,7 @@ type ModelRecordsProps = Omit<
  * @returns The comparison choice and the record of the model.
  */
 function ModelRecords(props: ModelRecordsProps): JSX.Element {
-	const { vault, against, onCompare, ...reading } = props;
+	const { vault, against, onCompare, offersAfter, ...reading } = props;
 	const history = useQuery({ ...architectureCheckpointsQuery(vault), enabled: true });
 	const catalogue = useQuery(architectureRecordQuery(vault));
 	return (
@@ -35,6 +37,7 @@ function ModelRecords(props: ModelRecordsProps): JSX.Element {
 				<ModelComparisonSelector
 					against={against}
 					onSelect={onCompare}
+					offersAfter={offersAfter}
 					catalogue={catalogue}
 					history={history}
 				/>
@@ -76,6 +79,7 @@ function ModelFailedRecords(props: {
 			<ModelColumn.List value="history">
 				<ModelRecords
 					vault={vault}
+					offersAfter
 					checkpoint={checkpoint}
 					state={state}
 					selected={undefined}

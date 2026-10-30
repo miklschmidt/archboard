@@ -234,6 +234,14 @@ test("an imported historical predecessor keeps exact scoped ancestry instead of 
 	if (!canonical.success) throw new Error(JSON.stringify(canonical));
 	const proposal = canonical.proposals[0]!;
 	expect(proposal.predecessorCheckpoint).toBeDefined();
+	const opened = await readArchitectureModel(value.vault, undefined, undefined, {
+		state: proposal.id,
+	});
+	if (!opened.success) throw new Error(JSON.stringify(opened));
+	expect(opened.comparison).toMatchObject({
+		reason: "predecessor",
+		checkpoint: proposal.predecessorCheckpoint,
+	});
 	const selected = await readArchitectureModel(value.vault, undefined, undefined, {
 		state: proposal.id,
 		compare: false,

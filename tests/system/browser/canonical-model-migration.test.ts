@@ -7,7 +7,8 @@ import {
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
-import type { ArchitectureModelRead, ArchitectureRecoveryResult } from "@archboard/board/model";
+import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { recoverArchitectureModel } from "@archboard/board/store-write";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import {
@@ -273,7 +274,7 @@ test("an unmigrated repository exposes migration and follows durable recovery to
 	).toBe(true);
 	const recovered = await pollUntil(
 		() =>
-			request<ArchitectureRecoveryResult>("/api/architecture/recover", {
+			request<Awaited<ReturnType<typeof recoverArchitectureModel>>>("/api/architecture/recover", {
 				method: "POST",
 				body: {},
 			}),

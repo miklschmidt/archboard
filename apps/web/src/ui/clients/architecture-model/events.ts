@@ -14,7 +14,6 @@ type ModelEvent = Exclude<ArchitectureEvent, { type: "architecture_claims" }>;
 interface FeedState {
 	connection: "connecting" | "live" | "unavailable";
 	failure: Extract<ArchitectureModelRead, { success: false }> | null;
-	refreshing: boolean;
 }
 
 /** One feed per vault and query cache, shared by panes. */
@@ -60,7 +59,7 @@ function createFeed(
 	socket: ReturnType<typeof createFeedSocket>,
 ) {
 	const listeners = new Set<() => void>();
-	let state: FeedState = { connection: "connecting", failure: null, refreshing: false };
+	let state: FeedState = { connection: "connecting", failure: null };
 	let stopFollowing: (() => void) | null = null;
 	let generation = 0;
 	let claimsGeneration = 0;
@@ -159,7 +158,6 @@ function createFeed(
 		if (moved) await refreshReadings(event, accepted);
 		if (!isCurrent(accepted)) return;
 		await resumeInterruptedHistory(client, vault, event);
-		if (isCurrent(accepted)) publish({ ...state, refreshing: false });
 	}
 	/**
 	 * Route a validated event to its existing query owner.
@@ -171,7 +169,7 @@ function createFeed(
 			return;
 		}
 		if (event.type === "architecture_snapshot") void receiveClaims(event.claims).catch(unavailable);
-		publish({ connection: "live", failure: failureOf(event), refreshing: true });
+		publish({ connection: "live", failure: failureOf(event) });
 		void receiveModel(event).catch(unavailable);
 		if (event.type === "architecture_changed" && event.reason === "completed") {
 			void client.invalidateQueries({ queryKey: architectureModelKeys.checkpoints(vault) });
@@ -185,7 +183,7 @@ function createFeed(
 	function subscribe(listener: () => void): () => void {
 		listeners.add(listener);
 		if (stopFollowing === null) {
-			state = { connection: "connecting", failure: null, refreshing: false };
+			state = { connection: "connecting", failure: null };
 			stopFollowing = socket.follow(vault, { event: receive, lost: unavailable });
 		}
 		return () => {
@@ -298,4 +296,4 @@ function failureOf(event: ModelEvent): FeedState["failure"] {
 	return null;
 }
 
-export { architectureFeed };
+export { architectureFeed, type FeedState as ArchitectureFeed };

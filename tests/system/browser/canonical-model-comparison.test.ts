@@ -220,7 +220,24 @@ test("proposal comparison draws removed definitions from its coherent base and e
 		"the explicit base after reload",
 		WAIT,
 	);
-	await selectComparison(browser, "current");
+	await selectComparison(browser, "after");
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-after"]') !== null && document.querySelector('[data-slot="model-comparison"]') === null`,
+			),
+		Boolean,
+		"the state alone, marked as After",
+		WAIT,
+	);
+	await browser.run(["reload"]);
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-after"]') !== null`),
+		Boolean,
+		"After through a reload",
+		WAIT,
+	);
+	await browser.run(["click", '[data-slot="model-compare-current"]']);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

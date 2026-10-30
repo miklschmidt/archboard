@@ -365,7 +365,8 @@ async function requestedState(
 	return resolveState(context, current, selector);
 }
 /**
- * Choose current before the retained predecessor for a non-current reading.
+ * Open a proposal against the checkpoint its changes were written on, because it can hold
+ * only a fragment of Current. Otherwise choose current before the retained predecessor.
  * @param selected The complete selected state.
  * @param current The working reading or refusal.
  * @returns Its default reference, when one exists.
@@ -374,11 +375,23 @@ function defaultComparisonReference(
 	selected: ArchitectureModel,
 	current: ArchitectureModelRead,
 ): ReturnType<typeof comparisonReference> {
+	const state = selected.selectedState;
+	const base = selected.proposals.find((proposal) => proposal.id === state?.id);
+	if (base?.predecessorCheckpoint !== undefined)
+		return { selector: base.predecessorCheckpoint, reason: "predecessor" };
 	if (current.success && current.manifest.current !== null)
 		return { selector: "current", reason: "current" };
-	const state = selected.selectedState;
-	if (state === null) return undefined;
-	if (state.predecessor == null || state.baseline === undefined) return undefined;
+	return retainedPredecessor(state);
+}
+/**
+ * The retained base of a state that follows another.
+ * @param state The selected state.
+ * @returns Its reference, when it has a predecessor and a baseline.
+ */
+function retainedPredecessor(
+	state: ArchitectureModel["selectedState"],
+): ReturnType<typeof comparisonReference> {
+	if (state?.predecessor == null || state.baseline === undefined) return undefined;
 	return { selector: state.baseline, reason: "predecessor" };
 }
 /**
@@ -517,6 +530,7 @@ function selectModuleResult(model: ArchitectureModelRead, module: string | undef
 export {
 	predecessorRevision,
 	materializedInputs,
+	readingArchive,
 	materializeProposal,
 	resolveState,
 	readSelectedState,

@@ -5,11 +5,11 @@ import { join, resolve } from "node:path";
 import { releaseArchitectureClaim } from "@archboard/board/store-write";
 import type {
 	ArchitectureCheckpointRetain,
-	ArchitectureCheckpointList,
 	ArchitectureModelRead,
 	ArchitectureClaimResult,
 	ArchitectureClaimList,
 } from "@archboard/board/model";
+import type { listArchitectureCheckpoints } from "@archboard/board/store-read";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
@@ -439,7 +439,9 @@ test("saved readings stay exact after current inputs change and expose missing e
 	await selectReading(browser, "current");
 	await pollUntil(state, (value) => value === "ready", "the current reading after history", WAIT);
 	expect(await gatewayDetails(browser)).toContain("Changed after the checkpoint");
-	const listed = await request<ArchitectureCheckpointList>("/api/architecture/checkpoints");
+	const listed = await request<Awaited<ReturnType<typeof listArchitectureCheckpoints>>>(
+		"/api/architecture/checkpoints",
+	);
 	if (!listed.body.success) throw new Error(listed.body.error);
 	expect(listed.body.checkpoints.map((entry) => entry.id)).toEqual([checkpoint]);
 	await server.assertRunning();

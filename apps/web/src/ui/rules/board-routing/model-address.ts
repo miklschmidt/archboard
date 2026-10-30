@@ -1,4 +1,5 @@
 import { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
+import { comparisonIntent } from "#ui/rules/architecture-model/comparison-intent.ts";
 import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
 
 /**
@@ -7,9 +8,10 @@ import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
  * @returns The validated request without dropping bookmarks or retained selectors.
  */
 function modelReading(address: ModelAddress) {
-	const { id, subject, scope, checkpoint, ...reading } = address;
+	const { id, subject, scope, checkpoint, against, ...reading } = address;
 	return ArchitecturePaneReadingSchema.parse({
 		...reading,
+		...comparisonIntent(against ?? null),
 		model: id,
 		module: subject,
 		scope: scope ?? undefined,

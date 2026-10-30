@@ -21,17 +21,32 @@ interface ModelClaimsProps {
  */
 function ModelClaims(props: ModelClaimsProps): JSX.Element | null {
 	const claims = useQuery(architectureClaimsQuery(props.vault));
-	if (claims.isError)
-		return <output className="text-body px-4 py-2">{claims.error.message}</output>;
-	if (claims.data === undefined) return null;
-	if (!claims.data.success)
-		return <output className="text-body px-4 py-2">{claims.data.error}</output>;
+	if (claims.data === undefined || !claims.data.success) return null;
 	return (
 		<>
 			{claims.data.claims.map((claim) => (
 				<ModelClaim key={claim.id} {...props} claim={claim} />
 			))}
 		</>
+	);
+}
+
+/**
+ * Say that ownership cannot be read. It lies over the picture with the other notices, which a
+ * line in the header above the picture would move.
+ * @param props The vault.
+ * @param props.vault The addressed vault.
+ * @returns The refusal, or nothing.
+ */
+function ModelClaimsFailure(props: { vault: string }): JSX.Element | null {
+	const claims = useQuery(architectureClaimsQuery(props.vault));
+	const message =
+		claims.error?.message ?? (claims.data?.success === false ? claims.data.error : null);
+	if (message === null) return null;
+	return (
+		<output data-slot="model-claims-failure" className="text-body bg-background px-4 py-2">
+			{message}
+		</output>
 	);
 }
 
@@ -113,4 +128,4 @@ function claimedStateName(claim: ArchitectureClaim, model: ModelClaimsProps["mod
 	return states.find((state) => state?.id === claim.target.state)?.name ?? fallback;
 }
 
-export { ModelClaims };
+export { ModelClaims, ModelClaimsFailure };

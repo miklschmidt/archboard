@@ -38,6 +38,8 @@ interface SceneRequest {
 	readonly grammar: DiagramGrammar | null;
 	/** Whether the model is the answer to this reading, not the last answer kept on screen. */
 	readonly settled: boolean;
+	/** Whether the read of this reading failed, so that no answer is on its way. */
+	readonly failed?: boolean | undefined;
 	readonly presentation?: ScenePresentation | undefined;
 	/** The history entry of this reading. A later visit to the entry returns its camera. */
 	readonly entry?: string | undefined;
@@ -174,10 +176,21 @@ function wayBetween(
 /**
  * Name a destination.
  * @param to The destination.
- * @returns The open module, or the model.
+ * @returns The open module, the proposal it opens, or the model.
  */
 function destinationName(to: SceneRequest): string {
-	return to.projection.trail.at(-1)?.name ?? to.model.manifest.name;
+	const proposal = to.model.proposals.find(({ id }) => id === to.reading.state);
+	return to.projection.trail.at(-1)?.name ?? proposal?.name ?? to.model.manifest.name;
+}
+
+/**
+ * Whether a reading narrows its scope, so that it can come up empty while the scope is not.
+ * @param reading The address fields.
+ * @returns True with a focus or a filter.
+ */
+function isNarrowed(reading: SceneReading): boolean {
+	const { hideKinds, showGroups } = reading.filters;
+	return reading.focus !== null || hideKinds.length > 0 || showGroups.length > 0;
 }
 
 /**
@@ -330,7 +343,9 @@ function parentOf(model: Model, scope: string): string | null {
 
 export {
 	EMPTY_DRAWING,
+	destinationName,
 	drawableGrammar,
+	isNarrowed,
 	leavingTo,
 	moveTo,
 	nextScene,
