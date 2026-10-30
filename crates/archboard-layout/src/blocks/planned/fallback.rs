@@ -98,21 +98,11 @@ fn obstacles(model: &Model<'_>, shape: &Shape, scope: usize) -> Vec<Rect> {
         .children
         .iter()
         .map(|child| match child {
-            super::model::Child::Endpoint(id) => shape.endpoints[id],
+            super::model::Child::Endpoint(id) => shape.solid(*id),
             super::model::Child::Scope(id) => shape.scopes[id].bounds,
         })
         .map(|r| inflate(r, 16.0))
         .collect();
-    if let Some(header) = model.scopes[scope].header {
-        obstacles.push(inflate(shape.endpoints[&header], 16.0));
-        obstacles.extend(
-            shape
-                .labels
-                .iter()
-                .filter(|(e, _)| model.ends[**e].0 == header)
-                .map(|(_, r)| inflate(*r, 4.0)),
-        );
-    }
     if let Some(group) = model.scopes[scope].group {
         obstacles.extend(
             shape

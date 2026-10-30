@@ -17,6 +17,7 @@ mod crossings;
 pub mod design;
 mod drill_mark;
 mod edge_line;
+mod edge_tab;
 mod export;
 mod far_card;
 pub(crate) use far_card::far_name_width;

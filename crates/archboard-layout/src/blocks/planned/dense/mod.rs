@@ -1,4 +1,4 @@
-//! A dense placement: the parts of one open frame on a grid beside its header,
+//! A dense placement: the parts of one open frame on a grid below its edge tab,
 //! and the cards outside it round its walls, each near what it joins. Inside a
 //! frame compactness comes before fewer bends. The planner routes this
 //! placement as it routes any other, so every guard still holds.
@@ -44,7 +44,8 @@ struct Set {
 struct Reading<'a> {
     graph: &'a Node,
     frame: &'a Node,
-    header: Point,
+    /// The size of the frame's edge tab, with the shoulder of the frame beside it.
+    tab: Point,
     doors: Vec<&'a Node>,
     items: Vec<Item<'a>>,
     joins: Vec<Join>,
@@ -119,7 +120,7 @@ impl<'a> Reading<'a> {
         Some(Reading {
             graph,
             frame,
-            header: Point {
+            tab: Point {
                 x: frame.w(),
                 y: frame.h(),
             },
@@ -152,16 +153,18 @@ impl<'a> Reading<'a> {
         let rows = grid.rows();
         let mut widths = vec![0.0_f64; grid.columns];
         let mut heights = vec![0.0_f64; rows];
-        widths[0] = self.header.x;
-        heights[0] = self.header.y;
         for (item, &cell) in self.items.iter().zip(&grid.cells) {
             let (x, y) = grid.at(cell);
             widths[x] = widths[x].max(item.node.w());
             heights[y] = heights[y].max(item.node.h());
         }
         let gaps = self.column_gaps(grid, room);
-        let xs = stations(&widths, gaps.iter().copied());
-        let ys = stations(&heights, std::iter::repeat(CELL_GAP + room));
+        let xs = stations(CONTAINER_INSET, &widths, gaps.iter().copied());
+        let ys = stations(
+            self.tab.y + CONTAINER_INSET,
+            &heights,
+            std::iter::repeat(CELL_GAP + room),
+        );
         let parts = self
             .items
             .iter()
@@ -179,7 +182,7 @@ impl<'a> Reading<'a> {
         let last = grid.columns - 1;
         Set {
             size: Point {
-                x: xs[last] + widths[last] + CONTAINER_INSET,
+                x: f64::max(xs[last] + widths[last] + CONTAINER_INSET, self.tab.x),
                 y: ys[rows - 1] + heights[rows - 1] + CONTAINER_INSET,
             },
             parts,
@@ -189,12 +192,12 @@ impl<'a> Reading<'a> {
     /// This reading's drawing, set out one way, with no routes yet.
     fn drawing(&self, way: Way) -> Placed {
         let mut grid = Grid::new(way.columns, self.items.len());
-        grid.settle(&self.joins, &self.items, self.header);
+        grid.settle(&self.joins, &self.items);
         let set = self.set(&grid, way.room);
         let ring = ring::Ring {
             graph: self.graph,
             frame: &self.frame.id,
-            header: self.header,
+            tab: self.tab,
             set: &set,
             ids: self
                 .items
@@ -213,8 +216,8 @@ impl<'a> Reading<'a> {
             height: set.size.y,
         };
         let title = Rect {
-            width: self.header.x,
-            height: self.header.y,
+            width: self.tab.x,
+            height: self.tab.y,
             ..bx
         };
         let parts = self
@@ -272,9 +275,9 @@ impl<'a> Reading<'a> {
     }
 }
 
-/// Where a run of sizes stands with a gap after each, from the frame's inset.
-fn stations(sizes: &[f64], gaps: impl Iterator<Item = f64>) -> Vec<f64> {
-    let mut at = CONTAINER_INSET;
+/// Where a run of sizes stands from one start, with a gap after each.
+fn stations(start: f64, sizes: &[f64], gaps: impl Iterator<Item = f64>) -> Vec<f64> {
+    let mut at = start;
     sizes
         .iter()
         .zip(gaps)
@@ -291,8 +294,8 @@ pub(super) fn drawings(graph: &Node, room: f64) -> Vec<Placed> {
     let Some(reading) = Reading::of(graph) else {
         return Vec::new();
     };
-    let most = MOST_COLUMNS.min(reading.items.len() + 1);
-    let mut placed: Vec<(f64, Placed)> = (2..=most)
+    let most = MOST_COLUMNS.min(reading.items.len());
+    let mut placed: Vec<(f64, Placed)> = (1..=most)
         .flat_map(|columns| {
             [false, true].map(|sides| Way {
                 columns,

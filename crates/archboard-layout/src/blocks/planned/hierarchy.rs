@@ -134,15 +134,9 @@ impl Channels<'_, '_> {
 
     fn clear_segment(&self, path: &[Point]) -> bool {
         let (model, shape, edge) = (self.model, self.shape, self.edge);
-        shape.endpoints.iter().all(|(&id, &at)| {
-            !crosses_box(
-                path,
-                if model.ends[edge].0 == id || model.ends[edge].1 == id {
-                    at
-                } else {
-                    inflate(at, 16.0)
-                },
-            )
+        let ends = model.ends[edge];
+        shape.endpoints.keys().all(|&id| {
+            !crosses_box(path, shape.clearance(ends, model.endpoints[id].foot, id))
         }) && shape
             .labels
             .iter()
@@ -314,7 +308,7 @@ impl Channels<'_, '_> {
             .children
             .iter()
             .map(|child| match child {
-                Child::Endpoint(id) => self.shape.endpoints[id],
+                Child::Endpoint(id) => self.shape.solid(*id),
                 Child::Scope(id) => self.shape.scopes[id].bounds,
             })
             .collect();

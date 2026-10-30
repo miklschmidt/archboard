@@ -169,8 +169,8 @@ pub(super) fn drawing(shape: &Shape, clear: f64) -> Option<Placed> {
     };
     let boxes = shape
         .endpoints
-        .values()
-        .copied()
+        .keys()
+        .map(|&endpoint| shape.solid(endpoint))
         .chain(shape.drawing.regions.iter().map(|region| region.caption))
         .chain(shape.drawing.titles.iter().map(|title| title.bx))
         .chain(shape.routes.iter().filter_map(|line| line.label));

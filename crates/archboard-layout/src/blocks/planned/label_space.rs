@@ -37,7 +37,7 @@ impl Protection {
                 protection.cells.entry(cell).or_default().push(r);
             }
         };
-        for &r in shape.endpoints.values() {
+        for r in shape.endpoints.keys().map(|&id| shape.solid(id)) {
             insert(r, 8.01, 8.02);
         }
         for region in &shape.drawing.regions {

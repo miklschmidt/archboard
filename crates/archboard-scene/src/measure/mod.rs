@@ -15,6 +15,7 @@ mod cards;
 mod far;
 mod labels;
 
+pub(crate) use cards::{TAB_FAR, tab_runs};
 pub use cards::{CardWords, measure_node};
 pub use far::{FarBox, FarSubject, far_size_for};
 pub use labels::{measure_caption, measure_label, message_lines, note_lines};

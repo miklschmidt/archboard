@@ -8,7 +8,6 @@ use super::{
 };
 use crate::{
     blocks::assembly::{Placed, PlacedLine},
-    constants::HEADER_SLAB_INSET,
     geometry::{Point, Rect, inflate},
     graph::Node,
 };
@@ -55,8 +54,31 @@ fn finish(
         return Err("The complete hybrid drawing failed its geometry guard".into());
     }
     super::runs::freeze(model, &shape.routes)
-        .map(|frozen| frozen.emit(model, (*shape.drawing).clone()))
+        .map(|frozen| reach_shoulders(model, shape, frozen.emit(model, (*shape.drawing).clone())))
         .ok_or_else(|| super::Refused::from("The hybrid drawing has an ambiguous fan tree"))
+}
+
+/// A line that ends on a frame's top wall beyond the tab stands in the air by
+/// the tab's height, so it runs on down to the frame's shoulder.
+fn reach_shoulders(model: &Model<'_>, shape: &Shape, mut drawing: Placed) -> Placed {
+    let shoulder = |end: &mut Point, endpoint: usize| {
+        let Some(tab) = shape.tabs.get(&endpoint) else {
+            return;
+        };
+        if (end.y - tab.y).abs() < 1.0 && end.x > tab.x + tab.width {
+            end.y = tab.y + tab.height;
+        }
+    };
+    for line in &mut drawing.edges {
+        let (from, to) = model.ends[model.edge_index[line.id.as_str()]];
+        if let Some(end) = line.points.first_mut() {
+            shoulder(end, from);
+        }
+        if let Some(end) = line.points.last_mut() {
+            shoulder(end, to);
+        }
+    }
+    drawing
 }
 
 fn blocked(model: &Model<'_>, edges: &[usize]) -> super::Refused {
@@ -86,11 +108,22 @@ fn placement(model: &Model<'_>, drawing: Placed) -> Result<Shape, String> {
                 .frames
                 .iter()
                 .find(|frame| frame.id == *id)
-                .ok_or_else(|| format!("No placed endpoint for {id}"))?;
-            Rect {
-                x: frame.bx.x + HEADER_SLAB_INSET,
-                y: frame.bx.y + HEADER_SLAB_INSET,
+                .ok_or_else(|| format!("No placed endpoint for {id}"))?
+                .bx;
+            let tab = Rect {
+                x: frame.x,
+                y: frame.y,
                 ..endpoint.bounds
+            };
+            if endpoint.foot.is_some() {
+                std::rc::Rc::make_mut(&mut shape.tabs).insert(index, tab);
+                frame
+            } else {
+                Rect {
+                    y: tab.y + tab.height,
+                    height: 0.0,
+                    ..tab
+                }
             }
         };
         std::rc::Rc::make_mut(&mut shape.endpoints).insert(index, at);
@@ -102,7 +135,14 @@ fn placement(model: &Model<'_>, drawing: Placed) -> Result<Shape, String> {
                 .frames
                 .iter()
                 .find(|frame| frame.id == model.endpoints[header].node.id)
-                .map(|frame| frame.bx)
+                .map(|frame| {
+                    let tab = model.endpoints[header].bounds.height;
+                    Rect {
+                        y: frame.bx.y + tab,
+                        height: frame.bx.height - tab,
+                        ..frame.bx
+                    }
+                })
         } else if let Some(group) = scope.group {
             shape
                 .drawing

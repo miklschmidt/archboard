@@ -50,7 +50,10 @@ fn choose_port(
     if !source && super::points::pointed(model, endpoint) && side != Side::Top {
         return None;
     }
-    let at = shape.endpoints[&endpoint];
+    if !model.endpoints[endpoint].walls.contains(&side) {
+        return None;
+    }
+    let at = shape.wall(endpoint, side);
     let kinds = kinds_of(model, incidents);
     if !room(at, side, kinds.len(), source) {
         return None;
@@ -91,7 +94,7 @@ fn separate_roles(
         model.ends[other].1
     };
     let toward = center(shape.endpoints[&peer]);
-    let at = shape.endpoints[&endpoint];
+    let at = shape.wall(endpoint, side);
     let margin = if primary_source { 12.0 } else { 20.0 };
     let primary = on_wall(
         at,

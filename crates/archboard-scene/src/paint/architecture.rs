@@ -11,15 +11,14 @@ use crate::paint::crossings::{
     Cutout, Masks, crossing_cutouts, crossing_masks, label_cutouts, trunk_cutouts,
 };
 use crate::paint::design::{DIAGRAM_MARGIN, SLAB_RADIUS};
+use crate::paint::edge_tab::{paint_measured_frame, paint_measured_header};
 use crate::paint::edge_line::{
     arrowhead_reach, label_shadow, line_ink, paint_edge_line, paint_edge_words,
 };
 use crate::paint::far_card::Part;
 use crate::paint::flowchart_shapes::FlowchartShapes;
 use crate::paint::junctions::junction_marks;
-use crate::paint::measured_cards::{
-    paint_measured_card, paint_measured_frame, paint_measured_header,
-};
+use crate::paint::measured_cards::paint_measured_card;
 use crate::paint::page::{PaintedPage, atlas_boxes, shifted};
 use crate::paint::palette::Palette;
 use crate::paint::ports::{Port, PortPlan, Ports, ends_in_port, port_plan, ports_of, ride_into};
@@ -391,7 +390,7 @@ impl<'p> Painting<'p> {
         )
     }
 
-    /// A container's header slab with its name and responsibility, painted over its contents.
+    /// A container's edge tab, painted over its contents.
     fn header(&self, held: &Node) -> Items {
         let id = &held.measured.node.id;
         paint_measured_header(

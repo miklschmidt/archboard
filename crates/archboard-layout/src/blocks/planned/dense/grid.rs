@@ -1,5 +1,5 @@
-//! Which cell of a frame's grid each part stands in. The header holds the
-//! first cell, and a short search swaps parts while that shortens their lines.
+//! Which cell of a frame's grid each part stands in. A short search swaps parts
+//! while that shortens their lines.
 
 use crate::{geometry::Point, graph::Node};
 
@@ -60,12 +60,12 @@ fn reach(dx: f64, dy: f64, pitch: Point, label: f64) -> f64 {
 }
 
 impl Grid {
-    /// The parts in reading order after the header's cell.
+    /// The parts in reading order.
     pub(super) fn new(columns: usize, parts: usize) -> Grid {
         Grid {
             columns,
-            cells: (1..=parts).collect(),
-            count: (parts + 1).div_ceil(columns) * columns,
+            cells: (0..parts).collect(),
+            count: parts.div_ceil(columns) * columns,
         }
     }
 
@@ -133,7 +133,7 @@ impl Grid {
     fn pass(&mut self, joins: &[Join], items: &[Item<'_>], pitch: Point, best: &mut f64) -> bool {
         let mut moved = false;
         for part in 0..self.cells.len() {
-            for cell in 1..self.count {
+            for cell in 0..self.count {
                 if cell == self.cells[part] {
                     continue;
                 }
@@ -151,11 +151,8 @@ impl Grid {
     }
 
     /// Swap parts while that shortens their lines.
-    pub(super) fn settle(&mut self, joins: &[Join], items: &[Item<'_>], header: Point) {
-        let width = items
-            .iter()
-            .map(|item| item.node.w())
-            .fold(header.x, f64::max);
+    pub(super) fn settle(&mut self, joins: &[Join], items: &[Item<'_>]) {
+        let width = items.iter().map(|item| item.node.w()).fold(0.0, f64::max);
         let height = items.iter().map(|item| item.node.h()).fold(0.0, f64::max);
         let pitch = Point {
             x: width + CELL_GAP,

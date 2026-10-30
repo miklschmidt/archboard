@@ -59,7 +59,7 @@ fn bands(
         .children
         .iter()
         .map(|child| match child {
-            super::model::Child::Endpoint(id) => shape.endpoints[id],
+            super::model::Child::Endpoint(id) => shape.solid(*id),
             super::model::Child::Scope(id) => shape.scopes[id].bounds,
         })
         .collect();

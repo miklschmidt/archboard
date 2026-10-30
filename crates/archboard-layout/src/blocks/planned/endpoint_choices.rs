@@ -132,7 +132,6 @@ fn extra(model: &Model<'_>, edge: usize, source: bool, shape: &Shape) -> Vec<sup
     if super::points::pointed(model, endpoint) {
         return ports;
     }
-    let at = shape.endpoints[&endpoint];
     let incidents: Vec<_> = model.outgoing[endpoint]
         .iter()
         .map(|&e| (e, true))
@@ -140,6 +139,10 @@ fn extra(model: &Model<'_>, edge: usize, source: bool, shape: &Shape) -> Vec<sup
         .collect();
     let margin = if source { 12.0 } else { 20.0 };
     for side in [Side::Bottom, Side::Right, Side::Top, Side::Left] {
+        if !model.endpoints[endpoint].walls.contains(&side) {
+            continue;
+        }
+        let at = shape.wall(endpoint, side);
         ports.push(super::ports::on_wall(at, side, toward, margin));
         let horizontal = matches!(side, Side::Bottom | Side::Top);
         let mut ordered = incidents.clone();

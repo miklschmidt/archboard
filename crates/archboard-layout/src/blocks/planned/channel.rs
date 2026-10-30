@@ -63,17 +63,10 @@ impl<'a, 'g> Probe<'a, 'g> {
                 .entry(index)
                 .or_insert_with(|| {
                     let (from, to) = model.ends[index];
-                    let route = &topology.routes[index];
                     let cards = shape
                         .endpoints
-                        .iter()
-                        .map(|(&id, &r)| {
-                            if id == from || id == to {
-                                r
-                            } else {
-                                inflate(r, 16.0)
-                            }
-                        })
+                        .keys()
+                        .map(|&id| shape.clearance((from, to), model.endpoints[id].foot, id))
                         .collect();
                     let captions = shape
                         .drawing
@@ -84,11 +77,7 @@ impl<'a, 'g> Probe<'a, 'g> {
                     let foreign = shape
                         .scopes
                         .iter()
-                        .filter(|(scope, _)| {
-                            !route.outward.contains(scope)
-                                && !route.inward.contains(scope)
-                                && !ancestor(model, route.scope, **scope)
-                        })
+                        .filter(|(scope, _)| foreign(model, topology, index, **scope))
                         .map(|(_, placed)| inflate(placed.bounds, 16.0))
                         .collect();
                     Rc::new(FixedGeometry {
@@ -263,6 +252,18 @@ pub(super) fn shared_fragment(
 pub(super) fn approaches(points: &[Point]) -> bool {
     let required = APPROACH_STRAIGHT + if points.len() > 2 { BEND_RADIUS } else { 0.0 };
     length(&points[..2]) >= required && length(&points[points.len() - 2..]) >= required
+}
+
+/// Whether a line keeps off a scope: it crosses no wall of it and ends on no frame of it.
+pub(super) fn foreign(model: &Model<'_>, topology: &Topology, edge: usize, scope: usize) -> bool {
+    let route = &topology.routes[edge];
+    let (from, to) = model.ends[edge];
+    let frame = model.scopes[scope].header;
+    !route.outward.contains(&scope)
+        && !route.inward.contains(&scope)
+        && !ancestor(model, route.scope, scope)
+        && frame != Some(from)
+        && frame != Some(to)
 }
 
 /// Source approaches depend on the endpoint geometry and declared flow points.

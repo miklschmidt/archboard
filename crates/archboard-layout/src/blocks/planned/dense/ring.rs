@@ -71,7 +71,7 @@ impl Door<'_> {
 pub(super) struct Ring<'a> {
     pub graph: &'a Node,
     pub frame: &'a str,
-    pub header: Point,
+    pub tab: Point,
     pub set: &'a Set,
     pub ids: Vec<&'a str>,
     pub extra: f64,
@@ -102,8 +102,8 @@ impl Ring<'_> {
         inside.insert(
             self.frame,
             Point {
-                x: self.header.x / 2.0,
-                y: self.header.y / 2.0,
+                x: self.tab.x / 2.0,
+                y: self.tab.y / 2.0,
             },
         );
         inside
