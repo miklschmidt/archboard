@@ -5,25 +5,12 @@
   "responsibility": "Paints the sequence grammar: frame, columns, messages and pulses",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/svg/sequence/dataflow.ts"
+    "path": "crates/archboard-scene/src/paint/sequence.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#CtoOMxca",
   "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
   "outgoing": [
-    {
-      "order": 22000,
-      "kind": "call",
-      "label": "columns, lifelines and messages",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/sequence/dataflow.ts",
-        "symbol": "layoutDataFlow"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#IvQqev1K",
-      "to": "vKEsyHFk/gbyqW4H3#wLF1X11D"
-    },
     {
       "order": 31000,
       "kind": "call",
@@ -31,8 +18,8 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/sequence/dataflow.ts",
-        "symbol": "atlasBoxes"
+        "path": "crates/archboard-scene/src/paint/sequence.rs",
+        "symbol": "atlas_boxes"
       },
       "id": "vKEsyHFk/gbyqW4H3#KgeoU8Mf",
       "to": "vKEsyHFk/gbyqW4H3#y8vuJJKu"
@@ -44,35 +31,21 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/sequence/dataflow.ts",
-        "symbol": "curveThrough"
+        "path": "crates/archboard-scene/src/paint/sequence_messages.rs",
+        "symbol": "curve_through"
       },
       "id": "vKEsyHFk/gbyqW4H3#FQBxwNeT",
       "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
     },
     {
-      "order": 33000,
-      "kind": "data",
-      "label": "the painted body",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/sequence/dataflow.ts",
-        "symbol": "shifted"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#QDc3ch8T",
-      "to": "vKEsyHFk/gbyqW4H3#eECDrhMc"
-    },
-    {
       "order": 37000,
       "kind": "call",
       "label": "selection seats and removed ghosts; helper slabs",
-      "description": "flow-frames.ts paintFrame calls slabSeat and slabShadow for the frame; cards.ts, flow-columns.ts and flow-words.ts draw participant cards, activations and message labels with slab. The neutral frame and its header are drawn by tray.ts.",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/sequence/flow-frames.ts",
-        "symbol": "slabSeat"
+        "path": "crates/archboard-scene/src/paint/sequence_frames.rs",
+        "symbol": "slab_seat"
       },
       "id": "vKEsyHFk/gbyqW4H3#HDZqKmN4",
       "to": "vKEsyHFk/gbyqW4H3#Ga3k1AaP"
@@ -81,11 +54,10 @@
       "order": 41000,
       "kind": "call",
       "label": "the neutral sequence frame and header slab",
-      "description": "flow-frames.ts paintFrame calls tray(frame, look, palette, ghosted).",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/sequence/flow-frames.ts",
+        "path": "crates/archboard-scene/src/paint/sequence_frames.rs",
         "symbol": "tray"
       },
       "id": "vKEsyHFk/gbyqW4H3#qtD8CVTd",
@@ -95,12 +67,11 @@
       "order": 46000,
       "kind": "call",
       "label": "flow heading, and participant content through cards",
-      "description": "flow-frames.ts paintFrame calls paintHeadingViews; dataflow.ts paintFlow calls paintCards, whose cards.ts calls paintCardViews.",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/sequence/flow-frames.ts",
-        "symbol": "paintHeadingViews"
+        "path": "crates/archboard-scene/src/paint/sequence_frames.rs",
+        "symbol": "paint_heading_views"
       },
       "id": "vKEsyHFk/gbyqW4H3#t5CUCz5T",
       "to": "vKEsyHFk/gbyqW4H3#8jYL9wH6"
@@ -112,8 +83,8 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/sequence/dataflow.ts",
-        "symbol": "subjectGroup"
+        "path": "crates/archboard-scene/src/paint/sequence_frames.rs",
+        "symbol": "subject"
       },
       "id": "vKEsyHFk/gbyqW4H3#XVvCNvvX",
       "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"

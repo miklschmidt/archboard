@@ -5,7 +5,7 @@
   "responsibility": "Places participant columns, lifelines and stacked messages for one exchange, and an alt or loop frame around each decision and loop",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/layout/sequence/dataflow.ts"
+    "path": "crates/archboard-flows/src/sequence"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#wLF1X11D",
@@ -15,14 +15,27 @@
   ],
   "outgoing": [
     {
+      "order": 22000,
+      "kind": "data",
+      "label": "where every column, message and frame goes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-flows/src/sequence/mod.rs",
+        "symbol": "drawing_of"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#IvQqev1K",
+      "to": "vKEsyHFk/gbyqW4H3#CtoOMxca"
+    },
+    {
       "order": 26000,
       "kind": "call",
       "label": "wrap responsibilities and step notes",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/layout/sequence/sequence-card.ts",
-        "symbol": "measureNoteLines"
+        "path": "crates/archboard-flows/src/sequence/card.rs",
+        "symbol": "note_lines"
       },
       "id": "vKEsyHFk/gbyqW4H3#oCH6TGpi",
       "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"

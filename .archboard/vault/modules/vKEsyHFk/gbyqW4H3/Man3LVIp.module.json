@@ -5,7 +5,7 @@
   "responsibility": "Paints measured architecture cards, frames and headers through shared surface and content helpers",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/svg/parts/measured-cards.ts"
+    "path": "crates/archboard-scene/src/paint/measured_cards.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#Man3LVIp",
@@ -15,11 +15,10 @@
       "order": 40000,
       "kind": "call",
       "label": "the measured frame well and its header slab",
-      "description": "paintMeasuredFrame calls tray for the neutral container well.",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/parts/measured-cards.ts",
+        "path": "crates/archboard-scene/src/paint/measured_cards.rs",
         "symbol": "tray"
       },
       "id": "vKEsyHFk/gbyqW4H3#0dHSQwEC",
@@ -29,12 +28,11 @@
       "order": 45000,
       "kind": "call",
       "label": "shared card and header content",
-      "description": "paintMeasuredCard and paintMeasuredHeader call paintCardViews.",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/parts/measured-cards.ts",
-        "symbol": "paintCardViews"
+        "path": "crates/archboard-scene/src/paint/measured_cards.rs",
+        "symbol": "paint_card_views"
       },
       "id": "vKEsyHFk/gbyqW4H3#WBfvIs2I",
       "to": "vKEsyHFk/gbyqW4H3#8jYL9wH6"
@@ -46,8 +44,8 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/parts/measured-cards.ts",
-        "symbol": "slab"
+        "path": "crates/archboard-scene/src/paint/measured_cards.rs",
+        "symbol": "slab_seat"
       },
       "id": "vKEsyHFk/gbyqW4H3#sUAWU5K9",
       "to": "vKEsyHFk/gbyqW4H3#Ga3k1AaP"
@@ -59,8 +57,8 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/parts/measured-cards.ts",
-        "symbol": "standingPalette"
+        "path": "crates/archboard-scene/src/paint/measured_cards.rs",
+        "symbol": "standing_palette"
       },
       "id": "vKEsyHFk/gbyqW4H3#djrx53Aq",
       "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"

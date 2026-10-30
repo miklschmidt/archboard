@@ -65,5 +65,6 @@
       "id": "vKEsyHFk/vKEsyHFk#NSENtfOa",
       "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
     }
-  ]
+  ],
+  "description": "The TypeScript hosts in this package load the renderer core, which crates/ builds to WebAssembly (ADR 0059). The core measures, lays out and paints. A host runs its layout solves and gives it icons and theme colours."
 }

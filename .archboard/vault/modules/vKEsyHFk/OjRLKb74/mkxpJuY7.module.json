@@ -5,7 +5,7 @@
   "responsibility": "Packs a block of blocks in rows or columns, whichever scores best on fit, crossings and detours",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/blocks/packing/pack.ts"
+    "path": "crates/archboard-layout/src/blocks/packing/pack.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/OjRLKb74#mkxpJuY7",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/blocks/packing/pack.ts",
+        "path": "crates/archboard-layout/src/blocks/packing/pack.rs",
         "symbol": "TrunkRouter"
       },
       "id": "vKEsyHFk/OjRLKb74#JBISovVb",

@@ -3,10 +3,11 @@
   "name": "Export legend",
   "kind": "function",
   "responsibility": "Lays out the key of an exported picture in a row or a column and draws each entry with the picture's own symbol",
-  "description": "legendOf lists the comparison's marks with their counts, each node kind with its chip and icon, each relationship kind with its ink, dash and head, and the two line marks, in the order the page's legend lists them. A row wraps at the picture's width; a column stands beside it.",
+  "description": "legend_of lists the comparison's marks with their counts, each node kind with its chip and icon, each relationship kind with its ink, dash and head, and the two line marks, in the order the page's legend lists them. A row wraps at the picture's width; a column stands beside it.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/svg/page/legend.ts"
+    "path": "crates/archboard-scene/src/paint/export.rs",
+    "symbol": "legend_of"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#YhQnj9ID",
@@ -19,8 +20,8 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/page/legend.ts",
-        "symbol": "pictureAppearances"
+        "path": "crates/archboard-scene/src/paint/export.rs",
+        "symbol": "entries_of"
       },
       "id": "vKEsyHFk/gbyqW4H3#0ylLwMwH",
       "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
@@ -32,8 +33,8 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/page/legend.ts",
-        "symbol": "standingPinAt"
+        "path": "crates/archboard-scene/src/paint/legend_symbols.rs",
+        "symbol": "standing_pin_at"
       },
       "id": "vKEsyHFk/gbyqW4H3#ryvCaAp5",
       "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"

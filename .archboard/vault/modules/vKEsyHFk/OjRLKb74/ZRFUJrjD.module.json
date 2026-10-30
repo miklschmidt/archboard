@@ -5,7 +5,8 @@
   "responsibility": "States containment, measured sizes, authored order, relationship kinds and comparison standing as one graph",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/layout/compound-graph.ts"
+    "path": "crates/archboard-layout/src/architecture/graph.rs",
+    "symbol": "compound_graph"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/OjRLKb74#ZRFUJrjD",
