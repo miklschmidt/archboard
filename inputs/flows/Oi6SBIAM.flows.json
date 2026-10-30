@@ -214,7 +214,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Accepts a pane's socket only from the page's own origin and for a vault the server can read. If the vault is gone, the pane lands in its repository's chosen checkout or the opening vault."
     },
     {
       "id": "vKEsyHFk/Oi6SBIAM#YkrftZyC",
@@ -389,7 +390,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Seen from the panes: each pane learns where it is, or moves into the chosen checkout's vault and reads its board again there. Every tab then refreshes its repositories."
     }
   ]
 }
