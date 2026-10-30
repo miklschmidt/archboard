@@ -7,7 +7,7 @@ import type { VariantContent } from "#shared/schemas/content.ts";
 import type { DrawnEdge, OverviewLine } from "#shared/rules/scope.ts";
 import { codePathOf } from "#shared/rules/code-path.ts";
 import { containment, foldChain } from "#shared/rules/module-fold.ts";
-import { doorEnds, drawnEnds, joinedLines, readingLines } from "#shared/rules/model-lines.ts";
+import { busLines, drawnEnds, joinedLines, readingLines } from "#shared/rules/model-lines.ts";
 import { inspectContainer } from "#shared/rules/inspect/container-interface.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
@@ -22,7 +22,7 @@ type Node = VariantContent["nodes"][number];
 type Edge = VariantContent["edges"][number];
 
 /** A card as a picture draws it: the code path is read for the picture and stored nowhere. */
-type DrawnNode = Node & { readonly codePath?: string };
+type DrawnNode = Node & { readonly codePath?: string; readonly door?: true };
 /** What a reading hands the renderer. */
 type DrawnContent = Omit<VariantContent, "nodes" | "edges"> & {
 	nodes: DrawnNode[];
@@ -83,13 +83,8 @@ function projectScope(
 	const relevant = complete.edges.filter((edge) => inside.has(edge.from) || inside.has(edge.to));
 	const open = new Set(scope === null ? [] : [scope]);
 	const shown = relevant.filter((edge) => !choices.hideKinds?.includes(edge.kind));
-	const listed = joinedLines(
-		complete,
-		shown,
-		doorEnds(shown, drawnAs, inside, scope),
-		open,
-		standing,
-	);
+	const endsOf = (edge: Edge) => drawnEnds(edge, drawnAs);
+	const listed = joinedLines(complete, shown, endsOf, open, standing);
 	const children = complete.nodes.filter((node) => (node.parent ?? null) === scope);
 	const visible = new Set([
 		...children.map((node) => node.id),
@@ -104,13 +99,7 @@ function projectScope(
 		missingFocus: [] as string[],
 		complete,
 		...lines,
-		allConnections: joinedLines(
-			complete,
-			relevant,
-			doorEnds(relevant, drawnAs, inside, scope),
-			open,
-			standing,
-		),
+		allConnections: joinedLines(complete, relevant, endsOf, open, standing),
 		children,
 		context,
 		trail: trail.flatMap((id) => {
@@ -464,6 +453,7 @@ function drawingContent(
 ): DrawnContent {
 	const doors = new Set(framing.doors.map((node) => node.id));
 	const childrenOf = containment(complete);
+	const onTrunk = busLines(connections, doors);
 	return {
 		nodes: complete.nodes
 			.filter((node) => visible.has(node.id))
@@ -474,9 +464,12 @@ function drawingContent(
 				const { parent: _parent, ...unframed } = card;
 				return unframed;
 			}),
-		edges: connections.map(
-			({ line: { anchor: _anchor, description: _description, ...line } }) => line,
-		),
+		edges: connections.map((connection) => {
+			const { anchor: _anchor, description: _description, ...line } = connection.line;
+			if (!onTrunk.has(connection)) return line;
+			const { label: _label, ...quiet } = line;
+			return quiet;
+		}),
 		flows: [],
 		walkthroughs: [],
 	};
@@ -489,7 +482,7 @@ function drawingContent(
  */
 function nameOnly(card: DrawnNode): DrawnNode {
 	const { responsibility: _responsibility, ...named } = card;
-	return named;
+	return { ...named, door: true };
 }
 
 /**

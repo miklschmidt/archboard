@@ -37,6 +37,9 @@ pub struct Node {
         deserialize_with = "present"
     )]
     pub drills: bool,
+    /// Whether it stands outside the open frame as a door.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub door: bool,
 }
 
 /// Whether a field is there, whatever it holds.
@@ -58,6 +61,7 @@ impl Node {
             name: self.name.clone(),
             responsibility: self.responsibility.clone(),
             code_path: self.code_path.clone(),
+            door: self.door,
         }
     }
 }

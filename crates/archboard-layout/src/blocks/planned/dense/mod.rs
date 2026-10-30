@@ -72,9 +72,15 @@ fn depths(count: usize, joins: &[Join]) -> Vec<usize> {
     depth
 }
 
+/// A part reaches something outside the frame.
+fn reaches<'a>(item: &mut Item<'a>, door: &'a str, entering: bool) {
+    item.outward += 1.0;
+    item.doors.push((door, entering));
+}
+
 /// The relationships among the parts, and how many leave for the world outside.
-fn joins_of(edges: &[std::rc::Rc<Edge>], items: &mut [Item<'_>]) -> Vec<Join> {
-    let index: FxHashMap<&str, usize> = items
+fn joins_of<'a>(edges: &'a [std::rc::Rc<Edge>], items: &mut [Item<'a>]) -> Vec<Join> {
+    let index: FxHashMap<&'a str, usize> = items
         .iter()
         .enumerate()
         .map(|(at, item)| (item.node.id.as_str(), at))
@@ -87,7 +93,8 @@ fn joins_of(edges: &[std::rc::Rc<Edge>], items: &mut [Item<'_>]) -> Vec<Join> {
                 to,
                 label: edge.label().and_then(|label| label.width).unwrap_or(0.0),
             }),
-            (Some(&at), None) | (None, Some(&at)) => items[at].outward += 1.0,
+            (Some(&at), None) => reaches(&mut items[at], edge.target(), false),
+            (None, Some(&at)) => reaches(&mut items[at], edge.source(), true),
             _ => {}
         }
     }
@@ -116,7 +123,7 @@ impl<'a> Reading<'a> {
                 ..join
             })
             .collect();
-        let items = order.into_iter().map(|at| items[at]).collect();
+        let items = order.into_iter().map(|at| items[at].clone()).collect();
         Some(Reading {
             graph,
             frame,

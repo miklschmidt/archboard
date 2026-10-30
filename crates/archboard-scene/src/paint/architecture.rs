@@ -11,6 +11,7 @@ use crate::paint::crossings::{
     Cutout, Masks, crossing_cutouts, crossing_masks, label_cutouts, trunk_cutouts,
 };
 use crate::paint::design::{DIAGRAM_MARGIN, SLAB_RADIUS};
+use crate::paint::door::paint_door;
 use crate::paint::edge_tab::{paint_measured_frame, paint_measured_header};
 use crate::paint::edge_line::{
     arrowhead_reach, label_shadow, line_ink, paint_edge_line, paint_edge_words,
@@ -194,8 +195,12 @@ impl<'p> Painting<'p> {
         cutouts.extend(label_cutouts(edges, &see_through));
         let masks = crossing_masks(edges, cutouts);
         let shaped = |id: &str| page.shapes.is_some_and(|shapes| shapes.has(id));
+        let doors: HashSet<&str> = (drawing.drawing.cards.iter())
+            .filter(|card| card.measured.node.door)
+            .map(|card| card.measured.node.id.as_str())
+            .collect();
         let ports = ports_of(&drawing.drawing.cards, edges, &|id| {
-            !removed(id) && !shaped(id)
+            !removed(id) && !shaped(id) && !doors.contains(id)
         });
         let plan = port_plan(&ports, edges);
         Painting {
@@ -287,6 +292,9 @@ impl<'p> Painting<'p> {
     /// The shadow under a card: its shape's own, or the slab's.
     fn card_shadow(&self, card: &Node) -> Items {
         let id = &card.measured.node.id;
+        if card.measured.node.door {
+            return Items::new();
+        }
         let standing = self.standings.of(id);
         match self.shapes_of(id) {
             Some(shapes) => shapes.shadow(card, standing),
@@ -374,6 +382,9 @@ impl<'p> Painting<'p> {
             standing,
             unsettled,
         };
+        if card.measured.node.door {
+            return paint_door(self.ctx, card, &part, self.palette);
+        }
         let cut = self.plan.cut_of(id);
         paint_measured_card(self.ctx, card, &part, self.palette, cut)
     }

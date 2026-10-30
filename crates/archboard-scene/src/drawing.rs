@@ -255,6 +255,10 @@ pub struct NodeFacts {
     #[serde(rename = "codePath", skip_serializing_if = "Option::is_none")]
     #[ts(rename = "codePath", optional)]
     pub code_path: Option<String>,
+    /// Whether it stands outside the open frame as a door.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    #[ts(optional, as = "Option<bool>")]
+    pub door: bool,
 }
 
 /// How loudly a line speaks.

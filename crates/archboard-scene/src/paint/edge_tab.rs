@@ -191,8 +191,8 @@ pub(super) fn paint_measured_frame(
     grouped(frame)
 }
 
-/// What a tab draws near and far, and the chip both views share.
-fn views(
+/// What a tab or a door draws near and far, and the chip both views share.
+pub(super) fn line_views(
     ctx: &Ctx<'_>,
     placed: &Node,
     tab: Rect,
@@ -250,7 +250,7 @@ pub(super) fn paint_measured_header(
     let header = Group::new(
         Role::Header(Box::new(appearance.clone())),
         lines(vec![
-            views(ctx, placed, tab, palette, standing, appearance),
+            line_views(ctx, placed, tab, palette, standing, appearance),
             warning_badge(tab, unsettled, palette),
         ]),
     )

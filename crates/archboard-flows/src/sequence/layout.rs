@@ -232,6 +232,7 @@ fn participant_node(id: &str, by_id: &HashMap<&str, &Node>) -> Node {
             kind: "other".to_owned(),
             responsibility: None,
             code_path: None,
+            door: false,
             parent: None,
             groups: Vec::new(),
             drills: false,

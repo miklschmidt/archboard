@@ -15,6 +15,7 @@ mod cards;
 mod colour;
 mod crossings;
 pub mod design;
+mod door;
 mod drill_mark;
 mod edge_line;
 mod edge_tab;

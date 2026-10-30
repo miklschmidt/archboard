@@ -58,6 +58,8 @@ pub struct CardWords<'a> {
     pub path: Option<&'a str>,
     /// Whether it opens another board, which puts a mark beside its name.
     pub drills: bool,
+    /// Whether it stands outside the open frame as a door.
+    pub door: bool,
 }
 
 impl CardWords<'_> {
@@ -108,7 +110,10 @@ struct Size {
 /// Measure a card or a frame's edge tab before layout.
 pub fn measure_node<N: Clone>(node: N, words: &CardWords<'_>, container: bool) -> MeasuredNode<N> {
     if container {
-        return edge_tab(node, words);
+        return one_line(node, words, TAB_SHOULDER);
+    }
+    if words.door {
+        return one_line(node, words, 0.0);
     }
     let size = Size {
         least: CARD_LEAST,
@@ -164,13 +169,13 @@ pub(crate) fn tab_runs(line: TabLine, name: &str, path: Option<&str>) -> Vec<Tex
     std::iter::once(title).chain(path).collect()
 }
 
-/// A frame's edge tab: one line with its name and code path. It is as wide as
-/// its words from far away, and its frame keeps a shoulder beside it. Its
-/// responsibility stays out of the picture.
-fn edge_tab<N>(node: N, words: &CardWords<'_>) -> MeasuredNode<N> {
+/// A frame's edge tab or a door: one line with a name and a code path. It is as
+/// wide as its words from far away, with some room beside it. A frame keeps a
+/// shoulder there. Its responsibility stays out of the picture.
+fn one_line<N>(node: N, words: &CardWords<'_>, beside: f64) -> MeasuredNode<N> {
     let far = tab_runs(TAB_FAR, words.name, words.path);
     let end = far.last().map_or(0.0, |run| run.x + run.width);
-    let width = end + TAB_PADDING + words.marked() + TAB_SHOULDER;
+    let width = end + TAB_PADDING + words.marked() + beside;
     MeasuredNode {
         node,
         width,
@@ -280,6 +285,7 @@ mod tests {
             responsibility: Some("Checks the rules from one author run."),
             path,
             drills: false,
+            door: false,
         };
         measure_node((), &words, false)
     }
@@ -309,6 +315,7 @@ mod tests {
             responsibility: None,
             path: None,
             drills: false,
+            door: false,
         };
         let far = far_name_width(words.name, 0.0);
         assert!(far > CARD_LEAST);
@@ -322,6 +329,7 @@ mod tests {
             responsibility: Some("Takes argv from the process to one selected command."),
             path: Some("apps/cli/src"),
             drills: false,
+            door: false,
         };
         let tab = measure_node((), &words, true);
         assert_eq!(tab.height, TAB_HEIGHT);

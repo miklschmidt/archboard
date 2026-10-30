@@ -137,11 +137,16 @@ fn next(
     repairs: &mut usize,
     windows: &mut usize,
 ) -> Option<Shape> {
-    paths[edge]
-        .iter()
-        .find_map(|line| append(model, topology, shape, line))
-        .map(|chosen| {
-            shorten(model, topology, shape, paths, edge, repairs, &chosen).unwrap_or(chosen)
+    bus(model, topology, edge)
+        .then(|| fan_join(model, topology, shape, &paths[edge], edge))
+        .flatten()
+        .or_else(|| {
+            paths[edge]
+                .iter()
+                .find_map(|line| append(model, topology, shape, line))
+                .map(|chosen| {
+                    shorten(model, topology, shape, paths, edge, repairs, &chosen).unwrap_or(chosen)
+                })
         })
         .or_else(|| fan_join(model, topology, shape, &paths[edge], edge))
         .or_else(|| dynamic(model, topology, shape, edge, super::fixed::Search::Channels))
@@ -149,6 +154,18 @@ fn next(
         .or_else(|| hierarchy(model, topology, shape, edge, windows))
         .or_else(|| dynamic(model, topology, shape, edge, super::fixed::Search::Ports))
 }
+/// How many unworded lines of one kind to one end make a bus (rule 5).
+const BUS_LINES: usize = 3;
+
+/// Whether a line belongs to a bus, whose lines join one trunk before any other route.
+fn bus(model: &Model<'_>, topology: &Topology, edge: usize) -> bool {
+    model.edges[edge].label().is_none()
+        && topology.memberships[edge].iter().flatten().any(|&fan| {
+            let members = &topology.fans[fan].members;
+            members.len() >= BUS_LINES && members.iter().all(|&m| model.edges[m].label().is_none())
+        })
+}
+
 fn shorten(
     model: &Model<'_>,
     topology: &Topology,

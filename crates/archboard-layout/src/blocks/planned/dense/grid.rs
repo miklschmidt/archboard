@@ -13,16 +13,22 @@ const TURN: f64 = 120.0;
 const PASSES: usize = 6;
 
 /// A part of the frame.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub(super) struct Item<'a> {
     pub node: &'a Node,
     /// How many relationships join it to something outside the frame.
     pub outward: f64,
+    /// What it reaches outside the frame, each way.
+    pub doors: Vec<(&'a str, bool)>,
 }
 
 impl<'a> Item<'a> {
     pub(super) fn of(node: &'a Node) -> Item<'a> {
-        Item { node, outward: 0.0 }
+        Item {
+            node,
+            outward: 0.0,
+            doors: Vec::new(),
+        }
     }
 }
 
@@ -40,6 +46,9 @@ pub(super) struct Grid {
     pub cells: Vec<usize>,
     count: usize,
 }
+
+/// What two parts that share a door cost for each cell between them.
+const APART: f64 = 0.25;
 
 /// What one line costs, by how far it reaches across the grid.
 fn reach(dx: f64, dy: f64, pitch: Point, label: f64) -> f64 {
@@ -98,7 +107,26 @@ impl Grid {
             .zip(&self.cells)
             .map(|(item, &cell)| item.outward * self.wall_distance(cell) * pitch.y)
             .sum();
-        joined + walled
+        joined + walled + self.apart(items, pitch)
+    }
+
+    /// How far apart the parts of each door stand.
+    fn apart(&self, items: &[Item<'_>], pitch: Point) -> f64 {
+        let mut cost = 0.0;
+        for (one, item) in items.iter().enumerate() {
+            let (ax, ay) = self.at(self.cells[one]);
+            for (other, peer) in items.iter().enumerate().skip(one + 1) {
+                let shared = item.doors.iter().filter(|door| peer.doors.contains(door));
+                let shared = shared.count() as f64;
+                if shared > 0.0 {
+                    let (bx, by) = self.at(self.cells[other]);
+                    cost += shared
+                        * APART
+                        * (ax.abs_diff(bx) as f64 * pitch.x + ay.abs_diff(by) as f64 * pitch.y);
+                }
+            }
+        }
+        cost
     }
 
     /// How many cells stand between one cell and the frame's nearest wall.
