@@ -295,6 +295,7 @@ pub(super) fn place(
             expanded: false,
             room: Vec::new(),
             extra: 0.0,
+            complete_repair: false,
         },
     )?;
     Ok(Assembly::new(&board.tree, &board.laid).placed().unstepped())
@@ -341,6 +342,7 @@ pub(super) fn candidates(
     host: &mut dyn Graphviz,
     room: &[String],
     extra: f64,
+    complete_repair: bool,
 ) -> Result<Candidates, String> {
     let mut graph = graph.clone();
     for edge in graph.edges.iter_mut().flatten() {
@@ -355,6 +357,7 @@ pub(super) fn candidates(
         expanded: false,
         room: room.to_vec(),
         extra,
+        complete_repair,
     };
     let mut first = lay_all(&mut gv, &graph, &Earlier::default(), &way)?;
     let orders = held_orders(&first.settling());
@@ -404,9 +407,8 @@ fn alternative_hierarchies(
     graph: &Node,
     way: &Way,
 ) -> Result<Vec<Board>, String> {
-    // Dense first attempts keep their small search. A refused placement also
-    // needs these existing alternatives during the two bounded room repairs.
-    if !super::planned::refines(graph) && way.extra == 0.0 {
+    // Keep existing drawings, then broaden placement only after a complete refusal.
+    if !super::planned::refines(graph) && !way.complete_repair {
         return Ok(Vec::new());
     }
     let mut candidates = expanded_candidates(gv, graph, way)?;
@@ -448,6 +450,7 @@ struct Way {
     expanded: bool,
     room: Vec<String>,
     extra: f64,
+    complete_repair: bool,
 }
 
 fn reserve_room(tree: &mut BlockTree, way: &Way) {
@@ -456,8 +459,10 @@ fn reserve_room(tree: &mut BlockTree, way: &Way) {
         if let Some(&id) = tree.blocks.get(node) {
             affected.insert(id);
         }
-        // A route also needs room outside every enclosing block, up to the page.
-        affected.extend(tree.above(node));
+        // Complete repairs also open the channels outside every enclosing block.
+        let above = tree.above(node);
+        let count = if way.complete_repair { above.len() } else { 1 };
+        affected.extend(above.into_iter().take(count));
     }
     for block in affected {
         tree.get_mut(block).routing_room = way.extra;

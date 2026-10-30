@@ -34,7 +34,8 @@ pub(super) fn refines(graph: &crate::graph::Node) -> bool {
 #[derive(Debug)]
 pub(super) struct Refused {
     pub message: String,
-    pub blocked: Vec<String>,
+    /// Endpoint pairs, with the latest refused relationship first.
+    pub blocked: Vec<[String; 2]>,
 }
 impl From<String> for Refused {
     fn from(message: String) -> Self {

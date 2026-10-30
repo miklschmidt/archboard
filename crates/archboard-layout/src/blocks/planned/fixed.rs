@@ -59,7 +59,8 @@ fn blocked(model: &Model<'_>, edges: &[usize]) -> super::Refused {
         message: format!("No clear planned channel for {}", model.edges[edge].id),
         blocked: edges
             .iter()
-            .flat_map(|&edge| {
+            .rev()
+            .map(|&edge| {
                 let (from, to) = model.ends[edge];
                 [from, to].map(|endpoint| model.endpoints[endpoint].node.id.clone())
             })

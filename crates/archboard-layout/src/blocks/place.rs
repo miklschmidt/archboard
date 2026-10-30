@@ -62,23 +62,40 @@ pub fn lay_out_board(graph: &str, host: &mut dyn Graphviz) -> Result<String, Str
 }
 
 fn hybrid(graph: &Node, host: &mut dyn Graphviz) -> Result<super::assembly::Placed, String> {
-    let mut result = Err(super::planned::Refused::from("No guarded Blocks drawing"));
+    let mut failure = super::planned::Refused::from("No guarded Blocks drawing");
     let mut room = Vec::new();
-    for extra in [0.0, 32.0, 64.0] {
-        result = try_placements(graph, host, &room, extra)?;
-        if result.is_ok() {
-            break;
+    let mut complete_room = Vec::new();
+    // Preserve every drawing the original bounded attempts already find. Only
+    // a complete refusal uses all blockage feedback and enclosing channels.
+    for (extra, complete) in [
+        (0.0, false),
+        (32.0, false),
+        (64.0, false),
+        (32.0, true),
+        (64.0, true),
+    ] {
+        let endpoints = if complete { &complete_room } else { &room };
+        match try_placements(graph, host, endpoints, extra, complete)? {
+            Ok(drawing) => return Ok(drawing),
+            Err(error) => failure = error,
         }
-        if let Err(failure) = &result {
-            if failure.blocked.is_empty() {
-                break;
-            }
-            room.extend(failure.blocked.iter().cloned());
+        let Some(latest) = failure.blocked.first() else {
+            break;
+        };
+        if !complete {
+            room.extend(latest.iter().cloned());
             room.sort();
             room.dedup();
         }
+        // Start the complete repair from the original placement's full feedback,
+        // independently of which endpoints the narrow repairs encounter later.
+        if extra == 0.0 || complete {
+            complete_room.extend(failure.blocked.iter().flatten().cloned());
+            complete_room.sort();
+            complete_room.dedup();
+        }
     }
-    result.map_err(|failure| failure.message)
+    Err(failure.message)
 }
 
 fn try_placements(
@@ -86,9 +103,10 @@ fn try_placements(
     host: &mut dyn Graphviz,
     room: &[String],
     extra: f64,
+    complete: bool,
 ) -> Result<Result<super::assembly::Placed, super::planned::Refused>, String> {
     Ok(super::planned::route_candidates(
         graph,
-        super::legacy::candidates(graph, host, room, extra)?,
+        super::legacy::candidates(graph, host, room, extra, complete)?,
     ))
 }

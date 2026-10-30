@@ -114,12 +114,13 @@ Each route-order attempt permits eight repairs, each with ninety-six conflict at
 Local grid windows retain limits of 128 obstacles, 192 coordinates per axis, and 32,768 search states.
 Final routing shares four grid windows across its four route-order attempts for each placement candidate.
 Packed-block gap estimates also use at most four local windows per packed scene.
-After a complete placement refusal, the legacy placer can add 32 then 64 units around the blocked endpoints.
-Each refusal retains the blocked endpoints from every route order and placement.
-Both retries give every enclosing block extra room, including the page.
-Dense retries also try the existing wider wraps and placements without provisional labels.
-Dense first attempts retain the narrow placement search.
-These are two bounded placement repairs, not a second placement algorithm or an unchecked drawing fallback.
+After a complete placement refusal, the legacy placer first adds 32 then 64 units around the latest blocked endpoints.
+Each refusal also retains the blocked endpoints from every route order and placement.
+If those attempts fail, two further repairs start from the initial placement's complete blockage feedback, with the same 32 and 64 unit limits.
+These repairs give every enclosing block extra room, including the page.
+They also try the existing wider wraps and placements without provisional labels on dense boards.
+An existing guarded drawing ends the search.
+Every repair uses the same placer and complete geometry guard.
 
 The complete guard and fan-tree freeze must accept every emitted relationship.
 Labels use a spatial index for fixed obstacles and current label rectangles.
@@ -158,7 +159,7 @@ The plain set includes 381 whole boards.
 Main lacks all 400 whole-board comparison drawings, so that category contributes no shared measurements.
 The measured head refused 35 of those requests with `No clear planned channel` errors, recorded in `head/failures.json`.
 The follow-up repair draws all 35 requests with zero geometry findings.
-It retains complete blockage feedback and gives enclosing blocks room during the existing bounded retries.
+After the original attempts fail, it uses complete blockage feedback and gives enclosing blocks room in two further bounded retries.
 The corpus script now includes whole boards in both comparison modes.
 The tables retain the original measurement commits.
 
