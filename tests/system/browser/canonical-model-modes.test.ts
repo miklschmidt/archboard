@@ -13,22 +13,17 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
+import { openDestination } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
 
+/** A flow is read as a sequence or a flowchart, and Backspace goes back to the structure. */
 async function chooseMode(browser: AgentBrowserSession, grammar: string): Promise<void> {
-	await browser.run(["click", '[data-slot="model-grammar-selector"]']);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`(() => { const item = document.querySelector('[data-grammar="${grammar}"]'); if (!item) return false; const rect = item.getBoundingClientRect(); return rect.height > 0 && item.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)); })()`,
-			),
-		Boolean,
-		"diagram mode choices",
-		WAIT,
-	);
-	await browser.run(["click", `[data-grammar="${grammar}"]`]);
+	if (grammar === "architecture") await browser.run(["press", "Backspace"]);
+	else {
+		await browser.run(["click", `[data-slot="model-grammar-selector"] [data-choice="${grammar}"]`]);
+	}
 }
 
 async function drawnSubjects(browser: AgentBrowserSession): Promise<string[]> {
@@ -157,16 +152,7 @@ test("diagram modes require a relevant flow and restore the prior architecture r
 		"the focused architecture",
 		WAIT,
 	);
-	await chooseMode(browser, "sequence");
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(`document.querySelector('[data-slot="model-flow-required"]') !== null`),
-		Boolean,
-		"an explicit flow choice",
-		WAIT,
-	);
-	expect(await drawnSubjects(browser)).toEqual([]);
-	await browser.run(["click", '[data-slot="model-flow-selector"]']);
+	await openDestination(browser, "flows");
 	await pollUntil(
 		() =>
 			browser.eval<string[]>(
@@ -206,15 +192,6 @@ test("diagram modes require a relevant flow and restore the prior architecture r
 			`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(node => node.getAttribute('data-module-id'))`,
 		),
 	).toEqual(["Shop#Gateway", "Shop#Handler", "Shop#Worker"]);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-flow-selector"]')?.getAttribute('aria-expanded') === 'false'`,
-			),
-		Boolean,
-		"the completed flow choice",
-		WAIT,
-	);
 	await chooseMode(browser, "flowchart");
 	await pollUntil(
 		() =>
@@ -281,7 +258,7 @@ test("diagram modes require a relevant flow and restore the prior architecture r
 		"the selected step revealed in its authored flow",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="model-flow-selector"]']);
+	await openDestination(browser, "flows");
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('[data-flow-id="Shop#Retry"]') !== null`),
 		Boolean,
@@ -424,16 +401,7 @@ test("behavioral addresses restore exact flows and recover missing definitions w
 		"a behavioral reading without any authored flow",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="model-flow-selector"]']);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-flow-selector"]')?.getAttribute('aria-expanded') === 'true'`,
-			),
-		Boolean,
-		"the empty flow choices",
-		WAIT,
-	);
+	await openDestination(browser, "flows");
 	expect(await browser.eval<number>(`document.querySelectorAll('[data-flow-id]').length`)).toBe(0);
 	expect(await drawnSubjects(browser)).toEqual([]);
 	await browser.run(["open", exact]);

@@ -382,6 +382,14 @@ function ApplicationBody(): JSX.Element {
 		presentedPaneId: fullscreen.snapshot.paneId,
 	});
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
+	const openingVault = useCallback(
+		(paneId: string): string => {
+			const other = livePanes.list.panes.find((pane) => pane.paneId !== paneId);
+			if (other === undefined) return servedVault();
+			return recordFor(livePanes.records, other.paneId).status.vault ?? servedVault();
+		},
+		[livePanes],
+	);
 	const mounted = usePaneViews({
 		panes,
 		theme,
@@ -389,6 +397,7 @@ function ApplicationBody(): JSX.Element {
 		reducedMotion,
 		onVariantChange,
 		openBoard: selectBoard,
+		openingVault,
 		...recorded,
 	});
 	const view = useShellView({

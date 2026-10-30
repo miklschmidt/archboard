@@ -16,7 +16,6 @@ import type { PaneReadings } from "#ui/hooks/application/use-pane-reading.ts";
 import type { Panes } from "#ui/hooks/application/use-panes.ts";
 import type { PaneTheme } from "#ui/rules/pane-session/session-contracts.ts";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
-import { servedVault } from "@archboard/server-requests";
 import type { WalkthroughRecorder } from "#ui/state/walkthrough-recording/recorder.ts";
 
 /** Something the shell lays over one pane's picture. */
@@ -57,6 +56,13 @@ interface PaneViewSources {
 	 * @returns Whether the pane shows it now.
 	 */
 	readonly openBoard: (key: string, paneId: string, repository?: string) => Promise<boolean>;
+	/**
+	 * The vault a pane mounted now opens in: that of the other pane, so a second pane
+	 * never lands on an unrelated repository.
+	 * @param paneId The pane.
+	 * @returns The vault.
+	 */
+	readonly openingVault: (paneId: string) => string;
 }
 
 /** What a recording page gives its pane. */
@@ -87,7 +93,7 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 		narration: sources.narration?.forPane(paneId),
 		overlay: sources.overlay?.paneId === paneId ? sources.overlay.element : undefined,
 		reducedMotion: sources.reducedMotion,
-		openingVault: servedVault(),
+		openingVault: sources.openingVault(paneId),
 	});
 }
 
@@ -149,6 +155,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		overlay,
 		recording,
 		openBoard,
+		openingVault,
 	} = sources;
 	const { list, callbacks, handles } = panes;
 	return useMemo(() => {
@@ -165,6 +172,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 					overlay,
 					recording,
 					openBoard,
+					openingVault,
 				},
 				entry.paneId,
 				index,
@@ -183,6 +191,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		overlay,
 		recording,
 		openBoard,
+		openingVault,
 	]);
 }
 

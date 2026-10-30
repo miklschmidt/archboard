@@ -1,28 +1,21 @@
+// The left column: it lists where to go. The brand sits at its top, and the agent at its
+// foot. The reader of the focused pane fills the two places it leaves for Find and for the
+// destinations, so the column always speaks for the focused pane, and the shell knows
+// nothing about a model. The repository switcher between them is the shell's own, because
+// a pane with nothing to read still has to reach a repository.
+
 import { RiErrorWarningLine } from "@remixicon/react";
-import {
-	useCallback,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-	type JSX,
-	type ReactNode,
-	type RefObject,
-} from "react";
+import { useCallback, useRef, useState, type JSX, type ReactNode } from "react";
 
 import { Skeleton } from "@archboard/ui-kit/components";
-import { RepositoryList } from "#ui/components/shell/RepositoryList.tsx";
-import { NavigatorFilter } from "#ui/components/shell/NavigatorFilter.tsx";
+import { RepositoryChooser, RepositorySwitcher } from "#ui/components/shell/RepositorySwitcher.tsx";
 import { WorkingNow, type WorkingEntry } from "#ui/components/shell/WorkingNow.tsx";
-import { useFindShortcut } from "#ui/hooks/shell/use-find-shortcut.ts";
 import { useKept } from "#ui/hooks/shell/use-kept.ts";
-import { navigatorRows } from "#ui/rules/shell/navigator-rows.ts";
 import { paneLetter } from "#ui/rules/shell/pane-letters.ts";
-import { foldQuery } from "#ui/rules/shell/text-match.ts";
+import type { PaneMark } from "#ui/rules/shell/repository-choices.ts";
 import { sameData } from "#ui/rules/shell/same-data.ts";
 import { nameX } from "#ui/rules/shell/tree-grid.ts";
-import type { ShellActions, ShellView } from "#ui/rules/shell/contracts.ts";
-import type { NavigatorRow, PaneMark } from "#ui/rules/shell/navigator-row-types.ts";
+import type { ShellActions, ShellRepository, ShellView } from "#ui/rules/shell/contracts.ts";
 
 /** Inputs for the navigator. */
 interface NavigatorProps {
@@ -33,6 +26,10 @@ interface NavigatorProps {
 	head: ReactNode;
 	/** The column's foot: the agent dock, with its voice and the way to the conversation. */
 	foot?: ReactNode;
+	/** Where the focused pane puts Find. */
+	attachFind: (element: HTMLDivElement | null) => void;
+	/** Where the focused pane puts its destinations. */
+	attachDestinations: (element: HTMLDivElement | null) => void;
 }
 
 /** Messages line up with the names at the top of the tree. */
@@ -76,24 +73,15 @@ function workingEntries(view: ShellView, panes: readonly PaneMark[]): WorkingEnt
 }
 
 /**
- * The canonical model identity that a repository row opens.
- * @param row The row.
- * @returns The key, or null when the repository has no canonical model.
- */
-function rowKey(row: NavigatorRow): string | null {
-	return row.model?.id ?? null;
-}
-
-/**
- * Open a canonical model in the requested pane.
+ * Open a repository's canonical model in the requested pane.
  * @param actions The shell actions.
- * @param key The model identity.
+ * @param shell The repository.
  * @param beside Whether to use the adjacent pane.
- * @param repository The repository identity.
  */
-function openKey(actions: ShellActions, key: string, beside: boolean, repository: string): void {
-	if (beside) actions.openBeside(key, repository);
-	else void actions.openModel(key, repository);
+function openRepository(actions: ShellActions, shell: ShellRepository, beside: boolean): void {
+	if (shell.model === undefined) return;
+	if (beside) actions.openBeside(shell.model.id, shell.repository.name);
+	else void actions.openModel(shell.model.id, shell.repository.name);
 }
 
 /**
@@ -110,75 +98,41 @@ function listingFailure(view: ShellView): string | null {
 }
 
 /**
- * The repository navigator.
+ * The left column.
  * @param props The shell view and actions.
  * @returns The navigator column.
  */
 function Navigator(props: NavigatorProps): JSX.Element {
-	const { view, actions } = props;
-	const input = useRef<HTMLInputElement>(null);
-	const column = useRef<HTMLElement>(null);
-	useFindShortcut(input);
-	const [query, setQuery] = useState("");
+	const { view, actions, attachFind, attachDestinations } = props;
 	// Unchanged repository locations preserve the row values and handlers.
 	const panes = useKept(paneMarks(view), sameData);
-	const folded = foldQuery(query);
-	const rows = useMemo(
-		() =>
-			navigatorRows({
-				repositories: view.repositories,
-				query: folded,
-				panes,
-			}),
-		[view.repositories, folded, panes],
-	);
+	const [choosing, setChoosing] = useState(false);
+	const switcher = useRef<HTMLButtonElement>(null);
+	const leave = useCallback((): void => {
+		setChoosing(false);
+		switcher.current?.focus();
+	}, []);
 	const open = useCallback(
-		(row: NavigatorRow, beside: boolean): void => {
-			const key = rowKey(row);
-			if (key !== null) openKey(actions, key, beside, row.repository);
+		(shell: ShellRepository, beside: boolean): void => {
+			setChoosing(false);
+			openRepository(actions, shell, beside);
 		},
 		[actions],
 	);
 	const openBoard = useCallback(
 		(_board: string, beside: boolean, repository: string): void => {
-			const model = view.repositories.find((entry) => entry.repository.name === repository)?.model;
-			if (model !== undefined) openKey(actions, model.id, beside, repository);
+			const shell = view.repositories.find((entry) => entry.repository.name === repository);
+			if (shell !== undefined) openRepository(actions, shell, beside);
 		},
 		[actions, view.repositories],
 	);
 	const onChooseCheckout = useCallback(
-		(repository: string, root: string): void => actions.chooseCheckout(repository, root),
+		(repository: string, root: string): void => {
+			setChoosing(false);
+			actions.chooseCheckout(repository, root);
+		},
 		[actions],
 	);
-	const onTypeAhead = useCallback((text: string): void => {
-		setQuery((current) => current + text);
-		input.current?.focus();
-	}, []);
-	const onOpenFirst = useCallback(
-		(beside: boolean): void => {
-			const first = rows.find((row) => rowKey(row) !== null);
-			if (first !== undefined) open(first, beside);
-		},
-		[rows, open],
-	);
-	const onEnterTree = useCallback((): void => {
-		column.current?.querySelector<HTMLElement>('[role="tree"] [tabindex="0"]')?.focus();
-	}, []);
-	const homeId = rows.find((row) => row.selected)?.id ?? null;
-	const total = view.repositories.length;
-	const count = useMemo(
-		() => ({
-			found: rows.length,
-			total,
-		}),
-		[rows, total],
-	);
-	useRevealActive(
-		column,
-		homeId,
-		rows.some((row) => row.id === homeId),
-	);
-
 	return (
 		<div
 			data-slot="navigator-column"
@@ -186,37 +140,41 @@ function Navigator(props: NavigatorProps): JSX.Element {
 		>
 			{props.head}
 			<nav
-				ref={column}
-				aria-label="Repositories"
+				aria-label="Reading"
 				data-slot="navigator"
-				className="flex min-h-0 flex-1 flex-col"
+				className="group/navigator flex min-h-0 flex-1 flex-col"
 			>
-				<NavigatorFilter
-					input={input}
-					query={query}
-					onQuery={setQuery}
-					count={count}
-					onOpenFirst={onOpenFirst}
-					onEnterTree={onEnterTree}
+				<div ref={attachFind} className="contents" />
+				<RepositorySwitcher
+					ref={switcher}
+					repositories={view.repositories}
+					panes={panes}
+					open={choosing}
+					onOpenChange={setChoosing}
 				/>
-				<div className="min-h-0 flex-1 overflow-y-auto">
-					<ListingState
-						loading={view.boardsLoading}
-						error={listingFailure(view)}
-						empty={view.repositories.length === 0}
-						noMatch={folded.length > 0 && rows.length === 0}
-						query={query}
-						actions={actions}
-						onClear={setQuery}
-					/>
-					<RepositoryList
-						rows={rows}
-						homeId={homeId}
-						onOpen={open}
-						onChooseCheckout={onChooseCheckout}
-						onTypeAhead={onTypeAhead}
-					/>
-				</div>
+				<ListingState
+					loading={view.boardsLoading}
+					error={listingFailure(view)}
+					empty={view.repositories.length === 0}
+					actions={actions}
+				/>
+				{/* A pane with nothing to list leaves this place empty, and the repositories take it. */}
+				<div
+					ref={attachDestinations}
+					data-slot="navigator-destinations"
+					hidden={choosing}
+					className="peer flex min-h-0 flex-1 flex-col empty:hidden"
+				/>
+				<RepositoryChooser
+					key={String(choosing)}
+					repositories={view.repositories}
+					panes={panes}
+					asked={choosing}
+					className={choosing ? "flex" : "hidden peer-empty:flex"}
+					onOpen={open}
+					onChooseCheckout={onChooseCheckout}
+					onLeave={leave}
+				/>
 				<WorkingNow entries={workingEntries(view, panes)} onOpen={openBoard} />
 			</nav>
 			{props.foot}
@@ -224,59 +182,23 @@ function Navigator(props: NavigatorProps): JSX.Element {
 	);
 }
 
-/**
- * Bring the row being read into view when it changes, unless the person is
- * using the navigator: a row moving under their pointer or focus would be a
- * row they did not choose.
- * @param column The navigator.
- * @param rowId The row being read, or null.
- * @param drawn Whether its row is drawn yet: the listing may arrive after the pane reports.
- */
-function useRevealActive(
-	column: RefObject<HTMLElement | null>,
-	rowId: string | null,
-	drawn: boolean,
-): void {
-	useEffect(() => {
-		const root = column.current;
-		if (!drawn || rowId === null || root === null || personIsIn(root)) return;
-		root
-			.querySelector(`[data-row-id="${CSS.escape(rowId)}"]`)
-			?.scrollIntoView({ block: "nearest" });
-	}, [column, rowId, drawn]);
-}
-
-/**
- * Whether the person is using the navigator: its focus or their pointer is in it.
- * @param root The navigator.
- * @returns True while they are.
- */
-function personIsIn(root: HTMLElement): boolean {
-	return root.contains(document.activeElement) || root.matches(":hover");
-}
-
 /** Inputs for the line shown when the tree has nothing to show. */
 interface ListingStateProps {
 	readonly loading: boolean;
 	readonly error: string | null;
 	readonly empty: boolean;
-	readonly noMatch: boolean;
-	readonly query: string;
 	readonly actions: ShellActions;
-	readonly onClear: (query: string) => void;
 }
 
 /**
- * What the navigator says while it has nothing to list: that the vault is
- * being read, why the listing failed, that the vault is empty, or that the
- * filter found nothing.
+ * What the navigator says while it cannot list: that the repositories are being read, why
+ * the listing failed, or that none is registered.
  * @param props The listing state.
- * @returns The state, or nothing while boards are listed.
+ * @returns The state, or nothing while repositories are listed.
  */
 function ListingState(props: ListingStateProps): JSX.Element | null {
-	const { actions, onClear } = props;
+	const { actions } = props;
 	const retry = useCallback(() => actions.refreshBoards(), [actions]);
-	const clear = useCallback(() => onClear(""), [onClear]);
 	if (props.error !== null) {
 		return (
 			<div
@@ -296,20 +218,6 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 					Retry
 				</button>
 			</div>
-		);
-	}
-	if (props.noMatch) {
-		return (
-			<p style={MESSAGE_STYLE} className="text-body text-muted-foreground py-3 pr-4">
-				No repository matches “{props.query.trim()}”.{" "}
-				<button
-					type="button"
-					onClick={clear}
-					className="text-primary-text decoration-primary-mark font-medium underline underline-offset-2 hover:decoration-2"
-				>
-					Clear
-				</button>
-			</p>
 		);
 	}
 	if (!props.empty) return null;

@@ -773,7 +773,7 @@ The board interface narrows to 184 exports, and its ceiling drops to 184.
 
 The repository navigator lists one canonical model per repository.
 It no longer contains folders, boards, variant rows, or a second architecture hierarchy.
-`apps/web/tests/ui/components/shell/navigator-repositories.test.tsx` retains repository identity, activity, checkout menus, failure recovery, and filter behavior.
+`apps/web/tests/ui/components/shell/navigator-repositories.test.tsx` retains repository identity, activity, the checkout list, failure recovery, and filter behavior.
 `canonical-model-agent-navigation.test.ts` owns keyboard opens, adjacent panes, active repository selection, and pane letters through the browser.
 The old `navigator-tree.test.tsx` retires with board hierarchy and variant expansion.
 Its private React-prop inspection also retires because it tests implementation details.
@@ -797,9 +797,12 @@ Canonical selection, navigation, comparison, and walkthrough owners cover the si
 Browser helpers open the appropriate tab before acting on its visible content.
 
 `canonical-model-inspection.test.ts` replaces `semantic-board-inspection.test.ts`.
-It retains trusted keyboard input and the visible module-search shortcut, focus, Escape, selection, and read-only behavior.
+It retains trusted keyboard input and the Find shortcut, focus, Escape, selection, and read-only behavior.
 Existing canonical navigation, code, and reference owners cover containment and source navigation.
-The existing sidebar placement owner now uses the canonical search field.
+
+`reader-column.test.ts` owns the left column through a real browser: Find, the tree, `Flows`, `History`, a second pane, and every move by keyboard, also in a presented pane.
+Unit owners hold its rules: `module-tree.test.ts`, `reader-keys.test.ts`, `search.test.ts`, `tree-keys.test.ts`, and `repository-choices.test.ts`.
+`presentation-keys.test.ts` owns the steps of `[` and `]` in a presented walkthrough.
 
 `canonical-model-groups.test.ts` replaces the legacy board group browser fixture.
 It retains computed selection-ring and read-only assertions.

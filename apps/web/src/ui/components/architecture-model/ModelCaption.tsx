@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import type { projectModel } from "@archboard/board/content";
 
@@ -6,6 +6,8 @@ interface ModelCaptionProps {
 	projection: ReturnType<typeof projectModel>;
 	everyLine: boolean;
 	onToggle: () => void;
+	/** Statements of the reading that end the line, each with its control. */
+	children?: ReactNode;
 }
 
 /**
@@ -18,17 +20,20 @@ function ModelCaption(props: ModelCaptionProps): JSX.Element | null {
 	const responsibility = projection.complete.nodes.find(
 		(node) => node.id === projection.opened,
 	)?.responsibility;
-	if (projection.flow !== null) return null;
-	if (responsibility === undefined && projection.implied.length === 0) return null;
 	return (
 		<div
 			data-slot="model-caption"
-			className="text-body border-border flex items-center gap-3 border-b px-6 py-1"
+			className="text-body border-border flex min-h-9 shrink-0 items-center gap-3 border-b px-6 py-1 empty:hidden"
 		>
-			<p className="text-muted-foreground min-w-0 flex-1 truncate">{responsibility}</p>
-			{projection.implied.length > 0 && (
+			{projection.flow === null && responsibility !== undefined && (
+				<p className="text-muted-foreground min-w-0 flex-1 truncate" title={responsibility}>
+					{responsibility}
+				</p>
+			)}
+			{projection.flow === null && projection.implied.length > 0 && (
 				<LeftOutLines {...props} left={projection.implied.length} />
 			)}
+			{props.children}
 		</div>
 	);
 }
@@ -38,11 +43,16 @@ function ModelCaption(props: ModelCaptionProps): JSX.Element | null {
  * @param props Whether every line is drawn, how many leave, and the control's action.
  * @returns The statement and its control.
  */
-function LeftOutLines(props: ModelCaptionProps & { left: number }): JSX.Element {
+function LeftOutLines(props: Omit<ModelCaptionProps, "children"> & { left: number }): JSX.Element {
 	const { everyLine, left } = props;
 	return (
 		<>
-			<output data-slot="model-left-out" data-count={left} data-every-line={everyLine}>
+			<output
+				className="ml-auto"
+				data-slot="model-left-out"
+				data-count={left}
+				data-every-line={everyLine}
+			>
 				{everyLine ? "Every line is drawn" : statement(left)}
 			</output>
 			<Button

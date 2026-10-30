@@ -6,7 +6,7 @@
 // the rows line up. The centre is also the fullscreen root, so presenting a
 // pane never remounts it.
 
-import { useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
+import { useMemo, useState, type CSSProperties, type JSX, type ReactNode } from "react";
 
 import { CHROME_HEIGHT, NAVIGATOR_WIDTH } from "@archboard/renderer/shell-geometry";
 import type { ShellActions, ShellView } from "#ui/rules/shell/contracts.ts";
@@ -58,13 +58,23 @@ interface ShellProps {
  */
 function Shell(props: ShellProps): JSX.Element {
 	const { view, actions } = props;
+	const [find, attachFind] = useState<HTMLDivElement | null>(null);
+	const [destinations, attachDestinations] = useState<HTMLDivElement | null>(null);
+	const column = useMemo(() => ({ find, destinations }), [find, destinations]);
 	const head = useMemo(
 		() => <BrandBar theme={view.theme} actions={actions} diagnostics={props.diagnostics} />,
 		[view.theme, actions, props.diagnostics],
 	);
 	return (
 		<div className="bg-background flex h-full min-w-0" style={SHELL_STYLE}>
-			<Navigator view={view} actions={actions} head={head} foot={props.agentDock} />
+			<Navigator
+				view={view}
+				actions={actions}
+				head={head}
+				foot={props.agentDock}
+				attachFind={attachFind}
+				attachDestinations={attachDestinations}
+			/>
 			<ConversationColumns
 				open={props.agentPanelOpen ?? false}
 				onClose={props.onAgentPanelClose ?? noop}
@@ -75,6 +85,7 @@ function Shell(props: ShellProps): JSX.Element {
 					panes={view.panes}
 					activePaneId={view.activePaneId}
 					presentation={view.presentation}
+					column={column}
 					voiceControls={props.voiceControls ?? null}
 					attachStage={props.attachStage}
 					actions={actions}

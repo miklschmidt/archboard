@@ -99,12 +99,7 @@ function ModelPreviewReader(props: PreviewProps): JSX.Element {
 				<output className="text-body text-muted-foreground p-10">Reading migration preview…</output>
 			)}
 			{problem === null ? (
-				<PreviewContent
-					{...props}
-					model={model}
-					settled={!query.isPlaceholderData}
-					subject={location.subject}
-				/>
+				<PreviewContent {...props} model={model} settled={!query.isPlaceholderData} />
 			) : (
 				<ModelError {...problem} />
 			)}
@@ -179,13 +174,12 @@ function previewProblem(
 
 /**
  * Reuse ordinary model navigation only after a coherent preview arrives.
- * @param props The pane, candidate, and explicit selected subject.
+ * @param props The pane and candidate.
  * @returns The preview evidence and model reading, or nothing during loading.
  */
 function PreviewContent(
 	props: PreviewProps & {
 		model: ComponentProps<typeof ModelReading>["model"] | undefined;
-		subject: string | null;
 		settled: boolean;
 	},
 ): JSX.Element | null {
@@ -211,7 +205,6 @@ export { ModelPreviewReader };
 function PreviewModel(
 	props: PreviewProps & {
 		model: ComponentProps<typeof ModelReading>["model"];
-		subject: string | null;
 		settled: boolean;
 	},
 ): JSX.Element {
@@ -235,7 +228,7 @@ function PreviewModel(
  * @returns A readable bookmark or explicit unavailable view.
  */
 function PreviewReading(
-	props: PreviewProps & Pick<ComponentProps<typeof ModelReading>, "model" | "subject" | "settled">,
+	props: PreviewProps & Pick<ComponentProps<typeof ModelReading>, "model" | "settled">,
 ): JSX.Element {
 	return (
 		<ModelBookmarkReading model={props.model}>

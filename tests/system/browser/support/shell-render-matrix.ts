@@ -219,7 +219,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		// The pane's own top row, level with the brand bar: where the board sits,
 		// the ways to read it and the pane's controls.
 		const paneHeader = pane?.querySelector('${PANE_HEADER}');
-		const board = paneHeader?.querySelector("h2");
+		const board = paneHeader?.querySelector('[data-slot="model-breadcrumbs"] button');
 		// Which variant is on screen, named after the board: the fact that
 		// changes while somebody watches (ADR 0023).
 		const variant = paneHeader?.querySelector('[data-slot="model-reading-selector"]');
@@ -231,13 +231,11 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const technical = nav?.querySelector('kbd');
 		const stages = document.querySelector('${STAGE_ROOT}');
 		const bar = document.querySelector('${AGENT_DOCK}');
-		// The navigator selects what the focused pane reads — the board, or its
-		// state when the board's states are listed; the board's name is a human
-		// label beside the header's.
-		const selectedBoard = nav?.querySelector('[role="treeitem"][aria-selected="true"] [data-slot="repository-name"]');
+		// The switcher names the repository of the focused pane, a human label beside the header's.
+		const selectedBoard = nav?.querySelector('[data-slot="repository-switcher"]');
 		const rowLabel = pane?.querySelector('[data-slot="module-list"] button .text-body');
 		// A section heading in the pane's sidebar.
-		const sectionHeading = pane?.querySelector('[data-slot="model-navigation"] h3');
+		const sectionHeading = pane?.querySelector('[data-slot="model-parts"] h3');
 		// The pane's window on the picture: the room the camera fits a drawing into.
 		const picture = pane?.querySelector('[data-slot="model-diagram"]');
 		if (!shell || !header || !wordmark || !control || !paneHeader || !board || !variant || !technical ||
@@ -347,7 +345,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				flatSurfaces: flat.every(node => getComputedStyle(node).backgroundImage === 'none'),
 				visibleFocus: ringVisible,
 				modelIdentity: board.textContent.trim(), stateName: variant.textContent.trim(),
-				selectedRepository: selectedBoard.closest('[data-row-id]').getAttribute('data-row-id').slice("repository:".length),
+				selectedRepository: selectedBoard.getAttribute('title'),
 				focusedPaneCount: panes.filter(node => node.getAttribute('aria-current') === 'true').length,
 				connectionTrouble,
 				headerSectionsAligned: boardRect.right < presentRect.left &&

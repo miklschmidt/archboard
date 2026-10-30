@@ -1,5 +1,5 @@
-// The navigator lists every repository, each with the boards of its chosen
-// checkout and a menu of its checkouts (ADR 0050).
+// The navigator lists every repository, each opening the model of its chosen
+// checkout and holding its checkouts (ADR 0050).
 
 import { expect, test } from "bun:test";
 
@@ -12,6 +12,7 @@ import {
 	carrying,
 	mountNavigator,
 	pane,
+	press,
 	ready,
 	repositoryOf,
 	row,
@@ -71,7 +72,7 @@ test("agent work stays with its repository and opens its canonical model", () =>
 	expect(asked.opened).toEqual([`${BILLING}|Billing`]);
 });
 
-test("a repository whose chosen checkout has no vault says so, and its menu chooses another checkout from the keyboard", async () => {
+test("a repository whose chosen checkout has no vault says so, and its rows choose another checkout from the keyboard", () => {
 	const stale: RepositoryEntry = {
 		name: BILLING,
 		untracked: false,
@@ -89,50 +90,29 @@ test("a repository whose chosen checkout has no vault says so, and its menu choo
 	const line = row(`repository:${BILLING}`);
 	// The row says why, so the navigator gives no advice for an empty vault over it.
 	expect(document.querySelector('[data-slot="navigator"] p')).toBeNull();
-	// It says why it holds nothing rather than counting none, and has nothing to open or close.
-	expect(line.textContent).not.toMatch(/\d/);
-	expect(line.hasAttribute("aria-expanded")).toBe(false);
-	expect(line.getAttribute("aria-haspopup")).toBe("menu");
+	expect(line.getAttribute("aria-expanded")).toBe("false");
 	act(() => line.focus());
-	act(() => {
-		line.dispatchEvent(new KeyboardEvent("keydown", { key: "F10", shiftKey: true, bubbles: true }));
-	});
-	// The menu's popup is placed once it has been laid out, a turn or two later.
-	await act(async () => {
-		await new Promise((resolve) => setTimeout(resolve, 50));
-	});
-	const items = [...document.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
-	expect(items.map((item) => item.getAttribute("aria-checked"))).toEqual([
-		"true",
-		"false",
-		"false",
-	]);
+	press("ArrowRight");
+	const choices = ["billing-old", "billing", "billing-gone"].map((name) =>
+		row(`checkout:/work/${name}`),
+	);
 	// A checkout that is gone, or has no vault, is listed and cannot be chosen.
-	expect(items.map((item) => item.getAttribute("aria-disabled") === "true")).toEqual([
+	expect(choices.map((choice) => choice.getAttribute("aria-disabled") === "true")).toEqual([
 		true,
 		false,
 		true,
 	]);
-	// Keys in the menu stay in it: a letter is not typed into the filter.
-	act(() => {
-		document.activeElement?.dispatchEvent(
-			new KeyboardEvent("keydown", { key: "b", bubbles: true }),
-		);
-	});
-	expect(document.querySelector<HTMLInputElement>('[data-slot="navigator"] input')?.value).toBe("");
-	act(() => items[1]?.click());
+	expect(choices.map((choice) => choice.getAttribute("aria-selected"))).toEqual([
+		"true",
+		"false",
+		"false",
+	]);
+	act(() => choices[2]?.focus());
+	press("Enter");
+	expect(asked.chosen).toEqual([]);
+	act(() => choices[1]?.focus());
+	press("Enter");
 	expect(asked.chosen).toEqual([`${BILLING}|/work/billing`]);
-	// Escape closes the menu and gives the keyboard back to the row.
-	act(() => {
-		document.activeElement?.dispatchEvent(
-			new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
-		);
-	});
-	await act(async () => {
-		await new Promise((resolve) => setTimeout(resolve, 50));
-	});
-	expect(document.querySelector('[role="menu"]')).toBeNull();
-	expect(document.activeElement).toBe(row(`repository:${BILLING}`));
 });
 
 test("a repository whose model cannot be read offers to read them again, and the navigator does not call it empty", () => {
@@ -147,9 +127,6 @@ test("a repository whose model cannot be read offers to read them again, and the
 	// Read again and empty, it says so and offers nothing to retry.
 	show({ repositories: [repositoryOf(ready(BILLING, BILLING_VAULT), undefined)], panes: [] });
 	expect(document.querySelector('[data-slot="navigator"] [role="alert"]')).toBeNull();
-	expect(
-		row(`repository:${BILLING}`).querySelector('[data-slot="repository-model-open"]'),
-	).toBeNull();
 });
 
 test("a pane is marked in the repository the server says it is in, before the repositories are read again", () => {

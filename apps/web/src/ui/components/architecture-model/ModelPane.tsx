@@ -39,9 +39,10 @@ function ModelPane(props: {
 		[choose, sidebar],
 	);
 	const [handover] = useState(cameraHandover);
+	const [head, attachHead] = useState<HTMLElement | null>(null);
 	const value = useMemo(
-		() => ({ selection: { ...selection, selectMany }, sidebar, handover }),
-		[selection, selectMany, sidebar, handover],
+		() => ({ selection: { ...selection, selectMany }, sidebar, handover, head, attachHead }),
+		[selection, selectMany, sidebar, handover, head],
 	);
 	return <ModelPaneContext value={value}>{props.children}</ModelPaneContext>;
 }

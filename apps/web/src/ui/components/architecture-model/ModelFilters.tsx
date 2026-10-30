@@ -17,21 +17,19 @@ interface ModelFiltersProps {
 function ModelFilters(props: ModelFiltersProps): JSX.Element {
 	const choices = filterChoices(props);
 	return (
-		<div className="ml-auto">
-			<DropdownMenu>
-				<DropdownMenu.Trigger
-					data-slot="model-filters"
-					className="text-control hover:bg-muted rounded-control px-3 py-2"
-				>
-					Filters ({choices.count})
-				</DropdownMenu.Trigger>
-				<DropdownMenu.Content align="end" className="w-64">
-					<FilterGroup {...props} field="hideKinds" title="Relationships" ids={choices.kinds} />
-					<DropdownMenu.Separator />
-					<FilterGroup {...props} field="showGroups" title="Group regions" ids={choices.groups} />
-				</DropdownMenu.Content>
-			</DropdownMenu>
-		</div>
+		<DropdownMenu>
+			<DropdownMenu.Trigger
+				data-slot="model-filters"
+				className="text-control bg-card border-border shadow-raised hover:bg-muted rounded-control border px-3 py-1.5"
+			>
+				Filters ({choices.count})
+			</DropdownMenu.Trigger>
+			<DropdownMenu.Content align="start" className="w-64">
+				<FilterGroup {...props} field="hideKinds" title="Relationships" ids={choices.kinds} />
+				<DropdownMenu.Separator />
+				<FilterGroup {...props} field="showGroups" title="Group regions" ids={choices.groups} />
+			</DropdownMenu.Content>
+		</DropdownMenu>
 	);
 }
 

@@ -46,12 +46,19 @@ const ModelPaneContext = createContext<{
 	selection: ModelSelection;
 	sidebar: Sidebar;
 	handover: CameraHandover;
+	/** Where the reading puts what it says in the pane's header. */
+	head: HTMLElement | null;
+	attachHead: (element: HTMLElement | null) => void;
 } | null>(null);
 
 /** The captured presentation owns its start action and whether it replaces ordinary reading. */
 const ModelWalkthroughContext = createContext<{
 	select: (id: string) => void;
+	/** End the presentation, which does nothing while none runs. */
+	leave: () => void;
 	active: boolean;
+	/** The walkthrough on screen, or null. */
+	current: string | null;
 } | null>(null);
 
 export { ModelPaneContext, ModelWalkthroughContext, cameraHandover, type CameraHandover };

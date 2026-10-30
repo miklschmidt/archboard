@@ -3,7 +3,9 @@
 // `ShellActions`. The shell keeps only presentation state of its own.
 
 import type { ReactNode } from "react";
+import type { z } from "zod";
 import type { Model } from "@archboard/board/content";
+import type { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
@@ -15,6 +17,9 @@ import type {
 
 /** The theme a person chose, stored on the root element. */
 type ThemeChoice = "light" | "dark";
+
+/** What a pane opens of a model, when it opens more than its roots. */
+type PaneOpening = Omit<z.input<typeof ArchitecturePaneReadingSchema>, "model" | "beat">;
 
 /** One pane: what it reports about itself, who holds its board, and its mounted stage. */
 interface ShellPane {
@@ -109,9 +114,15 @@ interface ShellActions {
 	 * @param model The stable model identity.
 	 * @param repository Its registered repository identity.
 	 * @param paneId The addressed pane, or the active pane when absent.
+	 * @param reading What the pane opens, when it opens more than the model's roots.
 	 * @returns Whether the server accepted the destination.
 	 */
-	openModel(model: string, repository: string, paneId?: string): Promise<boolean>;
+	openModel(
+		model: string,
+		repository: string,
+		paneId?: string,
+		reading?: PaneOpening,
+	): Promise<boolean>;
 	setTheme(theme: ThemeChoice): void;
 	/**
 	 * Show a board in one pane.
@@ -131,8 +142,9 @@ interface ShellActions {
 	 * adding the second pane when there is only one.
 	 * @param key The board key.
 	 * @param repository The repository the board is in.
+	 * @param reading What the pane opens, when it opens more than the model's roots.
 	 */
-	openBeside(key: string, repository: string): void;
+	openBeside(key: string, repository: string, reading?: PaneOpening): void;
 	/**
 	 * Choose which checkout of a repository this machine reads, for every tab
 	 * and every agent (ADR 0050).
@@ -153,6 +165,7 @@ interface ShellActions {
 
 export type {
 	ThemeChoice,
+	PaneOpening,
 	ShellPane,
 	SelectableNoticeAction,
 	ShellNoticeAction,

@@ -145,11 +145,6 @@ interface SemanticBoardStageProps {
 	/** What the shell lays over the picture, such as subtitles of a voice: low in the frame, or at the foot of a presented walkthrough's box, where the camera keeps the picture clear of it. */
 	overlay?: ReactNode;
 	/**
-	 * The search over every board's parts, which the shell joins to this pane:
-	 * at the top of the sidebar, where the part it finds is explained.
-	 */
-	search?: ReactNode;
-	/**
 	 * The boards above one, outermost first, as the navigator places them, each
 	 * a way to it in this pane: the header's breadcrumb.
 	 * @param board The board on screen.

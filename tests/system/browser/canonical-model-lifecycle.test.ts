@@ -198,6 +198,7 @@ test("adopted and shelved states remain discoverable with decisions and recovera
 		),
 	).toContain("docs/queued.md");
 	await fitted(browser);
+	await browser.run(["click", '[data-destination="history"]']);
 	await browser.run(["click", '[data-slot="model-comparison-selector"]']);
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('[data-against-id="Current"]') !== null`),

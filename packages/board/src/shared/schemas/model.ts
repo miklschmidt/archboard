@@ -338,7 +338,7 @@ const ArchitectureCheckpointRowsSchema = z.discriminatedUnion("success", [
 		success: z.literal(true),
 		checkpoints: z.array(
 			ArchitectureCheckpointSchema.pick({ id: true, createdAt: true }).extend({
-				state: StateMetadataSchema.pick({ name: true }).strict().nullable(),
+				state: StateMetadataSchema.pick({ id: true, name: true }).strict().nullable(),
 				doing: ArchitectureCheckpointRequestSchema.shape.doing,
 			}),
 		),

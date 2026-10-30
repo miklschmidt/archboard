@@ -217,9 +217,9 @@ paths, versions, counts and times.
 
 ## Layout
 
-The shell puts columns around the picture. The navigator (320px) is on the left,
-and the agent dock is at its foot. The panes are in the centre, one or two side
-by side. The conversation opens between the navigator and the panes: it slides
+The shell puts columns around the picture. The left column (320px) lists where to
+go, and the agent dock is at its foot. The panes are in the centre, one or two side
+by side. The conversation opens between the column and the panes: it slides
 in and out, and a handle on its edge, a grip on a line that takes the gold while
 it is dragged, resizes it between 320px and 720px, or drags it shut below that.
 Each pane has a sidebar (280px) on the right, shown and hidden by one control at
@@ -398,8 +398,8 @@ header, that shows and hides it. The control is filled while the sidebar is show
 its tooltip says what it will do, and it is there in every state of the pane.
 Showing the sidebar puts it back where the person had it. A floating panel has a
 pin at the end of its tab row, which docks it, and Escape inside it puts it away
-and gives the keyboard back to the control. The search for a part sits above the
-tabs, and its shortcut shows an away sidebar and takes focus in the field.
+and gives the keyboard back to the control. Find sits in the left column, and
+Ctrl K takes focus in its field.
 
 The sidebar eases in and out, as the conversation does. A docked column takes its
 width over 220ms while the panel, held at its own width, is uncovered under the
@@ -411,8 +411,8 @@ arrives with a 120ms fade. A row answers the pointer with a change of tone and
 nothing else. With reduced motion the sidebar appears and goes at once.
 
 A presented walkthrough steps the sidebar aside, as it does the rest of the pane's
-chrome. While it lasts the control is held and says so, and nothing, the search
-shortcut included, shows or hides the sidebar. A pick made on the About page lays
+chrome. While it lasts the control is held and says so, and nothing shows or hides
+the sidebar. A pick made on the About page lays
 no panel over the page, where it would cover the page's controls. Its panel comes
 with the diagram.
 

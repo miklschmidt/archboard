@@ -57,9 +57,10 @@ function ModelError(props: ModelErrorProps): JSX.Element {
 
 interface ModelHeaderProps {
 	name: string;
-	refresh: () => void;
-	refreshing: boolean;
-	children: ReactNode;
+	/** Read again, offered only where the live feed cannot recover by itself. */
+	refresh?: (() => void) | undefined;
+	refreshing?: boolean | undefined;
+	children?: ReactNode;
 }
 
 /**
@@ -86,21 +87,31 @@ function ModelHeader(props: ModelHeaderProps): JSX.Element {
 	return (
 		<PaneHeaderRow>
 			<PaneHeaderStart>
-				<h2 className="text-control truncate font-[650]">{props.name}</h2>
+				{/* A reading that can speak for itself says so here, in place of the name. */}
+				<h2 className="text-control truncate font-[650] [&:has(+:not(:empty))]:hidden">
+					{props.name}
+				</h2>
+				<div
+					ref={pane?.attachHead}
+					data-slot="model-head"
+					className="flex min-w-0 flex-1 items-center gap-3"
+				/>
 				{props.children}
 			</PaneHeaderStart>
 			<PaneHeaderEnd>
-				<Button
-					variant="ghost"
-					size="sm"
-					data-slot="model-refresh"
-					onClick={props.refresh}
-					disabled={props.refreshing}
-					aria-busy={props.refreshing}
-				>
-					<RiRefreshLine aria-hidden="true" className="size-4" />
-					Refresh
-				</Button>
+				{props.refresh !== undefined && (
+					<Button
+						variant="ghost"
+						size="sm"
+						data-slot="model-refresh"
+						onClick={props.refresh}
+						disabled={props.refreshing}
+						aria-busy={props.refreshing}
+					>
+						<RiRefreshLine aria-hidden="true" className="size-4" />
+						Refresh
+					</Button>
+				)}
 				{sidebar !== null && <SidebarToggle sidebar={sidebar} />}
 				{controls}
 			</PaneHeaderEnd>

@@ -24,7 +24,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { fixtureGit, initializeSource } from "./support/canonical-model.ts";
-import { refreshModel } from "./support/canonical-page.ts";
+import { chooseFlow, refreshModel } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -108,12 +108,7 @@ test("migration preview preserves its source while readers navigate modules and 
 	expect(await browser.eval<string>(`new URLSearchParams(location.search).get('previewA')`)).toBe(
 		"Shop",
 	);
-	await browser.run(["click", '[data-slot="model-grammar-selector"]']);
-	await visible(browser, '[data-grammar="sequence"][role="option"]');
-	await browser.run(["click", '[data-grammar="sequence"][role="option"]']);
-	await browser.run(["click", '[data-slot="model-flow-selector"]']);
-	await visible(browser, '[data-flow-id="Shop/System#Buy"]');
-	await browser.run(["click", '[data-flow-id="Shop/System#Buy"]']);
+	await chooseFlow(browser, "Shop/System#Buy");
 	await visible(
 		browser,
 		'[data-slot="model-reading"][data-grammar="sequence"] [data-slot="model-diagram"] svg',

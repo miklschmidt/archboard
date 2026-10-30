@@ -7,13 +7,15 @@ import { useCallback, useEffect, useRef } from "react";
 
 import type { Panes } from "#ui/hooks/application/use-panes.ts";
 import { paneReady, recordFor } from "#ui/rules/application/pane-records.ts";
-import type { ShellActions } from "#ui/rules/shell/contracts.ts";
+import type { PaneOpening, ShellActions } from "#ui/rules/shell/contracts.ts";
 
 /** A model waiting for the pane being added for it. */
 interface PendingBeside {
 	readonly key: string;
 	/** The repository the board is in. */
 	readonly repository: string;
+	/** What the pane opens of the model. */
+	readonly reading: PaneOpening | undefined;
 	/** The pane that was active when it was asked for: the new pane is the other one. */
 	readonly from: string;
 	/** The new pane has appeared: should it go again before it is ready, the board is not wanted any more. */
@@ -57,7 +59,7 @@ function useBesideOpening(
 	panes: Panes,
 	livePanes: Panes,
 	actions: Pick<ShellActions, "openModel" | "addPane" | "selectPane">,
-): (key: string, repository: string) => void {
+): ShellActions["openBeside"] {
 	const pending = useRef<PendingBeside | null>(null);
 	useEffect(() => {
 		const wanted = pending.current;
@@ -69,19 +71,19 @@ function useBesideOpening(
 		const paneId = readyTarget(panes, wanted);
 		if (paneId === null) return;
 		pending.current = null;
-		void actions.openModel(wanted.key, wanted.repository, paneId);
+		void actions.openModel(wanted.key, wanted.repository, paneId, wanted.reading);
 		// Beside means the person stays where they were reading, as with two panes.
 		actions.selectPane(wanted.from);
 	}, [panes, actions]);
 	return useCallback(
-		(key: string, repository: string): void => {
+		(key: string, repository: string, reading?: PaneOpening): void => {
 			const { list } = livePanes;
 			const other = list.panes.find((pane) => pane.paneId !== list.activePaneId);
 			if (other !== undefined) {
-				void actions.openModel(key, repository, other.paneId);
+				void actions.openModel(key, repository, other.paneId, reading);
 				return;
 			}
-			pending.current = { key, repository, from: list.activePaneId, seen: false };
+			pending.current = { key, repository, reading, from: list.activePaneId, seen: false };
 			actions.addPane();
 		},
 		[livePanes, actions],

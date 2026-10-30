@@ -107,6 +107,13 @@ const architectureModelKeys = {
 	 */
 	readings: (vault: string) => ["architecture-model", vault, "reading"] as const,
 	/**
+	 * The current reading as the History destination reads it, kept apart from the one that
+	 * a live snapshot replaces, because a snapshot lists no states but the proposals.
+	 * @param vault The explicit vault.
+	 * @returns Its query key, which every change of the model reads again.
+	 */
+	record: (vault: string) => ["architecture-model", vault, "reading", null, "record"] as const,
+	/**
 	 * The retained metadata in one vault.
 	 * @param vault The explicitly addressed vault.
 	 * @returns Its query key.
@@ -216,6 +223,26 @@ function architectureModelQuery(
 		 */
 		queryFn: (context) => readModel(vault, checkpoint, context.signal, selection),
 		...(selection.preview == null ? followed : shownFresh),
+		retry: false,
+	});
+}
+
+/**
+ * The complete catalogue of states, read when the History destination opens.
+ * @param vault The addressed vault.
+ * @returns Query options for the record of the model.
+ */
+function architectureRecordQuery(vault: string) {
+	return queryOptions({
+		queryKey: architectureModelKeys.record(vault),
+		/**
+		 * Read the current model with its whole catalogue of states.
+		 * @param context The query cancellation signal.
+		 * @returns The runtime answer.
+		 */
+		queryFn: (context) => readModel(vault, null, context.signal, {}),
+		staleTime: 0,
+		refetchOnMount: "always",
 		retry: false,
 	});
 }
@@ -339,6 +366,7 @@ export {
 	architectureModuleQuery,
 	architectureSummaryQuery,
 	architectureCheckpointsQuery,
+	architectureRecordQuery,
 	architectureClaimsQuery,
 	ArchitectureReadError,
 	hasNoCanonicalModel,

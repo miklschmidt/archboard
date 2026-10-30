@@ -182,7 +182,7 @@ test("planning readings use retained predecessors and preserve unavailable state
 	);
 	expect(
 		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="model-diagram"]') === null && new URLSearchParams(location.search).get('stateA') === 'MissingPlan' && document.querySelector('[data-slot="model-reading-selector"]')?.textContent?.includes('MissingPlan') === true`,
+			`document.querySelector('[data-slot="model-diagram"]') === null && new URLSearchParams(location.search).get('stateA') === 'MissingPlan'`,
 		),
 	).toBe(true);
 	await selectReading(browser, child.body.checkpoint.id);

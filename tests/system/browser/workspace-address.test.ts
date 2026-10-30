@@ -164,7 +164,7 @@ test("canonical workspace history preserves pane identity and isolates proposal 
 	);
 
 	// Choosing a state belongs to the pane whose control the reader uses.
-	await browser.run(["click", '[data-pane="A"] [data-slot="pane-header"] h2']);
+	await browser.run(["click", '[data-pane="A"] [data-slot="model-diagram"]']);
 	await browser.run(["click", '[data-pane="B"] [data-slot="model-reading-selector"]']);
 	await pollUntil(
 		() =>
@@ -280,22 +280,11 @@ test("choosing a checkout refreshes its canonical pane and preserves the other r
 	);
 
 	const before = await addressSearch(browser);
-	// The repository's menu lists its checkouts; choosing the worktree moves
+	// The switcher finds the repository's checkouts; choosing the worktree moves
 	// the pane that read the main checkout, and it keeps its board.
-	await browser.run(["click", `button[aria-label="Checkouts of ${ORDERS}"]`]);
-	const chose = await pollUntil(
-		() =>
-			browser.eval<boolean>(`(() => {
-				const item = [...document.querySelectorAll('[role="menuitemradio"]')]
-					.find((one) => one.textContent.includes(${JSON.stringify(worktree)}));
-				if (!item) return false;
-				item.click();
-				return true;
-			})()`),
-		Boolean,
-		"the menu to list the worktree",
-	);
-	expect(chose).toBe(true);
+	await browser.run(["click", '[data-slot="repository-switcher"]']);
+	await browser.run(["fill", 'input[aria-label="Find a repository or checkout"]', worktree]);
+	await browser.run(["click", `[data-row-id=${JSON.stringify(`checkout:${worktree}`)}]`]);
 	await pollUntil(
 		() => paneSays(browser, "B", "Feature checkout"),
 		Boolean,

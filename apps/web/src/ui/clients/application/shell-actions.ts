@@ -14,6 +14,7 @@ import { chooseCheckout } from "#ui/clients/board-catalog/repositories.ts";
 import { type ModelCatalog } from "#ui/hooks/architecture-model/use-model-catalog.ts";
 import { showModel } from "#ui/clients/pane-session/pane-requests.ts";
 import type {
+	PaneOpening,
 	SettingsSurface,
 	ShellActions,
 	ShellNotice,
@@ -148,6 +149,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
  * @param model The destination model identity.
  * @param repository The destination repository identity.
  * @param paneId The pane the reader chose.
+ * @param reading What the pane opens, when it opens more than the model's roots.
  * @returns Whether the addressed route accepted the reading.
  */
 async function openModel(
@@ -155,6 +157,7 @@ async function openModel(
 	model: string,
 	repository: string,
 	paneId: string,
+	reading?: PaneOpening,
 ): Promise<boolean> {
 	const { status } = recordFor(deps.panes.records, paneId);
 	const vault = placeFor(deps.catalog, status, repository);
@@ -171,7 +174,7 @@ async function openModel(
 	});
 	const move = userMoves(deps.panes.handles, paneId);
 	try {
-		await showModel(vault, status.clientId, { model });
+		await showModel(vault, status.clientId, { ...reading, model });
 		permission.move.done(null, repository);
 		await deps.activate(paneId, { vault });
 		deps.notices.dismiss("architecture-command");
@@ -334,10 +337,11 @@ function createShellActions(deps: ShellActionDeps): ComposedShellActions {
 		 * @param model The destination model.
 		 * @param repository Its registered repository.
 		 * @param paneId The target pane, or the active pane when absent.
+		 * @param reading What the pane opens, when it opens more than the model's roots.
 		 * @returns Whether the move succeeded.
 		 */
-		openModel: (model, repository, paneId) =>
-			openModel(deps, model, repository, paneId ?? deps.panes.active.status.paneId),
+		openModel: (model, repository, paneId, reading) =>
+			openModel(deps, model, repository, paneId ?? deps.panes.active.status.paneId, reading),
 		...boardActions(deps),
 		...paneActions(deps),
 		/**

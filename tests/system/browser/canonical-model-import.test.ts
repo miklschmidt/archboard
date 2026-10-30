@@ -80,6 +80,7 @@ test("imported planning models remain readable through exact history and compari
 		"the retained reading",
 		WAIT,
 	);
+	await browser.run(["click", '[data-destination="history"]']);
 	await browser.run(["click", '[data-slot="model-comparison-selector"]']);
 	await pollUntil(
 		() =>

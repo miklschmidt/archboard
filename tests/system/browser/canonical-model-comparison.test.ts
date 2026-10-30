@@ -24,6 +24,7 @@ import { serverPath } from "./support/navigator-support.ts";
 const WAIT = { timeoutMs: 10_000 } as const;
 
 async function selectComparison(browser: AgentBrowserSession, id: string): Promise<void> {
+	await browser.run(["click", '[data-destination="history"]']);
 	await browser.run(["click", '[data-slot="model-comparison-selector"]']);
 	await pollUntil(
 		() =>

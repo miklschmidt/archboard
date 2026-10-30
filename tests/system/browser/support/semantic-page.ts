@@ -15,7 +15,7 @@ interface PartSearchState {
 }
 
 /**
- * What the part search in the pane's sidebar is doing.
+ * What the Find field of the left column is doing.
  * @param evaluate How the owner evaluates an expression in the page.
  * @returns Whether the field has focus, what is typed, whether results are listed and what the field points at.
  */
@@ -23,7 +23,7 @@ function partSearchState(
 	evaluate: <T>(expression: string) => Promise<T>,
 ): Promise<PartSearchState> {
 	return evaluate<PartSearchState>(
-		`(() => { const field = document.querySelector('[data-slot="part-search"] input');` +
+		`(() => { const field = document.querySelector('[data-slot="model-find"] input');` +
 			` const named = field?.getAttribute('aria-controls') ?? null;` +
 			` const options = [...document.querySelectorAll('[role="option"] button')];` +
 			` return { focused: field !== null && field === document.activeElement,` +

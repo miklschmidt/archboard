@@ -5,11 +5,8 @@ import {
 } from "#ui/components/architecture-model/ModelFrame.tsx";
 import { ModelPane } from "#ui/components/architecture-model/ModelPane.tsx";
 import { ModelPreviewReader } from "#ui/components/architecture-model/ModelPreviewReader.tsx";
-import { ModelBookmarks } from "#ui/components/architecture-model/ModelBookmarks.tsx";
-import { ModelLegacyAddresses } from "#ui/components/architecture-model/ModelLegacyAddresses.tsx";
 import { ModelOriginalDestination } from "#ui/components/architecture-model/ModelOriginalDestination.tsx";
 import { ModelBookmarkReading } from "#ui/components/architecture-model/ModelBookmarkReading.tsx";
-import { importedReadings } from "#ui/rules/architecture-model/imported-readings.ts";
 import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
 import { useCallback, useEffect, type ComponentProps, type JSX, type ReactNode } from "react";
 import {
@@ -23,13 +20,11 @@ import {
 	ArchitectureReadError,
 	architectureModelQuery,
 	architectureModelKeys,
-	architectureCheckpointsQuery,
 } from "#ui/clients/architecture-model/queries.ts";
 import { ModelStateDetails } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { ModelWalkthroughReader } from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
-import { ModelReadingSelector } from "#ui/components/architecture-model/ModelReadingSelector.tsx";
-import { ModelComparisonSelector } from "#ui/components/architecture-model/ModelComparisonSelector.tsx";
+import { ModelFailedRecords } from "#ui/components/architecture-model/ModelRecords.tsx";
 import { CheckpointEvidence } from "#ui/components/architecture-model/CheckpointEvidence.tsx";
 import { ModelPublication } from "#ui/components/architecture-model/ModelPublication.tsx";
 import { ModelClaims } from "#ui/components/architecture-model/ModelClaims.tsx";
@@ -106,6 +101,22 @@ function LocatedModelStage(props: ModelStageProps): JSX.Element {
 }
 
 /**
+ * The feed keeps a healthy reading live, so only a reading it cannot recover offers Refresh.
+ * @param query The reading.
+ * @param feed The live feed.
+ * @param refresh Read again.
+ * @returns The action, or nothing for a healthy reading.
+ */
+function offeredRefresh(
+	query: ModelQuery,
+	feed: ReturnType<typeof useArchitectureFeed>,
+	refresh: () => void,
+): (() => void) | undefined {
+	const healthy = !query.isError && feed.connection === "live" && feed.failure === null;
+	return healthy ? undefined : refresh;
+}
+
+/**
  * The query is the sole owner of model content in the browser.
  * @param props The vault and legacy fallback.
  * @returns One coherent reading with explicit recovery.
@@ -114,15 +125,9 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const {
 		bookmark,
 		legacyAddress,
-		selectBookmark,
-		selectLegacyAddress,
 		checkpoint,
 		state,
 		against,
-		subject,
-		selectState,
-		compareAgainst,
-		selectCheckpoint,
 		model: requestedModel,
 		identify,
 	} = useModelLocation(props.paneId);
@@ -137,7 +142,6 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 		placeholderData: keepPreviousData,
 	});
 	const catalogue = useQuery(architectureModelQuery(props.vault));
-	const history = useQuery(architectureCheckpointsQuery(props.vault));
 	const { data } = query;
 	// The reading kept on screen while another loads answers no question about the address.
 	const answered = query.isPlaceholderData ? undefined : data;
@@ -162,35 +166,11 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 		return <ModelOriginalDestination model={answered} paneId={props.paneId} />;
 	const header = (
 		<>
-			<ModelHeader name={modelName(data)} refresh={refresh} refreshing={query.isFetching}>
-				<ModelReadingSelector
-					checkpoint={checkpoint}
-					state={state}
-					selected={data?.selectedState}
-					catalogue={catalogue}
-					onState={selectState}
-					onSelect={selectCheckpoint}
-					history={history}
-				/>
-				<ModelComparisonSelector
-					against={against}
-					onSelect={compareAgainst}
-					catalogue={catalogue}
-					history={history}
-				/>
-				<ModelBookmarks
-					catalogue={importedReadings(data)}
-					selected={bookmark}
-					pending={query.isPending}
-					onSelect={selectBookmark}
-				/>
-				<ModelLegacyAddresses
-					catalogue={importedReadings(data)}
-					selected={legacyAddress}
-					pending={query.isPending}
-					onSelect={selectLegacyAddress}
-				/>
-			</ModelHeader>
+			<ModelHeader
+				name={modelName(data)}
+				refresh={offeredRefresh(query, feed, refresh)}
+				refreshing={query.isFetching}
+			/>
 			<ModelControls vault={vault} checkpoint={checkpoint} model={data} />
 		</>
 	);
@@ -207,7 +187,6 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 		>
 			<ModelResponse
 				header={header}
-				subject={subject}
 				paneId={props.paneId}
 				vault={props.vault}
 				reducedMotion={props.reducedMotion}
@@ -378,7 +357,6 @@ interface ModelResponseProps extends Pick<
 	| "overlay"
 	| "onPresentationEnd"
 > {
-	subject: string | null;
 	query: ModelQuery;
 	states: ReturnType<typeof stateCatalogue>;
 	current: boolean;
@@ -432,13 +410,21 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 					retry.
 				</output>
 			)}
-			{problem !== null && <ModelError {...problem} compact={stale} />}
+			{problem !== null && (
+				<>
+					<ModelError {...problem} compact={stale} />
+					<ModelFailedRecords
+						vault={props.vault}
+						paneId={props.paneId}
+						failed={model === undefined}
+					/>
+				</>
+			)}
 			{model !== undefined && (
 				<ModelBookmarkReading model={model}>
 					<ModelReading
 						overview={overview}
 						overlay={props.overlay}
-						subject={props.subject}
 						vault={props.vault}
 						model={model}
 						settled={!query.isPlaceholderData}
