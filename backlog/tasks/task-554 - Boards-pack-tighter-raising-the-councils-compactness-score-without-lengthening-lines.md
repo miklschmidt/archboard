@@ -24,10 +24,10 @@ The final council of TASK-548.08 (2026-10-28, 40 blind pairs against c147b73c8, 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 On a fresh blind sample judged against the base branch, the council's mean K score of the after pictures is higher than of the before pictures, and its mean R score is not lower
-- [ ] #2 The council judges no pair worse, and no after picture has a defect its before picture lacks
-- [ ] #3 First and growing-edit renders of Board viewer, Board persistence and Archboard server routes stay under 500 ms on a quiet machine
-- [ ] #4 Every Track drawing of the corpus is byte-identical to the base branch
+- [x] #1 On a fresh blind sample judged against the base branch, the council's mean K score of the after pictures is higher than of the before pictures, and its mean R score is not lower
+- [x] #2 The council judges no pair worse, and no after picture has a defect its before picture lacks
+- [x] #3 First and growing-edit renders of Board viewer, Board persistence and Archboard server routes stay under 500 ms on a quiet machine
+- [x] #4 Every Track drawing of the corpus is byte-identical to the base branch
 - [ ] #5 Compactness measurements of the complete corpus before and after are recorded in docs/design
 <!-- AC:END -->
 
