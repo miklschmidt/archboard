@@ -5,7 +5,7 @@ import { useModelComparison } from "#ui/hooks/architecture-model/use-model-compa
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import { projectFlow } from "#ui/rules/architecture-model/flow-reading.ts";
 import { importedReadings } from "#ui/rules/architecture-model/imported-readings.ts";
-import { drawableGrammar } from "#ui/rules/architecture-model/scene.ts";
+import { drawableGrammar, isNarrowed } from "#ui/rules/architecture-model/scene.ts";
 
 /**
  * The destination the address asks for, as one request.
@@ -13,9 +13,17 @@ import { drawableGrammar } from "#ui/rules/architecture-model/scene.ts";
  * @param paneId The pane that owns the address.
  * @param model The coherent model.
  * @param settled Whether the model answers this address.
- * @returns The location, the comparison, the structural projection and the request.
+ * @param failed Whether the read of this address failed, so that the model only stands in.
+ * @returns The location, the comparison, the structural projection, the request, and the
+ * way out of a reading that narrows its scope.
  */
-function useModelReading(vault: string, paneId: string, model: Model, settled: boolean) {
+function useModelReading(
+	vault: string,
+	paneId: string,
+	model: Model,
+	settled: boolean,
+	failed?: boolean,
+) {
 	const comparison = useModelComparison(vault, model);
 	const { reference } = comparison;
 	const bookmark = importedReadings(model)?.bookmark?.reading;
@@ -54,11 +62,14 @@ function useModelReading(vault: string, paneId: string, model: Model, settled: b
 			reading,
 			grammar: drawableGrammar(grammar, projection),
 			settled,
+			failed,
 			entry,
 		}),
-		[model, projection, reading, grammar, settled, entry],
+		[model, projection, reading, grammar, settled, failed, entry],
 	);
-	return { location, comparison, structure, request };
+	const narrowed = isNarrowed(reading) || visibility !== undefined;
+	const onWholeScope = narrowed ? location.showWholeScope : undefined;
+	return { location, comparison, structure, request, onWholeScope };
 }
 
 export { useModelReading };

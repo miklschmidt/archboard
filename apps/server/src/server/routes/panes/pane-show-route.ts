@@ -70,12 +70,28 @@ function narrativeRefusal(model: Model, request: Reading): NavigationError | und
 	return undefined;
 }
 /**
+ * An agent hears at once that a scope is missing. A reader's own address goes through, because
+ * the pane says what the reading lacks and offers the way on.
+ * @param model The complete canonical reading.
+ * @param request The requested presentation.
+ * @param agent Whether an agent asked.
+ * @returns Its refusal, when an agent asked for what is unavailable.
+ */
+function agentRefusal(model: Model, request: Reading, agent: boolean): NavigationError | undefined {
+	return agent ? structuralRefusal(model, request) : undefined;
+}
+/**
  * Require the addressed model and authored flow before presentation resolution.
  * @param model The complete canonical reading.
  * @param request The requested model and grammar.
+ * @param agent Whether an agent asked.
  * @returns Its refusal, when unavailable.
  */
-function selectionRefusal(model: Model, request: Reading): NavigationError | undefined {
+function selectionRefusal(
+	model: Model,
+	request: Reading,
+	agent: boolean,
+): NavigationError | undefined {
 	if (
 		request.model !== undefined &&
 		![model.manifest.id, model.manifest.name].includes(request.model)
@@ -83,7 +99,7 @@ function selectionRefusal(model: Model, request: Reading): NavigationError | und
 		return { code: "TARGET_CHANGED", error: "The addressed vault contains another model." };
 	if (request.grammar !== "architecture" && model.selectedFlow === undefined)
 		return { code: "FLOW_REQUIRED", error: "Select an authored flow for this grammar." };
-	return structuralRefusal(model, request) ?? narrativeRefusal(model, request);
+	return agentRefusal(model, request, agent) ?? narrativeRefusal(model, request);
 }
 /**
  * Resolve stable reading selectors for the existing client renderer.
@@ -196,7 +212,7 @@ async function showPaneRoute(req: Request, res: Response): Promise<void> {
 		respond(res, model);
 		return;
 	}
-	const refused = selectionRefusal(model, body.reading);
+	const refused = selectionRefusal(model, body.reading, body.agent === true);
 	if (refused !== undefined) {
 		res.status(422).json({ success: false, ...refused });
 		return;

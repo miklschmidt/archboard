@@ -1,5 +1,5 @@
 import type { DiagramGrammar } from "@archboard/board/views";
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import type { projectModel, Model } from "@archboard/board/content";
 import { rendererBuild } from "virtual:archboard-renderer";
 import {
@@ -10,6 +10,7 @@ import {
 type ModelDrawing = Awaited<ReturnType<typeof cachedModelDrawing>>;
 
 const storage = browserPictureStorage();
+const DRAWINGS = "model-drawing";
 
 /**
  * Each reading revision accepts only the scene key derived from its content and interfaces.
@@ -35,7 +36,7 @@ function modelDrawingQuery(
 	};
 	const key = JSON.stringify(["canonical", rendererBuild, model.manifest.id, request]);
 	return queryOptions({
-		queryKey: ["model-drawing", key],
+		queryKey: [DRAWINGS, key],
 		/**
 		 * Reuse a matching scene or render it locally.
 		 * @returns The stored or newly rendered scene.
@@ -49,4 +50,23 @@ function modelDrawingQuery(
 	});
 }
 
-export { modelDrawingQuery, type ModelDrawing };
+/**
+ * Draw again what failed on screen. A drawing of a reading never goes stale by itself, so
+ * only this and an explicit retry reach one that failed.
+ * @param client The query cache.
+ * @returns After the failed drawings have run again.
+ */
+function retryFailedDrawings(client: QueryClient): Promise<void> {
+	return client.refetchQueries({
+		queryKey: [DRAWINGS],
+		type: "active",
+		/**
+		 * Keep every drawing that succeeded.
+		 * @param query A drawing.
+		 * @returns Whether it failed.
+		 */
+		predicate: (query) => query.state.status === "error",
+	});
+}
+
+export { modelDrawingQuery, retryFailedDrawings, type ModelDrawing };

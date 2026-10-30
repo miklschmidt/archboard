@@ -1,5 +1,6 @@
 import { checkpointTime } from "#ui/rules/architecture-model/history-time.ts";
 import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
+import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
 import { useCallback, type ComponentProps, type JSX } from "react";
 import { Select } from "@archboard/ui-kit/components";
 import {
@@ -13,6 +14,8 @@ type ComparisonSelectorProps = Pick<
 > & {
 	against: string | null;
 	onSelect: (against: string | null) => void;
+	/** Whether this reading has a comparison to turn off: Current has none by default. */
+	offersAfter: boolean;
 };
 
 /**
@@ -72,7 +75,8 @@ function ModelComparisonSelector(props: ComparisonSelectorProps): JSX.Element {
  * @returns Ordered comparison choices, including unavailable requested intent.
  */
 function comparisonChoices(props: ComparisonSelectorProps): Map<string, string> {
-	const choices = stateChoices(props.catalogue.data);
+	const choices = new Map(props.offersAfter ? [[AFTER, "After"]] : []);
+	for (const [id, label] of stateChoices(props.catalogue.data)) choices.set(id, label);
 	for (const [id, label] of savedChoices(props.history.data)) choices.set(id, label);
 	if (props.against !== null && !choices.has(props.against))
 		choices.set(props.against, `Selected base · ${props.against}`);

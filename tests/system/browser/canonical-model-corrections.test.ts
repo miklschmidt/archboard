@@ -108,7 +108,7 @@ async function fitted(browser: AgentBrowserSession): Promise<void> {
 			browser.eval<boolean>(`(() => {
 		const stage = document.querySelector('[data-slot="model-diagram"]');
 		const svg = stage?.querySelector('svg');
-		if (!stage || !svg || document.querySelector('[data-slot="model-comparison-loading"]')) return false;
+		if (!stage || !svg || document.querySelector('[data-comparison="loading"]')) return false;
 		const room = stage.getBoundingClientRect(); const picture = svg.getBoundingClientRect();
 		return picture.top >= room.top - 1 && picture.bottom <= room.bottom + 1;
 	})()`),

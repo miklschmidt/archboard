@@ -6,13 +6,13 @@ import {
 	type ReactNode,
 	type RefObject,
 } from "react";
+import {
+	ModelDestinationNotice,
+	ModelUnavailableReading,
+} from "#ui/components/architecture-model/ModelDestinationState.tsx";
 import { StageSpinner } from "#ui/components/semantic-board-canvas/SemanticStageStates.tsx";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
-import type {
-	AcceptedScene,
-	Projection,
-	SceneRequest,
-} from "#ui/rules/architecture-model/scene.ts";
+import type { AcceptedScene, SceneRequest } from "#ui/rules/architecture-model/scene.ts";
 
 const ModelDiagram = lazy(async () => {
 	const module = await import("#ui/components/architecture-model/ModelDiagram.tsx");
@@ -21,17 +21,34 @@ const ModelDiagram = lazy(async () => {
 
 type DiagramProps = ComponentProps<typeof ModelDiagram>;
 
-interface ModelReadingCanvasProps extends Pick<
-	DiagramProps,
-	"camera" | "pending" | "leaving" | "cut" | "floating" | "reducedMotion" | "onOpen" | "onAttention"
-> {
+interface ModelReadingCanvasProps
+	extends
+		Pick<
+			DiagramProps,
+			| "camera"
+			| "pending"
+			| "leaving"
+			| "cut"
+			| "floating"
+			| "reducedMotion"
+			| "onOpen"
+			| "onAttention"
+			| "onWholeScope"
+		>,
+		Pick<
+			ComponentProps<typeof ModelDestinationNotice>,
+			"paneId" | "failure" | "onRetry"
+		> {
 	overlay?: ReactNode;
+	/** What the stage has to say over the picture. */
+	notices: ReactNode;
+	/** Whether the base of the comparison is still on its way. */
+	comparing: boolean;
+	vault: string;
 	/** The reading that is on screen, once one is. */
 	scene: AcceptedScene | null;
 	/** The destination the address asks for. */
 	request: SceneRequest;
-	/** A drawing that failed. */
-	failure: Error | null;
 	area: RefObject<HTMLDivElement | null>;
 	warnings: ReadonlySet<string>;
 	selection: ModelSelection;
@@ -45,6 +62,7 @@ interface ModelReadingCanvasProps extends Pick<
  */
 function ModelReadingCanvas(props: ModelReadingCanvasProps): JSX.Element {
 	const { scene, request, selection, area } = props;
+	const waiting = props.pending || props.comparing;
 	return (
 		<>
 			{request.grammar === "architecture" && (
@@ -67,11 +85,25 @@ function ModelReadingCanvas(props: ModelReadingCanvasProps): JSX.Element {
 							onSelectMany={selection.selectMany}
 							onOpen={props.onOpen}
 							onAttention={props.onAttention}
+							onWholeScope={props.onWholeScope}
 							reducedMotion={props.reducedMotion}
 						/>
 					)}
 				</Suspense>
-				<DestinationState request={request} failure={props.failure} first={scene === null} />
+				<NoPicture {...props} waiting={waiting} />
+				<div
+					data-slot="model-notices"
+					className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col *:pointer-events-auto"
+				>
+					{props.notices}
+					<ModelDestinationNotice
+						paneId={props.paneId}
+						request={request}
+						failure={props.failure}
+						onRetry={props.onRetry}
+						waiting={waiting}
+					/>
+				</div>
 				<div
 					data-slot="model-stage-overlay"
 					className="pointer-events-none absolute inset-x-0 bottom-6 z-25 flex justify-center px-8"
@@ -84,98 +116,25 @@ function ModelReadingCanvas(props: ModelReadingCanvasProps): JSX.Element {
 }
 
 /**
- * What the destination has to say over the picture.
- * @param props The destination and how its drawing went.
+ * What the surface shows while no picture stands for the reading.
+ * @param props The destination and how it is going.
+ * @param props.vault The reading vault.
+ * @param props.paneId The pane.
  * @param props.request The destination.
- * @param props.failure A drawing that failed.
- * @param props.first Whether no picture exists yet.
- * @returns A failure, an unavailable reading, the first wait, or nothing.
+ * @param props.scene The accepted scene.
+ * @param props.waiting Whether the reader waits for it.
+ * @returns What the reading lacks, the wait for a first picture, or nothing.
  */
-function DestinationState(props: {
-	request: SceneRequest;
-	failure: Error | null;
-	first: boolean;
-}): JSX.Element | null {
-	const { request, failure } = props;
-	if (request.grammar === null)
-		return <UnavailableReading reading={request.reading} projection={request.projection} />;
-	if (failure !== null)
-		return (
-			<output
-				role="alert"
-				className="text-body bg-background border-border absolute inset-x-0 top-0 z-10 border-b px-8 py-4"
-			>
-				{failure.message}
-			</output>
-		);
-	return props.first ? <FirstDrawing request={request} /> : null;
-}
-
-/**
- * What the pane shows before its first picture exists.
- * @param props The destination.
- * @param props.request The destination.
- * @returns A spinner that waits before it appears, and the destination for a screen reader.
- */
-function FirstDrawing({ request }: { request: SceneRequest }): JSX.Element {
-	return (
-		<>
-			<p aria-live="polite" className="sr-only">
-				Drawing {request.projection.trail.at(-1)?.name ?? request.model.manifest.name}…
-			</p>
-			<StageSpinner className="pointer-events-none absolute inset-0" />
-		</>
-	);
-}
-
-/**
- * Never replace a missing destination with another reading.
- * @param props The requested reading and its projection.
- * @param props.reading The address fields.
- * @param props.projection The requested reading's content.
- * @returns The recovery instruction for that destination.
- */
-function UnavailableReading({
-	reading,
-	projection,
-}: {
-	reading: SceneRequest["reading"];
-	projection: Projection;
-}): JSX.Element {
-	const { slot, message } = unavailableMessage(reading, projection);
-	return (
-		<output data-slot={slot} className="text-body bg-background absolute inset-0 z-10 p-8">
-			{message}
-		</output>
-	);
-}
-
-/**
- * Name what a reading lacks.
- * @param reading The address fields.
- * @param projection The requested reading's content.
- * @returns Its state and recovery instruction.
- */
-function unavailableMessage(
-	reading: SceneRequest["reading"],
-	projection: Projection,
-): { slot: string; message: string } {
-	if (reading.grammar === "architecture")
-		return {
-			slot: "model-missing-scope",
-			message: `The requested module is absent from this reading: ${reading.scope}. Open the repository from the path above.`,
-		};
-	if (projection.flow !== null)
-		return {
-			slot: "model-mode-unavailable",
-			message: `The requested diagram mode is unavailable: ${reading.grammar}. Choose a supported mode.`,
-		};
-	return reading.flow === null
-		? { slot: "model-flow-required", message: "Choose an authored flow to read its behavior." }
-		: {
-				slot: "model-flow-missing",
-				message: `The selected flow is unavailable: ${reading.flow}. Choose another flow or restore its architecture.`,
-			};
+function NoPicture(
+	props: Pick<ModelReadingCanvasProps, "vault" | "paneId" | "request" | "scene"> & {
+		waiting: boolean;
+	},
+): JSX.Element | null {
+	const { request, vault, paneId } = props;
+	if (request.settled && request.grammar === null)
+		return <ModelUnavailableReading vault={vault} paneId={paneId} request={request} />;
+	if (props.scene !== null || !props.waiting) return null;
+	return <StageSpinner className="pointer-events-none absolute inset-0" />;
 }
 
 /**

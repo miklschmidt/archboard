@@ -1,4 +1,5 @@
-import { useContext, useMemo } from "react";
+import { useCallback, useContext, useMemo } from "react";
+import { useRouter } from "@tanstack/react-router";
 import {
 	ModelPaneContext,
 	ModelWalkthroughContext,
@@ -17,10 +18,14 @@ import {
 } from "#ui/components/semantic-board-canvas/PaneHeaderFrame.tsx";
 
 interface ModelErrorProps {
+	/** Lay the error over a kept picture, which it never moves. */
 	compact?: boolean;
+	title?: string;
 	code: string;
 	message: string;
 	diagnostics?: Extract<ArchitectureModelRead, { success: false }>["diagnostics"];
+	/** What the reader can do about it. */
+	children?: ReactNode;
 }
 
 /**
@@ -38,11 +43,11 @@ function ModelError(props: ModelErrorProps): JSX.Element {
 			data-code={props.code}
 			className={
 				props.compact
-					? "text-body border-border max-h-40 shrink-0 space-y-2 overflow-auto border-b px-4 py-3"
+					? "text-body border-border bg-background max-h-40 shrink-0 space-y-2 overflow-auto border-b px-4 py-3"
 					: "text-body max-w-prose space-y-4 p-10"
 			}
 		>
-			<h3 className="text-title font-semibold">Architecture unavailable</h3>
+			<h3 className="text-title font-semibold">{props.title ?? "Architecture unavailable"}</h3>
 			<p>{props.message}</p>
 			{[...diagnostics].map(([key, diagnostic]) => (
 				<div key={key} className="space-y-1">
@@ -51,6 +56,40 @@ function ModelError(props: ModelErrorProps): JSX.Element {
 					<p className="text-muted-foreground">{diagnostic.recovery}</p>
 				</div>
 			))}
+			{props.children}
+		</div>
+	);
+}
+
+/**
+ * What a reader can do about a failure. Back is the browser's, so a reading opened
+ * directly has none.
+ * @param props The recovery actions.
+ * @param props.onRetry Try the failed step again.
+ * @param props.onAfter Show the state alone, when a comparison can be what failed.
+ * @returns The actions.
+ */
+function ModelFailureActions(props: {
+	onRetry: () => void;
+	onAfter?: (() => void) | undefined;
+}): JSX.Element {
+	const { history } = useRouter();
+	const back = useCallback((): void => history.back(), [history]);
+	return (
+		<div className="flex items-center gap-2">
+			<Button size="sm" data-slot="model-retry" onClick={props.onRetry}>
+				Retry
+			</Button>
+			{history.canGoBack() && (
+				<Button variant="outline" size="sm" data-slot="model-back" onClick={back}>
+					Back
+				</Button>
+			)}
+			{props.onAfter !== undefined && (
+				<Button variant="outline" size="sm" data-slot="model-show-after" onClick={props.onAfter}>
+					Show After
+				</Button>
+			)}
 		</div>
 	);
 }
@@ -108,4 +147,4 @@ function ModelHeader(props: ModelHeaderProps): JSX.Element {
 	);
 }
 
-export { ModelHeader, ModelError, type ModelErrorProps };
+export { ModelHeader, ModelError, ModelFailureActions, type ModelErrorProps };

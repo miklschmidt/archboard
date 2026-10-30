@@ -703,7 +703,9 @@ A placement addresses its holder and following sibling by stable identity.
 A decision placement also names the exact alternative label.
 No active proposal stores unrelated module or flow snapshots.
 
-A selected draft compares against current by default.
+A selected draft with a `predecessorCheckpoint` compares against that checkpoint by default, with `comparison.reason:"predecessor"`.
+Such a draft can hold a fragment of current, so a comparison with current reports the rest of the model as removed.
+Any other selected draft compares against current by default.
 Without current, a dependent draft compares against its retained predecessor.
 A planning root has no default comparison.
 Use `--against` for an explicit coherent named state or complete checkpoint.
@@ -729,7 +731,8 @@ This absence names no implemented state and does not suppress the requested comp
 The browser state picker lists current architecture, active proposals, and saved readings.
 Select a proposal to read its modules and flows without changing current architecture.
 The header states whether the selected reading is implemented, draft, historical, or shelved.
-The Compare control selects the default comparison, another active state, or an exact saved reading.
+The Compare control selects the default comparison, After, another active state, or an exact saved reading.
+After shows the state alone, and the reading says that it has no comparison.
 The address preserves both selections through reload and browser history.
 
 The diagram marks added, removed, and changed subjects.

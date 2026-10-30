@@ -5,6 +5,7 @@ import { validateWorkspaceSearch } from "#ui/rules/board-routing/search.ts";
 import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
 import type { Model } from "@archboard/board/content";
 import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts";
+import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
 
 type Reading = Model["walkthroughs"][number]["beats"][number]["reading"];
 
@@ -189,7 +190,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					preview: reading.preview,
 					bookmark: reading.bookmark,
 					legacyAddress: reading.legacyAddress,
-					against: reading.against,
+					against: requestedComparison(reading),
 					subject: reading.module,
 					grammar: requestedGrammar(reading),
 					flow: reading.flow,
@@ -301,6 +302,26 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		},
 		[navigate, userChanged],
 	);
+	const openRetained = useCallback(
+		(next: string, module: string): void => {
+			userChanged?.("variant");
+			void navigate({
+				checkpoint: next,
+				state: undefined,
+				bookmark: undefined,
+				against: AFTER,
+				scope: module,
+				focus: undefined,
+				grammar: undefined,
+				flow: undefined,
+				subject: undefined,
+			});
+		},
+		[navigate, userChanged],
+	);
+	const showWholeScope = useCallback((): void => {
+		explore({ focus: undefined, hideKinds: undefined, showGroups: undefined });
+	}, [explore]);
 	const openReference = useCallback(
 		(repository: string, reading: Model): void => {
 			void navigate(referenceAddress(reading), false, repository);
@@ -323,6 +344,8 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		against,
 		selectState,
 		compareAgainst,
+		openRetained,
+		showWholeScope,
 		openFlow,
 		grammar,
 		flow,
@@ -411,6 +434,15 @@ function searchValue(value: ModelAddress[keyof ModelAddress]): string | undefine
 }
 
 export { useModelLocation };
+
+/**
+ * The address field of a resolved request's comparison.
+ * @param reading The resolved navigation request.
+ * @returns The named base, or After when the request turned the comparison off.
+ */
+function requestedComparison(reading: PaneModelRequest["reading"]): ModelAddress["against"] {
+	return reading.compare === false ? AFTER : reading.against;
+}
 
 /**
  * Omit the ordinary default while preserving an explicit override of a bookmark's grammar.

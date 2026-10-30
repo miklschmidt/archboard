@@ -547,7 +547,8 @@ Existing history owners retain publication, shallow recovery, source isolation, 
 `tests/system/semantic-boards/model-proposals.test.ts` owns normal CLI and HTTP routing, schema parity, lifecycle metadata, comparison selection, and refusal status.
 These adapters do not repeat the domain matrix.
 `canonical-model-proposals.test.ts` owns visible state selection, draft lifecycle, flow readings, claims, and live draft refresh.
-`canonical-model-comparison.test.ts` owns comparison choices, coherent removed definitions, changed fields, refusal, and retained recovery.
+`canonical-model-comparison.test.ts` owns comparison choices, After through a reload, `Compare with current`, coherent removed definitions, changed fields, refusal, and retained recovery.
+`model-destination-state.test.tsx` owns the recovery actions of a failed drawing, a removed module, and an absent module.
 `canonical-model-planning.test.ts` owns planning roots, retained predecessor comparisons, empty baselines, and unavailable state intent.
 These browser owners use real temporary files and Git through the normal public HTTP writes.
 No renderer algorithm test or model evaluation belongs to this slice.

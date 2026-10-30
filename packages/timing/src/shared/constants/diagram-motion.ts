@@ -53,6 +53,15 @@ const PICTURE_MS = durations({
 	 * and it runs underneath the next picture's entrance.
 	 */
 	exit: 280,
+	/**
+	 * How long a reader waits for the next reading before the pane names it.
+	 *
+	 * Most pictures arrive within a few hundred milliseconds, and a message flashed
+	 * in front of them would be the only thing on screen that jumps. Pulls against
+	 * doubt: a comparison can take many seconds, and past about a second a reader
+	 * with only the old picture cannot tell that the pane heard them.
+	 */
+	waitNotice: 800,
 });
 
 /**

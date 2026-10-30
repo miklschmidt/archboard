@@ -39,6 +39,10 @@ interface ModelReadingProps {
 	model: Model;
 	/** Whether the model is the answer to this address, not the last answer kept on screen. */
 	settled: boolean;
+	/** Whether the read of this address failed, so that the model only stands in for it. */
+	failed?: boolean | undefined;
+	/** What the stage has to say over the picture, which it never moves. */
+	notices?: ReactNode;
 	paneId: string;
 	reducedMotion: boolean;
 }
@@ -52,11 +56,12 @@ interface ModelReadingProps {
  */
 function ModelReading(props: ModelReadingProps): JSX.Element {
 	const { model, vault, reducedMotion } = props;
-	const { location, comparison, structure, request } = useModelReading(
+	const { location, comparison, structure, request, onWholeScope } = useModelReading(
 		vault,
 		props.paneId,
 		model,
 		props.settled,
+		props.failed,
 	);
 	const { open, reveal, filters, focus, scope, grammar, flow, openFlow, setFocus } = location;
 	const { id: modelId } = model.manifest;
@@ -183,6 +188,12 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 			</ModelSelectionBar>
 		</>
 	);
+	const notices = (
+		<>
+			{props.notices}
+			<ModelComparisonNotice comparison={comparison} />
+		</>
+	);
 	return (
 		<PeekProvider selection={soleSelected(selection.ids)}>
 			<div
@@ -190,10 +201,10 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				data-slot="model-reading"
 				data-scope={scope ?? ""}
 				data-grammar={grammar}
+				data-comparison={comparison.status}
 				className="flex min-h-0 min-w-0 flex-1"
 			>
 				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-					<ModelComparisonNotice comparison={comparison} />
 					<ModelCaption
 						projection={shown.projection}
 						everyLine={filters.everyLine}
@@ -202,9 +213,15 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 					<ModelReadingCanvas
 						scene={scene}
 						request={request}
+						vault={vault}
+						paneId={props.paneId}
 						pending={accepted.pending}
+						comparing={comparison.status === "loading"}
 						leaving={accepted.leaving}
 						failure={accepted.failure}
+						onRetry={accepted.retry}
+						onWholeScope={onWholeScope}
+						notices={notices}
 						camera={camera}
 						area={area}
 						cut={cut}

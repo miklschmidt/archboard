@@ -146,6 +146,7 @@ Each behavior keeps its existing public boundary and one state owner.
   Explicit canonical intent remains visible even when the server remembers an old address.
   Each reader instance belongs to its resolved vault. A foreign destination replaces that instance and its native reading controls.
   `stateX` names a mutable proposal, and `againstX` names an explicit comparison base.
+  `againstX=after` asks for the state alone, and reads with `compare: false`. The reading says so, because it looks like any plain state.
   `subjectX` names an explicit reference destination and seeds selection when that reading opens.
   Later pointer selection stays temporary and does not rewrite that destination.
   For canonical readings, selecting a state clears the checkpoint, and selecting a checkpoint clears the state.
@@ -338,6 +339,15 @@ The header, crumbs and controls read the destination.
 The picture, inspection, Ask and pane reports read the accepted scene, through `shown`.
 A pane reports a reading as drawn only when `ready` is true.
 An empty or unavailable reading is an accepted scene with no picture, so the last picture never stands in for it.
+A failed drawing or a failed read of a destination leaves the accepted scene where it is, and `pending` is false, because nothing is on its way.
+The failure lies over the picture with Retry and Back, and with After when a comparison can be what failed.
+Back is the browser's, so a reading opened directly has none.
+Every notice about a reading lies over the picture in `model-notices`, so no failure and no lost server moves it.
+A cached reading is stale only when a read failed or the stream was lost. An event being applied is healthy and shows nothing.
+A retained reading stays through a lost server. A refusal of that same reading removes it, because the server has then said that it is unavailable.
+A message about a wait appears after `PICTURE_MS.waitNotice` and names the destination.
+A scope in `retiredIds` says that the module was removed, and `/api/architecture/retained-module` finds the newest retained reading that holds it.
+That reading opens with no comparison. An address of a reader goes through `/api/panes/show` with a missing scope, because the pane states what is missing. An agent's show is refused.
 `rules/architecture-model/scene.ts` decides what carries, what leaves and which way, from the two readings, so every route to a reading moves the same way.
 A history entry keeps its camera, so Back and Forward return that camera. Up is a new visit, and it fits.
 
