@@ -377,11 +377,15 @@ test("saved readings stay exact after current inputs change and expose missing e
 	await pollUntil(state, (value) => value === "ready", "the retained reading", WAIT);
 	expect(await gatewayDetails(browser)).toContain("Accepts shopping requests");
 	await openModelSidebar(browser);
-	expect(
-		await browser.eval<string>(
-			`document.querySelector('[data-slot="model-checkpoint"]').textContent`,
-		),
-	).toContain(checkpoint);
+	await pollUntil(
+		() =>
+			browser.eval<string>(
+				`document.querySelector('[data-slot="model-checkpoint"]')?.textContent ?? ''`,
+			),
+		(text) => text.includes(checkpoint),
+		"the retained checkpoint in the sidebar",
+		WAIT,
+	);
 	expect(
 		await browser.eval<string | null>(
 			`document.querySelector('[data-slot="model-source-evidence"]')?.getAttribute('data-status') ?? null`,
