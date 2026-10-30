@@ -10,6 +10,7 @@ mod choices;
 mod clearance;
 mod compact;
 mod corridors;
+mod dense;
 mod endpoint_choices;
 mod fallback;
 mod geometry;
@@ -114,6 +115,37 @@ pub(super) fn route_candidates(
         }
     }
     Ok(best.ok_or(failure))
+}
+
+/// How many dense placements a reading routes, the most promising first.
+const DENSE_ROUTED: usize = 4;
+
+/// The best dense drawing of a reading of one open frame, if one passes every guard.
+pub(super) fn dense_drawing(graph: &crate::graph::Node) -> Option<crate::blocks::assembly::Placed> {
+    let mut best: Option<(reading::Order, crate::blocks::assembly::Placed)> = None;
+    for room in [0.0, 48.0] {
+        let mut routed = 0;
+        for drawing in dense::drawings(graph, room) {
+            let Ok(next) = fixed::route(graph, drawing, &selection::ORDERS[..1]) else {
+                continue;
+            };
+            let order = reading::order(&next);
+            if best
+                .as_ref()
+                .is_none_or(|one| reading::before(&order, &one.0))
+            {
+                best = Some((order, next));
+            }
+            routed += 1;
+            if routed == DENSE_ROUTED {
+                break;
+            }
+        }
+        if best.is_some() {
+            break;
+        }
+    }
+    best.map(|(_, drawing)| drawing)
 }
 
 mod direct;

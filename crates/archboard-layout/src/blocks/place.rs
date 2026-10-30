@@ -62,6 +62,9 @@ pub fn lay_out_board(graph: &str, host: &mut dyn Graphviz) -> Result<String, Str
 }
 
 fn hybrid(graph: &Node, host: &mut dyn Graphviz) -> Result<super::assembly::Placed, String> {
+    if let Some(drawing) = super::planned::dense_drawing(graph) {
+        return Ok(drawing);
+    }
     let mut failure = super::planned::Refused::from("No guarded Blocks drawing");
     let mut room = Vec::new();
     let mut complete_room = Vec::new();

@@ -5,17 +5,18 @@ use crate::{
     geometry::{Point, Rect},
 };
 
-use super::shape::{CLEAR, Shape};
+use super::shape::Shape;
 
 /// Occupied intervals on one axis, with the routing clearance kept at each end.
-#[derive(Default)]
 struct Axis {
+    clear: f64,
     occupied: Vec<(f64, f64)>,
 }
 
 impl Axis {
     fn protect(&mut self, start: f64, size: f64) {
-        self.occupied.push((start - CLEAR, start + size + CLEAR));
+        self.occupied
+            .push((start - self.clear, start + size + self.clear));
     }
 
     fn gaps(mut self) -> Gaps {
@@ -66,7 +67,6 @@ impl Gaps {
     }
 }
 
-#[derive(Default)]
 struct Space {
     x: Axis,
     y: Axis,
@@ -158,8 +158,15 @@ impl Contraction {
 /// Remove bands that hold no card, header, caption, label, bend or boundary.
 /// Long straight runs can contract, but every turn and attachment keeps its room.
 /// The caller must place the labels again and apply the complete geometry guard.
-pub(super) fn drawing(shape: &Shape) -> Option<Placed> {
-    let mut space = Space::default();
+pub(super) fn drawing(shape: &Shape, clear: f64) -> Option<Placed> {
+    let axis = || Axis {
+        clear,
+        occupied: Vec::new(),
+    };
+    let mut space = Space {
+        x: axis(),
+        y: axis(),
+    };
     let boxes = shape
         .endpoints
         .values()
@@ -189,7 +196,10 @@ mod tests {
 
     #[test]
     fn contraction_keeps_occupied_sizes_and_subpixel_alignment_at_gap_boundaries() {
-        let mut axis = Axis::default();
+        let mut axis = Axis {
+            clear: 32.0,
+            occupied: Vec::new(),
+        };
         for start in [0.25, 100.5, 210.75] {
             axis.protect(start, 20.0);
         }

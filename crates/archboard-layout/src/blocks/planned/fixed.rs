@@ -28,11 +28,13 @@ pub(super) fn route(
     let candidates = candidates(&model, &topology, &mut shape, &previous)?;
     shape.routes = super::selection::greedy(&model, &topology, &shape, &candidates, orders)
         .map_err(|edges| blocked(&model, &edges))?;
-    if let Some(drawing) = super::compact::drawing(&shape)
-        && let Ok(mut compact) = placement(&model, drawing)
-        && let Ok(drawing) = finish(&model, &topology, &mut compact)
-    {
-        return Ok(drawing);
+    for clear in [8.0, 12.0, 16.0, 24.0, 32.0] {
+        if let Some(drawing) = super::compact::drawing(&shape, clear)
+            && let Ok(mut compact) = placement(&model, drawing)
+            && let Ok(drawing) = finish(&model, &topology, &mut compact)
+        {
+            return Ok(drawing);
+        }
     }
     finish(&model, &topology, &mut shape)
 }
