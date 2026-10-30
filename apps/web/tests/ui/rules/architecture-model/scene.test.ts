@@ -84,7 +84,7 @@ test.each([
 	["a child's card", "Shop#Gateway", "Shop#Handler", "into"],
 	["a part deeper than the next level", "Shop#Gateway", "Shop#Decode", "into"],
 	["a module on another branch", "Shop#Handler", "Shop#Worker", "across"],
-])("the picture leaves the same way for every route to %s", (_name, from, to, way) => {
+] as const)("the picture leaves the same way for every route to %s", (_name, from, to, way) => {
 	const cards = to === "Shop#Handler" ? ["Shop#Handler"] : [];
 	const before = accepted(request({ scope: from }), cards);
 	const asked = request({ scope: to });

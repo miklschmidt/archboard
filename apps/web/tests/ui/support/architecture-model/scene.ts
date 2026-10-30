@@ -12,6 +12,9 @@ const MODULES = [
 
 /** Two branches: a gateway two levels deep and a worker one level deep. */
 const SHOP: Model = {
+	success: true,
+	roots: ["Shop#Gateway", "Shop#Worker"],
+	proposals: [],
 	manifest: {
 		schemaVersion: 1,
 		id: "Shop",
@@ -32,7 +35,6 @@ const SHOP: Model = {
 		...(parent === undefined ? {} : { parent }),
 	})),
 	relationships: [],
-	flows: [],
 	collections: [],
 	walkthroughs: [],
 };
