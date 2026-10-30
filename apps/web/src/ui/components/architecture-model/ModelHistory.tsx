@@ -49,7 +49,12 @@ function HistoryReading(props: HistoryProps): JSX.Element {
 		<SidebarRegion slot="semantic-inspector-history">
 			<div className="flex items-center justify-between gap-2">
 				<h3 className="text-title font-semibold">Local code history</h3>
-				<Button onClick={read} disabled={query.isFetching} data-slot="module-read-history">
+				<Button
+					variant="outline"
+					onClick={read}
+					disabled={query.isFetching}
+					data-slot="module-read-history"
+				>
 					{query.data === undefined ? "Read" : "Refresh"}
 				</Button>
 			</div>

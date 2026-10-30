@@ -27,6 +27,7 @@ import {
 	moduleSource,
 	selectedSubject,
 	type Connection,
+	type SelectedSubject,
 } from "#ui/rules/architecture-model/selected-subject.ts";
 
 /** Inputs for what the panel says of a selection. */
@@ -49,10 +50,10 @@ function ModelPanelSubject(props: ModelPanelSubjectProps): JSX.Element {
 	const module = subject.kind === "module" ? subject.module : undefined;
 	return (
 		<>
-			{module === undefined ? (
-				<OtherSubject {...props} />
+			{subject.kind === "module" ? (
+				<ModuleSubject {...props} module={subject.module} />
 			) : (
-				<ModuleSubject {...props} module={module} />
+				<OtherSubject {...props} subject={subject} />
 			)}
 			<div className="px-4 pb-4 empty:hidden">
 				<ModelHiddenSelection
@@ -76,10 +77,13 @@ function ModelPanelSubject(props: ModelPanelSubjectProps): JSX.Element {
  * @param props The selection and its reading.
  * @returns The body.
  */
-function OtherSubject(props: ModelPanelSubjectProps): JSX.Element {
-	const { model, projection, selection } = props;
+function OtherSubject(
+	props: ModelPanelSubjectProps & {
+		readonly subject: Exclude<SelectedSubject, { readonly kind: "module" }>;
+	},
+): JSX.Element {
+	const { model, projection, selection, subject } = props;
 	const { ids, select } = selection;
-	const subject = selectedSubject({ ...props, ids });
 	const warnings = (
 		<ModelCodeDetails reading={props.code} selected={ids} scope={props.scope} brief />
 	);
