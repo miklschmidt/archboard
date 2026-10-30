@@ -206,9 +206,9 @@ function followedReading(
 					(kind) => !relationshipKinds.includes(kind),
 				)
 			: undefined,
-		hideGroups: model.success
+		showGroups: model.success
 			? Object.keys(model.policy.groups).filter(
-					(group) => groups !== true && (groups === false || !groups.includes(group)),
+					(group) => groups === true || (groups !== false && groups.includes(group)),
 				)
 			: undefined,
 	};

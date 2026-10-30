@@ -150,7 +150,7 @@ Each behavior keeps its existing public boundary and one state owner.
   Later pointer selection stays temporary and does not rewrite that destination.
   For canonical readings, selecting a state clears the checkpoint, and selecting a checkpoint clears the state.
   Either selection clears the prior explicit comparison.
-  They use `focusX`, `hideKindsX`, and `hideGroupsX` for focused subjects and hidden visual features.
+  They use `focusX`, `hideKindsX`, `showGroupsX`, and `everyLineX` for focused subjects, hidden kinds, shown group regions, and the choice to draw every line.
   `grammarX` selects the diagram mode, and `flowX` identifies one explicit authored flow.
   Missing grammar means architecture. Missing flow in a behavioral mode requires a choice.
   Behavioral modes preserve the architecture fields so that returning restores the prior reading.

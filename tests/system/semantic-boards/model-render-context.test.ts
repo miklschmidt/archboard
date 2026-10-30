@@ -163,7 +163,8 @@ async function render(selectors: z.input<typeof ArchitectureRenderRequestSchema>
 	const parameters = new URLSearchParams({ vault });
 	for (const [key, value] of Object.entries(selectors)) {
 		if (value === undefined) continue;
-		for (const entry of typeof value === "string" ? [value] : value) parameters.append(key, entry);
+		for (const entry of Array.isArray(value) ? value : [value])
+			parameters.append(key, String(entry));
 	}
 	const response = await fetch(`${server!.base}/api/architecture/render?${parameters}`);
 	const result = ArchitectureRenderResultSchema.parse(await response.json());
@@ -183,7 +184,7 @@ function group(svg: string, id: string): string {
 		.join("\n");
 }
 
-test("canonical aggregates draw compact counts while retaining authored relationships and exact visibility", async () => {
+test("canonical aggregates stay silent while retaining authored relationships and exact visibility", async () => {
 	const reading = await readArchitectureModel(vault, undefined, undefined, { compare: false });
 	if (!reading.success) throw new Error(JSON.stringify(reading));
 	const authored = reading.relationships.filter((edge) => edge.from === "Shop#Gateway");
@@ -195,10 +196,8 @@ test("canonical aggregates draw compact counts while retaining authored relation
 		to: "Shop#Worker",
 		kind: "call",
 		order: 10,
-		label: expect.stringMatching(/\b2\b/),
 		emphasis: "normal",
 	});
-	expect(aggregate.line.label).not.toContain("\n");
 	expect([...aggregate.joins]).toEqual(authored);
 	expect(aggregate.joins.map((edge) => edge.label)).toEqual(["Dispatch request", "Second route"]);
 	const reverse = reading.relationships.find((edge) => edge.id === "Shop#Enter")!;
@@ -220,7 +219,8 @@ test("canonical aggregates draw compact counts while retaining authored relation
 	const texts = new dom.DOMParser()
 		.parseFromString(picture.svg, "image/svg+xml")
 		.querySelectorAll('[data-semantic-id="Shop#Dispatch"] text');
-	expect([...texts].map((element) => element.textContent).join(" ")).toBe(aggregate.line.label!);
+	expect(texts).toHaveLength(0);
+	expect(picture.leftOutLines).toBe(0);
 });
 
 test("canonical exports retain default comparison and unresolved subject marks through exact recipes", async () => {

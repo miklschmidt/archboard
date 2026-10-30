@@ -91,12 +91,48 @@ function scopedContent(content: VariantContent, scope: ReadingScope): VariantCon
 	};
 }
 
+/**
+ * What a line that joins relationships of several kinds wears. No vocabulary name holds a
+ * space, so no vault can define this kind, and the core draws it in its neutral mixed style.
+ */
+const MIXED_KIND = "mixed kinds";
+
+/**
+ * Words stay on a line that holds one relationship (reader redesign, rule 4).
+ * @returns No words.
+ */
+function noWords(): undefined {
+	return undefined;
+}
+
+/**
+ * Each distinct label once, one to a line of the text (ADR 0052).
+ * @param edges The relationships on the line.
+ * @returns The stacked labels, or nothing when none of them has one.
+ */
+function stackedWords(edges: readonly SemanticEdge[]): string | undefined {
+	const labels = new Set(edges.flatMap(({ label }) => label ?? []));
+	return labels.size === 0 ? undefined : [...labels].join("\n");
+}
+
+/** The two answers to what a joined line says. */
+const JOINED_WORDS = { none: noWords, stacked: stackedWords };
+
+/**
+ * The words on a joined line: the one choice that the owner's verdict on ADR 0052 changes.
+ * Every joined line lists all of its relationships in its tip and panel either way.
+ */
+const wordsOnJoinedLine: (edges: readonly SemanticEdge[]) => string | undefined = JOINED_WORDS.none;
+
+/** Relationships that one line joins, in board order. */
+type JoinedEdges = [SemanticEdge, ...SemanticEdge[]];
+
 /** One line of the overview, and the relationships it stands for. */
 interface OverviewLine {
 	/** What the overview draws. */
 	readonly line: SemanticEdge;
 	/** The relationships it joins, in board order, as the variant states them. */
-	readonly joins: readonly [SemanticEdge, ...SemanticEdge[]];
+	readonly joins: Readonly<JoinedEdges>;
 }
 
 /**
@@ -126,26 +162,38 @@ function overviewContent(content: VariantContent): VariantContent {
  * holds, is the card's own business and is not drawn (ADR 0052).
  * @param content The variant's whole content.
  * @param openSelf The open containers whose authored self-connections stay visible.
+ * @param endsOf Where a relationship's line starts and ends; the root parts that hold it by default.
  * @returns Each line, with what it joins.
  */
 function overviewLines(
 	content: VariantContent,
 	openSelf: ReadonlySet<string> = new Set(),
+	endsOf: (edge: SemanticEdge) => readonly [string, string] = rootEnds(content),
 ): OverviewLine[] {
-	const drawnAs = rootOf(content);
-	const joined = new Map<string, [SemanticEdge, ...SemanticEdge[]]>();
+	const joined = new Map<string, { ends: readonly [string, string]; joins: JoinedEdges }>();
 	for (const edge of content.edges) {
-		const [from, to] = [drawnAs(edge.from), drawnAs(edge.to)];
+		const ends = endsOf(edge);
+		const [from, to] = ends;
 		if (!drawsConnection(edge, from, to, openSelf)) continue;
 		const key = `${from}\u0000${to}`;
-		const joins = joined.get(key);
-		if (joins === undefined) joined.set(key, [edge]);
-		else joins.push(edge);
+		const line = joined.get(key);
+		if (line === undefined) joined.set(key, { ends, joins: [edge] });
+		else line.joins.push(edge);
 	}
-	return [...joined.values()].map((joins) => ({
-		line: oneLine(joins, drawnAs(joins[0].from), drawnAs(joins[0].to)),
+	return [...joined.values()].map(({ ends: [from, to], joins }) => ({
+		line: oneLine(joins, from, to),
 		joins,
 	}));
+}
+
+/**
+ * Where a relationship's line runs when every container is closed.
+ * @param content The variant's whole content.
+ * @returns The root parts at its two ends.
+ */
+function rootEnds(content: VariantContent): (edge: SemanticEdge) => readonly [string, string] {
+	const drawnAs = rootOf(content);
+	return (edge) => [drawnAs(edge.from), drawnAs(edge.to)];
 }
 
 /**
@@ -184,39 +232,30 @@ function rootOf(content: VariantContent): (id: string) => string {
  * Relationships from one drawn part to another, as one line.
  *
  * A lone relationship is drawn as stated. A joined line keeps the identity of
- * the first relationship in board order, so a comparison marks it, and it
- * takes the kind most of them have. Its label stacks their labels, each once,
- * one to a line of the text, because no one of them speaks for all of them; a
- * relationship with no label adds none. What only one of them says, its
- * description, emphasis, traffic and anchor, is not said of the line.
+ * the first relationship in board order, so a comparison marks it. It wears
+ * the kind they share, or the neutral mixed kind when they differ, because a
+ * majority kind would be a false mark. What only one of them says, its
+ * description, emphasis, traffic and anchor, is not said of the line, and
+ * {@link wordsOnJoinedLine} decides its words.
  * @param edges The relationships, in board order.
  * @param from The drawn part the line starts at.
  * @param to The drawn part the line ends at.
  * @returns The line.
  */
-function oneLine(
-	edges: readonly [SemanticEdge, ...SemanticEdge[]],
-	from: string,
-	to: string,
-): SemanticEdge {
+function oneLine(edges: Readonly<JoinedEdges>, from: string, to: string): SemanticEdge {
 	const [first] = edges;
 	if (edges.length === 1) {
 		return { ...first, from, to };
 	}
-	const counts = new Map<string, number>();
-	for (const edge of edges) {
-		counts.set(edge.kind, (counts.get(edge.kind) ?? 0) + 1);
-	}
-	// Map order is board order, so the first kind to reach the most wins a tie.
-	const kind = [...counts].reduce((best, next) => (next[1] > best[1] ? next : best))[0];
-	const labels = [...new Set(edges.flatMap(({ label }) => (label === undefined ? [] : [label])))];
+	const kinds = new Set(edges.map(({ kind }) => kind));
+	const label = wordsOnJoinedLine(edges);
 	return {
 		id: first.id,
 		order: first.order,
 		from,
 		to,
-		kind,
-		...(labels.length === 0 ? {} : { label: labels.join("\n") }),
+		kind: kinds.size === 1 ? first.kind : MIXED_KIND,
+		...(label === undefined ? {} : { label }),
 		emphasis: "normal",
 	};
 }
@@ -301,6 +340,7 @@ function findView(board: Pick<SemanticBoard, "views">, asked: string): SemanticV
 
 export {
 	EVERYTHING_VIEW,
+	MIXED_KIND,
 	RESERVED_VIEW_NAMES,
 	findView,
 	overviewContent,

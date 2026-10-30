@@ -26,6 +26,8 @@ function projectFlow(
 		held:
 			architecture.reference === undefined ? undefined : heldFlow(architecture.complete, flow.id),
 		connections: [],
+		listed: [],
+		implied: [],
 		allConnections: [],
 		content: {
 			nodes: nodes.map(({ parent: _parent, ...module }) => module),
