@@ -146,27 +146,82 @@ test("turning the Track comparison off moves nothing a draft shares with its ref
 	}
 });
 
-test("plain Blocks reserves no space for a removed intermediary or its routes", async () => {
-	const nodes = ["a", "b", "c"].map((id) => ({ id, name: id, kind: "module" }));
-	const current = {
-		nodes,
-		edges: [
-			{ id: "ab", from: "a", to: "b", kind: "call" },
-			{ id: "bc", from: "b", to: "c", kind: "call" },
-		],
-	};
-	const draft = orderedFixture({ nodes: nodes.filter(({ id }) => id !== "b"), edges: [] });
-	const drawings = await bothModes(current, draft, { layout: "blocks" });
-	const visible = await renderArchitecture({
-		content: draft,
-		policy: DEFAULT_SEMANTIC_POLICY,
-		layout: "blocks",
-	});
-	expect(drawings.plain.atlas).toEqual(visible.atlas);
-	expect(drawings.plain.width * drawings.plain.height).toBe(visible.width * visible.height);
-	expect(Object.keys(drawings.compared.atlas.nodes).toSorted()).toEqual(["a", "b", "c"]);
-	expect(Object.keys(drawings.compared.atlas.edges).toSorted()).toEqual(["ab", "bc"]);
-});
+const plainNodes = ["a", "b", "c"].map((id) => ({ id, name: id, kind: "module" }));
+const keptNodes = plainNodes.filter(({ id }) => id !== "b");
+const removedCalls = [
+	{ id: "ab", from: "a", to: "b", kind: "call" },
+	{ id: "bc", from: "b", to: "c", kind: "call" },
+];
+const keptStep = { id: "ac", from: "a", to: "c", kind: "sync", label: "Keep this call" };
+
+test.each([
+	{
+		name: "an intermediary and its routes",
+		current: { nodes: plainNodes, edges: removedCalls },
+		draft: { nodes: keptNodes, edges: [] },
+		comparedEdges: ["ab", "bc"],
+	},
+	{
+		name: "a labeled route between retained cards",
+		current: {
+			nodes: keptNodes,
+			edges: [{ id: "old", from: "a", to: "c", kind: "call", label: "Removed label rows" }],
+		},
+		draft: { nodes: keptNodes, edges: [] },
+		comparedEdges: ["old"],
+	},
+	{
+		name: "the last child of a former container",
+		current: {
+			nodes: [...keptNodes, { id: "b", name: "Child", kind: "module", parent: "a" }],
+			edges: [{ id: "bc", from: "b", to: "c", kind: "call" }],
+		},
+		draft: { nodes: keptNodes, edges: [] },
+		comparedEdges: ["bc"],
+	},
+	{
+		name: "flow messages and their removed participant",
+		current: {
+			nodes: plainNodes,
+			flows: [
+				{
+					id: "flow",
+					name: "Calls",
+					participants: ["a", "b", "c"],
+					steps: [
+						...removedCalls.map((edge) => ({ ...edge, kind: "sync", label: edge.id })),
+						keptStep,
+					],
+				},
+			],
+		},
+		draft: {
+			nodes: keptNodes,
+			flows: [{ id: "flow", name: "Calls", participants: ["a", "c"], steps: [keptStep] }],
+		},
+		comparedEdges: ["ab", "ac", "bc"],
+	},
+])(
+	"plain Blocks reserves no space for $name",
+	async ({ current, draft: content, comparedEdges }) => {
+		const draft = orderedFixture(content);
+		const drawings = await bothModes(current, draft, {
+			layout: "blocks",
+			view: { grammar: "architecture", scope: { kind: "all" } },
+		});
+		const visible = await renderArchitecture({
+			content: draft,
+			policy: DEFAULT_SEMANTIC_POLICY,
+			layout: "blocks",
+		});
+		expect(drawings.plain.atlas).toEqual(visible.atlas);
+		expect([drawings.plain.width, drawings.plain.height]).toEqual([visible.width, visible.height]);
+		expect(Object.keys(drawings.compared.atlas.nodes).toSorted()).toEqual(
+			current.nodes.map(({ id }) => id).toSorted(),
+		);
+		expect(Object.keys(drawings.compared.atlas.edges).toSorted()).toEqual([...comparedEdges]);
+	},
+);
 
 // The board's lines come from its flow, which the overview does not draw.
 const EVERY_PART = { view: { grammar: "architecture", scope: { kind: "all" } } };

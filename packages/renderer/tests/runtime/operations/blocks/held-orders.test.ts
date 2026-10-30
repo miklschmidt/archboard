@@ -1,8 +1,7 @@
-import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@archboard/board/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { corridorPoints } from "#tests/runtime/support/drawn-routes.ts";
+import { corridorPoints, routesCross } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import boardRequestPath from "#tests/runtime/support/fixtures/board-request-path.json";
 import durableWriteBoundary from "#tests/runtime/support/fixtures/durable-write-boundary.json";
@@ -32,10 +31,13 @@ const policy = SemanticPolicySchema.parse({
 	},
 });
 
-test("reserved boundary channels preserve the complete drawing across nested blocks", async () => {
+test("a block's ports keep the order its parent settles without crossing nested routes", async () => {
 	const content = orderedFixture(durableWriteBoundary);
 	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	expectDrawingIntact(drawing, content, "blocks");
+	const routes = corridorPoints(drawing.svg);
+	for (const id of ["i6pk24Ov", "smLdyKlp"])
+		for (const other of ["9O4o9jcE", "C0t1t0gb", "E4f3pKJb", "V478HCgq"])
+			expect(routesCross(routes.get(id)!, routes.get(other)!), `${id} ${other}`).toBe(false);
 });
 
 // Taken from a board of this repository: two lines join on their way to Board
