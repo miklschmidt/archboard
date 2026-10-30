@@ -1,6 +1,5 @@
 // What a variant draws: nodes, edges, drill-downs, walkthroughs, and the reading of its groups.
 export {
-	gatheringGroups,
 	groupsUsed,
 	inspectGroup,
 	isMemberOf,

@@ -26,7 +26,6 @@ export {
 	ArchitectureClaimListSchema,
 	ArchitectureClaimReleaseSchema,
 	ArchitectureClaimTakeBackSchema,
-	ArchitectureEventSchema,
 	ArchitectureFeedFrameSchema,
 	ArchitectureFeedRequestSchema,
 } from "#shared/schemas/model-operations.ts";
