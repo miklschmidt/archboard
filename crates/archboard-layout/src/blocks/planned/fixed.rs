@@ -15,14 +15,18 @@ use crate::{
 
 pub(super) use super::choices::{Search, choose};
 
-pub(super) fn route(graph: &Node, drawing: Placed) -> Result<Placed, super::Refused> {
+pub(super) fn route(
+    graph: &Node,
+    drawing: Placed,
+    orders: &[usize],
+) -> Result<Placed, super::Refused> {
     let model = Model::new(graph)?;
     let topology = Topology::new(&model);
     debug_assert!(model.complete() && topology.complete(&model));
     let mut shape = placement(&model, drawing)?;
     let previous = std::mem::take(&mut shape.routes);
     let candidates = candidates(&model, &topology, &mut shape, &previous)?;
-    shape.routes = super::selection::greedy(&model, &topology, &shape, &candidates)
+    shape.routes = super::selection::greedy(&model, &topology, &shape, &candidates, orders)
         .map_err(|edges| blocked(&model, &edges))?;
     if let Some(drawing) = super::compact::drawing(&shape)
         && let Ok(mut compact) = placement(&model, drawing)
@@ -361,7 +365,7 @@ mod tests {
             edges: vec![],
             titles: vec![],
         };
-        let result = route(&graph, drawing).unwrap();
+        let result = route(&graph, drawing, &super::super::selection::ORDERS).unwrap();
         let left = &result.edges.iter().find(|e| e.id == "ab").unwrap().points;
         let right = &result.edges.iter().find(|e| e.id == "bc").unwrap().points;
         assert_eq!(left.len(), 2);

@@ -107,8 +107,8 @@ fn try_placements(
     extra: f64,
     complete: bool,
 ) -> Result<Result<super::assembly::Placed, super::planned::Refused>, String> {
-    Ok(super::planned::route_candidates(
+    super::planned::route_candidates(
         graph,
         super::legacy::candidates(graph, host, room, extra, complete)?,
-    ))
+    )
 }

@@ -2,15 +2,19 @@
 use super::{fixed::route_cost, model::Model, shape::Shape, topology::Topology};
 use crate::blocks::assembly::PlacedLine;
 
+/// The route orders of `order`, the longest routes first.
+pub(super) const ORDERS: [usize; 4] = [1, 0, 2, 3];
+
 pub(super) fn greedy(
     model: &Model<'_>,
     topology: &Topology,
     base: &Shape,
     paths: &[Vec<PlacedLine>],
+    orders: &[usize],
 ) -> Result<Vec<PlacedLine>, Vec<usize>> {
     let mut failed = Vec::new();
     let mut windows = base.fallbacks;
-    for variant in [1, 0, 2, 3] {
+    for &variant in orders {
         match ordered(model, topology, base, paths, variant, &mut windows) {
             Ok(shape) => {
                 return Ok(
@@ -420,11 +424,11 @@ fn append_reserved(
 }
 
 fn append_guarded(model: &Model<'_>, shape: &Shape, line: &PlacedLine) -> Option<Shape> {
-    let mut next = shape.without_labels();
-    next.routes.push(line.clone());
     if !super::runs::accepts(model, &shape.routes, line) {
         return None;
     }
+    let mut next = shape.without_labels();
+    next.routes.push(line.clone());
     super::route_labels::arrange(model, &mut next)?;
     Some(next)
 }

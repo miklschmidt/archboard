@@ -301,10 +301,16 @@ pub(super) fn place(
     Ok(Assembly::new(&board.tree, &board.laid).placed().unstepped())
 }
 
-/// Legacy placements, with port settlement deferred until the first plans fail.
-pub(super) struct Candidates {
+/// Legacy placements in the order the planner tries them. The wider search and
+/// port settlement wait until the placements before them have been routed.
+pub(super) struct Candidates<'g> {
+    gv: Engine<'g>,
+    graph: Node,
+    way: Way,
     ready: std::vec::IntoIter<super::assembly::Placed>,
-    unsettled: Option<Vec<Board>>,
+    unsettled: Vec<Board>,
+    widened: bool,
+    settled: bool,
     seen: rustc_hash::FxHashSet<String>,
 }
 
@@ -317,33 +323,48 @@ fn drawings(boards: &[Board]) -> std::vec::IntoIter<super::assembly::Placed> {
     drawings.into_iter()
 }
 
-impl Iterator for Candidates {
-    type Item = super::assembly::Placed;
-    fn next(&mut self) -> Option<Self::Item> {
-        for next in self.ready.by_ref() {
-            // The planner reads the provisional routes as well as the card positions.
-            if self.seen.insert(next.json().text()) {
-                return Some(next);
+impl Candidates<'_> {
+    /// The next distinct placement, given whether an earlier one was drawn.
+    ///
+    /// # Errors
+    ///
+    /// What Graphviz refused a wider hierarchy with.
+    pub(super) fn next(&mut self, drawn: bool) -> Result<Option<super::assembly::Placed>, String> {
+        loop {
+            for next in self.ready.by_ref() {
+                // The planner reads the provisional routes as well as the card positions.
+                if self.seen.insert(next.json().text()) {
+                    return Ok(Some(next));
+                }
+            }
+            if !self.widened {
+                self.widened = true;
+                if super::planned::widens(&self.graph, drawn, self.way.complete_repair) {
+                    let wider = alternative_hierarchies(&mut self.gv, &self.graph, &self.way)?;
+                    self.ready = drawings(&wider);
+                    self.unsettled.extend(wider);
+                }
+            } else if self.settled {
+                return Ok(None);
+            } else {
+                self.settled = true;
+                let settled: Vec<_> = std::mem::take(&mut self.unsettled)
+                    .into_iter()
+                    .map(settled_board)
+                    .collect();
+                self.ready = drawings(&settled);
             }
         }
-        let settled: Vec<_> = self
-            .unsettled
-            .take()?
-            .into_iter()
-            .map(settled_board)
-            .collect();
-        self.ready = drawings(&settled);
-        self.next()
     }
 }
 
-pub(super) fn candidates(
+pub(super) fn candidates<'g>(
     graph: &Node,
-    host: &mut dyn Graphviz,
+    host: &'g mut dyn Graphviz,
     room: &[String],
     extra: f64,
     complete_repair: bool,
-) -> Result<Candidates, String> {
+) -> Result<Candidates<'g>, String> {
     let mut graph = graph.clone();
     for edge in graph.edges.iter_mut().flatten() {
         if let Some(options) = Rc::make_mut(edge).layout_options.as_mut() {
@@ -378,7 +399,6 @@ pub(super) fn candidates(
             &way,
         )?)
     };
-    let alternatives = alternative_hierarchies(&mut gv, &graph, &way)?;
     let mut unsettled: Vec<_> = std::iter::once(first).chain(ordered).collect();
     let area = |board: &Board| {
         let root = &board.laid[&board.tree.get(board.tree.root).id];
@@ -391,11 +411,14 @@ pub(super) fn candidates(
     ready.push(Assembly::new(&best.tree, &best.laid).placed());
     ready.extend(drawings(&unsettled));
     ready.sort_by(|a, b| (a.width * a.height).total_cmp(&(b.width * b.height)));
-    ready.extend(drawings(&alternatives));
-    unsettled.extend(alternatives);
     Ok(Candidates {
+        gv,
+        graph,
+        way,
         ready: ready.into_iter(),
-        unsettled: Some(unsettled),
+        unsettled,
+        widened: false,
+        settled: false,
         seen: rustc_hash::FxHashSet::default(),
     })
 }
@@ -407,10 +430,6 @@ fn alternative_hierarchies(
     graph: &Node,
     way: &Way,
 ) -> Result<Vec<Board>, String> {
-    // Keep existing drawings, then broaden placement only after a complete refusal.
-    if !super::planned::refines(graph) && !way.complete_repair {
-        return Ok(Vec::new());
-    }
     let mut candidates = expanded_candidates(gv, graph, way)?;
     if graph
         .edges
