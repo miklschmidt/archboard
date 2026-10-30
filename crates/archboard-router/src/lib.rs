@@ -133,7 +133,8 @@ pub struct Connector {
 pub struct Scene {
     /// The rectangles routes keep clear of, which a pin names by index.
     pub obstacles: Vec<Rect>,
-    /// The least body coordinates. Fixed pin stubs can extend beyond this inset.
+    /// The least interior grid coordinates. Fixed pin stubs and bounded window
+    /// borders can extend beyond this inset.
     pub minimum: Option<Point>,
     /// Each connector's two ends, from its tail to its head.
     pub connectors: Vec<Connector>,
