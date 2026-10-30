@@ -1,4 +1,5 @@
 // Repository discovery reads canonical models through the shared cache and event feed.
+import { ArchitectureFeedRequestSchema } from "@archboard/board/model";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, test } from "bun:test";
 import type { ReactNode } from "react";
@@ -70,23 +71,35 @@ const LEGACY: ArchitectureModelRead = {
 };
 const listed: string[] = [];
 let repositoriesRefused = false;
-const streams = new Map<string, ModelEvents>();
+const followed = new Set<string>();
+const sockets: ModelSocket[] = [];
 
-/** Controlled network stream for the existing architecture event protocol. */
-class ModelEvents extends EventTarget {
-	/**
-	 * Keep the connection addressed by the production subscriber.
-	 * @param url The requested event URL.
-	 */
-	constructor(url: string) {
+/** Controlled tab socket for the architecture event protocol. */
+class ModelSocket extends EventTarget {
+	static readonly OPEN = 1;
+	readonly readyState = ModelSocket.OPEN;
+	/** Open at once, as a local server does. */
+	constructor() {
 		super();
-		streams.set(new URL(url, "http://localhost").searchParams.get("vault")!, this);
+		sockets.push(this);
+		queueMicrotask(() => this.dispatchEvent(new Event("open")));
 	}
-	/** No external connection exists in this transport fixture. */
-	close(): void {}
+	/**
+	 * Keep the vaults the production subscriber follows.
+	 * @param frame One request.
+	 */
+	send(frame: string): void {
+		const { type, vault } = ArchitectureFeedRequestSchema.parse(JSON.parse(frame));
+		if (type === "subscribe") followed.add(vault);
+		else followed.delete(vault);
+	}
+	/** Close as the browser does. */
+	close(): void {
+		this.dispatchEvent(new Event("close"));
+	}
 }
-const realEvents = Object.getOwnPropertyDescriptor(globalThis, "EventSource");
-Object.defineProperty(globalThis, "EventSource", { value: ModelEvents, configurable: true });
+const realSocket = Object.getOwnPropertyDescriptor(globalThis, "WebSocket");
+Object.defineProperty(globalThis, "WebSocket", { value: ModelSocket, configurable: true });
 const realFetch = globalThis.fetch;
 
 /**
@@ -125,13 +138,14 @@ function Provided(props: { children: ReactNode }): ReactNode {
 afterEach(() => {
 	cleanup();
 	listed.length = 0;
-	streams.clear();
+	followed.clear();
+	sockets.length = 0;
 	repositoriesRefused = false;
 });
 afterAll(async () => {
 	globalThis.fetch = realFetch;
-	if (realEvents) Object.defineProperty(globalThis, "EventSource", realEvents);
-	else Reflect.deleteProperty(globalThis, "EventSource");
+	if (realSocket) Object.defineProperty(globalThis, "WebSocket", realSocket);
+	else Reflect.deleteProperty(globalThis, "WebSocket");
 	await GlobalRegistrator.unregister();
 });
 
@@ -153,9 +167,10 @@ test("each readable repository exposes its model or migration requirement and fo
 		]),
 	);
 	expect(listed.toSorted()).toEqual([BILLING, SHOP]);
-	expect([...streams.keys()].toSorted()).toEqual([BILLING, SHOP]);
+	expect([...followed].toSorted()).toEqual([BILLING, SHOP]);
+	expect(sockets).toHaveLength(1);
 	await act(async () => {
-		streams.get(SHOP)!.dispatchEvent(
+		sockets[0]!.dispatchEvent(
 			new MessageEvent("message", {
 				data: JSON.stringify({
 					type: "architecture_snapshot",
@@ -176,5 +191,5 @@ test("a failed repository discovery remains explicit and starts no model read", 
 	await waitFor(() => expect(result.current.error).not.toBeNull());
 	expect(result.current.repositories).toEqual([]);
 	expect(listed).toEqual([]);
-	expect(streams.size).toBe(0);
+	expect(followed.size).toBe(0);
 });

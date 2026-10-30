@@ -15,6 +15,11 @@ import {
 } from "@archboard/codex-realtime-voice/server";
 import { codexWiring, forgetTabSession, noteTabSession } from "@archboard/workbench/server";
 
+import {
+	isArchitectureFeed,
+	serveArchitectureFeed,
+} from "#server/sockets/architecture/architecture-feed.ts";
+import { frameText } from "#server/sockets/frame-text.ts";
 import { server } from "#server/wiring/http/server-app.ts";
 import {
 	acceptedSockets,
@@ -196,19 +201,6 @@ function codexRefusal(message: Record<string, unknown>, error: string): Record<s
 	const requestId = typeof message["requestId"] === "string" ? message["requestId"] : null;
 	const action = typeof message["action"] === "string" ? message["action"] : null;
 	return { type: "codex_workbench_result", requestId, action, ok: false, error };
-}
-
-/**
- * One socket frame as text. ws hands a frame over as a buffer, an array
- * buffer, or the buffers a fragmented message arrived in.
- * @param raw The frame.
- * @returns Its text.
- */
-function frameText(raw: RawData): string {
-	if (Array.isArray(raw)) {
-		return Buffer.concat(raw).toString("utf8");
-	}
-	return Buffer.from(raw instanceof ArrayBuffer ? new Uint8Array(raw) : raw).toString("utf8");
 }
 
 /**
@@ -490,6 +482,10 @@ function startWebSocketServer(): void {
 				done(false, 403, result.code);
 				return;
 			}
+			if (isArchitectureFeed(info.req)) {
+				done(true);
+				return;
+			}
 			// A pane belongs to one vault from its first message (ADR 0049), so a socket
 			// that names none is turned away before it can own a pane.
 			const vault = vaultOfUpgrade(info.req);
@@ -504,6 +500,10 @@ function startWebSocketServer(): void {
 	owner.on("connection", (socket, request) => {
 		acceptedSockets.add(socket);
 		socket.once("close", () => acceptedSockets.delete(socket));
+		if (isArchitectureFeed(request)) {
+			serveArchitectureFeed(socket);
+			return;
+		}
 		const vault = upgradeVaults.get(request);
 		if (vault === undefined) {
 			socket.terminate();

@@ -1,10 +1,6 @@
 import { hashKey, type Query, type QueryClient } from "@tanstack/react-query";
-import {
-	ArchitectureEventSchema,
-	type ArchitectureEvent,
-	type ArchitectureModelRead,
-} from "@archboard/board/model";
-import { inVault } from "@archboard/server-requests";
+import type { ArchitectureEvent, ArchitectureModelRead } from "@archboard/board/model";
+import { createFeedSocket } from "#ui/clients/architecture-model/feed-socket.ts";
 import {
 	ArchitectureReadError,
 	architectureModelKeys,
@@ -16,8 +12,10 @@ interface FeedState {
 	refreshing: boolean;
 }
 
-/** One event connection per vault and query cache, shared by panes. */
+/** One feed per vault and query cache, shared by panes. */
 const feeds = new WeakMap<QueryClient, Map<string, ReturnType<typeof createFeed>>>();
+/** One event connection per query cache, shared by every vault it reads. */
+const sockets = new WeakMap<QueryClient, ReturnType<typeof createFeedSocket>>();
 
 /**
  * Find the live update owner without creating another architecture cache.
@@ -31,9 +29,14 @@ function architectureFeed(client: QueryClient, vault: string) {
 		byVault = new Map();
 		feeds.set(client, byVault);
 	}
+	let socket = sockets.get(client);
+	if (socket === undefined) {
+		socket = createFeedSocket();
+		sockets.set(client, socket);
+	}
 	let feed = byVault.get(vault);
 	if (feed === undefined) {
-		feed = createFeed(client, vault);
+		feed = createFeed(client, vault, socket);
 		byVault.set(vault, feed);
 	}
 	return feed;
@@ -43,12 +46,17 @@ function architectureFeed(client: QueryClient, vault: string) {
  * Own transport availability separately from the cached architecture.
  * @param client The sole content cache.
  * @param vault The event stream's vault.
- * @returns A shared external store that closes its connection when nobody reads it.
+ * @param socket The connection of this query cache.
+ * @returns A shared external store that stops following its vault when nobody reads it.
  */
-function createFeed(client: QueryClient, vault: string) {
+function createFeed(
+	client: QueryClient,
+	vault: string,
+	socket: ReturnType<typeof createFeedSocket>,
+) {
 	const listeners = new Set<() => void>();
 	let state: FeedState = { connection: "connecting", failure: null, refreshing: false };
-	let source: EventSource | null = null;
+	let stopFollowing: (() => void) | null = null;
 	let generation = 0;
 	let claimsGeneration = 0;
 	const currentKey = architectureModelKeys.reading(vault, null);
@@ -75,7 +83,8 @@ function createFeed(client: QueryClient, vault: string) {
 	): Promise<void> {
 		const accepted = ++claimsGeneration;
 		await client.cancelQueries({ queryKey: claimsKey, exact: true });
-		if (source !== null && accepted === claimsGeneration) client.setQueryData(claimsKey, claims);
+		if (stopFollowing !== null && accepted === claimsGeneration)
+			client.setQueryData(claimsKey, claims);
 	}
 	/**
 	 * An asynchronous completion belongs only to its still-open generation.
@@ -83,7 +92,7 @@ function createFeed(client: QueryClient, vault: string) {
 	 * @returns Whether it still owns the current-reading update.
 	 */
 	function isCurrent(accepted: number): boolean {
-		return source !== null && accepted === generation;
+		return stopFollowing !== null && accepted === generation;
 	}
 	/**
 	 * Apply a fresh snapshot or request a coherent read after a change.
@@ -128,7 +137,6 @@ function createFeed(client: QueryClient, vault: string) {
 	 * @param event One event from the addressed vault.
 	 */
 	function receive(event: ArchitectureEvent): void {
-		if (event.vault !== vault) return;
 		if (event.type === "architecture_claims") {
 			void receiveClaims(event.claims).catch(unavailable);
 			return;
@@ -141,36 +149,21 @@ function createFeed(client: QueryClient, vault: string) {
 		}
 	}
 	/**
-	 * Decode the shared event contract at the network boundary.
-	 * @param message The SSE message.
-	 */
-	function handleMessage(message: MessageEvent<string>): void {
-		try {
-			const parsed = ArchitectureEventSchema.safeParse(JSON.parse(message.data));
-			if (parsed.success) receive(parsed.data);
-			else unavailable();
-		} catch {
-			unavailable();
-		}
-	}
-	/**
 	 * Subscribe to one shared stream and close it after the last reader leaves.
 	 * @param listener A reader of transport availability.
 	 * @returns Its unsubscribe operation.
 	 */
 	function subscribe(listener: () => void): () => void {
 		listeners.add(listener);
-		if (source === null) {
+		if (stopFollowing === null) {
 			state = { connection: "connecting", failure: null, refreshing: false };
-			source = new EventSource(inVault("/api/architecture/events", vault));
-			source.addEventListener("message", handleMessage);
-			source.addEventListener("error", unavailable);
+			stopFollowing = socket.follow(vault, { event: receive, lost: unavailable });
 		}
 		return () => {
 			listeners.delete(listener);
 			if (listeners.size > 0) return;
-			source?.close();
-			source = null;
+			stopFollowing?.();
+			stopFollowing = null;
 			generation++;
 			claimsGeneration++;
 		};

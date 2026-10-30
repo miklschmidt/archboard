@@ -27,6 +27,8 @@ export {
 	ArchitectureClaimReleaseSchema,
 	ArchitectureClaimTakeBackSchema,
 	ArchitectureEventSchema,
+	ArchitectureFeedFrameSchema,
+	ArchitectureFeedRequestSchema,
 } from "#shared/schemas/model-operations.ts";
 export type {
 	ArchitectureModuleEdit,
@@ -35,6 +37,7 @@ export type {
 	ArchitectureClaimList,
 	ArchitectureClaimResult,
 	ArchitectureEvent,
+	ArchitectureFeedFrame,
 } from "#shared/schemas/model-operations.ts";
 
 export {

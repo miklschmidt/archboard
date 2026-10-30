@@ -1,6 +1,6 @@
 import type { Express, Request } from "express";
 import { z } from "zod";
-import { readArchitectureClaims, watchArchitectureModel } from "@archboard/board/store-read";
+import { readArchitectureClaims } from "@archboard/board/store-read";
 import {
 	editArchitectureModule,
 	recoverArchitectureModel,
@@ -98,24 +98,6 @@ function mountArchitectureEditRoutes(app: Express): void {
 			return;
 		}
 		respond(res, readArchitectureClaims(vaultOfRequest(req)));
-	});
-	app.get("/api/architecture/events", requireVault, (req, res) => {
-		if (!validQuery(req)) {
-			res
-				.status(400)
-				.json({ success: false, code: "INVALID_REQUEST", error: "Name only the addressed vault." });
-			return;
-		}
-		res.set({
-			"Content-Type": "text/event-stream",
-			"Cache-Control": "no-store",
-			Connection: "keep-alive",
-		});
-		res.flushHeaders();
-		const stop = watchArchitectureModel(vaultOfRequest(req), (event) => {
-			res.write(`data: ${JSON.stringify(event)}\n\n`);
-		});
-		res.once("close", stop);
 	});
 }
 export { mountArchitectureEditRoutes };

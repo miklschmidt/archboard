@@ -271,6 +271,17 @@ type ArchitectureClaimList = z.infer<typeof ArchitectureClaimListSchema>;
 type ArchitectureClaimResult = z.infer<typeof ArchitectureClaimResultSchema>;
 type ArchitectureRecoveryResult = z.infer<typeof ArchitectureRecoveryResultSchema>;
 type ArchitectureEvent = z.infer<typeof ArchitectureEventSchema>;
+// One socket of a tab follows every vault the tab reads, because each stream of its own would
+// hold one of the six connections a browser allows a server over HTTP/1.1.
+const ArchitectureFeedRequestSchema = z.strictObject({
+	type: z.enum(["subscribe", "unsubscribe"]),
+	vault: z.string(),
+});
+const ArchitectureFeedFrameSchema = z.union([
+	ArchitectureEventSchema,
+	z.strictObject({ type: z.literal("architecture_unavailable"), vault: z.string() }),
+]);
+type ArchitectureFeedFrame = z.infer<typeof ArchitectureFeedFrameSchema>;
 export {
 	ArchitectureRenderRequestSchema,
 	ArchitectureRenderResultSchema,
@@ -286,6 +297,8 @@ export {
 	ArchitectureEditSuccessSchema,
 	ArchitectureRecoveryResultSchema,
 	ArchitectureEventSchema,
+	ArchitectureFeedFrameSchema,
+	ArchitectureFeedRequestSchema,
 	type ArchitectureModuleEdit,
 	type ArchitectureModuleEditResult,
 	type ArchitectureClaim,
@@ -294,4 +307,5 @@ export {
 	type ArchitectureClaimResult,
 	type ArchitectureRecoveryResult,
 	type ArchitectureEvent,
+	type ArchitectureFeedFrame,
 };
