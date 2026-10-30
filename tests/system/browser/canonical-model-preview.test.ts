@@ -139,7 +139,17 @@ test("migration preview preserves its source while readers navigate modules and 
 		await browser.eval<boolean>(`document.querySelector('[data-slot="model-reading"]') === null`),
 	).toBe(true);
 	writeFileSync(source, before["Shop.semantic.json"]!);
-	await refreshModel(browser);
+	await pollUntil(
+		async () => {
+			await refreshModel(browser);
+			return browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-reading"]') !== null`,
+			);
+		},
+		Boolean,
+		"the restored source",
+		WAIT,
+	);
 	await visible(
 		browser,
 		'[data-slot="model-reading"][data-grammar="sequence"] [data-slot="model-diagram"] svg',

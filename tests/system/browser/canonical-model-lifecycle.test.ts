@@ -244,9 +244,12 @@ test("adopted and shelved states remain discoverable with decisions and recovera
 	await chooseState(browser, queued.target.state!, "shelved");
 	renameSync(join(root, ".git"), join(root, "retained-git"));
 	initializeSource(root);
-	await refreshModel(browser);
+	// A read that began before the move answers the first press with the old history.
 	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-error"]') !== null`),
+		async () => {
+			await refreshModel(browser);
+			return browser.eval<boolean>(`document.querySelector('[data-slot="model-error"]') !== null`);
+		},
 		Boolean,
 		"unavailable retained history",
 		WAIT,
@@ -257,9 +260,11 @@ test("adopted and shelved states remain discoverable with decisions and recovera
 	expect(await gatewayName(browser)).not.toBe("Direct API");
 	rmSync(join(root, ".git"), { recursive: true });
 	renameSync(join(root, "retained-git"), join(root, ".git"));
-	await refreshModel(browser);
 	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-error"]') === null`),
+		async () => {
+			await refreshModel(browser);
+			return browser.eval<boolean>(`document.querySelector('[data-slot="model-error"]') === null`);
+		},
 		Boolean,
 		"restored retained history",
 		WAIT,
