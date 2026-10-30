@@ -155,7 +155,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Takes one tab's offer, reads the host's coordinator context for the start's brief, and starts realtime on the coordinator thread. An active session or a stale coordinator refuses the offer."
     },
     {
       "id": "vKEsyHFk/qKGcB6vZ#5FUaX27v",
@@ -351,7 +352,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Reuses the retained coordinator thread when its instructions, tools and settings still match. Otherwise it stages a new thread and commits it only after Codex confirms the reviewed model and effort."
     },
     {
       "id": "vKEsyHFk/qKGcB6vZ#Em3B5KKC",
@@ -482,7 +484,8 @@
             "symbol": "unload"
           }
         }
-      ]
+      ],
+      "summary": "Unloads a thread that a fresh coordinator replaced, through thread/unsubscribe. It waits until the thread's voice has closed and it is idle, so no live work is cut off."
     },
     {
       "id": "vKEsyHFk/qKGcB6vZ#BiOLk73A",
@@ -757,7 +760,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Validates each call against the manifest of its role and runs it once, because a replayed call answers from the ledger. It then resolves a spoken approval, stops workhorses or routes work to a checkout."
     },
     {
       "id": "vKEsyHFk/qKGcB6vZ#o4PDOaXL",
@@ -950,7 +954,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Lets a person answer a pending approval by voice: a classifier turn hears the final reply and calls resolve_spoken_approval. Anything unclear falls back to the page, so speech never approves by accident."
     },
     {
       "id": "vKEsyHFk/qKGcB6vZ#SUsqs0NP",
@@ -1245,7 +1250,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Filters workhorse notifications down to news and delivers each in order as one sentence on the coordinator thread. Without an attended live session, it is recorded and told to nobody."
     },
     {
       "id": "vKEsyHFk/qKGcB6vZ#67E4aMeN",
@@ -1515,7 +1521,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Queues each audience's part of a change while voice is live. A later change of the same feed and topic replaces a waiting one, and a tab's own change is refused, so nobody hears stale or echoed news."
     },
     {
       "id": "vKEsyHFk/qKGcB6vZ#7L5gGw1B",
@@ -1729,7 +1736,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Checks that a tell_coordinator call has a session, a valid message, the linked workhorse and a listener, then queues it as news. Every refusal is an answer that the workhorse can act on."
     }
   ]
 }

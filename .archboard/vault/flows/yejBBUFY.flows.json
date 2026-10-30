@@ -249,7 +249,8 @@
             "symbol": "publishAddress"
           }
         }
-      ]
+      ],
+      "summary": "Plans what the address asks for against what is on screen, and applies it one step at a time, opening boards through the server. A board it cannot reach leaves the rewritten address."
     },
     {
       "id": "vKEsyHFk/yejBBUFY#j71M2dfg",
@@ -469,7 +470,8 @@
             "symbol": "prune"
           }
         }
-      ]
+      ],
+      "summary": "Holds a message while setup carries it through sign-in and the new conversation, then delivers it as a turn, steer or queue entry. It stops being held only when the timeline shows it."
     },
     {
       "id": "vKEsyHFk/yejBBUFY#rJ0zWUg4",
@@ -608,7 +610,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Carries a press of Talk through the same setup as a message, then starts realtime voice on the pane's thread link. A link that is not executable refuses the start."
     },
     {
       "id": "vKEsyHFk/yejBBUFY#k15Ecakx",
@@ -841,7 +844,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "The page's side of model record: a pacing loop starts Talk as a recording and moves the pane to each step. It keeps the voice and log after the last step, and a wait that runs out keeps nothing."
     },
     {
       "id": "vKEsyHFk/yejBBUFY#TJCV96ua",
@@ -1069,7 +1073,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Draws one kept talk a frame at a time on a stepped clock, playing its steps, words and loudness. A frame that moved outside the clock, or was not ready in time, stops the render with the reason."
     }
   ]
 }

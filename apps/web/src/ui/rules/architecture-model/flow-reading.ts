@@ -78,6 +78,23 @@ function collectionSubjects(model: Model) {
 }
 
 /**
+ * What each flow belongs to. A comparison can read a flow that only its base still holds.
+ * @param models The reading, then the base it compares with, when it has one.
+ * @returns The name of the collection that holds each flow.
+ */
+function flowCollections(...models: readonly (Model | undefined)[]): ReadonlyMap<string, string> {
+	return new Map(
+		models
+			.toReversed()
+			.flatMap((model) =>
+				(model?.collections ?? []).flatMap((collection) =>
+					collection.flows.map((flow) => [flow.id, collection.name] as const),
+				),
+			),
+	);
+}
+
+/**
  * A selected collection makes its authored flow members relevant to the mode selector.
  * @param model The complete state that owns the collection.
  * @param selected The requested reading subjects.
@@ -107,6 +124,7 @@ function subjectName(subject: ReturnType<typeof modelSubjects>[number]): string 
 export {
 	relevantFlows,
 	projectFlow,
+	flowCollections,
 	flowSubjects,
 	modelSubjects,
 	subjectName,

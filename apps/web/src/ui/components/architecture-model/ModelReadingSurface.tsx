@@ -106,6 +106,7 @@ function ReadingCaption(props: {
 	const clearFocus = useCallback((): void => setFocus(null), [setFocus]);
 	return (
 		<ModelCaption
+			model={accepted.shown.model}
 			projection={accepted.shown.projection}
 			everyLine={filters.everyLine}
 			onToggle={location.toggleEveryLine}

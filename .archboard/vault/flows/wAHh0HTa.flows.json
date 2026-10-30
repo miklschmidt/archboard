@@ -212,7 +212,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Initializes the Codex child, reads its requirements and configuration, and proves that it uses exactly the storage prepared for it. Held notifications go out only after that proof."
     },
     {
       "id": "vKEsyHFk/wAHh0HTa#zSCvXJVY",
@@ -568,7 +569,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Takes a mutation such as thread/start through the session's gate, identity proof and wire decoder before one frame goes out. A failed send is not_delivered, and an untrusted answer is outcome_unknown."
     },
     {
       "id": "vKEsyHFk/wAHh0HTa#fNGi0n1g",
@@ -731,7 +733,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Answers the child's reverse requests: the time for a thread issued to the current child, and a policy refusal for token refresh or attestation. Another epoch's request gets an error."
     }
   ]
 }

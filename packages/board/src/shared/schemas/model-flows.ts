@@ -49,6 +49,12 @@ const LoopSchema = FlowLoopSchema.omit({ steps: true }).extend({
 	},
 });
 const StepSchema = z.union([MessageSchema, DecisionSchema, LoopSchema]);
+/**
+ * A flow as a file holds it, in the current model and in every retained reading. A reading
+ * written before summaries became required must keep opening exactly, so `summary` stays
+ * optional here. The requirement binds a write, through `FlowChangeSchema` and the candidate,
+ * and current content, through the semantics check.
+ */
 const ModelFlowSchema = SemanticFlowSchema.omit({ steps: true }).extend({
 	id: QualifiedSubjectIdSchema,
 	formerNames: z.array(DisplayNameSchema).optional(),
@@ -124,7 +130,20 @@ const StepFieldsSchema = z.strictObject({
 	condition: LoopSchema.shape.condition.optional(),
 	alternatives: z.array(AlternativeSchema.shape.label).min(2).optional(),
 });
-const FlowChangeSchema = z.discriminatedUnion("type", [
+const RecordedAddFlowSchema = z.strictObject({
+	type: z.literal("add-flow"),
+	collection: z.string().min(1),
+	flow: NewFlowSchema,
+});
+const RecordedEditFlowSchema = z.strictObject({
+	type: z.literal("edit-flow"),
+	subject: z.string().min(1),
+	collection: z.string().min(1).optional(),
+	set: FlowFieldsSchema.partial().optional(),
+	clear: z.array(z.literal("summary")).optional(),
+});
+/** The statements that mean the same to a new write and to one that history retains. */
+const LASTING_STATEMENTS = [
 	z.strictObject({ type: z.literal("add-collection"), name: DisplayNameSchema }),
 	z.strictObject({
 		type: z.literal("edit-collection"),
@@ -132,18 +151,6 @@ const FlowChangeSchema = z.discriminatedUnion("type", [
 		name: DisplayNameSchema,
 	}),
 	z.strictObject({ type: z.literal("remove-collection"), collection: z.string().min(1) }),
-	z.strictObject({
-		type: z.literal("add-flow"),
-		collection: z.string().min(1),
-		flow: NewFlowSchema,
-	}),
-	z.strictObject({
-		type: z.literal("edit-flow"),
-		subject: z.string().min(1),
-		collection: z.string().min(1).optional(),
-		set: FlowFieldsSchema.partial().optional(),
-		clear: z.array(z.literal("summary")).optional(),
-	}),
 	z.strictObject({ type: z.literal("remove-flow"), subject: z.string().min(1) }),
 	z.strictObject({ type: z.literal("add-step"), placement: PlacementSchema, step: NewStepSchema }),
 	z.strictObject({
@@ -158,5 +165,30 @@ const FlowChangeSchema = z.discriminatedUnion("type", [
 		subject: QualifiedSubjectIdSchema,
 		placement: PlacementSchema,
 	}),
+] as const;
+/** What an author writes now: a new flow says what it does, and no flow unsays it. */
+const FlowChangeSchema = z.discriminatedUnion("type", [
+	...LASTING_STATEMENTS,
+	RecordedAddFlowSchema.extend({
+		flow: NewFlowSchema.extend({
+			summary: NewFlowSchema.shape.summary.nonoptional(
+				"A flow needs a summary: one or two sentences that say what the exchange does and why it matters.",
+			),
+		}),
+	}),
+	RecordedEditFlowSchema.omit({ clear: true }),
 ]);
-export { FlowCollectionSchema, ModelFlowSchema, StepSchema, NewStepSchema, FlowChangeSchema };
+/** What a signed record or a journal can hold: an intent from before summaries were required. */
+const RecordedFlowChangeSchema = z.discriminatedUnion("type", [
+	...LASTING_STATEMENTS,
+	RecordedAddFlowSchema,
+	RecordedEditFlowSchema,
+]);
+export {
+	FlowCollectionSchema,
+	ModelFlowSchema,
+	StepSchema,
+	NewStepSchema,
+	FlowChangeSchema,
+	RecordedFlowChangeSchema,
+};

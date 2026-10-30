@@ -656,6 +656,7 @@
       "value": {
         "id": "vKEsyHFk/SJ2JMVyz#7zNzpXZB",
         "name": "A pane stops the shown workhorse",
+        "summary": "The Stop control of a pane stops the whole work tree of the shown workhorse, through the same operation that a spoken stop runs. The pane records whether the stop was complete, partial or unconfirmed, so the person sees what still runs.",
         "participants": [
           "vKEsyHFk/SJ2JMVyz#tIEJl3KY",
           "vKEsyHFk/SJ2JMVyz#mWD948LG",
@@ -813,6 +814,7 @@
       "value": {
         "id": "vKEsyHFk/SJ2JMVyz#Kq98fFAW",
         "name": "The coordinator inspects a workhorse",
+        "summary": "The coordinator reads what a workhorse actually does: its request, turn, recent progress, spawned agents, pending requests and last stop. A read that fails reports as unavailable and never as empty, so a failure does not look like idle work.",
         "participants": [
           "vKEsyHFk/SJ2JMVyz#npbOHMgi",
           "vKEsyHFk/SJ2JMVyz#glxfDGYq",

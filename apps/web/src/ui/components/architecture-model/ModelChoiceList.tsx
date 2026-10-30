@@ -25,6 +25,8 @@ interface ModelChoiceListProps<Entry extends Choice> {
 	readonly onChoose: (entry: Entry, beside: boolean) => void;
 	/** What a row says at its end. */
 	readonly facts?: ((entry: Entry) => ReactNode) | undefined;
+	/** The section that a row stands in. Neighbours in one section share its name. */
+	readonly sectionOf?: ((entry: Entry) => string) | undefined;
 	/** What stands under the lit row. */
 	readonly under?: ReactNode;
 }
@@ -67,9 +69,7 @@ function ModelChoiceList<Entry extends Choice>(props: ModelChoiceListProps<Entry
 	);
 	return (
 		<Tree label={props.label} rows={rows} home={lit} onOpen={open} onToggle={toggle}>
-			{near.map((entry) => (
-				<ChoiceRow key={entry.id} {...props} entry={entry} depth={0} />
-			))}
+			<ChoiceRows {...props} entries={near} depth={0} />
 			{rest.length > 0 && (
 				<Tree.Row
 					id={REST}
@@ -87,12 +87,62 @@ function ModelChoiceList<Entry extends Choice>(props: ModelChoiceListProps<Entry
 			)}
 			{shown && rest.length > 0 && (
 				<Tree.Group depth={0}>
-					{rest.map((entry) => (
-						<ChoiceRow key={entry.id} {...props} entry={entry} depth={1} />
-					))}
+					<ChoiceRows {...props} entries={rest} depth={1} />
 				</Tree.Group>
 			)}
 		</Tree>
+	);
+}
+
+/**
+ * Neighbours that stand in one section.
+ * @param entries The entries, in their order.
+ * @param sectionOf The section of an entry.
+ * @returns Each run of neighbours with its section.
+ */
+function sectionRuns<Entry>(
+	entries: readonly Entry[],
+	sectionOf: (entry: Entry) => string,
+): readonly { readonly label: string; readonly entries: readonly Entry[] }[] {
+	return entries.reduce<{ label: string; entries: Entry[] }[]>((runs, entry) => {
+		const label = sectionOf(entry);
+		const last = runs.at(-1);
+		if (last?.label === label) last.entries.push(entry);
+		else runs.push({ label, entries: [entry] });
+		return runs;
+	}, []);
+}
+
+/**
+ * The rows of some entries, in their sections when the list has sections.
+ * @param props The entries and their list.
+ * @returns The rows.
+ */
+function ChoiceRows<Entry extends Choice>(
+	props: ModelChoiceListProps<Entry> & {
+		readonly entries: readonly Entry[];
+		readonly depth: number;
+	},
+): JSX.Element {
+	const { entries, depth, sectionOf } = props;
+	if (sectionOf === undefined)
+		return (
+			<>
+				{entries.map((entry) => (
+					<ChoiceRow key={entry.id} {...props} entry={entry} depth={depth} />
+				))}
+			</>
+		);
+	return (
+		<>
+			{sectionRuns(entries, sectionOf).map((run) => (
+				<Tree.Section key={run.entries[0]!.id} label={run.label} depth={depth}>
+					{run.entries.map((entry) => (
+						<ChoiceRow key={entry.id} {...props} entry={entry} depth={depth} />
+					))}
+				</Tree.Section>
+			))}
+		</>
 	);
 }
 

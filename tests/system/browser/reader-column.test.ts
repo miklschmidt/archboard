@@ -97,6 +97,7 @@ test("every move of the left column has a keyboard route, also in a presented pa
 				{
 					id: "Shop#Request",
 					name: "Handle request",
+					summary: "The gateway hands a request to the handler.",
 					participants: ["Shop#Gateway", "Shop#Handler"],
 					steps: [
 						{
@@ -173,6 +174,19 @@ test("every move of the left column has a keyboard route, also in a presented pa
 			`document.querySelector('[data-flow-id="Shop#Request"]')?.getAttribute('aria-current') ?? null`,
 		),
 	).toBe("location");
+
+	// A flow says what it belongs to: its collection and what it does, and no crumb claims it.
+	expect(
+		await browser.eval<{ line: string | null; section: boolean; onTrail: boolean }>(`({
+			line: document.querySelector('[data-slot="model-flow-line"]')?.textContent ?? null,
+			section: document.querySelector('[data-tree-section="Requests"] [data-flow-id="Shop#Request"]') !== null,
+			onTrail: document.querySelector('[data-slot="model-breadcrumbs"] [data-slot="model-reading-name"]') !== null,
+		})`),
+	).toEqual({
+		line: "RequestsThe gateway hands a request to the handler.",
+		section: true,
+		onTrail: false,
+	});
 	await browser.run(["press", "Backspace"]);
 	await pollUntil(
 		() => reading(browser),

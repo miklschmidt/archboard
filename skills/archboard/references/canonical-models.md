@@ -457,7 +457,8 @@ Supply the target, complete expectedRevision, operationId, writer, and claim fro
 Supply the doing line through `--doing`.
 
 `add-collection` takes a name.
-`add-flow` takes a collection identity or unique name and a flow with ordered participants and nested steps.
+`add-flow` takes a collection identity or unique name and a flow with a `summary`, ordered participants and nested steps.
+The summary states what the exchange does and why it matters, in one or two sentences.
 Archboard allocates every new identity.
 Messages, decisions, loops, notes, repeat counts, summaries, and anchors keep their existing semantic fields.
 Returns remain messages and never create reverse structural relationships.
@@ -467,8 +468,10 @@ Only qualified identities persist.
 
 `edit-flow` takes its qualified identity or unique current or former name.
 Its `set` assigns name, summary, or participants.
-Its `clear:["summary"]` removes the summary.
 Its optional `collection` transfers the continuing flow between collections.
+An intent that creates or changes a flow and leaves it with no summary refuses with `FLOW_SUMMARY_REQUIRED`.
+The diagnostic names each flow. Add `edit-flow` with `set.summary` for it to the same intent.
+A flow that an intent leaves alone keeps its bytes, and `archboard check` reports it as `FLOW_SUMMARY_MISSING`.
 `edit-collection` changes a collection name without changing its identity or file.
 `remove-flow` and `remove-collection` remove their remaining subjects.
 A flow transferred out of a removed collection survives in its destination.

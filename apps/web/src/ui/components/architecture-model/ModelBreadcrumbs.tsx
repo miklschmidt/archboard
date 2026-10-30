@@ -4,12 +4,14 @@ import { Button } from "@archboard/ui-kit/components";
 import type { projectModel } from "@archboard/board/content";
 
 /**
- * The trail describes containment, independently of navigation history.
+ * The trail describes containment, independently of navigation history. A flow or a walkthrough
+ * crosses modules, so its name stands beside the trail and not on it: the open module says where
+ * the reader came from and gives the way back, and it does not own what is read.
  * @param props The model title, current scope, and canonical ancestors.
  * @param props.name The repository model name.
  * @param props.scope The open module, or null for repository roots.
  * @param props.trail The open module and its ancestors in display order.
- * @param props.ending What is read inside the scope, such as a flow; the scope then opens again.
+ * @param props.ending What is read from the scope, such as a flow; the scope then opens again.
  * @param props.pending Whether the picture of this destination is still on its way.
  * @param props.onOpen Navigates through the existing router.
  * @returns An accessible breadcrumb trail.
@@ -25,30 +27,35 @@ function ModelBreadcrumbs(props: {
 	const items = [{ id: null, name: props.name }, ...props.trail];
 	const here = props.ending === undefined ? props.scope : undefined;
 	return (
-		<nav
-			aria-label="Module path"
-			data-slot="model-breadcrumbs"
-			aria-busy={props.pending === true}
-			className="flex min-w-0 items-center"
-		>
-			{items.map((item, index) => (
-				<Fragment key={item.id ?? "root"}>
-					{index > 0 && <Separator />}
-					<Crumb id={item.id} name={item.name} current={item.id === here} onOpen={props.onOpen} />
-				</Fragment>
-			))}
+		<div className="flex min-w-0 items-center">
+			<nav
+				aria-label="Module path"
+				data-slot="model-breadcrumbs"
+				aria-busy={props.pending === true}
+				className="flex min-w-0 items-center"
+			>
+				{items.map((item, index) => (
+					<Fragment key={item.id ?? "root"}>
+						{index > 0 && <Separator />}
+						<Crumb id={item.id} name={item.name} current={item.id === here} onOpen={props.onOpen} />
+					</Fragment>
+				))}
+			</nav>
 			{props.ending !== undefined && (
 				<>
-					<Separator />
+					<span aria-hidden="true" className="text-muted-foreground shrink-0">
+						·
+					</span>
 					<span
 						aria-current="page"
+						data-slot="model-reading-name"
 						className="text-control min-w-0 shrink-0 truncate px-2 font-medium"
 					>
 						{props.ending}
 					</span>
 				</>
 			)}
-		</nav>
+		</div>
 	);
 }
 

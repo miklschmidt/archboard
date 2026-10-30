@@ -70,6 +70,7 @@ beforeAll(async () => {
 				{
 					id: "Shop#Request",
 					name: "Request",
+					summary: "Dispatch a request and return its result.",
 					participants: ["Shop#Gateway", "Shop#Worker", "Shop#Obsolete"],
 					steps: [
 						{

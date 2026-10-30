@@ -208,7 +208,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "The route behind archboard check code. It keeps the findings only when the pass finishes before the caller leaves, and it passes a refusal on unchanged as a 422."
     },
     {
       "id": "vKEsyHFk/HBlhIeSD#dTfYgmVn",
@@ -435,7 +436,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Makes one known checkout with a vault the repository's chosen one. Panes left in an unchosen checkout move with their board, and every tab hears repositories_changed."
     }
   ]
 }
