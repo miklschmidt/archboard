@@ -2,11 +2,10 @@ import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import { SelectedStateSchema } from "#shared/schemas/model-proposals.ts";
 import {
 	archiveRecords,
-	archiveTip,
 	type ArchiveContext,
 	type CheckpointRecordSchema,
 } from "#runtime/store/model-archive.ts";
-import { retainedPublicationTips } from "#runtime/store/model-publication.ts";
+import { retainedRoots } from "#runtime/store/model-publication.ts";
 
 type Record = ReturnType<typeof CheckpointRecordSchema.parse>;
 type States = NonNullable<ArchitectureModel["states"]>;
@@ -47,11 +46,7 @@ function displacedStates(record: Record): States {
  * @returns Their retained record identities and metadata.
  */
 async function modelRecords(context: ArchiveContext, model?: string) {
-	const tip = await archiveTip(context);
-	const roots = [
-		...new Set([...(tip === undefined ? [] : [tip]), ...(await retainedPublicationTips(context))]),
-	];
-	return (await archiveRecords(context, roots)).flatMap(({ id, record }) => {
+	return (await archiveRecords(context, await retainedRoots(context))).flatMap(({ id, record }) => {
 		if (record.kind !== "checkpoint") return [];
 		if (record.vault !== context.vault) return [];
 		if (model !== undefined && record.model !== model) return [];

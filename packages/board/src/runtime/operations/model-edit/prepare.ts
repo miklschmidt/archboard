@@ -10,7 +10,6 @@ import { readCurrentModel } from "#runtime/operations/read/model-read.ts";
 import {
 	archiveContext,
 	assertArchiveWritable,
-	archiveTip,
 	archiveCommit,
 	captureSource,
 	CheckpointRecordSchema,
@@ -112,8 +111,7 @@ async function prepareEdit(vault: string, request: ArchitectureModuleEdit) {
 	if (!candidate.success) return candidate;
 	const context = await archiveContext(vault);
 	const checkout = await checkoutContext(context);
-	await assertArchiveWritable(context);
-	const tip = await archiveTip(context);
+	const tip = await assertArchiveWritable(context);
 	const record = await candidateRecord(vault, request, candidate, context);
 	const inputs = new Map([...candidate.inputs].map(([file, bytes]) => [`inputs/${file}`, bytes]));
 	inputs.set("record.json", Buffer.from(JSON.stringify(record)));

@@ -1,6 +1,8 @@
 import { git } from "@archboard/process/git";
 import { ArchiveError, type archiveContext } from "#runtime/store/model-archive-location.ts";
 
+const TREE_BRANCH = "refs/archboard/tree";
+
 type ArchiveLocation = Awaited<ReturnType<typeof archiveContext>>;
 type ArchiveContext = ArchiveLocation & {
 	reader?: ReturnType<typeof archiveReader>;
@@ -135,74 +137,42 @@ function archiveReader(context: ArchiveLocation) {
 }
 
 /**
- * Store exact blobs through one supervised Git process, without refs or an index.
- * @param context The caller's checkout.
- * @param inputs The complete authored bytes in input order.
- * @returns The blob identities in that same order.
+ * Quote a path for a fast-import file command.
+ * @param path The exact relative path.
+ * @returns Its C-style quoted form.
  */
-async function blobs(context: ArchiveContext, inputs: Buffer[]): Promise<string[]> {
-	if (inputs.length === 0) return [];
-	const commands = inputs.flatMap((bytes, index) => [
-		Buffer.from(`blob\nmark :${index + 1}\ndata ${bytes.length}\n`),
-		bytes,
-		Buffer.from(`\nget-mark :${index + 1}\n`),
-	]);
-	const output = await git(context.root, ["fast-import", "--quiet", "--done"], {
-		input: Buffer.concat([...commands, Buffer.from("done\n")]),
-		// One Git object identity is at most 64 hex bytes and one newline.
-		maxOutputBytes: inputs.length * 65,
-	});
-	const objects = output?.split("\n") ?? [];
-	if (objects.length !== inputs.length) throw new Error("Git returned incomplete blob identities.");
-	return objects;
+function quotedPath(path: string): string {
+	return `"${path.replaceAll(/["\\]/gu, "\\$&").replaceAll("\n", "\\n")}"`;
 }
 
 /**
- * Build directory trees in order without starting a process for each file.
- * @param context The caller's checkout.
- * @param inputs Exact relative paths and stored blob identities.
- * @returns The tree identity.
- */
-async function directoryTree(
-	context: ArchiveContext,
-	inputs: Map<string, string>,
-): Promise<string> {
-	const directories = new Map<string, Map<string, string>>();
-	const entries: string[] = [];
-	for (const [path, object] of inputs) {
-		const slash = path.indexOf("/");
-		if (slash < 0) entries.push(`100644 blob ${object}\t${path}`);
-		else {
-			const directory = path.slice(0, slash);
-			const nested = directories.get(directory) ?? new Map<string, string>();
-			nested.set(path.slice(slash + 1), object);
-			directories.set(directory, nested);
-		}
-	}
-	for (const [directory, nested] of directories) {
-		// oxlint-disable-next-line no-await-in-loop -- bound Git ownership to one child tree at a time
-		const object = await directoryTree(context, nested);
-		entries.push(`040000 tree ${object}\t${directory}`);
-	}
-	const id = await git(context.root, ["mktree", "-z"], {
-		input: Buffer.from(entries.map((entry) => entry + "\0").join("")),
-	});
-	if (id === undefined) throw new Error("Git returned no tree identity.");
-	return id;
-}
-
-/**
- * Build a tree from architecture-only paths and bytes with bounded Git ownership.
+ * Store every blob and tree through one supervised Git process, without refs or an index.
+ * The commit that carries the tree stays unreachable, and resetting its branch writes no ref.
  * @param context The caller's checkout.
  * @param inputs Exact relative paths and authored bytes.
  * @returns The tree identity.
  */
 async function tree(context: ArchiveContext, inputs: Map<string, Buffer>): Promise<string> {
-	const objects = await blobs(context, [...inputs.values()]);
-	return directoryTree(
-		context,
-		new Map([...inputs.keys()].map((path, index) => [path, objects[index]!])),
-	);
+	const files = [...inputs];
+	const blobs = files.flatMap(([, bytes], index) => [
+		Buffer.from(`blob\nmark :${index + 1}\ndata ${bytes.length}\n`),
+		bytes,
+		Buffer.from("\n"),
+	]);
+	const carrier = files.length + 1;
+	const paths = files.map(([path], index) => `M 100644 :${index + 1} ${quotedPath(path)}\n`);
+	const commit = [
+		`commit ${TREE_BRANCH}\nmark :${carrier}\n`,
+		"committer archboard <archboard> 0 +0000\ndata 0\n\n",
+		...paths,
+		`\nls :${carrier} ""\nreset ${TREE_BRANCH}\ndone\n`,
+	].join("");
+	const output = await git(context.root, ["fast-import", "--quiet", "--done"], {
+		input: Buffer.concat([...blobs, Buffer.from(commit)]),
+	});
+	const id = /^040000 tree ([a-f0-9]+)/u.exec(output ?? "")?.[1];
+	if (id === undefined) throw new Error("Git returned no tree identity.");
+	return id;
 }
 
 export { archiveReader, checkpointBlobs, tree, type ArchiveContext };
