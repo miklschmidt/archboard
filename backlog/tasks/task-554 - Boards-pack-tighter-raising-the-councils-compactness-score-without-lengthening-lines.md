@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-30T03:30:00Z'
+updated_date: '2026-10-30T03:32:00Z'
 labels:
   - renderer
   - layout
@@ -26,10 +26,9 @@ The final council of TASK-548.08 (2026-10-28, 40 blind pairs against c147b73c8, 
 <!-- AC:BEGIN -->
 - [ ] #1 On a fresh blind sample judged against the base branch, the council's mean K score of the after pictures is higher than of the before pictures, and its mean R score is not lower
 - [ ] #2 The council judges no pair worse, and no after picture has a defect its before picture lacks
-- [ ] #3 Every hard check of expectDrawingIntact passes on the complete corpus and every whole board, in both engines
-- [ ] #4 First and growing-edit renders of Board viewer, Board persistence and Archboard server routes stay under 500 ms on a quiet machine
-- [ ] #5 Every Track drawing of the corpus is byte-identical to the base branch
-- [ ] #6 Compactness measurements of the complete corpus before and after are recorded in docs/design
+- [ ] #3 First and growing-edit renders of Board viewer, Board persistence and Archboard server routes stay under 500 ms on a quiet machine
+- [ ] #4 Every Track drawing of the corpus is byte-identical to the base branch
+- [ ] #5 Compactness measurements of the complete corpus before and after are recorded in docs/design
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -107,4 +106,6 @@ Council 563 (seed 563, 40 architecture pairs: 32 plain and 8 comparison; Blocks 
 2026-10-30, the owner: finish TASK-554 and make Blocks the default layout engine. Track stays available. Whether Track is fixed or kept is decided later, by whether it still has a reason to exist. Criterion 3 (every hard check passes in both engines) is not met for Track, which keeps its 7,803 collinear-port findings; the owner chose to leave Track unchanged. In progress: six gpt-6.1-sol review scopes, the Renderer layout board proposal, and the default switch on feat/blocks-default.
 
 Code review against feat/faster-first-render, six gpt-6.1-sol scopes, each fixing its own findings; every merged fix kept all 22,878 corpus drawings byte-identical and bun run check green. Placement-planner boundary (5fac68232): provisional routes could reassign a declared decision exit; one shared endpoint guard now holds declared points through routing and compaction. Selection and labels (4f621fb4a): quadratic gap scans in compaction replaced by a prefix sum with binary search; unreachable hierarchy departure code removed. Placement and render entry (e4838b312): restored the nested-route crossing assertion; added plain Blocks tests for dropped labeled routes, container children and flow messages. Route construction (c6f082112): quadratic fan building and cubic member and label scans indexed. Planner-router boundary (c5f8e4bf5): documented that reservations add search cost and that window borders stay available; regression test added. Router and Graphviz: one finding left open. Fixed strokes that lie between grid coordinates escape the crossing cost; the reviewer's fix broke an Archboard server drawing at VyIQhwhS and was reverted, so nothing was merged. Boards (9139bd151): Renderer layout gains Placement entry and Blocks route planner; Semantic renderer separates plain Blocks layout from Track's retained positions; both TASK-554 proposals adopted. Default engine (eb9e818e2, 2963b2bde): Blocks is the default, ADR 0064 and an ADR 0040 amendment record it; Track-specific tests name Track; the two README SVG recipes name no engine and now follow Blocks.
+
+2026-10-30, the owner: criterion 3 (every hard check passes in both engines) moves out of TASK-554 into TASK-557, which first decides whether Track stays. Blocks passes every hard check on the complete corpus.
 <!-- SECTION:NOTES:END -->
