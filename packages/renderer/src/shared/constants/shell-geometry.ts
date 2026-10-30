@@ -76,7 +76,10 @@ const STAGE: Size = {
  */
 const LAYOUT_ASPECT = 1.4;
 
-/** A lone pane's picture beside its docked sidebar, less the fit margin on either side. */
+/**
+ * A lone pane's picture beside a docked sidebar, less the fit margin on either side. The canonical
+ * reader's pane is wider, because its panel lies over the picture. The fit numbers keep this width.
+ */
 const REFERENCE_WIDTH = STAGE.width - SIDEBAR_WIDTH - 2 * FIT_MARGIN;
 
 /**

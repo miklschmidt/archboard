@@ -24,7 +24,7 @@ import {
 	selectReading,
 	selectState,
 } from "./support/canonical-model.ts";
-import { openModelSidebar } from "./support/canonical-page.ts";
+import { openAbout, pick } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -80,7 +80,7 @@ async function edit(
 }
 
 async function standing(browser: AgentBrowserSession, value: string): Promise<void> {
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(
@@ -130,13 +130,13 @@ test("proposal conflicts preserve coherent content, blocked ancestry, live settl
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"]') !== null`,
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]') !== null`,
 			),
 		Boolean,
 		"the selected proposal",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
+	await pick(browser, "Shop#Gateway");
 	await edit(request, "Current", {
 		changes: [
 			{
@@ -147,14 +147,14 @@ test("proposal conflicts preserve coherent content, blocked ancestry, live settl
 		],
 	});
 	await standing(browser, "conflicted");
-	await openModelSidebar(browser, "selection");
+	await openAbout(browser, "selection");
 	await selectModule(browser, "Shop#Gateway", (details) => details.includes("Accepts public work"));
 	expect(
 		await browser.eval<string>(
 			`document.querySelector('[data-slot="module-details"]')?.textContent ?? ''`,
 		),
 	).toContain("Queues accepted work.");
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await browser.run(["click", '[data-slot="model-reconciliation"] summary']);
 	expect(
 		await browser.eval<unknown>(

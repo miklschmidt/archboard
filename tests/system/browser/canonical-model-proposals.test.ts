@@ -18,6 +18,7 @@ import {
 } from "./support/agent-browser.ts";
 import { initializeSource, selectReading, selectState } from "./support/canonical-model.ts";
 import { serverPath } from "./support/navigator-support.ts";
+import { openAbout } from "./support/canonical-page.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
 
@@ -71,7 +72,7 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"]') !== null`,
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]') !== null`,
 			),
 		Boolean,
 		"the current architecture",
@@ -114,6 +115,7 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 		throw new Error(JSON.stringify(created.body));
 	const draft = created.body.target.state;
 	await selectState(browser, draft);
+	await openAbout(browser);
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(
@@ -224,6 +226,7 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 	flowAddress.searchParams.set("grammarA", "sequence");
 	flowAddress.searchParams.set("flowA", "Shop#Request");
 	await browser.run(["open", flowAddress.href]);
+	await openAbout(browser);
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(

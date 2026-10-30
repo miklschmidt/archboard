@@ -4,9 +4,7 @@ import { fileURLToPath } from "node:url";
 import {
 	AGENT_PANEL_WIDTH,
 	CHROME_HEIGHT,
-	FIT_MARGIN,
 	NAVIGATOR_WIDTH,
-	REFERENCE_PANE,
 	SHELL_VIEWPORT,
 	STAGE,
 } from "@archboard/renderer/shell-geometry";
@@ -48,7 +46,6 @@ import {
 	PANE_LETTERS,
 	PANE_SECTIONS,
 	STAGE_ROOT,
-	sidebarTabLineOverhang,
 } from "./support/shell-dom.ts";
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
@@ -79,13 +76,6 @@ const READ_DESKTOP = `(() => {
 })()`;
 
 /** The lone pane's width, and the size of its window on the picture. */
-const READ_PICTURE = `(() => {
-	const pane = document.querySelector('${PANE_SECTIONS}');
-	const picture = pane?.querySelector('[data-slot="model-diagram"]')?.getBoundingClientRect();
-	return { pane: pane?.getBoundingClientRect().width ?? 0, width: picture?.width ?? -1,
-		height: picture?.height ?? -1 };
-})()`;
-
 /** The pane letters, present only while two panes are open. */
 const READ_PANE_LETTERS = `(() => {
 	const letters = [...document.querySelectorAll('${PANE_LETTERS}')];
@@ -171,9 +161,9 @@ test(
 		await pollUntil(
 			() =>
 				browser.eval<string | null>(
-					`document.querySelector('[data-slot="model-state-details"]')?.getAttribute('data-selected-state') ?? null`,
+					`document.querySelector('[data-slot="model-reading-selector"]')?.getAttribute('title') ?? null`,
 				),
-			(state) => state === proposal.id,
+			(state) => state?.includes(proposal.name) === true,
 			"the header to name the proposal being read",
 			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
@@ -230,29 +220,13 @@ test(
 
 		// The shell draws what the shared geometry says, with the conversation
 		// closed: the navigator's column, the chrome row at the top of every
-		// column, and a lone pane's picture beside its docked sidebar, whose width
-		// less the fit margin is the width a drawing's fit is measured against.
+		// column, and a lone pane's picture, which holds the whole stage.
 		for (const cell of matrix.cells.filter(({ viewport }) => viewport === "desktop")) {
 			const { column, header, picture } = cell.geometry;
 			expect(column?.width, "navigator column width").toBe(NAVIGATOR_WIDTH);
 			expect(header?.height, "chrome row height").toBe(CHROME_HEIGHT);
-			expect(picture!.width - 2 * FIT_MARGIN, "the reference pane's width").toBe(
-				REFERENCE_PANE.width,
-			);
+			expect(picture!.width, "the stage").toBe(STAGE.width);
 		}
-		// The active sidebar underline stays inside its own tab row.
-		expect(
-			await sidebarTabLineOverhang(browser),
-			"the sidebar tab underline stays inside its row",
-		).toBe(0);
-		// With its sidebar put away, the picture has the whole stage.
-		await roleAction(browser, "button", "Sidebar");
-		const stage = await pollUntil(
-			() => browser.eval<{ pane: number; width: number; height: number }>(READ_PICTURE),
-			(picture) => picture.width === picture.pane,
-			"the sidebar to give the picture the pane's whole width",
-		);
-		expect({ width: stage.width, height: stage.height }, "the stage").toEqual(STAGE);
 
 		const themes = matrix.cells
 			.filter(({ viewport, mode }) => viewport === "desktop" && mode === "normal")
@@ -292,12 +266,6 @@ test(
 				),
 			).toBe(true);
 			expect(snapshot.titleType).toMatchObject({ weight: 500 });
-			expect(snapshot.sectionHeading).toMatchObject({
-				weight: 600,
-				transform: "none",
-				size: 12,
-			});
-			expect(snapshot.sectionHeading.family).toContain("archboard onest");
 			expect(snapshot.bodyType).toMatchObject({ weight: 400 });
 			expect(snapshot.stateType).toMatchObject({ weight: 500 });
 			expect(snapshot.controlType).toMatchObject({ weight: 500 });

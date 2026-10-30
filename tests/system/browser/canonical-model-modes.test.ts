@@ -13,7 +13,7 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { openDestination } from "./support/canonical-page.ts";
+import { openDestination, listedParts, openDiagram, pick } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -187,11 +187,8 @@ test("diagram modes require a relevant flow and restore the prior architecture r
 			"Shop#Finish",
 		]),
 	);
-	expect(
-		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(node => node.getAttribute('data-module-id'))`,
-		),
-	).toEqual(["Shop#Gateway", "Shop#Handler", "Shop#Worker"]);
+	expect(await listedParts(browser)).toEqual(["Shop#Gateway", "Shop#Handler", "Shop#Worker"]);
+	await openDiagram(browser);
 	await chooseMode(browser, "flowchart");
 	await pollUntil(
 		() =>
@@ -212,7 +209,7 @@ test("diagram modes require a relevant flow and restore the prior architecture r
 			"Shop#Finish",
 		]),
 	);
-	await browser.run(["click", '[data-slot="model-flow-steps"] [data-step-id="Shop#Send"]']);
+	await pick(browser, "Shop#Send");
 	await chooseMode(browser, "architecture");
 	await pollUntil(
 		() =>

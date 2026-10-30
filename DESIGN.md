@@ -222,13 +222,11 @@ go, and the agent dock is at its foot. The panes are in the centre, one or two s
 by side. The conversation opens between the column and the panes: it slides
 in and out, and a handle on its edge, a grip on a line that takes the gold while
 it is dragged, resizes it between 320px and 720px, or drags it shut below that.
-Each pane has a sidebar (280px) on the right, shown and hidden by one control at
-the end of the pane's header. Beside a lone pane the sidebar is docked and takes
-its width from the picture. With two panes it is away until somebody asks for
-it, and its panel then floats over the edge of the picture until it is pinned. A
-sidebar that is away is nowhere: it leaves no strip, no icons and no empty
-column behind. Every column starts with a chrome row (40px) and then a band
-(36px) for the find fields and the tabs of the sidebar. A pane's header stands
+A pane of the canonical reader has no sidebar. A selection lays the right panel
+(360px, or 46 percent of a narrow pane) over the picture's right edge, so the
+picture never refits. A retained board recording keeps a sidebar (280px). Every
+column starts with a chrome row (40px) and then a band (36px) for the find fields
+and the caption. A pane's header stands
 on a whole-pixel grid: 16px lines and icons, 32px crumbs and text trimmed to its
 cap height, so its parts sit on one line at any display scale. A row of a list
 is at least 28px high. Panels have 16px of padding. The shell has no narrow or
@@ -390,9 +388,25 @@ the Rule tone.
 
 - **Style:** a tree on Chrome Chalk. A board or folder row is 36px and a variant or Earlier row 30px, for one line of name. Rails and elbows draw its levels, and the line from the root to the chosen row is lit in Gold Mark. The chosen row is a plate in Reading Tone with `shadow-raised`. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. Tabs have an underline of Gold Mark. A link is ink with an underline of Gold Mark.
 
+### Right panel
+
+The right panel explains the selected thing and nothing else. It is absent until a
+selection, on Chrome Chalk with a rule down its inner edge, and it lies over the
+picture. A click lights its subject at once, and the panel waits 220ms, so a double
+click lands on the card. It eases in from 2rem to the right of its place and from
+nothing over 160ms, and leaves in 110ms. A new subject opens at the top of the panel
+and arrives with a 120ms fade. A row answers the pointer with a change of tone and
+nothing else, and it also lights its subject on the picture. Its actions stand in a
+foot that stays while the body scrolls. Long lists and evidence live on About. With
+reduced motion the panel appears and goes at once.
+
+The Key stands at the picture's lower left. Its rows show a mark as the picture draws
+it, and a switch at the end of a row changes the reading. A mark and its switch stay
+apart, so reading the Key never changes the picture.
+
 ### Pane sidebar
 
-The sidebar is one panel, 280px wide and held at the pane's edge, on Chrome Chalk
+A retained board recording keeps this sidebar. The sidebar is one panel, 280px wide and held at the pane's edge, on Chrome Chalk
 with a rule down its inner edge. It has two tabs and one control, in the pane's
 header, that shows and hides it. The control is filled while the sidebar is shown,
 its tooltip says what it will do, and it is there in every state of the pane.
@@ -425,8 +439,9 @@ its tooltip says why.
 ### About page
 
 The pane's header has two tabs, Diagram and About, and the mark of the open tab is
-Gold Mark. The About page lies over the picture on Ground Chalk and scrolls, and the
-sidebar stays beside it. Its column is 1320px wide at most and centred. The column
+Gold Mark. The About page lies over the picture on Ground Chalk and scrolls. A band at
+its top names what it describes, the open scope or the selected subject, and leads to
+the other one. Its column is 1320px wide at most and centred. The column
 keeps 40px of room inside each side, or 24px on a page narrower than 1040px.
 
 The head of the page names the board in the Figure role, in capitals. Under the

@@ -17,11 +17,7 @@ import {
 	runServerCli,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import {
-	seedCanonicalModel,
-	editCanonicalModel,
-	openModelSidebar,
-} from "./support/canonical-page.ts";
+import { seedCanonicalModel, editCanonicalModel, openAbout } from "./support/canonical-page.ts";
 import { initializeSource } from "./support/canonical-model.ts";
 import { serverPath, servedRepository, type PanesBody } from "./support/navigator-support.ts";
 import { PANE_SECTIONS } from "./support/shell-dom.ts";
@@ -122,7 +118,7 @@ test("canonical workspace history preserves pane identity and isolates proposal 
 		"both addressed repositories",
 	);
 	const paneB = restored.panes.find((pane) => pane.paneId === "B")!;
-	await openModelSidebar(browser, "board", '[data-pane="B"]');
+	await openAbout(browser, "scope", '[data-pane="B"]');
 	const before = await historyLength(browser);
 	await browser.run([
 		"click",

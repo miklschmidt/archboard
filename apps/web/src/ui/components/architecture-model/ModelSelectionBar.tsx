@@ -9,6 +9,7 @@ import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-sele
  * @param props.onFocus Changes the focused reading.
  * @param props.canFocus Whether selected subjects belong to architecture.
  * @param props.architectural Whether structural focus actions apply.
+ * @param props.oneLine Whether the selection is the relationships of one line, which reads as one.
  * @param props.children Additional actions.
  * @returns The actions.
  */
@@ -16,6 +17,7 @@ function ModelSelectionBar(props: {
 	selection: ModelSelection;
 	architectural: boolean;
 	canFocus: boolean;
+	oneLine: boolean;
 	children?: ReactNode;
 	onFocus: (ids: readonly string[] | null) => void;
 }): JSX.Element {
@@ -26,14 +28,11 @@ function ModelSelectionBar(props: {
 	);
 	const count = selection.ids.size;
 	return (
-		<div
-			data-slot="model-selection-bar"
-			className="border-border flex flex-wrap items-center gap-2 border-b px-4 py-2"
-		>
+		<div data-slot="model-selection-bar" className="flex flex-wrap items-center gap-2">
 			<output
 				data-slot="model-selection-count"
 				data-count={count}
-				hidden={count === 0}
+				hidden={count < 2 || props.oneLine}
 				className="text-control"
 			>
 				{count} selected

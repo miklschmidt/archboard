@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
-import { openModelSidebar } from "./support/canonical-page.ts";
+import {
+	openAbout,
+	openModule,
+	pick,
+	openDiagram,
+	pressInPanel,
+} from "./support/canonical-page.ts";
 import type { z } from "zod";
 import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
@@ -19,29 +25,6 @@ import {
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
-
-async function openModule(browser: AgentBrowserSession, id: string): Promise<void> {
-	await browser.run(["click", `[data-slot="module-list"] [data-module-id="${id}"]`]);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-details"][data-module-id="${id}"]') !== null && document.querySelector('[data-slot="module-open"]') !== null`,
-			),
-		Boolean,
-		"the selected module opening action",
-		WAIT,
-	);
-	await browser.run(["click", '[data-slot="module-open"]']);
-	await pollUntil(
-		() =>
-			browser.eval<string | null>(
-				`document.querySelector('[data-slot="model-reading"]')?.getAttribute('data-scope') ?? null`,
-			),
-		(scope) => scope === id,
-		"the open module",
-		WAIT,
-	);
-}
 
 async function drawnModules(browser: AgentBrowserSession): Promise<string[]> {
 	return browser.eval<string[]>(
@@ -104,7 +87,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"]') !== null`,
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]') !== null`,
 			),
 		Boolean,
 		"the root modules",
@@ -112,18 +95,8 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 	);
 	await openModule(browser, "Shop#Gateway");
 	await openModule(browser, "Shop#Handler");
-	const nearby = '[data-slot="module-context"] [data-module-id="Shop#Gateway"]';
-	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector('${nearby}') !== null`),
-		Boolean,
-		"the nearby module",
-		WAIT,
-	);
-	await browser.run(["click", nearby]);
-	await openModelSidebar(browser);
-	await browser.eval(
-		`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Decode"]').dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true }))`,
-	);
+	await pick(browser, "Shop#Gateway");
+	await pick(browser, "Shop#Decode", { toggle: true });
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -133,7 +106,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 		"the focus action for the selected subjects",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="model-focus"]']);
+	await pressInPanel(browser, '[data-slot="model-focus"]');
 	await pollUntil(
 		() => drawnModules(browser),
 		(ids) => ids.join() === "Shop#Decode,Shop#Gateway,Shop#Worker",
@@ -151,17 +124,20 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 		WAIT,
 	);
 	expect(focusedReport.body.panes.find((pane) => pane.paneId === "A")?.byUser).toContain("view");
+	expect(await drawnModules(browser)).toEqual(["Shop#Decode", "Shop#Gateway", "Shop#Worker"]);
+	await openAbout(browser, "selection");
+	expect(
+		await browser.eval<string[]>(
+			`[...document.querySelectorAll('[data-slot="model-about"] [data-slot="model-selected-subjects"] [data-subject-id]')].map(node => node.getAttribute('data-subject-id')).sort()`,
+		),
+	).toEqual(["Shop#Decode", "Shop#Gateway"]);
+	await openAbout(browser);
 	expect(
 		await browser.eval<boolean>(
 			`document.querySelector('[data-slot="model-connections"] [data-connection-id="Shop#Private"]') === null`,
 		),
 	).toBe(true);
-	expect(await drawnModules(browser)).toEqual(["Shop#Decode", "Shop#Gateway", "Shop#Worker"]);
-	expect(
-		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="model-selected-subjects"] [data-subject-id]')].map(node => node.getAttribute('data-subject-id')).sort()`,
-		),
-	).toEqual(["Shop#Decode", "Shop#Gateway"]);
+	await openDiagram(browser);
 	expect(
 		await browser.eval<string[]>(
 			`(new URLSearchParams(location.search).get('focusA') ?? '').split(',').sort()`,
@@ -231,6 +207,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 	);
 	partial.searchParams.set("focusA", "Shop#Private");
 	await browser.run(["open", partial.href]);
+	await openAbout(browser);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

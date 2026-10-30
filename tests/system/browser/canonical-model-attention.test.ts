@@ -10,7 +10,7 @@ import {
 	serverTestEnvironment,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { seedCanonicalModel } from "./support/canonical-page.ts";
+import { seedCanonicalModel, pick } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const SURFACE = "[data-slot='model-diagram'] [data-slot='semantic-board-surface']";
@@ -130,7 +130,7 @@ test("selection lights canonical connections without hiding labels or cutting sh
 		"the scoped model drawing",
 		WAIT,
 	);
-	await browser.run(["click", `[data-slot="module-list"] [data-module-id="${id("Renderer")}"]`]);
+	await pick(browser, id("Renderer"));
 	const receded = await pollUntil(
 		() => filtersByName(browser),
 		(filters) => (filters["Archive"] ?? "none") !== "none",
@@ -186,7 +186,7 @@ test("selection lights canonical connections without hiding labels or cutting sh
 		"the fanout drawing",
 		WAIT,
 	);
-	await browser.run(["click", `[data-slot="module-list"] [data-module-id="${id("Hub")}"]`]);
+	await pick(browser, id("Hub"));
 	const ink = await pollUntil(
 		() => litInk(browser),
 		(found) => found.trunked > 0,

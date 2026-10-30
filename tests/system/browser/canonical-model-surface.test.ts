@@ -47,7 +47,7 @@ test("one surface outlives each reading, and Back returns the camera of that rea
 		WAIT,
 	);
 	await browser.eval(
-		`window.held = ["pane-header", "model-reading", "model-diagram", "semantic-sidebar", "semantic-board-surface"].map((slot) => document.querySelector('[data-slot="' + slot + '"]')); true`,
+		`window.held = ["pane-header", "model-reading", "model-diagram", "semantic-board-surface"].map((slot) => document.querySelector('[data-slot="' + slot + '"]')); true`,
 	);
 	await openModule(browser, "Shop#Gateway");
 	const fitted = await cameraOf(browser);
@@ -75,7 +75,7 @@ test("one surface outlives each reading, and Back returns the camera of that rea
 		"the camera of that reading",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="model-filters"]']);
+	await browser.run(["click", '[data-slot="model-key"]']);
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('[data-filter-kind="call"]') !== null`),
 		Boolean,
@@ -90,9 +90,9 @@ test("one surface outlives each reading, and Back returns the camera of that rea
 		WAIT,
 	);
 	await settledOn(browser, "Shop#Gateway");
-	expect(await browser.eval<boolean>(`document.querySelector('[role="menu"]') !== null`)).toBe(
-		true,
-	);
+	expect(
+		await browser.eval<boolean>(`document.querySelector('[data-slot="model-key-sheet"]') !== null`),
+	).toBe(true);
 	expect(await browser.eval<boolean>(`window.held.every((part) => part.isConnected)`)).toBe(true);
 	await browser.run(["press", "Escape"]);
 	const address = new URLSearchParams({

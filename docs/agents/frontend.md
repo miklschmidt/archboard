@@ -133,7 +133,7 @@ Each behavior keeps its existing public boundary and one state owner.
   Existing pane keys resolve through captured aliases into paired original state and checkpoint addresses.
   The repository switcher reads the same authority and opens current canonical architecture through the router.
   A repository row targets the active pane, including a workspace that keeps only pane B.
-  The sidebar explains unavailable ownership transfer under Model ownership.
+  About explains unavailable ownership transfer under Model ownership.
 
   Scope, focus, or grammar changes leave the bookmark and retain the displayed reading fields.
   Filters narrow the bookmark without changing its original membership.
@@ -324,9 +324,12 @@ server, because the server reads the file only once, at start.
 `theme.css` sets with the color the built page has, in both themes. So no other
 stylesheet may set a theme token.
 
-Canonical panes share the existing 280-pixel sidebar and its dock, float, and hide behavior.
-The Architecture tab holds scope navigation, reading evidence, narratives, modules, and connections.
-The Selection tab starts with the selected module meaning, then its evidence and relationships.
+A canonical pane has no sidebar. `ModelPanel` is absent until a selection and lies over the picture's right edge.
+`usePanelWait` holds a selection for `SIDEBAR_MS.panelWait`, so the panel and any camera move wait and a double click lands where it began.
+`ModelPanelSubject` says what the selection is, and `selectedSubject` decides which subject that is for the panel and for About.
+A row of the panel is an action. Long lists and evidence live on `ModelAbout`, which names the open scope or the selected subject.
+`ModelKey` stands at the picture's lower left and owns the marks and the visibility switches.
+Only one of the three lies over the picture at a time, and the selection survives each of them.
 ModelPane owns ordinary selection across asynchronous reads.
 The drawing projection translates aggregate lines into canonical relationship identities without owning another selection.
 Captured walkthroughs keep their own selection and suspend the ordinary reader.
@@ -358,8 +361,7 @@ A history entry keeps its camera, so Back and Forward return that camera. Up is 
 A coherent model event resumes exact reads interrupted by an installation barrier.
 Healthy immutable readings with no live comparison keep their cached data without another read.
 A fresh selected set represents another pick, including a repeated choice of the same module.
-The existing sidebar opens Selection for that pick.
-The sidebar's list of parts labels comparison context with its standing, including removed reference modules.
+The list of parts on About labels comparison context with its standing, including removed reference modules.
 
 The shell owns the left column's frame and holds no model knowledge.
 The reader of the focused pane portals Find, the destinations, and its lists into the column slots from `usePaneChrome`.

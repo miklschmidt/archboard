@@ -35,8 +35,6 @@ interface Presented {
 	readonly arrived: boolean;
 	/** The heading in the caption, or null. */
 	readonly heading: string | null;
-	/** Whether the sidebar can be seen. */
-	readonly sidebar: boolean;
 	/** The surface's transform. */
 	readonly camera: string;
 }
@@ -51,12 +49,10 @@ const presented = (browser: AgentBrowserSession): Promise<Presented> =>
 		`(() => {` +
 			` const stage = document.querySelector("[data-slot='model-walkthrough']") ?? document.querySelector("[data-slot='model-reading']");` +
 			` const surface = stage?.querySelector("[data-slot='semantic-board-surface']");` +
-			` const sidebar = document.querySelector("[data-slot='semantic-sidebar']");` +
 			` return {` +
 			`  step: stage?.querySelector("[data-slot='semantic-presentation']")?.getAttribute("data-step") ?? null,` +
 			`  arrived: !!surface && !surface.hasAttribute("data-camera-motion") && !surface.hasAttribute("data-picture-motion"),` +
 			`  heading: document.querySelector("[data-slot='semantic-presentation-heading']")?.textContent ?? null,` +
-			`  sidebar: !!sidebar && sidebar.checkVisibility(),` +
 			`  camera: surface?.style.transform ?? "",` +
 			` }; })()`,
 	);
@@ -167,13 +163,11 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	);
 	const reader = await presented(browser);
 	expect(reader.step).toBeNull();
-	expect(reader.sidebar).toBe(true);
 
-	// Presenting: the first step, in the frame, and the sidebar steps aside.
+	// Presenting: the first step, in the frame.
 	await startModelWalkthrough(browser, model.walkthroughs[0]!.id);
 	const first = await arrivedAt(browser, "0");
 	expect(first.heading).toBe("All of it");
-	expect(first.sidebar).toBe(false);
 
 	await pollUntil(
 		() =>
@@ -245,7 +239,7 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	await browser.run(["press", "Escape"]);
 	const left = await pollUntil(
 		() => presented(browser),
-		(state) => state.step === null && state.sidebar && state.camera === reader.camera,
+		(state) => state.step === null && state.camera === reader.camera,
 		"the pane to be given back as it was",
 		ARRIVAL,
 	);

@@ -21,7 +21,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { initializeSource, fixtureGit, selectReading } from "./support/canonical-model.ts";
-import { openModelSidebar, openRepository } from "./support/canonical-page.ts";
+import { openAbout, openRepository, pick } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -50,7 +50,7 @@ function modelFixture(root: string, model: string, repository: string): string {
 }
 
 async function selectGateway(browser: AgentBrowserSession): Promise<void> {
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await pollUntil(
 		() =>
 			browser.eval<{
@@ -60,13 +60,14 @@ async function selectGateway(browser: AgentBrowserSession): Promise<void> {
 				stage: string | null;
 				modules: string[];
 			}>(
-				`({ present: document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"]') !== null, url: location.href, error: document.querySelector('[data-slot="model-error"]')?.textContent ?? null, stage: document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-state') ?? null, modules: [...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(node => node.getAttribute('data-module-id')) })`,
+				`({ present: document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]') !== null, url: location.href, error: document.querySelector('[data-slot="model-error"]')?.textContent ?? null, stage: document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-state') ?? null, modules: [...document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"]')].map(node => node.getAttribute('data-semantic-id')) })`,
 			),
 		(value) => value.present,
 		"the source module",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
+	await pick(browser, "Shop#Gateway");
+	await openAbout(browser, "selection");
 }
 
 async function followGateway(browser: AgentBrowserSession): Promise<void> {
@@ -100,8 +101,9 @@ async function followSubject(
 	);
 	await browser.run(["click", button]);
 	await pollUntil(
-		() =>
-			browser.eval<{
+		async () => {
+			await openAbout(browser, "selection");
+			return browser.eval<{
 				found: boolean;
 				url: string;
 				error: string | null;
@@ -109,7 +111,8 @@ async function followSubject(
 				selected: unknown[];
 			}>(
 				`({ found: document.querySelector(${JSON.stringify(selector)}) !== null, url: location.href, error: document.querySelector('[data-slot="model-error"], [data-slot="module-reference-error"]')?.textContent ?? null, steps: [...document.querySelectorAll('[data-slot="model-flow-steps"] [data-step-id]')].map(node => ({id:node.getAttribute('data-step-id'),pressed:node.getAttribute('aria-pressed')})), selected: [...document.querySelectorAll('[data-slot="model-selected-subjects"] [data-subject-id]')].map(node => node.getAttribute('data-subject-id')) })`,
-			),
+			);
+		},
 		(value) => value.found,
 		"the exact foreign subject",
 		WAIT,
@@ -400,7 +403,7 @@ test("foreign references preserve explicit addresses and recover pinned architec
 	expect(
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('checkpointA')`),
 	).toBe(retained.body.checkpoint.id);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	expect(
 		await browser.eval<boolean>(
 			`document.querySelector('[data-slot="model-state-details"][data-lifecycle="historical"]') !== null`,

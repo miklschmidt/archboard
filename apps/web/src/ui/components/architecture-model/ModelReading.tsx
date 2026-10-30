@@ -22,6 +22,8 @@ interface ModelReadingProps {
 	overlay?: ReactNode;
 	/** The state the accepted scene shows, so its details never run ahead of the picture. */
 	overview?: (shown: Content) => ReactNode;
+	/** What the accepted scene is compared with, which the caption states. */
+	comparison?: (shown: Content) => ReactNode;
 	onCodeTargetNotice: Parameters<typeof activateCodeTarget>[0]["onNotice"];
 	vault: string;
 	model: Content;

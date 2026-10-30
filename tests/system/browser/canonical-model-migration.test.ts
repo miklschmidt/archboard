@@ -3,6 +3,9 @@ import {
 	openRepository,
 	startModelWalkthrough,
 	refreshModel,
+	listedParts,
+	openDiagram,
+	openAbout,
 } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { join } from "node:path";
@@ -62,7 +65,7 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop/System#Shop"]') !== null && !new URLSearchParams(location.search).has('previewB')`,
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop/System#Shop"]') !== null && !new URLSearchParams(location.search).has('previewB')`,
 			),
 		Boolean,
 		"the current model after leaving the original URL",
@@ -72,7 +75,7 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop/System#Db"]') !== null`,
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop/System#Db"]') !== null`,
 			),
 		Boolean,
 		"the installed bookmark",
@@ -116,11 +119,8 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 		"the exact original after reload",
 		WAIT,
 	);
-	expect(
-		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(node => node.getAttribute('data-module-id'))`,
-		),
-	).toEqual(["Shop/System#Api"]);
+	expect(await listedParts(browser)).toEqual(["Shop/System#Api"]);
+	await openDiagram(browser);
 	await pollUntil(
 		readPanes,
 		(result) =>
@@ -136,7 +136,7 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop/System#Shop"]') !== null && !new URLSearchParams(location.search).has('previewB')`,
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop/System#Shop"]') !== null && !new URLSearchParams(location.search).has('previewB')`,
 			),
 		Boolean,
 		"the current model from its repository",
@@ -192,7 +192,9 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('bookmarkB')`),
 	).toBe("Shop/System#Storage");
 	expect(
-		await browser.eval<boolean>(`document.querySelector('[data-slot="module-list"]') === null`),
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-diagram"] [data-semantic-kind="node"]') === null`,
+		),
 	).toBe(true);
 }, 60_000);
 
@@ -286,7 +288,7 @@ test("an unmigrated repository exposes migration and follows durable recovery to
 	await pollUntil(
 		() =>
 			browser.eval<{ modules: string[]; error: string | null; address: string }>(
-				`({ modules: [...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(item => item.getAttribute('data-module-id')), error: document.querySelector('[data-slot="model-error"]')?.textContent ?? null, address: location.search })`,
+				`({ modules: [...document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"]')].map(item => item.getAttribute('data-semantic-id')), error: document.querySelector('[data-slot="model-error"]')?.textContent ?? null, address: location.search })`,
 			),
 		(result) => result.modules.includes("Shop/System#Shop"),
 		"durable canonical completion in the open pane",
@@ -295,6 +297,7 @@ test("an unmigrated repository exposes migration and follows durable recovery to
 	expect(
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('modelA')`),
 	).toBe("Shop");
+	await openAbout(browser);
 	expect(
 		await browser.eval<boolean>(
 			`document.querySelector('[data-slot="model-transfer-unavailable"]') !== null`,

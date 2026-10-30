@@ -233,19 +233,17 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const bar = document.querySelector('${AGENT_DOCK}');
 		// The switcher names the repository of the focused pane, a human label beside the header's.
 		const selectedBoard = nav?.querySelector('[data-slot="repository-switcher"]');
-		const rowLabel = pane?.querySelector('[data-slot="module-list"] button .text-body');
-		// A section heading in the pane's sidebar.
-		const sectionHeading = pane?.querySelector('[data-slot="model-parts"] h3');
+		const rowLabel = nav?.querySelector('[data-slot="model-tree"] [data-row-id]');
 		// The pane's window on the picture: the room the camera fits a drawing into.
 		const picture = pane?.querySelector('[data-slot="model-diagram"]');
 		if (!shell || !header || !wordmark || !control || !paneHeader || !board || !variant || !technical ||
 			!present || !column || !nav || !filter || !stages || !bar || !pane || !selectedBoard || !rowLabel ||
-			!sectionHeading || !picture) {
+			!picture) {
 			throw new Error('shell matrix probe is incomplete: ' + JSON.stringify({
 				shell: !!shell, header: !!header, wordmark: !!wordmark, control: !!control,
 				paneHeader: !!paneHeader, board: !!board, variant: !!variant, technical: !!technical,
 				present: !!present, column: !!column, nav: !!nav, filter: !!filter, stages: !!stages, bar: !!bar,
-				pane: !!pane, selectedBoard: !!selectedBoard, rowLabel: !!rowLabel, sectionHeading: !!sectionHeading,
+				pane: !!pane, selectedBoard: !!selectedBoard, rowLabel: !!rowLabel,
 				picture: !!picture }));
 		}
 		const round = value => Math.round(value * 1000) / 1000;
@@ -355,7 +353,6 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 					.filter(name => /(?:Onest-wght|DMMono-(?:Regular|Medium)).*[.]ttf/.test(name)),
 				humanLabels: humanLabels.map(node => { const value = getComputedStyle(node); return {
 					family: value.fontFamily.toLowerCase(), transform: value.textTransform, weight: parseFloat(value.fontWeight) }; }),
-				sectionHeading: { ...metrics(sectionHeading), transform: getComputedStyle(sectionHeading).textTransform },
 				titleType: metrics(board), bodyType: metrics(rowLabel), stateType: metrics(variant),
 				technicalType: metrics(technical), controlType: metrics(control),
 				actionTargets: actionTargets.map(({ width, height }) => ({ width, height })),

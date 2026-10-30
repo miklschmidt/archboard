@@ -1,4 +1,4 @@
-import { openModule } from "./support/canonical-page.ts";
+import { openModule, listedParts, openAbout } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -70,23 +70,14 @@ test("module decomposition follows breadcrumbs and browser history without chang
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"]') !== null`,
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]') !== null`,
 			),
 		Boolean,
 		"the root modules",
 		WAIT,
 	);
 	await openModule(browser, "Shop#Gateway");
-	expect(
-		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(node => node.getAttribute('data-module-id'))`,
-		),
-	).toEqual(["Shop#Handler", "Shop#Sibling"]);
-	expect(
-		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Decode"]') === null`,
-		),
-	).toBe(true);
+	expect(await listedParts(browser)).toEqual(["Shop#Handler", "Shop#Sibling"]);
 	await openModule(browser, "Shop#Handler");
 	expect(
 		await browser.eval<string[]>(
@@ -230,7 +221,7 @@ test("canonical addresses restore separate scopes and keep missing readings expl
 	);
 	expect(
 		await browser.eval<boolean>(
-			`document.querySelector('[data-pane="B"] [data-slot="module-list"]') === null`,
+			`document.querySelector('[data-pane="B"] [data-slot="model-diagram"] [data-semantic-kind="node"]') === null`,
 		),
 	).toBe(true);
 	await browser.run(["reload"]);
@@ -274,7 +265,9 @@ test("canonical addresses restore separate scopes and keep missing readings expl
 		WAIT,
 	);
 	expect(
-		await browser.eval<boolean>(`document.querySelector('[data-slot="module-list"]') === null`),
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-diagram"] [data-semantic-kind="node"]') === null`,
+		),
 	).toBe(true);
 	await browser.run(["open", `${server.base}/?modelA=Shop&scopeA=Shop%23Missing`]);
 	await pollUntil(
@@ -285,7 +278,9 @@ test("canonical addresses restore separate scopes and keep missing readings expl
 		WAIT,
 	);
 	expect(
-		await browser.eval<boolean>(`document.querySelector('[data-slot="module-list"]') === null`),
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-diagram"] [data-semantic-kind="node"]') === null`,
+		),
 	).toBe(true);
 }, 60_000);
 
@@ -371,6 +366,7 @@ test("projected connections expose complete ordered relationships and module int
 	await browser.run(["open", `${server.base}/`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	const line = '[data-slot="model-connections"] [data-from="Shop#Worker"][data-to="Shop#Gateway"]';
+	await openAbout(browser);
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('${line}') !== null`),
 		Boolean,
@@ -379,16 +375,12 @@ test("projected connections expose complete ordered relationships and module int
 	);
 	expect(await browser.eval<number>(`document.querySelectorAll('${line}').length`)).toBe(1);
 	await browser.run(["click", line]);
+	await openAbout(browser, "selection");
 	expect(
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-slot="model-connection-details"] [data-relationship-id]')].map(node => node.getAttribute('data-relationship-id'))`,
 		),
 	).toEqual(["Shop#In", "Shop#Whole", "Shop#Dispatch", "Shop#OutA", "Shop#Web", "Shop#OutB"]);
-	expect(
-		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="model-connection-labels"] li')].map(node => node.textContent)`,
-		),
-	).toEqual(["Enter", "Public API", "Dispatch request", "Deliver", "Request"]);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(`document.querySelector('[data-slot="model-diagram"] svg') !== null`),
@@ -397,6 +389,7 @@ test("projected connections expose complete ordered relationships and module int
 		WAIT,
 	);
 	await openModule(browser, "Shop#Gateway");
+	await openAbout(browser);
 	expect(
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-slot="module-context"] [data-module-id]')].map(node => node.getAttribute('data-module-id'))`,
@@ -427,6 +420,7 @@ test("projected connections expose complete ordered relationships and module int
 	const whole = '[data-slot="model-connections"] [data-from="Shop#Worker"][data-to="Shop#Gateway"]';
 	expect(await browser.eval<number>(`document.querySelectorAll('${whole}').length`)).toBe(1);
 	await browser.run(["click", '[data-slot="model-connections"] [data-connection-id="Shop#Self"]']);
+	await openAbout(browser, "selection");
 	expect(
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-slot="model-connection-details"] [data-relationship-id]')].map(node => node.getAttribute('data-relationship-id'))`,

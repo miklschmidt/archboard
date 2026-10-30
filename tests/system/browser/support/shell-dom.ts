@@ -64,22 +64,6 @@ function boardName(browser: PageEvaluator): Promise<string | null> {
 }
 
 /**
- * How far the active sidebar tab underline extends beyond its tab row.
- * @param browser The page.
- * @returns The overhang in pixels, 0 inside the row, or NaN with no open tab.
- */
-function sidebarTabLineOverhang(browser: PageEvaluator): Promise<number> {
-	return browser.eval<number>(`(() => {
-		const tab = document.querySelector('[data-slot="semantic-sidebar-tab"][data-active]');
-		const header = tab?.closest('[data-slot="tabs-list"]')?.parentElement;
-		if (!header || !tab) return Number.NaN;
-		const line = getComputedStyle(tab, '::after');
-		const bottom = tab.getBoundingClientRect().bottom - Number.parseFloat(line.bottom);
-		return Math.max(0, bottom - header.getBoundingClientRect().bottom);
-	})()`);
-}
-
-/**
  * The theme on the root element.
  * @param browser The page.
  * @returns `light`, `dark`, or an empty string before the shell applies one.
@@ -206,7 +190,6 @@ export {
 	shellNotices,
 	stageIsFullscreen,
 	switchTheme,
-	sidebarTabLineOverhang,
 	type ShellNoticeView,
 };
 

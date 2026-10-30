@@ -1,5 +1,11 @@
 import { ModelHistory } from "#ui/components/architecture-model/ModelHistory.tsx";
 import { modelSubjects, subjectName } from "#ui/rules/architecture-model/flow-reading.ts";
+import {
+	isRemoved,
+	moduleSource,
+	relationshipsOf,
+	selectedSubject,
+} from "#ui/rules/architecture-model/selected-subject.ts";
 import { useCallback, type ComponentProps, type JSX, type ReactNode } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import type { Model, projectModel } from "@archboard/board/content";
@@ -29,35 +35,34 @@ interface ModelSelectionDetailsProps {
 /**
  * Inspect canonical selection independently from what the canvas currently draws.
  * @param props The selected subjects and coherent reading.
- * @returns One module, an aggregate, multiple subjects, or the scope introduction.
+ * @returns One module, an aggregate, or multiple subjects.
  */
-function ModelSelectionDetails(props: ModelSelectionDetailsProps): JSX.Element {
+function ModelSelectionDetails(props: ModelSelectionDetailsProps): JSX.Element | null {
 	const { ids } = props.selection;
-	const only = selectedIdentity(ids);
-	const module = inspectedModule(props, only);
-	if (module !== undefined) return <SelectedModule {...props} module={module} />;
-	const collection = inspectedCollection(props, only);
-	if (collection !== undefined)
-		return <ModelCollectionDetails {...collection} onOpenFlow={props.onRevealFlow} />;
-	if (props.projection.flow !== null)
+	const subject = selectedSubject({ ...props, ids });
+	if (subject.kind === "module") return <SelectedModule {...props} module={subject.module} />;
+	if (subject.kind === "collection")
+		return <ModelCollectionDetails {...subject} onOpenFlow={props.onRevealFlow} />;
+	if (subject.kind === "flow")
 		return (
 			<ModelFlowDetails
 				model={props.model}
-				flow={props.projection.flow}
+				flow={subject.flow}
 				reference={props.projection.reference}
 				selection={props.selection}
 			/>
 		);
-	const connection = inspectedConnection(props);
-	if (connection !== undefined)
+	if (subject.kind === "connection")
 		return (
 			<ConnectionDetails
-				connection={connection}
+				connection={subject.connection}
 				model={props.model}
 				reference={props.projection.reference}
-			/>
+			>
+				{props.evidence}
+			</ConnectionDetails>
 		);
-	if (ids.size > 0)
+	if (subject.kind === "subjects")
 		return (
 			<SelectedSubjects
 				model={props.model}
@@ -67,99 +72,7 @@ function ModelSelectionDetails(props: ModelSelectionDetailsProps): JSX.Element {
 				slot="model-selected-subjects"
 			/>
 		);
-	return <UnselectedDetails {...props} />;
-}
-
-/**
- * An explicit relationship can select one member of a projected aggregate.
- * @param props The authored selection and projected connections.
- * @returns Only the selected relationships when one connection contains them all.
- */
-function inspectedConnection(props: ModelSelectionDetailsProps) {
-	const { ids } = props.selection;
-	if (ids.size === 0) return undefined;
-	const connection = props.projection.allConnections.find(({ joins }) =>
-		[...ids].every((id) => joins.some((edge) => edge.id === id)),
-	);
-	if (connection === undefined) return undefined;
-	const [first, ...rest] = connection.joins.filter((edge) => ids.has(edge.id));
-	return first === undefined ? undefined : { ...connection, joins: [first, ...rest] as const };
-}
-
-/**
- * Only a single authored identity opens its dedicated inspector.
- * @param selected The temporary selected identities.
- * @returns The one subject, or absence for empty and mixed selections.
- */
-function selectedIdentity(selected: ReadonlySet<string>): string | undefined {
-	return selected.size === 1 ? [...selected][0] : undefined;
-}
-
-/**
- * Collections use qualified subject identities while retaining their local authored identity.
- * @param props The selected reading and coherent comparison reference.
- * @param id The exact inspected identity.
- * @returns The collection and the state that owns its definition.
- */
-function inspectedCollection(props: ModelSelectionDetailsProps, id: string | undefined) {
-	if (props.projection.flow !== null) return undefined;
-	for (const model of [props.model, props.projection.reference]) {
-		if (model === undefined) continue;
-		const collection = model.collections.find((entry) => `${model.manifest.id}#${entry.id}` === id);
-		if (collection !== undefined) return { model, collection };
-	}
-	return undefined;
-}
-
-/**
- * With no transient selection, explain the captured focus or the open scope.
- * @param props The current architectural reading.
- * @returns Focused identities or the complete scope introduction and interface.
- */
-function UnselectedDetails(props: ModelSelectionDetailsProps): JSX.Element {
-	if (props.projection.flow !== null)
-		return (
-			<ModelFlowDetails
-				model={props.model}
-				flow={props.projection.flow}
-				reference={props.projection.reference}
-				selection={props.selection}
-			/>
-		);
-	if (props.projection.focused !== null)
-		return (
-			<SelectedSubjects
-				model={props.model}
-				reference={props.projection.reference}
-				selected={props.projection.focused}
-				title="Focused subjects"
-				slot="model-focused-subjects"
-			/>
-		);
-	return (
-		<>
-			<ScopeIntroduction model={scopeModel(props)} scope={props.scope} />
-			<ModelSubjectStanding model={props.model} subject={props.scope} />
-			<ModelInterface
-				model={props.model}
-				projection={props.projection}
-				onSelect={props.selection.select}
-			/>
-		</>
-	);
-}
-
-/**
- * A comparison can inspect a removed definition only from its verified reference.
- * @param props The selected state and optional coherent reference.
- * @param id The inspected identity.
- * @returns Its selected definition, otherwise the explicit reference definition.
- */
-function inspectedModule(props: ModelSelectionDetailsProps, id: string | undefined) {
-	return (
-		props.model.modules.find((entry) => entry.id === id) ??
-		props.projection.reference?.modules.find((entry) => entry.id === id)
-	);
+	return null;
 }
 
 /**
@@ -181,15 +94,13 @@ function scopeModel(props: ModelSelectionDetailsProps): Model {
 function SelectedModule(
 	props: ModelSelectionDetailsProps & { module: Model["modules"][number] },
 ): JSX.Element {
-	const removed = props.projection.standing?.[props.module.id] === "removed";
-	const source =
-		removed && props.projection.reference !== undefined ? props.projection.reference : props.model;
+	const { module, model, projection } = props;
 	return (
 		<SelectedModuleDetails
 			{...props}
-			model={source}
-			comparisonModel={props.model}
-			removed={removed}
+			model={moduleSource(model, projection, module.id)}
+			comparisonModel={model}
+			removed={isRemoved(projection, module.id)}
 		/>
 	);
 }
@@ -210,6 +121,8 @@ function SelectedModuleDetails(
 		<ModuleDetails
 			module={props.module}
 			model={props.model}
+			relationships={relationshipsOf(props.model, props.projection, props.module.id)}
+			onSelect={props.selection.select}
 			standing={
 				<>
 					{props.evidence}
@@ -217,9 +130,6 @@ function SelectedModuleDetails(
 				</>
 			}
 		>
-			{!props.removed && props.module.id !== props.scope && (
-				<OpenModule id={props.module.id} onOpen={props.onOpen} />
-			)}
 			{props.module.id === props.scope && (
 				<ModelInterface
 					model={props.model}
@@ -232,14 +142,20 @@ function SelectedModuleDetails(
 				model={props.model}
 				projection={props.projection}
 				onSelect={props.selection.select}
+				whole
 			/>
-			<ModuleNavigation
-				paneId={props.paneId}
-				vault={props.vault}
-				model={props.model}
-				module={props.module}
-				onNotice={props.onCodeTargetNotice}
-			/>
+			<div className="flex flex-wrap items-start gap-2">
+				{!props.removed && props.module.id !== props.scope && (
+					<OpenModule id={props.module.id} onOpen={props.onOpen} />
+				)}
+				<ModuleNavigation
+					paneId={props.paneId}
+					vault={props.vault}
+					model={props.model}
+					module={props.module}
+					onNotice={props.onCodeTargetNotice}
+				/>
+			</div>
 			<ModelHistory
 				vault={props.vault}
 				model={props.model}
@@ -305,30 +221,24 @@ function ScopeIntroduction(props: { model: Model; scope: string | null }): JSX.E
 	if (module === undefined) return <ModelIntroduction model={props.model} />;
 	return (
 		<section data-slot="model-scope-introduction" className="space-y-3">
-			<h3 className="text-figure font-display uppercase">{module.name}</h3>
-			{module.responsibility && <p className="text-reading">{module.responsibility}</p>}
-			{module.description && <p className="text-body whitespace-pre-wrap">{module.description}</p>}
+			<h3 className="title-figure [overflow-wrap:anywhere] uppercase">{module.name}</h3>
+			{module.responsibility && (
+				<p className="text-reading max-w-[68ch] text-pretty">{module.responsibility}</p>
+			)}
+			{module.description && (
+				<p className="text-body max-w-[68ch] whitespace-pre-wrap">{module.description}</p>
+			)}
 		</section>
 	);
 }
 
 /**
- * The model introduces itself until the reader selects a module.
+ * The model names itself where no module is open.
  * @param props The coherent model.
- * @returns Its authored model name and exploration action.
+ * @returns Its authored model name.
  */
 function ModelIntroduction(props: Pick<ModelSelectionDetailsProps, "model">): JSX.Element {
-	const { model } = props;
-	return (
-		<div className="max-w-prose space-y-4">
-			<h3 className="text-figure font-display uppercase">{model.manifest.name}</h3>
-			{model.roots.length > 0 && (
-				<p className="text-body text-muted-foreground">
-					Select a module to read its responsibility and connections.
-				</p>
-			)}
-		</div>
-	);
+	return <h3 className="title-figure uppercase">{props.model.manifest.name}</h3>;
 }
 
 /**
@@ -342,10 +252,17 @@ function OpenModule(props: { id: string; onOpen: (scope: string | null) => void 
 	const { id, onOpen } = props;
 	const open = useCallback((): void => onOpen(id), [id, onOpen]);
 	return (
-		<Button variant="outline" data-slot="module-open" className="mb-6" onClick={open}>
+		<Button data-slot="module-open" onClick={open}>
 			Open module
 		</Button>
 	);
 }
 
-export { ModelSelectionDetails, ScopeIntroduction, UnselectedDetails as ModelScopeDetails };
+export {
+	ModelSelectionDetails,
+	OpenModule,
+	ScopeIntroduction,
+	SelectedSubjects,
+	scopeModel,
+	type ModelSelectionDetailsProps,
+};

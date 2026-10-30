@@ -37,12 +37,7 @@ function ModelGroups(props: { model: Model; selection: ModelSelection }): JSX.El
 		[content, selectMany],
 	);
 	if (choices.length === 0) return null;
-	return (
-		<section className="border-border space-y-3 border-t px-4 py-4">
-			<h3 className="text-body font-semibold">Groups</h3>
-			<SemanticGroupList choices={choices} selected={selected} onChoose={choose} />
-		</section>
-	);
+	return <SemanticGroupList choices={choices} selected={selected} onChoose={choose} />;
 }
 
 export { ModelGroups };

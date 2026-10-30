@@ -1,4 +1,4 @@
-import { openDestination, openModelSidebar } from "./canonical-page.ts";
+import { openAbout, openDestination } from "./canonical-page.ts";
 import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
 
 const WAIT = { timeoutMs: 6_000 } as const;
@@ -55,8 +55,8 @@ async function selectReading(browser: AgentBrowserSession, id: string): Promise<
 }
 
 /**
- * Select a module from the sidebar list and read its details. A reading that settles replaces
- * the rows and drops the selection, so each pass activates the row while no details show.
+ * Select a module from the list on About and read its details there. A reading that settles
+ * replaces the rows and drops the selection, so each pass takes the one step that is left.
  * @param browser The page.
  * @param id The module.
  * @param shows Whether the details hold what the caller waits for.
@@ -73,7 +73,10 @@ async function selectModule(
 		() =>
 			browser.eval<string>(`(() => {
 				const details = document.querySelector('[data-slot="module-details"][data-module-id="${id}"]');
-				if (details === null) document.querySelector('[data-slot="module-list"] [data-module-id="${id}"]')?.click();
+				if (details === null) {
+					document.querySelector('[data-slot="module-list"] [data-module-id="${id}"]')?.click();
+					document.querySelector('[data-slot="model-about-other"]')?.click();
+				}
 				return document.querySelector('[data-slot="module-details"][data-module-id="${id}"] ${part}')?.textContent ?? "";
 			})()`),
 		shows,
@@ -83,7 +86,7 @@ async function selectModule(
 }
 
 async function gatewayDetails(browser: AgentBrowserSession): Promise<string> {
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	return selectModule(browser, "Shop#Gateway");
 }
 
@@ -99,7 +102,7 @@ async function selectState(browser: AgentBrowserSession, id: string): Promise<vo
 		WAIT,
 	);
 	await browser.run(["click", `[data-state-id="${id}"]`]);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

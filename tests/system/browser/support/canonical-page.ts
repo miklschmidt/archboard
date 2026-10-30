@@ -206,22 +206,60 @@ async function settledOn(browser: AgentBrowserSession, id: string): Promise<void
 	);
 }
 
-/** Open a module from the sidebar, and wait for its picture. */
-async function openModule(browser: AgentBrowserSession, id: string): Promise<void> {
-	await openModelSidebar(browser);
-	await browser.run(["click", `[data-slot="module-list"] [data-module-id="${id}"]`]);
+/**
+ * Pick a subject of the picture, as a click on it does. The panel opens after its wait.
+ * @param browser The page.
+ * @param id The subject.
+ * @param options How to pick it.
+ * @param options.toggle Whether the pick adds to the selection or takes from it.
+ * @param options.scope A selector for the pane.
+ */
+async function pick(
+	browser: AgentBrowserSession,
+	id: string,
+	options: { readonly toggle?: boolean; readonly scope?: string } = {},
+): Promise<void> {
+	const subject = `${options.scope ?? ""} [data-slot="model-diagram"] [data-semantic-id="${id}"]`;
 	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector('[data-slot="module-open"]') !== null`),
+		() =>
+			browser.eval<boolean>(`(() => {
+				const subject = document.querySelector(${JSON.stringify(subject)});
+				subject?.dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: ${options.toggle === true} }));
+				return subject !== null;
+			})()`),
 		Boolean,
-		"the module opening action",
+		`the picture of ${id}`,
 		{ timeoutMs: 10_000 },
 	);
-	await browser.run(["click", '[data-slot="module-open"]']);
+}
+
+/** Press an action of the panel. It is still sliding in, so a click on the screen can miss it. */
+async function pressInPanel(browser: AgentBrowserSession, selector: string): Promise<void> {
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(`(() => {
+				const action = document.querySelector(${JSON.stringify(`[data-slot="model-panel"] ${selector}`)});
+				action?.click();
+				return action !== null;
+			})()`),
+		Boolean,
+		`the panel's ${selector}`,
+		{ timeoutMs: 10_000 },
+	);
+}
+
+/** Open a part of the picture from the panel, and wait for its picture. */
+async function openModule(browser: AgentBrowserSession, id: string): Promise<void> {
+	await openDiagram(browser);
+	await pick(browser, id);
+	await pressInPanel(browser, '[data-slot="module-open"]');
 	await settledOn(browser, id);
 }
 
 export {
 	openModule,
+	pressInPanel,
+	pick,
 	settledOn,
 	editCanonicalModel,
 	seedCanonicalModel,
@@ -232,42 +270,60 @@ export {
 	VOICE_PIPELINE,
 };
 
-/** Open an existing sidebar tab through its visible controls. */
-async function openModelSidebar(
+/** Show a page of the reading through the header. */
+async function openPage(
 	browser: AgentBrowserSession,
-	tab = "board",
-	scope = "",
+	page: "diagram" | "about",
+	pane = "",
 ): Promise<void> {
-	const toggle = `${scope} [data-slot="semantic-sidebar-toggle"]`;
-	const expanded = await pollUntil(
-		() =>
-			browser.eval<string | null>(
-				`document.querySelector(${JSON.stringify(toggle)})?.getAttribute('aria-expanded') ?? null`,
-			),
-		(value) => value !== null,
-		"the mounted model sidebar control",
-	);
-	if (expanded === "false") await browser.run(["click", toggle]);
-	const choice = `${scope} [data-slot="semantic-sidebar-tab"][data-tab="${tab}"]`;
-	const chosen = (): Promise<boolean> =>
-		browser.eval<boolean>(
-			`document.querySelector(${JSON.stringify(choice)})?.getAttribute('aria-selected') === 'true'`,
-		);
-	// A sidebar that a new reading just mounted is still moving, so a click can miss its tab.
+	const choice = `${pane} [data-slot="model-page"] [data-choice="${page}"]`;
 	await pollUntil(
 		async () => {
-			const present = await browser.eval<boolean>(
-				`document.querySelector(${JSON.stringify(choice)}) !== null`,
-			);
-			if (present && !(await chosen())) await browser.run(["click", choice]);
-			return await chosen();
+			const about = `document.querySelector(${JSON.stringify(`${pane} [data-slot="model-about"]`)}) !== null`;
+			if ((await browser.eval<boolean>(about)) === (page === "about")) return true;
+			await browser.eval(`document.querySelector(${JSON.stringify(choice)})?.click()`);
+			return false;
 		},
 		Boolean,
-		"the requested model sidebar tab",
+		`the ${page} page`,
 	);
 }
 
-export { openModelSidebar };
+/** Show the picture of the reading. */
+async function openDiagram(browser: AgentBrowserSession, pane = ""): Promise<void> {
+	await openPage(browser, "diagram", pane);
+}
+
+/** Open About on the scope or on the selection, which hold the long lists of a reading. */
+async function openAbout(
+	browser: AgentBrowserSession,
+	subject: "scope" | "selection" = "scope",
+	pane = "",
+): Promise<void> {
+	await openPage(browser, "about", pane);
+	const about = `${pane} [data-slot="model-about"]`;
+	const other = `${pane} [data-slot="model-about-other"]`;
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(`(() => {
+				if (document.querySelector(${JSON.stringify(about)})?.getAttribute('data-subject') === ${JSON.stringify(subject)}) return true;
+				document.querySelector(${JSON.stringify(other)})?.click();
+				return false;
+			})()`),
+		Boolean,
+		`About on the ${subject}`,
+	);
+}
+
+/** Read the parts of the reading from the list on About, where the reader stays. */
+async function listedParts(browser: AgentBrowserSession): Promise<string[]> {
+	await openAbout(browser);
+	return browser.eval<string[]>(
+		`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(row => row.getAttribute('data-module-id'))`,
+	);
+}
+
+export { listedParts, openAbout, openDiagram };
 
 /**
  * Read again as a person does who comes back to the page. A healthy reading has no Refresh,

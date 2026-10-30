@@ -22,10 +22,19 @@ import {
 	RiBox3Line,
 	RiGitBranchLine,
 	RiPlayCircleLine,
-	type RemixiconComponentType,
 } from "@remixicon/react";
-import { useCallback, useId, useMemo, useState, type JSX } from "react";
+import { useCallback, useMemo, useState, type JSX } from "react";
 
+import {
+	AboutOutline,
+	AboutSectionFrame,
+	ABOUT_COLUMNS,
+	ABOUT_PAGE,
+	ABOUT_SHEET,
+	ABOUT_TITLE,
+	scrollToSection,
+	type AboutSection,
+} from "#ui/components/semantic-board-canvas/AboutOutline.tsx";
 import {
 	AboutParts,
 	AboutRelationships,
@@ -89,15 +98,6 @@ interface AboutPageProps {
 /** The sections of the page. */
 type SectionKey = "walkthroughs" | "parts" | "relationships" | "variants";
 
-/** One section of the page, as the outline lists it. */
-interface AboutSection {
-	readonly key: SectionKey;
-	readonly label: string;
-	readonly icon: RemixiconComponentType;
-	/** How many it lists. */
-	readonly count: number;
-}
-
 /**
  * The About page.
  * @param props The board, what it says about itself and what a reader can do.
@@ -143,13 +143,13 @@ function AboutPage(props: AboutPageProps): JSX.Element {
 			data-slot="board-page"
 			data-tab="about"
 			onScroll={keep}
-			className="bg-background absolute inset-0 z-20 overflow-x-hidden overflow-y-auto [container:about/size]"
+			className={`bg-background absolute inset-0 z-20 ${ABOUT_PAGE}`}
 		>
-			<div className="mx-auto grid max-w-[1320px] grid-cols-1 gap-x-12 px-6 pt-8 pb-16 wrap-break-word @min-[1040px]/about:grid-cols-[176px_minmax(0,1fr)] @min-[1040px]/about:px-10">
+			<div className={ABOUT_COLUMNS}>
 				<AboutTitle board={props.board} reading={reading} timeline={timeline} />
 				<AboutOutline sections={sections} current={current} onGo={goTo} />
 				{reading !== null && timeline !== null && (
-					<div className="@container/sheet flex min-w-0 flex-col gap-14 @min-[1040px]/about:col-start-2 @min-[1040px]/about:row-start-2">
+					<div className={ABOUT_SHEET}>
 						{sections.map((section) => (
 							<AboutSectionFrame key={section.key} section={section}>
 								<SectionBody
@@ -167,28 +167,8 @@ function AboutPage(props: AboutPageProps): JSX.Element {
 	);
 }
 
-/**
- * Bring a section's heading to the top of the page, clear of the outline's bar
- * while the page is narrow, and give the heading focus, so the keyboard reads
- * on from there.
- * @param page The page that scrolls.
- * @param key The section.
- * @param reducedMotion Whether the reader asked for no motion.
- */
-function scrollToSection(page: HTMLElement, key: SectionKey, reducedMotion: boolean): void {
-	const section = page.querySelector<HTMLElement>(`[data-about-section="${key}"]`);
-	if (section === null) return;
-	const top = section.getBoundingClientRect().top - page.getBoundingClientRect().top;
-	const margin = Number.parseFloat(getComputedStyle(section).scrollMarginTop);
-	page.scrollTo({
-		top: page.scrollTop + top - (Number.isFinite(margin) ? margin : 0),
-		behavior: reducedMotion ? "instant" : "smooth",
-	});
-	section.querySelector<HTMLElement>("h3")?.focus({ preventScroll: true });
-}
-
 /** Each section, in the order a reader asks, with its mark: the marks of the pages it replaced. */
-const SECTIONS: readonly Omit<AboutSection, "count">[] = [
+const SECTIONS: readonly Omit<AboutSection<SectionKey>, "count">[] = [
 	{ key: "walkthroughs", label: "Walkthroughs", icon: RiPlayCircleLine },
 	{ key: "parts", label: "Parts", icon: RiBox3Line },
 	{ key: "relationships", label: "Relationships", icon: RiArrowLeftRightLine },
@@ -200,7 +180,7 @@ const SECTIONS: readonly Omit<AboutSection, "count">[] = [
  * @param reading What the board says about itself, or null while it has not arrived.
  * @returns The sections, with what each lists.
  */
-function sectionsOf(reading: VariantReading | null): readonly AboutSection[] {
+function sectionsOf(reading: VariantReading | null): readonly AboutSection<SectionKey>[] {
 	if (reading === null) return [];
 	const counts = countsOf(reading);
 	return SECTIONS.map((section) => ({ ...section, count: counts[section.key] })).filter(
@@ -242,10 +222,7 @@ function AboutTitle(props: {
 }): JSX.Element {
 	const { reading, timeline } = props;
 	return (
-		<header
-			data-slot="about-title"
-			className="flex min-w-0 flex-col gap-3 pb-10 @min-[1040px]/about:col-start-2 @min-[1040px]/about:row-start-1"
-		>
+		<header data-slot="about-title" className={ABOUT_TITLE}>
 			<h2 className="title-figure min-w-0 [overflow-wrap:anywhere] uppercase">{props.board}</h2>
 			{reading === null || timeline === null ? (
 				<p className="text-control text-muted-foreground font-normal">Reading the board…</p>
@@ -303,115 +280,6 @@ function TitleFacts(props: {
  */
 function levelWords(level: string): string {
 	return `${level.charAt(0).toUpperCase()}${level.slice(1)} board`;
-}
-
-/**
- * The outline: each section with its count, which goes to it, and the mark on
- * the one being read. Beside the sections while the page is wide, and in a bar
- * that stays over them while it is narrow. A bar too narrow for every entry
- * scrolls sideways rather than grow taller, so a jump still lands clear of it.
- * @param props The sections, the one being read and the way to go to one.
- * @param props.sections The sections.
- * @param props.current The key of the one being read, or null.
- * @param props.onGo Go to a section.
- * @returns The outline, or nothing while there are no sections.
- */
-function AboutOutline(props: {
-	readonly sections: readonly AboutSection[];
-	readonly current: string | null;
-	readonly onGo: (key: SectionKey) => void;
-}): JSX.Element | null {
-	if (props.sections.length === 0) return null;
-	return (
-		<nav
-			aria-label="Sections of this page"
-			data-slot="about-outline"
-			className="bg-background border-border sticky top-0 z-10 -mx-6 mb-8 border-b @min-[1040px]/about:top-8 @min-[1040px]/about:col-start-1 @min-[1040px]/about:row-span-2 @min-[1040px]/about:row-start-1 @min-[1040px]/about:mx-0 @min-[1040px]/about:mb-0 @min-[1040px]/about:self-start @min-[1040px]/about:border-0"
-		>
-			<ol className="flex [scrollbar-width:thin] gap-1 overflow-x-auto px-5 py-1.5 @min-[1040px]/about:flex-col @min-[1040px]/about:overflow-visible @min-[1040px]/about:p-0">
-				{props.sections.map((section) => (
-					<OutlineEntry
-						key={section.key}
-						section={section}
-						current={props.current === section.key}
-						onGo={props.onGo}
-					/>
-				))}
-			</ol>
-		</nav>
-	);
-}
-
-/**
- * One section in the outline: its mark, its name and its count.
- * @param props The section, whether it is being read and the way to go to it.
- * @param props.section The section.
- * @param props.current Whether it is the one being read.
- * @param props.onGo Go to a section.
- * @returns The entry.
- */
-function OutlineEntry(props: {
-	readonly section: AboutSection;
-	readonly current: boolean;
-	readonly onGo: (key: SectionKey) => void;
-}): JSX.Element {
-	const { section, current, onGo } = props;
-	const Icon = section.icon;
-	const go = useCallback((): void => {
-		onGo(section.key);
-	}, [onGo, section.key]);
-	return (
-		<li>
-			<button
-				type="button"
-				aria-current={current ? "location" : undefined}
-				data-slot="about-outline-entry"
-				data-section={section.key}
-				onClick={go}
-				className="text-control text-muted-foreground hover:bg-muted hover:text-foreground aria-[current=location]:text-foreground rounded-control relative flex h-8 w-full items-center gap-2 px-2 whitespace-nowrap"
-			>
-				{current && (
-					<span
-						aria-hidden="true"
-						className="bg-primary-mark absolute inset-x-2 -bottom-1.5 h-0.5 rounded-full @min-[1040px]/about:inset-x-auto @min-[1040px]/about:inset-y-1.5 @min-[1040px]/about:left-0 @min-[1040px]/about:h-auto @min-[1040px]/about:w-0.5"
-					/>
-				)}
-				<Icon aria-hidden="true" className="size-4 shrink-0" />
-				<span className="flex-1 text-left">{section.label}</span>
-				<span className="text-technical text-muted-foreground font-mono tabular-nums">
-					{section.count}
-				</span>
-			</button>
-		</li>
-	);
-}
-
-/**
- * One section: its heading, which a jump from the outline gives focus to, and
- * what it lists. The last section is as tall as the page's room, so a jump
- * brings any section to the top.
- * @param props The section and what it lists.
- * @param props.section The section.
- * @param props.children What it lists.
- * @returns The section.
- */
-function AboutSectionFrame(props: {
-	readonly section: AboutSection;
-	readonly children: JSX.Element;
-}): JSX.Element {
-	const heading = useId();
-	return (
-		<section
-			aria-labelledby={heading}
-			data-about-section={props.section.key}
-			className="flex min-w-0 scroll-mt-16 flex-col gap-4 last:min-h-[calc(100cqh-6rem)] @min-[1040px]/about:scroll-mt-8"
-		>
-			<h3 id={heading} tabIndex={-1} className="text-subtitle font-semibold outline-none">
-				{props.section.label}
-			</h3>
-			{props.children}
-		</section>
-	);
 }
 
 /** What one section lists from. */

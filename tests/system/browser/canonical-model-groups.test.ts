@@ -13,7 +13,7 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { openModelSidebar } from "./support/canonical-page.ts";
+import { openAbout } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 8_000 } as const;
@@ -74,7 +74,7 @@ test("a group selects all canonical members across scopes and changes no archite
 		"the canonical drawing",
 		WAIT,
 	);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('${CHOICE}') !== null`),
 		Boolean,
@@ -82,6 +82,7 @@ test("a group selects all canonical members across scopes and changes no archite
 		WAIT,
 	);
 	await browser.run(["click", CHOICE]);
+	await openAbout(browser, "selection");
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -100,7 +101,7 @@ test("a group selects all canonical members across scopes and changes no archite
 		WAIT,
 	);
 	expect(await ringed(browser, ids)).toEqual(ids.slice(0, 3));
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	expect(
 		await browser.eval<string | null>(
 			`document.querySelector('${CHOICE}')?.getAttribute('aria-pressed')`,

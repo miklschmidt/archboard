@@ -24,7 +24,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { fixtureGit, initializeSource } from "./support/canonical-model.ts";
-import { chooseFlow, refreshModel } from "./support/canonical-page.ts";
+import { chooseFlow, refreshModel, listedParts, openModule } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -72,7 +72,7 @@ test("migration preview preserves its source while readers navigate modules and 
 	await browser.run(["open", `${server.base}/?modelA=Shop&previewA=Shop`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await visible(browser, '[data-slot="model-migration-preview"]');
-	await visible(browser, '[data-slot="module-list"] [data-module-id="Shop/System#Shop"]');
+	await visible(browser, '[data-slot="model-diagram"] [data-semantic-id="Shop/System#Shop"]');
 	expect(
 		await browser.eval<boolean>(
 			`document.querySelector('[data-slot="model-reading-selector"], [data-slot="model-state-details"], [data-slot="model-explain"]') === null`,
@@ -93,15 +93,8 @@ test("migration preview preserves its source while readers navigate modules and 
 		),
 	).toEqual(["Shop/Future#Draft"]);
 	await browser.run(["click", '[data-slot="model-migration-preview"] summary']);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop/System#Shop"]']);
-	await visible(browser, '[data-slot="module-open"]');
-	await browser.run(["click", '[data-slot="module-open"]']);
-	await visible(browser, '[data-slot="model-reading"][data-scope="Shop/System#Shop"]');
-	expect(
-		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(node => node.getAttribute('data-module-id'))`,
-		),
-	).toEqual(["Shop/System#Db", "Shop/System#Api"]);
+	await openModule(browser, "Shop/System#Shop");
+	expect(await listedParts(browser)).toEqual(["Shop/System#Db", "Shop/System#Api"]);
 	await visible(browser, '[data-slot="model-diagram"] [data-semantic-id="Shop/System#Api"]');
 	await browser.run(["reload"]);
 	await visible(browser, '[data-slot="model-reading"][data-scope="Shop/System#Shop"]');
@@ -253,7 +246,7 @@ test("a missing preview plan recovers to an explicit planned-only reading", asyn
 	).toBe(true);
 	expect(
 		await browser.eval<number>(
-			`document.querySelectorAll('[data-slot="module-list"] [data-module-id]').length`,
+			`document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"]').length`,
 		),
 	).toBe(0);
 	await browser.run(["click", '[data-slot="model-migration-preview"] summary']);

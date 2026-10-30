@@ -10,6 +10,8 @@ interface ModelFlowDetailsProps {
 	flow: ModelFlow;
 	reference: Model | undefined;
 	selection: ModelSelection;
+	/** Say only what is selected, for a place with no room for the whole flow. */
+	brief?: boolean | undefined;
 }
 
 /**
@@ -18,12 +20,17 @@ interface ModelFlowDetailsProps {
  * @returns The flow narrative and keyboard-accessible authored steps.
  */
 function ModelFlowDetails(props: ModelFlowDetailsProps): JSX.Element {
-	const steps = everyStep(props.flow.steps);
+	const { brief } = props;
+	const steps = everyStep(props.flow.steps).filter(
+		(step) => brief !== true || props.selection.ids.has(step.id),
+	);
 	return (
 		<section data-slot="model-flow-details" className="space-y-6">
 			<h3 className="text-title font-semibold">{props.flow.name}</h3>
 			<ModelSubjectStanding model={props.model} subject={props.flow.id} />
-			{props.flow.summary && <p className="text-body whitespace-pre-wrap">{props.flow.summary}</p>}
+			{brief !== true && props.flow.summary && (
+				<p className="text-body whitespace-pre-wrap">{props.flow.summary}</p>
+			)}
 			<ol data-slot="model-flow-steps" className="space-y-3">
 				{steps.map((step) => (
 					<FlowStepDetails key={step.id} step={step} {...props} />

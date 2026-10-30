@@ -1,4 +1,9 @@
-import { startModelWalkthrough } from "./support/canonical-page.ts";
+import {
+	startModelWalkthrough,
+	listedParts,
+	openAbout,
+	pick as pickSubject,
+} from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -118,11 +123,7 @@ test("a former address reopens exact retained original coverage and its walkthro
 		"the exact former state",
 		WAIT,
 	);
-	expect(
-		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(node => node.getAttribute('data-module-id'))`,
-		),
-	).toEqual(["Shop/System#Api"]);
+	expect(await listedParts(browser)).toEqual(["Shop/System#Api"]);
 	rmSync(join(fixture.vault, "Shop.semantic.json"));
 	rmSync(join(fixture.vault, ".archboard/migration-plan.json"));
 	await browser.run(["reload"]);
@@ -166,7 +167,7 @@ test("a converted reference preserves preview and paired original state and chec
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop/System#Api"]') !== null`,
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop/System#Api"]') !== null`,
 			),
 		Boolean,
 		"the original source module",
@@ -174,7 +175,8 @@ test("a converted reference preserves preview and paired original state and chec
 	);
 	rmSync(join(fixture.vault, "Shop.semantic.json"));
 	rmSync(join(fixture.vault, ".archboard/migration-plan.json"));
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop/System#Api"]']);
+	await pickSubject(browser, "Shop/System#Api");
+	await openAbout(browser, "selection");
 	const action = '[data-slot="module-follow-reference"]';
 	await pollUntil(
 		() =>

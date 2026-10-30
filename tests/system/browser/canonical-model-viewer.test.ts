@@ -1,4 +1,4 @@
-import { openModelSidebar, refreshModel } from "./support/canonical-page.ts";
+import { openAbout, refreshModel, listedParts } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -55,11 +55,6 @@ test("canonical modules open their authored details without writing architecture
 		"the model pane to connect",
 		WAIT,
 	);
-	expect(
-		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(row => row.getAttribute('data-module-id'))`,
-		),
-	).toEqual(["Shop#Worker", "Shop#Gateway"]);
 	await pollUntil(
 		() =>
 			browser.eval<string[]>(
@@ -74,8 +69,9 @@ test("canonical modules open their authored details without writing architecture
 			`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Handler"]') === null`,
 		),
 	).toBe(true);
-	await openModelSidebar(browser);
+	expect(await listedParts(browser)).toEqual(["Shop#Worker", "Shop#Gateway"]);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
+	await openAbout(browser, "selection");
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(
@@ -129,15 +125,15 @@ test("canonical modules open their authored details without writing architecture
 	writeFileSync(gatewayPath, gateway);
 	await refreshModel(browser);
 	await pollUntil(modelState, (state) => state === "ready", "the repaired model to reopen", WAIT);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	for (const module of before.body.modules) rmSync(join(vault, module.file));
 	await refreshModel(browser);
 	await pollUntil(
 		() =>
 			browser.eval<number>(
-				`document.querySelector('[data-slot="module-list"]')?.childElementCount ?? -1`,
+				`document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"]').length`,
 			),
 		(count) => count === 0,
 		"the empty model to remain readable",
@@ -241,7 +237,7 @@ test("current model readings refresh after external edits and reconnect with exp
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"]') !== null`,
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]') !== null`,
 			),
 		Boolean,
 		"the current modules",
@@ -379,7 +375,7 @@ test("saved readings stay exact after current inputs change and expose missing e
 	await selectReading(browser, checkpoint);
 	await pollUntil(state, (value) => value === "ready", "the retained reading", WAIT);
 	expect(await gatewayDetails(browser)).toContain("Accepts shopping requests");
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await pollUntil(
 		() =>
 			browser.eval<string>(
