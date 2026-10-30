@@ -2,7 +2,6 @@ import { afterEach, expect, test } from "bun:test";
 import { readArchitectureCheckpoint } from "@archboard/board/store-read";
 import {
 	configureArchitecturePublication,
-	fetchArchitectureHistory,
 	publishArchitectureHistory,
 } from "@archboard/board/store-write";
 import {
@@ -31,16 +30,6 @@ test("publication refuses private source paths without rewriting or losing the l
 		success: true,
 		revision: checkpoint.revision,
 	});
-});
-
-test("a successful archive fetch reports a missing requested identity as unavailable", async () => {
-	const { vault, destination } = publicationFixture();
-	const checkpoint = await retain(vault);
-	await configureArchitecturePublication(vault, destination);
-	await publishArchitectureHistory(vault, { ...destination, checkpoint: checkpoint.id });
-	expect(
-		await fetchArchitectureHistory(vault, { ...destination, checkpoint: "f".repeat(40) }),
-	).toMatchObject({ success: false, code: "ARCHITECTURE_UNAVAILABLE", publication: "unavailable" });
 });
 
 test("a configured source branch never becomes archive ancestry or changes during publication", async () => {

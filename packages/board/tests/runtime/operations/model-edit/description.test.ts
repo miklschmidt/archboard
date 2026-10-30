@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/board/store-read";
 import { claimArchitectureSubjects, editArchitectureModule } from "@archboard/board/store-write";
@@ -62,37 +62,8 @@ test("one claimed description edit retains its outcome without changing other au
 	expect(
 		await editArchitectureModule(vault, { ...input, description: "Another intent" }),
 	).toMatchObject({ success: false, code: "OPERATION_REUSED" });
-});
-
-test("a completed retry preserves its retained checkpoint after current inputs become invalid", async () => {
-	const { root, vault } = fixture();
-	const current = readArchitectureModel(vault);
-	if (!current.success || current.manifest.current === null)
-		throw new Error(JSON.stringify(current));
-	const target = { model: current.manifest.id, state: current.manifest.current.id };
-	const claimed = await claimArchitectureSubjects(vault, {
-		target,
-		writer: "agent",
-		reason: "explaining the gateway",
-		subjects: ["Shop#Gateway"],
-	});
-	if (!claimed.success) throw new Error(JSON.stringify(claimed));
-	const input = {
-		target,
-		subject: "Shop#Gateway",
-		expectedRevision: current.revision,
-		operationId: "lost-private-result",
-		writer: "agent",
-		doing: "explaining request routing",
-		claim: claimed.claim.id,
-		description: "A retained description.",
-	};
-	const result = await editArchitectureModule(vault, input);
-	if (!result.success) throw new Error(JSON.stringify(result));
 	const tip = git(root, "rev-parse", "refs/heads/archboard-history");
-	const { writeFileSync } = await import("node:fs");
 	writeFileSync(join(vault, "gateway.module.json"), "{");
-
 	expect(await editArchitectureModule(vault, input)).toEqual(result);
 	expect(git(root, "rev-parse", "refs/heads/archboard-history")).toBe(tip);
 });
@@ -135,7 +106,6 @@ test("the complete token includes policy bytes and discovered paths, even when i
 		diagnostics: expect.arrayContaining([expect.objectContaining({ subjects: [input.subject] })]),
 	});
 	const policy = join(vault, ".archboard/config.yaml");
-	const { writeFileSync } = await import("node:fs");
 	writeFileSync(policy, `${readFileSync(policy, "utf8")}\n`);
 	expect(await editArchitectureModule(vault, input)).toMatchObject({
 		success: false,

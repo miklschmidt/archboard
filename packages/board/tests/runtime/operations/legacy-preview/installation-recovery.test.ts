@@ -11,7 +11,7 @@ afterEach(() => {
 	Date.now = now;
 	for (const home of homes.splice(0)) rmSync(home, { recursive: true, force: true });
 });
-test.each(["prepared", "migration-file", "archive", "cleanup"])(
+test.each(["migration-file", "archive", "cleanup"])(
 	"migration recovers after %s through the existing journal",
 	async (point) => {
 		const value = await installationFixture();

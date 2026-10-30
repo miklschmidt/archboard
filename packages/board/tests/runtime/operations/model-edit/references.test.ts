@@ -246,6 +246,23 @@ test("a bound module resolves code in its own checkout without changing architec
 		},
 	});
 	expect(readArchitectureModel(vault)).toEqual(before);
+	const directory = await editArchitectureModule(vault, {
+		...(await structureIntent(vault, ["Shop#Gateway"])),
+		changes: [
+			{
+				type: "edit-module",
+				subject: "Shop#Gateway",
+				set: { binding: { repo: "github.com/acme/shop", path: "" } },
+			},
+		],
+	});
+	if (!directory.success) throw new Error(JSON.stringify(directory));
+	expect(
+		await readArchitectureModel(vault, "Shop#Gateway", undefined, {
+			code: true,
+			checkpoint: directory.checkpoint.id,
+		}),
+	).toMatchObject({ success: true, codeTarget: { ok: true, kind: "directory" } });
 });
 
 test("explicit references follow the chosen foreign model and never change either model's ownership", async () => {
@@ -287,6 +304,49 @@ test("explicit references follow the chosen foreign model and never change eithe
 	});
 	expect(readArchitectureModel(local.vault)).toEqual(beforeLocal);
 	expect(readArchitectureModel(foreign.vault)).toEqual(beforeForeign);
+	const bound = await editArchitectureModule(local.vault, {
+		...(await structureIntent(local.vault, ["Shop#Gateway"])),
+		changes: [
+			{
+				type: "edit-module",
+				subject: "Shop#Gateway",
+				set: {
+					binding: { repo: "github.com/acme/ledger", path: "code.ts" },
+					references: [{ ...reference, subject: "Ledger#Dispatch" }],
+				},
+			},
+		],
+	});
+	if (!bound.success) throw new Error(JSON.stringify(bound));
+	expect(
+		await readArchitectureModel(local.vault, "Shop#Gateway", undefined, {
+			code: true,
+			checkpoint: bound.checkpoint.id,
+		}),
+	).toMatchObject({
+		success: true,
+		codeTarget: { ok: true, root: foreign.root },
+		sourceEvidence: expect.arrayContaining([
+			{
+				repo: "github.com/acme/ledger",
+				commit: git(foreign.root, "rev-parse", "HEAD"),
+				uncommitted: false,
+				status: "available",
+			},
+		]),
+	});
+	// A foreign relationship stays the exact subject and never becomes a module.
+	expect(
+		await readArchitectureModel(local.vault, "Shop#Gateway", undefined, {
+			checkpoint: bound.checkpoint.id,
+			reference: 0,
+		}),
+	).toMatchObject({
+		success: true,
+		manifest: { id: "Ledger" },
+		selectedSubject: "Ledger#Dispatch",
+		location: { subject: "Ledger#Dispatch" },
+	});
 	const changed = JSON.parse(readFileSync(join(foreign.vault, "model.json"), "utf8"));
 	writeFileSync(join(foreign.vault, "model.json"), JSON.stringify({ ...changed, id: "Other" }));
 	expect(
@@ -365,93 +425,5 @@ test("historical code resolution refuses changed or unavailable source while pre
 	expect(await readArchitectureModel(vault, "Shop#Gateway", undefined, options)).toMatchObject({
 		success: true,
 		codeTarget: { ok: false, code: "CHECKOUT_ON_OTHER_REF" },
-	});
-});
-
-test("bindings into another repository retain its source association through existing checkout selection", async () => {
-	const { local, foreign } = await referencedFixture();
-	const edited = await editArchitectureModule(local.vault, {
-		...(await structureIntent(local.vault, ["Shop#Gateway"])),
-		changes: [
-			{
-				type: "edit-module",
-				subject: "Shop#Gateway",
-				set: { binding: { repo: "github.com/acme/ledger", path: "code.ts" } },
-			},
-		],
-	});
-	if (!edited.success) throw new Error(JSON.stringify(edited));
-	const reading = await readArchitectureModel(local.vault, "Shop#Gateway", undefined, {
-		code: true,
-		checkpoint: edited.checkpoint.id,
-	});
-	expect(reading).toMatchObject({
-		success: true,
-		codeTarget: { ok: true, root: foreign.root },
-		sourceEvidence: expect.arrayContaining([
-			{
-				repo: "github.com/acme/ledger",
-				commit: git(foreign.root, "rev-parse", "HEAD"),
-				uncommitted: false,
-				status: "available",
-			},
-		]),
-	});
-});
-
-test("historical directory bindings ignore architecture-only changes in the same checkout", async () => {
-	const { vault } = isolatedFixture();
-	const edited = await editArchitectureModule(vault, {
-		...(await structureIntent(vault, ["Shop#Gateway"])),
-		changes: [
-			{
-				type: "edit-module",
-				subject: "Shop#Gateway",
-				set: { binding: { repo: "github.com/acme/shop", path: "" } },
-			},
-		],
-	});
-	if (!edited.success) throw new Error(JSON.stringify(edited));
-	expect(
-		await readArchitectureModel(vault, "Shop#Gateway", undefined, {
-			code: true,
-			checkpoint: edited.checkpoint.id,
-		}),
-	).toMatchObject({ success: true, codeTarget: { ok: true, kind: "directory" } });
-});
-
-test("foreign relationship references keep the exact subject without turning it into a module", async () => {
-	const { local } = await referencedFixture();
-	const edited = await editArchitectureModule(local.vault, {
-		...(await structureIntent(local.vault, ["Shop#Gateway"])),
-		changes: [
-			{
-				type: "edit-module",
-				subject: "Shop#Gateway",
-				set: {
-					references: [
-						{
-							repo: "github.com/acme/ledger",
-							model: "Ledger",
-							subject: "Ledger#Dispatch",
-							state: "current",
-						},
-					],
-				},
-			},
-		],
-	});
-	expect(edited.success).toBe(true);
-	if (!edited.success) throw new Error(JSON.stringify(edited));
-	expect(
-		await readArchitectureModel(local.vault, "Shop#Gateway", undefined, {
-			checkpoint: edited.checkpoint.id,
-			reference: 0,
-		}),
-	).toMatchObject({
-		success: true,
-		manifest: { id: "Ledger" },
-		selectedSubject: "Ledger#Dispatch",
-		location: { subject: "Ledger#Dispatch" },
 	});
 });

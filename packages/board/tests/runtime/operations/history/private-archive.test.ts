@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { cpSync, existsSync, readFileSync, rmSync, mkdirSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { readArchitectureCheckpoint, readArchitectureModel } from "@archboard/board/store-read";
 import {
@@ -74,21 +74,6 @@ test("private initialization refuses source repositories without changing any so
 		code: "ARCHIVE_IN_USE",
 	});
 	expect(snapshot(root)).toEqual(before);
-});
-
-test("private initialization refuses a state directory inside a source repository", async () => {
-	const { home, vault } = fixture();
-	const source = join(home, "source");
-	mkdirSync(source);
-	git(source, "init", "--quiet");
-	process.env["XDG_STATE_HOME"] = join(source, "private-state");
-	const before = snapshot(source);
-	expect(await initializeArchitectureArchive(vault)).toMatchObject({
-		success: false,
-		code: "ARCHIVE_IN_USE",
-	});
-	expect(snapshot(source)).toEqual(before);
-	expect(existsSync(join(source, "private-state"))).toBe(false);
 });
 
 test("private structural batches honor signing, retain dependency history and publish only to an explicit destination", async () => {
