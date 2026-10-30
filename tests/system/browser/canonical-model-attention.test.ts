@@ -141,8 +141,10 @@ test("selection lights canonical connections without hiding labels or cutting sh
 	expect(receded["Archive"]).toContain("opacity");
 	const looks = await pollUntil(
 		() => labelLooks(browser),
-		(labels) => labels.some((label) => label.words === "replays" && label.filtered <= 0.5),
-		"the unrelated relationship label to recede",
+		(labels) =>
+			labels.every((label) => label.opacity === 1) &&
+			labels.some((label) => label.words === "replays" && label.filtered <= 0.5),
+		"the entrance to end and the unrelated relationship label to recede",
 		WAIT,
 	);
 	expect(looks.map((label) => label.words).toSorted()).toEqual(["draws", "replays", "shows"]);
