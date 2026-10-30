@@ -3,10 +3,11 @@
   "name": "Export frame",
   "kind": "function",
   "responsibility": "Draws what an exported picture carries around its drawing: a title above it, and its legend under it or beside it, or the legend alone",
-  "description": "framedForExport moves the painted page down whole under a title band, with its atlas, sets the legend under the page or beside it, or draws the legend alone, and grows the page to hold them. Asked for nothing, it returns the page unchanged, byte for byte. exportedName starts the accessible name with the drawn title. Board answer turns a title asked for without words into the names of the board, view, variant and comparison. The legend counts the marks of the subjects the painted drawing placed, read from its atlas, and the page says which subjects those are, also when the legend is drawn alone.",
+  "description": "framed_for_export moves the painted page down whole under a title band, with its atlas, sets the legend under the page or beside it, or draws the legend alone, and grows the page to hold them. Asked for nothing, it returns the page unchanged. exported_name starts the accessible name with the drawn title. Board answer turns a title asked for without words into the names of the board, view, variant and comparison. The legend counts the marks of the subjects the painted drawing placed, read from its atlas, and the page says which subjects those are, also when the legend is drawn alone.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/svg/page/export-frame.ts"
+    "path": "crates/archboard-scene/src/paint/export.rs",
+    "symbol": "framed_for_export"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
@@ -19,8 +20,8 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/page/export-frame.ts",
-        "symbol": "legendOf"
+        "path": "crates/archboard-scene/src/paint/export.rs",
+        "symbol": "legend_of"
       },
       "id": "vKEsyHFk/gbyqW4H3#jrbBTxz5",
       "to": "vKEsyHFk/gbyqW4H3#YhQnj9ID"
@@ -32,8 +33,8 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/page/export-frame.ts",
-        "symbol": "markCounts"
+        "path": "crates/archboard-scene/src/paint/export.rs",
+        "symbol": "mark_counts"
       },
       "id": "vKEsyHFk/gbyqW4H3#UTRklvpv",
       "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"

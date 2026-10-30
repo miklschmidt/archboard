@@ -3,10 +3,10 @@
   "name": "Slab surfaces",
   "kind": "function",
   "responsibility": "Draws raised slabs and their shadows, selection seats and standing borders",
-  "description": "Cards, icon chips, relationship labels and activation bars use these flat shapes. The header slab of a neutral container well uses the same slab function through tray.ts. Card and label shadows are painted in separate member-tagged groups below the lines and cards. Standing marks border the top face; no wash or hatch replaces the group tint.",
+  "description": "Cards, icon chips, relationship labels and activation bars use these flat shapes. The header slab of a neutral container well uses the same slab function through tray.rs. Card and label shadows are painted in separate member-tagged groups below the lines and cards. Standing marks border the top face; no wash or hatch replaces the group tint.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/svg/parts/slab.ts"
+    "path": "crates/archboard-scene/src/paint/slab.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#Ga3k1AaP",
@@ -16,11 +16,10 @@
       "order": 38000,
       "kind": "dependency",
       "label": "the palette type its functions consume",
-      "description": "Slab functions receive palette colors through the Palette contract imported from theme.ts.",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/parts/slab.ts",
+        "path": "crates/archboard-scene/src/paint/slab.rs",
         "symbol": "Palette"
       },
       "id": "vKEsyHFk/gbyqW4H3#lW0CBEfj",
@@ -33,8 +32,8 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/parts/slab.ts",
-        "symbol": "standingInk"
+        "path": "crates/archboard-scene/src/paint/slab.rs",
+        "symbol": "ink_of"
       },
       "id": "vKEsyHFk/gbyqW4H3#OVkwk7CO",
       "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"

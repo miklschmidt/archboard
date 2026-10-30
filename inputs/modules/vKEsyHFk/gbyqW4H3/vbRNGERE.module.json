@@ -5,7 +5,7 @@
   "responsibility": "Draws the warning badges and standing marks of a subject",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/svg/parts/standing.ts"
+    "path": "crates/archboard-scene/src/paint/standing.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#vbRNGERE",

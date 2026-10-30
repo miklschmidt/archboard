@@ -2,11 +2,12 @@
   "order": 26000,
   "name": "Picture key",
   "kind": "function",
-  "responsibility": "Reads from a drawn picture what its key lists, for the page's legend and an exported one alike",
-  "description": "pictureAppearances scans the drawn document without a DOM for each subject's applied appearance; keyOf keeps one sample of each node and relationship kind in drawing order; placedStanding keeps a comparison's standing to the subjects a drawing placed, and markCounts counts their marks. One reader, so the page's legend and an exported legend cannot list different things.",
+  "responsibility": "Reads from a drawn scene what its key lists, for the page's legend and an exported one alike",
+  "description": "picture_key keeps one sample of each node and relationship kind in drawing order, and mark_counts counts a comparison's marks on the subjects a drawing placed. archboard-svg spells each applied appearance as the document writes it. One reader, so the page's legend and an exported legend cannot list different things.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/render/picture-key.ts"
+    "path": "crates/archboard-scene/src/paint/legend_entries.rs",
+    "symbol": "picture_key"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#X0CpwpF1",

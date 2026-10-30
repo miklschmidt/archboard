@@ -151,7 +151,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+        "path": "apps/server/src/server/sockets/architecture/architecture-feed.ts",
         "symbol": "watchArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#tDk3zmci",

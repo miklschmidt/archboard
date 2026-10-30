@@ -3,10 +3,10 @@
   "name": "Card blocks",
   "kind": "function",
   "responsibility": "Ranks a block's cards, labels and ports with Graphviz, then routes its lines on tracks between the ranks",
-  "description": "Each channel between ranks grows to fit its tracks, so the block's size is final when it answers. Graphviz is asked once for each graph a layout gives it (graphviz-once.ts), and its answer is read into diagram coordinates by track/graphviz.ts.",
+  "description": "Each channel between ranks grows to fit its tracks, so the block's size is final when it answers. Graphviz is asked once for each graph a layout gives it (Engine in card_layout.rs), and track/graphviz.rs reads its answer into diagram coordinates.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts"
+    "path": "crates/archboard-layout/src/blocks/card_layout.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/OjRLKb74#Wp2usbe5",
@@ -23,8 +23,8 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
-        "symbol": "renderString"
+        "path": "crates/archboard-layout/src/blocks/card_layout.rs",
+        "symbol": "Graphviz"
       },
       "id": "vKEsyHFk/OjRLKb74#Md6tqK1p",
       "to": "vKEsyHFk/OjRLKb74#KdNM1Q56"
@@ -36,8 +36,8 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
-        "symbol": "entryRowEdges"
+        "path": "crates/archboard-layout/src/blocks/card_graph.rs",
+        "symbol": "entry_row_edges"
       },
       "id": "vKEsyHFk/OjRLKb74#c6EtTjBt",
       "to": "vKEsyHFk/OjRLKb74#jLUi9ZuH"

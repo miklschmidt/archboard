@@ -5,14 +5,6 @@
   "responsibility": "Breaks a prepared string into lines at a given width",
   "schemaVersion": 1,
   "id": "vKEsyHFk/OjRLKb74#RvOyWmEb",
-  "outgoing": [
-    {
-      "order": 3000,
-      "kind": "dependency",
-      "label": "measures its segments there",
-      "emphasis": "normal",
-      "id": "vKEsyHFk/OjRLKb74#aESGqkun",
-      "to": "vKEsyHFk/gbyqW4H3#gUN928v4"
-    }
-  ]
+  "outgoing": [],
+  "description": "Breaks the text of a voice subtitle box as the browser would, measuring its words with the browser's own canvas."
 }

@@ -1,0 +1,15 @@
+{
+  "order": 26500,
+  "name": "Pane marks",
+  "kind": "module",
+  "responsibility": "What a pane draws beside a picture without the core: line inks, standing pins and code warnings",
+  "description": "Their inks, sizes and markup are generated from the core's painter by `bun run build:core`, so a pane holds no copy of the painter's rules. Only the placement of a warning is written here.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/rules/render/marks.ts"
+  },
+  "parent": "vKEsyHFk/gbyqW4H3#eXWJ2qtq",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#Ut8M2UHc",
+  "outgoing": []
+}

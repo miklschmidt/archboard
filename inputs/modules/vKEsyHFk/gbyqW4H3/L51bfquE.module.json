@@ -5,7 +5,8 @@
   "responsibility": "Rounds a routed polyline into a curve and says where its label may sit",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/layout/routes/curves.ts"
+    "path": "crates/archboard-scene/src/geometry.rs",
+    "symbol": "curve_through"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#L51bfquE",
@@ -18,8 +19,8 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
-        "symbol": "labelAnchorOf"
+        "path": "crates/archboard-scene/src/paint/edge_line.rs",
+        "symbol": "label_anchor_of"
       },
       "id": "vKEsyHFk/gbyqW4H3#0s8raCUw",
       "to": "vKEsyHFk/gbyqW4H3#J7mPrUeP"

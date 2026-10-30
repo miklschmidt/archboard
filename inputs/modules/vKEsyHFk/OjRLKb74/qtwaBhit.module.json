@@ -6,7 +6,8 @@
   "description": "A block's size is final before its parent places it as one box. A block of cards may wrap its widest rank into rows or fold its ranks into columns where that reads better; last, each relationship's lines are joined end to end.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/blocks/tree/place.ts"
+    "path": "crates/archboard-layout/src/blocks/legacy.rs",
+    "symbol": "place"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/OjRLKb74#qtwaBhit",
@@ -23,7 +24,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
+        "path": "crates/archboard-layout/src/blocks/legacy.rs",
         "symbol": "CardLayout"
       },
       "id": "vKEsyHFk/OjRLKb74#fFiMvo56",
@@ -36,24 +37,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
+        "path": "crates/archboard-layout/src/blocks/legacy.rs",
         "symbol": "PackLayout"
       },
       "id": "vKEsyHFk/OjRLKb74#luMz0TJo",
       "to": "vKEsyHFk/OjRLKb74#mkxpJuY7"
-    },
-    {
-      "order": 26000,
-      "kind": "call",
-      "label": "weigh the routed lines, ports settled or not",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
-        "symbol": "routedWeighed"
-      },
-      "id": "vKEsyHFk/OjRLKb74#IDoV3QxP",
-      "to": "vKEsyHFk/OjRLKb74#skrvk25Y"
     }
   ]
 }

@@ -23,7 +23,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-stage-appearances.ts",
-        "symbol": "pictureAppearances"
+        "symbol": "appearances"
       },
       "id": "vKEsyHFk/gbyqW4H3#m9XkQSPd",
       "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
@@ -39,7 +39,7 @@
         "symbol": "lineInk"
       },
       "id": "vKEsyHFk/gbyqW4H3#N8eFnJ9p",
-      "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG"
+      "to": "vKEsyHFk#Ut8M2UHc"
     },
     {
       "order": 65000,
@@ -52,7 +52,7 @@
         "symbol": "lineWarning"
       },
       "id": "vKEsyHFk/gbyqW4H3#bwa7JRYk",
-      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
+      "to": "vKEsyHFk#Ut8M2UHc"
     }
   ]
 }
