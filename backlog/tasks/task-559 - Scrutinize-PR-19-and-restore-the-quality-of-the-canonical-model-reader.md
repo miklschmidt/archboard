@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:18:00Z'
-updated_date: '2026-10-30T15:48:00Z'
+updated_date: '2026-10-30T15:51:00Z'
 labels:
   - frontend
   - review
@@ -61,4 +61,6 @@ Before PR #19, the board canvas owned the transitions. Compare with origin/main 
 Owner, 2026-10-30, on this task: the whole UX around navigating the new data model needs redesign. The Blocks renderer, which was supposed to reduce area significantly in PR 24, creates obscene amounts of dead space. The UI, the starting point, and the amount of information in the small right sidebar overwhelm the user. The levers that gather information for readable diagrams are good, and the data model suits recursive decomposition, but the UX execution is atrocious. The task needs redesign by agents, focused on the user journey, done autonomously, with a council of Astra and Opus finding the path.
 
 Owner, 2026-10-30: numbered containers such as Layer 4 and Layer 6 are too abstract, and a person cannot relate them to the code or project structure. In this repository's model, Layer 0 to Layer 7 have kind other and no code binding, and each states an import rule. Layers 1 to 4 hold one child each. The rule comes from tests/system/repository-policy/package-graph.test.ts.
+
+Owner decision, 2026-10-30: delete the Layer 0 to Layer 7 containers from this repository's model. Do not replace them with groups, because more groups oversaturate the drawings. Show a module's code path on its card and let navigation read like the repository. The consumer skill and archboard check must catch containers with no code and no job of their own.
 <!-- SECTION:NOTES:END -->
