@@ -225,7 +225,7 @@ function acceptScene(
  * @param before The scene on screen.
  * @param request The destination.
  * @param drawing Its drawing, once it exists.
- * @returns True for a settled destination with a new drawing or a new identity.
+ * @returns True for a settled destination with a new drawing, identity or reading.
  */
 function arrives(
 	before: AcceptedScene | null,
@@ -233,7 +233,9 @@ function arrives(
 	drawing: ModelDrawing | undefined,
 ): drawing is ModelDrawing {
 	if (drawing === undefined || !request.settled) return false;
-	return before?.key !== sceneKey(request) || before.drawing !== drawing;
+	if (before?.key !== sceneKey(request) || before.drawing !== drawing) return true;
+	// A correction keeps the revision and the drawing, and changes what inspection reads.
+	return before.model !== request.model;
 }
 
 /**

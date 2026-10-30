@@ -143,6 +143,7 @@ function createFeed(
 		if (!isCurrent(accepted)) return;
 		await Promise.all([
 			client.invalidateQueries(changingReadings),
+			client.invalidateQueries({ queryKey: architectureModelKeys.modules(vault) }),
 			client.invalidateQueries({ queryKey: semanticBoardKeys.vaultCheck(vault) }),
 		]);
 	}

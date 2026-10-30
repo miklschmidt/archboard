@@ -61,6 +61,12 @@ test("a drawing kept from the last model is not the answer to a new address", ()
 	expect(nextScene(before, unsettled, drawing(["Shop#Handler"]), NOTHING)).toBe(before);
 });
 
+test("a correction replaces what inspection reads, though its revision and picture stay", () => {
+	const before = accepted(request());
+	const corrected = { ...request(), model: { ...SHOP } };
+	expect(nextScene(before, corrected, before.drawing, NOTHING)?.model).toBe(corrected.model);
+});
+
 test("the selection on screen holds while another reading is drawn and follows after", () => {
 	const picked = new Set(["Shop#Gateway"]);
 	const before = accepted(request());

@@ -133,6 +133,12 @@ const architectureModelKeys = {
 	 */
 	module: (vault: string, target: ModuleTarget, digest: string) =>
 		["architecture-model", vault, "module", target, digest] as const,
+	/**
+	 * Every module's details in one vault. A correction changes them and keeps the revision.
+	 * @param vault The explicit vault.
+	 * @returns Their shared prefix.
+	 */
+	modules: (vault: string) => ["architecture-model", vault, "module"] as const,
 };
 
 /**
