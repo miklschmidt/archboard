@@ -141,6 +141,8 @@ Both export commands can draw what a reader needs beside the picture:
 - `--legend-only` draws the key alone, in the layout `--legend` names, for a
   page that shows several pictures with one key.
 
+Blocks is the default layout engine. Pass `--layout track` to draw with Track.
+
 Every SVG and PNG that the two commands give out carries its render recipe:
 the board, the variant (or "current" when you named none), the view and the
 comparison by id, the drawing choices, and a fingerprint of what the picture
@@ -151,6 +153,8 @@ title names the board. An SVG keeps the recipe in its `<metadata>` element and
 a PNG in a text chunk.
 A post-processor that strips metadata, such as SVGO with its default
 `removeMetadata`, removes the recipe, so keep the metadata.
+If the recipe names no engine, it follows the current default.
+An explicit engine stays explicit when the embeds check draws the picture again.
 
 ### A picture in documentation that stays current
 
@@ -290,9 +294,9 @@ subjects and, on a proposal, how each was added or changed. The voice does not
 speak about a change that no beat names.
 
 - If the variant states several walkthroughs, `--walkthrough <name>` picks one.
-  `--variant`, `--theme light` and `--layout blocks` choose what is drawn. The
-  default theme is dark and the default layout is Track, and the talk keeps
-  the layout it was drawn with.
+  `--variant`, `--theme light` and `--layout track` choose what is drawn.
+  The default theme is dark and the default layout is Blocks.
+  The talk keeps the layout it was drawn with.
   `--against <variant>` draws every frame relative to that variant, without the
   "Planned" frame, as `render` does, and the talk keeps it too, so a replay
   draws the same comparison.

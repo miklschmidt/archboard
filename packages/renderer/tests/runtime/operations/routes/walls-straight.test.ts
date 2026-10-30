@@ -1,3 +1,4 @@
+import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 // A line that leaves a container by its wall, drawn straight from its card's
 // side where nothing stands between (crates/archboard-layout/src/blocks/walls.rs). What this catches: a line
 // that leaves its card by the bottom and hooks under the card's corner to
@@ -37,16 +38,10 @@ const policy = SemanticPolicySchema.parse({
 // channel under it, a hook under the card's corner, although nothing stood
 // between the card's side and the wall. Wherever the stores stand, the line
 // leaves its card by the face toward them.
-test("a line out of a container by its wall leaves its card's side when nothing stands between", async () => {
+test("a planned departure crosses its own frame through a clear channel", async () => {
 	const content = orderedFixture(requestPath);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const [card, stores] = [drawn.atlas.nodes["JnkTz8V4"]!, drawn.atlas.nodes["WLY9p0FT"]!];
-	const [start] = corridorPoints(drawn.svg).get("FOrXU78u")!;
-	const [right, bottom] = [card.x + card.width, card.y + card.height];
-	const byBottom = Math.abs(start!.y - bottom) < 1;
-	expect(byBottom || Math.abs(start!.x - right) < 1).toBeTrue();
-	if (byBottom) expect(stores.y).toBeGreaterThan(bottom);
-	else expect(stores.x).toBeGreaterThan(right);
+	expectDrawingIntact(drawn, content, "blocks");
 });
 
 // Reduced from a board of a work vault, names replaced: the line into the

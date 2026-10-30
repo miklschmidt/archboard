@@ -28,8 +28,8 @@ use super::drawn_lines::{
 };
 use super::folded::unfold_crossings;
 use super::hops::{
-    Bulge, HOP_MARGIN, Hop, HopScene, carried, crest_along, crowded, keepouts_of, look_of,
-    near_own_head, passes_beneath, replace_runs,
+    Bulge, HOP_MARGIN, Hop, HopScene, carried, crest_along, crowded, look_of, near_own_head,
+    passes_beneath, replace_runs,
 };
 use super::{BRIDGE_RADIUS, LineLook};
 
@@ -152,7 +152,7 @@ impl Settling<'_> {
                 return;
             };
             let axis = self.scene.runs[self.cluster(rise.cluster).run].axis;
-            crests.push(Hop { curve, axis });
+            crests.push(Hop::new(curve, axis));
         }
         for (rise, crest) in plan.rises.iter().zip(crests) {
             self.stand(rise, crest.curve);
@@ -195,7 +195,7 @@ impl Settling<'_> {
                 .push(carried(&curve, run, member));
         }
         let axis = run.axis;
-        self.scene.hops.push(Hop { curve, axis });
+        self.scene.hops.push(Hop::new(curve, axis));
     }
 
     /// The ids of the routes a drawn line holds, each once.
@@ -505,17 +505,35 @@ pub(crate) fn bridge_unfolded(
     drawing: &ArchitectureDrawing<NodeFacts, EdgeFacts>,
     lines: &BTreeMap<String, LineLook>,
 ) -> Bridged<EdgeFacts> {
+    settle(drawing, lines, false)
+}
+
+/// Planned routes reserve crossings already. Each crossing gets at most four
+/// fixed-radius hop attempts, without competing cluster plans or route changes.
+pub(crate) fn bridge_planned(
+    drawing: &ArchitectureDrawing<NodeFacts, EdgeFacts>,
+    lines: &BTreeMap<String, LineLook>,
+) -> Bridged<EdgeFacts> {
+    settle(drawing, lines, true)
+}
+
+fn settle(
+    drawing: &ArchitectureDrawing<NodeFacts, EdgeFacts>,
+    lines: &BTreeMap<String, LineLook>,
+    planned: bool,
+) -> Bridged<EdgeFacts> {
     let edges = &drawing.edges;
     let runs = straight_runs(edges);
     let crossings = drawn_crossings(edges, &runs);
+    if crossings.is_empty() {
+        return Bridged {
+            edges: edges.clone(),
+            bridges: Vec::new(),
+        };
+    }
     let clusters = clusters_of(&runs, &crossings);
     let mut state = Settling {
-        scene: HopScene {
-            drawing,
-            runs,
-            keepouts: keepouts_of(drawing, lines),
-            hops: Vec::new(),
-        },
+        scene: HopScene::new(drawing, runs, lines),
         lines,
         settled: vec![false; crossings.len()],
         crossings,
@@ -523,14 +541,19 @@ pub(crate) fn bridge_unfolded(
         bridges: Vec::new(),
         replacements: vec![BTreeMap::new(); edges.len()],
     };
-    let plans: Vec<Plan> = (0..state.clusters.all.len())
-        .flat_map(|cluster| state.plans_of(cluster))
-        .collect();
-    for plan in sorted_by(&plans, by_key) {
-        state.attempt(&plan);
+    if !planned {
+        let plans: Vec<Plan> = (0..state.clusters.all.len())
+            .flat_map(|cluster| state.plans_of(cluster))
+            .collect();
+        for plan in sorted_by(&plans, by_key) {
+            state.attempt(&plan);
+        }
     }
+    // Each crossing has at most four arc attempts. The complete planned drawing
+    // spends at most 512 attempts; later crossings retain their clear straight runs.
     for crossing in 0..state.crossings.len() {
-        if !state.settled[crossing] && !state.hop_alone(crossing) {
+        let try_hop = !planned || crossing < 128;
+        if !state.settled[crossing] && (!try_hop || !state.hop_alone(crossing)) {
             state.cross(crossing);
         }
     }

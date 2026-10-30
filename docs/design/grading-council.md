@@ -1,7 +1,7 @@
 # The grading council
 
-A layout change that alters drawings is judged by a council of four graders
-(Opus, gpt-6.1-sol, gpt-6-astra and Muse Wonder), not by byte-identical
+A layout change that alters drawings is judged by a council of three graders
+(Opus, gpt-6.1-sol and gpt-6-astra), not by byte-identical
 drawings (TASK-548, TASK-548.09, TASK-548.12). Each grader scores both
 drawings of a pair on the council's agreed criteria without knowing which
 drawing is the change, and the scores decide which reads better to a person.
@@ -40,12 +40,20 @@ The criteria, their anchors, the defects and the decision rules are in
 [grading-council/criteria.md](grading-council/criteria.md). Each grader
 rereads that file before each run.
 
-1. **Graders.** Run Opus, gpt-6.1-sol and gpt-6-astra at `xhigh` effort and
-   Muse Wonder (`muse-wonder-1.0`) through Cursor at `xhigh`. Muse Wonder
-   replaced Gemini 4 Argon on 2026-10-28. In round 4 none of Argon's 22
-   reported defects was real and its margins spread widest. In round 5 its
-   weighted scores averaged 8.0 against about 6.0 for the other three. Each grader
-   gets the grading copy, the criteria file and the owner's weighting above,
+1. **Graders.** Run Opus, gpt-6.1-sol and gpt-6-astra at `xhigh` effort.
+   A fourth seat held Gemini 4 Argon and then Muse Wonder, and the owner
+   removed both. In round 4 none of Argon's 22 reported defects was real and
+   its margins spread widest. In round 5 its weighted scores averaged 8.0
+   against about 6.0 for the other three. Muse Wonder replaced it on
+   2026-10-28. In the council of TASK-554 none of Muse Wonder's nine reported
+   defects was real, and the owner removed it on 2026-10-29. A grader must
+   see the pictures itself. Cursor's file reader gives a model a written
+   description of a picture instead of the picture. A trial of DeepSeek V4.1
+   Flash through Cursor graded from such descriptions and pixel scripts, and
+   its margins did not follow the council's (correlation -0.08 with the
+   median, against 0.58 to 0.66 for each grader with the other two). Before
+   a new grader counts, read its transcript and make sure that it opened the
+   pictures. Each grader gets the grading copy, the criteria file and the owner's weighting above,
    and nothing else. It does not use the old scorecard metrics
    (`drawn-scorecard.ts` and the `drawn-*` checks), and it does not see the
    other graders' files.
@@ -76,7 +84,7 @@ rereads that file before each run.
    `{ "001": { "A": false, "B": true } }`. A defect found real counts for
    every grader, and a defect found false is dropped.
 4. **Tally.** Once every reported defect has a ruling, unblind the scores.
-   For each pair, take each of the four graders' weighted margin of the after
+   For each pair, take each of the three graders' weighted margin of the after
    picture over the before picture. The median margin decides, and a margin
    under 0.40 is `same`. Each pair's verdict for the change is `better`,
    `worse`, `same` or `both fail`. Record the verdicts, the margins and the

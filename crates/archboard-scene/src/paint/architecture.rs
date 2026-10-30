@@ -35,7 +35,8 @@ use crate::scene::{Atlas, Colour, Definition, Item, SubjectKind};
 type Boxed<'edge> = Vec<(&'edge str, Rect)>;
 
 /// Each line's inked box, and each of its words' box.
-fn line_boxes(edges: &[Edge]) -> (Boxed<'_>, Boxed<'_>) {
+fn line_boxes(drawing: &Painted) -> (Boxed<'_>, Boxed<'_>) {
+    let edges = &drawing.bridged.edges;
     let inked = edges
         .iter()
         .map(|routed| {
@@ -62,7 +63,7 @@ fn line_boxes(edges: &[Edge]) -> (Boxed<'_>, Boxed<'_>) {
 
 /// What the page must hold of a drawing.
 fn extent_of(drawing: &Painted, standings: &Standings, unsettled: &Unsettled) -> Option<Rect> {
-    let (inked, labelled) = line_boxes(&drawing.bridged.edges);
+    let (inked, labelled) = line_boxes(drawing);
     let mut boxes: Vec<Rect> = drawing
         .drawing
         .cards
@@ -479,7 +480,7 @@ pub(super) fn paint_architecture(
         DIAGRAM_MARGIN,
     );
     let painted = painting.layers(&Stacked::of(drawing), &traffic);
-    let (inked, labelled) = line_boxes(edges);
+    let (inked, labelled) = line_boxes(drawing);
     let mut node_entries = carded.clone();
     node_entries.extend(framed.iter().copied());
     let mut edge_entries = inked;

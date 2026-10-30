@@ -1,6 +1,6 @@
 # The council's criteria
 
-The four graders of the grading council (Opus, gpt-6.1-sol, gpt-6-astra and Gemini 4 Argon) agreed on this list on 2026-10-27 (TASK-548.12). Each grader first wrote its own criteria from the same twelve sample pictures. Those four lists are in this directory's history at commit e62d75d4e. Each grader then proposed one shared list, and three rounds of votes settled it with every item accepted by all four. The owner's weighting in [grading-council.md](../grading-council.md) comes first: defects are defects, and among pictures without defects, tight composition counts most. On 2026-10-28 Muse Wonder replaced Gemini 4 Argon on the council. It grades with this list as agreed.
+The four graders of the grading council (Opus, gpt-6.1-sol, gpt-6-astra and Gemini 4 Argon) agreed on this list on 2026-10-27 (TASK-548.12). Each grader first wrote its own criteria from the same twelve sample pictures. Those four lists are in this directory's history at commit e62d75d4e. Each grader then proposed one shared list, and three rounds of votes settled it with every item accepted by all four. The owner's weighting in [grading-council.md](../grading-council.md) comes first: defects are defects, and among pictures without defects, tight composition counts most. On 2026-10-28 Muse Wonder replaced Gemini 4 Argon on the council. On 2026-10-29 the owner removed Muse Wonder, and the council now has three graders who grade with this list as agreed.
 
 ## How to look
 
@@ -111,5 +111,5 @@ The council:
 
 1. Every defect any grader reports is looked at full size by the person running the council. A defect found real counts for every grader. A defect found false is dropped.
 2. The defect rules of one grader then apply to the real defects.
-3. For two pictures without a real defect, sort the four Δ values and take the mean of the middle two (the median). Apply the same ±0.40 thresholds. This settles a 2–2 split without a special case.
+3. For two pictures without a real defect, take the median of the three Δ values. Apply the same ±0.40 thresholds.
 4. The change fails when any pair is `worse`, or when an after picture has a real defect that its before picture lacks.

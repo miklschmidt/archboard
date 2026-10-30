@@ -3,7 +3,7 @@
 use super::graph::Graph;
 use super::solving::{Solver, Unsolved};
 use crate::blocks::choosing::has_regions;
-use crate::blocks::place::{BLOCKS_NESTING, BLOCKS_PLACED};
+use crate::blocks::place::{BLOCKS_NESTING, BLOCKS_PLACED, BLOCKS_PLANNED};
 use archboard_scene::geometry::{Point, Rect};
 use indexmap::IndexMap;
 use serde::Deserialize;
@@ -52,6 +52,8 @@ pub(crate) struct PlacedEdge {
 /// A whole drawing's geometry, as a solve answers it.
 #[derive(Clone, Debug, Deserialize)]
 pub(crate) struct Placed {
+    #[serde(skip)]
+    pub(crate) planned: bool,
     pub(crate) width: f64,
     pub(crate) height: f64,
     pub(crate) cards: Vec<PlacedCard>,
@@ -92,6 +94,10 @@ pub(crate) async fn placed_blocks<S: Solver>(
     let placed = options
         .swap_remove(BLOCKS_PLACED)
         .ok_or_else(|| "A solve asked for a drawing answered none.".to_owned())?;
-    serde_json::from_str(&placed)
-        .map_err(|error| format!("A solve's drawing is unreadable: {error}"))
+    let mut placed: Placed = serde_json::from_str(&placed)
+        .map_err(|error| format!("A solve's drawing is unreadable: {error}"))?;
+    placed.planned = options
+        .get(BLOCKS_PLANNED)
+        .is_some_and(|value| value == "true");
+    Ok(placed)
 }

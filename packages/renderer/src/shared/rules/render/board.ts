@@ -243,9 +243,8 @@ async function drawnReply(
 ): Promise<{ reply: SemanticRenderReply; input: DrawnInput }> {
 	const reading = readingOf(view);
 	// The comparison restores what the variant lacks of the one it is read against.
-	// A picture without the comparison is laid out from the same content and
-	// draws only what the variant's own reading of the view holds, so the
-	// toggle moves nothing.
+	// The core draws only the variant's own reading when comparison is off.
+	// Blocks lays out that visible content; Track keeps comparison positions.
 	const proposal = drawingOf(board, variant, reading.scope, against);
 	// A subject nobody has decided yet is drawn with a warning on it, so a reader
 	// looking at the picture rather than the panel still knows not to trust it.

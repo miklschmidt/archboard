@@ -151,6 +151,7 @@ _Avoid_: view command, board command, pane command
 An image of one named Board drawn without a live Pane: an SVG from the renderer,
 or a PNG drawn in a private headless browser. It never attaches to a browser
 session. It carries its Render recipe, so it can be drawn again and compared.
+Blocks is the default layout engine. `--layout track` selects Track (ADR 0064).
 _Avoid_: screenshot, pane export, artifact, export
 
 **Render recipe**:

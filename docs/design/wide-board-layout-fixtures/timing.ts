@@ -12,6 +12,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { parseSemanticBoard } from "@archboard/board/document";
 import { renderArchitecture } from "@archboard/renderer/bun";
+import { DEFAULT_LAYOUT_ENGINE } from "@archboard/board/render-reply";
 import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
 import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
@@ -19,6 +20,7 @@ import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
 const fixtures = "docs/design/wide-board-layout-fixtures";
 const vault = ".archboard/vault";
 const runs = Number(process.argv[2] ?? 5);
+console.log(`Layout: ${DEFAULT_LAYOUT_ENGINE}`);
 
 const items: { name: string; content: unknown; policy: SemanticPolicy }[] = [];
 for (const file of fs

@@ -220,6 +220,7 @@ fn measured(graph: &Graph) -> (Measured, BTreeMap<String, Vec<String>>) {
             labels,
             lines,
             groups: None,
+            held_kinds: BTreeMap::new(),
         },
         words,
     )

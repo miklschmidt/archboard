@@ -123,17 +123,20 @@ const DIFFERENCES: Record<string, (edge: Edge) => void> = {
 	},
 };
 
-// The track engine keeps such routes apart; the blocks engine still shares a lane across them.
+// Each engine keeps the complete treatment of a shared channel.
 for (const [name, change] of Object.entries(DIFFERENCES)) {
-	test(`different ${name} uses distinct same-kind channels`, async () => {
-		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
-			content: outgoingDiffering(change),
-			theme: "dark",
-			layout: SHARING,
-		});
-		expect(overdrawnRun(drawing, OUTGOING_CHANNELS)).toBe(0);
-		expect(routePoints(drawing.svg).size).toBe(channelContent.edges.length);
-		expect(routeLabels(drawing.svg).size).toBe(channelContent.edges.length);
-	});
+	test.each(LayoutEngineSchema.options)(
+		`different ${name} uses distinct same-kind channels (%s)`,
+		async (layout) => {
+			const drawing = await renderArchitecture({
+				policy: DEFAULT_SEMANTIC_POLICY,
+				content: outgoingDiffering(change),
+				theme: "dark",
+				layout,
+			});
+			expect(overdrawnRun(drawing, OUTGOING_CHANNELS)).toBe(0);
+			expect(routePoints(drawing.svg).size).toBe(channelContent.edges.length);
+			expect(routeLabels(drawing.svg).size).toBe(channelContent.edges.length);
+		},
+	);
 }

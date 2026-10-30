@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { Window } from "happy-dom";
 import { LINE_MARKS, markCounts } from "#shared/rules/render/key-marks.ts";
 import type { DrawnBoard } from "@archboard/board/render-reply";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { exported } from "#tests/runtime/support/export-board.ts";
 
 // A render answers each subject's appearance and the picture's key beside the
@@ -197,8 +198,24 @@ describe("what the legend lists", () => {
 for (const layout of ["track", "blocks"] as const) {
 	describe(`where the legend stands, drawn by ${layout}`, () => {
 		test("horizontal: a row under the picture, wrapped at its width", async () => {
-			const plain = await exported({ variant: "Worker pool", layout });
-			const keyed = await exported({ variant: "Worker pool", layout, legend: "horizontal" });
+			// Each name fits the narrow page, but the entries together require several rows.
+			const policy = {
+				...DEFAULT_SEMANTIC_POLICY,
+				relationshipKinds: Object.fromEntries(
+					Object.entries(DEFAULT_SEMANTIC_POLICY.relationshipKinds).map(([kind, style]) => [
+						kind,
+						{
+							...style,
+							name: Array.from({ length: 12 }, () => style.name).join(" "),
+						},
+					]),
+				),
+			};
+			const plain = await exported({ variant: "Worker pool", layout }, policy);
+			const keyed = await exported(
+				{ variant: "Worker pool", layout, legend: "horizontal" },
+				policy,
+			);
 			const entries = listed(keyed.svg);
 			expect(keyed.width).toBe(plain.width);
 			expect(keyed.height).toBeGreaterThan(plain.height);

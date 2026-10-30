@@ -177,14 +177,14 @@ describe("what one capture is", () => {
 	});
 
 	test("the whole page is captured however far past a display it reaches", async () => {
-		const drawn = await draw(tallChain(24));
+		const drawn = await draw(tallChain(40));
 		expect(drawn.height).toBeGreaterThan(1080);
 		const capture = await owned().rasterize({ ...drawn, scale: 1 });
 		expect(readPngDimensions(capture.png)).toEqual({ width: drawn.width, height: drawn.height });
 		// Every card stands on a front edge of the same flat tone, so the capture
 		// holds all of them and not only the ones a display would have shown.
 		const colors = pngRgbCounts(capture.png);
-		expect(colors.get(rgbOf(lightValue(PAGE.slabEdge))) ?? 0).toBeGreaterThan(24 * 500);
+		expect(colors.get(rgbOf(lightValue(PAGE.slabEdge))) ?? 0).toBeGreaterThan(40 * 500);
 	});
 
 	test("a sequence draws through the sequence grammar with its animation paused", async () => {

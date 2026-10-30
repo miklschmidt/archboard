@@ -1,8 +1,7 @@
 // The corpus every renderer port step is held to (ADR 0059): every board of
 // the dogfood vault and of the vaults under examples/, every variant, every
 // view, and the complete architecture without a default view's filter.
-// Each engine, theme and comparison setting applies to the authored views.
-// Whole boards are drawn without comparison. `render`
+// Each engine, theme and comparison setting applies to views and whole boards. `render`
 // writes the hash, size and time of each drawing; `compare` says which
 // drawings differ between two runs and how their times moved.
 //
@@ -33,6 +32,7 @@ import { parseArgs } from "node:util";
 import { z } from "zod";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import type { SemanticBoard } from "@archboard/board/document";
+import { drawingOf as comparisonDrawing } from "@archboard/board/comparison";
 import { locateSemanticBoard } from "@archboard/board/address";
 import { readSemanticBoardAt } from "@archboard/board/store-read";
 import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
@@ -160,21 +160,41 @@ function readVault(vault: string): { boards: SemanticBoard[]; policy: Policy } {
 }
 
 /**
+ * Draw a whole board with the requested comparison content.
+ * @param job The drawing.
+ * @returns The picture, or nothing when the reading has no nodes.
+ */
+async function drawWhole(job: Job) {
+	const variant = job.board.variants.find(({ id }) => id === job.variant)!;
+	const reading = job.comparison
+		? comparisonDrawing(job.board, variant)
+		: { content: variant.content, changes: null };
+	if (reading.content.nodes.length === 0) return undefined;
+	return renderArchitecture({
+		content: reading.content,
+		...(job.comparison
+			? {
+					standing: reading.changes?.standing,
+					held: variant.content,
+					variant: variant.content,
+					paintStanding: true,
+				}
+			: {}),
+		policy: job.policy,
+		theme: job.theme,
+		layout: job.engine,
+	});
+}
+
+/**
  * Draw one job.
  * @param job The drawing.
  * @returns Its record and its SVG, or nothing when the board draws nothing there.
  */
 async function draw(job: Job): Promise<{ drawn: Drawn; svg: string } | undefined> {
-	const content = job.board.variants.find(({ id }) => id === job.variant)!.content;
-	if (job.whole && content.nodes.length === 0) return undefined;
 	const started = performance.now();
 	const reply = job.whole
-		? await renderArchitecture({
-				content,
-				policy: job.policy,
-				theme: job.theme,
-				layout: job.engine,
-			})
+		? await drawWhole(job)
 		: await renderBoard(
 				job.board,
 				{
@@ -254,7 +274,7 @@ function jobsOfBoard(vault: string, board: SemanticBoard, policy: Policy, axes: 
 		views.flatMap(({ view, whole }) =>
 			axes.engines.flatMap((engine) =>
 				axes.themes.flatMap((theme) =>
-					(whole ? [false] : axes.comparisons).map((comparison) => ({
+					axes.comparisons.map((comparison) => ({
 						key: keyOf({
 							vault,
 							board: board.name,

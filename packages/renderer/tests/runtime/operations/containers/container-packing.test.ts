@@ -1,3 +1,4 @@
+import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
@@ -19,7 +20,7 @@ test.each([
 	]),
 	{ count: 10, fan: 14, layout: "blocks" as const },
 ])(
-	"$count independent cards and $fan fanned keep compact insets ($layout)",
+	"$count independent cards and $fan fanned keep room for measured cards and reserved fan channels ($layout)",
 	async ({ count, fan, layout }) => {
 		const content = orderedFixture({
 			nodes: [
@@ -61,6 +62,13 @@ test.each([
 		const left = Math.min(...cards.map(({ x }) => x)) - frame.x;
 		const right = frame.x + frame.width - Math.max(...cards.map(({ x, width }) => x + width));
 		const bottom = frame.y + frame.height - Math.max(...cards.map(({ y, height }) => y + height));
+		if (fan > 0) {
+			expectDrawingIntact(drawing, content, layout);
+			expect(left).toBeGreaterThanOrEqual(CONTAINER_INSET);
+			expect(right).toBeGreaterThanOrEqual(CONTAINER_INSET);
+			expect(bottom).toBeGreaterThanOrEqual(CONTAINER_INSET);
+			return;
+		}
 		expect(left).toBe(CONTAINER_INSET);
 		expect(right).toBe(left);
 		expect(bottom).toBe(left);
@@ -106,6 +114,8 @@ test("external dependencies follow their contained sources beneath the frame", a
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content,
 		theme: "light",
+		// This regression owns Track's downward fan below the frame.
+		layout: "track",
 	});
 	const frame = drawing.atlas.nodes["pool"]!;
 	const childIds = new Set(

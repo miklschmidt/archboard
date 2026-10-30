@@ -33,3 +33,18 @@ test("Blocks keeps different kinds distinct from a caller to two parent members"
 	});
 	expect(ambiguousTrunks(drawing, content)).toEqual([]);
 });
+
+test("comparison context cannot merge the visible kinds of overview relationships", async () => {
+	const content = orderedFixture({
+		nodes: ["source", "one", "two"].map((id) => ({ id, name: id, kind: "module" })),
+		edges: ["one", "two"].map((to) => ({ id: to, from: "source", to, kind: "call" })),
+	});
+	const request = { policy: DEFAULT_SEMANTIC_POLICY, content, layout: "blocks" as const };
+	await renderArchitecture(request);
+	const held = structuredClone(content);
+	held.edges[0]!.kind = "event";
+	const marked = await renderArchitecture({ ...request, held });
+	const plain = await renderArchitecture({ ...request, held, paintStanding: false });
+	expect(ambiguousTrunks(plain, held)).toEqual([]);
+	expect(plain.atlas).toEqual(marked.atlas);
+});

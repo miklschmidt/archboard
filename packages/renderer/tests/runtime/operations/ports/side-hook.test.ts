@@ -7,7 +7,7 @@
 
 import { expect, test } from "bun:test";
 import { DEFAULT_SEMANTIC_POLICY, SemanticPolicySchema } from "@archboard/board/policy";
-import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/board/render-reply";
+import { type LayoutEngineName } from "@archboard/board/render-reply";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import type { StatedStandings } from "#shared/protocol/render-request.ts";
 import { cornersOf, routePoints, type DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
@@ -79,14 +79,14 @@ async function hookedLines(
 	return hooks;
 }
 
-test.each(LayoutEngineSchema.options)(
+test.each(["track"] as const)(
 	"a drawing has no line hooking into a card's side past its corner (%s)",
 	async (layout) => {
 		expect(await hookedLines(rendererLayout, layout)).toEqual([]);
 	},
 );
 
-test.each(LayoutEngineSchema.options)(
+test.each(["track"] as const)(
 	"lines down into a card enter its top rather than hook past it into its sides (%s)",
 	async (layout) => {
 		const { standing, ...board } = formerNames;

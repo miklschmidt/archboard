@@ -7,7 +7,7 @@ import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/b
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
-test("the corpus keeps nonempty drawings when another variant is empty", async () => {
+test("the corpus draws removed whole-board content and skips empty plain variants", async () => {
 	const root = mkdtempSync(join(tmpdir(), "archboard-corpus-empty-"));
 	try {
 		const vault = join(root, ".archboard", "vault");
@@ -27,6 +27,7 @@ test("the corpus keeps nonempty drawings when another variant is empty", async (
 			createdAt: "2026-10-16T00:00:00.000Z",
 			updatedAt: "2026-10-16T00:00:00.000Z",
 			views: [],
+			current: "full",
 			variants: [
 				{
 					id: "bare",
@@ -37,7 +38,7 @@ test("the corpus keeps nonempty drawings when another variant is empty", async (
 				{
 					id: "full",
 					name: "Full",
-					lifecycle: "draft",
+					lifecycle: "current",
 					content: orderedFixture({ nodes: [{ id: "node", name: "Module", kind: "module" }] }),
 				},
 			],
@@ -55,7 +56,7 @@ test("the corpus keeps nonempty drawings when another variant is empty", async (
 				"--themes",
 				"light",
 				"--comparison",
-				"off",
+				"on,off",
 				"--jobs",
 				"1",
 			],
@@ -64,12 +65,18 @@ test("the corpus keeps nonempty drawings when another variant is empty", async (
 		const [status, errors] = await Promise.all([child.exited, new Response(child.stderr).text()]);
 		expect(status, errors).toBe(0);
 		const keys = Object.keys(JSON.parse(readFileSync(join(out, "corpus.json"), "utf8")));
-		expect(keys).toHaveLength(2);
-		expect(keys.map((key) => key.split(" | ")[2])).toEqual(["Full", "Full"]);
-		expect(keys.map((key) => key.split(" | ")[3]).toSorted()).toEqual([
-			"(whole board)",
-			"overview",
-		]);
+		expect(keys).toHaveLength(6);
+		for (const view of ["(whole board)", "overview"]) {
+			const readings = keys
+				.map((key) => key.split(" | "))
+				.filter((fields) => fields[3] === view)
+				.map((fields) => [fields[2], fields[6]]);
+			expect(readings).toEqual([
+				["Bare", "comparison"],
+				["Full", "comparison"],
+				["Full", "plain"],
+			]);
+		}
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}

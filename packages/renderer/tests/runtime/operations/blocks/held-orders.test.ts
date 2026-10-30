@@ -31,7 +31,7 @@ const policy = SemanticPolicySchema.parse({
 	},
 });
 
-test("a block's ports keep the order its parent settles them in, and its lines cross less", async () => {
+test("a block's ports keep the order its parent settles without crossing nested routes", async () => {
 	const content = orderedFixture(durableWriteBoundary);
 	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	const routes = corridorPoints(drawing.svg);

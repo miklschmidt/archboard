@@ -169,7 +169,8 @@ impl BlockTree {
             let kind = trunk_kind(edge);
             let along = format!("{}|{kind}", edge.target());
             let side = self.exit_of(block, "out", face, &along);
-            let side = if side == Side::Top
+            let side = if !self.expanded
+                && side == Side::Top
                 && block == label_at
                 && from == header_of(self.get(block))
                 && edge.label_count() > 0
@@ -355,7 +356,8 @@ impl BlockTree {
             .copied()
             .unwrap_or(face);
         let own = self.get(block);
-        if side == Side::Top
+        if !self.expanded
+            && side == Side::Top
             && own.kind == Kind::Frame
             && own.lone.as_ref().is_some_and(|lone| {
                 own.header.as_ref().is_some_and(|header| {

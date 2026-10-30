@@ -14,8 +14,12 @@
 
 #![forbid(unsafe_code)]
 
+mod bounded;
 mod grid;
+mod reservations;
 mod search;
+
+pub use bounded::{Limits, route_bounded};
 
 /// A point in diagram units.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -129,7 +133,8 @@ pub struct Connector {
 pub struct Scene {
     /// The rectangles routes keep clear of, which a pin names by index.
     pub obstacles: Vec<Rect>,
-    /// The least body coordinates. Fixed pin stubs can extend beyond this inset.
+    /// The least interior grid coordinates. Fixed pin stubs and bounded window
+    /// borders can extend beyond this inset.
     pub minimum: Option<Point>,
     /// Each connector's two ends, from its tail to its head.
     pub connectors: Vec<Connector>,
@@ -174,6 +179,7 @@ fn started_inside(buffers: &[grid::Buffer], ends: [End; 2]) -> Vec<usize> {
 /// Route each connector in order, with earlier paths and every fixed pin reserved.
 pub fn route(scene: &Scene) -> Vec<Route> {
     let mut found: Vec<Option<Vec<Point>>> = Vec::with_capacity(scene.connectors.len());
+    let mut memory = search::Memory::default();
     for (index, connector) in scene.connectors.iter().enumerate() {
         let (tail, head) = connector.ends;
         let grid = grid::Grid::new(scene, &[], &found);
@@ -185,7 +191,13 @@ pub fn route(scene: &Scene) -> Vec<Route> {
                 taken.add(&grid, points, previous.subjects);
             }
         }
-        let path = search::shortest(own.as_ref().unwrap_or(&grid), scene, connector, &taken);
+        let path = search::shortest(
+            own.as_ref().unwrap_or(&grid),
+            scene,
+            connector,
+            &taken,
+            &mut memory,
+        );
         found.push(path);
     }
     found
@@ -202,3 +214,6 @@ mod tests;
 
 #[cfg(test)]
 mod subject_tests;
+
+#[cfg(test)]
+mod bounded_tests;

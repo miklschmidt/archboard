@@ -99,12 +99,24 @@ pub(crate) fn search_of(
         candidates.push(Candidate::Grid);
     }
     for lowered in wraps_of(laying.whole, tree, block) {
-        for columns in column_choices(&lowered, tree.nesting) {
-            candidates.push(Candidate::Lowered {
-                lowered: lowered.clone(),
-                columns,
-            });
+        if !tree.expanded
+            && !try_wrap(
+                &lowered,
+                tree.nesting,
+                laying.whole.boxes.len(),
+                tree.cards.len(),
+            )
+        {
+            continue;
         }
+        candidates.extend(
+            column_choices(&lowered, tree.nesting, tree.expanded)
+                .into_iter()
+                .map(|columns| Candidate::Lowered {
+                    lowered: lowered.clone(),
+                    columns,
+                }),
+        );
     }
     (!candidates.is_empty()).then_some(Search { needed, candidates })
 }
@@ -229,13 +241,11 @@ fn wraps_better(one: &Weighing, other: &Weighing) -> bool {
 }
 
 /// Whether a wrap's rows may be laid with their columns free, as well as held.
-/// Left free, a lowered card is pushed aside by the lines to every row below
-/// it, so on the track engine's ranks a wrap deeper than two rows keeps its
-/// columns. The blocks engine packs such a block among others, where holding
-/// its columns drew more crossings than it saved.
-fn column_choices(lowered: &Plan, nesting: Nesting) -> Vec<bool> {
+/// Track keeps its existing choices. The first Blocks hierarchy holds columns;
+/// the bounded placement comparison can also try the hierarchy with free columns.
+fn column_choices(lowered: &Plan, nesting: Nesting, free: bool) -> Vec<bool> {
     let deep = lowered.values().copied().max().unwrap_or(0) > 1;
-    if deep && nesting != Nesting::Blocks {
+    if deep && nesting != Nesting::Blocks || nesting == Nesting::Blocks && !free {
         vec![true]
     } else {
         vec![false, true]
@@ -303,4 +313,20 @@ fn peer_runs(
     runs.into_iter()
         .map(|(_, ids, width)| (ids, width))
         .collect()
+}
+
+fn try_wrap(lowered: &Plan, nesting: Nesting, boxes: usize, cards: usize) -> bool {
+    if nesting != Nesting::Blocks || boxes <= 24 {
+        return true;
+    }
+    let rows = lowered.values().copied().max().unwrap_or(0) + 1;
+    let dealt = rows == 3
+        && lowered
+            .values()
+            .enumerate()
+            .all(|(index, &row)| row == index % rows);
+    // Labels and boundary ports can make a small board's fan count as dense.
+    // Keep its two-row cut without widening the search of large boards.
+    let cut = (rows == 4 || rows == 2 && cards <= 24) && lowered.values().is_sorted();
+    dealt || cut
 }

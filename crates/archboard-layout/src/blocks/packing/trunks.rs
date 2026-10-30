@@ -238,11 +238,24 @@ impl TrunkRouter<'_> {
             .values()
             .filter(|line| !self.block.header_line(line))
             .collect();
-        let pinned = self.routed(&lines, true);
-        let routes = if pinned.iter().any(Vec::is_empty) {
-            self.routed(&lines, false)
+        let routes = if self.tree.nesting == super::super::tree::Nesting::Blocks {
+            super::super::planned::route_trunks(&self.scene(&lines, true))
+                .into_iter()
+                .map(|route| match route {
+                    Route::Routed(points) => points
+                        .into_iter()
+                        .map(|p| Point { x: p.x, y: p.y })
+                        .collect(),
+                    Route::Unroutable => Vec::new(),
+                })
+                .collect()
         } else {
-            pinned
+            let pinned = self.routed(&lines, true);
+            if pinned.iter().any(Vec::is_empty) {
+                self.routed(&lines, false)
+            } else {
+                pinned
+            }
         };
         lines
             .iter()
@@ -259,11 +272,7 @@ impl TrunkRouter<'_> {
             .collect()
     }
 
-    /// Every trunk as the router routes it, the router given every obstacle
-    /// (the packed blocks, the header and, directed, the block's own ports)
-    /// and each trunk's two ends. Answers each trunk's points, in order; none
-    /// where the router found no route.
-    fn routed(&self, lines: &[&Line], directed: bool) -> Vec<Vec<Point>> {
+    fn scene(&self, lines: &[&Line], directed: bool) -> Scene {
         let header = self.block.header.as_ref().map(|_| header_of(self.block));
         let owned: Vec<&String> = if directed {
             self.block
@@ -306,7 +315,7 @@ impl TrunkRouter<'_> {
                 )
             })
             .collect();
-        let scene = Scene {
+        Scene {
             minimum: Some(archboard_router::Point {
                 x: if self.block.kind == super::super::tree::Kind::Root {
                     0.0
@@ -348,7 +357,16 @@ impl TrunkRouter<'_> {
                 bend: TRUNK_TURN,
                 crossing: TRUNK_CROSSING,
             },
-        };
+        }
+    }
+
+    /// Every trunk as the router routes it, the router given every obstacle
+    /// (the packed blocks, the header and, directed, the block's own ports)
+    /// and each trunk's two ends. Answers each trunk's points, in order; none
+    /// where the router found no route.
+    fn routed(&self, lines: &[&Line], directed: bool) -> Vec<Vec<Point>> {
+        debug_assert_ne!(self.tree.nesting, super::super::tree::Nesting::Blocks);
+        let scene = self.scene(lines, directed);
         let routed = route(&scene);
         routed
             .into_iter()

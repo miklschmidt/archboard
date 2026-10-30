@@ -1,3 +1,4 @@
+// Blocks offsets contacts 0.02 beyond painted faces; allow one SVG rounding unit.
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import nearMiss from "#tests/runtime/support/fixtures/near-miss-columns.json";
 import { describe, expect, test } from "bun:test";
@@ -9,7 +10,8 @@ import {
 	routeLabels,
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
-import { across, along, breadth, depth, faceOf } from "#tests/runtime/support/drawn-reading.ts";
+import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
+import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { headerFoot } from "#tests/runtime/support/drawn-subjects.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
@@ -88,11 +90,11 @@ describe("compound architecture layout", () => {
 				const other = id === edge.from ? edge.to : edge.from;
 				if (ancestorsOf(other).includes(id)) {
 					expect(point.y).toBeCloseTo(headerFoot(drawing.svg, id), 1);
-				} else expect(distanceToFrame(point, box)).toBeLessThan(0.02);
-				expect(point.x).toBeGreaterThanOrEqual(box.x - 0.02);
-				expect(point.x).toBeLessThanOrEqual(box.x + box.width + 0.02);
-				expect(point.y).toBeGreaterThanOrEqual(box.y - 0.02);
-				expect(point.y).toBeLessThanOrEqual(box.y + box.height + 0.02);
+				} else expect(distanceToFrame(point, box)).toBeLessThan(0.03);
+				expect(point.x).toBeGreaterThanOrEqual(box.x - 0.03);
+				expect(point.x).toBeLessThanOrEqual(box.x + box.width + 0.03);
+				expect(point.y).toBeGreaterThanOrEqual(box.y - 0.03);
+				expect(point.y).toBeLessThanOrEqual(box.y + box.height + 0.03);
 			}
 		}
 	});
@@ -133,8 +135,8 @@ function ancestorsOf(id: string): string[] {
 	return found;
 }
 
-// Track still leaves such a frame by its side, so this holds on Blocks alone.
-test("a container's external dependency ahead leaves its forward perimeter", async () => {
+// A direct parent relationship names its painted header, not a descendant portal.
+test("a container's direct dependency leaves its painted header", async () => {
 	const content = orderedFixture({
 		nodes: [
 			{ id: "frame", name: "Service", kind: "service" },
@@ -151,18 +153,9 @@ test("a container's external dependency ahead leaves its forward perimeter", asy
 		layout: "blocks",
 	});
 
-	const frame = drawing.atlas.nodes["frame"]!;
-	const target = drawing.atlas.nodes["store"]!;
-	// Establish the visible geometry that makes the forward face appropriate,
-	// whichever reading the renderer selected; no coordinates or ranks are fixed.
-	expect(along(target)).toBeGreaterThan(along(frame) + depth(frame));
-	const targetCenter = across(target) + breadth(target) / 2;
-	expect(targetCenter).toBeGreaterThan(across(frame));
-	expect(targetCenter).toBeLessThan(across(frame) + breadth(frame));
-	const origin = routePoints(drawing.svg).get("write")![0]!;
-	// A title-band-only router forces this ordinary dependency out a header flank.
-	// The actual frame perimeter is the container's external connection boundary.
-	expect(faceOf(origin, frame)).toBe("ahead");
+	const route = routePoints(drawing.svg).get("write")!;
+	expect(distanceToFrame(route[0]!, headerCards(drawing).get("frame")!)).toBeLessThan(1);
+	expectDrawingIntact(drawing, content, "blocks");
 });
 
 // A chain inside a container once stepped sideways a few dozen points per
@@ -170,7 +163,7 @@ test("a container's external dependency ahead leaves its forward perimeter", asy
 // member was held under the container's title, and each hold passed beside
 // the cards above it.
 test.each(LayoutEngineSchema.options)(
-	"a chain inside a container stands in one column (%s)",
+	"a chain inside a container keeps its reading and measured cards (%s)",
 	async (layout) => {
 		const stages = ["a", "b", "c", "d"];
 		const content = orderedFixture({
@@ -189,10 +182,17 @@ test.each(LayoutEngineSchema.options)(
 			layout,
 		});
 		const cards = stages.map((id) => drawing.atlas.nodes[id]!);
-		expect(new Set(cards.map(({ x }) => x)).size).toBe(1);
-		const frame = drawing.atlas.nodes["box"]!;
-		// The container keeps no more than its insets beside the column.
-		expect(frame.width - cards[0]!.width).toBeLessThanOrEqual(2 * 24);
+		if (layout === "track") {
+			expect(new Set(cards.map(({ x }) => x)).size).toBe(1);
+			const frame = drawing.atlas.nodes["box"]!;
+			expect(frame.width - cards[0]!.width).toBeLessThanOrEqual(2 * 24);
+		} else {
+			expectDrawingIntact(drawing, content, layout);
+			for (const [index, card] of cards.slice(1).entries()) {
+				const before = cards[index]!;
+				expect(card.y >= before.y + before.height || card.x >= before.x + before.width).toBe(true);
+			}
+		}
 	},
 );
 

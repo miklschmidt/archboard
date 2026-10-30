@@ -1,11 +1,16 @@
 import { describe, expect, test } from "bun:test";
+import { DEFAULT_LAYOUT_ENGINE, type LayoutEngineName } from "@archboard/board/render-reply";
 import { loadCore } from "#runtime/services/core.ts";
 import type { RenderHost } from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 
 /** One reading that draws without a layout worker when read as a sequence. */
-function request(grammar: "sequence" | "architecture" = "sequence"): string {
+function request(
+	grammar: "sequence" | "architecture" = "sequence",
+	layout: LayoutEngineName = DEFAULT_LAYOUT_ENGINE,
+): string {
 	return JSON.stringify({
 		grammar,
+		layout,
 		content: {
 			nodes: [{ id: "a", order: 0, name: "A", kind: "service" }],
 			flows: [
@@ -32,6 +37,7 @@ function host(changes: Partial<RenderHost> = {}): RenderHost {
 }
 
 describe("the core render failure boundary", () => {
+	// Track sends this small architecture to the host solver; Blocks can place it directly.
 	test("rejects a synchronous solve failure and tries that layout again", async () => {
 		const core = loadCore();
 		const failure = new Error("host solve failed");
@@ -42,9 +48,13 @@ describe("the core render failure boundary", () => {
 				throw failure;
 			},
 		});
-		await expect(core.render(request("architecture"), solving)).rejects.toThrow(failure.message);
+		await expect(core.render(request("architecture", "track"), solving)).rejects.toThrow(
+			failure.message,
+		);
 		const before = called;
-		await expect(core.render(request("architecture"), solving)).rejects.toThrow(failure.message);
+		await expect(core.render(request("architecture", "track"), solving)).rejects.toThrow(
+			failure.message,
+		);
 		expect(called).toBeGreaterThan(before);
 		await expect(core.render(request(), host())).resolves.toHaveProperty("svg");
 	});
@@ -53,7 +63,7 @@ describe("the core render failure boundary", () => {
 		const failure = new Error("host solve rejected");
 		await expect(
 			loadCore().render(
-				request("architecture"),
+				request("architecture", "track"),
 				host({
 					solve: () => Promise.reject(failure),
 				}),
@@ -64,7 +74,7 @@ describe("the core render failure boundary", () => {
 	test("rejects an unreadable solve answer", async () => {
 		await expect(
 			loadCore().render(
-				request("architecture"),
+				request("architecture", "track"),
 				host({
 					solve: () => Promise.resolve("not JSON"),
 				}),

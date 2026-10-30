@@ -466,6 +466,8 @@ test("a board opens by flying into its card, a poke lights what it is wired to, 
 
 	// A relationship is lit along the whole of its route, though the picture has
 	// another line of its trunk draw the first stretch of it.
+	// This fixture shares that masked trunk in Track. Keep the flight checks above on the default.
+	await browser.eval(`localStorage.setItem("archboard.layout-engine", "track")`);
 	await browser.run(["open", `${server.base}/?paneA=fanout`]);
 	await pollUntil(
 		() => stageState(browser),

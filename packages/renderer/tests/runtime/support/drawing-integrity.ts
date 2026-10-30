@@ -3,6 +3,7 @@ import type { LayoutEngineName } from "@archboard/board/render-reply";
 import type { VariantContent } from "@archboard/board/content";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
+import { collinearPorts } from "#tests/runtime/support/drawn-ports.ts";
 import {
 	ambiguousTrunks,
 	labelsOffRuns,
@@ -48,6 +49,8 @@ export function expectDrawingIntact(
 		"parents with no visible frame or line boundary",
 	).toEqual([]);
 	expect(routesThroughCards(drawing, content), "routes through cards").toEqual([]);
+	if (layout === "blocks")
+		expect(collinearPorts(drawing, content), "opposite card ports on one line").toEqual([]);
 	expect(labelsOffRuns(drawing), "labels off their own route").toEqual([]);
 	expect(runsUnderLabels(drawing), "routes under another's label").toEqual([]);
 	expect(Object.keys(drawing.atlas.nodes).toSorted()).toEqual(
