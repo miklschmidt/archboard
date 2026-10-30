@@ -37,6 +37,19 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#UTRklvpv",
       "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
+    },
+    {
+      "order": 60900,
+      "kind": "call",
+      "label": "the width of a legend entry",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/export.rs",
+        "symbol": "width_of"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+      "id": "vKEsyHFk#2DOiQ4Pi"
     }
   ]
 }
