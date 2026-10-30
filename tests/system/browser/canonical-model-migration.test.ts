@@ -1,4 +1,4 @@
-import { startModelWalkthrough } from "./support/canonical-page.ts";
+import { startModelWalkthrough, refreshModel } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -194,7 +194,7 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 		rmSync(join(fixture.vault, module.file));
 	for (const input of [...fixture.model.collections, ...fixture.model.walkthroughs])
 		rmSync(join(fixture.vault, input.file));
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

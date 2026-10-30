@@ -14,6 +14,7 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
+import { refreshModel } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 import {
 	fixtureGit,
@@ -157,7 +158,7 @@ test("saved architecture publishes only after the reader chooses its destination
 	renameSync(join(root, ".git"), join(root, "retained-git"));
 	initializeSource(root);
 	fixtureGit(root, "remote", "add", "archive", remote);
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await pollUntil(
 		publication,
 		(state) => state === "unavailable",

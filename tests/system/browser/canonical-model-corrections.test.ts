@@ -19,7 +19,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { fixtureGit, initializeSource } from "./support/canonical-model.ts";
-import { openModelSidebar } from "./support/canonical-page.ts";
+import { openModelSidebar, refreshModel } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -266,7 +266,7 @@ test("historical corrections refresh the lasting reading and expose exact origin
 	resources.defer(() => {
 		if (existsSync(heldHistory)) renameSync(heldHistory, gitDirectory);
 	});
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await visible(browser, '[data-slot="model-error"]');
 	expect(
 		await browser.eval<boolean>(`document.querySelector('[data-slot="model-reading"]') === null`),
@@ -275,7 +275,7 @@ test("historical corrections refresh the lasting reading and expose exact origin
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('checkpointA')`),
 	).toBe(corrected.checkpoint.id);
 	renameSync(heldHistory, gitDirectory);
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await visible(
 		browser,
 		`[data-slot="architecture-model-stage"][data-reading="${corrected.checkpoint.id}"][data-state="ready"]`,

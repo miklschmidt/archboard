@@ -24,6 +24,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { fixtureGit, initializeSource } from "./support/canonical-model.ts";
+import { refreshModel } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -122,13 +123,13 @@ test("migration preview preserves its source while readers navigate modules and 
 	expect(live.body).toMatchObject({ success: false, code: "LEGACY_AUTHORITY" });
 	const source = join(vault, "Shop.semantic.json");
 	writeFileSync(source, `${before["Shop.semantic.json"]}\n`);
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await visible(browser, '[data-slot="model-error"][data-code="MAPPING_STALE"]');
 	expect(
 		await browser.eval<boolean>(`document.querySelector('[data-slot="model-reading"]') === null`),
 	).toBe(true);
 	writeFileSync(source, before["Shop.semantic.json"]!);
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await visible(
 		browser,
 		'[data-slot="model-reading"][data-grammar="sequence"] [data-slot="model-diagram"] svg',
@@ -228,7 +229,7 @@ test("a missing preview plan recovers to an explicit planned-only reading", asyn
 	});
 	if (!saved.success) throw new Error(JSON.stringify(saved));
 	const before = authoredBytes(vault);
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await visible(browser, '[data-slot="model-reading"]');
 	expect(
 		await browser.eval<boolean>(

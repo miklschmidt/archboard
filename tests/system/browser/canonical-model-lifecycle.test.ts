@@ -19,6 +19,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { initializeSource, selectReading } from "./support/canonical-model.ts";
+import { refreshModel } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -243,7 +244,7 @@ test("adopted and shelved states remain discoverable with decisions and recovera
 	await chooseState(browser, queued.target.state!, "shelved");
 	renameSync(join(root, ".git"), join(root, "retained-git"));
 	initializeSource(root);
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-error"]') !== null`),
 		Boolean,
@@ -256,7 +257,7 @@ test("adopted and shelved states remain discoverable with decisions and recovera
 	expect(await gatewayName(browser)).not.toBe("Direct API");
 	rmSync(join(root, ".git"), { recursive: true });
 	renameSync(join(root, "retained-git"), join(root, ".git"));
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-error"]') === null`),
 		Boolean,

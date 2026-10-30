@@ -237,6 +237,22 @@ async function openModelSidebar(
 
 export { openModelSidebar };
 
+/** Press Refresh once it can be pressed: it refuses while a read is running. */
+async function refreshModel(browser: AgentBrowserSession): Promise<void> {
+	const refresh = '[data-slot="model-refresh"]';
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector(${JSON.stringify(refresh)})?.disabled === false`,
+			),
+		Boolean,
+		"the refresh control to be free",
+	);
+	await browser.run(["click", refresh]);
+}
+
+export { refreshModel };
+
 /** Start an authored narrative through the ordinary sidebar. */
 async function startModelWalkthrough(
 	browser: AgentBrowserSession,

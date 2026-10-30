@@ -1,4 +1,4 @@
-import { openModelSidebar } from "./support/canonical-page.ts";
+import { openModelSidebar, refreshModel } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -101,7 +101,7 @@ test("canonical modules open their authored details without writing architecture
 	// A middleware refusal keeps its code and recovery message, even outside the model schema.
 	const movedVault = `${vault}-moved`;
 	renameSync(vault, movedVault);
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await pollUntil(modelState, (state) => state === "error", "the unavailable vault refusal", WAIT);
 	expect(
 		await browser.eval<string | null>(
@@ -109,14 +109,14 @@ test("canonical modules open their authored details without writing architecture
 		),
 	).toBe("VAULT_UNREADABLE");
 	renameSync(movedVault, vault);
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await pollUntil(modelState, (state) => state === "ready", "the restored vault to reopen", WAIT);
 
 	// A failed refresh exposes the refusal, and a repaired input can be read again.
 	const gatewayPath = join(vault, "gateway.module.json");
 	const gateway = readFileSync(gatewayPath, "utf8");
 	writeFileSync(gatewayPath, "{");
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await pollUntil(modelState, (state) => state === "error", "the invalid model refusal", WAIT);
 	expect(
 		await browser.eval<string | null>(
@@ -124,13 +124,13 @@ test("canonical modules open their authored details without writing architecture
 		),
 	).toBe("MODEL_INVALID");
 	writeFileSync(gatewayPath, gateway);
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await pollUntil(modelState, (state) => state === "ready", "the repaired model to reopen", WAIT);
 	await openModelSidebar(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await openModelSidebar(browser);
 	for (const module of before.body.modules) rmSync(join(vault, module.file));
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await pollUntil(
 		() =>
 			browser.eval<number>(
@@ -396,7 +396,7 @@ test("saved readings stay exact after current inputs change and expose missing e
 	const manifestPath = join(vault, "model.json");
 	const manifest = readFileSync(manifestPath);
 	rmSync(manifestPath);
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await pollUntil(state, (value) => value === "ready", "history without current inputs", WAIT);
 	expect(await gatewayDetails(browser)).toContain("Accepts shopping requests");
 	await selectReading(browser, "current");
@@ -415,7 +415,7 @@ test("saved readings stay exact after current inputs change and expose missing e
 	const savedGit = join(root, "saved-git");
 	renameSync(join(root, ".git"), savedGit);
 	initializeSource(root);
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await pollUntil(state, (value) => value === "error", "the missing architecture refusal", WAIT);
 	expect(
 		await browser.eval<string | null>(
@@ -427,7 +427,7 @@ test("saved readings stay exact after current inputs change and expose missing e
 	).toBe(true);
 	rmSync(join(root, ".git"), { recursive: true });
 	renameSync(savedGit, join(root, ".git"));
-	await browser.run(["click", '[data-slot="model-refresh"]']);
+	await refreshModel(browser);
 	await pollUntil(state, (value) => value === "ready", "the restored archive", WAIT);
 	await selectReading(browser, "current");
 	await pollUntil(state, (value) => value === "ready", "the current reading after history", WAIT);
