@@ -1,3 +1,4 @@
+import "#tests/runtime/operations/proposals/use-direct-git.ts";
 import { behaviorFixture } from "#tests/runtime/operations/model-edit/flow-fixture.ts";
 import { afterEach, expect, test } from "bun:test";
 import { readFileSync, writeFileSync, renameSync } from "node:fs";

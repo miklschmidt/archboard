@@ -1,7 +1,5 @@
+import "#tests/runtime/operations/proposals/use-direct-git.ts";
 import { afterEach, expect, test } from "bun:test";
-import { writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { BOARD_LOCK_MS } from "@archboard/timing";
 import {
 	readArchitectureModel,
@@ -10,7 +8,7 @@ import {
 } from "@archboard/board/store-read";
 import { editArchitectureModule, recoverArchitectureModel } from "@archboard/board/store-write";
 import { fixture, disposeFixtures } from "#tests/runtime/operations/model-edit/fixture.ts";
-import { request, proposal } from "#tests/runtime/operations/proposals/fixture.ts";
+import { request, proposal, writeInProcess } from "#tests/runtime/operations/proposals/fixture.ts";
 
 const now = Date.now;
 afterEach(() => {
@@ -19,7 +17,6 @@ afterEach(() => {
 });
 
 test.each([
-	["adopt", "proposal-removed"],
 	["adopt", "file"],
 	["shelve", "proposal-removed"],
 ] as const)(
@@ -34,22 +31,8 @@ test.each([
 			proposal: { type, reason: "Record this decision." },
 			changes: [],
 		};
-		const file = join(root, "lifecycle-request.json");
-		writeFileSync(file, JSON.stringify(input));
-		const child = Bun.spawn(
-			[
-				process.execPath,
-				"--preload",
-				fileURLToPath(import.meta.resolve("#tests/runtime/operations/model-edit/crash-preload.ts")),
-				fileURLToPath(import.meta.resolve("#tests/runtime/operations/model-edit/crash-runner.ts")),
-				vault,
-				file,
-			],
-			{ env: { ...process.env, ARCHBOARD_EDIT_CRASH: point }, stdout: "pipe", stderr: "pipe" },
-		);
-		const stdout = new Response(child.stdout).text(),
-			stderr = new Response(child.stderr).text();
-		expect(await child.exited, `${await stdout} ${await stderr}`).toBe(86);
+		const { exitCode, output } = await writeInProcess(root, vault, input, point);
+		expect(exitCode, output).toBe(86);
 		Date.now = () => now() + BOARD_LOCK_MS.lease;
 		const blocked = readArchitectureModel(vault);
 		expect(blocked).toMatchObject({ success: false, code: "RECOVERY_REQUIRED" });

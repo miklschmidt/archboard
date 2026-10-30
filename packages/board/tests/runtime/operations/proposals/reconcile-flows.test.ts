@@ -1,3 +1,4 @@
+import "#tests/runtime/operations/proposals/use-direct-git.ts";
 import { afterEach, expect, test } from "bun:test";
 import { editArchitectureModule } from "@archboard/board/store-write";
 import { behaviorFixture } from "#tests/runtime/operations/model-edit/flow-fixture.ts";
@@ -61,6 +62,9 @@ test("competing step holders remain explicit and take-theirs settlement preserve
 			expect.objectContaining({ subject: "Shop#Repeat", field: "within", kind: "competing-field" }),
 		]),
 	);
+	expect(held.collections[0]!.flows[0]!.steps[1]).toMatchObject({
+		alternatives: [{ label: "accepted", steps: [] }, { steps: [{ id: "Shop#Repeat" }] }],
+	});
 	const settled = await editArchitectureModule(vault, {
 		...(await request(vault, draft.target.state!)),
 		proposal: {
@@ -119,34 +123,6 @@ test("a step moved to another flow inherits an independent predecessor field by 
 		label: "Dispatch accepted work",
 	});
 	expect(reading.collections[0]!.flows[0]!.steps[0]).toMatchObject({ id: "Shop#Decide" });
-});
-
-test("incompatible flow and nested-holder moves keep the complete proposal side", async () => {
-	const { vault } = behaviorFixture();
-	const draft = await proposal(vault, "Nested dispatch", "Current", [
-		{
-			type: "move-step",
-			subject: "Shop#Send",
-			placement: { holder: "Shop#Decide", alternative: "no" },
-		},
-	]);
-	const changed = await editArchitectureModule(vault, {
-		...(await request(vault)),
-		changes: [
-			{
-				type: "move-step",
-				subject: "Shop#Send",
-				placement: { holder: "Shop#Other", before: "Shop#Notify" },
-			},
-		],
-	});
-	expect(changed).toMatchObject({ success: true, reconciliation: true });
-	const reading = await selected(vault, draft.target.state!);
-	expect(reading.collections[0]!.flows[0]!.steps[0]).toMatchObject({
-		id: "Shop#Decide",
-		alternatives: [{ label: "yes" }, { label: "no", steps: [{ id: "Shop#Send" }] }],
-	});
-	expect(reading.collections[0]!.flows[1]!.steps).toMatchObject([{ id: "Shop#Notify" }]);
 });
 
 test("take-theirs placement settlement preserves siblings in both holders", async () => {

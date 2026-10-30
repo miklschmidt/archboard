@@ -1,3 +1,4 @@
+import "#tests/runtime/operations/proposals/use-direct-git.ts";
 import { afterEach, expect, test } from "bun:test";
 import { readArchitectureModel } from "@archboard/board/store-read";
 import { editArchitectureModule } from "@archboard/board/store-write";
@@ -5,34 +6,6 @@ import { fixture, disposeFixtures, git } from "#tests/runtime/operations/model-e
 import { request, proposal, selected } from "#tests/runtime/operations/proposals/fixture.ts";
 
 afterEach(disposeFixtures);
-
-test("a blocked descendant can be shelved without settling its unfinished ancestor", async () => {
-	const { vault } = fixture();
-	const parent = await proposal(vault, "Unfinished", "Current", [
-		{ type: "edit-module", subject: "Shop#Gateway", set: { name: "Draft API" } },
-	]);
-	const child = await proposal(vault, "Rejected child", parent.target.state!);
-	const changed = await editArchitectureModule(vault, {
-		...(await request(vault)),
-		changes: [{ type: "edit-module", subject: "Shop#Gateway", set: { name: "Current API" } }],
-	});
-	if (!changed.success) throw new Error(JSON.stringify(changed));
-	const shelved = await editArchitectureModule(vault, {
-		...(await request(vault, child.target.state!)),
-		proposal: { type: "shelve", reason: "Stop this dependent proposal." },
-		changes: [],
-	});
-	expect(shelved).toMatchObject({
-		success: true,
-		selectedState: { id: child.target.state, lifecycle: "shelved" },
-	});
-	if (!shelved.success) throw new Error(JSON.stringify(shelved));
-	expect(shelved.checkpoint.lifecycle?.proposal.standing?.blockedBy).toBe(parent.target.state!);
-	expect((await selected(vault, child.target.state!)).selectedState?.standing).toBeUndefined();
-	expect(
-		(await selected(vault, parent.target.state!)).selectedState?.standing?.issues.length,
-	).toBeGreaterThan(0);
-}, 20_000);
 
 test("dependent drafts keep their lineage and exact retained baseline after their parent is adopted", async () => {
 	const { root, vault } = fixture();
@@ -83,12 +56,13 @@ test("dependent drafts keep their lineage and exact retained baseline after thei
 	expect((await selected(vault, parent.target.state!)).selectedState?.lifecycle).toBe("historical");
 }, 20_000);
 
-test("unsettled proposals refuse adoption but shelving preserves their final side and releases dependent standing", async () => {
+test("unsettled proposals refuse adoption, a blocked child can be shelved alone, and shelving the parent releases dependent standing", async () => {
 	const { vault } = fixture();
 	const parent = await proposal(vault, "Alternative", "Current", [
 		{ type: "edit-module", subject: "Shop#Gateway", set: { name: "Draft API" } },
 	]);
 	const child = await proposal(vault, "Following", parent.target.state!);
+	const rejected = await proposal(vault, "Rejected child", parent.target.state!);
 	const changed = await editArchitectureModule(vault, {
 		...(await request(vault)),
 		changes: [{ type: "edit-module", subject: "Shop#Gateway", set: { name: "Current API" } }],
@@ -103,6 +77,18 @@ test("unsettled proposals refuse adoption but shelving preserves their final sid
 			}),
 		).toMatchObject({ success: false, code: "PROPOSAL_BLOCKED", applied: false });
 	}
+	const stopped = await editArchitectureModule(vault, {
+		...(await request(vault, rejected.target.state!)),
+		proposal: { type: "shelve", reason: "Stop this dependent proposal." },
+		changes: [],
+	});
+	expect(stopped).toMatchObject({
+		success: true,
+		selectedState: { id: rejected.target.state, lifecycle: "shelved" },
+	});
+	if (!stopped.success) throw new Error(JSON.stringify(stopped));
+	expect(stopped.checkpoint.lifecycle?.proposal.standing?.blockedBy).toBe(parent.target.state!);
+	expect((await selected(vault, rejected.target.state!)).selectedState?.standing).toBeUndefined();
 	const shelved = await editArchitectureModule(vault, {
 		...(await request(vault, parent.target.state!)),
 		proposal: { type: "shelve", reason: "Keep the unresolved alternative as history." },

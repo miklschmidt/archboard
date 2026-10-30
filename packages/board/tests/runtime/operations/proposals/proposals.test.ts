@@ -1,3 +1,4 @@
+import "#tests/runtime/operations/proposals/use-direct-git.ts";
 import { request as familyRequest } from "#tests/runtime/operations/proposals/fixture.ts";
 import type { ArchitectureEvent } from "@archboard/board/model";
 import { afterEach, expect, test } from "bun:test";

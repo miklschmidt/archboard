@@ -5,6 +5,9 @@ import {
 	editArchitectureModule,
 } from "@archboard/board/store-write";
 import type { ArchitectureModuleEdit } from "@archboard/board/model";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 function stepIds(
 	steps: Extract<
 		Awaited<ReturnType<typeof readArchitectureModel>>,
@@ -81,4 +84,31 @@ async function proposal(
 	return result;
 }
 
-export { request, selected, proposal };
+// Submits one write from a second process, optionally ending it at a crash point of crash-preload.ts.
+async function writeInProcess(root: string, vault: string, intent: unknown, crash?: string) {
+	const file = join(root, "request.json");
+	writeFileSync(file, JSON.stringify(intent));
+	const resolved = (specifier: string) => fileURLToPath(import.meta.resolve(specifier));
+	const child = Bun.spawn(
+		[
+			process.execPath,
+			"--preload",
+			resolved("#tests/runtime/operations/proposals/direct-git-preload.ts"),
+			...(crash === undefined
+				? []
+				: ["--preload", resolved("#tests/runtime/operations/model-edit/crash-preload.ts")]),
+			resolved("#tests/runtime/operations/model-edit/crash-runner.ts"),
+			vault,
+			file,
+		],
+		{ env: { ...process.env, ARCHBOARD_EDIT_CRASH: crash ?? "" }, stdout: "pipe", stderr: "pipe" },
+	);
+	const [exitCode, stdout, stderr] = await Promise.all([
+		child.exited,
+		new Response(child.stdout).text(),
+		new Response(child.stderr).text(),
+	]);
+	return { exitCode, output: `${stdout} ${stderr}` };
+}
+
+export { request, selected, proposal, writeInProcess };

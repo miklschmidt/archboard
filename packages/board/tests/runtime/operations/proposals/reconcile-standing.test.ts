@@ -1,3 +1,4 @@
+import "#tests/runtime/operations/proposals/use-direct-git.ts";
 import { afterEach, expect, test } from "bun:test";
 import { readArchitectureModel } from "@archboard/board/store-read";
 import { projectModel, projectFlow } from "@archboard/board/content";
