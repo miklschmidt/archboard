@@ -41,6 +41,7 @@ fn measured(laid: &Reading, policy: &Policy, steps: &HashSet<&str>) -> Measured 
             let words = CardWords {
                 name: &node.name,
                 responsibility: node.responsibility.as_deref(),
+                path: node.code_path.as_deref(),
                 drills: node.drills,
             };
             let container = containers.contains(node.id.as_str());

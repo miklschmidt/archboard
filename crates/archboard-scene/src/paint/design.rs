@@ -18,6 +18,11 @@ pub const CARD_NOTE_FONT: DiagramFont = DiagramFont {
     family: FontFamily::Sans,
     weight: 400,
 };
+/// Where a card's code lives.
+pub const CARD_PATH_FONT: DiagramFont = DiagramFont {
+    family: FontFamily::Mono,
+    weight: 400,
+};
 /// What a connection carries: small, technical, and on a plate.
 pub const PILL_FONT: DiagramFont = DiagramFont {
     family: FontFamily::Sans,
@@ -38,6 +43,10 @@ pub const PART_TITLE_LINE: f64 = 20.0;
 pub(crate) const PART_NOTE_SIZE: f64 = 11.0;
 /// The room one line of such a responsibility takes.
 pub const PART_NOTE_LINE: f64 = 17.0;
+/// The size of a measured part's code path. A reader at the far view's edge reads it at 9 px.
+pub(crate) const PART_PATH_SIZE: f64 = 11.0;
+/// The room a code path's line takes.
+pub const PART_PATH_LINE: f64 = 16.0;
 /// The height of a line of a sequence note, as a multiple of its text size.
 pub const TEXT_LINE_HEIGHT: f64 = 1.35;
 /// How strong a line is on each ground.

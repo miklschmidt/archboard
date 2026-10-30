@@ -4,12 +4,14 @@
 use archboard_text::Paragraph;
 
 use crate::drawing::{DiagramFont, MeasuredNode, TextRole, TextRun};
-use crate::measure::paragraph;
+use crate::measure::{keep_tail, paragraph, width};
 use crate::paint::design::{
     ARCHITECTURE_CARD_PADDING, ARCHITECTURE_ICON_GAP, ARCHITECTURE_NOTE_GAP, CARD_NOTE_FONT,
-    CARD_TITLE_FONT, DRILL_MARK_ROOM, HEADER_SLAB_INSET, ICON_CHIP_SIZE, PARENT_TITLE_SIZE,
-    PART_NOTE_LINE, PART_NOTE_SIZE, PART_TITLE_LINE, PART_TITLE_SIZE,
+    CARD_PATH_FONT, CARD_TITLE_FONT, DRILL_MARK_ROOM, HEADER_SLAB_INSET, ICON_CHIP_SIZE,
+    PARENT_TITLE_SIZE, PART_NOTE_LINE, PART_NOTE_SIZE, PART_PATH_LINE, PART_PATH_SIZE,
+    PART_TITLE_LINE, PART_TITLE_SIZE,
 };
+use crate::paint::far_name_width;
 
 /// A face, a size, the room a line takes and what the line is.
 #[derive(Clone, Copy, Debug)]
@@ -36,6 +38,14 @@ pub(super) const NOTE: Style = Style {
     role: TextRole::Note,
 };
 
+/// A card's code path.
+pub(super) const PATH: Style = Style {
+    font: CARD_PATH_FONT,
+    size: PART_PATH_SIZE,
+    line: PART_PATH_LINE,
+    role: TextRole::Note,
+};
+
 /// The words a card shows.
 #[derive(Clone, Copy, Debug)]
 pub struct CardWords<'a> {
@@ -43,6 +53,8 @@ pub struct CardWords<'a> {
     pub name: &'a str,
     /// What it is responsible for, when it says.
     pub responsibility: Option<&'a str>,
+    /// Where its code lives, when it says.
+    pub path: Option<&'a str>,
     /// Whether it opens another board, which puts a mark beside its name.
     pub drills: bool,
 }
@@ -143,13 +155,23 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
     let title = paragraph(words.name, title_style.font, title_style.size);
     let note = paragraph(words.responsibility.unwrap_or(""), NOTE.font, NOTE.size);
     let natural = js_max(title.natural_width() + marked, note.natural_width());
-    let width = crate::js::js_min(size.most, js_max(size.least, natural + left + padding));
+    let far = far_name_width(words.name, title_style.size - TITLE.size);
+    let least = js_max(size.least, far + marked);
+    let width = crate::js::js_min(size.most, js_max(least, natural + left + padding));
     let available = width - left - padding;
     let titles = runs_for(&title, title_style, available - marked, left, padding);
-    let note_top = padding + titles.len() as f64 * title_style.line + ARCHITECTURE_NOTE_GAP;
+    let paths = path_run(
+        words.path,
+        available,
+        left,
+        padding + titles.len() as f64 * title_style.line,
+    );
+    let words_end =
+        padding + titles.len() as f64 * title_style.line + paths.len() as f64 * PATH.line;
+    let note_top = words_end + ARCHITECTURE_NOTE_GAP;
     let notes = runs_for(&note, NOTE, available, left, note_top);
     let bottom = if notes.is_empty() {
-        padding + titles.len() as f64 * title_style.line
+        words_end
     } else {
         note_top + notes.len() as f64 * NOTE.line
     };
@@ -166,15 +188,75 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
         width: js_max(width, left + painted + padding),
         height,
         header_height: 0.0,
-        runs: titles.into_iter().chain(notes).collect(),
+        runs: titles.into_iter().chain(paths).chain(notes).collect(),
         headers: None,
         pointed: None,
     }
 }
 
+/// A card's code path on one line under its name. A path never widens a card:
+/// a long one keeps its tail.
+fn path_run(path: Option<&str>, room: f64, x: f64, top: f64) -> Vec<TextRun> {
+    path.iter()
+        .map(|path| {
+            let text = keep_tail(path, PATH.font, PATH.size, room);
+            TextRun {
+                width: width(&text, PATH.font, PATH.size),
+                text,
+                x,
+                y: top + PATH.size,
+                font: PATH.font,
+                font_size: PATH.size,
+                role: PATH.role,
+            }
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn card(path: Option<&str>) -> MeasuredNode<()> {
+        let words = CardWords {
+            name: "Run checks",
+            responsibility: Some("Checks the rules from one author run."),
+            path,
+            drills: false,
+        };
+        measure_node((), &words, false)
+    }
+
+    const LONG: &str = "apps/web/src/ui/rules/semantic-board-canvas/camera/a-long-way/camera.ts";
+
+    #[test]
+    fn a_path_takes_a_row_under_the_name_and_never_widens_a_card() {
+        let (plain, bound) = (card(None), card(Some(LONG)));
+        assert_eq!(bound.width, plain.width);
+        assert!(bound.height > plain.height);
+        assert!(bound.runs[0].y < bound.runs[1].y && bound.runs[1].y < bound.runs[2].y);
+    }
+
+    #[test]
+    fn a_long_path_keeps_its_tail_inside_the_card() {
+        let bound = card(Some(LONG));
+        let row = &bound.runs[1];
+        assert!(row.text.starts_with('…') && row.text.ends_with("/camera.ts"));
+        assert!(row.x + row.width <= bound.width);
+    }
+
+    #[test]
+    fn a_card_is_wide_enough_for_its_far_name_at_the_full_size() {
+        let words = CardWords {
+            name: "codex-realtime-voice",
+            responsibility: None,
+            path: None,
+            drills: false,
+        };
+        let far = far_name_width(words.name, 0.0);
+        assert!(far > CARD_LEAST);
+        assert_eq!(measure_node((), &words, false).width, far);
+    }
 
     #[test]
     fn parents_use_normal_card_width_and_one_measured_header() {
@@ -183,6 +265,7 @@ mod tests {
             responsibility: Some(
                 "Checks the rules, outcomes, captures, and commands from one author run.",
             ),
+            path: None,
             drills: false,
         };
         let card = measure_node((), &words, false);

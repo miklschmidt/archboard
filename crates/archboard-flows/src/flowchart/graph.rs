@@ -81,6 +81,7 @@ impl<'a> Building<'a> {
             kind,
             parent: Some(self.flow.clone()),
             responsibility,
+            code_path: None,
             groups: Vec::new(),
             drills: false,
         });
@@ -211,6 +212,7 @@ impl<'a> Building<'a> {
             kind: FLOW_KIND.to_owned(),
             parent: None,
             responsibility: flow.summary.clone(),
+            code_path: None,
             groups: Vec::new(),
             drills: false,
         });

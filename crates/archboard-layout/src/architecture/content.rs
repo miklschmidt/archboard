@@ -21,6 +21,9 @@ pub struct Node {
     /// What it is responsible for, when the board says.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub responsibility: Option<String>,
+    /// Where its code lives, as a reading words it; never stored on a board.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code_path: Option<String>,
     /// The container it stands in; absent on the board itself.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<String>,
@@ -54,6 +57,7 @@ impl Node {
             order: self.order,
             name: self.name.clone(),
             responsibility: self.responsibility.clone(),
+            code_path: self.code_path.clone(),
         }
     }
 }

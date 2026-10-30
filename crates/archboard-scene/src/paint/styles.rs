@@ -139,6 +139,7 @@ pub(super) fn dash_array(dash: Dash) -> &'static [f64] {
         Dash::Solid => &[],
         Dash::Dashed => &[6.0, 4.0],
         Dash::Dotted => &[1.5, 3.5],
+        Dash::Mixed => &[10.0, 3.0, 1.5, 3.0],
     }
 }
 
