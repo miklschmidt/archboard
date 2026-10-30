@@ -370,7 +370,7 @@ test("projected connections expose complete ordered relationships and module int
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", `${server.base}/`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
-	const line = '[data-slot="model-connections"] [data-from="Shop#Gateway"][data-to="Shop#Worker"]';
+	const line = '[data-slot="model-connections"] [data-from="Shop#Worker"][data-to="Shop#Gateway"]';
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('${line}') !== null`),
 		Boolean,
@@ -383,12 +383,12 @@ test("projected connections expose complete ordered relationships and module int
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-slot="model-connection-details"] [data-relationship-id]')].map(node => node.getAttribute('data-relationship-id'))`,
 		),
-	).toEqual(["Shop#Dispatch", "Shop#OutA", "Shop#Web", "Shop#OutB"]);
+	).toEqual(["Shop#In", "Shop#Whole", "Shop#Dispatch", "Shop#OutA", "Shop#Web", "Shop#OutB"]);
 	expect(
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-slot="model-connection-labels"] li')].map(node => node.textContent)`,
 		),
-	).toEqual(["Dispatch request", "Deliver", "Request"]);
+	).toEqual(["Enter", "Public API", "Dispatch request", "Deliver", "Request"]);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(`document.querySelector('[data-slot="model-diagram"] svg') !== null`),

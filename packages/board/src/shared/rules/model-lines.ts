@@ -1,11 +1,12 @@
 // The lines a reading draws.
 //
-// One line joins a directed pair. A door's line ends on the one part that reaches
+// One line joins a pair of drawn parts, with an arrow at each end when its
+// relationships run both ways. A door's line ends on the one part that reaches
 // it, or on the open frame when several do. Above a budget, a line that other
 // drawn lines imply leaves the picture, and the reading says how many left.
 
 import type { ChangeKind } from "#shared/rules/compare/variants.ts";
-import { overviewLines, type OverviewLine } from "#shared/rules/scope.ts";
+import { overviewLines, type DrawnEdge, type OverviewLine } from "#shared/rules/scope.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
 
 type Standing = Readonly<Record<string, ChangeKind>>;
@@ -90,7 +91,7 @@ function drawnEnds(edge: Edge, drawnAs: ReadonlyMap<string, string>): readonly [
 }
 
 /**
- * One line joins a directed pair, and distinct comparison states stay separate lines.
+ * One line joins a pair of drawn parts, and distinct comparison states stay separate lines.
  * @param complete The full model content.
  * @param edges Relationships included by this reading.
  * @param endsOf Where each relationship's line runs.
@@ -151,9 +152,9 @@ function joinsParts(connection: OverviewLine, parts: ReadonlySet<string>): boole
 
 /**
  * Above the budget, a line between two parts leaves the picture if other drawn lines still join
- * its ends. The weakest line goes first, so the result is deterministic, and a path needs a line
- * out of one end and a line into the other, so no connected part loses its last line (rule 6).
- * A changed line is what a comparison shows, and a removed line carries no path.
+ * its ends, each way that it runs. The weakest line goes first, so the result is deterministic, and
+ * a path needs a line out of one end and a line into the other, so no connected part loses its last
+ * line (rule 6). A changed line is what a comparison shows, and a removed line carries no path.
  * @param lines Every line of the reading.
  * @param parts The modules whose lines can leave the picture.
  * @param standing Exact comparison states.
@@ -173,7 +174,7 @@ function impliedLines(
 		);
 	const gone = weakestFirst.filter((candidate) => {
 		live.delete(candidate);
-		const leaves = reaches([...live], standing, candidate.line);
+		const leaves = stillJoined([...live], standing, candidate.line);
 		if (!leaves) live.add(candidate);
 		return leaves;
 	});
@@ -181,7 +182,22 @@ function impliedLines(
 }
 
 /**
- * Whether drawn lines still lead from one end of a line to the other.
+ * Whether other lines still say what a line says: a two-way line needs a path each way.
+ * @param lines The lines to follow.
+ * @param standing Exact comparison states.
+ * @param line The line that would leave.
+ * @returns Whether its ends stay joined.
+ */
+function stillJoined(lines: readonly OverviewLine[], standing: Standing, line: DrawnEdge): boolean {
+	const { from, to, twoWay } = line;
+	return (
+		reaches(lines, standing, line) &&
+		(twoWay !== true || reaches(lines, standing, { from: to, to: from }))
+	);
+}
+
+/**
+ * Whether drawn lines lead from one end of a line to the other. A two-way line leads both ways.
  * @param lines The lines to follow.
  * @param standing Exact comparison states.
  * @param ends The two ends.
@@ -197,7 +213,10 @@ function reaches(
 	const paths = lines.filter(({ line }) => standing[line.id] !== "removed");
 	const seen = new Set([ends.from]);
 	for (const at of seen) {
-		for (const { line } of paths) if (line.from === at) seen.add(line.to);
+		for (const { line } of paths) {
+			if (line.from === at) seen.add(line.to);
+			if (line.twoWay === true && line.to === at) seen.add(line.from);
+		}
 	}
 	return seen.has(ends.to);
 }

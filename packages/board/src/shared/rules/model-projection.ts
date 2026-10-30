@@ -4,7 +4,7 @@ import type { ArchitectureModelRead } from "#shared/schemas/model.ts";
 import { drawingOf } from "#shared/rules/compare/drawing.ts";
 import type { ChangeKind } from "#shared/rules/compare/variants.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
-import type { OverviewLine } from "#shared/rules/scope.ts";
+import type { DrawnEdge, OverviewLine } from "#shared/rules/scope.ts";
 import { codePathOf } from "#shared/rules/code-path.ts";
 import { containment, foldChain } from "#shared/rules/module-fold.ts";
 import { doorEnds, drawnEnds, joinedLines, readingLines } from "#shared/rules/model-lines.ts";
@@ -24,7 +24,10 @@ type Edge = VariantContent["edges"][number];
 /** A card as a picture draws it: the code path is read for the picture and stored nowhere. */
 type DrawnNode = Node & { readonly codePath?: string };
 /** What a reading hands the renderer. */
-type DrawnContent = Omit<VariantContent, "nodes"> & { nodes: DrawnNode[] };
+type DrawnContent = Omit<VariantContent, "nodes" | "edges"> & {
+	nodes: DrawnNode[];
+	edges: DrawnEdge[];
+};
 
 /** What decides which lines a reading draws. */
 type LineChoices = Pick<ModelFilters, "hideKinds" | "everyLine">;

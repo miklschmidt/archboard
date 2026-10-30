@@ -27,6 +27,13 @@ fn header_of(placed: &Node) -> Rect {
     )
 }
 
+/// Where a measured name starts, from the top of its box: the chip stands level with it.
+fn name_top(placed: &Node) -> f64 {
+    let runs = &placed.measured.runs;
+    runs.first()
+        .map_or(ARCHITECTURE_CARD_PADDING, |name| name.y - name.font_size)
+}
+
 /// One measured card with its kind glyph and its standing's treatment: the
 /// card drawn as `part`, its words where the layout measured them.
 pub(super) fn paint_measured_card(
@@ -39,7 +46,7 @@ pub(super) fn paint_measured_card(
     let (rect, standing) = (placed.bounds, part.standing);
     let near = NearCard {
         chip_x: rect.x + ARCHITECTURE_CARD_PADDING,
-        chip_y: rect.y + ARCHITECTURE_CARD_PADDING,
+        chip_y: rect.y + name_top(placed),
         words: words_in(
             &placed.measured.runs,
             rect,
@@ -106,7 +113,7 @@ pub(super) fn paint_measured_header(
     };
     let near = NearCard {
         chip_x: header.x + ARCHITECTURE_CARD_PADDING,
-        chip_y: header.y + ARCHITECTURE_CARD_PADDING,
+        chip_y: placed.bounds.y + name_top(placed),
         words: words_in(
             &placed.measured.runs,
             placed.bounds,

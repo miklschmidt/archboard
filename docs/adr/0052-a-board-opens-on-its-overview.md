@@ -21,6 +21,20 @@ calls had no label, and its tip and inspector named only its first call. A
 count label ("5 relationships") was tried first and told a reader too little.
 Everything else stands.
 
+Amended by the owner on 2026-10-30 (TASK-559.12). The stacked labels of the
+amendment above give way to one combined label. The median joined line holds
+three labels of 32 characters, so a stack cannot fit, and a count still tells a
+reader too little. A line with one shared label wears that label. Otherwise it
+names the parts inside the target card that its relationships reach, at most
+two with `+N` for the others, such as `to Thread tools, Board catalogue +2`.
+If the target shows no part, the line names the source card with `from`. If
+neither card shows a part, it wears its first label and `+N`. If it has neither
+a label nor a part, it wears no words. A pair with relationships in both
+directions now draws one line with an arrow at each end, and its words say
+`with` in place of `to`. The tip over the line and the inspector still name
+every relationship with its own ends. Rules 2 and 4 of
+[the reader redesign](../design/reader-redesign.md) hold the exact order.
+
 Decided with the owner on 2026-10-15. This decision supersedes one clause of
 [ADR 0023](0023-semantic-boards-own-meaning-renderers-own-presentation.md):
 "Do not add size-driven refusal, automatic partitioning, or a density policy

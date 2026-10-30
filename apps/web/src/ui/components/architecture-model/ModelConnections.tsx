@@ -54,10 +54,7 @@ function ConnectionChoice(props: ModelConnectionsProps & { connection: Connectio
 				{...pick}
 				className="hover:bg-muted aria-pressed:bg-muted rounded-control w-full space-y-1 px-3 py-3 text-left"
 			>
-				<span className="text-control block">
-					{moduleName(model, line.from, props.reference)} →{" "}
-					{moduleName(model, line.to, props.reference)}
-				</span>
+				<span className="text-control block">{lineEnds(line, model, props.reference)}</span>
 				<span className="text-body text-muted-foreground block">{kindNames(model, joins)}</span>
 			</button>
 		</li>
@@ -82,8 +79,7 @@ function ConnectionDetails(props: {
 	return (
 		<article data-slot="model-connection-details" className="space-y-6">
 			<h3 className="text-title font-semibold">
-				{moduleName(model, connection.line.from, props.reference)} →{" "}
-				{moduleName(model, connection.line.to, props.reference)}
+				{lineEnds(connection.line, model, props.reference)}
 			</h3>
 			<p data-slot="model-connection-kinds" className="text-body text-muted-foreground">
 				{kindNames(model, connection.joins)}
@@ -115,6 +111,18 @@ function ConnectionDetails(props: {
 }
 
 /**
+ * The two ends of a drawn line by name, with an arrow each way when it runs both ways.
+ * @param line The line.
+ * @param model The model that names its modules.
+ * @param reference The coherent base for a removed end.
+ * @returns Both names.
+ */
+function lineEnds(line: Connection["line"], model: Model, reference: Model | undefined): string {
+	const mark = line.twoWay === true ? "↔" : "→";
+	return `${moduleName(model, line.from, reference)} ${mark} ${moduleName(model, line.to, reference)}`;
+}
+
+/**
  * Every kind that a line joins, so a mixed line names what it mixes.
  * @param model The model that names its vocabulary.
  * @param joins The relationships behind the line.
@@ -140,4 +148,4 @@ function moduleName(model: Model, id: string, reference: Model | undefined): str
 	);
 }
 
-export { ModelConnections, ConnectionDetails, kindNames, moduleName };
+export { ModelConnections, ConnectionDetails, kindNames, lineEnds, moduleName };

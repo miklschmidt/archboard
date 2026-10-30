@@ -103,18 +103,6 @@ pub struct MeasuredLabel {
     pub height: f64,
     /// The measured lines of its words.
     pub runs: Vec<TextRun>,
-    /// The chips the label stands on, from the top of its box: one for a
-    /// label, and one for each relationship a joined line stacks (ADR 0052).
-    pub chips: Vec<Chip>,
-}
-
-/// One chip of a label, by its offset from the top of the label's box.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]
-pub struct Chip {
-    /// Where the chip begins, from the top of the label's box.
-    pub y: f64,
-    /// How tall the chip is.
-    pub height: f64,
 }
 
 /// One card or containing frame, in the final drawing coordinate space.
@@ -139,17 +127,6 @@ pub struct PlacedLabel {
     pub bounds: Rect,
     /// The label's measured words.
     pub measured: MeasuredLabel,
-}
-
-impl PlacedLabel {
-    /// Each chip's box, where the picture puts it.
-    pub fn chips(&self) -> impl Iterator<Item = Rect> + '_ {
-        self.measured.chips.iter().map(|chip| Rect {
-            y: self.bounds.y + chip.y,
-            height: chip.height,
-            ..self.bounds
-        })
-    }
 }
 
 /// A group's region: the cards one group places inside one container, gathered and captioned.
@@ -318,6 +295,10 @@ pub struct EdgeFacts {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub traffic: Option<Traffic>,
+    /// Whether it joins relationships in both directions, so a head stands at each end.
+    #[serde(default, rename = "twoWay")]
+    #[ts(rename = "twoWay")]
+    pub two_way: bool,
 }
 
 /// The architecture drawing as the painter reads it.

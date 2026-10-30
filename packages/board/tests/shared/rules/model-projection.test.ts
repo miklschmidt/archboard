@@ -50,27 +50,154 @@ describe("lines", () => {
 		],
 	);
 
-	test("one line joins a directed pair, and a reciprocal pair keeps two", () => {
-		expect(lines(projectModel(model)).toSorted()).toEqual(["a>b", "b>a"]);
+	test("a pair with relationships in both directions draws one line with an arrow at each end", () => {
+		const reading = projectModel(model);
+		expect(lines(reading)).toEqual(["a>b"]);
+		expect(reading.content.edges[0]?.twoWay).toBe(true);
+		expect(reading.connections[0]?.joins.map((edge) => edge.id)).toEqual(["one", "two", "back"]);
 	});
 
 	test("a line of one kind wears it, and a line of mixed kinds names neither", () => {
-		const [joined, lone] = projectModel(model).content.edges;
-		expect(lone).toMatchObject({ kind: "http", label: "answer" });
+		const [joined] = projectModel(model).content.edges;
 		expect(joined?.kind).not.toBe("http");
 		expect(joined?.kind).not.toBe("event");
-		expect(joined?.label).toBeUndefined();
-		expect(projectModel(model).connections[0]?.joins.map((edge) => edge.id)).toEqual([
-			"one",
-			"two",
-		]);
+		const [shared] = projectModel(model, null, null, { hideKinds: ["event"] }).content.edges;
+		expect(shared?.kind).toBe("http");
 	});
 
 	test("hiding a kind leaves the relationships of every other kind on their line", () => {
-		const reading = projectModel(model, null, null, { hideKinds: ["event"] });
-		expect(reading.content.edges[0]).toMatchObject({ id: "one", kind: "http", label: "ask" });
-		expect(reading.connections[0]?.joins.map((edge) => edge.id)).toEqual(["one"]);
-		expect(reading.allConnections[0]?.joins.map((edge) => edge.id)).toEqual(["one", "two"]);
+		const reading = projectModel(model, null, null, { hideKinds: ["http"] });
+		expect(reading.content.edges[0]).toMatchObject({ id: "two", kind: "event", label: "tell" });
+		expect(reading.content.edges[0]).not.toHaveProperty("twoWay");
+		expect(reading.connections[0]?.joins.map((edge) => edge.id)).toEqual(["two"]);
+		expect(reading.allConnections[0]?.joins.map((edge) => edge.id)).toEqual(["one", "two", "back"]);
+	});
+});
+
+describe("two-way lines", () => {
+	const reached = [{ id: "open" }, { id: "p", parent: "open" }, { id: "q", parent: "open" }];
+
+	test("distinct comparison states stay separate lines", () => {
+		const base = modelOf([{ id: "a" }, { id: "b" }], [{ id: "there", from: "a", to: "b" }]);
+		const after = modelOf(
+			[{ id: "a" }, { id: "b" }],
+			[
+				{ id: "there", from: "a", to: "b" },
+				{ id: "back", from: "b", to: "a" },
+			],
+		);
+		const reading = projectModel(after, null, null, {}, base);
+		expect(lines(reading).toSorted()).toEqual(["a>b", "b>a"]);
+		expect(reading.content.edges.some((edge) => edge.twoWay === true)).toBe(false);
+	});
+
+	test("a door folds only when both directions end on the same two drawn parts", () => {
+		const reading = projectModel(
+			modelOf(
+				[...reached, { id: "one" }, { id: "both" }],
+				[
+					{ id: "out", from: "p", to: "one" },
+					{ id: "in", from: "one", to: "p" },
+					{ id: "from-p", from: "p", to: "both" },
+					{ id: "from-q", from: "q", to: "both" },
+					{ id: "back", from: "both", to: "q" },
+				],
+			),
+			"open",
+		);
+		const twoWay = reading.content.edges.filter((edge) => edge.twoWay === true);
+		expect(lines(reading).toSorted()).toEqual(["both>q", "open>both", "p>one"]);
+		expect(twoWay.map((edge) => `${edge.from}>${edge.to}`)).toEqual(["p>one"]);
+	});
+});
+
+describe("the words on a joined line", () => {
+	const closed = (card: string, parts: string[]) => [
+		{ id: card },
+		...parts.map((id) => ({ id, name: `the ${id}`, parent: card })),
+	];
+	const model = modelOf(
+		[
+			...closed("user", []),
+			...closed("store", ["s1", "s2", "s3", "s4"]),
+			...closed("worker", ["w1", "w2", "w3"]),
+			...closed("sink", []),
+			...closed("loud", []),
+			...closed("quiet", []),
+			...closed("bare", []),
+			...closed("void", []),
+			...closed("reader", []),
+		],
+		[
+			{ id: "shared-1", from: "reader", to: "s1", label: "reads" },
+			{ id: "shared-2", from: "reader", to: "s2", label: "reads" },
+			{ id: "to-1", from: "user", to: "s1", label: "one" },
+			{ id: "to-2", from: "user", to: "s3", label: "two" },
+			{ id: "to-3", from: "user", to: "s3" },
+			{ id: "to-4", from: "user", to: "s2" },
+			{ id: "to-5", from: "user", to: "s4" },
+			{ id: "from-1", from: "w1", to: "sink", label: "one" },
+			{ id: "from-2", from: "w3", to: "sink" },
+			{ id: "labels-1", from: "loud", to: "quiet", label: "first" },
+			{ id: "labels-2", from: "loud", to: "quiet", label: "second" },
+			{ id: "labels-3", from: "loud", to: "quiet", label: "third" },
+			{ id: "labels-4", from: "loud", to: "quiet", label: "first" },
+			{ id: "plain-1", from: "bare", to: "void" },
+			{ id: "plain-2", from: "bare", to: "void" },
+		],
+	);
+
+	test("say the one shared label, then the parts reached, then the first label", () => {
+		const said = new Map(
+			projectModel(model).content.edges.map((edge) => [`${edge.from}>${edge.to}`, edge.label]),
+		);
+		expect(said.get("reader>store")).toBe("reads");
+		expect(said.get("user>store")).toBe("to the s3, the s1 +2");
+		expect(said.get("worker>sink")).toBe("from the w1, the w3");
+		expect(said.get("loud>quiet")).toBe("first +2");
+		expect(said.get("bare>void")).toBeUndefined();
+	});
+
+	test("on a two-way line, name the card with more parts reached", () => {
+		const [line] = projectModel(
+			modelOf(
+				[...closed("left", ["l1"]), ...closed("right", ["r1", "r2", "r3"])],
+				[
+					{ id: "there", from: "right", to: "l1", label: "ask" },
+					{ id: "back", from: "l1", to: "r1" },
+					{ id: "again", from: "l1", to: "r2" },
+					{ id: "more", from: "l1", to: "r3" },
+				],
+			),
+		).content.edges;
+		expect(line?.label).toBe("with the r1, the r2 +1");
+	});
+
+	test("name a part on a line that ends on the frame", () => {
+		const reading = projectModel(
+			modelOf(
+				[{ id: "open" }, { id: "p", parent: "open" }, { id: "q", parent: "open" }, { id: "door" }],
+				[
+					{ id: "one", from: "p", to: "door" },
+					{ id: "two", from: "q", to: "door" },
+				],
+			),
+			"open",
+		);
+		expect(reading.content.edges[0]).toMatchObject({ from: "open", label: "from p, q" });
+	});
+
+	test("skip an end that the content does not hold", () => {
+		const reading = projectModel(
+			modelOf(
+				[{ id: "a" }, { id: "b" }],
+				[
+					{ id: "known", from: "a", to: "b", label: "first" },
+					{ id: "gone", from: "a", to: "removed", label: "second" },
+				],
+			),
+		);
+		expect(reading.connections.map(({ line }) => line.id)).toEqual(["known", "gone"]);
 	});
 });
 
@@ -166,6 +293,33 @@ describe("a crowded picture", () => {
 					{ id: "stronger", from: "s", to: "u" },
 					{ id: "there", from: "t", to: "u" },
 					{ id: "back", from: "u", to: "t" },
+					...filler,
+				],
+			),
+		);
+		expect(reading.implied.map(({ line }) => line.id)).toEqual(["weak"]);
+	});
+
+	test("a two-way line leaves only with a path each way, and leads both ways", () => {
+		const filler = Array.from({ length: 20 }, (_, index) => ({
+			id: `filler${index}`,
+			from: `x${index}`,
+			to: `y${index}`,
+		}));
+		const cards = [...new Set(filler.flatMap((edge) => [edge.from, edge.to]))].map((id) => ({
+			id,
+		}));
+		const reading = projectModel(
+			modelOf(
+				[...cards, { id: "s" }, { id: "t" }, { id: "u" }, { id: "x" }],
+				[
+					{ id: "there", from: "s", to: "t" },
+					{ id: "back", from: "t", to: "s" },
+					{ id: "out", from: "s", to: "u" },
+					{ id: "on", from: "u", to: "t" },
+					{ id: "strong", from: "s", to: "x" },
+					{ id: "stronger", from: "s", to: "x" },
+					{ id: "weak", from: "t", to: "x" },
 					...filler,
 				],
 			),

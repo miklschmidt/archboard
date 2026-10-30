@@ -1,8 +1,7 @@
 //! What a card draws when the picture is seen from far away: a tile at its top
-//! left that holds its kind's glyph large, and beside it its name and its code
-//! path, or the start of its responsibility when it has no path, sized to the
-//! room its box holds. Both views are drawn here together, as one shared
-//! element transition (TASK-428).
+//! left that holds its kind's glyph large, and beside it its name, its code path
+//! and the start of its responsibility in the room its box holds. Both views are
+//! drawn here together, as one shared element transition (TASK-428).
 
 use crate::drawing::{DiagramFont, NodeFacts, TextRole, TextRun};
 use crate::geometry::{Point, Rect};
@@ -32,7 +31,8 @@ const TILE: f64 = 52.0;
 const NAME_MAX: u32 = 20;
 const NAME_MIN: u32 = 15;
 const NAME_LINES: usize = 2;
-const GIST_LINES: usize = 2;
+/// The most lines of a responsibility a far card draws, however tall its box.
+const GIST_LINES: usize = 8;
 const GIST_SHARE: f64 = 0.68;
 const GIST_MIN: f64 = 13.0;
 /// A far path's size: 9 px on a screen at the lowest scale a reading lands at.
@@ -40,40 +40,30 @@ const PATH_SIZE: f64 = 15.0;
 const PATH_LINE: f64 = 1.2;
 const MARK_SCALE: f64 = 1.2;
 
-/// What a far card says under its name.
-#[derive(Clone, Copy)]
-enum Under<'a> {
+/// What a far card can say under its name.
+#[derive(Clone, Copy, Default)]
+struct Under<'a> {
     /// Where its code lives, cut to its tail.
-    Path(&'a str),
+    path: Option<&'a str>,
     /// The start of its responsibility.
-    Gist(&'a str),
+    gist: Option<&'a str>,
 }
 
-/// A card's name and gist, broken into lines and sized.
+/// A card's name, path and gist, broken into lines and sized.
 struct Stack {
     name_size: f64,
     names: Vec<String>,
     /// Whether the name keeps all its words, whole, on its lines.
     kept: bool,
+    path: Option<String>,
     gist_size: f64,
-    gist_face: DiagramFont,
-    gist_line: f64,
     gists: Vec<String>,
     height: f64,
 }
 
-/// What to try, in order: a name as large as it can be with a gist as long as
-/// it can be, the gist dropped last.
-fn attempts() -> Vec<(f64, usize)> {
-    let sizes: Vec<f64> = (NAME_MIN..=NAME_MAX).rev().map(f64::from).collect();
-    let mut tried = Vec::new();
-    for size in &sizes {
-        for gist_lines in (1..=GIST_LINES).rev() {
-            tried.push((*size, gist_lines));
-        }
-    }
-    tried.extend(sizes.iter().map(|size| (*size, 0)));
-    tried
+/// The sizes a far name can take, the largest first.
+fn name_sizes() -> impl Iterator<Item = f64> {
+    (NAME_MIN..=NAME_MAX).rev().map(f64::from)
 }
 
 /// The words of a text, split at white space.
@@ -148,62 +138,57 @@ pub(crate) fn far_name_width(name: &str, emphasis: f64) -> f64 {
     EDGE + TILE + EDGE + widest + END
 }
 
-/// A card's words at one name size, broken to the room they have.
-fn stack_at(
-    name: &str,
-    under: Option<Under<'_>>,
-    size: f64,
-    gist_lines: usize,
-    room: f64,
-) -> Stack {
+/// A card's words at one name size, broken to the room they have: the name, the
+/// path, and as much of the gist as the height holds below them.
+fn stack_at(name: &str, under: Under<'_>, size: f64, room: f64, height: f64) -> Stack {
     let names = break_lines(name, CARD_TITLE_FONT, size, room, NAME_LINES);
-    let note_size = js::js_max(GIST_MIN, js::round(size * GIST_SHARE));
-    let (gist_size, gist_face, gist_line, gists) = match under {
-        Some(Under::Path(path)) if gist_lines > 0 => (
-            PATH_SIZE,
-            CARD_PATH_FONT,
-            PATH_LINE,
-            vec![measure::keep_tail(path, CARD_PATH_FONT, PATH_SIZE, room)],
-        ),
-        Some(Under::Gist(gist)) if gist_lines > 0 => (
-            note_size,
-            CARD_NOTE_FONT,
-            GIST_LINE,
-            break_lines(gist, CARD_NOTE_FONT, note_size, room, gist_lines),
-        ),
-        _ => (note_size, CARD_NOTE_FONT, GIST_LINE, Vec::new()),
+    let path = under
+        .path
+        .map(|path| measure::keep_tail(path, CARD_PATH_FONT, PATH_SIZE, room));
+    let above = names.len() as f64 * size * NAME_LINE
+        + path
+            .as_ref()
+            .map_or(0.0, |_| GIST_GAP + PATH_SIZE * PATH_LINE);
+    let gist_size = js::js_max(GIST_MIN, js::round(size * GIST_SHARE));
+    let gist_room = |lines: usize| GIST_GAP + lines as f64 * gist_size * GIST_LINE;
+    let most = (1..=GIST_LINES)
+        .rev()
+        .find(|lines| above + gist_room(*lines) <= height);
+    let gists = match (under.gist, most) {
+        (Some(gist), Some(most)) => break_lines(gist, CARD_NOTE_FONT, gist_size, room, most),
+        _ => Vec::new(),
     };
-    let height = names.len() as f64 * size * NAME_LINE
-        + if gists.is_empty() {
-            0.0
-        } else {
-            GIST_GAP + gists.len() as f64 * gist_size * gist_line
-        };
     Stack {
         name_size: size,
         kept: names.join(" ") == name,
         names,
+        path,
         gist_size,
-        gist_face,
-        gist_line,
+        height: above
+            + if gists.is_empty() {
+                0.0
+            } else {
+                gist_room(gists.len())
+            },
         gists,
-        height,
     }
 }
 
-/// A card's name and gist sized to the room its box holds.
-fn settle(name: &str, under: Option<Under<'_>>, room: f64, height: f64, emphasis: f64) -> Stack {
+/// A card's words sized to the room its box holds: the name as large as it can
+/// be with its path, and the path dropped last.
+fn settle(name: &str, under: Under<'_>, room: f64, height: f64, emphasis: f64) -> Stack {
     let whole = words_of(name).join(" ");
-    for (size, gist_lines) in attempts() {
-        if under.is_none() && gist_lines > 0 {
-            continue;
-        }
-        let stack = stack_at(&whole, under, size + emphasis, gist_lines, room);
-        if stack.kept && stack.height <= height {
-            return stack;
-        }
-    }
-    stack_at(&whole, None, f64::from(NAME_MIN) + emphasis, 0, room)
+    let fitting = |under: Under<'_>| {
+        name_sizes()
+            .map(|size| stack_at(&whole, under, size + emphasis, room, height))
+            .find(|stack| stack.kept && stack.height <= height)
+    };
+    fitting(under)
+        .or_else(|| fitting(Under::default()))
+        .unwrap_or_else(|| {
+            let size = f64::from(NAME_MIN) + emphasis;
+            stack_at(&whole, Under::default(), size, room, height)
+        })
 }
 
 /// One line of words as a run, from the left of the line's top: its baseline
@@ -220,20 +205,22 @@ fn run(text: &str, at: Point, size: f64, step: f64, face: DiagramFont, role: Tex
     }
 }
 
-/// A stack's runs, the name's lines and then the gist's, from one top.
+/// A stack's runs, the name's lines, the path and the gist's lines, from one top.
 fn runs_of(stack: &Stack, x: f64, top: f64) -> Vec<TextRun> {
     let name_step = stack.name_size * NAME_LINE;
-    let gist_step = stack.gist_size * stack.gist_line;
-    let gist_top = top + stack.names.len() as f64 * name_step + GIST_GAP;
+    let mut below = top + stack.names.len() as f64 * name_step;
     let mut runs: Vec<TextRun> = stack
         .names
         .iter()
         .enumerate()
         .map(|(index, text)| {
-            let line_top = top + index as f64 * name_step;
+            let at = Point {
+                x,
+                y: top + index as f64 * name_step,
+            };
             run(
                 text,
-                Point { x, y: line_top },
+                at,
                 stack.name_size,
                 NAME_LINE,
                 CARD_TITLE_FONT,
@@ -241,14 +228,31 @@ fn runs_of(stack: &Stack, x: f64, top: f64) -> Vec<TextRun> {
             )
         })
         .collect();
+    if let Some(path) = &stack.path {
+        below += GIST_GAP;
+        let at = Point { x, y: below };
+        runs.push(run(
+            path,
+            at,
+            PATH_SIZE,
+            PATH_LINE,
+            CARD_PATH_FONT,
+            TextRole::Note,
+        ));
+        below += PATH_SIZE * PATH_LINE;
+    }
+    let gist_step = stack.gist_size * GIST_LINE;
     runs.extend(stack.gists.iter().enumerate().map(|(index, text)| {
-        let line_top = gist_top + index as f64 * gist_step;
+        let at = Point {
+            x,
+            y: below + GIST_GAP + index as f64 * gist_step,
+        };
         run(
             text,
-            Point { x, y: line_top },
+            at,
             stack.gist_size,
-            stack.gist_line,
-            stack.gist_face,
+            GIST_LINE,
+            CARD_NOTE_FONT,
             TextRole::Note,
         )
     }));
@@ -330,9 +334,10 @@ pub(super) fn paint_card_views(
         };
     let stack = settle(
         &part.node.name,
-        gist_of(part.node.code_path.as_deref())
-            .map(Under::Path)
-            .or_else(|| gist_of(part.node.responsibility.as_deref()).map(Under::Gist)),
+        Under {
+            path: gist_of(part.node.code_path.as_deref()),
+            gist: gist_of(part.node.responsibility.as_deref()),
+        },
         room,
         rect.height - PAD_Y * 2.0,
         if part.kind == SubjectKind::Region {
@@ -341,8 +346,11 @@ pub(super) fn paint_card_views(
             0.0
         },
     );
-    let top = EDGE + js::js_max(0.0, (tile - stack.height) / 2.0);
-    let far = words_in(&runs_of(&stack, x, top), rect, &words);
+    let far = words_in(
+        &runs_of(&stack, x, (rect.height - stack.height) / 2.0),
+        rect,
+        &words,
+    );
     let near_chip = Place {
         x: near.chip_x,
         y: near.chip_y,
@@ -390,7 +398,10 @@ pub(super) fn paint_heading_views(
 ) -> Items {
     let stack = settle(
         name,
-        gist_of(summary).map(Under::Gist),
+        Under {
+            path: None,
+            gist: gist_of(summary),
+        },
         rect.width,
         rect.height - PAD_Y * 2.0,
         0.0,
@@ -412,39 +423,51 @@ mod tests {
 
     const ROOM: f64 = 254.0;
 
+    /// A card's far words in a box of one height.
+    fn far(path: &str, gist: Option<&str>, height: f64) -> Stack {
+        let under = Under {
+            path: Some(path),
+            gist,
+        };
+        settle("Run checks", under, ROOM, height - PAD_Y * 2.0, 0.0)
+    }
+
     #[test]
-    fn a_path_stands_in_for_the_gist_at_the_size_that_reads_from_far_away() {
-        let stack = settle(
-            "Run checks",
-            Some(Under::Path("src/checks.ts")),
-            ROOM,
-            52.0,
-            0.0,
+    fn a_far_card_keeps_its_name_its_path_and_the_gist_its_box_holds() {
+        let gist = "Checks the rules, outcomes, captures and commands from one author run, \
+            then reports every failure with the rule that named it and what to do next.";
+        let (short, tall) = (
+            far("src/checks.ts", Some(gist), 87.0),
+            far("src/checks.ts", Some(gist), 121.0),
         );
-        assert_eq!(stack.name_size, f64::from(NAME_MAX));
-        assert_eq!(stack.gist_size, PATH_SIZE);
-        assert_eq!(stack.gist_face, CARD_PATH_FONT);
-        assert_eq!(stack.gists, ["src/checks.ts"]);
+        assert_eq!(short.name_size, f64::from(NAME_MAX));
+        assert_eq!(short.path.as_deref(), Some("src/checks.ts"));
+        assert_eq!((short.gists.len(), tall.gists.len()), (1, 3));
+        assert!(tall.height <= 121.0 - PAD_Y * 2.0);
     }
 
     #[test]
     fn a_far_path_keeps_its_tail() {
         let path = "apps/web/src/ui/rules/semantic-board-canvas/camera/camera.ts";
-        let stack = settle("Run checks", Some(Under::Path(path)), ROOM, 52.0, 0.0);
-        assert!(stack.gists[0].ends_with("/camera.ts"), "{}", stack.gists[0]);
+        let stack = far(path, None, 72.0);
+        let kept = stack.path.expect("a path");
+        assert!(kept.ends_with("/camera.ts"), "{kept}");
     }
 
     #[test]
     fn two_lines_of_a_name_and_a_path_fit_a_card_with_one_line_of_note() {
         let stack = settle(
             "Drive walkthrough focus",
-            Some(Under::Path("src/focus.ts")),
+            Under {
+                path: Some("src/focus.ts"),
+                gist: Some("Drives the focus of a walkthrough."),
+            },
             200.0,
             87.0 - PAD_Y * 2.0,
             0.0,
         );
         assert_eq!(stack.name_size, f64::from(NAME_MAX));
         assert_eq!(stack.names.len(), 2);
-        assert_eq!(stack.gists.len(), 1);
+        assert!(stack.path.is_some());
     }
 }

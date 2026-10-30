@@ -185,27 +185,19 @@ function group(svg: string, id: string): string {
 		.join("\n");
 }
 
-test("canonical aggregates stay silent while retaining authored relationships and exact visibility", async () => {
+test("canonical aggregates say what they join while retaining authored relationships and exact visibility", async () => {
 	const reading = await readArchitectureModel(vault, undefined, undefined, { compare: false });
 	if (!reading.success) throw new Error(JSON.stringify(reading));
 	const authored = reading.relationships.filter((edge) => edge.from === "Shop#Gateway");
-	const root = projectModel(reading);
-	const aggregate = root.connections.find(({ line }) => line.id === "Shop#Dispatch")!;
-	expect(aggregate.line).toEqual({
-		id: "Shop#Dispatch",
-		from: "Shop#Gateway",
-		to: "Shop#Worker",
-		kind: "call",
-		order: 10,
-		emphasis: "normal",
-	});
-	expect([...aggregate.joins]).toEqual(authored);
-	expect(aggregate.joins.map((edge) => edge.label)).toEqual(["Dispatch request", "Second route"]);
 	const reverse = reading.relationships.find((edge) => edge.id === "Shop#Enter")!;
-	expect(root.connections.find(({ line }) => line.id === reverse.id)).toEqual({
-		line: { ...reverse, to: "Shop#Gateway" },
-		joins: [reverse],
-	});
+	const root = projectModel(reading);
+	const aggregate = root.connections.find(({ joins }) =>
+		joins.some((edge) => edge.id === "Shop#Dispatch"),
+	)!;
+	expect(aggregate.line).toMatchObject({ label: "with Handler", twoWay: true });
+	expect(aggregate.joins.map((edge) => edge.id).toSorted()).toEqual(
+		[...authored, reverse].map((edge) => edge.id).toSorted(),
+	);
 	expect(projectModel(reading, "Shop#Worker").connections).toEqual(root.connections);
 	expect(projectModel(reading, null, ["Shop#Gateway"]).connections).toEqual(root.connections);
 	const focused = projectModel(reading, null, ["Shop#Dispatch"]);
@@ -219,8 +211,8 @@ test("canonical aggregates stay silent while retaining authored relationships an
 	const picture = await render();
 	const texts = new dom.DOMParser()
 		.parseFromString(picture.svg, "image/svg+xml")
-		.querySelectorAll('[data-semantic-id="Shop#Dispatch"] text');
-	expect(texts).toHaveLength(0);
+		.querySelectorAll(`[data-semantic-id="${aggregate.line.id}"] text`);
+	expect([...texts].map((text) => text.textContent).join(" ")).toContain("with Handler");
 	expect(picture.leftOutLines).toBe(0);
 });
 

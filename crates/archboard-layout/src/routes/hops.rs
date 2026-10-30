@@ -244,16 +244,31 @@ pub(super) fn look_of(lines: &BTreeMap<String, LineLook>, id: &str) -> LineLook 
     })
 }
 
-/// The box an arrowhead is drawn in, when the route ends in a head on a
-/// straight piece: its last stretch of approach, and half as far to either side.
-fn arrowhead_box(edge: &DrawingEdge<EdgeFacts>, look: LineLook) -> Option<Rect> {
-    let Some(Segment::Line { to }) = edge.curve.segments.last().copied() else {
-        return None;
-    };
+/// The boxes a line's arrowheads are drawn in: one at its end, and one at its
+/// start when it runs both ways.
+fn arrowhead_boxes(edge: &DrawingEdge<EdgeFacts>, look: LineLook) -> Vec<Rect> {
     if look.arrowhead == Arrowhead::None {
-        return None;
+        return Vec::new();
     }
-    let from = segment_start(&edge.curve, edge.curve.segments.len() - 1);
+    let curve = &edge.curve;
+    let end = curve.segments.last().and_then(|last| match last {
+        Segment::Line { to } => Some((segment_start(curve, curve.segments.len() - 1), *to)),
+        Segment::Cubic { .. } => None,
+    });
+    let start = curve.segments.first().and_then(|first| match first {
+        Segment::Line { to } if edge.edge.two_way => Some((*to, curve.from)),
+        _ => None,
+    });
+    [end, start]
+        .into_iter()
+        .flatten()
+        .filter_map(|(from, to)| arrowhead_box(from, to))
+        .collect()
+}
+
+/// The box an arrowhead is drawn in, on a straight piece that runs to the head's
+/// tip: the last stretch of approach, and half as far to either side.
+fn arrowhead_box(from: Point, to: Point) -> Option<Rect> {
     let length = hypot(to.x - from.x, to.y - from.y);
     if length == 0.0 {
         return None;
@@ -314,16 +329,14 @@ fn keepouts_of(
         .edges
         .iter()
         .filter_map(|edge| edge.label.as_ref().map(|label| alone(label.bounds)));
-    let heads = drawing
-        .edges
-        .iter()
-        .enumerate()
-        .filter_map(|(index, edge)| {
-            arrowhead_box(edge, look_of(lines, &edge.edge.id)).map(|bounds| Keepout {
+    let heads = drawing.edges.iter().enumerate().flat_map(|(index, edge)| {
+        arrowhead_boxes(edge, look_of(lines, &edge.edge.id))
+            .into_iter()
+            .map(move |bounds| Keepout {
                 bounds,
                 edge_index: Some(index),
             })
-        });
+    });
     cards.chain(titles).chain(labels).chain(heads).collect()
 }
 

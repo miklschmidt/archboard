@@ -45,6 +45,7 @@ fn line_of(step: &Message, order: f64) -> Edge {
         label: Some(step.label.clone()),
         emphasis: Emphasis::Normal,
         traffic: None,
+        two_way: false,
     }
 }
 

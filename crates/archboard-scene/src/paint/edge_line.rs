@@ -137,6 +137,7 @@ pub(super) fn paint_edge_line(
             ink: ink.clone(),
         };
         line.marker = Some(id.clone());
+        line.start_marker = edge.two_way.then(|| id.clone());
         parts.push(vec![Item::Definitions {
             definitions: vec![Definition::Marker(arrowhead_marker(id, head, weight, &ink))],
         }]);
@@ -185,19 +186,23 @@ pub(super) fn paint_edge_words(
         None => Items::new(),
         Some(label) => {
             let mut parts = vec![slab_seat(label.bounds, PILL_RADIUS)];
-            for chip in label.chips() {
-                // A removed label's ghost; a label's shadow lies under the lines (`label_shadow`).
-                if standing == Some(Standing::Removed) {
-                    parts.push(slab_shadow(
-                        chip,
-                        PILL_RADIUS,
-                        Lift::Chip,
-                        palette,
-                        standing,
-                    ));
-                }
-                parts.push(slab(chip, &label_look(palette), palette, standing, None));
+            // A removed label's ghost; a label's shadow lies under the lines (`label_shadow`).
+            if standing == Some(Standing::Removed) {
+                parts.push(slab_shadow(
+                    label.bounds,
+                    PILL_RADIUS,
+                    Lift::Chip,
+                    palette,
+                    standing,
+                ));
             }
+            parts.push(slab(
+                label.bounds,
+                &label_look(palette),
+                palette,
+                standing,
+                None,
+            ));
             parts.push(paint_text_runs(
                 &label.measured.runs,
                 label.bounds,
@@ -221,21 +226,14 @@ pub(super) fn paint_edge_words(
 pub(super) fn label_shadow(routed: &Edge, palette: &Palette, standing: Option<Standing>) -> Items {
     match &routed.label {
         None => Items::new(),
-        Some(label) => lines(
-            label
-                .chips()
-                .map(|chip| {
-                    shadow_under(
-                        &routed.edge.id,
-                        chip,
-                        PILL_RADIUS,
-                        Lift::Chip,
-                        palette,
-                        standing,
-                        None,
-                    )
-                })
-                .collect(),
+        Some(label) => shadow_under(
+            &routed.edge.id,
+            label.bounds,
+            PILL_RADIUS,
+            Lift::Chip,
+            palette,
+            standing,
+            None,
         ),
     }
 }

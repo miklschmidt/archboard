@@ -28,6 +28,20 @@ test("a door lists its real endpoints, grouped by the child that reaches them", 
 	]);
 });
 
+test("a door lists a two-way line's relationships under the part that reaches it", () => {
+	const twoWay = {
+		...model,
+		relationships: [
+			{ id: "in", from: "door", to: "other", kind: "call", order: 0, emphasis: "normal" },
+			{ id: "out", from: "other", to: "door", kind: "call", order: 1, emphasis: "normal" },
+		],
+	} as unknown as Model;
+	const groups = doorEndpoints(projectModel(twoWay, "open"), "door");
+	expect(groups.map(({ part, edges }) => [part, edges.map((edge) => edge.id)])).toEqual([
+		["other", ["in", "out"]],
+	]);
+});
+
 test("a module that is no door lists nothing", () => {
 	expect(doorEndpoints(projectModel(model, "open"), "part")).toEqual([]);
 });

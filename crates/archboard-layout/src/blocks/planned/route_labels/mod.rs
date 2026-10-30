@@ -262,8 +262,6 @@ fn slot_index(
         height: label.height.unwrap_or(0.0),
     };
     let mut spans = index.private(edge, path);
-    // Every plate in a stack must meet its own line, not only the stack's envelope.
-    spans.retain(|span| !label.stacked || span.a.x == span.b.x);
     spans.sort_by(|a, b| {
         length(&[b.a, b.b])
             .total_cmp(&length(&[a.a, a.b]))
