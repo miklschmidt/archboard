@@ -133,4 +133,7 @@ test("fetch deepens a truncated archive without moving a checked-out archive HEA
 		revision: baseline.revision,
 	});
 	expect(git(clone, "rev-parse", "HEAD")).toBe(head);
+	expect(
+		await fetchArchitectureHistory(addressed, { ...destination, checkpoint: "f".repeat(40) }),
+	).toMatchObject({ success: false, code: "ARCHITECTURE_UNAVAILABLE", publication: "unavailable" });
 });

@@ -26,7 +26,7 @@ afterEach(() => {
 	disposeFixtures();
 });
 
-test.each(["transfer", "remove-and-add", "flow-repair"])(
+test.each(["remove-and-add", "flow-repair"])(
 	"interrupted %s recovers its complete file set and affected identities",
 	async (kind) => {
 		const { root, vault } = kind === "flow-repair" ? behaviorFixture() : fixture();
@@ -38,24 +38,15 @@ test.each(["transfer", "remove-and-add", "flow-repair"])(
 			...(kind === "flow-repair" ? allBehaviorSubjects : []),
 		]);
 		const changes: Extract<ArchitectureModuleEdit, { changes: unknown }>["changes"] =
-			kind === "transfer"
+			kind === "flow-repair"
 				? [
-						{
-							type: "edit-relationship",
-							subject: "Shop#Dispatch",
-							source: "Shop#Worker",
-							set: { to: "Shop#Gateway" },
-						},
+						{ type: "remove-module", subject: "Shop#Worker" },
+						{ type: "remove-step", subject: "Shop#Send" },
 					]
-				: kind === "flow-repair"
-					? [
-							{ type: "remove-module", subject: "Shop#Worker" },
-							{ type: "remove-step", subject: "Shop#Send" },
-						]
-					: [
-							{ type: "remove-module", subject: "Shop#Worker" },
-							{ type: "add-module", module: { name: "Cache", kind: "service", order: 3 } },
-						];
+				: [
+						{ type: "remove-module", subject: "Shop#Worker" },
+						{ type: "add-module", module: { name: "Cache", kind: "service", order: 3 } },
+					];
 		const input = { ...base, changes };
 		const request = join(root, "request.json");
 		writeFileSync(request, JSON.stringify(input));

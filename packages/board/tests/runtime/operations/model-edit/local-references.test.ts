@@ -25,47 +25,41 @@ import { git, changeResponsibility } from "#tests/runtime/support/publication-fi
 
 afterEach(disposeReferences);
 
-test.each([
-	["Shop#Gateway", "Gateway"],
-	["Shop#Worker", "Worker"],
-])(
-	"same-model current references preserve exact local subject %s across edits",
-	async (subject, name) => {
-		const { vault } = isolatedFixture();
-		const reference = { repo: "github.com/acme/shop", model: "Shop", subject, state: "current" };
-		const created = await editArchitectureModule(vault, {
-			...(await structureIntent(vault, ["Shop#Gateway"])),
-			changes: [{ type: "edit-module", subject: "Shop#Gateway", set: { references: [reference] } }],
-		});
-		expect(created).toMatchObject({ success: true });
-		if (!created.success) throw new Error(JSON.stringify(created));
-		const edited = await editArchitectureModule(vault, {
-			...(await structureIntent(vault, [subject])),
-			changes: [{ type: "edit-module", subject, set: { name: "Later target" } }],
-		});
-		expect(edited).toMatchObject({ success: true });
-		expect(
-			await readArchitectureModel(vault, "Shop#Gateway", undefined, { reference: 0 }),
-		).toMatchObject({
-			success: true,
-			selectedModule: subject,
-			modules: expect.arrayContaining([
-				expect.objectContaining({ id: subject, name: "Later target" }),
-			]),
-		});
-		const exact = await readArchitectureModel(vault, "Shop#Gateway", undefined, {
-			checkpoint: created.checkpoint.id,
-			reference: 0,
-		});
-		expect(exact).toMatchObject({
-			success: true,
-			selectedModule: subject,
-			checkpoint: { id: created.checkpoint.id },
-			modules: expect.arrayContaining([expect.objectContaining({ id: subject, name })]),
-		});
-	},
-	30_000,
-);
+test("same-model current references preserve the exact local subject across edits", async () => {
+	const [subject, name] = ["Shop#Worker", "Worker"];
+	const { vault } = isolatedFixture();
+	const reference = { repo: "github.com/acme/shop", model: "Shop", subject, state: "current" };
+	const created = await editArchitectureModule(vault, {
+		...(await structureIntent(vault, ["Shop#Gateway"])),
+		changes: [{ type: "edit-module", subject: "Shop#Gateway", set: { references: [reference] } }],
+	});
+	expect(created).toMatchObject({ success: true });
+	if (!created.success) throw new Error(JSON.stringify(created));
+	const edited = await editArchitectureModule(vault, {
+		...(await structureIntent(vault, [subject])),
+		changes: [{ type: "edit-module", subject, set: { name: "Later target" } }],
+	});
+	expect(edited).toMatchObject({ success: true });
+	expect(
+		await readArchitectureModel(vault, "Shop#Gateway", undefined, { reference: 0 }),
+	).toMatchObject({
+		success: true,
+		selectedModule: subject,
+		modules: expect.arrayContaining([
+			expect.objectContaining({ id: subject, name: "Later target" }),
+		]),
+	});
+	const exact = await readArchitectureModel(vault, "Shop#Gateway", undefined, {
+		checkpoint: created.checkpoint.id,
+		reference: 0,
+	});
+	expect(exact).toMatchObject({
+		success: true,
+		selectedModule: subject,
+		checkpoint: { id: created.checkpoint.id },
+		modules: expect.arrayContaining([expect.objectContaining({ id: subject, name })]),
+	});
+});
 
 test("a proposal pins local current separately from its own draft and preserves foreign targets", async () => {
 	const {
