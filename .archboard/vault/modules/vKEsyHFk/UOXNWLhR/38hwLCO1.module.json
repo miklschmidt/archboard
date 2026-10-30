@@ -1,0 +1,31 @@
+{
+  "order": 12000,
+  "name": "Picture source",
+  "kind": "function",
+  "responsibility": "Where a pane's pictures come from: the renderer this page installed at start, or the server's render route",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/picture-source.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#38hwLCO1",
+  "parent": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
+  "outgoing": [
+    {
+      "order": 17000,
+      "kind": "call",
+      "label": "the page's own renderer",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/picture-source.ts",
+        "symbol": "takePicturesFrom"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#1BAA71RA",
+      "to": "vKEsyHFk/UOXNWLhR#IJkVbMK2"
+    }
+  ]
+}

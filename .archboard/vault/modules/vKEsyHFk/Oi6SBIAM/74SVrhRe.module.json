@@ -1,0 +1,41 @@
+{
+  "order": 34000,
+  "name": "Presentation position",
+  "kind": "module",
+  "responsibility": "Addresses legacy and canonical panes through the existing presentation request and acknowledges only the requested arrived beat",
+  "description": "Canonical and legacy panes use the same position contract and request acknowledgement. A missing beat never reports arrival. A recording advances its own beat and voice follows accepted positions.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/services/panes/presentation.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/Oi6SBIAM#74SVrhRe",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 86000,
+      "kind": "call",
+      "label": "address the exact pane socket",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/presentation.ts",
+        "symbol": "sendBoardlessToPane"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#cIfMjqFT",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    }
+  ]
+}

@@ -12,7 +12,7 @@ use rustc_hash::FxHashMap;
 
 use crate::Graphviz;
 use crate::constants::CONTAINER_INSET;
-use crate::ecma::{abs, js_min};
+use crate::ecma::{abs, js_max, js_min};
 use crate::geometry::{Point, Rect, Side};
 use crate::placed::{PlacedBlock, PlacedEdge, PlacedNode};
 use crate::track::graphviz::{boxes_of, centres_of, numbers, output_of, polyline_points};
@@ -27,7 +27,7 @@ use super::leaves::{
     PORT, corner_header, hold_resized_children, leaves_of, pinned_leaf, settled_leaf,
 };
 use super::readback::LinedUp;
-use super::routing::routed;
+use super::routing::{Settling, routed};
 use super::tree::{Block, BlockId, BlockTree, Line, header_of};
 use super::walls::ranks;
 
@@ -105,6 +105,8 @@ pub(crate) struct CardLayout<'t> {
     pub(super) nodes: Vec<Node>,
     pub(super) edges: Vec<Edge>,
     pub(super) subgraphs: Vec<Sub>,
+    /// The card widths reserved for independent ports during this placement.
+    pub(super) port_widths: Map<String, f64>,
 }
 
 impl<'t> CardLayout<'t> {
@@ -152,6 +154,7 @@ impl<'t> CardLayout<'t> {
             nodes: Vec::new(),
             edges: Vec::new(),
             subgraphs,
+            port_widths: Map::default(),
         }
     }
 
@@ -185,7 +188,7 @@ impl<'t> CardLayout<'t> {
     }
 
     /// The size of a vendor node.
-    fn size_of(&self, name: &str) -> Size {
+    pub(super) fn size_of(&self, name: &str) -> Size {
         if let Some(title) = self.clusters.size_of(name) {
             return title;
         }
@@ -205,8 +208,9 @@ impl<'t> CardLayout<'t> {
             };
         }
         let card = &self.tree.cards[name];
+        let reserved = self.port_widths.get(name).copied().unwrap_or(0.0);
         Size {
-            width: card.width,
+            width: js_max(card.width, reserved),
             height: card.height,
         }
     }
@@ -299,23 +303,41 @@ impl<'t> CardLayout<'t> {
     /// What Graphviz refused the block's graph with, or answered unreadably.
     pub(crate) fn lay(&mut self, gv: &mut Engine<'_>) -> Result<Rc<Laid>, String> {
         let lined = self.lined(gv)?;
-        Ok(self.finish(lined))
+        self.finish(gv, lined)
     }
 
-    /// Route a graph that was already ranked and read, without parsing it twice.
-    pub(crate) fn finish(&self, lined: Lined) -> Rc<Laid> {
+    /// Route a graph that was already ranked and read, without parsing it
+    /// twice. A card too narrow for its independent ports takes the width they
+    /// need, and the block is ranked again, so a crowded block costs a solve
+    /// more and any other none.
+    ///
+    /// # Errors
+    ///
+    /// What Graphviz refused the block's graph with, or answered unreadably.
+    pub(crate) fn finish(
+        &mut self,
+        gv: &mut Engine<'_>,
+        mut lined: Lined,
+    ) -> Result<Rc<Laid>, String> {
+        let (tree, id, laid, insets) = (self.tree, self.id, self.laid, self.insets);
+        let (laid, left) = loop {
+            match routed(tree, id, laid, insets, &lined.placed, &Settling::First) {
+                Ok(done) => break done,
+                Err(widths) if self.reserve_ports(&widths) => lined = self.place(gv)?,
+                Err(_) => {
+                    let ports = Map::default();
+                    let again = Settling::Again {
+                        held: 0.0,
+                        ports: &ports,
+                    };
+                    break routed(tree, id, laid, insets, &lined.placed, &again)
+                        .expect("a routing that stands stops for no card");
+                }
+            }
+        };
         let Lined {
             placed, centres, ..
         } = lined;
-        let (laid, left) = routed(
-            self.tree,
-            self.id,
-            self.laid,
-            self.insets,
-            &placed,
-            0.0,
-            &Map::default(),
-        );
         let reroute = Reroute {
             block: self.id,
             insets: self.insets,
@@ -324,10 +346,10 @@ impl<'t> CardLayout<'t> {
             placed: RefCell::new(placed),
             centres,
         };
-        Rc::new(Laid {
+        Ok(Rc::new(Laid {
             reroute: Some(Rc::new(reroute)),
             ..laid
-        })
+        }))
     }
 
     /// The block ranked by Graphviz and lined up, its lines not yet routed:
@@ -339,6 +361,11 @@ impl<'t> CardLayout<'t> {
     /// What Graphviz refused the block's graph with, or answered unreadably.
     pub(crate) fn lined(&mut self, gv: &mut Engine<'_>) -> Result<Lined, String> {
         self.build();
+        self.place(gv)
+    }
+
+    /// Rank the built graph at its cards' current widths and line it up.
+    fn place(&mut self, gv: &mut Engine<'_>) -> Result<Lined, String> {
         let graph = self.graph();
         let answer = gv.render(&graph)?;
 
@@ -551,9 +578,12 @@ impl Reroute {
             laid,
             self.insets,
             &placed,
-            self.held,
-            ports,
+            &Settling::Again {
+                held: self.held,
+                ports,
+            },
         )
+        .expect("a routing that stands stops for no card")
         .0
     }
 }

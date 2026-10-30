@@ -1,0 +1,26 @@
+{
+  "order": 27001,
+  "name": "Architecture news",
+  "kind": "module",
+  "responsibility": "Carries canonical changes and writer activity to local readers",
+  "description": "Durable model receipts and external input changes reach the existing context publisher. Subject claims retain concurrent writers and their intent. Each event keeps its vault and model identity.",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/Oi6SBIAM#YXy1uQYC",
+  "parent": "vKEsyHFk/6E6hL0Zk#cuOguqkZ",
+  "formerNames": [
+    "Board news"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": []
+}

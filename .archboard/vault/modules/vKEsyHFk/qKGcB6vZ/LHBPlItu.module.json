@@ -1,0 +1,46 @@
+{
+  "order": 9001,
+  "name": "Inbound protocol router",
+  "kind": "module",
+  "responsibility": "Routes decoded child requests and notifications to their registered owners",
+  "groups": [
+    "child"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-app-server/src/runtime/operations/inbound-router.ts",
+    "symbol": "createInboundRouter"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+  "parent": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+  "formerNames": [
+    "Codex transport"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 26000,
+      "kind": "event",
+      "label": "tool calls and notifications, routed by thread",
+      "description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/dynamic-tools/routing.ts",
+        "symbol": "routeCoordinatorTool"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#xzGv4R2g",
+      "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
+    }
+  ]
+}

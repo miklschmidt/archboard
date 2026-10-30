@@ -1,0 +1,44 @@
+{
+  "order": 43000,
+  "name": "Cached fact reader",
+  "kind": "module",
+  "responsibility": "Reads permitted source files through a cache keyed by file content and creates disk or historical passes",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/code-intel/src/runtime/services/code-facts/reader.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/6E6hL0Zk#mR7wPSei",
+  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 121000,
+      "kind": "call",
+      "label": "select the adapters for each checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/services/code-facts/reader.ts",
+        "symbol": "readingsIn"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#ZKvJWd4O",
+      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
+    }
+  ]
+}

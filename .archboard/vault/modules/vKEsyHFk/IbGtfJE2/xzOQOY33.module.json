@@ -1,0 +1,28 @@
+{
+  "order": 10000,
+  "name": "Outcome checks",
+  "kind": "function",
+  "responsibility": "The verdicts that need no model: what the vault, the renders and the group reports actually say",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/skills/src/runtime/rules/outcomes/outcomes.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#xzOQOY33",
+  "parent": "vKEsyHFk/IbGtfJE2#hu0RfGwG",
+  "outgoing": [
+    {
+      "order": 47000,
+      "kind": "data",
+      "label": "the check kinds the suite names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/rules/outcomes/outcomes.ts",
+        "symbol": "CHECK_KINDS"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#PoidUOm3",
+      "to": "vKEsyHFk/IbGtfJE2#k8wziYS4"
+    }
+  ]
+}

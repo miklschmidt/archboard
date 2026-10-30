@@ -14,6 +14,7 @@
 		"./server": "./src/runtime/api/server.ts",
 		"./server-host": "./src/runtime/api/server-host.ts",
 		"./server-client": "./src/runtime/api/server-client.ts",
-		"./panes": "./src/runtime/api/panes.ts"
+		"./panes": "./src/runtime/api/panes.ts",
+		"./pane-messages": "./src/shared/api/pane-messages.ts"
 	}
 }

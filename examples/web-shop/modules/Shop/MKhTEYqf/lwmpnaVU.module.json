@@ -1,0 +1,33 @@
+{
+  "order": 2000,
+  "name": "Checkout API",
+  "kind": "service",
+  "responsibility": "Takes an order, charges it and confirms it",
+  "schemaVersion": 1,
+  "id": "Shop/MKhTEYqf#lwmpnaVU",
+  "formerNames": [
+    "Shop app"
+  ],
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "http",
+      "label": "reserve stock, and wait",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "Shop/5IZTN4RT#CfNtly46",
+      "to": "Shop/5IZTN4RT#4sZ8ZI9y"
+    },
+    {
+      "order": 2000,
+      "kind": "http",
+      "label": "release the stock",
+      "emphasis": "muted",
+      "id": "Shop/5IZTN4RT#lcChHpcr",
+      "to": "Shop/5IZTN4RT#svGQgXIM"
+    }
+  ]
+}

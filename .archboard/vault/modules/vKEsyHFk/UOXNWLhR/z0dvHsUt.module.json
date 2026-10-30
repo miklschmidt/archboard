@@ -1,0 +1,71 @@
+{
+  "order": 9000,
+  "name": "Drive walkthrough focus",
+  "kind": "function",
+  "responsibility": "Focus each narrative beat",
+  "description": "Maps beat subjects through the atlas to a focus rectangle and reports named subjects missing from the current view.",
+  "groups": [
+    "walkthrough"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+  "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
+  "outgoing": [
+    {
+      "order": 11000,
+      "kind": "data",
+      "label": "the step's focus",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-auto-fit.ts",
+        "symbol": "useAutoFit"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#ttcJkRoJ",
+      "to": "vKEsyHFk/UOXNWLhR#VcgeYlnZ"
+    },
+    {
+      "order": 25000,
+      "kind": "call",
+      "label": "subject boxes in the atlas",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+        "symbol": "subjectBox"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#pjGLTugH",
+      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6"
+    },
+    {
+      "order": 30000,
+      "kind": "call",
+      "label": "ends of named lines and steps, lines between named cards",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+        "symbol": "subjectOf"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#5oNIinxP",
+      "to": "vKEsyHFk/UOXNWLhR#ntOE7caV"
+    },
+    {
+      "order": 99000,
+      "kind": "call",
+      "label": "the region a walkthrough beat focuses",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+        "symbol": "unionRect"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#gPCozayF",
+      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
+    }
+  ]
+}

@@ -5,7 +5,7 @@
 
 import {
 	currentVariant,
-	type SemanticBoard,
+	type SemanticBoard as LegacyBoard,
 	type SemanticVariant,
 } from "@archboard/board/document";
 import type { DiagramTheme } from "@archboard/board/render-reply";
@@ -22,6 +22,11 @@ import {
 import type { VaultDiagnosticSchema } from "@archboard/board/policy";
 import type { z } from "zod";
 
+type Model = Extract<import("@archboard/board/model").ArchitectureModelRead, { success: true }>;
+type SemanticBoard = Omit<
+	LegacyBoard,
+	"schemaVersion" | "kind" | "level" | "createdAt" | "updatedAt" | "version"
+> & { version?: number; revision?: string; architecture?: Model };
 type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
 
 /** One render the harness attempted because a check asked for it. */
@@ -236,3 +241,5 @@ export {
 	type RenderAttempt,
 	type VideoAttempt,
 };
+
+export type { SemanticBoard as EvaluationArchitecture };

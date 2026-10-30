@@ -1,0 +1,167 @@
+{
+  "order": 3000,
+  "name": "Browser gateway",
+  "kind": "module",
+  "responsibility": "The one door a browser has into the workbench: snapshots out, admitted commands in, one lease per tab session, and every chat of a tab is carried out by the workhorse of the checkout the tab shows",
+  "description": "The gateway asks which checkout the chat's tab shows on every read and command, because the person can activate another one at any time. It hears the change and presents every chat of the tab again, with the workhorse of the new checkout. A lease taken before a switch is refused as link_changed. A command runs on the workhorse its lease was claimed for, and once it has run only that workhorse's own link is asked whether it still stands, so a switch meanwhile does not make its outcome unknown. A workhorse's approval terminal is retired once the chats that show its checkout have shown it, and a coordinator's once every chat of the tab has.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/services/gateway"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+  "parent": "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 8000,
+      "kind": "call",
+      "label": "the link of this tab session and the shown checkout",
+      "description": "readWorkhorseBinding derives the workhorse key, then calls options.threadLink.read(key). The key helper does not read the link.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-connections.ts",
+        "symbol": "readWorkhorseBinding"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#3C7aLx0q",
+      "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
+    },
+    {
+      "order": 14000,
+      "kind": "call",
+      "label": "edit the queue of the shown checkout's workhorse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/browser-gateway.ts",
+        "symbol": "add"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#FWJMAVKj",
+      "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn"
+    },
+    {
+      "order": 15000,
+      "kind": "call",
+      "label": "start the workhorse of the shown checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+        "symbol": "start"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#NALNPztL",
+      "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN"
+    },
+    {
+      "order": 21000,
+      "kind": "call",
+      "label": "edit the queue of the shown checkout's workhorse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/browser-gateway.ts",
+        "symbol": "add"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#EZEiVlsE",
+      "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn"
+    },
+    {
+      "order": 29000,
+      "kind": "call",
+      "label": "the workhorse of the shown checkout, built on first use",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/browser-gateway.ts",
+        "symbol": "workhorse"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#mK9SfZDk",
+      "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4"
+    },
+    {
+      "order": 31000,
+      "kind": "call",
+      "label": "the tab session of this connection",
+      "description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/browser-gateway.ts",
+        "symbol": "require"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#89ivSTaM",
+      "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
+    },
+    {
+      "order": 57000,
+      "kind": "call",
+      "label": "the workhorse of the shown checkout, built on first use",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/browser-gateway.ts",
+        "symbol": "workhorse"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#ENHiJpTb",
+      "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4"
+    },
+    {
+      "order": 67000,
+      "kind": "call",
+      "label": "the checkout the chat's tab shows, pinned on first read",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/gateway-binding.ts",
+        "symbol": "shownCheckoutOf"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#fVScKEoP",
+      "to": "vKEsyHFk/9ncuT5DP#hCKEBd5f"
+    },
+    {
+      "order": 69000,
+      "kind": "call",
+      "label": "the tab's live workhorses, for the page's list",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/projections/browser-state/owner-projection.ts",
+        "symbol": "readWorkhorseList"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#kUptUGCI",
+      "to": "vKEsyHFk/9ncuT5DP#ME7EbWl8"
+    },
+    {
+      "order": 71000,
+      "kind": "call",
+      "label": "the coordinator turns the shown conversation keeps",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/projections/browser-state/owner-projection.ts",
+        "symbol": "coordinatorTurnsShownIn"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#vScn8k62",
+      "to": "vKEsyHFk/9ncuT5DP#qTmIytbT"
+    },
+    {
+      "order": 94000,
+      "kind": "call",
+      "label": "start admitted voice session",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-connections.ts",
+        "symbol": "onBrowserDisconnect"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#IubzjsMw",
+      "to": "vKEsyHFk/9ncuT5DP#yt8fa9w3"
+    }
+  ]
+}

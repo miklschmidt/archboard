@@ -1,0 +1,15 @@
+{
+  "order": 3000,
+  "name": "Subject atlas",
+  "kind": "function",
+  "responsibility": "Records where every drawn node, relationship and region landed",
+  "description": "The geometry a reader's pointer is tested against, in viewBox units, so the picture and the inspector agree without a second measurement.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/rules/render/atlas.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#y8vuJJKu",
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "outgoing": []
+}

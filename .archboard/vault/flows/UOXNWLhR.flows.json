@@ -1,0 +1,1628 @@
+{
+  "schemaVersion": 1,
+  "id": "UOXNWLhR",
+  "name": "Board viewer",
+  "flows": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#hzYlFfAp",
+      "name": "A reader opens a card's board",
+      "participants": [
+        "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+        "vKEsyHFk/UOXNWLhR#2YI34Bnu",
+        "vKEsyHFk/UOXNWLhR#yUjSLnkw",
+        "vKEsyHFk/UOXNWLhR#bpT0We3s",
+        "vKEsyHFk/UOXNWLhR#TK7SUGoc",
+        "vKEsyHFk/UOXNWLhR#gIakrnWa",
+        "vKEsyHFk/UOXNWLhR#hc77pwzB",
+        "vKEsyHFk/UOXNWLhR#3KtX2jdA"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/UOXNWLhR#n32JCa7L",
+          "from": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+          "to": "vKEsyHFk/UOXNWLhR#2YI34Bnu",
+          "label": "the card picked, when it links down",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+            "symbol": "useDrillOpen"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#eKcu4Syq",
+          "kind": "decision",
+          "question": "Does the picked card link down?",
+          "alternatives": [
+            {
+              "label": "it links down",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#hxvIUswS",
+                  "from": "vKEsyHFk/UOXNWLhR#2YI34Bnu",
+                  "to": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
+                  "label": "where the link leads, asked once",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
+                    "symbol": "readTarget"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#X8DIQa8g",
+                  "from": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
+                  "to": "vKEsyHFk/UOXNWLhR#bpT0We3s",
+                  "label": "which vault each listed repository has",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+                    "symbol": "RepositoryPlacesContext"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#zngsvVks",
+                  "from": "vKEsyHFk/UOXNWLhR#bpT0We3s",
+                  "to": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
+                  "label": "the repositories it lists",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/state/semantic-board-canvas/repository-places.ts",
+                    "symbol": "RepositoryPlacesContext"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#XhcL7Nan",
+                  "kind": "decision",
+                  "question": "Does the link name a repository?",
+                  "alternatives": [
+                    {
+                      "label": "it names one",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#jY67brGD",
+                          "from": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
+                          "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
+                          "label": "this vault's repository, from its board list",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+                            "symbol": "semanticBoardListQuery"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#rPTJ3qWL",
+                          "from": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
+                          "to": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
+                          "label": "the listing, with its repository",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
+                            "symbol": "semanticBoardListQuery"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "it names none",
+                      "steps": []
+                    }
+                  ]
+                },
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#kQbTreOX",
+                  "from": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
+                  "to": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
+                  "label": "the vault the board is in, or why it cannot be read",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+                    "symbol": "placeOf"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#5dMmZaIi",
+                  "kind": "decision",
+                  "question": "Can the target board be read?",
+                  "note": "When nothing opens, the inspector beside the picture says why.",
+                  "alternatives": [
+                    {
+                      "label": "readable",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#3g4p69YC",
+                          "from": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
+                          "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
+                          "label": "the target board, in its vault",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+                            "symbol": "semanticBoardDocumentQuery"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#4AxKlNAx",
+                          "from": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
+                          "to": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
+                          "label": "the board's document",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
+                            "symbol": "semanticBoardDocumentQuery"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#inUvyM2C",
+                          "from": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
+                          "to": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
+                          "label": "the variant the link names, by a name it has or had",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+                            "symbol": "variantOf"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#73SmSd76",
+                          "from": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
+                          "to": "vKEsyHFk/UOXNWLhR#2YI34Bnu",
+                          "label": "the board and its variant, or why there is none",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
+                            "symbol": "readTarget"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#sECEHEzq",
+                          "kind": "decision",
+                          "question": "Is there a variant, with the card's picture still up?",
+                          "alternatives": [
+                            {
+                              "label": "open it",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/UOXNWLhR#azDstCp9",
+                                  "from": "vKEsyHFk/UOXNWLhR#2YI34Bnu",
+                                  "to": "vKEsyHFk/UOXNWLhR#gIakrnWa",
+                                  "label": "the board and the variant to open",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
+                                    "symbol": "onOpenDown"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/UOXNWLhR#PIcwiXJz",
+                                  "kind": "decision",
+                                  "question": "Is the board in another repository?",
+                                  "alternatives": [
+                                    {
+                                      "label": "another repository",
+                                      "steps": [
+                                        {
+                                          "id": "vKEsyHFk/UOXNWLhR#MRxifjOK",
+                                          "from": "vKEsyHFk/UOXNWLhR#gIakrnWa",
+                                          "to": "vKEsyHFk/UOXNWLhR#3KtX2jdA",
+                                          "label": "open it in that vault",
+                                          "kind": "sync",
+                                          "anchor": {
+                                            "repo": "github.com/miklschmidt/archboard",
+                                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-moves.ts",
+                                            "symbol": "open"
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "label": "this vault",
+                                      "steps": [
+                                        {
+                                          "id": "vKEsyHFk/UOXNWLhR#i2rMSHdr",
+                                          "from": "vKEsyHFk/UOXNWLhR#gIakrnWa",
+                                          "to": "vKEsyHFk/UOXNWLhR#hc77pwzB",
+                                          "label": "fly into the card, then open the board",
+                                          "kind": "sync",
+                                          "anchor": {
+                                            "repo": "github.com/miklschmidt/archboard",
+                                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-moves.ts",
+                                            "symbol": "into"
+                                          }
+                                        },
+                                        {
+                                          "id": "vKEsyHFk/UOXNWLhR#oLMJm9OH",
+                                          "from": "vKEsyHFk/UOXNWLhR#hc77pwzB",
+                                          "to": "vKEsyHFk/UOXNWLhR#gIakrnWa",
+                                          "label": "landed: open the board",
+                                          "kind": "return",
+                                          "anchor": {
+                                            "repo": "github.com/miklschmidt/archboard",
+                                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+                                            "symbol": "proceed"
+                                          }
+                                        },
+                                        {
+                                          "id": "vKEsyHFk/UOXNWLhR#t4PcndeY",
+                                          "from": "vKEsyHFk/UOXNWLhR#gIakrnWa",
+                                          "to": "vKEsyHFk/UOXNWLhR#3KtX2jdA",
+                                          "label": "open the board down",
+                                          "kind": "sync",
+                                          "anchor": {
+                                            "repo": "github.com/miklschmidt/archboard",
+                                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-moves.ts",
+                                            "symbol": "open"
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "label": "nothing to open",
+                              "steps": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "unlisted or not ready",
+                      "steps": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "no link",
+              "steps": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#kLbQ8AUu",
+      "name": "A flight carries the reader into a card",
+      "participants": [
+        "vKEsyHFk/UOXNWLhR#gIakrnWa",
+        "vKEsyHFk/UOXNWLhR#hc77pwzB",
+        "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+        "vKEsyHFk/UOXNWLhR#TK7SUGoc",
+        "vKEsyHFk/UOXNWLhR#IH0j4qQo",
+        "vKEsyHFk/UOXNWLhR#UCjVcfWj",
+        "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+        "vKEsyHFk/UOXNWLhR#3KtX2jdA"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/UOXNWLhR#f6rguFRY",
+          "from": "vKEsyHFk/UOXNWLhR#gIakrnWa",
+          "to": "vKEsyHFk/UOXNWLhR#hc77pwzB",
+          "label": "fly into the card, then open the board",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-moves.ts",
+            "symbol": "into"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#NcDotFDO",
+          "kind": "decision",
+          "question": "Can the pane fly: motion allowed, a card, a picture?",
+          "alternatives": [
+            {
+              "label": "it can",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#EmVmJcUl",
+                  "from": "vKEsyHFk/UOXNWLhR#hc77pwzB",
+                  "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+                  "label": "give up waiting for the picture after a moment",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+                    "symbol": "frameClock"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#sXXqUBYS",
+                  "from": "vKEsyHFk/UOXNWLhR#hc77pwzB",
+                  "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
+                  "label": "the picture of the board the card opens",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+                    "symbol": "semanticRenderQuery"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#4BYXw5mB",
+                  "from": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
+                  "to": "vKEsyHFk/UOXNWLhR#hc77pwzB",
+                  "label": "the picture, or none",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
+                    "symbol": "semanticRenderQuery"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#7zsyiGf9",
+                  "kind": "decision",
+                  "question": "Is that picture to hand within a moment?",
+                  "alternatives": [
+                    {
+                      "label": "to hand",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#bPspXroW",
+                          "from": "vKEsyHFk/UOXNWLhR#hc77pwzB",
+                          "to": "vKEsyHFk/UOXNWLhR#IH0j4qQo",
+                          "label": "where the board sits and where the camera goes",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+                            "symbol": "legInto"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#C3vz8dX4",
+                          "from": "vKEsyHFk/UOXNWLhR#IH0j4qQo",
+                          "to": "vKEsyHFk/UOXNWLhR#hc77pwzB",
+                          "label": "the flight, or none",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/rules/semantic-board-canvas/camera/dive.ts",
+                            "symbol": "legInto"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#3wtxVyRf",
+                          "kind": "decision",
+                          "question": "Is the card drawn?",
+                          "alternatives": [
+                            {
+                              "label": "drawn",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/UOXNWLhR#wtjkjy7Q",
+                                  "from": "vKEsyHFk/UOXNWLhR#hc77pwzB",
+                                  "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+                                  "label": "hold the rest, glide to the flight's start",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+                                    "symbol": "glide"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/UOXNWLhR#qbLnF7rB",
+                                  "from": "vKEsyHFk/UOXNWLhR#hc77pwzB",
+                                  "to": "vKEsyHFk/UOXNWLhR#UCjVcfWj",
+                                  "label": "put the board inside the card",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+                                    "symbol": "startDive"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/UOXNWLhR#Q6Iaz917",
+                                  "from": "vKEsyHFk/UOXNWLhR#hc77pwzB",
+                                  "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+                                  "label": "glide into the card",
+                                  "kind": "sync",
+                                  "note": "If something moves the camera off its course, the board opens the plain way.",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+                                    "symbol": "glide"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/UOXNWLhR#h6uIrh4P",
+                                  "from": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+                                  "to": "vKEsyHFk/UOXNWLhR#hc77pwzB",
+                                  "label": "the camera landed",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-board-camera.ts",
+                                    "symbol": "glide"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "label": "not drawn",
+                              "steps": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "label": "late",
+                      "steps": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "it cannot",
+              "steps": []
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#FDi2pdnU",
+          "from": "vKEsyHFk/UOXNWLhR#hc77pwzB",
+          "to": "vKEsyHFk/UOXNWLhR#gIakrnWa",
+          "label": "open the board the plain way",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+            "symbol": "proceed"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#sPZdeihL",
+          "from": "vKEsyHFk/UOXNWLhR#gIakrnWa",
+          "to": "vKEsyHFk/UOXNWLhR#3KtX2jdA",
+          "label": "open the board down",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-moves.ts",
+            "symbol": "open"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#h21SnbZx",
+      "name": "A walkthrough step is shown",
+      "participants": [
+        "vKEsyHFk/UOXNWLhR#aYC7if1N",
+        "vKEsyHFk/UOXNWLhR#LayJIvbq",
+        "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+        "vKEsyHFk/UOXNWLhR#ntOE7caV",
+        "vKEsyHFk/UOXNWLhR#UDkL7Tn6",
+        "vKEsyHFk/UOXNWLhR#VcgeYlnZ",
+        "vKEsyHFk/UOXNWLhR#D6ZnKISi"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/UOXNWLhR#L4rIRFIG",
+          "from": "vKEsyHFk/UOXNWLhR#aYC7if1N",
+          "to": "vKEsyHFk/UOXNWLhR#LayJIvbq",
+          "label": "open step, and any driven one",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+            "symbol": "useWalkthrough"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#tuBpZesC",
+          "from": "vKEsyHFk/UOXNWLhR#LayJIvbq",
+          "to": "vKEsyHFk/UOXNWLhR#aYC7if1N",
+          "label": "the step on screen",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-walkthrough.ts",
+            "symbol": "useWalkthrough"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#uUHCoV2b",
+          "from": "vKEsyHFk/UOXNWLhR#aYC7if1N",
+          "to": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+          "label": "the step's focus, once its picture is up",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-settled-focus.ts",
+            "symbol": "beatFocus"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#6cQgkVRu",
+          "from": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+          "to": "vKEsyHFk/UOXNWLhR#ntOE7caV",
+          "label": "ends of the lines and steps it names",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+            "symbol": "subjectOf"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#Wiuj6mgV",
+          "from": "vKEsyHFk/UOXNWLhR#ntOE7caV",
+          "to": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+          "label": "the subject, with its ends",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/rules/semantic-board-canvas/board/board-document.ts",
+            "symbol": "subjectOf"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#GveSrlLw",
+          "from": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+          "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6",
+          "label": "the box of each subject in the atlas",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+            "symbol": "subjectBox"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#bYwI5GDi",
+          "from": "vKEsyHFk/UOXNWLhR#UDkL7Tn6",
+          "to": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+          "label": "the box, or none",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/semantic-board-canvas/subjects/subjects.ts",
+            "symbol": "subjectBox"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#qthbaypO",
+          "kind": "decision",
+          "question": "Does the picture draw any subject of the step?",
+          "alternatives": [
+            {
+              "label": "some drawn",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#0MUcgN9i",
+                  "from": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+                  "to": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+                  "label": "focus their region, in the flow's frame",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+                    "symbol": "focusTarget"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "none drawn",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#WEGiHfv8",
+                  "from": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+                  "to": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+                  "label": "focus the whole picture, name what is missing",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+                    "symbol": "beatFocus"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#gGCGIAGB",
+          "kind": "decision",
+          "question": "Has the picture of the step's view arrived?",
+          "alternatives": [
+            {
+              "label": "arrived",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#r7xkwbnx",
+                  "from": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+                  "to": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+                  "label": "take the new focus",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+                    "symbol": "beatFocus"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "still on its way",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#n8f9PUuP",
+                  "from": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+                  "to": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+                  "label": "keep the last focus until it arrives",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+                    "symbol": "beatFocus"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#k0RvaW5p",
+          "from": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+          "to": "vKEsyHFk/UOXNWLhR#aYC7if1N",
+          "label": "what to light, where to look, what is missing",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+            "symbol": "beatFocus"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#Dox1BHOD",
+          "from": "vKEsyHFk/UOXNWLhR#aYC7if1N",
+          "to": "vKEsyHFk/UOXNWLhR#VcgeYlnZ",
+          "label": "fit until the camera is moved",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+            "symbol": "useAutoFit"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#TdyJ85TZ",
+          "kind": "decision",
+          "question": "Is the camera already on this step?",
+          "alternatives": [
+            {
+              "label": "no",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#N6zKTYiV",
+                  "from": "vKEsyHFk/UOXNWLhR#VcgeYlnZ",
+                  "to": "vKEsyHFk/UOXNWLhR#VcgeYlnZ",
+                  "label": "remember the reader's camera while presenting",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-auto-fit.ts",
+                    "symbol": "remember"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#zhEL5uIf",
+                  "from": "vKEsyHFk/UOXNWLhR#VcgeYlnZ",
+                  "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+                  "label": "glide to the step's focus",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-auto-fit.ts",
+                    "symbol": "glide"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "yes",
+              "steps": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#DVK0aLi6",
+      "name": "A reader works the picture with the pointer",
+      "participants": [
+        "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+        "vKEsyHFk/UOXNWLhR#FyxVdk20",
+        "vKEsyHFk/UOXNWLhR#UDkL7Tn6",
+        "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+        "vKEsyHFk/UOXNWLhR#2YI34Bnu"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/UOXNWLhR#p4AfDeNS",
+          "from": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+          "to": "vKEsyHFk/UOXNWLhR#FyxVdk20",
+          "label": "the pointer on the picture",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+            "symbol": "useDiagramGestures"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#Vt8QFmIQ",
+          "from": "vKEsyHFk/UOXNWLhR#FyxVdk20",
+          "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6",
+          "label": "what the press landed on",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-diagram-gestures.ts",
+            "symbol": "subjectAt"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#XqPDEArn",
+          "from": "vKEsyHFk/UOXNWLhR#UDkL7Tn6",
+          "to": "vKEsyHFk/UOXNWLhR#FyxVdk20",
+          "label": "the subject, or none",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/semantic-board-canvas/subjects/subjects.ts",
+            "symbol": "subjectAt"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#pwwo7wQS",
+          "from": "vKEsyHFk/UOXNWLhR#FyxVdk20",
+          "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+          "label": "stop a zoom or an ease where it is",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-diagram-gestures.ts",
+            "symbol": "stop"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#S4cg6X4J",
+          "kind": "decision",
+          "question": "What does the press become?",
+          "alternatives": [
+            {
+              "label": "a drag",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#y6vbsiDM",
+                  "kind": "loop",
+                  "condition": "for each pointer move once past the tolerance",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/UOXNWLhR#QG4cz88J",
+                      "from": "vKEsyHFk/UOXNWLhR#FyxVdk20",
+                      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+                      "label": "pan by the move",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-diagram-gestures.ts",
+                        "symbol": "panBy"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "a click",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#kqYv04Dk",
+                  "from": "vKEsyHFk/UOXNWLhR#FyxVdk20",
+                  "to": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+                  "label": "pick what the press landed on",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-diagram-gestures.ts",
+                    "symbol": "onSelect"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "a double-click on a card",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#rY5R9er5",
+                  "from": "vKEsyHFk/UOXNWLhR#FyxVdk20",
+                  "to": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+                  "label": "open the card's board",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-diagram-gestures.ts",
+                    "symbol": "openDown"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#AVgKoTkN",
+                  "from": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+                  "to": "vKEsyHFk/UOXNWLhR#2YI34Bnu",
+                  "label": "the card picked, when it links down",
+                  "kind": "sync",
+                  "note": "Goes on as 'A reader opens a card's board'.",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+                    "symbol": "useDrillOpen"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#p6VME8e5",
+      "name": "A wheel zooms the picture",
+      "participants": [
+        "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+        "vKEsyHFk/UOXNWLhR#ZTOokYub",
+        "vKEsyHFk/UOXNWLhR#ijZRg0FU",
+        "vKEsyHFk/UOXNWLhR#JYR55KwD",
+        "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/UOXNWLhR#pVc8fDE9",
+          "kind": "decision",
+          "question": "Is it a trackpad pinch, with Control held?",
+          "alternatives": [
+            {
+              "label": "a pinch",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#AWTCIneM",
+                  "from": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+                  "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU",
+                  "label": "zoom about the pointer, at once",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-board-camera.ts",
+                    "symbol": "zoomCameraAbout"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#jHrZOVwm",
+                  "from": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+                  "to": "vKEsyHFk/UOXNWLhR#JYR55KwD",
+                  "label": "write the camera as the hand's",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-board-camera.ts",
+                    "symbol": "createCameraStore"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "a turn of the wheel",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#hYiRKC2v",
+                  "from": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+                  "to": "vKEsyHFk/UOXNWLhR#ZTOokYub",
+                  "label": "ease a zoom about the pointer",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-board-camera.ts",
+                    "symbol": "zoomAt"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#KYZcxnmY",
+                  "kind": "decision",
+                  "question": "Reduced motion, or no frames to ease on?",
+                  "alternatives": [
+                    {
+                      "label": "yes",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#h8AMiOq6",
+                          "from": "vKEsyHFk/UOXNWLhR#ZTOokYub",
+                          "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU",
+                          "label": "zoom at once",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-motion.ts",
+                            "symbol": "zoomCameraAbout"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "no",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#10srh6JT",
+                          "kind": "loop",
+                          "condition": "for each frame while the camera still moves",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/UOXNWLhR#UaGHDEE3",
+                              "from": "vKEsyHFk/UOXNWLhR#ZTOokYub",
+                              "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+                              "label": "ask for the next frame",
+                              "kind": "sync",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-motion.ts",
+                                "symbol": "frameClock"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/UOXNWLhR#vBpeW7dI",
+                              "from": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+                              "to": "vKEsyHFk/UOXNWLhR#ZTOokYub",
+                              "label": "the frame's time",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-motion.ts",
+                                "symbol": "frameClock"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/UOXNWLhR#xOMzOZa2",
+                              "from": "vKEsyHFk/UOXNWLhR#ZTOokYub",
+                              "to": "vKEsyHFk/UOXNWLhR#ZTOokYub",
+                              "label": "step the ease, draw through the store",
+                              "kind": "self",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-motion.ts",
+                                "symbol": "tick"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#DhtKonhW",
+          "from": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+          "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+          "label": "rest timer, then one frame after zoom",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-board-camera.ts",
+            "symbol": "frameClock"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#CBMtXkZw",
+      "name": "A part picked elsewhere is brought into view",
+      "participants": [
+        "vKEsyHFk/UOXNWLhR#aYC7if1N",
+        "vKEsyHFk/UOXNWLhR#CDWaLOJ7",
+        "vKEsyHFk/UOXNWLhR#UDkL7Tn6",
+        "vKEsyHFk/UOXNWLhR#D6ZnKISi"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/UOXNWLhR#QOYelfhK",
+          "from": "vKEsyHFk/UOXNWLhR#aYC7if1N",
+          "to": "vKEsyHFk/UOXNWLhR#CDWaLOJ7",
+          "label": "the pick, and the picture's atlas",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+            "symbol": "useReveal"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#pqRyVgYO",
+          "kind": "decision",
+          "question": "Did the picture itself pick the part?",
+          "alternatives": [
+            {
+              "label": "by the reader's hand",
+              "steps": []
+            },
+            {
+              "label": "from a list, a search or an agent",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#0og3TyfA",
+                  "kind": "decision",
+                  "question": "Does a walkthrough or a panel already move the camera?",
+                  "alternatives": [
+                    {
+                      "label": "yes",
+                      "steps": []
+                    },
+                    {
+                      "label": "no",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#EAHhi8Ml",
+                          "from": "vKEsyHFk/UOXNWLhR#CDWaLOJ7",
+                          "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6",
+                          "label": "where the part is",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-reveal.ts",
+                            "symbol": "subjectBox"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#CU14Zwk0",
+                          "from": "vKEsyHFk/UOXNWLhR#UDkL7Tn6",
+                          "to": "vKEsyHFk/UOXNWLhR#CDWaLOJ7",
+                          "label": "its box, or none",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/clients/semantic-board-canvas/subjects/subjects.ts",
+                            "symbol": "subjectBox"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#5MlivVEU",
+                          "kind": "decision",
+                          "question": "Is the part already in view?",
+                          "alternatives": [
+                            {
+                              "label": "in view",
+                              "steps": []
+                            },
+                            {
+                              "label": "out of view",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/UOXNWLhR#E8JGNHxU",
+                                  "from": "vKEsyHFk/UOXNWLhR#CDWaLOJ7",
+                                  "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+                                  "label": "glide just far enough to show it",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-reveal.ts",
+                                    "symbol": "glide"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#4cmw9x2t",
+      "name": "A part is poked and lights what it is wired to",
+      "participants": [
+        "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+        "vKEsyHFk/UOXNWLhR#bofpU6mt",
+        "vKEsyHFk/UOXNWLhR#uPniwNFZ",
+        "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+        "vKEsyHFk/UOXNWLhR#t49irDl0",
+        "vKEsyHFk/UOXNWLhR#UqVsXH0L",
+        "vKEsyHFk/UOXNWLhR#WT3s42AE"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/UOXNWLhR#qKQU2ePh",
+          "from": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+          "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ",
+          "label": "the pick, and the part the pointer rests on",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+            "symbol": "useLighting"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#tERTCi66",
+          "from": "vKEsyHFk/UOXNWLhR#bofpU6mt",
+          "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ",
+          "label": "the row pointed at, and the trace",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-lighting.ts",
+            "symbol": "LightingInputs"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#gb8xG444",
+          "from": "vKEsyHFk/UOXNWLhR#uPniwNFZ",
+          "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+          "label": "wait for the pointer to rest, and for its grace",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-resting-part.ts",
+            "symbol": "frameClock"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#km51LPct",
+          "kind": "decision",
+          "question": "Does something else say what the picture is about?",
+          "alternatives": [
+            {
+              "label": "a step, a group or a leaving picture",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#UVDA58gJ",
+                  "from": "vKEsyHFk/UOXNWLhR#uPniwNFZ",
+                  "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ",
+                  "label": "stand down: light nothing",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-lighting.ts",
+                    "symbol": "standsDown"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "nothing else",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#qkjxrM89",
+                  "kind": "decision",
+                  "question": "Is a trace asked of the picked part?",
+                  "alternatives": [
+                    {
+                      "label": "a trace",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#OwUzSViV",
+                          "from": "vKEsyHFk/UOXNWLhR#uPniwNFZ",
+                          "to": "vKEsyHFk/UOXNWLhR#t49irDl0",
+                          "label": "how far each subject is",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-lighting.ts",
+                            "symbol": "reachOf"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#g7qiG0Cy",
+                          "from": "vKEsyHFk/UOXNWLhR#t49irDl0",
+                          "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ",
+                          "label": "the subjects, with their hops",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/rules/semantic-board-canvas/board/reach.ts",
+                            "symbol": "reachOf"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "no trace",
+                      "steps": []
+                    }
+                  ]
+                },
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#9VphxuuC",
+                  "from": "vKEsyHFk/UOXNWLhR#uPniwNFZ",
+                  "to": "vKEsyHFk/UOXNWLhR#UqVsXH0L",
+                  "label": "the relationships that light",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-sweep.ts",
+                    "symbol": "sweepLines"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#bAKR6fXt",
+          "from": "vKEsyHFk/UOXNWLhR#uPniwNFZ",
+          "to": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+          "label": "what is lit, and how strongly",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-lighting.ts",
+            "symbol": "useLighting"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#1lZkK1Ce",
+          "from": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+          "to": "vKEsyHFk/UOXNWLhR#WT3s42AE",
+          "label": "the relationships that are lit",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-viewer-marks.ts",
+            "symbol": "lightInk"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#8y13ofdf",
+      "name": "A replay draws a talk frame by frame",
+      "participants": [
+        "vKEsyHFk/yejBBUFY#aixSjfNe",
+        "vKEsyHFk/UOXNWLhR#qV7dcNI5",
+        "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+        "vKEsyHFk/UOXNWLhR#aYC7if1N"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/UOXNWLhR#B7t6AbnH",
+          "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+          "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5",
+          "label": "read the boards from the talk",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+            "symbol": "readBoardsFrom"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#rEMVUaSW",
+          "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+          "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+          "label": "install the stepped clock",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+            "symbol": "driveFramesFrom"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#SNxH5IuT",
+          "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+          "to": "vKEsyHFk/UOXNWLhR#aYC7if1N",
+          "label": "mount the viewer on the talk's board",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+            "symbol": "SemanticBoardStage"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#GwL4zQCz",
+          "kind": "loop",
+          "condition": "for each frame, the preroll first",
+          "steps": [
+            {
+              "id": "vKEsyHFk/UOXNWLhR#d1iquVJp",
+              "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+              "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+              "label": "advance to the frame's time",
+              "kind": "sync",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "symbol": "draw"
+              }
+            },
+            {
+              "id": "vKEsyHFk/UOXNWLhR#urWtDY15",
+              "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+              "to": "vKEsyHFk/yejBBUFY#aixSjfNe",
+              "label": "play the talk to this frame's step",
+              "kind": "self",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "symbol": "playTo"
+              }
+            },
+            {
+              "id": "vKEsyHFk/UOXNWLhR#0jnrsAdp",
+              "kind": "loop",
+              "condition": "until the pane shows the talk's board at its step",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#NP2VXtuV",
+                  "from": "vKEsyHFk/UOXNWLhR#aYC7if1N",
+                  "to": "vKEsyHFk/yejBBUFY#aixSjfNe",
+                  "label": "board, version and step on screen",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+                    "symbol": "onReading"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "vKEsyHFk/UOXNWLhR#XyXsOCuZ",
+              "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+              "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+              "label": "run the frame, stand animations at the clock",
+              "kind": "sync",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                "symbol": "draw"
+              }
+            },
+            {
+              "id": "vKEsyHFk/UOXNWLhR#hNwozhyx",
+              "kind": "decision",
+              "question": "Did anything move outside the clock, or read another board?",
+              "alternatives": [
+                {
+                  "label": "it did",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/UOXNWLhR#avHI5NZl",
+                      "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+                      "to": "vKEsyHFk/yejBBUFY#aixSjfNe",
+                      "label": "fail the frame",
+                      "kind": "self",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                        "symbol": "violationsOf"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "it did not",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/UOXNWLhR#oSCXYjlZ",
+                      "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
+                      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+                      "label": "let the browser draw once",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+                        "symbol": "draw"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#RYeM7bcW",
+      "name": "A new picture replaces the last",
+      "participants": [
+        "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+        "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+        "vKEsyHFk/UOXNWLhR#oF5Ib5A4",
+        "vKEsyHFk/UOXNWLhR#n5No6FUy",
+        "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/UOXNWLhR#3jHGoyNI",
+          "from": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+          "to": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+          "label": "carry the drawn picture in from the last",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+            "symbol": "usePictureTransition"
+          }
+        },
+        {
+          "id": "vKEsyHFk/UOXNWLhR#GPsWoR5K",
+          "kind": "decision",
+          "question": "How does the new picture arrive?",
+          "alternatives": [
+            {
+              "label": "cut to",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#69MNCrCe",
+                  "from": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+                  "to": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+                  "label": "put it up as it is",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+                    "symbol": "showPicture"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "carried on from the last",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#7zuhxBb9",
+                  "kind": "loop",
+                  "condition": "for each frame until the transition lands",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/UOXNWLhR#wZNHSY36",
+                      "from": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+                      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+                      "label": "ask for the next frame",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+                        "symbol": "frameClock"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/UOXNWLhR#bJLRGO5n",
+                      "from": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+                      "to": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+                      "label": "the frame's time",
+                      "kind": "return",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+                        "symbol": "frameClock"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "brought in part by part",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#ivspkqxJ",
+                  "kind": "decision",
+                  "question": "Is there a picture on the surface to leave?",
+                  "alternatives": [
+                    {
+                      "label": "there is",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#VmYHvt8k",
+                          "from": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+                          "to": "vKEsyHFk/UOXNWLhR#oF5Ib5A4",
+                          "label": "ghost the leaving picture",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+                            "symbol": "ghostPicture"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#GZTD3yyE",
+                          "from": "vKEsyHFk/UOXNWLhR#oF5Ib5A4",
+                          "to": "vKEsyHFk/UOXNWLhR#n5No6FUy",
+                          "label": "run the leaving copy's traffic on",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-departure.ts",
+                            "symbol": "runTraffic"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/UOXNWLhR#ZEEcXD7y",
+                          "from": "vKEsyHFk/UOXNWLhR#n5No6FUy",
+                          "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+                          "label": "animate on the picture clock",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-traffic.ts",
+                            "symbol": "PICTURE_CLOCK"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "there is none",
+                      "steps": []
+                    }
+                  ]
+                },
+                {
+                  "id": "vKEsyHFk/UOXNWLhR#UCkZ9KJ9",
+                  "kind": "loop",
+                  "condition": "for each frame until the entrance lands",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/UOXNWLhR#yJiwnobD",
+                      "from": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+                      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+                      "label": "ask for the next frame",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+                        "symbol": "frameClock"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/UOXNWLhR#uCCTns7x",
+                      "from": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+                      "to": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+                      "label": "the frame's time",
+                      "kind": "return",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+                        "symbol": "frameClock"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-// The narrated videos: one walkthrough recorded by `archboard semantic record`, narrated by the
+// The narrated videos: one walkthrough recorded by `archboard model record`, narrated by the
 // Codex voice, on a server that has the machine's Archboard Codex sign-in. The MP4 stays in the
 // scratch directory for a person to attach to the README's player: GitHub plays a video with
 // sound only from a user attachment, uploaded through its editor. The README's index thumbnail is
@@ -6,6 +6,8 @@
 
 import { existsSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
+
+import { ArchitectureCheckpointRetainSchema } from "@archboard/board/model";
 
 import { readTalk } from "@archboard/walkthrough/recorder";
 import { TALK_SAMPLE_RATE, type Talk } from "@archboard/walkthrough/talk";
@@ -21,8 +23,11 @@ import {
 	type MakeContext,
 	type Producer,
 	type TrackedVault,
+	type TakeServer,
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./kit.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
+import { readModel, modelResult } from "./model-authoring.ts";
 
 /** The lower-left 16:9 part of a 1920x1080 recording, where the step's caption sits. */
 const CAPTION_CROP: Crop = { x: 0, y: 360, width: 1280, height: 720 };
@@ -32,8 +37,8 @@ interface NarratedSpec {
 	/** The asset's name, which also names the MP4. */
 	readonly name: string;
 	readonly vault: TrackedVault;
-	readonly board: string;
-	readonly variant?: string;
+	/** A retained proposal, or omit to capture current architecture before recording. */
+	readonly checkpoint?: string;
 	readonly walkthrough: string;
 	/** The index thumbnail: the step it shows, a moment into it. */
 	readonly thumbnail?: { readonly file: string; readonly step: number };
@@ -85,23 +90,38 @@ function videoOf(spec: NarratedSpec): string {
 }
 
 /**
- * The CLI arguments that pick the walkthrough.
- * @param spec The video.
- * @returns The board, the variant and the walkthrough.
+ * Capture current architecture unless the recipe already names an immutable proposal.
+ * @param server The copied vault and its restored archive.
+ * @param spec The exact recording recipe.
+ * @returns The checkpoint that the recorder must read.
  */
-function walkthroughArguments(spec: NarratedSpec): readonly string[] {
-	return [
-		spec.board,
-		...(spec.variant === undefined ? [] : ["--variant", spec.variant]),
-		"--walkthrough",
-		spec.walkthrough,
-	];
+async function recordingCheckpoint(server: TakeServer, spec: NarratedSpec): Promise<string> {
+	if (spec.checkpoint !== undefined) return spec.checkpoint;
+	const model = await readModel(server);
+	const retained = ArchitectureCheckpointRetainSchema.parse(
+		modelResult(
+			await server.cli([
+				"model",
+				"retain",
+				"--operation-id",
+				crypto.randomUUID(),
+				"--writer",
+				"readme",
+				"--expect-revision",
+				model.revision.digest,
+				"--doing",
+				"Retain the narrated README reading",
+			]),
+		),
+	);
+	if (!retained.success) throw new Error(JSON.stringify(retained));
+	return retained.checkpoint.id;
 }
 
 /**
  * Record the walkthrough, or render the talk its last recording kept again, and cut what the README
  * shows from the video. A replay draws the frames again with today's renderer and spends no Codex
- * usage, since the voice and the board are in the kept talk. A new recording is made beside the kept
+ * usage, because the kept talk contains the voice and architecture. A new recording is made beside the kept
  * talk and replaces it only once it is whole, so a refused or failed recording keeps the old one.
  * @param spec The video.
  * @param context What the producer is given.
@@ -123,11 +143,14 @@ async function record(spec: NarratedSpec, context: MakeContext): Promise<void> {
 	await holding(server.stop, async () => {
 		await server.cli(
 			context.replay
-				? ["semantic", "replay", talk, "--out", video]
+				? ["model", "replay", talk, "--out", video]
 				: [
-						"semantic",
+						"model",
 						"record",
-						...walkthroughArguments(spec),
+						"--checkpoint",
+						await recordingCheckpoint(server, spec),
+						"--walkthrough",
+						spec.walkthrough,
 						"--theme",
 						"dark",
 						"--talk",
@@ -150,7 +173,6 @@ async function record(spec: NarratedSpec, context: MakeContext): Promise<void> {
  * @returns The producer.
  */
 function narratedProducer(spec: NarratedSpec): Producer {
-	const variant = spec.variant === undefined ? "" : ` (${spec.variant})`;
 	return {
 		kind: "narrated",
 		codex: true,
@@ -159,7 +181,7 @@ function narratedProducer(spec: NarratedSpec): Producer {
 		needs: ["chromium", "ffmpeg", "codex"],
 		plan: [
 			`Start an Archboard server over a copy of ${spec.vault} that uses this machine's Archboard Codex sign-in unless it is a --replay, which uses none.`,
-			`Record "${spec.walkthrough}" on "${spec.board}"${variant} with archboard semantic record --theme dark, narrated by the Codex voice; this spends Codex usage. With --replay, render the talk that the last recording kept again with archboard semantic replay instead, which spends none. The MP4 stays in the scratch directory, to attach to the README by hand with gh attach.`,
+			`Record "${spec.walkthrough}" from its exact retained canonical checkpoint with archboard model record --theme dark, narrated by the Codex voice; this spends Codex usage. With --replay, render the talk that the last recording kept again with archboard model replay instead, which spends none. The MP4 stays in the scratch directory, to attach to the README by hand with gh attach.`,
 			...(spec.thumbnail === undefined
 				? []
 				: [`Cut ${spec.thumbnail.file} from step ${spec.thumbnail.step + 1} and its caption.`]),

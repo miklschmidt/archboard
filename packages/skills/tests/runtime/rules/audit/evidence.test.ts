@@ -121,7 +121,7 @@ describe("file changes", () => {
 					item: {
 						id: "i1",
 						type: "file_change",
-						changes: [{ path: `${VAULT}/Flask JSON.semantic.json`, kind: "update" }],
+						changes: [{ path: `${VAULT}/flask.module.json`, kind: "update" }],
 						status: "in_progress",
 					},
 				},
@@ -130,7 +130,7 @@ describe("file changes", () => {
 					item: {
 						id: "i1",
 						type: "file_change",
-						changes: [{ path: `${VAULT}/Flask JSON.semantic.json`, kind: "update" }],
+						changes: [{ path: `${VAULT}/flask.module.json`, kind: "update" }],
 						status: "completed",
 					},
 				},
@@ -149,7 +149,7 @@ describe("file changes", () => {
 		);
 		// Started and completed are one change, not two.
 		expect(trace.fileChanges).toEqual([
-			{ path: `${VAULT}/Flask JSON.semantic.json`, kind: "update" },
+			{ path: `${VAULT}/flask.module.json`, kind: "update" },
 			{ path: `${RUN}/flask/notes.md`, kind: "add" },
 		]);
 		const verdict = writeGuardrail([], trace.fileChanges);
@@ -158,14 +158,13 @@ describe("file changes", () => {
 		// A file outside the vault is the author's business.
 		expect(writeGuardrail([], [trace.fileChanges[1]!]).passed).toBe(true);
 		expect(
-			writeGuardrail([], [{ path: `${VAULT}-backup/Flask JSON.semantic.json`, kind: "update" }])
-				.passed,
+			writeGuardrail([], [{ path: `${VAULT}-backup/flask.module.json`, kind: "update" }]).passed,
 		).toBe(true);
 	});
 });
 
 describe("what counts as a direct write", () => {
-	const board = `'${VAULT}/Flask JSON.semantic.json'`;
+	const board = `'${VAULT}/flask.module.json'`;
 	test.each([
 		[`bash -lc "python -m json.tool ${board} >/dev/null; echo json_exit:$?"`, true],
 		[`bash -lc "jq empty ${board} 2>&1; grep -n version ${board}"`, true],
@@ -188,10 +187,10 @@ describe("what counts as a direct write", () => {
 describe("write attempts", () => {
 	test("help and text searches are not write attempts; an invocation is", () => {
 		const doing =
-			'bash -lc \'archboard semantic edit "Flask JSON" --expect-version 3 --doing "restoring" < edit.json\'';
-		expect(classified("bash -lc 'archboard semantic edit --help'").write).toBe(false);
-		expect(classified("bash -lc 'archboard semantic new -h'").write).toBe(false);
-		expect(classified("bash -lc 'archboard help semantic edit'").write).toBe(false);
+			'bash -lc \'archboard model edit "Flask JSON" --expect-version 3 --doing "restoring" < edit.json\'';
+		expect(classified("bash -lc 'archboard model edit --help'").write).toBe(false);
+		expect(classified("bash -lc 'archboard model init -h'").write).toBe(false);
+		expect(classified("bash -lc 'archboard help model edit'").write).toBe(false);
 		expect(classified("bash -lc 'rg -n \"semantic edit\" ~/.agents/skills/archboard'").write).toBe(
 			false,
 		);
@@ -201,26 +200,26 @@ describe("write attempts", () => {
 		expect(classified(doing).write).toBe(true);
 		expect(
 			classified(
-				"/home/msc/.nix-profile/bin/bash -lc 'archboard semantic edit \"Flask JSON\" --expect-version 3'",
+				"/home/msc/.nix-profile/bin/bash -lc 'archboard model edit \"Flask JSON\" --expect-version 3'",
 			).write,
 		).toBe(true);
+		expect(classified("bash -lc 'VAULT_DIR=/v archboard model edit \"Flask\" --as X'").write).toBe(
+			true,
+		);
 		expect(
-			classified("bash -lc 'VAULT_DIR=/v archboard semantic branch \"Flask\" --as X'").write,
-		).toBe(true);
-		expect(
-			classified("bash -lc 'cd /flask && archboard semantic adopt \"Flask\" --variant X'").write,
+			classified("bash -lc 'cd /flask && archboard model edit \"Flask\" --variant X'").write,
 		).toBe(true);
 		const verdict = writeGuardrail([
-			"bash -lc 'archboard semantic edit --help'",
+			"bash -lc 'archboard model edit --help'",
 			doing,
-			"bash -lc 'archboard semantic branch \"Flask JSON\" --as X --expect-version 3'",
+			"bash -lc 'archboard model edit \"Flask JSON\" --as X --expect-version 3'",
 		]);
 		expect(verdict.passed).toBe(true);
 		expect(verdict.detail).toContain("1 write attempts lacked --doing");
 	});
 
 	test("a CLI read does not hide a direct mutation later in the same shell script", () => {
-		const command = `bash -lc 'archboard semantic show "Flask JSON"; rm "${VAULT}/Flask JSON.semantic.json"'`;
+		const command = `bash -lc 'archboard model read "Flask JSON"; rm "${VAULT}/flask.module.json"'`;
 		expect(classified(command).class).toBe("operation");
 		expect(writeGuardrail([command]).passed).toBe(false);
 		expect(
@@ -255,7 +254,7 @@ describe("reading the product is its own class, apart from the skill, Flask and 
 
 	test("the batch lives under the checkout, and a run reading its own world or records has read no product source", () => {
 		for (const script of [
-			`cat ${VAULT}/Flask\\ JSON.semantic.json`,
+			`cat ${VAULT}/flask.module.json`,
 			`ls ${WORLD}`,
 			`rg -n load_app ${CONTEXT.checkoutRoot}/src/flask/cli.py`,
 			`cat ${RUN}/snapshot/Flask_JSON.json`,
@@ -292,16 +291,13 @@ describe("evaluation-material exposure", () => {
 			);
 		}
 		expect(
-			classified(
-				"bash -lc 'cat ../../../2/world/flask/.archboard/vault/Flask\\ JSON.semantic.json'",
-			).exposure,
+			classified("bash -lc 'cat ../../../2/world/flask/.archboard/vault/flask.module.json'")
+				.exposure,
 		).toBe("other-run");
-		expect(
-			classified("bash -lc 'cat .archboard/vault/Flask\\ JSON.semantic.json'").exposure,
-		).toBeNull();
+		expect(classified("bash -lc 'cat .archboard/vault/flask.module.json'").exposure).toBeNull();
 		expect(classified(`bash -lc 'cat ${VAULT}/.archboard/config.yaml'`).exposure).toBeNull();
 		expect(
-			classified(`bash -lc 'VAULT_DIR=${VAULT} archboard semantic show "Flask JSON"'`).exposure,
+			classified(`bash -lc 'VAULT_DIR=${VAULT} archboard model read "Flask JSON"'`).exposure,
 		).toBeNull();
 		expect(classified("bash -lc 'rg wsgi_app src/flask/app.py'").exposure).toBeNull();
 		expect(

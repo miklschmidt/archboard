@@ -32,6 +32,7 @@ function noop(): void {}
 
 /** Inputs for the shell. */
 interface ShellProps {
+	/** The application supplies format-aware empty guidance. */
 	diagnostics?: ReactNode;
 	view: ShellView;
 	actions: ShellActions;

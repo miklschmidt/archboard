@@ -36,7 +36,7 @@ import {
 import { lockupMarkup } from "./lockup.ts";
 
 /** The board and the proposal the banner shows. */
-const BOARD = "Web shop";
+const MODEL = "Shop";
 const PROPOSAL = "Queued fulfilment";
 
 /** The banner's size. The README shows it at its full width, and dark through the colour scheme. */
@@ -123,18 +123,7 @@ body { position: relative; margin: 0; width: ${BANNER.width}px; height: ${BANNER
  */
 async function drawProposal(server: TakeServer, theme: Theme, work: string): Promise<string> {
 	const file = join(work, `drawing-${theme}.svg`);
-	await server.cli([
-		"semantic",
-		"render",
-		BOARD,
-		"--variant",
-		PROPOSAL,
-		"--no-legend",
-		"--theme",
-		theme,
-		"--out",
-		file,
-	]);
+	await server.cli(["model", "render", "--state", PROPOSAL, "--theme", theme, "--out", file]);
 	return readFileSync(file, "utf8");
 }
 
@@ -183,7 +172,7 @@ async function makeBanner(context: MakeContext): Promise<void> {
 			async () => browser.close(),
 			async () =>
 				inOrder(["dark", "light"] as const, async (theme) => {
-					context.say(`Drawing ${BOARD}'s ${PROPOSAL} proposal in ${theme}, beside the lockup.`);
+					context.say(`Drawing ${MODEL}'s ${PROPOSAL} proposal in ${theme}, beside the lockup.`);
 					const picture = join(work, `banner-${theme}.png`);
 					await photograph(browser, theme, await drawProposal(server, theme, work), picture);
 					await ffmpeg([
@@ -219,7 +208,7 @@ const banner: Producer = {
 	needs: ["chromium", "ffmpeg"],
 	plan: [
 		"Start an Archboard server over a copy of examples/web-shop.",
-		`Render ${BOARD}'s ${PROPOSAL} proposal against today in dark and light with archboard semantic render.`,
+		`Render ${MODEL}'s ${PROPOSAL} proposal against today in dark and light with archboard model render.`,
 		`Lay each SVG as a tilted sheet beside the lockup (the mark from lockup.ts and archboard in the display face, in theme.css's colours) on GitHub's ground for that colour mode, in Chromium at ${BANNER.width}x${BANNER.height} and ${PIXEL_RATIO} pixels per CSS pixel.`,
 		`Scale each picture down and encode it as a still WebP in docs/readme, and cut the dark banner's left 2:1 into the ${SOCIAL.width}x${SOCIAL.height} social card in docs/assets.`,
 	],

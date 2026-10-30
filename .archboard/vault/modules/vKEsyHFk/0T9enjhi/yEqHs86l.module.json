@@ -1,0 +1,97 @@
+{
+  "order": 60000,
+  "name": "Archive publication storage",
+  "kind": "module",
+  "responsibility": "Publishes and fetches complete retained architecture history",
+  "description": "Publication uses the batched archive reader to inspect complete records and actual ancestry. Explicit destinations, shallow-history refusal, and concurrent append recovery remain unchanged.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/store/model-publication.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/0T9enjhi#yEqHs86l",
+  "parent": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 162000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-publication.ts",
+        "symbol": "git"
+      },
+      "id": "vKEsyHFk/0T9enjhi#cLBlxUZe",
+      "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
+    },
+    {
+      "order": 163000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-publication.ts",
+        "symbol": "writeFileAtomic"
+      },
+      "id": "vKEsyHFk/0T9enjhi#Tay0NoqL",
+      "to": "vKEsyHFk/0T9enjhi#qTv7HuBw"
+    },
+    {
+      "order": 165000,
+      "kind": "dependency",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-publication.ts",
+        "symbol": "ArchitecturePublicationDestinationSchema"
+      },
+      "id": "vKEsyHFk/0T9enjhi#6v2wIOX0",
+      "to": "vKEsyHFk/0T9enjhi#ZLJy8ivl"
+    },
+    {
+      "order": 166000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-publication.ts",
+        "symbol": "archiveContext"
+      },
+      "id": "vKEsyHFk/0T9enjhi#GdViIM9f",
+      "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
+    },
+    {
+      "order": 180000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-publication.ts",
+        "symbol": "archiveContext"
+      },
+      "id": "vKEsyHFk/0T9enjhi#XCyLrwKb",
+      "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
+    }
+  ]
+}

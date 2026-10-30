@@ -1,0 +1,10 @@
+{
+  "order": 25000,
+  "name": "Run checks",
+  "kind": "module",
+  "responsibility": "What a run is held to and what it left behind: the rules, the verdicts that need no model, the pictures of every board, and the class of each command the author ran",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#hu0RfGwG",
+  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
+  "outgoing": []
+}

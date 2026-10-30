@@ -37,7 +37,7 @@ interface FakePane {
 /** An open the fake server has been asked for and has not answered. */
 interface HeldOpen {
 	readonly paneId: string;
-	readonly boardKey: string;
+	readonly boardKey: string | null;
 	readonly repository: string | null;
 	readonly answer: (outcome: OpenOutcome) => void;
 }
@@ -63,7 +63,7 @@ interface FakeShell {
 	listen: (listener: () => void) => () => void;
 	readonly panes: FakePane[];
 	readonly opens: HeldOpen[];
-	readonly unreachable: string[];
+	readonly unreachable: (string | null)[];
 	/** What the address bar handed back, once it has mounted. */
 	addressing: Addressing | null;
 	/** Re-render the application with what the panes show now. */
@@ -168,7 +168,11 @@ function fakeShell(
 			 * @param repository The repository it is in, or null for the pane's own.
 			 * @returns The outcome, once the test gives one.
 			 */
-			open: (paneId: string, boardKey: string, repository: string | null): Promise<OpenOutcome> =>
+			open: (
+				paneId: string,
+				boardKey: string | null,
+				repository: string | null,
+			): Promise<OpenOutcome> =>
 				new Promise<OpenOutcome>((resolve) => {
 					shell.opens.push({ paneId, boardKey, repository, answer: resolve });
 				}),

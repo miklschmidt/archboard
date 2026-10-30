@@ -1,0 +1,2069 @@
+{
+  "schemaVersion": 1,
+  "id": "9ncuT5DP",
+  "name": "Codex realtime voice",
+  "flows": [
+    {
+      "id": "vKEsyHFk/9ncuT5DP#tp4aDqct",
+      "name": "A typed message from a pane",
+      "participants": [
+        "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+        "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "vKEsyHFk/wAHh0HTa#ql0DevMk",
+        "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/9ncuT5DP#x54ozhG5",
+          "from": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+          "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "label": "start or steer command",
+          "kind": "sync",
+          "note": "the pane sends it over its socket with the command lease it holds",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-execution.ts",
+            "symbol": "createCommandExecutor"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#vX55DDYV",
+          "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "label": "check the lease, the readiness and the link target",
+          "kind": "self",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/server/operations/command/command-admission.ts",
+            "symbol": "createCommandAdmission"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#GWqxwew7",
+          "kind": "decision",
+          "question": "Does the pane hold the lease, on a link that stands?",
+          "alternatives": [
+            {
+              "label": "refused",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#yklBpneG",
+                  "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+                  "to": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+                  "label": "refusal: lease transferred, link changed, not ready",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-execution.ts",
+                    "symbol": "createCommandExecutor"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "admitted",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#xOXRZp1z",
+                  "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "label": "thread/read: is the workhorse idle or active?",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/server/services/actions/text-actions.ts",
+                    "symbol": "threadRead"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#1R2ZA4zt",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+                  "label": "request thread/read",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "symbol": "requestDecoded"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#tRcBpEcU",
+                  "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+                  "to": "vKEsyHFk/vKEsyHFk#xr1MHYE7",
+                  "label": "JSON-RPC frame over stdio",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/clients/transport.ts",
+                    "symbol": "createFrameWriter"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#cZXGs8Br",
+                  "from": "vKEsyHFk/vKEsyHFk#xr1MHYE7",
+                  "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+                  "label": "the thread and its status",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/operations/request-settlement.ts",
+                    "symbol": "settleDelivered"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#iKOHetA7",
+                  "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "label": "decoded response",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "symbol": "requestDecoded"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#cgdkpjde",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+                  "label": "thread status",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/server/services/actions/text-actions.ts",
+                    "symbol": "threadRead"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#zUwAs98f",
+                  "kind": "decision",
+                  "question": "Does the thread's status fit the command?",
+                  "alternatives": [
+                    {
+                      "label": "does not fit",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#naaTp5r2",
+                          "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+                          "to": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+                          "label": "not delivered: wrong status for a start or a steer",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/server/services/actions/text-actions.ts",
+                            "symbol": "createServerCanonicalTextActions"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "fits",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#ENQkDXpX",
+                          "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+                          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                          "label": "turn/start when idle, turn/steer when active, with context",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/server/services/actions/text-actions.ts",
+                            "symbol": "turnStart"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#gQjSjv1d",
+                          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                          "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+                          "label": "request turn/start or turn/steer",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                            "symbol": "requestDecoded"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#6LnEoErP",
+                          "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+                          "to": "vKEsyHFk/vKEsyHFk#xr1MHYE7",
+                          "label": "JSON-RPC frame over stdio",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-app-server/src/runtime/clients/transport.ts",
+                            "symbol": "createFrameWriter"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#VBIITwQ7",
+                          "from": "vKEsyHFk/vKEsyHFk#xr1MHYE7",
+                          "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+                          "label": "turn accepted",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-app-server/src/runtime/operations/request-settlement.ts",
+                            "symbol": "settleDelivered"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#YcjArnsa",
+                          "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+                          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                          "label": "decoded response",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                            "symbol": "requestDecoded"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#NRJDQHKx",
+                          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                          "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+                          "label": "the turn that started",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/server/services/actions/text-actions.ts",
+                            "symbol": "turnStart"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#A77VyCZH",
+                          "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+                          "to": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+                          "label": "delivered, with the new snapshot",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-execution.ts",
+                            "symbol": "createCommandExecutor"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#UmUjUWRv",
+      "name": "A context change reaches a workhorse",
+      "participants": [
+        "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
+        "vKEsyHFk/9ncuT5DP#SQjLwRvE",
+        "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+        "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+        "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+        "vKEsyHFk/9ncuT5DP#byMaoUe0",
+        "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+      ],
+      "formerNames": [
+        "A board change reaches a workhorse"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/9ncuT5DP#rGWmiQ8v",
+          "from": "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
+          "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
+          "label": "a settled change of a board in the tab's panes' vaults",
+          "kind": "async",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+            "symbol": "subscribeSettledChange"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#ajT8vki6",
+          "from": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
+          "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+          "label": "announce the brief for the board's checkout",
+          "kind": "sync",
+          "note": "to its workhorse, withheld once the brief is stale",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+            "symbol": "announce"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#NKUo2Kzs",
+          "from": "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+          "to": "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+          "label": "tell the tab sessions the change names",
+          "kind": "sync",
+          "note": "the agent's announce is its workbench's",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+            "symbol": "announceContextChange"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#GOADij5y",
+          "from": "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+          "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+          "label": "deliver it, with the link, child and threads read now",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+            "symbol": "deliver"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#g4uGo1cl",
+          "kind": "decision",
+          "question": "Did this change already arrive?",
+          "alternatives": [
+            {
+              "label": "seen",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#ZCjFYzD4",
+                  "from": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                  "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                  "label": "answer with the outcome it has: never a second attempt",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                    "symbol": "createCodexThreadContextDelivery"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "first time",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#Z5eTxMhD",
+                  "from": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                  "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                  "label": "check the change, the target's generation and the child",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                    "symbol": "preflightReason"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#KHG58q0G",
+                  "from": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                  "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                  "label": "read the workhorse's link",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                    "symbol": "readInitialBinding"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#y6OM3MGZ",
+                  "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                  "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                  "label": "the link",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                    "symbol": "readInitialBinding"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#5d0dKhn0",
+                  "from": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                  "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                  "label": "build the context message; it must be exactly the change",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                    "symbol": "buildPayload"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#kd4mX8NF",
+                  "kind": "decision",
+                  "question": "Do the change, the target and the link pass?",
+                  "alternatives": [
+                    {
+                      "label": "refused",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#OshkRAyY",
+                          "from": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                          "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                          "label": "settle not_delivered with the reason",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                            "symbol": "refused"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "pass",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#r3CfeCjp",
+                          "from": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                          "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                          "label": "classify the target thread",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                            "symbol": "classifyTarget"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#dNtMDeU5",
+                          "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                          "label": "thread/read and thread/list",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/runtime/rules/thread-link/classifier.ts",
+                            "symbol": "threadRead"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#XW6xH1dn",
+                          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                          "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                          "label": "the thread",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/runtime/rules/thread-link/classifier.ts",
+                            "symbol": "threadRead"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#BCSwWJMl",
+                          "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                          "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+                          "label": "prove the linked thread current",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/runtime/rules/thread-link/durable-evidence.ts",
+                            "symbol": "assertCurrent"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#YhUAVOHz",
+                          "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                          "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                          "label": "the classification and its proof",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                            "symbol": "classifyTarget"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#tpTCvjE7",
+                          "from": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                          "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                          "label": "read the link again",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery-guards.ts",
+                            "symbol": "currentBinding"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#zgVYoZ7A",
+                          "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                          "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                          "label": "the link, to compare with the first read",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery-guards.ts",
+                            "symbol": "currentBinding"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#5Sakb5sK",
+                          "from": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                          "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+                          "label": "is its generation still current?",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery-guards.ts",
+                            "symbol": "assertCurrent"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#mucB2idw",
+                          "from": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+                          "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                          "label": "current, or why not",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery-guards.ts",
+                            "symbol": "epochAuthorityReason"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#LIWajs3K",
+                          "from": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                          "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                          "label": "is the change still fresh, and the newest of the feed?",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery-guards.ts",
+                            "symbol": "finalFreshnessReason"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#DKK3VoZ7",
+                          "kind": "decision",
+                          "question": "Does the final guard hold?",
+                          "alternatives": [
+                            {
+                              "label": "refused",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#V8QRxedt",
+                                  "from": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                                  "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                                  "label": "settle not_delivered with the reason",
+                                  "kind": "self",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                                    "symbol": "refused"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "label": "holds",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#7OP4graL",
+                                  "from": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                  "label": "thread/inject_items, once",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                                    "symbol": "attemptInjection"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#cvG5Sh5Q",
+                                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                  "to": "vKEsyHFk/vKEsyHFk#xr1MHYE7",
+                                  "label": "thread/inject_items over the transport",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "symbol": "requestDecoded"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#DSobstio",
+                                  "from": "vKEsyHFk/vKEsyHFk#xr1MHYE7",
+                                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                  "label": "items added",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "symbol": "requestDecoded"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#t3Mzaqjp",
+                                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                  "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                                  "label": "accepted, or rejected",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                                    "symbol": "attemptInjection"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#3CO7rPlU",
+                                  "kind": "decision",
+                                  "question": "What came of the attempt?",
+                                  "alternatives": [
+                                    {
+                                      "label": "accepted, authority intact",
+                                      "steps": [
+                                        {
+                                          "id": "vKEsyHFk/9ncuT5DP#7kzgOHCn",
+                                          "from": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                                          "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                                          "label": "settle delivered",
+                                          "kind": "self",
+                                          "anchor": {
+                                            "repo": "github.com/miklschmidt/archboard",
+                                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                                            "symbol": "settleAfterAttempt"
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "label": "rejected before the child",
+                                      "steps": [
+                                        {
+                                          "id": "vKEsyHFk/9ncuT5DP#KH6Xx1vQ",
+                                          "from": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                                          "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                                          "label": "settle not_delivered: session_rejected",
+                                          "kind": "self",
+                                          "anchor": {
+                                            "repo": "github.com/miklschmidt/archboard",
+                                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                                            "symbol": "attemptInjection"
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "label": "response lost or authority changed",
+                                      "steps": [
+                                        {
+                                          "id": "vKEsyHFk/9ncuT5DP#VuK5bUkd",
+                                          "from": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                                          "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                                          "label": "settle outcome_unknown, never retried",
+                                          "kind": "self",
+                                          "anchor": {
+                                            "repo": "github.com/miklschmidt/archboard",
+                                            "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+                                            "symbol": "settleAfterAttempt"
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#HBlK73c6",
+          "from": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+          "to": "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+          "label": "the outcome, as the workhorse's receipt",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+            "symbol": "tellWorkhorse"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#Ai2fk9xH",
+          "from": "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+          "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+          "label": "one receipt per tab session, audience and checkout",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+            "symbol": "announceContextChange"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#N1Y2pwbX",
+          "from": "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+          "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
+          "label": "the receipts, unread; a refusal is logged",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+            "symbol": "onError"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#eUWhXhf8",
+      "name": "A conversation starts",
+      "participants": [
+        "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+        "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+        "vKEsyHFk/9ncuT5DP#byMaoUe0",
+        "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+        "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+        "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "vKEsyHFk/9ncuT5DP#RkhHgrhb"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/9ncuT5DP#0kiuqwaZ",
+          "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "to": "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+          "label": "create, on the tab's first message or Talk",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/server/operations/command/command-dispatch.ts",
+            "symbol": "create"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#K2Z6m4Kt",
+          "from": "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+          "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "label": "read the link the chat named",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+            "symbol": "assertBrowserLinkStands"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#hJnLOKdi",
+          "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "to": "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+          "label": "the link and its revision",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+            "symbol": "assertBrowserLinkStands"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#P0Fzpn7K",
+          "kind": "decision",
+          "question": "Did the link change while the command waited?",
+          "alternatives": [
+            {
+              "label": "changed",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#9aFZDX9K",
+                  "from": "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+                  "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+                  "label": "refused: read the link again",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+                    "symbol": "assertBrowserLinkStands"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "stands",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#QUlsrjSJ",
+                  "from": "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+                  "to": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+                  "label": "ensure the tab's coordinator is ready first",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+                    "symbol": "readyCoordinator"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#Qg3JAQcN",
+                  "from": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+                  "to": "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+                  "label": "ready, or the reason it is not",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+                    "symbol": "readyCoordinator"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#c8PFrTUK",
+                  "kind": "decision",
+                  "question": "Is the coordinator ready?",
+                  "alternatives": [
+                    {
+                      "label": "not ready",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#8bwk9KsR",
+                          "from": "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+                          "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+                          "label": "refused with the coordinator's reason",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+                            "symbol": "readyCoordinator"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "ready",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#z0RMSQnC",
+                          "from": "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+                          "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+                          "label": "start the workhorse of the shown checkout",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+                            "symbol": "startWorkhorseThread"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#F0LUIBNz",
+                          "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+                          "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+                          "label": "stage the start",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                            "symbol": "stageStartTransaction"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#dnN8hskU",
+                          "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+                          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                          "label": "thread/start for the workhorse",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                            "symbol": "startWorkhorseThread"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#ytDk3gXP",
+                          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                          "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+                          "label": "the new thread, or why it failed",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                            "symbol": "startWorkhorseThread"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#TrzOSnzr",
+                          "kind": "decision",
+                          "question": "What came of thread/start?",
+                          "alternatives": [
+                            {
+                              "label": "not delivered",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#Y71UzjES",
+                                  "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+                                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+                                  "label": "roll the staged start back",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                                    "symbol": "refuseStartFailure"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#4gMlBhdU",
+                                  "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+                                  "to": "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+                                  "label": "failed: no thread, no link",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                                    "symbol": "execute"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "label": "outcome unknown",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#2ddysNmH",
+                                  "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+                                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+                                  "label": "mark the outcome unknown; never retried",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                                    "symbol": "refuseStartFailure"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#OAhpEmrO",
+                                  "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+                                  "to": "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+                                  "label": "unknown: no link",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                                    "symbol": "execute"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "label": "answered",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#KOAZ6Rsl",
+                                  "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+                                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+                                  "label": "commit the thread's ownership",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                                    "symbol": "commitStart"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#cQbogRR1",
+                                  "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+                                  "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                                  "label": "classify and bind the checkout's link",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                                    "symbol": "bindWorkhorse"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#mx0TU9CU",
+                                  "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                                  "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+                                  "label": "the executable link",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                                    "symbol": "bindWorkhorse"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#bKzE2rye",
+                                  "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+                                  "to": "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+                                  "label": "ready, with the bound link",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+                                    "symbol": "execute"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#UhMLF2rJ",
+                                  "from": "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+                                  "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
+                                  "label": "move context delivery to the new workhorse",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+                                    "symbol": "replaceThreadContextBinding"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#nAN9hREo",
+                                  "from": "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+                                  "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+                                  "label": "delivered",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/server/services/actions/thread-links.ts",
+                                    "symbol": "createServerThreadLinkActions"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#ILeym7Ex",
+      "name": "The coordinator delegates work",
+      "participants": [
+        "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+        "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "vKEsyHFk/9ncuT5DP#byMaoUe0",
+        "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+        "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/9ncuT5DP#YdByOgc3",
+          "from": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+          "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+          "label": "delegate_to_workhorse, naming the checkout",
+          "kind": "sync",
+          "note": "the tab session starts the named checkout's workhorse first when it has none",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/tool-execution.ts",
+            "symbol": "delegate"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#Xz7MNyau",
+          "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+          "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "label": "classify the workhorse: idle or active",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+            "symbol": "runDelegate"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#ru4CZMmp",
+          "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+          "label": "the link and its status",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+            "symbol": "runDelegate"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#ITQoQ4n9",
+          "kind": "decision",
+          "question": "Is the workhorse running a turn?",
+          "alternatives": [
+            {
+              "label": "active: queue behind it",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#YUOuX6sS",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+                  "label": "stage the delegation",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-operations/events.ts",
+                    "symbol": "stageOperation"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#Zls5gmvd",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                  "label": "classify again: it must still be active",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+                    "symbol": "addQueuedDelegate"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#QtntCtHB",
+                  "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                  "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "label": "still active",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+                    "symbol": "addQueuedDelegate"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#JB1wgnUm",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+                  "label": "add the prompt to the queue",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+                    "symbol": "add"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#sBz74tl0",
+                  "from": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "label": "thread/queue/add",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-queue/queue.ts",
+                    "symbol": "queueAdd"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#MItmWVo5",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+                  "label": "the queue",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-queue/queue.ts",
+                    "symbol": "queueAdd"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#8VO0EfNc",
+                  "from": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+                  "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "label": "the queued submission",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+                    "symbol": "addQueuedDelegate"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "idle: start a turn",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#MTOxSeB0",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+                  "label": "stage the delegation",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-operations/events.ts",
+                    "symbol": "stageOperation"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#vWndz6h6",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                  "label": "classify again: it must still be idle",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+                    "symbol": "assertIdleForDelegate"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#5Ci8GL7J",
+                  "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+                  "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "label": "still idle",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+                    "symbol": "assertIdleForDelegate"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#1BwEndY0",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "label": "turn/start with the board's context",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+                    "symbol": "deliverTurnStart"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#kghWrhPl",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "label": "the turn that started",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+                    "symbol": "deliverTurnStart"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#vDD2NoAE",
+          "kind": "decision",
+          "question": "What did the child answer?",
+          "alternatives": [
+            {
+              "label": "accepted",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#HABlToF8",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+                  "label": "commit the operation",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/durable-settlement.ts",
+                    "symbol": "recordSettlement"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "not delivered",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#SI9fdgc3",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+                  "label": "roll the operation back",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/durable-settlement.ts",
+                    "symbol": "recordSettlement"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "outcome unknown",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#gaZ3sdUV",
+                  "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+                  "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+                  "label": "mark the outcome unknown; inspect before retrying",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/durable-settlement.ts",
+                    "symbol": "settleDurable"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#4gO8EfCB",
+          "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+          "to": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+          "label": "queued or started with its id, or the stated outcome",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
+            "symbol": "createDelegate"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#Va4NV3BO",
+      "name": "Workhorse news reaches the coordinator",
+      "participants": [
+        "vKEsyHFk/9ncuT5DP#iay14AUl",
+        "vKEsyHFk/9ncuT5DP#08zJvPJq",
+        "vKEsyHFk/9ncuT5DP#byMaoUe0",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/9ncuT5DP#8ZkL9esb",
+          "from": "vKEsyHFk/9ncuT5DP#iay14AUl",
+          "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+          "label": "a workhorse notification, or a tell_coordinator call",
+          "kind": "async",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+            "symbol": "onServerRequest"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#oYxjfBC4",
+          "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+          "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+          "label": "write the news as one sentence",
+          "kind": "self",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+            "symbol": "clearForDelivery"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#viuikmqC",
+          "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+          "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "label": "classify the workhorse the news names",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+            "symbol": "classifyForDelivery"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#4MtOLLU8",
+          "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+          "label": "the link and its status",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+            "symbol": "classifyForDelivery"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#AJ7nOXRH",
+          "kind": "decision",
+          "question": "Does the workhorse link still stand?",
+          "alternatives": [
+            {
+              "label": "stale",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#57e03cLI",
+                  "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                  "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                  "label": "record: not delivered, stale_link",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                    "symbol": "refuseBeforeAttempt"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "stands",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#bHw3soI9",
+                  "kind": "decision",
+                  "question": "Is voice live?",
+                  "alternatives": [
+                    {
+                      "label": "no voice session",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#b9pIP9sM",
+                          "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                          "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                          "label": "record only: voice_inactive",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                            "symbol": "recordOnly"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "live",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#vaJwQJYG",
+                          "kind": "decision",
+                          "question": "Is the live voice session unattended?",
+                          "alternatives": [
+                            {
+                              "label": "unattended",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#S5mhjyrc",
+                                  "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                                  "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                                  "label": "record only: nothing is sent",
+                                  "kind": "self",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                    "symbol": "deliverThroughCoordinatorTurn"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "label": "attended",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#NDdGebjG",
+                                  "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                  "label": "turn/start: the news as one sentence for the coordinator",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                    "symbol": "deliverThroughCoordinatorTurn"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#dW4yunYz",
+                                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                  "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                                  "label": "started, or joined to the running turn",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                    "symbol": "deliverThroughCoordinatorTurn"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/9ncuT5DP#IMH0YVkJ",
+                                  "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                                  "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                                  "label": "check the link and generation again; settle the delivery",
+                                  "kind": "self",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                    "symbol": "turnDelivery"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#fNauRzDy",
+      "name": "A context change reaches the coordinator or the voice",
+      "participants": [
+        "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
+        "vKEsyHFk/9ncuT5DP#SQjLwRvE",
+        "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+        "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+        "vKEsyHFk/9ncuT5DP#08zJvPJq",
+        "vKEsyHFk/9ncuT5DP#byMaoUe0",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      ],
+      "formerNames": [
+        "A user's change reaches the voice"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/9ncuT5DP#7AB9nJWu",
+          "from": "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
+          "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
+          "label": "a settled board change, or a pane's focus or selection",
+          "kind": "async",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+            "symbol": "subscribePaneFocus"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#4QO2Hevk",
+          "from": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
+          "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
+          "label": "word it for the coordinator and the voice",
+          "kind": "self",
+          "note": "the voice hears a board on screen, as speech when it stops the narration; the coordinator hears only what an agent outside the session did",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+            "symbol": "heard"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#pTabQbT0",
+          "from": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
+          "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+          "label": "announce it",
+          "kind": "sync",
+          "note": "a focus or selection the user made carries a topic, so a later one replaces it while it waits",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
+            "symbol": "announce"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#XDSuIpxN",
+          "from": "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+          "to": "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+          "label": "tell the tab sessions the change names",
+          "kind": "sync",
+          "note": "the agent's announce is its workbench's",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+            "symbol": "announceContextChange"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#7YAsSUn3",
+          "kind": "loop",
+          "condition": "for each of the coordinator and the voice it names",
+          "steps": [
+            {
+              "id": "vKEsyHFk/9ncuT5DP#Vz52mSsP",
+              "from": "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+              "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+              "label": "queue its part while voice is live",
+              "kind": "sync",
+              "note": "with no voice session its receipt says voice_inactive, and nothing is queued",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+                "symbol": "enqueue"
+              }
+            },
+            {
+              "id": "vKEsyHFk/9ncuT5DP#TVUgmii8",
+              "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+              "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+              "label": "classify the workhorse voice is bound to",
+              "kind": "sync",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                "symbol": "classifyForDelivery"
+              }
+            },
+            {
+              "id": "vKEsyHFk/9ncuT5DP#EVYIPZnO",
+              "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+              "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+              "label": "the link and its status",
+              "kind": "return",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                "symbol": "classifyForDelivery"
+              }
+            },
+            {
+              "id": "vKEsyHFk/9ncuT5DP#FRvrsZ1V",
+              "kind": "decision",
+              "question": "Does the workhorse link still stand?",
+              "alternatives": [
+                {
+                  "label": "stale",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/9ncuT5DP#PifdA8W4",
+                      "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                      "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                      "label": "record: not delivered, stale_link",
+                      "kind": "self",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                        "symbol": "refuseBeforeAttempt"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "stands",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/9ncuT5DP#dvRKQxJy",
+                      "kind": "decision",
+                      "question": "Is voice still live, and did the host give it words?",
+                      "alternatives": [
+                        {
+                          "label": "no",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/9ncuT5DP#WQicCfIG",
+                              "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                              "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                              "label": "record only: voice_inactive or withheld",
+                              "kind": "self",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                "symbol": "recordOnly"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "label": "yes",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/9ncuT5DP#G8YI5GS1",
+                              "kind": "decision",
+                              "question": "Which audience is it?",
+                              "alternatives": [
+                                {
+                                  "label": "the coordinator",
+                                  "steps": [
+                                    {
+                                      "id": "vKEsyHFk/9ncuT5DP#F9RaXSMN",
+                                      "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                                      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                      "label": "thread/inject_items: a developer message that starts no turn",
+                                      "kind": "sync",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                        "symbol": "createCoordinatorCallbackContextPort"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/9ncuT5DP#iglMXOFu",
+                                      "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                      "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                                      "label": "injected",
+                                      "kind": "return",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                        "symbol": "createCoordinatorCallbackContextPort"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/9ncuT5DP#8ljFJHUe",
+                                      "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                                      "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                                      "label": "check the link and generation again; settle the delivery",
+                                      "kind": "self",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                        "symbol": "deliverToCoordinator"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "label": "the voice",
+                                  "steps": [
+                                    {
+                                      "id": "vKEsyHFk/9ncuT5DP#qZMl8hNQ",
+                                      "kind": "decision",
+                                      "question": "Did the host ask for speech?",
+                                      "alternatives": [
+                                        {
+                                          "label": "speech",
+                                          "steps": [
+                                            {
+                                              "id": "vKEsyHFk/9ncuT5DP#1ZladZHv",
+                                              "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                                              "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                              "label": "append the words as speech, after the audio in progress",
+                                              "kind": "sync",
+                                              "anchor": {
+                                                "repo": "github.com/miklschmidt/archboard",
+                                                "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                                "symbol": "realtimeAppendSpeech"
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "label": "quiet context",
+                                          "steps": [
+                                            {
+                                              "id": "vKEsyHFk/9ncuT5DP#XARWKQ1a",
+                                              "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                                              "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                              "label": "append the words as quiet context",
+                                              "kind": "sync",
+                                              "anchor": {
+                                                "repo": "github.com/miklschmidt/archboard",
+                                                "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                                "symbol": "realtimeAppendText"
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/9ncuT5DP#VS1mOJb6",
+                                      "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                      "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                                      "label": "accepted, rejected, or lost",
+                                      "kind": "return",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+                                        "symbol": "createCoordinatorCallbackRealtimePort"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/9ncuT5DP#xbsGMJXs",
+                                      "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                                      "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+                                      "label": "check the voice generation still stands; settle the delivery",
+                                      "kind": "self",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+                                        "symbol": "deliverThroughVoice"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "vKEsyHFk/9ncuT5DP#bA6ChT5c",
+              "from": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+              "to": "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+              "label": "how it settled, as that audience's receipt",
+              "kind": "return",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+                "symbol": "tellThroughCallbacks"
+              }
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#L19o03Sf",
+          "from": "vKEsyHFk/9ncuT5DP#8yOrpoeg",
+          "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+          "label": "one receipt per tab session and audience",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/server/services/announce/announce.ts",
+            "symbol": "announceContextChange"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#gBoH41j4",
+      "name": "A tab session ends",
+      "participants": [
+        "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+        "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+        "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+        "vKEsyHFk/9ncuT5DP#iay14AUl",
+        "vKEsyHFk/9ncuT5DP#QGVPyMwG",
+        "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/9ncuT5DP#EPxYqowm",
+          "from": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+          "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T",
+          "label": "a socket closes and its tab is forgotten",
+          "kind": "async",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+            "symbol": "forgetTabSession"
+          }
+        },
+        {
+          "id": "vKEsyHFk/9ncuT5DP#lecI5v9m",
+          "kind": "decision",
+          "question": "Is another chat of the tab still open?",
+          "alternatives": [
+            {
+              "label": "another chat remains",
+              "steps": []
+            },
+            {
+              "label": "the last chat went",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#XwJOc75W",
+                  "from": "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+                  "to": "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+                  "label": "start the 60 s grace",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-realtime-voice/src/server/services/sessions/browser-tabs.ts",
+                    "symbol": "createTabSessions"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/9ncuT5DP#HOYVTUuk",
+                  "kind": "decision",
+                  "question": "Does a chat of the tab come back within the grace?",
+                  "alternatives": [
+                    {
+                      "label": "a chat returns",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#r9HIC4rX",
+                          "from": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+                          "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T",
+                          "label": "a new socket names its tab",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+                            "symbol": "noteTabSession"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#klMm3Plr",
+                          "from": "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+                          "to": "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+                          "label": "cancel the grace; the conversation and its approvals stay",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/server/services/sessions/browser-tabs.ts",
+                            "symbol": "createTabSessions"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "none returns",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#xurALtuO",
+                          "from": "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+                          "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+                          "label": "forget the ended tab's lease",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+                            "symbol": "endSession"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#gKTRZtJY",
+                          "from": "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+                          "to": "vKEsyHFk/9ncuT5DP#iay14AUl",
+                          "label": "end the session",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+                            "symbol": "end"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#Gd0FTlt7",
+                          "from": "vKEsyHFk/9ncuT5DP#iay14AUl",
+                          "to": "vKEsyHFk/9ncuT5DP#QGVPyMwG",
+                          "label": "cancel the session's pending approvals",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+                            "symbol": "endApprovals"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/9ncuT5DP#X8eddH7g",
+                          "kind": "loop",
+                          "condition": "for each thread the session started",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/9ncuT5DP#ygvVgPmW",
+                              "from": "vKEsyHFk/9ncuT5DP#iay14AUl",
+                              "to": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+                              "label": "unload the thread",
+                              "kind": "sync",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+                                "symbol": "unload"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/9ncuT5DP#no7ohqrK",
+                              "from": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+                              "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                              "label": "thread/read: its status",
+                              "kind": "sync",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/codex-realtime-voice/src/runtime/operations/thread-unload/unload.ts",
+                                "symbol": "threadRead"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/9ncuT5DP#Bk3nNoD1",
+                              "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                              "to": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+                              "label": "the status",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/codex-realtime-voice/src/runtime/operations/thread-unload/unload.ts",
+                                "symbol": "threadRead"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/9ncuT5DP#mYd28Aaw",
+                              "kind": "decision",
+                              "question": "Is a turn running on the thread?",
+                              "alternatives": [
+                                {
+                                  "label": "a turn runs",
+                                  "steps": [
+                                    {
+                                      "id": "vKEsyHFk/9ncuT5DP#riwuuVmJ",
+                                      "from": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+                                      "to": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+                                      "label": "wait for the turn to end before unsubscribing",
+                                      "kind": "self",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/codex-realtime-voice/src/runtime/operations/thread-unload/unload.ts",
+                                        "symbol": "settle"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "label": "idle",
+                                  "steps": [
+                                    {
+                                      "id": "vKEsyHFk/9ncuT5DP#aIu6MegS",
+                                      "from": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+                                      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                      "label": "thread/unsubscribe, so Codex unloads it",
+                                      "kind": "sync",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/codex-realtime-voice/src/runtime/operations/thread-unload/unload.ts",
+                                        "symbol": "threadUnsubscribe"
+                                      }
+                                    },
+                                    {
+                                      "id": "vKEsyHFk/9ncuT5DP#Tw1Brh0R",
+                                      "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                      "to": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+                                      "label": "unsubscribed",
+                                      "kind": "return",
+                                      "anchor": {
+                                        "repo": "github.com/miklschmidt/archboard",
+                                        "path": "packages/codex-realtime-voice/src/runtime/operations/thread-unload/unload.ts",
+                                        "symbol": "threadUnsubscribe"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "id": "vKEsyHFk/9ncuT5DP#DxbVPPyv",
+                              "from": "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+                              "to": "vKEsyHFk/9ncuT5DP#iay14AUl",
+                              "label": "how the unload ended",
+                              "kind": "return",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+                                "symbol": "unload"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

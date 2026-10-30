@@ -1,0 +1,29 @@
+{
+  "order": 9000,
+  "name": "Guardrails",
+  "kind": "function",
+  "responsibility": "The rules every run is held to, including whether a board file was written behind the CLI's back",
+  "description": "Each relative path in a script is read from the directory the script's earlier cd commands moved it to, starting in the checkout the author works in, so a relative or escaped path to a board file still counts as a direct write, and a checkout file is never taken for a board.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/skills/src/runtime/rules/audit/guardrails.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#7LcGoxWH",
+  "parent": "vKEsyHFk/IbGtfJE2#hu0RfGwG",
+  "outgoing": [
+    {
+      "order": 46000,
+      "kind": "call",
+      "label": "unwrap commands, and find the vault in the checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/rules/audit/guardrails.ts",
+        "symbol": "unwrapped"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#ovGUX3xQ",
+      "to": "vKEsyHFk/IbGtfJE2#TJmrdpKj"
+    }
+  ]
+}

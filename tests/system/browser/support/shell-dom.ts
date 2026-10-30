@@ -48,6 +48,8 @@ const navigatorRow = (key: string): string =>
 
 /** The board name the header of the pane with focus shows. */
 const BOARD_NAME_EXPRESSION = `document.querySelector('${BOARD_BREADCRUMB} [data-slot="pane-board-name"]')?.textContent?.trim() ?? null`;
+/** The authored model name in the active pane. */
+const MODEL_NAME_EXPRESSION = `document.querySelector('section[aria-current="true"] [data-slot="pane-header"] h2')?.textContent?.trim() ?? null`;
 
 /** The theme the root element carries. */
 const THEME_EXPRESSION = "document.documentElement.getAttribute('data-theme') ?? ''";
@@ -62,15 +64,14 @@ function boardName(browser: PageEvaluator): Promise<string | null> {
 }
 
 /**
- * How far the open tab's line in the first pane's header reaches below the
- * header's edge, read from the line's own box.
+ * How far the active sidebar tab underline extends beyond its tab row.
  * @param browser The page.
- * @returns The overhang in pixels, 0 while the line lies inside the header, or NaN with no open tab.
+ * @returns The overhang in pixels, 0 inside the row, or NaN with no open tab.
  */
-function tabLineBelowHeader(browser: PageEvaluator): Promise<number> {
+function sidebarTabLineOverhang(browser: PageEvaluator): Promise<number> {
 	return browser.eval<number>(`(() => {
-		const header = document.querySelector('${PANE_HEADER}');
-		const tab = header?.querySelector('[data-slot="board-tab"][data-active]');
+		const tab = document.querySelector('[data-slot="semantic-sidebar-tab"][data-active]');
+		const header = tab?.closest('[data-slot="tabs-list"]')?.parentElement;
 		if (!header || !tab) return Number.NaN;
 		const line = getComputedStyle(tab, '::after');
 		const bottom = tab.getBoundingClientRect().bottom - Number.parseFloat(line.bottom);
@@ -184,6 +185,7 @@ export {
 	AGENT_PANEL,
 	BOARD_BREADCRUMB,
 	BOARD_NAME_EXPRESSION,
+	MODEL_NAME_EXPRESSION,
 	BRAND_BAR,
 	COMPOSER,
 	NAVIGATOR,
@@ -204,7 +206,7 @@ export {
 	shellNotices,
 	stageIsFullscreen,
 	switchTheme,
-	tabLineBelowHeader,
+	sidebarTabLineOverhang,
 	type ShellNoticeView,
 };
 

@@ -22,9 +22,10 @@ import type {
 	OpenOutcome,
 	WorkspacePort,
 } from "#ui/rules/board-routing/contracts.ts";
-import type { WorkspaceAddress } from "#ui/rules/board-routing/address.ts";
+import { modelReading } from "#ui/rules/board-routing/model-address.ts";
+import type { WorkspaceAddress, ModelAddress } from "#ui/rules/board-routing/address.ts";
 import type { WorkspaceAddressing } from "#ui/hooks/board-routing/use-workspace-address.ts";
-import { showBoard } from "#ui/clients/pane-session/pane-requests.ts";
+import { showModel } from "#ui/clients/pane-session/pane-requests.ts";
 
 /**
  * The pane list a tab opens with: the panes its address names, so a restored
@@ -47,6 +48,15 @@ function openingPaneList(address: WorkspaceAddress): PaneList {
  */
 function addressingOver(binding: LiveBinding<WorkspaceAddressing>): WorkspaceAddressing {
 	return {
+		/**
+		 * Hand the matching canonical arrival to the existing navigation owner.
+		 * @param paneId The addressed pane.
+		 * @param reading The complete resolved reading.
+		 * @param repository The destination repository.
+		 * @returns How the acknowledgement affects the current reader location.
+		 */
+		modelArriving: (paneId, reading, repository) =>
+			binding.read().modelArriving(paneId, reading, repository),
 		/**
 		 * A person asked for a move.
 		 * @param intent What they asked for.
@@ -149,8 +159,23 @@ async function showThroughServer(
 	boardKey: string,
 	vault: string,
 ): Promise<OpenedBoard> {
-	const reply = await showBoard({ vault, board: boardKey, pane: clientId });
-	return { boardKey: reply.board, repository: reply.repository };
+	const reply = await showModel(vault, clientId, { legacyAddress: boardKey });
+	return { boardKey: null, repository: reply.repository };
+}
+
+/**
+ * Resolve a portable repository through the same known checkout list as the navigator.
+ * @param repository The requested identity, or the current repository when absent.
+ * @param own The pane's current vault.
+ * @param find The registry resolver once discovery completes.
+ * @returns The explicit destination vault, or absence without a substitute.
+ */
+function destinationVault(
+	repository: string | null,
+	own: string | null,
+	find: WorkspacePortDeps["vaultOf"],
+): string | null {
+	return repository === null ? own : (find?.(repository) ?? null);
 }
 
 /**
@@ -219,15 +244,17 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 		 * @param paneId The pane.
 		 * @param boardKey The board.
 		 * @param repository The repository the board is in, or null for the pane's own.
+		 * @param model The complete canonical reading, when this address names one.
 		 * @returns Whether the board was reached.
 		 */
 		open: async (
 			paneId: string,
-			boardKey: string,
+			boardKey: string | null,
 			repository: string | null,
+			model?: ModelAddress,
 		): Promise<OpenOutcome> => {
 			const { clientId, vault: own } = recordFor(panes.records, paneId).status;
-			const vault = repository === null ? own : (deps.vaultOf?.(repository) ?? null);
+			const vault = destinationVault(repository, own, deps.vaultOf);
 			if (vault === null) {
 				return { kind: "unreachable" };
 			}
@@ -235,6 +262,11 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 			// else, so what the address bar asks for is theirs.
 			const move = userMoves(panes.handles, paneId);
 			try {
+				if (model !== undefined) {
+					await showModel(vault, clientId, modelReading(model));
+					return { kind: "opened", boardKey: null, repository };
+				}
+				if (boardKey === null) return { kind: "unreachable" };
 				return { kind: "opened", ...(await show(clientId, boardKey, vault)) };
 			} catch {
 				move.failed();
@@ -277,7 +309,11 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 				({ repository }) => repository === null || !unread.has(repository),
 			);
 			if (others.length > 0) {
-				deps.notices.raise(unreachableBoardsNotice(others.map(({ boardKey }) => boardKey)));
+				deps.notices.raise(
+					unreachableBoardsNotice(
+						others.map(({ boardKey, model }) => boardKey ?? model?.id ?? "Architecture"),
+					),
+				);
 			}
 		},
 	};

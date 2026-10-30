@@ -30,6 +30,18 @@ let releaseOwner!: () => void;
 const released = new Promise<void>((resolve) => {
 	releaseOwner = resolve;
 });
+/**
+ * Decode only the input supplied in the parent's start message.
+ * @param message The start message.
+ * @returns The exact input bytes, when supplied.
+ */
+function suppliedInput(message: object): Uint8Array | undefined {
+	return "input" in message && typeof message.input === "string"
+		? Buffer.from(message.input, "base64")
+		: undefined;
+}
+
+let commandInput: Uint8Array | undefined;
 let startCommand!: () => void;
 const started = new Promise<void>((resolve) => {
 	startCommand = resolve;
@@ -43,6 +55,7 @@ const started = new Promise<void>((resolve) => {
 const onMessage = (message: unknown): void => {
 	if (typeof message === "object" && message !== null && "kind" in message) {
 		if (message.kind === "start") {
+			commandInput = suppliedInput(message);
 			startCommand();
 		}
 		if (message.kind === "release") {
@@ -77,7 +90,7 @@ let result: GitOwnerResult;
 let output: Promise<unknown> = Promise.resolve();
 try {
 	const child = Bun.spawn(command, {
-		stdin: "ignore",
+		stdin: commandInput === undefined ? "ignore" : new Blob([Buffer.from(commandInput)]),
 		stdout: "pipe",
 		stderr: "pipe",
 	});

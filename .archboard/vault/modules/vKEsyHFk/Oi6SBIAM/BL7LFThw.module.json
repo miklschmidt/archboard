@@ -1,0 +1,58 @@
+{
+  "order": 4000,
+  "name": "Pane registry",
+  "kind": "module",
+  "responsibility": "The sockets and the vault each belongs to, what each pane is showing, which pane a show names in any vault, and the news broadcast to the sockets of one vault",
+  "description": "The registry delivers temporary explanation change notices only to panes registered in the action tab. These notices use each existing pane socket and carry no architecture or answer content.",
+  "groups": [
+    "panes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/services/panes/registry.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 6000,
+      "kind": "event",
+      "label": "board and agent news; the vault a pane is in",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/registry.ts",
+        "symbol": "sendToVaultClients"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#gK39PRbo",
+      "to": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    },
+    {
+      "order": 79000,
+      "kind": "call",
+      "label": "confirm model readability",
+      "description": "Pane registration checks whether canonical architecture remains readable. It does not establish that a legacy board or variant exists.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/registry.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#6kzjcG2u",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    }
+  ]
+}

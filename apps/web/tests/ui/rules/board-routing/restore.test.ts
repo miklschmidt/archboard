@@ -12,7 +12,7 @@ import type { OpenOutcome, WorkspacePort } from "#ui/rules/board-routing/contrac
 /** An open the shell has been asked for and has not answered. */
 interface HeldOpen {
 	readonly paneId: string;
-	readonly boardKey: string;
+	readonly boardKey: string | null;
 	readonly answer: (outcome: OpenOutcome) => void;
 }
 
@@ -25,7 +25,7 @@ interface FakeShell {
 	readonly port: WorkspacePort;
 	/** Every command the restore issued, in order. */
 	readonly applied: string[];
-	readonly unreachable: string[];
+	readonly unreachable: (string | null)[];
 	/** The opens asked for and not yet answered, oldest first. */
 	readonly held: HeldOpen[];
 	restore: Restore;
@@ -88,7 +88,7 @@ function fakeShell(options: FakeOptions): FakeShell {
 		activePaneId: pending.activePaneId,
 	});
 	const applied: string[] = [];
-	const unreachable: string[] = [];
+	const unreachable: (string | null)[] = [];
 	const held: HeldOpen[] = [];
 	const free = ["A", "B"].find((paneId) => !pending.panes.some((pane) => pane.paneId === paneId));
 
@@ -114,7 +114,7 @@ function fakeShell(options: FakeOptions): FakeShell {
 		 * @param boardKey The board.
 		 * @returns The outcome, once the test gives one.
 		 */
-		open: (paneId: string, boardKey: string): Promise<OpenOutcome> => {
+		open: (paneId: string, boardKey: string | null): Promise<OpenOutcome> => {
 			applied.push(`open:${paneId}:${boardKey}`);
 			return new Promise<OpenOutcome>((resolve) => {
 				held.push({ paneId, boardKey, answer: resolve });
@@ -220,7 +220,7 @@ function fakeShell(options: FakeOptions): FakeShell {
 				 * @param boardKey The board.
 				 * @param repository The repository the board is in, or null for the pane's own.
 				 */
-				open: (paneId: string, boardKey: string, repository: string | null): void => {
+				open: (paneId: string, boardKey: string | null, repository: string | null): void => {
 					void port.open(paneId, boardKey, repository);
 				},
 			};

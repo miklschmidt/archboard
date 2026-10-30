@@ -1,0 +1,23 @@
+{
+  "order": 5000,
+  "name": "Reserve route",
+  "kind": "route",
+  "responsibility": "POST /reservations: sets an order's items aside",
+  "schemaVersion": 1,
+  "id": "Shop/5IZTN4RT#4sZ8ZI9y",
+  "parent": "Shop/5IZTN4RT#1tJdSOqs",
+  "outgoing": [
+    {
+      "order": 4000,
+      "kind": "call",
+      "label": "set these items aside",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "Shop/5IZTN4RT#jzm9axQW",
+      "to": "Shop/5IZTN4RT#SN2ShpE5"
+    }
+  ]
+}

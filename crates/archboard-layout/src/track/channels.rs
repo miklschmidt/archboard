@@ -21,7 +21,7 @@ use crate::track::scene::{ItemId, Map, Set};
 use crate::track::tracks::{Unit, stack_units};
 
 /// How far a port keeps from a card's corner.
-const PORT_MARGIN: f64 = 20.0;
+pub(crate) const PORT_MARGIN: f64 = 20.0;
 
 /// An end of a net: its upper station's bottom face, or its lower station's top face.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

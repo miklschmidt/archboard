@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "id": "MKhTEYqf",
+  "name": "Web shop",
+  "flows": [
+    {
+      "id": "Shop/MKhTEYqf#yRuuRooQ",
+      "name": "Place an order",
+      "summary": "One press of Pay, from the basket to the confirmation page.",
+      "participants": [
+        "Shop/MKhTEYqf#cgbB3aQp",
+        "Shop/MKhTEYqf#kZjjfq1m",
+        "Shop/MKhTEYqf#VONp3yKV",
+        "Shop/MKhTEYqf#HYDbL5fE",
+        "Shop/MKhTEYqf#ZaOafnWt",
+        "Shop/MKhTEYqf#wlyh3hT6",
+        "Shop/MKhTEYqf#lXgq75bO"
+      ],
+      "steps": [
+        {
+          "id": "Shop/MKhTEYqf#cNRTLaGJ",
+          "from": "Shop/MKhTEYqf#cgbB3aQp",
+          "to": "Shop/MKhTEYqf#kZjjfq1m",
+          "label": "POST /orders",
+          "kind": "sync"
+        },
+        {
+          "id": "Shop/MKhTEYqf#6L1FfAc1",
+          "from": "Shop/MKhTEYqf#kZjjfq1m",
+          "to": "Shop/MKhTEYqf#kZjjfq1m",
+          "label": "load and price the basket",
+          "kind": "self"
+        },
+        {
+          "id": "Shop/MKhTEYqf#UMnxeM5M",
+          "from": "Shop/MKhTEYqf#kZjjfq1m",
+          "to": "Shop/MKhTEYqf#VONp3yKV",
+          "label": "start the 10 s clock",
+          "kind": "async",
+          "note": "if 10 s pass first, the guard releases the stock and refunds the card"
+        },
+        {
+          "id": "Shop/MKhTEYqf#3uClgO14",
+          "from": "Shop/MKhTEYqf#kZjjfq1m",
+          "to": "Shop/MKhTEYqf#HYDbL5fE",
+          "label": "reserve the items",
+          "kind": "sync"
+        },
+        {
+          "id": "Shop/MKhTEYqf#LyUokBCR",
+          "from": "Shop/MKhTEYqf#HYDbL5fE",
+          "to": "Shop/MKhTEYqf#kZjjfq1m",
+          "label": "reserved",
+          "kind": "return"
+        },
+        {
+          "id": "Shop/MKhTEYqf#eEjCrF7z",
+          "from": "Shop/MKhTEYqf#kZjjfq1m",
+          "to": "Shop/MKhTEYqf#ZaOafnWt",
+          "label": "charge the card",
+          "kind": "sync",
+          "note": "the items stay reserved while the bank answers"
+        },
+        {
+          "id": "Shop/MKhTEYqf#Ilu0YGrP",
+          "from": "Shop/MKhTEYqf#ZaOafnWt",
+          "to": "Shop/MKhTEYqf#kZjjfq1m",
+          "label": "paid",
+          "kind": "return"
+        },
+        {
+          "id": "Shop/MKhTEYqf#ituqu60p",
+          "from": "Shop/MKhTEYqf#kZjjfq1m",
+          "to": "Shop/MKhTEYqf#wlyh3hT6",
+          "label": "write the paid order",
+          "kind": "sync"
+        },
+        {
+          "id": "Shop/MKhTEYqf#TqpOt2sN",
+          "from": "Shop/MKhTEYqf#kZjjfq1m",
+          "to": "Shop/MKhTEYqf#lXgq75bO",
+          "label": "send the receipt",
+          "kind": "sync",
+          "note": "tried up to 3 times; the confirmation page waits for it",
+          "repeat": 3
+        },
+        {
+          "id": "Shop/MKhTEYqf#dkc8ZMX3",
+          "from": "Shop/MKhTEYqf#lXgq75bO",
+          "to": "Shop/MKhTEYqf#kZjjfq1m",
+          "label": "accepted",
+          "kind": "return"
+        },
+        {
+          "id": "Shop/MKhTEYqf#9L3Vfmq7",
+          "from": "Shop/MKhTEYqf#kZjjfq1m",
+          "to": "Shop/MKhTEYqf#cgbB3aQp",
+          "label": "order confirmed",
+          "kind": "return"
+        }
+      ]
+    }
+  ]
+}

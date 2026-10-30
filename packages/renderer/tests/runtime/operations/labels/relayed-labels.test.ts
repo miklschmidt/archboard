@@ -15,6 +15,7 @@ import { labelsAcrossWalls, runsUnderLabels } from "#tests/runtime/support/drawn
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import labelBeside from "#tests/runtime/support/fixtures/relayed-label-beside.json";
 import labelRegion from "#tests/runtime/support/fixtures/relayed-label-region.json";
+import loneFrame from "#tests/runtime/support/fixtures/lone-frame-label.json";
 
 /** The vocabulary the fixtures draw with, its groups in the dogfood vault's order. */
 const policy = SemanticPolicySchema.parse({
@@ -53,4 +54,17 @@ test("a relaid label stays off a line drawn straight to its block's wall", async
 	const content = orderedFixture(labelBeside);
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "blocks", policy });
 	expect(runsUnderLabels(drawing)).toEqual([]);
+});
+
+// Reduced from Codex session (TASK-549.24): fitting a wider header shortened
+// the combined caption/title row. A label moved onto that row crossed the
+// inner frame's top border because routing only saw the outer region.
+test("a relaid label stays clear of a lone frame's inner top border", async () => {
+	const drawing = await renderArchitecture({
+		content: orderedFixture(loneFrame.content),
+		policy: SemanticPolicySchema.parse(loneFrame.policy),
+		theme: "light",
+		layout: "track",
+	});
+	expect(labelsAcrossWalls(drawing)).toEqual([]);
 });

@@ -1,0 +1,15 @@
+{
+  "order": 4000,
+  "name": "Run isolation",
+  "kind": "module",
+  "responsibility": "One run's private world: its own home, its own agent storage, its own CLI on the path",
+  "description": "The run's vault is .archboard/vault in its Flask checkout, made after the clone because a clone needs an empty destination. The run's environment names no vault: every command finds it from the checkout it runs in (ADR 0049). Git looks no higher than the run's directory, and that directory links .archboard/vault to the run's vault, so a command anywhere in the world finds the run's vault and never the vault of the archboard checkout that holds the batch.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/skills/src/runtime/processes/isolation.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#IsMHIzoa",
+  "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
+  "outgoing": []
+}

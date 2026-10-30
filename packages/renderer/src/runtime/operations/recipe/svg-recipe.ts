@@ -9,7 +9,7 @@
 import {
 	RENDER_RECIPE_MARK,
 	RENDER_RECIPE_NAMESPACE,
-	type RenderRecipe,
+	type AnyRenderRecipe,
 } from "#runtime/operations/recipe/schema.ts";
 
 /** The recipe element's prefix and local name, from its qualified name. */
@@ -75,7 +75,7 @@ function decodeText(content: string): string {
  * @returns The document that carries it.
  * @throws {Error} When the text is not a document the renderer drew.
  */
-function embedRecipeInSvg(svg: string, recipe: RenderRecipe): string {
+function embedRecipeInSvg(svg: string, recipe: AnyRenderRecipe): string {
 	const end = svg.lastIndexOf(ROOT_END);
 	if (!svg.startsWith("<svg") || end < 0) throw new Error("The picture is not an SVG document.");
 	const element =
@@ -99,7 +99,7 @@ const RECIPE_ELEMENT_PARTS = new RegExp(
  * @returns The document.
  * @throws {Error} When the document carries no recipe element.
  */
-function replaceRecipeInSvg(svg: string, recipe: RenderRecipe): string {
+function replaceRecipeInSvg(svg: string, recipe: AnyRenderRecipe): string {
 	if (!RECIPE_ELEMENT_PARTS.test(svg)) throw new Error("The document carries no render recipe.");
 	return svg.replace(
 		RECIPE_ELEMENT_PARTS,

@@ -6,7 +6,6 @@ import { browserTestRoots, type AgentBrowserSession } from "./agent-browser.ts";
 import type { ThemeSnapshot } from "./shell-contract-types.ts";
 import {
 	AGENT_DOCK,
-	BOARD_BREADCRUMB,
 	BRAND_BAR,
 	NAVIGATOR,
 	NAVIGATOR_COLUMN,
@@ -220,11 +219,10 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		// The pane's own top row, level with the brand bar: where the board sits,
 		// the ways to read it and the pane's controls.
 		const paneHeader = pane?.querySelector('${PANE_HEADER}');
-		const breadcrumb = document.querySelector('${BOARD_BREADCRUMB}');
-		const board = breadcrumb?.querySelector('[data-slot="pane-board-name"]');
+		const board = paneHeader?.querySelector("h2");
 		// Which variant is on screen, named after the board: the fact that
 		// changes while somebody watches (ADR 0023).
-		const variant = breadcrumb?.querySelector('[data-slot="board-state"] > span:last-child');
+		const variant = paneHeader?.querySelector('[data-slot="model-reading-selector"]');
 		const present = paneHeader?.querySelector('button[aria-label^="Present"]');
 		const column = document.querySelector('${NAVIGATOR_COLUMN}');
 		const nav = document.querySelector('${NAVIGATOR}');
@@ -236,17 +234,12 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		// The navigator selects what the focused pane reads — the board, or its
 		// state when the board's states are listed; the board's name is a human
 		// label beside the header's.
-		const selectedKey = nav?.querySelector('[role="treeitem"][aria-selected="true"] [data-board-key]')?.getAttribute('data-board-key') ?? null;
-		// A board's row is named within its repository: \`repository:<name>|board:<key>\`.
-		const readRow = selectedKey === null ? null : \`[role="treeitem"][data-row-id$="|board:\${CSS.escape(selectedKey.split('@')[0].toLowerCase())}"]\`;
-		const selectedBoard = readRow === null ? null : nav?.querySelector(\`\${readRow} [data-board-key]\`);
-		// Body type: a row label that is neither selected nor the board being read.
-		const rowLabel = [...(nav?.querySelectorAll('[role="treeitem"][aria-selected="false"]') ?? [])]
-			.find(node => node.querySelector('[data-board-key]') !== null && (readRow === null || !node.matches(readRow)))?.querySelector('[data-board-key]');
+		const selectedBoard = nav?.querySelector('[role="treeitem"][aria-selected="true"] [data-slot="repository-name"]');
+		const rowLabel = pane?.querySelector('[data-slot="module-list"] button .text-body');
 		// A section heading in the pane's sidebar.
-		const sectionHeading = pane?.querySelector('[data-slot] > h2');
+		const sectionHeading = pane?.querySelector('[data-slot="model-navigation"] h3');
 		// The pane's window on the picture: the room the camera fits a drawing into.
-		const picture = pane?.querySelector('[data-slot="semantic-board-viewport"]');
+		const picture = pane?.querySelector('[data-slot="model-diagram"]');
 		if (!shell || !header || !wordmark || !control || !paneHeader || !board || !variant || !technical ||
 			!present || !column || !nav || !filter || !stages || !bar || !pane || !selectedBoard || !rowLabel ||
 			!sectionHeading || !picture) {
@@ -297,7 +290,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			throw new Error('shell matrix probe found no header controls');
 		}
 		const touchTargets = [...shell.querySelectorAll('button')]
-			.filter(node => rect(node).width > 0 && rect(node).height > 0)
+			.filter(node => node.checkVisibility() && rect(node).width > 0 && rect(node).height > 0)
 			.map(node => ({ label: node.getAttribute('aria-label') || node.textContent.trim().slice(0, 48),
 				width: rect(node).width, height: rect(node).height }));
 		const motion = { controlDuration: focusStyle.transitionDuration,
@@ -353,8 +346,8 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				inkContrast: (Math.max(foreground, backdrop) + 0.05) / (Math.min(foreground, backdrop) + 0.05),
 				flatSurfaces: flat.every(node => getComputedStyle(node).backgroundImage === 'none'),
 				visibleFocus: ringVisible,
-				boardIdentity: board.textContent.trim(), variant: variant.textContent.trim(),
-				selectedBoard: selectedBoard.getAttribute('data-board-key'),
+				modelIdentity: board.textContent.trim(), stateName: variant.textContent.trim(),
+				selectedRepository: selectedBoard.closest('[data-row-id]').getAttribute('data-row-id').slice("repository:".length),
 				focusedPaneCount: panes.filter(node => node.getAttribute('aria-current') === 'true').length,
 				connectionTrouble,
 				headerSectionsAligned: boardRect.right < presentRect.left &&

@@ -15,7 +15,13 @@
 import { randomUUID } from "node:crypto";
 
 import { PANE_MS } from "@archboard/timing";
-import { paneBoardOf, panes, sendToPane } from "#server/services/panes/registry.ts";
+import {
+	paneBoardOf,
+	panes,
+	sendToPane,
+	sendBoardlessToPane,
+} from "#server/services/panes/registry.ts";
+import { semanticPaneContextFor } from "#server/services/panes/context.ts";
 import type { PanePresentRequestSchema } from "@archboard/board/pane-context";
 import type { z } from "zod";
 import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
@@ -68,6 +74,8 @@ interface UserPresentationChange {
 /** One request a pane has not answered yet. */
 interface Pending {
 	readonly request: string;
+	readonly walkthrough: string;
+	readonly beat: number;
 	/**
 	 * Whether the pane has been seen answering this request. A report is sent a
 	 * moment after what it describes, so one that lands after the request went
@@ -83,7 +91,7 @@ interface Pending {
 interface PresentablePane {
 	readonly clientId: string;
 	/** The board key the pane is showing, which its socket messages are addressed by. */
-	readonly board: string;
+	readonly board: string | null;
 }
 
 /** What the port needs of the server around it. */
@@ -154,7 +162,10 @@ function sameStep(
  * @returns The outcome it settles, or null when the pane is still on its way.
  */
 function answerTo(waiting: Pending, said: SemanticPanePresentation | null): PresentOutcome | null {
-	return said?.answering === waiting.request && said.arrived
+	return said?.answering === waiting.request &&
+		said.arrived &&
+		said.walkthrough === waiting.walkthrough &&
+		said.beat === waiting.beat
 		? { kind: "arrived", presentation: said }
 		: null;
 }
@@ -170,8 +181,21 @@ function movedByPerson(
 	before: SemanticPanePresentation | null,
 	said: SemanticPanePresentation | null,
 ): boolean {
-	const byPerson = said === null ? before !== null : said.answering === null;
-	return byPerson && !sameStep(before, said);
+	if (said === null) return before !== null;
+	return said.answering === null && (!sameStep(before, said) || arrivedSince(before, said));
+}
+
+/**
+ * Detect arrival after a report of motion at the same position.
+ * @param before The previous report.
+ * @param said The new position.
+ * @returns Whether this report supplies new arrival evidence.
+ */
+function arrivedSince(
+	before: SemanticPanePresentation | null,
+	said: SemanticPanePresentation,
+): boolean {
+	return said.arrived && before?.arrived !== true;
 }
 
 /**
@@ -237,7 +261,13 @@ function awaitAnswer(
 			clearTimeout(timer);
 			resolve(outcome);
 		}
-		pending.set(clientId, { request, takenUp: false, settle });
+		pending.set(clientId, {
+			request,
+			walkthrough: input.walkthrough,
+			beat: input.beat,
+			takenUp: false,
+			settle,
+		});
 		const sent = parts.send(pane, {
 			type: "pane_present",
 			request,
@@ -275,9 +305,19 @@ function noteReport(ledger: PresentationLedger, report: SemanticPaneContext): vo
 		return;
 	}
 	refuseTakenOver(waiting);
-	for (const listener of ledger.listeners) {
+	announceArrival(ledger, report);
+}
+
+/**
+ * Tell listeners only settled positions or departure.
+ * @param ledger The presentation subscriptions.
+ * @param report The accepted pane report.
+ */
+function announceArrival(ledger: PresentationLedger, report: SemanticPaneContext): void {
+	const said = report.presentation ?? null;
+	if (said?.arrived === false) return;
+	for (const listener of ledger.listeners)
 		listener({ paneId: report.paneId, clientId: report.clientId, presentation: said });
-	}
 }
 
 /**
@@ -353,8 +393,11 @@ const panePresentations = createPanePresentations({
 	 */
 	paneFor(clientId) {
 		const pane = panes.get(clientId);
-		const board = pane === undefined ? null : paneBoardOf(pane.clientId);
-		return pane === undefined || board === null ? null : { clientId: pane.clientId, board };
+		if (pane === undefined) return null;
+		const architecture = semanticPaneContextFor(clientId)?.architecture;
+		if (architecture?.vault === pane.vault) return { clientId, board: null };
+		const board = paneBoardOf(clientId);
+		return board === null ? null : { clientId, board };
 	},
 	/**
 	 * Send one request down a pane's socket.
@@ -362,7 +405,10 @@ const panePresentations = createPanePresentations({
 	 * @param message The request.
 	 * @returns Whether a live socket took it.
 	 */
-	send: (pane, message) => sendToPane(pane.clientId, message, pane.board),
+	send: (pane, message) =>
+		pane.board === null
+			? sendBoardlessToPane(pane.clientId, message)
+			: sendToPane(pane.clientId, message, pane.board),
 });
 
 export {

@@ -18,7 +18,8 @@ import { beforeAll, expect, test } from "bun:test";
 import { createElement } from "react";
 
 import type { PaneChrome } from "#ui/components/semantic-board-canvas/PaneChrome.tsx";
-import { PartSearch } from "#ui/components/semantic-board-canvas/PartSearch.tsx";
+import { ModelSearch } from "#ui/components/architecture-model/ModelSearch.tsx";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { EXPLAINED_BOARD } from "#tests/ui/support/semantic-board-canvas/render-answers.ts";
 import {
 	changeChromeInShell,
@@ -57,8 +58,15 @@ function noChoice(): void {
 	// A search that finds nothing has nothing to choose.
 }
 
-/** The search over parts, with no board to search. */
-const SEARCH = createElement(PartSearch, { boards: [], onChoose: noChoice });
+/** The ordinary search field over an empty canonical model. */
+const SEARCH = createElement(ModelSearch, {
+	model: {
+		manifest: { schemaVersion: 1, id: "Fixture", name: "Fixture", current: null },
+		modules: [],
+		policy: DEFAULT_SEMANTIC_POLICY,
+	},
+	onChoose: noChoice,
+});
 
 /**
  * Mount a pane that holds its own selection, with a picture drawn.

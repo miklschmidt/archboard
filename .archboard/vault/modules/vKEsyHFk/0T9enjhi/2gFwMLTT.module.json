@@ -1,0 +1,154 @@
+{
+  "order": 76000,
+  "name": "Portable model operations",
+  "kind": "module",
+  "responsibility": "Exports and restores a complete canonical model with its retained history",
+  "description": "Portable inspection validates every retained record, authored input, local dependency, and materialized proposal. It bounds reads and historical decoding without skipping older records. Import uses the shared signed installer and preserves exact retry, source HEAD, and the index.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/history/portable.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/0T9enjhi#2gFwMLTT",
+  "parent": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 70033,
+      "kind": "call",
+      "label": "inspect portable history trees",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/portable.ts",
+        "symbol": "tree"
+      },
+      "id": "vKEsyHFk#IAJ0ChHL",
+      "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+    },
+    {
+      "order": 248000,
+      "kind": "call",
+      "label": "install verified inputs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/portable.ts",
+        "symbol": "installJournal"
+      },
+      "id": "vKEsyHFk/0T9enjhi#5PFwNTjm",
+      "to": "vKEsyHFk/0T9enjhi#CLdaoYy3"
+    },
+    {
+      "order": 249000,
+      "kind": "call",
+      "label": "retain immutable history",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/portable.ts",
+        "symbol": "archiveCommit"
+      },
+      "id": "vKEsyHFk/0T9enjhi#S8zTZBw6",
+      "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
+    },
+    {
+      "order": 250000,
+      "kind": "call",
+      "label": "share lease and journal",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/portable.ts",
+        "symbol": "writeState"
+      },
+      "id": "vKEsyHFk/0T9enjhi#1SXh5OFf",
+      "to": "vKEsyHFk/0T9enjhi#YREYrbYW"
+    },
+    {
+      "order": 251000,
+      "kind": "call",
+      "label": "readArchitectureModel",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/portable.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/0T9enjhi#W1fBWglm",
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+    },
+    {
+      "order": 252000,
+      "kind": "call",
+      "label": "historyResult",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/portable.ts",
+        "symbol": "historyResult"
+      },
+      "id": "vKEsyHFk/0T9enjhi#IyzXWhR8",
+      "to": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
+    },
+    {
+      "order": 253000,
+      "kind": "call",
+      "label": "notifyArchitecture",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/portable.ts",
+        "symbol": "notifyArchitecture"
+      },
+      "id": "vKEsyHFk/0T9enjhi#J7A3jU0T",
+      "to": "vKEsyHFk/0T9enjhi#IyV7OF9L"
+    },
+    {
+      "order": 254000,
+      "kind": "call",
+      "label": "ArchiveError",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/portable.ts",
+        "symbol": "ArchiveError"
+      },
+      "id": "vKEsyHFk/0T9enjhi#7r71xcNW",
+      "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
+    },
+    {
+      "order": 255000,
+      "kind": "call",
+      "label": "subjectsOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/portable.ts",
+        "symbol": "subjectsOf"
+      },
+      "id": "vKEsyHFk/0T9enjhi#8KIXscUH",
+      "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
+    }
+  ]
+}

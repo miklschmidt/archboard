@@ -42,11 +42,11 @@ type ThemeSnapshot = {
 	inkContrast: number;
 	flatSurfaces: boolean;
 	visibleFocus: boolean;
-	boardIdentity: string;
+	modelIdentity: string;
 	/** The name of the variant the header says is shown. */
-	variant: string;
+	stateName: string;
 	/** The board the navigator marks as the one being read. */
-	selectedBoard: string | null;
+	selectedRepository: string | null;
 	focusedPaneCount: number;
 	/** Visible connection warnings in the pane header; none while the socket is up. */
 	connectionTrouble: number;

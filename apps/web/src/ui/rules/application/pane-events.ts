@@ -3,7 +3,6 @@
 // nothing here diffs rendered state.
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
-import { agentBoardChange, NO_AGENT_ACTIVITY } from "#ui/rules/application/agent-activity.ts";
 import {
 	boardErrorNotice,
 	codeTargetShellNotice,
@@ -15,13 +14,13 @@ import type { NoticeStack } from "#ui/hooks/application/use-notices.ts";
 import type { PaneReadings } from "#ui/hooks/application/use-pane-reading.ts";
 import type { PaneEvents } from "#ui/hooks/application/use-panes.ts";
 import type { useWorkbench } from "#ui/hooks/application/use-workbench.ts";
-import type { BoardCatalog } from "#ui/hooks/board-catalog/use-board-catalog.ts";
+import type { ModelCatalog } from "#ui/hooks/architecture-model/use-model-catalog.ts";
 import type { AgentActivityEntry } from "#ui/rules/pane-session/session-types.ts";
 
 /** The owners the pane events reach. */
 interface PaneEventOwners {
 	readonly notices: NoticeStack;
-	readonly catalog: BoardCatalog;
+	readonly catalog: ModelCatalog;
 	readonly readings: PaneReadings;
 	readonly workbench: ReturnType<typeof useWorkbench>;
 	readonly activity: AgentActivity;
@@ -85,10 +84,6 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 		onCodeTargetNotice: (notice: CodeTargetNotice): void => {
 			notices.raise(codeTargetShellNotice(notice));
 		},
-		/** The server accepted a changed pane report: the listing may have moved. */
-		onPaneStateAccepted: (): void => {
-			catalog.refresh();
-		},
 		/**
 		 * A pane's socket came back: everything this tab caches about the server
 		 * may have moved while it was down, and nothing said so. The agent work it
@@ -100,28 +95,12 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 			catalog.reconnected();
 		},
 		/**
-		 * A pane has gone and the server has dropped it: what the panes are
-		 * holding is not what this tab last read.
-		 */
-		onPaneRetired: (): void => {
-			catalog.refresh();
-		},
-		/**
 		 * Which boards an agent is working on in one vault.
 		 * @param vault The vault.
 		 * @param snapshot The whole snapshot.
 		 */
 		onAgentActivity: (vault: string, snapshot: readonly AgentActivityEntry[]): void => {
-			const change = agentBoardChange(
-				owners.activity.byVault[vault] ?? NO_AGENT_ACTIVITY,
-				snapshot,
-			);
 			owners.activity.replace(vault, snapshot);
-			// A board put down is worth reading again, and one picked up may be one
-			// its vault has not listed yet: either way only that vault is read.
-			if (change.settled.length > 0 || change.started.length > 0) {
-				catalog.boardsChanged(vault, change.settled);
-			}
 		},
 		/** A checkout was chosen somewhere: the repositories are read again. */
 		onRepositoriesChanged: (): void => {

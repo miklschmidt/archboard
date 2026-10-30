@@ -1,0 +1,15 @@
+{
+  "order": 32000,
+  "name": "Trace what a part reaches",
+  "kind": "function",
+  "responsibility": "Walks the relationships from a part, and what it holds, in one direction, and says how many hops away each subject is",
+  "description": "Onward follows what the part sends to, back follows what sends to it. A subject reached by more than one route is as near as its nearest. The count of parts reached labels the control that asks for the trace.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/rules/semantic-board-canvas/board/reach.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#t49irDl0",
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
+  "outgoing": []
+}

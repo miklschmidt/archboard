@@ -214,10 +214,10 @@ function undrawnFinding(reading: RelationshipReading, to: ReadPart, pieces: Piec
 		severity: resolved ? "warning" : "information",
 		code: "RELATIONSHIP_UNDRAWN",
 		message:
-			`The code of ${from} reaches ${describeSubject(subject)}, and no relationship joins ` +
-			`${pieces.length === 1 ? "them" : "each of them to it"}.${unsure} Draw the relationship ` +
-			"this board's question needs, between these parts or parts that hold them, or change " +
-			`the code if it should not reach ${nameOf(reading, to.node.id)}.`,
+			`The code of ${from} reaches ${nameOf(reading, to.node.id)}. No relationship joins ` +
+			`${pieces.length === 1 ? "these modules" : "each caller to that module"}.${unsure} ` +
+			"Add the relationship between these modules or their containing modules. " +
+			"If this dependency is unintended, change the code.",
 		evidence: withPartners(reading, pieces),
 	};
 }

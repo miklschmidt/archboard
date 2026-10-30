@@ -1,4 +1,4 @@
-// Opening a board beside the one being read. With two panes that is the pane
+// Opening a model beside the one being read. With two panes that is the pane
 // that is not active; with one, the second pane is added first, and the board
 // is shown in it once the server has accepted it, since a pane the server has
 // not registered cannot be pointed at anything.
@@ -9,7 +9,7 @@ import type { Panes } from "#ui/hooks/application/use-panes.ts";
 import { paneReady, recordFor } from "#ui/rules/application/pane-records.ts";
 import type { ShellActions } from "#ui/rules/shell/contracts.ts";
 
-/** A board waiting for the pane being added for it. */
+/** A model waiting for the pane being added for it. */
 interface PendingBeside {
 	readonly key: string;
 	/** The repository the board is in. */
@@ -46,7 +46,7 @@ function abandoned(panes: Panes, pending: PendingBeside): boolean {
 }
 
 /**
- * Open a board beside the one being read.
+ * Open a model beside the one being read.
  * @param panes The panes, watched for the pane an opening waits on.
  * @param livePanes The panes as they are when the person acts, which the action reads
  * so that it keeps one identity through every pane's news.
@@ -56,7 +56,7 @@ function abandoned(panes: Panes, pending: PendingBeside): boolean {
 function useBesideOpening(
 	panes: Panes,
 	livePanes: Panes,
-	actions: Pick<ShellActions, "selectBoard" | "addPane" | "selectPane">,
+	actions: Pick<ShellActions, "openModel" | "addPane" | "selectPane">,
 ): (key: string, repository: string) => void {
 	const pending = useRef<PendingBeside | null>(null);
 	useEffect(() => {
@@ -69,7 +69,7 @@ function useBesideOpening(
 		const paneId = readyTarget(panes, wanted);
 		if (paneId === null) return;
 		pending.current = null;
-		void actions.selectBoard(wanted.key, paneId, wanted.repository);
+		void actions.openModel(wanted.key, wanted.repository, paneId);
 		// Beside means the person stays where they were reading, as with two panes.
 		actions.selectPane(wanted.from);
 	}, [panes, actions]);
@@ -78,7 +78,7 @@ function useBesideOpening(
 			const { list } = livePanes;
 			const other = list.panes.find((pane) => pane.paneId !== list.activePaneId);
 			if (other !== undefined) {
-				void actions.selectBoard(key, other.paneId, repository);
+				void actions.openModel(key, repository, other.paneId);
 				return;
 			}
 			pending.current = { key, repository, from: list.activePaneId, seen: false };

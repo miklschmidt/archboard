@@ -1,3 +1,4 @@
+import { mintId } from "@archboard/board/ids";
 // The code check runs on a route of its own, never inside the check that
 // every open canvas polls every 5 seconds (ADR 0045, ADR 0046), and the caller
 // that hangs up cancels it, because it runs as checkout work. A variant that
@@ -10,14 +11,21 @@
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import type { Server } from "node:http";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import express from "express";
 import type * as ServerModule from "#server/wiring/application/application.ts";
 import type * as RouteModule from "#server/routes/code-check/code-check-route.ts";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
-import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { readArchitectureModel } from "@archboard/board/store-read";
+import {
+	claimArchitectureSubjects,
+	editArchitectureModule,
+	releaseArchitectureClaim,
+} from "@archboard/board/store-write";
+const proposals: string[] = [];
 import { VaultCheckSchema } from "@archboard/board/policy";
 
 const caller = {
@@ -84,44 +92,72 @@ beforeAll(async () => {
 	git("remote", "add", "origin", "https://github.com/test/route.git");
 	mkdirSync(vault, { recursive: true });
 	writeFileSync(join(checkout, "src", "a.ts"), "1\n");
+	mkdirSync(join(vault, ".archboard"), { recursive: true });
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
 	writeFileSync(
-		join(vault, "Shop.semantic.json"),
+		join(vault, "model.json"),
 		JSON.stringify({
-			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
-			kind: "semantic-board",
-			id: "bd",
+			schemaVersion: 1,
+			id: "Shop",
 			name: "Shop",
-			level: "system",
-			version: 1,
-			createdAt: "2026-10-06T00:00:00.000Z",
-			updatedAt: "2026-10-06T00:00:00.000Z",
-			current: "v1",
-			variants: [
-				{
-					id: "v1",
-					name: "Built",
-					lifecycle: "current",
-					content: {
-						nodes: [
-							{
-								id: "pA",
-								name: "Checkout",
-								kind: "module",
-								order: 1000,
-								binding: { repo: "github.com/test/route", path: "src/a.ts", symbol: "settle" },
-							},
-						],
-					},
-				},
-				{ id: "v2", name: "PR 1", lifecycle: "draft", parent: "v1", content: {} },
-				{ id: "v3", name: "PR 2", lifecycle: "draft", parent: "v2", content: {} },
-			],
+			current: { id: "Current", name: "Built" },
 		}),
 	);
+	writeFileSync(
+		join(vault, "checkout.module.json"),
+		JSON.stringify({
+			schemaVersion: 1,
+			id: "Shop#Checkout",
+			name: "Checkout",
+			kind: "module",
+			order: 0,
+			binding: { repo: "github.com/test/route", path: "src/a.ts", symbol: "settle" },
+			outgoing: [],
+		}),
+	);
+	git("config", "user.name", "Route Author");
+	git("config", "user.email", "route@example.test");
+	git("config", "commit.gpgsign", "false");
 	git("add", "-A");
 	git("commit", "-q", "--no-gpg-sign", "-m", "the board and its code");
 	writeFileSync(join(checkout, "src", "a.ts"), "2\n");
 	git("commit", "-q", "--no-gpg-sign", "-am", "change a.ts");
+	const target = { model: "Shop", state: "Current" };
+	const claim = await claimArchitectureSubjects(vault, {
+		target,
+		writer: "author",
+		reason: "Create independent proposals",
+		subjects: ["Shop"],
+	});
+	if (!claim.success) throw new Error(JSON.stringify(claim));
+	for (const name of ["PR 1"]) {
+		const current = readArchitectureModel(vault);
+		if (!current.success) throw new Error(JSON.stringify(current));
+		const made = await editArchitectureModule(vault, {
+			target,
+			expectedRevision: current.revision,
+			operationId: name,
+			writer: "author",
+			doing: "Create an independent proposal",
+			claim: claim.claim.id,
+			proposal: { type: "create", name },
+			changes: [],
+		});
+		if (!made.success) throw new Error(JSON.stringify(made));
+		proposals.push(made.selectedState!.id);
+	}
+	// Two independent adapter inputs share the same exact retained base. Runtime proposal writes have their own owner.
+	const file = readdirSync(vault).find((candidate) => candidate.endsWith(".proposal.json"))!;
+	const original = JSON.parse(readFileSync(join(vault, file), "utf8"));
+	const second = mintId();
+	writeFileSync(
+		join(vault, `${second}.proposal.json`),
+		JSON.stringify({ ...original, id: second }),
+	);
+	proposals.push(second);
+
+	await releaseArchitectureClaim(vault, { claim: claim.claim.id, writer: "author" });
+
 	[server, route] = await Promise.all([
 		import("#server/wiring/application/application.ts"),
 		import("#server/routes/code-check/code-check-route.ts"),
@@ -137,7 +173,7 @@ afterAll(() => {
 	rmSync(scratch, { recursive: true, force: true });
 });
 
-test("the polled check never reads code or says how far a board is behind, and the code check route does", async () => {
+test("the polled semantic check stays separate from canonical code inspection", async () => {
 	const base = await listen(server.app);
 	const polled = VaultCheckSchema.passthrough().parse(
 		await (await fetch(`${base}/api/vault/check?vault=${encodeURIComponent(vault)}`)).json(),
@@ -147,17 +183,15 @@ test("the polled check never reads code or says how far a board is behind, and t
 	const answer = CodeCheckAnswerSchema.parse(
 		await (await fetch(`${base}/api/vault/code-check?vault=${encodeURIComponent(vault)}`)).json(),
 	);
-	expect(answer.timings.map((timing) => timing.check)).toEqual(["code-facts", "history"]);
+	expect(answer.timings.map((timing) => timing.check)).toContain("code-facts");
 	expect(answer.timings.every((timing) => timing.elapsedMs > 0)).toBe(true);
-	expect(answer.boards.map((one) => one.board)).toEqual(["Shop"]);
+	expect(answer.models).toMatchObject([{ model: "Shop", state: "Current" }]);
 	expect(answer.findings.map((one) => [one.code, one.subject?.id])).toEqual([
-		["BINDING_SYMBOL_MISSING", "pA"],
+		["BINDING_SYMBOL_MISSING", "Shop#Checkout"],
 	]);
-	const [shop] = answer.behind;
-	expect(shop !== undefined && "parts" in shop ? shop.parts[0]?.commits.length : undefined).toBe(1);
 });
 
-test("every-draft reads every draft of a board, and says once how far the board is behind", async () => {
+test("every-draft inspects independent canonical proposal identities", async () => {
 	const base = await listen(server.app);
 	const answer = CodeCheckAnswerSchema.parse(
 		await (
@@ -166,20 +200,16 @@ test("every-draft reads every draft of a board, and says once how far the board 
 			)
 		).json(),
 	);
-	expect(answer.boards.map((one) => [one.board, one.variant])).toEqual([
-		["Shop", "v2"],
-		["Shop", "v3"],
-	]);
-	expect(answer.behind.map((one) => one.board)).toEqual(["Shop"]);
+	expect(answer.models?.map((model) => model.state).toSorted()).toEqual(proposals.toSorted());
 });
 
-test("a variant that names no draft is refused", async () => {
+test("an unavailable canonical state is refused", async () => {
 	const base = await listen(server.app);
 	const refused = await fetch(
-		`${base}/api/vault/code-check?vault=${encodeURIComponent(vault)}&variant=TASK-0`,
+		`${base}/api/vault/code-check?vault=${encodeURIComponent(vault)}&state=TASK-0`,
 	);
 	expect(refused.status).toBe(422);
-	expect(await refused.json()).toMatchObject({ success: false, code: "NO_SUCH_DRAFT" });
+	expect(await refused.json()).toMatchObject({ success: false, code: "STATE_NOT_FOUND" });
 });
 
 test("a plan outside every registered checkout is refused before the pass", async () => {

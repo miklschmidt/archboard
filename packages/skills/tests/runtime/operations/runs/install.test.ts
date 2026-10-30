@@ -24,10 +24,14 @@ test("a candidate run installs the batch's kept copy, not the checkout as it sta
 		// would: its SKILL.md changed, and a reference the checkout still holds
 		// is gone from it.
 		fs.appendFileSync(path.join(kept, "SKILL.md"), "\nKEPT-COPY-MARKER\n");
-		fs.rmSync(path.join(kept, "references", "read.md"));
+		fs.rmSync(path.join(kept, "references", "canonical-models.md"));
 		const paths = prepareRunDirectory(path.join(root, "run"));
 		fs.mkdirSync(paths.flask, { recursive: true });
 		Bun.spawnSync(["git", "init", "--quiet"], { cwd: paths.flask });
+		fs.cpSync(path.join(checkout, "examples/canonical-model/.archboard/vault"), paths.vault, {
+			recursive: true,
+		});
+		const original = fs.readFileSync(path.join(paths.vault, "model.json"));
 		const cli = {
 			checkout,
 			env: runEnvironment(paths, "http://127.0.0.1:9"),
@@ -37,8 +41,11 @@ test("a candidate run installs the batch's kept copy, not the checkout as it sta
 		const installed = fs.readFileSync(path.join(install.skillRoot, "SKILL.md"), "utf8");
 		expect(installed).toBe(fs.readFileSync(path.join(kept, "SKILL.md"), "utf8"));
 		expect(install.source).toBe(kept);
+		expect(fs.readFileSync(path.join(paths.vault, "model.json"))).toEqual(original);
 		// Nothing of the checkout survives into the install beside the kept copy.
-		expect(fs.existsSync(path.join(install.skillRoot, "references", "read.md"))).toBe(false);
+		expect(fs.existsSync(path.join(install.skillRoot, "references", "canonical-models.md"))).toBe(
+			false,
+		);
 		// Nor does any other skill the installer ships.
 		expect(fs.readdirSync(path.dirname(install.skillRoot))).toEqual(["archboard"]);
 	} finally {

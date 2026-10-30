@@ -1,0 +1,128 @@
+{
+  "order": 21000,
+  "name": "Code check",
+  "kind": "module",
+  "responsibility": "Checks selected canonical architecture against source evidence",
+  "description": "The checker reads current architecture, one selected state, or independent drafts. It reports bindings, anchors, declared relationships, interfaces, and document references with canonical identities. Git locality and branch footprint use separate requested history operations.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/code-intel/src/runtime/operations/code-check"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 43000,
+      "kind": "call",
+      "label": "read selected canonical states",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#3hokVf0H",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    },
+    {
+      "order": 66000,
+      "kind": "call",
+      "label": "read selected canonical states",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#rCuDH1LU",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    },
+    {
+      "order": 69000,
+      "kind": "call",
+      "label": "the facts of each file, and what each module exposes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/check.ts",
+        "symbol": "createCodeFacts"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#osnkOhpk",
+      "to": "vKEsyHFk/6E6hL0Zk#mR7wPSei"
+    },
+    {
+      "order": 70018,
+      "kind": "call",
+      "label": "apply source-reading policy",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/checkouts.ts",
+        "symbol": "neverRead"
+      },
+      "id": "vKEsyHFk#inAwwoLx",
+      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
+    },
+    {
+      "order": 71000,
+      "kind": "call",
+      "label": "where a use no import resolves is defined",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/resolution.ts",
+        "symbol": "openLanguageServers"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#uZdil5lI",
+      "to": "vKEsyHFk/6E6hL0Zk#1aoB46lM"
+    },
+    {
+      "order": 87000,
+      "kind": "call",
+      "label": "reads each draft at its own ref",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/ref-code.ts",
+        "symbol": "nodesAtOwnRef"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#m1F0u7X1",
+      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+    },
+    {
+      "order": 122000,
+      "kind": "call",
+      "label": "each draft at its own ref; how far each board is behind",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/ref-code.ts",
+        "symbol": "nodesAtOwnRef"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#eW22MD6a",
+      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+    }
+  ]
+}

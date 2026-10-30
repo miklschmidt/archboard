@@ -1,0 +1,441 @@
+{
+  "schemaVersion": 1,
+  "id": "HBlhIeSD",
+  "name": "Archboard server routes",
+  "flows": [
+    {
+      "id": "vKEsyHFk/HBlhIeSD#SHFuILEQ",
+      "name": "An agent runs the code check",
+      "participants": [
+        "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+        "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+        "vKEsyHFk/HBlhIeSD#5SMX69gS",
+        "vKEsyHFk/HBlhIeSD#radK8osF",
+        "vKEsyHFk/HBlhIeSD#yYQ3AHkf"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/HBlhIeSD#M1JRMZ05",
+          "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+          "label": "check --code",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+            "symbol": "answerCodeCheck"
+          }
+        },
+        {
+          "id": "vKEsyHFk/HBlhIeSD#5d3cCsSc",
+          "from": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+          "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+          "label": "run: the boards, the plans, the pass and behind",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+            "symbol": "createCodeCheck"
+          }
+        },
+        {
+          "id": "vKEsyHFk/HBlhIeSD#psh2Ek59",
+          "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+          "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+          "label": "read the boards at their current variant or the named draft",
+          "kind": "self",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+            "symbol": "readBoardsToCheck"
+          }
+        },
+        {
+          "id": "vKEsyHFk/HBlhIeSD#tuxb9gwQ",
+          "kind": "decision",
+          "question": "Does some board have the draft that was named?",
+          "alternatives": [
+            {
+              "label": "no board has it",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/HBlhIeSD#otP2a8uC",
+                  "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                  "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+                  "label": "NO_SUCH_DRAFT, with the drafts that exist",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                    "symbol": "noSuchDraft"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/HBlhIeSD#oljnpPHi",
+                  "from": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+                  "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "label": "422 with the refusal as it is",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+                    "symbol": "answerCodeCheck"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "found",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/HBlhIeSD#kQ9AIOYa",
+                  "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                  "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                  "label": "read the plans that were named",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                    "symbol": "readPlans"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/HBlhIeSD#GBiO6IaH",
+                  "kind": "decision",
+                  "question": "Does the check read every plan?",
+                  "alternatives": [
+                    {
+                      "label": "a plan is refused",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/HBlhIeSD#7EqYTCjB",
+                          "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                          "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+                          "label": "PLAN_REFUSED, before the pass starts",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                            "symbol": "planRefused"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/HBlhIeSD#64EglmLD",
+                          "from": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+                          "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                          "label": "422 with the refusal as it is",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+                            "symbol": "answerCodeCheck"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "all read",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/HBlhIeSD#IKl4SagV",
+                          "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                          "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                          "label": "inspect canonical anchors, bindings, and relationships",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                            "symbol": "checkCode"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/HBlhIeSD#dZ5w2Aoa",
+                          "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                          "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+                          "label": "models, findings, and skipped evidence",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                            "symbol": "createCodeCheck"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/HBlhIeSD#fVuEiu60",
+                          "kind": "decision",
+                          "question": "Did the pass finish before the caller left?",
+                          "alternatives": [
+                            {
+                              "label": "caller left",
+                              "steps": []
+                            },
+                            {
+                              "label": "finished",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/HBlhIeSD#28Fj89Og",
+                                  "from": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+                                  "to": "vKEsyHFk/HBlhIeSD#yYQ3AHkf",
+                                  "label": "keep what the finished pass found",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+                                    "symbol": "createCodeFindingsMemory"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/HBlhIeSD#ofg1Dxh5",
+                                  "from": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+                                  "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                                  "label": "models, findings, and skipped evidence",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+                                    "symbol": "answerCodeCheck"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#dTfYgmVn",
+      "name": "A person chooses a repository's checkout",
+      "participants": [
+        "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+        "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+        "vKEsyHFk/HBlhIeSD#nLp2hILd",
+        "vKEsyHFk/HBlhIeSD#KLt72lWa",
+        "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/HBlhIeSD#7sWi0Gt4",
+          "from": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+          "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+          "label": "choose a repository's checkout",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+            "symbol": "chooseCheckoutRoute"
+          }
+        },
+        {
+          "id": "vKEsyHFk/HBlhIeSD#Yyk0IoPZ",
+          "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+          "to": "vKEsyHFk/HBlhIeSD#nLp2hILd",
+          "label": "the checkouts the registry knows",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+            "symbol": "listRegistry"
+          }
+        },
+        {
+          "id": "vKEsyHFk/HBlhIeSD#myGzl930",
+          "from": "vKEsyHFk/HBlhIeSD#nLp2hILd",
+          "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+          "label": "each checkout, with whether it exists",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+            "symbol": "listRegistry"
+          }
+        },
+        {
+          "id": "vKEsyHFk/HBlhIeSD#IXevfcB3",
+          "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+          "to": "vKEsyHFk/HBlhIeSD#KLt72lWa",
+          "label": "does the checkout have a vault",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+            "symbol": "vaultIn"
+          }
+        },
+        {
+          "id": "vKEsyHFk/HBlhIeSD#vgoiHzwl",
+          "from": "vKEsyHFk/HBlhIeSD#KLt72lWa",
+          "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+          "label": "the vault, or none",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workspace/src/server/projections/repository-listing.ts",
+            "symbol": "vaultIn"
+          }
+        },
+        {
+          "id": "vKEsyHFk/HBlhIeSD#g5QBwDaM",
+          "kind": "decision",
+          "question": "Is it a known checkout of the repository that has a vault?",
+          "alternatives": [
+            {
+              "label": "unknown",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/HBlhIeSD#RtOLEUXs",
+                  "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                  "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                  "label": "404 CHECKOUT_UNKNOWN",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                    "symbol": "refuseUnknownCheckout"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "gone or without a vault",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/HBlhIeSD#MyZxXuzc",
+                  "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                  "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                  "label": "422 CHECKOUT_UNUSABLE",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                    "symbol": "statedChoice"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "usable",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/HBlhIeSD#nGUygMX9",
+                  "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                  "to": "vKEsyHFk/HBlhIeSD#nLp2hILd",
+                  "label": "choose a known checkout of the registry",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                    "symbol": "chooseKnownCheckout"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/HBlhIeSD#IMvOQpab",
+                  "kind": "loop",
+                  "condition": "for each pane of the machine",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/HBlhIeSD#ZNWAp2rJ",
+                      "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa",
+                      "label": "where the pane's vault belongs now",
+                      "kind": "sync",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                        "symbol": "placeOfVault"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/HBlhIeSD#kqxOzNTs",
+                      "from": "vKEsyHFk/HBlhIeSD#KLt72lWa",
+                      "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                      "label": "its home vault and repository",
+                      "kind": "return",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/workspace/src/server/projections/repository-listing.ts",
+                        "symbol": "placeOfVault"
+                      }
+                    },
+                    {
+                      "id": "vKEsyHFk/HBlhIeSD#Dth0ebBa",
+                      "kind": "decision",
+                      "question": "Is the pane in a vault that is not its home?",
+                      "alternatives": [
+                        {
+                          "label": "in an unchosen checkout",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/HBlhIeSD#tglqRyhQ",
+                              "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                              "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+                              "label": "move the pane out, with its board",
+                              "kind": "sync",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                                "symbol": "movePaneVault"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "label": "at home",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/HBlhIeSD#4CvAnVr8",
+                              "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                              "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+                              "label": "tell the pane where it is again",
+                              "kind": "sync",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                                "symbol": "sendBoardlessToPane"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "vKEsyHFk/HBlhIeSD#T6XUtqQp",
+                  "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                  "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+                  "label": "repositories_changed to every tab",
+                  "kind": "async",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                    "symbol": "broadcastEverywhere"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/HBlhIeSD#lTkrf1jq",
+                  "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                  "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                  "label": "the repository and the root chosen",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                    "symbol": "chooseCheckoutRoute"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

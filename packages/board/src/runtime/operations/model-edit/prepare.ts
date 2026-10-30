@@ -1,0 +1,148 @@
+import { StateMetadataSchema } from "#shared/schemas/model-definitions.ts";
+import { isDeepStrictEqual } from "node:util";
+import type {
+	ArchitectureModuleEdit,
+	ArchitectureModuleEditResult,
+} from "#shared/schemas/model-operations.ts";
+import { editCandidate } from "#runtime/operations/model-edit/candidate.ts";
+import { requireSubjectClaim } from "#runtime/operations/model-edit/claims.ts";
+import { readCurrentModel } from "#runtime/operations/read/model-read.ts";
+import {
+	archiveContext,
+	assertArchiveWritable,
+	archiveTip,
+	archiveCommit,
+	captureSource,
+	CheckpointRecordSchema,
+	tree,
+	ArchiveError,
+	type ArchiveContext,
+} from "#runtime/store/model-archive.ts";
+import { operationRef, checkoutContext, type ModelJournal } from "#runtime/store/model-state.ts";
+import { captureReferencePins } from "#runtime/operations/history/reference-pins.ts";
+type Candidate = Extract<Awaited<ReturnType<typeof editCandidate>>, { success: true }> &
+	Pick<Extract<ArchitectureModuleEditResult, { success: true }>, "confirmed">;
+
+/**
+ * Recheck the caller's complete token after the asynchronous signer finishes.
+ * @param vault The explicitly addressed vault.
+ * @param request The original operation intent.
+ * @param subjects The complete affected claim scope.
+ * @returns The still-current reading or a structured refusal.
+ */
+async function requireUnchanged(
+	vault: string,
+	request: ArchitectureModuleEdit,
+	subjects: string[],
+) {
+	requireSubjectClaim(vault, request, subjects);
+	const current = readCurrentModel(vault);
+	if (!current.success) return current;
+	if (!isDeepStrictEqual(current.revision, request.expectedRevision))
+		throw new ArchiveError(
+			"STALE_REVISION",
+			"Inputs changed during signed preparation. No current file changed.",
+		);
+	if ("correction" in request) {
+		const { stateMetadata } = await import("#runtime/operations/proposals/read.ts");
+		const latest = await stateMetadata(await archiveContext(vault), current, request.target.state!);
+		if (latest.checkpoint !== request.correction.previous)
+			throw new ArchiveError(
+				"STALE_REVISION",
+				"The logical state changed during signed preparation. Read it again before correcting it.",
+			);
+	}
+	return current;
+}
+/**
+ * Capture one complete signed operation record, including selected lifecycle metadata.
+ * @param vault The explicitly addressed vault.
+ * @param request The original operation intent.
+ * @param candidate The complete checked candidate.
+ * @param context The addressed archive context.
+ * @returns Its immutable checkpoint metadata.
+ */
+async function candidateRecord(
+	vault: string,
+	request: ArchitectureModuleEdit,
+	candidate: Candidate,
+	context: ArchiveContext,
+) {
+	const references = await captureReferencePins(vault, candidate.model, request);
+	return CheckpointRecordSchema.parse({
+		schemaVersion: 1,
+		kind: "checkpoint",
+		vault: context.vault,
+		model: candidate.current.manifest.id,
+		state: StateMetadataSchema.strip().parse(
+			candidate.selection ?? candidate.current.manifest.current,
+		),
+		selection: candidate.selection ?? candidate.model.selectedState,
+		lifecycle: "lifecycle" in candidate ? candidate.lifecycle : undefined,
+		correction: "correction" in candidate ? candidate.correction : undefined,
+		revision: candidate.revision,
+		createdAt: new Date().toISOString(),
+		request: {
+			target: "current",
+			operationId: request.operationId,
+			writer: request.writer,
+			doing: request.doing,
+			expectedRevision: request.expectedRevision.digest,
+			dependencies: candidate.dependencies,
+		},
+		edit: request,
+		subjects: candidate.subjects,
+		reconciliations: candidate.reconciliations,
+		confirmed: candidate.confirmed,
+		sources:
+			"correction" in request
+				? request.correction.revisions.map((revision) => ({ ...revision, uncommitted: false }))
+				: await captureSource(context, candidate.model, vault),
+		...references,
+	});
+}
+/**
+ * Prepare signed architecture before any current input changes.
+ * @param vault The explicitly addressed vault.
+ * @param request The original operation intent.
+ * @returns The signed preparation journal or a structured refusal.
+ */
+async function prepareEdit(vault: string, request: ArchitectureModuleEdit) {
+	const candidate = await editCandidate(vault, request);
+	if (!candidate.success) return candidate;
+	const context = await archiveContext(vault);
+	const checkout = await checkoutContext(context);
+	await assertArchiveWritable(context);
+	const tip = await archiveTip(context);
+	const record = await candidateRecord(vault, request, candidate, context);
+	const inputs = new Map([...candidate.inputs].map(([file, bytes]) => [`inputs/${file}`, bytes]));
+	inputs.set("record.json", Buffer.from(JSON.stringify(record)));
+	const checkpoint = await archiveCommit(
+		context,
+		await tree(context, inputs),
+		[
+			...new Set([
+				...(tip === undefined ? [] : [tip]),
+				...candidate.dependencies,
+				...(record.referenceDependencies ?? []),
+			]),
+		],
+		"archboard: edit canonical architecture",
+	);
+	const latest = await requireUnchanged(vault, request, candidate.scopes);
+	if (!latest.success) return latest;
+	const journal: ModelJournal = {
+		schemaVersion: 1,
+		context: checkout,
+		request,
+		before: request.expectedRevision,
+		after: candidate.revision,
+		checkpoint,
+		ref: operationRef(vault, request.operationId, "transactions"),
+		phase: "prepared",
+		files: candidate.files,
+		subjects: candidate.subjects,
+	};
+	return journal;
+}
+export { prepareEdit };

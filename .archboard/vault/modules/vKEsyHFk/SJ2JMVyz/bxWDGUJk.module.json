@@ -1,0 +1,96 @@
+{
+  "order": 32000,
+  "name": "Canonical explanation actions",
+  "kind": "module",
+  "responsibility": "Runs one temporary captured request through the existing local workhorse and queue",
+  "description": "One action serves browser, typed requests, CLI, and voice. It retains only temporary invocation and result state. Exact retry reuses captured architecture. Existing queue deletion, turn interruption, and provider notifications establish cancellation and the one textual answer.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/services/explanations"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#bxWDGUJk",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 43000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/start.ts",
+        "symbol": "enqueue"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#iBhsibnc",
+      "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn"
+    },
+    {
+      "order": 44000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/start.ts",
+        "symbol": "readyWorkhorse"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#QvQYycYS",
+      "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4"
+    },
+    {
+      "order": 45000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/actions.ts",
+        "symbol": "interrupt"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#rCIdAV06",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 70014,
+      "kind": "call",
+      "label": "resolve the captured tab",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/actions.ts",
+        "symbol": "tabSessionOf"
+      },
+      "id": "vKEsyHFk#DxnUwbpm",
+      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+    },
+    {
+      "order": 70015,
+      "kind": "call",
+      "label": "resolve the captured pane",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/actions.ts",
+        "symbol": "panes"
+      },
+      "id": "vKEsyHFk#3YLhUCde",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "order": 126000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/actions.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#yBgqPUx8",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    }
+  ]
+}

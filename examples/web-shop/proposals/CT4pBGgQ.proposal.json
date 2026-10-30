@@ -1,0 +1,192 @@
+{
+  "id": "CT4pBGgQ",
+  "name": "Live events",
+  "summary": "Score product pairs as shoppers browse, so suggestions follow today's shopping",
+  "migration": {
+    "legacy": "Shop/gsfCCrqV#CT4pBGgQ",
+    "predecessor": "Shop/gsfCCrqV#ud0cQDB9",
+    "baseline": {
+      "kind": "content",
+      "state": "Shop/gsfCCrqV#ud0cQDB9"
+    },
+    "reason": "Preserve the original predecessor and its exact content.",
+    "checkpoint": "b1fad19fdf97ddc8c4d3826032a1ce5b20d3170c"
+  },
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "predecessor": "ud0cQDB9",
+  "predecessorRevision": "e9a83b2c3350728eb5011ed1b72b35812889ff64d7bc012e1e7739774d995d0d",
+  "baseline": "e55d70a66863a71d448db7234029412092889738",
+  "changes": [
+    {
+      "type": "remove",
+      "subject": "Shop/gsfCCrqV#QgAzuExP"
+    },
+    {
+      "type": "remove",
+      "subject": "Shop/gsfCCrqV#2YPq2CN8"
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#IsWsF823",
+      "kind": "relationship",
+      "value": {
+        "order": 6000,
+        "kind": "queue",
+        "label": "publish views and basket adds",
+        "emphasis": "normal",
+        "traffic": {
+          "speed": 80,
+          "volume": 2
+        },
+        "id": "Shop/gsfCCrqV#IsWsF823",
+        "to": "Shop/gsfCCrqV#8n40EjCz"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#IsWsF823",
+      "placement": {
+        "holder": "Shop/MKhTEYqf#cgbB3aQp"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "Shop/gsfCCrqV#6F35VHCd",
+      "field": "responsibility",
+      "value": "GET /recommendations/{product}: the 8 products scoring highest with it right now"
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#XfDqNKRX",
+      "kind": "relationship",
+      "value": {
+        "order": 5000,
+        "kind": "data",
+        "label": "top 8 for a product",
+        "emphasis": "hero",
+        "traffic": {
+          "speed": 80,
+          "volume": 1
+        },
+        "id": "Shop/gsfCCrqV#XfDqNKRX",
+        "to": "Shop/gsfCCrqV#nuT2H9fQ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#XfDqNKRX",
+      "placement": {
+        "holder": "Shop/gsfCCrqV#6F35VHCd"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#8n40EjCz",
+      "kind": "module",
+      "value": {
+        "order": 7000,
+        "name": "Shopper events",
+        "kind": "queue",
+        "responsibility": "Every product view and basket add, as it happens",
+        "schemaVersion": 1,
+        "id": "Shop/gsfCCrqV#8n40EjCz"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#8n40EjCz",
+      "placement": {
+        "holder": "Shop"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#rR6FCROs",
+      "kind": "relationship",
+      "value": {
+        "order": 7000,
+        "kind": "queue",
+        "label": "deliver each event",
+        "emphasis": "normal",
+        "traffic": {
+          "speed": 80,
+          "volume": 2
+        },
+        "id": "Shop/gsfCCrqV#rR6FCROs",
+        "to": "Shop/gsfCCrqV#hLt6rwYN"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#rR6FCROs",
+      "placement": {
+        "holder": "Shop/gsfCCrqV#8n40EjCz"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#hLt6rwYN",
+      "kind": "module",
+      "value": {
+        "order": 8000,
+        "name": "Live scorer",
+        "kind": "job",
+        "responsibility": "Scores two products higher each time one shopper looks at both",
+        "schemaVersion": 1,
+        "id": "Shop/gsfCCrqV#hLt6rwYN"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#hLt6rwYN",
+      "placement": {
+        "holder": "Shop"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#Lv6i6JoN",
+      "kind": "relationship",
+      "value": {
+        "order": 8000,
+        "kind": "data",
+        "label": "raise pair scores",
+        "emphasis": "normal",
+        "traffic": {
+          "speed": 80,
+          "volume": 2
+        },
+        "id": "Shop/gsfCCrqV#Lv6i6JoN",
+        "to": "Shop/gsfCCrqV#nuT2H9fQ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#Lv6i6JoN",
+      "placement": {
+        "holder": "Shop/gsfCCrqV#hLt6rwYN"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#nuT2H9fQ",
+      "kind": "module",
+      "value": {
+        "order": 9000,
+        "name": "Pair scores",
+        "kind": "cache",
+        "responsibility": "A score for each pair of products, fading over 7 days",
+        "schemaVersion": 1,
+        "id": "Shop/gsfCCrqV#nuT2H9fQ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#nuT2H9fQ",
+      "placement": {
+        "holder": "Shop"
+      }
+    }
+  ]
+}

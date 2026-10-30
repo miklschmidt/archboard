@@ -1,0 +1,48 @@
+{
+  "order": 53000,
+  "name": "Voice session actions",
+  "kind": "module",
+  "responsibility": "Admits voice starts and awaits the host narrative before creating the existing realtime offer",
+  "description": "The host narrative adapter can prepare synchronously or asynchronously. A cancelled or replaced start cannot create an offer after preparation. The existing voice owner keeps lifecycle, cleanup, and command authority.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/services/voice"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#yt8fa9w3",
+  "parent": "vKEsyHFk/9ncuT5DP#3vO7eN8L",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 95000,
+      "kind": "call",
+      "label": "await captured host narrative",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/voice/realtime-actions.ts",
+        "symbol": "prepareNarrative"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#a5ULzncp",
+      "to": "vKEsyHFk/9ncuT5DP#K53UIYaX"
+    },
+    {
+      "order": 97000,
+      "kind": "call",
+      "label": "create the existing realtime offer",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/voice/realtime-actions.ts",
+        "symbol": "createOffer"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#4taYdz5M",
+      "to": "vKEsyHFk/9ncuT5DP#ZQxB1ZaK"
+    }
+  ]
+}

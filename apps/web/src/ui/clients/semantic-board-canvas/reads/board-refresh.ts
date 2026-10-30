@@ -1,3 +1,4 @@
+import { architectureModelKeys } from "#ui/clients/architecture-model/queries.ts";
 // What makes this tab read a board again, and in what order (ADR 0023).
 //
 // Callers report what happened: a board changed, boards of a vault were
@@ -174,7 +175,11 @@ async function readEverythingAgain(client: QueryClient): Promise<void> {
 	await Promise.all([
 		repositoriesChanged(client),
 		listingsChanged(client),
-		readAgain(client, [semanticBoardKeys.documents, semanticBoardKeys.renders]),
+		readAgain(client, [
+			semanticBoardKeys.documents,
+			semanticBoardKeys.renders,
+			architectureModelKeys.all,
+		]),
 	]);
 }
 

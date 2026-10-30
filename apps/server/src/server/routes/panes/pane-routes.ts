@@ -20,7 +20,6 @@ import {
 } from "@archboard/workbench/host";
 import { asyncEndpoint } from "#server/middleware/mutation-work/mutation-work.ts";
 import {
-	aggregateOf,
 	boardForPane,
 	boardsOnScreen,
 	currentSocketsByClient,
@@ -37,8 +36,6 @@ import {
 	type PendingPaneClose,
 	type PendingPaneOpen,
 } from "@archboard/workbench/panes";
-import { tellPaneAboutLock } from "#server/projections/board-announcements/board-announcements.ts";
-import { noteBoardShown } from "#server/watchers/semantic-boards/semantic-disk-watch.ts";
 import { showPaneRoute } from "#server/routes/panes/pane-show-route.ts";
 import { shownConversationRoute } from "#server/routes/panes/shown-conversation-route.ts";
 import { SHOWN_CONVERSATION_ROUTE } from "@archboard/workbench/browser-contract";
@@ -429,7 +426,7 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 function mountPaneRoutes(app: Express): void {
 	app.post("/api/panes", requireVault, postPaneRoute);
 	app.get("/api/panes", getPanesRoute);
-	app.post("/api/panes/show", requireVault, showPaneRoute);
+	app.post(["/api/panes/show", "/api/browser/show"], requireVault, showPaneRoute);
 	// The person's own act in the page, so only the page reaches it (ADR 0050).
 	app.post(
 		SHOWN_CONVERSATION_ROUTE,
@@ -533,12 +530,4 @@ function focusChange(
  */
 function arrivedOnBoard(clientId: string, board: string): void {
 	paneBoards.set(clientId, board);
-	// What the board's file is right now, which is what this pane is about to
-	// read. Anything that replaces it after this is a change the pane has to
-	// hear about, and taking the baseline any later would let one slip past.
-	const vault = paneVaults.get(clientId);
-	if (vault !== undefined) {
-		noteBoardShown(vault, aggregateOf(board) ?? board);
-	}
-	tellPaneAboutLock(clientId, board);
 }

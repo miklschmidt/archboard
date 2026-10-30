@@ -212,6 +212,10 @@ export async function startServer(options: {
 export function extendFixture(root: string, storageMode?: StorageMode): string {
 	const source = readFileSync(fixtureSource, "utf8")
 		.replaceAll(
+			"./fake-codex-explanation-queue.ts",
+			join(repoRoot, "tests/system/server-state/fixtures/fake-codex-explanation-queue.ts"),
+		)
+		.replaceAll(
 			"./fake-codex-production-data.ts",
 			join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production-data.ts"),
 		)

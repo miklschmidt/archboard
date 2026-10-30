@@ -1,0 +1,57 @@
+{
+  "order": 13000,
+  "name": "Codex grader",
+  "kind": "module",
+  "responsibility": "One grader runner: a resumed thread, pictures attached, usage read as the thread's running total",
+  "groups": [
+    "grading"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/skills/src/runtime/clients/codex-grader.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#gwU9cyGm",
+  "parent": "vKEsyHFk/IbGtfJE2#RrIatpuG",
+  "outgoing": [
+    {
+      "order": 18000,
+      "kind": "call",
+      "label": "resume the grading thread",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/clients/codex-grader.ts",
+        "symbol": "codexGraderArgv"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#xovfrY1j",
+      "to": "vKEsyHFk/IbGtfJE2#1snXnK3G"
+    },
+    {
+      "order": 40000,
+      "kind": "call",
+      "label": "a private codex home for the grader",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/clients/codex-grader.ts",
+        "symbol": "fillCodexHome"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#NzNYGL6D",
+      "to": "vKEsyHFk/IbGtfJE2#IsMHIzoa"
+    },
+    {
+      "order": 45000,
+      "kind": "call",
+      "label": "unwrap the grader's shell commands",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/clients/codex-grader.ts",
+        "symbol": "unwrapped"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#DElPMBfe",
+      "to": "vKEsyHFk/IbGtfJE2#TJmrdpKj"
+    }
+  ]
+}

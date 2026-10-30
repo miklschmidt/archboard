@@ -1,0 +1,11 @@
+{
+	"schemaVersion": 1,
+	"id": "Shop",
+	"name": "Shop architecture",
+	"current": {
+		"id": "Current",
+		"name": "Implemented",
+		"summary": "The local shop services",
+		"documents": [{ "repo": "github.com/acme/shop", "path": "docs/design.md" }]
+	}
+}

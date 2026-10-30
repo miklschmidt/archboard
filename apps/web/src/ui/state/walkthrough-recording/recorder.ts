@@ -11,13 +11,11 @@
 // takes the talk; this owns nothing else (TASK-381).
 
 import { RECORDING_MS } from "@archboard/timing";
-import type { publishRecordingPage } from "@archboard/walkthrough/recording";
+import type { publishRecordingPage, recordingAskedOf } from "@archboard/walkthrough/recording";
 import { TALK_SAMPLE_RATE } from "@archboard/walkthrough/talk";
 import type { BrowserAudioElementPort } from "@archboard/codex-realtime-voice/controllers";
-import {
-	sameBoardName,
-	type SemanticPaneReading,
-} from "#ui/rules/semantic-board-canvas/board/address.ts";
+import { sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
+import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import { type SemanticBoardStageProps } from "#ui/components/semantic-board-canvas/SemanticBoardStage.tsx";
 
 import {
@@ -42,17 +40,15 @@ type RecordingState = ReturnType<RecordingPage["state"]>;
 /** The log of a finished talk, stamped on its voice's samples. */
 type TalkLog = NonNullable<ReturnType<RecordingPage["talk"]>>;
 
-/** What the page was opened to record. */
-interface RecordingRequest {
-	/** The board, by name, or null when the address named none. */
+/** What the page address asks the existing recorder to capture. */
+type RecordingRequest = NonNullable<ReturnType<typeof recordingAskedOf>> & {
 	readonly board: string | null;
-	/** The walkthrough, by id. */
-	readonly walkthrough: string;
-	/** The language the voice narrates it in, as a BCP 47 tag. */
-	readonly language: string;
-	/** The id of the variant the recording is read against, or null for the usual one. */
-	readonly against: string | null;
-}
+};
+type RecordedModel = Parameters<NonNullable<RecordingPage["load"]>>[0];
+type RecordedView = {
+	readonly step: RecordedStep | null;
+	readonly architecture: RecordedModel | null | undefined;
+};
 
 /** A step the page moves its pane to: its own choice, answering no request. */
 type RecordedStep = NonNullable<SemanticBoardStageProps["driven"]>;
@@ -82,8 +78,8 @@ const LOADING: Readiness = Object.freeze({ phase: "loading", failure: null });
  * @param walkthrough The recorded walkthrough's id.
  * @returns Its place, or null while it is not presenting that walkthrough.
  */
-function placeIn(reading: SemanticPaneReading | null, walkthrough: string): PanePlace | null {
-	const presented = reading === null ? null : reading.presentation;
+function placeIn(reading: PaneReading | null, walkthrough: string): PanePlace | null {
+	const presented = reading?.presentation ?? null;
 	if (presented === null || presented.walkthrough !== walkthrough) return null;
 	return { beat: presented.beat, of: presented.of, arrived: presented.arrived };
 }
@@ -94,8 +90,54 @@ function placeIn(reading: SemanticPaneReading | null, walkthrough: string): Pane
  * @param board The board, by name.
  * @returns True once it is.
  */
-function drawnOn(reading: SemanticPaneReading | null, board: string): boolean {
-	return reading !== null && reading.drawn !== null && sameBoardName(reading.board, board);
+function drawnOn(reading: PaneReading | null, board: string | null): boolean {
+	return (
+		reading?.board != null &&
+		reading.version !== null &&
+		board !== null &&
+		sameBoardName(reading.board.name, board)
+	);
+}
+
+/**
+ * Require both source and target guards from the captured canonical picture.
+ * @param reading The last complete pane report.
+ * @param model The loaded immutable capture, or null before load.
+ * @returns Whether the requested picture is drawn.
+ */
+function canonicalDrawn(reading: PaneReading | null, model: RecordedModel | null): boolean {
+	return (
+		model !== null &&
+		reading?.architecture?.model === model.manifest.id &&
+		reading.architecture.expectedRevision === model.revision.digest &&
+		reading.architecture.expectedSourceRevision === model.playback!.sourceRevision.digest
+	);
+}
+
+/**
+ * Match the reported picture through its existing identity contract.
+ * @param reading The last pane report.
+ * @param request The requested recording address.
+ * @param view The loaded model and driven step.
+ * @returns Whether the recording can use this picture.
+ */
+function requestedPicture(
+	reading: PaneReading | null,
+	request: RecordingRequest,
+	view: RecordedView,
+): boolean {
+	return view.architecture === undefined
+		? drawnOn(reading, request.board)
+		: canonicalDrawn(reading, view.architecture);
+}
+
+/**
+ * Name either form of the existing recording request.
+ * @param request The page address.
+ * @returns Its target name or null when none was requested.
+ */
+function recordingTarget(request: RecordingRequest): string | null {
+	return request.canonical?.model ?? request.board;
 }
 
 /**
@@ -128,13 +170,13 @@ class WalkthroughRecorder {
 	readonly #request: RecordingRequest;
 	readonly #listeners = new Set<() => void>();
 	#sources: RecordingSources | null = null;
-	#reading: SemanticPaneReading | null = null;
+	#reading: PaneReading | null = null;
 	#voice: MediaStream | null = null;
 	#capture: TalkCapture | null = null;
 	#talk: PaceState | null = null;
 	#kept: { readonly voice: Blob; readonly log: TalkLog } | null = null;
 	#failure: string | null = null;
-	#step: RecordedStep | null = null;
+	#view: RecordedView;
 	#timer: ReturnType<typeof setInterval> | null = null;
 	/** The transport whose transcript the talk follows, and how to stop following it. */
 	#following: { readonly transport: object; readonly stop: () => void } | null = null;
@@ -145,7 +187,9 @@ class WalkthroughRecorder {
 	 */
 	constructor(request: RecordingRequest) {
 		this.#request = request;
+		this.#view = { step: null, architecture: request.canonical === undefined ? undefined : null };
 		this.page = Object.freeze({
+			load: this.load.bind(this),
 			state: this.state.bind(this),
 			start: this.start.bind(this),
 			voice: this.voice.bind(this),
@@ -167,19 +211,44 @@ class WalkthroughRecorder {
 	 * What the recorded pane says it is reading, whenever that changes.
 	 * @param reading The reading.
 	 */
-	readonly reading = (reading: SemanticPaneReading): void => {
+	readonly reading = (reading: PaneReading): void => {
 		this.#reading = reading;
-		const { board } = this.#request;
-		if (board !== null && reading.drawn !== null && sameBoardName(reading.board, board)) {
-			this.#capture?.drawn(reading.drawn.version);
-		}
+		if (!requestedPicture(reading, this.#request, this.#view)) return;
+		const model = this.#view.architecture;
+		if (model === undefined) this.#capture?.drawn(reading.version!);
+		else if (model !== null) this.#capture?.drawn(0, model.revision.digest);
 	};
 
 	/**
-	 * The step the pane is to show.
-	 * @returns The step, or null before the first.
+	 * The captured architecture and driven position, stable between updates.
+	 * @returns The recording view.
 	 */
-	readonly step = (): RecordedStep | null => this.#step;
+	readonly view = (): RecordedView => this.#view;
+
+	/**
+	 * Load one exact canonical payload through the shared recording contract.
+	 * @param input The architecture that the driver already captured.
+	 * @returns Completion after the pane can consume that capture.
+	 */
+	load(input: RecordedModel): Promise<void> {
+		const target = this.#request.canonical;
+		if (target === undefined)
+			throw new Error("This recording page does not request a canonical model.");
+		if (this.#view.architecture !== null)
+			throw new Error("This recording page already has a capture. Reopen it to record another.");
+		const model = input;
+		if (
+			model.manifest.id !== target.model ||
+			model.checkpoint!.id !== target.checkpoint ||
+			model.playback!.walkthrough.id !== this.#request.walkthrough
+		)
+			throw new Error(
+				"The capture does not match this recording address. Reopen the requested recording.",
+			);
+		this.#view = { ...this.#view, architecture: model };
+		this.#changed();
+		return Promise.resolve();
+	}
 
 	/**
 	 * Hear when the step changes.
@@ -198,7 +267,7 @@ class WalkthroughRecorder {
 	 * @returns The state.
 	 */
 	state(): RecordingState {
-		const presented = this.#reading === null ? null : this.#reading.presentation;
+		const presented = this.#reading?.presentation ?? null;
 		const of = presented === null ? null : presented.of;
 		const readiness = this.#readiness();
 		const kept = this.#kept;
@@ -277,14 +346,15 @@ class WalkthroughRecorder {
 	 * @returns Ready, loading, or failed with why.
 	 */
 	#couldStart(): Readiness {
-		const { board } = this.#request;
-		if (board === null) {
-			return { phase: "failed", failure: "The page was opened to record without a board." };
+		if (recordingTarget(this.#request) === null) {
+			return { phase: "failed", failure: "The page was opened without a recording target." };
 		}
 		if (this.#sources === null) return LOADING;
 		const agent = agentReadiness(this.#sources.setup);
 		if (agent.kind === "refused") return { phase: "failed", failure: agent.reason };
-		return agent.kind === "ready" && drawnOn(this.#reading, board) ? READY : LOADING;
+		return agent.kind === "ready" && requestedPicture(this.#reading, this.#request, this.#view)
+			? READY
+			: LOADING;
 	}
 
 	/**
@@ -371,8 +441,13 @@ class WalkthroughRecorder {
 	 * @param beat The step, counted from zero.
 	 */
 	#show(beat: number): void {
-		this.#step = recordedStep(this.#request.walkthrough, beat);
+		this.#view = { ...this.#view, step: recordedStep(this.#request.walkthrough, beat) };
 		this.#capture?.step(beat);
+		this.#changed();
+	}
+
+	/** Notify subscribers after a capture or position changes. */
+	#changed(): void {
 		for (const listener of this.#listeners) listener();
 	}
 

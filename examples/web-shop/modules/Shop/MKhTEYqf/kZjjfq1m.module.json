@@ -1,0 +1,76 @@
+{
+  "order": 6000,
+  "name": "Place order",
+  "kind": "route",
+  "responsibility": "POST /orders: reserves the stock, charges the card, saves the order and emails the receipt, then answers",
+  "schemaVersion": 1,
+  "id": "Shop/MKhTEYqf#kZjjfq1m",
+  "parent": "Shop/MKhTEYqf#lwmpnaVU",
+  "outgoing": [
+    {
+      "order": 2000,
+      "kind": "data",
+      "label": "write the paid order",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "Shop/MKhTEYqf#6EKtMmuD",
+      "to": "Shop/MKhTEYqf#wlyh3hT6"
+    },
+    {
+      "order": 3000,
+      "kind": "http",
+      "label": "charge the card, and wait",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "Shop/MKhTEYqf#tLHGTzaf",
+      "to": "Shop/MKhTEYqf#ZaOafnWt"
+    },
+    {
+      "order": 4000,
+      "kind": "http",
+      "label": "send the receipt, and wait",
+      "description": "The email client tries up to 3 times before it gives up, all inside the shopper's request.",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "Shop/MKhTEYqf#mOCWkDAa",
+      "to": "Shop/MKhTEYqf#lXgq75bO"
+    },
+    {
+      "order": 5000,
+      "kind": "http",
+      "label": "reserve stock, and wait",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "Shop/MKhTEYqf#YeYYgWtm",
+      "to": "Shop/MKhTEYqf#HYDbL5fE"
+    },
+    {
+      "order": 8000,
+      "kind": "data",
+      "label": "read the basket",
+      "emphasis": "muted",
+      "id": "Shop/MKhTEYqf#ywGKHoBq",
+      "to": "Shop/MKhTEYqf#Q2XClLOC"
+    },
+    {
+      "order": 9000,
+      "kind": "call",
+      "label": "start the 10 s clock",
+      "emphasis": "muted",
+      "id": "Shop/MKhTEYqf#ys6hWCoY",
+      "to": "Shop/MKhTEYqf#VONp3yKV"
+    }
+  ]
+}

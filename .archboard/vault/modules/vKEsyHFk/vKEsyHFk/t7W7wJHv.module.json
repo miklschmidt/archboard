@@ -1,0 +1,29 @@
+{
+  "order": 12003,
+  "name": "Headless Chromium",
+  "kind": "external",
+  "responsibility": "Paints an SVG and answers with the bitmap, or opens the Archboard server's page to record a walkthrough's talk or draw it frame by frame, when a command asks",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/vKEsyHFk#t7W7wJHv",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 10000,
+      "kind": "http",
+      "label": "the recording and replay pages",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+        "symbol": "recordingPageUrl"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#vKDw0TwV",
+      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    }
+  ]
+}

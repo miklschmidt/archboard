@@ -89,7 +89,7 @@ function targetKey(target: FitTarget): string {
  * @param id A subject the beat names.
  * @returns The ids of its ends; none for a part or a flow.
  */
-function endsOf(variant: SemanticVariant | null, id: string): string[] {
+function endsOf(variant: Pick<SemanticVariant, "content"> | null, id: string): string[] {
 	const subject = variant === null ? undefined : subjectOf(variant, id);
 	if (subject === undefined || !("from" in subject)) {
 		return [];
@@ -108,7 +108,10 @@ function endsOf(variant: SemanticVariant | null, id: string): string[] {
  * @param named The subjects the beat names that the picture draws.
  * @returns The ids of the relationships that join two cards the beat names.
  */
-function linesBetween(variant: SemanticVariant | null, named: readonly string[]): string[] {
+function linesBetween(
+	variant: Pick<SemanticVariant, "content"> | null,
+	named: readonly string[],
+): string[] {
 	if (variant === null) {
 		return [];
 	}
@@ -130,7 +133,7 @@ function linesBetween(variant: SemanticVariant | null, named: readonly string[])
  * @returns The frame, or undefined when the focus is not inside one flow.
  */
 function flowAround(
-	variant: SemanticVariant | null,
+	variant: Pick<SemanticVariant, "content"> | null,
 	atlas: FocusSource["atlas"],
 	rect: Rect,
 ): Rect | undefined {
@@ -169,9 +172,9 @@ function flowAround(
  * @returns What to show, what to light up, and what is missing.
  */
 function beatFocus(
-	beat: WalkthroughBeat | null,
+	beat: Pick<WalkthroughBeat, "id" | "subjects"> | null,
 	source: FocusSource | null,
-	variant: SemanticVariant | null,
+	variant: Pick<SemanticVariant, "content"> | null,
 ): BeatFocus {
 	if (beat === null || source === null) {
 		return NO_FOCUS;
@@ -205,7 +208,7 @@ function beatFocus(
  */
 function focusTarget(
 	source: FocusSource,
-	variant: SemanticVariant | null,
+	variant: Pick<SemanticVariant, "content"> | null,
 	drawn: readonly string[],
 ): FitTarget {
 	const flow = flowFocus(variant, source.atlas, drawn);

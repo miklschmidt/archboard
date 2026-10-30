@@ -1,0 +1,23 @@
+{
+  "order": 4000,
+  "name": "Availability route",
+  "kind": "route",
+  "responsibility": "GET /stock/{product}: how many can still be sold",
+  "schemaVersion": 1,
+  "id": "Shop/5IZTN4RT#Nmg4K8ge",
+  "parent": "Shop/5IZTN4RT#1tJdSOqs",
+  "outgoing": [
+    {
+      "order": 6000,
+      "kind": "data",
+      "label": "count minus reserved",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 60,
+        "volume": 1.5
+      },
+      "id": "Shop/5IZTN4RT#ZbgEBMka",
+      "to": "Shop/5IZTN4RT#mmSzZdKG"
+    }
+  ]
+}

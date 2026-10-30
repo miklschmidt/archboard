@@ -175,6 +175,8 @@ function StandingBlock(props: StandingBlockProps): JSX.Element | null {
 interface WaitingProps {
 	/** The disagreements this subject is held up by; empty when it is held up by none. */
 	open: readonly ReconciliationIssue[];
+	/** Authored subject names for a whole-reading disclosure outside a subject inspector. */
+	names?: ReadonlyMap<string, string>;
 }
 
 /**
@@ -199,23 +201,50 @@ function WaitingBlock(props: WaitingProps): JSX.Element | null {
 			slot="semantic-inspector-undecided"
 			level={3}
 		>
-			<ul className="flex flex-col gap-2" data-slot="semantic-inspector-waiting">
-				{props.open.map((issue) => (
-					// The repair is part of the identity, not decoration. One subject can
-					// hold two disagreements of the same kind about no field at all — a
-					// relationship whose other side took both of its endpoints away
-					// reports one for each end — and a key built from the kind and the
-					// field alone is the same key twice.
-					<li key={`${issue.kind}|${issue.field ?? ""}|${issue.repair}`}>
-						<p className="text-body">
-							{issue.field === undefined ? issue.what : `${issue.what} — ${issue.field}`}
-						</p>
-						<p className="text-muted-foreground text-body">{issue.repair}</p>
-					</li>
-				))}
-			</ul>
+			<ReconciliationIssues {...props} />
 		</SidebarSection>
 	);
+}
+
+/**
+ * Canonical readings and legacy inspectors share the same explicit disagreement values.
+ * @param props The unresolved issues from the runtime.
+ * @returns Each subject, field, proposal value, predecessor value, and repair instruction.
+ */
+function ReconciliationIssues(props: WaitingProps): JSX.Element {
+	return (
+		<ul className="flex flex-col gap-4" data-slot="semantic-inspector-waiting">
+			{props.open.map((issue) => (
+				<li
+					key={JSON.stringify([issue.subject, issue.kind, issue.field, issue.repair])}
+					data-subject-id={issue.subject}
+					data-field={issue.field}
+				>
+					<p className="text-body font-medium">
+						{issueName(issue, props.names)}
+						{issue.field === undefined ? "" : ` · ${issue.field}`}
+					</p>
+					<dl className="text-body mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 [overflow-wrap:anywhere]">
+						<dt className="text-muted-foreground">Proposal</dt>
+						<dd data-value="mine">{valueText(issue.mine)}</dd>
+						<dt className="text-muted-foreground">Predecessor</dt>
+						<dd data-value="theirs">{valueText(issue.theirs)}</dd>
+					</dl>
+					<p className="text-muted-foreground text-body mt-2">{issue.repair}</p>
+				</li>
+			))}
+		</ul>
+	);
+}
+
+/**
+ * A whole-reading issue names its subject even when the coherent side no longer contains it.
+ * @param issue The exact unresolved subject.
+ * @param names Optional authored names from the coherent model.
+ * @returns Its subject name or stable identity, with legacy inspector wording preserved.
+ */
+function issueName(issue: ReconciliationIssue, names: WaitingProps["names"]): string {
+	return names === undefined ? issue.what : (names.get(issue.subject) ?? issue.subject);
 }
 
 /** Inputs for the standing region. */
@@ -304,4 +333,4 @@ function standingSentence(standing: ChangeKind, against: string): string | undef
 	return standing === "changed" ? `Different on ${against}.` : undefined;
 }
 
-export { Standing, type StandingProps };
+export { Standing, ReconciliationIssues, type StandingProps };

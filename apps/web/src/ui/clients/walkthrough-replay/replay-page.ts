@@ -37,10 +37,8 @@ import {
 	takePicturesFrom,
 } from "#ui/clients/semantic-board-canvas/reads/picture-source.ts";
 import { readBoardsFrom } from "#ui/clients/semantic-board-canvas/reads/board-reads.ts";
-import {
-	sameBoardName,
-	type SemanticPaneReading,
-} from "#ui/rules/semantic-board-canvas/board/address.ts";
+import { sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
+import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import { ReplayStage } from "#ui/components/walkthrough-replay/ReplayStage.tsx";
 import { FrameReadiness } from "#ui/clients/walkthrough-replay/frame-readiness.ts";
 import { TalkPlayback } from "#ui/state/walkthrough-replay/talk-playback.ts";
@@ -65,7 +63,7 @@ interface Rendering {
 	/** Boards read that the talk could not answer. */
 	readonly foreign: string[];
 	/** What the pane last said it is reading. */
-	reading: SemanticPaneReading | null;
+	reading: PaneReading | null;
 	/** The step on screen, counted from nought, or null before the first. */
 	beat: number | null;
 	/** The next frame to draw. */
@@ -100,12 +98,29 @@ function drawAgainst(against: string): void {
  */
 function boardPending(rendering: Rendering): string | null {
 	const { reading, talk } = rendering;
-	if (reading?.drawn == null || !sameBoardName(reading.board, talk.board.name)) {
+	if (talk.architecture !== undefined) return canonicalPending(talk.architecture, reading);
+	if (reading?.board == null || !sameBoardName(reading.board.name, talk.board.name)) {
 		return `the pane to draw ${talk.board.name}`;
 	}
-	return reading.drawn.version === talk.board.version
+	return reading.version === talk.board.version
 		? null
-		: `the board at version ${talk.board.version}, not ${reading.drawn.version}`;
+		: `the board at version ${talk.board.version}, not ${reading.version}`;
+}
+
+/**
+ * Require the exact captured canonical picture before a replay frame can advance.
+ * @param model The immutable architecture carried by the talk.
+ * @param reading The picture that the pane finished drawing.
+ * @returns What remains unavailable, or null when the exact picture is drawn.
+ */
+function canonicalPending(
+	model: NonNullable<Talk["architecture"]>,
+	reading: PaneReading | null,
+): string | null {
+	const shown = reading?.architecture;
+	return shown?.model === model.manifest.id && shown.expectedRevision === model.revision.digest
+		? null
+		: `the captured architecture at revision ${model.revision.digest}`;
 }
 
 /**
@@ -225,7 +240,7 @@ class WalkthroughReplay {
 				 * Keep what the pane says it is reading.
 				 * @param reading The reading.
 				 */
-				onReading: (reading: SemanticPaneReading): void => {
+				onReading: (reading: PaneReading | null): void => {
 					rendering.reading = reading;
 				},
 			}),

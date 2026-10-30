@@ -1,0 +1,84 @@
+{
+  "order": 25000,
+  "name": "Shown conversation",
+  "kind": "route",
+  "responsibility": "The person's own act in the page names the checkout whose conversation every pane of the tab shows; a pick of a checkout the tab does not work in is refused",
+  "description": "The existing workbench showConversation operation validates a pane and its vault, resolves allowed checkouts, and changes the shown conversation. The server route delegates the complete request without assembling workbench internals.",
+  "groups": [
+    "panes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+    "symbol": "shownConversationRoute"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/Oi6SBIAM#80IozszZ",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 68000,
+      "kind": "call",
+      "label": "show the activated checkout in the pane's tab",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+        "symbol": "showConversation"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#iUsWhMaM",
+      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+    },
+    {
+      "order": 69000,
+      "kind": "call",
+      "label": "the pane, and the vault it is in",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+        "symbol": "panes"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#RxeyNuay",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "order": 70000,
+      "kind": "call",
+      "label": "the tab's live workhorses, which a pick may name",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+        "symbol": "liveWorkhorseCheckouts"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#aBvYXyej",
+      "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+    },
+    {
+      "order": 72000,
+      "kind": "call",
+      "label": "the vault the call names, which the pane must be in",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+        "symbol": "vaultOfRequest"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#5odPEFwu",
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    }
+  ]
+}

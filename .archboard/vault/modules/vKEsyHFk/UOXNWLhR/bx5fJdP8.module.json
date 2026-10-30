@@ -1,0 +1,14 @@
+{
+  "order": 54000,
+  "name": "Board change feed",
+  "kind": "module",
+  "responsibility": "Tells every pane that shows a board when the server announced a new version of it, so the pane reads it again",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/state/semantic-board-canvas/board-changes.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#bx5fJdP8",
+  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "outgoing": []
+}

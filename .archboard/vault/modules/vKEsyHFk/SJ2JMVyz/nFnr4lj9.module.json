@@ -1,0 +1,47 @@
+{
+  "order": 41000,
+  "name": "Thread start parameters",
+  "kind": "module",
+  "responsibility": "Builds the thread start request with its checkout, instructions, tool manifests and reviewed model",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/rules/workhorse-start/model.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#nFnr4lj9",
+  "parent": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 10000,
+      "kind": "dependency",
+      "label": "Archboard tools supplied through the host profile",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/host/archboard.ts",
+        "symbol": "ARCHBOARD_APP_DYNAMIC_TOOLS"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#zIWijDn9",
+      "to": "vKEsyHFk/SJ2JMVyz#Fxm7RW2x"
+    },
+    {
+      "order": 11000,
+      "kind": "dependency",
+      "label": "captured role instructions and exact hashes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/workhorse-start/model.ts",
+        "symbol": "createWorkhorseThreadStartParams"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#jAdLjEha",
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
+    }
+  ]
+}

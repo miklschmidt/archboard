@@ -1,0 +1,46 @@
+{
+  "id": "G7qK7B9v",
+  "name": "TASK-447 after TASK-482.07",
+  "formerNames": [
+    "TASK-447 (with flows)"
+  ],
+  "summary": "Architecture roles and saved briefs for external implementation",
+  "migration": {
+    "legacy": "vKEsyHFk/qKGcB6vZ#G7qK7B9v",
+    "predecessor": "vKEsyHFk/qKGcB6vZ#O1N446cC",
+    "baseline": {
+      "kind": "content",
+      "state": "vKEsyHFk/qKGcB6vZ#O1N446cC"
+    },
+    "reason": "Preserve this independent proposal and its original predecessor and conflict base.",
+    "checkpoint": "a46dd0318a5ca42be33526026b375282234eb6f2"
+  },
+  "predecessorCheckpoint": "7ef6cd9c3931e69fcd4ce59ab0518184ff59ef80",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "predecessor": "O1N446cC",
+  "predecessorRevision": "ebda3e437e4ca9b8e709a648c5d675f8af8708c47191446ab3427bb8c06989a1",
+  "baseline": "2b746b14e6e83b11c9c47412ee0904f3f82655f1",
+  "changes": [
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+      "field": "responsibility",
+      "value": "Coordinator architecture role and external implementation handoff, pinned by digest"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+      "field": "description",
+      "value": "Ambiguous build questions receive feasibility, blockers, and architectural next steps. Explicit implementation requests produce a saved Markdown brief in the OS temporary directory. Report its path and give the user coding agent the actual CLI path, Archboard environment, board version, proposal retrieval commands, and differences."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#v76VMLF8",
+      "field": "target",
+      "value": {
+        "state": "G7qK7B9v"
+      }
+    }
+  ]
+}

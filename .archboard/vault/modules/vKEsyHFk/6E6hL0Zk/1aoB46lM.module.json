@@ -1,0 +1,31 @@
+{
+  "order": 32000,
+  "name": "Language servers",
+  "kind": "module",
+  "responsibility": "Asks the language server of a file's language where a name the file uses is defined, and what the definition declares, for one pass of the code check",
+  "description": "TASK-367.13 to TASK-367.16, TASK-433 and ADR 0046. One pass starts the server of each language once per project on its first question: the checkout, for Swift the package that holds the file, for C, C++ and Objective-C the directory of its compile_commands.json. It speaks JSON-RPC over the child's stdio, asks textDocument/definition at the last name of a use on its line, and textDocument/documentSymbol once per file to tell code that runs from a member of a type. A language's row in languages.ts says what its server needs beyond that: pyright is told the checkout's .venv or venv; csharp-ls the solution nearest the root; sourcekit-lsp starts normally, builds and prepares its Swift package through background indexing, is asked workspace/synchronize with index true once and has each file opened; clangd has each file opened, finds its compile_commands.json where it would, keeps its own index where an editor's clangd does, and is asked once that index has ended. The command comes from server-command.ts. Every language but TypeScript runs only what the agent in that repository set on the checkout's registration (repo language-server), with the environment of the Archboard server and nothing added; if none is configured, the pass says so once for the checkout and the language, naming the command that configures one. TypeScript runs the native tsc --lsp of the checkout's own typescript package from version 7 on, with its native program, both inside the checkout, else Archboard's own. Every server has stopped before the pass returns: shutdown and exit, then a kill of its process group, or a kill at once when the pass is cancelled. A server that fails is said once for its checkout, and so is a project it cannot answer about, for which no server starts: a C file with no compile_commands.json.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/code-intel/src/runtime/services/language-servers"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/6E6hL0Zk#1aoB46lM",
+  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": []
+}

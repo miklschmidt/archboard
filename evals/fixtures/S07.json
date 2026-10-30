@@ -1,5 +1,9 @@
 {
-	"$comment": "Nothing on the board: the author creates it from the Flask 3.0.0 source. The checkout is registered so a binding can name it.",
 	"registerRepo": true,
-	"steps": []
+	"steps": [],
+	"inputs": {
+		"model.json": "{\"schemaVersion\":1,\"id\":\"Flask\",\"name\":\"Flask\",\"current\":{\"id\":\"Now\",\"name\":\"Current\"}}",
+		"app.module.json": "{\"schemaVersion\":1,\"id\":\"Flask#App\",\"name\":\"Application\",\"kind\":\"service\",\"order\":0,\"responsibility\":\"Routes HTTP requests through Flask\",\"binding\":{\"repo\":\"$FLASK\",\"path\":\"src/flask/app.py\"},\"outgoing\":[{\"id\":\"Flask#Context\",\"to\":\"Flask#Ctx\",\"kind\":\"dependency\",\"order\":0}]}",
+		"context.module.json": "{\"schemaVersion\":1,\"id\":\"Flask#Ctx\",\"name\":\"Request context\",\"kind\":\"module\",\"order\":0,\"parent\":\"Flask#App\",\"binding\":{\"repo\":\"$FLASK\",\"path\":\"src/flask/ctx.py\"},\"outgoing\":[]}"
+	}
 }

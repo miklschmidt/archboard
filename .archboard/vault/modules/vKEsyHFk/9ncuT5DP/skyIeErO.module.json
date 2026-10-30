@@ -1,0 +1,77 @@
+{
+  "order": 2000,
+  "name": "Generation composition",
+  "kind": "module",
+  "responsibility": "Starts the private child, then builds each generation's object graph over a transport and identity ledger that outlive it",
+  "description": "installProductionCodexWorkbench hands the owner lifecycle createCodexProcess and a generation factory. The factories (codex-workbench-factories.ts) build the components in the order they depend on each other, the gateway last. codex-workbench-session-factories.ts builds one tab session's owners when the tab sessions open it. A child's exit drops every tab session, and nothing is resumed.",
+  "groups": [
+    "child"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/services/generation/workbench.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#skyIeErO",
+  "parent": "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "start a generation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/workbench.ts",
+        "symbol": "createCodexProcess"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#hwJPR59O",
+      "to": "vKEsyHFk/9ncuT5DP#9diqPrFw"
+    },
+    {
+      "order": 11000,
+      "kind": "call",
+      "label": "bind the gateway to this generation",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/factories.ts",
+        "symbol": "createCodexWorkbenchGateway"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#nw9nYSMn",
+      "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R"
+    },
+    {
+      "order": 37000,
+      "kind": "call",
+      "label": "one store per child, dropped when it exits",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/factories.ts",
+        "symbol": "createCodexWorkbenchSessions"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#PqSkt9px",
+      "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
+    },
+    {
+      "order": 50000,
+      "kind": "call",
+      "label": "the transport a restarted child rejoins",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/workbench.ts",
+        "symbol": "createCodexTransport"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#7Hqt9ysu",
+      "to": "vKEsyHFk/wAHh0HTa#ql0DevMk"
+    }
+  ]
+}

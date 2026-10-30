@@ -5,3 +5,4 @@ export {
 	SemanticPaneContextSchema,
 	SemanticSubjectKindSchema,
 } from "#shared/protocol/pane-context.ts";
+export { ArchitecturePaneReadingSchema } from "#shared/schemas/model-pane.ts";

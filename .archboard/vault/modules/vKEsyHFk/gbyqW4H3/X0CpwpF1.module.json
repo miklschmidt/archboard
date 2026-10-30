@@ -1,0 +1,15 @@
+{
+  "order": 26000,
+  "name": "Picture key",
+  "kind": "function",
+  "responsibility": "Reads from a drawn picture what its key lists, for the page's legend and an exported one alike",
+  "description": "pictureAppearances scans the drawn document without a DOM for each subject's applied appearance; keyOf keeps one sample of each node and relationship kind in drawing order; placedStanding keeps a comparison's standing to the subjects a drawing placed, and markCounts counts their marks. One reader, so the page's legend and an exported legend cannot list different things.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/rules/render/picture-key.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#X0CpwpF1",
+  "parent": "vKEsyHFk/gbyqW4H3#eXWJ2qtq",
+  "outgoing": []
+}

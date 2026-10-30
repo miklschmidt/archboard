@@ -1,0 +1,42 @@
+{
+  "order": 500,
+  "name": "Page start",
+  "kind": "function",
+  "responsibility": "Starts the local renderer and mounts the application or captured replay",
+  "description": "The page loads the renderer independently, resolves its served vault, and mounts the application router. A replay address lazily loads the captured-talk entry instead.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/main.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#LMJVhlqw",
+  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+  "outgoing": [
+    {
+      "order": 81000,
+      "kind": "call",
+      "description": "At page start, this page's renderer is fetched and started.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "startBrowserRenderer"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#eK0DABEt",
+      "to": "vKEsyHFk/yejBBUFY#hDWpDois"
+    },
+    {
+      "order": 82000,
+      "kind": "call",
+      "description": "A page opened to replay a recorded talk starts the replay instead of the application.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "startWalkthroughReplay"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#pszRWvFQ",
+      "to": "vKEsyHFk/yejBBUFY#aixSjfNe"
+    }
+  ]
+}

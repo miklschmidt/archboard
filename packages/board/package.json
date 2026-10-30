@@ -2,7 +2,7 @@
 	"name": "@archboard/board",
 	"version": "0.0.0",
 	"private": true,
-	"description": "The board: its document and policy, the wire contracts and pure rules (comparison, reconciliation, coherence) that the browser and the server both run, the id mint, and the runtime store that is the one reader and writer of a board file, with the one-writer lease lock.",
+	"description": "The canonical architecture model, shared semantic rules, coherent reader, and durable writer. Legacy decoding supports explicit migration and exact retained originals.",
 	"license": "BUSL-1.1",
 	"type": "module",
 	"imports": {
@@ -10,6 +10,8 @@
 		"#tests/*": "./tests/*"
 	},
 	"exports": {
+		"./migration": "./src/shared/api/migration.ts",
+		"./model": "./src/shared/api/model.ts",
 		"./document": "./src/shared/api/document.ts",
 		"./content": "./src/shared/api/content.ts",
 		"./flow": "./src/shared/api/flow.ts",
@@ -17,7 +19,6 @@
 		"./policy": "./src/shared/api/policy.ts",
 		"./comparison": "./src/shared/api/comparison.ts",
 		"./container-interface": "./src/shared/api/container-interface.ts",
-		"./commands": "./src/shared/api/commands.ts",
 		"./render-reply": "./src/shared/api/render-reply.ts",
 		"./pane-context": "./src/shared/api/pane-context.ts",
 		"./board-listing": "./src/shared/api/board-listing.ts",
@@ -28,7 +29,6 @@
 		"./vault-policy": "./src/runtime/api/vault-policy.ts",
 		"./doing": "./src/runtime/api/doing.ts",
 		"./lock": "./src/runtime/api/lock.ts",
-		"./store-move": "./src/runtime/api/store-move.ts",
 		"./store-write": "./src/runtime/api/store-write.ts"
 	}
 }

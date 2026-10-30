@@ -17,7 +17,6 @@ import type { VariantContent } from "@archboard/board/content";
 import { KindIcon, RelationshipChip } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import { ContainerInterface } from "#ui/components/semantic-board-canvas/ContainerInterface.tsx";
 import { GoDeeper } from "#ui/components/semantic-board-canvas/GoDeeper.tsx";
-import { PartHistory } from "#ui/components/semantic-board-canvas/PartHistory.tsx";
 import {
 	Account,
 	Membership,
@@ -325,16 +324,6 @@ function DetailsPanel(props: DetailsPanelProps): JSX.Element {
 						onPick={props.onPick}
 					/>
 				</SidebarRegion>
-				{props.on !== null && (
-					<PartHistory
-						board={props.on.board}
-						version={props.on.version}
-						variant={props.held}
-						node={node}
-						look={props.look}
-						onPick={props.onPick}
-					/>
-				)}
 			</div>
 			<GoDeeper
 				target={node.drillDown}

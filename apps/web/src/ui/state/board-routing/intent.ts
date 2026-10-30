@@ -21,6 +21,8 @@ import {
 type NavigationIntent =
 	| {
 			readonly kind: "board";
+			/** The canonical destination whose arrival completes this user open. */
+			readonly destination?: { readonly model: string; readonly repository: string };
 			readonly paneId: string;
 			/** The board that pane showed when the gesture was made. */
 			readonly from: string | null;

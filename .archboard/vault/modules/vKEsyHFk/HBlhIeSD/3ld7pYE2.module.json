@@ -1,0 +1,76 @@
+{
+  "order": 7000,
+  "name": "Service routes",
+  "kind": "route",
+  "responsibility": "Serves the page, the health answer (the archboard-server service, its pid, the checkout whose source it runs and whether that is the source on disk) and the vault a page opens in",
+  "description": "The CLI signals a process for stop only when it both identifies as archboard-server and reports its own pid. A CLI refuses a server whose health names another checkout's source than its own, and names both checkouts. The vault a page opens in is the one call that names no vault.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/routes/service/service-routes.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/HBlhIeSD#3ld7pYE2",
+  "parent": "vKEsyHFk/HBlhIeSD#ETrslazw",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 39000,
+      "kind": "call",
+      "label": "the phase it is in",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/service/service-routes.ts",
+        "symbol": "serverPhase"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#D62cZNEq",
+      "to": "vKEsyHFk/6E6hL0Zk#J7yOKraz"
+    },
+    {
+      "order": 41000,
+      "kind": "call",
+      "label": "how many sockets",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/service/service-routes.ts",
+        "symbol": "clients"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#wzL4gP8d",
+      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+    },
+    {
+      "order": 67000,
+      "kind": "call",
+      "label": "the vault a page opens in",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/service/service-routes.ts",
+        "symbol": "openingVault"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#KWmrBUXU",
+      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    }
+  ]
+}

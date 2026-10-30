@@ -17,7 +17,19 @@ import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.t
 import { PaneVaultContext } from "#ui/state/semantic-board-canvas/pane-vault.ts";
 import { SemanticBoardStage } from "#ui/components/semantic-board-canvas/SemanticBoardStage.tsx";
 import { type SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
-import { withFixtureOrders } from "#tests/ui/support/semantic-board-canvas/fixture-orders.ts";
+
+import {
+	server,
+	renderCalls,
+	supplyCapture,
+	resetCapture,
+} from "#tests/ui/support/semantic-board-canvas/stage-capture.ts";
+
+afterEach(() => {
+	cleanup();
+	Object.assign(room, VIEWPORT);
+	resetCapture();
+});
 
 /** The window on the diagram every measured element reports in these tests. */
 const VIEWPORT = Object.freeze({ width: 800, height: 600 });
@@ -46,187 +58,6 @@ beforeAll(() => {
 afterAll(async () => {
 	await GlobalRegistrator.unregister();
 });
-
-/** What the fake server answers a request with. */
-type Reply = { readonly status: number; readonly body: unknown } | "pending";
-
-/** A server no code pass has run on yet. */
-const NO_FINDINGS = { success: true, readings: [] } as const;
-
-/**
- * The reply the next request gets, every request made so far, and the board
- * documents inspection reads.
- *
- * Documents are answered by name rather than by turn, because a pane inspecting
- * a drill-down reads two boards at once and which of them answers first is not
- * something a test should have to predict.
- */
-const server: {
-	reply: Reply;
-	calls: string[];
-	documents: Record<string, unknown>;
-	/** Boards whose document is answered only once the promise settles. */
-	held: Record<string, Promise<unknown>>;
-	/** What the vault checker answers, or undefined for a checker that refuses. */
-	vault: unknown;
-	/** What the last code pass left in the server's memory, as its route answers it. */
-	findings: unknown;
-	/** The locality route's answer (none: a walk that never ends), and every request to it. */
-	locality: { reply: StubReply | undefined; calls: string[] };
-} = {
-	reply: "pending",
-	calls: [],
-	documents: {},
-	held: {},
-	vault: undefined,
-	findings: NO_FINDINGS,
-	locality: { reply: undefined, calls: [] },
-};
-
-const realFetch = globalThis.fetch;
-
-afterEach(() => {
-	cleanup();
-	Object.assign(room, VIEWPORT);
-	globalThis.fetch = realFetch;
-	server.reply = "pending";
-	server.calls = [];
-	server.documents = {};
-	server.held = {};
-	server.vault = undefined;
-	server.findings = NO_FINDINGS;
-	server.locality = { reply: undefined, calls: [] };
-});
-
-/** The route the shared vault checker answers on. */
-const VAULT_ROUTE = "/api/vault/check";
-
-/** The route the findings of the last code pass are read from. */
-const FINDINGS_ROUTE = "/api/vault/code-findings";
-
-/** The route a pane reads a whole board through. */
-const BOARD_ROUTE = "/api/semantic-boards/board";
-
-/** The route a pane asks for a picture through. */
-const RENDER_ROUTE = "/api/semantic-boards/render";
-
-/**
- * Every picture the pane has asked for, in the order it asked.
- *
- * A pane reads two routes — the picture, and the board itself, for what a
- * picture does not carry — so a question about what was drawn is asked of the
- * render requests rather than of whichever request happened to be last.
- * @returns The render requests.
- */
-function renderCalls(): string[] {
-	return server.calls.filter((call) => call.startsWith(RENDER_ROUTE));
-}
-
-/**
- * The board a document request named.
- * @param url The request's URL.
- * @returns The board name, or null when the request was for something else.
- */
-function documentAsked(url: string): string | null {
-	return url.startsWith(BOARD_ROUTE)
-		? (new URLSearchParams(url.split("?")[1]).get("board") ?? "")
-		: null;
-}
-
-/**
- * The URL a request named, whichever way it was spelled.
- * @param input What the caller passed to fetch.
- * @returns The URL as a string.
- */
-function urlOf(input: RequestInfo | URL): string {
-	if (typeof input === "string") {
-		return input;
-	}
-	return input instanceof URL ? input.href : input.url;
-}
-
-/**
- * Answer every request from `server`, recording what was asked for.
- * @param input The request.
- * @returns The reply, or a promise that never settles while it is pending.
- */
-function fakeFetch(input: RequestInfo | URL): Promise<Response> {
-	const url = urlOf(input);
-	// The findings are read on a timer, and the history when a part is picked:
-	// both are kept apart from the requests that tests count.
-	if (url.startsWith(FINDINGS_ROUTE)) return answered({ status: 200, body: server.findings });
-	if (!url.startsWith("/api/semantic-boards/locality")) return serverReply(url);
-	server.locality.calls.push(url);
-	const { reply } = server.locality;
-	return reply === undefined ? new Promise(() => undefined) : answered(reply);
-}
-
-/**
- * Answer one request other than the findings from `server`, recording it.
- * @param url The request's URL.
- * @returns The reply, or a promise that never settles while it is pending.
- */
-function serverReply(url: string): Promise<Response> {
-	server.calls.push(url);
-	const board = documentAsked(url);
-	if (board !== null) {
-		const held = server.held[board];
-		return held === undefined
-			? answered(documentReply(board))
-			: held.then(() => answered(documentReply(board)));
-	}
-	if (url.startsWith(VAULT_ROUTE)) {
-		return answered(
-			server.vault === undefined
-				? { status: 503, body: { success: false, error: "no checker" } }
-				: { status: 200, body: server.vault },
-		);
-	}
-	const reply = server.reply;
-	return reply === "pending" ? new Promise<Response>(() => undefined) : answered(reply);
-}
-
-/**
- * What a document request for one board is answered with.
- * @param board The board asked for.
- * @returns The reply, refusing a board the test never put there.
- */
-function documentReply(board: string): StubReply {
-	const held = server.documents[board];
-	if (held === undefined) {
-		return {
-			status: 404,
-			body: {
-				success: false,
-				code: "BOARD_MISSING",
-				error: `there is no semantic board called "${board}"`,
-			},
-		};
-	}
-	return { status: 200, body: { success: true, board: withFixtureOrders(held) } };
-}
-
-/** A reply the fake server is about to give. */
-interface StubReply {
-	/** Its HTTP status. */
-	readonly status: number;
-	/** Its body, before it is serialised. */
-	readonly body: unknown;
-}
-
-/**
- * One reply, as a response.
- * @param reply Its status and body.
- * @returns The response.
- */
-function answered(reply: StubReply): Promise<Response> {
-	return Promise.resolve(
-		new Response(JSON.stringify(reply.body), {
-			status: reply.status,
-			headers: { "Content-Type": "application/json" },
-		}),
-	);
-}
 
 /**
  * Let the answers in flight, and the reads they start, reach the screen. The
@@ -263,12 +94,6 @@ function Cache(children: ReactNode): JSX.Element {
 		createElement(PaneVaultContext, { value: PANE_VAULT }, children),
 	);
 }
-
-/**
- * The fake wearing the one extra member the runtime's own `fetch` carries, so
- * it can stand in for it without an assertion.
- */
-const serving: typeof fetch = Object.assign(fakeFetch, { preconnect: realFetch.preconnect });
 
 /**
  * The stage's own props a test may state as they are: a driven step, what is
@@ -508,7 +333,7 @@ function Held(props: HeldProps): JSX.Element {
  * @returns What the pane reported.
  */
 function mountStage(selection: string | null = null, options: MountOptions = {}): Mounted {
-	globalThis.fetch = serving;
+	supplyCapture();
 	const picks: (string | null)[] = [];
 	/**
 	 * Record what the person picked out.

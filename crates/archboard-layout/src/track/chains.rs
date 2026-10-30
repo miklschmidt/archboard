@@ -35,6 +35,16 @@ pub(crate) struct StationId(pub usize);
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub(crate) struct ChainId(pub usize);
 
+/// What a line's nets must share with another's to share a trunk: its kind,
+/// and its direction, since a trunk carries its lines one way.
+pub(crate) fn chain_kind(kind: &str, upward: bool) -> String {
+    if upward {
+        format!("{kind}|upward")
+    } else {
+        kind.to_owned()
+    }
+}
+
 /// Where a chain touches a band.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Station {

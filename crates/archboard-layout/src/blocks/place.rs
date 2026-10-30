@@ -73,6 +73,8 @@ fn hybrid(graph: &Node, host: &mut dyn Graphviz) -> Result<super::assembly::Plac
         (64.0, false),
         (32.0, true),
         (64.0, true),
+        (128.0, true),
+        (256.0, true),
     ] {
         let endpoints = if complete { &complete_room } else { &room };
         match try_placements(graph, host, endpoints, extra, complete)? {

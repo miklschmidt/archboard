@@ -18,21 +18,18 @@ import { useMemo, type PointerEvent } from "react";
 import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { Peeked, Trace } from "#ui/components/semantic-board-canvas/Peek.tsx";
 import { useRestingPart } from "#ui/hooks/semantic-board-canvas/use-resting-part.ts";
-import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import {
 	litInPicture,
 	withReach,
 	type Wiring,
 } from "#ui/rules/semantic-board-canvas/board/connections.ts";
-import type { GroupSelection } from "#ui/rules/semantic-board-canvas/board/groups.ts";
-import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
 import { reachOf } from "#ui/rules/semantic-board-canvas/board/reach.ts";
 import type { ProbeMode } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 
 /** What decides the lighting. */
 interface LightingInputs {
 	/** What the board says about the variant the picture draws, or null while that is not known. */
-	readonly reading: VariantReading | null;
+	readonly content: Wiring | null;
 	/** Where every subject of the picture ended up: only a drawn relationship has anything to light. */
 	readonly atlas: SemanticAtlas;
 	/** The subject picked out, or null. */
@@ -41,12 +38,8 @@ interface LightingInputs {
 	readonly peeked: Peeked;
 	/** What a presented step's veil leaves standing, or null for no veil. */
 	readonly veil: ReadonlySet<string> | null;
-	/** The step of a presented walkthrough on screen, or null or undefined while none is presented. */
-	readonly presenting: number | null | undefined;
-	/** Whether a group is selected. */
-	readonly group: GroupSelection | null;
-	/** Where the reader went, while the picture is on its way out. */
-	readonly departure: Departure | null;
+	/** Whether ordinary exploration can light this reading. */
+	readonly enabled: boolean;
 }
 
 /** What the picture lights, and what moves it. */
@@ -75,12 +68,7 @@ interface Lighting {
  * @returns True when the light stands down.
  */
 function standsDown(inputs: LightingInputs): boolean {
-	return (
-		inputs.veil !== null ||
-		(inputs.presenting ?? null) !== null ||
-		inputs.group !== null ||
-		inputs.departure !== null
-	);
+	return inputs.veil !== null || !inputs.enabled;
 }
 
 /**
@@ -111,15 +99,6 @@ function pokedBy(
 		return null;
 	}
 	return inputs.peeked.row ?? (trace === null ? resting : null) ?? inputs.selection;
-}
-
-/**
- * The parts and relationships the board says the variant holds.
- * @param reading What the board says about the variant, or null.
- * @returns Them, or null while that is not known.
- */
-function wiringOf(reading: VariantReading | null): Wiring | null {
-	return reading?.variant?.content ?? null;
 }
 
 /**
@@ -165,11 +144,10 @@ function reachBeyond(
  * @returns What is lit, how strongly, and the handlers that move it.
  */
 function useLighting(inputs: LightingInputs): Lighting {
-	const { reading, atlas, selection, veil } = inputs;
+	const { content: wiring, atlas, selection, veil } = inputs;
 	const { part, onHover, release } = useRestingPart(atlas);
 	const trace = traceOf(inputs);
 	const poked = pokedBy(inputs, trace, part);
-	const wiring = wiringOf(reading);
 	const lit = useMemo(() => litInPicture(wiring, atlas, poked), [wiring, atlas, poked]);
 	const reach = useMemo(
 		() => (lit === null ? null : reachBeyond(wiring, trace, poked === selection)),

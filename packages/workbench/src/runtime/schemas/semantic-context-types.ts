@@ -16,7 +16,7 @@ type ReconciliationKind = z.infer<typeof ReconciliationKindSchema>;
 type SemanticSubjectKind = z.infer<typeof SemanticSubjectKindSchema>;
 type VariantLifecycle = z.infer<typeof VariantLifecycleSchema>;
 
-type SemanticChangeOrigin = "human" | "agent" | "mixed";
+type SemanticChangeOrigin = "human" | "agent" | "mixed" | "external";
 type SemanticChangeSignificance = "layout" | "structural" | "cosmetic";
 type SemanticBriefSource = "settled_change" | "pane_focus" | "pane_selection" | "fresh_brief";
 type SemanticThreadLinkState = "executable" | "inspect_only" | "unbound";
@@ -42,6 +42,8 @@ interface SettledChangeSourceEvent {
 	readonly origin: SemanticChangeOrigin;
 	readonly significance: SemanticChangeSignificance;
 	readonly text: string;
+	/** The durable writer's doing line, or null when no operation attributes this change. */
+	readonly doing?: string | null;
 	/**
 	 * The agent session that made the write, when the feed could attribute it.
 	 *

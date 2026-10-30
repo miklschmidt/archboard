@@ -222,7 +222,7 @@ fn tried(
     if sinks(lowered, &lined.boxes, around) {
         return Ok(None);
     }
-    let wrapped = wrap_of(layout.finish(lined), Some(lowered));
+    let wrapped = wrap_of(layout.finish(gv, lined)?, Some(lowered));
     Ok((!sinks(lowered, &wrapped.laid.boxes, around)).then_some(wrapped))
 }
 

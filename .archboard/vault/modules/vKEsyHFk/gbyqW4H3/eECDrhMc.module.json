@@ -1,0 +1,57 @@
+{
+  "order": 10000,
+  "name": "SVG document",
+  "kind": "function",
+  "responsibility": "Wraps a painted body in one self-contained document with its faces",
+  "description": "Wraps the painted SVG with fonts, markers, slab and port gradients, theme tokens and the near/far stylesheet. The one shared chip moves and scales; both layers of words move on a shared baseline and fade over one span with complementary opacity. Reduced motion cuts the swap.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/rules/svg/page/document.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#eECDrhMc",
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "outgoing": [
+    {
+      "order": 20000,
+      "kind": "call",
+      "label": "each token's value, for a picture that stands alone",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/svg/page/document.ts",
+        "symbol": "themeColor"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#NIW5ioWQ",
+      "to": "vKEsyHFk/gbyqW4H3#4nyk76pY"
+    },
+    {
+      "order": 39000,
+      "kind": "call",
+      "label": "slabDefinitions: shared sheen gradient",
+      "description": "document.ts svgDocument adds slabDefinitions(palette) to its defs. The standing hatch was removed; slabs keep their group face.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/svg/page/document.ts",
+        "symbol": "slabDefinitions"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#FBttxPdB",
+      "to": "vKEsyHFk/gbyqW4H3#Ga3k1AaP"
+    },
+    {
+      "order": 44000,
+      "kind": "call",
+      "label": "portDefinitions: well and fade gradients",
+      "description": "document.ts svgDocument includes portDefinitions(palette) in its defs.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/svg/page/document.ts",
+        "symbol": "portDefinitions"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#aQe4gXE2",
+      "to": "vKEsyHFk/gbyqW4H3#Oqsd6MyT"
+    }
+  ]
+}

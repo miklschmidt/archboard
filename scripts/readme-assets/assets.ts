@@ -30,8 +30,7 @@ const PRODUCERS: Readonly<Record<string, Producer>> = {
 	explainer: narratedProducer({
 		name: "explainer",
 		vault: ".archboard/vault",
-		board: "Archboard",
-		walkthrough: "Read this board",
+		walkthrough: "From modules to durable architecture",
 	}),
 	plan,
 	"code-evidence": codeEvidence,
@@ -41,22 +40,20 @@ const PRODUCERS: Readonly<Record<string, Producer>> = {
 	"pr-walkthrough": narratedProducer({
 		name: "pr-walkthrough",
 		vault: "examples/web-shop",
-		board: "Web shop",
-		variant: "Queued fulfilment",
+		// The portable example archive retains this exact Queued fulfilment reading.
+		checkpoint: "f4ae77d823d935570198b3c0be53dd1803db8aba",
 		walkthrough: "Why checkout stops waiting",
 		thumbnail: { file: "docs/readme/idx-voice.webp", step: 1 },
 	}),
 	sequence: diagramProducer({
 		name: "sequence",
 		vault: "examples/web-shop",
-		board: "Web shop",
-		view: "Place an order",
+		reading: { flow: "Place an order", grammar: "sequence" },
 		thumbnail: { file: "docs/readme/idx-sequence.webp", theme: "light", width: 1120 },
 	}),
 	newcomer: narratedProducer({
 		name: "newcomer",
 		vault: "examples/web-shop",
-		board: "Inventory service",
 		walkthrough: "How stock is reserved",
 		thumbnail: { file: "docs/readme/idx-newcomer.webp", step: 4 },
 	}),
@@ -66,14 +63,13 @@ const PRODUCERS: Readonly<Record<string, Producer>> = {
 	"web-shop": diagramProducer({
 		name: "web-shop",
 		vault: "examples/web-shop",
-		board: "Web shop",
-		view: "Everything",
+		reading: { grammar: "architecture" },
 		thumbnail: { file: "docs/readme/idx-docs.webp", theme: "dark", width: 1600 },
 	}),
 	architecture: diagramProducer({
 		name: "architecture",
 		vault: ".archboard/vault",
-		board: "Archboard",
+		reading: { grammar: "architecture" },
 	}),
 };
 

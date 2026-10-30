@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "id": "5IZTN4RT",
+  "name": "Inventory service",
+  "flows": [
+    {
+      "id": "Shop/5IZTN4RT#lvZlcOxt",
+      "name": "Reserve an order's items",
+      "summary": "One reservation, from Checkout API's request to its answer.",
+      "participants": [
+        "Shop/MKhTEYqf#lwmpnaVU",
+        "Shop/5IZTN4RT#4sZ8ZI9y",
+        "Shop/5IZTN4RT#SN2ShpE5",
+        "Shop/5IZTN4RT#mmSzZdKG"
+      ],
+      "steps": [
+        {
+          "id": "Shop/5IZTN4RT#iEFwMg6K",
+          "from": "Shop/MKhTEYqf#lwmpnaVU",
+          "to": "Shop/5IZTN4RT#4sZ8ZI9y",
+          "label": "POST /reservations",
+          "kind": "sync"
+        },
+        {
+          "id": "Shop/5IZTN4RT#TQKVXDfs",
+          "from": "Shop/5IZTN4RT#4sZ8ZI9y",
+          "to": "Shop/5IZTN4RT#SN2ShpE5",
+          "label": "set these items aside",
+          "kind": "sync"
+        },
+        {
+          "id": "Shop/5IZTN4RT#AD8giBuc",
+          "from": "Shop/5IZTN4RT#SN2ShpE5",
+          "to": "Shop/5IZTN4RT#mmSzZdKG",
+          "label": "lock each item's row",
+          "kind": "sync",
+          "note": "a second order for the same item waits here until the first commits"
+        },
+        {
+          "id": "Shop/5IZTN4RT#boYUz1Ob",
+          "from": "Shop/5IZTN4RT#mmSzZdKG",
+          "to": "Shop/5IZTN4RT#SN2ShpE5",
+          "label": "count and reserved so far",
+          "kind": "return"
+        },
+        {
+          "id": "Shop/5IZTN4RT#6UZFxToK",
+          "from": "Shop/5IZTN4RT#SN2ShpE5",
+          "to": "Shop/5IZTN4RT#SN2ShpE5",
+          "label": "check every item is covered",
+          "kind": "self",
+          "note": "one item short: nothing is reserved and the answer is 409 sold out"
+        },
+        {
+          "id": "Shop/5IZTN4RT#1gKhCqiE",
+          "from": "Shop/5IZTN4RT#SN2ShpE5",
+          "to": "Shop/5IZTN4RT#mmSzZdKG",
+          "label": "insert the reservations, commit",
+          "kind": "sync"
+        },
+        {
+          "id": "Shop/5IZTN4RT#2DryZjPi",
+          "from": "Shop/5IZTN4RT#SN2ShpE5",
+          "to": "Shop/5IZTN4RT#4sZ8ZI9y",
+          "label": "reserved",
+          "kind": "return"
+        },
+        {
+          "id": "Shop/5IZTN4RT#a6WYvb9A",
+          "from": "Shop/5IZTN4RT#4sZ8ZI9y",
+          "to": "Shop/MKhTEYqf#lwmpnaVU",
+          "label": "201 reserved",
+          "kind": "return"
+        }
+      ]
+    }
+  ]
+}

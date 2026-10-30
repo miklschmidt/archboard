@@ -1,0 +1,843 @@
+{
+  "schemaVersion": 1,
+  "id": "gbyqW4H3",
+  "name": "Semantic renderer",
+  "flows": [
+    {
+      "id": "vKEsyHFk/gbyqW4H3#ts6X9FtG",
+      "name": "Draw a view",
+      "participants": [
+        "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+        "vKEsyHFk/gbyqW4H3#CtoOMxca",
+        "vKEsyHFk/gbyqW4H3#0idmUHd2",
+        "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+        "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+        "vKEsyHFk/gbyqW4H3#J7mPrUeP",
+        "vKEsyHFk/gbyqW4H3#eECDrhMc"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/gbyqW4H3#4f8Q81AB",
+          "kind": "decision",
+          "question": "Which grammar does the view ask for?",
+          "alternatives": [
+            {
+              "label": "sequence",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#cWuZ3fFx",
+                  "from": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                  "to": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+                  "label": "paint every flow of the reading",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+                    "symbol": "paintDataFlow"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#UM4ZGYZb",
+                  "from": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+                  "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                  "label": "page body, size and atlas",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/svg/sequence/dataflow.ts",
+                    "symbol": "paintDataFlow"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#1MPySIfw",
+                  "from": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                  "to": "vKEsyHFk/gbyqW4H3#eECDrhMc",
+                  "label": "frame the page for export and wrap it",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+                    "symbol": "svgDocument"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#bHQChsxF",
+                  "from": "vKEsyHFk/gbyqW4H3#eECDrhMc",
+                  "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                  "label": "one self-contained document",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/svg/page/document.ts",
+                    "symbol": "svgDocument"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "flowchart",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#ca2ix7hO",
+                  "from": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                  "to": "vKEsyHFk/gbyqW4H3#0idmUHd2",
+                  "label": "draw the flow's logic",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+                    "symbol": "renderFlowchart"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#f8Ma7jiv",
+                  "from": "vKEsyHFk/gbyqW4H3#0idmUHd2",
+                  "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+                  "label": "measure the boxes",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/flowchart/flowchart.ts",
+                    "symbol": "measureArchitecture"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#fLMPVxJ6",
+                  "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+                  "to": "vKEsyHFk/gbyqW4H3#0idmUHd2",
+                  "label": "sizes and wrapped lines",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/text/measurement.ts",
+                    "symbol": "measureArchitecture"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#XFJazS8y",
+                  "from": "vKEsyHFk/gbyqW4H3#0idmUHd2",
+                  "to": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+                  "label": "the step graph, on the track engine",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/flowchart/flowchart.ts",
+                    "symbol": "layoutEngine"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#NR1ARSyH",
+                  "from": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+                  "to": "vKEsyHFk/gbyqW4H3#0idmUHd2",
+                  "label": "boxes, ports and routes",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/layout/engines.ts",
+                    "symbol": "layoutEngine"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#aRiECsZT",
+                  "from": "vKEsyHFk/gbyqW4H3#0idmUHd2",
+                  "to": "vKEsyHFk/gbyqW4H3#J7mPrUeP",
+                  "label": "paint frames, boxes and lines; shapes by their own painters",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/flowchart/flowchart.ts",
+                    "symbol": "paintArchitecture"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#mVuR3qNf",
+                  "from": "vKEsyHFk/gbyqW4H3#J7mPrUeP",
+                  "to": "vKEsyHFk/gbyqW4H3#0idmUHd2",
+                  "label": "marks and the subject atlas",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
+                    "symbol": "paintArchitecture"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#vrCQMNhp",
+                  "from": "vKEsyHFk/gbyqW4H3#0idmUHd2",
+                  "to": "vKEsyHFk/gbyqW4H3#eECDrhMc",
+                  "label": "wrap the painted body",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/flowchart/flowchart.ts",
+                    "symbol": "svgDocument"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#AxUOykUZ",
+                  "from": "vKEsyHFk/gbyqW4H3#eECDrhMc",
+                  "to": "vKEsyHFk/gbyqW4H3#0idmUHd2",
+                  "label": "one self-contained document",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/svg/page/document.ts",
+                    "symbol": "svgDocument"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#A3mQ1UEN",
+                  "from": "vKEsyHFk/gbyqW4H3#0idmUHd2",
+                  "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                  "label": "document, size and atlas",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/flowchart/flowchart.ts",
+                    "symbol": "renderFlowchart"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "architecture",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#NcD6J0aw",
+                  "from": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                  "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                  "label": "turn flow steps into lines",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+                    "symbol": "renderArchitecture"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#DWVyoGBm",
+                  "kind": "decision",
+                  "question": "Was this content laid out before?",
+                  "alternatives": [
+                    {
+                      "label": "remembered",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/gbyqW4H3#gP9IzN0h",
+                          "from": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                          "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                          "label": "take the remembered layout",
+                          "kind": "self",
+                          "note": "the last 64 layouts are remembered, by content, standing, engine and policy",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+                            "symbol": "layoutRemembered"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "new",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/gbyqW4H3#xnf4S2ZR",
+                          "from": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                          "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+                          "label": "measure every card, note and label",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+                            "symbol": "measureArchitecture"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/gbyqW4H3#zyeRC559",
+                          "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+                          "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                          "label": "measured sizes and wrapped lines",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/renderer/src/shared/rules/text/measurement.ts",
+                            "symbol": "measureArchitecture"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/gbyqW4H3#63rqVVga",
+                          "from": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                          "to": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+                          "label": "content and measured sizes",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+                            "symbol": "layoutEngine"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/gbyqW4H3#QXhFPRlf",
+                          "from": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+                          "to": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+                          "label": "lay out with Track or Blocks; keep what reads best",
+                          "kind": "self",
+                          "note": "every variant is laid out fresh (ADR 0032); each way to lay it out is solved on the host layout engine",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/renderer/src/shared/rules/layout/engines.ts",
+                            "symbol": "ENGINES"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/gbyqW4H3#83fQKZF2",
+                          "from": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+                          "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                          "label": "cards, frames, ports, routes and labels",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/renderer/src/shared/rules/layout/engines.ts",
+                            "symbol": "layoutEngine"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#Un5S1WfO",
+                  "kind": "decision",
+                  "question": "Does the picture leave out its comparison?",
+                  "alternatives": [
+                    {
+                      "label": "yes",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/gbyqW4H3#8UzNPwpr",
+                          "from": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                          "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                          "label": "keep only what the variant's own reading holds",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+                            "symbol": "shownOf"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "no",
+                      "steps": []
+                    }
+                  ]
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#yKVb0R1p",
+                  "from": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                  "to": "vKEsyHFk/gbyqW4H3#J7mPrUeP",
+                  "label": "paint the settled drawing",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+                    "symbol": "paintArchitecture"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#xaDDNjPP",
+                  "from": "vKEsyHFk/gbyqW4H3#J7mPrUeP",
+                  "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                  "label": "marks and the subject atlas",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
+                    "symbol": "paintArchitecture"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#TjSEqIVb",
+                  "from": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                  "to": "vKEsyHFk/gbyqW4H3#eECDrhMc",
+                  "label": "frame the page for export and wrap it",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+                    "symbol": "svgDocument"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#fbNKMfT6",
+                  "from": "vKEsyHFk/gbyqW4H3#eECDrhMc",
+                  "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+                  "label": "one self-contained document",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/svg/page/document.ts",
+                    "symbol": "svgDocument"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/gbyqW4H3#APiBh4ih",
+      "name": "Draw a sequence",
+      "participants": [
+        "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+        "vKEsyHFk/gbyqW4H3#CtoOMxca",
+        "vKEsyHFk/gbyqW4H3#wLF1X11D",
+        "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+        "vKEsyHFk/gbyqW4H3#L51bfquE",
+        "vKEsyHFk/gbyqW4H3#y8vuJJKu",
+        "vKEsyHFk/gbyqW4H3#eECDrhMc"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/gbyqW4H3#FnQTAFd7",
+          "from": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+          "to": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+          "label": "paint every flow of the reading",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+            "symbol": "paintDataFlow"
+          }
+        },
+        {
+          "id": "vKEsyHFk/gbyqW4H3#670bDrhG",
+          "from": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+          "to": "vKEsyHFk/gbyqW4H3#wLF1X11D",
+          "label": "columns, lifelines and messages",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/renderer/src/shared/rules/svg/sequence/dataflow.ts",
+            "symbol": "layoutDataFlow"
+          }
+        },
+        {
+          "id": "vKEsyHFk/gbyqW4H3#S53p7nFg",
+          "from": "vKEsyHFk/gbyqW4H3#wLF1X11D",
+          "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+          "label": "wrap responsibilities and step notes",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/renderer/src/shared/rules/layout/sequence/sequence-card.ts",
+            "symbol": "measureNoteLines"
+          }
+        },
+        {
+          "id": "vKEsyHFk/gbyqW4H3#U7wIQMH6",
+          "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+          "to": "vKEsyHFk/gbyqW4H3#wLF1X11D",
+          "label": "wrapped lines",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/renderer/src/shared/rules/text/measurement.ts",
+            "symbol": "measureNoteLines"
+          }
+        },
+        {
+          "id": "vKEsyHFk/gbyqW4H3#OFdIV002",
+          "from": "vKEsyHFk/gbyqW4H3#wLF1X11D",
+          "to": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+          "label": "where every column, message and frame goes",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/renderer/src/shared/rules/layout/sequence/dataflow.ts",
+            "symbol": "layoutDataFlow"
+          }
+        },
+        {
+          "id": "vKEsyHFk/gbyqW4H3#Bf1uSWnx",
+          "kind": "decision",
+          "question": "Does the picture leave out its comparison?",
+          "alternatives": [
+            {
+              "label": "yes",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#HUgQSpyw",
+                  "from": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+                  "to": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+                  "label": "keep only what the variant's own reading holds",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/svg/sequence/dataflow.ts",
+                    "symbol": "paintDataFlow"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "no",
+              "steps": []
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/gbyqW4H3#a7spC3Be",
+          "kind": "loop",
+          "condition": "for each flow the view holds",
+          "steps": [
+            {
+              "id": "vKEsyHFk/gbyqW4H3#hvm2hvsw",
+              "from": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+              "to": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+              "label": "paint the frame, the columns and the decision frames",
+              "kind": "self",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/renderer/src/shared/rules/svg/sequence/dataflow.ts",
+                "symbol": "paintFlow"
+              }
+            },
+            {
+              "id": "vKEsyHFk/gbyqW4H3#FnuJ9qkV",
+              "kind": "loop",
+              "condition": "for each message of the flow",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#TV3CyjhV",
+                  "kind": "decision",
+                  "question": "Is the message a call on its own participant?",
+                  "alternatives": [
+                    {
+                      "label": "self call",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/gbyqW4H3#vHyOda5O",
+                          "from": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+                          "to": "vKEsyHFk/gbyqW4H3#L51bfquE",
+                          "label": "round the turns of the loop its pulses ride",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/renderer/src/shared/rules/svg/sequence/dataflow.ts",
+                            "symbol": "curveThrough"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/gbyqW4H3#LLjWcyC8",
+                          "from": "vKEsyHFk/gbyqW4H3#L51bfquE",
+                          "to": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+                          "label": "the rounded curve",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/renderer/src/shared/rules/layout/routes/curves.ts",
+                            "symbol": "curveThrough"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "between two columns",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/gbyqW4H3#o1aDteuC",
+                          "from": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+                          "to": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+                          "label": "draw one straight line from column to column",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/renderer/src/shared/rules/svg/sequence/dataflow.ts",
+                            "symbol": "stepPath"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/gbyqW4H3#eo5hZg4V",
+          "from": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+          "to": "vKEsyHFk/gbyqW4H3#y8vuJJKu",
+          "label": "where every column, message and frame landed",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/renderer/src/shared/rules/svg/sequence/dataflow.ts",
+            "symbol": "atlasBoxes"
+          }
+        },
+        {
+          "id": "vKEsyHFk/gbyqW4H3#qU8wRslx",
+          "from": "vKEsyHFk/gbyqW4H3#y8vuJJKu",
+          "to": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+          "label": "boxes by subject",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/renderer/src/shared/rules/render/atlas.ts",
+            "symbol": "atlasBoxes"
+          }
+        },
+        {
+          "id": "vKEsyHFk/gbyqW4H3#p2qxm18z",
+          "from": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+          "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+          "label": "page body, size and atlas",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/renderer/src/shared/rules/svg/sequence/dataflow.ts",
+            "symbol": "paintDataFlow"
+          }
+        },
+        {
+          "id": "vKEsyHFk/gbyqW4H3#cQKl0Jn2",
+          "from": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+          "to": "vKEsyHFk/gbyqW4H3#eECDrhMc",
+          "label": "frame the page for export and wrap it",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+            "symbol": "svgDocument"
+          }
+        },
+        {
+          "id": "vKEsyHFk/gbyqW4H3#BMCBlJlx",
+          "from": "vKEsyHFk/gbyqW4H3#eECDrhMc",
+          "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+          "label": "one self-contained document",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/renderer/src/shared/rules/svg/page/document.ts",
+            "symbol": "svgDocument"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/gbyqW4H3#VbVMzrrT",
+      "name": "Frame a picture for export",
+      "participants": [
+        "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+        "vKEsyHFk/gbyqW4H3#iXrVyvHz",
+        "vKEsyHFk/gbyqW4H3#YhQnj9ID",
+        "vKEsyHFk/gbyqW4H3#X0CpwpF1"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/gbyqW4H3#NV6GSQ5E",
+          "from": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+          "to": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
+          "label": "frame the page for export",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+            "symbol": "framedForExport"
+          }
+        },
+        {
+          "id": "vKEsyHFk/gbyqW4H3#die1ECgF",
+          "kind": "decision",
+          "question": "Does the export ask for a legend?",
+          "alternatives": [
+            {
+              "label": "legend",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#bQmocAEW",
+                  "kind": "decision",
+                  "question": "Does the picture draw its comparison's marks?",
+                  "alternatives": [
+                    {
+                      "label": "marks",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/gbyqW4H3#KLl81Vh2",
+                          "from": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
+                          "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1",
+                          "label": "count the marks of the subjects the drawing placed",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/renderer/src/shared/rules/svg/page/export-frame.ts",
+                            "symbol": "markCounts"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/gbyqW4H3#2OkuWYG3",
+                          "from": "vKEsyHFk/gbyqW4H3#X0CpwpF1",
+                          "to": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
+                          "label": "how many placed subjects carry each mark",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/renderer/src/shared/rules/render/picture-key.ts",
+                            "symbol": "markCounts"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "no marks",
+                      "steps": []
+                    }
+                  ]
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#XqwcLlCR",
+                  "from": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
+                  "to": "vKEsyHFk/gbyqW4H3#YhQnj9ID",
+                  "label": "lay out the key",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/svg/page/export-frame.ts",
+                    "symbol": "legendOf"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#7ZIx3pOn",
+                  "from": "vKEsyHFk/gbyqW4H3#YhQnj9ID",
+                  "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1",
+                  "label": "what the picture draws",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/svg/page/legend.ts",
+                    "symbol": "pictureAppearances"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#5MnjnM20",
+                  "from": "vKEsyHFk/gbyqW4H3#X0CpwpF1",
+                  "to": "vKEsyHFk/gbyqW4H3#YhQnj9ID",
+                  "label": "the appearances the picture wears",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/render/picture-key.ts",
+                    "symbol": "pictureAppearances"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#PKofi6GZ",
+                  "from": "vKEsyHFk/gbyqW4H3#YhQnj9ID",
+                  "to": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
+                  "label": "the key, laid out and drawn",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/svg/page/legend.ts",
+                    "symbol": "legendOf"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#UbCKiKHt",
+                  "kind": "decision",
+                  "question": "Is the legend drawn alone?",
+                  "alternatives": [
+                    {
+                      "label": "alone",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/gbyqW4H3#p1LvPUgr",
+                          "from": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
+                          "to": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
+                          "label": "draw the legend and no picture",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/renderer/src/shared/rules/svg/page/export-frame.ts",
+                            "symbol": "NOTHING"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "with the picture",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/gbyqW4H3#IZLQKDye",
+                          "from": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
+                          "to": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
+                          "label": "put the legend under the picture, or beside it",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/renderer/src/shared/rules/svg/page/export-frame.ts",
+                            "symbol": "withLegend"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "no legend",
+              "steps": []
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/gbyqW4H3#JWne69Uh",
+          "kind": "decision",
+          "question": "Does the export ask for a title?",
+          "alternatives": [
+            {
+              "label": "title",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/gbyqW4H3#0i7XkljB",
+                  "from": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
+                  "to": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
+                  "label": "move the picture down under the title",
+                  "kind": "self",
+                  "note": "the drawing is never laid out again; the page grows to hold the title",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/renderer/src/shared/rules/svg/page/export-frame.ts",
+                    "symbol": "underTitle"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "no title",
+              "steps": []
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/gbyqW4H3#pfdwGBeB",
+          "from": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
+          "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+          "label": "the page, grown to hold what it carries",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/renderer/src/shared/rules/svg/page/export-frame.ts",
+            "symbol": "framedForExport"
+          }
+        }
+      ]
+    }
+  ]
+}

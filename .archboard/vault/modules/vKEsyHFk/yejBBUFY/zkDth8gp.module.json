@@ -1,0 +1,108 @@
+{
+  "order": 28000,
+  "name": "Pane composition",
+  "kind": "module",
+  "responsibility": "Mounts the session and drawing stage for one pane",
+  "description": "Canonical reading metadata joins the existing pane publisher. The request uses the admitted pane vault, while architecture names the actual reading vault. Legacy and canonical readings use one report sequence.\n\nCanonical recording draws only its supplied payload. Live narration waits for the accepted capture report before voice starts. Matching pane requests drive the captured walkthrough. Reading changes or failed publication refuse a pending narration start.\n\nAlready-open panes observe the shared architecture feed before cutover. The public read result selects the active format. Durable migration changes the pane to canonical authority; recovery and busy states stay explicit. The browser performs no migration write.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/application/ApplicationPane.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#zkDth8gp",
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.13 - Explain-the-captured-reading-through-local-agent-actions.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 65000,
+      "kind": "render",
+      "label": "Read an authored model",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "symbol": "ApplicationPane"
+      },
+      "id": "vKEsyHFk/yejBBUFY#iM6sDA82",
+      "to": "vKEsyHFk/yejBBUFY#n2ONtqdt"
+    },
+    {
+      "order": 84000,
+      "kind": "call",
+      "label": "identify the tab answer",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "symbol": "tabSessionId"
+      },
+      "id": "vKEsyHFk/yejBBUFY#VA9yIxx0",
+      "to": "vKEsyHFk/yejBBUFY#aG0rP4SX"
+    },
+    {
+      "order": 86000,
+      "kind": "call",
+      "label": "refresh the changed tab answer",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "symbol": "explanationKey"
+      },
+      "id": "vKEsyHFk/yejBBUFY#ponUuQbD",
+      "to": "vKEsyHFk/yejBBUFY#AIp6YN1P"
+    },
+    {
+      "order": 87000,
+      "kind": "call",
+      "label": "keep answers above the changing reading",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "symbol": "ModelExplanationHost"
+      },
+      "id": "vKEsyHFk/yejBBUFY#TWI66Wjf",
+      "to": "vKEsyHFk/yejBBUFY#YLoD5SNo"
+    },
+    {
+      "order": 92000,
+      "kind": "call",
+      "label": "draw the supplied recording",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "symbol": "RecordedModelStage"
+      },
+      "id": "vKEsyHFk/yejBBUFY#gkl1U5a9",
+      "to": "vKEsyHFk/yejBBUFY#Dobe4vE1"
+    },
+    {
+      "order": 107000,
+      "kind": "call",
+      "label": "the pane's vault check, to redraw on a policy move",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "symbol": "useVaultPolicyRefresh"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#g00kNnNx",
+      "to": "vKEsyHFk/UOXNWLhR#j9uyTKyA"
+    }
+  ]
+}

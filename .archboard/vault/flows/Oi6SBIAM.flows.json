@@ -1,0 +1,395 @@
+{
+  "schemaVersion": 1,
+  "id": "Oi6SBIAM",
+  "name": "Live panes",
+  "flows": [
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#StrSdB9p",
+      "name": "A page connects its socket",
+      "participants": [
+        "vKEsyHFk/yejBBUFY#xsn0RvSi",
+        "vKEsyHFk/Oi6SBIAM#X07YebBP",
+        "vKEsyHFk/Oi6SBIAM#RjaKX25k",
+        "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+        "vKEsyHFk/HBlhIeSD#KLt72lWa"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/Oi6SBIAM#gId3lbYc",
+          "from": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+          "to": "vKEsyHFk/Oi6SBIAM#X07YebBP",
+          "label": "open a socket naming its vault, pane and tab",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
+            "symbol": "socketUrl"
+          }
+        },
+        {
+          "id": "vKEsyHFk/Oi6SBIAM#x1Byggls",
+          "from": "vKEsyHFk/Oi6SBIAM#X07YebBP",
+          "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k",
+          "label": "is it the page's own origin?",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+            "symbol": "checkBrowserCsrf"
+          }
+        },
+        {
+          "id": "vKEsyHFk/Oi6SBIAM#nyaoOyy7",
+          "from": "vKEsyHFk/Oi6SBIAM#RjaKX25k",
+          "to": "vKEsyHFk/Oi6SBIAM#X07YebBP",
+          "label": "the verdict",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+            "symbol": "checkBrowserCsrf"
+          }
+        },
+        {
+          "id": "vKEsyHFk/Oi6SBIAM#K0jfIWXV",
+          "kind": "decision",
+          "question": "Does the upgrade come from the page's own origin?",
+          "alternatives": [
+            {
+              "label": "a foreign page",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/Oi6SBIAM#Z1AwOpO4",
+                  "from": "vKEsyHFk/Oi6SBIAM#X07YebBP",
+                  "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+                  "label": "refused with 403",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                    "symbol": "startWebSocketServer"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "the page",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/Oi6SBIAM#L1mHc5CO",
+                  "from": "vKEsyHFk/Oi6SBIAM#X07YebBP",
+                  "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+                  "label": "which vault does it name?",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                    "symbol": "vaultOfUpgrade"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/Oi6SBIAM#rNJVEA2C",
+                  "from": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+                  "to": "vKEsyHFk/Oi6SBIAM#X07YebBP",
+                  "label": "the canonical vault, or why not",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/server/services/request/vault.ts",
+                    "symbol": "namedVault"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/Oi6SBIAM#maZONSSM",
+                  "kind": "decision",
+                  "question": "Can the server read the vault the socket names?",
+                  "alternatives": [
+                    {
+                      "label": "it names none, or no directory",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/Oi6SBIAM#UXFumNQO",
+                          "from": "vKEsyHFk/Oi6SBIAM#X07YebBP",
+                          "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+                          "label": "refused: VAULT_REQUIRED or VAULT_UNREADABLE",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                            "symbol": "startWebSocketServer"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "readable",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/Oi6SBIAM#hn2Q6jbD",
+                          "from": "vKEsyHFk/Oi6SBIAM#X07YebBP",
+                          "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+                          "label": "accepted",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                            "symbol": "acceptWebSocketConnection"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "its vault is gone",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/Oi6SBIAM#RPw8zIHG",
+                          "from": "vKEsyHFk/Oi6SBIAM#X07YebBP",
+                          "to": "vKEsyHFk/HBlhIeSD#KLt72lWa",
+                          "label": "its repository's chosen checkout, else the opening vault",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                            "symbol": "placeOfVault"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/Oi6SBIAM#iV6tUF2l",
+                          "from": "vKEsyHFk/HBlhIeSD#KLt72lWa",
+                          "to": "vKEsyHFk/Oi6SBIAM#X07YebBP",
+                          "label": "a vault to put it in, or none",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                            "symbol": "placeInstead"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/Oi6SBIAM#lbMwIQ2e",
+                          "kind": "decision",
+                          "question": "Is there a readable vault to put it in?",
+                          "alternatives": [
+                            {
+                              "label": "none",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/Oi6SBIAM#J5gyfFop",
+                                  "from": "vKEsyHFk/Oi6SBIAM#X07YebBP",
+                                  "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+                                  "label": "refused: VAULT_UNREADABLE",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                                    "symbol": "startWebSocketServer"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "label": "one",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/Oi6SBIAM#h8QBd6aC",
+                                  "from": "vKEsyHFk/Oi6SBIAM#X07YebBP",
+                                  "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+                                  "label": "accepted, and its first message names the vault it is in",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                                    "symbol": "placeInstead"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#YkrftZyC",
+      "name": "A person chooses a checkout",
+      "participants": [
+        "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+        "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+        "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+        "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+        "vKEsyHFk/Oi6SBIAM#MqTq68P3",
+        "vKEsyHFk/yejBBUFY#xsn0RvSi"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/Oi6SBIAM#8lDS120l",
+          "from": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+          "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+          "label": "choose a checkout of a repository",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+            "symbol": "mountRepositoryRoutes"
+          }
+        },
+        {
+          "id": "vKEsyHFk/Oi6SBIAM#Xymg9Rr4",
+          "kind": "decision",
+          "question": "Is the root a known checkout of the repository?",
+          "alternatives": [
+            {
+              "label": "unknown",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/Oi6SBIAM#ZstWLA7K",
+                  "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                  "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                  "label": "refused, naming the checkouts it knows",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                    "symbol": "refuseUnknownCheckout"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "known",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/Oi6SBIAM#Cmp2uTOo",
+                  "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                  "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                  "label": "make it the chosen checkout",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                    "symbol": "chooseCheckoutRoute"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/Oi6SBIAM#XFiY1bF6",
+                  "kind": "loop",
+                  "condition": "for each pane the server holds",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/Oi6SBIAM#e14nWX5g",
+                      "kind": "decision",
+                      "question": "Is the pane in the vault of the chosen checkout?",
+                      "alternatives": [
+                        {
+                          "label": "yes",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/Oi6SBIAM#l5rDHunS",
+                              "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                              "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+                              "label": "tell it where it is, with its repository's name",
+                              "kind": "sync",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                                "symbol": "sendBoardlessToPane"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "label": "no",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/Oi6SBIAM#D9yzkvrZ",
+                              "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                              "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+                              "label": "move it into the chosen checkout's vault",
+                              "kind": "sync",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                                "symbol": "movePaneVault"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/Oi6SBIAM#vJTlDcZe",
+                              "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                              "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+                              "label": "pane_board: its board, read again there",
+                              "kind": "sync",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                                "symbol": "sendToPane"
+                              }
+                            },
+                            {
+                              "id": "vKEsyHFk/Oi6SBIAM#Z5pzIome",
+                              "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                              "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3",
+                              "label": "the pane arrived on its board",
+                              "kind": "sync",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                                "symbol": "arrivedOnBoard"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "vKEsyHFk/Oi6SBIAM#U31cZhAR",
+                  "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                  "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+                  "label": "tell every tab",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                    "symbol": "broadcastEverywhere"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/Oi6SBIAM#Q6IZmbLE",
+                  "from": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+                  "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+                  "label": "repositories_changed",
+                  "kind": "async",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/state/pane-vaults/pane-vaults.ts",
+                    "symbol": "broadcastEverywhere"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/Oi6SBIAM#eEuiCZSD",
+                  "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                  "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                  "label": "the repository and the root",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+                    "symbol": "chooseCheckoutRoute"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "order": 58000,
+  "name": "Board cache keys",
+  "kind": "function",
+  "responsibility": "The cache keys of the semantic-board resources, spelled once, and the one reading of a cached key back into the board it names",
+  "description": "Private to the reads folder: the queries subscribe under these keys and the refresh module decides which go stale. Nothing outside it names a key or decodes one, so the layout can change here alone.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-keys.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#nMKLaMje",
+  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "outgoing": [
+    {
+      "order": 132000,
+      "kind": "call",
+      "label": "the comparison part of a drawing's key",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-keys.ts",
+        "symbol": "comparisonKey"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#N9rPOyGF",
+      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
+    }
+  ]
+}

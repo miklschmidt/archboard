@@ -410,3 +410,53 @@ This reverses these parts of ADR 0035:
   the replay draws the voice box in the walkthrough box's pill. The pill has one
   height whatever it holds, so the camera frames each step the same way on both
   pages.
+
+## Canonical walkthrough recordings
+
+TASK-549.14 extends the existing talk with an optional `architecture` payload.
+It contains one complete canonical reading and its resolved playback.
+Canonical talks require an exact retained checkpoint and available beats.
+Their `document` is null because the architecture payload owns the captured meaning.
+Legacy talks keep their original document and remain readable.
+
+The existing recording page receives that exact payload through its optional `load` operation before voice starts.
+The page address names the model, checkpoint, walkthrough, and explicit vault.
+The recorder never resolves the architecture from a chosen mutable checkout.
+Canonical drawn events report the captured revision digest.
+The talk reader refuses a different revision before replay starts.
+
+The page driver, audio timeline, talk store, frame renderer, and encoder remain the execution owners.
+Replay loads the stored payload and uses the existing frame clock.
+It reads no current vault and starts no voice model.
+The public recording operation and offline replay both use this captured payload through the existing pages.
+
+Canonical replay draws the captured model through the same walkthrough component as live playback.
+It uses the existing presentation controls, picture loader, and frame clock.
+The artifact supplies every architecture read, including after the source repository disappears.
+Picture readiness names the captured revision and requested beat.
+The frame clock advances motion after the picture is drawn.
+
+Replay disables Chromium animation execution on the compositor thread.
+The first frame of a new SVG otherwise varied even when its markup and sampled animation times matched.
+The existing picture loader converts SVG traffic into animations that the frame clock controls.
+The canonical replay owner compares every frame across one-page and two-page rendering.
+Legacy replay keeps the same owner and also passes its frame comparisons.
+
+The canonical voice bridge resolves one server-owned capture before the voice offer starts.
+A pane report supplies the source selection and separate source and target revision guards.
+Live narration waits for the existing publisher to receive acceptance of that report.
+A changed or failed report refuses the pending start.
+The report supplies no authored narration text.
+The public architecture reader resolves the narrative source, including definitions newer than their exact targets.
+The bridge refuses changed or unavailable captures and keeps accepted captures for later beats.
+It reads subject names and standing from that retained reading and its existing comparison.
+
+Narrative preparation can be asynchronous within the existing serialized voice start.
+After preparation, the voice owner requires the same active start token before creating an offer.
+Disconnect, stop, or replacement cancels an unfinished start.
+
+Canonical live narration uses the existing pane presentation port without a legacy board key.
+The pane acknowledges the exact requested walkthrough and beat after arrival.
+The recording page drives its own first beat.
+Only arrived, available beats reach narration through either path.
+Leaving releases the capture through the existing narration lifecycle.

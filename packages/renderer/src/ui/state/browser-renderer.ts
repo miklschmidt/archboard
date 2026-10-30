@@ -13,6 +13,11 @@
 
 import type { SemanticBoard } from "@archboard/board/document";
 import type { SemanticPolicy } from "@archboard/board/policy";
+import { renderSemanticView } from "#shared/rules/render/diagram.ts";
+import type {
+	SemanticViewRenderRequest,
+	RenderedDiagram,
+} from "#shared/protocol/render-request.ts";
 import {
 	renderBoard,
 	type BoardRenderChoices,
@@ -117,4 +122,26 @@ async function drawBoardHere(
 	return renderBoard(board, choices, policy);
 }
 
-export { drawBoardHere, startBrowserRenderer };
+/**
+ * Prepare a scoped drawing with the renderer's complete interface classification.
+ * @param request The visible content, complete model, and presentation policy.
+ * @returns A stable scene key and its local rendering operation.
+ */
+function prepareContentHere(request: Omit<SemanticViewRenderRequest, "theme">) {
+	return {
+		key: JSON.stringify(request),
+		/**
+		 * Render only after the renderer core and the icons are available.
+		 * @returns The picture and its interaction geometry.
+		 * @throws {Error} When the browser renderer is not started or rendering fails.
+		 */
+		draw: async (): Promise<RenderedDiagram> => {
+			if (started === undefined)
+				throw new Error("Start the browser renderer before drawing content.");
+			await Promise.all([started, loadDiagramIcons(request.policy)]);
+			return renderSemanticView(request);
+		},
+	};
+}
+
+export { drawBoardHere, prepareContentHere, startBrowserRenderer };

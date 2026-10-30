@@ -84,7 +84,6 @@ function view(parts: {
 			failure: parts.failure ?? null,
 		},
 		voice: { stage: "idle", problem: null, busy: false, level: SILENT },
-		context: { board: "payments", state: null },
 		busyApprovals: [],
 		approvalErrors: {},
 		lastProgressAtMs: parts.lastProgressAtMs ?? null,

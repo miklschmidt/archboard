@@ -183,3 +183,83 @@ test("what a pass found in one vault is not shown for a board of the same name i
 		rmSync(other, { recursive: true, force: true });
 	}
 });
+
+test("canonical findings keep the exact model revision and replace only the selected state", async () => {
+	const revision = { digest: "a".repeat(64), files: [] };
+	const updatedRevision = { digest: "b".repeat(64), files: [] };
+	const answer: CodeCheckAnswer = {
+		timings: [],
+		boards: [],
+		models: [{ model: "Shop", state: "Now", revision }],
+		findings: [
+			{
+				code: "BINDING_PATH_MISSING",
+				severity: "warning",
+				file: "shop.module.json",
+				model: "Shop",
+				state: "Now",
+				message: "Missing path",
+			},
+		],
+		skipped: [],
+		behind: [],
+	};
+	const draft = {
+		...answer,
+		models: [{ model: "Shop", state: "Draft", revision }],
+		findings: answer.findings.map((finding) => ({ ...finding, state: "Draft" })),
+	};
+	const { base, passes } = await serverWith([
+		answer,
+		draft,
+		{
+			...answer,
+			models: [{ model: "Shop", state: "Now", revision: updatedRevision }],
+			findings: [],
+		},
+	]);
+	async function models(vault = ownVault) {
+		const reply = await fetch(`${base}/api/vault/code-findings?${named(vault)}`);
+		expect(reply.status).toBe(200);
+		return RememberedFindingsSchema.parse(await reply.json()).models;
+	}
+	for (let pass = 0; pass < 2; pass += 1) {
+		const response = await fetch(`${base}/api/vault/code-check?${named()}`);
+		expect(response.status).toBe(200);
+		await response.json();
+	}
+	expect(await models()).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({ model: "Shop", state: "Now", revision, findings: answer.findings }),
+			expect.objectContaining({
+				model: "Shop",
+				state: "Draft",
+				revision,
+				findings: draft.findings,
+			}),
+		]),
+	);
+	const refreshed = await fetch(`${base}/api/vault/code-check?${named()}`);
+	expect(refreshed.status).toBe(200);
+	await refreshed.json();
+	const kept = await models();
+	expect(kept).toHaveLength(2);
+	expect(kept).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({
+				model: "Shop",
+				state: "Now",
+				revision: updatedRevision,
+				findings: [],
+			}),
+			expect.objectContaining({
+				model: "Shop",
+				state: "Draft",
+				revision,
+				findings: draft.findings,
+			}),
+		]),
+	);
+	expect(await models(vaultIn(join(scratch, "other")))).toEqual([]);
+	expect(passes()).toBe(3);
+});

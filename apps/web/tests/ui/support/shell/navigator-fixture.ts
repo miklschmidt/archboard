@@ -6,19 +6,14 @@ import { afterAll, afterEach } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import type { Root } from "react-dom/client";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import type { OutlineNode } from "#ui/rules/board-catalog/outline.ts";
+import type { Model } from "@archboard/board/content";
 import type {
 	ShellActions,
 	ShellPane,
 	ShellRepository,
 	ShellView,
 } from "#ui/rules/shell/contracts.ts";
-import type {
-	AgentActivityEntry,
-	BoardListing,
-	CatalogBoard,
-	ListedVariant,
-} from "#ui/rules/pane-session/session-types.ts";
+import type { AgentActivityEntry } from "#ui/rules/pane-session/session-types.ts";
 
 // The page's globals come first: the menus decide whether there is a page to
 // draw their popups on when they are loaded.
@@ -27,7 +22,6 @@ Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, wri
 const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
 const { act, createElement } = await import("react");
 const { createRoot } = await import("react-dom/client");
-const { buildOutline } = await import("#ui/rules/board-catalog/outline.ts");
 const { Shell } = await import("#ui/components/shell/Shell.tsx");
 
 let root: Root;
@@ -45,86 +39,12 @@ function unmount(): void {
 	act(() => root.unmount());
 }
 
-/**
- * A listed variant.
- * @param boardKey The board's key.
- * @param id The variant id.
- * @param parentId Its predecessor, or null.
- * @param lifecycle Its standing.
- * @param opens Whether the board's bare name opens it.
- * @returns The variant.
- */
-function variant(
-	boardKey: string,
-	id: string,
-	parentId: string | null,
-	lifecycle: ListedVariant["lifecycle"],
-	opens = false,
-): ListedVariant {
-	return {
-		id,
-		name: `${boardKey} ${id}`,
-		parentId,
-		lifecycle,
-		key: opens ? boardKey : `${boardKey}@${id}`,
-	};
-}
-
-/**
- * A listed board with one current variant unless given more.
- * @param name Its name.
- * @param level Its level.
- * @param links The boards it drills down to.
- * @param variants Its variants; one current one when omitted.
- * @returns The board.
- */
-function board(
-	name: string,
-	level: string,
-	links: readonly string[] = [],
-	variants?: readonly ListedVariant[],
-): CatalogBoard {
-	const key = name.toLowerCase();
-	const listed = variants ?? [variant(key, "now", null, "current", true)];
-	return {
-		name,
-		key,
-		level,
-		opens: listed.find((entry) => entry.key === key)?.id ?? null,
-		variants: [...listed],
-		links: links.map((target) => ({
-			board: target,
-			variant: null,
-			node: target,
-			container: false,
-		})),
-		description: null,
-	};
-}
-
-/** A system that drills into a service, with a module under it, and a loose board. */
-const BOARDS: readonly CatalogBoard[] = [
-	board("Checkout", "system", ["Payments"]),
-	board(
-		"Payments",
-		"service",
-		["Ledger"],
-		[
-			variant("payments", "now", null, "current", true),
-			variant("payments", "queued", "now", "draft"),
-			variant("payments", "old", null, "historical"),
-		],
-	),
-	board("Ledger", "module"),
-	board("Audit", "service"),
-];
-
 /** The one repository most tests list: its identity, and its chosen checkout's vault. */
 const SHOP = "github.com/acme/shop";
 const SHOP_VAULT = "/work/shop/.archboard/vault";
 
-/** The prefix of every row inside the shop repository. */
-const IN_SHOP = `repository:${SHOP}|`;
+/** The model each fixture repository exposes unless specified otherwise. */
+const SHOP_MODEL: Model["manifest"] = { schemaVersion: 1, id: "Shop", name: "Shop", current: null };
 
 /**
  * A repository whose chosen checkout is ready.
@@ -143,24 +63,19 @@ function ready(name: string, vault: string): RepositoryEntry {
 	};
 }
 
-/** The outline of each listing, built once as the application builds it once per listing. */
-const outlines = new WeakMap<readonly CatalogBoard[], readonly OutlineNode<CatalogBoard>[]>();
-
 /**
- * One repository as the shell lists it.
- * @param repository The repository.
- * @param boards Its boards.
- * @param activity What agents are doing in it, by board key.
- * @returns The shell's repository.
+ * One repository with its canonical model and current agent activity.
+ * @param repository The registered checkout choice.
+ * @param model The model, or absence when it has none.
+ * @param activity Current agent work in that vault.
+ * @returns The shell entry.
  */
 function repositoryOf(
 	repository: RepositoryEntry,
-	boards: BoardListing,
+	model: Model["manifest"] | undefined,
 	activity: Readonly<Record<string, AgentActivityEntry>> = {},
 ): ShellRepository {
-	const outline = outlines.get(boards.boards) ?? buildOutline(boards.boards, boards.levels);
-	outlines.set(boards.boards, outline);
-	return { repository, boards, outline, error: null, loading: false, activity };
+	return { repository, model, error: null, loading: false, activity };
 }
 
 /** No unrelated shell behaviour is exercised here. */
@@ -180,7 +95,7 @@ interface Asked {
 
 /** The workspace a test states: the shop's boards and activity, or every repository itself. */
 interface Workspace extends Partial<ShellView> {
-	readonly boards?: BoardListing;
+	readonly model?: Model["manifest"];
 	readonly agentActivity?: Readonly<Record<string, AgentActivityEntry>>;
 }
 
@@ -193,27 +108,20 @@ interface Mounted extends Asked {
 	readonly show: (changes: Workspace) => void;
 }
 
-/** The shop's boards, as most tests list them. */
-const SHOP_BOARDS: BoardListing = {
-	boards: [...BOARDS],
-	levels: ["system", "service", "module"],
-	onScreen: [],
-};
-
 /**
  * The shell's view of a workspace: the shop alone unless the test lists repositories.
  * @param workspace What the test stated.
  * @returns The view.
  */
 function viewOf(workspace: Workspace): ShellView {
-	const { boards = SHOP_BOARDS, agentActivity = {}, ...view } = workspace;
+	const { model = SHOP_MODEL, agentActivity = {}, ...view } = workspace;
 	return {
 		theme: "light",
-		repositories: [repositoryOf(ready(SHOP, SHOP_VAULT), boards, agentActivity)],
+		repositories: [repositoryOf(ready(SHOP, SHOP_VAULT), model, agentActivity)],
 		boardsError: null,
 		boardsLoading: false,
-		selectedBoardKey: "payments",
-		panes: [pane("A", "payments")],
+		selectedBoardKey: null,
+		panes: [pane("A", null)],
 		activePaneId: "A",
 		presentation: null,
 		notices: [],
@@ -230,6 +138,17 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 	const asked: Asked = { selected: [], beside: [], opened: [], chosen: [] };
 	const actions: ShellActions = {
 		setTheme: ignore,
+		/**
+		 * Record a current model opened from its repository.
+		 * @param model The stable model identity.
+		 * @param repository Its registered repository.
+		 * @returns That the pane accepted the reading.
+		 */
+		openModel: (model, repository) => {
+			asked.selected.push(model);
+			asked.opened.push(`${repository}|${model}`);
+			return Promise.resolve(true);
+		},
 		/**
 		 * Record a board opened in the active pane.
 		 * @param key The board key.
@@ -264,7 +183,6 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 		addPane: ignore,
 		closePane: ignore,
 		present: ignore,
-		takeBackControl: ignore,
 		openSettings: ignore,
 		selectNoticeAction: ignore,
 		dismissNotice: ignore,
@@ -336,56 +254,18 @@ function pane(
 		},
 		stage: null,
 		holder: null,
-		takeBack: { kind: "idle" },
-		boardName: null,
 	};
 }
 
 /**
- * A row's id as the shop's outline spells it, without the repository it is in.
- * @param id The row's id in the tree.
- * @returns The id within the shop, or the id itself outside it.
- */
-function inShop(id: string): string {
-	return id.startsWith(IN_SHOP) ? id.slice(IN_SHOP.length) : id;
-}
-
-/**
- * The shop's rows as `kind:id@level`, in order, as its outline places them:
- * without the repository row they all sit under, one level up.
- * @returns The rows.
- */
-function rows(): string[] {
-	return [...document.querySelectorAll<HTMLElement>('[role="treeitem"]')]
-		.filter((item) => item.dataset["rowId"]?.startsWith(IN_SHOP))
-		.map(
-			(item) =>
-				`${item.dataset["rowKind"]}:${inShop(item.dataset["rowId"] ?? "")}@${Number(item.getAttribute("aria-level")) - 1}`,
-		);
-}
-
-/**
- * A rendered row by its id.
- * @param id The row's id within the shop, or a whole id outside it.
- * @returns The row.
+ * Read a repository row by its stable identity.
+ * @param id The complete repository row identity.
+ * @returns Its rendered row.
  */
 function row(id: string): HTMLElement {
-	const found =
-		document.querySelector<HTMLElement>(`[data-row-id="${CSS.escape(IN_SHOP + id)}"]`) ??
-		document.querySelector<HTMLElement>(`[data-row-id="${CSS.escape(id)}"]`);
+	const found = document.querySelector<HTMLElement>(`[data-row-id="${CSS.escape(id)}"]`);
 	if (found === null) throw new Error(`Missing row ${id}`);
 	return found;
-}
-
-/**
- * The lines a row draws to join it to what it sits under, as `shape` or `shape:lit`.
- * @param id The row id.
- * @returns One entry for each line drawn, outermost first.
- */
-function guides(id: string): string[] {
-	return [...row(id).querySelectorAll<HTMLElement>('[data-slot="tree-guide"]')].map(
-		(line) => `${line.dataset["guide"]}${line.dataset["lit"] ? `:${line.dataset["lit"]}` : ""}`,
-	);
 }
 
 /**
@@ -394,8 +274,8 @@ function guides(id: string): string[] {
  * @returns Their ids, within the shop.
  */
 function carrying(letter: string): string[] {
-	return [...document.querySelectorAll(`[data-pane-letter="${letter}"]`)].map((chip) =>
-		inShop(chip.closest<HTMLElement>('[role="treeitem"]')?.dataset["rowId"] ?? ""),
+	return [...document.querySelectorAll(`[data-pane-letter="${letter}"]`)].map(
+		(chip) => chip.closest<HTMLElement>('[role="treeitem"]')?.dataset["rowId"] ?? "",
 	);
 }
 
@@ -413,22 +293,16 @@ function press(key: string, altKey = false): void {
 }
 
 export {
-	BOARDS,
 	SHOP,
-	SHOP_BOARDS,
+	SHOP_MODEL,
 	SHOP_VAULT,
 	act,
-	board,
 	carrying,
-	guides,
-	inShop,
 	mountNavigator,
 	pane,
 	press,
 	ready,
 	repositoryOf,
 	row,
-	rows,
 	unmount,
-	variant,
 };

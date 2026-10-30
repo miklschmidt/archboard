@@ -1,0 +1,60 @@
+{
+  "order": 7000,
+  "name": "Spoken approval",
+  "kind": "module",
+  "responsibility": "The gate that lets an approval be answered out loud, and the reasons it falls back to an answer on the page",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/services/spoken-approval"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
+  "parent": "vKEsyHFk/qKGcB6vZ#CjiN3z5a",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 11000,
+      "kind": "call",
+      "label": "answer the one it was armed for",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/spoken-approval/resolver-turn.ts",
+        "symbol": "resolve"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#0yGbIQl9",
+      "to": "vKEsyHFk/9ncuT5DP#QGVPyMwG"
+    },
+    {
+      "order": 35000,
+      "kind": "call",
+      "label": "parse the resolve call's input",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/spoken-approval/resolver-turn.ts",
+        "symbol": "ResolveSpokenApprovalInputSchema"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#JGOJBUyI",
+      "to": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P"
+    },
+    {
+      "order": 36000,
+      "kind": "call",
+      "label": "the classifier turn, as authored",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/spoken-approval/classifier-turn.ts",
+        "symbol": "createWorkbenchTurnStartParams"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#ZSSbttgn",
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
+    }
+  ]
+}

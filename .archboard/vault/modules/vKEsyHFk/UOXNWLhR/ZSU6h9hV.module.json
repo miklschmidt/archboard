@@ -1,0 +1,10 @@
+{
+  "order": 50001,
+  "name": "Camera and pointer",
+  "kind": "module",
+  "responsibility": "Owns the pane's camera, its fits, glides and eased moves. Turns presses, drags and hovers into picks and lit relationships.",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
+  "parent": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+  "outgoing": []
+}

@@ -18,7 +18,6 @@ import {
 } from "#runtime/operations/code-check/boards.ts";
 import { checkCode } from "#runtime/operations/code-check/check.ts";
 import { readPlans, type PlanRefused } from "#runtime/operations/code-check/plans.ts";
-import { createBehindReading } from "#runtime/operations/history-lens/behind.ts";
 
 /** What one run reads: the vault, the draft to read where a board has one, the plans an agent named, and how to cancel. */
 interface CodeCheckRequest {
@@ -34,7 +33,7 @@ interface CodeCheckRequest {
 
 /** Why a run is refused before its pass starts: a draft no board has, or a plan the check does not read. */
 interface CodeCheckRefusal {
-	readonly code: "NO_SUCH_DRAFT" | "PLAN_REFUSED";
+	readonly code: NoSuchDraft["code"] | "PLAN_REFUSED";
 	readonly error: string;
 }
 
@@ -55,13 +54,9 @@ interface CodeCheck {
  * @returns The refusal.
  */
 function noSuchDraft(refused: NoSuchDraft): CodeCheckRefusal {
-	const drafts =
-		refused.drafts.length === 0
-			? "No board has a draft."
-			: `The drafts that exist: ${refused.drafts.map((name) => JSON.stringify(name)).join(", ")}.`;
 	return {
-		code: "NO_SUCH_DRAFT",
-		error: `No board has a draft named ${JSON.stringify(refused.variant)}, so there is nothing to read at it. ${drafts}`,
+		code: refused.code,
+		error: refused.diagnostics.map((item) => `${item.message} ${item.recovery}`).join(" "),
 	};
 }
 
@@ -82,12 +77,53 @@ function planRefused(refused: PlanRefused): CodeCheckRefusal {
 }
 
 /**
+ * Address analyzer findings with their real canonical model, state, and source file.
+ * @param readings The complete inspected semantic readings.
+ * @param finding The analyzer finding.
+ * @returns The canonical finding or retained semantic evidence.
+ */
+function canonicalFinding(
+	readings: readonly import("#runtime/operations/code-check/boards.ts").BoardToCheck[],
+	finding: import("#shared/protocol/code-check.ts").CodeFinding,
+) {
+	const model = readings.find(
+		(reading) => reading.board.name === finding.board && reading.variant.id === finding.variant,
+	)?.model;
+	if (model === undefined) return finding;
+	const { board: _board, variant: _variant, path: _path, ...content } = finding;
+	const owner = findingOwner(model, finding.subject?.id);
+	return { ...content, file: owner ?? "model.json", ...findingIdentity(model) };
+}
+/**
+ * Identify the exact canonical state described by a finding.
+ * @param model The actual inspected reading.
+ * @returns Its model and state identities.
+ */
+function findingIdentity(
+	model: NonNullable<import("#runtime/operations/code-check/boards.ts").BoardToCheck["model"]>,
+) {
+	return { model: model.manifest.id, state: model.selectedState?.id ?? null };
+}
+/**
+ * Locate the authored definition of a module or source-owned relationship.
+ * @param model The actual inspected architecture.
+ * @param subject The stable subject identity.
+ * @returns Its authored input path.
+ */
+function findingOwner(
+	model: NonNullable<import("#runtime/operations/code-check/boards.ts").BoardToCheck["model"]>,
+	subject: string | undefined,
+) {
+	return model.modules.find(
+		(module) => module.id === subject || module.outgoing.some((edge) => edge.id === subject),
+	)?.file;
+}
+/**
  * Create the code check. Its reading of behind keeps what it read, so one
  * check serves every run of a process.
  * @returns The code check.
  */
 function createCodeCheck(): CodeCheck {
-	const behindReading = createBehindReading();
 	return {
 		/**
 		 * Run the code check with behind beside it.
@@ -96,31 +132,30 @@ function createCodeCheck(): CodeCheck {
 		 */
 		async run(request) {
 			const { vault } = request;
-			const read = request.everyDraft
+			const read = await (request.everyDraft
 				? readEveryDraftToCheck(vault)
-				: readBoardsToCheck(vault, request.variant);
-			if (!read.ok) return noSuchDraft(read);
-			// Every draft of a board is one board to behind, which reads its current variant.
-			const files = new Map(read.boards.map(({ board, file }) => [file, { board, file }]));
+				: readBoardsToCheck(vault, request.variant));
+			if (!("ok" in read)) return noSuchDraft(read);
 			const plans = await readPlans(vault, request.plans, request.signal);
 			if (!plans.ok) return planRefused(plans);
-			const historyStarted = performance.now();
-			const [code, history] = await Promise.all([
-				checkCode(vault, read.boards, request.signal, plans.plans),
-				behindReading
-					.read(vault, [...files.values()], request.signal)
-					.then((behind) => ({ behind, elapsedMs: performance.now() - historyStarted })),
-			]);
+			const code = await checkCode(vault, read.boards, request.signal, plans.plans);
 			return CodeCheckAnswerSchema.parse({
-				timings: [...code.timings, { check: "history", elapsedMs: history.elapsedMs }],
-				boards: read.boards.map(({ board, variant }) => ({
-					board: board.name,
-					variant: variant.id,
-					version: board.version,
-				})),
-				findings: code.findings,
+				timings: code.timings,
+				boards: [],
+				models: read.boards.flatMap(({ model }) =>
+					model === undefined
+						? []
+						: [
+								{
+									model: model.manifest.id,
+									state: model.selectedState?.id ?? null,
+									revision: model.revision,
+								},
+							],
+				),
+				findings: code.findings.map((finding) => canonicalFinding(read.boards, finding)),
 				skipped: [...read.skipped, ...code.skipped],
-				behind: history.behind,
+				behind: [],
 			});
 		},
 	};

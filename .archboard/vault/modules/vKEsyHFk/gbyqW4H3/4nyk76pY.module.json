@@ -1,0 +1,15 @@
+{
+  "order": 13000,
+  "name": "Renderer host",
+  "kind": "function",
+  "responsibility": "The seam a host fills: the layout engine, theme colours, font bytes and icon paths",
+  "description": "The host supplies layout solves, theme colors, font bytes and icon paths. A solve accepts an optional AbortSignal for queued work. An active solve still answers normally.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/rules/render/host.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#4nyk76pY",
+  "parent": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
+  "outgoing": []
+}

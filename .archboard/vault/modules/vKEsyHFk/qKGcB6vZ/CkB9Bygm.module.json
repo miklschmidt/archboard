@@ -1,0 +1,19 @@
+{
+  "order": 24003,
+  "name": "Shared thread policy",
+  "kind": "module",
+  "responsibility": "Defines the role profiles and instruction policy that thread and voice owners share",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#CkB9Bygm",
+  "parent": "vKEsyHFk/vKEsyHFk#lU0khwR0",
+  "formerNames": [
+    "Thread and voice"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

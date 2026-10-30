@@ -11,8 +11,8 @@ import type { Panes } from "#ui/hooks/application/use-panes.ts";
 import type { ConversationActivation } from "#ui/clients/application/shown-conversation.ts";
 import { userMoves, type UserMove } from "#ui/rules/application/user-moves.ts";
 import { chooseCheckout } from "#ui/clients/board-catalog/repositories.ts";
-import { type BoardCatalog } from "#ui/hooks/board-catalog/use-board-catalog.ts";
-import { showBoard } from "#ui/clients/pane-session/pane-requests.ts";
+import { type ModelCatalog } from "#ui/hooks/architecture-model/use-model-catalog.ts";
+import { showModel } from "#ui/clients/pane-session/pane-requests.ts";
 import type {
 	SettingsSurface,
 	ShellActions,
@@ -23,7 +23,9 @@ import type {
 import type { PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 
 /** What the server says a pane is showing after a show, and the repository it is in. */
-type ShownBoard = Pick<Awaited<ReturnType<typeof showBoard>>, "board" | "repository">;
+type ShownBoard = Pick<Awaited<ReturnType<typeof showModel>>, "repository"> & {
+	board: string | null;
+};
 
 /** What the actions act on. */
 interface ShellActionDeps {
@@ -31,7 +33,7 @@ interface ShellActionDeps {
 	/** Where a person's own move is announced, so the address bar records it. */
 	readonly addressing: WorkspaceAddressing;
 	readonly panes: Panes;
-	readonly catalog: BoardCatalog;
+	readonly catalog: ModelCatalog;
 	readonly notices: NoticeStack;
 	readonly fullscreen: Fullscreen;
 	readonly openSettings: (surface: SettingsSurface) => void;
@@ -70,8 +72,10 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 	const moving = deps.userMoves ?? ((paneId: string): UserMove => userMoves(panes.handles, paneId));
 	const show =
 		deps.show ??
-		((board: string, pane: string, vault: string): Promise<ShownBoard> =>
-			showBoard({ vault, board, pane }));
+		(async (board: string, pane: string, vault: string): Promise<ShownBoard> => {
+			const { repository } = await showModel(vault, pane, { legacyAddress: board });
+			return { board: null, repository };
+		});
 	const { activate } = deps;
 	/**
 	 * Show a listed board in one pane; the outcome is the pane moving, or a notice.
@@ -139,6 +143,54 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 }
 
 /**
+ * A human repository open moves the pane before activating its conversation.
+ * @param deps The existing pane, registry, notice and activation owners.
+ * @param model The destination model identity.
+ * @param repository The destination repository identity.
+ * @param paneId The pane the reader chose.
+ * @returns Whether the addressed route accepted the reading.
+ */
+async function openModel(
+	deps: ShellActionDeps,
+	model: string,
+	repository: string,
+	paneId: string,
+): Promise<boolean> {
+	const { status } = recordFor(deps.panes.records, paneId);
+	const vault = placeFor(deps.catalog, status, repository);
+	if (typeof vault !== "string") {
+		deps.notices.raise(vault);
+		return false;
+	}
+	const permission = await deps.addressing.claim({
+		kind: "board",
+		destination: { model, repository },
+		paneId,
+		from: status.boardKey,
+		repository: status.repository,
+	});
+	const move = userMoves(deps.panes.handles, paneId);
+	try {
+		await showModel(vault, status.clientId, { model });
+		permission.move.done(null, repository);
+		await deps.activate(paneId, { vault });
+		deps.notices.dismiss("architecture-command");
+		return true;
+	} catch (error) {
+		permission.move.failed();
+		move.failed();
+		deps.notices.raise(
+			failureNotice(
+				"architecture-command",
+				"Open architecture",
+				error instanceof Error ? error.message : String(error),
+			),
+		);
+		return false;
+	}
+}
+
+/**
  * Choose a checkout, and say so when the server refuses. Every tab hears the
  * choice from the server, this one included, and reads its repositories again.
  * @param deps The owners.
@@ -168,7 +220,7 @@ async function choose(deps: ShellActionDeps, repository: string, root: string): 
  * @returns The vault, or the notice that says why there is none.
  */
 function placeFor(
-	catalog: BoardCatalog,
+	catalog: ModelCatalog,
 	status: PaneStatus,
 	repository: string | undefined,
 ): string | ShellNotice {
@@ -202,7 +254,7 @@ function placeFor(
  * @param repository The repository's name.
  * @returns Its chosen checkout's vault, or null when it has none to read.
  */
-function vaultOf(catalog: Pick<BoardCatalog, "repositories">, repository: string): string | null {
+function vaultOf(catalog: Pick<ModelCatalog, "repositories">, repository: string): string | null {
 	return (
 		catalog.repositories.find((each) => each.repository.name === repository)?.repository.vault ??
 		null
@@ -210,36 +262,15 @@ function vaultOf(catalog: Pick<BoardCatalog, "repositories">, repository: string
 }
 
 /** The pane actions. */
-type PaneActions = Pick<
-	ShellActions,
-	"selectPane" | "addPane" | "closePane" | "present" | "takeBackControl"
->;
+type PaneActions = Pick<ShellActions, "selectPane" | "addPane" | "closePane" | "present">;
 
 /**
- * The pane actions: focus, add, close, present and take back.
+ * The pane actions: focus, add, close and present.
  * @param deps The owners.
  * @returns Those actions.
  */
 function paneActions(deps: ShellActionDeps): PaneActions {
 	const { panes, fullscreen } = deps;
-	/**
-	 * Take a claimed board back from the agent (ADR 0022).
-	 * @param paneId The pane.
-	 */
-	async function takeBackControl(paneId: string): Promise<void> {
-		const session = panes.handles.session(paneId);
-		if (session === null) {
-			return;
-		}
-		panes.patch(paneId, { takeBack: { kind: "pending" } });
-		const result = await session.takeBack();
-		panes.patch(paneId, {
-			takeBack:
-				result.outcome === "success"
-					? { kind: "idle" }
-					: { kind: "failed", message: "The board could not be taken back. Try again." },
-		});
-	}
 	return {
 		/**
 		 * Focus a pane.
@@ -272,13 +303,6 @@ function paneActions(deps: ShellActionDeps): PaneActions {
 				fullscreen.present(presentation.paneId);
 			}
 		},
-		/**
-		 * Take a claimed board back; the pane's take-back state shows the outcome.
-		 * @param paneId The pane.
-		 */
-		takeBackControl: (paneId: string): void => {
-			void takeBackControl(paneId);
-		},
 	};
 }
 
@@ -305,6 +329,15 @@ function answerNotice(deps: ShellActionDeps, actionId: string): void {
 function createShellActions(deps: ShellActionDeps): ComposedShellActions {
 	return {
 		setTheme: deps.setTheme,
+		/**
+		 * Open a current model in the explicitly addressed pane.
+		 * @param model The destination model.
+		 * @param repository Its registered repository.
+		 * @param paneId The target pane, or the active pane when absent.
+		 * @returns Whether the move succeeded.
+		 */
+		openModel: (model, repository, paneId) =>
+			openModel(deps, model, repository, paneId ?? deps.panes.active.status.paneId),
 		...boardActions(deps),
 		...paneActions(deps),
 		/**

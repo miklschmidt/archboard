@@ -85,7 +85,7 @@ function Finding(props: { readonly finding: CodeFinding }): JSX.Element {
 	const { finding } = props;
 	const warning = finding.severity === "warning";
 	return (
-		<li className="flex gap-2" data-severity={finding.severity}>
+		<li className="flex gap-2" data-severity={finding.severity} data-finding-code={finding.code}>
 			<SidebarGlyph>{warning && <WarningGlyph />}</SidebarGlyph>
 			<div className="flex min-w-0 flex-1 flex-col gap-1">
 				<p

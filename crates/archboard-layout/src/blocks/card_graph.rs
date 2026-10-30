@@ -5,8 +5,8 @@
 use crate::geometry::Side;
 use crate::graph::FROM_POINTS;
 use crate::track::grid::grid_edges;
-use crate::track::scene::Set;
-use crate::viz::{Attrs, Edge, Graph, Subgraph, Value, box_node};
+use crate::track::scene::{Map, Set};
+use crate::viz::{Attrs, Edge, Graph, Node, Subgraph, Value, box_node};
 
 use super::card_layout::{CardLayout, Sub};
 use super::clusters::{Link, title_of};
@@ -298,5 +298,40 @@ impl CardLayout<'_> {
                     .collect(),
             ),
         }
+    }
+
+    /// Keep the widths crowded cards need, for the next ranking. Widths only
+    /// grow, and each card's ports bound them, so the rankings end.
+    pub(super) fn reserve_ports(&mut self, widths: &Map<String, f64>) -> bool {
+        let crowded: Vec<(String, f64)> = widths
+            .iter()
+            .filter(|&(name, &width)| {
+                self.tree.cards.contains_key(name.as_str()) && width > self.size_of(name).width
+            })
+            .map(|(name, &width)| (name.clone(), width))
+            .collect();
+        if crowded.is_empty() {
+            return false;
+        }
+        self.port_widths.extend(crowded);
+        let sized: Map<String, Node> = self
+            .port_widths
+            .keys()
+            .map(|name| (name.clone(), self.node_of(name)))
+            .collect();
+        let held = self
+            .clusters
+            .graphs
+            .iter_mut()
+            .map(|graph| &mut graph.nodes);
+        for node in self.nodes.iter_mut().chain(held.flatten()) {
+            if let Some(Value::Num(width)) = sized
+                .get(&node.name)
+                .and_then(|wider| wider.attributes.get("width"))
+            {
+                node.attributes.set("width", Value::Num(*width));
+            }
+        }
+        true
     }
 }

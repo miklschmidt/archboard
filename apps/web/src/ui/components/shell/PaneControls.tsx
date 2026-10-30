@@ -9,7 +9,6 @@
 import { RiAddLine, RiCloseLine, RiFullscreenLine } from "@remixicon/react";
 import { useCallback, type JSX } from "react";
 
-import { MoveBoardControl } from "#ui/components/board-move/MoveBoardControl.tsx";
 import { cn, IconButton } from "@archboard/ui-kit/components";
 import type { ShellActions, ShellPane } from "#ui/rules/shell/contracts.ts";
 import { presentShortcutLabel } from "#ui/rules/shell/shortcuts.ts";
@@ -74,7 +73,6 @@ function PaneControls(props: PaneControlsProps): JSX.Element {
 					Reconnecting
 				</output>
 			)}
-			<MoveBoardControl status={pane.status} boardName={pane.boardName} />
 			<IconButton
 				label={alone ? "Present fullscreen" : `Present pane ${letter} fullscreen`}
 				shortcut={presentShortcutLabel()}

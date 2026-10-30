@@ -1,0 +1,108 @@
+{
+  "id": "LjzZMsi7",
+  "name": "Nightly batch",
+  "summary": "Build every product's list once a night from 90 days of orders",
+  "migration": {
+    "legacy": "Shop/gsfCCrqV#LjzZMsi7",
+    "predecessor": "Shop/gsfCCrqV#ud0cQDB9",
+    "baseline": {
+      "kind": "content",
+      "state": "Shop/gsfCCrqV#ud0cQDB9"
+    },
+    "reason": "Preserve the original predecessor and its exact content.",
+    "checkpoint": "b1fad19fdf97ddc8c4d3826032a1ce5b20d3170c"
+  },
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "predecessor": "ud0cQDB9",
+  "predecessorRevision": "e9a83b2c3350728eb5011ed1b72b35812889ff64d7bc012e1e7739774d995d0d",
+  "baseline": "bf7bba485577ad566dadea26f056ff47aa5e6809",
+  "changes": [
+    {
+      "type": "assign",
+      "subject": "Shop/gsfCCrqV#2YPq2CN8",
+      "field": "responsibility",
+      "value": "The 8 products most often bought with each product, rebuilt every night"
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#tMH3KtXK",
+      "kind": "module",
+      "value": {
+        "order": 7000,
+        "name": "Orders replica",
+        "kind": "datastore",
+        "responsibility": "A read-only copy of Orders DB, at most a day behind",
+        "schemaVersion": 1,
+        "id": "Shop/gsfCCrqV#tMH3KtXK"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#tMH3KtXK",
+      "placement": {
+        "holder": "Shop"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#3UyAn6so",
+      "kind": "module",
+      "value": {
+        "order": 8000,
+        "name": "Nightly job",
+        "kind": "job",
+        "responsibility": "At 02:00, finds the products most often bought together over the last 90 days",
+        "schemaVersion": 1,
+        "id": "Shop/gsfCCrqV#3UyAn6so"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#3UyAn6so",
+      "placement": {
+        "holder": "Shop"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#mvPRO97Z",
+      "kind": "relationship",
+      "value": {
+        "order": 5000,
+        "kind": "data",
+        "label": "read 90 days of orders",
+        "emphasis": "normal",
+        "id": "Shop/gsfCCrqV#mvPRO97Z",
+        "to": "Shop/gsfCCrqV#tMH3KtXK"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#mvPRO97Z",
+      "placement": {
+        "holder": "Shop/gsfCCrqV#3UyAn6so"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop/gsfCCrqV#y5jKdDgY",
+      "kind": "relationship",
+      "value": {
+        "order": 6000,
+        "kind": "data",
+        "label": "replace every list",
+        "emphasis": "normal",
+        "id": "Shop/gsfCCrqV#y5jKdDgY",
+        "to": "Shop/gsfCCrqV#2YPq2CN8"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/gsfCCrqV#y5jKdDgY",
+      "placement": {
+        "holder": "Shop/gsfCCrqV#3UyAn6so"
+      }
+    }
+  ]
+}

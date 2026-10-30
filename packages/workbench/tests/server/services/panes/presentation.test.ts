@@ -101,6 +101,7 @@ describe("a walkthrough step asked of a pane", () => {
 		says(null);
 		says(null);
 		expect(changes.map((change) => change.presentation?.beat ?? null)).toEqual([0, 1, null]);
+		expect(changes[1]?.presentation?.arrived).toBe(true);
 	});
 
 	test("is refused for a pane that has gone, when replaced by a later request, and when the server stops", async () => {
@@ -114,4 +115,20 @@ describe("a walkthrough step asked of a pane", () => {
 		port.forget();
 		expect(await stopping).toEqual({ kind: "refused", reason: "stopping" });
 	});
+});
+
+test("an arrival acknowledgement must name the exact requested beat", async () => {
+	const { port, sent, says } = harness();
+	let arrived = false;
+	const asking = port
+		.present({ clientId: "client-a", walkthrough: "w1", beat: 2 })
+		.then((outcome) => {
+			arrived = true;
+			return outcome;
+		});
+	says(at(1, true, sent[0]!.request));
+	await Promise.resolve();
+	expect(arrived).toBe(false);
+	says(at(2, true, sent[0]!.request));
+	expect(await asking).toEqual({ kind: "arrived", presentation: at(2, true, sent[0]!.request) });
 });

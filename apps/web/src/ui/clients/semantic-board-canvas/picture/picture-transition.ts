@@ -139,11 +139,12 @@ function continuousPictures(before: SemanticDrawing, after: SemanticDrawing): bo
  * stopped, since it would run on with nothing to move.
  * @param surface The element the picture is put into.
  * @param svg The picture.
+ * @param at The traffic position to preserve, in seconds.
  */
-function stagePicture(surface: HTMLElement, svg: string): void {
+function stagePicture(surface: HTMLElement, svg: string, at = 0): void {
 	const made = surface.ownerDocument.createElement("div");
 	made.innerHTML = svg;
-	runTraffic(made, 0);
+	runTraffic(made, at);
 	stopTraffic(surface);
 	surface.replaceChildren(...made.childNodes);
 }

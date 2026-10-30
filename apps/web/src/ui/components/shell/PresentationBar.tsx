@@ -35,7 +35,6 @@ function PresentationBar(props: PresentationBarProps): JSX.Element {
 			<ExitControl actions={actions} />
 			<span className="text-muted-foreground text-body">
 				Pane <span className="font-mono">{paneId}</span>
-				{pane.status.board && ` · ${pane.boardName ?? pane.status.board.board}`}
 			</span>
 			{props.error !== null && (
 				<span role="alert" className="text-destructive text-body min-w-0 truncate">

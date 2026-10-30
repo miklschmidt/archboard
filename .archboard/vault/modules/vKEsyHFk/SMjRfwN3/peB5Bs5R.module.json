@@ -1,0 +1,49 @@
+{
+  "order": 25000,
+  "name": "Video encoder",
+  "kind": "module",
+  "responsibility": "Finds ffmpeg, proves it has the encoders the file needs, and turns the JPEG frames and the voice into that file",
+  "description": "ARCHBOARD_FFMPEG comes first, and one named there that does not run is refused by that name, never passed over. Then ffmpeg on PATH, then nix run nixpkgs#ffmpeg-headless. With none of them, ENCODER_UNAVAILABLE names both ways to get one. MP4 needs libx264 and aac, and WebM needs libvpx-vp9 and libopus. The frames are converted from full-range BT.601 to BT.709 limited range and tagged so, and the voice is padded to the last frame.",
+  "groups": [
+    "walkthrough"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/walkthrough/src/runtime/processes/video-encoder.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SMjRfwN3#peB5Bs5R",
+  "parent": "vKEsyHFk/SMjRfwN3#itWd9ux7",
+  "outgoing": [
+    {
+      "order": 38000,
+      "kind": "call",
+      "description": "list its encoders; then frames on stdin, voice.wav beside",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/processes/video-encoder.ts",
+        "symbol": "Bun.spawn"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#KIRE5kGi",
+      "to": "vKEsyHFk/SMjRfwN3#PhFc1AJ9"
+    },
+    {
+      "order": 39000,
+      "kind": "call",
+      "label": "nix run nixpkgs#ffmpeg-headless, when no ffmpeg is found",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/services/ffmpeg.ts",
+        "symbol": "NIX_ARGV"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#jPAvfxQA",
+      "to": "vKEsyHFk/SMjRfwN3#WSI0A2k3"
+    }
+  ]
+}

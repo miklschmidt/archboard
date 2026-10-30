@@ -1,0 +1,19 @@
+{
+  "order": 11006,
+  "name": "Architecture inputs",
+  "kind": "datastore",
+  "responsibility": "Stores canonical modules, relationships, flows, proposals, and walkthroughs",
+  "description": "Modules own their outgoing relationships. Independent flow collections describe exchanges. Compact proposals and authored narratives refer to stable subjects, while exact history lives in the signed archive.",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/vKEsyHFk#8XKRkSHl",
+  "formerNames": [
+    "Board vault"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

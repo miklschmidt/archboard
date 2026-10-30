@@ -1,0 +1,63 @@
+{
+  "order": 59000,
+  "name": "Migration client",
+  "kind": "module",
+  "responsibility": "Send explicit-vault inventory, mapping, and migration requests and preserve shared receipts and recovery refusals",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/clients/server/legacy-migration.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/XppR9owz#AhjN13Ip",
+  "parent": "vKEsyHFk/XppR9owz#dHZeNcMs",
+  "formerNames": [
+    "Migration planning client"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 101000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/clients/server/legacy-migration.ts",
+        "symbol": "requestJson"
+      },
+      "id": "vKEsyHFk/XppR9owz#YyXXHRVN",
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    },
+    {
+      "order": 102000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/clients/server/legacy-migration.ts",
+        "symbol": "statedInvocation"
+      },
+      "id": "vKEsyHFk/XppR9owz#DugcdHTp",
+      "to": "vKEsyHFk/XppR9owz#fF4A9uvU"
+    }
+  ]
+}

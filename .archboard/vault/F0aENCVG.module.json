@@ -1,0 +1,25 @@
+{
+  "order": 69000,
+  "name": "Layout investigation",
+  "kind": "module",
+  "responsibility": "Compares layout engines and measures the saved layout fixtures",
+  "description": "The canonical engine gallery reads current module scopes and flows. The two historical investigation scripts measure the saved scorecard and timing fixtures. Fixture data stays shared with renderer tests and is not private implementation.",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#F0aENCVG",
+  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+  "outgoing": [
+    {
+      "order": 71000,
+      "kind": "call",
+      "label": "render measured layout fixtures",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/design/wide-board-layout-fixtures/measure.ts",
+        "symbol": "renderArchitecture"
+      },
+      "id": "vKEsyHFk#xTpg1eOM",
+      "to": "vKEsyHFk/gbyqW4H3#0XCanbzp"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "order": 7000,
+  "name": "Basket route",
+  "kind": "route",
+  "responsibility": "PUT /basket: keeps the shopper's basket between page views",
+  "schemaVersion": 1,
+  "id": "Shop/MKhTEYqf#4M4pdgk0",
+  "parent": "Shop/MKhTEYqf#lwmpnaVU",
+  "outgoing": [
+    {
+      "order": 7000,
+      "kind": "data",
+      "label": "keep the basket",
+      "emphasis": "muted",
+      "id": "Shop/MKhTEYqf#AdNRbD8D",
+      "to": "Shop/MKhTEYqf#Q2XClLOC"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "order": 3000,
+  "name": "Fetch semantic reads",
+  "kind": "function",
+  "responsibility": "Decode the listing, a board, a render, the vault check, the code findings and a board's locality",
+  "description": "Plain fetch to the semantic read routes; refused, unreachable or invalid replies become explicit viewer failures carrying the server's code. There is no write call.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
+  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "outgoing": []
+}

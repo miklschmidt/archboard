@@ -1,0 +1,15 @@
+{
+	"changes": [
+		{
+			"type": "edit-module",
+			"subject": "Shop#Gateway",
+			"set": { "name": "API" }
+		},
+		{
+			"type": "edit-relationship",
+			"subject": "Shop#Dispatch",
+			"source": "Shop#Worker",
+			"set": { "to": "Shop#Gateway" }
+		}
+	]
+}

@@ -1089,60 +1089,6 @@
 	}
 }
 
-/* The navigator's tree lines (tree-guides). Each row draws, for every row it
-   sits under, a line through the middle of that row's chevron. Where it hangs
-   from its parent the line turns to it with an elbow, and the last of a
-   parent's rows ends the line there; a row with a chevron gets a short elbow
-   and a row without one an elbow that runs on to its marker (--tick). --row-mid
-   is the middle of a row's first line. The way from the top to the selected row
-   is lit in Gold Mark, down to the middle of each row on it, and every other
-   line is quiet. */
-[data-slot="tree-guide"] {
-	--guide: color-mix(in oklch, var(--foreground) 11%, transparent);
-	--guide-lit: var(--primary-mark);
-	position: absolute;
-	inset-block: 0;
-	width: 0;
-	pointer-events: none;
-}
-[data-slot="tree-guide"]::before {
-	content: "";
-	position: absolute;
-	inset-block: 0;
-	left: 0;
-	width: 1px;
-	background: var(--guide);
-}
-[data-guide="last"]::before {
-	bottom: auto;
-	height: calc(var(--row-mid) + 1px);
-}
-[data-guide="elbow"]::after,
-[data-guide="last"]::after {
-	content: "";
-	position: absolute;
-	top: var(--row-mid);
-	left: 0;
-	width: var(--tick);
-	height: 1px;
-	background: var(--guide);
-}
-[data-lit="rail"]::before,
-[data-lit="branch"]::before {
-	background: var(--guide-lit);
-}
-[data-lit="mid"]::before {
-	background: linear-gradient(
-		to bottom,
-		var(--guide-lit) calc(var(--row-mid) + 1px),
-		var(--guide) 0
-	);
-}
-[data-lit="mid"]::after,
-[data-lit="branch"]::after {
-	background: var(--guide-lit);
-}
-
 @layer base {
 	* {
 		@apply border-border outline-ring/50;

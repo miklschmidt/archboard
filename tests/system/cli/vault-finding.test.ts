@@ -1,3 +1,4 @@
+import { seedCanonicalFixture } from "../support/canonical-fixture.ts";
 // How a command finds its vault, as the shipped bin does it (ADR 0049,
 // TASK-472.06): from the working directory or -C, at the checkout root inside a
 // git checkout and at the nearest enclosing vault outside one. Every answer
@@ -44,6 +45,7 @@ let billing = "";
  */
 function holdingVault(holder: string): string {
 	mkdirSync(join(holder, ".archboard", "vault"), { recursive: true });
+	seedCanonicalFixture(join(holder, ".archboard/vault"), holder.split("/").at(-1), []);
 	return realpathSync.native(holder);
 }
 
@@ -87,7 +89,7 @@ function listed(
 	args: readonly string[] = [],
 	env: Readonly<Record<string, string | undefined>> = {},
 ) {
-	const result = archboard(["semantic", ...args], cwd, env);
+	const result = archboard(["model", "read", ...args], cwd, env);
 	expect(result.status, result.failure).toBe(0);
 	return { vault: AnswerSchema.parse(JSON.parse(result.stdout)).vault, stderr: result.stderr };
 }
@@ -151,7 +153,7 @@ test("-C finds the vault from the directory it names, before or after the comman
 		origin: "-C",
 		registered: { kind: "untracked", name: "plans", root: plans },
 	});
-	const leading = archboard(["-C", shop, "semantic"], fixture.nowhere);
+	const leading = archboard(["-C", shop, "model", "read"], fixture.nowhere);
 	expect(leading.status, leading.failure).toBe(0);
 	expect(AnswerSchema.parse(JSON.parse(leading.stdout)).vault).toEqual({
 		path: join(shop, ".archboard", "vault"),
@@ -190,13 +192,13 @@ test("a registry that cannot be written is a warning, and the command still answ
 	expect(answered.stderr).not.toBe("");
 });
 
-test("semantic record refuses in a checkout that is not the chosen one of its repository", () => {
+test("model record refuses in a checkout that is not the chosen one of its repository", () => {
 	// The page names the repository and reads its chosen checkout, which is shop.
 	const clone = fixture.repository("shop-clone", `https://${SHOP}.git`);
 	holdingVault(clone);
 	expect(listed(clone).vault.registered).toMatchObject({ root: clone, chosen: false });
 	const out = join(fixture.nowhere, "tour.mp4");
-	const refused = archboard(["semantic", "record", "Tour", "--out", out], clone);
+	const refused = archboard(["model", "record", "--walkthrough", "Tour", "--out", out], clone);
 	expect(refused.status, refused.failure).toBe(2);
 	expect(refused.stdout).toBe("");
 	expect(existsSync(out)).toBe(false);
@@ -204,7 +206,7 @@ test("semantic record refuses in a checkout that is not the chosen one of its re
 
 test("inside a checkout without a vault a command refuses, and creates and registers nothing", () => {
 	const before = existsSync(fixture.registry) ? readFileSync(fixture.registry) : null;
-	const refused = archboard(["semantic"], join(billing, "src"));
+	const refused = archboard(["model", "read"], join(billing, "src"));
 	expect(refused.status, refused.failure).toBe(2);
 	expect(refused.stdout).toBe("");
 	expect(existsSync(join(billing, ".archboard"))).toBe(false);
@@ -214,25 +216,17 @@ test("inside a checkout without a vault a command refuses, and creates and regis
 test("a checkout without a vault is told which known vault holds boards of its code, and nothing is created", () => {
 	// Another directory keeps the architecture of the billing checkout's code.
 	const architecture = holdingVault(join(fixture.root, "architecture"));
-	const board = JSON.stringify({
-		level: "system",
-		nodes: [
-			{
-				name: "Invoices",
-				kind: "service",
-				binding: { repo: "github.com/acme/billing", path: "src/invoices.ts" },
-			},
-		],
-	});
-	const drawn = archboard(
-		["semantic", "new", "Billing flow", "--doing", "drawing billing's architecture"],
-		architecture,
-		{},
-		board,
-	);
+	seedCanonicalFixture(join(architecture, ".archboard/vault"), "Billing flow", [
+		{
+			name: "Invoices",
+			kind: "service",
+			binding: { repo: "github.com/acme/billing", path: "src/invoices.ts" },
+		},
+	]);
+	const drawn = archboard(["model", "read"], architecture);
 	expect(drawn.status, drawn.failure).toBe(0);
 	const before = readFileSync(fixture.registry);
-	const refused = archboard(["semantic"], join(billing, "src"));
+	const refused = archboard(["model", "read"], join(billing, "src"));
 	expect(refused.status, refused.failure).toBe(2);
 	expect(refused.stdout).toBe("");
 	expect(refused.stderr).toContain(architecture);
@@ -241,14 +235,14 @@ test("a checkout without a vault is told which known vault holds boards of its c
 	expect(readFileSync(fixture.registry)).toEqual(before);
 	// A checkout whose code no known vault binds is not sent there.
 	const ledger = fixture.repository("ledger", "https://github.com/acme/ledger.git");
-	const unbound = archboard(["semantic"], ledger);
+	const unbound = archboard(["model", "read"], ledger);
 	expect(unbound.status, unbound.failure).toBe(2);
 	expect(unbound.stderr).not.toContain(architecture);
 });
 
 test("outside any checkout and any vault a command refuses before it starts a server", async () => {
 	const port = await availablePort();
-	const refused = archboard(["semantic"], fixture.nowhere, {
+	const refused = archboard(["model", "read"], fixture.nowhere, {
 		ARCHBOARD_URL: `http://127.0.0.1:${port}`,
 		ARCHBOARD_NO_AUTOSTART: undefined,
 	});
@@ -261,23 +255,17 @@ test("autostart starts a server without a vault, and the server serves the vault
 	// Nothing in this environment names a vault: the server starts without one.
 	const started = { ARCHBOARD_URL: `http://127.0.0.1:${port}`, ARCHBOARD_NO_AUTOSTART: undefined };
 	try {
-		const drawn = archboard(
-			["semantic", "new", "Checkout", "--doing", "drawing a board in the shop"],
-			shop,
-			started,
-			JSON.stringify({ level: "system", nodes: [{ name: "Cart", kind: "service" }] }),
-		);
+		seedCanonicalFixture(join(shop, ".archboard/vault"), "Checkout", []);
+		const drawn = archboard(["model", "read"], shop, started);
 		expect(drawn.status, drawn.failure).toBe(0);
 		const boards = (cwd: string, args: readonly string[] = []) => {
-			const result = archboard(["semantic", ...args], cwd, started);
+			const result = archboard(["model", "read", ...args], cwd, started);
 			expect(result.status, result.failure).toBe(0);
-			return z
-				.object({ boards: z.array(z.object({ name: z.string() })) })
-				.parse(JSON.parse(result.stdout))
-				.boards.map((board) => board.name);
+			return z.object({ manifest: z.object({ name: z.string() }) }).parse(JSON.parse(result.stdout))
+				.manifest.name;
 		};
-		expect(boards(shop)).toEqual(["Checkout"]);
-		expect(boards(fixture.nowhere, ["-C", plans])).toEqual([]);
+		expect(boards(shop)).toBe("Checkout");
+		expect(boards(fixture.nowhere, ["-C", plans])).toBe("plans");
 	} finally {
 		archboard(["stop"], fixture.nowhere, started);
 	}

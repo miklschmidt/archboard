@@ -1,0 +1,10 @@
+{
+  "order": 16001,
+  "name": "libavoid",
+  "kind": "external",
+  "responsibility": "Routes orthogonal connectors around obstacle shapes",
+  "description": "libavoid-js, patched, compiled to WebAssembly and loaded by the layout worker.",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/OjRLKb74#LCcblgyC",
+  "outgoing": []
+}

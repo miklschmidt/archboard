@@ -1,0 +1,30 @@
+{
+  "order": 54000,
+  "name": "Archboard narration",
+  "kind": "module",
+  "responsibility": "Resolves the presented narrative and supplies arrived beats to the existing voice session",
+  "description": "Reads canonical narration through the public architecture capture interface. It requires the observed narrative source and target revisions, including an older target that predates the narrative. The existing narrated-session owner keeps the immutable capture. Legacy board narration retains its existing path. Recording follows the browser position and starts no second voice engine.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/services/host/archboard-presentation.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#K53UIYaX",
+  "parent": "vKEsyHFk/9ncuT5DP#SScV6EZR",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 96000,
+      "kind": "call",
+      "label": "resolve one exact walkthrough",
+      "emphasis": "normal",
+      "id": "vKEsyHFk/9ncuT5DP#iZim0JO9",
+      "to": "vKEsyHFk/9ncuT5DP#pZL0uxjI"
+    }
+  ]
+}

@@ -14,6 +14,8 @@ import { homedir } from "node:os";
 import path from "node:path";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { z } from "zod";
+import { listArchitectureCheckpoints } from "@archboard/board/store-read";
+import { anchorsOf } from "@archboard/skills/citations";
 import { createInstallFixture, installFailure, shippedSkills } from "./support/install-fixture.ts";
 import { checkoutRoot } from "./support/package-cli.ts";
 
@@ -150,9 +152,10 @@ describe("install targets", () => {
 		expect(readdirSync(linkedRoot), installFailure(refused)).toEqual(["archboard"]);
 	});
 
-	test("makes the vault and writes no agent document, and a rerun changes nothing", () => {
+	test("makes the vault and writes no agent document, and a rerun changes nothing", async () => {
 		using fixture = createInstallFixture();
 		const repo = fixture.repo("fresh");
+		fixture.git(repo, "init", "--quiet");
 		const first = fixture.install(repo);
 		const firstDiagnostic = installFailure(first.spawn);
 		const vault = join(repo, ".archboard", "vault");
@@ -162,8 +165,17 @@ describe("install targets", () => {
 			removedBlocks: [],
 		});
 		expect(existsSync(join(vault, ".archboard", "config.yaml")), firstDiagnostic).toBe(true);
+		expect(JSON.parse(readFileSync(join(vault, "model.json"), "utf8"))).toMatchObject({
+			schemaVersion: 1,
+			name: "fresh",
+			current: null,
+		});
 		expect(existsSync(join(repo, "AGENTS.md")), firstDiagnostic).toBe(false);
 		expect(existsSync(join(repo, "CLAUDE.md")), firstDiagnostic).toBe(false);
+		const retained = await listArchitectureCheckpoints(vault);
+		if (!retained.success) throw new Error(JSON.stringify(retained));
+		expect(retained.checkpoints).toHaveLength(1);
+		fixture.git(repo, "verify-commit", retained.checkpoints[0]!.id);
 		const before = filesBelow(repo);
 		const second = fixture.install(repo);
 		const secondDiagnostic = installFailure(second.spawn);
@@ -172,7 +184,26 @@ describe("install targets", () => {
 			removedBlocks: [],
 		});
 		expect(filesBelow(repo), secondDiagnostic).toEqual(before);
+		expect(await listArchitectureCheckpoints(vault)).toEqual(retained);
 		expect(() => fixture.assertSkillBytes(fixture.skillRoot), secondDiagnostic).not.toThrow();
+	});
+
+	test("retries canonical setup after the configured signer fails", async () => {
+		using fixture = createInstallFixture();
+		const repo = fixture.repo("signing-retry");
+		fixture.git(repo, "init", "--quiet");
+		fixture.git(repo, "config", "gpg.ssh.program", join(fixture.root, "missing-signer"));
+		const refused = fixture.run(repo);
+		expect(refused.status, installFailure(refused)).toBe(2);
+		const vault = join(repo, ".archboard", "vault");
+		expect(existsSync(join(vault, "model.json"))).toBe(false);
+		fixture.git(repo, "config", "--unset", "gpg.ssh.program");
+		const retried = fixture.install(repo);
+		expect(existsSync(join(vault, "model.json")), installFailure(retried.spawn)).toBe(true);
+		const retained = await listArchitectureCheckpoints(vault);
+		if (!retained.success) throw new Error(JSON.stringify(retained));
+		expect(retained.checkpoints).toHaveLength(1);
+		fixture.git(repo, "verify-commit", retained.checkpoints[0]!.id);
 	});
 
 	test("removes the block of an earlier version, says so, and leaves every other byte of the document", () => {
@@ -279,7 +310,10 @@ describe("what an install carries beyond the authored skill", () => {
 		expect(manual.startsWith("<!-- Generated copy of"), diagnostic).toBe(true);
 		for (const [, target] of manual.matchAll(/\]\(<([^>]+)>\)/gu)) {
 			if (/^https?:/u.test(target!)) continue;
-			expect(existsSync(target!), `${target} from the shipped INSTALL.md`).toBe(true);
+			const [file, anchor] = target!.split("#");
+			expect(existsSync(file!), `${target} from the shipped INSTALL.md`).toBe(true);
+			if (anchor !== undefined)
+				expect(anchorsOf(readFileSync(file!, "utf8")).has(anchor), target).toBe(true);
 		}
 	});
 });

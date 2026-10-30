@@ -1,0 +1,1010 @@
+{
+  "schemaVersion": 1,
+  "id": "6E6hL0Zk",
+  "name": "Archboard server",
+  "flows": [
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#CCzGfHOu",
+      "name": "The server starts",
+      "participants": [
+        "vKEsyHFk/6E6hL0Zk#m4GMTKLW",
+        "vKEsyHFk/6E6hL0Zk#2naazvac",
+        "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+        "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
+        "vKEsyHFk/6E6hL0Zk#WEawqdWG",
+        "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#9AH65q3i",
+          "from": "vKEsyHFk/6E6hL0Zk#m4GMTKLW",
+          "to": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+          "label": "start the server",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server.ts",
+            "symbol": "startServer"
+          }
+        },
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#MAbVX98e",
+          "kind": "decision",
+          "question": "Is another Archboard already listening on the port?",
+          "alternatives": [
+            {
+              "label": "listening",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#iac54vzl",
+                  "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+                  "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW",
+                  "label": "refuse to start: a duplicate would split state",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                    "symbol": "loopbackRefusal"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "free",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#90uVynO9",
+                  "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+                  "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
+                  "label": "start the workbench",
+                  "kind": "sync",
+                  "note": "resources start in order, each after the one before; the first failure skips the rest",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                    "symbol": "prepareCodexWorkbench"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#h2eh6kdJ",
+                  "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+                  "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG",
+                  "label": "listen",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                    "symbol": "buildLifetime"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#gyiEjCHt",
+                  "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+                  "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+                  "label": "start the socket server",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                    "symbol": "startWebSocketServer"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#at849aWL",
+                  "kind": "decision",
+                  "question": "Did every resource start?",
+                  "alternatives": [
+                    {
+                      "label": "all started",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/6E6hL0Zk#HZWB5Mr3",
+                          "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+                          "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW",
+                          "label": "running",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                            "symbol": "startServer"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "one failed",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/6E6hL0Zk#wXxdm1Yl",
+                          "kind": "loop",
+                          "condition": "for each started resource, newest first",
+                          "steps": [
+                            {
+                              "id": "vKEsyHFk/6E6hL0Zk#vh4rWyoU",
+                              "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+                              "to": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+                              "label": "stop it, forcing it after its grace",
+                              "kind": "self",
+                              "anchor": {
+                                "repo": "github.com/miklschmidt/archboard",
+                                "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                                "symbol": "buildLifetime"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "vKEsyHFk/6E6hL0Zk#nRPTU4Dy",
+                          "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+                          "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW",
+                          "label": "startup failed",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                            "symbol": "startServer"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#xfUOzZhb",
+      "name": "Is this the Archboard server?",
+      "participants": [
+        "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+        "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+        "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+        "vKEsyHFk/6E6hL0Zk#K6P74fM7",
+        "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#8nZMZiiS",
+          "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "to": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+          "label": "health",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/routes/service/service-routes.ts",
+            "symbol": "healthRoute"
+          }
+        },
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#gvLQt128",
+          "from": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+          "to": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+          "label": "the phase it is in",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/routes/service/service-routes.ts",
+            "symbol": "serverPhase"
+          }
+        },
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#66RPSzJc",
+          "from": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+          "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7",
+          "label": "whether writes are admitted, and how many run",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/routes/service/service-routes.ts",
+            "symbol": "mutationAdmission"
+          }
+        },
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#f7wAReCS",
+          "from": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+          "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+          "label": "how many sockets",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/routes/service/service-routes.ts",
+            "symbol": "clients"
+          }
+        },
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#FFyp6VQ5",
+          "from": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+          "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "label": "healthy, with its pid and the source it runs",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/routes/service/service-routes.ts",
+            "symbol": "healthRoute"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#FCB3mr2J",
+      "name": "A code check pass",
+      "participants": [
+        "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+        "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+        "vKEsyHFk/HBlhIeSD#5SMX69gS",
+        "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+        "vKEsyHFk/6E6hL0Zk#aqjsNyJ9",
+        "vKEsyHFk/6E6hL0Zk#1aoB46lM",
+        "vKEsyHFk/6E6hL0Zk#SmrySjjM",
+        "vKEsyHFk/HBlhIeSD#radK8osF"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#bdciL0XK",
+          "from": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "to": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+          "label": "check the canonical model against source",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+            "symbol": "answerCodeCheck"
+          }
+        },
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#4f5nsDWm",
+          "from": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+          "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+          "label": "inspect selected states and stated plans",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+            "symbol": "createCodeCheck"
+          }
+        },
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#2nd4qIC8",
+          "kind": "loop",
+          "condition": "for each selected canonical state",
+          "steps": [
+            {
+              "id": "vKEsyHFk/6E6hL0Zk#Jk1gMRuI",
+              "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+              "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+              "label": "read the selected canonical state",
+              "kind": "sync",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+                "symbol": "readArchitectureModel"
+              }
+            },
+            {
+              "id": "vKEsyHFk/6E6hL0Zk#PjWBQChd",
+              "from": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+              "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+              "label": "coherent model and exact revision",
+              "kind": "return",
+              "anchor": {
+                "repo": "github.com/miklschmidt/archboard",
+                "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+                "symbol": "readArchitectureModel"
+              }
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#6PpYR7ZP",
+          "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+          "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+          "label": "the selected states or an explicit refusal",
+          "kind": "self",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+            "symbol": "readBoardsToCheck"
+          }
+        },
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#bze87EBh",
+          "kind": "decision",
+          "question": "Can the pass read what was asked?",
+          "alternatives": [
+            {
+              "label": "no draft of that name",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#mz13Gcrp",
+                  "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                  "to": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+                  "label": "the selected architecture is unavailable",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                    "symbol": "noSuchDraft"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#HfThI5IK",
+                  "from": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+                  "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "label": "422 with the refusal as it is",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+                    "symbol": "answerCodeCheck"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "plan refused",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#32LJDZ6C",
+                  "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                  "to": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+                  "label": "PLAN_REFUSED, before the pass starts",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                    "symbol": "planRefused"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#ipsZgZ59",
+                  "from": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+                  "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "label": "422 with the refusal as it is",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+                    "symbol": "answerCodeCheck"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "readable",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#8KCz2kB8",
+                  "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                  "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                  "label": "the boards' anchors, bindings and relationships",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                    "symbol": "checkCode"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#o12fHQp9",
+                  "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                  "to": "vKEsyHFk/6E6hL0Zk#aqjsNyJ9",
+                  "label": "read the facts of each file",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/code-intel/src/runtime/operations/code-check/check.ts",
+                    "symbol": "createCodeFacts"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#gTqRHNnt",
+                  "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                  "to": "vKEsyHFk/6E6hL0Zk#1aoB46lM",
+                  "label": "open the servers that resolve a use",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/code-intel/src/runtime/operations/code-check/resolution.ts",
+                    "symbol": "openLanguageServers"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#fGicYKbN",
+                  "kind": "loop",
+                  "condition": "for each claim, then for each board",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk/6E6hL0Zk#le1xvi4P",
+                      "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                      "label": "judge it against the facts",
+                      "kind": "self",
+                      "anchor": {
+                        "repo": "github.com/miklschmidt/archboard",
+                        "path": "packages/code-intel/src/runtime/operations/code-check/check.ts",
+                        "symbol": "judgeBoardRelationships"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#5p6VBZvu",
+                  "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                  "to": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+                  "label": "boards, findings, skipped and behind",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+                    "symbol": "createCodeCheck"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#RwZKwyFW",
+                  "kind": "decision",
+                  "question": "Did the pass finish?",
+                  "alternatives": [
+                    {
+                      "label": "finished",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/6E6hL0Zk#owZJ0jFY",
+                          "from": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+                          "to": "vKEsyHFk/6E6hL0Zk#SmrySjjM",
+                          "label": "keep what a finished pass found",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+                            "symbol": "remember"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "cancelled by the caller",
+                      "steps": []
+                    }
+                  ]
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#lRPZsOfV",
+                  "from": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+                  "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+                  "label": "the findings",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+                    "symbol": "answerCodeCheck"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#eaZyW88b",
+      "name": "A part's code is opened",
+      "participants": [
+        "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+        "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+        "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+        "vKEsyHFk/6E6hL0Zk#aqjsNyJ9"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#4LouOnM4",
+          "from": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+          "to": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+          "label": "open the code of a part",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/code-opener/src/server/routes/code-opener.ts",
+            "symbol": "createCodeOpenerRouter"
+          }
+        },
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#TH34Y0en",
+          "from": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+          "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+          "label": "resolve the module binding",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/code-opener/src/server/projections/model-target.ts",
+            "symbol": "canonicalModelTarget"
+          }
+        },
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#iDYLhMnI",
+          "from": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+          "to": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+          "label": "the exact source target",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/code-opener/src/server/projections/model-target.ts",
+            "symbol": "canonicalModelTarget"
+          }
+        },
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#oipi6vdQ",
+          "kind": "decision",
+          "question": "Does the board hold a part bound to code?",
+          "alternatives": [
+            {
+              "label": "no such board",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#f6zhGkTU",
+                  "from": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+                  "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                  "label": "404 BOARD_NOT_FOUND",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/code-opener/src/server/routes/code-opener.ts",
+                    "symbol": "canonicalBinding"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "no such part",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#vNnTFjNm",
+                  "from": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+                  "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                  "label": "404 ELEMENT_NOT_FOUND",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/code-opener/src/server/routes/code-opener.ts",
+                    "symbol": "canonicalBinding"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "part not bound",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#XamImMQi",
+                  "from": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+                  "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                  "label": "422 BINDING_UNAVAILABLE",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/code-opener/src/server/routes/code-opener.ts",
+                    "symbol": "canonicalBinding"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "bound",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#pk8SY0cX",
+                  "from": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+                  "to": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+                  "label": "resolve the bound file in its repository's checkout",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/code-opener/src/server/projections/resolve-target.ts",
+                    "symbol": "resolveInVault"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#O9hpxUzW",
+                  "kind": "decision",
+                  "question": "Can the checkout be opened?",
+                  "alternatives": [
+                    {
+                      "label": "refused",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/6E6hL0Zk#ZAQyhHN1",
+                          "from": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+                          "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                          "label": "409 or 422: wrong ref, or the checkout changed",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/code-opener/src/server/routes/code-opener.ts",
+                            "symbol": "openable"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "openable",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/6E6hL0Zk#45sjx6Xw",
+                          "kind": "decision",
+                          "question": "Does the binding name a symbol in a file?",
+                          "alternatives": [
+                            {
+                              "label": "symbol",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/6E6hL0Zk#HYNarsgt",
+                                  "from": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+                                  "to": "vKEsyHFk/6E6hL0Zk#aqjsNyJ9",
+                                  "label": "the line where the symbol is defined",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/code-opener/src/server/routes/code-opener.ts",
+                                    "symbol": "symbolLine"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/6E6hL0Zk#3MWVQDbA",
+                                  "from": "vKEsyHFk/6E6hL0Zk#aqjsNyJ9",
+                                  "to": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+                                  "label": "the line",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/code-intel/src/runtime/operations/code-facts/symbol-line.ts",
+                                    "symbol": "symbolLine"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "label": "no symbol",
+                              "steps": []
+                            }
+                          ]
+                        },
+                        {
+                          "id": "vKEsyHFk/6E6hL0Zk#cPgIqcYR",
+                          "from": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+                          "to": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+                          "label": "launch the chosen opener at the file and line",
+                          "kind": "self",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/code-opener/src/server/lifecycle/launch.ts",
+                            "symbol": "launchOpener"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/6E6hL0Zk#bynNroUQ",
+                          "kind": "decision",
+                          "question": "Does the opener start?",
+                          "alternatives": [
+                            {
+                              "label": "failed",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/6E6hL0Zk#LYdvABd7",
+                                  "from": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+                                  "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                                  "label": "500 OPENER_SPAWN_FAILED, with the settings action",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/code-opener/src/server/routes/code-opener.ts",
+                                    "symbol": "sendFailure"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "label": "started",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/6E6hL0Zk#nONLLRgo",
+                                  "from": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+                                  "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                                  "label": "opened: repository, path and kind",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/code-opener/src/server/routes/code-opener.ts",
+                                    "symbol": "openedReply"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#zeZA4CvA",
+      "name": "A tab opens a pane",
+      "participants": [
+        "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+        "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+        "vKEsyHFk/6E6hL0Zk#cZ1UH0xU",
+        "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+        "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#yqRjYNRW",
+          "from": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+          "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+          "label": "open the pane's socket",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+            "symbol": "startWebSocketServer"
+          }
+        },
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#BNhaqnpm",
+          "from": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+          "to": "vKEsyHFk/6E6hL0Zk#cZ1UH0xU",
+          "label": "check the page's origin",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+            "symbol": "checkBrowserCsrf"
+          }
+        },
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#juCAGjIp",
+          "kind": "decision",
+          "question": "Does the page come from this server's origin?",
+          "alternatives": [
+            {
+              "label": "another origin",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#kCdwKuFo",
+                  "from": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+                  "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                  "label": "403 CROSS_ORIGIN_REFUSED",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                    "symbol": "startWebSocketServer"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "this origin",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#YoFotxiU",
+                  "from": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+                  "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+                  "label": "which vault does the socket name",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                    "symbol": "namedVault"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#nAWRKg6a",
+                  "kind": "decision",
+                  "question": "Does the socket name a vault the server reads?",
+                  "alternatives": [
+                    {
+                      "label": "refused",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/6E6hL0Zk#cEoolpDm",
+                          "from": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+                          "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                          "label": "VAULT_REQUIRED or VAULT_UNREADABLE",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                            "symbol": "vaultOfUpgrade"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "readable",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/6E6hL0Zk#5dimKCaV",
+                          "from": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+                          "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+                          "label": "the board this pane starts on",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                            "symbol": "sendStartingBoard"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/6E6hL0Zk#MtgrEVHR",
+                          "from": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+                          "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
+                          "label": "accept the browser",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+                            "symbol": "acceptWebSocketConnection"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#U1HsxCvz",
+      "name": "The server stops",
+      "participants": [
+        "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+        "vKEsyHFk/6E6hL0Zk#K6P74fM7",
+        "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+        "vKEsyHFk/6E6hL0Zk#WEawqdWG",
+        "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#67qwVVPM",
+          "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+          "to": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+          "label": "a stop signal arrives",
+          "kind": "self",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+            "symbol": "shutdown"
+          }
+        },
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#Xzao4l5H",
+          "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+          "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7",
+          "label": "stop admitting writes and wait for the admitted ones",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/lifecycle/lifetime/mutation-admission.ts",
+            "symbol": "createServerMutationAdmission"
+          }
+        },
+        {
+          "id": "vKEsyHFk/6E6hL0Zk#Hn5dZswW",
+          "kind": "decision",
+          "question": "Do the admitted writes settle within the drain time?",
+          "alternatives": [
+            {
+              "label": "still busy",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#Hq3WFHBc",
+                  "from": "vKEsyHFk/6E6hL0Zk#K6P74fM7",
+                  "to": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+                  "label": "SERVER_BUSY: nothing is torn down",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/lifecycle/lifetime/mutation-admission.ts",
+                    "symbol": "ServerApplicationBusyError"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#FlC3nScY",
+                  "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+                  "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7",
+                  "label": "admit writes again",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                    "symbol": "buildLifetime"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "settled",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#TyYrGUII",
+                  "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+                  "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+                  "label": "close the socket server",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                    "symbol": "closeWebSocketServer"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#iVTpaElr",
+                  "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+                  "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG",
+                  "label": "stop listening",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                    "symbol": "buildLifetime"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#WON6gq6N",
+                  "kind": "decision",
+                  "question": "Did the listener stop within its grace?",
+                  "alternatives": [
+                    {
+                      "label": "too slow",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/6E6hL0Zk#0LGmlIiU",
+                          "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+                          "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG",
+                          "label": "close every connection",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                            "symbol": "buildLifetime"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "stopped",
+                      "steps": []
+                    }
+                  ]
+                },
+                {
+                  "id": "vKEsyHFk/6E6hL0Zk#Utzarf5j",
+                  "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+                  "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
+                  "label": "stop the workbench",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+                    "symbol": "stopCodexWorkbench"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

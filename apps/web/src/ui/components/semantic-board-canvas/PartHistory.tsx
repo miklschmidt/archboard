@@ -1,22 +1,7 @@
-// What Git says about a picked part (ADR 0045): the commits of the last year
-// that changed its bound files, and the parts whose code changes in the same
-// commits. It answers "how has it changed in code?", the last question of the
-// selection tab.
-//
-// The pane asks the locality route when a part is picked, and never on a
-// timer. The answer is derived from Git and the board on the server and kept
-// only in its memory and in this tab's read-only cache: nothing here is
-// stored, and the picture draws nothing for it (ADR 0027). A part with no
-// binding has no history and no region, as it has no row for its code at the
-// foot, and nothing is asked for it. A bound part the lens did not read says
-// why, so it never looks like a part that no commit changed.
-
-import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState, type JSX, type ReactNode } from "react";
 
 import type { LocalityAnswer } from "@archboard/code-intel/history";
 import type { SemanticNode } from "@archboard/board/content";
-import type { SemanticVariant } from "@archboard/board/document";
 import { KindIcon } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import {
 	SidebarChoice,
@@ -25,7 +10,6 @@ import {
 	SidebarHeading,
 	SidebarLabel,
 	SidebarMeta,
-	SidebarRegion,
 	SidebarRow,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
 import { usePeekControl } from "#ui/hooks/semantic-board-canvas/use-peek.ts";
@@ -35,8 +19,6 @@ import {
 	type PartLocality,
 	type Partner,
 } from "#ui/rules/semantic-board-canvas/board/part-locality.ts";
-import { localityQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
-import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
 
 /** A part the reading did not read, and why. */
 type BehindSkip = LocalityAnswer["skipped"][number];
@@ -67,105 +49,31 @@ const SKIPPED: Readonly<Record<BehindSkip["reason"], string>> = {
 		"The history of its code is not read, because its binding names a ref that its checkout does not have out.",
 };
 
-/** Inputs for the history of a part. */
+/** The pure source-history display, shared by canonical module readers. */
 interface PartHistoryProps {
-	/** The board, by the name its document gives. */
-	readonly board: string;
-	/** The version of the board on screen. */
-	readonly version: number;
-	/** The variant that holds the part, which the history is read for. */
-	readonly variant: SemanticVariant;
-	/** The picked part. */
-	readonly node: SemanticNode;
+	readonly answer: Omit<LocalityAnswer, "board" | "version" | "variant">;
+	readonly subject: string;
+	readonly nodes: readonly Pick<SemanticNode, "id" | "kind">[];
 	readonly look: KindLook;
-	/**
-	 * Pick another part out: one that changes with this one.
-	 * @param id The part.
-	 */
 	readonly onPick: (id: string) => void;
 }
 
 /**
- * The history of a picked part. The lens reads only the current variant and a
- * draft, because only they say what is built or planned (ADR 0031), so on a
- * historical or shelved variant the region says so and asks nothing.
- * @param props The board, the variant, the part and what to do with a pick.
- * @returns The region, or nothing for a part with no binding.
+ * Show the selected module's commits, coupled modules, or explicit source limitation.
+ * @param props The coherent analysis and subject identities.
+ * @returns Source evidence without any architecture reads or fabricated board metadata.
  */
-function PartHistory(props: PartHistoryProps): JSX.Element | null {
-	const { lifecycle } = props.variant;
-	if (props.node.binding === undefined) {
-		return null;
-	}
-	return (
-		<SidebarRegion slot="semantic-inspector-history">
-			{lifecycle === "current" || lifecycle === "draft" ? (
-				<LocalityReading {...props} />
-			) : (
-				<Note slot="semantic-inspector-history-unread">
-					The history of its code is read only for the current variant and drafts.
-				</Note>
-			)}
-		</SidebarRegion>
-	);
-}
-
-/**
- * The part's history, once the server has read it.
- * @param props The board, the variant, the part and what to do with a pick.
- * @returns What the answer says, or the words for waiting or a failed read.
- */
-function LocalityReading(props: PartHistoryProps): JSX.Element {
-	const { board, version, variant } = props;
-	const vault = usePaneVault();
-	const read = useQuery(localityQuery({ vault, board, variant: variant.id, version }));
-	const { refetch } = read;
-	const again = useCallback((): void => {
-		void refetch();
-	}, [refetch]);
-	if (read.data !== undefined) {
-		return <PartReading {...props} answer={read.data} />;
-	}
-	// A read the person asked for again says that it is reading, so pressing
-	// Read it again is seen to do something even when it fails the same way.
-	// The control stays where it is, so the keyboard's focus is not lost.
-	if (read.error !== null) {
-		return (
-			<div
-				data-slot="semantic-inspector-history-failed"
-				className="flex flex-col items-start gap-2"
-			>
-				<Note>
-					{read.isFetching
-						? "Reading the history of its code…"
-						: `The history of its code could not be read. ${read.error.message}`}
-				</Note>
-				<SmallButton onClick={again}>Read it again</SmallButton>
-			</div>
-		);
-	}
-	return <Note slot="semantic-inspector-history-reading">Reading the history of its code…</Note>;
-}
-
-/**
- * What the answer says about the part: why it was not read, or its commits and
- * the parts that change with it, and how many large commits no count holds.
- * @param props The part, the board's answer and what to do with a pick.
- * @returns The sections.
- */
-function PartReading(props: PartHistoryProps & { readonly answer: LocalityAnswer }): JSX.Element {
-	const { answer, node } = props;
-	const reading = partLocality(answer, node.id);
-	if (reading.kind !== "read") {
-		return <Unread reading={reading} />;
-	}
+function PartHistory(props: PartHistoryProps): JSX.Element {
+	const { answer, subject } = props;
+	const reading = partLocality(answer, subject);
+	if (reading.kind !== "read") return <Unread reading={reading} />;
 	return (
 		<>
 			<Commits commits={reading.commits} period={reading.period} />
 			{reading.commits.length > 0 && (
 				<Partners
 					partners={reading.partners}
-					variant={props.variant}
+					nodes={props.nodes}
 					look={props.look}
 					onPick={props.onPick}
 				/>
@@ -186,7 +94,7 @@ function Unread(props: {
 }): JSX.Element {
 	const { reading } = props;
 	if (reading.kind === "absent") {
-		return <Note>The board changed while the history of its code was read.</Note>;
+		return <Note>The architecture changed while its code history was read.</Note>;
 	}
 	const { skip } = reading;
 	// What the reason rests on, where it rests on a fact: the repository, the
@@ -229,8 +137,8 @@ function LeftOut(props: { readonly count: number }): JSX.Element | null {
 	return (
 		<Note slot="semantic-inspector-large-commits" count={count}>
 			{count === 1
-				? "On this board, one large commit of over 30 files is left out of every count."
-				: `On this board, ${count} large commits of over 30 files are left out of every count.`}
+				? "In this model, one large commit of over 30 files is left out of every count."
+				: `In this model, ${count} large commits of over 30 files are left out of every count.`}
 		</Note>
 	);
 }
@@ -302,7 +210,7 @@ function CommitList(props: { readonly commits: readonly LocalityCommit[] }): JSX
 interface PartnersProps {
 	readonly partners: readonly Partner[];
 	/** The variant that holds the parts, for each one's kind. */
-	readonly variant: SemanticVariant;
+	readonly nodes: PartHistoryProps["nodes"];
 	readonly look: KindLook;
 	readonly onPick: (id: string) => void;
 }
@@ -314,8 +222,8 @@ interface PartnersProps {
  * @returns The section.
  */
 function Partners(props: PartnersProps): JSX.Element {
-	const { partners, variant, look, onPick } = props;
-	const kinds = new Map(variant.content.nodes.map((node) => [node.id, node.kind]));
+	const { partners, nodes, look, onPick } = props;
+	const kinds = new Map(nodes.map((node) => [node.id, node.kind]));
 	return (
 		<Counted title="Changes with" count={partners.length} slot="semantic-inspector-partners">
 			{partners.length === 0 ? (
@@ -383,7 +291,7 @@ function PartnerRow(props: PartnerRowProps): JSX.Element {
 				{/* The question the reading asks, so in the ink rather than the quiet tone. */}
 				{partner.unjoined && (
 					<span className="text-body block leading-4 font-normal">
-						Nothing on the board joins them
+						No relationship joins these modules
 					</span>
 				)}
 			</SidebarLabel>

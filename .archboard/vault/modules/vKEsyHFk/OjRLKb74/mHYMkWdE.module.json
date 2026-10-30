@@ -1,0 +1,33 @@
+{
+  "order": 12000,
+  "name": "Engine selection",
+  "kind": "module",
+  "responsibility": "Selects the named layout implementation through its common contract",
+  "description": "Nothing outside this seam knows which engine drew. Track is the default; Blocks stays selectable. The Graphviz engine that stood here beside them is gone (ADR 0040).",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/rules/layout/engines.ts",
+    "symbol": "layoutEngine"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/OjRLKb74#mHYMkWdE",
+  "parent": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+  "formerNames": [
+    "Layout engines"
+  ],
+  "outgoing": [
+    {
+      "order": 20000,
+      "kind": "dependency",
+      "label": "layoutTracks or layoutBlocks",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/layout/engines.ts",
+        "symbol": "layoutBlocks"
+      },
+      "id": "vKEsyHFk/OjRLKb74#Gejk3C1W",
+      "to": "vKEsyHFk/OjRLKb74#oycxx6G2"
+    }
+  ]
+}

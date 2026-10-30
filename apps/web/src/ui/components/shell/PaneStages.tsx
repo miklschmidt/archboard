@@ -12,7 +12,6 @@ import {
 	type PaneChrome,
 	PaneChromeContext,
 } from "#ui/components/semantic-board-canvas/PaneChrome.tsx";
-import { ClaimBanner } from "#ui/components/shell/ClaimBanner.tsx";
 import { PaneControls, PaneLetter } from "#ui/components/shell/PaneControls.tsx";
 import { useKept } from "#ui/hooks/shell/use-kept.ts";
 import type { ShellActions, ShellPane, ShellPresentation } from "#ui/rules/shell/contracts.ts";
@@ -192,7 +191,7 @@ function PaneStage(props: PaneStageProps): JSX.Element {
 			controls: (
 				<PaneControls pane={pane} letter={letter} paneCount={paneCount} actions={actions} />
 			),
-			notice: <ClaimBanner pane={pane} actions={actions} />,
+			notice: null,
 			shared: paneCount > 1,
 			active,
 		}),

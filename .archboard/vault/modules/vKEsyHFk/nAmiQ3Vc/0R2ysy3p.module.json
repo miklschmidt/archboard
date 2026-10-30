@@ -1,0 +1,28 @@
+{
+  "order": 4000,
+  "name": "dispatchedCommand",
+  "kind": "function",
+  "responsibility": "Finds the selected contract",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/rules/routing/dispatch.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/nAmiQ3Vc#0R2ysy3p",
+  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
+  "outgoing": [
+    {
+      "order": 8000,
+      "kind": "call",
+      "label": "childOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/rules/routing/dispatch.ts",
+        "symbol": "childOf"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#Ba2uml5A",
+      "to": "vKEsyHFk/nAmiQ3Vc#45uNvMac"
+    }
+  ]
+}

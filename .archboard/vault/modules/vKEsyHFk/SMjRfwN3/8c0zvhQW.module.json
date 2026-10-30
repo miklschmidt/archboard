@@ -1,0 +1,97 @@
+{
+  "order": 4000,
+  "name": "Raster session",
+  "kind": "function",
+  "responsibility": "Draws one SVG at a time in the page it opened: writes the file, loads it, proves the page ready, sets the scale and shoots",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/runtime/services/rasterizer/session.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SMjRfwN3#8c0zvhQW",
+  "parent": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
+  "outgoing": [
+    {
+      "order": 4000,
+      "kind": "call",
+      "label": "launch, open a page, stop",
+      "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+        "symbol": "launchHeadlessChromium"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#tJ3SgMcL",
+      "to": "vKEsyHFk/SMjRfwN3#6uHnaygd"
+    },
+    {
+      "order": 6000,
+      "kind": "call",
+      "label": "one socket to the page",
+      "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+        "symbol": "DevTools.evaluate"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#aYI0EhkT",
+      "to": "vKEsyHFk/SMjRfwN3#AVCQVNqI"
+    },
+    {
+      "order": 8000,
+      "kind": "call",
+      "label": "prove the page before shooting",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+        "symbol": "checkedReadiness"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#TBd33jdx",
+      "to": "vKEsyHFk/SMjRfwN3#FXGZhgKo"
+    },
+    {
+      "order": 9000,
+      "kind": "call",
+      "label": "the clip region",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+        "symbol": "regionOf"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#6dBMtPdX",
+      "to": "vKEsyHFk/SMjRfwN3#7N0JLb2b"
+    },
+    {
+      "order": 50000,
+      "kind": "call",
+      "label": "a page that would not open, as the browser's own failure",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
+        "symbol": "HeadlessChromiumError"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#ZflKJBv6",
+      "to": "vKEsyHFk/SMjRfwN3#IzgAi2R1"
+    }
+  ]
+}

@@ -42,9 +42,9 @@ const output = {
 	 */
 	select: () => "json",
 } as const;
-/** What the code check reads: `--variant`, `--every-draft` and `--plan`. */
+/** What the code check reads: `--state`, `--every-draft` and `--plan`. */
 const CodeCheckInputSchema = z.object({
-	variant: z.string().optional(),
+	state: z.string().optional(),
 	everyDraft: z.boolean().optional(),
 	plan: z.array(z.string()).optional(),
 });
@@ -53,7 +53,7 @@ type CodeCheckInput = z.output<typeof CodeCheckInputSchema>;
 /**
  * Run the code check on the Archboard server.
  * @param reading What to read.
- * @param reading.variant The draft to read on every board that has one.
+ * @param reading.state The draft to read on every board that has one.
  * @param reading.everyDraft Whether to read every draft of every board.
  * @param reading.plan The plan JSON files named, resolved against this directory,
  * because the server runs elsewhere.
@@ -64,9 +64,7 @@ async function codeCheckOnServer(
 	reading: CodeCheckInput,
 	signal: AbortSignal,
 ): Promise<CodeCheckAnswer> {
-	const asked = new URLSearchParams(
-		reading.variant === undefined ? [] : [["variant", reading.variant]],
-	);
+	const asked = new URLSearchParams(reading.state === undefined ? [] : [["state", reading.state]]);
 	if (reading.everyDraft === true) asked.append("every-draft", "true");
 	for (const plan of reading.plan ?? []) asked.append("plan", path.resolve(plan));
 	const query = asked.toString() === "" ? "" : `?${asked}`;
@@ -79,17 +77,17 @@ async function codeCheckOnServer(
 const FixInputSchema = z.object({ fix: z.boolean().optional() });
 type FixInput = z.output<typeof FixInputSchema>;
 
-/** One draft and every draft are two readings, so `--variant` and `--every-draft` exclude each other. */
+/** One draft and every draft are two readings, so `--state` and `--every-draft` exclude each other. */
 const CodeCheckRequestSchema = CodeCheckInputSchema.extend(FixInputSchema.shape).refine(
-	(input) => input.everyDraft !== true || input.variant === undefined,
-	"--every-draft reads every draft, and --variant one name: use one of them",
+	(input) => input.everyDraft !== true || input.state === undefined,
+	"--every-draft reads every draft, and --state one name: use one of them",
 );
 
 const noSuchDraftRefusal = {
 	code: "NO_SUCH_DRAFT",
 	exit: 2,
 	stream: "stderr" as const,
-	description: "--variant names no draft on any board. The refusal names the drafts that exist.",
+	description: "--state names no draft on any board. The refusal names the drafts that exist.",
 };
 
 const planRefusal = {
@@ -257,20 +255,18 @@ const CheckNamespaceInputSchema = z.object({
 const codeCheckParameters = [
 	{
 		kind: "option",
-		key: "variant",
-		spellings: ["--variant"],
+		key: "state",
+		spellings: ["--state"],
 		value: "required",
 		placeholder: "draft",
-		description:
-			"Read this draft on every board that has one, and the current variant elsewhere, in the code check",
+		description: "Read the canonical state identified by this ID or unique name",
 	},
 	{
 		kind: "option",
 		key: "everyDraft",
 		spellings: ["--every-draft"],
 		value: "none",
-		description:
-			"Read every draft of every board in the code check, each against the ref its bindings name, and no current variant",
+		description: "Inspect each independent active proposal instead of current architecture",
 	},
 	{
 		kind: "option",
@@ -295,10 +291,10 @@ const fixParameter = {
 
 const codeCheckStages = [
 	{
-		name: "code-check-variant",
+		name: "code-check-state",
 		when: "before-server" as const,
 		description: "A named draft and every draft are two readings of the code check",
-		rules: ["Refuse --every-draft with --variant"],
+		rules: ["Refuse --every-draft with --state"],
 		schema: CodeCheckRequestSchema,
 	},
 ];
@@ -420,7 +416,7 @@ const checkAllContract = defineCommand({
 	description: CHECK_ALL_HELP,
 	examples: [
 		"archboard check",
-		"archboard check all --variant TASK-123",
+		"archboard check all --state TASK-123",
 		"archboard check --every-draft",
 		"archboard check --fix",
 	],
@@ -452,7 +448,7 @@ const checkEmbedsContract = defineCommand({
 	path: ["check", "embeds"],
 	shared: ["url", "directory"],
 	runsWithoutVault: true,
-	summary: "Check the board renders that this checkout's documents embed",
+	summary: "Check the reproducible architecture artifacts that this checkout embeds",
 	description: CHECK_EMBEDS_HELP,
 	examples: ["archboard check embeds", "archboard check embeds --fix"],
 	parameters: [fixParameter],
@@ -478,9 +474,9 @@ const checkEmbedsContract = defineCommand({
 const checkSemanticsContract = defineCommand({
 	path: ["check", "semantics"],
 	shared: ["url", "directory"],
-	summary: "Check configuration and every board family in the vault",
+	summary: "Check the canonical model, active proposals, and vocabulary",
 	description:
-		"Reports invalid configuration, unreadable boards and removed vocabulary references. It reads no code and no Git, and it is the check that every open pane polls. Exit 1 means the vault has a diagnostic or a warning; no board is changed.",
+		"Reports invalid configuration, incoherent model content, and removed vocabulary references. It changes no authored input. Exit 1 means that a diagnostic or warning remains.",
 	examples: ["archboard check semantics"],
 	parameters: [],
 	input: { ingress: z.object({}) },
@@ -505,11 +501,11 @@ const checkSemanticsContract = defineCommand({
 const checkCodeContract = defineCommand({
 	path: ["check", "code"],
 	shared: ["url", "directory"],
-	summary: "Check the code that the bindings and anchors of the boards name",
+	summary: "Inspect the source that canonical bindings and evidence anchors name",
 	description: CHECK_CODE_HELP,
 	examples: [
 		"archboard check code",
-		"archboard check code --variant TASK-123",
+		"archboard check code --state TASK-123",
 		"archboard check code --every-draft",
 		"archboard check code --plan infra/plan.json",
 	],
@@ -533,7 +529,7 @@ const checkCodeContract = defineCommand({
 	},
 });
 const semanticConfigContract = defineCommand({
-	path: ["semantic", "config"],
+	path: ["model", "config"],
 	shared: ["url", "directory"],
 	summary: "Discover the configured vocabulary or its editor schema",
 	description:
@@ -574,7 +570,7 @@ const semanticConfigContract = defineCommand({
 	 */
 	async handler(input, context) {
 		if (input.schema) return { result: z.toJSONSchema(SemanticBoardConfigurationSchema) };
-		await context.require("server", "semantic config");
+		await context.require("server", "model config");
 		return { result: await checkSemanticVaultOnServer() };
 	},
 });
