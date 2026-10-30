@@ -4,15 +4,13 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { createInterface } from "node:readline";
-import { Readable } from "node:stream";
 import { z } from "zod";
 import {
 	ArchitectureModelReadSchema,
 	ArchitectureModuleEditResultSchema,
-	ArchitectureEventSchema,
 } from "@archboard/board/model";
 import { LegacyInventoryReadSchema } from "@archboard/board/migration";
+import { openArchitectureFeed } from "../support/architecture-feed.ts";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 const repoRoot = resolve(import.meta.dir, "../../.."),
@@ -95,84 +93,61 @@ test("CLI and HTTP share explicit migration authority, strict authorization, exa
 		writer: "owner",
 		doing: "Install explicit migration",
 	};
-	const controller = new AbortController();
-	let stream: Readable | undefined;
-	let lines: ReturnType<typeof createInterface> | undefined;
-	try {
-		const events = await fetch(
-			`${base}/api/architecture/events?${new URLSearchParams({ vault })}`,
-			{ signal: controller.signal },
-		);
-		stream = Readable.from(events.body!);
-		lines = createInterface({ input: stream, crlfDelay: Infinity });
-		const reader = lines[Symbol.asyncIterator]();
-		async function nextEvent() {
-			for (;;) {
-				const line = await reader.next();
-				if (line.done) throw new Error("Event stream ended before completion");
-				if (line.value.startsWith("data: "))
-					return ArchitectureEventSchema.parse(JSON.parse(line.value.slice(6)));
-			}
+	using feed = await openArchitectureFeed(base, vault);
+	expect(await feed.next()).toMatchObject({
+		type: "architecture_snapshot",
+		reading: { success: false, code: "LEGACY_AUTHORITY" },
+	});
+	const endpoint = `${base}/api/architecture/migration/apply`;
+	for (const body of [
+		{ ...request, vault, authorization: "agent" },
+		[],
+		{ ...request, vault, extra: true },
+	])
+		expect(
+			(
+				await fetch(endpoint, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(body),
+				})
+			).status,
+		).toBe(400);
+	const response = await fetch(endpoint, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ ...request, vault }),
+	});
+	expect(response.status).toBe(200);
+	const applied = ArchitectureModuleEditResultSchema.parse(await response.json());
+	if (!applied.success) throw new Error(JSON.stringify(applied));
+	const retried = cli(["model", "migrate"], request);
+	expect(retried.status, retried.stderr).toBe(0);
+	expect(ArchitectureModuleEditResultSchema.parse(answer(retried.stdout))).toEqual(applied);
+	const refused = cli(["model", "migrate"], { ...request, doing: "Another intent" });
+	expect(refused.status).toBe(2);
+	expect(answer(refused.stdout)).toMatchObject({ code: "OPERATION_REUSED" });
+	expect(await read()).toMatchObject({
+		success: true,
+		manifest: { id: "Shop" },
+		revision: applied.after,
+	});
+	let completion = false;
+	while (!completion) {
+		const event = await feed.next();
+		if (event.type === "architecture_changed") {
+			expect(event).toMatchObject({
+				model: "Shop",
+				reason: "completed",
+				revision: applied.after,
+				operation: { operationId: request.operationId, applied: true },
+			});
+			completion = true;
 		}
-		expect(await nextEvent()).toMatchObject({
-			type: "architecture_snapshot",
-			reading: { success: false, code: "LEGACY_AUTHORITY" },
-		});
-		const endpoint = `${base}/api/architecture/migration/apply`;
-		for (const body of [
-			{ ...request, vault, authorization: "agent" },
-			[],
-			{ ...request, vault, extra: true },
-		])
-			expect(
-				(
-					await fetch(endpoint, {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify(body),
-					})
-				).status,
-			).toBe(400);
-		const response = await fetch(endpoint, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ ...request, vault }),
-		});
-		expect(response.status).toBe(200);
-		const applied = ArchitectureModuleEditResultSchema.parse(await response.json());
-		if (!applied.success) throw new Error(JSON.stringify(applied));
-		const retried = cli(["model", "migrate"], request);
-		expect(retried.status, retried.stderr).toBe(0);
-		expect(ArchitectureModuleEditResultSchema.parse(answer(retried.stdout))).toEqual(applied);
-		const refused = cli(["model", "migrate"], { ...request, doing: "Another intent" });
-		expect(refused.status).toBe(2);
-		expect(answer(refused.stdout)).toMatchObject({ code: "OPERATION_REUSED" });
-		expect(await read()).toMatchObject({
-			success: true,
-			manifest: { id: "Shop" },
-			revision: applied.after,
-		});
-		let completion = false;
-		while (!completion) {
-			const event = await nextEvent();
-			if (event.type === "architecture_changed") {
-				expect(event).toMatchObject({
-					model: "Shop",
-					reason: "completed",
-					revision: applied.after,
-					operation: { operationId: request.operationId, applied: true },
-				});
-				completion = true;
-			}
-		}
-		const legacy = cli(["semantic", "new", "Other", "--doing", "Try legacy authoring"], {
-			level: "service",
-			nodes: [{ name: "Other", kind: "module", responsibility: "Another module" }],
-		});
-		expect(legacy.status, legacy.stderr).not.toBe(0);
-	} finally {
-		lines?.close();
-		stream?.destroy();
-		controller.abort();
 	}
+	const legacy = cli(["semantic", "new", "Other", "--doing", "Try legacy authoring"], {
+		level: "service",
+		nodes: [{ name: "Other", kind: "module", responsibility: "Another module" }],
+	});
+	expect(legacy.status, legacy.stderr).not.toBe(0);
 }, 15000);
