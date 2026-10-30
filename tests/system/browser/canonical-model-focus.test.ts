@@ -207,6 +207,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 	);
 	partial.searchParams.set("focusA", "Shop#Private");
 	await browser.run(["open", partial.href]);
+	await openAbout(browser);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
