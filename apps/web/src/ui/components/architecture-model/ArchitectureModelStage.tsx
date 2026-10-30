@@ -385,6 +385,11 @@ interface ModelResponseProps extends Pick<
 function ModelResponse(props: ModelResponseProps): JSX.Element {
 	const { query, stale } = props;
 	const model = visibleModel(query, props.current);
+	/**
+	 * A failed read that retries is pending again, so every answer shares one frame.
+	 * @param content What the reading shows.
+	 * @returns The content under a header that keeps its open menu.
+	 */
 	const framed = (content: ReactNode): JSX.Element => (
 		<ModelWalkthroughFrame
 			key={readingSessionKey(model, props.subject)}
@@ -401,7 +406,6 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			{content}
 		</ModelWalkthroughFrame>
 	);
-	// A failed read that retries is pending again: the same frame keeps the header and its open menu.
 	if (query.isPending)
 		return framed(
 			<output className="text-body text-muted-foreground p-10">Reading architecture…</output>,

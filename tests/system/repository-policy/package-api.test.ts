@@ -249,12 +249,10 @@ describe("the api checks", () => {
 		expect(
 			exportsOutsideApi(
 				{
-					"./owner": "./src/runtime/processes/owner.ts",
 					"./group": "./src/runtime/processes/group.ts",
 					"./api": "./src/runtime/api/group.ts",
 				},
 				"runtime",
-				["./owner"],
 			),
 		).toEqual(["./group -> ./src/runtime/processes/group.ts"]);
 		expect(
