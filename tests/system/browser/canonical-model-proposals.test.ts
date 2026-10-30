@@ -38,6 +38,7 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 				{
 					id: "Shop#Request",
 					name: "Request",
+					summary: "Dispatch a request to the worker.",
 					participants: ["Shop#Gateway", "Shop#Worker"],
 					steps: [
 						{

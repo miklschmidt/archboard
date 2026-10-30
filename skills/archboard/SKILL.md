@@ -73,6 +73,18 @@ Connect each root to another root, or move it into the module that uses it.
 A shape is a signal, not proof, so read the source before you change the model.
 No write refuses them.
 
+## Say what each flow does
+
+Every flow has a `summary`: one or two plain sentences that say what the exchange does and why it matters.
+Read the code that the flow names, and do not repeat its name.
+A reader sees the summary beside the flow's collection, and a flow has no other account of itself.
+`add-flow` requires it, and no edit clears it.
+A write that changes a flow with no summary refuses with `FLOW_SUMMARY_REQUIRED`.
+Add an `edit-flow` change with `set.summary` to the same intent.
+`archboard check` reports each current flow with no summary as the error `FLOW_SUMMARY_MISSING`.
+A reader can still read that model, and a write that leaves the flow alone still succeeds.
+Retained readings keep their exact original content.
+
 ## Choose a reading
 
 Architecture answers which parts exist and how they depend on one another.
@@ -142,7 +154,7 @@ This catalogue also gives evaluations stable feature names across retained repor
 | `repeat`       | Record repeated exchanges on authored steps.                      |
 | `note`         | Attach relevant evidence or constraints to a step.                |
 | `groups`       | Apply configured group identities.                                |
-| `flow`         | Author an independent collection and complete exchange.           |
+| `flow`         | Author a complete, described exchange in a collection.            |
 | `view`         | Select a content-free reading or imported bookmark.               |
 | `walkthrough`  | Author ordered beats with exact reading targets.                  |
 | `drillDown`    | Follow an explicit model reference or recursive module scope.     |

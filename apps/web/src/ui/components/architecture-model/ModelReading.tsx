@@ -1,4 +1,4 @@
-import { Activity, useCallback, useRef, useState, type JSX, type ReactNode } from "react";
+import { Activity, useCallback, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import type { Model as Content } from "@archboard/board/content";
 import { ModelBreadcrumbs } from "#ui/components/architecture-model/ModelBreadcrumbs.tsx";
@@ -15,6 +15,7 @@ import { ModelRecords } from "#ui/components/architecture-model/ModelRecords.tsx
 import { ModelTree } from "#ui/components/architecture-model/ModelTree.tsx";
 import { ModelWalkthroughs } from "#ui/components/architecture-model/ModelWalkthroughs.tsx";
 import { useReader, type Reader } from "#ui/hooks/architecture-model/use-reader.ts";
+import { flowCollections } from "#ui/rules/architecture-model/flow-reading.ts";
 
 /** Inputs for a reading. */
 interface ModelReadingProps {
@@ -97,6 +98,8 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 		find.current?.focus();
 	}, []);
 	const records = keepsRecord(model);
+	const { reference } = reader.comparison;
+	const collections = useMemo(() => flowCollections(model, reference), [model, reference]);
 	return (
 		<>
 			<ModelColumn.Find>
@@ -130,6 +133,7 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 					<ModelFlows
 						content={depicted}
 						near={flows}
+						collections={collections}
 						flow={location.flow}
 						grammar={location.grammar}
 						onChoose={choices.chooseFlow}

@@ -17,6 +17,8 @@ interface ModelFlowsProps {
 	readonly content: ReturnType<typeof projectModel>["depicted"];
 	/** The flows that concern the open scope. */
 	readonly near: readonly ModelFlow[];
+	/** The name of the collection that holds each flow. */
+	readonly collections: ReadonlyMap<string, string>;
 	/** The flow on screen. */
 	readonly flow: string | null;
 	readonly grammar: string;
@@ -30,7 +32,7 @@ interface ModelFlowsProps {
  * @returns The list.
  */
 function ModelFlows(props: ModelFlowsProps): JSX.Element {
-	const { content, near, flow, grammar, onChoose, onGrammar } = props;
+	const { content, near, collections, flow, grammar, onChoose, onGrammar } = props;
 	const rest = useMemo(
 		() => content.flows.filter((entry) => !near.includes(entry)),
 		[content.flows, near],
@@ -38,6 +40,10 @@ function ModelFlows(props: ModelFlowsProps): JSX.Element {
 	const choose = useCallback(
 		(entry: ModelFlow, beside: boolean): void => onChoose(entry.id, beside),
 		[onChoose],
+	);
+	const collectionOf = useCallback(
+		(entry: ModelFlow): string => collections.get(entry.id) ?? "",
+		[collections],
 	);
 	const representation: Representation = grammar === "flowchart" ? "flowchart" : "sequence";
 	const switcher = useMemo(
@@ -61,6 +67,7 @@ function ModelFlows(props: ModelFlowsProps): JSX.Element {
 			lit={grammar === "architecture" ? null : flow}
 			attribute="data-flow-id"
 			onChoose={choose}
+			sectionOf={collectionOf}
 			under={switcher}
 		/>
 	);

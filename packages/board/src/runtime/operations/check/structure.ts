@@ -1,7 +1,9 @@
-// What the semantics check says about the shape of a canonical model: a
-// container that gathers nothing, and a root that nothing connects. A shape is
-// a signal and never proves that a module has no job, so these are warnings
-// and no write reads them. Neither rule reads a name, a count or a folder.
+// What the semantics check says about one state of a canonical model. Two rules
+// read its shape: a container that gathers nothing, and a root that nothing
+// connects. A shape is a signal and never proves that a module has no job, so
+// these are warnings and no write reads them. Neither rule reads a name, a
+// count or a folder. The third rule is an error: a current flow with no summary
+// breaks what every write of a flow now keeps, and a reader can still read it.
 
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import type { VaultDiagnostic } from "#shared/schemas/semantic-policy.ts";
@@ -111,9 +113,29 @@ function unconnectedRoots(
 }
 
 /**
- * Warn about the shape of one coherent state.
+ * Name each flow that says nothing about what it does. The flows in a file written before the
+ * rule stay readable, so the author can repair them one write at a time.
+ * @param model The flows of one state.
+ * @returns One error for each flow with no summary.
+ */
+function unexplainedFlows(model: ModelStructure): VaultDiagnostic[] {
+	return model.collections.flatMap((collection) =>
+		collection.flows
+			.filter((flow) => flow.summary === undefined)
+			.map((flow) => ({
+				severity: "error" as const,
+				code: "FLOW_SUMMARY_MISSING",
+				file: collection.file,
+				subject: { kind: "flow" as const, id: flow.id, name: flow.name },
+				message: `This flow in ${collection.name} has no summary, so a reader cannot tell what it does. Read its code, then write one or two sentences through model edit: an edit-flow change with set.summary.`,
+			})),
+	);
+}
+
+/**
+ * Report on one coherent state.
  * @param model The modules and exchanges of that state.
- * @returns The warnings, in the order of the modules within each rule.
+ * @returns The diagnostics, in the order of the modules within each rule, then the flows.
  */
 function structureDiagnostics(model: ModelStructure): VaultDiagnostic[] {
 	const parents = new Map(
@@ -121,7 +143,11 @@ function structureDiagnostics(model: ModelStructure): VaultDiagnostic[] {
 			parent === undefined ? [] : [[id, parent] as const],
 		),
 	);
-	return [...passThroughContainers(model, parents), ...unconnectedRoots(model, parents)];
+	return [
+		...passThroughContainers(model, parents),
+		...unconnectedRoots(model, parents),
+		...unexplainedFlows(model),
+	];
 }
 
 export { structureDiagnostics };

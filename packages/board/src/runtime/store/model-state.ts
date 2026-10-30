@@ -19,7 +19,7 @@ import {
 	GitObjectIdSchema,
 } from "#shared/schemas/model.ts";
 import {
-	ArchitectureModuleEditSchema,
+	RecordedModuleEditSchema,
 	ArchitectureClaimSchema,
 } from "#shared/schemas/model-operations.ts";
 import { holdBoard, BoardHeldError } from "#runtime/store/lock/lock.ts";
@@ -48,7 +48,7 @@ const JournalSchema = z
 		schemaVersion: z.literal(1),
 		context: CheckoutContextSchema,
 		request: z.union([
-			ArchitectureModuleEditSchema,
+			RecordedModuleEditSchema,
 			PortableInstallationSchema,
 			InitializationInstallationSchema,
 			MigrationInstallationSchema,

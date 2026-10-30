@@ -58,6 +58,9 @@ const CHECK_SEMANTICS_HELP = [
 	"- CONTAINER_PASS_THROUGH: in a model that binds code, a module with parts and no binding, which no relationship or flow names, and whose parts no relationship or flow joins.",
 	"- ROOT_UNCONNECTED: in a model with several roots, a root with no relationship to another root. A relationship of a part inside it counts.",
 	"",
+	"Errors on current architecture, which refuse only a write that touches the flow. A reader can still read it:",
+	"- FLOW_SUMMARY_MISSING: a flow with no summary. Read its code, then set the summary through `model edit` with an edit-flow change.",
+	"",
 	"Exit 1 means that a diagnostic or warning remains.",
 ].join("\n");
 

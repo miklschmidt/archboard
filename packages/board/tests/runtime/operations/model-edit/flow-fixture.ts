@@ -13,6 +13,7 @@ function behaviorFixture() {
 				{
 					id: "Shop#Checkout",
 					name: "Checkout",
+					summary: "Dispatch a request and return its result.",
 					participants: ["Shop#Gateway", "Shop#Worker"],
 					steps: [
 						{
@@ -56,6 +57,7 @@ function behaviorFixture() {
 				{
 					id: "Shop#Other",
 					name: "Other",
+					summary: "Notify the worker without waiting for it.",
 					participants: ["Shop#Worker", "Shop#Gateway"],
 					steps: [
 						{

@@ -39,7 +39,7 @@ function flow(...participants: string[]): Collection {
 		id: "Flows",
 		name: "Flows",
 		file: "Flows.flows.json",
-		flows: [{ id: "Shop#Flow", name: "Flow", participants, steps: [] }],
+		flows: [{ id: "Shop#Flow", name: "Flow", summary: "It says.", participants, steps: [] }],
 	};
 }
 
@@ -144,4 +144,16 @@ describe("ROOT_UNCONNECTED", () => {
 		const modules = [part(box), part(first, { parent: box, binding: BINDING })];
 		expect(warned(model({ modules, relationships: [] }), "ROOT_UNCONNECTED")).toEqual([]);
 	});
+});
+
+test("a current flow with no summary is an error that names the flow and its file", () => {
+	const described = flow(first, second);
+	const silent = { ...described.flows[0]! };
+	delete silent.summary;
+	const reports = structureDiagnostics(
+		model({ collections: [{ ...described, flows: [silent, described.flows[0]!] }] }),
+	);
+	expect(reports.filter(({ code }) => code === "FLOW_SUMMARY_MISSING")).toMatchObject([
+		{ severity: "error", file: described.file, subject: { kind: "flow", id: silent.id } },
+	]);
 });

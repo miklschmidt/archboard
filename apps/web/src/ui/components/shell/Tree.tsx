@@ -311,6 +311,42 @@ function TreeGroup(props: { readonly depth: number; readonly children: ReactNode
 }
 
 /**
+ * Rows that belong together without one row that holds them. The name is not a row, so it adds
+ * no stop to the keys of the tree, and it stays above its rows while the column scrolls.
+ * @param props The section's name, its depth and its rows.
+ * @param props.label The name.
+ * @param props.depth The depth of its rows.
+ * @param props.children The rows.
+ * @returns The section.
+ */
+function TreeSection(props: {
+	readonly label: string;
+	readonly depth: number;
+	readonly children: ReactNode;
+}): JSX.Element {
+	const place = useMemo(
+		() => ({
+			top: props.depth * ROW_HEIGHT,
+			paddingLeft: disclosureX(props.depth) - ROW_GUTTER + DISCLOSURE_WIDTH + NAME_GAP,
+		}),
+		[props.depth],
+	);
+	return (
+		// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the ARIA tree pattern's group
+		<div role="group" aria-label={props.label} data-tree-section={props.label}>
+			<div
+				aria-hidden="true"
+				style={place}
+				className="bg-sidebar text-control text-muted-foreground sticky z-10 truncate py-1"
+			>
+				{props.label}
+			</div>
+			{props.children}
+		</div>
+	);
+}
+
+/**
  * The marker column: what kind of row this is, and what is drawn over it.
  * @param props The icon and its title, and what is drawn over it.
  * @param props.icon The icon, drawn muted.
@@ -394,6 +430,7 @@ function TreeFacts(props: { readonly children: ReactNode }): JSX.Element {
 const Tree = Object.assign(TreeRoot, {
 	Row: TreeRow,
 	Group: TreeGroup,
+	Section: TreeSection,
 	Marker: TreeMarker,
 	Name: TreeName,
 	Facts: TreeFacts,

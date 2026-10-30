@@ -17,8 +17,12 @@ The left column lists where to go. The middle shows it. The right explains the s
 
 - Left column, 320 px: Find, a repository switcher that shows the pane letter, the destinations `Modules`,
   `Flows`, `Walkthroughs` and `History`, and Talk. `Flows` and `Walkthroughs` show a count for the open scope.
-- Header: crumbs, the open module's code path, the state chip and `Diagram | About`.
-- Caption, one line: the responsibility of the open module, then any statement of hidden lines.
+- Header: crumbs, the open module's code path, the state chip and `Diagram | About`. A flow or a walkthrough
+  stands beside the crumbs after a dot, not on them: the crumbs state containment, the open module gives the way
+  back, and it does not own what is read.
+- Caption, one line: the responsibility of the open module, then any statement of hidden lines. A flow reading
+  shows its collection's name, then its summary, with no label before them. A retained flow with no summary shows
+  the collection alone.
 - Picture: the open module with its parts and doors. The Key sits at its lower left.
 - Right panel: absent until a selection. It is an overlay, so the picture does not refit.
 - About: every long list. It names whether it describes the open scope or the selected subject.
@@ -89,6 +93,8 @@ entered or selected subject. If geometry has no real correspondence, change plai
   click cancels them, so a double click never lands on a moved card.
 - A flow is chosen first, and the Sequence or Flowchart representation second. A scope with no flows offers
   `All flows (72)`. Selecting a flow opens the sequence. The move from structure to sequence is a plain change.
+- The flow list groups its rows under their collections. A collection name at the end of a row truncated the flow
+  names at 320 px. Its heading sticks while the column scrolls, and it is not a row, so it adds no key stop.
 
 ## History and proposals
 
@@ -128,6 +134,18 @@ needs no escape: `Workhorses` has 17 relationships between its parts and never w
 model before they left, and 8 other containers of 130. A model that binds no code is exempt, because an unbound
 container then says nothing. `ROOT_UNCONNECTED` names a root with no relationship to another root. A relationship
 of a part inside it counts, and a lone root is exempt.
+
+A flow must say what it does, because only 1 of this repository's 72 flows did, and a reader could not tell that
+`One author run` belongs to the skill evaluation. Every flow has a summary, and this rule is an error, not a
+signal. It binds a write and current content, and it stops at history:
+
+- A write that creates or changes a flow and leaves it with no summary refuses. `add-flow` requires the field in
+  the type of the request, no edit clears it, and the candidate refuses any other change with
+  `FLOW_SUMMARY_REQUIRED`. A write that leaves the flow alone proceeds, so an author can repair a model in steps.
+- `archboard check` reports each current flow with no summary as `FLOW_SUMMARY_MISSING` and exits 1. A reader can
+  still read that model.
+- A flow file, a retained checkpoint, a migration preview, a signed record and a journal keep decoding a flow
+  with no summary, because a reading written before this rule must open exactly.
 
 ## Rejected
 

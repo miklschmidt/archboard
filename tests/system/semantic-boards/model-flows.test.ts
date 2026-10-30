@@ -69,6 +69,26 @@ test("CLI authors independent flows and renders explicit sequence and flowchart 
 	expect(claimCli.status, claimCli.stderr).toBe(0);
 	const claim = ArchitectureClaimResultSchema.parse(answer(claimCli.stdout));
 	if (!claim.success) throw new Error(JSON.stringify(claim));
+	const unexplained = cli(["model", "edit", "--doing", "authoring independent behavior"], {
+		target,
+		expectedRevision: current.revision,
+		operationId: "surface-flows-unexplained",
+		writer: "surface-agent",
+		claim: claim.claim.id,
+		changes: [
+			{
+				type: "add-flow",
+				collection: "Behavior",
+				flow: {
+					name: "Unexplained",
+					participants: ["Shop#Gateway"],
+					steps: [{ from: "Shop#Gateway", to: "Shop#Gateway", kind: "self", label: "Tick" }],
+				},
+			},
+		],
+	});
+	expect(unexplained.status).toBe(2);
+	expect(unexplained.stderr).toContain("changes.0.flow.summary");
 	const editCli = cli(["model", "edit", "--doing", "authoring independent behavior"], {
 		target,
 		expectedRevision: current.revision,
@@ -82,6 +102,7 @@ test("CLI authors independent flows and renders explicit sequence and flowchart 
 				collection: "Behavior",
 				flow: {
 					name: "Request",
+					summary: "Dispatch work and return each result.",
 					participants: ["Shop#Worker", "Shop#Gateway"],
 					steps: [
 						{

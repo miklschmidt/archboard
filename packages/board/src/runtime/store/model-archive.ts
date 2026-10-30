@@ -24,7 +24,7 @@ import {
 } from "#shared/schemas/model.ts";
 
 import {
-	ArchitectureModuleEditSchema,
+	RecordedModuleEditSchema,
 	ArchitectureEditSuccessSchema,
 } from "#shared/schemas/model-operations.ts";
 import { captureBoundSources } from "#runtime/store/model-source.ts";
@@ -41,7 +41,7 @@ const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, pub
 		vault: z.string(),
 		narrativeDependencies: z.array(ArchitectureCheckpointSchema.shape.id).optional(),
 		referenceDependencies: z.array(ArchitectureCheckpointSchema.shape.id).optional(),
-		edit: ArchitectureModuleEditSchema.optional(),
+		edit: RecordedModuleEditSchema.optional(),
 		installation: z
 			.union([
 				PortableInstallationSchema,

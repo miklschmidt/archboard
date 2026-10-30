@@ -7,7 +7,7 @@ import {
 } from "#shared/schemas/model-proposals.ts";
 import { DiagramGrammarSchema } from "#shared/schemas/vocabulary.ts";
 import { StandaloneThemeSchema, DiagramAtlasSchema } from "#shared/protocol/render-reply.ts";
-import { FlowChangeSchema } from "#shared/schemas/model-flows.ts";
+import { FlowChangeSchema, RecordedFlowChangeSchema } from "#shared/schemas/model-flows.ts";
 import { z } from "zod";
 import { SemanticIdSchema, SingleLineTextSchema } from "#shared/schemas/primitives.ts";
 import {
@@ -181,27 +181,70 @@ const ProposalIntentSchema = z.discriminatedUnion("type", [
 		clear: z.array(z.enum(["summary", "documents"])).optional(),
 	}),
 ]);
-const ArchitectureChangesSchema = z.array(
-	z.union([StructureChangeSchema, FlowChangeSchema, WalkthroughChangeSchema]),
+/**
+ * Every problem beneath a refused union, each with its complete path.
+ * @param issues What the union's branches refused.
+ * @param parent Where the paths of these issues start.
+ * @returns The problems that no further union holds.
+ */
+function refusedLeaves(
+	issues: readonly z.core.$ZodIssue[],
+	parent: readonly PropertyKey[] = [],
+): { path: PropertyKey[]; message: string }[] {
+	return issues.flatMap((issue) => {
+		const path = [...parent, ...issue.path];
+		return issue.code === "invalid_union" && issue.errors.length > 0
+			? refusedLeaves(issue.errors.flat(), path)
+			: [{ path, message: issue.message }];
+	});
+}
+/**
+ * Build the intents over one vocabulary of statements. Every intent is a branch of one union,
+ * so a refusal says where the mistake is and not only that no branch took the request.
+ * @param statement One statement of a batch.
+ * @returns The schema of a complete intent.
+ */
+function editSchema<Statement extends z.ZodType>(statement: Statement) {
+	const changes = z.array(statement);
+	const batch = DescriptionEditSchema.omit({ subject: true, description: true });
+	return z.union(
+		[
+			batch.extend({ correction: CorrectionIntentSchema, changes: changes.min(1) }).strict(),
+			batch.extend({ proposal: ProposalIntentSchema, changes }).strict(),
+			DescriptionEditSchema,
+			batch.extend({ changes: changes.min(1) }).strict(),
+		],
+		{
+			/**
+			 * Say where the request went wrong: the furthest problem is the one the author made,
+			 * and the other branches only say that the request is not theirs.
+			 * @param refused The union's refusal.
+			 * @returns The dotted location and its problem.
+			 */
+			error: (refused) => {
+				const { path, message } = refusedLeaves(refused.errors.flat()).reduce((far, next) =>
+					next.path.length >= far.path.length ? next : far,
+				);
+				return `${path.map(String).join(".")}: ${message}`;
+			},
+		},
+	);
+}
+const ArchitectureModuleEditSchema = editSchema(
+	z.discriminatedUnion("type", [
+		...StructureChangeSchema.options,
+		...FlowChangeSchema.options,
+		...WalkthroughChangeSchema.options,
+	]),
 );
-const ArchitectureModuleEditSchema = z.union([
-	DescriptionEditSchema.omit({ subject: true, description: true })
-		.extend({
-			correction: CorrectionIntentSchema,
-			changes: ArchitectureChangesSchema.min(1),
-		})
-		.strict(),
-	DescriptionEditSchema.omit({ subject: true, description: true })
-		.extend({
-			proposal: ProposalIntentSchema,
-			changes: ArchitectureChangesSchema,
-		})
-		.strict(),
-	DescriptionEditSchema,
-	DescriptionEditSchema.omit({ subject: true, description: true })
-		.extend({ changes: ArchitectureChangesSchema.min(1) })
-		.strict(),
-]);
+/** An intent as a signed record or a journal holds it, which history must keep decoding. */
+const RecordedModuleEditSchema = editSchema(
+	z.discriminatedUnion("type", [
+		...StructureChangeSchema.options,
+		...RecordedFlowChangeSchema.options,
+		...WalkthroughChangeSchema.options,
+	]),
+);
 const ArchitectureEditSuccessSchema = z
 	.object({
 		success: z.literal(true),
@@ -297,6 +340,7 @@ export {
 	ArchitectureClaimReleaseSchema,
 	ArchitectureClaimTakeBackSchema,
 	ArchitectureModuleEditSchema,
+	RecordedModuleEditSchema,
 	ArchitectureModuleEditResultSchema,
 	ArchitectureEditSuccessSchema,
 	ArchitectureRecoveryResultSchema,

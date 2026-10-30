@@ -3,6 +3,7 @@ import { isDeepStrictEqual } from "node:util";
 import type { ArchitectureModuleEdit } from "#shared/schemas/model-operations.ts";
 import { FlowChangeSchema } from "#shared/schemas/model-flows.ts";
 import { assignFields } from "#runtime/operations/model-edit/fields.ts";
+import { ArchiveError } from "#runtime/store/model-archive.ts";
 import { materialize } from "#runtime/operations/model-edit/flow-placement.ts";
 import { finishFlowRemovals } from "#runtime/operations/model-edit/flow-removal.ts";
 import {
@@ -100,7 +101,7 @@ function editFlow(state: FlowCandidate, change: Extract<Change, { type: "edit-fl
 	once(state, flow.id);
 	includeAffected(state.entries, state.flows, flow.id, state.subjects);
 	const previous = flow.name;
-	assignFields(flow, change.set, change.clear);
+	Object.assign(flow, change.set);
 	flow.participants = flow.participants.map(state.moduleId);
 	if (previous !== flow.name)
 		flow.formerNames = [...new Set([...(flow.formerNames ?? []), previous])];
@@ -270,6 +271,30 @@ function includeCollectionChanges(state: FlowCandidate): void {
 	}
 }
 /**
+ * Refuse a flow that this intent creates or changes and leaves unexplained. A flow that it
+ * leaves alone keeps its bytes: the semantics check reports that one, and any other write can
+ * still proceed.
+ * @param state The complete candidate.
+ * @param flows The surviving candidate flows.
+ */
+function requireSummaries(state: FlowCandidate, flows: Flow[]): void {
+	const before = new Map(
+		state.model.collections.flatMap(({ flows: held }) => held.map((flow) => [flow.id, flow])),
+	);
+	const silent = flows.filter(
+		(flow) =>
+			flow.summary === undefined &&
+			(state.edited.has(flow.id) || !isDeepStrictEqual(before.get(flow.id), flow)),
+	);
+	if (silent.length > 0)
+		throw new ArchiveError(
+			"FLOW_SUMMARY_REQUIRED",
+			`This intent leaves ${silent.map((flow) => flow.name).join(", ")} with no summary.`,
+			"model.json",
+			silent.map((flow) => flow.id),
+		);
+}
+/**
  * Extend the complete graph behind the existing durable write operation.
  * @param model The coherent starting model.
  * @param statements The complete architecture batch.
@@ -304,6 +329,7 @@ function applyFlowChanges(
 	const flows = state.collections.flatMap((collection) => collection.flows);
 	includeFinalScopes(state, flows);
 	materialize(flows, state.entries, state.moves);
+	requireSummaries(state, flows);
 	includeCollectionChanges(state);
 	return state.collections;
 }

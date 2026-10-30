@@ -47,6 +47,10 @@ A caller never stores hand-adjusted layout as architecture.
 
 A flow collection is one `.flows.json` input with independent behavioral exchanges.
 A flow names its participants and ordered steps.
+Its summary says what the exchange does and why it matters.
+A write that creates or changes a flow requires the summary, and `check` reports a current flow without one.
+A retained reading keeps its original content, with or without a summary.
+A flow belongs to its collection, not to the module that a reader has open.
 Steps can describe exchanges, decisions, and loops.
 A complete behavioral reading keeps all participants and steps.
 A structural scope never truncates that exchange.

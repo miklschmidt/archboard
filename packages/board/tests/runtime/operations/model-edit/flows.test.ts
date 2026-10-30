@@ -2,12 +2,13 @@ import {
 	behaviorFixture,
 	allBehaviorSubjects,
 } from "#tests/runtime/operations/model-edit/flow-fixture.ts";
-import type { ArchitectureModuleEdit } from "@archboard/board/model";
+import { ArchitectureModuleEditSchema, type ArchitectureModuleEdit } from "@archboard/board/model";
 import { afterEach, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/board/store-read";
 import { editArchitectureModule } from "@archboard/board/store-write";
+import { RecordedModuleEditSchema } from "#shared/schemas/model-operations.ts";
 import {
 	fixture,
 	structureIntent,
@@ -15,6 +16,22 @@ import {
 } from "#tests/runtime/operations/model-edit/fixture.ts";
 
 afterEach(disposeFixtures);
+
+/**
+ * Take every summary out of the fixture's flows, as a file from before they were required has.
+ * @param vault The fixture's vault.
+ * @returns The bytes of the flow file.
+ */
+function withoutSummaries(vault: string): string {
+	const file = join(vault, "unrelated-name.flows.json");
+	const collection = JSON.parse(readFileSync(file, "utf8")) as {
+		flows: { summary?: string }[];
+	};
+	for (const flow of collection.flows) delete flow.summary;
+	const bytes = JSON.stringify(collection);
+	writeFileSync(file, bytes);
+	return bytes;
+}
 
 test("independent collections author ordered cross-module behavior without creating relationships", async () => {
 	const { vault } = fixture();
@@ -310,6 +327,7 @@ test("one batch explicitly removes an incident message and its module while pres
 				{
 					id: "Shop#Checkout",
 					name: "Checkout",
+					summary: "Dispatch a request and handle it.",
 					participants: ["Shop#Gateway", "Shop#Worker", "Shop#Handler"],
 					steps: [
 						{
@@ -351,6 +369,7 @@ test("one batch explicitly removes an incident message and its module while pres
 		{
 			id: "Shop#Checkout",
 			name: "Checkout",
+			summary: "Dispatch a request and handle it.",
 			participants: ["Shop#Gateway", "Shop#Handler"],
 			steps: [surviving],
 		},
@@ -469,6 +488,91 @@ test("editing participant membership requires both former and new module claims"
 	expect(readArchitectureModel(vault)).toEqual(original);
 }, 15_000);
 
+test("a write that leaves a flow without a summary is refused, and a write beside it proceeds", async () => {
+	const { vault } = behaviorFixture();
+	const bytes = withoutSummaries(vault);
+	const refused = await structureIntent(vault, allBehaviorSubjects);
+	const added = {
+		name: "Added",
+		participants: ["Shop#Gateway"],
+		steps: [{ from: "Shop#Gateway", to: "Shop#Gateway", kind: "self", label: "Tick" }],
+	};
+	expect(
+		ArchitectureModuleEditSchema.safeParse({
+			...refused,
+			changes: [{ type: "add-flow", collection: "Behavior", flow: added }],
+		}).error?.issues[0]?.message,
+	).toStartWith("changes.0.flow.summary:");
+	expect(
+		ArchitectureModuleEditSchema.safeParse({
+			...refused,
+			changes: [{ type: "edit-flow", subject: "Shop#Other", clear: ["summary"] }],
+		}).success,
+	).toBe(false);
+	const edit = { type: "edit-step", subject: "Shop#Notify", set: { label: "Tell" } } as const;
+	expect(await editArchitectureModule(vault, { ...refused, changes: [edit] })).toMatchObject({
+		success: false,
+		code: "FLOW_SUMMARY_REQUIRED",
+		diagnostics: [{ subjects: ["Shop#Other"] }],
+	});
+	expect(readFileSync(join(vault, "unrelated-name.flows.json"), "utf8")).toBe(bytes);
+	expect(
+		await editArchitectureModule(vault, {
+			...refused,
+			operationId: "described",
+			changes: [edit, { type: "edit-flow", subject: "Shop#Other", set: { summary: "Tell it." } }],
+		}),
+	).toMatchObject({ success: true });
+	expect(
+		await editArchitectureModule(vault, {
+			...(await structureIntent(vault, allBehaviorSubjects)),
+			operationId: "beside",
+			changes: [{ type: "edit-module", subject: "Shop#Gateway", set: { description: "Serves." } }],
+		}),
+	).toMatchObject({ success: true });
+}, 15_000);
+
+test("a reading and a signed intent from before summaries were required stay exact", async () => {
+	const { vault } = behaviorFixture();
+	withoutSummaries(vault);
+	const input = await structureIntent(vault, allBehaviorSubjects);
+	const retained = await editArchitectureModule(vault, {
+		...input,
+		changes: [{ type: "edit-module", subject: "Shop#Gateway", set: { description: "Serves." } }],
+	});
+	if (!retained.success) throw new Error(JSON.stringify(retained));
+	expect(
+		await editArchitectureModule(vault, {
+			...(await structureIntent(vault, allBehaviorSubjects)),
+			operationId: "described",
+			changes: ["Shop#Checkout", "Shop#Other"].map((subject) => ({
+				type: "edit-flow",
+				subject,
+				set: { summary: "Now it says." },
+			})),
+		}),
+	).toMatchObject({ success: true });
+	const reading = await readArchitectureModel(vault, undefined, undefined, {
+		checkpoint: retained.checkpoint.id,
+	});
+	if (!reading.success) throw new Error(JSON.stringify(reading));
+	for (const flow of reading.collections[0]!.flows) expect(flow).not.toHaveProperty("summary");
+	const unsaid = {
+		name: "Old",
+		participants: ["Shop#Gateway"],
+		steps: [{ from: "Shop#Gateway", to: "Shop#Gateway", kind: "self", label: "Tick" }],
+	};
+	expect(
+		RecordedModuleEditSchema.safeParse({
+			...input,
+			changes: [
+				{ type: "add-flow", collection: "Behavior", flow: unsaid },
+				{ type: "edit-flow", subject: "Shop#Other", clear: ["summary"] },
+			],
+		}).success,
+	).toBe(true);
+}, 15_000);
+
 test("one intent can author a flow over a module that it adds without caller-chosen identities", async () => {
 	const { vault } = fixture();
 	const input = await structureIntent(vault, ["Shop", "Shop#Gateway"]);
@@ -481,6 +585,7 @@ test("one intent can author a flow over a module that it adds without caller-cho
 				collection: "New responsibilities",
 				flow: {
 					name: "Cache request",
+					summary: "Read a cached answer before the gateway does the work.",
 					participants: ["Gateway", "Cache"],
 					steps: [{ from: "Gateway", to: "Cache", kind: "sync", label: "Read" }],
 				},

@@ -25,6 +25,8 @@ const recovery: Partial<Record<Failure["code"], string>> = {
 	COMPARISON_REQUIRED:
 		"Read the proposal with against current. Copy its complete comparison into a new forced adoption intent with the same complete revision.",
 	MODEL_INVALID: "Repair the requested changes and read the model again before a new intent.",
+	FLOW_SUMMARY_REQUIRED:
+		"Keep the intent and add an edit-flow change with set.summary for each named flow: one or two sentences that say what the exchange does and why it matters.",
 	MODULE_NOT_FOUND:
 		"Read the model and use an existing qualified module ID or a unique current or former name.",
 	MODULE_AMBIGUOUS: "Use one of the qualified module identities in the diagnostic.",
