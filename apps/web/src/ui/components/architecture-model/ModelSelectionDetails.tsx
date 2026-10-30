@@ -11,6 +11,7 @@ import { ModuleNavigation } from "#ui/components/architecture-model/ModuleNaviga
 import { ModelCollectionDetails } from "#ui/components/architecture-model/ModelCollectionDetails.tsx";
 import { ConnectionDetails } from "#ui/components/architecture-model/ModelConnections.tsx";
 import { ModelInterface } from "#ui/components/architecture-model/ModelInterface.tsx";
+import { ModelDoorEndpoints } from "#ui/components/architecture-model/ModelDoorEndpoints.tsx";
 
 interface ModelSelectionDetailsProps {
 	evidence?: ReactNode;
@@ -226,6 +227,12 @@ function SelectedModuleDetails(
 					onSelect={props.selection.select}
 				/>
 			)}
+			<ModelDoorEndpoints
+				door={props.module.id}
+				model={props.model}
+				projection={props.projection}
+				onSelect={props.selection.select}
+			/>
 			<ModuleNavigation
 				paneId={props.paneId}
 				vault={props.vault}

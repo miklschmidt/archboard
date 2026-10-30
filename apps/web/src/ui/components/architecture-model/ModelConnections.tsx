@@ -25,8 +25,8 @@ function ModelConnections(props: ModelConnectionsProps): JSX.Element | null {
 		<section className="mt-8 space-y-3" aria-label="Connections">
 			<h3 className="text-title font-semibold">Connections</h3>
 			<ul data-slot="model-connections" className="space-y-1">
-				{props.connections.map(({ line }) => (
-					<ConnectionChoice key={line.id} {...props} line={line} />
+				{props.connections.map((connection) => (
+					<ConnectionChoice key={connection.line.id} {...props} connection={connection} />
 				))}
 			</ul>
 		</section>
@@ -38,10 +38,9 @@ function ModelConnections(props: ModelConnectionsProps): JSX.Element | null {
  * @param props The line and its selection action.
  * @returns A keyboard-accessible line choice.
  */
-function ConnectionChoice(
-	props: ModelConnectionsProps & { line: Connection["line"] },
-): JSX.Element {
-	const { line, model, onSelect } = props;
+function ConnectionChoice(props: ModelConnectionsProps & { connection: Connection }): JSX.Element {
+	const { model, onSelect } = props;
+	const { line, joins } = props.connection;
 	const pick = useModelPick(line.id, onSelect);
 	return (
 		<li>
@@ -59,9 +58,7 @@ function ConnectionChoice(
 					{moduleName(model, line.from, props.reference)} →{" "}
 					{moduleName(model, line.to, props.reference)}
 				</span>
-				<span className="text-body text-muted-foreground block">
-					{model.policy.relationshipKinds[line.kind]?.name ?? line.kind}
-				</span>
+				<span className="text-body text-muted-foreground block">{kindNames(model, joins)}</span>
 			</button>
 		</li>
 	);
@@ -88,6 +85,9 @@ function ConnectionDetails(props: {
 				{moduleName(model, connection.line.from, props.reference)} →{" "}
 				{moduleName(model, connection.line.to, props.reference)}
 			</h3>
+			<p data-slot="model-connection-kinds" className="text-body text-muted-foreground">
+				{kindNames(model, connection.joins)}
+			</p>
 			<ul data-slot="model-connection-labels" className="text-body space-y-1">
 				{labels.map((label) => (
 					<li key={label}>{label}</li>
@@ -115,6 +115,17 @@ function ConnectionDetails(props: {
 }
 
 /**
+ * Every kind that a line joins, so a mixed line names what it mixes.
+ * @param model The model that names its vocabulary.
+ * @param joins The relationships behind the line.
+ * @returns Their distinct kinds, in authored order.
+ */
+function kindNames(model: Model, joins: Connection["joins"]): string {
+	const kinds = new Set(joins.map((edge) => edge.kind));
+	return [...kinds].map((kind) => model.policy.relationshipKinds[kind]?.name ?? kind).join(", ");
+}
+
+/**
  * Resolve an authored identity without inventing a replacement endpoint.
  * @param model The complete model.
  * @param id The authored endpoint.
@@ -129,4 +140,4 @@ function moduleName(model: Model, id: string, reference: Model | undefined): str
 	);
 }
 
-export { ModelConnections, ConnectionDetails };
+export { ModelConnections, ConnectionDetails, kindNames, moduleName };

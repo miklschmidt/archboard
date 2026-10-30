@@ -33,6 +33,11 @@ type FitTarget =
 	/** The whole diagram, centred: what a pane shows when nothing is singled out. */
 	| { readonly kind: "whole"; readonly content: Size }
 	/**
+	 * Where a reading lands: the whole diagram if that reads, otherwise the head
+	 * of its open frame at the smallest scale that does ({@link LANDING_FLOOR}).
+	 */
+	| { readonly kind: "landing"; readonly content: Size; readonly head?: Rect | undefined }
+	/**
 	 * One region of it, centred: what a narrative beat's subjects occupy. The
 	 * context holds more around the region, and is shown in its place when it
 	 * still reads nearly as large ({@link CONTEXT_SHARE}).
@@ -89,13 +94,20 @@ const FOCUS_MAX_SCALE = 1.5;
 const CONTEXT_SHARE = 0.9;
 
 /**
- * Below this magnification the picture is seen from far away: a card's
- * responsibility, drawn at 11 units, is under 8.25 px on screen and nobody
- * reads it, while its name, at 14, is still read with effort. The picture
- * then draws each card's name larger, with a larger tile for its kind and
- * the start of its responsibility set to read.
+ * The smallest and the largest scale a reading lands at. A picture fits whole
+ * if that scale reaches the floor, and a far card's name and path still read at
+ * 12 and 9 px there. Deliberate zoom keeps its full range.
  */
-const FAR_SCALE = 0.75;
+const LANDING_FLOOR = 0.6;
+const LANDING_CEILING = 1;
+
+/**
+ * Below this magnification the picture is seen from far away: a card's name,
+ * drawn at 14 units, falls under 12 px on screen. The picture then draws each
+ * card's name larger, with a larger tile for its kind and its code path or the
+ * start of its responsibility set to read.
+ */
+const FAR_SCALE = 12 / 14;
 
 /** The camera a diagram starts at before anything has been fitted. */
 const IDENTITY_CAMERA: Camera = Object.freeze({ x: 0, y: 0, scale: 1 });
@@ -222,6 +234,41 @@ function fitCamera(viewport: Size, content: Size): Camera | null {
 }
 
 /**
+ * Whether the camera, where it last came to rest, is far enough away to draw
+ * each card's name in place of what it says. Read at rest, so a zoom or a
+ * flight that crosses the line swaps the two once, when it is over.
+ * @param view Where the camera last came to rest.
+ * @param view.rest That camera.
+ * @returns True when it is.
+ */
+function seenFromFar(view: { readonly rest: Camera }): boolean {
+	return view.rest.scale < FAR_SCALE;
+}
+
+/**
+ * The camera a reading lands with.
+ * @param viewport How big the pane's window on the diagram is.
+ * @param target The diagram and the head of its open frame, when one is open.
+ * @returns The camera, or null when there is nothing to fit.
+ */
+function landingCamera(
+	viewport: Size,
+	target: Extract<FitTarget, { kind: "landing" }>,
+): Camera | null {
+	const whole = fitRect(viewport, { x: 0, y: 0, ...target.content }, LANDING_CEILING);
+	if (whole === null || whole.scale >= LANDING_FLOOR) return whole;
+	const head = target.head ?? { x: 0, y: 0, ...target.content };
+	const fits = head.width * LANDING_FLOOR <= viewport.width - FIT_MARGIN * 2;
+	return {
+		scale: LANDING_FLOOR,
+		x: fits
+			? viewport.width / 2 - (head.x + head.width / 2) * LANDING_FLOOR
+			: FIT_MARGIN - head.x * LANDING_FLOOR,
+		y: FIT_MARGIN - head.y * LANDING_FLOOR,
+	};
+}
+
+/**
  * The one rectangle that holds all of them.
  * @param rects The rectangles, typically the atlas boxes of a beat's subjects.
  * @returns The rectangle around them, or null when there were none.
@@ -257,9 +304,21 @@ function unionRect(rects: readonly Rect[]): Rect | null {
  * @returns The fitted camera, or null when there is nothing to fit.
  */
 function cameraFor(viewport: Size, target: FitTarget): Camera | null {
-	if (target.kind === "whole") {
-		return fitCamera(viewport, target.content);
+	if (target.kind !== "focus") {
+		return target.kind === "whole"
+			? fitCamera(viewport, target.content)
+			: landingCamera(viewport, target);
 	}
+	return focusCamera(viewport, target);
+}
+
+/**
+ * The camera that shows one region, or its context when that reads nearly as large.
+ * @param viewport How big the pane's window on the diagram is.
+ * @param target The region and its context.
+ * @returns The fitted camera, or null when there is nothing to fit.
+ */
+function focusCamera(viewport: Size, target: Extract<FitTarget, { kind: "focus" }>): Camera | null {
 	const focus = fitRect(viewport, target.rect, FOCUS_MAX_SCALE, target.anchor);
 	const context =
 		target.context === undefined
@@ -303,7 +362,6 @@ function cameraOf(transform: string): Camera | null {
 }
 
 export {
-	FAR_SCALE,
 	FOCUS_MAX_SCALE,
 	IDENTITY_CAMERA,
 	MAX_SCALE,
@@ -317,6 +375,7 @@ export {
 	fitCamera,
 	panCamera,
 	pinchCamera,
+	seenFromFar,
 	unionRect,
 	zoomCameraAbout,
 	type Camera,

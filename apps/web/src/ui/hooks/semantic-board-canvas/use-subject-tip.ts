@@ -9,7 +9,6 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent } from "rea
 
 import { EXPLORING_MS } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
-import type { SemanticDrawing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import {
 	tipTargetAt,
@@ -18,13 +17,13 @@ import {
 
 /** What a tip opens over: the picture, and the camera it is seen through. */
 interface TipScene {
-	readonly drawing: SemanticDrawing;
+	readonly drawing: object;
 	readonly camera: Pick<BoardCamera, "subscribe">;
 }
 
 /** An open tip, and the picture it opened on. */
 interface OpenTip {
-	readonly drawing: SemanticDrawing;
+	readonly drawing: object;
 	readonly target: TipTarget;
 }
 

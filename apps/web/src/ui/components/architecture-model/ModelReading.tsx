@@ -13,6 +13,7 @@ import {
 	collectionSubjects,
 	withCollectionFlows,
 } from "#ui/rules/architecture-model/flow-reading.ts";
+import { ModelCaption } from "#ui/components/architecture-model/ModelCaption.tsx";
 import { ModelFilters } from "#ui/components/architecture-model/ModelFilters.tsx";
 import { useModelComparison } from "#ui/hooks/architecture-model/use-model-comparison.ts";
 import { ModelComparisonNotice } from "#ui/components/architecture-model/ModelStateDetails.tsx";
@@ -55,6 +56,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 		setFocus,
 		filters,
 		toggleFilter,
+		toggleEveryLine,
 		reveal,
 		grammar,
 		flow,
@@ -163,7 +165,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 		<>
 			<ModelBreadcrumbs
 				name={model.manifest.name}
-				scope={scope}
+				scope={projection.opened}
 				trail={projection.trail}
 				onOpen={onOpen}
 			/>
@@ -209,6 +211,11 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 		>
 			<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 				<ModelComparisonNotice comparison={comparison} />
+				<ModelCaption
+					projection={visibleProjection}
+					everyLine={filters.everyLine}
+					onToggle={toggleEveryLine}
+				/>
 				<ModelReadingCanvas
 					model={model}
 					projection={visibleProjection}
@@ -228,7 +235,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 				projection={visibleProjection}
 				selection={selection}
 				sidebar={sidebar}
-				scope={scope}
+				scope={projection.opened}
 				onOpen={onOpen}
 				onSearch={chooseSearch}
 				onReveal={revealSelection}

@@ -30,7 +30,6 @@ import {
 import {
 	useCameraWith,
 	type BoardCamera,
-	type CameraView,
 } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import { useCodeMarks } from "#ui/hooks/semantic-board-canvas/use-code-marks.ts";
@@ -43,12 +42,12 @@ import {
 	type StagedPicture,
 } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
 import { usePresentationArrival } from "#ui/hooks/semantic-board-canvas/use-presentation-arrival.ts";
+import { seenFromFar } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
 import { useSubjectTip } from "#ui/hooks/semantic-board-canvas/use-subject-tip.ts";
 import { useViewerMarks } from "#ui/hooks/semantic-board-canvas/use-viewer-marks.ts";
 import { useStickyHeads } from "#ui/hooks/semantic-board-canvas/use-sticky-heads.ts";
 import { useSweep } from "#ui/hooks/semantic-board-canvas/use-sweep.ts";
 import { useTrafficRest } from "#ui/hooks/semantic-board-canvas/use-traffic-rest.ts";
-import { FAR_SCALE } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
 import {
 	leavePicture,
 	stayPicture,
@@ -246,17 +245,6 @@ function drawnReading(
 	drawing: SemanticDrawing,
 ): VariantReading | null {
 	return reading?.variant?.id === drawing.variant.id ? reading : null;
-}
-
-/**
- * Whether the camera, where it last came to rest, is far enough away to draw
- * each card's name in place of what it says. Read at rest, so a zoom or a
- * flight that crosses the line swaps the two once, when it is over.
- * @param view Where the camera is, and where it last came to rest.
- * @returns True when it is.
- */
-function seenFromFar(view: CameraView): boolean {
-	return view.rest.scale < FAR_SCALE;
 }
 
 /**
