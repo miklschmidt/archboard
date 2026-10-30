@@ -22,10 +22,10 @@ async function chooseOriginal(browser: AgentBrowserSession, id: string): Promise
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="preview-reading-selector"]')?.disabled === false`,
+				`document.querySelector('[data-slot="preview-reading-selector"]')?.disabled === false && (document.querySelector('[data-slot="model-diagram"]')?.getAttribute('aria-busy') === 'false' || document.querySelector('[data-slot="preview-originals-only"]') !== null)`,
 			),
 		Boolean,
-		"the original catalogue to finish loading",
+		"the reading to settle, because its first picture moves the header's controls",
 		WAIT,
 	);
 	await browser.run(["click", '[data-slot="preview-reading-selector"]']);
