@@ -21,6 +21,7 @@
 // because nothing here reads board content or needs a step drawn by hand.
 
 import { PICTURE_MS } from "@archboard/timing";
+import { frameClock } from "@archboard/ui-kit/frame-clock";
 import { clockOf, setClock } from "#ui/clients/semantic-board-canvas/picture/picture-clock.ts";
 import {
 	runTraffic,
@@ -280,24 +281,42 @@ function ghostPicture(surface: HTMLElement, heading: Departure | null, moved: Of
 		return;
 	}
 	const { look } = visible;
+	const { copy, ghost } = made;
 	const to = onwards(visible.root, look, heading);
-	made.copy.style.transformOrigin = to.origin;
+	copy.style.transformOrigin = to.origin;
 	// A clone is a new picture whose traffic would start again: it runs on as it was.
 	const clock = clockOf(visible.root);
-	runTraffic(made.copy, clock ?? 0);
-	surface.after(made.ghost);
-	setClock(made.copy, clock);
-	const fade = made.copy.animate(
+	runTraffic(copy, clock ?? 0);
+	surface.after(ghost);
+	setClock(copy, clock);
+	const duration = PICTURE_MS.exit * look.opacity;
+	const fade = copy.animate(
 		[
 			{ opacity: look.opacity, transform: look.transform },
 			{ opacity: 0, transform: to.transform },
 		],
-		{ duration: PICTURE_MS.exit * look.opacity, easing: "ease-out", fill: "forwards" },
+		{ duration, easing: "ease-out", fill: "forwards" },
 	);
-	fade.addEventListener("finish", () => {
-		stopTraffic(made.ghost);
-		made.ghost.remove();
-	});
+	// The frame clock runs the fade, because a recording waits on browser time between frames
+	// and a fade on the browser's own clock can end before a recording sees it.
+	fade.pause();
+	const pace = frameClock();
+	const began = pace.now();
+	/**
+	 * Draw the fade at a frame, and take the ghost away at its end.
+	 * @param now The frame's time.
+	 */
+	function tick(now: number): void {
+		const ran = now - began;
+		if (ran < duration) {
+			fade.currentTime = ran;
+			pace.requestFrame(tick);
+			return;
+		}
+		stopTraffic(ghost);
+		ghost.remove();
+	}
+	pace.requestFrame(tick);
 }
 
 export { ghostPicture, leavePicture, stayPicture, type Departure, type DepartureWay };
