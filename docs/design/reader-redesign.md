@@ -1,0 +1,172 @@
+# Reader redesign
+
+Status: settled by the council of TASK-559, 2026-10-30. The owner still judges each slice by eye.
+
+This record replaces the reader and navigation parts of
+[operator-canvas-shell.md](operator-canvas-shell.md) where the two disagree. Task TASK-559 owns the work.
+
+The owner rejected the reader of PR #19. Transitions were gone, navigation was janky, the right sidebar
+overwhelmed the reader, the start was wrong, and drawings held large dead areas. Two seats, Astra and Opus,
+each studied the user journey, the drawing and the implementation. Each seat then attacked the other. Their
+papers are in [reader-council/](reader-council/). Their measurements came from this repository's model and
+from Shop, on the renderer core before commit `4b970e501`. Measure again before a number becomes a gate.
+
+## The rule of the screen
+
+The left column lists where to go. The middle shows it. The right explains the selected thing.
+
+- Left column, 320 px: Find, a repository switcher that shows the pane letter, the destinations `Modules`,
+  `Flows`, `Walkthroughs` and `History`, and Talk. `Flows` and `Walkthroughs` show a count for the open scope.
+- Header: crumbs, the open module's code path, the state chip and `Diagram | About`.
+- Caption, one line: the responsibility of the open module, then any statement of hidden lines.
+- Picture: the open module with its parts and doors. The Key sits at its lower left.
+- Right panel: absent until a selection. It is an overlay, so the picture does not refit.
+- About: every long list. It names whether it describes the open scope or the selected subject.
+
+Only one overlay opens at a time. Long evidence never goes into the right panel.
+
+## What a picture draws
+
+These rules live in the projection, so the CLI, exports and the reader draw the same picture.
+
+1. One module is open. Its children are parts, and the modules that it touches are doors. A flow and a
+   deliberate focus keep their own extent, because they cross branches.
+2. One line joins a directed pair. Reciprocal pairs keep two lines.
+3. A line with one kind wears that kind. A line with mixed kinds wears a neutral style, and its tip and panel
+   list the kinds. Filters act on the relationships before they join, so hiding a kind never hides another
+   kind.
+4. Words stay on a line that holds one relationship. This changes the stacked labels of
+   [ADR 0052](../adr/0052-a-board-opens-on-its-overview.md), and the owner must accept that change. Each joined
+   line still lists all of its relationships in its tip and panel.
+5. A door is a card with a name only. If exactly one part reaches a door, the line ends on that part.
+   Otherwise the line ends on the frame, so a line on the frame means several parts. Selecting a door lists
+   its real endpoints, grouped by child.
+6. Above 18 lines, a line leaves the picture if other drawn lines still join its ends. Remove the weakest
+   first, so that the result is deterministic. No connected part loses its last line. The caption states the
+   count, and one control shows every line.
+7. Group regions are off by default. The Key turns them on.
+8. A card shows its code path. A far card shows the path in place of the gist. A long path keeps its tail.
+   An unbound container shows its shared folder with a count, for example `apps/web/src/ui · 14 paths`, so it
+   reads as a span and not as ownership. A path that does not resolve wears the warning mark. An external
+   module shows no path.
+9. `Open code` follows an authored binding only. A derived folder never becomes a source action, and a path
+   never establishes identity or containment.
+10. A chain of modules with one part each folds, as a code host folds single-child folders. The crumbs show
+    each step, and the tree shows one row.
+11. Focus draws exactly the focused subjects and their mutual lines. The rest become doors.
+
+## Where a reading lands
+
+A picture fits whole if that scale reaches 0.6, with a ceiling of 1.0. Otherwise it lands at 0.6 on the head
+of the frame, and `0` still fits the whole. Deliberate zoom keeps its full range.
+
+## One surface and one accepted scene
+
+The pane keeps one mounted surface. No key on scope, state or model remounts it. The camera lives above any
+reading-dependent branch.
+
+One accepted scene holds the drawing with its model revision, projection, reading and selected identities.
+A requested destination stays separate until its matching scene arrives. The crumbs can show the destination
+as pending, but inspection, Ask, export and agent context read the accepted scene. A late result never
+replaces a newer destination. A pane reports a reading as drawn only after the picture exists.
+
+Each transition that `origin/main` shows for an action returns for the same action, and the rule of
+[ADR 0042](../adr/0042-the-picture-answers-the-hand-and-a-card-opens-by-flight.md) holds: the reader keeps
+orientation and reduced motion is honored. A shared identity alone does not justify a flight. Prefer the
+entered or selected subject. If geometry has no real correspondence, change plainly.
+
+## Navigation
+
+- The `Modules` tree opens only the path to the open scope and any branch that the reader opened. The ancestors
+  stick to the top while the column scrolls, so the lit row stays in view.
+- Siblings sort by code path. Unbound modules come last, and ties use authored order. This amends the sibling
+  order of `CONTEXT.md`. A filesystem path never reparents a module.
+- The tree follows the focused pane. Another pane keeps its own path in its header.
+- Tree and Find navigate. A card selects. A code link opens source. Each has a keyboard route that needs no
+  double click or hover. Presenting removes the tree, so Backspace, `[`, `]`, Enter, `F` and `0` cover every move.
+- Up and Back are different actions. Moving to another module clears stale subject and flow intent.
+- A click lights the card and the tree row at once. The panel and any camera move wait 220 ms, and a second
+  click cancels them, so a double click never lands on a moved card.
+- A flow is chosen first, and the Sequence or Flowchart representation second. A scope with no flows offers
+  `All flows (72)`. Selecting a flow opens the sequence. The move from structure to sequence is a plain change.
+
+## History and proposals
+
+`History` lists proposals first, then states with their checkpoints folded. A click carries the picture to
+that record, and the panel holds its text. Proposals and history stay distinct, because a draft is future work.
+
+A proposal opens against its base. If it has `predecessorCheckpoint`, the base is that checkpoint, because
+`against=<predecessor>` refuses the eight imported drafts. A draft then shows 2 to 61 changes, not about 3,000.
+One line offers `Compare with current`. Current can also compare with a checkpoint. `compare: false` reaches the
+browser as an explicit After choice.
+
+Review uses a change list in the left column, grouped by owner, because most changes are flow steps that have
+no tree row. `N` and `P` walk the list, and a change to a step opens that flow's sequence. Reparenting shows old
+and new parents, and removed subjects stay reachable. The walk keeps its place by subject identity.
+
+## Start and states
+
+Open an explicit address, or the last reading, or a repository chooser. Never open an unrelated repository,
+and never open one that needs migration by default. A second pane opens the destination that the reader chose.
+
+A planning model names its unimplemented state. A failed draw keeps the last picture, names the failure and
+offers Retry and Back. A healthy refresh shows nothing. A lost server overlays the picture and does not move
+it. A removed module says that it was removed, and offers its retained reading. A filtered empty result offers
+`Show whole scope`. A loading message appears only after a delay, and names the destination.
+
+Warnings sit on the one subject that they concern. The model-wide count moves to About.
+
+## Authoring
+
+`archboard check` warns on a pass-through container and on a root with no relationship, and the consumer skill
+teaches the same rule. These are warnings. A count or a folder spread is a signal and never proves that a
+container has no job, so no write is refused.
+
+## Rejected
+
+| Idea | Reason |
+| --- | --- |
+| A hard limit of 18 lines | It hides the many weak lines that make a foundation a foundation, and leaves six packages of `Workspace packages` with no line. |
+| Keep the strongest one to three neighbors | The rule leaves a picture with 3,113 crossings against 560, and it hides meaning by frequency. |
+| One line for each relationship family | It keeps 47 lines at the root against 29. |
+| Majority kind on a joined line | It is a false mark: 8 of 29 root lines mix kinds. |
+| A Read menu, or a history panel | A menu closes on each choice and hides three nouns. A panel adds a surface type. The column rule covers both. |
+| A contextual outline in place of the tree | A median of 4 rows leaves the column empty and does not read like a repository. |
+| An authored orientation reading | It adds one more thing to author. A repaired Focus and the tour give the same value. |
+| A layout selector | It moves a renderer fault onto the reader. |
+| Saved readings, `Copy link`, picture export, "since you were here" | No observed need. The address holds a reading. |
+| A write refusal for empty containers | The owner asked for guidance and detection. |
+| A code path as a link on the card | The picture has no such target, and the row is under 9 px high in 43 of 123 readings. |
+| Removing a stored label reservation first | Inside these rules, labels cost 10 percent overall. Revisit the root after the content rules. |
+
+## Gates
+
+Each gate is absolute and uses the real pane of this design, about 1551 by 960.
+
+1. At least 108 of 123 readings of this repository pass at fit 0.6. The rest land at 0.6.
+2. At landing, a name reaches 12 px and a path reaches 9 px on every reading of at most 18 lines.
+3. No line leaves a picture without a statement, and the panel lists every connection.
+4. Each reading of Shop stays at or below its size today.
+5. A draft opens against its base and draws with no error.
+6. The grading corpus includes `Workspace packages`, the root, `Browser`, `board` and `Command startup`.
+
+The kill test comes first. The owner opens `Browser` and `Workspace packages` after the content rules land. If
+doors or the reduced chain do not read better than today, stop before any interface work. The fallback is an
+inside-only reading, with a connection reading on request.
+
+## Order of work
+
+The subtasks of TASK-559 carry this order. Each slice removes the path that it replaces.
+
+1. Model data: name, summary, `Architecture inputs`, 29 stale paths and pass-through containers.
+2. Content rules and landing. This is the fastest test of the design.
+3. One surface, one accepted scene, and the transitions.
+4. Honest failures and the proposal base.
+5. Left column and header.
+6. Right panel, About and the Key.
+7. Start and return.
+8. Review of a proposal.
+9. Local compaction and candidates ranked by fit, on the content that the rules leave.
+
+Two side tracks run beside these: the server cost of reads and watchers, and the `check` warnings with the skill
+text.

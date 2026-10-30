@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:18:00Z'
-updated_date: '2026-10-30T15:51:00Z'
+updated_date: '2026-10-30T16:45:00Z'
 labels:
   - frontend
   - review
@@ -14,6 +14,8 @@ references:
   - https://github.com/miklschmidt/archboard/pull/19
   - docs/design/operator-canvas-shell.md
   - docs/adr/0068-one-live-canonical-model-and-consumer-path.md
+documentation:
+  - docs/design/reader-redesign.md
 priority: high
 ordinal: 972000
 ---
@@ -49,7 +51,7 @@ Before PR #19, the board canvas owned the transitions. Compare with origin/main 
 - [ ] #1 A scrutiny pass over the complete PR 19 diff against origin/main is written down, and each finding is fixed or carries an owner decision
 - [ ] #2 Each transition that origin/main shows for an action exists for the same action in the canonical reader
 - [ ] #3 Changing a reading, scope, grammar or comparison keeps the header, the sidebar and any open control in place, with no rebuild and no flash
-- [ ] #4 The canonical reader matches docs/design/operator-canvas-shell.md at 1920 by 1080, and the owner accepts the result by eye
+- [ ] #4 The canonical reader follows docs/design/reader-redesign.md at 1920 by 1080, and the owner accepts the result by eye
 - [ ] #5 A first draw of this repository's root reading finishes in less than 500 ms in a browser
 - [ ] #6 A tab that is open and idle costs the server no more than a few percent of one core
 - [ ] #7 The owner approves the merge of PR 19
@@ -63,4 +65,6 @@ Owner, 2026-10-30, on this task: the whole UX around navigating the new data mod
 Owner, 2026-10-30: numbered containers such as Layer 4 and Layer 6 are too abstract, and a person cannot relate them to the code or project structure. In this repository's model, Layer 0 to Layer 7 have kind other and no code binding, and each states an import rule. Layers 1 to 4 hold one child each. The rule comes from tests/system/repository-policy/package-graph.test.ts.
 
 Owner decision, 2026-10-30: delete the Layer 0 to Layer 7 containers from this repository's model. Do not replace them with groups, because more groups oversaturate the drawings. Show a module's code path on its card and let navigation read like the repository. The consumer skill and archboard check must catch containers with no code and no job of their own.
+
+Council settled on 2026-10-30. The design record is docs/design/reader-redesign.md and the papers are under docs/design/reader-council/. The implementation papers are the scrutiny pass so far.
 <!-- SECTION:NOTES:END -->
