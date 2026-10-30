@@ -23,7 +23,7 @@ pub(super) fn route(graph: &Node, drawing: Placed) -> Result<Placed, super::Refu
     let previous = std::mem::take(&mut shape.routes);
     let candidates = candidates(&model, &topology, &mut shape, &previous)?;
     shape.routes = super::selection::greedy(&model, &topology, &shape, &candidates)
-        .map_err(|edge| blocked(&model, edge))?;
+        .map_err(|edges| blocked(&model, &edges))?;
     if let Some(drawing) = super::compact::drawing(&shape)
         && let Ok(mut compact) = placement(&model, drawing)
         && let Ok(drawing) = finish(&model, &topology, &mut compact)
@@ -53,14 +53,17 @@ fn finish(
         .ok_or_else(|| super::Refused::from("The hybrid drawing has an ambiguous fan tree"))
 }
 
-fn blocked(model: &Model<'_>, edge: usize) -> super::Refused {
-    let (from, to) = model.ends[edge];
+fn blocked(model: &Model<'_>, edges: &[usize]) -> super::Refused {
+    let edge = *edges.last().expect("an unfinished route");
     super::Refused {
         message: format!("No clear planned channel for {}", model.edges[edge].id),
-        blocked: vec![
-            model.endpoints[from].node.id.clone(),
-            model.endpoints[to].node.id.clone(),
-        ],
+        blocked: edges
+            .iter()
+            .flat_map(|&edge| {
+                let (from, to) = model.ends[edge];
+                [from, to].map(|endpoint| model.endpoints[endpoint].node.id.clone())
+            })
+            .collect(),
     }
 }
 
@@ -296,7 +299,7 @@ fn candidates(
             shape.fallbacks = windows;
         }
         if choices.is_empty() {
-            return Err(blocked(model, edge));
+            return Err(blocked(model, &[edge]));
         }
         choices.sort_by_cached_key(|line| route_rank(model, bounds, &line.points));
         candidates.push(choices);

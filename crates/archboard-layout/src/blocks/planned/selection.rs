@@ -7,8 +7,8 @@ pub(super) fn greedy(
     topology: &Topology,
     base: &Shape,
     paths: &[Vec<PlacedLine>],
-) -> Result<Vec<PlacedLine>, usize> {
-    let mut failed = None;
+) -> Result<Vec<PlacedLine>, Vec<usize>> {
+    let mut failed = Vec::new();
     let mut windows = base.fallbacks;
     for variant in [1, 0, 2, 3] {
         match ordered(model, topology, base, paths, variant, &mut windows) {
@@ -17,10 +17,10 @@ pub(super) fn greedy(
                     improve(model, topology, base, paths, variant, shape, &mut windows).routes,
                 );
             }
-            Err(edge) => failed = Some(edge),
+            Err(edge) => failed.push(edge),
         }
     }
-    Err(failed.expect("an unfinished route"))
+    Err(failed)
 }
 
 fn ordered(

@@ -74,7 +74,11 @@ pub(super) fn route_candidates(
                     best = Some(next);
                 }
             }
-            Err(error) => failure = error,
+            Err(mut error) => {
+                // A placement repair must address every failed candidate.
+                error.blocked.extend(failure.blocked);
+                failure = error;
+            }
         }
     }
     best.ok_or(failure)

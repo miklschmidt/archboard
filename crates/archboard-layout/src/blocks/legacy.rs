@@ -404,7 +404,9 @@ fn alternative_hierarchies(
     graph: &Node,
     way: &Way,
 ) -> Result<Vec<Board>, String> {
-    if !super::planned::refines(graph) {
+    // Dense first attempts keep their small search. A refused placement also
+    // needs these existing alternatives during the two bounded room repairs.
+    if !super::planned::refines(graph) && way.extra == 0.0 {
         return Ok(Vec::new());
     }
     let mut candidates = expanded_candidates(gv, graph, way)?;
@@ -454,9 +456,8 @@ fn reserve_room(tree: &mut BlockTree, way: &Way) {
         if let Some(&id) = tree.blocks.get(node) {
             affected.insert(id);
         }
-        if let Some(&id) = tree.above(node).first() {
-            affected.insert(id);
-        }
+        // A route also needs room outside every enclosing block, up to the page.
+        affected.extend(tree.above(node));
     }
     for block in affected {
         tree.get_mut(block).routing_room = way.extra;

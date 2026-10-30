@@ -115,6 +115,10 @@ Local grid windows retain limits of 128 obstacles, 192 coordinates per axis, and
 Final routing shares four grid windows across its four route-order attempts for each placement candidate.
 Packed-block gap estimates also use at most four local windows per packed scene.
 After a complete placement refusal, the legacy placer can add 32 then 64 units around the blocked endpoints.
+Each refusal retains the blocked endpoints from every route order and placement.
+Both retries give every enclosing block extra room, including the page.
+Dense retries also try the existing wider wraps and placements without provisional labels.
+Dense first attempts retain the narrow placement search.
 These are two bounded placement repairs, not a second placement algorithm or an unchecked drawing fallback.
 
 The complete guard and fan-tree freeze must accept every emitted relationship.
@@ -152,8 +156,11 @@ Main retains its saved inputs, which differ on 366 shared readings of Renderer l
 The shared set contains 3,981 plain drawings and 7,294 comparison drawings.
 The plain set includes 381 whole boards.
 Main lacks all 400 whole-board comparison drawings, so that category contributes no shared measurements.
-Head refuses 35 of those requests with `No clear planned channel` errors.
-The evidence records each refusal in `head/failures.json`.
+The measured head refused 35 of those requests with `No clear planned channel` errors, recorded in `head/failures.json`.
+The follow-up repair draws all 35 requests with zero geometry findings.
+It retains complete blockage feedback and gives enclosing blocks room during the existing bounded retries.
+The corpus script now includes whole boards in both comparison modes.
+The tables retain the original measurement commits.
 
 | Plain drawings                 |           Base |           Main |           Head |
 | ------------------------------ | -------------: | -------------: | -------------: |

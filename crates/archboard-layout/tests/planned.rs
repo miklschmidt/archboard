@@ -16,6 +16,24 @@ fn drawing(graph: &Value) -> Value {
 }
 
 #[test]
+fn nested_comparison_repairs_channels_through_enclosing_blocks() {
+    // Reduced from a whole-board comparison. Its restored calls exceed the
+    // small-placement search limit and need room outside their nearest blocks.
+    let graph: Value =
+        serde_json::from_str(include_str!("fixtures/nested-comparison.json")).unwrap();
+    let placed = drawing(&graph);
+    let ids = |edges: &Value| {
+        edges
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|edge| edge["id"].as_str().unwrap().to_owned())
+            .collect::<std::collections::BTreeSet<_>>()
+    };
+    assert_eq!(ids(&placed["edges"]), ids(&graph["edges"]));
+}
+
+#[test]
 fn an_adjacent_chain_uses_direct_channels_with_measured_cards() {
     let placed = drawing(
         &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
