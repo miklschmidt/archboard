@@ -18,7 +18,7 @@ import {
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { z } from "zod";
-import { availablePort, portIsReusable } from "../process-contracts/support/process-http.ts";
+import { freeLoopbackPort, portIsReusable } from "../process-contracts/support/process-http.ts";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { packageBin } from "./support/package-cli.ts";
 import { createRepositoryFixture, type RepositoryFixture } from "./support/repository-fixture.ts";
@@ -241,7 +241,7 @@ test("a checkout without a vault is told which known vault holds boards of its c
 });
 
 test("outside any checkout and any vault a command refuses before it starts a server", async () => {
-	const port = await availablePort();
+	const port = await freeLoopbackPort();
 	const refused = archboard(["model", "read"], fixture.nowhere, {
 		ARCHBOARD_URL: `http://127.0.0.1:${port}`,
 		ARCHBOARD_NO_AUTOSTART: undefined,
@@ -251,7 +251,7 @@ test("outside any checkout and any vault a command refuses before it starts a se
 });
 
 test("autostart starts a server without a vault, and the server serves the vault each command names", async () => {
-	const port = await availablePort();
+	const port = await freeLoopbackPort();
 	// Nothing in this environment names a vault: the server starts without one.
 	const started = { ARCHBOARD_URL: `http://127.0.0.1:${port}`, ARCHBOARD_NO_AUTOSTART: undefined };
 	try {

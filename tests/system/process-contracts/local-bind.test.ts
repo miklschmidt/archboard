@@ -10,7 +10,7 @@ import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import { runOwnedPeerToExit, startOwnedPeer } from "./support/owned-peer-process.ts";
 import {
-	availablePort,
+	freeLoopbackPort,
 	HealthSchema,
 	portIsReusable,
 	ReadySchema,
@@ -86,7 +86,7 @@ test("rejects foreign health, recovers the port, and refuses a command outside a
 	const root = mkdtempSync(join(tmpdir(), "archboard-local-bind-refusal-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = vaultIn(join(root, "boards"));
-	const port = await availablePort();
+	const port = await freeLoopbackPort();
 	const foreign = await startOwnedPeer({
 		argv: [process.execPath, healthFixture],
 		env: {
@@ -121,7 +121,7 @@ test("rejects foreign health, recovers the port, and refuses a command outside a
 		// before it starts a server (ADR 0049).
 		const cliEnv = sanitizedEnvironment(root);
 		delete cliEnv["ARCHBOARD_NO_AUTOSTART"];
-		const cliPort = await availablePort();
+		const cliPort = await freeLoopbackPort();
 		cliEnv["ARCHBOARD_URL"] = `http://127.0.0.1:${cliPort}`;
 		const cli = spawnSync(
 			process.execPath,

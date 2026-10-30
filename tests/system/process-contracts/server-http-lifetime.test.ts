@@ -22,6 +22,7 @@ import {
 } from "../support/owned-server.ts";
 import { productionServer } from "../server-state/support/production-server.ts";
 import { records } from "./support/codex-workbench-lifecycle.ts";
+import { freeLoopbackPort } from "../support/loopback-port.ts";
 
 const repoRoot = resolvePath(import.meta.dir, "../../..");
 const fixtureSource = join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production.ts");
@@ -31,28 +32,12 @@ const httpFailurePreload = join(
 );
 type HttpFailureMode = "bind-race" | "runtime-error" | "delayed-listen-cancel";
 
-async function freePort(): Promise<number> {
-	const server = createServer();
-	await new Promise<void>((resolve, reject) => {
-		server.once("error", reject);
-		server.listen({ host: "127.0.0.1", port: 0, exclusive: true }, resolve);
-	});
-	const address = server.address();
-	if (address === null || typeof address === "string") {
-		throw new Error("No loopback port.");
-	}
-	await new Promise<void>((resolve, reject) =>
-		server.close((error) => (error ? reject(error) : resolve())),
-	);
-	return address.port;
-}
-
 async function spawnServer(
 	resources: AsyncDisposableStack,
 	fixture: ProductionFixture,
 	mode: HttpFailureMode,
 ) {
-	const port = await freePort();
+	const port = await freeLoopbackPort();
 	const pendingPath = join(fixture.root, `${mode}.pending`);
 	const outcomePath = join(fixture.root, `${mode}.outcome`);
 	const paths = {
