@@ -49,7 +49,7 @@ async function drawnModules(browser: AgentBrowserSession): Promise<string[]> {
 	);
 }
 
-test("focus keeps selected ancestors and descendants with only necessary paths and context", async () => {
+test("focus draws the selected subjects, with the rest as doors", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "focused-model");
 	const vault = vaultIn(root);
@@ -149,12 +149,7 @@ test("focus keeps selected ancestors and descendants with only necessary paths a
 			`document.querySelector('[data-slot="model-connections"] [data-connection-id="Shop#Private"]') === null`,
 		),
 	).toBe(true);
-	expect(await drawnModules(browser)).toEqual([
-		"Shop#Decode",
-		"Shop#Gateway",
-		"Shop#Handler",
-		"Shop#Worker",
-	]);
+	expect(await drawnModules(browser)).toEqual(["Shop#Decode", "Shop#Gateway", "Shop#Worker"]);
 	expect(
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-slot="model-selected-subjects"] [data-subject-id]')].map(node => node.getAttribute('data-subject-id')).sort()`,
@@ -189,12 +184,7 @@ test("focus keeps selected ancestors and descendants with only necessary paths a
 		"the focused reading after reload",
 		WAIT,
 	);
-	expect(await drawnModules(browser)).toEqual([
-		"Shop#Decode",
-		"Shop#Gateway",
-		"Shop#Handler",
-		"Shop#Worker",
-	]);
+	expect(await drawnModules(browser)).toEqual(["Shop#Decode", "Shop#Gateway", "Shop#Worker"]);
 	const partial = new URL(server.base);
 	partial.searchParams.set("modelA", "Shop");
 	partial.searchParams.set("scopeA", "Shop#Handler");
@@ -209,7 +199,7 @@ test("focus keeps selected ancestors and descendants with only necessary paths a
 		"the partial focus without a replacement subject",
 		WAIT,
 	);
-	expect(await drawnModules(browser)).toEqual(["Shop#Decode", "Shop#Gateway", "Shop#Handler"]);
+	expect(await drawnModules(browser)).toEqual(["Shop#Decode"]);
 	partial.searchParams.set("focusA", "Shop#Missing");
 	await browser.run(["open", partial.href]);
 	await pollUntil(
@@ -249,7 +239,7 @@ test("focus keeps selected ancestors and descendants with only necessary paths a
 		"the self-connection scene",
 		WAIT,
 	);
-	expect(await drawnModules(browser)).toEqual(["Shop#Gateway", "Shop#Hidden"]);
+	expect(await drawnModules(browser)).toEqual(["Shop#Hidden"]);
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!after.body.success) throw new Error(after.body.error);
 	expect(after.body.revision).toEqual(before.body.revision);

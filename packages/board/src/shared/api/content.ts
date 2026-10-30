@@ -24,5 +24,6 @@ export {
 	type ModelFilters,
 } from "#shared/rules/model-projection.ts";
 export { projectFlow } from "#shared/rules/model-flow-projection.ts";
+export { doorEndpoints } from "#shared/rules/door-endpoints.ts";
 
 export { subjectsOf } from "#shared/schemas/content.ts";

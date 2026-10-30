@@ -43,7 +43,7 @@ function structuralRefusal(model: Model, request: Reading): NavigationError | un
 		model,
 		request.scope ?? model.selectedModule ?? null,
 		request.focus ?? null,
-		{ hideKinds: request.hideKinds, hideGroups: request.hideGroups },
+		{ hideKinds: request.hideKinds, showGroups: request.showGroups, everyLine: request.everyLine },
 	);
 	if (projection.missing || projection.missingFocus.length !== 0)
 		return { code: "MODULE_NOT_FOUND", error: "The requested scope or focus is unavailable." };
@@ -184,7 +184,8 @@ async function showPaneRoute(req: Request, res: Response): Promise<void> {
 		scope: _scope,
 		focus: _focus,
 		hideKinds: _kinds,
-		hideGroups: _groups,
+		showGroups: _groups,
+		everyLine: _lines,
 		grammar: _grammar,
 		beat: _beat,
 		model: _asked,

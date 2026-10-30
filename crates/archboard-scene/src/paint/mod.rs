@@ -19,6 +19,7 @@ mod drill_mark;
 mod edge_line;
 mod export;
 mod far_card;
+pub(crate) use far_card::far_name_width;
 mod far_view;
 mod flowchart_shapes;
 mod icons;

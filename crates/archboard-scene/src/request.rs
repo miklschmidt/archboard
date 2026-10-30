@@ -118,6 +118,8 @@ pub enum Dash {
     Solid,
     Dashed,
     Dotted,
+    /// The line that joins relationships of several kinds. No policy can choose it.
+    Mixed,
 }
 
 /// Which arrowhead a line ends in.

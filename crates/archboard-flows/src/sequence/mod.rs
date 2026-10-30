@@ -100,6 +100,7 @@ fn flow_of(layout: &FlowLayout<'_>) -> SequenceFlow {
                         order: column.card.node.order,
                         name: column.card.node.name.clone(),
                         responsibility: column.card.node.responsibility.clone(),
+                        code_path: None,
                     },
                     bounds: column.card.bounds,
                     title_size: column.card.title_size,

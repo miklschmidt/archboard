@@ -63,6 +63,18 @@ test("module decomposition follows breadcrumbs and browser history without chang
 			outgoing: [],
 		}),
 	);
+	writeFileSync(
+		join(vault, "sibling.module.json"),
+		JSON.stringify({
+			schemaVersion: 1,
+			id: "Shop#Sibling",
+			name: "Sibling",
+			kind: "module",
+			parent: "Shop#Gateway",
+			order: 41,
+			outgoing: [],
+		}),
+	);
 	initializeSource(root);
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());
@@ -87,7 +99,7 @@ test("module decomposition follows breadcrumbs and browser history without chang
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(node => node.getAttribute('data-module-id'))`,
 		),
-	).toEqual(["Shop#Handler"]);
+	).toEqual(["Shop#Handler", "Shop#Sibling"]);
 	expect(
 		await browser.eval<boolean>(
 			`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Decode"]') === null`,
@@ -372,30 +384,25 @@ test("projected connections expose complete ordered relationships and module int
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", `${server.base}/`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
-	const line =
-		'[data-slot="model-connections"] [data-from="Shop#Gateway"][data-to="Shop#Worker"][data-kind="call"]';
+	const line = '[data-slot="model-connections"] [data-from="Shop#Gateway"][data-to="Shop#Worker"]';
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('${line}') !== null`),
 		Boolean,
 		"the projected connection choices",
 		WAIT,
 	);
-	expect(
-		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="model-connections"] [data-from="Shop#Gateway"][data-to="Shop#Worker"]')].map(node => node.getAttribute('data-kind'))`,
-		),
-	).toEqual(["call", "http"]);
+	expect(await browser.eval<number>(`document.querySelectorAll('${line}').length`)).toBe(1);
 	await browser.run(["click", line]);
 	expect(
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-slot="model-connection-details"] [data-relationship-id]')].map(node => node.getAttribute('data-relationship-id'))`,
 		),
-	).toEqual(["Shop#Dispatch", "Shop#OutA", "Shop#OutB"]);
+	).toEqual(["Shop#Dispatch", "Shop#OutA", "Shop#Web", "Shop#OutB"]);
 	expect(
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-slot="model-connection-labels"] li')].map(node => node.textContent)`,
 		),
-	).toEqual(["Dispatch request", "Deliver"]);
+	).toEqual(["Dispatch request", "Deliver", "Request"]);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(`document.querySelector('[data-slot="model-diagram"] svg') !== null`),
@@ -431,12 +438,8 @@ test("projected connections expose complete ordered relationships and module int
 		"the opened scene",
 		WAIT,
 	);
-	const whole = '[data-slot="model-connections"] [data-connection-id="Shop#Whole"]';
-	expect(
-		await browser.eval<string | null>(
-			`document.querySelector('${whole}')?.getAttribute('data-to') ?? null`,
-		),
-	).toBe("Shop#Gateway");
+	const whole = '[data-slot="model-connections"] [data-from="Shop#Worker"][data-to="Shop#Gateway"]';
+	expect(await browser.eval<number>(`document.querySelectorAll('${whole}').length`)).toBe(1);
 	await browser.run(["click", '[data-slot="model-connections"] [data-connection-id="Shop#Self"]']);
 	expect(
 		await browser.eval<string[]>(

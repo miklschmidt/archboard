@@ -274,6 +274,10 @@ pub struct NodeFacts {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub responsibility: Option<String>,
+    /// Where its code lives, when a reading says.
+    #[serde(rename = "codePath", skip_serializing_if = "Option::is_none")]
+    #[ts(rename = "codePath", optional)]
+    pub code_path: Option<String>,
 }
 
 /// How loudly a line speaks.

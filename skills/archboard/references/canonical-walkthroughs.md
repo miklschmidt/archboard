@@ -39,7 +39,7 @@ Omitted scope means the model roots.
 No field inherits a previous beat's presentation state.
 `focus` contains module identities.
 `selection` contains stable subject identities.
-`filters.relationships` and `filters.groups` contain keys to hide.
+`filters.relationships` contains kinds to hide. Group regions are off by default, so `filters.groups` changes no picture.
 A sequence or flowchart beat also names an explicit qualified `flow` identity.
 Its behavioral reading includes the complete flow.
 

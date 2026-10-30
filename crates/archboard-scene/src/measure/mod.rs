@@ -75,6 +75,30 @@ pub fn truncate(text: &str, font: DiagramFont, size: f64, room: f64) -> String {
     format!("{}{ELLIPSIS}", js::trim_end(&head))
 }
 
+/// A path, or as much of its tail as fits the room after an ellipsis. The tail
+/// says what the path names, so it is what stays, from a folder's start when one fits.
+pub fn keep_tail(path: &str, font: DiagramFont, size: f64, room: f64) -> String {
+    if width(path, font, size) <= room {
+        return path.to_owned();
+    }
+    let characters: Vec<char> = path.chars().collect();
+    let budget = room - width(ELLIPSIS, font, size);
+    let mut used = 0.0;
+    let mut kept = 0;
+    for character in characters.iter().rev() {
+        let next = used + width(&character.to_string(), font, size);
+        if next > budget {
+            break;
+        }
+        used = next;
+        kept += 1;
+    }
+    let tail = &characters[characters.len() - kept..];
+    let folder = tail.iter().position(|character| *character == '/');
+    let from = folder.unwrap_or(0);
+    format!("{ELLIPSIS}{}", tail[from..].iter().collect::<String>())
+}
+
 /// The size a title is set at: the largest step, at or below the size it
 /// earned, where the whole title fits its run, and never below the floor.
 pub fn fitted_size(

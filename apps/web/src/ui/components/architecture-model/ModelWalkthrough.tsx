@@ -83,7 +83,7 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 			subject: null,
 			scope: reading.scope ?? null,
 			focus: reading.focus,
-			filters: { hideKinds: reading.filters.relationships, hideGroups: reading.filters.groups },
+			filters: { hideKinds: reading.filters.relationships, showGroups: [], everyLine: false },
 			grammar: reading.grammar,
 			flow: reading.flow ?? null,
 		}),
@@ -163,7 +163,7 @@ function projectionOf(model: Model, reading: Reading) {
 		model,
 		reading.scope ?? null,
 		reading.focus.length === 0 ? null : reading.focus,
-		{ hideKinds: reading.filters.relationships, hideGroups: reading.filters.groups },
+		{ hideKinds: reading.filters.relationships },
 		undefined,
 		reading.visibility,
 	);

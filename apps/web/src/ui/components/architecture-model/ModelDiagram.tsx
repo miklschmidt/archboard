@@ -13,6 +13,7 @@ import {
 	useState,
 	type JSX,
 	type KeyboardEvent,
+	type PointerEvent,
 } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { everyStep } from "@archboard/board/flow";
@@ -22,8 +23,12 @@ import type { prepareContentHere } from "@archboard/renderer/browser";
 import { CameraSurface } from "#ui/components/semantic-board-canvas/CameraSurface.tsx";
 import {
 	useBoardCamera,
+	useCameraWith,
 	type BoardCamera,
 } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
+import { seenFromFar } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
+import { useSubjectTip } from "#ui/hooks/semantic-board-canvas/use-subject-tip.ts";
+import { ModelLineTip } from "#ui/components/architecture-model/ModelLineTip.tsx";
 import { useDiagramGestures } from "#ui/hooks/semantic-board-canvas/use-diagram-gestures.ts";
 import { stagePicture } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
 import { clockOf } from "#ui/clients/semantic-board-canvas/picture/picture-clock.ts";
@@ -187,6 +192,20 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		[props.projection.content, drawing.atlas, selected, props.presentation, props.grammar],
 	);
 	const lighting = useLighting(lightingInput);
+	const tip = useSubjectTip({ drawing, camera });
+	const { dismiss: dismissTip, onHover: tipHover } = tip;
+	const { onHover: lightHover, release } = lighting;
+	const onHover = useCallback(
+		(event: PointerEvent<HTMLElement>): void => {
+			tipHover(event);
+			lightHover(event);
+		},
+		[tipHover, lightHover],
+	);
+	const leave = useCallback((): void => {
+		dismissTip();
+		release();
+	}, [dismissTip, release]);
 	const selectArea = useCallback(
 		(rectangle: DiagramBox, toggle: boolean): void => {
 			const pose = camera.view().camera;
@@ -216,8 +235,8 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		atlas: drawing.atlas,
 		onSelect,
 		onSelectArea: selectArea,
-		onHover: lighting.onHover,
-		dismissTip: lighting.release,
+		onHover,
+		dismissTip: leave,
 		openDown: open,
 	});
 	const onKeyDown = useCallback(
@@ -258,14 +277,16 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 	]);
 	useLayoutEffect(() => {
 		if (camera.room === null || props.presentation !== undefined) return;
-		if (!camera.handled()) camera.fit({ kind: "whole", content: drawing }, true);
-	}, [camera, drawing, props.presentation]);
+		const head = drawing.atlas.regions[props.projection.opened ?? ""];
+		if (!camera.handled()) camera.fit({ kind: "landing", content: drawing, head }, true);
+	}, [camera, drawing, props.presentation, props.projection.opened]);
 	useEffect(() => {
 		const root = surface.current;
 		return () => {
 			if (root !== null) stopTraffic(root);
 		};
 	}, []);
+	const far = useCameraWith(camera, seenFromFar);
 	usePresentationArrival(arrivalSurface, props.presentation ?? null, setSettled);
 	const { onPresentation, presentation } = props;
 	useEffect(() => {
@@ -298,7 +319,7 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 				marks={
 					surfaceMarks({
 						veiled: veil !== null,
-						far: false,
+						far,
 						probing: lighting.mode,
 					}) + (props.presentation === undefined ? "" : " is-presenting")
 				}
@@ -309,6 +330,7 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 				</output>
 			)}
 			{rectangle !== null && <ModelSelectionRectangle rectangle={rectangle} />}
+			<ModelLineTip target={tip.shown} model={model} projection={props.projection} />
 		</section>
 	);
 	/* oxlint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */

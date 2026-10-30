@@ -177,6 +177,7 @@ fn measured(graph: &Graph) -> (Measured, BTreeMap<String, Vec<String>>) {
                 let words = CardWords {
                     name: &node.name,
                     responsibility: node.responsibility.as_deref(),
+                    path: None,
                     drills: false,
                 };
                 let measured = measure::measure_node(node.facts(), &words, container);

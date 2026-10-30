@@ -62,13 +62,13 @@ function useProjectedSelection(projection: Projection, selection: SubjectSelecti
 		(subjects: readonly string[], toggle = false): void => {
 			choose(
 				subjects.flatMap((id) => {
-					const connection = projection.connections.find(({ line }) => line.id === id);
+					const connection = projection.listed.find(({ line }) => line.id === id);
 					return connection === undefined ? [id] : connection.joins.map((edge) => edge.id);
 				}),
 				toggle,
 			);
 		},
-		[projection.connections, choose],
+		[projection.listed, choose],
 	);
 	const select = useCallback(
 		(id: string | null, toggle = false): void => selectMany(id === null ? [] : [id], toggle),

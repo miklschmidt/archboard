@@ -32,7 +32,7 @@ const PART_ATTRIBUTE = "data-semantic-part";
 /** The part of the picture a tip explains, and the element it stands against. */
 interface TipTarget {
 	readonly id: string;
-	readonly part: "card" | "header" | "label";
+	readonly part: "card" | "header" | "label" | "line";
 	readonly anchor: Element;
 }
 
@@ -80,10 +80,20 @@ function partOf(group: Element, id: string, clientY: number): TipTarget | null {
 		return part === "label" || part === "header" ? { id, part, anchor: group } : null;
 	}
 	const kind = group.getAttribute("data-semantic-kind");
-	if (kind === "node") {
-		return { id, part: "card", anchor: group };
-	}
-	return kind === "region" ? headerBand(group, id, clientY) : null;
+	if (kind === "region") return headerBand(group, id, clientY);
+	return wholeSubject(group, id, kind);
+}
+
+/**
+ * A subject that its whole group draws: a card, or a line.
+ * @param group The subject's group.
+ * @param id The subject.
+ * @param kind What the group says the subject is.
+ * @returns The part, or null for anything else.
+ */
+function wholeSubject(group: Element, id: string, kind: string | null): TipTarget | null {
+	if (kind === "node") return { id, part: "card", anchor: group };
+	return kind === "edge" ? { id, part: "line", anchor: group } : null;
 }
 
 /** A box a tip is placed against, as a positioning library reads one that is no element. */
@@ -165,7 +175,7 @@ function headerBand(frame: Element, id: string, clientY: number): TipTarget | nu
  */
 function openableAt(target: EventTarget | null, clientY: number): string | null {
 	const part = tipTargetAt(target, clientY);
-	return part === null || part.part === "label" ? null : part.id;
+	return part?.part === "card" || part?.part === "header" ? part.id : null;
 }
 
 /** Where the board drawn sits among the vault's levels, which places the boards its parts open. */

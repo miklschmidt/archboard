@@ -108,9 +108,14 @@ pub(crate) fn node_appearances(
         .collect()
 }
 
+/// The kind a joined line wears when its relationships differ
+/// (`MIXED_KIND` in `@archboard/board/views`). No vocabulary name holds a space.
+const MIXED_KIND: &str = "mixed kinds";
+
 /// How a line reads: a flow's step dashed with an open head in the neutral
-/// ink, never mistaken for a relationship of any kind; a relationship in its
-/// kind's look, or solid with a filled head for a kind the policy lacks.
+/// ink, never mistaken for a relationship of any kind; a line of mixed kinds in
+/// the neutral ink, in a dash no kind can wear; a relationship in its kind's
+/// look, or solid with a filled head for a kind the policy lacks.
 pub(crate) fn line_appearance(kind: &str, policy: &Policy, step: bool) -> LineAppearance {
     if step {
         return LineAppearance {
@@ -118,6 +123,14 @@ pub(crate) fn line_appearance(kind: &str, policy: &Policy, step: bool) -> LineAp
             color: None,
             dash: Dash::Dashed,
             arrowhead: Arrowhead::Open,
+        };
+    }
+    if kind == MIXED_KIND {
+        return LineAppearance {
+            name: "Mixed kinds".to_owned(),
+            color: None,
+            dash: Dash::Mixed,
+            arrowhead: Arrowhead::Filled,
         };
     }
     policy.relationship_kinds.get(kind).map_or_else(
@@ -146,8 +159,22 @@ pub(crate) fn line_look(kind: &str, policy: &Policy, step: bool) -> LineLook {
 
 #[cfg(test)]
 mod tests {
-    use super::drill_direction;
-    use archboard_scene::request::DrillDirection;
+    use super::{MIXED_KIND, drill_direction, line_appearance};
+    use crate::request::Policy;
+    use archboard_scene::request::{Dash, DrillDirection};
+
+    #[test]
+    fn a_line_of_mixed_kinds_wears_a_dash_no_kind_can_choose_in_the_neutral_ink() {
+        let policy: Policy = serde_json::from_value(serde_json::json!({
+            "levels": [],
+            "nodeKinds": {},
+            "relationshipKinds": {},
+        }))
+        .expect("a policy");
+        let line = line_appearance(MIXED_KIND, &policy, false);
+        assert_eq!(line.dash, Dash::Mixed);
+        assert_eq!(line.color, None);
+    }
 
     #[test]
     fn says_which_way_the_board_a_part_opens_lies() {

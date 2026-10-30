@@ -2,7 +2,7 @@ import { useCallback, type JSX } from "react";
 import { DropdownMenu } from "@archboard/ui-kit/components";
 import type { Model, ModelFilters as Filters } from "@archboard/board/content";
 
-type Field = keyof Filters;
+type Field = "hideKinds" | "showGroups";
 interface ModelFiltersProps {
 	model: Model;
 	filters: Filters;
@@ -28,7 +28,7 @@ function ModelFilters(props: ModelFiltersProps): JSX.Element {
 				<DropdownMenu.Content align="end" className="w-64">
 					<FilterGroup {...props} field="hideKinds" title="Relationships" ids={choices.kinds} />
 					<DropdownMenu.Separator />
-					<FilterGroup {...props} field="hideGroups" title="Group regions" ids={choices.groups} />
+					<FilterGroup {...props} field="showGroups" title="Group regions" ids={choices.groups} />
 				</DropdownMenu.Content>
 			</DropdownMenu>
 		</div>
@@ -37,19 +37,19 @@ function ModelFilters(props: ModelFiltersProps): JSX.Element {
 
 /**
  * Keep active filters reachable even when a retained state lacks their vocabulary.
- * @param props The model and hidden features.
+ * @param props The model and active features.
  * @param props.model The complete model.
- * @param props.filters The hidden visual features.
+ * @param props.filters The hidden kinds and shown group regions.
  * @returns Used vocabulary and active filters without duplicates.
  */
 function filterChoices({ model, filters }: ModelFiltersProps) {
 	const hiddenKinds = filters.hideKinds ?? [];
-	const hiddenGroups = filters.hideGroups ?? [];
+	const shownGroups = filters.showGroups ?? [];
 	return {
-		count: hiddenKinds.length + hiddenGroups.length,
+		count: hiddenKinds.length + shownGroups.length,
 		kinds: [...new Set([...model.relationships.map((edge) => edge.kind), ...hiddenKinds])],
 		groups: [
-			...new Set([...model.modules.flatMap((module) => module.groups ?? []), ...hiddenGroups]),
+			...new Set([...model.modules.flatMap((module) => module.groups ?? []), ...shownGroups]),
 		],
 	};
 }
@@ -87,11 +87,12 @@ function FilterChoice(
 ): JSX.Element {
 	const { id, field, onToggle } = props;
 	const change = useCallback((): void => onToggle(field, id), [onToggle, field, id]);
+	const shown = props.filters[field]?.includes(id) === true;
 	return (
 		<DropdownMenu.CheckboxItem
 			data-filter-kind={field === "hideKinds" ? id : undefined}
-			data-filter-group={field === "hideGroups" ? id : undefined}
-			checked={!props.filters[field]?.includes(id)}
+			data-filter-group={field === "showGroups" ? id : undefined}
+			checked={field === "showGroups" ? shown : !shown}
 			onCheckedChange={change}
 			closeOnClick={false}
 		>

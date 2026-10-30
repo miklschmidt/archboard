@@ -70,8 +70,8 @@ const NO_FOCUS: BeatFocus = Object.freeze({ drawn: [], undrawn: [], target: null
  * @returns The target as a string.
  */
 function targetKey(target: FitTarget): string {
-	if (target.kind === "whole") {
-		return "whole";
+	if (target.kind !== "focus") {
+		return target.kind;
 	}
 	const { x, y, width, height } = target.rect;
 	return `${x},${y},${width},${height}`;

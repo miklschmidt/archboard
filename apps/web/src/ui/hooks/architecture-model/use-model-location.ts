@@ -41,13 +41,15 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const flow = nullableParameter(search[`flow${paneId}`]);
 	const focused = search[`focus${paneId}`];
 	const hiddenKinds = search[`hideKinds${paneId}`];
-	const hiddenGroups = search[`hideGroups${paneId}`];
+	const shownGroups = search[`showGroups${paneId}`];
+	const everyLine = search[`everyLine${paneId}`];
 	const filters = useMemo(
 		() => ({
 			hideKinds: hiddenKinds ? hiddenKinds.split(",") : [],
-			hideGroups: hiddenGroups ? hiddenGroups.split(",") : [],
+			showGroups: shownGroups ? shownGroups.split(",") : [],
+			everyLine: everyLine !== undefined,
 		}),
-		[hiddenKinds, hiddenGroups],
+		[hiddenKinds, shownGroups, everyLine],
 	);
 	const focus = useMemo(
 		() => (focused === undefined ? null : [...new Set(focused.split(","))]),
@@ -92,13 +94,14 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 							grammar,
 							flow: flow ?? undefined,
 							hideKinds: filters.hideKinds,
-							hideGroups: filters.hideGroups,
+							showGroups: filters.showGroups,
+							everyLine,
 							bookmark: undefined,
 						}),
 				...patch,
 			});
 		},
-		[navigate, bookmarkReading, scope, focus, grammar, flow, filters, userChanged],
+		[navigate, bookmarkReading, scope, focus, grammar, flow, filters, everyLine, userChanged],
 	);
 	const selectBookmark = useCallback(
 		(next: string | null): void => {
@@ -110,7 +113,8 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				grammar: undefined,
 				flow: undefined,
 				hideKinds: undefined,
-				hideGroups: undefined,
+				showGroups: undefined,
+				everyLine: undefined,
 				subject: undefined,
 			});
 		},
@@ -134,7 +138,8 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				grammar: undefined,
 				flow: undefined,
 				hideKinds: undefined,
-				hideGroups: undefined,
+				showGroups: undefined,
+				everyLine: undefined,
 				subject: undefined,
 				against: undefined,
 			});
@@ -164,7 +169,8 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					flow: undefined,
 					focus: undefined,
 					hideKinds: undefined,
-					hideGroups: undefined,
+					showGroups: undefined,
+					everyLine: undefined,
 				},
 				false,
 				repository,
@@ -189,7 +195,8 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					flow: reading.flow,
 					focus: reading.focus,
 					hideKinds: reading.hideKinds,
-					hideGroups: reading.hideGroups,
+					showGroups: reading.showGroups,
+					everyLine: reading.everyLine === true ? "1" : undefined,
 				},
 				!push,
 				repository ?? undefined,
@@ -224,7 +231,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		[explore, focused],
 	);
 	const toggleFilter = useCallback(
-		(field: "hideKinds" | "hideGroups", id: string): void => {
+		(field: "hideKinds" | "showGroups", id: string): void => {
 			userChanged?.("view");
 			const current = filters[field];
 			const next = current.includes(id)
@@ -234,6 +241,10 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		},
 		[filters, navigate, userChanged],
 	);
+	const toggleEveryLine = useCallback((): void => {
+		userChanged?.("view");
+		void navigate({ everyLine: everyLine === undefined ? "1" : undefined });
+	}, [everyLine, navigate, userChanged]);
 	const reveal = useCallback(
 		(ids: readonly string[], kinds: readonly string[]): void => {
 			const hidden = filters.hideKinds.filter((kind) => !kinds.includes(kind));
@@ -316,6 +327,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		focus,
 		filters,
 		toggleFilter,
+		toggleEveryLine,
 		reveal,
 		setFocus,
 		open,
@@ -348,7 +360,8 @@ function referenceAddress(reading: Model): ModelAddress {
 		against: undefined,
 		focus: referenceFocus(reading, location.subject),
 		hideKinds: undefined,
-		hideGroups: undefined,
+		showGroups: undefined,
+		everyLine: undefined,
 	};
 }
 
@@ -417,7 +430,6 @@ function bookmarkSearch(reading: Reading | undefined, paneId: string): Record<st
 		flow: reading.flow,
 		focus: reading.focus,
 		hideKinds: reading.filters.relationships,
-		hideGroups: reading.filters.groups,
 	};
 	return Object.fromEntries(
 		Object.entries(values).flatMap(([field, value]) => {

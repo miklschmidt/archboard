@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { overviewLines, scopedContent } from "#shared/rules/scope.ts";
+import { overviewLines, MIXED_KIND, scopedContent } from "#shared/rules/scope.ts";
 import { VariantContentSchema, type VariantContent } from "#shared/schemas/content.ts";
 import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";
 
@@ -144,12 +144,12 @@ describe("the overview a board opens on", () => {
 		expect(overview.nodes.map((node) => node.id)).toEqual(["pl", "ld"]);
 	});
 
-	test("joins every relationship between two drawn parts into one line of the commonest kind", () => {
+	test("joins every relationship between two drawn parts into one line of a neutral kind", () => {
 		expect(overview.edges).toHaveLength(1);
-		expect(overview.edges[0]).toMatchObject({ id: "e1", from: "pl", to: "ld", kind: "queue" });
+		expect(overview.edges[0]).toMatchObject({ id: "e1", from: "pl", to: "ld", kind: MIXED_KIND });
 	});
 
-	test("stacks the labels of a joined line's relationships, each once, in board order", () => {
+	test("says nothing on a joined line that only some of its relationships say", () => {
 		const calls = content({
 			nodes: [PLATFORM, GATEWAY, ROUTER, AUDIT, LEDGER],
 			edges: [
@@ -177,7 +177,6 @@ describe("the overview a board opens on", () => {
 			from: "pl",
 			to: "ld",
 			kind: "call",
-			label: "posts\nrecords",
 			emphasis: "normal",
 		});
 	});

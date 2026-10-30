@@ -66,12 +66,24 @@ test("reading filters preserve selection and authored meaning with an explicit r
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-diagram"] svg') !== null && document.querySelector('[data-slot="model-diagram"] [data-semantic-kind="group-region"]') === null`,
+			),
+		Boolean,
+		"a first picture with its groups off",
+		WAIT,
+	);
+	await openFilters(browser);
+	await browser.run(["click", '[data-filter-group="public"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
 				`document.querySelector('[data-slot="model-diagram"] [data-semantic-kind="group-region"]') !== null`,
 			),
 		Boolean,
-		"the configured group region",
+		"the shown group region",
 		WAIT,
 	);
+	await closeFilters(browser);
 	await browser.run([
 		"click",
 		'[data-slot="model-connections"] [data-connection-id="Shop#Dispatch"]',

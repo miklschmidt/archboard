@@ -34,19 +34,26 @@ const modelRenderContract = defineCommand({
 			[
 				["focus", "Focus these identities"],
 				["hideKinds", "Hide these relationship kinds"],
-				["hideGroups", "Hide these groups"],
+				["showGroups", "Show these group regions"],
 			] as const
 		).map(([key, description]) => ({
 			kind: "option" as const,
 			key,
 			spellings: [
-				key === "hideKinds" ? "--hide-kind" : key === "hideGroups" ? "--hide-group" : "--focus",
+				key === "hideKinds" ? "--hide-kind" : key === "showGroups" ? "--show-group" : "--focus",
 			] as const,
 			value: "required" as const,
 			occurrences: "append" as const,
 			placeholder: "id",
 			description,
 		})),
+		{
+			kind: "option",
+			key: "everyLine",
+			spellings: ["--every-line"],
+			value: "none",
+			description: "Draw the lines that a crowded picture leaves out",
+		},
 		{
 			kind: "option",
 			key: "flow",
