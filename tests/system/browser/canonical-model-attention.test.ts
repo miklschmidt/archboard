@@ -89,6 +89,9 @@ function litInk(browser: AgentBrowserSession): Promise<LitInk> {
 	);
 }
 
+/** Blocks draws five unlabeled routes out of one module with a shared lane. */
+const FAN = ["North", "South", "East", "West", "Central"];
+
 test("selection lights canonical connections without hiding labels or cutting shared routes", async () => {
 	await using resources = new AsyncDisposableStack();
 	const vault = vaultIn(join(browserTestRoots().ownerRoot, "model-attention"));
@@ -101,22 +104,13 @@ test("selection lights canonical connections without hiding labels or cutting sh
 				parent: "Pipeline",
 			})),
 			{ name: "Fanout", kind: "module" },
-			...["Hub", "North", "South", "East"].map((name) => ({
-				name,
-				kind: "module",
-				parent: "Fanout",
-			})),
+			...["Hub", ...FAN].map((name) => ({ name, kind: "module", parent: "Fanout" })),
 		],
 		edges: [
 			{ from: "Writer", to: "Renderer", kind: "call", label: "draws" },
 			{ from: "Renderer", to: "Viewer", kind: "call", label: "shows" },
 			{ from: "Archive", to: "Viewer", kind: "data", label: "replays" },
-			...["North", "South", "East"].map((to) => ({
-				from: "Hub",
-				to,
-				kind: "call",
-				label: `asks ${to}`,
-			})),
+			...FAN.map((to) => ({ from: "Hub", to, kind: "call" })),
 		],
 	});
 	const id = (name: string): string => model.modules.find((module) => module.name === name)!.id;
@@ -190,7 +184,7 @@ test("selection lights canonical connections without hiding labels or cutting sh
 		"the fanout drawing",
 		WAIT,
 	);
-	await browser.run(["click", `[data-slot="module-list"] [data-module-id="${id("East")}"]`]);
+	await browser.run(["click", `[data-slot="module-list"] [data-module-id="${id("Hub")}"]`]);
 	const ink = await pollUntil(
 		() => litInk(browser),
 		(found) => found.trunked > 0,
