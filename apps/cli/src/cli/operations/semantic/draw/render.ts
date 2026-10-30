@@ -4,6 +4,7 @@
 
 import { z } from "zod";
 import {
+	DEFAULT_LAYOUT_ENGINE,
 	LayoutEngineSchema,
 	OfferedViewSchema,
 	PictureReceiptShape,
@@ -221,7 +222,7 @@ const semanticRenderContract = defineCommand({
 			value: "required",
 			placeholder: "engine",
 			choices: LayoutEngineSchema.options,
-			description: "Which layout engine lays the architecture out; the default one when absent",
+			description: `Choose the layout engine. The default is ${DEFAULT_LAYOUT_ENGINE}.`,
 		},
 		TITLE_OPTION,
 		...LEGEND_OPTIONS,

@@ -97,6 +97,13 @@
 					"owner": "packages/renderer/tests/runtime/operations/architecture/theme.test.ts owns the declared tokens; packages/renderer/tests/runtime/services/rasterizer/theme-following.test.ts owns the ground under each colour scheme as an image, a background and inline"
 				},
 				{
+					"path": "semantic render/rasterize/record --layout and recipes with no named engine",
+					"expectedUse": "Use Blocks by default. Select Track with --layout track. A recipe without an engine follows the current default. A talk keeps its recorded engine.",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "packages/renderer/tests/runtime/operations/architecture/architecture.test.ts owns default Blocks and explicit Track. packages/renderer/tests/runtime/operations/recipe/recipe-file.test.ts owns the omitted recipe engine. packages/walkthrough/tests/shared/protocol/talk.test.ts owns explicit and omitted talk engines. No model scenario chooses a layout engine."
+				},
+				{
 					"path": "semantic render/rasterize --title",
 					"expectedUse": "draw a title above an exported picture: the board, view, variant and comparison by default, or the given text",
 					"scenarios": [],

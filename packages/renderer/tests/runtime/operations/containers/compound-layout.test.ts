@@ -1,3 +1,4 @@
+// Blocks offsets contacts 0.02 beyond painted faces; allow one SVG rounding unit.
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import nearMiss from "#tests/runtime/support/fixtures/near-miss-columns.json";
 import { describe, expect, test } from "bun:test";
@@ -89,11 +90,11 @@ describe("compound architecture layout", () => {
 				const other = id === edge.from ? edge.to : edge.from;
 				if (ancestorsOf(other).includes(id)) {
 					expect(point.y).toBeCloseTo(headerFoot(drawing.svg, id), 1);
-				} else expect(distanceToFrame(point, box)).toBeLessThan(0.02);
-				expect(point.x).toBeGreaterThanOrEqual(box.x - 0.02);
-				expect(point.x).toBeLessThanOrEqual(box.x + box.width + 0.02);
-				expect(point.y).toBeGreaterThanOrEqual(box.y - 0.02);
-				expect(point.y).toBeLessThanOrEqual(box.y + box.height + 0.02);
+				} else expect(distanceToFrame(point, box)).toBeLessThan(0.03);
+				expect(point.x).toBeGreaterThanOrEqual(box.x - 0.03);
+				expect(point.x).toBeLessThanOrEqual(box.x + box.width + 0.03);
+				expect(point.y).toBeGreaterThanOrEqual(box.y - 0.03);
+				expect(point.y).toBeLessThanOrEqual(box.y + box.height + 0.03);
 			}
 		}
 	});

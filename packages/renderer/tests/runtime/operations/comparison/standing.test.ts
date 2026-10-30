@@ -126,7 +126,7 @@ describe("a picture nobody stated a standing for", () => {
 		}
 	});
 
-	test("keeps this simple fixture's cards stable with comparison marks", async () => {
+	test("keeps this Track fixture's cards stable with comparison marks", async () => {
 		const shared = orderedFixture({
 			...PROPOSAL,
 			edges: [
@@ -135,12 +135,17 @@ describe("a picture nobody stated a standing for", () => {
 			].map((edge) => Object.assign({}, edge, { emphasis: "normal" })),
 		});
 		const plain = arrangementOf(
-			await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: shared }),
+			await renderArchitecture({
+				policy: DEFAULT_SEMANTIC_POLICY,
+				content: shared,
+				layout: "track",
+			}),
 		);
 		const compared = arrangementOf(
 			await renderArchitecture({
 				policy: DEFAULT_SEMANTIC_POLICY,
 				content: shared,
+				layout: "track",
 				standing: STANDING,
 			}),
 		);

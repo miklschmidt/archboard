@@ -146,6 +146,8 @@ for (const fixture of [
 			policy: DEFAULT_SEMANTIC_POLICY,
 			content,
 			theme: "dark",
+			// These measured wiring limits belong to the Track shared-row regression.
+			layout: "track",
 		});
 		expectIntact(drawing, content);
 		// The baseline sizes and route totals are measured in shared-container-rows.md.

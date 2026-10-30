@@ -87,7 +87,11 @@ async function atlasOf(
 	board: ReturnType<typeof boardOf>,
 	choices: { variant: string; view?: string },
 ): Promise<DiagramAtlas> {
-	const outcome = await renderBoard(board, { ...choices, theme: "light" }, DEFAULT_SEMANTIC_POLICY);
+	const outcome = await renderBoard(
+		board,
+		{ ...choices, theme: "light", layout: "track" },
+		DEFAULT_SEMANTIC_POLICY,
+	);
 	if (!outcome.ok || !("atlas" in outcome.reply)) throw new Error("Expected a drawn picture");
 	return outcome.reply.atlas;
 }
@@ -97,6 +101,7 @@ test("a container's entry point takes its first row and its hidden parts sit bel
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content: orderedFixture(service),
 		theme: "light",
+		layout: "track",
 	});
 	expect(standsBelow(atlas, "client", "api")).toBe(true);
 	expect(standsBelow(atlas, "api", "job")).toBe(true);

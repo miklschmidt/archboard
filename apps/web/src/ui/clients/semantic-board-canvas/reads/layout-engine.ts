@@ -17,8 +17,8 @@ const LAYOUT_ENGINE_KEY = "archboard.layout-engine";
 
 /** What each engine is, as the control offers it. */
 const LAYOUT_ENGINES: readonly { readonly name: LayoutEngineName; readonly label: string }[] = [
+	{ name: "blocks", label: "Blocks" },
 	{ name: "track", label: "Tracks" },
-	{ name: "blocks", label: "Blocks (experimental)" },
 ];
 
 /**

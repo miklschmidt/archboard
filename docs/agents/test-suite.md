@@ -43,6 +43,11 @@ These six cases read no vault and enforce no speed limit.
 Focused renderer tests and process cancellation deadlines also remain in the normal gate.
 Neither `bun run test` nor `bun run check` invokes the benchmark task.
 
+Blocks is the default layout engine (ADR 0064).
+A test of Track behavior names `layout: "track"` explicitly.
+An engine-independent contract uses the default unless it already tests both engines.
+Changing the default must preserve the assertions of each Track regression.
+
 `bun run check` is the complete normal gate locally and on GitHub Actions.
 It runs lint, formatting, both TypeScript projects, and the normal test chain.
 `lint:all` includes `lint:core`, clippy over the crates and their tests, and
@@ -190,7 +195,7 @@ default costs them nothing. When a test must outwait a product timer, write why
 beside its own literal in `timing.ts`.
 
 The opt-in benchmark corpus in `packages/renderer/tests/runtime/operations/blocks/wide-boards.test.ts`
-uses a 60-second case deadline when `CI=true`. Its default engine also gets
+uses a 60-second case deadline when `CI=true`. Its default engine, Blocks, also gets
 60 seconds for a first render. GitHub Actions recorded first renders up to
 45.3 seconds (TASK-451). Local runs keep the 20-second case deadline and
 3-second first-render limit. Both engines keep all picture correctness assertions.

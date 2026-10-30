@@ -16,6 +16,7 @@
 // to the same bytes in any order.
 
 import { DEFAULT_TRAFFIC_SPEED } from "@archboard/board/content";
+import { DEFAULT_LAYOUT_ENGINE } from "@archboard/board/render-reply";
 import { FAR_VIEW_SWAP_MS, FLOW_CYCLE_CAP_MS } from "@archboard/timing";
 import type { RenderHost } from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import {
@@ -75,12 +76,15 @@ function coreHost(): RenderHost {
  */
 async function renderSemanticView(request: SemanticViewRenderRequest): Promise<RenderedDiagram> {
 	const host = rendererHost();
-	const rendered = await host
-		.core()
-		.render(
-			JSON.stringify({ ...request, clock: CLOCK, themeColors: host.themeColors }),
-			coreHost(),
-		);
+	const rendered = await host.core().render(
+		JSON.stringify({
+			...request,
+			layout: request.layout ?? DEFAULT_LAYOUT_ENGINE,
+			clock: CLOCK,
+			themeColors: host.themeColors,
+		}),
+		coreHost(),
+	);
 	if ("empty" in rendered) {
 		throw new SemanticRenderError(rendered.empty, NOTHING_TO_DRAW[request.grammar]);
 	}

@@ -10,7 +10,7 @@ Choose from text, before you render anything. List what every view draws at
 the proposal, read the way the picture will be read:
 
 ```bash
-archboard semantic views <board> --variant "<proposal>" --against "<below>" --layout blocks
+archboard semantic views <board> --variant "<proposal>" --against "<below>"
 ```
 
 Each entry gives the view, `drawn` (the nodes, edges, flows and steps it
@@ -41,8 +41,8 @@ removed.
 
 ## Draw the file
 
-Draw the picture with Blocks: pass `--layout blocks`, because the default
-layout is Track. Draw SVG, because SVG stays sharp at every zoom. Pass
+Draw the picture with the default engine, Blocks.
+Draw SVG, because SVG stays sharp at every zoom. Pass
 `--theme auto`: the one file carries the light and the dark colours and shows
 the ground of the reader's colour scheme
 (see [What GitHub supports](#what-github-supports)). Pass `--title` and
@@ -51,7 +51,7 @@ under it. Write the file to a temporary directory, `$tmp`, never into the
 checkout.
 
 ```bash
-archboard semantic render <board> --view "<view>" --variant "<proposal>" --against "<below>" --layout blocks --theme auto --title "<title>" --legend horizontal --out "$tmp/after.svg"
+archboard semantic render <board> --view "<view>" --variant "<proposal>" --against "<below>" --theme auto --title "<title>" --legend horizontal --out "$tmp/after.svg"
 ```
 
 - `--against "<below>"` names the variant that the proposal came from (section
@@ -77,7 +77,7 @@ the user chose to go on without it (section 0 of the skill), post the SVG file
 unseen, and say so in your final report.
 
 ```bash
-archboard semantic rasterize <board> --view "<view>" --variant "<proposal>" --against "<below>" --layout blocks --title "<title>" --legend horizontal --out "$tmp/look.png"
+archboard semantic rasterize <board> --view "<view>" --variant "<proposal>" --against "<below>" --title "<title>" --legend horizontal --out "$tmp/look.png"
 ```
 
 1. Read the receipt first. Its `drawn` names every subject the picture draws,

@@ -29,12 +29,11 @@ use crate::routes::{
 };
 
 /// Which engine lays an architecture out (TASK-348, ADR 0040).
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Engine {
     /// Every relationship on an assigned track between ranks. Multi-member
     /// group regions pack as blocks, with their containers drawn inline.
-    #[default]
     Track,
     /// Each container and group region packed as a block of its own.
     Blocks,

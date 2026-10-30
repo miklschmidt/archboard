@@ -254,11 +254,12 @@ source).
   `--scale 0.25` to `4`. Both take `--variant`, `--view`, `--no-comparison`,
   `--theme light|dark` (default `light`) and `--layout track|blocks`
   (`./bin/archboard semantic render --help`, `semantic rasterize --help`).
-- **Layout engines.** Track is the default and Blocks is selectable
+- **Layout engines.** At the researched revision, Track was the default and Blocks was selectable
   (`packages/board/src/shared/protocol/render-reply.ts:40`,
   [ADR 0040](../adr/0040-track-and-blocks-replace-the-graphviz-engine.md)). The
-  browser labels Blocks "Blocks (experimental)"
+  browser labeled Blocks "Blocks (experimental)"
   (`src/ui/semantic-board-canvas/lib/layout-engine.ts`).
+  [ADR 0064](../adr/0064-blocks-is-the-default-layout-engine.md) changes the default to Blocks on 2026-10-30.
 - **One theme per file.** An exported SVG stands alone. Its root carries
   `color-scheme:<theme>` and that theme's value of every colour token
   (`standingAlone` in `packages/renderer/src/shared/rules/svg/page/document.ts`).

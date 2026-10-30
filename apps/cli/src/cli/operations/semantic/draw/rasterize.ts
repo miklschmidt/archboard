@@ -7,6 +7,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import {
 	DiagramThemeSchema,
+	DEFAULT_LAYOUT_ENGINE,
 	LayoutEngineSchema,
 	type DrawnBoard,
 } from "@archboard/board/render-reply";
@@ -306,7 +307,7 @@ const semanticRasterizeContract = defineCommand({
 			value: "required",
 			placeholder: "engine",
 			choices: LayoutEngineSchema.options,
-			description: "Which layout engine lays the architecture out; the default one when absent",
+			description: `Choose the layout engine. The default is ${DEFAULT_LAYOUT_ENGINE}.`,
 		},
 		TITLE_OPTION,
 		...LEGEND_OPTIONS,

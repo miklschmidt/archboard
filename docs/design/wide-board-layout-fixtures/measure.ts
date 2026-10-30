@@ -13,7 +13,7 @@
 // SAVE=run.json      also write this run's scorecards
 // AGAINST=run.json   compare this run with a saved one, measure by measure
 // ALL=1              measure every variant of every board, not only the current one
-// ENGINE=blocks      lay every board out with this engine, not the default one
+// ENGINE=track       lay every board out with this engine, not the default one
 // PICTURES=1         write a PNG of each drawing to outdir (default .skill-evals/repro)
 //
 // A layout experiment is compared by saving a run on the tree as it is, then
@@ -23,7 +23,7 @@ import path from "node:path";
 import { parseSemanticBoard } from "@archboard/board/document";
 import { REFERENCE_PANE } from "@archboard/renderer/shell-geometry";
 import { renderArchitecture } from "@archboard/renderer/bun";
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
+import { DEFAULT_LAYOUT_ENGINE, LayoutEngineSchema } from "@archboard/board/render-reply";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
 import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
 import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
@@ -37,8 +37,7 @@ const fixtures = "docs/design/wide-board-layout-fixtures";
 const vault = ".archboard/vault";
 const out = process.argv[2] ?? ".skill-evals/repro";
 const every = process.env["ALL"] === "1";
-const layout =
-	process.env["ENGINE"] === undefined ? undefined : LayoutEngineSchema.parse(process.env["ENGINE"]);
+const layout = LayoutEngineSchema.parse(process.env["ENGINE"] ?? DEFAULT_LAYOUT_ENGINE);
 const pictures = process.env["PICTURES"] === "1";
 const save = process.env["SAVE"];
 const against = process.env["AGAINST"];

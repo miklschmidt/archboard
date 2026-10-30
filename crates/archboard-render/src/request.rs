@@ -152,8 +152,7 @@ pub struct RenderRequest {
     /// The level of the board drawn (ADR 0029).
     #[serde(default)]
     pub level: Option<String>,
-    /// Which engine lays an architecture out.
-    #[serde(default)]
+    /// Which engine lays an architecture out, resolved by the host from its shared default.
     pub layout: Engine,
     /// A title and a legend an exported picture carries beside its drawing.
     #[serde(default)]
