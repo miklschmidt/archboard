@@ -166,7 +166,8 @@ test("a camera the stage moves itself leaves the traffic running", async () => {
 
 test("a pick that a panel laid over the picture would cover moves the picture clear and leaves the traffic running", async () => {
 	// Two panes share the centre, so a pick lays the sidebar's panel over the
-	// picture's edge, and in this DOM every part reaches under it.
+	// picture's edge. This DOM lays nothing out, so the card says where it stands:
+	// it reaches under the panel, with room to its left to move.
 	const traffic = await mountWithTraffic({
 		live: true,
 		chrome: {
@@ -182,8 +183,10 @@ test("a pick that a panel laid over the picture would cover moves the picture cl
 	const frames = takeFrames();
 	try {
 		const before = cameraNow().x;
+		const card = inPicture("card");
+		card.parentElement!.getBoundingClientRect = () => new DOMRect(600, 0, 200, 100);
 		act(() => {
-			fireEvent.click(inPicture("card"));
+			fireEvent.click(card);
 		});
 		// The pick opens the sidebar, whose inspector reads the board. Let that read
 		// land inside this test: answered after it, it renders outside act and
