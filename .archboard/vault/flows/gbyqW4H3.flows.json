@@ -398,7 +398,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Renders a reading to one self-contained SVG document through its sequence, flowchart or architecture grammar. Every grammar runs in the same core, so the CLI, exports and the reader draw the same picture."
     },
     {
       "id": "vKEsyHFk/gbyqW4H3#APiBh4ih",
@@ -640,7 +641,8 @@
             "symbol": "document"
           }
         }
-      ]
+      ],
+      "summary": "Lays out the columns, messages and frames of a behavioral reading, paints them and records where each subject landed. That atlas lets the reader and walkthroughs find a step in the finished picture."
     },
     {
       "id": "vKEsyHFk/gbyqW4H3#VbVMzrrT",
@@ -850,7 +852,8 @@
             "symbol": "framed_for_export"
           }
         }
-      ]
+      ],
+      "summary": "Adds an export's legend and title around a finished picture. The drawing is never laid out again, and the page grows to hold what it carries."
     }
   ]
 }

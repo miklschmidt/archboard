@@ -153,7 +153,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Starts the workbench, the HTTP listener and the socket server in order, and refuses a port that another Archboard holds. A failed start stops what already runs, newest first."
     },
     {
       "id": "vKEsyHFk/6E6hL0Zk#xfUOzZhb",
@@ -226,7 +227,8 @@
             "symbol": "healthRoute"
           }
         }
-      ]
+      ],
+      "summary": "The health route reports its pid, source, lifecycle phase, admitted writes and socket count. The CLI reads it to tell its own server from anything else on the port."
     },
     {
       "id": "vKEsyHFk/6E6hL0Zk#FCB3mr2J",
@@ -486,7 +488,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Judges the anchors, bindings and relationships of the selected canonical states against source, through code facts and language servers. The server keeps a finished pass for the panes to show."
     },
     {
       "id": "vKEsyHFk/6E6hL0Zk#eaZyW88b",
@@ -731,7 +734,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Resolves a module's binding to a file in its repository's checkout and launches the chosen opener at the symbol's line. Each refusal has its own status, so the browser can name what went wrong."
     },
     {
       "id": "vKEsyHFk/6E6hL0Zk#zeZA4CvA",
@@ -862,7 +866,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Upgrades a pane's socket after it checks the page's origin and the vault that the socket names. The pane then learns its starting board and joins the workbench, and a foreign page gets a 403."
     },
     {
       "id": "vKEsyHFk/6E6hL0Zk#U1HsxCvz",
@@ -1004,7 +1009,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Stops admitting writes and waits for the admitted ones before it closes sockets, the listener and the workbench. If they do not settle in time, it reports SERVER_BUSY and tears nothing down."
     }
   ]
 }

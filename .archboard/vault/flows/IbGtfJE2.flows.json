@@ -271,7 +271,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "The skill evaluation's run command drives every selected arm, scenario and repetition. It stops early on an unpinned Codex or a fixture that the store refuses, so batches stay comparable."
     },
     {
       "id": "vKEsyHFk/IbGtfJE2#lZsh600a",
@@ -575,7 +576,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Gives one evaluation run its own directory, checkout, Codex home, server and installed skill, then lays its fixture. The isolation keeps one run from touching another's measurements."
     },
     {
       "id": "vKEsyHFk/IbGtfJE2#ccyEofmP",
@@ -879,7 +881,8 @@
             "symbol": "assemble"
           }
         }
-      ]
+      ],
+      "summary": "Codex plays the author of one evaluation scenario through the real archboard CLI. The harness then classes its commands and reads, photographs and checks the vault it left, so the run can be graded."
     },
     {
       "id": "vKEsyHFk/IbGtfJE2#B2GJ39Ug",
@@ -1063,7 +1066,8 @@
             "symbol": "executeRun"
           }
         }
-      ]
+      ],
+      "summary": "When a step of an evaluation run throws, the harness keeps what it can capture, writes the run's manifest and bundle, and stops the server. The failure stays on record in the batch."
     },
     {
       "id": "vKEsyHFk/IbGtfJE2#VpJQRW95",
@@ -1431,7 +1435,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Sends ungraded evaluation runs, blinded and in chunks, to the chosen Codex or Claude grader and files each verdict. A pinned version and the skill's digest tie each verdict to the skill that ran."
     },
     {
       "id": "vKEsyHFk/IbGtfJE2#4JiqqpnZ",
@@ -1662,7 +1667,8 @@
             "symbol": "writeReport"
           }
         }
-      ]
+      ],
+      "summary": "Turns a graded batch into report.md and report.json. It audits exposure again with today's classifier, resolves each finding's citation, and sets the verdicts of two graders side by side."
     }
   ]
 }

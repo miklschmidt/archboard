@@ -291,7 +291,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "model record from start to video. It checks ffmpeg's encoders, narrates the walkthrough in headless Chromium and keeps talk.json with voice.wav, then replays the talk frame by frame into ffmpeg."
     }
   ]
 }
