@@ -384,16 +384,30 @@ interface ModelResponseProps extends Pick<
  */
 function ModelResponse(props: ModelResponseProps): JSX.Element {
 	const { query, stale } = props;
+	const model = visibleModel(query, props.current);
+	const framed = (content: ReactNode): JSX.Element => (
+		<ModelWalkthroughFrame
+			key={readingSessionKey(model, props.subject)}
+			vault={props.vault}
+			model={model}
+			paneId={props.paneId}
+			reducedMotion={props.reducedMotion}
+			driven={props.driven}
+			onPresentationEnd={props.onPresentationEnd}
+			narration={props.narration}
+			overlay={props.overlay}
+			chrome={props.header}
+		>
+			{content}
+		</ModelWalkthroughFrame>
+	);
+	// A failed read that retries is pending again: the same frame keeps the header and its open menu.
 	if (query.isPending)
-		return (
-			<>
-				{props.header}
-				<output className="text-body text-muted-foreground p-10">Reading architecture…</output>
-			</>
+		return framed(
+			<output className="text-body text-muted-foreground p-10">Reading architecture…</output>,
 		);
 	const problem = readingProblem(query.error, props.current ? props.failure : null);
-	const model = visibleModel(query, props.current);
-	const content = (
+	return framed(
 		<>
 			{stale && (
 				<output
@@ -424,23 +438,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 					/>
 				</ModelBookmarkReading>
 			)}
-		</>
-	);
-	return (
-		<ModelWalkthroughFrame
-			key={readingSessionKey(model, props.subject)}
-			vault={props.vault}
-			model={model}
-			paneId={props.paneId}
-			reducedMotion={props.reducedMotion}
-			driven={props.driven}
-			onPresentationEnd={props.onPresentationEnd}
-			narration={props.narration}
-			overlay={props.overlay}
-			chrome={props.header}
-		>
-			{content}
-		</ModelWalkthroughFrame>
+		</>,
 	);
 }
 
