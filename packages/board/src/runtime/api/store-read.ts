@@ -8,7 +8,9 @@ export { readArchitecturePublication } from "#runtime/operations/history/publica
 export {
 	readArchitectureCheckpoint,
 	listArchitectureCheckpoints,
+	listArchitectureCheckpointRows,
 } from "#runtime/operations/history/read.ts";
+export { readModuleNavigation } from "#runtime/operations/read/module-navigation.ts";
 export { readLegacyInventory } from "#runtime/operations/legacy-inventory/inventory.ts";
 export { readArchitectureClaims } from "#runtime/operations/model-edit/claims.ts";
 export { watchArchitectureModel } from "#runtime/operations/read/model-watch.ts";

@@ -153,6 +153,11 @@ function registryText(): string | null {
 	}
 }
 
+/** Tell the activity tracker which vaults a connected pane hears about. */
+function registerReadableVaults(): void {
+	agentActivity.register(listRepositories().flatMap((entry) => entry.vault ?? []));
+}
+
 /**
  * Bring every pane in line with the registry as it is now (ADR 0050). A pane in
  * the vault of a checkout that is not chosen, including one that is gone, moves
@@ -163,9 +168,7 @@ function registryText(): string | null {
  */
 function followRegistry(): void {
 	followedRegistry = registryText();
-	for (const entry of listRepositories()) {
-		if (entry.vault !== null) agentActivity.follow(entry.vault);
-	}
+	registerReadableVaults();
 	// A move sets the entry of a pane it has visited already, which adds no entry to visit.
 	for (const [clientId, vault] of paneVaults) {
 		const { home, repository } = placeOfVault(vault);
@@ -288,9 +291,7 @@ function watchRegistry(): void {
 	}
 	const file = path.resolve(registryPath());
 	followedRegistry = registryText();
-	for (const entry of listRepositories()) {
-		if (entry.vault !== null) agentActivity.follow(entry.vault);
-	}
+	registerReadableVaults();
 	try {
 		fs.mkdirSync(path.dirname(file), { recursive: true });
 		registryWatcher = fs.watch(path.dirname(file), { persistent: false }, (_event, name) => {

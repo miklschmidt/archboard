@@ -10,6 +10,8 @@ export {
 	ArchitectureCheckpointRequestSchema,
 	ArchitectureCheckpointRetainSchema,
 	ArchitectureCheckpointListSchema,
+	ArchitectureCheckpointRowsSchema,
+	ModuleNavigationReadSchema,
 } from "#shared/schemas/model.ts";
 export type {
 	ArchitectureCheckpointRequest,

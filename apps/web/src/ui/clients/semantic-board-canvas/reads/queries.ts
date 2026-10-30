@@ -140,9 +140,9 @@ function semanticBoardDocumentQuery(vault: string, board: string) {
  *
  * Owned here rather than beside the diagnostics bell because a picture is
  * drawn under this policy and a pane names groups out of it: the policy is one
- * resource with two readers, and one cache entry serves both. It is re-read on
- * a timer, because the file it comes from is edited on disk by a person and
- * nothing announces that.
+ * resource with two readers, and one cache entry serves both. The architecture
+ * feed marks it stale when the vault changes, and a return to the tab reads it
+ * again, because a person can edit a file that no feed follows.
  * @param vault The vault.
  * @returns The query options.
  */
@@ -156,7 +156,6 @@ function vaultCheckQuery(vault: string) {
 		 */
 		queryFn: (context) => boardReads().vaultCheck(vault, context.signal),
 		staleTime: BOARD_CACHE_MS.vaultCheck,
-		refetchInterval: BOARD_CACHE_MS.vaultCheck,
 		refetchOnWindowFocus: true,
 		refetchOnReconnect: true,
 		retry: false,

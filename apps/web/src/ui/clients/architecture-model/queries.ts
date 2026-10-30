@@ -1,11 +1,13 @@
 import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, skipToken } from "@tanstack/react-query";
+import type { z } from "zod";
 import {
 	ArchitectureModelReadSchema,
-	ArchitectureCheckpointListSchema,
+	ArchitectureCheckpointRowsSchema,
 	ArchitectureClaimListSchema,
+	ModuleNavigationReadSchema,
+	type ArchitectureEvent,
 	type ArchitectureModelRead,
-	type ArchitectureCheckpointList,
 } from "@archboard/board/model";
 import { inVault, strictReply, type ReplySchema } from "@archboard/server-requests";
 
@@ -18,10 +20,26 @@ type StateSelection = {
 	readonly walkthrough?: string;
 	readonly shared?: boolean;
 	readonly module?: Extract<ArchitectureModelRead, { success: true }>["selectedModule"];
-	readonly code?: boolean;
-	readonly references?: boolean;
 	readonly reference?: number;
 };
+
+type CheckpointRows = z.infer<typeof ArchitectureCheckpointRowsSchema>;
+type ArchitectureSummary = Extract<ArchitectureEvent, { type: "architecture_snapshot" }>["reading"];
+
+/** What a repository row knows of a vault, as the feed last reported it. */
+interface ModelSummary {
+	readonly manifest?: Extract<ArchitectureSummary, { success: true }>["manifest"] | undefined;
+	readonly failure: Extract<ArchitectureSummary, { success: false }> | null;
+}
+
+/** A selected module and the reading its details belong to. */
+interface ModuleTarget {
+	readonly module: string;
+	readonly state: string | undefined;
+	readonly checkpoint: string | undefined;
+	readonly preview: string | undefined;
+	readonly code: boolean;
+}
 
 /** A failed read retains its structured diagnostics while Query keeps the last coherent data. */
 class ArchitectureReadError extends Error {
@@ -35,6 +53,16 @@ class ArchitectureReadError extends Error {
 	}
 }
 
+/** A followed resource stays fresh until its feed or a person marks it stale. */
+const followed = { staleTime: Number.POSITIVE_INFINITY } as const;
+/** A resource without a feed is read again whenever it is shown. */
+const shownFresh = {
+	staleTime: 0,
+	refetchOnMount: "always",
+	refetchOnWindowFocus: "always",
+	refetchOnReconnect: "always",
+} as const;
+
 const READING_FIELDS = [
 	"preview",
 	"bookmark",
@@ -43,8 +71,6 @@ const READING_FIELDS = [
 	"against",
 	"compare",
 	"module",
-	"code",
-	"references",
 	"reference",
 	"walkthrough",
 	"shared",
@@ -92,6 +118,21 @@ const architectureModelKeys = {
 	 * @returns Its claim-list query key.
 	 */
 	claims: (vault: string) => ["architecture-model", vault, "claims"] as const,
+	/**
+	 * What a repository row shows, which only the feed writes.
+	 * @param vault The addressed vault.
+	 * @returns Its summary query key.
+	 */
+	summary: (vault: string) => ["architecture-model", vault, "summary"] as const,
+	/**
+	 * One selected module's details within one exact revision.
+	 * @param vault The addressed vault.
+	 * @param target The module and its reading.
+	 * @param digest The revision on screen.
+	 * @returns Its query key.
+	 */
+	module: (vault: string, target: ModuleTarget, digest: string) =>
+		["architecture-model", vault, "module", target, digest] as const,
 };
 
 /**
@@ -147,7 +188,8 @@ async function readModel(
 
 /**
  * A model has one server snapshot, shared by every reader of its vault.
- * Reads refresh on selection, mounting, focus, model events, or an explicit refresh.
+ * The feed reports each change of a followed vault, so a reading stays fresh until a model event
+ * or an explicit refresh marks it stale. A preview has no feed and refreshes when it is shown.
  * Query cancellation discards obsolete reads. A failed refresh keeps the last coherent data.
  * @param vault The addressed vault.
  * @param checkpoint The exact identity, or null for current inputs.
@@ -167,18 +209,60 @@ function architectureModelQuery(
 		 * @returns The runtime answer.
 		 */
 		queryFn: (context) => readModel(vault, checkpoint, context.signal, selection),
-		staleTime: 0,
-		refetchOnMount: "always",
-		refetchOnWindowFocus: "always",
-		refetchOnReconnect: "always",
+		...(selection.preview == null ? followed : shownFresh),
 		retry: false,
 	});
 }
 
 /**
- * Retained metadata shares the existing refresh and reconnect invalidation.
+ * A repository row reads no model: the feed writes this entry and nothing fetches it.
  * @param vault The addressed vault.
- * @returns Query options for the checkpoint catalogue.
+ * @returns Query options for the shared summary.
+ */
+function architectureSummaryQuery(vault: string) {
+	return queryOptions<ModelSummary>({
+		queryKey: architectureModelKeys.summary(vault),
+		queryFn: skipToken,
+	});
+}
+
+/**
+ * One selected module's source target and references, read again when the source can have moved.
+ * @param vault The addressed vault.
+ * @param target The module and its reading.
+ * @param digest The revision on screen.
+ * @returns Query options for the module's details.
+ */
+function architectureModuleQuery(vault: string, target: ModuleTarget, digest: string) {
+	return queryOptions({
+		queryKey: architectureModelKeys.module(vault, target, digest),
+		/**
+		 * Read the details of this module alone.
+		 * @param context The query cancellation signal.
+		 * @returns The details and the reading they belong to.
+		 */
+		queryFn: async (context) => {
+			const parameters = new URLSearchParams(
+				Object.entries(target).flatMap(([key, value]) =>
+					value === undefined ? [] : [[key, String(value)]],
+				),
+			);
+			const result = await readReply(
+				`${inVault("/api/architecture/module", vault)}&${parameters}`,
+				ModuleNavigationReadSchema,
+				context.signal,
+			);
+			if (!result.success) throw new ArchitectureReadError(result);
+			return result;
+		},
+		retry: false,
+	});
+}
+
+/**
+ * Nothing reads retained rows until a person opens a menu. From then on completions keep them fresh.
+ * @param vault The addressed vault.
+ * @returns Query options for the checkpoint rows.
  */
 function architectureCheckpointsQuery(vault: string) {
 	return queryOptions({
@@ -190,14 +274,17 @@ function architectureCheckpointsQuery(vault: string) {
 		 */
 		queryFn: (context) =>
 			readReply(
-				inVault("/api/architecture/checkpoints", vault),
-				ArchitectureCheckpointListSchema,
+				inVault("/api/architecture/checkpoints/rows", vault),
+				ArchitectureCheckpointRowsSchema,
 				context.signal,
 			),
-		staleTime: Number.POSITIVE_INFINITY,
-		refetchOnMount: "always",
-		refetchOnWindowFocus: "always",
-		refetchOnReconnect: "always",
+		/**
+		 * Only an explicit first read starts this resource.
+		 * @param query The cached rows.
+		 * @returns Whether a person asked for them before.
+		 */
+		enabled: (query) => query.state.data !== undefined,
+		...followed,
 		retry: false,
 	});
 }
@@ -221,23 +308,9 @@ function architectureClaimsQuery(vault: string) {
 				ArchitectureClaimListSchema,
 				context.signal,
 			),
-		staleTime: 0,
-		refetchOnMount: "always",
-		refetchOnWindowFocus: "always",
-		refetchOnReconnect: "always",
+		...followed,
 		retry: false,
 	});
-}
-
-/**
- * Only a known empty or uninitialized archive permits legacy empty guidance.
- * @param result The retained metadata result.
- * @returns True when no saved reading can be offered.
- */
-function hasNoCheckpoints(result: ArchitectureCheckpointList): boolean {
-	return result.success
-		? result.checkpoints.length === 0
-		: result.code === "ARCHIVE_NOT_INITIALIZED";
 }
 
 /**
@@ -257,9 +330,12 @@ export {
 	readModel,
 	architectureModelKeys,
 	architectureModelQuery,
+	architectureModuleQuery,
+	architectureSummaryQuery,
 	architectureCheckpointsQuery,
 	architectureClaimsQuery,
 	ArchitectureReadError,
 	hasNoCanonicalModel,
-	hasNoCheckpoints,
+	type CheckpointRows,
+	type ModelSummary,
 };

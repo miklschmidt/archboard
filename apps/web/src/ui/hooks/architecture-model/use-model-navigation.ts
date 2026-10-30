@@ -1,7 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 import type { Model } from "@archboard/board/content";
-import { architectureModelQuery, readModel } from "#ui/clients/architecture-model/queries.ts";
+import { architectureModuleQuery, readModel } from "#ui/clients/architecture-model/queries.ts";
+
+/** The fields that make a reading one exact reading. */
+const READING_FIELDS = [
+	"model",
+	"state",
+	"checkpoint",
+	"preview",
+	"previewState",
+	"digest",
+] as const;
+type ReadingIdentity = Partial<Record<(typeof READING_FIELDS)[number], string | undefined>>;
 
 /**
  * Navigation details belong to the exact state whose module the inspector shows.
@@ -15,17 +26,13 @@ function useModelNavigation(vault: string, model: Model, module: Model["modules"
 	const target = navigationTarget(model, subject);
 	const { checkpoint, state, preview } = target;
 	const query = useQuery(
-		architectureModelQuery(vault, checkpoint ?? null, {
-			module: subject,
-			state,
-			preview,
-			code: module.binding !== undefined,
-			references: true,
-			compare: false,
-		}),
+		architectureModuleQuery(
+			vault,
+			{ module: subject, state, checkpoint, preview, code: module.binding !== undefined },
+			model.revision.digest,
+		),
 	);
-	const coherent = !query.isError && matchingNavigation(query.data, model);
-	const data = coherent ? query.data : undefined;
+	const data = query.isError ? undefined : coherentDetails(query.data, model);
 	const follow = useCallback(
 		(index: number, signal: AbortSignal) =>
 			readModel(vault, checkpoint ?? null, signal, {
@@ -39,34 +46,28 @@ function useModelNavigation(vault: string, model: Model, module: Model["modules"
 	);
 	return {
 		query,
-		coherent,
+		coherent: data !== undefined,
 		code: data?.codeTarget,
-		references: moduleReferences(data, subject),
+		references: data?.resolvedReferences ?? [],
 		follow,
 		target,
 	};
 }
 
 /**
- * A selected module exposes only its own authored references.
- * @param model The coherent navigation reading.
- * @param subject The selected module.
- * @returns Its resolved entries in authored order.
- */
-function moduleReferences(model: Model | undefined, subject: string) {
-	if (model === undefined) return [];
-	return model.resolvedReferences?.filter((entry) => entry.module === subject) ?? [];
-}
-
-/**
  * A later or different reading never supplies actions for an older inspector.
- * @param actual The separately read navigation details.
+ * @param details The separately read navigation details.
  * @param shown The exact state that the person sees.
- * @returns Whether both responses identify one coherent reading.
+ * @returns The details when both responses identify one coherent reading.
  */
-function matchingNavigation(actual: Model | undefined, shown: Model): boolean {
-	if (actual === undefined) return false;
-	return JSON.stringify(navigationIdentity(actual)) === JSON.stringify(navigationIdentity(shown));
+function coherentDetails<T extends { reading: ReadingIdentity }>(
+	details: T | undefined,
+	shown: Model,
+): T | undefined {
+	if (details === undefined) return undefined;
+	const identity = readingIdentity(shown);
+	const same = READING_FIELDS.every((field) => details.reading[field] === identity[field]);
+	return same ? details : undefined;
 }
 
 /**
@@ -95,17 +96,17 @@ function navigationState(model: Model): string | undefined {
 /**
  * State, checkpoint, and input revision all contribute to reading identity.
  * @param model One complete query response.
- * @returns Its ordered identity fields.
+ * @returns Its identity, as the server names it on a separately read detail.
  */
-function navigationIdentity(model: Model) {
-	return [
-		model.manifest.id,
-		model.selectedState?.id,
-		model.checkpoint?.id,
-		model.migrationPreview?.origin,
-		model.migrationPreview?.selected?.legacy,
-		model.revision.digest,
-	];
+function readingIdentity(model: Model): ReadingIdentity {
+	return {
+		model: model.manifest.id,
+		state: model.selectedState?.id,
+		checkpoint: model.checkpoint?.id,
+		preview: model.migrationPreview?.origin,
+		previewState: model.migrationPreview?.selected?.legacy,
+		digest: model.revision.digest,
+	};
 }
 
 export { useModelNavigation };

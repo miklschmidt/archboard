@@ -1,8 +1,9 @@
 import { checkpointTime } from "#ui/rules/architecture-model/history-time.ts";
 import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
 import { useCallback, type JSX } from "react";
+import { useRetainedRead } from "#ui/hooks/architecture-model/use-retained-read.ts";
 import type { UseQueryResult } from "@tanstack/react-query";
-import type { ArchitectureCheckpointList } from "@archboard/board/model";
+import type { CheckpointRows } from "#ui/clients/architecture-model/queries.ts";
 import type { Model } from "@archboard/board/content";
 import { Select } from "@archboard/ui-kit/components";
 import { proposalStanding, standingSuffix } from "#ui/rules/architecture-model/standing.ts";
@@ -14,7 +15,7 @@ interface ModelReadingSelectorProps {
 	catalogue: UseQueryResult<Model>;
 	onState: (state: string) => void;
 	onSelect: (checkpoint: string | null) => void;
-	history: UseQueryResult<ArchitectureCheckpointList>;
+	history: UseQueryResult<CheckpointRows>;
 }
 
 /**
@@ -32,14 +33,7 @@ function ModelReadingSelector(props: ModelReadingSelectorProps): JSX.Element {
 		},
 		[onSelect, onState],
 	);
-	const { refetch: readHistory } = history;
-	const { refetch: readCatalogue } = catalogue;
-	const opened = useCallback(
-		(open: boolean): void => {
-			if (open) void Promise.all([readHistory(), readCatalogue()]);
-		},
-		[readHistory, readCatalogue],
-	);
+	const opened = useRetainedRead(history, catalogue);
 	return (
 		<Select value={readingChoice(checkpoint, state)} onValueChange={choose} onOpenChange={opened}>
 			<Select.Trigger
@@ -173,7 +167,7 @@ function RetainedChoices({
 								{entry.state?.name ?? "Planning model"} · {checkpointTime(entry.createdAt)}
 							</span>
 							<span className="text-muted-foreground text-body max-w-prose whitespace-normal">
-								{entry.request.doing}
+								{entry.doing}
 							</span>
 							<code className="text-muted-foreground text-control">{entry.id.slice(0, 8)}</code>
 						</span>

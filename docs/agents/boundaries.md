@@ -182,7 +182,7 @@ agent can configure a server for. The rest is Node-bound. `./checkouts` carries 
 checkouts: the Git lookups, the repository registry and the validation of a language server
 command, which uses `node:path`, so the browser never imports it. Its `gitCheckoutOfVault` asks
 Git synchronously for the checkout that holds a vault, its root and identity, for the vault check
-that every open canvas polls and that cannot wait for the asynchronous lookups. The registry's
+that every open canvas reads and that cannot wait for the asynchronous lookups. The registry's
 `repositoryOfVault` is exported as `registeredRepositoryOfVault`, because `./repository-listing`
 defines a different `repositoryOfVault`, the one that the server projection answers with.
 `./vault` finds a vault as ADR 0049 says. `findVault` only finds it, for a command that asks

@@ -41,7 +41,7 @@ function ModelHistory(props: HistoryProps): JSX.Element | null {
 function HistoryReading(props: HistoryProps): JSX.Element {
 	const query = useQuery(modelHistoryQuery(props.vault, props.model));
 	const { refetch } = query;
-	const refresh = useCallback((): void => {
+	const read = useCallback((): void => {
 		void refetch();
 	}, [refetch]);
 	const look = useMemo(() => kindLookOf(props.model.policy, new Map()), [props.model.policy]);
@@ -49,8 +49,8 @@ function HistoryReading(props: HistoryProps): JSX.Element {
 		<SidebarRegion slot="semantic-inspector-history">
 			<div className="flex items-center justify-between gap-2">
 				<h3 className="text-title font-semibold">Local code history</h3>
-				<Button onClick={refresh} disabled={query.isFetching}>
-					Refresh
+				<Button onClick={read} disabled={query.isFetching} data-slot="module-read-history">
+					{query.data === undefined ? "Read" : "Refresh"}
 				</Button>
 			</div>
 			{query.isFetching && (

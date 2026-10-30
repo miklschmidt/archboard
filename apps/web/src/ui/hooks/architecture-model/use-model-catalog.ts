@@ -10,23 +10,21 @@ import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import { architectureFeed } from "#ui/clients/architecture-model/events.ts";
 import {
 	architectureModelKeys,
-	architectureModelQuery,
-	ArchitectureReadError,
-	hasNoCanonicalModel,
+	architectureSummaryQuery,
+	type ModelSummary,
 } from "#ui/clients/architecture-model/queries.ts";
 import { boardCatalogKeys, repositoriesQuery } from "#ui/clients/board-catalog/queries.ts";
-import type { Model } from "@archboard/board/content";
 
 /** One repository and its current architecture authority. */
 interface RepositoryModel {
 	readonly repository: RepositoryEntry;
-	readonly model?: Model["manifest"] | undefined;
+	readonly model?: ModelSummary["manifest"];
 	readonly migrationRequired?: boolean;
 	readonly error: string | null;
 	readonly loading: boolean;
 }
 
-/** Repository discovery and invalidation share the existing content cache. */
+/** Repository discovery reads no model: the feed reports each vault's summary. */
 interface ModelCatalog {
 	readonly repositories: readonly RepositoryModel[];
 	readonly served: string | null;
@@ -48,10 +46,9 @@ function catalogCommands(client: QueryClient) {
 	function refresh(): void {
 		void client.invalidateQueries({ queryKey: architectureModelKeys.all });
 	}
-	/** Refresh repository locations and their canonical readings together. */
+	/** Refresh repository locations. A vault that this adds starts its own feed. */
 	function reload(): void {
 		void client.invalidateQueries({ queryKey: boardCatalogKeys.repositories });
-		refresh();
 	}
 	return {
 		refresh,
@@ -62,24 +59,44 @@ function catalogCommands(client: QueryClient) {
 }
 
 /**
- * Derive catalogue authority without fetching live legacy content.
- * @param results The public reads in repository order.
+ * Derive catalogue authority from what the feed reported.
+ * @param results The summaries in repository order.
  * @returns Stable metadata, migration requirements, and explicit failures.
  */
-function readModels(results: readonly UseQueryResult<Model>[]) {
-	return results.map((result) => ({
-		model: result.data?.manifest,
-		migrationRequired:
-			result.error instanceof ArchitectureReadError &&
-			result.error.failure.code === "LEGACY_AUTHORITY",
-		error: hasNoCanonicalModel(result.error) ? null : result.error,
-		pending: result.isPending,
+function readSummaries(results: readonly UseQueryResult<ModelSummary>[]) {
+	return results.map(({ data, isPending }) => ({
+		...summaryRow(data ?? { failure: null }),
+		pending: isPending,
 	}));
 }
 
 /**
- * Read canonical repository summaries through the same queries and feed as open panes.
- * @returns Repository discovery and refresh actions without legacy board reads.
+ * What a repository row shows of one summary.
+ * @param summary What the feed reported.
+ * @returns The identity and the refusal that the row names.
+ */
+function summaryRow(summary: ModelSummary) {
+	const code = summary.failure?.code;
+	return {
+		model: summary.manifest,
+		migrationRequired: code === "LEGACY_AUTHORITY",
+		error:
+			code === "LEGACY_AUTHORITY" || code === "MODEL_NOT_FOUND" ? null : visible(summary.failure),
+	};
+}
+
+/**
+ * The text of a refusal that a row must name.
+ * @param failure The reported refusal, when any.
+ * @returns Its text, or nothing.
+ */
+function visible(failure: ModelSummary["failure"]): string | null {
+	return failure === null ? null : failure.error;
+}
+
+/**
+ * Read repository summaries through the feed that follows every readable vault.
+ * @returns Repository discovery and refresh actions without any model read.
  */
 function useModelCatalog(): ModelCatalog {
 	const client = useQueryClient();
@@ -99,8 +116,8 @@ function useModelCatalog(): ModelCatalog {
 		};
 	}, [client, readable]);
 	const models = useQueries({
-		queries: readable.map((vault) => architectureModelQuery(vault)),
-		combine: readModels,
+		queries: readable.map((vault) => architectureSummaryQuery(vault)),
+		combine: readSummaries,
 	});
 	const repositories = useMemo(
 		() =>
@@ -117,7 +134,7 @@ function useModelCatalog(): ModelCatalog {
 					...empty,
 					model: model.model,
 					migrationRequired: model.migrationRequired,
-					error: model.error?.message ?? null,
+					error: model.error,
 					loading: model.pending,
 				};
 			}),

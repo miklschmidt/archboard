@@ -104,7 +104,7 @@ mountPaneRoutes(app);
 mountRepositoryRoutes(app);
 mountArchitectureConfigurationRoutes(app);
 app.use("/api/architecture", requireVault, (req, _res, next) => {
-	agentActivity.follow(vaultOfRequest(req));
+	if (req.method !== "GET") agentActivity.addressed(vaultOfRequest(req));
 	next();
 });
 mountArchitectureModelRoutes(app);

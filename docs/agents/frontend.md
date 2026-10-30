@@ -166,8 +166,9 @@ Each behavior keeps its existing public boundary and one state owner.
   Selection and the camera remain separate from the address.
 
   Mutable state queries share the architecture event feed, with separate keys for state and comparison intent.
-  A current event snapshot populates only the default current query.
-  Other mutable readings refresh through the same public reader. Exact checkpoints keep distinct keys.
+  A subscription reports the revision and carries no architecture.
+  A reading stays fresh until the feed reports another revision, so a focus or a mount of cached data reads nothing.
+  Exact checkpoints keep distinct keys.
   The selected state metadata supplies lifecycle labels, including retained drafts.
   It also supplies unresolved issues and blocked ancestry, independently of comparison changes.
   The current catalogue also supplies adopted and shelved logical states.
@@ -186,14 +187,14 @@ Each behavior keeps its existing public boundary and one state owner.
   Exact checkpoints preserve their original standing after live settlement. The browser authors no settlement.
   The comparison reference must match the requested model, state, checkpoint, and base revision.
   Only a coherent reference supplies removed subjects to the existing semantic comparison operation.
-  Code and foreign navigation details use the same cache with module and action selectors.
-  Their state, checkpoint, and revision must match the inspected architecture.
+  Code and reference details come from `/api/architecture/module`, which answers for one module.
+  They name the reading that they belong to. Its state, checkpoint, and revision must match the inspected architecture.
   Remembered code findings also match the model identity, state, and exact revision.
   The existing warning control, diagram marks, and evidence panel show only that matching pass.
-  Selecting a bound canonical module requests its local Git history through the existing analysis.
-  The response must match the inspected model, state, checkpoint, and revision.
-  Fast selections share a pending history read. No timer, focus change, or reconnect starts another analysis.
-  A source failure remains explicit, and the reader can refresh the history on demand.
+  A person asks for a bound canonical module's local Git history through the action in its history region.
+  A selection reads no history, and neither does a timer, a focus change, or a reconnect.
+  The response must match the inspected model, state, checkpoint, and revision, and later selections reuse it.
+  A source failure remains explicit, and the same action reads again.
   A foreign activation requires the returned address to match the resolved link the reader selected.
   A change of source context cancels its pending activation.
   An unavailable base stays explicit, and the selected reading supplies its own complete interface facts.
@@ -226,12 +227,15 @@ Each behavior keeps its existing public boundary and one state owner.
   An unrelated request must not unmount a live canvas or voice owner.
   Query holds server responses, while each pane owns its mounted scene and transient selection.
   Edit acknowledgements, socket ordering, claims, workbench streams, and voice retain their existing owners.
-- The repository catalogue reads canonical models through the same queries and event feed as open panes.
-  Claim activity, pane registration, and pane departure do not trigger another architecture read.
-  A missing canonical model exposes initialization or explicit migration, according to the returned refusal.
+- The repository catalogue reads no model. The event feed follows every readable vault and reports its summary.
+  Claim activity, pane registration, and pane departure do not trigger an architecture read.
+  A missing canonical model exposes initialization or explicit migration, according to the reported refusal.
   Reconnect and repository changes refresh discovery through the existing catalogue owner.
 - Define freshness, cancellation, retry, and unavailable states for each resource.
   Preserve healthy exact checkpoints when mutable architecture changes.
+  Retained checkpoint rows load when a person opens a reading or comparison menu, and completions keep them fresh after that.
+  A canonical drawing is kept under a digest of the exact render request, whose whole-model part holds only containment and relationship ends.
+  An edit that the drawing does not read keeps its entry. The browser keeps a bounded number of drawings for one renderer build.
   A retained reading with a live comparison base refreshes its comparison metadata through the same reader.
   Retry interrupted reads only after a coherent completion event or an explicit reader action.
   Browser controls never retry authoring or maintain optimistic architecture copies.

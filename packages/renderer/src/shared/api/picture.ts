@@ -11,5 +11,6 @@ export {
 	standingMark,
 } from "#shared/rules/render/marks.ts";
 export { LINE_MARKS, markCounts } from "#shared/rules/render/key-marks.ts";
+export { scopedDrawingKey } from "#shared/rules/render/drawing-key.ts";
 export type { LineMark, MarkCount } from "#shared/rules/render/key-marks.ts";
 export type { SubjectStanding } from "#shared/protocol/render-request.ts";

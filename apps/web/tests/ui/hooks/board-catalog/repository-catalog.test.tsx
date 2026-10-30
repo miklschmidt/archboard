@@ -1,9 +1,9 @@
-// Repository discovery reads canonical models through the shared cache and event feed.
+// Repository discovery reads no model: the event feed reports each vault's summary.
 import { ArchitectureFeedRequestSchema } from "@archboard/board/model";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, test } from "bun:test";
 import type { ReactNode } from "react";
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureFeedFrame } from "@archboard/board/model";
 
 GlobalRegistrator.register({ url: "http://127.0.0.1:3000/" });
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
@@ -38,25 +38,20 @@ const REPOSITORIES = {
 		},
 	],
 };
-const MODEL: Extract<ArchitectureModelRead, { success: true }> = {
+type Summary = Extract<ArchitectureFeedFrame, { type: "architecture_snapshot" }>["reading"];
+
+const SHOP_SUMMARY: Summary = {
 	success: true,
-	manifest: { schemaVersion: 1, id: "Shop", name: "Shop", current: null },
-	policy: {
-		levels: [],
-		groups: {},
-		nodeKinds: { service: { name: "Service", icon: "RiServerLine" } },
-		relationshipKinds: { calls: { name: "Calls", dash: "solid", arrowhead: "filled" } },
-	},
-	modules: [],
-	collections: [],
-	walkthroughs: [],
-	relationships: [],
-	roots: [],
-	selectedState: null,
-	proposals: [],
-	revision: { digest: "a".repeat(64), files: [] },
+	manifest: { id: "Shop", name: "Shop" },
+	digest: "a".repeat(64),
 };
-const LEGACY: ArchitectureModelRead = {
+const BUSY: Extract<Summary, { success: false }> = {
+	success: false,
+	code: "MODEL_BUSY",
+	error: "The current architecture is unavailable during installation.",
+	diagnostics: [{ code: "MODEL_BUSY", file: ".", message: "Busy.", recovery: "Retry." }],
+};
+const LEGACY: Extract<Summary, { success: false }> = {
 	success: false,
 	code: "LEGACY_AUTHORITY",
 	error: "Explicit migration is required.",
@@ -69,7 +64,7 @@ const LEGACY: ArchitectureModelRead = {
 		},
 	],
 };
-const listed: string[] = [];
+const read: string[] = [];
 let repositoriesRefused = false;
 const followed = new Set<string>();
 const sockets: ModelSocket[] = [];
@@ -117,11 +112,8 @@ async function fakeFetch(input: RequestInfo | URL): Promise<Response> {
 				)
 			: Response.json(REPOSITORIES);
 	}
-	if (asked.pathname !== "/api/architecture/model")
-		throw new Error(`Unexpected route: ${asked.pathname}`);
-	const vault = asked.searchParams.get("vault")!;
-	listed.push(vault);
-	return Response.json(vault === SHOP ? MODEL : LEGACY);
+	if (asked.pathname === "/api/architecture/model") read.push(asked.searchParams.get("vault")!);
+	throw new Error(`Unexpected route: ${asked.pathname}`);
 }
 globalThis.fetch = Object.assign(fakeFetch, { preconnect: realFetch.preconnect });
 
@@ -137,7 +129,7 @@ function Provided(props: { children: ReactNode }): ReactNode {
 
 afterEach(() => {
 	cleanup();
-	listed.length = 0;
+	read.length = 0;
 	followed.clear();
 	sockets.length = 0;
 	repositoriesRefused = false;
@@ -149,8 +141,29 @@ afterAll(async () => {
 	await GlobalRegistrator.unregister();
 });
 
-test("each readable repository exposes its model or migration requirement and follows canonical news", async () => {
+/**
+ * Report a vault as the server does when a tab subscribes, or a change of it.
+ * @param frame The architecture event.
+ */
+async function hear(frame: ArchitectureFeedFrame): Promise<void> {
+	await act(async () => {
+		sockets[0]!.dispatchEvent(new MessageEvent("message", { data: JSON.stringify(frame) }));
+	});
+}
+
+test("each readable repository takes its model or migration requirement from the feed and reads no model", async () => {
 	const { result } = renderHook(() => useModelCatalog(), { wrapper: Provided });
+	await waitFor(() => expect([...followed].toSorted()).toEqual([BILLING, SHOP]));
+	expect(sockets).toHaveLength(1);
+	expect(result.current.repositories.map((each) => each.loading)).toEqual([
+		true,
+		true,
+		false,
+		false,
+	]);
+	const claims = { success: true as const, claims: [] };
+	await hear({ type: "architecture_snapshot", vault: SHOP, reading: SHOP_SUMMARY, claims });
+	await hear({ type: "architecture_snapshot", vault: BILLING, reading: LEGACY, claims });
 	await waitFor(() =>
 		expect(
 			result.current.repositories.map((each) => ({
@@ -166,23 +179,21 @@ test("each readable repository exposes its model or migration requirement and fo
 			{ model: null, migration: false, failed: false, loading: false },
 		]),
 	);
-	expect(listed.toSorted()).toEqual([BILLING, SHOP]);
-	expect([...followed].toSorted()).toEqual([BILLING, SHOP]);
-	expect(sockets).toHaveLength(1);
-	await act(async () => {
-		sockets[0]!.dispatchEvent(
-			new MessageEvent("message", {
-				data: JSON.stringify({
-					type: "architecture_snapshot",
-					vault: SHOP,
-					reading: { ...MODEL, manifest: { ...MODEL.manifest, name: "Renamed shop" } },
-					claims: { success: true, claims: [] },
-				}),
-			}),
-		);
+	await hear({
+		type: "architecture_changed",
+		vault: SHOP,
+		model: "Shop",
+		name: "Renamed shop",
+		state: null,
+		revision: { digest: "b".repeat(64), files: [] },
+		subjects: [],
+		reason: "external",
 	});
 	await waitFor(() => expect(result.current.repositories[0]?.model?.name).toBe("Renamed shop"));
-	expect(listed.toSorted()).toEqual([BILLING, SHOP]);
+	await hear({ type: "architecture_status", vault: SHOP, reading: BUSY });
+	await waitFor(() => expect(result.current.repositories[0]?.error).toBe(BUSY.error));
+	expect(result.current.repositories[0]?.model?.name).toBe("Renamed shop");
+	expect(read).toEqual([]);
 });
 
 test("a failed repository discovery remains explicit and starts no model read", async () => {
@@ -190,6 +201,5 @@ test("a failed repository discovery remains explicit and starts no model read", 
 	const { result } = renderHook(() => useModelCatalog(), { wrapper: Provided });
 	await waitFor(() => expect(result.current.error).not.toBeNull());
 	expect(result.current.repositories).toEqual([]);
-	expect(listed).toEqual([]);
 	expect(followed.size).toBe(0);
 });

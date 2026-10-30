@@ -1,6 +1,6 @@
 import { useCallback, type JSX, type MouseEvent } from "react";
 import { Button } from "@archboard/ui-kit/components";
-import type { Model } from "@archboard/board/content";
+import type { ModelSummary } from "#ui/clients/architecture-model/queries.ts";
 
 /**
  * Open current architecture from its repository without inventing a board.
@@ -13,7 +13,7 @@ function RepositoryModelLink({
 	model,
 	onOpen,
 }: {
-	model: Model["manifest"];
+	model: NonNullable<ModelSummary["manifest"]>;
 	onOpen: () => void;
 }): JSX.Element {
 	const open = useCallback(

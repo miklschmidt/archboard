@@ -1,10 +1,12 @@
 import type { DiagramGrammar } from "@archboard/board/views";
+import { scopedDrawingKey } from "@archboard/renderer/picture";
 import { queryOptions } from "@tanstack/react-query";
 import type { projectModel, Model } from "@archboard/board/content";
 import { rendererBuild } from "virtual:archboard-renderer";
 import {
 	browserPictureStorage,
 	cachedModelDrawing,
+	modelDrawingKey,
 } from "#ui/clients/semantic-board-canvas/reads/picture-cache.ts";
 
 type ModelDrawing = Awaited<ReturnType<typeof cachedModelDrawing>>;
@@ -12,7 +14,7 @@ type ModelDrawing = Awaited<ReturnType<typeof cachedModelDrawing>>;
 const storage = browserPictureStorage();
 
 /**
- * Each reading revision accepts only the scene key derived from its content and interfaces.
+ * A drawing is keyed by a digest of what it is drawn from, so an edit it does not read keeps it.
  * The renderer loads only when a picture is drawn, so a reader can own this query in the first chunk.
  * @param model The coherent architecture revision.
  * @param projection The content this reading shows.
@@ -33,7 +35,7 @@ function modelDrawingQuery(
 		unsettled: projection.unsettled,
 		policy: model.policy,
 	};
-	const key = JSON.stringify(["canonical", rendererBuild, model.manifest.id, request]);
+	const key = modelDrawingKey(rendererBuild, model.manifest.id, scopedDrawingKey(request));
 	return queryOptions({
 		queryKey: ["model-drawing", key],
 		/**

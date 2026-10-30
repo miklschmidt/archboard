@@ -6,6 +6,7 @@ import { z } from "zod";
 import {
 	ArchitectureCheckpointRetainSchema,
 	ArchitectureCheckpointListSchema,
+	ArchitectureCheckpointRowsSchema,
 	ArchitectureModelReadSchema,
 	ArchitecturePublicationSchema,
 } from "@archboard/board/model";
@@ -227,6 +228,20 @@ test("CLI and HTTP retain, list and reopen one exact checkpoint after current co
 		`${server.base}/api/architecture/checkpoints?vault=${encodeURIComponent(vault)}`,
 	);
 	expect(ArchitectureCheckpointListSchema.parse(await listedHttp.json())).toEqual(list);
+	const rows = await fetch(
+		`${server.base}/api/architecture/checkpoints/rows?vault=${encodeURIComponent(vault)}`,
+	);
+	expect(ArchitectureCheckpointRowsSchema.parse(await rows.json())).toEqual({
+		success: true,
+		checkpoints: [
+			{
+				id: retained.checkpoint.id,
+				createdAt: retained.checkpoint.createdAt,
+				state: { name: retained.checkpoint.state!.name },
+				doing: retained.checkpoint.request.doing,
+			},
+		],
+	});
 	const unavailableCli = runServerCli({
 		repoRoot,
 		server,
@@ -435,24 +450,7 @@ test("CLI and HTTP share claimed edit outcomes and an event connection starts wi
 		expect(await feed.next()).toMatchObject({
 			type: "architecture_snapshot",
 			vault,
-			reading: {
-				success: true,
-				relationships: [
-					expect.objectContaining({
-						id: "Shop#Dispatch",
-						from: "Shop#Worker",
-						to: "Shop#Gateway",
-						emphasis: "hero",
-					}),
-				],
-				modules: expect.arrayContaining([
-					expect.objectContaining({
-						id: "Shop#Gateway",
-						name: "API",
-						description: "A durable surface edit.",
-					}),
-				]),
-			},
+			reading: { success: true, manifest: { id: "Shop" }, digest: expect.any(String) },
 			claims: { success: true, claims: [{ id: claim.claim.id }] },
 		});
 	}

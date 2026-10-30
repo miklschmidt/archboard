@@ -1,24 +1,89 @@
 import { expect, test } from "bun:test";
 import {
 	cachedModelDrawing,
+	forgetStalePictures,
+	modelDrawingKey,
 	type PictureStorage,
 } from "#ui/clients/semantic-board-canvas/reads/picture-cache.ts";
 
-test("canonical scenes survive reload only under their exact key and refused storage still draws", async () => {
-	const drawing = {
-		svg: '<svg width="100" height="100"><rect data-semantic-id="Service" width="80" height="40" /></svg>',
-		width: 100,
-		height: 100,
-		atlas: {
-			nodes: { Service: { x: 0, y: 0, width: 80, height: 40 } },
-			edges: {},
-			regions: {},
+const DRAWING = {
+	svg: '<svg width="100" height="100"><rect data-semantic-id="Service" width="80" height="40" /></svg>',
+	width: 100,
+	height: 100,
+	atlas: {
+		nodes: { Service: { x: 0, y: 0, width: 80, height: 40 } },
+		edges: {},
+		regions: {},
+	},
+	placed: ["Service"],
+	appearances: [],
+	key: null,
+	readingDirection: "down",
+} satisfies Awaited<ReturnType<Parameters<typeof cachedModelDrawing>[2]>>;
+
+/**
+ * A picture store over a map.
+ * @param entries What it holds.
+ * @returns The store.
+ */
+function storeOver(entries: Map<string, unknown>): PictureStorage {
+	return {
+		/**
+		 * Read one drawing.
+		 * @param key Its key.
+		 * @returns The drawing.
+		 */
+		get: async (key) => entries.get(key),
+		/**
+		 * Keep one drawing.
+		 * @param key Its key.
+		 * @param value The drawing.
+		 */
+		set: async (key, value) => {
+			entries.set(key, value);
 		},
-		placed: ["Service"],
-		appearances: [],
-		key: null,
-		readingDirection: "down",
-	} satisfies Awaited<ReturnType<Parameters<typeof cachedModelDrawing>[2]>>;
+		/**
+		 * Forget one drawing.
+		 * @param key Its key.
+		 */
+		del: async (key) => {
+			entries.delete(key);
+		},
+		/**
+		 * List the keys.
+		 * @returns Every key.
+		 */
+		keys: async () => [...entries.keys()],
+	};
+}
+
+/**
+ * Lay nothing out.
+ * @returns The fixture's drawing.
+ */
+async function drawFixture() {
+	return DRAWING;
+}
+
+test("canonical drawings stay bounded, drop other builds and survive the replay cleanup", async () => {
+	const entries = new Map<string, unknown>();
+	const other = modelDrawingKey("older-build", "Shop", "digest");
+	entries.set(other, DRAWING);
+	const kept = Array.from({ length: 80 }, (_, index) =>
+		modelDrawingKey("build", "Shop", `digest-${index}`),
+	);
+	for (const key of kept.slice(0, -1)) entries.set(key, DRAWING);
+	const storage = storeOver(entries);
+	await cachedModelDrawing(storage, kept.at(-1)!, drawFixture);
+	expect(entries.has(other)).toBe(false);
+	expect(entries.size).toBe(64);
+	expect(entries.has(kept.at(-1)!)).toBe(true);
+	await forgetStalePictures(storage, "/vault", [], "build");
+	expect(entries.size).toBe(64);
+});
+
+test("canonical scenes survive reload only under their exact key and refused storage still draws", async () => {
+	const drawing = DRAWING;
 	const entries = new Map<string, unknown>();
 	const storage: PictureStorage = {
 		/**

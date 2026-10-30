@@ -101,9 +101,9 @@ const BOARD_LOCK_MS = durations({
 	 * would otherwise let somebody draw into a board an agent has had for minutes.
 	 *
 	 * One renewal interval, so a pane learns about a claim about as fast as the
-	 * claim's own lease moves. It costs one small file read per board on screen per
-	 * second, and only while a browser is connected: with nothing rendering, there
-	 * is no pane to be wrong.
+	 * claim's own lease moves. It costs one read of the vault's file metadata per
+	 * followed vault per second, and only while a browser is connected: with nothing
+	 * rendering, there is no pane to be wrong.
 	 */
 	watch: LOCK_RENEW_MS,
 });

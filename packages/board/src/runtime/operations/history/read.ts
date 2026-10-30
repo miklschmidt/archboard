@@ -2,6 +2,7 @@ import {
 	GitObjectIdSchema,
 	type ArchitectureModelRead,
 	type ArchitectureCheckpointList,
+	type ArchitectureCheckpointRows,
 } from "#shared/schemas/model.ts";
 import {
 	discoveryFailure,
@@ -442,27 +443,55 @@ async function readArchitectureCheckpoint(
 }
 
 /**
- * List retained states without turning synchronization records into architecture.
+ * Read this vault's retained checkpoints without turning synchronization records into architecture.
+ * @param context The archive of the addressed vault.
+ * @returns Each retained checkpoint record with its identity.
+ */
+async function retainedCheckpoints(context: Awaited<ReturnType<typeof archiveContext>>) {
+	const records = await archiveRecords(context, await retainedRoots(context));
+	return records.flatMap(({ id, record }) =>
+		record.kind === "checkpoint" && record.vault === context.vault ? [{ id, record }] : [],
+	);
+}
+
+/**
+ * List retained states with their complete metadata and publication evidence.
  * @param vault The explicitly addressed vault.
  * @returns Retained metadata or actionable archive diagnostics.
  */
 async function listArchitectureCheckpoints(vault: string): Promise<ArchitectureCheckpointList> {
 	return historyResult("ARCHIVE_UNREADABLE", async () => {
 		const context = await archiveContext(vault);
-		const records = await archiveRecords(context, await retainedRoots(context));
+		const records = await retainedCheckpoints(context);
 		return {
 			success: true as const,
 			checkpoints: await Promise.all(
-				records.flatMap(({ id, record }) =>
-					record.kind === "checkpoint" && record.vault === context.vault
-						? [
-								checkpointPublication(context, id).then(({ publication }) =>
-									checkpointMetadata(id, record, publication),
-								),
-							]
-						: [],
+				records.map(({ id, record }) =>
+					checkpointPublication(context, id).then(({ publication }) =>
+						checkpointMetadata(id, record, publication),
+					),
 				),
 			),
+		};
+	});
+}
+
+/**
+ * List the rows a history menu shows.
+ * @param vault The explicitly addressed vault.
+ * @returns What a person chooses a reading by, or actionable archive diagnostics.
+ */
+async function listArchitectureCheckpointRows(vault: string): Promise<ArchitectureCheckpointRows> {
+	return historyResult("ARCHIVE_UNREADABLE", async () => {
+		const records = await retainedCheckpoints(await archiveContext(vault));
+		return {
+			success: true as const,
+			checkpoints: records.map(({ id, record }) => ({
+				id,
+				createdAt: record.createdAt,
+				state: record.state === null ? null : { name: record.state.name },
+				doing: record.request.doing,
+			})),
 		};
 	});
 }
@@ -471,5 +500,6 @@ export {
 	readArchitectureCheckpoint,
 	readCheckpointModel,
 	listArchitectureCheckpoints,
+	listArchitectureCheckpointRows,
 	exactReading,
 };

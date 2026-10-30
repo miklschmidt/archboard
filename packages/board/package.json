@@ -27,7 +27,6 @@
 		"./address": "./src/runtime/api/address.ts",
 		"./store-read": "./src/runtime/api/store-read.ts",
 		"./vault-policy": "./src/runtime/api/vault-policy.ts",
-		"./doing": "./src/runtime/api/doing.ts",
 		"./lock": "./src/runtime/api/lock.ts",
 		"./store-write": "./src/runtime/api/store-write.ts"
 	}
