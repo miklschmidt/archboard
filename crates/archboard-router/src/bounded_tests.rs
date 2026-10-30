@@ -117,3 +117,17 @@ fn earlier_unrelated_strokes_reserve_parallel_space_without_moving() {
     };
     assert!(points.iter().any(|p| (p.y - 100.0).abs() >= 16.0));
 }
+
+#[test]
+fn a_window_keeps_its_perimeter_available_beyond_the_interior_inset() {
+    let mut scene = scene();
+    scene.minimum = Some(Point { x: 0.0, y: 60.0 });
+    scene.obstacles = vec![Rect {
+        x: 80.0,
+        y: 40.0,
+        width: 60.0,
+        height: 200.0,
+    }];
+    let routes = route_bounded(&scene, &[], WINDOW, LIMITS);
+    assert!(matches!(routes.as_slice(), [Route::Routed(_)]));
+}

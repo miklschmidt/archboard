@@ -14,7 +14,10 @@ pub struct Limits {
 }
 
 /// Route inside a window without moving earlier strokes or omitting an intersecting obstacle.
-/// Limit exhaustion returns [`Route::Unroutable`], never a truncated scene or unchecked path.
+/// The window perimeter stays available beyond [`Scene::minimum`].
+/// Limit exhaustion returns [`Route::Unroutable`] rather than a partial path.
+/// Fixed strokes contribute lane and crossing costs, not hard obstacles.
+/// The caller must guard fan ownership and clearance around junctions before accepting a path.
 pub fn route_bounded(
     scene: &Scene,
     fixed: &[(Connector, Vec<Point>)],
