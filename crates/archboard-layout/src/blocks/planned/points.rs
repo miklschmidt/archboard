@@ -39,3 +39,16 @@ pub(super) fn source_port(model: &Model<'_>, edge: usize, shape: &Shape) -> Opti
         },
     })
 }
+
+/// Provisional routes and shared fans cannot replace declared endpoint constraints.
+/// The channel guard establishes the path's length and outward wall attachments first.
+pub(super) fn follows(model: &Model<'_>, edge: usize, shape: &Shape, path: &[Point]) -> bool {
+    let source_matches = model.edges[edge].option(FROM_POINTS).is_none()
+        || source_port(model, edge, shape)
+            .is_some_and(|port| super::geometry::length(&[path[0], port.attachment]) < 0.1);
+    let to = model.ends[edge].1;
+    let target = path[path.len() - 1];
+    source_matches
+        && (!pointed(model, to)
+            || (target.y - shape.endpoints[&to].y).abs() < 0.1 && path[path.len() - 2].y < target.y)
+}
