@@ -6,7 +6,7 @@ import type { ChangeKind } from "#shared/rules/compare/variants.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
 import type { OverviewLine } from "#shared/rules/scope.ts";
 import { codePathOf } from "#shared/rules/code-path.ts";
-import { doorEnds, joinedLines, readingLines } from "#shared/rules/model-lines.ts";
+import { doorEnds, drawnEnds, joinedLines, readingLines } from "#shared/rules/model-lines.ts";
 import { inspectContainer } from "#shared/rules/inspect/container-interface.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
@@ -18,6 +18,7 @@ type ModelFilters = Pick<
 type Visibility = Model["walkthroughs"][number]["beats"][number]["reading"]["visibility"];
 type Standing = Readonly<Record<string, ChangeKind>>;
 type Node = VariantContent["nodes"][number];
+type Edge = VariantContent["edges"][number];
 
 /** A card as a picture draws it: the code path is read for the picture and stored nowhere. */
 type DrawnNode = Node & { readonly codePath?: string };
@@ -367,7 +368,12 @@ function projectFocused(
 	);
 	const selfConnections = edges.filter((edge) => edge.from === edge.to).map((edge) => edge.from);
 	const openSelf = new Set([...open, ...selfConnections]);
-	const ends = doorEnds([], drawnAs, inside, null);
+	/**
+	 * A focus has no frame, so a line runs between the cards that it joins.
+	 * @param edge The relationship.
+	 * @returns Both drawn ends.
+	 */
+	const ends = (edge: Edge) => drawnEnds(edge, drawnAs);
 	const shown = relevant.filter((edge) => !choices.hideKinds?.includes(edge.kind));
 	const listed = joinedLines(complete, shown, ends, openSelf, standing);
 	const children = complete.nodes.filter((node) => anchors.has(node.id));

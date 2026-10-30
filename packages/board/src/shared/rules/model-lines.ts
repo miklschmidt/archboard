@@ -61,7 +61,7 @@ function reachedDoors(
  * @param edges The relationships of this reading.
  * @param drawnAs The visible representative of each endpoint.
  * @param inside Every subject inside the open module.
- * @param frame The open module, or null when the reading has no frame to end on.
+ * @param frame The open module, or null at the root, where no line crosses a frame.
  * @returns Where each relationship's line runs.
  */
 function doorEnds(
@@ -202,4 +202,4 @@ function reaches(
 	return seen.has(ends.to);
 }
 
-export { doorEnds, joinedLines, readingLines };
+export { doorEnds, drawnEnds, joinedLines, readingLines };
