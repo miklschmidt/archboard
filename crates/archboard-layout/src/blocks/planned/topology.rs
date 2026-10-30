@@ -4,7 +4,7 @@ use crate::geometry::Rect;
 
 use super::model::Model;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(super) enum CommonEndpoint {
     Source(usize),
     Target(usize),
@@ -46,6 +46,7 @@ impl Topology {
             labels: Vec::new(),
             routes: Vec::new(),
         };
+        let mut fans = rustc_hash::FxHashMap::default();
         for (index, edge) in model.edges.iter().enumerate() {
             let (from, to) = model.ends[index];
             let mut outward = ancestors(model, model.endpoints[from].scope);
@@ -74,7 +75,17 @@ impl Topology {
                 });
             }
             for common in [CommonEndpoint::Source(from), CommonEndpoint::Target(to)] {
-                topology.add_fan(index, common, &model.treatments[index]);
+                let treatment = model.treatments[index].as_str();
+                let fan = *fans.entry((common, treatment)).or_insert_with(|| {
+                    let fan = topology.fans.len();
+                    topology.fans.push(Fan {
+                        common,
+                        treatment: treatment.to_owned(),
+                        members: Vec::new(),
+                    });
+                    fan
+                });
+                topology.fans[fan].members.push(index);
             }
         }
         topology.fans.retain(|fan| fan.members.len() > 1);
@@ -90,23 +101,6 @@ impl Topology {
             }
         }
     }
-    fn add_fan(&mut self, index: usize, common: CommonEndpoint, treatment: &str) {
-        let treatment = treatment.to_owned();
-        if let Some(fan) = self
-            .fans
-            .iter_mut()
-            .find(|fan| fan.common == common && fan.treatment == treatment)
-        {
-            fan.members.push(index);
-        } else {
-            self.fans.push(Fan {
-                common,
-                treatment,
-                members: vec![index],
-            });
-        }
-    }
-
     pub(super) fn complete(&self, model: &Model<'_>) -> bool {
         self.routes.len() == model.edges.len()
             && self.fans.iter().all(|fan| {
