@@ -31,6 +31,7 @@ import { useViewerMarks } from "#ui/hooks/semantic-board-canvas/use-viewer-marks
 import { markCodeWarnings } from "#ui/clients/semantic-board-canvas/subjects/code-marks.ts";
 import { surfaceMarks } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 import { usePresentationArrival } from "#ui/hooks/semantic-board-canvas/use-presentation-arrival.ts";
+import { useCameraHandover } from "#ui/hooks/architecture-model/use-camera-handover.ts";
 import { useCameraMemory } from "#ui/hooks/architecture-model/use-camera-memory.ts";
 import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
 import { sceneFit, type AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
@@ -108,6 +109,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		cut: props.cut,
 		recall,
 	});
+	useCameraHandover(camera, drawing.board, reducedMotion);
 	const { lighting, single } = useSceneLighting(scene, selected, leaving !== null);
 	const selectArea = useAreaSelection(scene, camera, onSelectMany);
 	const onPick = useReveal({

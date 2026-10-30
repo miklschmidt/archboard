@@ -1,4 +1,4 @@
-import { ModelPaneContext } from "#ui/state/architecture-model/presentation.ts";
+import { cameraHandover, ModelPaneContext } from "#ui/state/architecture-model/presentation.ts";
 import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
 import { useSubjectSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { useSidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
@@ -38,9 +38,10 @@ function ModelPane(props: {
 		},
 		[choose, sidebar],
 	);
+	const [handover] = useState(cameraHandover);
 	const value = useMemo(
-		() => ({ selection: { ...selection, selectMany }, sidebar }),
-		[selection, selectMany, sidebar],
+		() => ({ selection: { ...selection, selectMany }, sidebar, handover }),
+		[selection, selectMany, sidebar, handover],
 	);
 	return <ModelPaneContext value={value}>{props.children}</ModelPaneContext>;
 }

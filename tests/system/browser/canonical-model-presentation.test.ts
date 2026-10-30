@@ -238,7 +238,10 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	expect(third.heading).toBe("The ledger");
 	expect(third.camera).not.toBe(second.camera);
 
-	// Escape leaves, and the pane is the reader's again, where they had it.
+	// Escape leaves, and the pane is the reader's again, where they had it, by a glide.
+	await browser.eval(
+		`window.__way = new Set(); (function watch() { const surface = [...document.querySelectorAll('[data-slot="semantic-board-surface"]')].find((one) => one.checkVisibility()); if (surface) window.__way.add(surface.style.transform); requestAnimationFrame(watch); })(); true`,
+	);
 	await browser.run(["press", "Escape"]);
 	const left = await pollUntil(
 		() => presented(browser),
@@ -247,6 +250,7 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 		ARRIVAL,
 	);
 	expect(left.heading).toBeNull();
+	expect(await browser.eval<number>("window.__way.size")).toBeGreaterThan(2);
 	await pollUntil(
 		() => opacityOfCard(browser, "Reports"),
 		(opacity) => opacity === 1,
