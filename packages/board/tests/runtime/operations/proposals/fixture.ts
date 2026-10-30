@@ -92,8 +92,6 @@ async function writeInProcess(root: string, vault: string, intent: unknown, cras
 	const child = Bun.spawn(
 		[
 			process.execPath,
-			"--preload",
-			resolved("#tests/runtime/operations/proposals/direct-git-preload.ts"),
 			...(crash === undefined
 				? []
 				: ["--preload", resolved("#tests/runtime/operations/model-edit/crash-preload.ts")]),

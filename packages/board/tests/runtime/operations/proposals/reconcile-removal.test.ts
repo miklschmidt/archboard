@@ -1,4 +1,3 @@
-import "#tests/runtime/operations/proposals/use-direct-git.ts";
 import { afterEach, expect, test } from "bun:test";
 import { editArchitectureModule } from "@archboard/board/store-write";
 import { fixture, disposeFixtures, git } from "#tests/runtime/operations/model-edit/fixture.ts";
