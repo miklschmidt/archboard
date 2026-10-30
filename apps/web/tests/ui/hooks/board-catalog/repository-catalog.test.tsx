@@ -3,7 +3,7 @@ import { ArchitectureFeedRequestSchema } from "@archboard/board/model";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, test } from "bun:test";
 import type { ReactNode } from "react";
-import type { ArchitectureFeedFrame, ArchitectureSummary } from "@archboard/board/model";
+import type { ArchitectureFeedFrame } from "@archboard/board/model";
 
 GlobalRegistrator.register({ url: "http://127.0.0.1:3000/" });
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
@@ -38,18 +38,20 @@ const REPOSITORIES = {
 		},
 	],
 };
-const SHOP_SUMMARY: ArchitectureSummary = {
+type Summary = Extract<ArchitectureFeedFrame, { type: "architecture_snapshot" }>["reading"];
+
+const SHOP_SUMMARY: Summary = {
 	success: true,
 	manifest: { id: "Shop", name: "Shop" },
 	digest: "a".repeat(64),
 };
-const BUSY: Extract<ArchitectureSummary, { success: false }> = {
+const BUSY: Extract<Summary, { success: false }> = {
 	success: false,
 	code: "MODEL_BUSY",
 	error: "The current architecture is unavailable during installation.",
 	diagnostics: [{ code: "MODEL_BUSY", file: ".", message: "Busy.", recovery: "Retry." }],
 };
-const LEGACY: Extract<ArchitectureSummary, { success: false }> = {
+const LEGACY: Extract<Summary, { success: false }> = {
 	success: false,
 	code: "LEGACY_AUTHORITY",
 	error: "Explicit migration is required.",

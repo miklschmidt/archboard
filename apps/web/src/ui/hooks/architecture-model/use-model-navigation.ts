@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 import type { Model } from "@archboard/board/content";
-import type { ModuleNavigationRead } from "@archboard/board/model";
 import { architectureModuleQuery, readModel } from "#ui/clients/architecture-model/queries.ts";
 
 /** The fields that make a reading one exact reading. */
@@ -13,6 +12,7 @@ const READING_FIELDS = [
 	"previewState",
 	"digest",
 ] as const;
+type ReadingIdentity = Partial<Record<(typeof READING_FIELDS)[number], string | undefined>>;
 
 /**
  * Navigation details belong to the exact state whose module the inspector shows.
@@ -32,8 +32,7 @@ function useModelNavigation(vault: string, model: Model, module: Model["modules"
 			model.revision.digest,
 		),
 	);
-	const coherent = !query.isError && matchingNavigation(query.data, model);
-	const data = coherent ? query.data : undefined;
+	const data = query.isError ? undefined : coherentDetails(query.data, model);
 	const follow = useCallback(
 		(index: number, signal: AbortSignal) =>
 			readModel(vault, checkpoint ?? null, signal, {
@@ -47,7 +46,7 @@ function useModelNavigation(vault: string, model: Model, module: Model["modules"
 	);
 	return {
 		query,
-		coherent,
+		coherent: data !== undefined,
 		code: data?.codeTarget,
 		references: data?.resolvedReferences ?? [],
 		follow,
@@ -57,17 +56,18 @@ function useModelNavigation(vault: string, model: Model, module: Model["modules"
 
 /**
  * A later or different reading never supplies actions for an older inspector.
- * @param actual The separately read navigation details.
+ * @param details The separately read navigation details.
  * @param shown The exact state that the person sees.
- * @returns Whether both responses identify one coherent reading.
+ * @returns The details when both responses identify one coherent reading.
  */
-function matchingNavigation(
-	actual: Extract<ModuleNavigationRead, { success: true }> | undefined,
+function coherentDetails<T extends { reading: ReadingIdentity }>(
+	details: T | undefined,
 	shown: Model,
-): boolean {
-	if (actual === undefined) return false;
+): T | undefined {
+	if (details === undefined) return undefined;
 	const identity = readingIdentity(shown);
-	return READING_FIELDS.every((field) => actual.reading[field] === identity[field]);
+	const same = READING_FIELDS.every((field) => details.reading[field] === identity[field]);
+	return same ? details : undefined;
 }
 
 /**
@@ -98,7 +98,7 @@ function navigationState(model: Model): string | undefined {
  * @param model One complete query response.
  * @returns Its identity, as the server names it on a separately read detail.
  */
-function readingIdentity(model: Model) {
+function readingIdentity(model: Model): ReadingIdentity {
 	return {
 		model: model.manifest.id,
 		state: model.selectedState?.id,

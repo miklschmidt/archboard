@@ -3,7 +3,7 @@ import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts"
 import { useCallback, type JSX } from "react";
 import { useRetainedRead } from "#ui/hooks/architecture-model/use-retained-read.ts";
 import type { UseQueryResult } from "@tanstack/react-query";
-import type { ArchitectureCheckpointRows } from "@archboard/board/model";
+import type { CheckpointRows } from "#ui/clients/architecture-model/queries.ts";
 import type { Model } from "@archboard/board/content";
 import { Select } from "@archboard/ui-kit/components";
 import { proposalStanding, standingSuffix } from "#ui/rules/architecture-model/standing.ts";
@@ -15,7 +15,7 @@ interface ModelReadingSelectorProps {
 	catalogue: UseQueryResult<Model>;
 	onState: (state: string) => void;
 	onSelect: (checkpoint: string | null) => void;
-	history: UseQueryResult<ArchitectureCheckpointRows>;
+	history: UseQueryResult<CheckpointRows>;
 }
 
 /**

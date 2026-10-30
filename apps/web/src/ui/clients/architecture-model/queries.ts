@@ -1,13 +1,13 @@
 import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
 import { queryOptions, skipToken } from "@tanstack/react-query";
+import type { z } from "zod";
 import {
 	ArchitectureModelReadSchema,
 	ArchitectureCheckpointRowsSchema,
 	ArchitectureClaimListSchema,
 	ModuleNavigationReadSchema,
+	type ArchitectureEvent,
 	type ArchitectureModelRead,
-	type ArchitectureSummary,
-	type ReadingIdentity,
 } from "@archboard/board/model";
 import { inVault, strictReply, type ReplySchema } from "@archboard/server-requests";
 
@@ -23,17 +23,23 @@ type StateSelection = {
 	readonly reference?: number;
 };
 
+type CheckpointRows = z.infer<typeof ArchitectureCheckpointRowsSchema>;
+type ArchitectureSummary = Extract<ArchitectureEvent, { type: "architecture_snapshot" }>["reading"];
+
 /** What a repository row knows of a vault, as the feed last reported it. */
 interface ModelSummary {
 	readonly manifest?: Extract<ArchitectureSummary, { success: true }>["manifest"] | undefined;
 	readonly failure: Extract<ArchitectureSummary, { success: false }> | null;
 }
 
-/** The reading a selected module's details belong to. */
-type ModuleTarget = Pick<ReadingIdentity, "state" | "checkpoint" | "preview"> & {
+/** A selected module and the reading its details belong to. */
+interface ModuleTarget {
 	readonly module: string;
+	readonly state: string | undefined;
+	readonly checkpoint: string | undefined;
+	readonly preview: string | undefined;
 	readonly code: boolean;
-};
+}
 
 /** A failed read retains its structured diagnostics while Query keeps the last coherent data. */
 class ArchitectureReadError extends Error {
@@ -330,5 +336,6 @@ export {
 	architectureClaimsQuery,
 	ArchitectureReadError,
 	hasNoCanonicalModel,
+	type CheckpointRows,
 	type ModelSummary,
 };

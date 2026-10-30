@@ -146,13 +146,18 @@ function createAgentActivity(send: (message: AgentActivityMessage) => void) {
 		}
 	}
 	/**
+	 * The vaults that a connected pane can show.
+	 * @returns Each vault once, and none while no pane is connected.
+	 */
+	function wantedVaults(): Set<string> {
+		return new Set(held.size === 0 ? [] : [...registered, ...held.keys(), ...written]);
+	}
+	/**
 	 * Watch what a connected pane can show, and nothing while no pane is connected. A snapshot
 	 * outlives its watcher then, so a pane that replaces the last one still reads what landed.
 	 */
 	function followWanted(): void {
-		const wanted = new Set(
-			held.size === 0 ? [] : [...registered, ...held.keys(), ...written],
-		);
+		const wanted = wantedVaults();
 		for (const [vault, stop] of watched) {
 			if (wanted.has(vault)) continue;
 			stop();
