@@ -24,8 +24,6 @@ async function lockMode(): Promise<void> {
 			server.listen(port, "127.0.0.1", resolve);
 		});
 	}
-	// eslint-disable-next-line no-console -- stdout is the peer readiness protocol.
-	console.log(JSON.stringify({ pid: process.pid, lockFile, process: hold.holder.process, port }));
 	const renewal = setInterval(() => {
 		void holdBoard({ vault, board, holder: { id: holderId, kind: "agent" }, waitMs: 0 });
 	}, 800);
@@ -40,6 +38,8 @@ async function lockMode(): Promise<void> {
 	};
 	process.on("SIGTERM", process.env["ARCHBOARD_TEST_IGNORE_TERM"] === "1" ? () => {} : stop);
 	process.on("SIGINT", stop);
+	// eslint-disable-next-line no-console -- stdout is the peer readiness protocol.
+	console.log(JSON.stringify({ pid: process.pid, lockFile, process: hold.holder.process, port }));
 }
 
 await lockMode();
