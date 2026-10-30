@@ -1,10 +1,11 @@
 ---
 id: TASK-559.02
 title: Draw one open module with honest doors, joined lines and code paths
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T16:44:00Z'
+updated_date: '2026-10-30T18:23:00Z'
 labels:
   - frontend
   - renderer
@@ -24,11 +25,17 @@ Round 2 measured total area of 392.9 M today against 175.9 M under these rules, 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Rules 1 to 11 of the section What a picture draws hold in the projection, for the reader and for `archboard model render`
-- [ ] #2 A joined line with mixed kinds wears a neutral style, and hiding one kind never hides a relationship of another kind
-- [ ] #3 A line that leaves a picture is counted in a statement that the caption shows, and one control shows every line
-- [ ] #4 No connected part loses its last line through reduction
-- [ ] #5 A reading lands by the rule of the section Where a reading lands
+- [x] #1 Rules 1 to 11 of the section What a picture draws hold in the projection, for the reader and for `archboard model render`
+- [x] #2 A joined line with mixed kinds wears a neutral style, and hiding one kind never hides a relationship of another kind
+- [x] #3 A line that leaves a picture is counted in a statement that the caption shows, and one control shows every line
+- [x] #4 No connected part loses its last line through reduction
+- [x] #5 A reading lands by the rule of the section Where a reading lands
 - [ ] #6 Gates 1, 2, 3 and 4 of the design record hold, measured on the merged renderer core
 - [ ] #7 The owner sees the root, `Browser`, `Workspace packages` and `Command startup`, and accepts the change to ADR 0052 or rejects it
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Gates on the merged core: 108 of 123 at fit 0.6 with no margin, name 12 px and path 9 px on 118 readings, 133 lines left out in 13 readings and all counted. Gate 4 holds by area, but Checkout API grew from 1326 by 1240 to 1800 by 664. The tree row of rule 10 waits for TASK-559.05. Pictures are in /tmp/integrate/slice1. The owner still judges the pictures and the change to ADR 0052.
+<!-- SECTION:NOTES:END -->
