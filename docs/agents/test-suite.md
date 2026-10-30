@@ -3,16 +3,20 @@
 What each check proves, and the constraints on running them. Read this when
 changing tests or CI, or when a browser check fails.
 
-`bun run test` type-checks and builds both browser applications, then runs five normal
-native lanes in this order:
+`bun run test` runs the stages of `test:first` at the same time: both TypeScript projects,
+both browser builds, `test:core` and `test:repository`. It then runs `test:modules`,
+`test:system` and `test:serial-browser`, one lane after the other, because each lane uses
+the whole machine. `bun run check` also runs lint and the format checks in the first stage.
+The five normal native lanes are:
 
 - `test:core`: the Rust tests of every crate under `crates/`, run natively with
   `cargo test --locked --workspace` inside `nix develop`;
-- `test:modules`: isolated package-owned and app-owned product tests discovered under
-  `packages/` and `apps/`, excluding the capacity and benchmark inventories;
+- `test:modules`: package-owned and app-owned product tests discovered under
+  `packages/` and `apps/`, excluding the capacity and benchmark inventories.
+  Bun runs one worker per core (`--parallel`), and each file gets a fresh global object;
 - `test:system`: system product owners under the five explicit non-browser
-  directories, with `--max-concurrency=1` because they own real processes and
-  shared local ports;
+  directories, with one Bun worker per core. Each file owns its servers, ports, homes and
+  registries, so files share only the machine;
 - `test:repository`: the source-boundary lint fixtures, the owner that resolves
   links in the shipped skills, repository navigation, and development skill
   (`tests/system/repository-policy/skill-links.test.ts`),
@@ -26,7 +30,7 @@ native lanes in this order:
   inherits the workspace lints, and no `.rs` file is over 600 lines
   (`tests/system/repository-policy/rust-crates.test.ts`);
 - `test:serial-browser`: every owner in the executable `BROWSER_TEST_PATHS`
-  inventory through the strict adapter.
+  inventory through the strict adapter, one owner for every six cores.
 
 `bun run benchmark` runs the renderer corpus separately and never caches results.
 It reads the current canonical model in this checkout's `.archboard/vault` through `readArchitectureModel`.
@@ -53,15 +57,19 @@ Changing the default must preserve the assertions of each Track regression.
 
 `bun run check` is the complete normal gate locally and on GitHub Actions.
 It runs lint, formatting, both TypeScript projects, and the normal test chain.
+`check:first` holds every stage that waits on no shared timing, and `vp` runs them at once.
+The first failure ends the run with a nonzero status, stops the other stages, and leaves its
+output in the log with the stage name on each line.
+The three Rust stages take turns on the lock of Cargo's build directory.
 `lint:all` includes `lint:core`, clippy over the crates and their tests, and
 `lint:core-docs`, rustdoc over every doc comment of the crates, and
 `format:core` checks their formatting with `cargo fmt`.
 `lint:all` includes `lint:css`, which applies the shared import boundaries to authored CSS.
 The CSS fixtures and package graph own the refusal and dependency regressions.
-The hosted run includes opener persistence and the entire serial browser inventory.
+The hosted run includes opener persistence and the entire browser inventory.
 The workflow retains its full output as the `validation-log` artifact.
 
-`vite.config.ts` owns the Vite+ tasks and their ordered pipelines.
+`vite.config.ts` owns the Vite+ tasks, the stage groups and their ordered pipelines.
 The package scripts keep the main commands: `build`, `lint`, `fix`, `type-check`, `test`, and `check`.
 Run an individual lane with `bunx vp run <task>`, such as `bunx vp run test:modules`.
 The two lint policies retain their JSONC files and the project guard in `scripts/lint.ts`.
@@ -96,15 +104,16 @@ their cheapest product owner. These commands contain everything outside it:
 | Command                            | Concrete regressions and cheapest interface                                                                                                                                                                                        |
 | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `bunx vp run test:opt-in:capacity` | Dynamic-tool wire limits, transport write capacity, and the frozen app-server capacity authority.                                                                                                                                  |
-| `bunx vp run test:opt-in:tooling`  | Browser adapter, wall-clock preload, owned-process harness, renderer fixture, and external watchdog behavior through their real test adapters.                                                                                     |
+| `bunx vp run test:opt-in:tooling`  | Browser adapter, wall-clock preload, owned-process harness, both `resource-cleanup` owners, renderer fixture, and external watchdog behavior through their real test adapters.                                                     |
 | `bunx vp run test:opt-in:topology` | A claim taken through a second server excludes writes here and reaches this server's pane within the lock sweep. A take-back by a pane here ends that server's claim, and its agent hears `CLAIM_REVOKED` after one lease renewal. |
 
 Every test owner belongs to exactly one lane; opt-in package commands are never
 reached from `check`. The Ubuntu CI job invokes the complete `bun run check` gate;
 the macOS job repeats its selected native owners on that platform.
 
-The whole chain's duration is machine-dependent. Browser owners run one at a
-time. Re-measure before making a timing claim.
+The whole chain's duration is machine-dependent. Bun takes its worker count from the cores
+that the process can use, so a 4-core runner uses four workers and one browser owner at a time.
+Re-measure before making a timing claim.
 
 ## Isolated servers and vaults
 
@@ -304,7 +313,7 @@ The `renderToStaticMarkup` owners elsewhere in `apps/web/tests/ui/` do not need 
 Do not add a shared harness or migrate unrelated owners solely to change their
 test setup.
 
-## The serial browser lane
+## The browser lane
 
 The owners named by `BROWSER_TEST_PATHS` drive a real browser through one
 strict adapter. They test visible behavior and rendered fidelity. System owners
@@ -314,9 +323,11 @@ test the CLI and server through their public contracts. The browser lane:
   Prerequisite failure exits 2 before building or starting an owner;
 - asserts `navigator.userAgent` says headless, because a window that maps
   steals focus under Hyprland; local and hosted runs exercise the same normal inventory;
-- runs one literal file child at a time, never concurrently. TASK-097 records that two owners
-  sharing the machine is how one of them fails for no reason: contention
-  stretches request and frame observations that the checks probe on purpose;
+- runs one file child for every six cores at a time, and at least one. Contention stretches
+  the request and frame observations that the checks probe, so a machine with fewer than
+  twelve cores runs one owner at a time. A lane with several owners prints the output of
+  each owner when it ends. After a failure it starts no further owner, and the running
+  owners finish their cleanup;
 - checks frontend freshness once and builds at most once before the first
   owner;
 - bounds retained browser and build children with `TEST_BROWSER_COMMAND_TIMEOUT_MS`,
@@ -343,7 +354,6 @@ On macOS, use Chrome for Testing. Before every local lane or gate, set
 executable path in the command environment. Keep these values out of `.env` files.
 Bun fixture subprocesses load these files and can add variables outside the fixture's allowed environment.
 Desktop Chrome can show system default-browser prompts despite the automation flags.
-Run the browser lane serially. Each owner must finish cleanup before the next starts.
 
 The lane writes `# browser-toolchain` and `# browser-lane` JSON summaries to stderr.
 The summaries identify the toolchain, selected files, owner progress, and final exit status.
@@ -376,7 +386,7 @@ bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/<canon
 One `--focus` can name any subset of the owners in any order. A repeated path runs once.
 The runner refuses unknown paths and flags before prerequisites or a build.
 `--test-name` needs exactly one owner and matches its complete test name.
-Run owners through the adapter, which keeps browser work serial, headless and clean after interruption.
+Run owners through the adapter, which keeps browser work bounded, headless and clean after interruption.
 
 `BROWSER_TEST_PATHS` is the inventory and the order of the package command.
 The runner accepts the package command or a focused selection from this inventory.

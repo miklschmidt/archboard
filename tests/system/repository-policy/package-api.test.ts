@@ -36,8 +36,7 @@ const ADOPTERS: {
 function exportsOutsideApi(exports: Record<string, string>, area: string): string[] {
 	const prefix = `./src/${area}/`;
 	return Object.entries(exports).flatMap(([subpath, target]) =>
-		target.startsWith(prefix) &&
-		!new RegExp(`^\\./src/${area}/api/[^/]+\\.ts$`).test(target)
+		target.startsWith(prefix) && !new RegExp(`^\\./src/${area}/api/[^/]+\\.ts$`).test(target)
 			? [`${subpath} -> ${target}`]
 			: [],
 	);
@@ -189,9 +188,10 @@ describe("no code outside the packages names a private package path", () => {
 		const violations = codeFilesOutsidePackages().flatMap((file) =>
 			file in PRIVATE_PATH_FILE_USES
 				? []
-				: privatePackagePathLines(fs.readFileSync(path.join(repoRoot, file), "utf8"), packageNames).map(
-						(line) => `${file}:${line}`,
-					),
+				: privatePackagePathLines(
+						fs.readFileSync(path.join(repoRoot, file), "utf8"),
+						packageNames,
+					).map((line) => `${file}:${line}`),
 		);
 		expect(violations).toEqual([]);
 	});

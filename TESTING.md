@@ -194,7 +194,8 @@ Desktop Chrome can show system default-browser prompts.
 
 Three facts decide whether the gate can run to its end:
 
-- The checks run one after the other and stop at the first failure. If the gate
+- The first stage runs lint, types, builds and the Rust checks at the same time.
+  The test lanes follow, one after the other. The first failure stops the gate. If the gate
   stops early, run the remaining checks and every unrun normal lane separately,
   using the Vite+ tasks in `vite.config.ts`. Include
   `test:modules` if it has not run. Run `frontend` and `workbench-example` before browser owners.

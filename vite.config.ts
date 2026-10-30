@@ -192,6 +192,20 @@ const capacityTests = [
 	"packages/codex-app-server/tests/shared/constants/app-server-capacity.test.ts",
 ];
 
+// These prove the test harness, not the product, so the normal gate leaves them out.
+const harnessTests = [
+	"tests/system/process-contracts/git-opener-sequence-watchdog.test.ts",
+	"tests/system/process-contracts/resource-cleanup.test.ts",
+	"tests/system/cli/resource-cleanup.test.ts",
+];
+
+const topologyTests = ["tests/system/process-contracts/cross-process-model-claims.test.ts"];
+
+// Twelve is every stage of `check:first`, so no stage waits for a slot.
+const stageOptions = "--concurrency-limit 12 --log labeled";
+// `vp` requires a command of a task that only gathers others.
+const stageGroup = { command: "true", cache: false };
+
 export default defineConfig({
 	// Both the page and its workers refuse a core from another source build.
 	define: { ARCHBOARD_CORE_SOURCE_HASH: JSON.stringify(coreSourceHash()) },
@@ -243,16 +257,19 @@ export default defineConfig({
 				},
 			},
 			"lint:tests": {
+				dependsOn: ["contracts", "core"],
 				command:
 					"bun scripts/lint.ts --disable-nested-config --config .oxlintrc.tests.jsonc tests packages/*/tests apps/*/tests",
 				cache: analysisCache,
 			},
 			"lint:policy": {
+				dependsOn: ["contracts", "core"],
 				command:
 					"bun scripts/lint.ts --type-aware --threads 1 --deny-warnings --max-warnings 0 --report-unused-disable-directives-severity error --config .oxlintrc.jsonc packages apps scripts tools vite.config.ts",
 				cache: analysisCache,
 			},
 			"lint:css": {
+				dependsOn: ["contracts", "core"],
 				command: "bun scripts/lint-css.ts",
 				cache: analysisCache,
 			},
@@ -276,15 +293,8 @@ export default defineConfig({
 				cache: coreCache,
 			},
 			"lint:all": {
-				dependsOn: ["contracts", "core"],
-				command: [
-					"vp run lint:tests",
-					"vp run lint:policy",
-					"vp run lint:css",
-					"vp run lint:core",
-					"vp run lint:core-docs",
-				],
-				cache: false,
+				dependsOn: ["lint:tests", "lint:policy", "lint:css", "lint:core", "lint:core-docs"],
+				...stageGroup,
 			},
 			"fix:all": {
 				dependsOn: ["contracts", "core"],
@@ -299,31 +309,38 @@ export default defineConfig({
 				],
 				cache: false,
 			},
+			// The stages that wait on no shared timing: `vp` runs them at once, and the first
+			// failure ends the run. Each test lane fills the machine, so those run after them,
+			// one at a time, and the browser lane shares the machine with nothing (TASK-097).
+			"test:first": {
+				dependsOn: ["types", "frontend", "workbench-example", "test:core", "test:repository"],
+				...stageGroup,
+			},
+			"check:first": {
+				dependsOn: ["lint:all", "format:check", "format:core", "test:first"],
+				...stageGroup,
+			},
 			"test:all": {
 				command: [
-					"vp run types",
-					"vp run frontend",
-					"vp run workbench-example",
-					"vp run test:core",
+					`vp run ${stageOptions} test:first`,
 					"vp run test:modules",
 					"vp run test:system",
-					"vp run test:repository",
 					"vp run test:serial-browser",
 				],
 				cache: false,
 			},
 			"check:all": {
 				command: [
-					"vp run lint:all",
-					"vp run format:check",
-					"vp run format:core",
-					"vp run test:all",
+					`vp run ${stageOptions} check:first`,
+					"vp run test:modules",
+					"vp run test:system",
+					"vp run test:serial-browser",
 				],
 				cache: false,
 			},
 			"test:modules": {
 				command: [
-					"bun test --isolate",
+					"bun test --parallel",
 					...[...capacityTests, ...benchmarkTests].map((file) => `--path-ignore-patterns ${file}`),
 					"packages apps",
 				].join(" "),
@@ -331,11 +348,8 @@ export default defineConfig({
 			},
 			"test:system": {
 				command: [
-					"bun test --isolate --max-concurrency=1",
-					"--path-ignore-patterns",
-					"tests/system/process-contracts/git-opener-sequence-watchdog.test.ts",
-					"--path-ignore-patterns",
-					"tests/system/process-contracts/cross-process-model-claims.test.ts",
+					"bun test --parallel",
+					...[...harnessTests, ...topologyTests].map((file) => `--path-ignore-patterns ${file}`),
 					"tests/system/cli",
 					"tests/system/server-state",
 					"tests/system/process-contracts",
@@ -348,7 +362,7 @@ export default defineConfig({
 				command:
 					"ARCHBOARD_TEST_TRACKED_INPUTS=" +
 					trackedInputsFingerprint +
-					" bun test --isolate tests/system/repository-policy",
+					" bun test --parallel tests/system/repository-policy",
 				cache: { ...testCache, env: [...testCache.env, "GIT_INDEX_FILE"] },
 			},
 			"test:serial-browser": {
@@ -390,14 +404,13 @@ export default defineConfig({
 				command: [
 					"bun test --isolate --max-concurrency=1",
 					"tests/system/support",
-					"tests/system/process-contracts/git-opener-sequence-watchdog.test.ts",
+					...harnessTests,
 					"tests/system/browser/browser-toolchain.test.ts",
 				].join(" "),
 				cache: browserTestCache,
 			},
 			"test:opt-in:topology": {
-				command:
-					"bun test --isolate --max-concurrency=1 tests/system/process-contracts/cross-process-model-claims.test.ts",
+				command: ["bun test --isolate --max-concurrency=1", ...topologyTests].join(" "),
 				cache: testCache,
 			},
 		},
