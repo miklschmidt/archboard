@@ -23,12 +23,19 @@ impl Axis {
             .sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.total_cmp(&b.1)));
         let mut high = f64::NEG_INFINITY;
         let mut gaps = Vec::new();
+        let mut removed = 0.0;
         for (low, end) in self.occupied {
             if high.is_finite() && low - high >= 1.0 {
                 // Keep each box's original subpixel alignment when SVG rounds its
                 // position and size separately. A fractional shift can put the
                 // rounded attachment just inside its rounded header edge.
-                gaps.push((high, high + (low - high).floor()));
+                let end = high + (low - high).floor();
+                gaps.push(Gap {
+                    start: high,
+                    end,
+                    before: removed,
+                });
+                removed += end - high;
             }
             high = high.max(end);
         }
@@ -36,17 +43,26 @@ impl Axis {
     }
 }
 
+/// One removable interval, with the total width of all preceding gaps.
+struct Gap {
+    start: f64,
+    end: f64,
+    before: f64,
+}
+
 /// Empty intervals that can disappear. Every protected interval only translates.
-struct Gaps(Vec<(f64, f64)>);
+struct Gaps(Vec<Gap>);
 
 impl Gaps {
+    /// Locate the last preceding gap instead of scanning every gap per coordinate.
     fn at(&self, value: f64) -> f64 {
-        value
-            - self
-                .0
-                .iter()
-                .map(|&(start, end)| (value.min(end) - start).max(0.0))
-                .sum::<f64>()
+        let index = self.0.partition_point(|gap| gap.start < value);
+        let Some(index) = index.checked_sub(1) else {
+            // Preserve the signed zero of an empty floating-point sum.
+            return value - if self.0.is_empty() { -0.0 } else { 0.0 };
+        };
+        let gap = &self.0[index];
+        value - (gap.before + (value.min(gap.end) - gap.start).max(0.0))
     }
 }
 
@@ -165,4 +181,36 @@ pub(super) fn drawing(shape: &Shape) -> Option<Placed> {
         y: space.y.gaps(),
     };
     (!contraction.x.0.is_empty() || !contraction.y.0.is_empty()).then(|| contraction.drawing(shape))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn contraction_keeps_occupied_sizes_and_subpixel_alignment_at_gap_boundaries() {
+        let mut axis = Axis::default();
+        for start in [0.25, 100.5, 210.75] {
+            axis.protect(start, 20.0);
+        }
+        let gaps = axis.gaps();
+        for (before, after) in [
+            (0.25, 0.25),
+            (52.25, 52.25),
+            (60.0, 52.25),
+            (68.25, 52.25),
+            (68.5, 52.5),
+            (100.5, 84.5),
+            (152.5, 136.5),
+            (170.0, 136.5),
+            (178.5, 136.5),
+            (210.75, 168.75),
+            (230.75, 188.75),
+        ] {
+            assert_eq!(gaps.at(before), after);
+        }
+        for start in [0.25, 100.5, 210.75] {
+            assert_eq!(gaps.at(start + 20.0) - gaps.at(start), 20.0);
+        }
+    }
 }

@@ -30,7 +30,7 @@ fn cost(path: &[Point]) -> f64 {
 impl Channels<'_, '_> {
     fn candidates(&self) -> Vec<PlacedLine> {
         let (model, shape, edge) = (self.model, self.shape, self.edge);
-        let (from, to) = model.ends[edge];
+        let (_, to) = model.ends[edge];
         let target = shape.endpoints[&to];
         let label = shape.labels.get(&edge).copied();
         let mut paths = Vec::new();
@@ -39,15 +39,10 @@ impl Channels<'_, '_> {
             (cost(path) + length(&[*path.last().expect("a source approach"), center(target)]))
                 .to_bits()
         });
-        for prefix in tails {
-            for above in [true] {
-                let Some(tail) = self.leave_cell(prefix.clone(), from, above) else {
-                    continue;
-                };
-                for tail in self.outward(tail, &self.topology.routes[edge].outward, center(target))
-                {
-                    paths.extend(self.arrivals(&tail));
-                }
+        // Ports already provide straight approaches outside endpoint clearance.
+        for tail in tails.into_iter().filter(|path| self.clear(path)) {
+            for tail in self.outward(tail, &self.topology.routes[edge].outward, center(target)) {
+                paths.extend(self.arrivals(&tail));
             }
         }
         paths.sort_by_cached_key(|path| cost(path).to_bits());
@@ -64,7 +59,7 @@ impl Channels<'_, '_> {
 
     fn arrivals(&self, tail: &[Point]) -> Vec<Vec<Point>> {
         let (model, shape, edge) = (self.model, self.shape, self.edge);
-        let (from, to) = model.ends[edge];
+        let (from, _) = model.ends[edge];
         let source = shape.endpoints[&from];
         let mut paths = Vec::new();
         for side in [Side::Top, Side::Bottom, Side::Left, Side::Right] {
@@ -78,43 +73,41 @@ impl Channels<'_, '_> {
             ) else {
                 continue;
             };
-            for above in [true] {
-                let Some(head) = self.leave_cell(vec![end.attachment, end.approach], to, above)
-                else {
+            let head = vec![end.attachment, end.approach];
+            if !self.clear(&head) {
+                continue;
+            }
+            let inward: Vec<_> = self.topology.routes[edge]
+                .inward
+                .iter()
+                .rev()
+                .copied()
+                .collect();
+            for head in self.outward(head, &inward, center(source)) {
+                let scope = self.topology.routes[edge].scope;
+                let Some(middle) = self.join(
+                    scope,
+                    *tail.last().expect("a departure"),
+                    *head.last().expect("an arrival"),
+                ) else {
                     continue;
                 };
-                let inward: Vec<_> = self.topology.routes[edge]
-                    .inward
-                    .iter()
-                    .rev()
-                    .copied()
-                    .collect();
-                for head in self.outward(head, &inward, center(source)) {
-                    let scope = self.topology.routes[edge].scope;
-                    let Some(middle) = self.join(
-                        scope,
-                        *tail.last().expect("a departure"),
-                        *head.last().expect("an arrival"),
-                    ) else {
-                        continue;
-                    };
-                    let points = clean(
-                        tail.iter()
-                            .copied()
-                            .chain(middle)
-                            .chain(head.into_iter().rev())
-                            .collect(),
-                    );
-                    if super::channel::feasible(
-                        model,
-                        self.topology,
-                        edge,
-                        shape,
-                        &points,
-                        shape.scopes[&scope].bounds,
-                    ) {
-                        paths.push(points);
-                    }
+                let points = clean(
+                    tail.iter()
+                        .copied()
+                        .chain(middle)
+                        .chain(head.into_iter().rev())
+                        .collect(),
+                );
+                if super::channel::feasible(
+                    model,
+                    self.topology,
+                    edge,
+                    shape,
+                    &points,
+                    shape.scopes[&scope].bounds,
+                ) {
+                    paths.push(points);
                 }
             }
         }
@@ -163,33 +156,6 @@ impl Channels<'_, '_> {
                 .routes
                 .iter()
                 .all(|line| super::channel::shared_fragment(model, edge, path, line))
-    }
-
-    fn leave_cell(&self, mut path: Vec<Point>, endpoint: usize, above: bool) -> Option<Vec<Point>> {
-        let cell = self.shape.endpoints[&endpoint];
-        let outside = inflate(cell, 16.0);
-        let last = *path.last()?;
-        if last.x <= outside.x + 1e-6
-            || last.x >= outside.x + outside.width - 1e-6
-            || last.y <= outside.y + 1e-6
-            || last.y >= outside.y + outside.height - 1e-6
-        {
-            return self.clear(&path).then_some(path);
-        }
-        let scope = &self.model.scopes[self.model.endpoints[endpoint].scope];
-        let gap = if scope.header == Some(endpoint) {
-            16.0
-        } else {
-            24.0
-        };
-        let y = if above {
-            cell.y - gap
-        } else {
-            cell.y + cell.height + gap
-        };
-        path.push(Point { x: last.x, y });
-        let path = clean(path);
-        self.clear(&path).then_some(path)
     }
 
     fn outward(&self, path: Vec<Point>, scopes: &[usize], peer: Point) -> Vec<Vec<Point>> {
