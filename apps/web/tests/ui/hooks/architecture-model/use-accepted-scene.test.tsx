@@ -78,7 +78,7 @@ test("a drawing that arrives late never replaces a newer destination", async () 
 		wrapper: withClient(client),
 	});
 	await waitFor(() => expect(pane.result.current.scene?.picture.svg).toBe("<svg>gateway</svg>"));
-	const third = shopRequest({ scope: "Shop#Handler" });
+	const third = shopRequest();
 	pane.rerender({ asked: worker });
 	pane.rerender({ asked: third });
 	expect(pane.result.current.pending).toBe(true);
