@@ -14,15 +14,11 @@
 // a moment, a pane that moved on while it waited. A second request while one is
 // under way ends the first at once, and is made the plain way itself.
 
-import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type RefObject } from "react";
 
 import { EXPLORING_MS } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
-import type {
-	SemanticDrawing,
-	SemanticRenderRequest,
-} from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+import type { SemanticRenderRequest } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import { CAMERA_MOTION_ATTRIBUTE } from "#ui/hooks/semantic-board-canvas/use-camera-glide.ts";
 import { PICTURE_MOTION_ATTRIBUTE } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
@@ -35,8 +31,10 @@ import {
 	type DiveWay,
 	type Stage,
 } from "#ui/clients/semantic-board-canvas/picture/picture-dive.ts";
-import { stagePicture } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
-import { semanticRenderQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
+import {
+	stagePicture,
+	type MovingPicture,
+} from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
 
 /** What decides whether a flight can be made, and over what. */
 interface DiveInputs {
@@ -44,17 +42,27 @@ interface DiveInputs {
 	/** The picture's area, which holds the camera's viewport and its surface. */
 	readonly area: RefObject<HTMLElement | null>;
 	/** The picture on screen, or null. */
-	readonly drawn: SemanticDrawing | null;
-	/** How the pane asks for a picture, besides which board. */
-	readonly reading: Pick<SemanticRenderRequest, "vault" | "comparison" | "layout">;
+	readonly drawn: MovingPicture | null;
+	/**
+	 * Ask for the picture of a board.
+	 * @param to The board, and how the pane will read it.
+	 * @returns The picture, or null when there is none to fly to.
+	 */
+	readonly draw: (to: Destination) => Promise<MovingPicture | null>;
 	/** Whether the person asked for no motion, which makes every move a cut. */
 	readonly reducedMotion: boolean;
 	/** Whether a walkthrough is presented: its step says what the picture is about, and nothing flies over it. */
 	readonly presenting: boolean;
 }
 
-/** Which board a flight goes to, and the variant and view the pane will read it through. */
-type Destination = Pick<SemanticRenderRequest, "board" | "variant" | "view">;
+/**
+ * Which board a flight goes to, and the variant and view the pane will read it
+ * through. Going back, a reader that knows which card opens the board on screen
+ * says so. Otherwise it is the card that the flight in went through.
+ */
+type Destination = Pick<SemanticRenderRequest, "board" | "variant" | "view"> & {
+	readonly card?: string;
+};
 
 /** What the pane can be asked to fly. */
 interface Flier {
@@ -73,6 +81,8 @@ interface Flier {
 	 * @param proceed What goes back the plain way, which the flight ends with.
 	 */
 	readonly out: (to: Destination, proceed: () => void) => void;
+	/** The reader went somewhere else: take the flight away and do not open what it was for. */
+	readonly abandon: () => void;
 }
 
 /** One request for a flight, from the moment it is made until the pane has taken over. */
@@ -80,7 +90,7 @@ interface Run {
 	/** Whether it has ended: the pane took over, or it ended the plain way. */
 	over: boolean;
 	/** The picture the pane showed when it was made. */
-	readonly at: SemanticDrawing;
+	readonly at: MovingPicture;
 	/** What opens or goes back the plain way. */
 	readonly proceed: () => void;
 	/** Give the surface back, once the flight is in the air. */
@@ -93,16 +103,16 @@ interface Plan {
 	readonly card: string;
 	readonly leg: Leg;
 	/** The picture that sits inside the card. */
-	readonly child: SemanticDrawing;
+	readonly child: MovingPicture;
 	/** The picture the surface holds for the flight when it is not the one on it. */
 	readonly standing: string | null;
 }
 
 /** A request to fly: over which picture, which way, to what, and how to plan it. */
 interface Trip {
-	readonly at: SemanticDrawing;
+	readonly at: MovingPicture;
 	readonly way: DiveWay;
-	readonly request: SemanticRenderRequest;
+	readonly to: Destination;
 	/**
 	 * Work out the flight.
 	 * @param other The picture of the board flown to.
@@ -110,7 +120,7 @@ interface Trip {
 	 * @param seen Where the camera is.
 	 * @returns The plan, or null when the card is not drawn.
 	 */
-	readonly plan: (other: SemanticDrawing, room: Size, seen: Camera) => Plan | null;
+	readonly plan: (other: MovingPicture, room: Size, seen: Camera) => Plan | null;
 }
 
 /** The pane as a flight finds it. */
@@ -221,23 +231,19 @@ function fly(
 
 /**
  * The picture of a board, when it is to hand within a moment.
- * @param client The tab's cache.
- * @param request The board, variant and reading.
+ * @param draw How the pane asks for it.
+ * @param to The board, and how the pane will read it.
  * @returns The picture, or null.
  */
-async function pictureOf(
-	client: QueryClient,
-	request: SemanticRenderRequest,
-): Promise<SemanticDrawing | null> {
+async function pictureOf(draw: DiveInputs["draw"], to: Destination): Promise<MovingPicture | null> {
 	const clock = frameClock();
 	let timer = 0;
 	const late = new Promise<null>((resolve) => {
 		timer = clock.after(EXPLORING_MS.divePrefetch, () => resolve(null));
 	});
-	const read = client.fetchQuery(semanticRenderQuery(request)).catch(() => null);
+	const read = draw(to).catch(() => null);
 	try {
-		const answer = await Promise.race([read, late]);
-		return answer?.kind === "drawn" ? answer : null;
+		return await Promise.race([read, late]);
 	} finally {
 		clock.cancelAfter(timer);
 	}
@@ -292,25 +298,21 @@ interface Flights {
 	readonly update: (inputs: DiveInputs) => void;
 	/** The pane is going away. */
 	readonly dispose: () => void;
+	readonly abandon: Flier["abandon"];
 }
 
 /**
  * The flights of one pane.
- * @param client The tab's cache.
  * @param first The pane as it is when it first renders.
  * @param handed Told when the pane takes over from a flight, with the picture it takes over from.
  * @returns The two flights, and the two things the pane tells them.
  */
-function createFlights(
-	client: QueryClient,
-	first: DiveInputs,
-	handed: (from: SemanticDrawing | null) => void,
-): Flights {
+function createFlights(first: DiveInputs, handed: (from: MovingPicture | null) => void): Flights {
 	let pane = first;
 	let run: Run | null = null;
 	// A flight that has arrived holds the camera's rest until the pane has taken
 	// over from the picture it flew over: what lets the hold go, and that picture.
-	let landing: { readonly letGo: () => void; readonly from: SemanticDrawing | null } | null = null;
+	let landing: { readonly letGo: () => void; readonly from: MovingPicture | null } | null = null;
 	// Which card of a board opened which board, so that going back knows what to fly out of.
 	const cards = new Map<string, string>();
 
@@ -378,7 +380,7 @@ function createFlights(
 	 * @param other The picture of the board flown to, or null when it was not to hand.
 	 * @returns The flight and what it flies over, or null when it cannot be made.
 	 */
-	function takeoffFor(mine: Run, trip: Trip, other: SemanticDrawing | null): Takeoff | null {
+	function takeoffFor(mine: Run, trip: Trip, other: MovingPicture | null): Takeoff | null {
 		const ground = groundFor(mine, trip);
 		const plan =
 			ground === null || other === null
@@ -396,7 +398,7 @@ function createFlights(
 	 * @param other The picture of the board flown to, or null when it was not to hand.
 	 * @returns How to give the surface back, or null when the flight cannot be made.
 	 */
-	function takeOff(mine: Run, trip: Trip, other: SemanticDrawing | null): (() => void) | null {
+	function takeOff(mine: Run, trip: Trip, other: MovingPicture | null): (() => void) | null {
 		const takeoff = takeoffFor(mine, trip, other);
 		return takeoff === null
 			? null
@@ -417,7 +419,7 @@ function createFlights(
 	 * @param trip What to fly.
 	 */
 	async function fetchAndFly(mine: Run, trip: Trip): Promise<void> {
-		const other = await pictureOf(client, trip.request);
+		const other = await pictureOf(pane.draw, trip.to);
 		const stop = takeOff(mine, trip, other);
 		if (stop === null) {
 			settle(mine);
@@ -467,7 +469,7 @@ function createFlights(
 			const leg = legInto(at, card, child, room);
 			return leg === null ? null : { card, leg, child, standing: null };
 		};
-		begin({ at, way: "in", request: { ...to, ...pane.reading }, plan }, proceed);
+		begin({ at, way: "in", to, plan }, proceed);
 	}
 
 	/**
@@ -477,7 +479,7 @@ function createFlights(
 	 */
 	function out(to: Destination, proceed: () => void): void {
 		const child = pane.drawn;
-		const card = child === null ? undefined : cards.get(keyOf(to.board, child.board));
+		const card = to.card ?? (child === null ? undefined : cards.get(keyOf(to.board, child.board)));
 		if (endRun() || child === null || card === undefined) {
 			proceed();
 			return;
@@ -493,7 +495,7 @@ function createFlights(
 			const leg = legOut(parent, card, child, room, seen);
 			return leg === null ? null : { card, leg, child, standing: parent.svg };
 		};
-		begin({ at: child, way: "out", request: { ...to, ...pane.reading }, plan }, proceed);
+		begin({ at: child, way: "out", to, plan }, proceed);
 	}
 
 	/**
@@ -508,23 +510,28 @@ function createFlights(
 		if (landing !== null && landing.from !== inputs.drawn) letGoOfLanding();
 	}
 
-	/** Let go of a flight in the air, of the surface it holds, and of any hold on the camera. */
-	function dispose(): void {
-		letGoOfLanding();
+	/** Take a flight in the air away, and forget what it was for. */
+	function abandon(): void {
 		if (run === null) return;
 		run.over = true;
 		run.stop();
 		run = null;
 	}
 
-	return { into, out, update, dispose };
+	/** Let go of a flight in the air, of the surface it holds, and of any hold on the camera. */
+	function dispose(): void {
+		letGoOfLanding();
+		abandon();
+	}
+
+	return { into, out, update, dispose, abandon };
 }
 
 /** The pane has taken over from a flight: from which picture, and which it arrived at. */
 interface Handover {
-	readonly from: SemanticDrawing | null;
+	readonly from: MovingPicture | null;
 	/** The picture of the board flown to, once it is on screen; undefined until then. */
-	readonly to?: SemanticDrawing | null;
+	readonly to?: MovingPicture | null;
 }
 
 /**
@@ -534,7 +541,7 @@ interface Handover {
  * @param drawn The picture on screen.
  * @returns The same hand-over, or the arrival noted on it, or null.
  */
-function followed(handover: Handover | null, drawn: SemanticDrawing | null): Handover | null {
+function followed(handover: Handover | null, drawn: MovingPicture | null): Handover | null {
 	if (handover === null) {
 		return null;
 	}
@@ -550,10 +557,9 @@ function followed(handover: Handover | null, drawn: SemanticDrawing | null): Han
  * @returns Whether the next picture takes over from a flight, and the two flights.
  */
 function useDive(inputs: DiveInputs): Flier {
-	const client = useQueryClient();
 	const [handover, setHandover] = useState<Handover | null>(null);
 	const [flights] = useState(() =>
-		createFlights(client, inputs, (from) => {
+		createFlights(inputs, (from) => {
 			setHandover({ from });
 		}),
 	);
@@ -565,7 +571,12 @@ function useDive(inputs: DiveInputs): Flier {
 		flights.update(inputs);
 	});
 	useEffect(() => flights.dispose, [flights]);
-	return { cut: current !== null, into: flights.into, out: flights.out };
+	return {
+		cut: current !== null,
+		into: flights.into,
+		out: flights.out,
+		abandon: flights.abandon,
+	};
 }
 
 export { useDive, type Destination, type Flier };

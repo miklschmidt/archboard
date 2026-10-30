@@ -1,5 +1,5 @@
 import { useCallback, useMemo, type ComponentProps, type JSX } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	ArchitectureReadError,
 	architectureModelKeys,
@@ -15,10 +15,7 @@ import { ModelPreviewCoverage } from "#ui/components/architecture-model/ModelPre
 import { ModelPreviewDetails } from "#ui/components/architecture-model/ModelPreviewDetails.tsx";
 import { ModelBookmarks } from "#ui/components/architecture-model/ModelBookmarks.tsx";
 import { ModelBookmarkReading } from "#ui/components/architecture-model/ModelBookmarkReading.tsx";
-import {
-	ModelWalkthroughReader,
-	ModelWalkthroughFrame,
-} from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
+import { ModelWalkthroughReader } from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
 import { ModelLegacyAddresses } from "#ui/components/architecture-model/ModelLegacyAddresses.tsx";
 
 type PreviewProps = Pick<
@@ -37,15 +34,16 @@ type PreviewProps = Pick<
  */
 function ModelPreviewReader(props: PreviewProps): JSX.Element {
 	const location = useModelLocation(props.paneId);
-	const query = useQuery(
-		architectureModelQuery(props.vault, location.checkpoint, {
+	const query = useQuery({
+		...architectureModelQuery(props.vault, location.checkpoint, {
 			preview: location.preview,
 			bookmark: location.bookmark,
 			legacyAddress: location.legacyAddress,
 			state: location.state,
 			against: location.against,
 		}),
-	);
+		placeholderData: keepPreviousData,
+	});
 	const client = useQueryClient();
 	const { vault } = props;
 	const refresh = useCallback((): void => {
@@ -101,7 +99,12 @@ function ModelPreviewReader(props: PreviewProps): JSX.Element {
 				<output className="text-body text-muted-foreground p-10">Reading migration preview…</output>
 			)}
 			{problem === null ? (
-				<PreviewContent {...props} model={model} subject={location.subject} />
+				<PreviewContent
+					{...props}
+					model={model}
+					settled={!query.isPlaceholderData}
+					subject={location.subject}
+				/>
 			) : (
 				<ModelError {...problem} />
 			)}
@@ -116,17 +119,24 @@ function ModelPreviewReader(props: PreviewProps): JSX.Element {
 			aria-label="Migration preview"
 			className="bg-background flex min-h-0 flex-1 flex-col"
 		>
-			<ModelWalkthroughFrame
-				key={previewReadingKey(model)}
-				{...props}
-				model={model}
-				refused={problem !== null}
-				chrome={header}
-			>
+			<ModelWalkthroughReader {...props} model={offeredModel(model, problem)} chrome={header}>
 				{content}
-			</ModelWalkthroughFrame>
+			</ModelWalkthroughReader>
 		</section>
 	);
+}
+
+/**
+ * A refused preview offers no presentation.
+ * @param model The read model.
+ * @param problem The refusal, when one applies.
+ * @returns The model a presentation can start from.
+ */
+function offeredModel(
+	model: ComponentProps<typeof ModelReading>["model"] | undefined,
+	problem: ReturnType<typeof previewProblem>,
+): ComponentProps<typeof ModelReading>["model"] | undefined {
+	return problem === null ? model : undefined;
 }
 
 /**
@@ -176,6 +186,7 @@ function PreviewContent(
 	props: PreviewProps & {
 		model: ComponentProps<typeof ModelReading>["model"] | undefined;
 		subject: string | null;
+		settled: boolean;
 	},
 ): JSX.Element | null {
 	if (props.model === undefined) return null;
@@ -201,6 +212,7 @@ function PreviewModel(
 	props: PreviewProps & {
 		model: ComponentProps<typeof ModelReading>["model"];
 		subject: string | null;
+		settled: boolean;
 	},
 ): JSX.Element {
 	const diagnostics = props.model.migrationPreview?.diagnostics;
@@ -223,29 +235,13 @@ function PreviewModel(
  * @returns A readable bookmark or explicit unavailable view.
  */
 function PreviewReading(
-	props: PreviewProps & Pick<ComponentProps<typeof ModelReading>, "model" | "subject">,
+	props: PreviewProps & Pick<ComponentProps<typeof ModelReading>, "model" | "subject" | "settled">,
 ): JSX.Element {
-	const bookmark = props.model.migrationPreview?.bookmark;
 	return (
 		<ModelBookmarkReading model={props.model}>
-			<ModelReading {...props} key={JSON.stringify([props.subject, bookmark?.id])} />
+			<ModelReading {...props} />
 		</ModelBookmarkReading>
 	);
-}
-
-/**
- * A new source selection starts a new presentation, while refresh keeps its capture.
- * @param model The complete selected preview.
- * @returns The source identity of the presentation session.
- */
-function previewReadingKey(
-	model: ComponentProps<typeof ModelReading>["model"] | undefined,
-): string {
-	return JSON.stringify([
-		model?.manifest.id,
-		previewOriginal(model?.migrationPreview, null),
-		model?.checkpoint?.id,
-	]);
 }
 
 /**

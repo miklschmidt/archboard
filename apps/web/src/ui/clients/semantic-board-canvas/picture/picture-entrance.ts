@@ -14,10 +14,7 @@
 // landing stages it again untouched.
 
 import { PICTURE_ENTRY_PHASES } from "@archboard/timing";
-import type {
-	SemanticBox,
-	SemanticDrawing,
-} from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+import type { SemanticBox } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { growIn } from "#ui/clients/semantic-board-canvas/picture/picture-cards.ts";
 import { drawOn } from "#ui/clients/semantic-board-canvas/picture/picture-lines.ts";
 import {
@@ -35,6 +32,7 @@ import { keepingMarks } from "#ui/clients/semantic-board-canvas/subjects/subject
 import {
 	restagePicture,
 	stagePicture,
+	type MovingPicture,
 	type PictureTransition,
 } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
 
@@ -199,7 +197,7 @@ function nothingToSeek(): void {
  * @param drawing The picture.
  * @returns The entrance, drawn at its start.
  */
-function enterPicture(surface: HTMLElement, drawing: SemanticDrawing): PictureTransition {
+function enterPicture(surface: HTMLElement, drawing: MovingPicture): PictureTransition {
 	/** Land on the picture exactly as the server drew it, keeping the viewer's marks on it. */
 	function finish(): void {
 		keepingMarks(surface, () => {

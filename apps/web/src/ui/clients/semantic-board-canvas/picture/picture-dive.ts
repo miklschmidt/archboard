@@ -60,7 +60,7 @@ function canFly(surface: HTMLElement): boolean {
  * @returns The stage, or null when there is none to fly over.
  */
 function stageIn(area: HTMLElement | null): Stage | null {
-	const viewport = slotIn(area, "semantic-board-viewport");
+	const viewport = slotIn(area, "semantic-board-viewport") ?? slotIn(area, "model-diagram");
 	const surface = slotIn(area, "semantic-board-surface");
 	if (viewport === null || surface === null) {
 		return null;

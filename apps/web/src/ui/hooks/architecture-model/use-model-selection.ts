@@ -47,7 +47,13 @@ function useSubjectSelection(initial: readonly string[], readingKey = "") {
 		[selectMany],
 	);
 	const clear = useCallback((): void => selectMany([]), [selectMany]);
-	return { ids, select, selectMany, clear };
+	const seed = useCallback(
+		(subjects: readonly string[]): void => {
+			setChoice({ key: readingKey, ids: new Set(subjects) });
+		},
+		[readingKey],
+	);
+	return { ids, select, selectMany, clear, seed };
 }
 
 /**

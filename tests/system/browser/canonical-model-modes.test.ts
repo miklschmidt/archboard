@@ -251,7 +251,12 @@ test("diagram modes require a relevant flow and restore the prior architecture r
 			`['scopeA','focusA','hideKindsA'].map(key => new URLSearchParams(location.search).get(key))`,
 		),
 	).toEqual(["Shop#Gateway", "Shop#Handler", "call"]);
-	expect(await drawnSubjects(browser)).not.toContain("Shop#Finish");
+	await pollUntil(
+		() => drawnSubjects(browser),
+		(subjects) => !subjects.includes("Shop#Finish"),
+		"the architecture reading in place of the flow",
+		WAIT,
+	);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

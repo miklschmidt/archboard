@@ -21,82 +21,73 @@ interface ReaderProps extends Pick<
 	"driven" | "narration" | "overlay"
 > {
 	vault: string;
-	model: Model;
+	model: Model | undefined;
 	paneId: string;
 	reducedMotion: boolean;
 	children: ReactNode;
 	chrome?: ReactNode;
+	/** Which time the pane has been pointed at a reading from outside: each arrival decides playback. */
+	arrival?: number | undefined;
 	onPresentationEnd?: (() => void) | undefined;
 }
 
 /**
- * Keep header and recovery available when a source cannot offer a presentation.
- * @param props The optional coherent model and composed pane contents.
- * @returns Ordinary recovery or the existing captured-reading owner.
- */
-function ModelWalkthroughFrame(
-	props: Omit<ReaderProps, "model"> & { model: Model | undefined; refused?: boolean },
-): JSX.Element {
-	if (props.model === undefined || props.refused === true)
-		return (
-			<>
-				{props.chrome}
-				{props.children}
-			</>
-		);
-	return <ModelWalkthroughReader {...props} model={props.model} />;
-}
-
-/**
- * Preserve the ordinary reader while one captured presentation is open.
- * @param props The live source and its ordinary reading.
+ * Preserve the ordinary reader while one captured presentation is open. The
+ * header stays in one place for every answer, so an open menu outlives a read.
+ * @param props The live source, when it is known, and its ordinary reading.
  * @returns A narrative choice and one captured reading at a time.
  */
 function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
 	const { checkpoint, state: requestedState, preview } = useModelLocation(props.paneId);
-	const state = walkthroughState(props.model, requestedState);
+	const { model, arrival, driven } = props;
+	const state = walkthroughState(model, requestedState);
 	const source = JSON.stringify([checkpoint, state, preview]);
-	const [session, setSession] = useState(() => {
-		const asked = props.driven;
-		const request: PlaybackRequest | null =
-			asked == null
-				? null
-				: {
-						id: crypto.randomUUID(),
-						walkthrough: asked.walkthrough,
-						checkpoint,
-						state,
-						preview,
-					};
-		return { source, request };
-	});
-	// A new source closes only playback. The ordinary reader retains its selection.
-	if (session.source !== source) setSession({ source, request: null });
+	/**
+	 * What an arrival from outside asks of playback.
+	 * @returns The presentation it asks for, or null for the ordinary reading.
+	 */
+	const requested = (): PlaybackRequest | null =>
+		driven == null
+			? null
+			: {
+					id: crypto.randomUUID(),
+					walkthrough: driven.walkthrough,
+					checkpoint,
+					state,
+					preview,
+				};
+	const [session, setSession] = useState(() => ({ source, arrival, request: requested() }));
+	// An arrival starts what it asks for. A new source closes only playback, and the
+	// ordinary reader retains its selection.
+	if (session.arrival !== arrival) setSession({ source, arrival, request: requested() });
+	else if (session.source !== source) setSession({ source, arrival, request: null });
 	const { request } = session;
 	const select = useCallback(
 		(walkthrough: string): void => {
 			setSession({
 				source,
+				arrival,
 				request: { id: crypto.randomUUID(), walkthrough, checkpoint, state, preview },
 			});
 		},
-		[source, checkpoint, state, preview],
+		[source, arrival, checkpoint, state, preview],
 	);
 	const { onPresentationEnd } = props;
 	const leave = useCallback((): void => {
-		setSession({ source, request: null });
+		setSession({ source, arrival, request: null });
 		onPresentationEnd?.();
-	}, [source, onPresentationEnd]);
+	}, [source, arrival, onPresentationEnd]);
 	const active = request !== null;
 	const context = useMemo(() => ({ select, active }), [select, active]);
 	return (
 		<ModelWalkthroughContext value={context}>
 			{props.chrome}
 			<Activity mode={request === null ? "visible" : "hidden"}>{props.children}</Activity>
-			{request !== null && (
+			{request !== null && model !== undefined && (
 				<CapturedWalkthrough
 					key={request.id}
 					{...props}
+					model={model}
 					request={request}
 					onLeave={leave}
 					onRestart={select}
@@ -113,6 +104,7 @@ function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
  */
 function CapturedWalkthrough(
 	props: ReaderProps & {
+		model: Model;
 		request: PlaybackRequest;
 		onLeave: () => void;
 		onRestart: (id: string) => void;
@@ -183,7 +175,7 @@ function PlaybackFailure(props: {
 	);
 }
 
-export { ModelWalkthroughReader, ModelWalkthroughFrame };
+export { ModelWalkthroughReader };
 
 /**
  * Preserve original coverage when an alias selected it without a state URL field.
@@ -191,6 +183,6 @@ export { ModelWalkthroughReader, ModelWalkthroughFrame };
  * @param requested The ordinary current or proposal selector.
  * @returns The original state identity, or unchanged canonical selection.
  */
-function walkthroughState(model: Model, requested: string | null): string | null {
-	return model.migrationPreview?.selected?.legacy ?? requested;
+function walkthroughState(model: Model | undefined, requested: string | null): string | null {
+	return model?.migrationPreview?.selected?.legacy ?? requested;
 }

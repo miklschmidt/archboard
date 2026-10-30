@@ -249,7 +249,7 @@ test("walkthrough beats change readings while one revision stays captured until 
 	);
 	expect(
 		await browser.eval<number>(
-			`document.querySelectorAll('[data-slot="model-walkthrough"] [data-slot="model-diagram"]').length`,
+			`document.querySelectorAll('[data-slot="model-walkthrough"] [data-semantic-id]').length`,
 		),
 	).toBe(0);
 	await browser.run(["click", '[data-slot="semantic-presentation-next"]']);

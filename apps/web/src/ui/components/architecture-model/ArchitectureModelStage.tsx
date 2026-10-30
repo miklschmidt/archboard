@@ -12,7 +12,12 @@ import { ModelBookmarkReading } from "#ui/components/architecture-model/ModelBoo
 import { importedReadings } from "#ui/rules/architecture-model/imported-readings.ts";
 import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
 import { useCallback, useEffect, type ComponentProps, type JSX, type ReactNode } from "react";
-import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
+import {
+	keepPreviousData,
+	useQuery,
+	useQueryClient,
+	type UseQueryResult,
+} from "@tanstack/react-query";
 import type { ArchitectureModelRead } from "@archboard/board/model";
 import {
 	ArchitectureReadError,
@@ -21,10 +26,7 @@ import {
 	architectureCheckpointsQuery,
 } from "#ui/clients/architecture-model/queries.ts";
 import { ModelStateDetails } from "#ui/components/architecture-model/ModelStateDetails.tsx";
-import {
-	ModelWalkthroughReader,
-	ModelWalkthroughFrame,
-} from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
+import { ModelWalkthroughReader } from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
 import { ModelReadingSelector } from "#ui/components/architecture-model/ModelReadingSelector.tsx";
 import { ModelComparisonSelector } from "#ui/components/architecture-model/ModelComparisonSelector.tsx";
@@ -49,6 +51,8 @@ interface ModelStageProps
 	vault: string;
 	paneId: string;
 	reducedMotion: boolean;
+	/** Which time the pane has been pointed at a reading from outside. */
+	arrival?: number | undefined;
 }
 
 /**
@@ -95,7 +99,7 @@ function ArchitectureModelStage(props: ModelStageProps): JSX.Element {
 function LocatedModelStage(props: ModelStageProps): JSX.Element {
 	const { preview, subject } = useModelLocation(props.paneId);
 	return (
-		<ModelPane key={JSON.stringify([props.vault, subject])} subject={subject}>
+		<ModelPane key={props.vault} subject={subject} arrival={props.arrival}>
 			{preview !== null ? <ModelPreviewReader {...props} /> : <CanonicalModelReader {...props} />}
 		</ModelPane>
 	);
@@ -123,19 +127,22 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 		identify,
 	} = useModelLocation(props.paneId);
 	const feed = useArchitectureFeed(props.vault);
-	const query = useQuery(
-		architectureModelQuery(props.vault, checkpoint, {
+	const query = useQuery({
+		...architectureModelQuery(props.vault, checkpoint, {
 			state,
 			against,
 			bookmark,
 			legacyAddress,
 		}),
-	);
+		placeholderData: keepPreviousData,
+	});
 	const catalogue = useQuery(architectureModelQuery(props.vault));
 	const history = useQuery(architectureCheckpointsQuery(props.vault));
 	const { data } = query;
-	const resolvedId = modelIdentity(data);
-	const original = isOriginalModel(data);
+	// The reading kept on screen while another loads answers no question about the address.
+	const answered = query.isPlaceholderData ? undefined : data;
+	const resolvedId = modelIdentity(answered);
+	const original = isOriginalModel(answered);
 	useEffect(() => {
 		if (resolvedId !== undefined && !original) identify(resolvedId);
 	}, [identify, resolvedId, original]);
@@ -151,7 +158,8 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 			<ModelIdentityFailure id={requestedModel} refresh={refresh} refreshing={query.isFetching} />
 		);
 	}
-	if (isOriginalModel(data)) return <ModelOriginalDestination model={data} paneId={props.paneId} />;
+	if (isOriginalModel(answered))
+		return <ModelOriginalDestination model={answered} paneId={props.paneId} />;
 	const header = (
 		<>
 			<ModelHeader name={modelName(data)} refresh={refresh} refreshing={query.isFetching}>
@@ -209,6 +217,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				stale={stale}
 				failure={feed.failure}
 				onCodeTargetNotice={props.onCodeTargetNotice}
+				arrival={props.arrival}
 				driven={props.driven}
 				onPresentationEnd={props.onPresentationEnd}
 				narration={props.narration}
@@ -363,6 +372,7 @@ interface ModelResponseProps extends Pick<
 	| "paneId"
 	| "reducedMotion"
 	| "onCodeTargetNotice"
+	| "arrival"
 	| "driven"
 	| "narration"
 	| "overlay"
@@ -385,34 +395,34 @@ interface ModelResponseProps extends Pick<
 function ModelResponse(props: ModelResponseProps): JSX.Element {
 	const { query, stale } = props;
 	const model = visibleModel(query, props.current);
-	/**
-	 * A failed read that retries is pending again, so every answer shares one frame.
-	 * @param content What the reading shows.
-	 * @returns The content under a header that keeps its open menu.
-	 */
-	const framed = (content: ReactNode): JSX.Element => (
-		<ModelWalkthroughFrame
-			key={readingSessionKey(model, props.subject)}
+	const problem = readingProblem(query.error, props.current ? props.failure : null);
+	const { paneId, states } = props;
+	const overview = useCallback(
+		(shown: NonNullable<typeof model>): JSX.Element => (
+			<>
+				<ModelStateDetails model={shown} paneId={paneId} states={states} />
+				<CheckpointEvidence model={shown} />
+			</>
+		),
+		[paneId, states],
+	);
+	// One frame for every answer: its header keeps an open menu while a read fails, retries or arrives.
+	return (
+		<ModelWalkthroughReader
 			vault={props.vault}
 			model={model}
 			paneId={props.paneId}
 			reducedMotion={props.reducedMotion}
+			arrival={props.arrival}
 			driven={props.driven}
 			onPresentationEnd={props.onPresentationEnd}
 			narration={props.narration}
 			overlay={props.overlay}
 			chrome={props.header}
 		>
-			{content}
-		</ModelWalkthroughFrame>
-	);
-	if (query.isPending)
-		return framed(
-			<output className="text-body text-muted-foreground p-10">Reading architecture…</output>,
-		);
-	const problem = readingProblem(query.error, props.current ? props.failure : null);
-	return framed(
-		<>
+			{query.isPending && (
+				<output className="text-body text-muted-foreground p-10">Reading architecture…</output>
+			)}
 			{stale && (
 				<output
 					data-slot="model-stale"
@@ -426,34 +436,20 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			{model !== undefined && (
 				<ModelBookmarkReading model={model}>
 					<ModelReading
-						overview={
-							<>
-								<ModelStateDetails model={model} paneId={props.paneId} states={props.states} />
-								<CheckpointEvidence model={model} />
-							</>
-						}
+						overview={overview}
 						overlay={props.overlay}
 						subject={props.subject}
 						vault={props.vault}
 						model={model}
+						settled={!query.isPlaceholderData}
 						paneId={props.paneId}
 						reducedMotion={props.reducedMotion}
 						onCodeTargetNotice={props.onCodeTargetNotice}
 					/>
 				</ModelBookmarkReading>
 			)}
-		</>,
+		</ModelWalkthroughReader>
 	);
-}
-
-/**
- * Preserve a model's reader identity across states while resetting explicit subject destinations.
- * @param model The optional coherent model.
- * @param subject The explicit selected destination.
- * @returns The presentation owner identity.
- */
-function readingSessionKey(model: ModelQuery["data"], subject: string | null): string {
-	return JSON.stringify([model?.manifest.id, subject]);
 }
 
 /**

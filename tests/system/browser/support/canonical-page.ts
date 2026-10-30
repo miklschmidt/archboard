@@ -190,7 +190,39 @@ async function editCanonicalModel(
 	return edited.body;
 }
 
+/**
+ * Wait until a module's reading is on screen. The sidebar reads the accepted scene,
+ * so a read after a move waits for its picture.
+ */
+async function settledOn(browser: AgentBrowserSession, id: string): Promise<void> {
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-reading"]')?.getAttribute('data-scope') === ${JSON.stringify(id)} && document.querySelector('[data-slot="model-diagram"]')?.getAttribute('aria-busy') === 'false'`,
+			),
+		Boolean,
+		"the selected scope",
+		{ timeoutMs: 10_000 },
+	);
+}
+
+/** Open a module from the sidebar, and wait for its picture. */
+async function openModule(browser: AgentBrowserSession, id: string): Promise<void> {
+	await openModelSidebar(browser);
+	await browser.run(["click", `[data-slot="module-list"] [data-module-id="${id}"]`]);
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector('[data-slot="module-open"]') !== null`),
+		Boolean,
+		"the module opening action",
+		{ timeoutMs: 10_000 },
+	);
+	await browser.run(["click", '[data-slot="module-open"]']);
+	await settledOn(browser, id);
+}
+
 export {
+	openModule,
+	settledOn,
 	editCanonicalModel,
 	seedCanonicalModel,
 	modelAddress,

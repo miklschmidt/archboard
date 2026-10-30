@@ -7,15 +7,10 @@
 // walkthrough open — and a subject that is both attended and unsettled says
 // both, which it could not while one map held one mark per subject.
 
-import { useLayoutEffect, useMemo } from "react";
+import { useLayoutEffect } from "react";
 
 import type { StagedPicture } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
-import type { GroupSelection } from "#ui/rules/semantic-board-canvas/board/groups.ts";
 import { lightInk } from "#ui/clients/semantic-board-canvas/subjects/lit-ink.ts";
-import {
-	subjectMarks,
-	type BeatFocus,
-} from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
 import {
 	markReach,
 	markSubjects,
@@ -24,12 +19,8 @@ import {
 
 /** What the viewer is attending to, and what a presented step veils. */
 interface ViewerMarks {
-	/** The subject picked out, or null. */
-	readonly selection: string | null;
-	/** What the beat being read asks of the picture. */
-	readonly focus: BeatFocus;
-	/** The selected group and its members, or null. */
-	readonly group: GroupSelection | null;
+	/** Every subject attended to: what is picked out, what a beat asks for, and a group's members. */
+	readonly attended: ReadonlySet<string>;
 	/** What a presented step's veil, or the light a poke asks for, leaves standing; null for neither. */
 	readonly veil: ReadonlySet<string> | null;
 	/** How many hops beyond the first each subject a trace reached is; null without a trace. */
@@ -46,11 +37,7 @@ interface ViewerMarks {
  * @param marks What to mark.
  */
 function useViewerMarks(picture: StagedPicture | null, marks: ViewerMarks): void {
-	const { selection, focus, group, veil, reach } = marks;
-	const attended = useMemo(
-		() => subjectMarks(selection, focus, group?.members),
-		[selection, focus, group],
-	);
+	const { attended, veil, reach } = marks;
 	useLayoutEffect(() => {
 		if (picture !== null) {
 			markSubjects(picture.root, attended);

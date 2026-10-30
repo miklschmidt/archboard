@@ -17,7 +17,6 @@ import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 
 import { PICTURE_MS } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
-import type { SemanticDrawing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import {
 	ghostPicture,
 	type Departure,
@@ -28,6 +27,7 @@ import {
 	sharedShift,
 	stagePicture,
 	transitionPicture,
+	type MovingPicture,
 	type PictureTransition,
 	type Shift,
 } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
@@ -50,7 +50,7 @@ interface Flight {
 /** What the surface was last given, and on which element. */
 interface Shown {
 	readonly surface: HTMLElement;
-	readonly drawing: SemanticDrawing;
+	readonly drawing: MovingPicture;
 }
 
 /** How pictures move on the surface, and what the camera is told as they do. */
@@ -100,7 +100,7 @@ interface PictureStore {
  * @returns True when the two are pictures of one board read one way, or of one
  * board in one presentation, and differ.
  */
-function carriedOn(last: SemanticDrawing, next: SemanticDrawing, presenting = false): boolean {
+function carriedOn(last: MovingPicture, next: MovingPicture, presenting = false): boolean {
 	if (last.svg === next.svg) {
 		return false;
 	}
@@ -118,9 +118,9 @@ function carriedOn(last: SemanticDrawing, next: SemanticDrawing, presenting = fa
 function carriedFrom(
 	last: Shown | null,
 	surface: HTMLElement,
-	drawing: SemanticDrawing,
+	drawing: MovingPicture,
 	motion: Pick<PictureMotion, "reducedMotion" | "presenting">,
-): SemanticDrawing | null {
+): MovingPicture | null {
 	if (last?.surface !== surface || motion.reducedMotion || !frameClock().animates) {
 		return null;
 	}
@@ -131,7 +131,8 @@ function carriedFrom(
  * Whether the next picture comes in part by part: one with nothing on this
  * surface to be carried from — the first, or another board or view. A picture
  * of the same board read the same way is carried instead. A theme switch is no
- * new picture at all: the one on the surface takes the page's colours.
+ * new picture at all: the one on the surface takes the page's colours, and an
+ * empty reading has no parts to bring in.
  * @param last What the surface was last given, if anything.
  * @param surface The surface the picture goes on.
  * @param drawing The picture.
@@ -141,10 +142,10 @@ function carriedFrom(
 function entersAfresh(
 	last: Shown | null,
 	surface: HTMLElement,
-	drawing: SemanticDrawing,
+	drawing: MovingPicture,
 	reducedMotion: boolean,
 ): boolean {
-	if (reducedMotion || !frameClock().animates) {
+	if (reducedMotion || drawing.svg === "" || !frameClock().animates) {
 		return false;
 	}
 	return last?.surface !== surface || !continuousPictures(last.drawing, drawing);
@@ -206,7 +207,7 @@ function land(flight: Flight | null): void {
 function shiftFrom(
 	last: Shown | null,
 	surface: HTMLElement,
-	drawing: SemanticDrawing,
+	drawing: MovingPicture,
 	presenting: boolean,
 ): Shift | undefined {
 	return !presenting && last?.surface === surface && carriedOn(last.drawing, drawing)
@@ -219,7 +220,7 @@ interface NextPicture extends PictureMotion {
 	readonly heading: Departure | null;
 	readonly surface: HTMLElement;
 	readonly last: Shown | null;
-	readonly drawing: SemanticDrawing;
+	readonly drawing: MovingPicture;
 	/** Where the surface's pane was on screen when the last picture was last seen. */
 	readonly seenAt: Point | null;
 }
@@ -302,7 +303,7 @@ function publish(store: PictureStore, surface: HTMLElement | null): void {
  */
 function usePictureTransition(
 	surface: HTMLElement | null,
-	drawing: SemanticDrawing,
+	drawing: MovingPicture,
 	motion: PictureMotion,
 ): StagedPicture | null {
 	const { reducedMotion, keepStill } = motion;

@@ -52,6 +52,8 @@ interface Lighting {
 	readonly reach: ReadonlyMap<string, number> | null;
 	/** How strongly the light answers, or null for no light. */
 	readonly mode: ProbeMode | null;
+	/** The part the pointer rests on, or null. */
+	readonly resting: string | null;
 	/**
 	 * The pointer moved over the picture while no gesture is under way.
 	 * @param event The move.
@@ -162,6 +164,7 @@ function useLighting(inputs: LightingInputs): Lighting {
 		standing: veil ?? light,
 		reach,
 		mode: modeOf(lit, poked, selection),
+		resting: part,
 		onHover,
 		release,
 	};
