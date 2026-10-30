@@ -15,7 +15,6 @@ export {
 export type {
 	ArchitectureCheckpointRequest,
 	ArchitectureCheckpointList,
-	ArchitectureRetainedModule,
 } from "#shared/schemas/model.ts";
 export {
 	ArchitectureModuleEditSchema,

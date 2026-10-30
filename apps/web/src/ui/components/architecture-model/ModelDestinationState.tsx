@@ -1,9 +1,11 @@
 import { useCallback, type JSX } from "react";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import type { ArchitectureRetainedModule } from "@archboard/board/model";
 import { Button } from "@archboard/ui-kit/components";
 import { ModelError, ModelFailureActions } from "#ui/components/architecture-model/ModelFrame.tsx";
-import { retainedModuleQuery } from "#ui/clients/architecture-model/queries.ts";
+import {
+	retainedModuleQuery,
+	type RetainedModule,
+} from "#ui/clients/architecture-model/queries.ts";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import { useSlowWait } from "#ui/hooks/architecture-model/use-slow-wait.ts";
 import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
@@ -13,10 +15,6 @@ import {
 	sceneFit,
 	type SceneRequest,
 } from "#ui/rules/architecture-model/scene.ts";
-
-type RetainedSearch = UseQueryResult<
-	Extract<ArchitectureRetainedModule, { success: true }>["retained"]
->;
 
 interface DestinationProps {
 	paneId: string;
@@ -166,7 +164,7 @@ function RemovedModule(props: DestinationProps & { vault: string; scope: string 
  * @param retained The search.
  * @returns What it found, or what the reader can do without it.
  */
-function retainedStatement(retained: RetainedSearch): string {
+function retainedStatement(retained: UseQueryResult<RetainedModule>): string {
 	if (retained.isPending) return "Searching the retained readings for it…";
 	if (retained.isError)
 		return `Archboard could not search the retained readings. ${retained.error.message}`;

@@ -35,10 +35,7 @@ interface ModelReadingCanvasProps
 			| "onAttention"
 			| "onWholeScope"
 		>,
-		Pick<
-			ComponentProps<typeof ModelDestinationNotice>,
-			"paneId" | "failure" | "onRetry"
-		> {
+		Pick<ComponentProps<typeof ModelDestinationNotice>, "paneId" | "failure" | "onRetry"> {
 	overlay?: ReactNode;
 	/** What the stage has to say over the picture. */
 	notices: ReactNode;

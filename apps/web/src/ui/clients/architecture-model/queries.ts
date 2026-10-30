@@ -1,5 +1,6 @@
 import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
 import { queryOptions } from "@tanstack/react-query";
+import type { z } from "zod";
 import {
 	ArchitectureModelReadSchema,
 	ArchitectureCheckpointListSchema,
@@ -23,6 +24,12 @@ type StateSelection = {
 	readonly references?: boolean;
 	readonly reference?: number;
 };
+
+/** Where a removed module was last retained, or null when no reading holds it. */
+type RetainedModule = Extract<
+	z.output<typeof ArchitectureRetainedModuleSchema>,
+	{ success: true }
+>["retained"];
 
 /** A failed read retains its structured diagnostics while Query keeps the last coherent data. */
 class ArchitectureReadError extends Error {
@@ -298,4 +305,5 @@ export {
 	ArchitectureReadError,
 	hasNoCanonicalModel,
 	hasNoCheckpoints,
+	type RetainedModule,
 };
