@@ -378,3 +378,50 @@ fn a_global_saving_keeps_a_callers_compact_fan() {
     rows.dedup();
     assert!(rows.len() <= 3);
 }
+
+#[test]
+fn provisional_routes_cannot_reassign_declared_decision_points() {
+    let children: Vec<_> = std::iter::once(json!({"id":"decision","width":240,"height":100}))
+        .chain((0..7).map(|index| {
+            json!({"id":format!("n{index}"),"width":180,"height":80,
+            "layoutOptions":{"archboard.order":(7-index).to_string()}})
+        }))
+        .collect();
+    let edges: Vec<_> = (0..7)
+        .map(|index| {
+            json!({"id":format!("e{index}"),
+        "sources":["decision"],"targets":[format!("n{index}")],
+        "layoutOptions":{"archboard.order":index.to_string(),
+            "archboard.from-points":match index {0=>"sw",6=>"se",_=>"s"},
+            "archboard.from-points.inset":"24"}})
+        })
+        .collect();
+    let placed = drawing(&json!({"id":"root",
+        "layoutOptions":{"archboard.blocks.nesting":"blocks"},
+        "children":children,"edges":edges}));
+    let card = &placed["cards"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|card| card["id"] == "decision")
+        .unwrap()["box"];
+    for index in 0..7 {
+        let line = placed["edges"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|line| line["id"] == format!("e{index}"))
+            .unwrap();
+        let first = &line["points"][0];
+        let x = match index {
+            0 => 24.0,
+            6 => 216.0,
+            _ => 120.0,
+        };
+        assert!(
+            (first["x"].as_f64().unwrap() - card["x"].as_f64().unwrap() - x).abs() < 0.05,
+            "a provisional route replaced a declared decision point: {line}"
+        );
+        assert!((first["y"].as_f64().unwrap() - card["y"].as_f64().unwrap() - 100.0).abs() < 0.05);
+    }
+}

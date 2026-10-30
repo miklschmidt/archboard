@@ -131,6 +131,9 @@ impl<'a, 'g> Probe<'a, 'g> {
         ) {
             return Some(reason);
         }
+        if !super::points::follows(model, index, shape, points) {
+            return Some("declared point");
+        }
         if shape
             .labels
             .get(&index)
