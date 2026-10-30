@@ -192,6 +192,13 @@ const capacityTests = [
 	"packages/codex-app-server/tests/shared/constants/app-server-capacity.test.ts",
 ];
 
+// A contended machine changes what these real programs answer: Chromium's exact bytes, and
+// whether rust-analyzer answers at all. They run after the parallel lanes, alone.
+const soloTests = [
+	"packages/renderer/tests/runtime/services/rasterizer/rasterizer.test.ts",
+	"packages/code-intel/tests/runtime/processes/language-servers/rust-server.test.ts",
+];
+
 // These prove the test harness, not the product, so the normal gate leaves them out.
 const harnessTests = [
 	"tests/system/process-contracts/git-opener-sequence-watchdog.test.ts",
@@ -325,6 +332,7 @@ export default defineConfig({
 					`vp run ${stageOptions} test:first`,
 					"vp run test:modules",
 					"vp run test:system",
+					"vp run test:solo",
 					"vp run test:serial-browser",
 				],
 				cache: false,
@@ -334,6 +342,7 @@ export default defineConfig({
 					`vp run ${stageOptions} check:first`,
 					"vp run test:modules",
 					"vp run test:system",
+					"vp run test:solo",
 					"vp run test:serial-browser",
 				],
 				cache: false,
@@ -341,9 +350,15 @@ export default defineConfig({
 			"test:modules": {
 				command: [
 					"bun test --parallel",
-					...[...capacityTests, ...benchmarkTests].map((file) => `--path-ignore-patterns ${file}`),
+					...[...capacityTests, ...benchmarkTests, ...soloTests].map(
+						(file) => `--path-ignore-patterns ${file}`,
+					),
 					"packages apps",
 				].join(" "),
+				cache: testCache,
+			},
+			"test:solo": {
+				command: ["bun test --isolate --max-concurrency=1", ...soloTests].join(" "),
 				cache: testCache,
 			},
 			"test:system": {

@@ -5,9 +5,9 @@ changing tests or CI, or when a browser check fails.
 
 `bun run test` runs the stages of `test:first` at the same time: both TypeScript projects,
 both browser builds, `test:core` and `test:repository`. It then runs `test:modules`,
-`test:system` and `test:serial-browser`, one lane after the other, because each lane uses
-the whole machine. `bun run check` also runs lint and the format checks in the first stage.
-The five normal native lanes are:
+`test:system`, `test:solo` and `test:serial-browser`, one lane after the other, because each
+lane uses the whole machine or needs it free. `bun run check` also runs lint and the format checks in the first stage.
+The six normal native lanes are:
 
 - `test:core`: the Rust tests of every crate under `crates/`, run natively with
   `cargo test --locked --workspace` inside `nix develop`;
@@ -17,6 +17,9 @@ The five normal native lanes are:
 - `test:system`: system product owners under the five explicit non-browser
   directories, with one Bun worker per core. Each file owns its servers, ports, homes and
   registries, so files share only the machine;
+- `test:solo`: the two owners that contention changes, one file at a time, on a free machine.
+  Chromium's exact PNG bytes differ, and the real rust-analyzer can give no answer.
+  The list is `soloTests` in `vite.config.ts`;
 - `test:repository`: the source-boundary lint fixtures, the owner that resolves
   links in the shipped skills, repository navigation, and development skill
   (`tests/system/repository-policy/skill-links.test.ts`),
