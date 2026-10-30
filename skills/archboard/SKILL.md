@@ -62,6 +62,17 @@ Omitted fields preserve their values. Explicit clear lists remove optional value
 Release the claim when the intent ends.
 If a claim is revoked, stop that intent and report the state that it left.
 
+## Give each container a job
+
+A module with parts needs code or a job of its own.
+Bind it to the code that it owns, or let a relationship or flow name it or join its parts.
+If it has neither, move its parts to its parent and remove it.
+A numbered layer or a tidy box is not a job. Use a configured group for a gathering that only labels its parts.
+Connect each root to another root, or move it into the module that uses it.
+`archboard check` warns on these shapes with `CONTAINER_PASS_THROUGH` and `ROOT_UNCONNECTED`.
+A shape is a signal, not proof, so read the source before you change the model.
+No write refuses them.
+
 ## Choose a reading
 
 Architecture answers which parts exist and how they depend on one another.
