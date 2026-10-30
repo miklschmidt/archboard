@@ -234,6 +234,8 @@ Each behavior keeps its existing public boundary and one state owner.
 - Define freshness, cancellation, retry, and unavailable states for each resource.
   Preserve healthy exact checkpoints when mutable architecture changes.
   Retained checkpoint rows load when a person opens a reading or comparison menu, and completions keep them fresh after that.
+  A canonical drawing is kept under a digest of the exact render request, whose whole-model part holds only containment and relationship ends.
+  An edit that the drawing does not read keeps its entry. The browser keeps a bounded number of drawings for one renderer build.
   A retained reading with a live comparison base refreshes its comparison metadata through the same reader.
   Retry interrupted reads only after a coherent completion event or an explicit reader action.
   Browser controls never retry authoring or maintain optimistic architecture copies.
