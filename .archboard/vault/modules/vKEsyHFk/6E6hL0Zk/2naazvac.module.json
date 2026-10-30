@@ -1,0 +1,213 @@
+{
+  "order": 1000,
+  "name": "HTTP application",
+  "kind": "module",
+  "responsibility": "Composes the middleware and mounts every route on the one application",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/wiring/application/application.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/6E6hL0Zk#2naazvac",
+  "parent": "vKEsyHFk/6E6hL0Zk#nU6dNHBE",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "dependency",
+      "label": "mounts the pane routes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "mountPaneRoutes"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#PoXHqEaa",
+      "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
+    },
+    {
+      "order": 2000,
+      "kind": "dependency",
+      "label": "admits writes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/middleware/mutation-work/mutation-work.ts",
+        "symbol": "admit"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#W2BXIpq7",
+      "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7"
+    },
+    {
+      "order": 3000,
+      "kind": "dependency",
+      "label": "mount canonical model routes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "mountArchitectureModelRoutes"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#C9PQBOwg",
+      "to": "vKEsyHFk/6E6hL0Zk#Y70KOm9C"
+    },
+    {
+      "order": 4000,
+      "kind": "dependency",
+      "description": "mounts the pane routes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "mountPaneRoutes"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#dHru8Ng6",
+      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+    },
+    {
+      "order": 5000,
+      "kind": "dependency",
+      "label": "mounts opener",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "createCodeOpenerRouter"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#ibCZHaRq",
+      "to": "vKEsyHFk/6E6hL0Zk#6a2R1ddu"
+    },
+    {
+      "order": 35000,
+      "kind": "dependency",
+      "label": "mounts every route on the one app",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "app"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#wYcfvDau",
+      "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG"
+    },
+    {
+      "order": 39000,
+      "kind": "call",
+      "description": "Checks every browser request before admission and routing",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "createBrowserOriginGuard"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#E1Tpzwjx",
+      "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
+    },
+    {
+      "order": 42000,
+      "kind": "call",
+      "label": "requires a vault on the code opener's route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "requireVault"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#wfZNifHF",
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "order": 43000,
+      "kind": "dependency",
+      "label": "mounts the repository routes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "mountRepositoryRoutes"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#5x06MUNV",
+      "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
+    },
+    {
+      "order": 72000,
+      "kind": "dependency",
+      "label": "mounts every route on the one app",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "app"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#zcMW5JaE",
+      "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG"
+    },
+    {
+      "order": 96000,
+      "kind": "call",
+      "description": "The icon route answers the path data of one icon that a picture drawn in the browser names.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "diagramIconPaths"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#uaSxFsAP",
+      "to": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+    },
+    {
+      "order": 97000,
+      "kind": "call",
+      "label": "checks browser request origin before routing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "createBrowserOriginGuard"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#4P3PNJ5d",
+      "to": "vKEsyHFk/6E6hL0Zk#cZ1UH0xU"
+    },
+    {
+      "order": 119000,
+      "kind": "call",
+      "label": "requires a vault on the code opener's route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "requireVault"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#EYz7uJ3g",
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "order": 124000,
+      "kind": "dependency",
+      "label": "mount the voice agent's start trace route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "mountVoiceStartTraceRoute"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#7plLLcKh",
+      "to": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
+    }
+  ]
+}

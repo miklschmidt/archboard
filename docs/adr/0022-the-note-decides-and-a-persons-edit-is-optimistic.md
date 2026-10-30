@@ -4,6 +4,10 @@ status: accepted
 
 # The note decides, and a person's edit is optimistic
 
+Canonical subject claims and complete revisions supersede board leases and document versions below. The browser reads architecture and retains human claim take-back.
+[ADR 0062](0062-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
+
 Amended by [ADR 0051](0051-a-person-can-move-a-board-to-another-repository.md)
 (2026-10-14). A person can move a board to another repository. With the
 take-back, that is the second write that a browser makes to a board. Everything

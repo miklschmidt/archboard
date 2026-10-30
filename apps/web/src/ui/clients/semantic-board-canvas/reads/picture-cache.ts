@@ -21,6 +21,9 @@
 // simply draws again.
 
 import { createStore, del, get, keys, set } from "idb-keyval";
+import { z } from "zod";
+import { ArchitectureRenderResultSchema } from "@archboard/board/model";
+import type { prepareContentHere } from "@archboard/renderer/browser";
 
 import {
 	DEFAULT_LAYOUT_ENGINE,
@@ -49,6 +52,43 @@ interface PictureStorage {
 	readonly set: (key: string, value: unknown) => Promise<void>;
 	readonly del: (key: string) => Promise<void>;
 	readonly keys: () => Promise<readonly IDBValidKey[]>;
+}
+
+type ModelDrawing = Awaited<ReturnType<ReturnType<typeof prepareContentHere>["draw"]>>;
+const ModelDrawingSchema = ArchitectureRenderResultSchema.options[0]
+	.pick({ svg: true, width: true, height: true, atlas: true, placed: true })
+	.extend({
+		readingDirection: z
+			.literal("down" satisfies NonNullable<ModelDrawing["readingDirection"]>)
+			.optional(),
+	});
+
+/**
+ * Reuse a local scene only when its complete render input and renderer build match.
+ * @param storage The existing picture store, when available.
+ * @param key The renderer build and exact prepared scene identity.
+ * @param draw The local layout operation on a cache miss.
+ * @returns The stored scene or a fresh scene when storage is unavailable.
+ */
+async function cachedModelDrawing(
+	storage: PictureStorage | undefined,
+	key: string,
+	draw: () => Promise<ModelDrawing>,
+): Promise<ModelDrawing> {
+	if (storage === undefined) return draw();
+	try {
+		const cached = ModelDrawingSchema.safeParse(await storage.get(key));
+		if (cached.success) return cached.data;
+	} catch {
+		// Refused storage leaves local rendering available.
+	}
+	const drawing = await draw();
+	try {
+		await storage.set(key, drawing);
+	} catch {
+		// A full or closed store does not prevent the scene from appearing.
+	}
+	return drawing;
 }
 
 /**
@@ -208,6 +248,7 @@ function keyParts(key: string): unknown[] {
 
 export {
 	browserPictureStorage,
+	cachedModelDrawing,
 	forgetStalePictures,
 	readCachedPicture,
 	writeCachedPicture,

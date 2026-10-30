@@ -1,0 +1,130 @@
+{
+  "order": 56000,
+  "name": "Canonical subject claims",
+  "kind": "module",
+  "responsibility": "Claims explicit architecture subjects, affected descendant states and model structure before one family write.",
+  "description": "A claim names the writer, purpose, target and time. It leaves the short installation lease free during agent work. Take-back refuses the former claim on its next edit.",
+  "groups": [
+    "writes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/model-edit/claims.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/0T9enjhi#ov7pPg21",
+  "parent": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 132000,
+      "kind": "call",
+      "label": "require explicit current target",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/claims.ts",
+        "symbol": "readCurrentModel"
+      },
+      "id": "vKEsyHFk/0T9enjhi#MWwtJ07I",
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+    },
+    {
+      "order": 133000,
+      "kind": "call",
+      "label": "serialize claim records",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/claims.ts",
+        "symbol": "withModelLock"
+      },
+      "id": "vKEsyHFk/0T9enjhi#Unx9ZNwy",
+      "to": "vKEsyHFk/0T9enjhi#YREYrbYW"
+    },
+    {
+      "order": 139000,
+      "kind": "call",
+      "label": "announce claim changes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/claims.ts",
+        "symbol": "notifyArchitecture"
+      },
+      "id": "vKEsyHFk/0T9enjhi#pwwBQjxG",
+      "to": "vKEsyHFk/0T9enjhi#IyV7OF9L"
+    },
+    {
+      "order": 149000,
+      "kind": "call",
+      "label": "archiveFailure",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/claims.ts",
+        "symbol": "archiveFailure"
+      },
+      "id": "vKEsyHFk/0T9enjhi#L9qSRNoR",
+      "to": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
+    },
+    {
+      "order": 152000,
+      "kind": "call",
+      "label": "ArchiveError",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/claims.ts",
+        "symbol": "ArchiveError"
+      },
+      "id": "vKEsyHFk/0T9enjhi#VTZKWgse",
+      "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
+    },
+    {
+      "order": 159000,
+      "kind": "call",
+      "label": "ArchitectureClaimRequestSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/claims.ts",
+        "symbol": "ArchitectureClaimRequestSchema"
+      },
+      "id": "vKEsyHFk/0T9enjhi#FNRbx70t",
+      "to": "vKEsyHFk/0T9enjhi#W6wFcSQz"
+    },
+    {
+      "order": 176000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/claims.ts",
+        "symbol": "ArchiveError"
+      },
+      "id": "vKEsyHFk/0T9enjhi#TVVWknIf",
+      "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
+    }
+  ]
+}

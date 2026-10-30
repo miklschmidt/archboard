@@ -1,29 +1,14 @@
-// Every call the browser makes to the Archboard server's semantic-board routes.
-//
-// Plain `fetch` on purpose: the browser never imports the board store or the
-// vault (ADR 0023). The reads are the whole of what a viewer is allowed to
-// know — which boards exist, what one board says, the vault policy, what the
-// last code check found, where a board's code changes (its locality), and
-// what one variant looks like when the page draws
-// no pictures of its own — and every
-// one of them is answered by the server. There is no write call, because the
-// viewer never writes a board.
-//
-// A refusal is carried as an error with the server's own code on it, so the
-// stage can say which of the several things went wrong rather than showing one
-// shrug for all of them.
+// Shared retained drawing types and live vault evidence reads.
 
 import { z } from "zod";
 import {
 	RememberedFindingsSchema,
 	type RememberedFindings,
 } from "@archboard/code-intel/code-check";
-import { LocalityReplySchema, type LocalityAnswer } from "@archboard/code-intel/history";
 import { VaultCheckSchema } from "@archboard/board/policy";
 import { inVault } from "@archboard/server-requests";
 import { BoardListingSchema } from "@archboard/board/board-listing";
 import {
-	SemanticRenderReplySchema,
 	type DiagramAtlas,
 	type DiagramBox,
 	type DrawnBoard,
@@ -146,10 +131,6 @@ class SemanticBoardError extends Error {
 	}
 }
 
-const LIST_URL = "/api/semantic-boards";
-const RENDER_URL = "/api/semantic-boards/render";
-const BOARD_URL = "/api/semantic-boards/board";
-
 /** A decoded body, as far as the browser can see before checking its shape. */
 type JsonRecord = Readonly<Record<string, unknown>>;
 
@@ -228,95 +209,6 @@ async function readRoute(url: string, vault: string, signal?: AbortSignal): Prom
 	return body;
 }
 
-/**
- * Every semantic board the vault holds, and the levels the vault orders them by.
- * @param vault The vault.
- * @param signal Cancels the read.
- * @returns The listing, its boards in the order the server listed them.
- */
-async function fetchSemanticBoards(
-	vault: string,
-	signal?: AbortSignal,
-): Promise<SemanticBoardListing> {
-	const parsed = BoardListingSchema.safeParse(await readRoute(LIST_URL, vault, signal));
-	if (!parsed.success) {
-		throw new SemanticBoardError("REPLY_INVALID", "The Archboard server listed no boards.");
-	}
-	const { levels, boards, repository } = parsed.data;
-	return repository === undefined ? { levels, boards } : { levels, boards, repository };
-}
-
-/**
- * The query string one render request is asking with.
- * The picture names no theme: it paints with the page's own colour tokens, so
- * it is drawn once and takes whichever theme the page is in.
- * @param request The board, the variant and the view.
- * @returns The query string, with its leading question mark.
- */
-function renderQuery(request: SemanticRenderRequest): string {
-	const search = new URLSearchParams({ board: request.board });
-	const stated = {
-		variant: request.variant,
-		view: request.view,
-		against: request.against,
-		comparison: request.comparison === false ? "off" : undefined,
-		layout: request.layout,
-	};
-	for (const [name, value] of Object.entries(stated)) {
-		if (value !== undefined && value !== "") search.set(name, value);
-	}
-	return `?${search.toString()}`;
-}
-
-/**
- * One variant of one board, drawn.
- *
- * The `empty` answer is a success, not a failure: a board that exists and has
- * nothing on it yet is a normal thing for an agent to have just created, and
- * the viewer says so in its own words. A reply that is neither that nor a whole
- * picture is a failure, and is reported as one.
- * @param request The board, the variant and the view.
- * @param signal Cancels the read.
- * @returns The drawing, or the news that there is nothing to draw.
- */
-async function fetchSemanticRender(
-	request: SemanticRenderRequest,
-	signal?: AbortSignal,
-): Promise<SemanticRender> {
-	const body = await readRoute(`${RENDER_URL}${renderQuery(request)}`, request.vault, signal);
-	const parsed = SemanticRenderReplySchema.safeParse(body);
-	if (!parsed.success) {
-		throw new SemanticBoardError(
-			"REPLY_INVALID",
-			"The Archboard server sent a reply that was neither a picture nor an empty board.",
-		);
-	}
-	return "empty" in parsed.data
-		? { ...parsed.data, kind: "empty" }
-		: { ...parsed.data, kind: "drawn" };
-}
-
-/**
- * One board's whole aggregate, as it is on disk. Read-only: nothing in the
- * browser writes a semantic board (ADR 0023).
- * @param vault The vault the board is in.
- * @param board The board name.
- * @param signal Cancels the read.
- * @returns The aggregate, as the server holds it.
- */
-async function fetchSemanticBoardDocument(
-	vault: string,
-	board: string,
-	signal?: AbortSignal,
-): Promise<unknown> {
-	const body = await readRoute(`${BOARD_URL}?board=${encodeURIComponent(board)}`, vault, signal);
-	const parsed = z.object({ board: z.unknown() }).safeParse(body);
-	if (!parsed.success) {
-		throw new SemanticBoardError("REPLY_INVALID", "The Archboard server sent no board.");
-	}
-	return parsed.data.board;
-}
-
 /** The route the shared vault checker answers on. */
 const VAULT_CHECK_URL = "/api/vault/check";
 
@@ -358,45 +250,10 @@ async function fetchCodeFindings(vault: string, signal?: AbortSignal): Promise<R
 	return parsed.data;
 }
 
-/** The route the server answers a board's hotspots and change coupling on (ADR 0045). */
-const LOCALITY_URL = "/api/semantic-boards/locality";
-
-/**
- * Where change concentrates in one variant of one board: every part's commits
- * in the period, and the parts that change together. The server walks Git for
- * the first request at a HEAD and answers later ones from its memory, so a pane
- * asks only when somebody picks a part out (ADR 0045).
- * @param vault The vault the board is in.
- * @param board The board's name.
- * @param variant The variant's id: the current one or a draft.
- * @returns The answer, about every part of the variant.
- */
-async function fetchLocality(
-	vault: string,
-	board: string,
-	variant: string,
-): Promise<LocalityAnswer> {
-	const search = new URLSearchParams({ board, variant });
-	const parsed = LocalityReplySchema.safeParse(
-		await readRoute(`${LOCALITY_URL}?${search.toString()}`, vault),
-	);
-	if (!parsed.success) {
-		throw new SemanticBoardError(
-			"REPLY_INVALID",
-			"The Archboard server sent no history of this board's code.",
-		);
-	}
-	return parsed.data;
-}
-
 export {
 	SemanticBoardError,
 	fetchCodeFindings,
-	fetchLocality,
-	fetchSemanticBoardDocument,
-	fetchSemanticBoards,
 	comparisonKey,
-	fetchSemanticRender,
 	fetchVaultCheck,
 	type SemanticAtlas,
 	type SemanticBoardEntry,

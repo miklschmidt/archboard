@@ -106,12 +106,7 @@ function PanelFooter(props: {
 			data-slot="agent-panel-footer"
 			className="border-border bg-raised shadow-edge-up relative shrink-0 border-t px-4 py-3"
 		>
-			<AgentComposer
-				draft={props.draft}
-				context={props.view.context}
-				running={running}
-				onSend={props.actions.send}
-			/>
+			<AgentComposer draft={props.draft} running={running} onSend={props.actions.send} />
 		</div>
 	);
 }
@@ -176,7 +171,7 @@ function FirstUse(props: {
 	const signedOut =
 		view.setup.phase.kind === "signed_out" || view.setup.phase.kind === "signing_in";
 	if (signedOut) return <SignInCard actions={props.actions} />;
-	return <EmptyConversation view={view} suggest={props.suggest} />;
+	return <EmptyConversation suggest={props.suggest} />;
 }
 
 /** Inputs for the panel's menu. */

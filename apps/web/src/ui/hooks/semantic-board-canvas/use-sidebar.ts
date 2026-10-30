@@ -28,6 +28,9 @@ import { useCallback, useId, useState } from "react";
 /** The sidebar's tabs. */
 type SidebarTab = "board" | "selection";
 
+/** A fresh set identifies a new canonical pick, even when it contains the same subjects. */
+type SidebarSelection = string | ReadonlySet<string> | null;
+
 /** What the sidebar is showing, and how to change it. */
 interface Sidebar {
 	/** The open tab. */
@@ -65,7 +68,7 @@ interface Frame {
 	/** The tab to give back when the selection is let go. */
 	readonly before: SidebarTab;
 	/** The selection this state was last brought up to date with. */
-	readonly seen: string | null;
+	readonly seen: SidebarSelection;
 	/** Whether the person has it docked, when they have said; null leaves it to the pane. */
 	readonly pinned: boolean | null;
 	/** A docked sidebar the person put away, which docks again when they ask for it. */
@@ -80,7 +83,7 @@ interface Frame {
  * @param selection The selection now.
  * @returns The state after.
  */
-function followSelection(state: Frame, selection: string | null): Frame {
+function followSelection(state: Frame, selection: SidebarSelection): Frame {
 	if (selection !== null) {
 		const before = state.tab === "selection" ? state.before : state.tab;
 		return {
@@ -167,7 +170,7 @@ function toggled(state: Frame, docked: boolean, floating: boolean, pinned: boole
  * @returns The sidebar state and its controls.
  */
 function useSidebar(
-	selection: string | null,
+	selection: SidebarSelection,
 	resting: boolean,
 	steppedAside: boolean,
 	overPage: boolean,

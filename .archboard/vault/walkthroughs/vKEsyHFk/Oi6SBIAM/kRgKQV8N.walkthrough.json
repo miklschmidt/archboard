@@ -1,0 +1,315 @@
+{
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/Oi6SBIAM#kRgKQV8N",
+  "name": "Original Live panes: What a live pane keeps",
+  "formerNames": [
+    "What a live pane keeps"
+  ],
+  "summary": "This narrative preserves the architecture before canonical module ownership. It reads the exact retained migration baseline.",
+  "target": {
+    "checkpoint": "6bc124a8ca521df89dd84fe13922798bf8065914"
+  },
+  "beats": [
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#F6Fxaitr",
+      "title": "The socket owns screen presence",
+      "narrative": "Only the authoritative socket owns a pane identity. Its close removes pane and tab presence; a replaced socket cannot retire its successor.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+            "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+            "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+            "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+            "vKEsyHFk/Oi6SBIAM#MqTq68P3",
+            "vKEsyHFk/Oi6SBIAM#X07YebBP",
+            "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+            "vKEsyHFk/Oi6SBIAM#mAwzQrjT",
+            "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+            "vKEsyHFk/Oi6SBIAM#K385etzX",
+            "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+            "vKEsyHFk/Oi6SBIAM#YXy1uQYC",
+            "vKEsyHFk/Oi6SBIAM#xwAgUBmW",
+            "vKEsyHFk/Oi6SBIAM#Qyu8T7UT",
+            "vKEsyHFk/Oi6SBIAM#Bfh2rRfX"
+          ],
+          "relationships": [
+            "vKEsyHFk/Oi6SBIAM#wH0rE1x7",
+            "vKEsyHFk/Oi6SBIAM#gK39PRbo",
+            "vKEsyHFk/Oi6SBIAM#dl8GcVsN",
+            "vKEsyHFk/Oi6SBIAM#JHTQ2avc",
+            "vKEsyHFk/Oi6SBIAM#pO57FCEs",
+            "vKEsyHFk/Oi6SBIAM#esNJ3K32",
+            "vKEsyHFk/Oi6SBIAM#CJ5JwtNl",
+            "vKEsyHFk/Oi6SBIAM#oi6YF8VO",
+            "vKEsyHFk/Oi6SBIAM#yG8Hyadm",
+            "vKEsyHFk/Oi6SBIAM#BIqHpV5C",
+            "vKEsyHFk/Oi6SBIAM#1MfDpq9X",
+            "vKEsyHFk/Oi6SBIAM#UVtcPHc3",
+            "vKEsyHFk/Oi6SBIAM#Y5c0eIar",
+            "vKEsyHFk/Oi6SBIAM#DomT7qYj",
+            "vKEsyHFk/Oi6SBIAM#vNyjT5NQ",
+            "vKEsyHFk/Oi6SBIAM#hDNka8yA",
+            "vKEsyHFk/Oi6SBIAM#kUKOPjAB",
+            "vKEsyHFk/Oi6SBIAM#5zgh8igv",
+            "vKEsyHFk/Oi6SBIAM#HO533F7P",
+            "vKEsyHFk/Oi6SBIAM#6kzjcG2u",
+            "vKEsyHFk/Oi6SBIAM#oVsV7Zvz",
+            "vKEsyHFk/Oi6SBIAM#2wIgQ9t1",
+            "vKEsyHFk/Oi6SBIAM#2HMvI71J"
+          ],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/Oi6SBIAM#X07YebBP",
+          "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+          "vKEsyHFk/Oi6SBIAM#mAwzQrjT"
+        ],
+        "focus": [
+          "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+          "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+          "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+          "vKEsyHFk/Oi6SBIAM#MqTq68P3",
+          "vKEsyHFk/Oi6SBIAM#X07YebBP",
+          "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+          "vKEsyHFk/Oi6SBIAM#mAwzQrjT",
+          "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+          "vKEsyHFk/Oi6SBIAM#K385etzX",
+          "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+          "vKEsyHFk/Oi6SBIAM#YXy1uQYC",
+          "vKEsyHFk/Oi6SBIAM#xwAgUBmW",
+          "vKEsyHFk/Oi6SBIAM#Qyu8T7UT",
+          "vKEsyHFk/Oi6SBIAM#Bfh2rRfX"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#ohpgvs6y",
+      "title": "News carries a version, never the board",
+      "narrative": "A board write, claim or disk change reaches the panes through announcements. The pane reads content again from the store; no pane owns a board copy.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+            "vKEsyHFk/HBlhIeSD#3LoKNA2g",
+            "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+            "vKEsyHFk/Oi6SBIAM#mStVd7fZ",
+            "vKEsyHFk/Oi6SBIAM#K385etzX",
+            "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+            "vKEsyHFk/Oi6SBIAM#YXy1uQYC",
+            "vKEsyHFk/Oi6SBIAM#Qyu8T7UT"
+          ],
+          "relationships": [
+            "vKEsyHFk/Oi6SBIAM#gK39PRbo",
+            "vKEsyHFk/Oi6SBIAM#dl8GcVsN",
+            "vKEsyHFk/Oi6SBIAM#JHTQ2avc",
+            "vKEsyHFk/Oi6SBIAM#pO57FCEs",
+            "vKEsyHFk/Oi6SBIAM#esNJ3K32",
+            "vKEsyHFk/Oi6SBIAM#gMK54vsq",
+            "vKEsyHFk/Oi6SBIAM#52NUP6Ut",
+            "vKEsyHFk/Oi6SBIAM#ZGGx69Il",
+            "vKEsyHFk/Oi6SBIAM#HgatVqjT"
+          ],
+          "flows": [
+            "vKEsyHFk/Oi6SBIAM#XSzt4PYz"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/Oi6SBIAM#4ueVnUlH",
+          "vKEsyHFk/Oi6SBIAM#K385etzX"
+        ],
+        "focus": [
+          "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+          "vKEsyHFk/HBlhIeSD#3LoKNA2g",
+          "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+          "vKEsyHFk/Oi6SBIAM#mStVd7fZ",
+          "vKEsyHFk/Oi6SBIAM#K385etzX",
+          "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+          "vKEsyHFk/Oi6SBIAM#YXy1uQYC",
+          "vKEsyHFk/Oi6SBIAM#Qyu8T7UT"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/Oi6SBIAM#XSzt4PYz"
+      }
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#uOHnsW1B",
+      "title": "Agents read the same news",
+      "narrative": "The change feed records each board broadcast and lets the workbench read changes since its cursor. Tab presence allows a reload to keep its conversation.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+            "vKEsyHFk/HBlhIeSD#3LoKNA2g",
+            "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+            "vKEsyHFk/Oi6SBIAM#mStVd7fZ",
+            "vKEsyHFk/Oi6SBIAM#K385etzX",
+            "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+            "vKEsyHFk/Oi6SBIAM#YXy1uQYC",
+            "vKEsyHFk/Oi6SBIAM#Qyu8T7UT"
+          ],
+          "relationships": [
+            "vKEsyHFk/Oi6SBIAM#gK39PRbo",
+            "vKEsyHFk/Oi6SBIAM#dl8GcVsN",
+            "vKEsyHFk/Oi6SBIAM#JHTQ2avc",
+            "vKEsyHFk/Oi6SBIAM#pO57FCEs",
+            "vKEsyHFk/Oi6SBIAM#esNJ3K32",
+            "vKEsyHFk/Oi6SBIAM#gMK54vsq",
+            "vKEsyHFk/Oi6SBIAM#52NUP6Ut",
+            "vKEsyHFk/Oi6SBIAM#ZGGx69Il",
+            "vKEsyHFk/Oi6SBIAM#HgatVqjT"
+          ],
+          "flows": [
+            "vKEsyHFk/Oi6SBIAM#XSzt4PYz"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/Oi6SBIAM#LRAVU6mu",
+          "vKEsyHFk/Oi6SBIAM#sofQR8Hh"
+        ],
+        "focus": [
+          "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+          "vKEsyHFk/HBlhIeSD#3LoKNA2g",
+          "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+          "vKEsyHFk/Oi6SBIAM#mStVd7fZ",
+          "vKEsyHFk/Oi6SBIAM#K385etzX",
+          "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+          "vKEsyHFk/Oi6SBIAM#YXy1uQYC",
+          "vKEsyHFk/Oi6SBIAM#Qyu8T7UT"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/Oi6SBIAM#XSzt4PYz"
+      }
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#hGIeGP0i",
+      "title": "A change on disk is announced like a write",
+      "narrative": "One vault can be open in more than one server, so a write from another process reaches no pane through this server's broadcast. The lock sweep compares each board on screen with the fingerprint it last saw, and a difference is announced as a change with no version. The pane answers by reading the board again.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+            "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+            "vKEsyHFk/Oi6SBIAM#TCMBvDpL",
+            "vKEsyHFk/6E6hL0Zk#8imgDQSw",
+            "vKEsyHFk/Oi6SBIAM#K385etzX",
+            "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+            "vKEsyHFk/Oi6SBIAM#YXy1uQYC"
+          ],
+          "relationships": [
+            "vKEsyHFk/Oi6SBIAM#HquZNzap",
+            "vKEsyHFk/Oi6SBIAM#ISZ2PYLl",
+            "vKEsyHFk/Oi6SBIAM#gK39PRbo",
+            "vKEsyHFk/Oi6SBIAM#KpSOz34r",
+            "vKEsyHFk/Oi6SBIAM#ialffxnW",
+            "vKEsyHFk/Oi6SBIAM#vNyjT5NQ",
+            "vKEsyHFk/Oi6SBIAM#7HmEZgi5",
+            "vKEsyHFk/Oi6SBIAM#6kzjcG2u"
+          ],
+          "flows": [
+            "vKEsyHFk/Oi6SBIAM#hduvezXg"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/Oi6SBIAM#TCMBvDpL",
+          "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+          "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+        ],
+        "focus": [
+          "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+          "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+          "vKEsyHFk/Oi6SBIAM#TCMBvDpL",
+          "vKEsyHFk/6E6hL0Zk#8imgDQSw",
+          "vKEsyHFk/Oi6SBIAM#K385etzX",
+          "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+          "vKEsyHFk/Oi6SBIAM#YXy1uQYC"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/Oi6SBIAM#hduvezXg"
+      }
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#DcBRVb3O",
+      "title": "The server decides which vault a pane is in",
+      "narrative": "A show that names a pane, or a new chosen checkout of the repository it shows, moves the pane into another vault. The pane only mirrors that: it takes the vault from pane_board and names it on its socket, reports and calls. A report that names the vault it left is answered as not registered, so it cannot undo the move.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+            "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+            "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+            "vKEsyHFk/Oi6SBIAM#MqTq68P3",
+            "vKEsyHFk/Oi6SBIAM#K385etzX",
+            "vKEsyHFk/Oi6SBIAM#etiWAAKH",
+            "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+            "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+            "vKEsyHFk/Oi6SBIAM#Qyu8T7UT"
+          ],
+          "relationships": [
+            "vKEsyHFk/Oi6SBIAM#wH0rE1x7",
+            "vKEsyHFk/Oi6SBIAM#gK39PRbo",
+            "vKEsyHFk/Oi6SBIAM#dl8GcVsN",
+            "vKEsyHFk/Oi6SBIAM#JHTQ2avc",
+            "vKEsyHFk/Oi6SBIAM#CJ5JwtNl",
+            "vKEsyHFk/Oi6SBIAM#oi6YF8VO",
+            "vKEsyHFk/Oi6SBIAM#UVtcPHc3",
+            "vKEsyHFk/Oi6SBIAM#vNyjT5NQ",
+            "vKEsyHFk/Oi6SBIAM#YawQAO0P",
+            "vKEsyHFk/Oi6SBIAM#ic9G2qN4",
+            "vKEsyHFk/Oi6SBIAM#rnMTaURu",
+            "vKEsyHFk/Oi6SBIAM#tqLvLUcA",
+            "vKEsyHFk/Oi6SBIAM#7wxK5YUi",
+            "vKEsyHFk/Oi6SBIAM#HZkTRFtf",
+            "vKEsyHFk/Oi6SBIAM#gwCn1bx5",
+            "vKEsyHFk/Oi6SBIAM#6kzjcG2u",
+            "vKEsyHFk/Oi6SBIAM#oVsV7Zvz",
+            "vKEsyHFk/Oi6SBIAM#wNDcc9zW"
+          ],
+          "flows": [
+            "vKEsyHFk/Oi6SBIAM#eFY1ph4z"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+          "vKEsyHFk/Oi6SBIAM#etiWAAKH",
+          "vKEsyHFk/Oi6SBIAM#K385etzX"
+        ],
+        "focus": [
+          "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+          "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+          "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "vKEsyHFk/Oi6SBIAM#MqTq68P3",
+          "vKEsyHFk/Oi6SBIAM#K385etzX",
+          "vKEsyHFk/Oi6SBIAM#etiWAAKH",
+          "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+          "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+          "vKEsyHFk/Oi6SBIAM#Qyu8T7UT"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/Oi6SBIAM#eFY1ph4z"
+      }
+    }
+  ]
+}

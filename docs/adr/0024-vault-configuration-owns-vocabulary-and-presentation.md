@@ -4,6 +4,10 @@ status: accepted
 
 # Vault configuration owns vocabulary and presentation
 
+Canonical policy retains vocabulary and presentation rules. Recursive modules supersede live level classification below without another stored depth.
+[ADR 0062](0062-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
+
 Partly superseded by [ADR 0038](0038-groups-gather-and-colour-their-cards.md): a
 group now has a required color from the curated palette, and that color places
 and colors its cards. Configuration ownership and the curated palette stand.

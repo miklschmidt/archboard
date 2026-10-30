@@ -125,7 +125,7 @@ test("rejects foreign health, recovers the port, and refuses a command outside a
 		cliEnv["ARCHBOARD_URL"] = `http://127.0.0.1:${cliPort}`;
 		const cli = spawnSync(
 			process.execPath,
-			[join(repoRoot, "apps/cli/src/bin.ts"), "semantic", "show", "any"],
+			[join(repoRoot, "apps/cli/src/bin.ts"), "model", "read", "any"],
 			{
 				cwd: root,
 				env: cliEnv,

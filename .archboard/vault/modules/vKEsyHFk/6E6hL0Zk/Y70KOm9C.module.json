@@ -1,0 +1,86 @@
+{
+  "order": 4000,
+  "name": "Route handlers",
+  "kind": "module",
+  "responsibility": "Routes canonical model read, initialization, edit, migration, archive, render, code, repository, and pane operations through their owners.",
+  "description": "The application mounts canonical architecture routes alongside code, repository, service, and pane routes. Legacy semantic-board content, writer, claim, rename, discard, and move routes are no longer mounted.",
+  "groups": [
+    "drawing"
+  ],
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+  "parent": "vKEsyHFk/6E6hL0Zk#nU6dNHBE",
+  "formerNames": [
+    "Board routes"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 65000,
+      "kind": "call",
+      "label": "runs the code check: boards, plans, pass and behind",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+        "symbol": "createCodeCheck"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#D9dCZCLo",
+      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+    },
+    {
+      "order": 67000,
+      "kind": "call",
+      "label": "keep what a finished pass found",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+        "symbol": "createCodeFindingsMemory"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#gjUcUvHu",
+      "to": "vKEsyHFk/6E6hL0Zk#SmrySjjM"
+    },
+    {
+      "order": 109000,
+      "kind": "call",
+      "label": "the phase it is in",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/service/service-routes.ts",
+        "symbol": "serverPhase"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#K3vcKTFp",
+      "to": "vKEsyHFk/6E6hL0Zk#J7yOKraz"
+    },
+    {
+      "order": 120000,
+      "kind": "call",
+      "label": "whether writes are admitted, and how many run",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/service/service-routes.ts",
+        "symbol": "mutationAdmission"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#CiOgt2S3",
+      "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7"
+    }
+  ]
+}

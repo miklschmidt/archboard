@@ -1,0 +1,212 @@
+{
+  "order": 11005,
+  "name": "Browser",
+  "kind": "service",
+  "responsibility": "Reads architecture; owns the camera, the view, the walkthrough and the selection, and nothing else",
+  "description": "It also carries voice: the Archboard server negotiates the session with Codex for the page, and the microphone and the voice then travel over the connection that negotiation opens.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 2000,
+      "kind": "http",
+      "label": "views and controls",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-requests/src/ui/clients/server-requests.ts",
+        "symbol": "fetch"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#iF6W48DS",
+      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "order": 11000,
+      "kind": "http",
+      "label": "the page",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/service/service-routes.ts",
+        "symbol": "frontendRoute"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#k5pgt4eX",
+      "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
+    },
+    {
+      "order": 17000,
+      "kind": "http",
+      "description": "what this pane is reading",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "symbol": "postPaneRoute"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#VkGzebtq",
+      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+    },
+    {
+      "order": 21000,
+      "kind": "dependency",
+      "label": "imports packages through their exports",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "learnServedVault"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#0ri6Svab",
+      "to": "vKEsyHFk/vKEsyHFk#fssx6Gaq"
+    },
+    {
+      "order": 33000,
+      "kind": "http",
+      "label": "what the last code pass found",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+        "symbol": "mountCodeCheckRoute"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#poDLrJ2M",
+      "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5"
+    },
+    {
+      "order": 44000,
+      "kind": "http",
+      "label": "list the repositories; choose a checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "symbol": "mountRepositoryRoutes"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#j3HPQ3Ng",
+      "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
+    },
+    {
+      "order": 45000,
+      "kind": "event",
+      "description": "one socket per page",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+        "symbol": "acceptWebSocketConnection"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#ENymHNDK",
+      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+    },
+    {
+      "order": 56000,
+      "kind": "call",
+      "label": "one session per pane, opened in the page's opening vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "symbol": "usePaneSession"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#5zgh8igv",
+      "to": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    },
+    {
+      "order": 58000,
+      "kind": "http",
+      "label": "lists the repositories and chooses a checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "symbol": "repositoriesRoute"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#dCeje2WJ",
+      "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
+    },
+    {
+      "order": 91000,
+      "kind": "http",
+      "label": "open the code",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/routes/code-opener.ts",
+        "symbol": "createCodeOpenerRouter"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#dw2T12P3",
+      "to": "vKEsyHFk/6E6hL0Zk#6a2R1ddu"
+    },
+    {
+      "order": 102000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "startBrowserRenderer"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#156cyBe3",
+      "to": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+    },
+    {
+      "order": 105000,
+      "kind": "http",
+      "label": "Read the canonical model",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/architecture-model/queries.ts",
+        "symbol": "readModel"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#NcnDdoyZ",
+      "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
+    },
+    {
+      "order": 125000,
+      "kind": "call",
+      "label": "Start local layout workers",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "renderer"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#HlVF0G3N",
+      "to": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+    }
+  ]
+}

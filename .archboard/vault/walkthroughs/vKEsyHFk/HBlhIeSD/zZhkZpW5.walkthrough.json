@@ -1,0 +1,469 @@
+{
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/HBlhIeSD#zZhkZpW5",
+  "name": "Original Archboard server routes: How the routes answer",
+  "formerNames": [
+    "How the routes answer"
+  ],
+  "summary": "This narrative preserves the architecture before canonical module ownership. It reads the exact retained migration baseline.",
+  "target": {
+    "checkpoint": "6bc124a8ca521df89dd84fe13922798bf8065914"
+  },
+  "beats": [
+    {
+      "id": "vKEsyHFk/HBlhIeSD#RZiKbNgt",
+      "title": "A read answers from the board family or a drawing made here",
+      "narrative": "Board routes reads the family from the store and draws a selected view with the renderer. The browser holds board content only as a read-only cache of what this answered.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/HBlhIeSD#r6IpmadI",
+            "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+            "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+            "vKEsyHFk/vKEsyHFk#OHywsFXm",
+            "vKEsyHFk/HBlhIeSD#ETrslazw",
+            "vKEsyHFk/HBlhIeSD#ldITx5BG"
+          ],
+          "relationships": [
+            "vKEsyHFk/HBlhIeSD#jxxcFkHs",
+            "vKEsyHFk/HBlhIeSD#1yVGMFKT",
+            "vKEsyHFk/HBlhIeSD#e7BVB9LR",
+            "vKEsyHFk/HBlhIeSD#156cyBe3"
+          ],
+          "flows": [
+            "vKEsyHFk/HBlhIeSD#4xxBuQRI"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/HBlhIeSD#r6IpmadI",
+          "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+          "vKEsyHFk/vKEsyHFk#OHywsFXm"
+        ],
+        "focus": [
+          "vKEsyHFk/HBlhIeSD#r6IpmadI",
+          "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+          "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+          "vKEsyHFk/vKEsyHFk#OHywsFXm",
+          "vKEsyHFk/HBlhIeSD#ETrslazw",
+          "vKEsyHFk/HBlhIeSD#ldITx5BG"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/HBlhIeSD#4xxBuQRI"
+      }
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#Q1QA0WLJ",
+      "title": "Every change passes the write routes and the board's lease",
+      "narrative": "Board write routes states the version it read, writes through the store under the board's lease, and announces the accepted write to the panes. The file is committed before it answers.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/HBlhIeSD#iwrhchml",
+            "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+            "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+            "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+            "vKEsyHFk/6E6hL0Zk#8imgDQSw",
+            "vKEsyHFk/HBlhIeSD#I6MrfGUg",
+            "vKEsyHFk/HBlhIeSD#ldITx5BG"
+          ],
+          "relationships": [
+            "vKEsyHFk/HBlhIeSD#I4TF2ANT",
+            "vKEsyHFk/HBlhIeSD#23r2JYWL",
+            "vKEsyHFk/HBlhIeSD#xHu4Vgbq",
+            "vKEsyHFk/HBlhIeSD#pGjd62O0"
+          ],
+          "flows": [
+            "vKEsyHFk/HBlhIeSD#bPEzKJ7o"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/HBlhIeSD#iwrhchml",
+          "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+          "vKEsyHFk/6E6hL0Zk#8imgDQSw"
+        ],
+        "focus": [
+          "vKEsyHFk/HBlhIeSD#iwrhchml",
+          "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+          "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+          "vKEsyHFk/6E6hL0Zk#8imgDQSw",
+          "vKEsyHFk/HBlhIeSD#I6MrfGUg",
+          "vKEsyHFk/HBlhIeSD#ldITx5BG"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/HBlhIeSD#bPEzKJ7o"
+      }
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#JiAqaGC2",
+      "title": "A rename moves more than the board",
+      "narrative": "Rename route asks the store to rename the board. The store carries the claim and what agents said they were doing to the new name, and the route points every pane on the board at the name it has now.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/HBlhIeSD#iwrhchml",
+            "vKEsyHFk/HBlhIeSD#kFQJkivd",
+            "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+            "vKEsyHFk/HBlhIeSD#3LoKNA2g",
+            "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+            "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+            "vKEsyHFk/6E6hL0Zk#8imgDQSw",
+            "vKEsyHFk/HBlhIeSD#I6MrfGUg",
+            "vKEsyHFk/HBlhIeSD#ldITx5BG"
+          ],
+          "relationships": [
+            "vKEsyHFk/HBlhIeSD#I4TF2ANT",
+            "vKEsyHFk/HBlhIeSD#23r2JYWL",
+            "vKEsyHFk/HBlhIeSD#xHu4Vgbq",
+            "vKEsyHFk/HBlhIeSD#5j3tGRoW",
+            "vKEsyHFk/HBlhIeSD#TpA1RJLU",
+            "vKEsyHFk/HBlhIeSD#hIT2B3b7",
+            "vKEsyHFk/HBlhIeSD#GluCUThW",
+            "vKEsyHFk/HBlhIeSD#pGjd62O0",
+            "vKEsyHFk/HBlhIeSD#59jbxyYa"
+          ],
+          "flows": [
+            "vKEsyHFk/HBlhIeSD#C6EetJpW"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/HBlhIeSD#kFQJkivd",
+          "vKEsyHFk/6E6hL0Zk#8imgDQSw",
+          "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+        ],
+        "focus": [
+          "vKEsyHFk/HBlhIeSD#iwrhchml",
+          "vKEsyHFk/HBlhIeSD#kFQJkivd",
+          "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+          "vKEsyHFk/HBlhIeSD#3LoKNA2g",
+          "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+          "vKEsyHFk/6E6hL0Zk#8imgDQSw",
+          "vKEsyHFk/HBlhIeSD#I6MrfGUg",
+          "vKEsyHFk/HBlhIeSD#ldITx5BG"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/HBlhIeSD#C6EetJpW"
+      }
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#Rk1gbLzh",
+      "title": "A discard tells every pane the board is gone",
+      "narrative": "Discard route lets the board go under the write's lease, then tells every pane on it that the board is gone.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/HBlhIeSD#iwrhchml",
+            "vKEsyHFk/HBlhIeSD#GXtY3Xsd",
+            "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+            "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+            "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+            "vKEsyHFk/HBlhIeSD#I6MrfGUg",
+            "vKEsyHFk/HBlhIeSD#ldITx5BG"
+          ],
+          "relationships": [
+            "vKEsyHFk/HBlhIeSD#I4TF2ANT",
+            "vKEsyHFk/HBlhIeSD#23r2JYWL",
+            "vKEsyHFk/HBlhIeSD#xHu4Vgbq",
+            "vKEsyHFk/HBlhIeSD#z4OClFMn",
+            "vKEsyHFk/HBlhIeSD#VuqFhb4g",
+            "vKEsyHFk/HBlhIeSD#C0qksVg8",
+            "vKEsyHFk/HBlhIeSD#4XnSzjXx",
+            "vKEsyHFk/HBlhIeSD#pGjd62O0",
+            "vKEsyHFk/HBlhIeSD#tw3GPstl"
+          ],
+          "flows": [
+            "vKEsyHFk/HBlhIeSD#87wVtBIk"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/HBlhIeSD#GXtY3Xsd",
+          "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+        ],
+        "focus": [
+          "vKEsyHFk/HBlhIeSD#iwrhchml",
+          "vKEsyHFk/HBlhIeSD#GXtY3Xsd",
+          "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+          "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+          "vKEsyHFk/HBlhIeSD#I6MrfGUg",
+          "vKEsyHFk/HBlhIeSD#ldITx5BG"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/HBlhIeSD#87wVtBIk"
+      }
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#9XX8SDWD",
+      "title": "A claim keeps the board between writes, and a person can end it",
+      "narrative": "Claim routes takes the claim in the board lease and extends it when it is claimed again. A person takes the board back without waiting: the claim ends at once, and the agent hears so once.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/HBlhIeSD#TW3uG9Uh",
+            "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+            "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+            "vKEsyHFk/6E6hL0Zk#8imgDQSw",
+            "vKEsyHFk/HBlhIeSD#I6MrfGUg",
+            "vKEsyHFk/HBlhIeSD#ldITx5BG"
+          ],
+          "relationships": [
+            "vKEsyHFk/HBlhIeSD#sUwTQnzU",
+            "vKEsyHFk/HBlhIeSD#pTXsEFlF",
+            "vKEsyHFk/HBlhIeSD#8vOEjDKu"
+          ],
+          "flows": [
+            "vKEsyHFk/HBlhIeSD#TL2DyUBl"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/HBlhIeSD#TW3uG9Uh",
+          "vKEsyHFk/6E6hL0Zk#8imgDQSw"
+        ],
+        "focus": [
+          "vKEsyHFk/HBlhIeSD#TW3uG9Uh",
+          "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+          "vKEsyHFk/6E6hL0Zk#8imgDQSw",
+          "vKEsyHFk/HBlhIeSD#I6MrfGUg",
+          "vKEsyHFk/HBlhIeSD#ldITx5BG"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/HBlhIeSD#TL2DyUBl"
+      }
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#cKR3H3sm",
+      "title": "A check runs on request, as work on the checkout",
+      "narrative": "The code check route keeps what a finished pass found. The locality reading keeps each answer until a board version or a checkout HEAD moves. The footprint route keeps none. The history lens reads the board a locality or footprint request names, so the route sends names and maps the refusal to a status.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+            "vKEsyHFk/HBlhIeSD#k9h1zv1s",
+            "vKEsyHFk/HBlhIeSD#Z57AabPn",
+            "vKEsyHFk/HBlhIeSD#yYQ3AHkf",
+            "vKEsyHFk/HBlhIeSD#radK8osF",
+            "vKEsyHFk/HBlhIeSD#5SMX69gS"
+          ],
+          "relationships": [
+            "vKEsyHFk/HBlhIeSD#WPeZchzr",
+            "vKEsyHFk/HBlhIeSD#IndUemKN",
+            "vKEsyHFk/HBlhIeSD#9dxhTOHc",
+            "vKEsyHFk/HBlhIeSD#9g0Uli0a",
+            "vKEsyHFk/HBlhIeSD#T6lWsdFm",
+            "vKEsyHFk/HBlhIeSD#m1F0u7X1"
+          ],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+          "vKEsyHFk/HBlhIeSD#k9h1zv1s",
+          "vKEsyHFk/HBlhIeSD#Z57AabPn",
+          "vKEsyHFk/HBlhIeSD#radK8osF",
+          "vKEsyHFk/HBlhIeSD#5SMX69gS",
+          "vKEsyHFk/HBlhIeSD#yYQ3AHkf"
+        ],
+        "focus": [
+          "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+          "vKEsyHFk/HBlhIeSD#k9h1zv1s",
+          "vKEsyHFk/HBlhIeSD#Z57AabPn",
+          "vKEsyHFk/HBlhIeSD#yYQ3AHkf",
+          "vKEsyHFk/HBlhIeSD#radK8osF",
+          "vKEsyHFk/HBlhIeSD#5SMX69gS"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#JbOveV9h",
+      "title": "A person chooses a checkout, and every pane reading the old one follows",
+      "narrative": "Repository routes accepts only a checkout the registry already knows, makes it the chosen one, moves each pane of the old chosen vault to the new one with its board, and tells every tab to read the repositories again. A board the new checkout has not got is a pane that says so, not a board made on the way.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+            "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+            "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+            "vKEsyHFk/HBlhIeSD#KLt72lWa",
+            "vKEsyHFk/HBlhIeSD#nLp2hILd",
+            "vKEsyHFk/HBlhIeSD#8fMA8lHI",
+            "vKEsyHFk/HBlhIeSD#ldITx5BG"
+          ],
+          "relationships": [
+            "vKEsyHFk/HBlhIeSD#dCeje2WJ",
+            "vKEsyHFk/HBlhIeSD#HbR02k8Z",
+            "vKEsyHFk/HBlhIeSD#yqfoZW5w",
+            "vKEsyHFk/HBlhIeSD#SvY26YAN",
+            "vKEsyHFk/HBlhIeSD#pBu0Et3y",
+            "vKEsyHFk/HBlhIeSD#e5ud8ccd",
+            "vKEsyHFk/HBlhIeSD#57KDyakx",
+            "vKEsyHFk/HBlhIeSD#ALYb99sn",
+            "vKEsyHFk/HBlhIeSD#epRLrdt6"
+          ],
+          "flows": [
+            "vKEsyHFk/HBlhIeSD#dTfYgmVn"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+          "vKEsyHFk/HBlhIeSD#nLp2hILd",
+          "vKEsyHFk/HBlhIeSD#KLt72lWa",
+          "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+        ],
+        "focus": [
+          "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+          "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+          "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+          "vKEsyHFk/HBlhIeSD#KLt72lWa",
+          "vKEsyHFk/HBlhIeSD#nLp2hILd",
+          "vKEsyHFk/HBlhIeSD#8fMA8lHI",
+          "vKEsyHFk/HBlhIeSD#ldITx5BG"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/HBlhIeSD#dTfYgmVn"
+      }
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#0j9KpJ9a",
+      "title": "A move is looked at before it is made",
+      "narrative": "The browser asks the move route what moving the board to another repository would rewrite. The store runs the move's own checks against both vaults as they are on disk and writes nothing, so a writer is never kept waiting for a question. The answer carries the board's version, which the move then states.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/HBlhIeSD#iwrhchml",
+            "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+            "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+            "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+            "vKEsyHFk/HBlhIeSD#fs2ehN0i",
+            "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+            "vKEsyHFk/HBlhIeSD#7fHOSn27",
+            "vKEsyHFk/HBlhIeSD#I6MrfGUg",
+            "vKEsyHFk/HBlhIeSD#ETrslazw",
+            "vKEsyHFk/HBlhIeSD#8fMA8lHI",
+            "vKEsyHFk/HBlhIeSD#ldITx5BG"
+          ],
+          "relationships": [
+            "vKEsyHFk/HBlhIeSD#I4TF2ANT",
+            "vKEsyHFk/HBlhIeSD#23r2JYWL",
+            "vKEsyHFk/HBlhIeSD#xHu4Vgbq",
+            "vKEsyHFk/HBlhIeSD#pGjd62O0",
+            "vKEsyHFk/HBlhIeSD#Q6obhUnE",
+            "vKEsyHFk/HBlhIeSD#pBu0Et3y",
+            "vKEsyHFk/HBlhIeSD#e5ud8ccd",
+            "vKEsyHFk/HBlhIeSD#QuTl35TC",
+            "vKEsyHFk/HBlhIeSD#WUhJRKQt",
+            "vKEsyHFk/HBlhIeSD#ms6cZtTv",
+            "vKEsyHFk/HBlhIeSD#DVb3tPMP",
+            "vKEsyHFk/HBlhIeSD#omWYQZNa",
+            "vKEsyHFk/HBlhIeSD#ojIHYzHX",
+            "vKEsyHFk/HBlhIeSD#epRLrdt6",
+            "vKEsyHFk/HBlhIeSD#5YTp0MkM",
+            "vKEsyHFk/HBlhIeSD#qqzbmw2N"
+          ],
+          "flows": [
+            "vKEsyHFk/HBlhIeSD#0N8qt3jA"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/HBlhIeSD#7fHOSn27",
+          "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+        ],
+        "focus": [
+          "vKEsyHFk/HBlhIeSD#iwrhchml",
+          "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+          "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+          "vKEsyHFk/HBlhIeSD#fs2ehN0i",
+          "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+          "vKEsyHFk/HBlhIeSD#7fHOSn27",
+          "vKEsyHFk/HBlhIeSD#I6MrfGUg",
+          "vKEsyHFk/HBlhIeSD#ETrslazw",
+          "vKEsyHFk/HBlhIeSD#8fMA8lHI",
+          "vKEsyHFk/HBlhIeSD#ldITx5BG"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/HBlhIeSD#0N8qt3jA"
+      }
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#BQkVKNto",
+      "title": "A correction reads the code with no lease held",
+      "narrative": "A historical correction must be checked against the code at the revisions it cites. The store prepares the candidate first and holds nothing, the route reads Git, and the commit then writes exactly that candidate, refusing it when the board moved while Git was read.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/HBlhIeSD#iwrhchml",
+            "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+            "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+            "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+            "vKEsyHFk/6E6hL0Zk#8imgDQSw",
+            "vKEsyHFk/HBlhIeSD#I6MrfGUg",
+            "vKEsyHFk/HBlhIeSD#ldITx5BG"
+          ],
+          "relationships": [
+            "vKEsyHFk/HBlhIeSD#I4TF2ANT",
+            "vKEsyHFk/HBlhIeSD#23r2JYWL",
+            "vKEsyHFk/HBlhIeSD#xHu4Vgbq",
+            "vKEsyHFk/HBlhIeSD#pGjd62O0"
+          ],
+          "flows": [
+            "vKEsyHFk/HBlhIeSD#bPEzKJ7o"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/HBlhIeSD#XSLgfg1m",
+          "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+          "vKEsyHFk/HBlhIeSD#5SMX69gS"
+        ],
+        "focus": [
+          "vKEsyHFk/HBlhIeSD#iwrhchml",
+          "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+          "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+          "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+          "vKEsyHFk/6E6hL0Zk#8imgDQSw",
+          "vKEsyHFk/HBlhIeSD#I6MrfGUg",
+          "vKEsyHFk/HBlhIeSD#ldITx5BG"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/HBlhIeSD#bPEzKJ7o"
+      }
+    }
+  ]
+}

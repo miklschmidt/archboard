@@ -1,0 +1,1173 @@
+{
+  "id": "93RlBGLx",
+  "name": "TASK-446 after TASK-482.07",
+  "formerNames": [
+    "TASK-446 with flows"
+  ],
+  "summary": "Observe actual work and stop the whole workhorse tree",
+  "migration": {
+    "legacy": "vKEsyHFk/9ncuT5DP#93RlBGLx",
+    "predecessor": "vKEsyHFk/9ncuT5DP#qdsrL4tY",
+    "baseline": {
+      "kind": "content",
+      "state": "vKEsyHFk/9ncuT5DP#qdsrL4tY"
+    },
+    "reason": "Preserve this independent proposal and its original predecessor and conflict base.",
+    "checkpoint": "a46dd0318a5ca42be33526026b375282234eb6f2"
+  },
+  "predecessorCheckpoint": "915bf7ea501b49028ac309766df5c47a5c3eda62",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "predecessor": "qdsrL4tY",
+  "predecessorRevision": "cbe235960cf0a1baff64da37a72496da00ff9079637c6257e02785c121b6707e",
+  "baseline": "c5a1aa387e8d3cebfc127460a29b72e0a2049ad6",
+  "changes": [
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/9ncuT5DP#j1PGjoTR"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#U6L1Occk",
+      "kind": "relationship",
+      "value": {
+        "order": 77000,
+        "kind": "call",
+        "label": "workbench Stop uses the shared workhorse operation",
+        "emphasis": "normal",
+        "id": "vKEsyHFk/9ncuT5DP#U6L1Occk",
+        "to": "vKEsyHFk/9ncuT5DP#tlC2W839"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#U6L1Occk",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#u2LFaG7R"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+      "field": "description",
+      "value": "Pending requests use canonical ownership evidence. Stop clears the queue and blocks new submissions until settlement."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#tlC2W839",
+      "field": "responsibility",
+      "value": "Delegate, steer, inspect, manage pending requests, and stop all work for the workhorse of a checkout it names, one at a time; each workhorse has its own"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#tlC2W839",
+      "field": "description",
+      "value": "Inspection reads actual turns, recent progress, descendants, and pending requests. Stop clears pending requests and interrupts the proven work tree. It observes settlement and reports complete, partial, or unconfirmed results. New work waits for resolution and a fresh user request. Existing ownership and epoch records govern effects."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#9V9fQDIT",
+      "field": "label",
+      "value": "a delegation's or a stop's outcome"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+      "field": "description",
+      "value": "A workhorse works in its checkout, the directory that holds its vault, so it reads that repository's AGENTS.md, skills and Codex configuration. Its thread-link key is the tab session and the checkout together. It belongs to the checkout, not to the repository identity, so a new chosen checkout leaves it linked. noteActiveTurn keeps the turn running on a workhorse from turn/started on its current thread to the turn/completed of the thread the turn started on, which New conversation may have left meanwhile, and stopWorkhorses asks the operations of one checkout's workhorse, or of every workhorse of the tab, to stop its whole work tree. The coordinator's stop_workhorses tool stops every running workhorse of its tab session by voice."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#uK6QAuru",
+      "field": "label",
+      "value": "queue a delegation behind the running turn; clear on stop"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#rOBpux5i",
+      "field": "label",
+      "value": "turn/start, turn/steer, work-tree reads, turn/interrupt"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#aLUB44Jp",
+      "field": "order",
+      "value": 79000
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#sIsqpJmw",
+      "field": "target",
+      "value": {
+        "state": "93RlBGLx"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#9Ee1KNBg",
+      "field": "reading",
+      "value": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+            "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+            "vKEsyHFk/9ncuT5DP#jylkTBp7",
+            "vKEsyHFk/9ncuT5DP#byMaoUe0",
+            "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+            "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+            "vKEsyHFk/9ncuT5DP#QGVPyMwG",
+            "vKEsyHFk/9ncuT5DP#DNQTPTxE",
+            "vKEsyHFk/9ncuT5DP#08zJvPJq",
+            "vKEsyHFk/9ncuT5DP#iay14AUl",
+            "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+            "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+            "vKEsyHFk/9ncuT5DP#rOgOf2bo",
+            "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+            "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+            "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+            "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+            "vKEsyHFk/9ncuT5DP#3vO7eN8L"
+          ],
+          "relationships": [
+            "vKEsyHFk/9ncuT5DP#FZnS78FX",
+            "vKEsyHFk/9ncuT5DP#XAd3chIR",
+            "vKEsyHFk/9ncuT5DP#3C7aLx0q",
+            "vKEsyHFk/9ncuT5DP#Lo6Q7GDB",
+            "vKEsyHFk/9ncuT5DP#YOaSBuBr",
+            "vKEsyHFk/9ncuT5DP#aoHKAkWD",
+            "vKEsyHFk/9ncuT5DP#NztvEtjX",
+            "vKEsyHFk/9ncuT5DP#biUWQZMB",
+            "vKEsyHFk/9ncuT5DP#xPCxyO70",
+            "vKEsyHFk/9ncuT5DP#9kvKfu7U",
+            "vKEsyHFk/9ncuT5DP#89ivSTaM",
+            "vKEsyHFk/9ncuT5DP#IxtTYfQ6",
+            "vKEsyHFk/9ncuT5DP#egDoJ9fH",
+            "vKEsyHFk/9ncuT5DP#f4o4iE3G",
+            "vKEsyHFk/9ncuT5DP#ELaAYJKS",
+            "vKEsyHFk/9ncuT5DP#02ywpfgL",
+            "vKEsyHFk/9ncuT5DP#YrKMY0LM",
+            "vKEsyHFk/9ncuT5DP#5gcxxoqv",
+            "vKEsyHFk/9ncuT5DP#zOHsZyzc",
+            "vKEsyHFk/9ncuT5DP#yhm3JUJQ",
+            "vKEsyHFk/9ncuT5DP#NasuLye5",
+            "vKEsyHFk/9ncuT5DP#ENHiJpTb",
+            "vKEsyHFk/9ncuT5DP#wMqJn1nW",
+            "vKEsyHFk/9ncuT5DP#Ikp3Fwwc",
+            "vKEsyHFk/9ncuT5DP#PfZvhB8I",
+            "vKEsyHFk/9ncuT5DP#99za8lFO",
+            "vKEsyHFk/9ncuT5DP#fVScKEoP",
+            "vKEsyHFk/9ncuT5DP#EVC1aGxx",
+            "vKEsyHFk/9ncuT5DP#azMem83I",
+            "vKEsyHFk/9ncuT5DP#ITcuqCHT"
+          ],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "vKEsyHFk/9ncuT5DP#iay14AUl",
+          "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+          "vKEsyHFk/9ncuT5DP#JHbKEH3A",
+          "vKEsyHFk/9ncuT5DP#b9yFBXHz",
+          "vKEsyHFk/9ncuT5DP#NxCpSlMJ",
+          "vKEsyHFk/9ncuT5DP#nRRQSBu7",
+          "vKEsyHFk/9ncuT5DP#GoJ2PW76",
+          "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "vKEsyHFk/9ncuT5DP#Qh7VZ9MQ",
+          "vKEsyHFk/9ncuT5DP#EZEiVlsE",
+          "vKEsyHFk/9ncuT5DP#tlC2W839",
+          "vKEsyHFk/9ncuT5DP#rOBpux5i",
+          "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+        ],
+        "focus": [
+          "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+          "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+          "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+          "vKEsyHFk/9ncuT5DP#QGVPyMwG",
+          "vKEsyHFk/9ncuT5DP#DNQTPTxE",
+          "vKEsyHFk/9ncuT5DP#08zJvPJq",
+          "vKEsyHFk/9ncuT5DP#iay14AUl",
+          "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+          "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+          "vKEsyHFk/9ncuT5DP#rOgOf2bo",
+          "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+          "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+          "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+          "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+          "vKEsyHFk/9ncuT5DP#3vO7eN8L"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#HdGCnvev",
+      "field": "reading",
+      "value": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+            "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+            "vKEsyHFk/9ncuT5DP#jylkTBp7",
+            "vKEsyHFk/9ncuT5DP#byMaoUe0",
+            "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+            "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+            "vKEsyHFk/9ncuT5DP#QGVPyMwG",
+            "vKEsyHFk/9ncuT5DP#DNQTPTxE",
+            "vKEsyHFk/9ncuT5DP#08zJvPJq",
+            "vKEsyHFk/9ncuT5DP#iay14AUl",
+            "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+            "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+            "vKEsyHFk/9ncuT5DP#rOgOf2bo",
+            "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+            "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+            "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+            "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+            "vKEsyHFk/9ncuT5DP#3vO7eN8L"
+          ],
+          "relationships": [
+            "vKEsyHFk/9ncuT5DP#FZnS78FX",
+            "vKEsyHFk/9ncuT5DP#XAd3chIR",
+            "vKEsyHFk/9ncuT5DP#3C7aLx0q",
+            "vKEsyHFk/9ncuT5DP#Lo6Q7GDB",
+            "vKEsyHFk/9ncuT5DP#YOaSBuBr",
+            "vKEsyHFk/9ncuT5DP#aoHKAkWD",
+            "vKEsyHFk/9ncuT5DP#NztvEtjX",
+            "vKEsyHFk/9ncuT5DP#biUWQZMB",
+            "vKEsyHFk/9ncuT5DP#xPCxyO70",
+            "vKEsyHFk/9ncuT5DP#9kvKfu7U",
+            "vKEsyHFk/9ncuT5DP#89ivSTaM",
+            "vKEsyHFk/9ncuT5DP#IxtTYfQ6",
+            "vKEsyHFk/9ncuT5DP#egDoJ9fH",
+            "vKEsyHFk/9ncuT5DP#f4o4iE3G",
+            "vKEsyHFk/9ncuT5DP#ELaAYJKS",
+            "vKEsyHFk/9ncuT5DP#02ywpfgL",
+            "vKEsyHFk/9ncuT5DP#YrKMY0LM",
+            "vKEsyHFk/9ncuT5DP#5gcxxoqv",
+            "vKEsyHFk/9ncuT5DP#zOHsZyzc",
+            "vKEsyHFk/9ncuT5DP#yhm3JUJQ",
+            "vKEsyHFk/9ncuT5DP#NasuLye5",
+            "vKEsyHFk/9ncuT5DP#ENHiJpTb",
+            "vKEsyHFk/9ncuT5DP#wMqJn1nW",
+            "vKEsyHFk/9ncuT5DP#Ikp3Fwwc",
+            "vKEsyHFk/9ncuT5DP#PfZvhB8I",
+            "vKEsyHFk/9ncuT5DP#99za8lFO",
+            "vKEsyHFk/9ncuT5DP#fVScKEoP",
+            "vKEsyHFk/9ncuT5DP#EVC1aGxx",
+            "vKEsyHFk/9ncuT5DP#azMem83I",
+            "vKEsyHFk/9ncuT5DP#ITcuqCHT"
+          ],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/9ncuT5DP#iay14AUl",
+          "vKEsyHFk/9ncuT5DP#xPCxyO70",
+          "vKEsyHFk/9ncuT5DP#NztvEtjX",
+          "vKEsyHFk/9ncuT5DP#9kvKfu7U",
+          "vKEsyHFk/9ncuT5DP#IxtTYfQ6",
+          "vKEsyHFk/9ncuT5DP#YrKMY0LM"
+        ],
+        "focus": [
+          "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+          "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+          "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+          "vKEsyHFk/9ncuT5DP#QGVPyMwG",
+          "vKEsyHFk/9ncuT5DP#DNQTPTxE",
+          "vKEsyHFk/9ncuT5DP#08zJvPJq",
+          "vKEsyHFk/9ncuT5DP#iay14AUl",
+          "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+          "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+          "vKEsyHFk/9ncuT5DP#rOgOf2bo",
+          "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+          "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+          "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+          "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+          "vKEsyHFk/9ncuT5DP#3vO7eN8L"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#XARzanTh",
+      "field": "reading",
+      "value": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+            "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+            "vKEsyHFk/9ncuT5DP#jylkTBp7",
+            "vKEsyHFk/9ncuT5DP#byMaoUe0",
+            "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+            "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+            "vKEsyHFk/9ncuT5DP#QGVPyMwG",
+            "vKEsyHFk/9ncuT5DP#DNQTPTxE",
+            "vKEsyHFk/9ncuT5DP#08zJvPJq",
+            "vKEsyHFk/9ncuT5DP#iay14AUl",
+            "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+            "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+            "vKEsyHFk/9ncuT5DP#rOgOf2bo",
+            "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+            "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+            "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+            "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+            "vKEsyHFk/9ncuT5DP#3vO7eN8L"
+          ],
+          "relationships": [
+            "vKEsyHFk/9ncuT5DP#FZnS78FX",
+            "vKEsyHFk/9ncuT5DP#XAd3chIR",
+            "vKEsyHFk/9ncuT5DP#3C7aLx0q",
+            "vKEsyHFk/9ncuT5DP#Lo6Q7GDB",
+            "vKEsyHFk/9ncuT5DP#YOaSBuBr",
+            "vKEsyHFk/9ncuT5DP#aoHKAkWD",
+            "vKEsyHFk/9ncuT5DP#NztvEtjX",
+            "vKEsyHFk/9ncuT5DP#biUWQZMB",
+            "vKEsyHFk/9ncuT5DP#xPCxyO70",
+            "vKEsyHFk/9ncuT5DP#9kvKfu7U",
+            "vKEsyHFk/9ncuT5DP#89ivSTaM",
+            "vKEsyHFk/9ncuT5DP#IxtTYfQ6",
+            "vKEsyHFk/9ncuT5DP#egDoJ9fH",
+            "vKEsyHFk/9ncuT5DP#f4o4iE3G",
+            "vKEsyHFk/9ncuT5DP#ELaAYJKS",
+            "vKEsyHFk/9ncuT5DP#02ywpfgL",
+            "vKEsyHFk/9ncuT5DP#YrKMY0LM",
+            "vKEsyHFk/9ncuT5DP#5gcxxoqv",
+            "vKEsyHFk/9ncuT5DP#zOHsZyzc",
+            "vKEsyHFk/9ncuT5DP#yhm3JUJQ",
+            "vKEsyHFk/9ncuT5DP#NasuLye5",
+            "vKEsyHFk/9ncuT5DP#ENHiJpTb",
+            "vKEsyHFk/9ncuT5DP#wMqJn1nW",
+            "vKEsyHFk/9ncuT5DP#Ikp3Fwwc",
+            "vKEsyHFk/9ncuT5DP#PfZvhB8I",
+            "vKEsyHFk/9ncuT5DP#99za8lFO",
+            "vKEsyHFk/9ncuT5DP#fVScKEoP",
+            "vKEsyHFk/9ncuT5DP#EVC1aGxx",
+            "vKEsyHFk/9ncuT5DP#azMem83I",
+            "vKEsyHFk/9ncuT5DP#ITcuqCHT"
+          ],
+          "flows": []
+        },
+        "selection": [
+          "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+          "vKEsyHFk/9ncuT5DP#egDoJ9fH",
+          "vKEsyHFk/9ncuT5DP#f4o4iE3G",
+          "vKEsyHFk/9ncuT5DP#02ywpfgL",
+          "vKEsyHFk/9ncuT5DP#ELaAYJKS",
+          "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+          "vKEsyHFk/9ncuT5DP#AoYD3SWj",
+          "vKEsyHFk/9ncuT5DP#jcfXg6TV"
+        ],
+        "focus": [
+          "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "vKEsyHFk/9ncuT5DP#FxzIjbIO",
+          "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+          "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+          "vKEsyHFk/9ncuT5DP#QGVPyMwG",
+          "vKEsyHFk/9ncuT5DP#DNQTPTxE",
+          "vKEsyHFk/9ncuT5DP#08zJvPJq",
+          "vKEsyHFk/9ncuT5DP#iay14AUl",
+          "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+          "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+          "vKEsyHFk/9ncuT5DP#rOgOf2bo",
+          "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+          "vKEsyHFk/9ncuT5DP#Akuz1a3J",
+          "vKEsyHFk/9ncuT5DP#i5AuDn9L",
+          "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+          "vKEsyHFk/9ncuT5DP#3vO7eN8L"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "architecture"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#gBoH41j4",
+      "placement": {
+        "holder": "vKEsyHFk#9ncuT5DP",
+        "before": "vKEsyHFk/9ncuT5DP#EWpqfaqF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#EWpqfaqF",
+      "kind": "flow",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#EWpqfaqF",
+        "name": "A stop ends a workhorse's work tree",
+        "summary": "The workbench Stop control and a spoken stop run one operation that stops a workhorse, every agent it spawned and its pending requests, and reports only what it observed",
+        "participants": [
+          "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+          "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+          "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+          "vKEsyHFk/9ncuT5DP#tlC2W839",
+          "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+          "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+          "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "vKEsyHFk/9ncuT5DP#08zJvPJq"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#EWpqfaqF",
+      "placement": {
+        "holder": "vKEsyHFk#9ncuT5DP",
+        "before": "vKEsyHFk/9ncuT5DP#OlftZnY0"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#7DbjnUB5",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#7DbjnUB5",
+        "kind": "decision",
+        "question": "Who asked to stop?",
+        "alternatives": [
+          "the workbench Stop control",
+          "a spoken stop"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#7DbjnUB5",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#EWpqfaqF",
+        "before": "vKEsyHFk/9ncuT5DP#L4hdmKh2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#ozNVQUzP",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#ozNVQUzP",
+        "from": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+        "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "label": "Stop: the shown checkout's workhorse",
+        "kind": "async"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#ozNVQUzP",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#7DbjnUB5",
+        "alternative": "the workbench Stop control"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#bG62TplO",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#bG62TplO",
+        "from": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+        "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+        "label": "stop_workhorses",
+        "kind": "sync",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/runtime/services/coordinator-tools/tool-execution.ts",
+          "symbol": "stopWork"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#bG62TplO",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#7DbjnUB5",
+        "alternative": "a spoken stop",
+        "before": "vKEsyHFk/9ncuT5DP#ZWPcLX0p"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#ZWPcLX0p",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#ZWPcLX0p",
+        "from": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+        "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "label": "stop, for each workhorse of the tab",
+        "kind": "async",
+        "note": "every workhorse of the tab session runs the steps below at once"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#ZWPcLX0p",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#7DbjnUB5",
+        "alternative": "a spoken stop",
+        "before": "vKEsyHFk/9ncuT5DP#VgDq5TdK"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#VgDq5TdK",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#VgDq5TdK",
+        "from": "vKEsyHFk/9ncuT5DP#kEF4DfR4",
+        "to": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+        "label": "stopping began; each outcome arrives as news",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#VgDq5TdK",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#7DbjnUB5",
+        "alternative": "a spoken stop"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#L4hdmKh2",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#L4hdmKh2",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+        "label": "record the stop before any effect",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#L4hdmKh2",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#EWpqfaqF",
+        "before": "vKEsyHFk/9ncuT5DP#rt7CMtc1"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#rt7CMtc1",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#rt7CMtc1",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "label": "refuse new work until the stop resolves",
+        "kind": "self",
+        "note": "delegation, queue additions, typed input and new threads are refused; inspection and recovery stay open"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#rt7CMtc1",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#EWpqfaqF",
+        "before": "vKEsyHFk/9ncuT5DP#jFW6evsi"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#jFW6evsi",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#jFW6evsi",
+        "kind": "loop",
+        "condition": "until no affected work runs, or the settlement bound passes"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#jFW6evsi",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#EWpqfaqF",
+        "before": "vKEsyHFk/9ncuT5DP#tydmTSDg"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#8BInnfIf",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#8BInnfIf",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "label": "thread/list by ancestorThreadId, every page",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#8BInnfIf",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jFW6evsi",
+        "before": "vKEsyHFk/9ncuT5DP#FxkidOBM"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#FxkidOBM",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#FxkidOBM",
+        "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "label": "the root and every descendant thread",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#FxkidOBM",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jFW6evsi",
+        "before": "vKEsyHFk/9ncuT5DP#H9uWPnPc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#H9uWPnPc",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#H9uWPnPc",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "label": "turn/interrupt the root and active ancestors first",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#H9uWPnPc",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jFW6evsi",
+        "before": "vKEsyHFk/9ncuT5DP#IhTLtWlk"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#IhTLtWlk",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#IhTLtWlk",
+        "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "label": "acknowledged, which proves nothing yet",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#IhTLtWlk",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jFW6evsi",
+        "before": "vKEsyHFk/9ncuT5DP#6VGEA3xd"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#6VGEA3xd",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#6VGEA3xd",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+        "label": "clear each affected thread's pending requests",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#6VGEA3xd",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jFW6evsi",
+        "before": "vKEsyHFk/9ncuT5DP#g5aueG69"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#g5aueG69",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#g5aueG69",
+        "from": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+        "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "label": "thread/queue/delete",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#g5aueG69",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jFW6evsi",
+        "before": "vKEsyHFk/9ncuT5DP#1txTqGNv"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#1txTqGNv",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#1txTqGNv",
+        "from": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+        "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "label": "pending requests cleared, or why not",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#1txTqGNv",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jFW6evsi",
+        "before": "vKEsyHFk/9ncuT5DP#qj36GugG"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#qj36GugG",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#qj36GugG",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "label": "turn/interrupt each active descendant",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#qj36GugG",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jFW6evsi",
+        "before": "vKEsyHFk/9ncuT5DP#mz1DiQ2Z"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#mz1DiQ2Z",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#mz1DiQ2Z",
+        "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "label": "acknowledged, which proves nothing yet",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#mz1DiQ2Z",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jFW6evsi",
+        "before": "vKEsyHFk/9ncuT5DP#Xzaep36A"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#Xzaep36A",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#Xzaep36A",
+        "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "label": "turn/completed of each targeted turn",
+        "kind": "async",
+        "note": "only an observed end counts; a late child or a restart is found on the next pass"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#Xzaep36A",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#jFW6evsi"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#tydmTSDg",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#tydmTSDg",
+        "kind": "decision",
+        "question": "Did all observed work end, with no pending request?",
+        "alternatives": [
+          "all ended",
+          "some work remains",
+          "not observed in time"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#tydmTSDg",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#EWpqfaqF",
+        "before": "vKEsyHFk/9ncuT5DP#F8EoWZqG"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#QoPu63BY",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#QoPu63BY",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+        "label": "settle complete: only a fresh request starts work",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#QoPu63BY",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#tydmTSDg",
+        "alternative": "all ended"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#XYiTWaf7",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#XYiTWaf7",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+        "label": "settle partial: keep refusing new work",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#XYiTWaf7",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#tydmTSDg",
+        "alternative": "some work remains"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#YhIADqh7",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#YhIADqh7",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+        "label": "settle unconfirmed: keep refusing new work",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#YhIADqh7",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#tydmTSDg",
+        "alternative": "not observed in time"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#F8EoWZqG",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#F8EoWZqG",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+        "label": "the outcome, naming what remains and how to recover",
+        "kind": "async"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#F8EoWZqG",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#EWpqfaqF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#OlftZnY0",
+      "kind": "flow",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#OlftZnY0",
+        "name": "The coordinator inspects a workhorse",
+        "summary": "Inspection reports the workhorse's actual work from authoritative reads, and a read that failed stays unavailable",
+        "participants": [
+          "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+          "vKEsyHFk/9ncuT5DP#tlC2W839",
+          "vKEsyHFk/9ncuT5DP#byMaoUe0",
+          "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+          "vKEsyHFk/9ncuT5DP#jylkTBp7"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#OlftZnY0",
+      "placement": {
+        "holder": "vKEsyHFk#9ncuT5DP"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#dIpfGzTW",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#dIpfGzTW",
+        "from": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+        "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "label": "inspect_workhorse, naming the checkout",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#dIpfGzTW",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#OlftZnY0",
+        "before": "vKEsyHFk/9ncuT5DP#s5RlcEz9"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#s5RlcEz9",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#s5RlcEz9",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+        "label": "classify by canonical source and ownership records",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#s5RlcEz9",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#OlftZnY0",
+        "before": "vKEsyHFk/9ncuT5DP#cQHNxPOH"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#cQHNxPOH",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#cQHNxPOH",
+        "from": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+        "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "label": "the link and its status",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#cQHNxPOH",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#OlftZnY0",
+        "before": "vKEsyHFk/9ncuT5DP#qaopQMdk"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#qaopQMdk",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#qaopQMdk",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "label": "thread/read with its turns and recent items",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#qaopQMdk",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#OlftZnY0",
+        "before": "vKEsyHFk/9ncuT5DP#B9i0vaLk"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#B9i0vaLk",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#B9i0vaLk",
+        "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "label": "the authoritative active turn and recent progress",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#B9i0vaLk",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#OlftZnY0",
+        "before": "vKEsyHFk/9ncuT5DP#PYjWMPFE"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#PYjWMPFE",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#PYjWMPFE",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "label": "thread/list by ancestorThreadId: spawned agents",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#PYjWMPFE",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#OlftZnY0",
+        "before": "vKEsyHFk/9ncuT5DP#HIt55VKo"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#HIt55VKo",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#HIt55VKo",
+        "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "label": "every descendant, page by page",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#HIt55VKo",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#OlftZnY0",
+        "before": "vKEsyHFk/9ncuT5DP#b4meI19t"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#b4meI19t",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#b4meI19t",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+        "label": "list the pending requests",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#b4meI19t",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#OlftZnY0",
+        "before": "vKEsyHFk/9ncuT5DP#gbree88p"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#gbree88p",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#gbree88p",
+        "from": "vKEsyHFk/9ncuT5DP#2ffhMTdn",
+        "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "label": "the pending requests, or why they could not be read",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#gbree88p",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#OlftZnY0",
+        "before": "vKEsyHFk/9ncuT5DP#D4mofAbH"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#D4mofAbH",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#D4mofAbH",
+        "kind": "decision",
+        "question": "Did every read succeed?",
+        "alternatives": [
+          "a read failed",
+          "all read"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#D4mofAbH",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#OlftZnY0",
+        "before": "vKEsyHFk/9ncuT5DP#bakqPQJX"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#D6Qaxaxc",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#D6Qaxaxc",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "label": "mark that read unavailable, never empty",
+        "kind": "self"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#D6Qaxaxc",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#D4mofAbH",
+        "alternative": "a read failed"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk/9ncuT5DP#bakqPQJX",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk/9ncuT5DP#bakqPQJX",
+        "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
+        "to": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+        "label": "request, turn, progress, agents, pending, stop result",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#bakqPQJX",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#OlftZnY0"
+      }
+    }
+  ]
+}

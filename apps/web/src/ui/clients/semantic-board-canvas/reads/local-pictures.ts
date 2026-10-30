@@ -38,7 +38,7 @@ import {
 } from "@archboard/board/document";
 import { wasDrawn, type SemanticRenderReply } from "@archboard/board/render-reply";
 import type { SemanticPolicy } from "@archboard/board/policy";
-import type { BoardRenderChoices, BoardRenderOutcome } from "@archboard/renderer/picture";
+import type { drawBoardHere } from "@archboard/renderer/browser";
 import {
 	SemanticBoardError,
 	comparisonKey,
@@ -66,11 +66,7 @@ import { cachedReadings } from "#ui/clients/semantic-board-canvas/reads/board-ke
 import { boardGoneStale } from "#ui/clients/semantic-board-canvas/reads/board-refresh.ts";
 
 /** Draws one board in this page. */
-type DrawBoard = (
-	board: SemanticBoard,
-	choices: Omit<BoardRenderChoices, "fonts">,
-	policy: SemanticPolicy,
-) => Promise<BoardRenderOutcome>;
+type DrawBoard = typeof drawBoardHere;
 
 /** What drawing in this page needs. */
 interface LocalPictureSetup {

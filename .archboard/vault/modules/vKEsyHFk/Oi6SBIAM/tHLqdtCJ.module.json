@@ -1,0 +1,57 @@
+{
+  "order": 31000,
+  "name": "Architecture context input",
+  "kind": "module",
+  "responsibility": "Publishes canonical reading context and exact-capture requirements; legacy-authority refusals return explicit migration guidance.",
+  "description": "Publishes canonical model context and exact captured reading selectors to local agents. Unmigrated vaults expose migration guidance instead of board authoring or fixed levels.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "formerNames": [
+    "Semantic context input"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 70005,
+      "kind": "call",
+      "label": "subscribe to durable changes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+        "symbol": "semanticChangeFeed"
+      },
+      "id": "vKEsyHFk#GSMazGUv",
+      "to": "vKEsyHFk/Oi6SBIAM#mStVd7fZ"
+    },
+    {
+      "order": 76000,
+      "kind": "call",
+      "label": "compose the captured canonical context",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+        "symbol": "canonicalContext"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#Q85nTD4V",
+      "to": "vKEsyHFk/6E6hL0Zk#C9EOzoYB"
+    }
+  ]
+}

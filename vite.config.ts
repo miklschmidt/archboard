@@ -274,7 +274,7 @@ export default defineConfig({
 					"--path-ignore-patterns",
 					"tests/system/process-contracts/git-opener-sequence-watchdog.test.ts",
 					"--path-ignore-patterns",
-					"tests/system/process-contracts/cross-process-lock.test.ts",
+					"tests/system/process-contracts/cross-process-model-claims.test.ts",
 					"tests/system/cli",
 					"tests/system/server-state",
 					"tests/system/process-contracts",
@@ -304,13 +304,14 @@ export default defineConfig({
 					"packages/codex-app-server/tests/runtime/services/executable.test.ts",
 					"packages/server-lifecycle/tests/runtime/store/pidfile.test.ts",
 					"packages/renderer/tests/runtime/processes/headless-chromium/startup.test.ts",
-					"packages/board/tests/runtime/store/policy.test.ts",
-					"packages/board/tests/runtime/operations/rename/renaming.test.ts",
+					"packages/board/tests/runtime/operations/read/model-read.test.ts",
+					"packages/board/tests/runtime/operations/model-edit/structure.test.ts",
 					"packages/code-binding/tests/runtime/operations/resolution.test.ts",
 					"packages/workbench/tests/server/services/owner/production-initialization.test.ts",
-					"packages/workbench/tests/server/services/actions/approval-sessions.test.ts",
+					"packages/workbench/tests/server/services/actions/dynamic-approval-sessions.test.ts",
 					"apps/cli/tests/cli/operations/vault/language-server-configuration.test.ts",
-					"tests/system/semantic-boards/lifecycle.test.ts",
+					"tests/system/semantic-boards/model-proposals.test.ts",
+					"tests/system/semantic-boards/model-corrections.test.ts",
 					"tests/system/process-contracts/codex-workbench-storage.test.ts",
 				].join(" "),
 				cache: testCache,
@@ -334,16 +335,18 @@ export default defineConfig({
 			},
 			"test:opt-in:topology": {
 				command:
-					"bun test --isolate --max-concurrency=1 tests/system/process-contracts/cross-process-lock.test.ts",
+					"bun test --isolate --max-concurrency=1 tests/system/process-contracts/cross-process-model-claims.test.ts",
 				cache: testCache,
 			},
 		},
 	},
-	// Board files retain their store serializer. Agent and generated files retain their owners.
+	// Architecture inputs retain their store serializer and exact portable fingerprints.
 	fmt: {
 		ignorePatterns: [
-			".archboard/vault/**/*.semantic.json",
+			".archboard/vault/**",
 			"examples/**/*.semantic.json",
+			"examples/web-shop/**/*.json",
+			"examples/web-shop/.archboard/config.yaml",
 			// Third-party agent skills keep their upstream formatting, so they diff cleanly
 			// against a later upstream version: those in .agents/skills here, and those in
 			// .claude/skills through .claude/**. The skills this repository distributes are
@@ -372,6 +375,36 @@ export default defineConfig({
 		// The server serves SOURCE_CHECKOUT/dist/frontend. It lies outside the root, so it is emptied on purpose.
 		outDir: join(repositoryRoot, "dist", "frontend"),
 		emptyOutDir: true,
+		rolldownOptions: {
+			output: {
+				// Application edits preserve cached framework, controls, and agent code.
+				// Entry-aware groups retain the renderer and replay's lazy boundaries.
+				codeSplitting: {
+					groups: [
+						{
+							name: "react-platform",
+							test: /node_modules[\\/](react(?:-dom)?|scheduler|@tanstack)[\\/]/,
+							entriesAware: true,
+						},
+						{
+							name: "controls",
+							test: /(?:node_modules[\\/](?:@base-ui|@floating-ui|@remixicon)|packages[\\/](?:ui-kit|cn))[\\/]/,
+							entriesAware: true,
+						},
+						{
+							name: "conversation-runtime",
+							test: /node_modules[\\/](?:@assistant-ui|assistant-stream)[\\/]/,
+							entriesAware: true,
+						},
+						{
+							name: "agent",
+							test: /packages[\\/](?:workbench|codex-realtime-voice)[\\/]/,
+							entriesAware: true,
+						},
+					],
+				},
+			},
+		},
 	},
 	server: {
 		fs: {

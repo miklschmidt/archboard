@@ -1,3 +1,4 @@
+import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
 // One author run, start to finish: a private world, Flask at the pin, a
 // Archboard server of its own, the fixture laid, the skill installed and verified, a
 // snapshot, one Codex exec with the scenario's prompt, and then everything
@@ -7,7 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { SKILL_EVAL_MS } from "@archboard/timing";
-import type { SemanticBoard } from "@archboard/board/document";
+
 import type { CliContext } from "#runtime/processes/archboard.ts";
 import {
 	anonymousRunId,

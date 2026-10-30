@@ -7,14 +7,9 @@
 // separate read, made by the viewer through the query cache.
 
 import { boardAddressOf } from "#ui/rules/semantic-board-canvas/board/address.ts";
-import { takeBoardBack } from "#ui/clients/pane-session/pane-requests.ts";
 import { createPaneArrival } from "#ui/rules/pane-session/pane-arrival.ts";
 import { createPaneReportDeadline } from "#ui/state/pane-session/pane-deadline.ts";
-import {
-	createReadingPublisher,
-	NOTHING_READ,
-	type PaneReading,
-} from "#ui/state/pane-session/pane-reading.ts";
+import { createReadingPublisher, type PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import { createPaneReportSender } from "#ui/clients/pane-session/pane-report-sender.ts";
 import {
 	createPaneSocketConnector,
@@ -29,7 +24,6 @@ import {
 import {
 	UNKNOWN_HOLDER,
 	type PaneSessionOptions,
-	type TakeBackResult,
 } from "#ui/rules/pane-session/session-contracts.ts";
 import type { PaneWorkbenchSocketOwner } from "#ui/clients/pane-session/workbench-socket.ts";
 import type { WorkbenchTransportPort } from "#ui/rules/pane-session/workbench-port.ts";
@@ -86,6 +80,8 @@ interface PaneCore<Transport extends WorkbenchTransportPort> {
 	 * @param reading The board, variant, view and selection.
 	 */
 	readonly readingChanged: (reading: PaneReading) => void;
+	/** Await the latest reading before starting an action that consumes it. */
+	readonly flushReading: () => Promise<boolean>;
 	/**
 	 * The user asked, by hand, for a part of this pane's reading to change (ADR 0034).
 	 * @param part The part their gesture was about.
@@ -96,7 +92,6 @@ interface PaneCore<Transport extends WorkbenchTransportPort> {
 	 * @param part The part that is not going to change after all.
 	 */
 	readonly userChangeFailed: (part: SemanticPanePart) => void;
-	readonly takeBack: () => Promise<TakeBackResult>;
 	/**
 	 * Open the file a subject's binding names.
 	 * @param subjectId The semantic id.
@@ -313,6 +308,13 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 			return ports.options().onPresentRequest;
 		},
 		/**
+		 * Read the current canonical navigation listener.
+		 * @returns The router-owned arrival listener.
+		 */
+		get onModelRequest() {
+			return ports.options().onModelRequest;
+		},
+		/**
 		 * Where a board refusal goes; read live.
 		 * @returns The listener, or undefined when the shell wants none.
 		 */
@@ -329,6 +331,13 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		/**
 		 * Where news of a chosen checkout goes; read live.
 		 * @returns The listener, or undefined when the shell wants none.
+		 */
+		get onExplanationsChanged() {
+			return ports.options().onExplanationsChanged;
+		},
+		/**
+		 * Read the current repository change callback.
+		 * @returns The current listener, when installed.
 		 */
 		get onRepositoriesChanged() {
 			return ports.options().onRepositoriesChanged;
@@ -375,18 +384,10 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 
 	/**
 	 * A socket closed, current or not; the workbench must release it either way.
-	 *
-	 * For a pane that has been disposed this is also where its retirement is
-	 * said, because it is the first moment the socket is actually gone — the
-	 * shell learns a pane has left the layout earlier, and the server still has
-	 * it registered until here (TASK-167).
 	 * @param socket The socket.
 	 */
 	function socketRetired(socket: WebSocket): void {
 		void ports.workbenchSockets?.detach(socket).catch(() => undefined);
-		if (disposed) {
-			ports.options().onPaneRetired?.(paneId);
-		}
 	}
 
 	/**
@@ -397,13 +398,18 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		handleSocketMessage(messageContext, data);
 	}
 
-	const connector = createPaneSocketConnector(clientId, paneVault, {
-		opened: socketOpened,
-		message: onSocketMessage,
-		closed: socketLost,
-		retired: socketRetired,
-		errored: socketLost,
-	});
+	const connector = createPaneSocketConnector(
+		clientId,
+		paneVault,
+		{
+			opened: socketOpened,
+			message: onSocketMessage,
+			closed: socketLost,
+			retired: socketRetired,
+			errored: socketLost,
+		},
+		() => ports.options().canonical === true,
+	);
 
 	const paneReports = createPaneReportSender({
 		paneId,
@@ -419,30 +425,6 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		setRegistered,
 		listeners: ports.options,
 	});
-
-	/**
-	 * The person releases an agent's claim on their board: the one explicit
-	 * control over a claimed board (ADR 0022). Nothing is undone; the board goes
-	 * to nobody, and the agent is told once that it lost the board.
-	 * @returns Whether the claim was released.
-	 */
-	async function takeBack(): Promise<TakeBackResult> {
-		const target = status.boardKey;
-		const vault = status.vault;
-		try {
-			await takeBoardBack(vault, target, clientId);
-			// The same board of another checkout is another board, with its own claim.
-			if (status.boardKey !== target || status.vault !== vault) {
-				return { outcome: "failure" };
-			}
-			// Released, or nobody claimed it any more: the board is free either
-			// way, and the broadcast says so too.
-			setHolder(null);
-			return { outcome: "success" };
-		} catch {
-			return { outcome: "failure" };
-		}
-	}
 
 	/**
 	 * Say what happened, where the person is.
@@ -492,7 +474,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	function readingChanged(next: PaneReading): void {
 		if (next.board === null) {
 			readingThrough(null);
-			reading.publish(NOTHING_READ);
+			reading.publish(next);
 			return;
 		}
 		showing(next.board.key);
@@ -567,9 +549,9 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		facetsChanged,
 		paneElementChanged: facetsChanged,
 		readingChanged,
+		flushReading: reading.flush,
 		userChanged: reading.userChanged,
 		userChangeFailed: reading.userChangeFailed,
-		takeBack,
 		openCode,
 		workbenchTransport,
 		dispose,

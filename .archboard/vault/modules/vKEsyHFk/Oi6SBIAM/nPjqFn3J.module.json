@@ -1,0 +1,44 @@
+{
+  "order": 22000,
+  "name": "Pane vaults",
+  "kind": "module",
+  "responsibility": "Moves a pane into another vault, re-keying its sockets and registration and forgetting what it said it was reading, and broadcasts machine news to every tab",
+  "description": "It tells nobody that a pane moved: which conversation the tab's agent dock shows stays as it is, because only the person's own act in the page changes that.",
+  "groups": [
+    "panes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/state/pane-vaults/pane-vaults.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+  "parent": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 55000,
+      "kind": "event",
+      "label": "repositories_changed to every tab",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/state/pane-vaults/pane-vaults.ts",
+        "symbol": "broadcastEverywhere"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#HZkTRFtf",
+      "to": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "order": 27000,
+  "name": "Reporting",
+  "kind": "module",
+  "responsibility": "Joins each run with the verdict of every grader that graded it, says where two graders agree, and compares the arms per scenario and workflow",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#tDDQDe92",
+  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
+  "outgoing": [
+    {
+      "order": 70040,
+      "kind": "call",
+      "label": "read captured grading evidence",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/store/records.ts",
+        "symbol": "suppliedCaptures"
+      },
+      "id": "vKEsyHFk#jkSstw4e",
+      "to": "vKEsyHFk/IbGtfJE2#RrIatpuG"
+    }
+  ]
+}

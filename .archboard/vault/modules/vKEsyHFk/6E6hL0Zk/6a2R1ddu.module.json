@@ -1,0 +1,84 @@
+{
+  "order": 9000,
+  "name": "Code opener",
+  "kind": "module",
+  "responsibility": "Resolves a node's binding against this machine and opens it",
+  "description": "The existing code opener also resolves an explicit migration preview before opening the candidate module binding. It refuses stale plans rather than using installed or legacy subjects.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/code-opener/src/server"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
+  "parent": "vKEsyHFk/vKEsyHFk#7hdbqGFn",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 11000,
+      "kind": "call",
+      "label": "resolve the canonical module code target",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/projections/model-target.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#oYfZ2qnC",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    },
+    {
+      "order": 70000,
+      "kind": "call",
+      "label": "symbolLine: the line where a bound symbol is defined",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/routes/code-opener.ts",
+        "symbol": "symbolLine"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#ZAbHs2zZ",
+      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
+    },
+    {
+      "order": 70019,
+      "kind": "call",
+      "label": "enforce the local browser origin",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/routes/code-opener.ts",
+        "symbol": "createBrowserOriginGuard"
+      },
+      "id": "vKEsyHFk#6MddSKIu",
+      "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
+    },
+    {
+      "order": 98000,
+      "kind": "call",
+      "label": "checks settings reads and mutations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/routes/code-opener.ts",
+        "symbol": "createBrowserOriginGuard"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#5JU3fREk",
+      "to": "vKEsyHFk/6E6hL0Zk#cZ1UH0xU"
+    }
+  ]
+}

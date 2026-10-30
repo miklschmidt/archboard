@@ -4,6 +4,10 @@ status: accepted
 
 # A node standing for another board carries that board's level
 
+Canonical recursive module readings supersede fixed board levels below. Imported board namespaces preserve provenance rather than navigation depth.
+[ADR 0062](0062-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
+
 `external` carried two jobs. The skill defines it as a part outside the
 checkout, such as a library, a shell, or a caller. Archboard's own vault used it
 to join one board to another. 14 of the 18 `external` nodes in

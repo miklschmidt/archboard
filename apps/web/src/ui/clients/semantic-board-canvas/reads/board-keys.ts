@@ -13,7 +13,6 @@ import {
 	comparisonKey,
 	type SemanticRenderRequest,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
-import type { ReadingOnScreen } from "#ui/hooks/semantic-board-canvas/use-code-findings.ts";
 
 /** The one root every semantic resource hangs under, so a sweep can find it. */
 const SEMANTIC_KEY = "semantic-board";
@@ -32,15 +31,6 @@ const semanticBoardKeys = {
 	 * @returns Its cache key.
 	 */
 	codeFindings: (vault: string) => ["code-findings", vault] as const,
-	/**
-	 * Where one variant of one board changes in code, at one version of the
-	 * board. Under a root of its own, so no sweep of the board's pictures or
-	 * documents asks Git again.
-	 * @param on The board, the variant by id and the version on screen.
-	 * @returns Its cache key.
-	 */
-	locality: (on: ReadingOnScreen) =>
-		["locality", on.vault, on.board, on.variant, on.version] as const,
 	/** Every vault's semantic boards. */
 	allBoards: [SEMANTIC_KEY, "boards"] as const,
 	/**
@@ -158,14 +148,4 @@ function sameBoardAsked(
 	return previous?.[2] === request.vault && previous[3] === request.board;
 }
 
-/**
- * Whether the last locality query asked about the same vault as this one.
- * @param previous The last query's key, if any.
- * @param vault The vault this one asks about.
- * @returns True when its answer is of this vault's history.
- */
-function sameVaultAsked(previous: readonly unknown[] | undefined, vault: string): boolean {
-	return previous?.[1] === vault;
-}
-
-export { cachedReadings, sameBoardAsked, sameVaultAsked, semanticBoardKeys, type CachedReading };
+export { cachedReadings, sameBoardAsked, semanticBoardKeys, type CachedReading };

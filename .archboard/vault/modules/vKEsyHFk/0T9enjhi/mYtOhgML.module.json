@@ -1,0 +1,77 @@
+{
+  "order": 35000,
+  "name": "Bound vaults",
+  "kind": "function",
+  "responsibility": "Lists known canonical models whose current or active proposed modules bind a repository.",
+  "description": "Scans chosen checkouts and registered untracked vaults, then reads canonical model and proposal modules. LEGACY_AUTHORITY produces no match; discovery does not decode or rewrite legacy board files.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/store/bound-vaults.ts",
+    "symbol": "vaultsBoundTo"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/0T9enjhi#mYtOhgML",
+  "parent": "vKEsyHFk/0T9enjhi#ZqkmwupZ",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 21000,
+      "kind": "call",
+      "label": "the chosen checkouts and untracked vaults",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/bound-vaults.ts",
+        "symbol": "listRegistry"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "order": 22000,
+      "kind": "call",
+      "label": "the vault layout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/bound-vaults.ts",
+        "symbol": "isVaultLayout"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#7hxRgVwY",
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    },
+    {
+      "order": 76000,
+      "kind": "call",
+      "label": "read models bound to a repository",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/bound-vaults.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/0T9enjhi#1Rd0xfYJ",
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+    }
+  ]
+}

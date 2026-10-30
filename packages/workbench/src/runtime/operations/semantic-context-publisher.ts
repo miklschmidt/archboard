@@ -143,13 +143,12 @@ function validateFeedId(feedId: string): string {
 }
 
 /**
- * Whether a settled change names one of the three reviewed origins. Origin decides whether a
- * change is delivered at all, so an unrecognised one is refused rather than guessed at.
+ * Whether a settled change names a reviewed origin. Refuse an unrecognized origin.
  * @param value - The claimed origin.
  * @returns True for a reviewed origin.
  */
 function validOrigin(value: unknown): value is SemanticChangeOrigin {
-	return value === "human" || value === "agent" || value === "mixed";
+	return value === "human" || value === "agent" || value === "mixed" || value === "external";
 }
 
 /**
@@ -486,7 +485,8 @@ export function createSemanticContextPublisher(
 			SEMANTIC_CONTEXT_LIMITS.descriptionBytes,
 			false,
 		);
-		const fields = buildSemanticBrief(context, feedId, clock, {
+		const input = event.doing === undefined ? context : { ...context, doing: event.doing };
+		const fields = buildSemanticBrief(input, feedId, clock, {
 			source: "settled_change",
 			origin: event.origin,
 			cursorOverride: { feedId, sequence: settled.cursor },

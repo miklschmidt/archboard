@@ -1,9 +1,6 @@
 // The panes on screen, as the CLI asks the server about them and moves them.
 
-import type { parseBoardKey } from "@archboard/board/address";
 import { requestJson, statedInvocation } from "@archboard/server-lifecycle/server-client";
-
-type BoardIdentity = ReturnType<typeof parseBoardKey>;
 
 /**
  * The options for a POST carrying a JSON body.
@@ -35,20 +32,18 @@ interface PaneLayoutResponse {
 	onScreen: Array<{ paneId: string; place: string; board: string }>;
 }
 
-/** What showing a board in a pane answers with. */
-interface ShowBoardResponse {
+type ShowBoardResponse = {
 	success: true;
-	board: string;
-	identity: BoardIdentity;
-	/** The repository the board is in, or null when no registered directory holds its vault. */
+	model: string;
+	reading: import("zod").infer<
+		typeof import("@archboard/board/pane-context").ArchitecturePaneReadingSchema
+	>;
+	revision: unknown;
 	repository: string | null;
-	/** The checkout that holds the board's vault, or null when it is not known. */
-	checkout: string | null;
-	/** The choice of checkout the show made, when it made one (ADR 0050). */
+	checkout: string;
 	chose?: { repository: string; checkout: string; replaced: string | null };
 	paneId: string;
-	pane?: PaneRef | null;
-}
+};
 
 /**
  * What every pane on screen is showing and reading.
@@ -84,16 +79,19 @@ function closePane(spec: string): Promise<PaneLayoutResponse> {
  * from here says it is an agent's, and which agent session it is when the invocation named one.
  * The voice and its coordinator are told an agent moved the pane, unless it was their own
  * session (TASK-293.06).
- * @param board The board key.
+ * @param reading The canonical reading selectors.
  * @param pane The pane spec, when the caller named one.
  * @returns What the pane is showing now.
  */
-function showBoardInPane(board: string, pane?: string): Promise<ShowBoardResponse> {
+function showBoardInPane(
+	reading: ShowBoardResponse["reading"],
+	pane?: string,
+): Promise<ShowBoardResponse> {
 	const { session } = statedInvocation();
 	return requestJson<ShowBoardResponse>(
 		"/api/panes/show",
 		posting({
-			board,
+			reading,
 			agent: true,
 			...(pane === undefined ? {} : { pane }),
 			...(session === null ? {} : { session }),

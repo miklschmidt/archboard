@@ -132,21 +132,6 @@ interface WorkingItemProps {
 }
 
 /**
- * What the agent last said about the board, and when: its doing line, else
- * the reason it gave for its claim.
- * @param activity The activity.
- * @returns The words and the stamp, which may be missing.
- */
-function lastWords(activity: AgentActivityEntry): {
-	readonly said: string;
-	readonly at: string | null;
-} {
-	const { claim, doing } = activity;
-	if (doing !== null) return { said: doing.doing, at: doing.at };
-	return { said: claim?.reason ?? "Writing", at: claim?.since ?? null };
-}
-
-/**
  * One board an agent works on: its lamp, its name, how long ago the agent
  * spoke, and what it said.
  * @param props The entry, the clock and the open handler.
@@ -154,12 +139,12 @@ function lastWords(activity: AgentActivityEntry): {
  */
 function WorkingItem(props: WorkingItemProps): JSX.Element {
 	const { entry, now, onOpen } = props;
-	const { claim, board } = entry.activity;
+	const { claims, model } = entry.activity;
 	const { repository } = entry;
-	const { said, at } = lastWords(entry.activity);
+	const at = activityTime(entry.activity);
 	const handleClick = useCallback(
-		(event: MouseEvent<HTMLButtonElement>) => onOpen(board, event.altKey, repository),
-		[onOpen, board, repository],
+		(event: MouseEvent<HTMLButtonElement>) => onOpen(model, event.altKey, repository),
+		[onOpen, model, repository],
 	);
 	return (
 		<li>
@@ -171,7 +156,7 @@ function WorkingItem(props: WorkingItemProps): JSX.Element {
 			>
 				<span className="flex w-full min-w-0 items-center">
 					<span style={LAMP_STYLE} className="flex shrink-0 justify-center">
-						<ActivityLamp state={claim === null ? "wrote" : "claimed"} />
+						<ActivityLamp state={claims.length === 0 ? "wrote" : "claimed"} />
 					</span>
 					<span style={NAME_GAP_STYLE} className="text-control min-w-0 flex-1 truncate">
 						<span className="font-medium">{entry.name}</span>
@@ -186,12 +171,56 @@ function WorkingItem(props: WorkingItemProps): JSX.Element {
 						<Age at={at} now={now} />
 					</span>
 				</span>
-				<span style={DOING_STYLE} className="text-body text-muted-foreground truncate">
-					<span className="sr-only">{claim === null ? "Just wrote: " : "Claimed: "}</span>
-					{said}
-				</span>
+				<ActivityDetails activity={entry.activity} />
 			</button>
 		</li>
+	);
+}
+
+/**
+ * Prefer the last durable operation time, then the first active claim's start.
+ * @param activity The current model snapshot.
+ * @returns The observed time, or absence when no activity is known.
+ */
+function activityTime(activity: AgentActivityEntry): string | null {
+	return activity.doing?.at ?? activity.claims[0]?.since ?? null;
+}
+
+/**
+ * Show each concurrent claim without implying exclusive model ownership.
+ * @param props The model's observed claims and durable operation.
+ * @param props.activity The exact server snapshot.
+ * @returns The last doing line and each current writer's own reason.
+ */
+function ActivityDetails({ activity }: { activity: AgentActivityEntry }): JSX.Element {
+	return (
+		<>
+			{activity.doing !== null && (
+				<span
+					data-slot="activity-doing"
+					data-writer={activity.doing.writer}
+					style={DOING_STYLE}
+					className="text-body text-muted-foreground truncate"
+				>
+					<span className="sr-only">{activity.doing.writer}: </span>
+					{activity.doing.doing}
+				</span>
+			)}
+			{activity.claims.map((claim) => (
+				<span
+					key={claim.id}
+					data-claim-id={claim.id}
+					data-writer={claim.writer}
+					style={DOING_STYLE}
+					className="text-body text-muted-foreground flex w-full gap-1.5"
+				>
+					<span className="shrink-0 font-medium">{claim.writer}</span>
+					<span className="truncate" title={claim.reason}>
+						{claim.reason}
+					</span>
+				</span>
+			))}
+		</>
 	);
 }
 

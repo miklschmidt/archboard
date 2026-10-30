@@ -135,6 +135,8 @@ function renderFlags(): readonly string[] {
 		// A partial raster reuses a tile's old content, so a frame's pixels would depend on how many
 		// real frames Chromium drew while the page waited; two renders of a talk then differ.
 		"--disable-partial-raster",
+		// The first sample of a new SVG must not run ahead of the replay clock on the compositor.
+		"--disable-threaded-animation",
 		"--hide-scrollbars",
 		"--force-device-scale-factor=1",
 		"--force-color-profile=srgb",
@@ -471,7 +473,7 @@ function renderFailed(
 		leftBehind.length === 0 ? "" : ` Stopping the browser also failed: ${leftBehind.join("; ")}`;
 	return new WalkthroughRecordingError(
 		"RENDER_FAILED",
-		`Rendering the talk failed: ${why}${also} The talk is kept in ${request.directory}; render it again with: archboard semantic replay ${request.directory} --out <file>`,
+		`Rendering the talk failed: ${why}${also} The talk is kept in ${request.directory}; render it again with: archboard model replay ${request.directory} --out <file>`,
 		error,
 	);
 }

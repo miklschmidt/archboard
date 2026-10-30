@@ -1,0 +1,52 @@
+{
+  "id": "hhgbZK4Q",
+  "name": "TASK-447 after TASK-482.07",
+  "formerNames": [
+    "TASK-447 (with flows)"
+  ],
+  "summary": "Architecture roles and saved briefs for external implementation",
+  "migration": {
+    "legacy": "vKEsyHFk/SJ2JMVyz#hhgbZK4Q",
+    "predecessor": "vKEsyHFk/SJ2JMVyz#VbwPSZYa",
+    "baseline": {
+      "kind": "content",
+      "state": "vKEsyHFk/SJ2JMVyz#VbwPSZYa"
+    },
+    "reason": "Preserve this independent proposal and its original predecessor and conflict base.",
+    "checkpoint": "a46dd0318a5ca42be33526026b375282234eb6f2"
+  },
+  "predecessorCheckpoint": "299ed3ef0f7992883677c69a0baed86f37687796",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "predecessor": "VbwPSZYa",
+  "predecessorRevision": "c9d916ccabf3a9af2cfcdf08c1cd13f1a041f2e5a087390ea9a97601edd7fbe6",
+  "baseline": "b2b688cca884f2f64275e247429998717a4b34c7",
+  "changes": [
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+      "field": "description",
+      "value": "thread/start on gpt-6-astra at medium effort in the workhorse's checkout, which is the thread's working directory and workspace root, so it reads that repository's agent instructions and skills. It carries the workhorse developer instructions and the archboard_app and archboard_coordinator tool namespaces; the manifest digest it records covers both. Start the architectural workhorse with its role instructions and existing permissions. Carry the role into delegated agents. Implementation requests produce a saved brief instead of product code."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+      "field": "responsibility",
+      "value": "Architecture roles for built-in agents and descendants, pinned by digest"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+      "field": "description",
+      "value": "Inspect code, analyze architecture, and author requested proposals and documents. Run existing diagnostics with normal untracked output. Keep experiments outside repositories. Explicit implementation requests save a Markdown brief in the OS temporary directory for the user coding agent. The brief includes live board retrieval instructions and suggested skills. Existing permissions stay unchanged."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#sdzhtbxw",
+      "field": "target",
+      "value": {
+        "state": "hhgbZK4Q"
+      }
+    }
+  ]
+}

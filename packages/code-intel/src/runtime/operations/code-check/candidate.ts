@@ -5,7 +5,7 @@ import {
 	snapshotCheckoutAccess,
 	resolveRegisteredCheckout,
 } from "@archboard/code-binding/resolution";
-import { HistoricalRevisionSchema } from "@archboard/board/commands";
+import { HistoricalRevisionSchema } from "@archboard/board/model";
 import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
 import { commitOf } from "#runtime/clients/history-lens/source-history.ts";

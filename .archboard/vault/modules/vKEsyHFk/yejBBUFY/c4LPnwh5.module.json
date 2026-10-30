@@ -1,0 +1,56 @@
+{
+  "order": 8002,
+  "name": "Shell",
+  "kind": "ui",
+  "responsibility": "Connects repository navigation, local agents, and canonical panes",
+  "description": "The desktop frame keeps the repository navigator, local agent controls, conversation, and canonical panes. Repository actions open current modules through the shared router. Unmigrated repositories show their migration state. Board ownership and level controls are retired.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/shell"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#c4LPnwh5",
+  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.13 - Explain-the-captured-reading-through-local-agent-actions.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 73000,
+      "kind": "render",
+      "label": "each pane's letter, controls and claim",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/shell/PaneStages.tsx",
+        "symbol": "PaneChromeContext"
+      },
+      "id": "vKEsyHFk/yejBBUFY#6JBVcBmw",
+      "to": "vKEsyHFk/yejBBUFY#OPt4rjAR"
+    },
+    {
+      "order": 93000,
+      "kind": "render",
+      "label": "opens current architecture",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/shell/RepositoryLine.tsx",
+        "symbol": "RepositoryModelLink"
+      },
+      "id": "vKEsyHFk/yejBBUFY#tWVYo1RT",
+      "to": "vKEsyHFk/yejBBUFY#n2ONtqdt"
+    }
+  ]
+}

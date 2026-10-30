@@ -1,5 +1,5 @@
 // The trail a drill-down into another repository leaves. Where the link leads
-// is read by `use-drill-target.ts`, and `drill-target.test.tsx` owns it.
+// is read by canonical model references; canonical-model-references.test.ts owns it.
 //
 // What these catch: a dive that forgets the boards the reader came through once
 // the pane arrives, and a trail kept after somebody else pointed the pane

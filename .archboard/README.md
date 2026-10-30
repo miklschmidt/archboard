@@ -1,155 +1,127 @@
-# Archboard's architecture vault
+# Archboard's architecture model
 
-The files in `vault/` are the canonical, editable boards of this repository's
-current architecture. Keep them in Git. Edit them through the CLI so writes,
-versions, claims, and live browser announcements retain their normal guarantees.
-Rendered SVGs are disposable; there is no second set of authored input files to
-regenerate these boards from.
-Their JSON formatting belongs to the board store (`packages/board/src/runtime`); the source formatter
-excludes these files so it cannot change a board outside its write boundary.
-The authored `.archboard/config.yaml` inside the vault defines its shared levels,
-node kinds, relationship kinds and appearance. Run `archboard semantic config`
-to discover that vocabulary and `archboard check` after board work. Rendered
-legends and generated editor schemas are derived artifacts, not authored boards.
+The files in `vault/` describe one canonical model of this repository.
+Its stable model identity is `vKEsyHFk`.
+Modules own their outgoing relationships and form a recursive containment forest.
+Flow collections describe independent exchanges across those modules.
+A reading selects scope and presentation without owning architecture content.
 
-## Open the vault
+Keep authored inputs in Git and change them through the public CLI.
+The runtime owns serialization, subject claims, exact revision checks, signed retention, and durable installation.
+The source formatter excludes these inputs because their exact bytes identify a revision.
+Rendered pictures are derived artifacts and contain no second authored model.
 
-A command finds its vault from the directory it runs in, as git finds its
-repository (ADR 0049). Inside this checkout, from any directory, that is
-`.archboard/vault` at the checkout root. A vault above the root is never used.
-`-C <dir>` starts the search in another directory, so
-`archboard -C <checkout> check` reads this vault from anywhere.
-Every JSON answer names the vault it used, as `vault: {path, origin}`. Plain
-`archboard` in this checkout reads this vault.
+## Open the model
 
-`archboard` runs the source of the archboard checkout that you are in. In a
-worktree, it runs the worktree's own `bin/archboard`, even when `archboard` on
-your PATH links to the main checkout. The server of the main checkout listens
-on port 3000. The server of a worktree listens on its own port, from 10000
-to 19999. The port comes from the worktree's path, so it does not change.
-`archboard status` gives the URL.
-
-From the checkout root:
+From this checkout, run:
 
 ```bash
 archboard start
-archboard browser show Archboard --pane primary
+archboard model read
+archboard browser panes
 ```
 
-`start` prints the URL. Open `<url>/?paneA=Archboard` before the browser
-command. In the main checkout, that is <http://127.0.0.1:3000/?paneA=Archboard>.
-The navigator lists every repository on the machine that has a vault. The
-first command that runs in this checkout registers it, and its answer says so
-in `vault.registered`. Then the navigator lists this vault under
-`github.com/miklschmidt/archboard`, and
-`?paneA=Archboard&repoA=github.com/miklschmidt/archboard` opens the board
-whichever vault the page opened in. The server starts without a vault and
-serves every vault that a call names, so a running server needs no restart to
-read this vault. Restart it after you change server source:
+Open the URL reported by `start` with `?modelA=vKEsyHFk`.
+After the browser connects, address its pane explicitly:
 
 ```bash
-archboard stop
-archboard start
+archboard browser show vKEsyHFk --pane A
 ```
 
-On another machine, the first command in the checkout registers it, or run
-`archboard repo add`, to resolve the boards'
-`github.com/miklschmidt/archboard` code bindings. Build the frontend
-with `bun run build` when setting up a fresh checkout, as described in
-[TESTING.md](../TESTING.md).
+Commands discover `.archboard/vault` from the checkout root, or from the checkout named by `-C`.
+Each JSON answer identifies the vault that it used.
+The main checkout normally serves port 3000.
+A linked worktree has its own source and stable port between 10000 and 19999.
+Run `archboard status` to read that address.
+Restart the server after changing its source.
+See [TESTING.md](../TESTING.md) for setup and browser validation.
 
-## Read across levels
+## Explore recursive ownership
 
-Start at `Archboard`. Select a node and use its inspector's linked-board
-button. The viewer keeps a breadcrumb trail back to the board you came from.
-Links explicitly follow the target board's `current` variant.
+Open a module to read its children, interface, and connections.
+The module keeps its identity when the scope changes.
+Use breadcrumbs to return to its parent.
+Selection, Focus, filters, and the diagram selector change only the reading.
+Sequence and flowchart readings require an authored flow.
 
-A link is a property of a part the board draws for its own sake, never a card
-added to carry it, and it says the level of what it opens through its kind
-(ADR 0029). So a board reaches the level above it either through the container
-it describes, or through the caller it draws — and a board with neither says so
-by having no upward link, which is why the breadcrumb exists.
+The existing source owners provide useful starting scopes:
 
-| Level   | Board                     | Scope                                                          |
-| ------- | ------------------------- | -------------------------------------------------------------- |
-| System  | `Archboard`               | The processes, what they keep, and the packages in layers      |
-| Service | `Command interface`       | CLI application modules and its command groups                 |
-| Service | `Archboard server`        | Archboard server modules and the one write boundary            |
-| Service | `Browser application`     | Browser application modules                                    |
-| Service | `Codex realtime voice`    | The voice package, its Codex sessions, and its hosts           |
-| Service | `Skill evaluation`        | The harness that measures the consumer skill                   |
-| Module  | `Command dispatch`        | Dispatch and invocation lifetime                               |
-| Module  | `Archboard server routes` | The route handlers, and what each one reaches                  |
-| Module  | `Live panes`              | Pane connections, screen state and board announcements         |
-| Module  | `Board persistence`       | Board reads, transitions, and durable writes                   |
-| Module  | `Semantic renderer`       | Meaning to SVG and interaction geometry                        |
-| Module  | `Renderer layout`         | How one drawing is settled, and by what measure                |
-| Module  | `Board rasterizer`        | Pictures and recordings of a board, through a headless browser |
-| Module  | `Board viewer`            | Reading, selection, camera, and navigation                     |
-| Module  | `Codex session`           | Reviewed app-server protocol operations                        |
-| Module  | `Codex workhorse`         | The workhorse thread, its queue, and the coordinator's door    |
-| Module  | `Voice coordinator`       | The separate thread voice attaches to                          |
+| Scope              | Stable module identity       | Source owner                    |
+| ------------------ | ---------------------------- | ------------------------------- |
+| CLI                | `vKEsyHFk/vKEsyHFk#TBnOCNx2` | `apps/cli`                      |
+| Server             | `vKEsyHFk/vKEsyHFk#cPOdAA3f` | `apps/server`                   |
+| Browser            | `vKEsyHFk/vKEsyHFk#6nZjwK9W` | `apps/web`                      |
+| Shared packages    | `vKEsyHFk/vKEsyHFk#fssx6Gaq` | `packages`                      |
+| Model runtime      | `vKEsyHFk/0T9enjhi#1VHRyajb` | `packages/board`                |
+| Renderer           | `vKEsyHFk/vKEsyHFk#OHywsFXm` | `packages/renderer`             |
+| Local workbench    | `vKEsyHFk/vKEsyHFk#sw4oFps0` | `packages/workbench`            |
+| Voice coordination | `vKEsyHFk/vKEsyHFk#lU0khwR0` | `packages/codex-realtime-voice` |
+| Example host       | `vKEsyHFk/vKEsyHFk#xssnUgIk` | `apps/workbench-example`        |
 
-Here, service-level boards explain one application or explicitly named subsystem;
-they do not imply separate deployments. Archboard hosts the `codex-realtime-voice` package in its server, and `apps/workbench-example` is a second host of it.
-Codex app-server runs as the host's private child. The skill evaluation harness is a developer tool a person starts. Module boards expand
-the central implementation paths rather than inventorying every source file.
-Each board includes a short walkthrough; some also offer focused views.
-
-Board names describe architectural subjects; source paths live in node bindings.
-Variants form an ancestry tree and describe the evolution of the same diagram.
-Views belong to the board and remain available across every variant.
-
-`Renderer layout` keeps two historical variants: `Initial`, the renderer as it
-placed cards on a grid, and `Readable layout`, the Graphviz engine that
-[ADR 0040](../docs/adr/0040-track-and-blocks-replace-the-graphviz-engine.md)
-removed. **Render sequence**, **Sizing a card** and **Layout sequence** are its
-three readings.
-
-A historical variant is a record, not a board to maintain. `Initial`'s bindings
-name files that moved out of `src/runtime/semantic-renderer/lib` in September,
-and `Readable layout`'s name files deleted with the Graphviz engine. Ordinary edits refuse them. If a diagram contains a factual mistake,
-`semantic correct` repairs it against explicit historical Git commits and records
-the reason. The architecture it describes remains the architecture of that time.
-
-## Maintain the architecture
-
-These boards were checked against the implementation on 2026-09-24 (TASK-328).
-A task changes them through a proposal: each affected board gets one while the
-task is planned, and the proposal is corrected to what was built and adopted
-when the task closes. The `archboard-dev` skill gives the steps. Edit a current
-variant in place only to correct a board that was already wrong. Preserve
-subject IDs.
-Read with `archboard semantic show <board>` and edit with the reported version
-and `--doing`. The historical migration example in `docs/design/semantic-pipeline`
-is separate from this living vault.
-
-After board work, run `archboard check`. It runs every check: the semantics
-check of the vault and the code check
-([ADR 0057](../docs/adr/0057-a-board-render-carries-its-recipe-and-the-check-keeps-embeds-current.md)).
-`archboard check code` runs the code check alone. When a task closes,
-run it as the closing steps of `archboard-dev` say. The code check reads the
-bound code
-([ADR 0046](../docs/adr/0046-boards-carry-anchors-and-the-code-check-reads-them-on-request.md)).
-It finds an anchor or a bound symbol that no longer holds. It finds a
-relationship that the code does not support or runs the other way. It also
-finds code of one bound part that reaches another part with no relationship
-drawn. Every relationship between two bound parts carries an anchor: the one
-place in code that proves it. The check judges the relationship by that line.
-If a finding stays, the notes of the task that left it explain it.
-
-To find the boards that the code has moved away from, read `behind` in the
-same answer. For each board, it lists the
-commits that changed a part's bound files after the board's current variant
-last changed, and it lists those commits for each part
-([ADR 0045](../docs/adr/0045-git-history-is-read-through-bindings-on-request.md)).
-A part that drills into another board is skipped, because that board carries
-its history. A count says where to look, not what is wrong, and it never fails
-the check. Read the parts that the commits changed against the code. If the
-board is wrong, correct it. If it is still right, leave it.
-
-For an export, write outside the canonical vault, for example:
+For example:
 
 ```bash
-archboard semantic render Archboard --out /tmp/archboard-system.svg
+archboard model read 'vKEsyHFk/0T9enjhi#1VHRyajb'
+archboard browser show vKEsyHFk --pane A --module 'vKEsyHFk/0T9enjhi#1VHRyajb'
 ```
+
+Packages remain independent of the applications that call them.
+An outgoing relationship does not establish containment.
+The package layer groups describe dependency direction, not fixed module depths.
+External participants remain outside Archboard's implementation ownership.
+
+## Proposals and walkthroughs
+
+Create a compact proposal for each architectural intent.
+One proposal can change several modules, relationships, flows, and walkthroughs.
+Matching names never combine independent proposals.
+Preserve continuing subject identities and let the writer allocate new identities.
+Use the revision from the complete reading and claim the affected subjects before writing.
+
+The [archboard-dev skill](../skills/archboard-dev/SKILL.md) explains the repository workflow.
+The [consumer skill](../skills/archboard/SKILL.md) gives the public command contracts.
+Adoption and shelving require an explicit decision.
+A source commit or code merge does not adopt architecture.
+
+`From modules to durable architecture` explains the canonical model through scoped readings and the current durable-edit flow.
+Each beat states its complete reading, so presentation does not inherit an earlier beat's scope or selection.
+The `Original` walkthroughs retain their earlier explanations against an exact checkpoint.
+They do not describe the current implementation.
+
+## Retained originals and history
+
+TASK-549 migrates the original board documents through explicit identity choices and the public installer.
+Their exact bytes, state history, and independent drafts remain retained.
+Original IDs in qualified module addresses record provenance; they no longer define separate live boards.
+
+Use `model checkpoints` to discover retained readings.
+Use an exact checkpoint when sharing or recording a walkthrough.
+An installed former address opens only the original coverage that its saved mapping identifies.
+An unresolved historical reference stays unavailable with its original files and recovery information.
+Never substitute present-day architecture for that missing evidence.
+
+A source push does not publish the architecture archive.
+Follow the consumer skill's publication workflow to share required checkpoints deliberately.
+A factual correction creates an auditable new reading and preserves the previous immutable inputs.
+
+## Source evidence and exports
+
+Run `archboard check semantics` for model validity and `archboard check code` for current source evidence.
+Use `--state <proposal-id>` to inspect a proposal before adoption.
+Fix findings caused by the task and record real evidence limits.
+The code checker reports canonical model, state, subject, and input revision identities.
+
+Use `model locality` for recent changes and source coupling.
+Use `model footprint --base main` to compare local source changes with architecture.
+Neither operation retains source history or fetches code automatically.
+
+Write exports outside the authored vault:
+
+```bash
+archboard model render --module 'vKEsyHFk/0T9enjhi#1VHRyajb' --out /tmp/archboard-runtime.svg
+archboard check embeds
+```
+
+Git supplies the tracked artifact list.
+Each recipe identifies its exact reading and rendering choices.
+The renderer owns placement, measurement, and routing; authored modules contain no geometry.

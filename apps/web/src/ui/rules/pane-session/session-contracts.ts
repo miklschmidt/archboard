@@ -5,6 +5,7 @@
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
+import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts";
 import type {
 	AgentActivityEntry,
 	BoardIdentity,
@@ -39,11 +40,6 @@ const UNKNOWN_HOLDER: LockHolder = Object.freeze({
 	process: "",
 });
 
-/** Whether a take-back released the claim it was aimed at. */
-interface TakeBackResult {
-	outcome: "success" | "failure";
-}
-
 /** What the shell tells one pane, and what it wants to hear back. */
 interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	paneId: string;
@@ -56,6 +52,8 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 * of every pane it picks for somebody who did not name it. Absent means false.
 	 */
 	recording?: boolean;
+	/** An explicit canonical reading must not open a legacy board on connection. */
+	canonical?: boolean;
 	theme: PaneTheme;
 	/**
 	 * The vault the pane opens in: what its socket names until the server moves
@@ -86,19 +84,14 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 * @param request Which walkthrough and beat, and the request's name.
 	 */
 	onPresentRequest?: (request: PanePresentRequest) => void;
-	/** The server accepted this pane's report, so the pane inventory has moved. */
-	onPaneStateAccepted?: () => void;
+	/** Open the canonical reading resolved for this pane. */
+	onModelRequest?: (request: PaneModelRequest) => void;
 	/**
 	 * This pane's socket came back after a drop, so anything cached from this
 	 * server while it was down may be stale (TASK-167).
 	 * @param paneId The pane.
 	 */
 	onPaneReconnected?: (paneId: string) => void;
-	/**
-	 * This pane's socket has actually closed, so the server has dropped it.
-	 * @param paneId The pane.
-	 */
-	onPaneRetired?: (paneId: string) => void;
 	/**
 	 * The board could not be shown.
 	 * @param error What the server said, in words a person can act on.
@@ -122,6 +115,8 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	onAgentActivity?: (vault: string, activity: readonly AgentActivityEntry[]) => void;
 	/** A checkout was chosen somewhere, so the repositories are worth reading again. */
 	onRepositoriesChanged?: () => void;
+	/** Temporary explanation progress changed in this tab. */
+	onExplanationsChanged?: () => void;
 	/**
 	 * The board the server says this pane is showing, which is how a pane learns
 	 * that `browser show` moved it.
@@ -170,8 +165,6 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	/** Who holds the board, or null when nobody does. */
 	readonly heldBy: LockHolder | null;
 	readonly doing: readonly DoingEntry[];
-	/** Release an agent's claim on this pane's board (ADR 0022). */
-	readonly takeBack: () => Promise<TakeBackResult>;
 	/**
 	 * Open the file a node's binding names, in the person's editor.
 	 *
@@ -190,6 +183,8 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	 * @param reading The board, variant, view and selection.
 	 */
 	readonly readingChanged: (reading: PaneReading) => void;
+	/** Await the latest reading before starting an action that consumes it. */
+	readonly flushReading: () => Promise<boolean>;
 	/**
 	 * The user asked, by hand, for a part of this pane's reading to change. The report in which
 	 * it does change says so, and a part that changes without this is told to nobody (ADR 0034).
@@ -208,10 +203,4 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	readonly workbenchTransport: () => Transport | null;
 }
 
-export {
-	UNKNOWN_HOLDER,
-	type PaneSession,
-	type PaneSessionOptions,
-	type PaneTheme,
-	type TakeBackResult,
-};
+export { UNKNOWN_HOLDER, type PaneSession, type PaneSessionOptions, type PaneTheme };

@@ -1,0 +1,77 @@
+{
+  "order": 44000,
+  "name": "Workbench interface",
+  "kind": "module",
+  "responsibility": "Starts the shared Codex sessions the voice agent asks for and owns their connections, lifecycle, and state through one host contract, and hands each announced change to the live generation",
+  "groups": [
+    "agent"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+    "symbol": "createCodexWorkbench"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#k9hxdLjq",
+  "parent": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 70049,
+      "kind": "call",
+      "label": "install generation hooks",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+        "symbol": "createProductionHooks"
+      },
+      "id": "vKEsyHFk#DGC0nyAH",
+      "to": "vKEsyHFk/9ncuT5DP#wkvnbMs8"
+    },
+    {
+      "order": 80000,
+      "kind": "call",
+      "label": "compose and own the shared generation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+        "symbol": "installProductionCodexWorkbench"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#JAa1keHs",
+      "to": "vKEsyHFk/9ncuT5DP#skyIeErO"
+    },
+    {
+      "order": 85000,
+      "kind": "call",
+      "label": "own the tab store and its lifetime",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+        "symbol": "createTabSessions"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#d57vavqj",
+      "to": "vKEsyHFk/9ncuT5DP#hCKEBd5f"
+    },
+    {
+      "order": 93000,
+      "kind": "call",
+      "label": "announce: to the live generation's tab sessions",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+        "symbol": "announceContextChange"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#ZzCMx2ZI",
+      "to": "vKEsyHFk/9ncuT5DP#8yOrpoeg"
+    }
+  ]
+}

@@ -12,8 +12,6 @@
 				"docs/assets/archboard-social-card.jpg"
 			],
 			"sources": [
-				"examples/web-shop/Web shop.semantic.json",
-				"examples/web-shop/.archboard/config.yaml",
 				"packages/renderer/src",
 				"packages/board/src/shared",
 				"packages/code-binding/src/shared",
@@ -23,9 +21,13 @@
 				"apps/web/src/ui/components/shell/Brand.tsx",
 				"scripts/readme-assets/banner.ts",
 				"scripts/readme-assets/lockup.ts",
-				"scripts/readme-assets/browser.ts"
+				"scripts/readme-assets/browser.ts",
+				"examples/web-shop",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "cc1da493ee3ce13187e982ab67aaa0d439935a612d15a1a6a8a73dbf6d5bd4bc"
+			"hash": "466d4fa7de136ef926805e826cda4acaf3e556bf4b4ea29959fe187937e97880"
 		},
 		{
 			"name": "hero",
@@ -52,9 +54,13 @@
 				"scripts/readme-assets/stage/terminal.html",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"scripts/readme-assets/model-authoring.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "826016ab528d12fe8752fa44445b5878e7ef68d3b4e9c90efea768843b110a8b"
+			"hash": "3cffe77e716728ea4d0889fda37efdd2369cfc67899e3c7c6d2e31271cfa76f2"
 		},
 		{
 			"name": "explainer",
@@ -63,8 +69,7 @@
 			"command": "bun run readme:assets explainer",
 			"files": [],
 			"sources": [
-				".archboard/vault/Archboard.semantic.json",
-				".archboard/vault/.archboard/config.yaml",
+				".archboard/vault",
 				"apps/web",
 				"packages/ui-kit/src/ui",
 				"packages/server-requests/src/ui",
@@ -75,13 +80,18 @@
 				"packages/walkthrough/src/shared",
 				"packages/workbench/src/shared",
 				"packages/walkthrough/src/runtime",
-				"apps/cli/src/cli/operations/semantic/draw/replay.ts",
+				"apps/cli/src/cli/operations/model/replay.ts",
 				"packages/workbench/src/runtime/rules/realtime",
 				"packages/codex-realtime-voice/src",
 				"packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
-				"scripts/readme-assets/narrated.ts"
+				"scripts/readme-assets/narrated.ts",
+				"scripts/readme-assets/model-authoring.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "4414a45cca43106c803596062013b14a871af13f92175ce63b2a70e6d3a4e33f"
+			"hash": "6a233aa66df94d98b1a124234dd757ef0f007a76359bd5ce13e5d9258c42337d"
 		},
 		{
 			"name": "plan",
@@ -103,9 +113,13 @@
 				"scripts/readme-assets/plan.ts",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "c3131e15476a7c8824c6cff2d918cc4e755327dc5d70e23c9a9f099ab32ba21c"
+			"hash": "71cac31562d0db78c37142c2fe5930554707c140ad52fbbc39c41e9e0b3262f3"
 		},
 		{
 			"name": "history",
@@ -114,8 +128,7 @@
 			"command": "bun run readme:assets history",
 			"files": ["docs/readme/idx-history.webp"],
 			"sources": [
-				".archboard/vault/Renderer layout.semantic.json",
-				".archboard/vault/.archboard/config.yaml",
+				"examples/web-shop",
 				"apps/web",
 				"packages/ui-kit/src/ui",
 				"packages/server-requests/src/ui",
@@ -129,9 +142,13 @@
 				"scripts/readme-assets/stage/timeline.html",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"scripts/readme-assets/model-authoring.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "177d0dd05376ff8d5776f81b1bf2c73b393c97da7c7c091fbb7453cd828adc68"
+			"hash": "871bc35030e65150a0e4c9cd67bde66db20bee140ee7b7477d0ecbd8b5f9719b"
 		},
 		{
 			"name": "pr-walkthrough",
@@ -151,14 +168,19 @@
 				"packages/walkthrough/src/shared",
 				"packages/workbench/src/shared",
 				"packages/walkthrough/src/runtime",
-				"apps/cli/src/cli/operations/semantic/draw/replay.ts",
+				"apps/cli/src/cli/operations/model/replay.ts",
 				"packages/workbench/src/runtime/rules/realtime",
 				"packages/codex-realtime-voice/src",
 				"packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"scripts/readme-assets/model-authoring.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "927c165d03fee606c56d1fd1f30b3c0a5d622ac2d40a6810f9bdb126b543db52"
+			"hash": "c38a65e233f62778ec3414b2d65b937575d0826d6ccbfdc8dccc4f7afe480e17"
 		},
 		{
 			"name": "sequence",
@@ -171,8 +193,6 @@
 				"docs/readme/idx-sequence.webp"
 			],
 			"sources": [
-				"examples/web-shop/Web shop.semantic.json",
-				"examples/web-shop/.archboard/config.yaml",
 				"packages/renderer/src",
 				"packages/board/src/shared",
 				"packages/code-binding/src/shared",
@@ -180,9 +200,14 @@
 				"packages/timing/src",
 				"packages/renderer/assets/fonts",
 				"scripts/readme-assets/svg.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"examples/web-shop",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "94cebc41703d26a266be9d07ab381e7cf0799486f2666d7ca399666f228b896e"
+			"hash": "608047736e9dc19b466462db304c934e46883f76ca32a394cf37f842e89f8b1f"
 		},
 		{
 			"name": "newcomer",
@@ -202,14 +227,19 @@
 				"packages/walkthrough/src/shared",
 				"packages/workbench/src/shared",
 				"packages/walkthrough/src/runtime",
-				"apps/cli/src/cli/operations/semantic/draw/replay.ts",
+				"apps/cli/src/cli/operations/model/replay.ts",
 				"packages/workbench/src/runtime/rules/realtime",
 				"packages/codex-realtime-voice/src",
 				"packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
 				"scripts/readme-assets/narrated.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"scripts/readme-assets/model-authoring.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "927c165d03fee606c56d1fd1f30b3c0a5d622ac2d40a6810f9bdb126b543db52"
+			"hash": "c38a65e233f62778ec3414b2d65b937575d0826d6ccbfdc8dccc4f7afe480e17"
 		},
 		{
 			"name": "drill-down",
@@ -231,9 +261,12 @@
 				"scripts/readme-assets/drill-down.ts",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "f3552de4a2a8fc76ef578a5650fb44765abb0a634ae5643541743e6e5ed78e00"
+			"hash": "ce174991c314b36c5291403b1d49bf2572a47e96522f84c0045a1ee6899b9f7a"
 		},
 		{
 			"name": "ask",
@@ -255,9 +288,14 @@
 				"scripts/readme-assets/ask.ts",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"packages/workbench/src/server/services/explanations",
+				"packages/workbench/src/runtime/rules/instructions",
+				"apps/cli/src/cli/operations/model/explain.ts",
+				"apps/server/src/server/routes/architecture/explanation-routes.ts",
+				"apps/cli/src/cli/clients/server/architecture-model.ts"
 			],
-			"hash": "fe55cef1637a404b3820e1bc8bc48ba3b699d35e77bb0a605020d17f0cf8b184"
+			"hash": "f7a9834f469ca6fe1d43e2595f16bd8f405e9fe5e2aee62f10356be4f38bdefa"
 		},
 		{
 			"name": "take-back",
@@ -283,9 +321,13 @@
 				"scripts/readme-assets/stage/terminal.html",
 				"scripts/readme-assets/film.ts",
 				"scripts/readme-assets/browser.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"scripts/readme-assets/model-authoring.ts",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "b8356075fd518f345aa1b2851e1977000520f083a7833620b7410af38deeec1c"
+			"hash": "b60118798cf6cbc2c58d5c726c9e0316e3f212caea4b378f088959be18fe1102"
 		},
 		{
 			"name": "web-shop",
@@ -298,8 +340,6 @@
 				"docs/readme/idx-docs.webp"
 			],
 			"sources": [
-				"examples/web-shop/Web shop.semantic.json",
-				"examples/web-shop/.archboard/config.yaml",
 				"packages/renderer/src",
 				"packages/board/src/shared",
 				"packages/code-binding/src/shared",
@@ -307,9 +347,14 @@
 				"packages/timing/src",
 				"packages/renderer/assets/fonts",
 				"scripts/readme-assets/svg.ts",
-				"scripts/readme-assets/encode.ts"
+				"scripts/readme-assets/encode.ts",
+				"examples/web-shop",
+				"scripts/readme-assets/server.ts",
+				"scripts/readme-assets/fixture-history.ts",
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "94cebc41703d26a266be9d07ab381e7cf0799486f2666d7ca399666f228b896e"
+			"hash": "608047736e9dc19b466462db304c934e46883f76ca32a394cf37f842e89f8b1f"
 		},
 		{
 			"name": "architecture",
@@ -318,7 +363,7 @@
 			"command": "bun run readme:assets architecture",
 			"files": ["docs/readme/architecture-light.svg", "docs/readme/architecture-dark.svg"],
 			"sources": ["scripts/readme-assets/svg.ts", "scripts/readme-assets/server.ts"],
-			"hash": "c5de20b3cf677cd7e0ed79424d68dcd6bcffeeeab23e38168320bb6e9892f55b"
+			"hash": "184b056335e4f6ab70194a43e9f653c583d6307dccac6e6278a5ffa7b48aad12"
 		},
 		{
 			"name": "code-evidence",
@@ -348,9 +393,10 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts",
 				"scripts/readme-assets/server.ts",
-				"scripts/readme-assets/tools.ts"
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "b9219a23122af457ac8b28a91b6360adf548b439cfa04580931e030843aaf420"
+			"hash": "7b27570340a5c28e8d53038d4e4d270674333ee7418b420cc1c4921ba17e714c"
 		},
 		{
 			"name": "module-interfaces",
@@ -380,9 +426,10 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts",
 				"scripts/readme-assets/server.ts",
-				"scripts/readme-assets/tools.ts"
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "8a27864d90cd7d071eb666d4157fd44e3fd451dbc7d3ce05bfa31ce3ce4c0a03"
+			"hash": "7b27570340a5c28e8d53038d4e4d270674333ee7418b420cc1c4921ba17e714c"
 		},
 		{
 			"name": "git-history",
@@ -412,9 +459,10 @@
 				"scripts/readme-assets/browser.ts",
 				"scripts/readme-assets/encode.ts",
 				"scripts/readme-assets/server.ts",
-				"scripts/readme-assets/tools.ts"
+				"scripts/readme-assets/tools.ts",
+				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "a789e03dcca0f808bfa21341c32b93002734c6fc2e0f84c81df70677def9187e"
+			"hash": "7b27570340a5c28e8d53038d4e4d270674333ee7418b420cc1c4921ba17e714c"
 		}
 	]
 }

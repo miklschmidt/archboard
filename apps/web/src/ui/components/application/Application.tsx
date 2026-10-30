@@ -1,3 +1,4 @@
+import { ModelArrivalContext } from "#ui/state/board-routing/model-arrival.ts";
 // The application root: the pane sessions, the listing, the notices, the
 // workbench and the presentation composed over the shell. The sessions, the
 // transport, the runtime and the controllers are the state; this file only
@@ -16,7 +17,7 @@ import {
 } from "#ui/rules/application/notices.ts";
 import { OpenerSettings } from "@archboard/code-opener/opener-settings";
 import { paneEvents } from "#ui/rules/application/pane-events.ts";
-import { heldBoards, recordFor, type PaneRecords } from "#ui/rules/application/pane-records.ts";
+import { recordFor, type PaneRecords } from "#ui/rules/application/pane-records.ts";
 import { createShellActions, vaultOf } from "#ui/clients/application/shell-actions.ts";
 import {
 	addressingOver,
@@ -28,7 +29,6 @@ import { applyTheme, initialTheme } from "#ui/clients/application/theme.ts";
 import { usePaneReadings } from "#ui/hooks/application/use-pane-reading.ts";
 import { usePaneViews } from "#ui/hooks/application/use-pane-views.ts";
 import { useSubtitleOverlay } from "#ui/hooks/application/use-subtitle-overlay.ts";
-import { useReleasedBoards } from "#ui/hooks/application/use-released-boards.ts";
 import {
 	shellPresentationOf,
 	useFullscreen,
@@ -53,22 +53,18 @@ import { useWorkspaceAddressing } from "#ui/hooks/application/use-workspace-addr
 import { useBesideOpening } from "#ui/hooks/application/use-beside-opening.ts";
 import { BoardCatalogProvider } from "#ui/components/board-catalog/BoardCatalogProvider.tsx";
 import {
-	boardsIn,
-	useBoardCatalog,
-	type BoardCatalog,
-} from "#ui/hooks/board-catalog/use-board-catalog.ts";
-import { listedBoard, listedBoardKey } from "#ui/rules/board-catalog/listing.ts";
+	useModelCatalog,
+	type ModelCatalog,
+} from "#ui/hooks/architecture-model/use-model-catalog.ts";
 import { useOpeningAddress } from "#ui/hooks/board-routing/use-opening-address.ts";
 import { type WorkspaceAddressing } from "#ui/hooks/board-routing/use-workspace-address.ts";
 import { Tooltip } from "@archboard/ui-kit/components";
 import { boardAddressOf, boardKeyFor } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import { servedVault } from "@archboard/server-requests";
-import type { BoardListing } from "#ui/rules/pane-session/session-types.ts";
 import { RecordingStage } from "#ui/components/walkthrough-recording/RecordingStage.tsx";
 import { OrbStageProvider, VoiceSurfaceProvider } from "@archboard/workbench/voice";
 import { AgentDockSlot, AgentPanelSlot } from "#ui/components/application/AgentSurfaceSlots.tsx";
 import { PresentationVoiceKey } from "#ui/components/application/PresentationVoiceKey.tsx";
-import type { AgentContext } from "@archboard/workbench/agent";
 import { SETTINGS_TRIGGER_ID } from "#ui/components/shell/BrandBar.tsx";
 import { Shell } from "#ui/components/shell/Shell.tsx";
 import {
@@ -117,27 +113,6 @@ function usePresentationTransfer(panes: Panes, fullscreen: Fullscreen): void {
 	}, [list, target, paneRemoved]);
 }
 
-/**
- * What the agent reads with the next message: the board in the focused pane,
- * by the name the vault lists it under, and the state shown when it is not
- * the one the board's name opens.
- * @param listing The listing of the focused pane's repository.
- * @param boardKey The focused pane's board key, or null.
- * @returns The context.
- */
-function agentContextOf(listing: BoardListing, boardKey: string | null): AgentContext {
-	const address = boardAddressOf(boardKey);
-	if (address === null) return { board: null, state: null };
-	const board = listedBoard(listing, address.board);
-	if (board === undefined) return { board: address.board, state: address.variant ?? null };
-	const key = listedBoardKey(listing, boardKey);
-	const variant = board.variants.find((entry) => entry.key === key);
-	return {
-		board: board.name,
-		state: variant === undefined || variant.id === board.opens ? null : variant.name,
-	};
-}
-
 /** The agent's surfaces as the shell places them. */
 interface AgentSlots {
 	readonly dock: ReactNode;
@@ -149,8 +124,6 @@ interface AgentSlots {
 interface AgentSlotSources {
 	readonly agent: AgentSurfaces;
 	readonly workbench: Workbench;
-	/** The board the agent sees with the next message. */
-	readonly context: AgentContext;
 	readonly reducedMotion: boolean;
 	/** Whether the agent dock is off screen, as while a pane is presented fullscreen. */
 	readonly dockless: boolean;
@@ -161,26 +134,25 @@ interface AgentSlotSources {
  * voice key a presentation's bar carries. The dock and the panel read what changes
  * while the agent works themselves, so these elements are made again only when
  * the person acts.
- * @param sources The agent, the workbench, the context, the motion preference and whether the dock is off screen.
+ * @param sources The agent, the workbench, the motion preference and whether the dock is off screen.
  * @returns The slots.
  */
 function useAgentSlots(sources: AgentSlotSources): AgentSlots {
-	const { agent, workbench, context, reducedMotion, dockless } = sources;
+	const { agent, workbench, reducedMotion, dockless } = sources;
 	return useMemo(
 		() => ({
 			dock: (
 				<AgentDockSlot
 					agent={agent}
 					workbench={workbench}
-					context={context}
 					reducedMotion={reducedMotion}
 					dockless={dockless}
 				/>
 			),
-			panel: <AgentPanelSlot agent={agent} workbench={workbench} context={context} />,
+			panel: <AgentPanelSlot agent={agent} workbench={workbench} />,
 			voiceControls: <PresentationVoiceKey />,
 		}),
-		[agent, workbench, context, reducedMotion, dockless],
+		[agent, workbench, reducedMotion, dockless],
 	);
 }
 
@@ -188,7 +160,7 @@ function useAgentSlots(sources: AgentSlotSources): AgentSlots {
 interface ShellViewSources {
 	readonly theme: ThemeChoice;
 	readonly panes: Panes;
-	readonly catalog: BoardCatalog;
+	readonly catalog: ModelCatalog;
 	/** The mounted pane per pane id. */
 	readonly mounted: Readonly<Record<string, ReactNode>>;
 	readonly fullscreen: Fullscreen;
@@ -271,7 +243,7 @@ function SettingsHosts(props: SettingsHostsProps): JSX.Element | null {
  * @param catalog The catalog.
  * @returns The lookup, or null.
  */
-function useVaultOf(catalog: BoardCatalog): ((repository: string) => string | null) | null {
+function useVaultOf(catalog: ModelCatalog): ((repository: string) => string | null) | null {
 	const { repositories, loading } = catalog;
 	return useMemo(
 		() =>
@@ -308,23 +280,10 @@ function ApplicationBody(): JSX.Element {
 		() => announcingViews(paneReadings, addressing),
 		[paneReadings, addressing],
 	);
-	const held = useMemo(
-		() =>
-			heldBoards(
-				panes.records,
-				panes.list.panes.map((entry) => entry.paneId),
-			),
-		[panes.records, panes.list],
-	);
-	const catalog = useBoardCatalog();
-	useReleasedBoards(held, catalog);
+	const catalog = useModelCatalog();
 	const agentActivity = useAgentActivity();
 	const workbench = useWorkbench(panes.handles, panes.list.activePaneId);
-	const { vault: activeVault, boardKey: activeKey } = panes.active.status;
-	const context = useMemo(
-		() => agentContextOf(boardsIn(catalog, activeVault), activeKey),
-		[catalog, activeVault, activeKey],
-	);
+	const { vault: activeVault } = panes.active.status;
 	// The actions read the panes as they are when somebody acts, so a pane's news
 	// does not make them, and every control holding one, again.
 	const [panesNow] = useState(() => new LiveBinding<Panes>());
@@ -352,7 +311,7 @@ function ApplicationBody(): JSX.Element {
 	const fullscreen = useFullscreen({ onRefused });
 	// The agent dock is off screen while a pane is presented fullscreen.
 	const dockless = fullscreen.snapshot.paneId !== null;
-	const slots = useAgentSlots({ agent, workbench, context, reducedMotion, dockless });
+	const slots = useAgentSlots({ agent, workbench, reducedMotion, dockless });
 	// The address bar over the panes the shell already owns: it writes down what
 	// they show, and restores what a direct load or a Back/Forward asks for.
 	const repositoryVaults = useVaultOf(catalog);
@@ -417,6 +376,7 @@ function ApplicationBody(): JSX.Element {
 	const narration = useNarration(workbench, agent.voice, panes.list.activePaneId, selectPane);
 	const overlay = useSubtitleOverlay({
 		workbench,
+		activePaneId: panes.list.activePaneId,
 		reducedMotion,
 		recording: recorder !== null,
 		presentedPaneId: fullscreen.snapshot.paneId,
@@ -483,6 +443,7 @@ function ApplicationBody(): JSX.Element {
 		() => <VaultDiagnostics vault={diagnosed} transport={transport} ask={askAboutDiagnosed} />,
 		[diagnosed, transport, askAboutDiagnosed],
 	);
+
 	const recordedPane = recordedPaneOf(recorded.recording, panes.list, mounted);
 	if (recordedPane !== null) {
 		return (
@@ -492,25 +453,27 @@ function ApplicationBody(): JSX.Element {
 		);
 	}
 	return (
-		<OrbStageProvider>
-			{/* The voice box over a pane reads the voice and its actions where it is drawn. */}
-			<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
-				<Tooltip.Provider>
-					<Shell
-						view={view}
-						actions={actions}
-						diagnostics={diagnostics}
-						voiceControls={slots.voiceControls}
-						agentDock={slots.dock}
-						agentPanel={slots.panel}
-						agentPanelOpen={agent.panel.open}
-						onAgentPanelClose={agent.panel.closePanel}
-						attachStage={fullscreen.attachStage}
-					/>
-					<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
-				</Tooltip.Provider>
-			</VoiceSurfaceProvider>
-		</OrbStageProvider>
+		<ModelArrivalContext value={addressing.modelArriving}>
+			<OrbStageProvider>
+				{/* The voice box over a pane reads the voice and its actions where it is drawn. */}
+				<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
+					<Tooltip.Provider>
+						<Shell
+							view={view}
+							actions={actions}
+							diagnostics={diagnostics}
+							voiceControls={slots.voiceControls}
+							agentDock={slots.dock}
+							agentPanel={slots.panel}
+							agentPanelOpen={agent.panel.open}
+							onAgentPanelClose={agent.panel.closePanel}
+							attachStage={fullscreen.attachStage}
+						/>
+						<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
+					</Tooltip.Provider>
+				</VoiceSurfaceProvider>
+			</OrbStageProvider>
+		</ModelArrivalContext>
 	);
 }
 

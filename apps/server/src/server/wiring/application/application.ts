@@ -1,3 +1,4 @@
+import { mountArchitectureHistoryRoutes } from "#server/routes/architecture/history-routes.ts";
 import express from "express";
 import type { NextFunction, Request, Response } from "express";
 import dotenv from "dotenv";
@@ -12,9 +13,8 @@ import { diagramIconPaths } from "@archboard/renderer/bun";
 import { app } from "#server/wiring/http/server-app.ts";
 import { FRONTEND_DIRECTORY } from "#server/store/frontend/frontend-directory.ts";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
-import { checkoutWork } from "#server/wiring/owners/server-owners.ts";
+import { agentActivity, checkoutWork } from "#server/wiring/owners/server-owners.ts";
 import { mountCodeCheckRoute } from "#server/routes/code-check/code-check-route.ts";
-import { mountFootprintRoute } from "#server/routes/footprint/footprint-route.ts";
 import { startServer } from "#server/lifecycle/startup/server-startup.ts";
 import {
 	mountMutationAdmission,
@@ -22,14 +22,13 @@ import {
 } from "#server/middleware/mutation-work/mutation-work.ts";
 import { mountPaneRoutes } from "#server/routes/panes/pane-routes.ts";
 import { mountRepositoryRoutes } from "#server/routes/repositories/repository-routes.ts";
-import { mountSemanticLockRoutes } from "#server/routes/semantic-boards/semantic-lock-routes.ts";
-import { mountSemanticBoardRoutes } from "#server/routes/semantic-boards/semantic-board-routes.ts";
-import { mountLocalityRoute } from "#server/routes/locality/locality-route.ts";
+import { mountArchitectureConfigurationRoutes } from "#server/routes/architecture/configuration-routes.ts";
 import { mountVoiceStartTraceRoute } from "@archboard/codex-realtime-voice/server";
 
 import { mountSemanticPaneContextRoutes } from "@archboard/workbench/panes";
-import { watchSemanticBoardFiles } from "#server/watchers/semantic-boards/semantic-disk-watch.ts";
 import { mountServiceRoutes } from "#server/routes/service/service-routes.ts";
+import { mountLegacyMigrationRoutes } from "#server/routes/architecture/migration-routes.ts";
+import { mountArchitectureModelRoutes } from "#server/routes/architecture/model-routes.ts";
 
 // The Archboard server application, assembled in the order Express will run it. Each
 // mount owns one concern; this file decides only their order, which is the
@@ -114,20 +113,23 @@ app.use(
 	}),
 );
 
-mountSemanticLockRoutes(app);
 mountPaneRoutes(app);
 mountRepositoryRoutes(app);
-mountSemanticBoardRoutes(app);
-mountLocalityRoute(app);
+mountArchitectureConfigurationRoutes(app);
+app.use("/api/architecture", requireVault, (req, _res, next) => {
+	agentActivity.follow(vaultOfRequest(req));
+	next();
+});
+mountArchitectureModelRoutes(app);
+mountArchitectureHistoryRoutes(app);
+mountLegacyMigrationRoutes(app);
 mountCodeCheckRoute(app);
-mountFootprintRoute(app);
 mountSemanticPaneContextRoutes(app);
 mountVoiceStartTraceRoute(app);
 
 // A vault can be open in more than one server, and the lease says who may write
 // rather than who has been told. Watching the boards on screen is what keeps a
 // pane from reading a board another writer replaced under it.
-watchSemanticBoardFiles();
 
 mountServiceRoutes(app);
 

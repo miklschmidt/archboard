@@ -105,7 +105,7 @@ function headDrop(rows: FlowRows, camera: Camera): number {
  * @returns The flow's head and rows, or undefined when no one flow holds the box.
  */
 function flowHolding(
-	variant: SemanticVariant | null,
+	variant: Pick<SemanticVariant, "content"> | null,
 	atlas: SemanticAtlas,
 	box: Rect,
 ): FlowRows | undefined {
@@ -132,7 +132,7 @@ function flowHolding(
  * @returns The focus, or null when the step lights no message of one flow.
  */
 function flowFocus(
-	variant: SemanticVariant | null,
+	variant: Pick<SemanticVariant, "content"> | null,
 	atlas: SemanticAtlas,
 	lit: readonly string[],
 ): FlowFocus | null {

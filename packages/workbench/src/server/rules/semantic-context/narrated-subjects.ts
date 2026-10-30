@@ -7,6 +7,7 @@
 // against that one, as the picture marks it, and a changed one says what moved, so the voice can
 // explain the difference the viewer is looking at.
 
+import type { ArchitectureModelRead } from "@archboard/board/model";
 import type { StepSubject } from "#runtime/rules/realtime/presentation-mode.ts";
 import {
 	changeOf,
@@ -31,7 +32,9 @@ const MOVED_VALUE_MAX_CHARS = 120;
  * @param content The variant's content.
  * @returns The names: a part's or a sequence's own, a relationship's or a step's ends and label.
  */
-function namesOf(content: VariantContent): ReadonlyMap<string, string> {
+function namesOf(
+	content: Pick<VariantContent, "nodes" | "edges" | "flows">,
+): ReadonlyMap<string, string> {
 	const parts = new Map(content.nodes.map((node) => [node.id, node.name]));
 	/**
 	 * A relationship or a step, by its ends and label.
@@ -74,7 +77,7 @@ interface Against {
  * @param against The variant it is compared against: its name, and what its subjects are called.
  * @returns What the other side says of it.
  */
-function movedOf(moved: FieldChange, against: Against): string {
+function movedOf(moved: FieldChange, against: Pick<Against, "name" | "names">): string {
 	const theirs = moved.before;
 	if (theirs === undefined) {
 		return `${moved.field} is not stated on ${against.name}`;
@@ -139,3 +142,59 @@ function narratedSubjects(
 }
 
 export { narratedSubjects };
+
+/**
+ * Name retained canonical selections using the public reader's comparison, without comparing again.
+ * @param model One complete captured reading.
+ * @param selection The authored beat's selected identities.
+ * @returns Named subjects and their existing standing.
+ */
+function canonicalNarratedSubjects(
+	model: Extract<ArchitectureModelRead, { success: true }>,
+	selection: readonly string[],
+): StepSubject[] {
+	const names = new Map([
+		...namesOf({
+			nodes: model.modules,
+			edges: model.relationships,
+			flows: model.collections.flatMap((collection) => collection.flows),
+		}),
+		...model.collections.map(
+			(collection) => [`${model.manifest.id}#${collection.id}`, collection.name] as const,
+		),
+	]);
+	const comparison = model.comparison;
+	return selection.flatMap((id) => {
+		const name = names.get(id);
+		if (name === undefined) return [];
+		return [{ name, ...canonicalStanding(id, comparison, names) }];
+	});
+}
+
+/**
+ * Read existing comparison data without resolving or comparing another model.
+ * @param id The selected subject.
+ * @param comparison The retained reader's comparison.
+ * @param names The captured subject names.
+ * @returns Its standing and changed fields.
+ */
+function canonicalStanding(
+	id: string,
+	comparison: Extract<ArchitectureModelRead, { success: true }>["comparison"],
+	names: ReadonlyMap<string, string>,
+): Omit<StepSubject, "name"> {
+	if (comparison === undefined) return { standing: null, moved: [] };
+	const change = comparison.subjects.find((subject) => subject.id === id);
+	if (change === undefined) return { standing: "unchanged", moved: [] };
+	const against = { name: comparison.against?.name ?? "the comparison", names };
+	return {
+		standing: change.kind,
+		moved:
+			change.kind === "changed"
+				? change.fields.map((field) =>
+						movedOf({ ...field, before: field.before, after: field.after }, against),
+					)
+				: [],
+	};
+}
+export { canonicalNarratedSubjects };

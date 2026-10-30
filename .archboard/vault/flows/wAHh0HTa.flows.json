@@ -1,0 +1,737 @@
+{
+  "schemaVersion": 1,
+  "id": "wAHh0HTa",
+  "name": "Codex session",
+  "flows": [
+    {
+      "id": "vKEsyHFk/wAHh0HTa#3x2lgrhZ",
+      "name": "Start the session",
+      "participants": [
+        "vKEsyHFk/wAHh0HTa#xtHoCCnF",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "vKEsyHFk/wAHh0HTa#ql0DevMk",
+        "vKEsyHFk/wAHh0HTa#Ly6hUU5o"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/wAHh0HTa#b6erA2Tf",
+          "from": "vKEsyHFk/wAHh0HTa#xtHoCCnF",
+          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "label": "initialize, once",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/server/services/generation/hooks.ts",
+            "symbol": "initialize"
+          }
+        },
+        {
+          "id": "vKEsyHFk/wAHh0HTa#4Acu1SX1",
+          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+          "label": "initialize",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+            "symbol": "request"
+          }
+        },
+        {
+          "id": "vKEsyHFk/wAHh0HTa#VfIo7G0A",
+          "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "label": "the child's initialize result",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+            "symbol": "request"
+          }
+        },
+        {
+          "id": "vKEsyHFk/wAHh0HTa#sccMFQws",
+          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+          "label": "initialized",
+          "kind": "async",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+            "symbol": "sendNotification"
+          }
+        },
+        {
+          "id": "vKEsyHFk/wAHh0HTa#FydWPELu",
+          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+          "label": "configRequirements/read",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+            "symbol": "request"
+          }
+        },
+        {
+          "id": "vKEsyHFk/wAHh0HTa#O9yI0oEi",
+          "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "label": "the managed requirements",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+            "symbol": "request"
+          }
+        },
+        {
+          "id": "vKEsyHFk/wAHh0HTa#HJFMXHZg",
+          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+          "label": "config/read",
+          "kind": "sync",
+          "note": "asks for every config layer, in the coordinator's directory",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+            "symbol": "request"
+          }
+        },
+        {
+          "id": "vKEsyHFk/wAHh0HTa#m5Dj2NDi",
+          "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "label": "the effective config",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+            "symbol": "request"
+          }
+        },
+        {
+          "id": "vKEsyHFk/wAHh0HTa#VxixWw4P",
+          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "to": "vKEsyHFk/wAHh0HTa#Ly6hUU5o",
+          "label": "prove storage after config/read",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+            "symbol": "proveCodexStorage"
+          }
+        },
+        {
+          "id": "vKEsyHFk/wAHh0HTa#R88S8Tts",
+          "kind": "decision",
+          "question": "Does the child use exactly the storage prepared for it?",
+          "alternatives": [
+            {
+              "label": "proved",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#RCfqVyvU",
+                  "from": "vKEsyHFk/wAHh0HTa#Ly6hUU5o",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "label": "storage proved",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/store/storage-proof.ts",
+                    "symbol": "proveCodexStorage"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#T83dFret",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "label": "login-capable: publish the notifications held back",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "symbol": "publishNotifications"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#P3DvDy0o",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/wAHh0HTa#xtHoCCnF",
+                  "label": "the initialize result",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "symbol": "initialize"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "refused",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#nzycdJYU",
+                  "from": "vKEsyHFk/wAHh0HTa#Ly6hUU5o",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "label": "a root disagrees with the prepared one",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/store/storage-proof.ts",
+                    "symbol": "proveCodexStorage"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#TBX0QwFp",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "label": "phase failed: drop the held notifications, mark the failure",
+                  "kind": "self",
+                  "note": "a failed session is replaced, never retried",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "symbol": "markTerminalFailure"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#CFOW8oZc",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/wAHh0HTa#xtHoCCnF",
+                  "label": "the storage error",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "symbol": "initialize"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/wAHh0HTa#zSCvXJVY",
+      "name": "Send one request",
+      "participants": [
+        "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+        "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7",
+        "vKEsyHFk/wAHh0HTa#X6j6fViI",
+        "vKEsyHFk/wAHh0HTa#Sk7GfGta",
+        "vKEsyHFk/wAHh0HTa#ql0DevMk",
+        "vKEsyHFk/wAHh0HTa#M3mPynLe",
+        "vKEsyHFk/wAHh0HTa#8QpDaiD6"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/wAHh0HTa#iXfRgmHg",
+          "from": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+          "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+          "label": "thread/start for a new workhorse",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts",
+            "symbol": "threadStart"
+          }
+        },
+        {
+          "id": "vKEsyHFk/wAHh0HTa#PslWUElL",
+          "from": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+          "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+          "label": "mutate thread/start behind its gate",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+            "symbol": "mutate"
+          }
+        },
+        {
+          "id": "vKEsyHFk/wAHh0HTa#OT4APYVU",
+          "kind": "decision",
+          "question": "Is the session ready for thread work?",
+          "alternatives": [
+            {
+              "label": "not ready",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#aRvOGbjB",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/wAHh0HTa#8QpDaiD6",
+                  "label": "classify the refused gate",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "symbol": "mutationFailure"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#1CH2cwHK",
+                  "from": "vKEsyHFk/wAHh0HTa#8QpDaiD6",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "label": "not_delivered",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/services/session-failures.ts",
+                    "symbol": "mutationFailure"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#XVmgDPWm",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+                  "label": "mutation error: not delivered",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "symbol": "mutate"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#uwJqMDXn",
+                  "from": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+                  "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+                  "label": "mutation error: not delivered",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+                    "symbol": "mutate"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "ready",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#awtzkYnk",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/wAHh0HTa#X6j6fViI",
+                  "label": "serialize issued identities",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "symbol": "serializeRequestParams"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#0BaNzvbf",
+                  "from": "vKEsyHFk/wAHh0HTa#X6j6fViI",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "label": "wire parameters",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/services/session-request-identities.ts",
+                    "symbol": "createRequestParamsSerializer"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#RPVnxIvU",
+                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
+                  "label": "decode the parameters",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "symbol": "decodeClientRequestParams"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#E4nd56dR",
+                  "from": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
+                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                  "label": "decoded parameters",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                    "symbol": "decodeClientRequestParams"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#lvsaiBie",
+                  "kind": "decision",
+                  "question": "Do the parameters pass identity proof and the wire decoder?",
+                  "alternatives": [
+                    {
+                      "label": "rejected",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/wAHh0HTa#wSmpnhYv",
+                          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                          "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+                          "label": "mutation error: rejected before delivery",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                            "symbol": "requestDecoded"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/wAHh0HTa#Yxq9FoIy",
+                          "from": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+                          "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+                          "label": "mutation error: not delivered",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+                            "symbol": "mutate"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "accepted",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/wAHh0HTa#bujwXKF0",
+                          "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                          "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+                          "label": "one request frame",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                            "symbol": "request"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/wAHh0HTa#8xY34ysB",
+                          "kind": "decision",
+                          "question": "Did the answer arrive, decode and adopt?",
+                          "alternatives": [
+                            {
+                              "label": "answered",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/wAHh0HTa#G9QTO3xJ",
+                                  "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+                                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                  "label": "the response",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "symbol": "request"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/wAHh0HTa#ml5NhzbA",
+                                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                  "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
+                                  "label": "decode the response",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "symbol": "decodeResponse"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/wAHh0HTa#Hgh6LaId",
+                                  "from": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
+                                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                  "label": "the decoded result",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "symbol": "decodeResponse"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/wAHh0HTa#eeXOLtoL",
+                                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                  "to": "vKEsyHFk/wAHh0HTa#M3mPynLe",
+                                  "label": "adopt returned identities",
+                                  "kind": "sync",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "symbol": "adoptSessionResponse"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/wAHh0HTa#AGHY3heC",
+                                  "from": "vKEsyHFk/wAHh0HTa#M3mPynLe",
+                                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                  "label": "the result with its identities adopted",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/operations/response-identity-adoption.ts",
+                                    "symbol": "adoptSessionResponse"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/wAHh0HTa#KF0V9M4W",
+                                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                  "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+                                  "label": "the result",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "symbol": "mutate"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/wAHh0HTa#45WxPXqM",
+                                  "from": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+                                  "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+                                  "label": "the thread/start result",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+                                    "symbol": "mutate"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "label": "failed",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/wAHh0HTa#zydH1TTi",
+                                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                  "to": "vKEsyHFk/wAHh0HTa#8QpDaiD6",
+                                  "label": "classify the failure",
+                                  "kind": "sync",
+                                  "note": "an answer that cannot be read or trusted is outcome_unknown, because the thread may exist; a failed send is not_delivered",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "symbol": "mutationFailure"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/wAHh0HTa#kzhVobn4",
+                                  "from": "vKEsyHFk/wAHh0HTa#8QpDaiD6",
+                                  "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                  "label": "not_delivered or outcome_unknown",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/services/session-failures.ts",
+                                    "symbol": "mutationFailure"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/wAHh0HTa#wvdkZRyI",
+                                  "from": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+                                  "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+                                  "label": "mutation error with its outcome",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+                                    "symbol": "mutate"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/wAHh0HTa#H0efa6Oc",
+                                  "from": "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+                                  "to": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+                                  "label": "mutation error with its outcome",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
+                                    "symbol": "mutate"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk/wAHh0HTa#fNGi0n1g",
+      "name": "Answer a request the child makes",
+      "participants": [
+        "vKEsyHFk/wAHh0HTa#ql0DevMk",
+        "vKEsyHFk/wAHh0HTa#3FR6mev4"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk/wAHh0HTa#NHwGSC4v",
+          "from": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+          "to": "vKEsyHFk/wAHh0HTa#3FR6mev4",
+          "label": "currentTime/read, a token refresh or an attestation request",
+          "kind": "async",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+            "symbol": "onServerRequest"
+          }
+        },
+        {
+          "id": "vKEsyHFk/wAHh0HTa#AhMX8Wh9",
+          "kind": "decision",
+          "question": "Does this session own the request?",
+          "alternatives": [
+            {
+              "label": "not its own",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#bsDDjWuR",
+                  "from": "vKEsyHFk/wAHh0HTa#3FR6mev4",
+                  "to": "vKEsyHFk/wAHh0HTa#3FR6mev4",
+                  "label": "ignore it: another owner, or this session is disposed",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+                    "symbol": "onServerRequest"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "its own",
+              "steps": [
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#RSVwJl8x",
+                  "from": "vKEsyHFk/wAHh0HTa#3FR6mev4",
+                  "to": "vKEsyHFk/wAHh0HTa#3FR6mev4",
+                  "label": "check the child epoch",
+                  "kind": "self",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+                    "symbol": "validateReverseRequest"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/wAHh0HTa#xLf70TXd",
+                  "kind": "decision",
+                  "question": "Is the request from the current child epoch?",
+                  "alternatives": [
+                    {
+                      "label": "no",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/wAHh0HTa#RvTOH6C9",
+                          "from": "vKEsyHFk/wAHh0HTa#3FR6mev4",
+                          "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+                          "label": "error: not valid for the current epoch",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+                            "symbol": "respondInvalidReverseRequest"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "label": "yes",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/wAHh0HTa#znWqQIH2",
+                          "kind": "decision",
+                          "question": "Which request is it?",
+                          "alternatives": [
+                            {
+                              "label": "currentTime/read",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/wAHh0HTa#eAXuixU6",
+                                  "from": "vKEsyHFk/wAHh0HTa#3FR6mev4",
+                                  "to": "vKEsyHFk/wAHh0HTa#3FR6mev4",
+                                  "label": "check the thread was issued to this child",
+                                  "kind": "self",
+                                  "note": "a thread not issued to this child gets the same error as a stale epoch",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+                                    "symbol": "validateCurrentThread"
+                                  }
+                                },
+                                {
+                                  "id": "vKEsyHFk/wAHh0HTa#EKXcG6D6",
+                                  "from": "vKEsyHFk/wAHh0HTa#3FR6mev4",
+                                  "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+                                  "label": "the time, in whole seconds",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+                                    "symbol": "respondCurrentTime"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "label": "token refresh",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/wAHh0HTa#uZwFrETt",
+                                  "from": "vKEsyHFk/wAHh0HTa#3FR6mev4",
+                                  "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+                                  "label": "refused by policy: the client never refreshes tokens",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+                                    "symbol": "respondUnsupportedTokenRefresh"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "label": "attestation",
+                              "steps": [
+                                {
+                                  "id": "vKEsyHFk/wAHh0HTa#1q8WJBYW",
+                                  "from": "vKEsyHFk/wAHh0HTa#3FR6mev4",
+                                  "to": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+                                  "label": "refused by policy: not implemented",
+                                  "kind": "return",
+                                  "anchor": {
+                                    "repo": "github.com/miklschmidt/archboard",
+                                    "path": "packages/codex-app-server/src/runtime/services/session-reverse-requests.ts",
+                                    "symbol": "respondUnsupportedAttestation"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

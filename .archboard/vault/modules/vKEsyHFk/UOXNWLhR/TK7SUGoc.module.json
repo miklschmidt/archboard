@@ -1,0 +1,97 @@
+{
+  "order": 15000,
+  "name": "Semantic queries",
+  "kind": "function",
+  "responsibility": "The query options and freshness of the listing, a board's document, a picture and a board's locality",
+  "description": "No timer: a picture and a document stay fresh until their board announces a new version, and are read again on a reconnect. The last picture of the same board stays as the placeholder while another reading of it is drawn. A board's locality is asked once for each pick of a part, and never on a timer, a return to the tab or a reconnect. Every key names a vault, because two repositories can each have a board of the same name. A listing it reads is handed to the refresh module, which reads again what moved since.",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
+  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "outgoing": [
+    {
+      "order": 3000,
+      "kind": "data",
+      "label": "the board document",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/rules/semantic-board-canvas/board/board-document.ts",
+        "symbol": "readVariant"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#55rosWUN",
+      "to": "vKEsyHFk/UOXNWLhR#ntOE7caV"
+    },
+    {
+      "order": 4000,
+      "kind": "data",
+      "label": "the render answer, code findings, a board's locality",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
+        "symbol": "codeFindingsQuery"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#IJQe6RQy",
+      "to": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
+    },
+    {
+      "order": 16000,
+      "kind": "call",
+      "label": "draw this reading",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
+        "symbol": "pictureSource"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#HPCTlv5B",
+      "to": "vKEsyHFk/UOXNWLhR#38hwLCO1"
+    },
+    {
+      "order": 70044,
+      "kind": "call",
+      "label": "share captured read queries",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
+        "symbol": "boardReads"
+      },
+      "id": "vKEsyHFk#f43RMTLN",
+      "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
+    },
+    {
+      "order": 123000,
+      "kind": "data",
+      "label": "the keys its queries subscribe under",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
+        "symbol": "semanticBoardKeys"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#p9gP1ZtC",
+      "to": "vKEsyHFk/UOXNWLhR#nMKLaMje"
+    },
+    {
+      "order": 124000,
+      "kind": "call",
+      "label": "a listing: read again what moved since",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
+        "symbol": "boardsListed"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#GNx2x7VX",
+      "to": "vKEsyHFk/UOXNWLhR#OeUYLDxp"
+    }
+  ]
+}

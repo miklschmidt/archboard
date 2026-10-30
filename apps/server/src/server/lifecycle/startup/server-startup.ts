@@ -25,6 +25,7 @@ import {
 	PORT,
 	messageOf,
 } from "@archboard/workbench/host";
+import { agentActivity } from "#server/wiring/owners/server-owners.ts";
 import { unwatchRegistry, watchRegistry } from "#server/routes/repositories/repository-routes.ts";
 import { serverStartupFailureMessage } from "#server/lifecycle/startup/startup-error.ts";
 import {
@@ -292,6 +293,13 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				start: prepareCodexWorkbench,
 				stop: stopCodexWorkbench,
 				forceStop: stopCodexWorkbench,
+			},
+			{
+				name: "agent-activity",
+				/** Stop the activity tracker with its owning receiver. */
+				stop: () => {
+					agentActivity.dispose();
+				},
 			},
 			{
 				name: "http-server",

@@ -2,8 +2,9 @@
 
 You install archboard once on a machine. The repositories that you diagram do
 not build or import it. Setup puts a vault directory, `.archboard/vault`, in a
-repository. The vault is the directory that holds the boards. Each board is one
-`<name>.semantic.json` file in it. Setup adds nothing else to the repository.
+repository. One canonical model lives in that vault.
+Its manifest identifies the model and optional current state.
+Module, flow, active proposal, and walkthrough files hold the authored architecture.
 
 This document is also the installation reference for agents: the installed
 skill carries a copy of it. To set up the voice loop for development of
@@ -16,7 +17,7 @@ You need these things:
 - Linux or macOS, Bash, Git, and Bun 1.4.3 or newer. Bun must be on the `PATH` of
   every process that runs archboard.
 - Node.js that satisfies `^22.18.0 || ^24.11.0 || >=26.0.0`, for the Vite+ build and validation tools.
-- A desktop browser, to read the boards. The browser layout is for desktop
+- A desktop browser, to read architecture. The browser layout is for desktop
   screens only.
 - Chromium or Google Chrome, only to draw PNG files and to record videos.
 - `ffmpeg` with libx264 and aac, or Nix, only to record videos. If there is no
@@ -71,14 +72,16 @@ Use `--agent claude-code` for Claude Code. Without it, the installer sets up
 Codex. The installer does these things:
 
 1. It copies two skills into a skills directory: `archboard`, which writes
-   and reads boards, and `archboard-pr`, which gives a pull request an
+   and reads canonical models, and `archboard-pr`, which gives a pull request an
    architecture explainer. The default directory is `~/.agents/skills`, which
    Codex reads. With `--agent claude-code` it is `~/.claude/skills`. Each copy
    replaces an earlier copy. If a target is a symlink, the installer stops and
    changes nothing.
-2. If the repository has no `.archboard/vault`, it creates that directory, with a
-   `.archboard/config.yaml` file that holds the default vocabulary. The
-   archboard skill explains that file to the agents that write boards.
+2. If the repository has no `.archboard/vault`, the installer creates that directory.
+   An empty vault receives a `.archboard/config.yaml` file with the default vocabulary.
+   It initializes a canonical planning model through the signed model installer.
+   The new model has no implemented current state.
+   Existing vaults keep their inputs and require explicit migration when they contain legacy boards.
 3. It removes the block that earlier versions of the installer wrote into
    `CLAUDE.md` and `AGENTS.md` between `<!-- archboard:begin -->` and
    `<!-- archboard:end -->`. It says which files it changed and changes nothing
@@ -91,6 +94,9 @@ paths of your machine.
 
 The installer prints what it did, and a JSON receipt. If Git ignores the vault,
 the installer warns you. Commit the vault with your code.
+Setup honors the configured Git identity and signer.
+If signing fails, repair that configuration before retrying.
+Keep signing enabled.
 
 These options change what the installer does:
 
@@ -121,15 +127,13 @@ directory, or in the directory that `-C <dir>` names:
   enclosing directory. That is an untracked vault. If there is none, the
   command refuses.
 - `-C <dir>` starts the search at `<dir>` and uses the same rule, as in
-  `archboard -C ~/Projects/payments-api semantic`. Put it before or after the
+  `archboard -C ~/Projects/payments-api model read`. Put it before or after the
   command name. If `<dir>` is a vault directory, `-C` finds that vault.
   `-C` changes only where the vault is found. A relative `--input` or `--out`
   still resolves against the working directory.
-- The commands that call a vault take `-C`: `semantic`, `check`, `claim`,
-  `release`, `browser show`. If a command takes `-C`, the output of
-  `archboard <command> --help` lists it. `start`, `stop`, `restart`, `status`, `repo`,
-  `install-skill`, `browser open`, `browser panes`, `browser close` and
-  `semantic replay` take none, because they need no vault.
+- Commands that address a vault expose `-C` in their help, including `model read`, `model edit`, and `browser show`.
+  Machine operations such as `status` and `repo list` need no vault.
+  `model replay` reads a retained talk directory rather than mutable model inputs.
 
 A JSON answer of a command that takes `-C` names the vault it used, as
 `vault: {path, origin}`. The origin is `-C` or `working-directory`.
@@ -144,16 +148,18 @@ checkout moves to `<dir>/.archboard/vault`, where a command run in `<dir>` or
 given `-C <dir>` finds it. The Archboard server serves only a vault in that
 layout, and refuses a call that names another directory.
 
-A vault in the repository keeps the boards next to the code. A reviewer can
-then read a board change in the same diff as the code change. To diagram
-several repositories together, keep their boards in a directory of their own,
+A vault in the repository keeps current architecture next to the code.
+A reviewer can read its changes in the same diff.
+To describe several repositories together, keep one model in a directory of its own,
 for example a repository for a meta project. Run `archboard install-skill`
 there, and then run commands there or give `-C <that directory>`. A binding
-names a repository by its identity, so a board in that vault can describe any
+names a repository by its identity, so a module in that vault can describe any
 repository (see "Code bindings").
 
-While an agent works on a board, archboard keeps a lock file for it in
-`<vault>/.archboard/locks/`. If you commit the vault, ignore that directory.
+Claims cover affected subjects, state, and structure scopes.
+A short vault lease protects installation rather than the whole authoring session.
+Use `model claim`, `model claims`, and `model release` through the consumer recipe.
+Keep private runtime records and reproducible outputs out of source control.
 
 ## 5. Start the Archboard server and sign in to Codex
 
@@ -171,7 +177,7 @@ The old variable `EXPRESS_SERVER_URL` is refused with a message, as
 Several Archboard servers can run on one machine at the same time, each on its own port.
 The Codex agents of a server run `archboard` against that server, and they
 never start another server. The Codex child holds no vault setting. The
-board context of a thread names the vault of each board, and the instructions
+captured architecture context names its actual vault, and the instructions
 tell the thread to pass it as `-C`. The voice coordinator works in a directory
 of its own under the state directory, which holds no vault, so a command it
 runs without `-C` is refused. Each workhorse works in the checkout of its vault,
@@ -201,19 +207,68 @@ Run these commands in the repository:
 
 ```bash
 archboard status          # the server runs, and at which URL
-archboard check           # every check: the vault and its boards are valid, the boards match their code, and the board pictures the repository keeps are current
-archboard semantic config # the vocabulary in use, and the configuration file
+archboard model read
+archboard model config
+archboard check semantics
 ```
 
-Then create a test board with `archboard semantic new`, and read it with
-`archboard semantic show`. The first session in [TESTING.md](TESTING.md) has an example.
+A new model returns an empty planning state without a current designation.
+For an existing empty vault without a manifest, initialize it explicitly:
+
+```bash
+archboard model init --name Payments --operation-id initialize-payments --writer agent --doing 'Initialize architecture'
+```
+
+For an untracked vault, run `model archive-init` before signed authoring or retention.
+Configure the returned archive's Git identity and signer.
+Follow [the consumer skill](skills/archboard/SKILL.md) for claims, proposal creation, comparison, and explicit adoption.
+Use `check code --state <proposal-id>` for source evidence.
+Use `check embeds` for tracked rendered artifacts.
+
+## Migrate an existing vault
+
+If `model read` returns `LEGACY_AUTHORITY`, use [legacy migration](skills/archboard/references/legacy-migration.md).
+Inventory the originals through `model inventory`.
+Record deliberate identity choices through `model plan`.
+Read the composed candidate through `model read --preview <origin>`.
+Only owner-authorized `model migrate` installs that candidate.
+
+The plan must preserve independent drafts, exact predecessors, historical coverage, and explicit walkthrough readings.
+Matching names and bindings do not authorize identity merges.
+The installer retains exact originals before removing their live copies.
+Opening a model or preview never performs automatic cutover.
+Retired semantic-board commands cannot edit an unmigrated vault.
+
+## Retain and share history
+
+A checkpoint preserves exact architecture inputs and metadata in the independent Git archive.
+It changes neither source HEAD nor the source index.
+Configured signing applies before live installation.
+A checkpoint does not adopt architecture or retain source-code objects automatically.
+
+Use [canonical history](skills/archboard/references/canonical-models.md#retain-an-exact-local-reading) before sharing or recording a reading.
+Retain the complete required dependency history.
+Configure an explicit remote and archive ref through `model publication-configure` before publication.
+Use `model publish` to transfer that history and `model fetch` to recover unavailable checkpoints.
+A normal source push does not publish the archive.
+Remote retention depends on the remote owner's policy and backups.
+
+Linked worktrees share archive objects and keep separate current architecture.
+An untracked vault uses an explicitly initialized private bare archive in machine state.
+Back up that archive before removing machine state or moving its vault.
+Use `model export` and `model import` for complete portable transfer.
+Canonical models have no board-move or cross-model ownership-transfer operation.
+
+If an operation returns `RECOVERY_REQUIRED`, run `model recover` in its original checkout.
+Preserve foreign bytes and the journal when recovery refuses.
+For a lost response, repeat the exact request with its original operation identity.
 
 ## Code bindings
 
-A node can bind to a file in a repository, as `binding: { repo, path }`, with an
-optional `symbol`, `branch` and `commit`. The board stores the identity of the
+A module can bind to a file in a repository, as `binding: { repo, path }`, with an
+optional `symbol`, `branch` and `commit`. The module stores the identity of the
 repository and a path in the repository. It never stores an absolute path, so
-the same board opens the correct file on any machine.
+the same module opens the correct file on any machine.
 
 If a binding names a branch or a commit, the checkout must have that ref out for
 the local file to open. A named commit decides over a named branch. If the
@@ -222,7 +277,7 @@ you both refs. It also offers the file on GitHub at the named ref. Archboard nev
 branch of your checkout. If the repository is not on GitHub, the browser opens
 the local file and tells you which ref the binding names.
 
-To open the code from a board, register each checkout on each machine:
+To open the code from a module, register each checkout on each machine:
 
 ```bash
 archboard repo add ~/Projects/payments-api
@@ -247,16 +302,16 @@ If it was the chosen checkout, the repository has no chosen checkout until you
 run `repo use`, and its bindings resolve as unregistered meanwhile.
 
 An agent's `archboard browser show` from a checkout that is not chosen, such as
-a worktree, makes that checkout the chosen one before it shows the board. Its
+a worktree, makes that checkout the chosen one before it shows the reading. Its
 answer names the checkout that it replaced. Only `browser show`, `repo use` and
-the menu in the navigator change the choice. A board command never does.
+the menu in the navigator change the choice. An ordinary model read or edit never changes that choice.
 Every running server watches the registry, whichever command or server
 changed it. So every pane of the repository moves to the chosen checkout with
-its board, and every tab lists the change at once.
+its reading, and every tab lists the change at once.
 
 One rule overrides the choice. A binding or anchor into the repository whose
 checkout holds the vault resolves in that checkout, whether or not it is
-registered or chosen. So a board in a worktree is checked against that
+registered or chosen. So a model in a worktree is checked against that
 worktree's code, while a binding into any other repository resolves in that
 repository's chosen checkout. A vault outside any checkout has no repository of
 its own, so all its bindings use chosen checkouts.
@@ -398,75 +453,50 @@ If no `Package.swift` holds the file, the check says `language-server-unready` o
 
 ## Rendering to a bitmap
 
-`archboard semantic render <board> --out <file.svg>` writes an SVG with its
-fonts in it, and needs no browser. `archboard semantic rasterize <board> --out
-<file.png>` draws the same picture to a PNG in a private headless Chromium.
-Both take `--variant`, `--view` and `--theme`. To export a variant
-without comparison marks and removed subjects, add `--no-comparison`. To draw a
-variant relative to another one, with no "Planned" frame, add `--against <variant>`.
-`semantic render` draws one SVG that shows the ground of the reader's colour
-scheme (`--theme auto`), and `semantic rasterize` draws dark. Both commands draw
-the key under the picture. `--legend vertical` draws it beside the picture,
-`--no-legend` draws none, and `--legend-only` draws the key alone. `--title`
-draws a title above the picture. Each SVG and PNG carries its render recipe,
-which names the board and the drawing choices. An SVG keeps it in its
-`<metadata>` element, so a pipeline that runs SVGO must keep that element
-(turn off its `removeMetadata`). With `--track`, the board lists the file, and
-`archboard check` in that repository says when the picture is outdated;
-`archboard check --fix` draws it again.
-
-The CLI starts the browser itself, with a private temporary profile, and stops
-it and removes the profile before the command ends. It uses the first of
-`chromium`, `chromium-browser`, `google-chrome` and `google-chrome-stable` on
-`PATH`, and on macOS also the standard applications in `/Applications`. To use
-another browser, set `ARCHBOARD_RENDERER_CHROMIUM` to its executable in the
-environment of the command. If there is no browser, the command stops with exit
-status 4 and writes nothing.
-
-The PNG has these properties:
-
-- One bitmap pixel is one diagram pixel. `--scale` takes 0.25 to 4. The size
-  does not depend on the display or on a pane.
-- The PNG shows the whole diagram, with a margin of 20 px. `--region x,y,w,h`
-  draws one part of it. A bitmap larger than 16384 px on a side or 80 million
-  pixels is refused with exit status 2.
-- All the fonts load before the capture, or the command fails. Moving traffic
-  marks show their first frame.
-- The receipt gives the file, the size, the scale, the board, its version, the
-  variant and view that it drew, and the SHA-256 of the SVG that it drew.
-
-To copy the PNG and its description together on Linux or macOS, run:
+Use canonical selectors for both exports:
 
 ```bash
-archboard semantic rasterize "Skill evaluation" --clipboard
+archboard model render --module Gateway --theme auto --out gateway.svg
+archboard model rasterize --module Gateway --out gateway.png
+archboard model render --flow Checkout --grammar sequence --checkpoint <checkpoint-id> --out checkout.svg
 ```
 
-Archboard uses the native clipboard on the machine that runs the command.
-The clipboard package installs with Archboard. No clipboard manager is required.
-Archboard offers PNG and HTML together. The HTML embeds the PNG and includes
-the image description as alt text. The receiving app chooses which format to paste.
-On Linux, a background helper keeps the copy available after the command exits.
-If another copy replaces the image or the desktop disconnects, the helper exits.
-On macOS, the system keeps the copy.
-The command prints a JSON receipt after the native clipboard accepts both formats.
-Use either `--clipboard` or `--out` for one command.
+`model render` writes a self-contained SVG without Chromium.
+`model rasterize` captures the same local projection through private headless Chromium.
+Both accept state, checkpoint, scope, focus, grammar, flow, and filter selectors.
+Sequence and flowchart require an explicit authored flow and preserve its complete exchange.
+Use each command's `--help` for its supported flags.
 
-Without either destination, `semantic rasterize` writes PNG bytes to stdout.
-For an image-only clipboard entry on Wayland, run:
+Exports record model identity, canonical selectors, input revision, and picture digest in their render recipes.
+Keep SVG `<metadata>` when another tool processes the file.
+Git discovers tracked artifacts for `check embeds`.
+Use `check embeds --fix` only when artifact replacement is authorized.
+A model keeps no second list of exported pictures.
 
-```bash
-archboard semantic rasterize "Skill evaluation" | wl-copy --type image/png
-```
+The rasterizer finds Chromium or Google Chrome on `PATH` or in standard macOS applications.
+Set `ARCHBOARD_RENDERER_CHROMIUM` to use another executable.
+The command removes its private profile before completion.
+Without a browser, it refuses and writes no PNG.
+
+`--scale` accepts 0.25 to 4 bitmap pixels per diagram pixel.
+`--region x,y,w,h` selects a region inside the page.
+Rasterization refuses images larger than 16384 pixels per side or 80 million pixels.
+The receipt records dimensions, exact canonical revision, and SVG digest.
+The canonical command requires `--out` and exposes no clipboard flag.
 
 ## Recording a walkthrough
 
-`archboard semantic record <board> --out <file.mp4>` presents one walkthrough,
-and the Codex voice of the server narrates it. The command writes an MP4 or a
-WebM file. It is how an agent gives the reviewers of a pull request a narrated
-video of the change. The voice speaks English, whatever language the steps
-are written in. `--language` names another language as a BCP 47 tag, such as
-`da`, `fr` or `pt-BR`. `--discard --doing "<why>"` deletes the board after the
-file is written, for a board made only for the video.
+Retain an exact checkpoint before recording a walkthrough:
+
+```bash
+archboard model record --checkpoint <checkpoint-id> --walkthrough 'Request tour' --out tour.mp4
+```
+
+Use [canonical walkthroughs](skills/archboard/references/canonical-walkthroughs.md) to author complete reading instructions for every beat.
+The recording pins one model revision for the whole presentation.
+Missing subjects or history stop playback instead of selecting another state.
+`--language` selects a BCP 47 language tag, such as `da`, `fr`, or `pt-BR`.
+Recording never deletes the model.
 
 The command makes a recording in two passes:
 
@@ -484,11 +514,11 @@ The command keeps the talk, a directory with `talk.json` and `voice.wav`, and
 the receipt's `talk` names it. By default the talk goes to `recordings/` in the
 state directory, which keeps the newest 10 talks. `--talk <dir>` keeps it in a
 directory that does not exist yet, and nothing removes it there.
-`archboard semantic replay <talk> --out <file.mp4>` renders a kept talk again,
+`archboard model replay <talk> --out <file.mp4>` renders a kept talk again,
 with no voice session. Use `--theme dark` for the other palette, or render
-again after you update archboard. The board need not exist. If a render fails,
+again after you update archboard. The live model need not exist. If a render fails,
 the command refuses with `RENDER_FAILED`, keeps the talk and names the
-`semantic replay` command that renders it again.
+`model replay` command that renders it again.
 
 A recording needs these things:
 
@@ -524,7 +554,7 @@ There is no uninstall command. To remove archboard, delete these things:
   configured language servers of each checkout), the opener configuration, the
   server process files, the log and the kept talks of recordings.
 
-If you do not want to keep the boards, delete the vault too.
+Keep the vault and its archive until you no longer need their architecture or recovery evidence.
 
 ## Machine state and logs
 
@@ -543,7 +573,7 @@ move between machines. The state directory and the log are in these places:
 On macOS, archboard examines processes through the macOS process API. On Linux
 it uses `/proc`.
 
-The browser that `semantic rasterize` and `semantic record` start uses the
+The browser that `model rasterize` and `model record` start uses the
 account home for system services, and it keeps its profile private. It uses a
 mock keychain, so it opens no keychain dialogs. A managed Chrome installation
 can ask to become the default browser, even with a temporary profile. If it
@@ -565,6 +595,6 @@ no Chromium process and needs no elevation for this restriction.
 `realpath: command not found`, run `brew install coreutils`, or run
 `bun ~/Projects/archboard/apps/cli/src/bin.ts` directly.
 
-Board names do not depend on case, on both Linux and macOS. If a vault has two
-boards whose names differ only in case, `archboard check` reports them as
-`DUPLICATE_BOARD`.
+Model subjects use stable qualified identities.
+If a name resolves ambiguously, use one of the returned identities.
+A file rename or changed display name never creates another subject.

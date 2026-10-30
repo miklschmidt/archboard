@@ -74,6 +74,11 @@ interface ThreeStates {
  * do not mark a subject as changed, but they are still somebody's decision, so
  * a merge carries them and holds two different answers as a disagreement.
  */
+const EXTENDED_FIELDS = {
+	node: ["formerNames", "documents", "references"],
+	flow: ["formerNames", "collection"],
+} as const;
+const UNWRITTEN_EXTENSIONS = new Set<string>([...EXTENDED_FIELDS.node, ...EXTENDED_FIELDS.flow]);
 const MERGED = {
 	node: [
 		"order",
@@ -85,9 +90,10 @@ const MERGED = {
 		"groups",
 		"binding",
 		"drillDown",
+		...EXTENDED_FIELDS.node,
 	],
 	edge: ["order", "from", "to", "kind", "label", "description", "emphasis", "traffic", "anchor"],
-	flow: ["name", "summary", "participants"],
+	flow: ["name", "summary", "participants", ...EXTENDED_FIELDS.flow],
 	walkthrough: ["name", "summary"],
 } as const;
 
@@ -275,6 +281,7 @@ function mergeFields<Entity extends { readonly id: string }>(
 	const issues: ReconciliationIssue[] = [];
 	const inherited: string[] = [];
 	for (const field of fields) {
+		if (unwrittenExtension(field, [mine, base, theirs])) continue;
 		const decided = decideField(field, { mine, base, theirs, fields, what, id });
 		settled = { ...settled, [field]: decided.value };
 		issues.push(...decided.issues);
@@ -283,6 +290,15 @@ function mergeFields<Entity extends { readonly id: string }>(
 	return { entity: settled, issues, inherited };
 }
 
+/**
+ * Keep canonical-only fields absent from legacy semantic content.
+ * @param field The field under consideration.
+ * @param sides The three complete subject definitions.
+ * @returns Whether this extension is absent from every side.
+ */
+function unwrittenExtension(field: string, sides: object[]): boolean {
+	return UNWRITTEN_EXTENSIONS.has(field) && !sides.some((side) => Object.hasOwn(side, field));
+}
 /**
  * Decide one field: inherit it, keep it, or hold it as a disagreement.
  * @param field The field's name.
@@ -385,11 +401,12 @@ function settledMembership(here: boolean, was: boolean, there: boolean): boolean
 /**
  * What this proposal should say now that the variant it came from has moved.
  * @param states The base, this proposal, and the predecessor as it stands.
+ * @param incoherence The selected architecture coherence authority.
  * @returns The proposal's content afterwards, and what is left to settle.
  */
-function reconcileVariant(states: ThreeStates): Reconciliation {
+function reconcileVariant(states: ThreeStates, incoherence = incoherenceOf): Reconciliation {
 	const merged = mergedCandidate(states);
-	const dangling = incoherenceOf(merged.content);
+	const dangling = incoherence(merged.content);
 	if (dangling.length === 0) {
 		return merged;
 	}
@@ -398,7 +415,7 @@ function reconcileVariant(states: ThreeStates): Reconciliation {
 	// subjects whose change does that keep this proposal's side; the rest of the
 	// change still arrives, and every reason is reported in the words the
 	// contract itself uses.
-	const part = coherentPart(states, mergedCandidate);
+	const part = coherentPart(states, mergedCandidate, incoherence);
 	return {
 		content: part.content,
 		issues: [...merged.issues, ...dangling],
@@ -466,4 +483,13 @@ function asIssues(issues: readonly OrderedIssue[]): ReconciliationIssue[] {
 	}));
 }
 
-export { MERGED, SUBJECT_WORDS, reconcileVariant, type Reconciliation, type ThreeStates };
+export {
+	asIssues,
+	mergeByIdentity,
+	sidesOf,
+	MERGED,
+	SUBJECT_WORDS,
+	reconcileVariant,
+	type Reconciliation,
+	type ThreeStates,
+};

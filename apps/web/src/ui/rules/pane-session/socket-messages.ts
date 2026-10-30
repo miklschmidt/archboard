@@ -9,7 +9,10 @@
 // about the layout, which step of a walkthrough somebody narrating it asked for,
 // and that a checkout was chosen somewhere.
 
-import { PanePresentRequestSchema } from "@archboard/board/pane-context";
+import {
+	PanePresentRequestSchema,
+	ArchitecturePaneReadingSchema,
+} from "@archboard/board/pane-context";
 import { announceSemanticBoardChange } from "#ui/state/semantic-board-canvas/board-changes.ts";
 import { boardAddressOf } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import type {
@@ -22,6 +25,12 @@ import type {
 import type { z } from "zod";
 
 type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
+
+/** Canonical navigation resolved by the shared runtime before it reaches a pane. */
+interface PaneModelRequest {
+	readonly reading: z.infer<typeof ArchitecturePaneReadingSchema> & { model: string };
+	readonly repository: string | null;
+}
 
 /** Where the server says a pane is: a vault, and the repository it is listed under. */
 interface PanePlace {
@@ -65,11 +74,13 @@ interface MessageContext {
 	readonly setDoing: (entries: DoingEntry[]) => void;
 	readonly onLayoutRequest: ((request: "open" | "close") => void) | undefined;
 	readonly onPresentRequest: ((request: PanePresentRequest) => void) | undefined;
+	readonly onModelRequest?: ((request: PaneModelRequest) => void) | undefined;
 	readonly onBoardError: ((error: string) => void) | undefined;
 	readonly onAgentActivity:
 		| ((vault: string, activity: readonly AgentActivityEntry[]) => void)
 		| undefined;
 	readonly onRepositoriesChanged: (() => void) | undefined;
+	readonly onExplanationsChanged: (() => void) | undefined;
 }
 
 type Handler = (context: MessageContext, data: WebSocketMessage) => void;
@@ -86,6 +97,20 @@ function paneBoard(context: MessageContext, data: WebSocketMessage): void {
 			? { vault: data.vault, repository: data.repository ?? null }
 			: null;
 	context.adoptBoard(data.board, data.identity, place);
+}
+
+/**
+ * A canonical arrival updates its place and delegates display intent to the router.
+ * @param context The addressed pane session.
+ * @param data The runtime-resolved reading.
+ */
+function paneModel(context: MessageContext, data: WebSocketMessage): void {
+	if (typeof data.model !== "string" || typeof data.vault !== "string") return;
+	const parsed = ArchitecturePaneReadingSchema.safeParse(data.reading);
+	if (!parsed.success) return;
+	const repository = data.repository ?? null;
+	context.adoptBoard(null, null, { vault: data.vault, repository });
+	context.onModelRequest?.({ reading: { ...parsed.data, model: data.model }, repository });
 }
 
 /**
@@ -208,6 +233,7 @@ function panePresent(context: MessageContext, data: WebSocketMessage): void {
 }
 
 const HANDLERS: Readonly<Record<string, Handler>> = {
+	pane_model: paneModel,
 	pane_board: paneBoard,
 	board_lock: boardLock,
 	board_note: boardChanged,
@@ -218,6 +244,13 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
 	pane_close: paneClose,
 	pane_present: panePresent,
 	repositories_changed: repositoriesChanged,
+	/**
+	 * Refresh the tab answer through the existing query owner.
+	 * @param context The current pane callbacks.
+	 */
+	architecture_explanations_changed: (context): void => {
+		context.onExplanationsChanged?.();
+	},
 };
 
 /**
@@ -231,7 +264,7 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
  * @returns True when the message is ours to act on.
  */
 function addressesThisPane(context: MessageContext, data: WebSocketMessage): boolean {
-	if (data.type === "pane_board" || data.type === "board_note") {
+	if (data.type === "pane_board" || data.type === "pane_model" || data.type === "board_note") {
 		return true;
 	}
 	const said = data.board;
@@ -249,4 +282,4 @@ function handleSocketMessage(context: MessageContext, data: WebSocketMessage): v
 	}
 }
 
-export { handleSocketMessage, type MessageContext, type PanePlace };
+export { handleSocketMessage, type MessageContext, type PanePlace, type PaneModelRequest };

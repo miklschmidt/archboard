@@ -1,0 +1,16 @@
+{
+  "order": 32001,
+  "name": "Workhorses",
+  "kind": "module",
+  "responsibility": "The sustained work of each checkout: a workhorse's thread link, queue, operations, start and context delivery, built per tab session on first use, with its tool calls",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+  "parent": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

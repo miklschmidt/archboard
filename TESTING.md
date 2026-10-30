@@ -1,7 +1,7 @@
 # Running and verifying Archboard
 
 This file is for a developer or an agent who works in this checkout. It shows
-how to run a server of your own, write and read a board, see it in a browser,
+how to run a server of your own, write and read a model, see it in a browser,
 and test a change. [INSTALL.md](INSTALL.md) covers installation on a machine.
 [docs/agents/test-suite.md](docs/agents/test-suite.md) covers the test lanes.
 `./bin/archboard --help` and the `--help` of each command describe the flags.
@@ -40,17 +40,22 @@ export ARCHBOARD_REPOS=$(mktemp -d)/repos.json
 session=$(mktemp -d)
 mkdir -p "$session/.archboard"
 cp -r examples/web-shop "$session/.archboard/vault"
+git -C "$session" init
+git -C "$session" remote add origin https://example.invalid/web-shop.git
+./bin/archboard -C "$session" model import \
+  --input "$session/.archboard/vault/history.import.json"
 ./bin/archboard start
 ./bin/archboard status
 ```
 
-`examples/web-shop` holds three boards with proposals, views, walkthroughs and
-groups. Its `config.yaml` defines the kinds that the examples below use. `start`
-prints the URL and the process id of the server. `status` says whether the
-server runs and how many browser pages are open.
+`examples/web-shop` contains one canonical model, four proposals, independent flows, and walkthroughs.
+Its import request restores the complete architecture archive beside the copied inputs.
+Use your configured Git identity and signer for this scratch repository.
+The synthetic origin identifies local example references. These commands never fetch that origin.
+`start` prints the server URL and process ID. `status` reports whether it runs.
 
 The commands below name the session with `-C "$session"`. Without it, a command
-in this checkout uses the boards of this repository. The first command that
+in this checkout uses the architecture of this repository. The first command that
 names the session registers it in your own registry, and a browser page then
 opens in its vault.
 
@@ -75,9 +80,8 @@ from your sign-in: set `XDG_STATE_HOME` to an empty directory before `start`.
 The test server then starts with no sign-in, and it keeps its log in that
 directory.
 
-`archboard` in this checkout finds the boards of this repository in
-`.archboard/vault`, from any directory of the checkout. Read the boards as you like. Change them only through the
-proposal of a task, as the `archboard-dev` skill describes.
+`archboard` in this checkout finds the model of this repository in
+`.archboard/vault`, from any directory of the checkout. Read the model as needed. Change it through a task proposal, as the `archboard-dev` skill describes.
 
 In an archboard checkout, `archboard` runs that checkout's own `bin/archboard`,
 even when the `archboard` on your PATH links to another checkout (ADR 0049).
@@ -96,93 +100,72 @@ So a worktree runs its own source and has its own server:
   refuses and names both checkouts. It does not try another port. Run the
   command in the checkout that the refusal names, or stop that server there.
 
-## 3. Write and read a board
+## 3. Read and change the model
 
-Every write says what it does with `--doing`. A write to a board that already
-exists also gives the version that you read, with `--expect-version`. If the
-board changed after you read it, the write is refused with exit code 5.
+Read the copied example through the public model interface:
 
 ```bash
-echo '{"level": "system",
-  "nodes": [{"name": "API Gateway", "kind": "service"},
-            {"name": "Orders", "kind": "service"}],
-  "edges": [{"from": "API Gateway", "to": "Orders", "kind": "http",
-             "label": "place an order"}]}' |
-  ./bin/archboard -C "$session" semantic new payments --doing "drawing the payment path"
-
-./bin/archboard -C "$session" semantic show payments
-
-./bin/archboard -C "$session" semantic branch payments --as "Queued ingest" \
-  --summary "Orders arrive through a queue" \
-  --expect-version 1 --doing "proposing a queue"
-
-echo '{"nodes": [{"name": "Order queue", "kind": "queue"}],
-  "edges": [{"from": "API Gateway", "to": "Order queue", "kind": "queue",
-             "label": "enqueue the order"},
-            {"from": "Order queue", "to": "Orders", "kind": "queue",
-             "label": "deliver"}]}' |
-  ./bin/archboard -C "$session" semantic edit payments --variant "Queued ingest" \
-  --expect-version 2 --doing "routing orders through a queue"
-
-./bin/archboard -C "$session" semantic compare payments --variant "Queued ingest"
+./bin/archboard -C "$session" model read
+./bin/archboard -C "$session" model read 'Inventory service'
+./bin/archboard -C "$session" model read --state 'Queued fulfilment'
+./bin/archboard -C "$session" model compare --state 'Queued fulfilment'
 ./bin/archboard -C "$session" check
 ```
 
-Each command prints its answer as JSON on stdout and one sentence on stderr.
-The three writes take the board to versions 1, 2 and 3. `compare` reports the
-queue and its two relationships as added. `check` runs every check: the
-semantics check of the vault, the code check and the embeds check. It exits 0
-when the configuration and every board are valid and neither the code check
-nor the embeds check has a warning. The session's vault is in no Git checkout,
-so the embeds check has no file to read there.
+The current reading has eight root modules. Inventory owns its stock API, ledger, database, and synchronization job.
+Opening a module changes the reading scope and preserves its identity.
+The queued proposal compares its changed responsibilities and relationships against current architecture.
+The recommendations proposals keep their separate planning root and competing approaches.
 
-The board is the file `payments.semantic.json` in the vault. It holds the
-current variant and every proposal. Write it only through the CLI.
+For a new proposal, follow the [canonical authoring recipe](skills/archboard/references/canonical-models.md).
+Read the complete revision, claim the affected subjects, and submit one public edit request for the intended change.
+Every write states its purpose through `--doing` or its complete operation request.
+A stale revision refuses the write instead of overwriting later work.
+Release the claim when the authoring intent ends.
+Adoption and shelving require explicit lifecycle operations.
 
-## 4. Draw it
+The working tree holds modules, source-owned relationships, flow collections, active proposal patches, and walkthroughs.
+Exact history lives in the retained Git archive. A source commit does not replace architecture retention or adopt a proposal.
+Use `model recover` in the original scratch checkout after an interrupted installation.
+The [migration recipe](skills/archboard/references/legacy-migration.md) covers unmigrated legacy vaults without automatic rewriting.
+
+## 4. Draw a reading
 
 ```bash
 out=$(mktemp -d)
-./bin/archboard -C "$session" semantic render payments --out "$out/payments.svg"
-./bin/archboard -C "$session" semantic render payments --variant "Queued ingest" \
+./bin/archboard -C "$session" model render --out "$out/shop.svg"
+./bin/archboard -C "$session" model render --state 'Queued fulfilment' \
   --out "$out/proposal.svg"
-./bin/archboard -C "$session" semantic rasterize payments --out "$out/payments.png"
+./bin/archboard -C "$session" model render --module 'Inventory service' \
+  --out "$out/inventory.svg"
+./bin/archboard -C "$session" model rasterize --out "$out/shop.png"
 ```
 
-Write pictures outside the checkout, because git does not ignore them there.
-`render` needs no browser. It draws the current variant, or a proposal marked
-against the current variant. `rasterize` needs Chromium or Google Chrome, as
-[INSTALL.md](INSTALL.md#rendering-to-a-bitmap) describes. At the default scale,
-the `width` and `height` in the answer of `rasterize` are the ones in the answer
-of `render`.
+Write temporary pictures outside the checkout.
+Structural renders use the selected scope. Sequence and flowchart renders also name an authored flow and grammar.
+`model rasterize` accepts the same reading selectors and needs Chromium, as [INSTALL.md](INSTALL.md#rendering-to-a-bitmap) describes.
+Render recipes retain exact architecture references for reproducible output.
+`check embeds` discovers tracked artifacts through Git and reads their embedded recipes.
+It needs no board-owned tracking list.
 
-With `--track --doing "..."`, `render` and `rasterize` also list the file on
-the board as a tracked embed, and `check embeds` in the vault's repository then
-reads that file too. Tracking needs the vault and the file in Git checkouts, so
-the session above cannot use it.
-`tests/system/semantic-boards/tracked-embeds.test.ts` runs it over four
-repositories.
+## 5. Open the browser
 
-## 5. See it in a browser
-
-Open `$ARCHBOARD_URL/?paneA=payments` in a browser. The `browser` commands need
-that page. Without it, `browser show` exits with code 4 and tells you which URL
-to open.
+Open `$ARCHBOARD_URL/?modelA=Shop` after the example registers with the server.
+The browser commands address its existing panes:
 
 ```bash
 ./bin/archboard browser panes
-./bin/archboard -C "$session" browser show "payments@Queued ingest"
+./bin/archboard -C "$session" browser show Shop --state 'Queued fulfilment'
 ./bin/archboard browser open
-./bin/archboard -C "$session" browser show payments --pane left
-./bin/archboard -C "$session" browser show "payments@Queued ingest" --pane right
+./bin/archboard -C "$session" browser show Shop --pane A
+./bin/archboard -C "$session" browser show Shop --state 'Queued fulfilment' --pane B
 ```
 
-`browser panes` reports the board, the variant and the version of each pane,
-and the repository and the checkout that the board is in.
-`payments@Queued ingest` names the proposal. A pane shows it with what it adds,
-changes and removes marked against the current variant. `browser open` splits
-the page into two panes, and `--pane left` and `--pane right` then put the
-current variant beside the proposal. None of these commands writes a board.
+`browser panes` reports each pane's canonical architecture capture, repository, and chosen checkout.
+The capture includes its reading, selection, and exact revision.
+The state picker exposes current architecture, proposals, and retained readings.
+Recursive navigation, selection, focus, filters, and walkthrough controls change presentation only.
+Agent navigation never activates another workhorse conversation.
 
 ## 6. Talk to Codex
 
@@ -221,16 +204,20 @@ speakers:
 - [The voice acceptance](docs/design/codex-workbench-voice-acceptance.md), for
   a change to the Codex workbench or its voice path.
 - [The recording acceptance](docs/design/walkthrough-recording-acceptance.md),
-  for a change to `semantic record` or `semantic replay`. Its automated owners
+  for a change to `model record` or `model replay`. Its automated owners
   run a real headless Chromium with a fake ffmpeg.
-  `tests/system/server-state/walkthrough-recording.test.ts` records against a
-  fake Codex, and `walkthrough-replay.test.ts` beside it renders a kept talk.
+  `tests/system/server-state/canonical-walkthrough-recording.test.ts` records against a
+  fake Codex, and `canonical-walkthrough-replay.test.ts` beside it renders a kept talk.
+
+Run `bun run benchmark` for the separate, uncached renderer corpus.
+It draws the current repository root and every module with children, plus three fixed fixtures, on both layout engines.
+The public model reader refuses unreadable canonical inputs.
+This command retains drawing assertions and speed limits outside the normal gate.
 
 ## 8. When something fails
 
-- The exit codes mean: 0 success, 1 an error, 2 wrong usage, 3 no answer from
-  the server, 4 no browser page, and 5 a refused board write. `check` exits 1
-  while a check still has a diagnostic or a warning.
+- Read the structured `code`, `diagnostics`, and recovery fields when a model operation refuses.
+  `check` exits 1 while a check still reports a diagnostic or warning.
 - The answer of a command is JSON on stdout. The reason for a failure is on
   stderr.
 - The server log is `archboard.log` in the state directory.

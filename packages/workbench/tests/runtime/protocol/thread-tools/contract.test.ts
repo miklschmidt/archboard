@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { archboardProfiles } from "#tests/runtime/support/archboard-profiles.ts";
 
 import {
 	ARCHBOARD_APP_DYNAMIC_TOOLS,
@@ -32,8 +33,7 @@ import {
 } from "#tests/runtime/protocol/thread-tools/fixtures.ts";
 
 const EXPECTED_MANIFEST_SHA256 = "5399a33a0466d31518de7067536dc6c578d559bb2b46b3668ff8d4e18bdd1860";
-const EXPECTED_WORKHORSE_SHA256 =
-	"2b0005b5c90d0d5b8480b7a94532eaa42ede2e2b02433d994ae68e564e6833d4";
+const EXPECTED_WORKHORSE_SHA256 = archboardProfiles().workhorse.instructions.sha256;
 
 function expectDeepFrozen(value: unknown): void {
 	if (typeof value !== "object" || value === null) {

@@ -2,7 +2,11 @@
 // implements this over the panes it already owns; the router knows nothing
 // about pane sessions, notices or dialogs.
 
-import type { AddressOpen, WorkspaceAddress } from "#ui/rules/board-routing/address.ts";
+import type {
+	AddressOpen,
+	ModelAddress,
+	WorkspaceAddress,
+} from "#ui/rules/board-routing/address.ts";
 
 /**
  * Where the server says it put a pane: the key it resolved the board to, which
@@ -10,13 +14,13 @@ import type { AddressOpen, WorkspaceAddress } from "#ui/rules/board-routing/addr
  * repository the pane is in now, which is what the pane reports beside it.
  */
 interface OpenedBoard {
-	readonly boardKey: string;
+	readonly boardKey: string | null;
 	/** The repository the server lists the pane's vault under, or null when none. */
 	readonly repository: string | null;
 }
 
 /** A board an address asked for, and the repository it named, or null for the pane's own. */
-type AskedBoard = Pick<AddressOpen, "boardKey" | "repository">;
+type AskedBoard = Pick<AddressOpen, "boardKey" | "repository" | "model">;
 
 /** How pointing one pane at one board ended. */
 type OpenOutcome = ({ readonly kind: "opened" } & OpenedBoard) | { readonly kind: "unreachable" };
@@ -35,8 +39,9 @@ interface WorkspacePort {
 	 */
 	readonly open: (
 		paneId: string,
-		boardKey: string,
+		boardKey: string | null,
 		repository: string | null,
+		model?: ModelAddress,
 	) => Promise<OpenOutcome>;
 	/**
 	 * Read the board one pane is already showing through one of its views, or

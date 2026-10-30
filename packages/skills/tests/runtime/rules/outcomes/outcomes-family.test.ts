@@ -44,9 +44,6 @@ describe("family checks", () => {
 	test("versions, variants, comparison, reconciliation, adoption, flows, views and walkthroughs", () => {
 		expect(
 			passes([
-				{ check: "version-advanced-by", board: "Flask", max: 2 },
-				{ check: "version-advanced-by", board: "Flask", max: 1 },
-				{ check: "board-level", board: "Flask", level: "service" },
 				{ check: "board-count", expected: 1 },
 				{ check: "variant-exists", board: "Flask", variant: "No provider", lifecycle: "draft" },
 				{
@@ -92,9 +89,6 @@ describe("family checks", () => {
 				{ check: "walkthrough-beats-retained", board: "Flask", walkthrough: "Tour" },
 			]),
 		).toEqual([
-			true,
-			false,
-			true,
 			true,
 			true,
 			false,
@@ -283,7 +277,7 @@ describe("vault-level checks", () => {
 describe("guardrails", () => {
 	const commands = [
 		{
-			command: "archboard semantic edit Flask --doing x --expect-version 1",
+			command: "archboard model edit --doing x --input edit.json",
 			exitCode: 0,
 			status: "completed",
 			output: "",
@@ -293,7 +287,7 @@ describe("guardrails", () => {
 			exposure: null,
 		},
 		{
-			command: "archboard semantic edit Flask --expect-version 1",
+			command: "archboard model edit --input edit.json",
 			exitCode: 2,
 			status: "completed",
 			output: "",
@@ -352,7 +346,7 @@ describe("guardrails", () => {
 			commands: [
 				...commands,
 				{
-					command: "python3 - <<EOF\nopen('/run/vault/Flask.semantic.json','w')\nEOF",
+					command: "python3 - <<EOF\nopen('/run/vault/Flask.module.json','w')\nEOF",
 					exitCode: 0,
 					status: "completed",
 					output: "",
@@ -372,9 +366,9 @@ describe("guardrails", () => {
 			["/bin/bash -lc 'cat /run/vault/.archboard/config.yaml'", true],
 			["cat /run/vault/.archboard/config.yaml; cat src/flask/app.py", true],
 			["rg group /run/vault/.archboard/config.yaml | head", true],
-			["sed -n '1,80p' /run/vault/Flask.semantic.json", true],
-			["cat vocabulary.yaml > /run/vault/.archboard/config.yaml", true],
-			["cat payload.json > /run/vault/Flask.semantic.json", false],
+			["sed -n '1,80p' /run/vault/Flask.module.json", true],
+			["cat vocabulary.yaml > /run/vault/.archboard/config.yaml", false],
+			["cat payload.json > /run/vault/Flask.module.json", false],
 		] as const) {
 			const verdicts = evaluateGuardrails(["doing-on-writes"], {
 				...context,

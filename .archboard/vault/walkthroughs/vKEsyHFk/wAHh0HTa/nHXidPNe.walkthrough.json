@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/wAHh0HTa#nHXidPNe",
+  "name": "Original Codex session: Guard one app-server exchange",
+  "formerNames": [
+    "Guard one app-server exchange"
+  ],
+  "summary": "This narrative preserves the architecture before canonical module ownership. It reads the exact retained migration baseline.",
+  "target": {
+    "checkpoint": "6bc124a8ca521df89dd84fe13922798bf8065914"
+  },
+  "beats": [
+    {
+      "id": "vKEsyHFk/wAHh0HTa#6uIC2378",
+      "title": "Establish trusted readiness",
+      "narrative": "The generation hooks initialize the session once: the handshake negotiates the fixed capability set, and the storage proof confirms the child is using exactly the private paths prepared for it before any login or thread method opens.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+            "vKEsyHFk/wAHh0HTa#Ly6hUU5o",
+            "vKEsyHFk/wAHh0HTa#ql0DevMk",
+            "vKEsyHFk/wAHh0HTa#xtHoCCnF"
+          ],
+          "relationships": [
+            "vKEsyHFk/wAHh0HTa#qQrqNYdt",
+            "vKEsyHFk/wAHh0HTa#EAKN00R4",
+            "vKEsyHFk/wAHh0HTa#JTrBju8L"
+          ],
+          "flows": [
+            "vKEsyHFk/wAHh0HTa#3x2lgrhZ"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/wAHh0HTa#xtHoCCnF",
+          "vKEsyHFk/wAHh0HTa#qQrqNYdt",
+          "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+          "vKEsyHFk/wAHh0HTa#JTrBju8L",
+          "vKEsyHFk/wAHh0HTa#Ly6hUU5o"
+        ],
+        "focus": [
+          "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+          "vKEsyHFk/wAHh0HTa#Ly6hUU5o",
+          "vKEsyHFk/wAHh0HTa#ql0DevMk",
+          "vKEsyHFk/wAHh0HTa#xtHoCCnF"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/wAHh0HTa#3x2lgrhZ"
+      }
+    },
+    {
+      "id": "vKEsyHFk/wAHh0HTa#EzmGJ9EP",
+      "title": "Send only owned requests",
+      "narrative": "Every reviewed method is a read or a mutation of the one request path, behind its gate. The path serializes only identities issued for this child epoch and decodes the parameters against the pinned protocol before one frame goes on the wire.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+            "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+            "vKEsyHFk/wAHh0HTa#X6j6fViI",
+            "vKEsyHFk/wAHh0HTa#M3mPynLe",
+            "vKEsyHFk/wAHh0HTa#8QpDaiD6",
+            "vKEsyHFk/wAHh0HTa#FPKa6YCR",
+            "vKEsyHFk/wAHh0HTa#ql0DevMk",
+            "vKEsyHFk/wAHh0HTa#Sk7GfGta"
+          ],
+          "relationships": [
+            "vKEsyHFk/wAHh0HTa#SI5PTs6X",
+            "vKEsyHFk/wAHh0HTa#HlhfxXJm",
+            "vKEsyHFk/wAHh0HTa#mpJAeANo",
+            "vKEsyHFk/wAHh0HTa#7dDHchT9",
+            "vKEsyHFk/wAHh0HTa#EAKN00R4",
+            "vKEsyHFk/wAHh0HTa#jhNZqAiD",
+            "vKEsyHFk/wAHh0HTa#d2caVqCr",
+            "vKEsyHFk/wAHh0HTa#wVgRmbf8",
+            "vKEsyHFk/wAHh0HTa#OjFVoTcz",
+            "vKEsyHFk/wAHh0HTa#s0Qx9DbR",
+            "vKEsyHFk/wAHh0HTa#cGImVr7b"
+          ],
+          "flows": [
+            "vKEsyHFk/wAHh0HTa#zSCvXJVY"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+          "vKEsyHFk/wAHh0HTa#jhNZqAiD",
+          "vKEsyHFk/wAHh0HTa#X6j6fViI",
+          "vKEsyHFk/wAHh0HTa#SI5PTs6X",
+          "vKEsyHFk/wAHh0HTa#Sk7GfGta",
+          "vKEsyHFk/wAHh0HTa#EAKN00R4"
+        ],
+        "focus": [
+          "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+          "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+          "vKEsyHFk/wAHh0HTa#X6j6fViI",
+          "vKEsyHFk/wAHh0HTa#M3mPynLe",
+          "vKEsyHFk/wAHh0HTa#8QpDaiD6",
+          "vKEsyHFk/wAHh0HTa#FPKa6YCR",
+          "vKEsyHFk/wAHh0HTa#ql0DevMk",
+          "vKEsyHFk/wAHh0HTa#Sk7GfGta"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/wAHh0HTa#zSCvXJVY"
+      }
+    },
+    {
+      "id": "vKEsyHFk/wAHh0HTa#GgnkvAie",
+      "title": "Settle every answer",
+      "narrative": "An answer is decoded against the protocol and its identities adopted in one transaction, by the identity kinds its method's contract names; a mutation that fails states whether it was delivered. A request the child makes of us is answered for an owned thread or refused by policy.",
+      "reading": {
+        "visibility": {
+          "modules": [
+            "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+            "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+            "vKEsyHFk/wAHh0HTa#X6j6fViI",
+            "vKEsyHFk/wAHh0HTa#M3mPynLe",
+            "vKEsyHFk/wAHh0HTa#8QpDaiD6",
+            "vKEsyHFk/wAHh0HTa#FPKa6YCR",
+            "vKEsyHFk/wAHh0HTa#ql0DevMk",
+            "vKEsyHFk/wAHh0HTa#Sk7GfGta"
+          ],
+          "relationships": [
+            "vKEsyHFk/wAHh0HTa#SI5PTs6X",
+            "vKEsyHFk/wAHh0HTa#HlhfxXJm",
+            "vKEsyHFk/wAHh0HTa#mpJAeANo",
+            "vKEsyHFk/wAHh0HTa#7dDHchT9",
+            "vKEsyHFk/wAHh0HTa#EAKN00R4",
+            "vKEsyHFk/wAHh0HTa#jhNZqAiD",
+            "vKEsyHFk/wAHh0HTa#d2caVqCr",
+            "vKEsyHFk/wAHh0HTa#wVgRmbf8",
+            "vKEsyHFk/wAHh0HTa#OjFVoTcz",
+            "vKEsyHFk/wAHh0HTa#s0Qx9DbR",
+            "vKEsyHFk/wAHh0HTa#cGImVr7b"
+          ],
+          "flows": [
+            "vKEsyHFk/wAHh0HTa#zSCvXJVY"
+          ]
+        },
+        "selection": [
+          "vKEsyHFk/wAHh0HTa#aRDbMlep",
+          "vKEsyHFk/wAHh0HTa#M3mPynLe",
+          "vKEsyHFk/wAHh0HTa#HlhfxXJm",
+          "vKEsyHFk/wAHh0HTa#8QpDaiD6",
+          "vKEsyHFk/wAHh0HTa#3FR6mev4",
+          "vKEsyHFk/wAHh0HTa#bEmVBBGp"
+        ],
+        "focus": [
+          "vKEsyHFk/wAHh0HTa#tFTiAUKg",
+          "vKEsyHFk/wAHh0HTa#JBu1uGdl",
+          "vKEsyHFk/wAHh0HTa#X6j6fViI",
+          "vKEsyHFk/wAHh0HTa#M3mPynLe",
+          "vKEsyHFk/wAHh0HTa#8QpDaiD6",
+          "vKEsyHFk/wAHh0HTa#FPKa6YCR",
+          "vKEsyHFk/wAHh0HTa#ql0DevMk",
+          "vKEsyHFk/wAHh0HTa#Sk7GfGta"
+        ],
+        "filters": {
+          "relationships": [],
+          "groups": []
+        },
+        "grammar": "sequence",
+        "flow": "vKEsyHFk/wAHh0HTa#zSCvXJVY"
+      }
+    }
+  ]
+}

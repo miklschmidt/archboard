@@ -1,5 +1,9 @@
 # The vault is the truth, and the agent-friendly shape is an input format
 
+Canonical authored inputs supersede independent board-file ownership below. The public model reader and durable writer remain the single authority.
+[ADR 0062](0062-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
+
 Amended by [ADR
 0049](0049-one-server-serves-every-vault-and-every-call-names-its-vault.md)
 (2026-10-14). The server starts without a vault, because every call names its

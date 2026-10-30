@@ -272,14 +272,15 @@ function found(outcome: CodeCheckOutcome): string[] {
 	return outcome.findings.map((finding) => `${finding.code} ${finding.subject?.id}`);
 }
 
-test("the current variant reports a missing anchored file, anchor symbol and bound symbol", async () => {
+test("the current variant reports missing binding and anchor paths and symbols", async () => {
 	const { read, outcome } = await pass();
-	expect(read.boards.map((one) => [one.board.name, one.variant.id])).toEqual([
+	expect(read.boards.map((one) => [one.board.name, one.variant.id]).toSorted()).toEqual([
 		["Ops", "v1"],
 		["Shop", "v1"],
 	]);
 	expect(found(outcome).toSorted()).toEqual(
 		[
+			"BINDING_PATH_MISSING pG",
 			"BINDING_SYMBOL_MISSING pR",
 			// Only an ignored file below the directory, and the ignored file and
 			// the variable file the links below it lead to, hold the name.
@@ -314,19 +315,4 @@ test("what the pass cannot read is skipped with its reason, and a reason for a w
 	);
 	// A repository this machine has not registered stays silent.
 	expect(outcome.findings.some((finding) => finding.subject?.id === "e5")).toBe(false);
-});
-
-test("--variant reads the named draft where a board has one, never a shelved or historical variant", async () => {
-	const { read, outcome } = await pass("TASK-1");
-	expect(read.boards.map((one) => [one.board.name, one.variant.id, one.named])).toEqual([
-		["Ops", "v1", false],
-		["Shop", "v2", true],
-	]);
-	// On a named draft a bound path that is not in the checkout is reported.
-	expect(found(outcome)).toEqual(["BINDING_PATH_MISSING pN"]);
-	expect(check.readBoardsToCheck(vault, "Old")).toEqual({
-		ok: false,
-		variant: "Old",
-		drafts: ["Sketch", "TASK-1"],
-	});
 });

@@ -1,0 +1,90 @@
+{
+  "order": 43000,
+  "name": "Application policy",
+  "kind": "module",
+  "responsibility": "Archboard's options for the voice agent: identity and tool names, domain instructions, context, tools, storage, Codex environment, admitted checkouts and their labels, and its context announcer",
+  "groups": [
+    "agent"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/services/owner/production.ts",
+    "symbol": "createServerVoiceAgentOptions"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#yyFS6UVO",
+  "parent": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 79000,
+      "kind": "call",
+      "label": "createVoiceAgent with Archboard's options",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "symbol": "createVoiceAgent"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#34fI1JB6",
+      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
+    },
+    {
+      "order": 81000,
+      "kind": "call",
+      "label": "announce the tabs' board changes, focus and selection",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "symbol": "createArchboardAnnouncements"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#3494fDAK",
+      "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE"
+    },
+    {
+      "order": 82000,
+      "kind": "dependency",
+      "label": "project each tab workhorse for the visual shell",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "symbol": "liveWorkhorseCheckouts"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#tef70baL",
+      "to": "vKEsyHFk/9ncuT5DP#ME7EbWl8"
+    },
+    {
+      "order": 83000,
+      "kind": "dependency",
+      "label": "attach pane registration to core-owned tab presence",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/production.ts",
+        "symbol": "installWorkbenchTabSessions"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#UE6yrRV7",
+      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+    },
+    {
+      "order": 100000,
+      "kind": "call",
+      "label": "subscribe to arrived narration changes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "symbol": "narrationChangesOf"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#8iYy7AoA",
+      "to": "vKEsyHFk/9ncuT5DP#pZL0uxjI"
+    }
+  ]
+}

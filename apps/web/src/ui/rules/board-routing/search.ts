@@ -25,6 +25,7 @@
 import {
 	settledAddress,
 	type AddressedPane,
+	type ModelAddress,
 	type WorkspaceAddress,
 } from "#ui/rules/board-routing/address.ts";
 
@@ -145,7 +146,12 @@ function validateWorkspaceSearch(input: Record<string, unknown>): WorkspaceSearc
 }
 
 /** The parameters each pane owns: its board, its view and its board's repository. */
-const PANE_PARAMS: readonly RegExp[] = [PANE_PARAM, VIEW_PARAM, REPO_PARAM];
+const PANE_PARAMS: readonly RegExp[] = [
+	PANE_PARAM,
+	VIEW_PARAM,
+	REPO_PARAM,
+	/^(model|scope|checkpoint|focus|hideKinds|hideGroups|grammar|flow|state|preview|bookmark|legacyAddress|against|subject)([A-Za-z0-9]+)$/,
+];
 
 /**
  * Whether a search parameter is one the workspace owns.
@@ -163,10 +169,10 @@ function ownedParam(key: string): boolean {
  */
 function panesFromSearch(search: WorkspaceSearch): readonly AddressedPane[] {
 	const panes: AddressedPane[] = [];
-	for (const [key, value] of Object.entries(search)) {
-		const paneId = PANE_PARAM.exec(key)?.[1];
+	for (const key of Object.keys(search)) {
+		const paneId = /^(?:pane|model)([A-Za-z0-9]+)$/.exec(key)?.[1];
 		if (paneId !== undefined && !panes.some((pane) => pane.paneId === paneId)) {
-			panes.push(paneFromSearch(search, paneId, value));
+			panes.push(paneFromSearch(search, paneId));
 		}
 	}
 	return panes.toSorted((one, other) => one.paneId.localeCompare(other.paneId));
@@ -178,16 +184,53 @@ function panesFromSearch(search: WorkspaceSearch): readonly AddressedPane[] {
  * one is ignored the same way.
  * @param search The search.
  * @param paneId The pane.
- * @param boardKey The board it names for the pane.
  * @returns The pane.
  */
-function paneFromSearch(search: WorkspaceSearch, paneId: string, boardKey: string): AddressedPane {
+function paneFromSearch(search: WorkspaceSearch, paneId: string): AddressedPane {
+	const model = modelFromSearch(search, paneId);
 	return Object.freeze({
 		paneId,
-		boardKey,
+		model,
+		boardKey: model === undefined ? (search[paneParam(paneId)] ?? null) : null,
 		repository: search[repoParam(paneId)] ?? null,
 		view: search[viewParam(paneId)] ?? null,
 	});
+}
+
+/**
+ * Read the canonical identity without replacing a missing checkpoint or scope.
+ * @param search The requested workspace.
+ * @param paneId The addressed pane.
+ * @returns Exact canonical intent, or no canonical reading.
+ */
+function modelFromSearch(search: WorkspaceSearch, paneId: string): ModelAddress | undefined {
+	const id = search[`model${paneId}`];
+	if (id === undefined) return undefined;
+	return {
+		id,
+		scope: search[`scope${paneId}`] ?? null,
+		checkpoint: search[`checkpoint${paneId}`] ?? null,
+		state: search[`state${paneId}`],
+		preview: search[`preview${paneId}`],
+		bookmark: search[`bookmark${paneId}`],
+		legacyAddress: search[`legacyAddress${paneId}`],
+		against: search[`against${paneId}`],
+		subject: search[`subject${paneId}`],
+		grammar: search[`grammar${paneId}`],
+		flow: search[`flow${paneId}`],
+		focus: searchList(search[`focus${paneId}`]),
+		hideKinds: searchList(search[`hideKinds${paneId}`]),
+		hideGroups: searchList(search[`hideGroups${paneId}`]),
+	};
+}
+
+/**
+ * Decode an optional reading list without inventing an empty subject.
+ * @param value Its validated search value.
+ * @returns The explicit list, or absence.
+ */
+function searchList(value: string | undefined): readonly string[] | undefined {
+	return value?.split(",");
 }
 
 /**
@@ -222,11 +265,51 @@ function writtenActivePane(address: WorkspaceAddress): string | null {
  * @returns Its parameters.
  */
 function paneSearch(pane: AddressedPane): Record<string, string> {
+	if (pane.model !== undefined) return modelSearch(pane);
 	if (pane.boardKey === null) return {};
 	return {
 		[paneParam(pane.paneId)]: pane.boardKey,
 		...(pane.repository === null ? {} : { [repoParam(pane.paneId)]: pane.repository }),
 		...(pane.view === null ? {} : { [viewParam(pane.paneId)]: pane.view }),
+	};
+}
+
+/**
+ * Preserve exact model identity and scope even when that reading is unavailable.
+ * @param pane The addressed canonical pane.
+ * @returns Its portable reading parameters.
+ */
+function modelSearch(pane: AddressedPane): Record<string, string> {
+	const model = pane.model;
+	if (model === undefined) return {};
+	return {
+		[`model${pane.paneId}`]: model.id,
+		...(pane.repository === null ? {} : { [repoParam(pane.paneId)]: pane.repository }),
+		...(model.scope === null ? {} : { [`scope${pane.paneId}`]: model.scope }),
+		...(model.checkpoint === null ? {} : { [`checkpoint${pane.paneId}`]: model.checkpoint }),
+		...Object.fromEntries(
+			(
+				[
+					"state",
+					"preview",
+					"bookmark",
+					"legacyAddress",
+					"against",
+					"subject",
+					"grammar",
+					"flow",
+				] as const
+			).flatMap((field) => {
+				const value = model[field];
+				return value === undefined ? [] : [[`${field}${pane.paneId}`, value]];
+			}),
+		),
+		...Object.fromEntries(
+			(["focus", "hideKinds", "hideGroups"] as const).flatMap((field) => {
+				const value = model[field];
+				return value === undefined ? [] : [[`${field}${pane.paneId}`, value.join(",")]];
+			}),
+		),
 	};
 }
 

@@ -4,25 +4,23 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-import { currentVariant } from "@archboard/board/document";
-import type { SemanticEdgeInput, SemanticNodeInput } from "@archboard/board/commands";
+import type { ArchitectureModuleEdit } from "@archboard/board/model";
 
 import {
 	inOrder,
-	readBoard,
 	run,
 	scratch,
 	type TakeServer,
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./kit.ts";
-import type { BoardCreateInputSchema } from "@archboard/board/commands";
-import type { z } from "zod";
-import type { VariantEditInputSchema } from "@archboard/board/commands";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
+import { editModel, readModel } from "./model-authoring.ts";
 
-type VariantEditInput = z.infer<typeof VariantEditInputSchema>;
-type BoardCreateInput = z.infer<typeof BoardCreateInputSchema>;
+type Change = Extract<ArchitectureModuleEdit, { changes: unknown }>["changes"][number];
+type ModuleInput = Extract<Change, { type: "add-module" }>["module"];
+type RelationshipInput = Extract<Change, { type: "add-relationship" }>;
 
-const BOARD = "Checkout and orders";
+const MODEL = "Checkout and orders";
 const REPO = "example.invalid/archboard/readme-checkout";
 const PROPOSALS = { narrow: "One entry point", wide: "Entry per job" } as const;
 const BASE = "main";
@@ -138,6 +136,9 @@ async function prepareSource(root: string): Promise<void> {
 		);
 	};
 	await git(["init", "-q", "-b", BASE]);
+	await git(["config", "user.name", GIT_ENV.GIT_AUTHOR_NAME]);
+	await git(["config", "user.email", GIT_ENV.GIT_AUTHOR_EMAIL]);
+	await git(["config", "commit.gpgSign", "false"]);
 	await git(["remote", "add", "origin", `https://${REPO}.git`]);
 	await git(["add", "--all"]);
 	await git(["commit", "-q", "-m", "Create the synthetic checkout example"]);
@@ -165,188 +166,169 @@ async function prepareSource(root: string): Promise<void> {
 }
 
 /**
- * Prepare the shared example for the three README evidence demonstrations.
- * @param server A take server over an isolated copy of examples/web-shop and isolated state.
- * @param name The scene's single directory name under scratch/takes.
- * @returns Board names, CLI-minted node ids, and the source range used by the history scene.
- * @throws {Error} When the name could leave the take directory or the CLI omitted a part.
+ * Prepare a source repository and empty vault before its isolated server starts.
+ * @param name The take directory under scratch/takes.
+ * @returns The synthetic repository path.
  */
-async function prepareEvidenceFixture(server: TakeServer, name: string) {
+async function prepareEvidenceSource(name: string): Promise<string> {
 	if (!/^[a-z0-9-]+$/u.test(name))
 		throw new Error("An evidence take needs a simple directory name");
-	const home = scratch("takes", name);
-	const sourceRoot = join(home, "source");
-	await prepareSource(sourceRoot);
-	await server.cli(["repo", "add", sourceRoot]);
+	const root = scratch("takes", name, "source");
+	await prepareSource(root);
+	mkdirSync(join(root, ".archboard", "vault"), { recursive: true });
+	return root;
+}
+
+/**
+ * Author the synthetic architecture through canonical CLI operations.
+ * @param server The server over this take's source repository.
+ * @param name The take directory under scratch/takes.
+ * @returns Saved model and module identities, proposals, and the source range.
+ */
+async function prepareEvidenceFixture(server: TakeServer, name: string) {
+	const sourceRoot = scratch("takes", name, "source");
+	await server.cli([
+		"model",
+		"init",
+		"--name",
+		MODEL,
+		"--operation-id",
+		"initialize-evidence",
+		"--writer",
+		"readme",
+		"--doing",
+		"Initialize the synthetic architecture",
+	]);
 	/**
-	 * One sample part, bound to the file that implements it.
-	 * @param partName The part's display name.
-	 * @param path Its source file or directory.
-	 * @param responsibility What it does.
-	 * @param parent The module that contains it, when any.
-	 * @returns CLI input that carries no invented subject id.
+	 * Bind one sample module to its real source file.
+	 * @param partName The module name.
+	 * @param path The relative source path.
+	 * @param responsibility The authored purpose.
+	 * @param parent The containing module name.
+	 * @returns Input whose identity the runtime mints.
 	 */
 	const part = (
 		partName: string,
 		path: string,
 		responsibility: string,
 		parent?: string,
-	): SemanticNodeInput => ({
+	): ModuleInput => ({
 		name: partName,
+		order: 0,
 		kind: parent === undefined ? "module" : "function",
 		responsibility,
 		binding: { repo: REPO, path },
 		...(parent === undefined ? {} : { parent }),
 	});
 	/**
-	 * A drawn or proposed call, with its source anchor.
-	 * @param from Its calling part.
-	 * @param to Its called part.
-	 * @param path The source file containing the call.
+	 * Author a call with its real source anchor.
+	 * @param source The caller.
+	 * @param to The called module.
+	 * @param path The file that contains the call.
 	 * @param symbol The called function.
-	 * @returns The relationship input.
+	 * @returns The relationship creation request.
 	 */
-	const call = (from: string, to: string, path: string, symbol: string): SemanticEdgeInput => ({
-		from,
-		to,
-		kind: "call",
-		label: `${symbol}()`,
-		anchor: { repo: REPO, path, symbol },
+	const call = (source: string, to: string, path: string, symbol: string): RelationshipInput => ({
+		type: "add-relationship",
+		source,
+		relationship: {
+			order: 0,
+			to,
+			kind: "call",
+			label: `${symbol}()`,
+			emphasis: "normal",
+			anchor: { repo: REPO, path, symbol },
+		},
 	});
-	const input: BoardCreateInput = {
-		name: BOARD,
-		level: "module",
-		summary: "Synthetic sample: checkout callers, the Orders interface, and its hidden work.",
-		nodes: [
-			part(
-				"Checkout route",
-				"src/checkout/route.ts",
-				"Accepts a checkout request and places its order",
-			),
-			part("Replay job", "src/replay/job.ts", "Replays an accepted checkout request"),
-			part("Orders", "src/orders", "Owns order validation and storage behind its entry point"),
-			part(
-				"Place order",
-				"src/orders/place-order.ts",
-				"Validates the total and saves the order",
-				"Orders",
-			),
-			part("Validate order", COUPLED[0], "Checks that the order total is positive", "Orders"),
-			part("Save order", COUPLED[1], "Stores an order with the accepted total", "Orders"),
-		],
-		edges: [
+	const modules = [
+		part(
+			"Checkout route",
+			"src/checkout/route.ts",
+			"Accepts a checkout request and places its order",
+		),
+		part("Replay job", "src/replay/job.ts", "Replays an accepted checkout request"),
+		part("Orders", "src/orders", "Owns order validation and storage behind its entry point"),
+		part(
+			"Place order",
+			"src/orders/place-order.ts",
+			"Validates the total and saves the order",
+			"Orders",
+		),
+		part("Validate order", COUPLED[0], "Checks that the order total is positive", "Orders"),
+		part("Save order", COUPLED[1], "Stores an order with the accepted total", "Orders"),
+	];
+	const initial = await editModel(
+		server,
+		name,
+		null,
+		[
+			...modules.map((module, order): Change => ({
+				type: "add-module",
+				module: { ...module, order },
+			})),
 			call("Checkout route", "Place order", "src/checkout/route.ts", "placeOrder"),
 			call("Replay job", "Place order", "src/replay/job.ts", "placeOrder"),
 			call("Place order", "Validate order", "src/orders/place-order.ts", "validateOrder"),
-			// Deliberately omit placeOrder -> saveOrder: the code check must discover it.
+			// The code check must discover the deliberately omitted placeOrder -> saveOrder call.
 		],
-		flows: [],
-		views: [],
-		walkthroughs: [],
-	};
-	const newInput = join(home, "evidence-new.json");
-	writeFileSync(newInput, JSON.stringify(input));
-	await server.cli([
-		"semantic",
-		"new",
-		BOARD,
-		"--input",
-		newInput,
-		"--doing",
-		"drawing the synthetic checkout example",
-	]);
-	await server.cli([
-		"claim",
-		"--board",
-		BOARD,
-		"--reason",
-		"Preparing the README's synthetic evidence examples",
-	]);
-	try {
-		await inOrder(Object.values(PROPOSALS), async (proposal) => {
-			const board = await readBoard(server, BOARD);
-			await server.cli([
-				"semantic",
-				"branch",
-				BOARD,
-				"--as",
-				proposal,
-				"--expect-version",
-				String(board.version),
-				"--doing",
-				`drafting ${proposal}`,
-			]);
-			const after = await readBoard(server, BOARD);
-			const edit: Pick<VariantEditInput, "nodes" | "edges"> = {
-				nodes:
-					proposal === PROPOSALS.narrow
-						? [
-								part(
-									"Replay job",
-									"src/replay/job.ts",
-									"Replays accepted orders through the single Orders entry point",
-								),
-							]
-						: [],
-				edges: [
-					call("Place order", "Save order", "src/orders/place-order.ts", "saveOrder"),
-					...(proposal === PROPOSALS.wide
-						? [
-								{
-									from: "Checkout route",
-									to: "Validate order",
-									kind: "call",
-									label: "validateOrder()",
-									description: "Proposal: checkout directly calls the validation entry point.",
-								},
-								{
-									from: "Replay job",
-									to: "Save order",
-									kind: "call",
-									label: "saveOrder()",
-									description: "Proposal: replay directly calls the storage entry point.",
-								},
-							]
-						: []),
-				],
-			};
-			const editInput = join(
-				home,
-				`evidence-${proposal === PROPOSALS.narrow ? "narrow" : "wide"}.json`,
+		{ type: "create", name: "Implemented checkout" },
+	);
+	await editModel(server, name, initial.target.state, [], {
+		type: "adopt",
+		reason: "The synthetic source implements this architecture.",
+	});
+	await inOrder(Object.values(PROPOSALS), async (proposal) => {
+		const changes: Change[] = [
+			call("Place order", "Save order", "src/orders/place-order.ts", "saveOrder"),
+		];
+		if (proposal === PROPOSALS.narrow)
+			changes.push({
+				type: "edit-module",
+				subject: "Replay job",
+				set: { responsibility: "Replays accepted orders through the single Orders entry point" },
+			});
+		else
+			changes.push(
+				{
+					type: "add-relationship",
+					source: "Checkout route",
+					relationship: {
+						order: 0,
+						to: "Validate order",
+						kind: "call",
+						emphasis: "normal",
+						label: "validateOrder()",
+						description: "Proposal: checkout directly calls the validation entry point.",
+					},
+				},
+				{
+					type: "add-relationship",
+					source: "Replay job",
+					relationship: {
+						order: 0,
+						to: "Save order",
+						kind: "call",
+						emphasis: "normal",
+						label: "saveOrder()",
+						description: "Proposal: replay directly calls the storage entry point.",
+					},
+				},
 			);
-			writeFileSync(editInput, JSON.stringify(edit));
-			await server.cli([
-				"semantic",
-				"edit",
-				BOARD,
-				"--variant",
-				proposal,
-				"--expect-version",
-				String(after.version),
-				"--input",
-				editInput,
-				"--doing",
-				`showing the ${proposal} interface`,
-			]);
-		});
-	} finally {
-		await server.cli(["release", "--board", BOARD]);
-	}
-	const board = await readBoard(server, BOARD);
-	const current = currentVariant(board);
+		await editModel(server, name, null, changes, { type: "create", name: proposal });
+	});
+	const model = await readModel(server);
 	/**
-	 * Read the id the CLI minted for a known sample part.
-	 * @param partName The part's name.
-	 * @returns Its saved id.
-	 * @throws {Error} When the CLI did not save the part.
+	 * Resolve a module identity from the completed public reading.
+	 * @param partName The authored module name.
+	 * @returns Its runtime identity.
 	 */
 	const node = (partName: string): string => {
-		const found = current?.content.nodes.find((saved) => saved.name === partName);
+		const found = model.modules.find((saved) => saved.name === partName);
 		if (found === undefined) throw new Error(`The evidence fixture has no ${partName}`);
 		return found.id;
 	};
 	return {
-		board: BOARD,
+		model: model.manifest.id,
 		sourceRoot,
 		repo: REPO,
 		base: BASE,
@@ -362,4 +344,4 @@ async function prepareEvidenceFixture(server: TakeServer, name: string) {
 	} as const;
 }
 
-export { prepareEvidenceFixture };
+export { prepareEvidenceFixture, prepareEvidenceSource };

@@ -1,0 +1,22 @@
+{
+  "order": 26002,
+  "name": "Pane connections",
+  "kind": "module",
+  "responsibility": "Accepts each page's socket and pane, keeps which pane shows what in which tab, reports what the panes show, and moves a pane to the checkout a person chooses",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+  "parent": "vKEsyHFk/6E6hL0Zk#cuOguqkZ",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": []
+}

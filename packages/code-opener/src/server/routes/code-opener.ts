@@ -7,9 +7,8 @@ import {
 	type Response,
 } from "express";
 
-import { CodeBindingSchema, type CodeBinding } from "@archboard/code-binding/bindings";
+import { type CodeBinding } from "@archboard/code-binding/bindings";
 import {
-	CodeTargetOpenRequestSchema,
 	type CodeTargetOpenSuccess,
 	type CodeTargetFailureCode,
 	type CodeTargetOpenRequest,
@@ -29,7 +28,6 @@ import {
 	type OtherRef,
 } from "@archboard/code-binding/resolution";
 import { githubUrlForBinding } from "#server/projections/github-link.ts";
-import { readBoardVariant } from "@archboard/board/store-read";
 import { createBrowserOriginGuard } from "#server/middleware/browser-origin-guard.ts";
 import {
 	readOpenerSelection,
@@ -38,6 +36,8 @@ import {
 } from "#server/store/configuration.ts";
 import { launchOpener, resolveOpenerCommand, type LaunchResult } from "#server/lifecycle/launch.ts";
 import { resolveInVault } from "#server/projections/resolve-target.ts";
+import { parseActivationRequest } from "#server/projections/activation-request.ts";
+import { canonicalModelTarget } from "#server/projections/model-target.ts";
 import { symbolLine } from "@archboard/code-intel/code-facts";
 import {
 	planOpenerCommand,
@@ -59,10 +59,6 @@ interface RouteFailure {
 	error: string;
 }
 
-type ActivationRequest =
-	| { ok: true; request: CodeTargetOpenRequest }
-	| { ok: false; failure: RouteFailure };
-
 const BODY_PARSER_FAILURES: ReadonlySet<string> = new Set([
 	"charset.unsupported",
 	"encoding.unsupported",
@@ -80,6 +76,7 @@ const FAILURE_STATUSES: Readonly<Partial<Record<CodeTargetFailureCode, number>>>
 	CROSS_ORIGIN_REFUSED: 403,
 	BOARD_NOT_FOUND: 404,
 	ELEMENT_NOT_FOUND: 404,
+	MODEL_UNAVAILABLE: 404,
 	CHECKOUT_IDENTITY_CHANGED: 409,
 	CHECKOUT_ON_OTHER_REF: 409,
 	OPENER_SPAWN_FAILED: 500,
@@ -126,53 +123,18 @@ export interface CodeOpenerRouteDependencies {
  * proposal's binding is read off the proposal rather than off whatever is
  * current: a person following code from a draft lands in the code that draft
  * names (ADR 0023).
- * @param vault The vault root the board lives in.
- * @param boardKey The board the node is on, variant and all.
- * @param subjectId The node whose binding is wanted.
+ * @param _vault The vault root the board lives in.
+ * @param _boardKey The board the node is on, variant and all.
+ * @param _subjectId The node whose binding is wanted.
  * @returns The binding, or which of board, node or binding was missing.
  */
-function canonicalBinding(vault: string, boardKey: string, subjectId: string): BindingLookup {
-	const address = boardAddressOf(boardKey);
-	const opened = readBoardVariant(vault, address.board, address.variant);
-	if (!opened.ok) {
-		const variantMissing = opened.code === "VARIANT_MISSING" || opened.code === "VARIANT_UNCHOSEN";
-		return {
-			ok: false,
-			code: "BOARD_NOT_FOUND",
-			error: variantMissing ? `${opened.problem}.` : opened.problem,
-		};
-	}
-	const node = opened.variant.content.nodes.find((one) => one.id === subjectId);
-	if (node === undefined) {
-		return {
-			ok: false,
-			code: "ELEMENT_NOT_FOUND",
-			error: `${subjectId} is not a node on this board.`,
-		};
-	}
-	// The binding keeps its `symbol`: the opener opens the bound file at the line that
-	// defines it where code facts find one (ADR 0046).
-	const parsed = CodeBindingSchema.safeParse(node.binding);
-	return parsed.success
-		? { ok: true, binding: parsed.data }
-		: { ok: false, code: "BINDING_UNAVAILABLE", error: "This node is not bound to code." };
-}
-
-/**
- * What a pane board key names: the board, and which of its variants.
- *
- * Split at the first `@`, which is the one spelling a pane and an address use
- * (`apps/web/src/ui/rules/semantic-board-canvas/board/address.ts` holds the browser's half of it).
- * @param key The board key.
- * @returns The board name and the variant, when it names one.
- */
-function boardAddressOf(key: string): { board: string; variant: string | undefined } {
-	const mark = key.indexOf("@");
-	if (mark <= 0) {
-		return { board: key, variant: undefined };
-	}
-	const variant = key.slice(mark + 1);
-	return { board: key.slice(0, mark), variant: variant === "" ? undefined : variant };
+function canonicalBinding(_vault: string, _boardKey: string, _subjectId: string): BindingLookup {
+	return {
+		ok: false,
+		code: "BINDING_UNAVAILABLE",
+		error:
+			"Open code from a canonical model and stable module identity. Migrate legacy architecture explicitly first.",
+	};
 }
 
 const DEFAULT_DEPENDENCIES: Omit<CodeOpenerRouteDependencies, "bindingForElement"> = {
@@ -203,6 +165,30 @@ const DEFAULT_DEPENDENCIES: Omit<CodeOpenerRouteDependencies, "bindingForElement
 	 */
 	runMutation: async (_request, _name, work) => work(new AbortController().signal),
 };
+
+/**
+ * Select a binding through the reader that owns the addressed architecture.
+ * @param request The legacy board or canonical module address.
+ * @param vault The explicitly addressed vault.
+ * @param signal The owning request cancellation signal.
+ * @param dependencies The existing legacy binding and checkout adapters.
+ * @returns The effective binding and resolver target or an opening refusal.
+ */
+async function activationTarget(
+	request: CodeTargetOpenRequest,
+	vault: string,
+	signal: AbortSignal,
+	dependencies: CodeOpenerRouteDependencies,
+) {
+	if ("model" in request) return canonicalModelTarget(vault, request);
+	const found = dependencies.bindingForElement(request.board, request.element, vault);
+	if (!found.ok) return found;
+	return {
+		ok: true as const,
+		binding: found.binding,
+		target: await dependencies.resolveTarget(found.binding, signal, vault),
+	};
+}
 
 /**
  * Adapts an async handler so a rejection reaches Express's error pipeline instead of hanging.
@@ -398,30 +384,6 @@ export async function openInEditor(
 }
 
 /**
- * Reads an activation request, refusing query parameters and malformed bodies.
- * @param request The incoming activation request.
- * @returns The typed request, or the 400 failure to answer with.
- */
-function parseActivationRequest(request: Request): ActivationRequest {
-	if (request.url.includes("?")) {
-		return {
-			ok: false,
-			failure: { code: "REQUEST_INVALID", error: "Activation query parameters are not accepted." },
-		};
-	}
-	// The vault the call names is the server's own requirement and is read from the call
-	// before this route runs (ADR 0049); what is left is the board and the element.
-	const { vault: _named, ...link } = typeof request.body === "object" ? (request.body ?? {}) : {};
-	const parsed = CodeTargetOpenRequestSchema.safeParse(link);
-	return parsed.success
-		? { ok: true, request: parsed.data }
-		: {
-				ok: false,
-				failure: { code: "REQUEST_INVALID", error: "The activation request is invalid." },
-			};
-}
-
-/**
  * Builds the opener routes: settings read, save, reset and test, and code-target activation.
  * @param vault Names the vault root whose boards carry the bindings a request opens; asked
  * per request, because every call names its own vault (ADR 0049).
@@ -550,16 +512,9 @@ export function createCodeOpenerRouter(
 				const activation = parseActivationRequest(request);
 				if (!activation.ok) return sendFailure(response, activation.failure, 400);
 				const vaultRoot = vault(request);
-				const found = dependencies.bindingForElement(
-					activation.request.board,
-					activation.request.element,
-					vaultRoot,
-				);
+				const found = await activationTarget(activation.request, vaultRoot, signal, dependencies);
 				if (!found.ok) return sendFailure(response, found);
-				const opening = openable(
-					await dependencies.resolveTarget(found.binding, signal, vaultRoot),
-					found.binding,
-				);
+				const opening = openable(found.target, found.binding);
 				if (!opening.ok)
 					return sendFailure(response, opening.failure, opening.status, found.binding);
 				const { target } = opening;

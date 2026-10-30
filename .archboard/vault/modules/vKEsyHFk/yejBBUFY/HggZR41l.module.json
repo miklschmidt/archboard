@@ -1,0 +1,225 @@
+{
+  "order": 1005,
+  "name": "Application composition",
+  "kind": "module",
+  "responsibility": "Connects canonical pane and feature owners",
+  "description": "Mounts canonical readers and captured recordings. It never opens a live legacy board. Existing legacy addresses resolve through retained originals after migration. Unmigrated vaults expose explicit migration guidance. The shared pane session reports captured canonical readings to local agents.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/application"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.13 - Explain-the-captured-reading-through-local-agent-actions.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "render",
+      "label": "the desktop frame",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "Shell"
+      },
+      "id": "vKEsyHFk/yejBBUFY#4dl0EE8i",
+      "to": "vKEsyHFk/yejBBUFY#c4LPnwh5"
+    },
+    {
+      "order": 2000,
+      "kind": "call",
+      "label": "a session per pane, opened in a vault; show a board in one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "symbol": "usePaneSession"
+      },
+      "id": "vKEsyHFk/yejBBUFY#x9gy2EYu",
+      "to": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    },
+    {
+      "order": 11000,
+      "kind": "render",
+      "label": "dock, conversation, voice box, the presentation's voice key",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/AgentSurfaceSlots.tsx",
+        "symbol": "AgentDock"
+      },
+      "id": "vKEsyHFk/yejBBUFY#WchncnH1",
+      "to": "vKEsyHFk/yejBBUFY#0x47EMoO"
+    },
+    {
+      "order": 13000,
+      "kind": "call",
+      "label": "opening address; write what panes show and where",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-workspace-addressing.ts",
+        "symbol": "useWorkspaceAddress"
+      },
+      "id": "vKEsyHFk/yejBBUFY#vo87NlJg",
+      "to": "vKEsyHFk/yejBBUFY#HCghQa6I"
+    },
+    {
+      "order": 14000,
+      "kind": "call",
+      "label": "read canonical repository summaries",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "useModelCatalog"
+      },
+      "id": "vKEsyHFk/yejBBUFY#ep2NF6Z5",
+      "to": "vKEsyHFk/yejBBUFY#zWQG6LJZ"
+    },
+    {
+      "order": 21000,
+      "kind": "call",
+      "label": "controllers over the focused pane's",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/application/agent-actions.ts",
+        "symbol": "state"
+      },
+      "id": "vKEsyHFk/yejBBUFY#kZtsu0nq",
+      "to": "vKEsyHFk/yejBBUFY#941UBxya"
+    },
+    {
+      "order": 22000,
+      "kind": "call",
+      "label": "send, Talk, narrate",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-workbench.ts",
+        "symbol": "createAgentSetup"
+      },
+      "id": "vKEsyHFk/yejBBUFY#md5cpNZV",
+      "to": "vKEsyHFk/yejBBUFY#zs2QxCu7"
+    },
+    {
+      "order": 25000,
+      "kind": "call",
+      "label": "a session for voice's pane; mute, stop",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/application/voice-store.ts",
+        "symbol": "createVoiceSession"
+      },
+      "id": "vKEsyHFk/yejBBUFY#qKwYD1B2",
+      "to": "vKEsyHFk/yejBBUFY#0SRnYXnC"
+    },
+    {
+      "order": 27000,
+      "kind": "render",
+      "label": "over voice's pane, or the presented one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/PaneSubtitles.tsx",
+        "symbol": "VoiceSubtitles"
+      },
+      "id": "vKEsyHFk/yejBBUFY#vm1xFAYO",
+      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc"
+    },
+    {
+      "order": 28000,
+      "kind": "call",
+      "label": "the recorder, when the address asks",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-page-recording.ts",
+        "symbol": "openWalkthroughRecorder"
+      },
+      "id": "vKEsyHFk/yejBBUFY#4zVUlTbS",
+      "to": "vKEsyHFk/yejBBUFY#fscW90Xt"
+    },
+    {
+      "order": 43000,
+      "kind": "render",
+      "label": "the stage the one orb is flown on",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "OrbStageProvider"
+      },
+      "id": "vKEsyHFk/yejBBUFY#ZISV4NoQ",
+      "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
+    },
+    {
+      "order": 52000,
+      "kind": "call",
+      "label": "the vault a pane opens in, which the server serves",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-pane-views.ts",
+        "symbol": "servedVault"
+      },
+      "id": "vKEsyHFk/yejBBUFY#9vLmTtXn",
+      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
+    },
+    {
+      "order": 59000,
+      "kind": "call",
+      "label": "a pane focused, a board opened, a fix asked for",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "conversationActivation"
+      },
+      "id": "vKEsyHFk/yejBBUFY#XjRK4GvJ",
+      "to": "vKEsyHFk/yejBBUFY#cLeaiTWy"
+    },
+    {
+      "order": 68000,
+      "kind": "call",
+      "label": "one pane's controllers, over the focused pane's transport",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/application/workbench-owners.ts",
+        "symbol": "createConversationControllers"
+      },
+      "id": "vKEsyHFk/yejBBUFY#NVu6WtHx",
+      "to": "vKEsyHFk/yejBBUFY#hO56iL2W"
+    },
+    {
+      "order": 71000,
+      "kind": "render",
+      "label": "the opener settings dialog, when the person opens it",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "OpenerSettings"
+      },
+      "id": "vKEsyHFk/yejBBUFY#wEaLH20o",
+      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+    }
+  ]
+}

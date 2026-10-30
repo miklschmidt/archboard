@@ -1,0 +1,63 @@
+{
+  "order": 25000,
+  "name": "Repository listing",
+  "kind": "module",
+  "responsibility": "Turns the checkout registry into the repositories the navigator lists: each identity's chosen checkout, its vault and its state, and the names of the vaults",
+  "description": "An identity is listed when any known checkout has a vault in the .archboard/vault layout; its state is ready, no-vault, gone or unchosen. The registry is the only source: no environment variable names a vault (TASK-472.09). A vault whose link leads out of the layout is no vault here, because every call to it is refused: its checkout reads no-vault, and an untracked one is not listed. The vault a page opens in is that of the first ready repository by name, else none. repositoryOfVault is how a show names the repository a pane moved into. A vault that no registry entry holds has no repository name, and its checkout is the directory that holds it.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workspace/src/server/projections/repository-listing.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/HBlhIeSD#KLt72lWa",
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 62000,
+      "kind": "call",
+      "label": "every checkout and untracked vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/server/projections/repository-listing.ts",
+        "symbol": "listRegistry"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#SvY26YAN",
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "order": 70041,
+      "kind": "call",
+      "label": "recognize the canonical vault layout",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/server/projections/repository-listing.ts",
+        "symbol": "isVaultLayout"
+      },
+      "id": "vKEsyHFk#SyLH2N4H",
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    }
+  ]
+}

@@ -1,10 +1,11 @@
+import { agentActivity } from "#server/wiring/owners/server-owners.ts";
 import type { IncomingMessage } from "http";
 import path from "path";
 import { WebSocket, WebSocketServer } from "ws";
 import { checkBrowserCsrf } from "@archboard/code-opener/browser-origin";
 import type { RawData } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
-import type { WebSocketMessage } from "@archboard/server-lifecycle/panes";
+import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
 import { parseBoardKey } from "@archboard/board/address";
 import {
 	createServerCodexBrowserSocketSend,
@@ -13,10 +14,7 @@ import {
 	type TabSessionId,
 } from "@archboard/codex-realtime-voice/server";
 import { codexWiring, forgetTabSession, noteTabSession } from "@archboard/workbench/server";
-import {
-	agentActivity,
-	tellPaneAboutLock,
-} from "#server/projections/board-announcements/board-announcements.ts";
+
 import { server } from "#server/wiring/http/server-app.ts";
 import {
 	acceptedSockets,
@@ -31,7 +29,6 @@ import {
 	paneVaults,
 	panes,
 	socketVaults,
-	syncLockWatch,
 } from "@archboard/workbench/panes";
 import { isRecord, namedVault, VAULT_PARAMETER, type NamedVault } from "@archboard/workbench/host";
 import {
@@ -67,7 +64,6 @@ function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void
 	const closingCodexInstance = codexSocketInstances.get(ws);
 	codexSocketInstances.delete(ws);
 	if (closingId === undefined) {
-		syncLockWatch();
 		logger.info("WebSocket connection closed");
 		return;
 	}
@@ -80,12 +76,10 @@ function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void
 			.catch((error) => logger.error("Codex browser cleanup failed:", error));
 	}
 	if (currentSocketsByClient.get(closingId) !== ws) {
-		syncLockWatch();
 		logger.info(`Replaced WebSocket connection closed (client ${closingId})`);
 		return;
 	}
 	retirePaneOwner(closingId);
-	syncLockWatch();
 	logger.info("WebSocket connection closed");
 }
 
@@ -286,23 +280,6 @@ function listenForCodexRequests(ws: WebSocket, socket: RegisteredSocket): void {
  * @param clientId The pane's client id, or null for an anonymous socket.
  * @param startingKey The board the pane starts on, or null when it starts on none.
  */
-function announceToNewPane(
-	ws: WebSocket,
-	clientId: string | null,
-	startingKey: string | null,
-): void {
-	// Where its lock stands. A broadcast only reaches panes that were already
-	// connected, so a tab that has just arrived — or come back from a dropped
-	// socket — is told outright rather than left assuming the board is free.
-	if (clientId !== null && startingKey !== null) {
-		tellPaneAboutLock(clientId, startingKey);
-	}
-	// And which boards an agent has right now, in every vault (ADR 0022): the
-	// same reasoning, for the navigator rather than the pane.
-	for (const snapshot of agentActivity.snapshots()) {
-		ws.send(JSON.stringify(snapshot));
-	}
-}
 
 /** What one accepted socket is registered as, before it is presented anything. */
 interface RegisteredSocket {
@@ -397,19 +374,36 @@ async function acceptWebSocketConnection(
 	// board, which no longer exists as a single thing. A pane that has been here
 	// before (a dropped socket, not a new tab) resumes what it was holding,
 	// because a reconnect must not undo a user's scene arrangement.
-	const startingKey = socket.clientId === null ? null : boardForNewPane(socket.clientId, vault);
+	const startingKey = startingBoard(req, socket.clientId, vault);
 	await sendStartingBoard(ws, startingKey, vault);
 	if (ws.readyState !== WebSocket.OPEN || !admitSocket(ws, socket, startingKey)) {
 		return;
 	}
+	agentActivity.follow(vault);
+	for (const snapshot of agentActivity.snapshots()) ws.send(JSON.stringify(snapshot));
 	// There is a screen again, so the lock files of what is on it are worth
 	// reading (ADR 0016).
-	syncLockWatch();
 	logger.info(
 		`New WebSocket connection established${socket.clientId === null ? "" : ` (client ${socket.clientId})`}`,
 	);
-	announceToNewPane(ws, socket.clientId, startingKey);
 	listenForCodexRequests(ws, socket);
+}
+
+/**
+ * Canonical panes keep their own reading instead of inheriting a legacy board.
+ * @param req The socket address and explicit reading mode.
+ * @param clientId The admitted pane identity.
+ * @param vault The pane's source vault.
+ * @returns The legacy starting key, or no legacy reading.
+ */
+function startingBoard(
+	req: IncomingMessage,
+	clientId: string | null,
+	vault: string,
+): string | null {
+	const canonical =
+		new URL(req.url ?? "/", "http://localhost").searchParams.get("reading") === "canonical";
+	return clientId === null || canonical ? null : boardForNewPane(clientId, vault);
 }
 
 /**

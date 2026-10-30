@@ -1,5 +1,5 @@
 {
-	"board": 188,
+	"board": 184,
 	"code-binding": 18,
 	"code-intel": 16,
 	"code-opener": 13,
@@ -7,13 +7,13 @@
 	"codex-realtime-voice": 99,
 	"diagnostics": 10,
 	"process": 14,
-	"renderer": 61,
+	"renderer": 60,
 	"server-lifecycle": 29,
 	"server-requests": 6,
 	"skills": 3,
 	"timing": 38,
 	"ui-kit": 37,
 	"walkthrough": 21,
-	"workbench": 138,
+	"workbench": 135,
 	"workspace": 42
 }

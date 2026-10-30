@@ -19,14 +19,15 @@ import {
 	runServerCli,
 } from "./support/agent-browser.ts";
 import {
+	agentSurface,
 	productionFixtureRecords,
 	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
-import { SEMANTIC_STAGE, seedSemanticBoard } from "./support/semantic-page.ts";
+import { MODEL_STAGE, seedCanonicalModel } from "./support/canonical-page.ts";
 import {
 	AGENT_DOCK,
 	AGENT_PANEL,
-	BOARD_NAME_EXPRESSION,
+	MODEL_NAME_EXPRESSION,
 	COMPOSER,
 	PANE_SECTIONS,
 	dockFocusOrder,
@@ -52,64 +53,17 @@ interface FixtureRecord {
 
 type Browser = Awaited<ReturnType<typeof createAgentBrowser>>;
 
-/** What the agent dock and the conversation show, read through their hooks. */
-interface AgentSurface {
-	/** How the dock lights the agent's state: quiet, working, attention or failed. */
-	readonly tone: string | null;
-	readonly panelOpen: boolean;
-	readonly held: { readonly state: string | null; readonly text: string }[];
-	readonly prompts: string[];
-	/** Links and buttons the dock offers, by href or accessible name. */
-	readonly dockLinks: (string | null)[];
-	readonly dockButtons: string[];
-	readonly cards: {
-		readonly busy: boolean;
-		readonly details: string;
-		readonly decisions: string[];
-		readonly top: number;
-	}[];
-	/** The bottom edge of the conversation's last prompt, for the cards' place. */
-	readonly promptBottom: number | null;
-}
-
-function agentSurface(browser: Browser): Promise<AgentSurface> {
-	return browser.eval<AgentSurface>(`(() => {
-		const panel = document.querySelector('${AGENT_PANEL}');
-		const dock = document.querySelector('${AGENT_DOCK}');
-		const named = node => (node.getAttribute('aria-label') ?? node.textContent ?? '').trim();
-		const prompts = [...(panel?.querySelectorAll('[data-slot="prompt"]') ?? [])];
-		return {
-			tone: dock?.getAttribute('data-agent-tone') ?? null,
-			panelOpen: panel !== null,
-			held: [...(panel?.querySelectorAll('[data-slot="held-prompt"]') ?? [])].map(node => ({
-				state: node.getAttribute('data-state'),
-				text: node.textContent ?? '',
-			})),
-			prompts: prompts.map(node => node.textContent ?? ''),
-			dockLinks: [...(dock?.querySelectorAll('a') ?? [])].map(node => node.getAttribute('href')),
-			dockButtons: [...(dock?.querySelectorAll('button') ?? [])].map(named),
-			cards: [...(panel?.querySelectorAll('article[data-slot="approval"]') ?? [])].map(card => ({
-				busy: card.getAttribute('aria-busy') === 'true',
-				details: [...card.querySelectorAll('dd')].map(node => node.textContent).join('\\n'),
-				decisions: [...card.querySelectorAll('button')].map(named),
-				top: card.getBoundingClientRect().top,
-			})),
-			promptBottom: prompts.at(-1)?.getBoundingClientRect().bottom ?? null,
-		};
-	})()`);
-}
-
 /** The pane's canvas, remembered once drawn (the loading stage is replaced) so its identity can be checked at the end. */
 function paneCanvas(
 	browser: Browser,
 ): Promise<{ panes: number; board: string | null; drawn: boolean }> {
 	return browser.eval(`(() => {
-		const canvas = document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}');
-		const drawn = canvas?.getAttribute('data-state') === 'drawn';
+		const canvas = document.querySelector('${PANE_SECTIONS} ${MODEL_STAGE}');
+		const drawn = Boolean(canvas?.querySelector('[data-slot="model-diagram"] svg'));
 		if (canvas && drawn && !window.__codexTextWorkbenchCanvas) window.__codexTextWorkbenchCanvas = canvas;
 		return {
 			panes: document.querySelectorAll('${PANE_SECTIONS}').length,
-			board: ${BOARD_NAME_EXPRESSION},
+			board: ${MODEL_NAME_EXPRESSION},
 			drawn,
 		};
 	})()`);
@@ -160,10 +114,17 @@ test(
 		const api = createJsonRequester(server);
 		const records = () => productionFixtureRecords<FixtureRecord>(fixture);
 
-		await seedSemanticBoard(api, "workbench");
+		await seedCanonicalModel(server.vault, "workbench");
 		await browser.run(["open", server.base]);
+		// The fake provider page must not depend on external DNS or a failed network navigation.
+		await browser.run(["network", "route", LOGIN_URL, "--body", '{"fixture":"sign-in"}']);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		expect(await browser.eval<[number, number]>("[innerWidth, innerHeight]")).toEqual([1920, 1080]);
+		await pollUntil(
+			() => api<{ panes: { paneId: string }[] }>("/api/panes"),
+			(result) => result.body.panes.some((pane) => pane.paneId === "A"),
+			"the workbench pane registration",
+		);
 		runServerCli(server, ["browser", "show", "workbench", "--pane", "primary"]);
 		await pollUntil(
 			() => paneCanvas(browser),
@@ -322,9 +283,9 @@ test(
 		// The pane kept its canvas through the whole flow.
 		expect(
 			await browser.eval<boolean>(`(() => {
-				const canvas = document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}');
+				const canvas = document.querySelector('${PANE_SECTIONS} ${MODEL_STAGE}');
 				return canvas === window.__codexTextWorkbenchCanvas &&
-					canvas?.getAttribute('data-state') === 'drawn';
+					Boolean(canvas?.querySelector('[data-slot="model-diagram"] svg'));
 			})()`),
 		).toBe(true);
 
@@ -390,11 +351,16 @@ test(
 		});
 		resources.defer(() => server.dispose());
 		registerServerBase(server.base);
-		await seedSemanticBoard(createJsonRequester(server), "storefront");
-		await seedSemanticBoard(createJsonRequester({ ...server, vault: ordersVault }), "ledger");
+		await seedCanonicalModel(shopVault, "storefront");
+		await seedCanonicalModel(ordersVault, "ledger");
 		const browser = resources.use(await createAgentBrowser());
 		await browser.run(["open", server.base]);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
+		await pollUntil(
+			() => createJsonRequester(server)<{ panes: { paneId: string }[] }>("/api/panes"),
+			(result) => result.body.panes.some((pane) => pane.paneId === "A"),
+			"the first pane registration",
+		);
 		runServerCli(server, ["browser", "show", "storefront", "--pane", "primary"]);
 		expect(
 			await browser.eval<boolean>(
@@ -405,6 +371,11 @@ test(
 			() => browser.eval<number>(`document.querySelectorAll('${PANE_SECTIONS}').length`),
 			(count) => count === 2,
 			"the second pane to open",
+		);
+		await pollUntil(
+			() => createJsonRequester(server)<{ panes: { paneId: string }[] }>("/api/panes"),
+			(result) => result.body.panes.some((pane) => pane.paneId === "B"),
+			"the second pane registration before addressing it",
 		);
 		runServerCli(server, [
 			"-C",
@@ -427,8 +398,8 @@ test(
 
 		// Opening the second pane focused it without activating it. Focusing the shop pane and then
 		// the orders pane shows the orders conversation, and the list offers both.
-		await browser.run(["click", `${PANE_SECTIONS}:first-of-type ${SEMANTIC_STAGE}`]);
-		await browser.run(["click", `${PANE_SECTIONS}:last-of-type ${SEMANTIC_STAGE}`]);
+		await browser.run(["click", `${PANE_SECTIONS}:first-of-type ${MODEL_STAGE}`]);
+		await browser.run(["click", `${PANE_SECTIONS}:last-of-type ${MODEL_STAGE}`]);
 		await pollUntil(
 			() => conversationList(browser),
 			(list) =>
@@ -443,7 +414,7 @@ test(
 		// An agent's show moves the focused pane into the shop, and the dock stays where the person put it.
 		runServerCli(server, ["browser", "show", "storefront", "--pane", "focused"]);
 		await pollUntil(
-			() => browser.eval<string | null>(BOARD_NAME_EXPRESSION),
+			() => browser.eval<string | null>(MODEL_NAME_EXPRESSION),
 			(name) => name === "storefront",
 			"the agent's show to reach the focused pane",
 		);
@@ -468,6 +439,46 @@ test(
 			"the pick to show the shop conversation",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
+		// Opening a repository is the person's act. Its pane, capture and conversation move together.
+		await browser.run(["click", '[data-slot="repository-model-open"][title="Open ledger"]']);
+		await pollUntil(
+			() => conversationList(browser),
+			(list) => list.some(({ checkout, shown }) => checkout === orders && shown),
+			"the human repository open to activate its conversation",
+			{ timeoutMs: 10_000 },
+		);
+		const placed = await pollUntil(
+			() =>
+				createJsonRequester(server)<{
+					panes: { paneId: string; vault: string; architecture?: { vault: string } }[];
+				}>("/api/panes"),
+			(result) =>
+				result.body.panes.some(
+					(pane) => pane.paneId === "B" && pane.architecture?.vault === ordersVault,
+				),
+			"the foreign model capture in the addressed pane",
+			{ timeoutMs: 10_000 },
+		);
+		expect(placed.body.panes.find((pane) => pane.paneId === "B")?.vault).toBe(ordersVault);
+		expect(placed.body.panes.find((pane) => pane.paneId === "A")?.vault).toBe(shopVault);
+		await browser.run(["reload"]);
+		const restored = await pollUntil(
+			() =>
+				createJsonRequester(server)<{
+					panes: { paneId: string; vault: string; architecture?: { vault: string } }[];
+				}>("/api/panes"),
+			(result) =>
+				result.body.panes.some(
+					(pane) => pane.paneId === "A" && pane.architecture?.vault === shopVault,
+				) &&
+				result.body.panes.some(
+					(pane) => pane.paneId === "B" && pane.architecture?.vault === ordersVault,
+				),
+			"both restored pane connections to match their repository readings",
+			{ timeoutMs: 10_000 },
+		);
+		expect(restored.body.panes.find((pane) => pane.paneId === "A")?.vault).toBe(shopVault);
+		expect(restored.body.panes.find((pane) => pane.paneId === "B")?.vault).toBe(ordersVault);
 		expect(await browser.run(["errors"])).toBe("");
 	},
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,

@@ -1,0 +1,59 @@
+{
+  "order": 5000,
+  "name": "Model catalogue",
+  "kind": "module",
+  "responsibility": "Lists repositories and their canonical architecture authority",
+  "description": "Reads repository identities and canonical model authority through the shared query cache. The navigator opens each model in the active pane. Legacy authority exposes migration guidance instead of fetching live board listings or levels.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/hooks/architecture-model/use-model-catalog.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+  "parent": "vKEsyHFk/yejBBUFY#wlbLOPSH",
+  "formerNames": [
+    "Board catalog"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.13 - Explain-the-captured-reading-through-local-agent-actions.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 5010,
+      "kind": "call",
+      "label": "read registered repositories",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/architecture-model/use-model-catalog.ts",
+        "symbol": "repositoriesQuery"
+      },
+      "id": "vKEsyHFk#i32p6taI",
+      "to": "vKEsyHFk#dneK7oM5"
+    },
+    {
+      "order": 5020,
+      "kind": "call",
+      "label": "read model authority",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/architecture-model/use-model-catalog.ts",
+        "symbol": "architectureModelQuery"
+      },
+      "id": "vKEsyHFk#7EsWuSSD",
+      "to": "vKEsyHFk/yejBBUFY#AIp6YN1P"
+    }
+  ]
+}

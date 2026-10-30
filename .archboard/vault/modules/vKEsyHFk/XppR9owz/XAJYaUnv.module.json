@@ -1,0 +1,53 @@
+{
+  "order": 22000,
+  "name": "Walkthrough recorder",
+  "kind": "module",
+  "responsibility": "Records a walkthrough's talk on the Archboard server's own page, then draws it frame by frame in a second private headless browser and encodes the file through ffmpeg",
+  "description": "It proves an ffmpeg first: the one ARCHBOARD_FFMPEG names, else one on PATH, else nixpkgs#ffmpeg-headless run through Nix, and refuses before any browser starts without one. The talk is kept before its picture is drawn, so a render that fails can be rendered again with replay. The existing recorder also accepts exact retained canonical playback and preserves that payload in saved talks.",
+  "groups": [
+    "walkthrough"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/walkthrough/src/runtime"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/XppR9owz#XAJYaUnv",
+  "parent": "vKEsyHFk/vKEsyHFk#5zIYNuw1",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 38000,
+      "kind": "http",
+      "label": "the recording and replay pages",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+        "symbol": "recordingPageUrl"
+      },
+      "id": "vKEsyHFk/XppR9owz#mLWF1WuB",
+      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    }
+  ]
+}

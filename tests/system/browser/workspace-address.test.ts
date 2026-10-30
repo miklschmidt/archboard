@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, realpathSync } from "node:fs";
+import { cpSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { packageBin } from "../cli/support/package-cli.ts";
@@ -8,7 +8,6 @@ import { createRepositoryFixture } from "../cli/support/repository-fixture.ts";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { holderOf, vaultIn } from "../support/test-vault.ts";
-import { ensureSemanticVaultConfiguration } from "../support/semantic-vault.ts";
 import {
 	browserTestRoots,
 	serverTestEnvironment,
@@ -18,9 +17,14 @@ import {
 	runServerCli,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { seedSemanticBoard } from "./support/semantic-page.ts";
+import {
+	seedCanonicalModel,
+	editCanonicalModel,
+	openModelSidebar,
+} from "./support/canonical-page.ts";
+import { initializeSource } from "./support/canonical-model.ts";
 import { serverPath, servedRepository, type PanesBody } from "./support/navigator-support.ts";
-import { PANE_SECTIONS, clickNavigatorRow, shellNotices } from "./support/shell-dom.ts";
+import { PANE_SECTIONS } from "./support/shell-dom.ts";
 
 /**
  * The search parameters the address bar is showing.
@@ -61,198 +65,140 @@ function panesOf(request: <T>(path: string) => Promise<{ body: T }>): () => Prom
 	return () => request<PanesBody>("/api/panes").then((reply) => reply.body);
 }
 
-test("a workspace opens from its address, and Back retraces the boards a person moved between", async () => {
+test("canonical workspace history preserves pane identity and isolates proposal choices", async () => {
 	await using resources = new AsyncDisposableStack();
-	const { ownerRoot } = browserTestRoots();
-	const vault = vaultIn(join(ownerRoot, "vault"));
-	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	const root = join(browserTestRoots().ownerRoot, "workspace-model");
+	const vault = vaultIn(root);
+	const model = await seedCanonicalModel(vault, "Payments", {
+		nodes: [
+			{ name: "Gateway", kind: "module" },
+			{ name: "Handler", kind: "module", parent: "Gateway" },
+			{ name: "Worker", kind: "module" },
+		],
+	});
+	const id = (name: string): string => model.modules.find((module) => module.name === name)!.id;
+	initializeSource(root);
+	const server = await startOwnedServer({
+		serverPath,
+		vault,
+		env: serverTestEnvironment({ GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" }),
+	});
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
-	const repo = await servedRepository(server.base);
 	const request = createJsonRequester(server);
-	const cli = (...args: string[]): string => runServerCli(server, args);
-
-	await Promise.all(
-		["payments", "billing", "ledger"].map((board) => seedSemanticBoard(request, board)),
+	const proposal = await editCanonicalModel(
+		request,
+		vault,
+		"workspace-proposal",
+		[{ type: "edit-module", subject: id("Gateway"), set: { name: "Queued gateway" } }],
+		{ proposal: { type: "create", name: "Queued ingest", summary: "Queue accepted work" } },
 	);
-
+	const repo = await servedRepository(server.base);
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${server.base}/?paneA=payments&paneB=billing&pane=B`]);
+	const search = new URLSearchParams({
+		modelA: model.manifest.id,
+		scopeA: id("Worker"),
+		modelB: model.manifest.id,
+		scopeB: id("Gateway"),
+		pane: "B",
+	});
+	await browser.run(["open", `${server.base}/?${search}`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
-	const panes = (): Promise<PanesBody> =>
-		request<PanesBody>("/api/panes").then((reply) => reply.body);
-
-	// A direct load restores the comparison: two panes, each on the board the
-	// address names, without the address being rewritten to something else.
+	const panes = panesOf(request);
 	const restored = await pollUntil(
 		panes,
 		(state) =>
 			state.paneCount === 2 &&
-			state.panes.some((pane) => pane.board === "payments") &&
-			state.panes.some((pane) => pane.board === "billing"),
-		"both panes to restore the boards the address named",
+			state.panes.some((pane) => pane.architecture?.reading.scope === id("Worker")) &&
+			state.panes.some((pane) => pane.architecture?.reading.scope === id("Gateway")),
+		"both addressed canonical panes",
 	);
-	// The address names each pane's repository once that pane reports it, which
-	// can come a moment after the server holds both boards.
-	const settled = `paneA=payments&repoA=${repo}&paneB=billing&repoB=${repo}&pane=B`;
-	await pollUntil(
+	const settled = await pollUntil(
 		() => addressSearch(browser),
-		(search) => search === settled,
-		"the address to name the repository of each restored pane",
+		(value) => {
+			const fields = new URLSearchParams(value);
+			return fields.get("repoA") === repo && fields.get("repoB") === repo;
+		},
+		"both addressed repositories",
 	);
-	const paneA = restored.panes.find((pane) => pane.board === "payments")!;
-	const paneB = restored.panes.find((pane) => pane.board === "billing")!;
-
-	// A person's open pushes a history entry, and the address says where they are.
+	const paneB = restored.panes.find((pane) => pane.paneId === "B")!;
+	await openModelSidebar(browser, "board", '[data-pane="B"]');
 	const before = await historyLength(browser);
-	await clickNavigatorRow(browser, "ledger");
+	await browser.run([
+		"click",
+		'[data-pane="B"] [data-slot="model-breadcrumbs"] [data-scope-id=""]',
+	]);
 	await pollUntil(
 		() => addressSearch(browser),
-		(search) => search === `paneA=payments&repoA=${repo}&paneB=ledger&repoB=${repo}&pane=B`,
-		"the address to record the board the person opened",
+		(value) => !new URLSearchParams(value).has("scopeB"),
+		"the root reading in browser history",
 	);
 	expect(await historyLength(browser)).toBe(before + 1);
 
-	// An agent moving a pane is not the person's navigation: it is recorded
-	// without a history entry of its own, so Back still retraces their moves.
-	cli("browser", "show", "payments", "--pane", `${paneB.clientId}`);
+	// An agent replaces the visible location without adding a user history entry.
+	runServerCli(server, [
+		"browser",
+		"show",
+		model.manifest.id,
+		"--pane",
+		paneB.clientId,
+		"--scope",
+		id("Worker"),
+	]);
 	await pollUntil(
 		() => addressSearch(browser),
-		(search) => search === `paneA=payments&repoA=${repo}&paneB=payments&repoB=${repo}&pane=B`,
-		"the address to follow the board an agent opened",
+		(value) => new URLSearchParams(value).get("scopeB") === id("Worker"),
+		"the agent-addressed scope",
 	);
 	expect(await historyLength(browser)).toBe(before + 1);
-
-	await goBack(browser, `paneA=payments&repoA=${repo}&paneB=billing&repoB=${repo}&pane=B`);
+	await goBack(browser, settled);
 	await pollUntil(
 		panes,
-		(state) => state.panes.find((pane) => pane.clientId === paneB.clientId)?.board === "billing",
-		"Back to put the pane on the board it came from",
+		(state) =>
+			state.panes.find((pane) => pane.clientId === paneB.clientId)?.architecture?.reading.scope ===
+			id("Gateway"),
+		"Back restoring the prior scope",
+	);
+	expect((await panes()).panes.map((pane) => pane.clientId).toSorted()).toEqual(
+		restored.panes.map((pane) => pane.clientId).toSorted(),
 	);
 
-	// The panes were never remounted: their identity to the server is the one
-	// they registered with, so the workbench and the picture rode through it.
-	const afterBack = await panes();
-	expect(afterBack.panes.map((pane) => pane.clientId).toSorted()).toEqual(
-		[paneA.clientId, paneB.clientId].toSorted(),
-	);
-
-	await server.assertRunning();
-}, 30_000);
-
-test("an address naming a board that is not there says so and settles on what is shown", async () => {
-	await using resources = new AsyncDisposableStack();
-	const { ownerRoot } = browserTestRoots();
-	const vault = vaultIn(join(ownerRoot, "missing-vault"));
-	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
-	resources.defer(() => server.dispose());
-	registerServerBase(server.base);
-	const repo = await servedRepository(server.base);
-	const request = createJsonRequester(server);
-	await seedSemanticBoard(request, "payments");
-
-	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${server.base}/?paneA=nowhere`]);
-	await browser.run(["set", "viewport", "1920", "1080"]);
+	// Choosing a state belongs to the pane whose control the reader uses.
+	await browser.run(["click", '[data-pane="A"] [data-slot="pane-header"] h2']);
+	await browser.run(["click", '[data-pane="B"] [data-slot="model-reading-selector"]']);
 	await pollUntil(
-		() => shellNotices(browser),
-		(notices) =>
-			notices.some(
-				(notice) =>
-					notice.title.includes("nowhere") && notice.description.includes("Board navigation"),
-			),
-		"the missing board to be named rather than quietly swapped",
+		() =>
+			browser.eval<boolean>(`(() => {
+			const item = document.querySelector('[data-state-id="${proposal.target.state}"]');
+			if (!item) return false;
+			const box = item.getBoundingClientRect();
+			return box.height > 0 && item.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2));
+		})()`),
+		Boolean,
+		"the selected pane proposal choice to become clickable",
 	);
-	// The address is corrected to the workspace that is actually on screen, so
-	// the two never disagree, and what it settled on is announced.
-	const shown = await pollUntil(
-		() => request<PanesBody>("/api/panes").then((reply) => reply.body),
-		(state) => state.paneCount === 1,
-		"the pane to register",
-	);
-	const board = shown.panes[0]?.board;
-	expect(board).toBeDefined();
-	expect(board).not.toBe("nowhere");
-	await pollUntil(
-		() => addressSearch(browser),
-		(search) => search === `paneA=${board!}&repoA=${repo}`,
-		"the address to settle on the workspace that is shown",
-	);
-	await server.assertRunning();
-}, 30_000);
-
-test("choosing a variant in the navigator moves the pane it was chosen for, and only that one", async () => {
-	await using resources = new AsyncDisposableStack();
-	const { ownerRoot } = browserTestRoots();
-	const vault = vaultIn(join(ownerRoot, "variant-vault"));
-	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
-	resources.defer(() => server.dispose());
-	registerServerBase(server.base);
-	const request = createJsonRequester(server);
-	await seedSemanticBoard(request, "payments");
-	const branched = await request<{ board: { variants: Array<{ id: string; name: string }> } }>(
-		"/api/semantic-boards/branch?expectVersion=1",
-		{
-			method: "POST",
-			doing: "proposing the queue",
-			body: { board: "payments", branch: { from: "current", name: "Queued ingest" } },
-		},
-	);
-	expect(branched.status).toBe(200);
-	const proposal = branched.body.board.variants.find((one) => one.name === "Queued ingest")!;
-	expect(proposal).toBeDefined();
-
-	const browser = resources.use(await createAgentBrowser());
-	// Both panes on the same board, and the LEFT one active: the person is about
-	// to move to the right one and choose a variant for it. A pane does not offer
-	// its own board's states; the navigator does, for the active pane.
-	await browser.run(["open", `${server.base}/?paneA=payments&paneB=payments&pane=A`]);
-	await browser.run(["set", "viewport", "1920", "1080"]);
-	await pollUntil(
-		panesOf(request),
-		(state) => state.paneCount === 2 && state.panes.every((pane) => pane.board === "payments"),
-		"both panes to settle on payments",
-	);
-
-	// The right-hand pane, then the proposal's row, pressed the way a person
-	// presses them: a pointer pressed in a pane gives it focus.
-	await browser.run(["click", `${PANE_SECTIONS}:last-of-type [data-slot="pane-board-name"]`]);
-	await pollUntil(
-		() => addressSearch(browser),
-		(search) => search.endsWith("pane=B"),
-		"the right-hand pane to become the active one",
-	);
+	await browser.run(["click", `[data-state-id="${proposal.target.state}"]`]);
 	const chosen = await pollUntil(
-		() => clickNavigatorRow(browser, `payments@${proposal.id}`),
-		(clicked) => clicked,
-		"the proposal's row in the navigator",
+		() => addressSearch(browser),
+		(value) => new URLSearchParams(value).get("stateB") === proposal.target.state,
+		"the right pane proposal",
 	);
-	expect(chosen).toBeTrue();
-
-	// The pane they chose it for moved, and the other did not.
-	const after = await pollUntil(
-		panesOf(request),
-		(state) => state.panes.some((pane) => pane.board === `payments@${proposal.id}`),
-		"the pane the variant was chosen in to show the proposal",
+	const fields = new URLSearchParams(chosen);
+	expect(fields.get("stateA")).toBeNull();
+	expect(fields.get("scopeA")).toBe(id("Worker"));
+	expect(fields.get("pane")).toBe("B");
+	await pollUntil(
+		panes,
+		(state) =>
+			state.panes.find((pane) => pane.paneId === "B")?.architecture?.selection?.state ===
+			proposal.target.state,
+		"the selected proposal in the pane report",
 	);
-	expect(after.panes.map((pane) => pane.board)).toEqual(["payments", `payments@${proposal.id}`]);
 	await server.assertRunning();
-}, 30_000);
+}, 45_000);
 
 /** The repository identity whose two checkouts the next owner chooses between. */
 const ORDERS = "github.com/acme/orders";
-
-/**
- * A checkout's vault, made and configured.
- * @param checkout The checkout.
- * @returns The vault's real path.
- */
-function checkoutVault(checkout: string): string {
-	const vault = join(checkout, ".archboard", "vault");
-	mkdirSync(vault, { recursive: true });
-	ensureSemanticVaultConfiguration(vault);
-	return realpathSync(vault);
-}
 
 /**
  * Whether one pane's picture says a word: which vault's board it drew.
@@ -267,7 +213,7 @@ function paneSays(browser: AgentBrowserSession, letter: string, word: string): P
 	);
 }
 
-test("two panes show boards of two repositories, and choosing another checkout in the navigator moves the pane that read the old one", async () => {
+test("choosing a checkout refreshes its canonical pane and preserves the other repository", async () => {
 	await using resources = new AsyncDisposableStack();
 	const fixture = createRepositoryFixture();
 	resources.defer(() => fixture.dispose());
@@ -295,25 +241,36 @@ test("two panes show boards of two repositories, and choosing another checkout i
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
 	const served = await servedRepository(server.base);
-	await seedSemanticBoard(createJsonRequester(server), "ledger");
-	// One board of one name in both checkouts, each saying which checkout it is in.
-	for (const [checkout, word] of [
-		[main, "Main checkout"],
-		[worktree, "Feature checkout"],
-	] as const) {
-		const request = createJsonRequester({ ...server, vault: checkoutVault(checkout) });
-		await seedSemanticBoard(request, "payments", {
-			nodes: [{ name: word, kind: "service", responsibility: "Says where it is" }],
-		});
-	}
+	const ledger = await seedCanonicalModel(fixture.vault, "Ledger");
+	const mainVault = vaultIn(main);
+	const payments = await seedCanonicalModel(mainVault, "Payments", {
+		nodes: [{ name: "Main checkout", kind: "service", responsibility: "Says where it is" }],
+	});
+	const featureVault = vaultIn(worktree);
+	cpSync(mainVault, featureVault, { recursive: true });
+	const modulePath = join(featureVault, "module-0.module.json");
+	const module = JSON.parse(readFileSync(modulePath, "utf8"));
+	module.name = "Feature checkout";
+	writeFileSync(modulePath, JSON.stringify(module));
 
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", `${server.base}/?paneA=ledger&paneB=payments&repoB=${ORDERS}&pane=A`]);
+	await browser.run([
+		"open",
+		`${server.base}/?modelA=${ledger.manifest.id}&modelB=${payments.manifest.id}&repoB=${ORDERS}&pane=A`,
+	]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	// Each pane reads its own repository, and the address names both.
 	await pollUntil(
 		() => addressSearch(browser),
-		(search) => search === `paneA=ledger&repoA=${served}&paneB=payments&repoB=${ORDERS}`,
+		(search) => {
+			const fields = new URLSearchParams(search);
+			return (
+				fields.get("repoA") === served &&
+				fields.get("repoB") === ORDERS &&
+				fields.get("modelA") === ledger.manifest.id &&
+				fields.get("modelB") === payments.manifest.id
+			);
+		},
 		"the address to name each pane's repository",
 	);
 	await pollUntil(
@@ -322,6 +279,7 @@ test("two panes show boards of two repositories, and choosing another checkout i
 		"the right-hand pane to draw the board of the chosen checkout",
 	);
 
+	const before = await addressSearch(browser);
 	// The repository's menu lists its checkouts; choosing the worktree moves
 	// the pane that read the main checkout, and it keeps its board.
 	await browser.run(["click", `button[aria-label="Checkouts of ${ORDERS}"]`]);
@@ -344,8 +302,6 @@ test("two panes show boards of two repositories, and choosing another checkout i
 		"the right-hand pane to read the chosen checkout",
 	);
 	expect(await paneSays(browser, "A", "Ingest")).toBe(true);
-	expect(await addressSearch(browser)).toBe(
-		`paneA=ledger&repoA=${served}&paneB=payments&repoB=${ORDERS}`,
-	);
+	expect(await addressSearch(browser)).toBe(before);
 	await server.assertRunning();
 }, 45_000);

@@ -1,3 +1,5 @@
+import { canonicalReadingProblems } from "#shared/protocol/canonical.ts";
+import { ArchitectureModelReadSchema } from "@archboard/board/model";
 // A talk: what the live pass of a recording heard and did, for the second pass
 // to render frame by frame (TASK-381).
 //
@@ -64,7 +66,14 @@ const TalkEventSchema = z.discriminatedUnion("kind", [
 		})
 		.strict(),
 	/** The pane drew the board at a version. */
-	z.object({ kind: z.literal("drawn"), at: SampleSchema, version: z.int().nonnegative() }).strict(),
+	z
+		.object({
+			kind: z.literal("drawn"),
+			at: SampleSchema,
+			version: z.int().nonnegative(),
+			revision: z.string().optional(),
+		})
+		.strict(),
 	/** The talk ended; nothing after this is rendered. */
 	z.object({ kind: z.literal("end"), at: SampleSchema.min(1) }).strict(),
 ]);
@@ -134,6 +143,7 @@ const TalkSchema = z
 		events: z.array(TalkEventSchema),
 		/** The board's document as the Archboard server served it. */
 		document: z.unknown(),
+		architecture: ArchitectureModelReadSchema.options[0].optional(),
 		/** The vault's checked policy the board was drawn under. */
 		policy: VaultCheckSchema,
 	})
@@ -180,6 +190,7 @@ function talkFrom(parts: TalkParts): ReturnType<typeof TalkSchema.safeParse> {
 		},
 		events: parts.log.events,
 		document: parts.document,
+		...(parts.architecture === undefined ? {} : { architecture: parts.architecture }),
 		policy: parts.policy,
 	});
 }
@@ -243,6 +254,14 @@ function endProblems(events: readonly TalkEvent[], samples: number): readonly st
  * @returns The problems.
  */
 function boardProblems(talk: z.infer<typeof TalkSchema>): readonly string[] {
+	return talk.architecture === undefined ? legacyBoardProblems(talk) : canonicalProblems(talk);
+}
+/**
+ * Read the legacy board and its captured versions.
+ * @param talk The saved talk.
+ * @returns Board failures.
+ */
+function legacyBoardProblems(talk: z.infer<typeof TalkSchema>): readonly string[] {
 	const parsed = parseSemanticBoard(talk.document);
 	if (!parsed.ok) return [`The talk's board cannot be read: ${parsed.problem}`];
 	const problems: string[] = [];
@@ -260,6 +279,45 @@ function boardProblems(talk: z.infer<typeof TalkSchema>): readonly string[] {
 		}
 	}
 	return problems;
+}
+
+/**
+ * Compare captured metadata with the canonical narrative.
+ * @param talk The saved talk.
+ * @returns Whether its labels describe the captured reading.
+ */
+function canonicalMetadataMatches(talk: z.infer<typeof TalkSchema>): boolean {
+	const model = talk.architecture!;
+	const playback = model.playback!;
+	return [
+		talk.board.name === model.manifest.name,
+		talk.board.variant === model.selectedState?.id,
+		talk.board.version === 0,
+		talk.board.walkthrough.id === playback.walkthrough.id,
+		talk.board.steps === playback.walkthrough.beats.length,
+	].every(Boolean);
+}
+/**
+ * Refuse a canonical talk that cannot replay its captured reading.
+ * @param talk The saved talk.
+ * @returns Contract failures.
+ */
+function canonicalProblems(talk: z.infer<typeof TalkSchema>): string[] {
+	const model = talk.architecture!;
+	const problems = canonicalReadingProblems(model);
+	if (problems.length > 0) return problems;
+	if (talk.document !== null)
+		return ["A canonical talk keeps architecture once and no legacy document."];
+	if (!canonicalMetadataMatches(talk))
+		return ["The talk metadata disagrees with its captured narrative."];
+	if (
+		talk.events.some(
+			(event) =>
+				event.kind === "drawn" && (event.version !== 0 || event.revision !== model.revision.digest),
+		)
+	)
+		return ["A canonical picture differs from the captured revision."];
+	return [];
 }
 
 /**

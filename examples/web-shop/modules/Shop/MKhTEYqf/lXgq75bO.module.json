@@ -1,0 +1,12 @@
+{
+  "order": 5000,
+  "name": "Email provider",
+  "kind": "external",
+  "responsibility": "Delivers the receipt to the shopper",
+  "groups": [
+    "fulfilment"
+  ],
+  "schemaVersion": 1,
+  "id": "Shop/MKhTEYqf#lXgq75bO",
+  "outgoing": []
+}

@@ -1,0 +1,26 @@
+{
+  "order": 18001,
+  "name": "Browser origin guard",
+  "kind": "module",
+  "responsibility": "Checks browser request origins at HTTP and WebSocket entry points",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/code-opener/src/server/middleware"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/Oi6SBIAM#RjaKX25k",
+  "parent": "vKEsyHFk/vKEsyHFk#7hdbqGFn",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": []
+}

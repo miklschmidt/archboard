@@ -4,6 +4,13 @@ status: accepted
 
 # Git history is read through bindings, on request, and never stored
 
+Canonical locality and footprint supersede live board selectors below. The existing local source-history algorithms and separate source-evidence policy remain.
+[ADR 0062](0062-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
+
+[ADR 0059](0059-checkpoints-retain-architecture-without-selecting-current.md) governs retained canonical architecture.
+This decision governs the separate source-history lens.
+
 TASK-369.01 tracks this decision, accepted on 2026-10-06 after an independent
 review. It serves TASK-369, its subtasks TASK-369.02
 to TASK-369.07, and Proposal 3 of `docs/design/design-checks.md`.

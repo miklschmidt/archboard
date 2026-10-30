@@ -130,9 +130,9 @@ function useGroupSelection(
 		},
 		[board, shown],
 	);
-	const choices = useMemo(() => groupChoices(variant, names), [variant, names]);
+	const choices = useMemo(() => groupChoices(variant?.content ?? null, names), [variant, names]);
 	const selected = useMemo(
-		() => (group === null || variant === null ? null : groupSelection(variant, group)),
+		() => (group === null || variant === null ? null : groupSelection(variant.content, group)),
 		[variant, group],
 	);
 	return useMemo(() => ({ names, choices, selected, choose }), [names, choices, selected, choose]);

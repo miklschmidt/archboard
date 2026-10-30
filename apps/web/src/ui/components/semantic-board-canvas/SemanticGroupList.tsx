@@ -23,7 +23,7 @@ interface SemanticGroupListProps {
 	/** Every group the variant on screen uses. */
 	readonly choices: readonly GroupChoice[];
 	/** The selected group's id, or null for none. */
-	readonly selected: string | null;
+	readonly selected: string | ReadonlySet<string> | null;
 	/**
 	 * The person selected a group, or let it go.
 	 * @param group The group's id, or null.
@@ -81,7 +81,11 @@ function SemanticGroupList(props: SemanticGroupListProps): JSX.Element | null {
 				<GroupChoiceRow
 					key={choice.id}
 					choice={choice}
-					selected={selected === choice.id}
+					selected={
+						typeof selected === "string"
+							? selected === choice.id
+							: (selected?.has(choice.id) ?? false)
+					}
 					onChoose={onChoose}
 				/>
 			))}

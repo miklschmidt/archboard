@@ -1,0 +1,68 @@
+{
+  "order": 13000,
+  "name": "Tell coordinator",
+  "kind": "module",
+  "responsibility": "Defines and answers the workhorse tool that sends news to the coordinator",
+  "description": "One tool owner publishes its reviewed manifest and answers the corresponding requests. It validates the message, reports unavailable listeners, and queues news for the live coordinator.",
+  "groups": [
+    "voice"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/tell-coordinator.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
+  "parent": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+  "formerNames": [
+    "Tell coordinator",
+    "Coordinator callback manifest"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 18000,
+      "kind": "call",
+      "label": "the news this message is",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+        "symbol": "news"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#kK1YexMf",
+      "to": "vKEsyHFk/qKGcB6vZ#hxZxt8Wy"
+    },
+    {
+      "order": 19000,
+      "kind": "call",
+      "label": "queue it, wait for its delivery",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+        "symbol": "enqueue"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#35DJDouE",
+      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI"
+    },
+    {
+      "order": 20000,
+      "kind": "call",
+      "label": "answer the workhorse",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/tell-coordinator.ts",
+        "symbol": "respond"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#5EeoHuyh",
+      "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu"
+    }
+  ]
+}

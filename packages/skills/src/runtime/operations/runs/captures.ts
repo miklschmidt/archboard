@@ -1,3 +1,4 @@
+import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
 // The bitmaps the harness takes of every final diagram a scenario asked for,
 // through `archboard semantic rasterize`: the same capability a person uses,
 // never a renderer of the harness's own. A capture is declared by the
@@ -7,20 +8,24 @@
 // also cut into native-scale tiles so no detail is lost to a viewer that
 // shrinks a big image.
 
-import type { z } from "zod";
+import { z } from "zod";
 import fs from "node:fs";
 import path from "node:path";
 
 import type { PageRegion } from "@archboard/renderer/rasterizer";
-import { SemanticRasterReceiptSchema } from "@archboard/renderer/rasterizer";
+import {
+	SemanticRasterReceiptSchema,
+	ArchitectureRasterReceiptSchema,
+} from "@archboard/renderer/rasterizer";
 import { archboard, type CliAnswer, type CliContext } from "#runtime/processes/archboard.ts";
 import { namedEntry, variantNamed, viewNamed } from "#runtime/rules/outcomes/naming.ts";
 import { sequentially } from "#runtime/processes/process.ts";
 import type { CaptureDeclaration, CaptureRequest } from "#runtime/schemas/suite.ts";
-import type { SemanticBoard } from "@archboard/board/document";
 
 /** What the rasterizer says about one capture. */
-type SemanticRasterReceipt = z.infer<typeof SemanticRasterReceiptSchema>;
+type SemanticRasterReceipt =
+	| z.infer<typeof SemanticRasterReceiptSchema>
+	| z.infer<typeof ArchitectureRasterReceiptSchema>;
 
 /**
  * The longest side a capture keeps whole before it is also cut into tiles.
@@ -35,17 +40,18 @@ interface CaptureTile extends PageRegion {
 }
 
 /** What a capture is of: the saved content, exactly, and how it was shot. */
-type CaptureProvenance = Readonly<
+type CaptureProvenance = Partial<
+	Pick<z.infer<typeof SemanticRasterReceiptSchema>, "version" | "variant" | "view">
+> &
+	Partial<Pick<z.infer<typeof ArchitectureRasterReceiptSchema>, "model" | "state" | "revision">> &
 	Pick<
-		SemanticRasterReceipt,
-		"version" | "variant" | "view" | "theme" | "scale" | "width" | "height" | "diagram"
+		z.infer<typeof ArchitectureRasterReceiptSchema>,
+		"theme" | "scale" | "width" | "height" | "diagram"
 	> & {
-		readonly svgSha256: SemanticRasterReceipt["source"]["svgSha256"];
-		readonly facesLoaded: SemanticRasterReceipt["source"]["facesLoaded"];
-		readonly motion: SemanticRasterReceipt["source"]["motion"];
-	}
->;
-
+		readonly svgSha256: string;
+		readonly facesLoaded: number;
+		readonly motion: "paused-at-start";
+	};
 /** One capture the harness attempted because the scenario declared it. */
 interface CaptureAttempt extends CaptureDeclaration {
 	readonly ok: boolean;
@@ -91,6 +97,7 @@ function viewMismatch(
 	declaration: CaptureDeclaration,
 	receipt: SemanticRasterReceipt,
 ): string | null {
+	if ("model" in receipt) return grammarMismatch(declaration.grammar, receipt.grammar);
 	if (declaration.view !== undefined && receipt.view === null) {
 		return `the receipt drew the whole variant, not the "${declaration.view}" view`;
 	}
@@ -136,7 +143,9 @@ function parsedReceipt(answer: CliAnswer): ReadReceipt {
 		const last = answer.stderr.trim().split("\n").at(-1) ?? "";
 		return { failure: `rasterize failed (exit ${answer.exitCode ?? "none"}): ${last}` };
 	}
-	const parsed = SemanticRasterReceiptSchema.safeParse(answer.json);
+	const parsed = z
+		.union([ArchitectureRasterReceiptSchema, SemanticRasterReceiptSchema])
+		.safeParse(answer.json);
 	return parsed.success ? { receipt: parsed.data } : { failure: "rasterize answered no receipt" };
 }
 
@@ -174,12 +183,12 @@ function captureFromReceipt(
 	return {
 		...declaration,
 		ok: true,
-		detail: `captured ${receipt.width}×${receipt.height} of version ${receipt.version} to ${path.basename(file)}`,
+		detail: `captured ${receipt.width}×${receipt.height} to ${path.basename(file)}`,
 		file,
 		provenance: {
-			version: receipt.version,
-			variant: receipt.variant,
-			view: receipt.view,
+			...("model" in receipt
+				? { model: receipt.model, state: receipt.state, revision: receipt.revision }
+				: { version: receipt.version, variant: receipt.variant, view: receipt.view }),
 			theme: receipt.theme,
 			scale: receipt.scale,
 			width: receipt.width,
@@ -200,8 +209,10 @@ function captureFromReceipt(
  */
 function selectorsOf(declaration: CaptureDeclaration): string[] {
 	return [
-		...(declaration.variant === undefined ? [] : ["--variant", declaration.variant]),
-		...(declaration.view === undefined ? [] : ["--view", declaration.view]),
+		...(declaration.variant === undefined ? [] : ["--state", declaration.variant]),
+		...(declaration.scope === undefined ? [] : ["--scope", declaration.scope]),
+		...(declaration.flow === undefined ? [] : ["--flow", declaration.flow]),
+		...(declaration.grammar === undefined ? [] : ["--grammar", declaration.grammar]),
 	];
 }
 
@@ -224,9 +235,8 @@ async function tilesOf(
 	const tiles = await sequentially(regions, async (region, index) => {
 		const file = `${stem}-tile-${index}.png`;
 		const answer = await archboard(cli, [
-			"semantic",
+			"model",
 			"rasterize",
-			attempt.board,
 			"--out",
 			file,
 			"--region",
@@ -362,9 +372,8 @@ function captureDeclared(
 		const stem = path.join(directory, `capture-${index}-${declaration.label}`);
 		const file = `${stem}.png`;
 		const answer = await archboard(cli, [
-			"semantic",
+			"model",
 			"rasterize",
-			declaration.board,
 			"--out",
 			file,
 			...selectorsOf(declaration),

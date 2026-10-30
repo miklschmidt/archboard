@@ -4,7 +4,7 @@
 
 import { crc32 } from "node:zlib";
 import { readPngDimensions } from "#runtime/operations/rasterizer/png.ts";
-import { RENDER_RECIPE_MARK, type RenderRecipe } from "#runtime/operations/recipe/schema.ts";
+import { RENDER_RECIPE_MARK, type AnyRenderRecipe } from "#runtime/operations/recipe/schema.ts";
 
 /** The PNG signature's length, where the first chunk starts. */
 const SIGNATURE_LENGTH = 8;
@@ -83,7 +83,7 @@ function isRecipeChunk(one: Chunk): boolean {
  * @returns The bitmap that carries it.
  * @throws {Error} When the bytes are not a PNG.
  */
-function embedRecipeInPng(png: Uint8Array, recipe: RenderRecipe): Uint8Array {
+function embedRecipeInPng(png: Uint8Array, recipe: AnyRenderRecipe): Uint8Array {
 	readPngDimensions(png);
 	const [header, ...rest] = chunksOf(png);
 	if (header === undefined) throw new Error("The capture is not a PNG file.");

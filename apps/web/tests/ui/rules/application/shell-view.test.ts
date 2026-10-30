@@ -3,17 +3,13 @@ import { expect, test } from "bun:test";
 import { addPane, initialPaneList } from "#ui/rules/application/pane-list.ts";
 import {
 	emptyPaneStatus,
-	heldBoards,
 	initialPaneRecord,
 	patchRecord,
-	releasedBoards,
 	type PaneRecords,
 } from "#ui/rules/application/pane-records.ts";
 import { assembleShellView } from "#ui/rules/application/shell-view.ts";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import type { BoardCatalog } from "#ui/hooks/board-catalog/use-board-catalog.ts";
-import { EMPTY_LISTING } from "#ui/rules/board-catalog/listing.ts";
-import type { BoardListing } from "#ui/rules/pane-session/session-types.ts";
+import type { ModelCatalog } from "#ui/hooks/architecture-model/use-model-catalog.ts";
 
 const CHECKOUT = { board: "Checkout", variant: "current" };
 
@@ -22,14 +18,12 @@ const VAULT = "/work/shop/.archboard/vault";
 
 /**
  * A catalog of one repository whose chosen checkout is VAULT.
- * @param listing Its boards.
  * @param error Why the repositories could not be read, or null.
  * @returns The catalog.
  */
 function catalogOf(
-	listing: BoardListing = EMPTY_LISTING,
 	error: string | null = null,
-): Pick<BoardCatalog, "repositories" | "error" | "loading"> {
+): Pick<ModelCatalog, "repositories" | "error" | "loading"> {
 	const repository: RepositoryEntry = {
 		name: "github.com/acme/shop",
 		untracked: false,
@@ -38,7 +32,7 @@ function catalogOf(
 		checkouts: [{ root: "/work/shop", chosen: true, exists: true, hasVault: true }],
 	};
 	return {
-		repositories: [{ repository, listing, error: null, loading: false }],
+		repositories: [{ repository, error: null, loading: false }],
 		error,
 		loading: false,
 	};
@@ -84,49 +78,14 @@ test("the shell view names the active pane's board and carries its mounted panes
 	expect(view.selectedBoardKey).toBeNull();
 });
 
-test("a pane's board is named as the vault lists it, whatever case the key was typed in", () => {
-	const records = patchRecord({}, "A", {
-		status: {
-			...emptyPaneStatus("A"),
-			board: { board: "web shop", variant: "current" },
-			boardKey: "web shop@v2",
-			vault: VAULT,
-		},
-		holder: null,
-	});
-	const view = assembleShellView({
-		theme: "dark",
-		list: initialPaneList(),
-		records,
-		panes: {},
-		catalog: catalogOf({
-			...EMPTY_LISTING,
-			boards: [
-				{
-					name: "Web shop",
-					key: "web shop",
-					variants: [],
-					opens: null,
-					links: [],
-					description: null,
-				},
-			],
-		}),
-		presentation: null,
-		notices: [],
-		agentActivity: {},
-	});
-	expect(view.panes[0]?.boardName).toBe("Web shop");
-});
-
-test("the focused pane's board key is the selected navigator entry and held keys deduplicate", () => {
+test("the focused pane's board key is the selected navigator entry", () => {
 	const records = twoPaneRecords();
 	const view = assembleShellView({
 		theme: "light",
 		list: initialPaneList(),
 		records,
 		panes: {},
-		catalog: catalogOf(EMPTY_LISTING, "offline"),
+		catalog: catalogOf("offline"),
 		presentation: { kind: "live", paneId: "A" },
 		notices: [],
 		agentActivity: {},
@@ -135,27 +94,20 @@ test("the focused pane's board key is the selected navigator entry and held keys
 	expect(view.boardsError).toBe("offline");
 	expect(view.presentation).toEqual({ kind: "live", paneId: "A" });
 	expect(view.panes[0]?.stage).toBeNull();
-	expect(heldBoards(records, ["A", "B", "A"])).toEqual([{ vault: VAULT, key: "Checkout" }]);
-});
-
-test("a board stops being shown when the last pane showing it in its vault lets it go", () => {
-	const checkout = { vault: VAULT, key: "Checkout" };
-	const billing = { vault: VAULT, key: "Billing" };
-	const elsewhere = { vault: "/work/billing/.archboard/vault", key: "Checkout" };
-	// Two panes on one board: one of them going is not the board being released.
-	expect(releasedBoards([checkout], [checkout])).toEqual([]);
-	expect(releasedBoards([checkout, billing], [checkout])).toEqual([billing]);
-	// A pane switching board releases the one it was showing and holds another.
-	expect(releasedBoards([checkout], [billing])).toEqual([checkout]);
-	expect(releasedBoards([], [checkout])).toEqual([]);
-	// A board of the same name in another vault is another board.
-	expect(releasedBoards([checkout], [elsewhere])).toEqual([checkout]);
 });
 
 test("what an agent does in a vault is shown whether or not a pane of the tab is in it", () => {
 	const since = "2026-10-15T00:00:00.000Z";
-	const claim = { id: "agent-1", kind: "agent", since, until: since, process: "codex" } as const;
-	const entry = { board: "Checkout", claim, doing: null };
+	const claim = {
+		id: "Claim",
+		target: { model: "Checkout", state: "Current" },
+		writer: "agent-1",
+		reason: "Planning checkout",
+		subjects: ["Checkout#Queue"],
+		since,
+		until: since,
+	};
+	const entry = { board: "model:Checkout", model: "Checkout", claims: [claim], doing: null };
 	/**
 	 * The view while the tab's one pane is in a vault.
 	 * @param vault The vault.

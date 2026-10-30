@@ -1,0 +1,32 @@
+{
+  "order": 12500,
+  "name": "Grader retry",
+  "kind": "module",
+  "responsibility": "Holds each answer to what the report reads, and asks once more in the same session for the runs an answer fell short on",
+  "description": "Short means a declared feature left unanswered, a feature invented, or a capture offered and not observed. The retry is a call of the session like any other, so its usage counts, and it is never itself retried; a retry owed by an earlier pass is asked on the next one.",
+  "groups": [
+    "grading"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/skills/src/runtime/operations/grading/grading-retry.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#m7s6sgLI",
+  "parent": "vKEsyHFk/IbGtfJE2#RrIatpuG",
+  "outgoing": [
+    {
+      "order": 70024,
+      "kind": "call",
+      "label": "reuse delivered image evidence",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/grading/grading-retry.ts",
+        "symbol": "combinedDelivery"
+      },
+      "id": "vKEsyHFk#OFpAXpvp",
+      "to": "vKEsyHFk/SMjRfwN3#5ut3UjV6"
+    }
+  ]
+}

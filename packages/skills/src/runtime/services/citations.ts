@@ -11,7 +11,7 @@
 //
 // A citation is `<file>#<anchor>`: a markdown file of the skill, relative to
 // its root, and the anchor of one of its headings, slugged the way the skill's
-// own links slug them (`SKILL.md#everything-the-code-shows`). It is never a
+// own links slug them (`SKILL.md#source-evidence-catalogue`). It is never a
 // line number, so rewording a passage keeps it cited, and renaming a heading
 // breaks the citation loudly at check time rather than silently at grading.
 
@@ -78,7 +78,7 @@ function keepBatchSkill(skillRoot: string, batchRoot: string): string {
 }
 
 /** Where the skill states its catalogue; the rows above are that table's. */
-const CATALOGUE_PASSAGE = "SKILL.md#everything-the-code-shows";
+const CATALOGUE_PASSAGE = "SKILL.md#source-evidence-catalogue";
 
 /**
  * The rubric sections the grader prompt points at by name instead of

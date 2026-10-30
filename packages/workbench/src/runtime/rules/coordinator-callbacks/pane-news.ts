@@ -128,18 +128,20 @@ function stopsNarration(
 }
 
 /**
- * What an agent outside this session writing a board is (TASK-293.06): the board, and what the
- * writer said it was doing, in its own words. Said by name and never as the user's doing: neither
- * model asked for it, and what they hold about that board is no longer true.
+ * Name the changed model and its attributed writer's doing line.
+ * External observations carry no agent attribution. Captured narration keeps its original facts.
  * @param event - The settled change.
  * @returns The news.
  */
 function outsideWriteNews(event: SettledSemanticChangeEvent): CoordinatorPaneNews {
 	const doing = event.doing === null ? "" : `, which says: ${JSON.stringify(event.doing)}`;
+	const by = event.change.origin === "agent" ? "agent" : "external";
+	const writer = by === "agent" ? "by another agent" : "outside this session";
 	return {
-		sentence: `Board "${event.board.name}" was just changed by another agent${doing} (data).`,
-		stops: true,
-		by: "agent",
+		sentence: `Board "${event.board.name}" was just changed ${writer}${doing} (data).`,
+		// Narration retains its source and target snapshots. Live edits only update context.
+		stops: false,
+		by,
 		board: event.change.board,
 	};
 }
@@ -155,7 +157,7 @@ function agentSwitchNews(event: PaneFocusEvent, from: string | null): Coordinato
 	const now = `board "${event.board.name}"`;
 	let sentence = `A pane now shows ${now}; an agent put it there (data).`;
 	if (from === event.board.name) {
-		sentence = `The pane showing ${now} now shows another variant of it; an agent put it there (data).`;
+		sentence = `The pane showing ${now} now shows another reading of it; an agent put it there (data).`;
 	} else if (from !== null) {
 		sentence = `The pane that showed board "${from}" now shows ${now}; an agent put it there (data).`;
 	}

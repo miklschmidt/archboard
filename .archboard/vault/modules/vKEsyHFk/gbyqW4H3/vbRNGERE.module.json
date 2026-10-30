@@ -1,0 +1,14 @@
+{
+  "order": 36000,
+  "name": "Subject standing marks",
+  "kind": "module",
+  "responsibility": "Draws the warning badges and standing marks of a subject",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/rules/svg/parts/standing.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#vbRNGERE",
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "outgoing": []
+}

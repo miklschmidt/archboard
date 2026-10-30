@@ -17,7 +17,7 @@ function picker() {
 	let record = initialPaneRecord("A");
 	const notices: ShellNotice[] = [];
 	const shown: string[] = [];
-	const moved: string[] = [];
+	const moved: (string | null)[] = [];
 	const marked: string[] = [];
 	const activated: { readonly paneId: string; readonly vault: string | undefined }[] = [];
 	let failures = 0;
@@ -78,6 +78,11 @@ function picker() {
 			bindEvents: unrelated,
 		},
 		addressing: {
+			/**
+			 * This fixture exercises legacy shell commands without a canonical arrival.
+			 * @returns An external arrival because no canonical navigation is pending.
+			 */
+			modelArriving: () => "replace",
 			expect: unrelated,
 			/**
 			 * Read the fixture state.
@@ -120,7 +125,6 @@ function picker() {
 			/** A successful board open invalidates its listing. */
 			refresh: (): void => {},
 			reload: unrelated,
-			boardsChanged: unrelated,
 			reconnected: unrelated,
 			repositoriesChanged: unrelated,
 		},

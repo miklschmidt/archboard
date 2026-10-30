@@ -1,0 +1,99 @@
+{
+  "order": 34000,
+  "name": "code-opener",
+  "kind": "package",
+  "responsibility": "Opens the code that a node binds",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/code-opener"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/vKEsyHFk#7hdbqGFn",
+  "parent": "vKEsyHFk/vKEsyHFk#TQNCxSiT",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 30000,
+      "kind": "dependency",
+      "label": "the line of a bound symbol",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/routes/code-opener.ts",
+        "symbol": "symbolLine"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#3WdQR8x7",
+      "to": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+    },
+    {
+      "order": 31000,
+      "kind": "dependency",
+      "label": "opener requests",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/ui/clients/code-target-requests.ts",
+        "symbol": "strictReply"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#FZXXXyDz",
+      "to": "vKEsyHFk/vKEsyHFk#29kIWfHH"
+    },
+    {
+      "order": 32000,
+      "kind": "dependency",
+      "label": "settings controls",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/ui/components/RepositoryField.tsx",
+        "symbol": "Badge"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#MAtwLWd8",
+      "to": "vKEsyHFk/vKEsyHFk#l5jdGkb1"
+    },
+    {
+      "order": 48000,
+      "kind": "dependency",
+      "label": "locate and persist opener configuration",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/store/configuration.ts",
+        "symbol": "stateDir"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#LLVzjl11",
+      "to": "vKEsyHFk/vKEsyHFk#tdKalihR"
+    },
+    {
+      "order": 52000,
+      "kind": "dependency",
+      "label": "interpret and validate opener selections",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/projections/planning.ts",
+        "symbol": "OpenerSelectionSchema"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#rzta8x5j",
+      "to": "vKEsyHFk/vKEsyHFk#w9zvoSFD"
+    },
+    {
+      "order": 53000,
+      "kind": "dependency",
+      "label": "resolve a module code binding",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/projections/model-target.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#q1ENQYcO",
+      "to": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+    }
+  ]
+}

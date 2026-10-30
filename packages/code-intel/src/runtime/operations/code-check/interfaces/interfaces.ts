@@ -335,11 +335,11 @@ function callerFinding(
 		severity: resolved ? "warning" : "information",
 		code: "CALLER_UNDRAWN",
 		message:
-			`${describeSubject(subject)} is a hidden part of ${container}, and code outside the module ` +
-			`${JSON.stringify(judged.module.exposure.directory || ".")} uses what it exposes, in ${files} ` +
-			`${files === 1 ? "file" : "files"} that no part on this board binds. Draw the caller this ` +
-			`board's question needs to it from outside ${container}, or stop exposing what no caller ` +
-			"should use.",
+			`${JSON.stringify(hidden.name)} is hidden inside ${container}. Code outside module ` +
+			`${JSON.stringify(judged.module.exposure.directory || ".")} uses its exports. ` +
+			`${files} ${files === 1 ? "source file has" : "source files have"} no module binding in this model. ` +
+			`Add the relevant callers and relationships outside ${container}. ` +
+			"If this use is unintended, stop exporting the referenced code.",
 		evidence: [...pieces],
 	};
 }

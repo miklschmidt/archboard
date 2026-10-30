@@ -1,0 +1,59 @@
+{
+  "order": 62000,
+  "name": "Module navigation",
+  "kind": "module",
+  "responsibility": "Opens selected code and explicit foreign subjects with visible availability and exact history",
+  "description": "Uses the selected model, state, checkpoint, and revision to read code and reference availability through the existing query cache. The code action uses the existing opener and shell notices. Reference actions show authored destination names and require the returned address to match the selected link. Leaving the source cancels pending navigation. The pane router preserves the foreign repository, model, state, checkpoint, and subject. Relationships open their endpoint paths. Collections offer their member flows. Flow and step destinations open the complete containing flow. Missing source or architecture remains visible without ownership changes.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/architecture-model/ModuleNavigation.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#0IYZeQvF",
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.13 - Explain-the-captured-reading-through-local-agent-actions.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 78000,
+      "kind": "call",
+      "label": "resolve source and references",
+      "emphasis": "normal",
+      "id": "vKEsyHFk/yejBBUFY#F6bCh9SD",
+      "to": "vKEsyHFk/yejBBUFY#AIp6YN1P"
+    },
+    {
+      "order": 79000,
+      "kind": "call",
+      "label": "activate selected code",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModuleNavigation.tsx",
+        "symbol": "BoundCode"
+      },
+      "id": "vKEsyHFk/yejBBUFY#LyoUBIl0",
+      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+    },
+    {
+      "order": 80000,
+      "kind": "call",
+      "label": "follow explicit foreign subject",
+      "emphasis": "normal",
+      "id": "vKEsyHFk/yejBBUFY#lE0UE0im",
+      "to": "vKEsyHFk/yejBBUFY#w46oCRoH"
+    }
+  ]
+}

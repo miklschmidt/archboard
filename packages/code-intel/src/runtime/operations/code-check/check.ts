@@ -259,9 +259,7 @@ function searchOf(checkout: ClaimCheckout, pass: Pass) {
 }
 
 /**
- * What the pass reads of a binding, or nothing when its path is not in the
- * checkout: on a named draft that is a finding, and on the current variant the
- * semantics check's to report.
+ * Resolve a binding and report a missing path in the selected source.
  * @param claim The binding.
  * @param checkout Its checkout.
  * @param pass The pass.
@@ -270,15 +268,12 @@ function searchOf(checkout: ClaimCheckout, pass: Pass) {
 function boundTarget(claim: BindingClaim, checkout: ClaimCheckout, pass: Pass) {
 	const target = targetIn(claim.binding, checkout, pass);
 	if (target.ok) return target;
-	if (claim.path) {
-		pass.outcome.findings.push(bindingPathMissing(claim, whereIn(checkout, pass.refs)));
-	}
+	pass.outcome.findings.push(bindingPathMissing(claim, whereIn(checkout, pass.refs)));
 	return undefined;
 }
 
 /**
- * Judge a part's binding: on a named draft that its path is in the checkout,
- * and that the bound file or directory defines its symbol.
+ * Judge whether a binding's path exists and defines its optional symbol.
  * @param claim The binding.
  * @param pass The pass.
  */

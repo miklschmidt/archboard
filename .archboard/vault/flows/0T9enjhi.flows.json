@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "id": "0T9enjhi",
+  "name": "Model persistence",
+  "flows": [
+    {
+      "id": "vKEsyHFk#37yCryrX",
+      "name": "A canonical edit becomes durable",
+      "summary": "The shared runtime signs the complete candidate before changing current inputs. It returns only after durable installation.",
+      "participants": [
+        "vKEsyHFk/HBlhIeSD#9zu5ryhZ",
+        "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+        "vKEsyHFk/0T9enjhi#8Uq1mtzw",
+        "vKEsyHFk/0T9enjhi#e0GTqv1k",
+        "vKEsyHFk/0T9enjhi#ZRq51Ecz",
+        "vKEsyHFk/0T9enjhi#YREYrbYW",
+        "vKEsyHFk/0T9enjhi#CLdaoYy3",
+        "vKEsyHFk/0T9enjhi#IyV7OF9L"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk#WhIXidbU",
+          "from": "vKEsyHFk/HBlhIeSD#9zu5ryhZ",
+          "to": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+          "label": "editArchitectureModule",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
+            "symbol": "editArchitectureModule"
+          }
+        },
+        {
+          "id": "vKEsyHFk#53cdVjYp",
+          "from": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+          "to": "vKEsyHFk/0T9enjhi#8Uq1mtzw",
+          "label": "prepareEdit",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/board/src/runtime/operations/model-edit/edit.ts",
+            "symbol": "prepareEdit"
+          }
+        },
+        {
+          "id": "vKEsyHFk#YfqHBPuw",
+          "from": "vKEsyHFk/0T9enjhi#8Uq1mtzw",
+          "to": "vKEsyHFk/0T9enjhi#e0GTqv1k",
+          "label": "editCandidate",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
+            "symbol": "editCandidate"
+          }
+        },
+        {
+          "id": "vKEsyHFk#XXyCeIrL",
+          "from": "vKEsyHFk/0T9enjhi#e0GTqv1k",
+          "to": "vKEsyHFk/0T9enjhi#8Uq1mtzw",
+          "label": "complete candidate",
+          "kind": "return"
+        },
+        {
+          "id": "vKEsyHFk#10U4hOmj",
+          "from": "vKEsyHFk/0T9enjhi#8Uq1mtzw",
+          "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz",
+          "label": "archiveCommit",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
+            "symbol": "archiveCommit"
+          }
+        },
+        {
+          "id": "vKEsyHFk#laWOvUmM",
+          "from": "vKEsyHFk/0T9enjhi#ZRq51Ecz",
+          "to": "vKEsyHFk/0T9enjhi#8Uq1mtzw",
+          "label": "signed checkpoint",
+          "kind": "return"
+        },
+        {
+          "id": "vKEsyHFk#jl9a1Ipi",
+          "from": "vKEsyHFk/0T9enjhi#8Uq1mtzw",
+          "to": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+          "label": "prepared journal",
+          "kind": "return"
+        },
+        {
+          "id": "vKEsyHFk#HvSEtBsg",
+          "from": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+          "to": "vKEsyHFk/0T9enjhi#YREYrbYW",
+          "label": "writeState",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/board/src/runtime/operations/model-edit/edit.ts",
+            "symbol": "writeState"
+          }
+        },
+        {
+          "id": "vKEsyHFk#fhSRy9Hi",
+          "from": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+          "to": "vKEsyHFk/0T9enjhi#CLdaoYy3",
+          "label": "installJournal",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/board/src/runtime/operations/model-edit/edit.ts",
+            "symbol": "installJournal"
+          }
+        },
+        {
+          "id": "vKEsyHFk#TFWkQtKh",
+          "from": "vKEsyHFk/0T9enjhi#CLdaoYy3",
+          "to": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+          "label": "durable receipt",
+          "kind": "return"
+        },
+        {
+          "id": "vKEsyHFk#eLFZNVoJ",
+          "from": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+          "to": "vKEsyHFk/0T9enjhi#IyV7OF9L",
+          "label": "notifyArchitecture",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/board/src/runtime/operations/model-edit/edit.ts",
+            "symbol": "notifyArchitecture"
+          }
+        },
+        {
+          "id": "vKEsyHFk#EkbXYAoj",
+          "from": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+          "to": "vKEsyHFk/HBlhIeSD#9zu5ryhZ",
+          "label": "exact result",
+          "kind": "return"
+        }
+      ]
+    }
+  ]
+}

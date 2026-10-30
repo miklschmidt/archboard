@@ -31,6 +31,11 @@ import { useCallback, type JSX, type ReactNode } from "react";
 
 import { cn, DropdownMenu, RepositoryName, Tabs } from "@archboard/ui-kit/components";
 import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
+import {
+	PaneHeaderRow as HeaderRow,
+	PaneHeaderStart as HeaderStart,
+	PaneHeaderEnd as HeaderEnd,
+} from "#ui/components/semantic-board-canvas/PaneHeaderFrame.tsx";
 import { LevelMark } from "#ui/components/semantic-board-canvas/LevelMark.tsx";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
 import { SidebarToggle } from "#ui/components/semantic-board-canvas/SidebarToggle.tsx";
@@ -333,55 +338,6 @@ function PageTab(props: {
 			</span>
 		</Tabs.Trigger>
 	);
-}
-
-/** The parts of a header row. */
-interface HeaderPartProps {
-	readonly children: ReactNode;
-}
-
-/**
- * The row every pane's header is, and under it what the shell says about the pane.
- * @param props The row's start and end.
- * @returns The header row.
- */
-function HeaderRow(props: HeaderPartProps): JSX.Element {
-	const { notice } = usePaneChrome();
-	return (
-		<>
-			<header
-				data-slot="pane-header"
-				className="bg-sidebar h-chrome shadow-edge-down after:bg-border @container/pane-header relative z-30 flex shrink-0 items-center pr-2 pl-4 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px in-data-presenting:hidden"
-			>
-				{props.children}
-			</header>
-			{notice}
-		</>
-	);
-}
-
-/**
- * The start of the row: the shell's letter, then where the pane is.
- * @param props Where the pane is.
- * @returns The start.
- */
-function HeaderStart(props: HeaderPartProps): JSX.Element {
-	const { letter } = usePaneChrome();
-	return (
-		<div className="mr-5 flex min-w-0 shrink items-center gap-3">
-			{letter}
-			{props.children}
-		</div>
-	);
-}
-
-/**
- * The end of the row: what can be done, the shell's controls included.
- * @param props What can be done.
- * @returns The end.
- */
-function HeaderEnd(props: HeaderPartProps): JSX.Element {
-	return <div className="ml-auto flex h-full shrink-0 items-center gap-2">{props.children}</div>;
 }
 
 /**

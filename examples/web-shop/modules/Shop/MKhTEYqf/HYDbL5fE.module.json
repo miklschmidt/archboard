@@ -1,0 +1,12 @@
+{
+  "order": 10000,
+  "name": "Inventory service",
+  "kind": "service",
+  "responsibility": "Knows the stock and sets it aside for an order",
+  "groups": [
+    "fulfilment"
+  ],
+  "schemaVersion": 1,
+  "id": "Shop/MKhTEYqf#HYDbL5fE",
+  "outgoing": []
+}

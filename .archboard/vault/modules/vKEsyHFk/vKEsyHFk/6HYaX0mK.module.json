@@ -1,0 +1,86 @@
+{
+  "order": 31000,
+  "name": "code-intel",
+  "kind": "package",
+  "responsibility": "What the code says about a board: the code check, its facts and the history lens",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/code-intel"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
+  "parent": "vKEsyHFk/vKEsyHFk#aIT2jJaC",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 27000,
+      "kind": "dependency",
+      "label": "read the inspected canonical state",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#fVxcoo6Q",
+      "to": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+    },
+    {
+      "order": 51000,
+      "kind": "dependency",
+      "label": "select the source files of a binding",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/clients/history-lens/source-history.ts",
+        "symbol": "filesOfBinding"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#K7yg89u4",
+      "to": "vKEsyHFk/vKEsyHFk#w9zvoSFD"
+    },
+    {
+      "order": 70053,
+      "kind": "call",
+      "label": "report source inspection failures",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/checkouts.ts",
+        "symbol": "errorMessage"
+      },
+      "id": "vKEsyHFk#o6iMuevP",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 70054,
+      "kind": "call",
+      "label": "measure source inspection work",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/check.ts",
+        "symbol": "createElapsedClock"
+      },
+      "id": "vKEsyHFk#zAB848k7",
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    },
+    {
+      "order": 70055,
+      "kind": "call",
+      "label": "resolve configured source tooling",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/resolution.ts",
+        "symbol": "configureCommand"
+      },
+      "id": "vKEsyHFk#73DTR15V",
+      "to": "vKEsyHFk/vKEsyHFk#tdKalihR"
+    }
+  ]
+}

@@ -49,6 +49,7 @@
 // not at the version it names, with no subject: its `path` names the reference
 // as `variants.<id>.documents.<index>` (ADR 0054).
 
+import { ArchitectureModelReadSchema } from "@archboard/board/model";
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";
 import { z } from "zod";
 import { EvidenceKindSchema, VaultDiagnosticSchema } from "@archboard/board/policy";
@@ -118,6 +119,8 @@ const DroppedPartSchema = z
  * nothing sets.
  */
 const CodeFindingSchema = VaultDiagnosticSchema.extend({
+	model: z.string().optional(),
+	state: z.string().nullable().optional(),
 	severity: z.enum(["warning", "information"]),
 	evidence: z.array(CodeEvidenceSchema).min(1).optional(),
 	missing: z.enum(["code", "infrastructure"]).optional(),
@@ -240,6 +243,8 @@ const CodeCheckSkipSchema = z
 			"draft-ref-missing",
 			"draft-refs-ambiguous",
 		]),
+		model: z.string().optional(),
+		state: z.string().nullable().optional(),
 		board: z.string().optional(),
 		variant: z.string().optional(),
 		subject: CodeCheckSubjectSchema.optional(),
@@ -356,7 +361,13 @@ type CheckTiming = z.infer<typeof CheckTimingSchema>;
  * The whole answer of one code check. The route answers it beside
  * `success: true`, as every route does, and a parse keeps only the answer.
  */
+const CodeCheckModelSchema = z.strictObject({
+	model: z.string(),
+	state: z.string().nullable(),
+	revision: ArchitectureModelReadSchema.options[0].shape.revision,
+});
 const CodeCheckAnswerSchema = z.object({
+	models: z.array(CodeCheckModelSchema).optional(),
 	timings: z.array(CheckTimingSchema),
 	boards: z.array(CodeCheckBoardSchema),
 	findings: z.array(CodeFindingSchema),
@@ -382,7 +393,14 @@ const RememberedReadingSchema = CodeCheckBoardSchema.extend({
  * runs the code check, with `archboard check` or `archboard check code`. The
  * route answers it beside `success: true`, and a parse keeps only the answer.
  */
-const RememberedFindingsSchema = z.object({ readings: z.array(RememberedReadingSchema) });
+const RememberedModelSchema = CodeCheckModelSchema.extend({
+	checkedAt: z.iso.datetime(),
+	findings: z.array(CodeFindingSchema),
+});
+const RememberedFindingsSchema = z.object({
+	readings: z.array(RememberedReadingSchema),
+	models: z.array(RememberedModelSchema).optional(),
+});
 
 type CodeCheckAnswer = z.infer<typeof CodeCheckAnswerSchema>;
 type RememberedReading = z.infer<typeof RememberedReadingSchema>;

@@ -5,29 +5,23 @@
 import type { ElkExtendedEdge, ElkNode } from "@archboard/elk-rs";
 import type { Box } from "#shared/rules/geometry.ts";
 import { z } from "zod";
+import {
+	TRACK_BELOW,
+	TRACK_STEPS,
+	titleRow,
+	type TitleStep,
+} from "#shared/rules/track/scene/title-row.ts";
 
 /** The layout option that carries a relationship's polyline, as `x,y` pairs separated by spaces. */
 const TRACK_POLYLINE = "archboard.track.polyline";
-/** The layout option on a frame that carries its title row's box, as `x,y,width,height`. */
+/** The frame's title row, as `x,y,width,height,words,topInset`. */
 const TRACK_TITLE = "archboard.track.title";
-/**
- * The layout option on a frame laid out as the region round it (`shared/rules/blocks/tree/lone.ts`):
- * the region's inset, which it keeps below what it holds past its own and
- * which its own face stands in from its title row.
- */
-const TRACK_BELOW = "archboard.track.below";
 /**
  * The layout option on a frame laid out as the region round it: how wide the
  * region's caption needs it. The region stands that wide round the frame
  * fitted to what it holds, where its layout kept the room (`sides.ts`).
  */
 const TRACK_WIDE = "archboard.track.wide";
-/**
- * The layout option on a frame that carries each size its title row can
- * take, as JSON `[words, height]` rows, narrowest first: how far its words
- * reach in, and how tall the row stands (TASK-486).
- */
-const TRACK_STEPS = "archboard.track.steps";
 /** The root layout option that carries every group region, as JSON `PlacedRegion` rows. */
 const TRACK_REGIONS = "archboard.track.regions";
 /** How far a region's caption sits in from its band's left edge. */
@@ -51,6 +45,8 @@ interface Item {
 	band: number;
 	/** How far a card's own faces stand in from its box, for a card laid out as its region. */
 	inset?: number;
+	/** How far a lone frame's top stands below its combined caption and title row's top. */
+	readonly topInset?: number | undefined;
 }
 
 /**
@@ -63,41 +59,6 @@ function cardFace(item: Item): Box {
 	const inset = item.inset ?? 0;
 	return { ...item.box, x: item.box.x + inset, width: item.box.width - 2 * inset };
 }
-
-/**
- * A frame's title row, as its layout option carries it, and how far in from
- * its left edge the title's words reach. A frame laid out as the region
- * round it is reached on its own face, the region's inset in from the row.
- * @param node The frame.
- * @param title Its title row's layout option.
- * @returns The row and its words' reach.
- */
-function titleRow(
-	node: ElkNode,
-	title: string,
-): { item: Item; words: number; steps: readonly TitleStep[] } {
-	const [x, y, width, height, words] = title.split(",").map(Number);
-	const inset = Number(node.layoutOptions?.[TRACK_BELOW] ?? 0);
-	const item: Item = { box: { x: x!, y: y!, width: width!, height: height! }, band: -1 };
-	if (inset > 0) item.inset = inset;
-	const rows = node.layoutOptions?.[TRACK_STEPS];
-	const steps =
-		rows === undefined
-			? []
-			: TitleStepsSchema.parse(JSON.parse(rows)).map(([reach, tall]) => ({
-					words: reach,
-					height: tall,
-				}));
-	return { item, words: words!, steps };
-}
-
-/** A size a frame's title row can take: how far its words reach in, and how tall it stands. */
-interface TitleStep {
-	readonly words: number;
-	readonly height: number;
-}
-
-const TitleStepsSchema = z.array(z.tuple([z.number(), z.number()]));
 
 /** One band: the items on one rank, and where it lies before and after spacing. */
 interface Band {
@@ -228,7 +189,9 @@ class Scene {
 		this.readLabels(placed.edges ?? []);
 		this.readRegions(placed);
 		const heads = [...this.titles.values(), ...this.regions.map(({ caption }) => caption)];
-		this.groupBands([...this.cards.values(), ...this.labels.values(), ...heads]);
+		const items = [...this.cards.values(), ...this.labels.values(), ...heads];
+		this.reserveLabels(placed.edges ?? [], items);
+		this.groupBands(items);
 		// A card stands at the top of its band, so the cards of a row line up and
 		// every line into them from above lands at one height, whatever their heights.
 		for (const card of this.cards.values())
@@ -270,6 +233,32 @@ class Scene {
 			const label = edge.labels?.[0];
 			if (label?.x !== undefined)
 				this.labels.set(edge.id, { box: boxOf(label, `the label of ${edge.id}`), band: -1 });
+		}
+	}
+
+	/**
+	 * Reserve an intervening row for a label Graphviz ranked outside its ends.
+	 * Cycle breaking can put an explicit label node beyond both endpoints,
+	 * where a monotone route cannot visit it. Move its box before grouping
+	 * bands so occupancy, container bounds and channel spacing see its station.
+	 * @param edges The placed relationships.
+	 * @param items Every placed item.
+	 */
+	private reserveLabels(edges: readonly ElkExtendedEdge[], items: readonly Item[]): void {
+		const centres = [...new Set(items.map(centreKey))].toSorted((one, other) => one - other);
+		for (const edge of edges) {
+			const label = this.labels.get(edge.id);
+			if (label === undefined) continue;
+			const source = centreKey(this.endpoint(edge.sources[0]!));
+			const target = centreKey(this.endpoint(edge.targets[0]!));
+			const [upper, lower] = [Math.min(source, target), Math.max(source, target)];
+			const at = centreKey(label);
+			if (at > upper && at < lower) continue;
+			const centre =
+				at <= upper
+					? (upper + centres.find((one) => one > upper)!) / 2
+					: (centres.findLast((one) => one < lower)! + lower) / 2;
+			label.box = { ...label.box, y: centre - label.box.height / 2 };
 		}
 	}
 
@@ -354,17 +343,31 @@ class Scene {
 	 * What a label box keeps clear of on its band for each group region
 	 * heading it: the caption's words, and the whole caption row when the box
 	 * would reach above the region's top edge there.
+	 * A lone frame's inner top border blocks only boxes that cross it.
 	 * @param label The label box.
 	 * @returns The items it keeps a card's clearance from.
 	 */
 	captionsFor(label: Item): Item[] {
-		return this.regions
+		const borders = [...this.titles.values()]
+			.filter((title) => {
+				const inset = title.topInset ?? 0;
+				const top = title.box.y + inset;
+				return (
+					inset > 0 &&
+					title.band === label.band &&
+					label.box.y < top + ROW_MARGIN &&
+					label.box.y + label.box.height > top - ROW_MARGIN
+				);
+			})
+			.map((title) => ({ box: cardFace(title), band: title.band }));
+		const captions = this.regions
 			.filter(({ caption }) => caption.band === label.band)
 			.map(({ box, caption }) =>
 				label.box.y >= caption.box.y + ROW_MARGIN
 					? caption
 					: { box: { ...caption.box, x: box.x, width: box.width }, band: caption.band },
 			);
+		return [...captions, ...borders];
 	}
 
 	/**

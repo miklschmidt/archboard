@@ -197,34 +197,56 @@ test("the root help lists every top-level command and the shared options", async
 });
 
 test("help routing skips shared option values without mistaking them for commands", async () => {
-	for (const [argv, path] of [
-		[
-			["semantic", "--doing", "describing", "new", "--help"],
-			["semantic", "new"],
-		],
-		[["semantic", "--board", "render", "--help"], ["semantic"]],
-	] as const) {
-		stdout.mockClear();
-		await runCli([...argv]);
-		const model = modelled(path);
-		expect(printed().split("\n")[0]).toBe(`Usage: ${model.createHelp().commandUsage(model)}`);
+	for (const entry of registry) {
+		const child = registry.find((candidate) => candidate.parent === entry.name);
+		if (child === undefined) continue;
+		for (const option of sharedOptionsFor(SHARED_OPTION_KEYS)) {
+			if (option.value === "none") continue;
+			for (const [argv, path] of [
+				[
+					[
+						...entry.contract.path,
+						option.spellings[0],
+						"describing",
+						child.contract.path.at(-1)!,
+						"--help",
+					],
+					child.contract.path,
+				],
+				[
+					[...entry.contract.path, option.spellings[0], child.contract.path.at(-1)!, "--help"],
+					entry.contract.path,
+				],
+			] as const) {
+				stdout.mockClear();
+				await runCli([...argv]);
+				const model = modelled(path);
+				expect(printed().split("\n")[0]).toBe(`Usage: ${model.createHelp().commandUsage(model)}`);
+			}
+		}
 	}
 });
 
 test("a missing --url value cannot consume the help flag during bootstrap", async () => {
 	for (const flag of ["--help", "-h"]) {
 		stdout.mockClear();
-		const argv = ["semantic", "--url", flag];
+		const path = registry.find((entry) => entry.parent === null)!.contract.path;
+		const argv = [...path, "--url", flag];
 		const environment: Record<string, string | undefined> = {};
 		const bootstrap = applyCliBootstrap(argv, environment);
 		expect(bootstrap.help).toBe(true);
 		expect(environment["ARCHBOARD_URL"]).toBeUndefined();
 		await runCli(argv, bootstrap);
-		expect(printed().split("\n")[0]).toContain("semantic");
+		const model = modelled(path);
+		expect(printed().split("\n")[0]).toBe(`Usage: ${model.createHelp().commandUsage(model)}`);
 	}
 	for (const argv of [
-		["semantic", "show", "help"],
-		["status", "--url", "help"],
+		[...registry.find((entry) => entry.parent !== null)!.contract.path, "help"],
+		[
+			...registry.find((entry) => entry.contract.shared.includes("url"))!.contract.path,
+			"--url",
+			"help",
+		],
 	]) {
 		expect(isHelpInvocation(argv), argv.join(" ")).toBe(false);
 	}

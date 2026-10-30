@@ -1,3 +1,4 @@
+import { notifyExplanation } from "#server/services/explanations/dispatch.ts";
 import type {
 	CodexWorkbenchDomainTools,
 	CodexWorkbenchDomain,
@@ -66,6 +67,7 @@ export function createArchboardDomainTools(
 				 * @param event The correlated server notification.
 				 */
 				onNotification: (event) => {
+					notifyExplanation(event);
 					dynamic.approval.onNotification(event);
 					dynamic.lifecycle.onNotification(event);
 				},

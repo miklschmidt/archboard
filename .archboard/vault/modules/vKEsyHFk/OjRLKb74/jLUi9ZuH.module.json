@@ -1,0 +1,15 @@
+{
+  "order": 19000,
+  "name": "Entry row",
+  "kind": "function",
+  "responsibility": "Stands each container's hidden parts below its first entry points, so the parts its callers reach take its first row",
+  "description": "Track only (ADR 0044). A first entry point is one no other part of the container leads to on the variant, as the compound graph marks it. Each other hidden part is held below it by an invisible edge that ranks and pulls nothing; an edge that would close a loop is left out, so a hidden part that calls an entry point stands above it.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/rules/blocks/cards/entry-row.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/OjRLKb74#jLUi9ZuH",
+  "parent": "vKEsyHFk/OjRLKb74#tppVDaSZ",
+  "outgoing": []
+}

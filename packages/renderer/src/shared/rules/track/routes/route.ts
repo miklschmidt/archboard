@@ -12,10 +12,15 @@ import type { ElkExtendedEdge } from "@archboard/elk-rs";
 import type { Point } from "#shared/rules/geometry.ts";
 import { LANE, chainOf, type Station, type Chain } from "#shared/rules/track/routes/chains.ts";
 import { straightenLanes } from "#shared/rules/track/routes/straighten.ts";
-import { assignPorts, bundleTrunks, type Net } from "#shared/rules/track/channels/channels.ts";
+import {
+	assignPorts,
+	bundleTrunks,
+	requiredPortWidths,
+	type Net,
+} from "#shared/rules/track/channels/channels.ts";
 import { spaceBands, type Rim } from "#shared/rules/track/channels/spacing.ts";
 import { settleLabels, slideLabels } from "#shared/rules/track/labels/labels.ts";
-import { Scene, centreX } from "#shared/rules/track/scene/scene.ts";
+import { Scene, centreX, type Item } from "#shared/rules/track/scene/scene.ts";
 import { Containers } from "#shared/rules/track/scene/containers.ts";
 import { closeJogs, openNotches } from "#shared/rules/track/routes/jogs.ts";
 import { collinearPairs, partCollinear } from "#shared/rules/track/routes/parting.ts";
@@ -450,14 +455,14 @@ function partAndClose(scene: Scene, chains: readonly Chain[], routed: readonly R
 }
 
 /**
- * Route lines through a banded scene, each on tracks of its own, and space
- * the bands for the tracks each channel holds.
+ * Prepare independent ports, then route and space the scene when it fits.
+ * A crowded placement can be discarded before label and track settlement.
  * @param scene The scene, whose bands get their new tops.
  * @param lines The lines, each between two of its items.
  * @param margin How far every x moves.
  * @param top Where the first band starts.
  * @param rim The room the block keeps at its edge rows where no line turns.
- * @returns Each line's points, from its source to its target.
+ * @returns Crowded faces' required widths and the remaining routing operation.
  */
 function routeScene(
 	scene: Scene,
@@ -465,7 +470,7 @@ function routeScene(
 	margin: number,
 	top = margin,
 	rim?: Rim,
-): Map<string, Point[]> {
+): { widths: ReadonlyMap<Item, number>; route: () => Map<string, Point[]> } {
 	const inner = lines.filter(({ wall }) => wall === undefined);
 	const chains = new Map(inner.map((line) => [line.id, chainOf(scene, line.placed)]));
 	holdToPoints(inner, chains);
@@ -493,39 +498,48 @@ function routeScene(
 	]);
 	const nets = [...routed.values()].flatMap((route) => route.nets);
 	bundleTrunks(nets);
-	assignPorts(nets);
-	slideLabels(scene, nets);
-	if (straightenIntoContainers(scene, [...chains.values()])) followLanes(nets);
-	if (unstrandLanes(scene, [...chains.values()])) followLanes(nets);
-	assignPorts(nets);
-	pullOntoPorts(scene, [...chains.values()], [...routed.values()], nets);
-	closeJogs(
-		scene,
-		[...chains.values()],
-		[...routed.values()].map((route) => route.nets),
-	);
-	for (const route of routed.values()) settleStraights(route.nets);
-	for (const line of inner) turnToWall(scene, line, routed.get(line.id)!.nets);
-	partAndClose(scene, [...chains.values()], [...routed.values()]);
-	const edges = new Map(lines.map((line) => [line.id, line.placed]));
-	const rising = new Set(
-		[...routed.values()].filter(({ upward }) => upward).map(({ nets: [first] }) => first!),
-	);
-	const containers = new Containers(scene, edges);
-	spaceBands(
-		scene,
-		nets,
-		{ closings: containers.closings(), facing: containers.facing() },
-		rising,
-		top,
-		rim,
-	);
-	return new Map(
-		[...routed].map(([id, route]) => {
-			const points = pointsOf(scene, route.nets, margin);
-			return [id, route.upward ? points.toReversed() : points];
-		}),
-	);
+	return {
+		widths: requiredPortWidths(nets),
+		/**
+		 * Settle ports, labels and tracks in the accepted placement.
+		 * @returns Each line's points, from source to target.
+		 */
+		route: () => {
+			assignPorts(nets);
+			slideLabels(scene, nets);
+			if (straightenIntoContainers(scene, [...chains.values()])) followLanes(nets);
+			if (unstrandLanes(scene, [...chains.values()])) followLanes(nets);
+			assignPorts(nets);
+			pullOntoPorts(scene, [...chains.values()], [...routed.values()], nets);
+			closeJogs(
+				scene,
+				[...chains.values()],
+				[...routed.values()].map((route) => route.nets),
+			);
+			for (const route of routed.values()) settleStraights(route.nets);
+			for (const line of inner) turnToWall(scene, line, routed.get(line.id)!.nets);
+			partAndClose(scene, [...chains.values()], [...routed.values()]);
+			const edges = new Map(lines.map((line) => [line.id, line.placed]));
+			const rising = new Set(
+				[...routed.values()].filter(({ upward }) => upward).map(({ nets: [first] }) => first!),
+			);
+			const containers = new Containers(scene, edges);
+			spaceBands(
+				scene,
+				nets,
+				{ closings: containers.closings(), facing: containers.facing() },
+				rising,
+				top,
+				rim,
+			);
+			return new Map(
+				[...routed].map(([id, route]) => {
+					const points = pointsOf(scene, route.nets, margin);
+					return [id, route.upward ? points.toReversed() : points];
+				}),
+			);
+		},
+	};
 }
 
 export { PAGE_MARGIN, routeScene, trunkKind };

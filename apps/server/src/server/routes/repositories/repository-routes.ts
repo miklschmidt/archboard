@@ -18,15 +18,19 @@
 // there chooses. So the server watches the file and follows every change it
 // did not follow already, whoever made it.
 
+import { agentActivity } from "#server/wiring/owners/server-owners.ts";
 import fs from "fs";
 import path from "path";
 import type { Express, Request, Response } from "express";
 
 import { logger } from "@archboard/diagnostics/logger";
+import { readArchitectureModel } from "@archboard/board/store-read";
+import type { ArchitectureModelRead } from "@archboard/board/model";
 import { parseBoardKey } from "@archboard/board/address";
 import { chooseKnownCheckout, listRegistry, registryPath } from "@archboard/workspace/checkouts";
 import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 import {
+	semanticPaneContextFor,
 	paneBoardOf,
 	paneVaults,
 	sendBoardlessToPane,
@@ -159,6 +163,9 @@ function registryText(): string | null {
  */
 function followRegistry(): void {
 	followedRegistry = registryText();
+	for (const entry of listRepositories()) {
+		if (entry.vault !== null) agentActivity.follow(entry.vault);
+	}
 	// A move sets the entry of a pane it has visited already, which adds no entry to visit.
 	for (const [clientId, vault] of paneVaults) {
 		const { home, repository } = placeOfVault(vault);
@@ -171,6 +178,72 @@ function followRegistry(): void {
 	broadcastEverywhere({ type: "repositories_changed" });
 }
 
+type CapturedArchitecture = NonNullable<ReturnType<typeof semanticPaneContextFor>>["architecture"];
+
+/**
+ * Preserve the pane's reported canonical presentation when its checkout changes.
+ * @param key The canonical presentation key.
+ * @param captured The optional exact pane capture.
+ * @param model The chosen checkout's available policy.
+ * @returns Its stable selectors or the initial structural reading.
+ */
+function followedReading(
+	key: string,
+	captured: CapturedArchitecture,
+	model: ArchitectureModelRead,
+) {
+	if (captured == null) return { model: key.slice(6), grammar: "architecture" as const };
+	const { relationshipKinds, groups } = captured.reading;
+	return {
+		...captured.selection,
+		model: key.slice(6),
+		grammar: captured.reading.grammar,
+		scope: captured.reading.scope,
+		focus: captured.reading.focus,
+		flow: captured.reading.flow,
+		hideKinds: model.success
+			? Object.keys(model.policy.relationshipKinds).filter(
+					(kind) => !relationshipKinds.includes(kind),
+				)
+			: undefined,
+		hideGroups: model.success
+			? Object.keys(model.policy.groups).filter(
+					(group) => groups !== true && (groups === false || !groups.includes(group)),
+				)
+			: undefined,
+	};
+}
+/**
+ * Follow a chosen checkout with the pane's captured canonical reading.
+ * @param clientId The pane socket identity.
+ * @param to The chosen vault.
+ * @param repository The registered repository identity.
+ * @param key The canonical presentation key.
+ * @param captured The optional exact pane capture.
+ */
+function moveCanonicalPane(
+	clientId: string,
+	to: string,
+	repository: string | null,
+	key: string,
+	captured: CapturedArchitecture,
+): void {
+	const model = readArchitectureModel(to);
+	const reading = followedReading(key, captured, model);
+	sendToPane(
+		clientId,
+		{
+			type: "pane_model",
+			model: key.slice(6),
+			reading,
+			...(model.success ? { revision: model.revision } : {}),
+			vault: to,
+			repository,
+		},
+		key,
+	);
+	arrivedOnBoard(clientId, key);
+}
 /**
  * Move one pane into another checkout's vault, keeping its board.
  * @param clientId The pane.
@@ -178,8 +251,13 @@ function followRegistry(): void {
  * @param repository The name of the repository it is in.
  */
 function movePane(clientId: string, to: string, repository: string | null): void {
-	movePaneVault(clientId, to);
+	const captured = semanticPaneContextFor(clientId)?.architecture;
 	const key = paneBoardOf(clientId);
+	movePaneVault(clientId, to);
+	if (key?.startsWith("model:")) {
+		moveCanonicalPane(clientId, to, repository, key, captured);
+		return;
+	}
 	if (key === null) {
 		sendBoardlessToPane(clientId, {
 			type: "pane_board",
@@ -210,6 +288,9 @@ function watchRegistry(): void {
 	}
 	const file = path.resolve(registryPath());
 	followedRegistry = registryText();
+	for (const entry of listRepositories()) {
+		if (entry.vault !== null) agentActivity.follow(entry.vault);
+	}
 	try {
 		fs.mkdirSync(path.dirname(file), { recursive: true });
 		registryWatcher = fs.watch(path.dirname(file), { persistent: false }, (_event, name) => {

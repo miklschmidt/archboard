@@ -30,9 +30,13 @@ import { embedRecipeInSvg } from "#runtime/operations/recipe/svg-recipe.ts";
  * @param request What to draw, and on which ground.
  * @returns The document, its size and its atlas.
  */
-async function renderArchitecture(request: DiagramRenderRequest): Promise<RenderedDiagram> {
+async function renderArchitecture(
+	request: DiagramRenderRequest & { grammar?: SemanticViewRenderRequest["grammar"] },
+): Promise<RenderedDiagram> {
 	installBunHost();
-	return renderArchitectureIn(request);
+	return request.grammar === undefined
+		? renderArchitectureIn(request)
+		: renderSemanticViewIn({ ...request, grammar: request.grammar });
 }
 
 /**

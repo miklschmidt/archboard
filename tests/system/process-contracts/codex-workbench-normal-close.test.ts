@@ -1,3 +1,4 @@
+import { seedCanonicalFixture } from "../support/canonical-fixture.ts";
 import { describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { request as httpRequest } from "node:http";
@@ -43,15 +44,7 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 						: undefined,
 				"held normal-close RPC",
 			);
-			const seeded = await request("/api/semantic-boards/create", {
-				method: "POST",
-				doing: "starting the board this close is about",
-				body: {
-					board: "scratch",
-					create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
-				},
-			});
-			expect(seeded.status).toBe(200);
+			const seeded = seedCanonicalFixture(server.vault);
 
 			const blockerBody = JSON.stringify({ version: 1, kind: "platform" });
 			const blocker = httpRequest(`${server.base}/api/settings/opener`, {
@@ -101,13 +94,18 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 			// A write arriving after admission closed is refused rather than queued,
 			// and it is told why: the server is on its way down.
 			const raced = await fetch(
-				`${server.base}/api/semantic-boards/edit?vault=${encodeURIComponent(server.vault)}&expectVersion=1&doing=${encodeURIComponent("a write that arrives too late")}`,
+				`${server.base}/api/architecture/module?vault=${encodeURIComponent(server.vault)}`,
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
-						board: "scratch",
-						edit: { nodes: [{ name: "Late", kind: "service" }] },
+						target: { model: "Fixture", state: "Now" },
+						expectedRevision: seeded.revision,
+						operationId: "late",
+						writer: "agent",
+						doing: "A late architecture write",
+						claim: "NoClaim",
+						changes: [{ type: "add-module", module: { name: "Late", kind: "service", order: 0 } }],
 					}),
 				},
 			);
@@ -138,8 +136,8 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 
 			// The board came through the whole close untouched: the writes that
 			// landed stand, and the one that arrived too late changed nothing.
-			const afterRace = await request("/api/semantic-boards/board?board=scratch");
-			expect((afterRace.body as { board?: { version?: unknown } }).board?.version).toBe(1);
+			const afterRace = await request("/api/architecture/model");
+			expect(afterRace.body).toMatchObject({ success: true, revision: seeded.revision });
 
 			const retryClose = server.normalClose();
 			await Promise.all([closing, retryClose]);

@@ -21,7 +21,7 @@ import { stopAndKillOwnedGroup } from "#runtime/processes/git-group-termination.
 import { asError, errorMessage } from "@archboard/diagnostics/thrown-error";
 import { GitCommandError } from "#runtime/processes/git-failure.ts";
 import type { GitFailure } from "#runtime/processes/git-failure.ts";
-import { drainBounded } from "#runtime/processes/git-output.ts";
+import { decodeGitOutput, drainBounded } from "#runtime/processes/git-output.ts";
 import type { BoundedDrain, DrainOutcome } from "#runtime/processes/git-output.ts";
 
 // The owner script is an export of this package, which Bun resolves to its file.
@@ -106,6 +106,7 @@ function spawnGitOwner(cwd: string, args: readonly string[], executable: string)
 	try {
 		const child = Bun.spawn([process.execPath, GIT_PROCESS_OWNER, executable, ...args], {
 			cwd,
+			env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
 			detached: true,
 			/**
 			 * Take the owner's result off the IPC channel.
@@ -458,23 +459,29 @@ function refuseExitStatus(result: GitOwnerResult, err: DrainOutcome): void {
  * @param commandResult What the owner reported.
  * @param out The kept stdout.
  * @param err The kept stderr.
- * @returns Trimmed stdout, or undefined when it was empty.
+ * @param trimOutput Whether this is a trimmed probe or exact object output.
+ * @returns The requested output, or undefined when it was empty.
  * @throws {GitCommandError} When the command did not succeed.
  */
 function commandOutput(
 	commandResult: OwnerOutcome,
 	out: DrainOutcome,
 	err: DrainOutcome,
+	trimOutput: boolean,
 ): string | undefined {
 	if (commandResult.kind !== "result") {
 		throw new GitCommandError("cleanup", "Git process owner exited without a command result.");
 	}
 	refuseOwnerReport(commandResult);
 	refuseExitStatus(commandResult, err);
-	return new TextDecoder().decode(out.bytes).trim() || undefined;
+	const output = decodeGitOutput(out.bytes, commandResult.exitCode);
+	return (trimOutput ? output.trim() : output) || undefined;
 }
 
 interface GitOptions {
+	input?: Uint8Array;
+	trimOutput?: boolean;
+	maxOutputBytes?: number;
 	signal?: AbortSignal;
 	timeoutMs?: number | null;
 	executable?: string;
@@ -511,6 +518,7 @@ async function startCommand(
 		child.stdout,
 		() => run.terminate("output"),
 		(error) => run.terminate("cleanup", error),
+		options.maxOutputBytes,
 	);
 	const stderr = drainBounded(
 		child.stderr,
@@ -524,7 +532,10 @@ async function startCommand(
 	const inspectedOwnerResult = ownerResult.then((outcome) =>
 		inspectOwnerOutcome(run, child, group, outcome),
 	);
-	child.send({ kind: "start" });
+	child.send({
+		kind: "start",
+		input: options.input === undefined ? undefined : Buffer.from(options.input).toString("base64"),
+	});
 	return { child, group, run, handles: { leaderExited, inspectedOwnerResult, stdout, stderr } };
 }
 
@@ -579,7 +590,7 @@ async function git(
 		const exitCode = commandResult.kind === "result" ? commandResult.exitCode : undefined;
 		throw await terminationError(command.run, command.run.termination, command.group, exitCode);
 	}
-	return commandOutput(commandResult, out, err);
+	return commandOutput(commandResult, out, err, options.trimOutput !== false);
 }
 
 export { type GitOptions, git };

@@ -21,16 +21,27 @@ test("every HTTP surface and socket upgrade refuses foreign pages before work", 
 		vault,
 	});
 	resources.defer(() => server.dispose());
-	const boardFile = join(vault, "payments.semantic.json");
+	const boardFile = join(vault, "model.json");
+	for (const args of [
+		["init", "-q"],
+		["config", "user.name", "Origin Author"],
+		["config", "user.email", "origin@example.test"],
+		["config", "commit.gpgsign", "false"],
+	]) {
+		const ran = Bun.spawnSync(["git", "-C", join(root, "vault"), ...args]);
+		if (ran.exitCode !== 0) throw new Error(ran.stderr.toString());
+	}
 	const named = `vault=${encodeURIComponent(server.vault)}`;
-	const create = `/api/semantic-boards/create?${named}&doing=checking%20local%20tools`;
+	const create = `/api/architecture/init?${named}&doing=checking%20local%20tools`;
 	const body = JSON.stringify({
-		board: "payments",
-		create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
+		name: "Payments",
+		operationId: "origin-probe",
+		writer: "local-tool",
+		doing: "Probe local authoring",
 	});
 
 	for (const [path, method] of [
-		[`/api/semantic-boards?${named}`, "GET"],
+		[`/api/architecture/model?${named}`, "GET"],
 		[create, "POST"],
 		[`/api/vault/code-check?${named}`, "GET"],
 		["/assets/diagram-fonts/Onest-wght-v1.000.ttf", "GET"],
@@ -69,12 +80,9 @@ test("every HTTP surface and socket upgrade refuses foreign pages before work", 
 		// The Vite proxy preserves this browser Host for the shared origin guard.
 		{ Host: "localhost:5173", Origin: "http://localhost:5173", "Sec-Fetch-Site": "same-origin" },
 	]) {
-		const response = await fetch(
-			`${server.base}/api/semantic-boards/board?${named}&board=payments`,
-			{
-				headers,
-			},
-		);
+		const response = await fetch(`${server.base}/api/architecture/model?${named}`, {
+			headers,
+		});
 		expect(response.status).toBe(200);
 		expect(response.headers.get("access-control-allow-origin")).toBeNull();
 	}
@@ -86,7 +94,7 @@ test("every HTTP surface and socket upgrade refuses foreign pages before work", 
 		).status,
 	).toBe(200);
 	const refusedEdit = await fetch(
-		`${server.base}/api/semantic-boards/edit?${named}&doing=foreign%20write`,
+		`${server.base}/api/architecture/module?${named}&doing=foreign%20write`,
 		{
 			method: "POST",
 			headers: { Origin: "https://example.com", "Content-Type": "application/json" },

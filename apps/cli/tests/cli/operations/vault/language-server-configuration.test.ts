@@ -11,8 +11,8 @@ import { afterAll, beforeAll, expect, spyOn, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import type * as CodeCheck from "@archboard/code-intel/code-check-run";
-import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
 
 /** A repository with no remote is named by its directory, here with a space. */
 const IDENTITY = "my project";
@@ -63,7 +63,8 @@ beforeAll(async () => {
 	vault = join(scratch, "vault");
 	process.env["ARCHBOARD_REPOS"] = registry;
 	mkdirSync(join(checkout, "src"), { recursive: true });
-	mkdirSync(vault);
+	mkdirSync(join(vault, ".archboard"), { recursive: true });
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
 	git(checkout, "init", "-q");
 	// `ledger.c` calls `audit_check` that `ledger.h` declares and `audit.c` defines: only a server can place the use.
 	const files = {
@@ -74,33 +75,42 @@ beforeAll(async () => {
 		"src/report.c": "int report(void) { return 0; }\n",
 	};
 	for (const [file, text] of Object.entries(files)) writeFileSync(join(checkout, file), text);
-	const part = (id: string, path: string, order: number) => ({
-		id,
-		name: id,
-		kind: "module",
-		order,
-		binding: { repo: IDENTITY, path },
-	});
-	const anchor = { repo: IDENTITY, path: "src/ledger.c", symbol: "audit_check" };
-	const content = {
-		nodes: [part("pL", "src/ledger.c", 10), part("pR", "src/report.c", 20)],
-		edges: [{ id: "e1", order: 10, from: "pL", to: "pR", kind: "call", anchor }],
-	};
 	writeFileSync(
-		join(vault, "Shop.semantic.json"),
+		join(vault, "model.json"),
 		JSON.stringify({
-			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
-			kind: "semantic-board",
+			schemaVersion: 1,
 			id: "Shop",
 			name: "Shop",
-			level: "system",
-			version: 1,
-			createdAt: "2026-10-07T00:00:00.000Z",
-			updatedAt: "2026-10-07T00:00:00.000Z",
-			current: "v1",
-			variants: [{ id: "v1", name: "Built", lifecycle: "current", content }],
+			current: { id: "Built", name: "Built" },
 		}),
 	);
+	for (const [id, path, order] of [
+		["pL", "src/ledger.c", 10],
+		["pR", "src/report.c", 20],
+	] as const)
+		writeFileSync(
+			join(vault, `${id}.module.json`),
+			JSON.stringify({
+				schemaVersion: 1,
+				id: `Shop#${id}`,
+				name: id,
+				kind: "module",
+				order,
+				binding: { repo: IDENTITY, path },
+				outgoing:
+					id === "pL"
+						? [
+								{
+									id: "Shop#e1",
+									order: 10,
+									to: "Shop#pR",
+									kind: "call",
+									anchor: { repo: IDENTITY, path: "src/ledger.c", symbol: "audit_check" },
+								},
+							]
+						: [],
+			}),
+		);
 	codeCheck = (await import("@archboard/code-intel/code-check-run")).createCodeCheck();
 	({ runCli } = await import("#cli/operations/invocation/run.ts"));
 });

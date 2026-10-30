@@ -50,7 +50,7 @@ function lacking(lacks: (typeof LACKS)[keyof typeof LACKS], held: Held, symbol: 
 }
 
 /**
- * The warning for a bound path that a named draft names and the checkout lacks.
+ * The warning for a bound path that the selected source lacks.
  * @param claim The binding.
  * @param where The code that was read: the checkout, or a ref in it.
  * @returns The finding.
@@ -61,10 +61,8 @@ function bindingPathMissing(claim: BindingClaim, where: string): CodeFinding {
 		site,
 		"BINDING_PATH_MISSING",
 		`Node ${JSON.stringify(site.subject.name)} is bound to ${JSON.stringify(binding.path)} in ` +
-			`${JSON.stringify(binding.repo)} on the named draft, and there is no such file or ` +
-			`directory in ${where}. Naming a draft says that its code ` +
-			"is built now: bind the part to where its code lives, write that code, or leave --variant " +
-			"out until it is built.",
+			`${JSON.stringify(binding.repo)}. There is no such file or directory in ${where}. ` +
+			"Correct the binding or create the missing source before accepting this state.",
 	);
 }
 

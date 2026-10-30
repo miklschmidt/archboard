@@ -12,12 +12,12 @@ import {
 	type ApplicationPaneProps,
 } from "#ui/components/application/ApplicationPane.tsx";
 import type { Narration } from "#ui/hooks/application/use-narration.ts";
-import type { PaneReadings, PickedSubject } from "#ui/hooks/application/use-pane-reading.ts";
+import type { PaneReadings } from "#ui/hooks/application/use-pane-reading.ts";
 import type { Panes } from "#ui/hooks/application/use-panes.ts";
 import type { PaneTheme } from "#ui/rules/pane-session/session-contracts.ts";
-import type { SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
+import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import { servedVault } from "@archboard/server-requests";
-import type { RecordedStep } from "#ui/state/walkthrough-recording/recorder.ts";
+import type { WalkthroughRecorder } from "#ui/state/walkthrough-recording/recorder.ts";
 
 /** Something the shell lays over one pane's picture. */
 interface PaneOverlay {
@@ -60,14 +60,12 @@ interface PaneViewSources {
 }
 
 /** What a recording page gives its pane. */
-interface PaneRecording {
-	/** The step the page moves the pane to, or null before the first. */
-	readonly step: RecordedStep | null;
+interface PaneRecording extends ReturnType<WalkthroughRecorder["view"]> {
 	/**
 	 * The recorder hears what the pane is reading.
 	 * @param reading The reading.
 	 */
-	readonly onReading: (reading: SemanticPaneReading) => void;
+	readonly onReading: (reading: PaneReading) => void;
 }
 
 /**
@@ -78,37 +76,7 @@ interface PaneRecording {
  * @returns The element.
  */
 function paneElement(sources: PaneViewSources, paneId: string, index: number): ReactNode {
-	const { panes, readings } = sources;
-	/**
-	 * The person chose a different way of reading this pane's board.
-	 * @param view The view's id, or null for the overview.
-	 */
-	function readThrough(view: string | null): void {
-		readings.showView(paneId, view);
-	}
-	/**
-	 * The person picked a subject out in this pane, or cleared it.
-	 * @param subject The subject, or null.
-	 */
-	function pickHere(subject: PickedSubject | null): void {
-		readings.pick(paneId, subject);
-	}
-	/**
-	 * The person asked for a different state of this pane's architecture.
-	 * @param variant The variant's id or name, or null for whichever is current.
-	 */
-	function showVariantHere(variant: string | null): void {
-		sources.onVariantChange(paneId, variant);
-	}
-	/**
-	 * Show a board in this pane: where a part its search found is, or where a drill-down leads.
-	 * @param key The board key.
-	 * @param repository The repository the board is in; the pane's own when none is named.
-	 * @returns Whether the pane shows it now.
-	 */
-	function openBoardHere(key: string, repository?: string): Promise<boolean> {
-		return sources.openBoard(key, paneId, repository);
-	}
+	const { panes } = sources;
 	return createElement(ApplicationPane, {
 		key: paneId,
 		paneId,
@@ -116,16 +84,10 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 		theme: sources.theme,
 		callbacks: panes.callbacks,
 		handles: panes.handles,
-		view: readings.viewOf(paneId),
-		onViewChange: readThrough,
-		picked: readings.pickedIn(paneId),
-		onPick: pickHere,
-		onVariantChange: showVariantHere,
 		narration: sources.narration?.forPane(paneId),
 		overlay: sources.overlay?.paneId === paneId ? sources.overlay.element : undefined,
 		reducedMotion: sources.reducedMotion,
 		openingVault: servedVault(),
-		onOpenBoard: openBoardHere,
 	});
 }
 
@@ -144,14 +106,18 @@ function recordedOrNot(
 	recording: PaneRecording | null,
 	first: boolean,
 	active: boolean,
-): Pick<ApplicationPaneProps, "primary" | "focused" | "recording" | "step" | "onSemanticReading"> {
+): Pick<
+	ApplicationPaneProps,
+	"primary" | "focused" | "recording" | "step" | "onRecordedReading" | "recordedArchitecture"
+> {
 	if (recording === null) {
 		return {
 			primary: first,
 			focused: active,
 			recording: false,
 			step: null,
-			onSemanticReading: undefined,
+			onRecordedReading: undefined,
+			recordedArchitecture: undefined,
 		};
 	}
 	return {
@@ -159,7 +125,8 @@ function recordedOrNot(
 		focused: false,
 		recording: true,
 		step: recording.step,
-		onSemanticReading: recording.onReading,
+		onRecordedReading: recording.onReading,
+		recordedArchitecture: recording.architecture,
 	};
 }
 

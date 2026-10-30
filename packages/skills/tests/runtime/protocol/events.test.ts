@@ -55,7 +55,19 @@ describe("parsing a codex exec event stream", () => {
 					item: {
 						id: "i3",
 						type: "command_execution",
-						command: ["archboard", "semantic", "new", "Flask", "--doing", "x"],
+						command: [
+							"archboard",
+							"model",
+							"init",
+							"--name",
+							"Flask",
+							"--operation-id",
+							"init",
+							"--writer",
+							"agent",
+							"--doing",
+							"x",
+						],
 						exit_code: 0,
 						status: "completed",
 					},
@@ -79,7 +91,7 @@ describe("parsing a codex exec event stream", () => {
 		expect(trace.threadId).toBe("thr_1");
 		expect(trace.commands.map((command) => command.command)).toEqual([
 			"bash -lc 'cat /run/home/.agents/skills/archboard/SKILL.md'",
-			"archboard semantic new Flask --doing x",
+			"archboard model init --name Flask --operation-id init --writer agent --doing x",
 		]);
 		expect(trace.commands[0]?.output).toBe("# Archboard");
 		expect(trace.messages).toEqual(["Done."]);
@@ -149,7 +161,7 @@ describe("classifying what an author ran", () => {
 		const [nestedWrite] = classifyCommands(
 			[
 				{
-					command: `bash -lc "sh -c 'archboard semantic new x --doing y'"`,
+					command: `bash -lc "sh -c 'archboard model init --name x --operation-id init --writer agent --doing y'"`,
 					exitCode: 0,
 					status: "completed",
 					output: "",
@@ -165,7 +177,7 @@ describe("classifying what an author ran", () => {
 		const [compoundWrite] = classifyCommands(
 			[
 				{
-					command: `bash -lc "cd x && sh -c 'archboard semantic new x --doing y'"`,
+					command: `bash -lc "cd x && sh -c 'archboard model init --name x --operation-id init --writer agent --doing y'"`,
 					exitCode: 0,
 					status: "completed",
 					output: "",
@@ -176,8 +188,8 @@ describe("classifying what an author ran", () => {
 		expect(compoundWrite?.write).toBe(true);
 		// Invoked as bash -l -c, or followed by another command, a write is still a write.
 		for (const command of [
-			"bash -l -c 'archboard semantic new x --doing y'",
-			"bash -c true && archboard semantic new x --doing y",
+			"bash -l -c 'archboard model init --name x --operation-id init --writer agent --doing y'",
+			"bash -c true && archboard model init --name x --operation-id init --writer agent --doing y",
 		]) {
 			const [write] = classifyCommands(
 				[{ command, exitCode: 0, status: "completed", output: "" }],
@@ -190,10 +202,10 @@ describe("classifying what an author ran", () => {
 	test("each class has a rule that names why, and a write is a write", () => {
 		const records = [
 			"bash -lc 'cat /run/home/.agents/skills/archboard/references/schemas.md'",
-			"bash -lc 'archboard help semantic edit'",
-			"bash -lc 'archboard semantic config'",
+			"bash -lc 'archboard help model edit'",
+			"bash -lc 'archboard model config'",
 			"bash -lc 'cat /run/vault/.archboard/config.yaml'",
-			'bash -lc \'archboard semantic edit "Flask JSON" --doing "adding the provider" --expect-version 3 < edit.json\'',
+			"bash -lc 'archboard model edit --doing \"adding the provider\" --input edit.json'",
 			"bash -lc 'archboard check'",
 			"bash -lc 'rg -n \"class Flask\" src/flask/app.py'",
 			"bash -lc 'sed -n 1,40p /run/flask/src/flask/ctx.py'",

@@ -1,3 +1,4 @@
+import { reconcileFlows } from "#shared/rules/reconcile/flows.ts";
 // Reconciling the parts of a variant that are told in an order.
 //
 // A sequence's steps and a walkthrough's beats are not a set: "the reply comes
@@ -21,9 +22,8 @@
 
 import type { VariantContent } from "#shared/schemas/content.ts";
 import type { ChangedField } from "#shared/schemas/reconciliation.ts";
-import type { FlowStep, SemanticFlow } from "#shared/schemas/views.ts";
-import { flatSteps, type FlatStep } from "#shared/rules/flow-steps.ts";
-import { leftEmpty, toldFlow } from "#shared/rules/reconcile/flow.ts";
+import type { SemanticFlow } from "#shared/schemas/views.ts";
+import { leftEmpty } from "#shared/rules/reconcile/flow.ts";
 import type { SemanticWalkthrough, WalkthroughBeat } from "#shared/schemas/walkthrough.ts";
 
 /** One disagreement about something told in an order. */
@@ -488,23 +488,9 @@ function reconcileTold(
 	settled: Containers,
 ): { flows: SemanticFlow[]; walkthroughs: SemanticWalkthrough[]; issues: OrderedIssue[] } {
 	const issues: OrderedIssue[] = [];
-	const flows = settled.flows.map((flow) => {
-		// Merged on the flat reading, so a step that moved into another alternative
-		// merges like a changed field, and built back into a tree.
-		const sides = {
-			base: flatSteps(stepsIn(states.base.flows, flow.id)),
-			mine: stepsIn(states.mine.flows, flow.id),
-			theirs: stepsIn(states.theirs.flows, flow.id),
-		};
-		const merged = mergeTold<FlatStep>(
-			{ base: sides.base, mine: flatSteps(sides.mine), theirs: flatSteps(sides.theirs) },
-			TOLD_FIELDS.step,
-			"step",
-		);
-		const told = toldFlow({ flow, ...merged, ...sides });
-		issues.push(...told.issues);
-		return { ...flow, steps: told.steps };
-	});
+	const reconciledFlows = reconcileFlows(states, settled.flows);
+	const flows = reconciledFlows.flows;
+	issues.push(...reconciledFlows.issues);
 	const walkthroughs = settled.walkthroughs.map((walkthrough) => {
 		const merged = mergeTold<WalkthroughBeat>(
 			{
@@ -526,16 +512,6 @@ function reconcileTold(
 }
 
 /**
- * One flow's steps in one state.
- * @param flows That state's flows.
- * @param id The flow.
- * @returns Its steps, or none when that state has no such flow.
- */
-function stepsIn(flows: readonly SemanticFlow[], id: string): readonly FlowStep[] {
-	return flows.find((flow) => flow.id === id)?.steps ?? [];
-}
-
-/**
  * One walkthrough's beats in one state.
  * @param walkthroughs That state's walkthroughs.
  * @param id The walkthrough.
@@ -548,4 +524,12 @@ function beatsIn(
 	return walkthroughs.find((walkthrough) => walkthrough.id === id)?.beats ?? [];
 }
 
-export { reconcileTold, type OrderedIssue };
+export {
+	reconcileTold,
+	mergeTold,
+	settledEntries,
+	orderOf,
+	afterAnchor,
+	TOLD_FIELDS,
+	type OrderedIssue,
+};

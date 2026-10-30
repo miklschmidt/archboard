@@ -1,0 +1,32 @@
+{
+  "order": 61000,
+  "name": "Shared model projection",
+  "kind": "module",
+  "responsibility": "Projects canonical module scopes into shared renderer content",
+  "description": "One shared projection selects recursive scopes, focus, and visual filters without copying architecture. It groups connections by visible endpoints, kind, and comparison standing. Aggregate lines summarize their hidden relationships while the inspector retains every original identity and label. Complete authored flows remain ordered and unchanged.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/shared/rules/model-projection.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#IgYndyJd",
+  "parent": "vKEsyHFk/0T9enjhi#1VHRyajb",
+  "formerNames": [
+    "Model projection"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.13 - Explain-the-captured-reading-through-local-agent-actions.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
+    }
+  ],
+  "outgoing": []
+}

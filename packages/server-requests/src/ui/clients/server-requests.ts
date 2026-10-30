@@ -8,6 +8,22 @@
 /** A JSON body as far as the browser can see before trusting its shape. */
 type JsonRecord = Readonly<Record<string, unknown>>;
 
+/** A server refusal whose optional code remains available to the reader. */
+class RequestFailure extends Error {
+	readonly code: string | undefined;
+
+	/**
+	 * Preserve a server refusal without inventing an endpoint contract.
+	 * @param message The server message or HTTP fallback.
+	 * @param code The machine-readable refusal code, when supplied.
+	 */
+	constructor(message: string, code?: string) {
+		super(message);
+		this.name = "RequestFailure";
+		this.code = code;
+	}
+}
+
 /**
  * The vault a page opens in (ADR 0049), learned once before the page draws
  * anything. A pane opens in it until somebody shows it a board of another
@@ -116,7 +132,7 @@ async function readBody(response: Response): Promise<unknown> {
  * @param method The request method.
  * @param url The request URL.
  * @param status The HTTP status.
- * @returns A plain error.
+ * @returns The refusal with its optional server code.
  */
 function plainFailure(
 	record: JsonRecord | null,
@@ -125,7 +141,11 @@ function plainFailure(
 	status: number,
 ): Error {
 	const message = record?.["error"];
-	return new Error(typeof message === "string" ? message : `${method} ${url} failed (${status})`);
+	const code = record?.["code"];
+	return new RequestFailure(
+		typeof message === "string" ? message : `${method} ${url} failed (${status})`,
+		typeof code === "string" ? code : undefined,
+	);
 }
 
 /** One JSON request: GET unless it names a method, with a JSON body when it carries a payload. */
@@ -142,7 +162,7 @@ interface JsonRequest {
  * @param asked The request.
  * @returns The fetch options.
  */
-function fetchOptions(asked: JsonRequest): RequestInit {
+function fetchOptions(asked: JsonRequest = {}): RequestInit {
 	return {
 		...(asked.method === undefined ? {} : { method: asked.method }),
 		...(asked.payload === undefined
@@ -164,21 +184,29 @@ function fetchOptions(asked: JsonRequest): RequestInit {
 async function requestJson<T>(url: string, asked: JsonRequest = {}): Promise<T> {
 	const response = await fetch(url, fetchOptions(asked));
 	const body = await readBody(response);
-	const record = isRecord(body) ? body : null;
-	if (refused(response, record)) {
-		throw plainFailure(record, asked.method ?? "GET", url, response.status);
-	}
+	const failure = replyFailure(response, body, asked.method ?? "GET", url);
+	if (failure) throw failure;
 	return trustReply<T>(body);
 }
 
 /**
- * Whether a reply is a refusal: a non-2xx, or a body that says so itself.
+ * Preserve a non-2xx refusal, or a body that reports its own failure.
  * @param response The fetch response.
- * @param record Its decoded body, when it decoded to an object.
- * @returns True when the server refused.
+ * @param body Its decoded body.
+ * @param method The request method.
+ * @param url The request URL.
+ * @returns The refusal, or undefined for a successful reply.
  */
-function refused(response: Response, record: JsonRecord | null): boolean {
-	return !response.ok || record?.["success"] === false;
+function replyFailure(
+	response: Response,
+	body: unknown,
+	method: string,
+	url: string,
+): Error | undefined {
+	const record = isRecord(body) ? body : null;
+	if (!response.ok || record?.["success"] === false)
+		return plainFailure(record, method, url, response.status);
+	return undefined;
 }
 
 /** A Zod-shaped parser for one reply schema. */
@@ -204,13 +232,22 @@ async function strictReply<T, F>(
 	invalid: (error?: unknown) => F,
 ): Promise<T | F> {
 	try {
-		const response = await fetch(url, asked === undefined ? undefined : fetchOptions(asked));
+		const response = await fetch(url, fetchOptions(asked));
 		const body: unknown = await response.json();
 		const parsed = response.ok ? successSchema.safeParse(body) : failureSchema.safeParse(body);
-		return parsed.success ? parsed.data : invalid();
+		if (parsed.success) return parsed.data;
+		return invalid(replyFailure(response, body, asked?.method ?? "GET", url));
 	} catch (error) {
 		return invalid(error);
 	}
 }
 
-export { inVault, learnServedVault, requestJson, servedVault, strictReply, type ReplySchema };
+export {
+	inVault,
+	learnServedVault,
+	requestJson,
+	servedVault,
+	strictReply,
+	RequestFailure,
+	type ReplySchema,
+};

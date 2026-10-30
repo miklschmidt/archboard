@@ -1,19 +1,14 @@
-// The README's diagrams: SVGs drawn by `archboard semantic render`, in light and dark, each with
-// its embedded faces cut down to the characters it draws, so the page stays light. The same board
-// gives the same bytes. An index thumbnail of one of them is a region rasterized by `archboard
-// semantic rasterize` and encoded as a still WebP.
-//
-// A diagram of this checkout's own vault is a tracked embed (ADR 0057): it is drawn in place with
-// `--track`, so its board lists it, and it keeps its render recipe, which `archboard check` reads
-// to say when the board or the renderer draws it differently. Cutting the faces keeps the recipe,
-// and the recipe's picture digest is of the drawing before the cut, so a cut file still compares.
-// A diagram of examples/web-shop is drawn from a copy: that example is no vault in place (in a Git
-// checkout only `<root>/.archboard/vault` is one), so no check can find its board, and the kit
-// leaves its recipe out. The manifest's source hash says when it is stale.
+// Canonical SVG and PNG exports for the README.
+// Repository drawings keep their exact render recipes for Git-discovered embed checks.
+// Example drawings omit a recipe that names a disposable take; the asset receipt tracks inputs.
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { z } from "zod";
+import type { z } from "zod";
+import {
+	ArchitectureRenderResultSchema,
+	type ArchitectureRenderRequestSchema,
+} from "@archboard/board/model";
 
 import {
 	encodeThumbnail,
@@ -37,9 +32,11 @@ interface DiagramSpec {
 	/** The asset's name, which is also the stem of its two files. */
 	readonly name: string;
 	readonly vault: TrackedVault;
-	readonly board: string;
-	/** The board's view to draw through; the whole variant when absent. */
-	readonly view?: string;
+	/** The authored structural or flow reading; repository roots when absent. */
+	readonly reading?: Pick<
+		z.input<typeof ArchitectureRenderRequestSchema>,
+		"module" | "flow" | "grammar" | "state" | "checkpoint"
+	>;
 	/** An index thumbnail cut from the picture: its file, its theme, and the region's width. */
 	readonly thumbnail?: {
 		readonly file: string;
@@ -49,8 +46,10 @@ interface DiagramSpec {
 	};
 }
 
-/** What `semantic render` answers about the picture it drew. */
-const RenderReceiptSchema = z.object({ width: z.number(), height: z.number() });
+/** What `model render` answers about the picture it drew. */
+const RenderReceiptSchema = ArchitectureRenderResultSchema.options[0]
+	.pick({ width: true, height: true })
+	.strip();
 
 /**
  * The code points of a text, each as a string. A face maps code points to glyphs, so a subset is
@@ -99,7 +98,7 @@ const RECIPE_ELEMENT = /<metadata><archboard:render-recipe[\s\S]*?<\/metadata>/;
 /**
  * Cut each face an SVG embeds down to the characters it draws. Every other byte stays, the
  * render recipe included.
- * @param svg The SVG `semantic render` wrote.
+ * @param svg The SVG `model render` wrote.
  * @param work A directory for the faces.
  * @returns The smaller SVG.
  */
@@ -133,17 +132,19 @@ async function subsetFaces(svg: string, work: string): Promise<string> {
 /**
  * The CLI arguments that pick what the diagram draws.
  * @param spec The diagram.
- * @returns The board and its view.
+ * @returns Explicit canonical reading flags.
  */
 function subjectArguments(spec: DiagramSpec): readonly string[] {
-	return [spec.board, ...(spec.view === undefined ? [] : ["--view", spec.view])];
+	return Object.entries(spec.reading ?? {}).flatMap(([key, value]) =>
+		value === undefined ? [] : [`--${key}`, value],
+	);
 }
 
 /**
  * Rasterize the thumbnail's region of the picture and encode it.
  * @param spec The diagram.
  * @param server The take's server.
- * @param size The picture's size, as `semantic render` reported it.
+ * @param size The picture's size, as `model render` reported it.
  * @param work A directory for the bitmap.
  */
 async function thumbnail(
@@ -158,10 +159,9 @@ async function thumbnail(
 	const height = Math.round((width * 9) / 16);
 	const bitmap = join(work, "thumbnail.png");
 	await server.cli([
-		"semantic",
+		"model",
 		"rasterize",
 		...subjectArguments(spec),
-		"--no-legend",
 		"--theme",
 		cut.theme,
 		"--region",
@@ -182,21 +182,19 @@ const CHECKOUT_VAULT: TrackedVault = ".archboard/vault";
 /**
  * Whether a diagram is a tracked embed: drawn in place from this checkout's own vault.
  * @param spec The diagram.
- * @returns Whether its board lists its files.
+ * @returns Whether its source remains available in this checkout.
  */
-function isTrackedEmbed(spec: DiagramSpec): boolean {
+function keepsRecipe(spec: DiagramSpec): boolean {
 	return spec.vault === CHECKOUT_VAULT;
 }
 
 /**
- * Draw one theme of a diagram into docs/readme, its faces cut down. A tracked embed is drawn
- * there with `--track` and keeps its recipe; a copy's picture is drawn in the scratch directory
- * and loses it.
+ * Draw one theme and subset its fonts while preserving repository recipes.
  * @param spec The diagram.
  * @param server The take's server.
  * @param theme The theme.
- * @param work A directory for the faces and the copy's picture.
- * @returns The picture's size, as `semantic render` reported it.
+ * @param work The directory for fonts and temporary drawings.
+ * @returns The dimensions from the public renderer.
  */
 async function drawTheme(
 	spec: DiagramSpec,
@@ -205,19 +203,16 @@ async function drawTheme(
 	work: string,
 ): Promise<z.infer<typeof RenderReceiptSchema>> {
 	const file = readmeFile(`${spec.name}-${theme}.svg`);
-	const tracked = isTrackedEmbed(spec);
+	const tracked = keepsRecipe(spec);
 	const drawn = tracked ? inRepository(file) : join(work, `${theme}.svg`);
-	const tracking = ["--track", "--doing", `Drawing ${file} for the README as a tracked embed`];
 	const receipt = await server.cli([
-		"semantic",
+		"model",
 		"render",
 		...subjectArguments(spec),
-		"--no-legend",
 		"--theme",
 		theme,
 		"--out",
 		drawn,
-		...(tracked ? tracking : []),
 	]);
 	const svg = readFileSync(drawn, "utf8");
 	const kept = tracked ? svg : svg.replace(RECIPE_ELEMENT, "");
@@ -231,15 +226,15 @@ async function drawTheme(
  * @returns The steps.
  */
 function diagramPlan(spec: DiagramSpec): readonly string[] {
-	const through = spec.view === undefined ? "" : ` through its view "${spec.view}"`;
-	const drawing = isTrackedEmbed(spec)
+	const reading = JSON.stringify(spec.reading ?? { grammar: "architecture" });
+	const drawing = keepsRecipe(spec)
 		? [
 				`Start an Archboard server over ${spec.vault} in place.`,
-				`Draw "${spec.board}"${through} in light and dark into docs/readme with archboard semantic render --track, so the board lists each file as a tracked embed.`,
+				`Render ${reading} in both themes and keep its exact recipe for Git-discovered embed checks.`,
 			]
 		: [
 				`Start an Archboard server over a copy of ${spec.vault}.`,
-				`Draw "${spec.board}"${through} in light and dark with archboard semantic render, and leave its render recipe out.`,
+				`Render ${reading} in both themes and omit the disposable source recipe.`,
 			];
 	return [
 		...drawing,
@@ -247,7 +242,7 @@ function diagramPlan(spec: DiagramSpec): readonly string[] {
 		...(spec.thumbnail === undefined
 			? []
 			: [
-					`Rasterize the top-left 16:9 region of the ${spec.thumbnail.theme} picture with archboard semantic rasterize, and encode it as ${spec.thumbnail.file}.`,
+					`Rasterize the top-left 16:9 region of the ${spec.thumbnail.theme} picture with archboard model rasterize, and encode it as ${spec.thumbnail.file}.`,
 				]),
 	];
 }
@@ -273,7 +268,7 @@ function diagramProducer(spec: DiagramSpec): Producer {
 		make: async () => {
 			const work = scratch("diagrams", spec.name);
 			const take = `diagram-${spec.name}`;
-			const server = isTrackedEmbed(spec)
+			const server = keepsRecipe(spec)
 				? await startCheckoutServer(take)
 				: await startServer(take, spec.vault, false);
 			await holding(server.stop, async () => {

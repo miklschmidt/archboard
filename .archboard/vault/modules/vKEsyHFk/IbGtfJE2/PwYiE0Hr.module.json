@@ -1,0 +1,110 @@
+{
+  "order": 12000,
+  "name": "Grading session",
+  "kind": "module",
+  "responsibility": "Stages a read-only workspace and grades the ungraded runs in chunks, in one resumed session of the grader chosen by name",
+  "description": "The runs reach the grader blinded: an anonymous id from the batch salt, private paths redacted, and no arm anywhere in the bundle. Every run of both arms is judged against the one candidate skill the batch kept, staged beside the pinned Flask sources; a batch whose kept copy is missing or changed is refused.",
+  "groups": [
+    "grading"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/skills/src/runtime/operations/grading/grading-run.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#PwYiE0Hr",
+  "parent": "vKEsyHFk/IbGtfJE2#RrIatpuG",
+  "outgoing": [
+    {
+      "order": 16000,
+      "kind": "call",
+      "label": "one chunk of blinded runs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+        "symbol": "codexGrader"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#Kj1Dd9Y2",
+      "to": "vKEsyHFk/IbGtfJE2#gwU9cyGm"
+    },
+    {
+      "order": 17000,
+      "kind": "call",
+      "label": "one chunk of blinded runs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+        "symbol": "claudeGrader"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#GfcZMk6V",
+      "to": "vKEsyHFk/IbGtfJE2#bgEcePXZ"
+    },
+    {
+      "order": 33000,
+      "kind": "call",
+      "label": "which answers fell short",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+        "symbol": "settleRetry"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#pDhY9kXG",
+      "to": "vKEsyHFk/IbGtfJE2#m7s6sgLI"
+    },
+    {
+      "order": 34000,
+      "kind": "call",
+      "label": "the Flask sources the grader reads",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+        "symbol": "checkoutFlask"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#DzWFLBp6",
+      "to": "vKEsyHFk/IbGtfJE2#8NS6WwkH"
+    },
+    {
+      "order": 42000,
+      "kind": "call",
+      "label": "the kept skill is unchanged",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+        "symbol": "digestOf"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#Ln5uDLuM",
+      "to": "vKEsyHFk/IbGtfJE2#IFhUy8C6"
+    },
+    {
+      "order": 43000,
+      "kind": "data",
+      "label": "where the kept skill lives",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+        "symbol": "BATCH_SKILL_DIRECTORY"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#s7YzBWCX",
+      "to": "vKEsyHFk/IbGtfJE2#wOZsx1lS"
+    },
+    {
+      "order": 70026,
+      "kind": "call",
+      "label": "deliver captured grading images",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+        "symbol": "imagesForRun"
+      },
+      "id": "vKEsyHFk#7IJFtNQk",
+      "to": "vKEsyHFk/SMjRfwN3#5ut3UjV6"
+    }
+  ]
+}

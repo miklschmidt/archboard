@@ -2,7 +2,6 @@
 // the orb, the voice box over a pane and the key in a presentation's bar), the subtitle in the
 // voice box, what was said in the conversation, a walkthrough's position and the focused control.
 
-import { SEMANTIC_STAGE } from "./semantic-page.ts";
 import { AGENT_DOCK, AGENT_PANEL, PANE_SECTIONS, PRESENTATION_BAR } from "./shell-dom.ts";
 import type { AgentBrowserSession } from "./agent-browser.ts";
 
@@ -70,7 +69,7 @@ function voiceNow(browser: AgentBrowserSession): Promise<VoiceNow> {
 		const key = document.querySelector('${DOCK_VOICE}');
 		const holder = document.querySelector('[data-slot="voice-orb-holder"]');
 		const socket = holder?.parentElement?.getAttribute('data-slot') === 'voice-orb-socket' ? holder.parentElement : null;
-		const box = document.querySelector('[data-slot="voice-box"]:not([data-leaving])');
+		const box = [...document.querySelectorAll('[data-slot="voice-box"]:not([data-leaving])')].find(element => element.checkVisibility());
 		const bar = document.querySelector('${BAR_VOICE}');
 		const presented = document.fullscreenElement;
 		const pressesNothing = ${PRESSES_NOTHING};
@@ -80,12 +79,12 @@ function voiceNow(browser: AgentBrowserSession): Promise<VoiceNow> {
 			enabled: !pressesNothing(key),
 			orb: socket?.getAttribute('data-home') ?? null,
 			lit: holder?.getAttribute('data-shown') === 'true',
-			box: box && {
+			box: box ? {
 				place: box.getAttribute('data-place'),
 				state: box.getAttribute('data-voice-state'),
 				pane: box.closest('${PANE_SECTIONS}')?.getAttribute('aria-label') ?? null,
 				presented: !!presented && presented.contains(box) && !!holder && presented.contains(holder),
-			},
+			} : null,
 			bar: bar && {
 				mode: bar.getAttribute('data-voice-key'),
 				enabled: !pressesNothing(bar),
@@ -96,7 +95,8 @@ function voiceNow(browser: AgentBrowserSession): Promise<VoiceNow> {
 
 function subtitleSnapshot(browser: AgentBrowserSession): Promise<SubtitleSnapshot> {
 	return browser.eval<SubtitleSnapshot>(`(() => {
-		const subtitle = document.querySelector('[data-slot="voice-box"] [data-slot="voice-subtitles"]');
+		const box = [...document.querySelectorAll('[data-slot="voice-box"]')].find(element => element.checkVisibility());
+		const subtitle = box?.querySelector('[data-slot="voice-subtitles"]');
 		const pane = subtitle?.closest('${PANE_SECTIONS}') ?? null;
 		const inner = subtitle?.getBoundingClientRect();
 		const outer = pane?.getBoundingClientRect();
@@ -119,7 +119,7 @@ function subtitleSnapshot(browser: AgentBrowserSession): Promise<SubtitleSnapsho
  */
 function voiceStill(browser: AgentBrowserSession): Promise<boolean> {
 	return browser.eval<boolean>(
-		`document.querySelector('[data-slot="voice-box"]:not([data-leaving])')?.hasAttribute('data-still') === true`,
+		`[...document.querySelectorAll('[data-slot="voice-box"]:not([data-leaving])')].find(element => element.checkVisibility())?.hasAttribute('data-still') === true`,
 	);
 }
 
@@ -140,10 +140,10 @@ function presentedStep(
 	browser: AgentBrowserSession,
 ): Promise<{ readonly index: string | null; readonly moving: boolean }> {
 	return browser.eval(`(() => {
-		const stage = document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}');
+		const stage = document.querySelector('${PANE_SECTIONS} [data-slot="model-walkthrough"]');
 		const surface = stage?.querySelector('[data-slot="semantic-board-surface"]');
 		return {
-			index: stage?.getAttribute('data-presentation-step') ?? null,
+			index: stage?.querySelector('[data-slot="semantic-presentation"]')?.getAttribute('data-step') ?? null,
 			moving: !surface || surface.hasAttribute('data-camera-motion') || surface.hasAttribute('data-picture-motion'),
 		};
 	})()`);

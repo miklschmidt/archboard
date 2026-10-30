@@ -4,8 +4,15 @@ import { fileURLToPath } from "node:url";
 import type { buildPanesReport } from "@archboard/server-lifecycle/panes";
 import type { z } from "zod";
 import type { RepositoryListingSchema } from "@archboard/workspace/repositories";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
 
-type PanesBody = ReturnType<typeof buildPanesReport> & { success: boolean };
+type PanesReport = ReturnType<typeof buildPanesReport>;
+type PanesBody = Omit<PanesReport, "panes"> & {
+	success: boolean;
+	panes: (PanesReport["panes"][number] & {
+		architecture: z.infer<typeof SemanticPaneContextSchema>["architecture"] | null;
+	})[];
+};
 type HealthBody = { websocket_clients: number };
 type ElementsBody = { elements: unknown[] };
 type ChangesBody = { cursor: number };

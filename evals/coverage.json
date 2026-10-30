@@ -1,1130 +1,185 @@
 {
-	"$comment": "The behavioural coverage inventory: every user-facing schema path and closed branch of the audited schemas plus TASK-207 and the recording commands of TASK-381, the scenarios that exercise it, what correct use is, and who owns the evidence. author-run: a model run proves it (graded by the blinded grader against source); harness-check: the deterministic outcome checks prove it from the saved board; grader: only the grader can judge it; runtime-owner: an existing fast test owns it and no model run is asked to. An entry with no scenarios is uncovered by model runs and says so.",
+	"$comment": "Canonical consumer contract. Current runtime owners cover mechanical behavior. These scenarios establish a new author baseline and make no token or quality comparison with the retired board workflow.",
 	"parts": [
 		{
 			"part": 1,
-			"title": "Architecture creation and editing",
+			"title": "Canonical structure and claims",
 			"entries": [
 				{
-					"path": "board.name, board.level (configured)",
-					"expectedUse": "one board named as asked at the configured level",
-					"scenarios": ["S00", "S07", "S08", "S14"],
-					"evidence": "harness-check",
-					"owner": "board-level, board-count"
-				},
-				{
-					"path": "create.variant, create.summary (initial variant name/summary)",
-					"expectedUse": "fixtures name the initial variant; an author may",
-					"scenarios": ["S02", "S06"],
-					"evidence": "harness-check",
-					"owner": "variant-exists on the fixture-named variant; packages/board/tests/runtime"
-				},
-				{
-					"path": "empty board then population",
-					"expectedUse": "a board may start empty and be filled by edits",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime (create with empty content, then edit)"
-				},
-				{
-					"path": "edit.level (board-level level change)",
-					"expectedUse": "level moves with the board, not a variant",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime level change"
-				},
-				{
-					"path": "node.name, node.kind, node.responsibility, node.description",
-					"expectedUse": "configured kind, clear short responsibility grounded in source and readable over two or three rendered lines when useful; optional explicit newlines; longer detail in description",
-					"scenarios": ["S00", "S01", "S14"],
+					"path": "model.modules, source-owned outgoing, claimed edits",
+					"expectedUse": "Uses the one canonical model and its public operations without legacy live authoring.",
+					"scenarios": ["S00", "S01"],
 					"evidence": "author-run",
-					"owner": "grader feature node.kind, node.responsibility; harness node-kind"
-				},
-				{
-					"path": "optional field preservation or intentional clearing on restate",
-					"expectedUse": "a restated node keeps responsibility and binding unless the change is about them",
-					"scenarios": ["S01", "S03", "S10"],
-					"evidence": "harness-check",
-					"owner": "node-field-retained, edge-ids-retained"
-				},
-				{
-					"path": "semantic rasterize: the saved board as a native-scale PNG, same selectors as render",
-					"expectedUse": "an author renders SVG to read; the harness captures every requested board, view and variant as a PNG; a bitmap is never authored or supplied by the author",
-					"scenarios": ["S00", "S02", "S05", "S07", "S09", "S12"],
-					"evidence": "harness-check",
-					"owner": "captures declared per scenario, taken after every run; packages/renderer/tests/runtime/services/rasterizer and tests/system/semantic-boards/rasterize.test.ts own pixels, size and selectors"
-				},
-				{
-					"path": "Chromium startup in a macOS host sandbox",
-					"expectedUse": "request approved execution outside the sandbox for the same rasterization, recording, or replay command when the preflight refuses startup",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/processes/headless-chromium/startup.test.ts proves native sandbox detection without an agent marker, no executable launch, and clean refusal; headless-chromium.test.ts proves ordinary startup and teardown"
-				},
-				{
-					"path": "semantic render and semantic rasterize without --out: raw SVG or PNG stdout for clipboard pipelines",
-					"expectedUse": "pipe the image to a tool such as wl-copy with the matching image type; use --out for an image file and JSON receipt",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "tests/system/semantic-boards/rasterize.test.ts owns exact SVG output with its description, PNG bytes, file receipts, and empty stdout on failure. Mechanical output behavior needs no model run."
-				},
-				{
-					"path": "semantic rasterize --clipboard",
-					"expectedUse": "copy PNG and self-contained HTML with accessible description through the native Linux or macOS clipboard; refuse --out at the same time",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "tests/system/semantic-boards/rasterize.test.ts"
-				},
-				{
-					"path": "semantic render/rasterize --no-comparison",
-					"expectedUse": "hide comparison marks and removed subjects on explicit request; preserve comparisons by default; receipts report comparedWith as null when hidden",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "tests/system/semantic-boards/rasterize.test.ts"
-				},
-				{
-					"path": "semantic render/rasterize/record --against",
-					"expectedUse": "draw a picture or a recording relative to a named variant, such as the pull request below a stacked one: it marks only what the drawn variant changes over it, carries no Planned frame, and the receipt names the variant under comparedWith",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "tests/system/semantic-boards/draw-against.test.ts owns the CLI in SVG and PNG with its refusals; packages/renderer/tests/runtime/operations/comparison/drawn-against.test.ts owns the marks and the missing frame; tests/system/server-state/walkthrough-replay.test.ts owns a talk read against a variant"
-				},
-				{
-					"path": "semantic render --theme auto",
-					"expectedUse": "the default of semantic render: one SVG for a document, README or pull request that shows the ground of the reader's colour scheme; a PNG takes light or dark and is dark by default",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/operations/architecture/theme.test.ts owns the declared tokens; packages/renderer/tests/runtime/services/rasterizer/theme-following.test.ts owns the ground under each colour scheme as an image, a background and inline"
-				},
-				{
-					"path": "semantic render/rasterize --title",
-					"expectedUse": "draw a title above an exported picture: the board, view, variant and comparison by default, or the given text",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/operations/export/export-title.test.ts owns the band and the moved picture on both engines; tests/system/semantic-boards/rasterize.test.ts owns the CLI routing in SVG and PNG"
-				},
-				{
-					"path": "semantic render/rasterize --legend, --no-legend and --legend-only",
-					"expectedUse": "draw the key of an exported picture under it by default or beside it, none with --no-legend, or alone with --legend-only",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/operations/export/export-legend.test.ts owns the content against the page key and the placement on both engines; tests/system/semantic-boards/rasterize.test.ts owns the CLI routing in SVG and PNG"
-				},
-				{
-					"path": "semantic render/rasterize render recipe: in an SVG's <metadata> element and a PNG's text chunk, on stdout, with --out and on the clipboard",
-					"expectedUse": "keep a picture as the command wrote it; a pipeline that runs SVGO keeps <metadata>, because a file without its recipe is no embed",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/operations/recipe/recipe-file.test.ts owns reading and writing the recipe; tests/system/semantic-boards/render-recipe.test.ts owns its fields, the fingerprint under real edits and the same bytes twice. Mechanical validation: no Flask scenario embeds a picture in a document"
-				},
-				{
-					"path": "semantic render/rasterize --out <file> --track --doing <line>: the board lists the file as a tracked embed { repo, path }; TRACK_OUTSIDE_CHECKOUT, TRACK_VAULT_UNREGISTERED",
-					"expectedUse": "draw a picture that a document in a Git checkout embeds with --track, SVG preferred, and commit the file with the vault",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "tests/system/semantic-boards/tracked-embeds.test.ts owns the list, the doing line, both refusals and tracking a file twice; packages/code-intel/tests/runtime/operations/history-lens/behind.test.ts owns the unchanged last change. Mechanical validation: no Flask scenario embeds a picture in a document"
-				},
-				{
-					"path": "archboard check embeds and check --fix: EMBED_OUTDATED, EMBED_SOURCE_MISSING and EMBED_RECIPE_UNREADABLE warnings, EMBED_RENDERER_CHANGED and EMBED_VAULT_UNAVAILABLE information, a fetched or cached vault of an unregistered repository, the embeds check alone in a checkout without a vault",
-					"expectedUse": "after correcting a board that check code named, run archboard check, then archboard check --fix to draw each outdated embed again, and commit the files it lists",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "tests/system/semantic-boards/embeds-check.test.ts owns the findings and --fix; embeds-fetch.test.ts owns the fetch and the cache; embeds-without-vault.test.ts owns a checkout without a vault; apps/cli/tests/cli/rules/check/embed-state.test.ts owns the standing of an embed. Mechanical validation: no Flask scenario embeds a picture in a document"
-				},
-				{
-					"path": "semantic views: every view of a board with what it draws at a variant",
-					"expectedUse": "choose the view to draw from its drawn counts and marks before rendering; a view with nothing drawn draws nothing at that variant; --variant, --against and --no-comparison read as render reads them",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "tests/system/semantic-boards/view-listing.test.ts owns the listing against the render of each view, the empty view and the refusal"
-				},
-				{
-					"path": "semantic render/rasterize receipt drawn and marks",
-					"expectedUse": "read what the picture draws and marks by id and name before looking at it; marks are the key's counts, null when the picture marks no comparison",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/operations/marks/drawn-marks.test.ts owns the key's counts and the answer's subjects against the drawn marks in all three grammars; tests/system/semantic-boards/view-listing.test.ts and rasterize.test.ts own the receipts"
-				},
-				{
-					"path": "check.NODE_UNCONNECTED",
-					"expectedUse": "repair isolated nodes by connecting, moving, or deleting them; containment and flow messages count, self calls do not",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/check/unconnected-nodes.test.ts"
-				},
-				{
-					"path": "semantic.correct historical correction",
-					"expectedUse": "inspect timestamp-based commit guesses, preview a correction against explicit immutable commits, then apply with reason and expected version",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/write/correction.test.ts; packages/code-intel/tests/runtime/operations/code-check/ref-code.test.ts; apps/server/tests/server/routes/semantic-boards/semantic-board-correction.test.ts"
+					"owner": "packages/board/tests/runtime/operations/model-edit/structure.test.ts"
 				}
 			]
 		},
 		{
 			"part": 2,
-			"title": "Containment and relationships",
+			"title": "Compact proposals and exact history",
 			"entries": [
 				{
-					"path": "node.parent (single, optional, nested)",
-					"expectedUse": "truthful containment; nested where the source nests",
-					"scenarios": ["S00", "S03", "S05", "S12"],
-					"evidence": "harness-check",
-					"owner": "container-has-children, node-parent"
-				},
-				{
-					"path": "containment acyclic",
-					"expectedUse": "refused at the boundary",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests integrity (cycle)"
-				},
-				{
-					"path": "edge.from/to at a module's edge: callers outside the container, entry points and hidden parts inside it",
-					"expectedUse": "a module the board describes is a container with its callers outside it; a call from outside lands on the entry point the caller names, never on the container or a helper behind it; the calls behind that entry point land inside the container on the part whose body runs",
-					"scenarios": ["S00", "S05", "S14"],
-					"evidence": "harness-check",
-					"owner": "no-edge-to-container-with-children; grader edge.actual-receiver"
-				},
-				{
-					"path": "whole-module endpoints where appropriate",
-					"expectedUse": "a leaf module is a fine endpoint; a relationship that ends on a container makes no entry point and is only for a dependency on the whole module",
-					"scenarios": ["S01", "S02", "S13"],
+					"path": "model.proposals, adoption, checkpoints",
+					"expectedUse": "Uses the one canonical model and its public operations without legacy live authoring.",
+					"scenarios": ["S02", "S05"],
 					"evidence": "author-run",
-					"owner": "grader edge.actual-receiver"
-				},
-				{
-					"path": "edge.kind (configured), edge.label, edge.description",
-					"expectedUse": "configured kinds; label says what is carried",
-					"scenarios": ["S01", "S08", "S10"],
-					"evidence": "harness-check",
-					"owner": "edge-between with kind; fixtures S10 carry description"
-				},
-				{
-					"path": "edge.emphasis normal (default) | hero | muted",
-					"expectedUse": "presentation intent, excluded from semantic change badges",
-					"scenarios": ["S10"],
-					"evidence": "harness-check",
-					"owner": "fixture S10 holds hero and muted; edge-ids-retained shows they survive restate; packages/board/tests compare (emphasis not a change)"
-				},
-				{
-					"path": "semantic inspect --container: entry points, hidden parts, callers, outgoing relationships, pass-through entry points",
-					"expectedUse": "answer which parts of a module its callers reach, from the CLI",
-					"scenarios": ["S16"],
-					"evidence": "grader",
-					"owner": "grader inspect.container; packages/board/tests/shared/rules/inspect/container-interface.test.ts; tests/system/semantic-boards/container-interface.test.ts"
-				},
-				{
-					"path": "a node with no children holds no parts; a container nothing outside reaches has only hidden parts and no callers; a relationship to the container itself makes a caller and no entry point",
-					"expectedUse": "the answer says each in words instead of reporting zero entry points",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/shared/rules/inspect/container-interface.test.ts; tests/system/semantic-boards/container-interface.test.ts"
-				},
-				{
-					"path": "semantic compare reports each container's interface changes before the other changes: entry points added and removed, parts moved between the interface and the hidden parts, callers gained and lost, and no comparison status",
-					"expectedUse": "report the interface changes of a proposal first, naming the callers each one costs",
-					"scenarios": ["S17"],
-					"evidence": "grader",
-					"owner": "grader compare.interface-changes; packages/board/tests/shared/rules/compare/interfaces.test.ts; apps/cli/tests/cli/operations/semantic/compare/comparison-answer.test.ts"
-				},
-				{
-					"path": "semantic compare interfaceMeasures and --beside: the five interface measures of each container on the variant, the one it is read against and each competing proposal, side by side, with the entry points and pass-through entry points named",
-					"expectedUse": "design it twice: put the measures of competing drafts side by side in one answer and report them unranked, with no score and no deep or shallow verdict",
-					"scenarios": ["S17"],
-					"evidence": "grader",
-					"owner": "grader compare.measures-side-by-side, measures.unranked; apps/cli/tests/cli/operations/semantic/compare/interface-measures.test.ts; apps/cli/tests/cli/rules/commander/parameters.test.ts (an appending option)"
+					"owner": "packages/board/tests/runtime/operations/proposals/lifecycle.test.ts"
 				}
 			]
 		},
 		{
 			"part": 3,
-			"title": "Illustrative traffic",
+			"title": "Recursive and behavioral readings",
 			"entries": [
 				{
-					"path": "edge.traffic omitted (off)",
-					"expectedUse": "turning traffic off is omitting it",
-					"scenarios": ["S10"],
-					"evidence": "harness-check",
-					"owner": "edge-traffic off"
-				},
-				{
-					"path": "edge.traffic {} (defaults)",
-					"expectedUse": "enable with defaults",
-					"scenarios": ["S10"],
-					"evidence": "harness-check",
-					"owner": "edge-traffic default"
-				},
-				{
-					"path": "edge.traffic.speed, edge.traffic.volume (positive finite)",
-					"expectedUse": "stated values where justified",
-					"scenarios": ["S10"],
-					"evidence": "harness-check",
-					"owner": "edge-traffic custom; grader traffic.custom"
-				},
-				{
-					"path": "effective-default equivalence in identity/comparison",
-					"expectedUse": "{} and explicit defaults compare equal",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests compare (effectiveTraffic)"
-				},
-				{
-					"path": "illustration is not telemetry",
-					"expectedUse": "the answer says the animation illustrates flow",
-					"scenarios": ["S10"],
-					"evidence": "grader",
-					"owner": "grader feature traffic.illustrative; rubric"
+					"path": "model.render, scope, flow, complete walkthrough reading",
+					"expectedUse": "Uses the one canonical model and its public operations without legacy live authoring.",
+					"scenarios": ["S03", "S04", "S06"],
+					"evidence": "author-run",
+					"owner": "tests/system/semantic-boards/model-flows.test.ts"
 				}
 			]
 		},
 		{
 			"part": 4,
-			"title": "Code binding and linked detail",
+			"title": "Local code and agents",
 			"entries": [
 				{
-					"path": "node.binding absent (planned/unbound node)",
-					"expectedUse": "a part with no code stays unbound",
-					"scenarios": ["S00", "S05"],
+					"path": "model.code, captured explanation, canonical pane navigation",
+					"expectedUse": "Uses the one canonical model and its public operations without legacy live authoring.",
+					"scenarios": ["S07"],
 					"evidence": "author-run",
-					"owner": "grader binding.repo-path (WSGI server, View function unbound)"
-				},
-				{
-					"path": "node.binding.repo (registered identity), node.binding.path (repo-relative)",
-					"expectedUse": "repo add, then bind through the identity",
-					"scenarios": ["S00", "S01", "S03", "S14"],
-					"evidence": "harness-check",
-					"owner": "node-binding, binding-count-at-least"
-				},
-				{
-					"path": "node.binding.symbol (definition or infrastructure address at the path)",
-					"expectedUse": "a part that is one definition among others in its file names it; a changed symbol is a changed binding",
-					"scenarios": ["S00"],
-					"evidence": "author-run",
-					"owner": "grader binding.symbol; packages/board/tests/shared/rules/compare/comparison.test.ts (a changed symbol is a changed binding)"
-				},
-				{
-					"path": "edge.anchor, step.anchor {repo, path, symbol}",
-					"expectedUse": "every relationship and step carries its line of evidence; restating one without it drops it with ANCHOR_DROPPED; comparison ignores it",
-					"scenarios": ["S00", "S07"],
-					"evidence": "author-run",
-					"owner": "grader edge.anchor, step.anchor; packages/board/tests/runtime/operations/edit/anchors.test.ts; packages/board/tests/shared/rules/compare/comparison.test.ts and reconciliation.test.ts"
-				},
-				{
-					"path": "archboard check code [--variant <draft>]: ANCHOR_PATH_MISSING, ANCHOR_SYMBOL_MISSING, ANCHOR_MISMATCH (the anchor's symbol is defined in the checkout outside the bound code of both ends, or the anchored file uses it only as an evidence kind the relationship kind does not accept), BINDING_SYMBOL_MISSING and, on a named draft, BINDING_PATH_MISSING, each a warning whose subject is a node, an edge or a step; RELATIONSHIP_UNDRAWN once on the part that bound parts' code reaches with no relationship, a warning when its evidence is resolved and information on candidates; RELATIONSHIP_BACKWARDS and RELATIONSHIP_UNSUPPORTED, information, for a relationship with no anchor; across a network hop, an environment value bound code reads joined with the compose service, Kubernetes workload or Terraform resource that runs that code and sets it to another part's address as configured-path evidence (a candidate where the infrastructure leaves a choice), and RELATIONSHIP_UNSUPPORTED naming the side with no evidence in missing (code or infrastructure); each finding with evidence names its kind and whether it is resolved or a candidate; skipped subjects and checkouts listed with the reason, symbol-unparsed (found only in code that did not parse), ends-overlap (a relationship whose ends hold one another), language-server-missing (a checkout with no configured server for a language, said once for the checkout and the language, naming the command that configures one), language-server-unready (a project its server cannot answer about, said once for it: a Swift package with no index, which the check never builds, a C# checkout with no solution or project file, or a C, C++ or Objective-C file with no compile_commands.json or one that lists no command) and language-server-failed (a server that did not start or answer, said once for its checkout) among them; a --variant no board has as a draft refused NO_SUCH_DRAFT",
-					"expectedUse": "after a write that adds or changes an anchor or a binding symbol, run check code and repair the anchor or binding each warning names, and draw the relationship an undrawn warning names where the board's question needs it; a draft whose code is written is read with --variant",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/code-intel/tests/runtime/operations/code-check/code-check.test.ts (each finding, every skip reason, the named draft, historical and shelved variants never read); packages/code-intel/tests/runtime/operations/code-check/code-facts-judging.test.ts (a definition or a use and never a comment or a string, ANCHOR_MISMATCH and its unbound end, symbol-unparsed, text-only); packages/code-intel/tests/runtime/operations/code-check/infrastructure/network-hop.test.ts (the join through compose, Kubernetes and Terraform, a joined value undrawn with its read and its setting, missing code and missing infrastructure, a candidate where the infrastructure leaves a choice, no value in the answer); packages/code-intel/tests/runtime/operations/code-facts/terraform/terraform-environment.test.ts (the environment names a Terraform resource sets); packages/code-intel/tests/runtime/operations/code-check/relationships.test.ts (undrawn grouped on the reached part, type-only uses and tests never undrawn, a containing relationship counts as drawn, backwards, unsupported, an anchored relationship judged only by its anchor, ANCHOR_MISMATCH by evidence kind, ends-overlap); packages/code-intel/tests/runtime/operations/code-check/language-servers.test.ts (a candidate that joins two parts resolved by the server, a call through a value no evidence, an anchor through a value judged where the server names its definition and not on a member of an interface, no server left running); packages/code-intel/tests/runtime/processes/language-servers (the protocol, missing and failed servers said once, every server stopped on close, cancel, timeout and a crash; server-command.test.ts: no server for a language that is not configured, a configured server run exactly, TypeScript from the checkout's own version 7 or later with its native program inside the checkout, and Archboard's otherwise, also where a link leaves the checkout; the real tsc --lsp loads no plugin of the checkout; swift-server.test.ts: sourcekit-lsp started in the package with background indexing off, after its index loads, about an opened file, a package with no index said once with nothing started, and a failed server started in no other package of its checkout; python-csharp.test.ts: pyright told the interpreter of the checkout's own .venv, tracked or not, a function whose parameters share its line still code, csharp-ls told the solution nearest the root or left to load the .csproj files, a checkout with nothing to load said once with nothing started; clangd-server.test.ts: clangd started in the directory of the file's compile_commands.json with exactly the arguments and environment it is given, asked once its index ended about an opened file, a C++ name through its class and an Objective-C selector asked where their last name stands, no database or one with no command said once with nothing started, an index that never ends said once as failed); packages/code-intel/tests/runtime/operations/code-check/languages/c-check.test.ts (language-server-missing once for the checkout, naming the command that configures a server); packages/code-intel/tests/runtime/operations/code-check/languages/swift-check.test.ts (language-server-unready reaches the answer once with the checkout's repo); packages/code-intel/tests/runtime/operations/code-check/languages/clangd-check.test.ts (clangd configured on the registration; an include that leads only to a declaration resolved by clangd into a warning, an anchor judged where clangd places it, a declaration clangd names left as code facts read it, and without compile_commands.json one language-server-unready with the candidates kept); packages/code-intel/tests/runtime/operations/code-facts (TypeScript facts, import resolution, re-exports, the cache); packages/code-intel/tests/runtime/operations/code-facts/nix/nix-imports.test.ts (local import and callPackage functions, actual build inputs, shared 200,000-operation budget, outside paths and links, import cycles, imported edits across passes); packages/code-intel/tests/runtime/operations/code-check/infrastructure/nix-build-check.test.ts and nix-check.test.ts (supported imported build dependencies and skips with imported file:lines); apps/server/tests/server/routes/code-check/code-check-route.test.ts (its own route, never the polled check; NO_SUCH_DRAFT); apps/cli/tests/cli/operations/vault/check-parts.test.ts (exit status, finding and evidence lines, --variant, a checkout named once on a skip line). Mechanical validation: whether a run's anchors are right is graded per anchor on edge.anchor and step.anchor, and no author run is asked to run the command"
-				},
-				{
-					"path": "archboard repo language-server <language> [command] [--arg <argument>] [--remove] [--repo <identity>]; archboard repo list (servers of each checkout); repo forget",
-					"expectedUse": "when the repository the agent works in has Python, C, C++, Objective-C, C# or Swift code whose uses the check can only match by name, install the language server, register the checkout, run repo language-server for its language, and run check code; configure one only for a repository the agent works in, because the server runs that repository's code as an editor does",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "apps/cli/tests/cli/operations/repo/language-server.test.ts (set, list, keep on registering again, remove, forget, the refusals); packages/code-intel/tests/runtime/operations/language-servers/server-command.test.ts (no server that is not configured, a configured server run exactly); apps/cli/tests/cli/operations/vault/language-server-configuration.test.ts (the command that a language-server-missing skip names is one the CLI accepts, a configuration belongs to the checkout it was written for); packages/code-intel/tests/runtime/operations/code-check/languages/c-check.test.ts (language-server-missing says the command). Mechanical validation: an author run is not asked to configure a server"
-				},
-				{
-					"path": "archboard repo add <dir> | use <dir> | forget <dir> | list (known checkouts, the chosen one for each repository, untracked vaults)",
-					"expectedUse": "register the checkout with repo add and bind through the identity it prints; a repository with several known checkouts resolves in its chosen one, and repo use changes that only when the user asks",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "tests/system/cli/repo-checkouts.test.ts (add chooses the first checkout only and registers its worktrees, use, an untracked vault, forget of a chosen checkout); packages/workspace/tests/runtime/store/repo-registry.test.ts (the registry operations and the legacy read); packages/code-binding/tests/runtime/operations/chosen-checkout.test.ts (every reader resolves the chosen checkout). Mechanical validation: an author run is not asked to choose a checkout"
-				},
-				{
-					"path": "archboard check code, the interface of a container bound to a module (a directory, or the index.ts or __init__.py that stands for it): ENTRY_POINT_UNEXPOSED (a warning on an entry point that owns nothing the module exposes while a drawn caller's code reaches it from outside the module), CALLER_UNDRAWN (a warning on a hidden part whose exposed code a file outside the module uses at run time where no part on the board binds that file, judged only where the board draws a caller of the container), EXPOSED_UNUSED (information on the container: exposed names no file outside the module uses, a test no caller); TEST_IMPORT_UNEXPOSED (warning on a container for an external test importing a private file; internal tests unrestricted); a Nix flake exposes its output attribute paths; a Helm chart identified by Chart.yaml exposes its values.yaml key paths; compose files and plain Kubernetes manifests stay exposure-unknown; a module with no root file the check reads skipped as exposure-unknown; a Terraform or OpenTofu module exposes its variables and outputs, used by the arguments a call sets and the outputs its module reads, with VARIABLE_PASSED_THROUGH (information: variables the module passes unchanged to one argument of a resource it manages) and MODULE_SHALLOW (information: one resource that reads nothing else, every variable passed through but a count toggle) on the container",
-					"expectedUse": "after drawing a module as a container, run check code; land the callers an ENTRY_POINT_UNEXPOSED names on the part that holds what the module exposes, and draw the caller a CALLER_UNDRAWN names where the board's question needs it",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/code-intel/tests/runtime/operations/code-check/interfaces.test.ts (each finding and its severity, a use by a part on the board left to RELATIONSHIP_UNDRAWN, a type-only use no caller, a container with no caller, a test no caller and no root file, external test private imports and unrestricted internal tests, flake and Helm interface findings, compose and plain-manifest exposure-unknown); packages/code-intel/tests/runtime/operations/code-facts/infrastructure-exposure.test.ts (flake outputs and Helm key paths with source spans and no default values, malformed chart values, ordinary YAML preserved); packages/code-intel/tests/runtime/operations/code-facts/module-exposure.test.ts (what a module is and exposes: TypeScript root files, re-exports, an imported name exported again, members, package.json exports; a Python package's __init__.py, __all__ or its public names, read from the fixture package python-shop; a Swift target's files and their open, public and package declarations, read from the fixture package swift-shop; a C or C++ directory's public headers, read from the fixture project c-shop; a Terraform module's configuration files, variables and outputs, read from the fixture configuration terraform-shop); packages/code-intel/tests/runtime/operations/code-check/languages/c-check.test.ts (a C module's callers through an include); packages/code-intel/tests/runtime/operations/code-check/infrastructure/terraform-modules.test.ts (a call's arguments and outputs as uses, no ENTRY_POINT_UNEXPOSED for a Terraform module, a whole call reading every output but in depends_on, MODULE_SHALLOW with a count toggle and its evidence, VARIABLE_PASSED_THROUGH on a module that computes from its variables, whose for_each carries a variable or whose resource reads a local)"
-				},
-				{
-					"path": "node.binding.branch, .commit, .confirmedAt",
-					"expectedUse": "only when confirmed; preserved on restate",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/code-binding/tests and board store tests (binding fields round-trip)"
-				},
-				{
-					"path": "node.drillDown.board + variant {kind: current}",
-					"expectedUse": "link to the detail board's designation",
-					"scenarios": ["S04"],
-					"evidence": "harness-check",
-					"owner": "node-drilldown current"
-				},
-				{
-					"path": "node.drillDown.variant {kind: named, name}",
-					"expectedUse": "link to a named variant; never falls back to current",
-					"scenarios": ["S04"],
-					"evidence": "harness-check",
-					"owner": "node-drilldown named; apps/web/tests/ui/components/semantic-board-canvas drill address (missing named target refused)"
-				},
-				{
-					"path": "node.drillDown.repo",
-					"expectedUse": "only when the detail board is in another repository: the identity a binding names, never a path; without it the link stays in the board's own vault. DRILL_DOWN_UNKNOWN_REPOSITORY (the repository has no usable checkout on this machine) and DRILL_DOWN_UNKNOWN_BOARD (the chosen checkout's vault lacks the board) are reported by check",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/check/drill-down-repository.test.ts (the link without repo stays local, the chosen checkout's vault, the target's level, a former or recased name, the vault's own identity, an unknown or gone repository, no write to the other vault); tests/system/cli/drill-down-repository.test.ts (archboard check semantics over two checkouts with a registry of their own); packages/board/tests/shared/protocol/board-listing.test.ts (the schema refuses a path; the listed link carries repo) and comparison.test.ts (a changed repo is a changed drill-down). Mechanical validation: no Flask scenario links to a board of another repository"
-				},
-				{
-					"path": "archboard semantic move <board> --to <dir> --expect-version <n> --doing <line>: the whole board, with every variant, former name and id, into the vault found from --to; the drill-downs whose meaning the move changes rewritten to name a repository identity and listed in rewritten; MOVE_SAME_REPOSITORY, BOARD_EXISTS, MOVE_NEEDS_IDENTITY, BOARD_HELD, MOVE_STOPPED (the board in both vaults until the same move runs again)",
-					"expectedUse": "only when the user asks to move a board to the repository it belongs in; a stopped move is run again, never repaired by hand, and each repository commits its own half",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/move/move.test.ts (the whole note, both rewrite directions, each refusal, the stopped move and its re-run); tests/system/cli/semantic-move.test.ts (the command through an owned server: the answer, the files in both vaults, the target registered, the panes of the source vault, the checkout a move into a worktree chooses, a refusal's exit status). Mechanical validation: no Flask scenario has a second repository to move a board to"
-				},
-				{
-					"path": "detail boards separate from proposals",
-					"expectedUse": "the existing detail board is reused, not recreated",
-					"scenarios": ["S04"],
-					"evidence": "harness-check",
-					"owner": "board-count 2"
-				},
-				{
-					"path": "semantic locality: the hotspots of a board, its parts ranked by the commits that changed their bound files in a period, and its change coupling, the pairs of parts that changed together past fixed thresholds with the pairs nothing on the board joins marked, with large commits left out and counted and unread parts listed with the reason",
-					"expectedUse": "answer which parts of a board change most often and which change together from the CLI, report parts that share a file as one list of commits and never as a coupled pair, report an unjoined pair as a question, and name a part that was not read as not read",
-					"scenarios": ["S18"],
-					"evidence": "grader",
-					"owner": "grader locality.hotspots, locality.shared-files, locality.skipped, locality.coupling; packages/code-intel/tests/runtime/operations/history-lens/locality.test.ts; packages/code-intel/tests/runtime/operations/history-lens/coupling.test.ts (thresholds, unjoined); apps/cli/tests/cli/operations/semantic/history/locality.test.ts; apps/server/tests/server/routes/locality/locality-route.test.ts. No pair passes the thresholds on Flask 3.0.0, so locality.coupling grades an empty list and no shared file reported as coupled; no run reports an unjoined pair, and nothing grades that reading"
+					"owner": "tests/system/code-targets/canonical-model.test.ts"
 				}
 			]
 		},
 		{
 			"part": 5,
-			"title": "Ordered sequences",
+			"title": "Explicit migration and originals",
 			"entries": [
 				{
-					"path": "flow.name, flow.summary, flow.participants (identity and column order)",
-					"expectedUse": "participants in reading order",
-					"scenarios": ["S05", "S07"],
-					"evidence": "harness-check",
-					"owner": "flow-with-steps; grader flow.participants-and-steps"
-				},
-				{
-					"path": "step.from/to/label, step identity",
-					"expectedUse": "steps in order with what they carry",
-					"scenarios": ["S05", "S07"],
-					"evidence": "harness-check",
-					"owner": "flow-with-steps"
-				},
-				{
-					"path": "step.kind sync (default) | async | return | self",
-					"expectedUse": "as the source justifies; self exactly when both ends are one node",
-					"scenarios": ["S05", "S07"],
-					"evidence": "harness-check",
-					"owner": "flow-with-steps kinds [sync, return, self]; grader flow.message-kinds"
-				},
-				{
-					"path": "step.note, step.repeat >= 2",
-					"expectedUse": "annotated, repeated attempts",
-					"scenarios": ["S07"],
-					"evidence": "harness-check",
-					"owner": "flow-step-repeat withNote"
-				},
-				{
-					"path": "single-participant self flow",
-					"expectedUse": "a component's own steps as one flow",
+					"path": "model.inventory, plan, preview, migrate, retained originals",
+					"expectedUse": "Uses the one canonical model and its public operations without legacy live authoring.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests views (one participant, self steps)"
-				},
-				{
-					"path": "step insert/delete/reorder with continuing identity",
-					"expectedUse": "restating a flow keeps step ids where stated",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime (flow restate keeps step ids); compare tests (sequence position meaningful)"
+					"owner": "packages/board/tests/runtime/operations/legacy-preview/installation.test.ts"
 				}
 			]
 		},
 		{
 			"part": 6,
-			"title": "Shared views",
+			"title": "Durable initialization and recovery",
 			"entries": [
 				{
-					"path": "view.name, view.summary, view.grammar architecture | sequence",
-					"expectedUse": "a sequence view over a flow; architecture views over regions",
-					"scenarios": ["S05", "S12"],
-					"evidence": "harness-check",
-					"owner": "view-exists grammar"
-				},
-				{
-					"path": "view.scope {kind: all}",
-					"expectedUse": "the whole board",
-					"scenarios": ["S02"],
-					"evidence": "harness-check",
-					"owner": "fixture S02 Contexts view; render-ok through it"
-				},
-				{
-					"path": "view.scope selection.nodes with no edges (node region: every relationship among them)",
-					"expectedUse": "a region view",
-					"scenarios": ["S12"],
-					"evidence": "harness-check",
-					"owner": "view-exists edgesSelected 0 with three parts selected; grader view.node-region"
-				},
-				{
-					"path": "view.scope selection.edges (explicit edge isolation)",
-					"expectedUse": "one relationship isolated by id or handle",
-					"scenarios": ["S12"],
-					"evidence": "harness-check",
-					"owner": "view-exists edgesSelected 1 with process_response selected and its save_session call hidden; grader view.edge-isolation"
-				},
-				{
-					"path": "view.scope selection.flows",
-					"expectedUse": "a sequence view scoped to a flow",
-					"scenarios": ["S05"],
-					"evidence": "author-run",
-					"owner": "grader view.sequence; packages/board/tests scope"
-				},
-				{
-					"path": "automatic endpoints, participants and ancestor context",
-					"expectedUse": "come with the selection",
+					"path": "model.init, exact retry, signing, recovery",
+					"expectedUse": "Uses the one canonical model and its public operations without legacy live authoring.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests scope (withContainers, endpointsOf)"
-				},
-				{
-					"path": "board-owned view edits across variants",
-					"expectedUse": "a view added once applies to both variants",
-					"scenarios": ["S12"],
-					"evidence": "harness-check",
-					"owner": "render-ok of the draft through Session path"
-				},
-				{
-					"path": "selected subject removed on one comparison side",
-					"expectedUse": "the removal stays visible through the view",
-					"scenarios": ["S12"],
-					"evidence": "harness-check",
-					"owner": "comparison-standing removedNodes 1 + render-ok; packages/board/tests compare withRemoved"
-				},
-				{
-					"path": "view empty on both sides without falling back to all",
-					"expectedUse": "an empty selection draws nothing",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime (NothingDrawn) and scope tests"
-				},
-				{
-					"path": "a declared view captured as itself, never the whole variant in its place",
-					"expectedUse": "a sequence scenario's sequence view and a comparison's shared view are captured by name; a view the author never made is a failed capture",
-					"scenarios": ["S02", "S05", "S07", "S12"],
-					"evidence": "harness-check",
-					"owner": "captureFromReceipt refuses a receipt without the declared view or grammar; packages/skills/tests/runtime/operations/runs/captures.test.ts"
+					"owner": "packages/board/tests/runtime/operations/initialization/initialize.test.ts"
 				}
 			]
 		},
 		{
 			"part": 7,
-			"title": "Walkthroughs",
+			"title": "Code bindings and explicit references",
 			"entries": [
 				{
-					"path": "walkthrough.name, walkthrough.summary, beats ordered with heading and body",
-					"expectedUse": "an explanation in beats",
-					"scenarios": ["S05", "S13"],
-					"evidence": "harness-check",
-					"owner": "walkthrough-beat-references, walkthrough-beats-retained"
-				},
-				{
-					"path": "beat.subjects referencing node | edge | flow | step",
-					"expectedUse": "each allowed class",
-					"scenarios": ["S05", "S13"],
-					"evidence": "harness-check",
-					"owner": "walkthrough-beat-references subjectKinds [step]; fixture S13 references nodes; runtime tests for edge and flow subjects; apps/web/tests/ui/components/semantic-board-canvas narrative (a relationship or step brings the parts at its ends, and several named cards bring the relationships between them)"
-				},
-				{
-					"path": "introductory beat with no subjects",
-					"expectedUse": "an opening beat about the whole picture",
-					"scenarios": ["S13"],
-					"evidence": "harness-check",
-					"owner": "fixture S13 beat 1; walkthrough-beats-retained"
-				},
-				{
-					"path": "beat.view stated versus omitted",
-					"expectedUse": "every beat names its view explicitly, including consecutive beats that use the same view",
-					"scenarios": ["S05"],
-					"evidence": "author-run",
-					"owner": "grader walkthrough.beat-subjects; apps/web/tests/ui/components/semantic-board-canvas narrative (omitted view keeps the presentation)"
-				},
-				{
-					"path": "WALKTHROUGH_VIEW_MISSING on authored beats without view; view schema descriptions announce that the property will become required soon",
-					"expectedUse": "repair each warned beat with an explicit view; writes still succeed while view remains optional",
+					"path": "model.code and model.references",
+					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/edit/walkthroughs.test.ts (creation, omission after an explicit view, repeated explicit views, repair, and untouched walkthroughs). Mechanical author feedback uses a runtime owner. Schema descriptions come from the shared guidance in packages/board/src/shared/schemas/walkthrough.ts."
-				},
-				{
-					"path": "stable beat identity across reword/reorder/add/remove",
-					"expectedUse": "ids kept in order when a body is reworded",
-					"scenarios": ["S13"],
-					"evidence": "harness-check",
-					"owner": "walkthrough-beats-retained"
-				},
-				{
-					"path": "repair when referenced subjects change",
-					"expectedUse": "the beat about a removed part is pointed at its successor",
-					"scenarios": ["S13"],
-					"evidence": "harness-check",
-					"owner": "walkthrough-beat-references subjectNames [Jinja environment]"
-				},
-				{
-					"path": "semantic replay <talk> --out <file> [--theme]: a kept talk rendered again with no voice session",
-					"expectedUse": "the talk a recording kept is rendered again in the palette asked for, to the file asked for, whose extension chooses MP4 or WebM; nothing is recorded again and no board is written",
-					"scenarios": ["S15"],
-					"evidence": "harness-check",
-					"owner": "video-rendered (the file is there, is the container its extension names, and the last replay receipt for it names the kept talk, the theme asked for, the talk's frame count and the file's size); grader replay.kept-talk, replay.receipt; tests/system/server-state/walkthrough-replay.test.ts owns identical frames, one per 1/30 s of the talk, and the other theme's picture"
-				},
-				{
-					"path": "semantic record <board> --out: a walkthrough narrated by the Codex voice, in two passes, keeping its talk in the state directory's recordings/ (newest ten) or in --talk <dir>",
-					"expectedUse": "record a walkthrough to a narrated video; --discard for a board made only for it; the receipt's talk names what can be rendered again",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "tests/system/server-state/walkthrough-recording.test.ts (records end to end with a fake Codex and ffmpeg); packages/walkthrough/tests/runtime/store/talk-files.test.ts (a talk lands whole, the newest ten are kept, a named place is never pruned and is refused when it exists). No author run records: a run's Archboard server keeps its Codex home in the run's own state directory, where nobody is signed in, and a voice session is minutes of a live model; S15's fixture keeps a talk as --talk would"
-				},
-				{
-					"path": "recording refusals: an unreadable talk, no ffmpeg (ENCODER_UNAVAILABLE), a failed render (RENDER_FAILED)",
-					"expectedUse": "refused before a browser starts, or with the talk kept to render again",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "tests/system/server-state/walkthrough-recording-refusals.test.ts (a missing or malformed talk is a usage error; no ffmpeg and no nix, or a named ffmpeg that cannot run, is ENCODER_UNAVAILABLE); tests/system/server-state/walkthrough-render.test.ts (RENDER_FAILED names the kept talk and writes nothing)"
-				},
-				{
-					"path": "semantic footprint <board> --base <ref>: the parts whose bound files the commits from the merge base of the ref and HEAD changed, with each part's commits, large commits marked, and the parts it could not read listed with the reason and in no list",
-					"expectedUse": "a pull request's recording takes the parts its steps are about from the footprint, reads a large commit's subject before making a beat of it, and takes a part it could not read from the diff",
-					"scenarios": ["S19"],
-					"evidence": "grader",
-					"owner": "grader footprint.changed-parts, footprint.unchanged-and-skipped; packages/code-intel/tests/runtime/operations/history-lens/footprint.test.ts; apps/server/tests/server/routes/footprint/footprint-route.test.ts; apps/cli/tests/cli/operations/semantic/history/footprint.test.ts"
-				},
-				{
-					"path": "semantic footprint --variant <proposal>: the changed parts split into named and changed, changed but not named, and named but not changed, each named part with why the proposal names it, and a skipped part in none of the three",
-					"expectedUse": "archboard-dev sets a task's commits against its proposal at close; no author run does, because the answer is a reviewer's check on a task of this repository, not a workflow of the consumer skill",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/code-intel/tests/runtime/operations/history-lens/footprint.test.ts (the three lists, the reasons a part is named, skipped parts in none of them); apps/server/tests/server/routes/footprint/footprint-route.test.ts (a variant that is current, shelved or unknown is refused with a code)"
+					"owner": "packages/board/tests/runtime/operations/model-edit/references.test.ts"
 				}
 			]
 		},
 		{
 			"part": 8,
-			"title": "Efficient authoring inputs",
+			"title": "Captured local explanations",
 			"entries": [
 				{
-					"path": "references by existing id and by name",
-					"expectedUse": "restate by id; refer by name",
-					"scenarios": ["S01", "S03", "S11"],
-					"evidence": "harness-check",
-					"owner": "node-id-retained"
-				},
-				{
-					"path": "missing ids minted by the product",
-					"expectedUse": "new subjects leave id out",
-					"scenarios": ["S00", "S01"],
-					"evidence": "harness-check",
-					"owner": "nodes-named after creation; grader edge.replacement-rule"
-				},
-				{
-					"path": "same-write `as` handles on node/edge/flow/step and their consumers",
-					"expectedUse": "a beat references a step created in the same write",
-					"scenarios": ["S05", "S12"],
-					"evidence": "author-run",
-					"owner": "grader authoring.handles, view.edge-isolation; packages/board/tests/runtime handles"
-				},
-				{
-					"path": "one batched edit; full-definition replacement with field preservation",
-					"expectedUse": "one semantic edit for a related change",
-					"scenarios": ["S01", "S03"],
-					"evidence": "harness-check",
-					"owner": "version-advanced-by max 1; node-field-retained"
-				},
-				{
-					"path": "removeNodes, removeEdges, removeFlows, removeViews, removeWalkthroughs",
-					"expectedUse": "each collection",
-					"scenarios": ["S01", "S02", "S13"],
-					"evidence": "harness-check",
-					"owner": "no-edge-between (removeEdges), nodes-absent (removeNodes); removeFlows/removeViews/removeWalkthroughs owned by packages/board/tests/runtime"
-				},
-				{
-					"path": "nested steps/beats removed through the enclosing definition",
-					"expectedUse": "restate the flow or walkthrough without them",
+					"path": "model.explain and exact subject capture",
+					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime"
-				},
-				{
-					"path": "untouched subjects remain untouched",
-					"expectedUse": "an edit changes only what it states",
-					"scenarios": ["S10", "S13"],
-					"evidence": "harness-check",
-					"owner": "edge-ids-retained, walkthrough-beats-retained"
-				},
-				{
-					"path": "same-batch forward parent references and handles",
-					"expectedUse": "a child names a parent created in the same write",
-					"scenarios": ["S00"],
-					"evidence": "harness-check",
-					"owner": "container-has-children after one semantic new"
+					"owner": "tests/system/server-state/canonical-explanations.test.ts"
 				}
 			]
 		},
 		{
 			"part": 9,
-			"title": "Variants and adoption",
+			"title": "Walkthrough persistence and playback",
 			"entries": [
 				{
-					"path": "initial current variant",
-					"expectedUse": "the first variant is current",
-					"scenarios": ["S00", "S07"],
-					"evidence": "harness-check",
-					"owner": "board-level implies a current variant; runtime tests"
-				},
-				{
-					"path": "branch from current and from a named predecessor (--from)",
-					"expectedUse": "a proposal derived from a stated variant",
-					"scenarios": ["S02", "S04", "S12"],
-					"evidence": "harness-check",
-					"owner": "variant-exists draft; --from owned by packages/board/tests/runtime"
-				},
-				{
-					"path": "competing branches / descendants",
-					"expectedUse": "two drafts off one parent",
+					"path": "canonical walkthrough beats and pinned state",
+					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime lifecycle"
-				},
-				{
-					"path": "proposal summary",
-					"expectedUse": "one line saying what the proposal is for",
-					"scenarios": ["S04", "S06"],
-					"evidence": "harness-check",
-					"owner": "fixtures carry --summary; variant-exists"
-				},
-				{
-					"path": "a variant's summary restated by an edit batch",
-					"expectedUse": "summary in the semantic edit batch replaces the target variant's summary in the same write",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/variant/branching.test.ts, an edit restates the summary"
-				},
-				{
-					"path": "variant.documents: create.documents and edit.documents ({ repo, path, branch?, commit? }), copied by semantic branch, returned by semantic show, and DOCUMENT_PATH_MISSING from archboard check code",
-					"expectedUse": "a draft that draws a design document, an ADR or a task names each, at the commit it was drawn from; an edit states the whole list of the variant it lands on, [] removes it; a later pull request finds the design draft through the document it names",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/variant/branching.test.ts (an edit replaces the edited list, a branch copies it, a record refuses it; a new board's first variant holds them); packages/code-intel/tests/runtime/operations/code-check/documents.test.ts (a file missing at the named version, a directory, a branch the checkout cannot resolve, an unregistered repository, a draft read with --variant). No author run is asked to name documents: no scenario draws from a design document"
-				},
-				{
-					"path": "lifecycle draft | current | historical",
-					"expectedUse": "adoption moves current and leaves historical",
-					"scenarios": ["S06"],
-					"evidence": "harness-check",
-					"owner": "current-variant, variant-exists historical"
-				},
-				{
-					"path": "lifecycle shelved, with its reason",
-					"expectedUse": "shelve, when asked, each competing draft not kept, with the reason it lost; the kept draft stays a draft",
-					"scenarios": ["S17"],
-					"evidence": "harness-check",
-					"owner": "variant-exists shelved and draft; grader variant.shelve"
-				},
-				{
-					"path": "current designation versus lasting identity",
-					"expectedUse": "adoption renames nothing",
-					"scenarios": ["S06"],
-					"evidence": "harness-check",
-					"owner": "variant-exists by fixture name after adoption"
-				},
-				{
-					"path": "adoption with reason and history",
-					"expectedUse": "adopt --reason recorded",
-					"scenarios": ["S06"],
-					"evidence": "harness-check",
-					"owner": "adoptions-count withReason"
-				},
-				{
-					"path": "adoption of a proposal built on an architecture a later adoption superseded",
-					"expectedUse": "refused as PARENT_SUPERSEDED; branch again from current, or --force records forced",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "tests/system/semantic-boards/variant-targeting.test.ts, adopted only when forced"
-				},
-				{
-					"path": "comparison against the current variant (on a board nobody has built, the direct predecessor): added/removed/changed/unchanged, continuing versus replacement edges, sequence subjects",
-					"expectedUse": "a proposal reads as its real delta",
-					"scenarios": ["S02", "S12"],
-					"evidence": "harness-check",
-					"owner": "comparison-standing; grader compare.reading; packages/board/tests compare"
-				},
-				{
-					"path": "current variant as the reference: history and proposals drawn against it, current drawn plain, compare --against names another side",
-					"expectedUse": "report a proposal against now; read a superseded proposal's own change with --against its parent before restating it",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/shared/rules/compare/read-against-current.test.ts; apps/cli/tests/cli/operations/semantic/compare/comparison-answer.test.ts"
-				},
-				{
-					"path": "fresh architecture layout independent of variant ancestry",
-					"expectedUse": "compare stable identities and Standing; geometry may change without an architectural change",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/operations/comparison/fresh-proposal.test.ts; apps/web/tests/ui/clients/semantic-board-canvas/picture/picture-transition.test.tsx"
-				},
-				{
-					"path": "compact semantic containers and direct outgoing relationships",
-					"expectedUse": "author actual containment and relationships; the renderer packs independent cards, keeps compact equal insets and routes to real endpoints using shared ports without forcing a flank",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/operations/containers/container-packing.test.ts"
-				},
-				{
-					"path": "outside relationships share container rows",
-					"expectedUse": "author real containment and relationships; outside callers and dependencies may sit beside their connected children without changing ownership",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/operations/containers/shared-container-rows.test.ts"
-				},
-				{
-					"path": "relationships avoid unrelated containers",
-					"expectedUse": "author real containment and relationships; routes may enter an endpoint's container but do not pass through a container unrelated to either endpoint",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/foreign-frame-routing.test.ts"
-				},
-				{
-					"path": "stable horizontal sibling ordering between variants",
-					"expectedUse": "preserve subject identities; equivalent sibling cards keep horizontal order in fresh slots without freezing positions or ranks",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/operations/blocks/sibling-order.test.ts"
-				},
-				{
-					"path": "relationship channel routing separation",
-					"expectedUse": "author real relationships; matching kind, comparison standing and local direction may share a port while differing channels use distinct ports and tracks; cards and external container arrivals jointly offer aligned channels with room for reserved labels",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/operations/routes/relationship-kind-routing.test.ts; packages/renderer/tests/runtime/aligned-kind-ports.test.ts; packages/renderer/tests/runtime/operations/routes/matched-kind-channels.test.ts; packages/renderer/tests/runtime/operations/labels/route-labels.test.ts; packages/renderer/tests/runtime/forced-label-direction.test.ts; packages/renderer/tests/runtime/operations/routes/channel-projection.test.ts; packages/renderer/tests/runtime/projection-fallback.test.ts"
-				},
-				{
-					"path": "fixed bend and arrow approach clearance",
-					"expectedUse": "author real relationships; the renderer reserves space for fixed-radius bends and full straight arrow approaches instead of shrinking visible geometry",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/operations/routes/route-approach.test.ts; packages/renderer/tests/runtime/operations/crossings/crossing-rounding.test.ts"
-				},
-				{
-					"path": "automatic downward column wrapping",
-					"expectedUse": "author the real branching path and containment; the renderer selects downward columns by how the completed routed picture fits the pane while keeping containers together, without authored placement",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime/operations/blocks/automatic-columns.test.ts; packages/renderer/tests/shared/rules/blocks/fold-columns.test.ts"
-				},
-				{
-					"path": "continuing relationship identity across multiple changed fields or an endpoint",
-					"expectedUse": "restate a continuing relationship by id; explicit removal plus an idless addition declares replacement",
-					"scenarios": ["S01", "S10"],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/edit/edge-identity.test.ts; tests/system/semantic-boards/edge-identity.test.ts"
-				},
-				{
-					"path": "restore absent inherited node and relationship identities",
-					"expectedUse": "repair a proposal by restating known predecessor or reconciliation-base identities in one ordinary edit; invented and wrong-kind ids stay refused",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/variant/restoration.test.ts; packages/board/tests/runtime/operations/edit/edge-identity.test.ts; tests/system/semantic-boards/edge-identity.test.ts"
-				},
-				{
-					"path": "consistent shared-view comparison",
-					"expectedUse": "both states through one view",
-					"scenarios": ["S02", "S12"],
-					"evidence": "harness-check",
-					"owner": "render-ok of both variants through the same view"
+					"owner": "tests/system/semantic-boards/model-walkthroughs.test.ts"
 				}
 			]
 		},
 		{
 			"part": 10,
-			"title": "Family reconciliation",
+			"title": "Proposal reconciliation and settlement",
 			"entries": [
 				{
-					"path": "noncompeting inheritance and agreement",
-					"expectedUse": "a parent edit reaches a draft that did not touch the subject",
-					"scenarios": ["S11"],
-					"evidence": "harness-check",
-					"owner": "fixture S11 (helpers edge untouched by both); reconciliation-settled"
-				},
-				{
-					"path": "issue kind competing-field",
-					"expectedUse": "two answers to one field, settled mine/theirs",
-					"scenarios": ["S11"],
-					"evidence": "harness-check",
-					"owner": "nodes-named JSON helper functions (theirs), node-field-equals responsibility (mine)"
-				},
-				{
-					"path": "issue kind deleted-and-changed",
-					"expectedUse": "settled by a third answer: an ordinary edit restoring the id",
-					"scenarios": ["S11"],
-					"evidence": "harness-check",
-					"owner": "node-id-retained Tagged JSON on the draft"
-				},
-				{
-					"path": "issue kinds competing-order, reference-lost, left-empty",
-					"expectedUse": "reported and settleable",
+					"path": "standing, blocked ancestry, exact settlement",
+					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests reconcile"
-				},
-				{
-					"path": "blocked descendants and atomic family outcomes",
-					"expectedUse": "a draft under an unsettled draft waits; the family lands whole",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime family"
-				},
-				{
-					"path": "choices with subject and optional field; partial resolution leaving outstanding issues",
-					"expectedUse": "answer part, report the rest",
-					"scenarios": ["S11"],
-					"evidence": "author-run",
-					"owner": "grader resolve.partial"
-				},
-				{
-					"path": "adoption only after settlement",
-					"expectedUse": "adopt refused while disagreements are open",
-					"scenarios": ["S11"],
-					"evidence": "harness-check",
-					"owner": "variant-exists draft (not adopted); runtime tests refuse adoption"
+					"owner": "packages/board/tests/runtime/operations/proposals/reconcile.test.ts"
 				}
 			]
 		},
 		{
 			"part": 11,
-			"title": "Vault vocabulary and presentation policy",
+			"title": "Historical corrections",
 			"entries": [
 				{
-					"path": "config.levels",
-					"expectedUse": "boards at configured levels",
-					"scenarios": ["S00", "S07", "S14"],
-					"evidence": "harness-check",
-					"owner": "board-level"
-				},
-				{
-					"path": "config.nodeKinds.<key>.name/icon/color",
-					"expectedUse": "a new kind with a real RemixIcon; palette color optional",
-					"scenarios": ["S08"],
-					"evidence": "harness-check",
-					"owner": "config-has nodeKinds extension; vault-config.schema.json icon enum"
-				},
-				{
-					"path": "config.relationshipKinds.<key>.name/color/dash solid|dashed|dotted/arrowhead filled|open|none",
-					"expectedUse": "a new kind with a stated dash and arrowhead",
-					"scenarios": ["S08"],
-					"evidence": "harness-check",
-					"owner": "config-has relationshipKinds signal (dashed, open); dotted/none owned by packages/renderer/tests/runtime policy"
-				},
-				{
-					"path": "config.relationshipKinds.<key>.evidence [call, configured-path, permission, import, build-dependency, provisioning], optional; the default vocabulary carries it and other has none",
-					"expectedUse": "a kind a vault adds names the evidence kinds that prove it to check code; leave the key out to accept every evidence kind",
+					"path": "correction audit and exact source evidence",
+					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/code-intel/tests/runtime/operations/code-check/relationships.test.ts (the default vocabulary: data refuses import evidence, dependency accepts it, other accepts every kind, an anchor's uses judged against its kind); vault-config.schema.json evidence enum. Mechanical validation: no author run is asked to write the key"
-				},
-				{
-					"path": "omitted color / defaults versus explicit policy; container body color versus node icon identity",
-					"expectedUse": "presentation from policy, not from the board",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/renderer/tests/runtime policy and grouping"
-				},
-				{
-					"path": "consumer-defined vocabularies, not a closed list",
-					"expectedUse": "extend rather than invent",
-					"scenarios": ["S08"],
-					"evidence": "author-run",
-					"owner": "grader config.vocabulary"
-				},
-				{
-					"path": "missing/invalid config warnings; unknown new references refused; removed definitions readable; repair",
-					"expectedUse": "read the refusal, configure, retry",
-					"scenarios": ["S08"],
-					"evidence": "author-run",
-					"owner": "grader config.before-board; the refusal itself: packages/board/tests/runtime policy (unknown kind rejected)"
+					"owner": "packages/board/tests/runtime/operations/proposals/corrections.test.ts"
 				}
 			]
 		},
 		{
 			"part": 12,
-			"title": "TASK-207 configured grouping",
+			"title": "Archive publication and recovery",
 			"entries": [
 				{
-					"path": "config.groups.<id>.name and required .color; empty default",
-					"expectedUse": "stable ids configured; display names free to change",
-					"scenarios": ["S03", "S08", "S09"],
-					"evidence": "harness-check",
-					"owner": "config-has configuredGroups; fixtures S03/S09 policy"
-				},
-				{
-					"path": "node.groups explicit set memberships, overlapping across containers",
-					"expectedUse": "Dispatch in two groups, Request context push and Run command in one each, across three containers",
-					"scenarios": ["S03", "S09"],
-					"evidence": "harness-check",
-					"owner": "node-groups"
-				},
-				{
-					"path": "no inherited membership",
-					"expectedUse": "containers gain nothing",
-					"scenarios": ["S03"],
-					"evidence": "harness-check",
-					"owner": "node-groups [] on Flask app and CLI"
-				},
-				{
-					"path": "omitted/empty equivalence; reorder/dedup normalization",
-					"expectedUse": "the document stores a sorted set or omits it",
+					"path": "published checkpoint and explicit fetch",
+					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests groups; packages/board/tests/runtime grouping"
-				},
-				{
-					"path": "display-name change without semantic delta; independent membership reconciliation",
-					"expectedUse": "renaming a group changes no board",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests reconcile memberships; compare tests"
-				},
-				{
-					"path": "semantic inspect --group: members, internal edges, directed boundary edges, immediate neighbours",
-					"expectedUse": "answer a membership question from the CLI",
-					"scenarios": ["S09"],
-					"evidence": "harness-check",
-					"owner": "inspect-group; tests/system/semantic-boards/groups.test.ts"
-				},
-				{
-					"path": "configured-empty versus unknown group",
-					"expectedUse": "an unknown id is refused, an empty configured group is empty",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "tests/system/semantic-boards/groups.test.ts UNKNOWN_GROUP"
-				},
-				{
-					"path": "hidden/collapsed members versus contextual ancestors",
-					"expectedUse": "the answer names a member the view does not draw",
-					"scenarios": ["S09"],
-					"evidence": "grader",
-					"owner": "grader inspect.hidden-members; apps/web/tests/ui/components/semantic-board-canvas/semantic-board-groups.test.tsx"
-				},
-				{
-					"path": "browser selection/emphasis/clear, pane-local refresh, coexistence with other presentation state",
-					"expectedUse": "viewer behaviour, not authored JSON",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "tests/system/browser/semantic-board-groups.test.ts; apps/web/tests/ui/components/semantic-board-canvas/semantic-board-groups.test.tsx"
-				},
-				{
-					"path": "legacy singular group field refused",
-					"expectedUse": "never written",
-					"scenarios": ["S03"],
-					"evidence": "harness-check",
-					"owner": "check-clean (legacy group is unreadable); packages/board/tests/runtime grouping"
+					"owner": "packages/board/tests/runtime/operations/history/concurrent-publication.test.ts"
 				}
 			]
 		},
 		{
 			"part": 13,
-			"title": "System-owned document state",
+			"title": "Private archives and portable models",
 			"entries": [
 				{
-					"path": "schemaVersion, kind, board id, version, createdAt, updatedAt",
-					"expectedUse": "outcomes of writes, never authored",
-					"scenarios": ["S00", "S01"],
-					"evidence": "harness-check",
-					"owner": "version-advanced-by; check-clean; packages/board/tests aggregate"
-				},
-				{
-					"path": "variant ids, parent, current, lifecycle",
-					"expectedUse": "outcomes of branch and adopt",
-					"scenarios": ["S02", "S06"],
-					"evidence": "harness-check",
-					"owner": "variant-exists, current-variant"
-				},
-				{
-					"path": "adoptions[].variant/from/at/reason/forced",
-					"expectedUse": "recorded by adopt",
-					"scenarios": ["S06"],
-					"evidence": "harness-check",
-					"owner": "adoptions-count"
-				},
-				{
-					"path": "reconciliation.against/atVersion/base/issues/blockedBy",
-					"expectedUse": "recorded by the store on a parent edit",
-					"scenarios": ["S11"],
-					"evidence": "harness-check",
-					"owner": "reconciliation-settled; packages/board/tests reconcile-standing"
-				},
-				{
-					"path": "schema refinements and cross-reference rules",
-					"expectedUse": "runtime evidence, not shape coverage",
+					"path": "untracked source and complete portable closure",
+					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests integrity; packages/skills/tests/runtime/operations/distribution/artifacts.test.ts (obligations named)"
+					"owner": "tests/system/semantic-boards/model-portable.test.ts"
 				}
 			]
 		},
 		{
 			"part": 14,
-			"title": "Authoring constraints and recovery",
+			"title": "Original migration coverage",
 			"entries": [
 				{
-					"path": "strict unknown-field rejection",
-					"expectedUse": "refused with the field named",
+					"path": "exact originals, bookmarks, and qualified history",
+					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/skills/tests/runtime/operations/distribution/artifacts.test.ts; semantic-board input tests"
-				},
-				{
-					"path": "bounded single-line names/labels/handles; bounded multiline responsibilities; description limits",
-					"expectedUse": "mechanical limits",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests primitives; packages/board/tests/shared/schemas/responsibility.test.ts"
-				},
-				{
-					"path": "ambiguous name references versus ids",
-					"expectedUse": "a name matching two nodes is refused; use the id",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime edit-content (ambiguous name)"
-				},
-				{
-					"path": "dangling or wrong-kind references, identity collisions, participant membership, empty selections, empty walkthroughs, invalid traffic/repeat",
-					"expectedUse": "refused at the boundary",
-					"scenarios": [],
-					"evidence": "runtime-owner",
-					"owner": "packages/board/tests integrity and input"
-				},
-				{
-					"path": "interpret a refusal and repair meaning",
-					"expectedUse": "configure the vocabulary the request asked for rather than bend the board",
-					"scenarios": ["S08"],
-					"evidence": "author-run",
-					"owner": "grader config.before-board (configure first, or repair a refusal by configuring; never bend the meaning); the refusal itself: packages/board/tests/runtime policy"
-				},
-				{
-					"path": "default versus explicit values; partial traffic overrides",
-					"expectedUse": "one of each, no matrix",
-					"scenarios": ["S10"],
-					"evidence": "harness-check",
-					"owner": "edge-traffic default and custom"
-				},
-				{
-					"path": "named view versus omitted view never conflated with the first view",
-					"expectedUse": "render --view names a view; absent draws the variant",
-					"scenarios": ["S02", "S12"],
-					"evidence": "harness-check",
-					"owner": "render-ok with and without --view; packages/renderer/tests/runtime"
-				},
-				{
-					"path": "visual verification by looking: readability, clipping, overlap, endpoints, sequence order",
-					"expectedUse": "the grader opens every capture as an image and names what it opened; a pass without every capture opened is downgraded to incomplete; a still proves no animation",
-					"scenarios": ["S00", "S05", "S07", "S10", "S12", "S14"],
-					"evidence": "grader",
-					"owner": "visualStandingOf (packages/skills/tests/runtime/operations/runs/captures.test.ts); rubric.md What you can and cannot see"
+					"owner": "packages/board/tests/runtime/operations/legacy-preview/readings.test.ts"
 				}
 			]
 		}

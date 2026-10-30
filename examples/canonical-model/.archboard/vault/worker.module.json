@@ -1,0 +1,8 @@
+{
+	"schemaVersion": 1,
+	"id": "Shop#Worker",
+	"name": "Worker",
+	"kind": "service",
+	"order": 10,
+	"outgoing": []
+}

@@ -1,0 +1,141 @@
+{
+  "order": 53500,
+  "name": "Canonical structure candidate",
+  "kind": "module",
+  "responsibility": "Builds module and flow candidates, then stores only identity additions, removals, assignments, clears and placements for a selected draft.",
+  "description": "Builds one complete module and flow candidate with identities reserved by retained lifecycle records. Loads identity reservations only for allocation. Checks exact tokens and writable standing before materializing a draft. Serialization preserves unrelated bytes and removes superseded file locations.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/model-edit/candidate.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/0T9enjhi#e0GTqv1k",
+  "parent": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 147000,
+      "kind": "call",
+      "label": "decodeModel",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+        "symbol": "decodeModel"
+      },
+      "id": "vKEsyHFk/0T9enjhi#wP2zZutN",
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+    },
+    {
+      "order": 169000,
+      "kind": "call",
+      "label": "requireSubjectClaim",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+        "symbol": "requireSubjectClaim"
+      },
+      "id": "vKEsyHFk/0T9enjhi#L2flrrBd",
+      "to": "vKEsyHFk/0T9enjhi#ov7pPg21"
+    },
+    {
+      "order": 170000,
+      "kind": "call",
+      "label": "ArchiveError",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+        "symbol": "ArchiveError"
+      },
+      "id": "vKEsyHFk/0T9enjhi#JVhp6YbR",
+      "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
+    },
+    {
+      "order": 181000,
+      "kind": "call",
+      "label": "shared archive failure contract",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+        "symbol": "ArchiveError"
+      },
+      "id": "vKEsyHFk/0T9enjhi#b4Ac9wPx",
+      "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
+    },
+    {
+      "order": 183000,
+      "kind": "call",
+      "label": "applyStructure",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+        "symbol": "editCandidate"
+      },
+      "id": "vKEsyHFk/0T9enjhi#nanqex2o",
+      "to": "vKEsyHFk/0T9enjhi#llmZ5fau"
+    },
+    {
+      "order": 192000,
+      "kind": "call",
+      "label": "materialize target and prepare proposals",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+        "symbol": "editCandidate"
+      },
+      "id": "vKEsyHFk/0T9enjhi#5EqQZzLi",
+      "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
+    },
+    {
+      "order": 219000,
+      "kind": "call",
+      "label": "retain identity reservations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+        "symbol": "retainedReservations"
+      },
+      "id": "vKEsyHFk/0T9enjhi#ZcLsTS33",
+      "to": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
+    },
+    {
+      "order": 240000,
+      "kind": "call",
+      "label": "walkthroughDependencies",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+        "symbol": "walkthroughDependencies"
+      },
+      "id": "vKEsyHFk/0T9enjhi#bMnT3nY6",
+      "to": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
+    }
+  ]
+}

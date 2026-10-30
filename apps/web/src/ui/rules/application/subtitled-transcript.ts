@@ -46,7 +46,10 @@ function subtitledTranscript(
  * @param transport The pane's transport.
  * @returns The feed.
  */
-function heardOver(transport: Pick<BrowserWorkbenchTransport, "subscribe" | "state">): VoiceFeed {
+function heardOver(
+	transport: Pick<BrowserWorkbenchTransport, "subscribe" | "state"> | null,
+): VoiceFeed {
+	if (transport === null) return NO_FEED;
 	return {
 		subscribe: transport.subscribe,
 		/**
@@ -56,5 +59,19 @@ function heardOver(transport: Pick<BrowserWorkbenchTransport, "subscribe" | "sta
 		voice: () => transport.state().snapshot?.voice ?? null,
 	};
 }
+
+/** A preparing voice has controls but no transcript transport yet. */
+const NO_FEED: VoiceFeed = {
+	/**
+	 * There are no transcript events before the transport exists.
+	 * @returns An empty cleanup action.
+	 */
+	subscribe: () => () => undefined,
+	/**
+	 * Preparation carries no spoken words.
+	 * @returns No transcript snapshot.
+	 */
+	voice: () => null,
+};
 
 export { heardOver, subtitledTranscript, type SubtitledVoice, type VoiceFeed };

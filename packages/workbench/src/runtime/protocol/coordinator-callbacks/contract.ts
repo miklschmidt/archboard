@@ -4,19 +4,18 @@ export interface CoordinatorPaneNews {
 	readonly sentence: string;
 	/**
 	 * Whether, during a narration, it is a reason to stop the talk: a pick that is not empty, a
-	 * view or variant the user chose, or anything an agent outside this session did. An emptied
-	 * selection or a move to another pane is not.
+	 * view or variant the user chose, or an agent's pane navigation. An emptied selection,
+	 * a move to another pane, or a live edit outside the captured snapshots is not.
 	 */
 	readonly stops: boolean;
 	/**
-	 * Who did what it tells: the user by hand, or an agent that is neither this session's workhorse
-	 * nor its coordinator (TASK-293.06). Neither of those asked for an agent's change, so the
-	 * coordinator is told it too.
+	 * Who caused the news: the user, an agent outside this session, or an external change.
+	 * The coordinator also hears changes outside this session.
 	 */
-	readonly by: "user" | "agent";
+	readonly by: "user" | "agent" | "external";
 	/**
 	 * For a board an outside agent wrote, its aggregate key: the write is told only while a pane of
-	 * this canvas shows that board, and stops only a narration of it. Null for anything else.
+	 * this canvas shows that board. It never interrupts captured narration. Null for anything else.
 	 */
 	readonly board: string | null;
 }

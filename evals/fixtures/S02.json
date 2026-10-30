@@ -1,74 +1,9 @@
 {
-	"$comment": "Flask 2.1 contexts as pushed onto werkzeug LocalStacks, with one shared view over the whole board. The two stacks are werkzeug's, outside the checkout, so they are `external` and carry no binding; every part that is Flask's own is bound to the file implementing it.",
 	"registerRepo": true,
-	"steps": [
-		{
-			"op": "new",
-			"board": "Flask contexts",
-			"input": {
-				"level": "module",
-				"variant": "Local stacks",
-				"summary": "Contexts pushed onto werkzeug LocalStacks, as Flask 2.1 did",
-				"nodes": [
-					{
-						"name": "App context",
-						"kind": "module",
-						"responsibility": "Binds current_app and g for one unit of work",
-						"binding": {
-							"repo": "$FLASK",
-							"path": "src/flask/ctx.py"
-						}
-					},
-					{
-						"name": "Request context",
-						"kind": "module",
-						"responsibility": "Binds request and session for one request",
-						"binding": {
-							"repo": "$FLASK",
-							"path": "src/flask/ctx.py"
-						}
-					},
-					{
-						"name": "App context stack",
-						"kind": "external",
-						"responsibility": "werkzeug LocalStack holding pushed app contexts"
-					},
-					{
-						"name": "Request context stack",
-						"kind": "external",
-						"responsibility": "werkzeug LocalStack holding pushed request contexts"
-					}
-				],
-				"edges": [
-					{
-						"from": "App context",
-						"to": "App context stack",
-						"kind": "data",
-						"label": "push / pop"
-					},
-					{
-						"from": "Request context",
-						"to": "Request context stack",
-						"kind": "data",
-						"label": "push / pop"
-					},
-					{
-						"from": "Request context",
-						"to": "App context",
-						"kind": "call",
-						"label": "pushes an app context when none is active"
-					}
-				],
-				"views": [
-					{
-						"name": "Contexts",
-						"grammar": "architecture",
-						"scope": {
-							"kind": "all"
-						}
-					}
-				]
-			}
-		}
-	]
+	"steps": [],
+	"inputs": {
+		"model.json": "{\"schemaVersion\":1,\"id\":\"Flask\",\"name\":\"Flask\",\"current\":{\"id\":\"Now\",\"name\":\"Current\"}}",
+		"app.module.json": "{\"schemaVersion\":1,\"id\":\"Flask#App\",\"name\":\"Application\",\"kind\":\"service\",\"order\":0,\"responsibility\":\"Routes HTTP requests through Flask\",\"binding\":{\"repo\":\"$FLASK\",\"path\":\"src/flask/app.py\"},\"outgoing\":[{\"id\":\"Flask#Context\",\"to\":\"Flask#Ctx\",\"kind\":\"dependency\",\"order\":0}]}",
+		"context.module.json": "{\"schemaVersion\":1,\"id\":\"Flask#Ctx\",\"name\":\"Request context\",\"kind\":\"module\",\"order\":0,\"parent\":\"Flask#App\",\"binding\":{\"repo\":\"$FLASK\",\"path\":\"src/flask/ctx.py\"},\"outgoing\":[]}"
+	}
 }

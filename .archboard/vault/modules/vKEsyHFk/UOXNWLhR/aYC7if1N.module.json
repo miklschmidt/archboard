@@ -1,0 +1,201 @@
+{
+  "order": 11000,
+  "name": "Retained stage entry",
+  "kind": "function",
+  "responsibility": "Mounts queries and presentation state for an exact retained diagram",
+  "description": "The retained stage receives its original content through a captured provider. Ordinary panes mount the canonical model stage. Camera, selection, and presentation controls remain read-only.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#aYC7if1N",
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "formerNames": [
+    "Viewer entry point"
+  ],
+  "outgoing": [
+    {
+      "order": 1500,
+      "kind": "render",
+      "label": "the answer, the reading and its moves",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+        "symbol": "SemanticStageView"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#MFYABYzc",
+      "to": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
+    },
+    {
+      "order": 2000,
+      "kind": "call",
+      "label": "the picture of this reading",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+        "symbol": "semanticRenderQuery"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#ACKA5I1k",
+      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
+    },
+    {
+      "order": 21000,
+      "kind": "call",
+      "label": "fit until the camera is moved",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+        "symbol": "useAutoFit"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#UubWA3xG",
+      "to": "vKEsyHFk/UOXNWLhR#VcgeYlnZ"
+    },
+    {
+      "order": 22500,
+      "kind": "call",
+      "label": "the pane's camera, kept across pictures",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+        "symbol": "useBoardCamera"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#IPiFENAY",
+      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
+    },
+    {
+      "order": 23000,
+      "kind": "call",
+      "label": "open step, and any driven one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+        "symbol": "useWalkthrough"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#aZWI05I3",
+      "to": "vKEsyHFk/UOXNWLhR#LayJIvbq"
+    },
+    {
+      "order": 24000,
+      "kind": "call",
+      "label": "the step's focus, once its picture is up",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-settled-focus.ts",
+        "symbol": "beatFocus"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#ReedyDWe",
+      "to": "vKEsyHFk/UOXNWLhR#z0dvHsUt"
+    },
+    {
+      "order": 27000,
+      "kind": "call",
+      "label": "what is on screen",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+        "symbol": "useReported"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#zhpc5qbc",
+      "to": "vKEsyHFk/UOXNWLhR#gT3UJ3yd"
+    },
+    {
+      "order": 29000,
+      "kind": "call",
+      "label": "hear the board on screen change",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+        "symbol": "useSemanticBoardChanges"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#Kx7K0XLU",
+      "to": "vKEsyHFk/UOXNWLhR#VC7yvPZB"
+    },
+    {
+      "order": 55000,
+      "kind": "call",
+      "label": "the pick, and the picture's atlas",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+        "symbol": "useReveal"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#cKc7k19t",
+      "to": "vKEsyHFk/UOXNWLhR#CDWaLOJ7"
+    },
+    {
+      "order": 58000,
+      "kind": "call",
+      "label": "the card opened, and the board above",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+        "symbol": "useDrillMoves"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#rywgYYWx",
+      "to": "vKEsyHFk/UOXNWLhR#gIakrnWa"
+    },
+    {
+      "order": 58500,
+      "kind": "call",
+      "label": "mount the flight on the pane's camera",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+        "symbol": "useDive"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#teXwe1ys",
+      "to": "vKEsyHFk/UOXNWLhR#hc77pwzB"
+    },
+    {
+      "order": 101000,
+      "kind": "call",
+      "label": "the vault of the reading it draws and listens to",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+        "symbol": "usePaneVault"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#mhEYDOOE",
+      "to": "vKEsyHFk/UOXNWLhR#51hijVQY"
+    },
+    {
+      "order": 108000,
+      "kind": "call",
+      "label": "the board on screen, and the trail behind it",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+        "symbol": "useDrillDown"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#B0UbZ22U",
+      "to": "vKEsyHFk/UOXNWLhR#3KtX2jdA"
+    },
+    {
+      "order": 129000,
+      "kind": "call",
+      "label": "does another pane share the centre",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+        "symbol": "usePaneChrome"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#XFDnxQCC",
+      "to": "vKEsyHFk/UOXNWLhR#kCxSbcFL"
+    }
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "order": 36000,
+  "name": "Live panes",
+  "kind": "module",
+  "responsibility": "Keeps pane sockets and tab sessions live; existing publishers send canonical change and activity snapshots.",
+  "description": "Pane routes and sockets retain presentation state. The canonical change feed carries model events to agent context, while the activity tracker broadcasts vault-keyed subject claims and durable action attribution.",
+  "groups": [
+    "panes"
+  ],
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
+  "parent": "vKEsyHFk/6E6hL0Zk#cuOguqkZ",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 10000,
+      "kind": "event",
+      "description": "the page's agent messages",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+        "symbol": "handleBrowserMessage"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#fISQ9jAX",
+      "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+    },
+    {
+      "order": 18000,
+      "kind": "event",
+      "label": "board and agent news",
+      "description": "board and agent news",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/registry.ts",
+        "symbol": "sendToVaultClients"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#VO9ngl7m",
+      "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
+    },
+    {
+      "order": 65000,
+      "kind": "call",
+      "label": "the repository and checkout of a pane's vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+        "symbol": "placeOfVault"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#57KDyakx",
+      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    },
+    {
+      "order": 73000,
+      "kind": "dependency",
+      "description": "upgrades on the same listener",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+        "symbol": "server"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#GQKfoYtu",
+      "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG"
+    },
+    {
+      "order": 80000,
+      "kind": "call",
+      "label": "an agent's show chooses the checkout it shows",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+        "symbol": "chooseKnownCheckout"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#ALYb99sn",
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "order": 81000,
+      "kind": "call",
+      "description": "the pane's focus, for its agent",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "symbol": "publishPaneContext"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#k3GPy1bo",
+      "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+    },
+    {
+      "order": 81000,
+      "kind": "call",
+      "label": "a show that chose: every pane follows",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-show-route.ts",
+        "symbol": "followRegistry"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#epRLrdt6",
+      "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
+    },
+    {
+      "order": 99000,
+      "kind": "call",
+      "description": "The pane WebSocket implementation checks handshakes through the shared browser request policy; Live panes shows the exact caller",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+        "symbol": "checkBrowserCsrf"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#9yGuDXdP",
+      "to": "vKEsyHFk/6E6hL0Zk#cZ1UH0xU"
+    },
+    {
+      "order": 118000,
+      "kind": "call",
+      "label": "sockets and pane calls name a vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+        "symbol": "namedVault"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#mDvMUlZO",
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    }
+  ]
+}

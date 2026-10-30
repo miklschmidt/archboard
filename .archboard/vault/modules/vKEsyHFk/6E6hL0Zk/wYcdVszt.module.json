@@ -1,0 +1,60 @@
+{
+  "order": 3000,
+  "name": "Architecture runtime API",
+  "kind": "module",
+  "responsibility": "Exposes canonical architecture operations through the shared runtime boundary",
+  "description": "Local CLI and HTTP adapters share canonical reads, edits, subject claims, proposals, migration, archive retention, and recovery. Legacy decoding serves explicit migration and exact retained originals.",
+  "groups": [
+    "writes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/api"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "formerNames": [
+    "Semantic board store",
+    "Architecture store"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 104000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/bound-vaults.ts",
+        "symbol": "chosenCheckouts"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#XY9qNedj",
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    }
+  ]
+}

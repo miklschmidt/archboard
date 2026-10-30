@@ -156,6 +156,15 @@ test("the worktrees that git lists for a known checkout are known, and a deleted
 	expect(orders().chosen).toEqual([worktree]);
 });
 
+test("a larger worktree family is registered completely without replacing the chosen checkout", async () => {
+	const family = repository(join(scratch, "larger-family"));
+	const linked = Array.from({ length: 12 }, (_, index) => addWorktree(family, `family-${index}`));
+	await declareDirectory(clone);
+	await declareDirectory(family);
+	expect(orders().roots).toEqual([clone, family, ...linked].toSorted());
+	expect(orders().chosen).toEqual([clone]);
+});
+
 test("a worktree whose own config names an origin is another repository", async () => {
 	const base = join(scratch, "forked");
 	mkdirSync(base);
@@ -173,6 +182,25 @@ test("a worktree whose own config names an origin is another repository", async 
 	// Asked from the worktree with its own origin, the others are another repository.
 	expect(await declareDirectory(own)).toMatchObject({
 		checkout: { repo: "github.com/test/fork" },
+		worktrees: [],
+	});
+});
+
+test("a conditional Git include can give one listed worktree another repository identity", async () => {
+	const base = repository(join(scratch, "conditional"));
+	git(base, "remote", "remove", "origin");
+	const same = addWorktree(base, "conditional-same");
+	const own = addWorktree(base, "conditional-own");
+	const included = join(scratch, "conditional-origin");
+	writeFileSync(included, '[remote "origin"]\n\turl = https://github.com/test/fork.git\n');
+	git(base, "config", "includeIf.onbranch:conditional-own.path", included);
+	await declareDirectory(base);
+	expect(listRegistry().checkouts.map((each) => [each.repo, each.root])).toEqual([
+		["conditional", base],
+		["conditional", same],
+	]);
+	expect(await declareDirectory(own)).toMatchObject({
+		checkout: { repo: "github.com/test/fork", root: own },
 		worktrees: [],
 	});
 });

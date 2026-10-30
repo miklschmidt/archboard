@@ -6,6 +6,7 @@
 // caller to decide that the command is over.
 
 import { asError } from "@archboard/diagnostics/thrown-error";
+import { GitCommandError } from "#runtime/processes/git-failure.ts";
 
 const GIT_OUTPUT_LIMIT_BYTES = 64 * 1024;
 
@@ -21,17 +22,34 @@ interface BoundedDrain {
 }
 
 /**
+ * Decode exact UTF-8 text without consuming an authored byte-order mark.
+ * @param bytes The complete command output.
+ * @param exitCode The successful command's reported exit status.
+ * @returns The exact text.
+ * @throws {GitCommandError} When the output is not valid UTF-8.
+ */
+function decodeGitOutput(bytes: Uint8Array, exitCode: number | undefined): string {
+	try {
+		return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
+	} catch {
+		throw new GitCommandError("output", "Git command output is not valid UTF-8.", exitCode);
+	}
+}
+
+/**
  * Read a stream to its end, keeping at most the output limit and reporting
  * the moment it is exceeded.
  * @param stream The child's stdout or stderr.
  * @param onExcess Called once when the limit is passed.
  * @param onFailure Called when the read itself fails.
+ * @param limit The output budget for this command.
  * @returns The kept bytes as a promise, and a way to cut the read short.
  */
 function drainBounded(
 	stream: ReadableStream<Uint8Array>,
 	onExcess: () => void,
 	onFailure: (error: Error) => void,
+	limit = GIT_OUTPUT_LIMIT_BYTES,
 ): BoundedDrain {
 	const reader = stream.getReader();
 	let chunks: Uint8Array[] = [];
@@ -75,13 +93,13 @@ function drainBounded(
 	 */
 	const take = (value: Uint8Array): void => {
 		seen += value.byteLength;
-		if (kept < GIT_OUTPUT_LIMIT_BYTES) {
-			const room = GIT_OUTPUT_LIMIT_BYTES - kept;
+		if (kept < limit) {
+			const room = limit - kept;
 			const chunk = value.byteLength <= room ? value : value.slice(0, room);
 			chunks.push(chunk);
 			kept += chunk.byteLength;
 		}
-		if (!exceeded && seen > GIT_OUTPUT_LIMIT_BYTES) {
+		if (!exceeded && seen > limit) {
 			exceeded = true;
 			onExcess();
 		}
@@ -127,4 +145,4 @@ function drainBounded(
 	};
 }
 
-export { type BoundedDrain, type DrainOutcome, drainBounded };
+export { type BoundedDrain, type DrainOutcome, decodeGitOutput, drainBounded };

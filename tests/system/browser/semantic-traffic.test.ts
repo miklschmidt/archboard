@@ -7,7 +7,7 @@
 // traffic jumps back to the start instead of running on.
 
 import { expect, test } from "bun:test";
-import { cpSync } from "node:fs";
+import { cpSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { createJsonRequester } from "../support/http.ts";
@@ -22,16 +22,19 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
-import { SEMANTIC_SURFACE, pictureAtRest } from "./support/semantic-page.ts";
+import { editCanonicalModel } from "./support/canonical-page.ts";
+import { initializeSource } from "./support/canonical-model.ts";
+import { emulateMedia } from "./support/shell-render-matrix.ts";
 
 const WAIT = { timeoutMs: 8_000 } as const;
 
-/** The example vault: its boards draw trains of pulses, and its sequence view draws one pulse a message. */
-const EXAMPLE = join(import.meta.dir, "../../../examples/web-shop");
+/** The authored model draws traffic trains and an independent sequence draws message pulses. */
+const EXAMPLE = join(import.meta.dir, "../../../examples/canonical-model/.archboard/vault");
 
-/** The board, and the id of its sequence view. */
-const BOARD = "Web shop";
-const SEQUENCE_VIEW = "ejQ7ydLw";
+/** The model and its independent flow identity. */
+const MODEL = "Shop";
+const FLOW = "Shop#Request";
+const SEMANTIC_SURFACE = '[data-slot="model-diagram"] [data-slot="semantic-board-surface"]';
 
 /** The moments compared: before the traffic begins, and on into its cycles. */
 const MOMENTS = [0.01, 0.5, 1.7, 3.3, 6.1, 9.4];
@@ -115,7 +118,10 @@ const TRAFFIC_CLOCK = `(() => {
 async function openAtRest(browser: AgentBrowserSession, address: string): Promise<void> {
 	await browser.run(["open", address]);
 	await pollUntil(
-		() => pictureAtRest((expression) => browser.eval(expression)),
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('${SEMANTIC_SURFACE}:not([data-picture-motion]) svg') !== null`,
+			),
 		(rest) => rest,
 		`${address} to be drawn and at rest`,
 		WAIT,
@@ -134,18 +140,57 @@ async function compareTraffic(browser: AgentBrowserSession): Promise<Comparison>
 test("the page runs a picture's traffic where SMIL would, without SMIL, and runs it on across versions", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
-	const vault = vaultIn(join(ownerRoot, "vault"));
+	const root = join(ownerRoot, "vault");
+	const vault = vaultIn(root);
 	cpSync(EXAMPLE, vault, { recursive: true });
-	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	initializeSource(root);
+	writeFileSync(
+		join(vault, "request.flows.json"),
+		JSON.stringify({
+			schemaVersion: 1,
+			id: "Requests",
+			name: "Requests",
+			flows: [
+				{
+					id: FLOW,
+					name: "Handle request",
+					participants: ["Shop#Gateway", "Shop#Worker"],
+					steps: [
+						{
+							id: "Shop#Send",
+							from: "Shop#Gateway",
+							to: "Shop#Worker",
+							kind: "sync",
+							label: "Dispatch",
+						},
+						{
+							id: "Shop#Return",
+							from: "Shop#Worker",
+							to: "Shop#Gateway",
+							kind: "return",
+							label: "Result",
+						},
+					],
+				},
+			],
+		}),
+	);
+	const server = await startOwnedServer({
+		serverPath,
+		vault,
+		env: serverTestEnvironment({ GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" }),
+	});
 	resources.defer(() => server.dispose());
 	registerServerBase(server.base);
 	const request = createJsonRequester(server);
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["set", "viewport", "1920", "1080"]);
-	const board = encodeURIComponent(BOARD);
 
 	// Trains on the board, and a pulse a message on its sequence view: every form the renderer writes.
-	for (const address of [`?paneA=${board}&viewA=${SEQUENCE_VIEW}`, `?paneA=${board}`]) {
+	for (const address of [
+		`?modelA=${MODEL}&grammarA=sequence&flowA=${encodeURIComponent(FLOW)}`,
+		`?modelA=${MODEL}`,
+	]) {
 		await openAtRest(browser, `${server.base}/${address}`);
 		const compared = await compareTraffic(browser);
 		expect(compared.running, `${address} runs SMIL`).toBe(0);
@@ -159,22 +204,9 @@ test("the page runs a picture's traffic where SMIL would, without SMIL, and runs
 	// The final comparison left the board's live traffic at MOMENTS' last time, then resumed it.
 	const before = await browser.eval<number>(TRAFFIC_CLOCK);
 	expect(before).toBeGreaterThan(3000);
-	const read = await request<{ board: { version: number } }>(
-		`/api/semantic-boards/board?board=${board}`,
-	);
-	const edited = await request(
-		`/api/semantic-boards/edit?expectVersion=${read.body.board.version}`,
-		{
-			method: "POST",
-			doing: "adding an audit log",
-			body: {
-				board: BOARD,
-				origin: "agent",
-				edit: { nodes: [{ name: "Audit log", kind: "datastore" }] },
-			},
-		},
-	);
-	expect(edited.status).toBe(200);
+	await editCanonicalModel(request, vault, "traffic-audit", [
+		{ type: "add-module", module: { name: "Audit log", kind: "service", order: 40 } },
+	]);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -186,4 +218,37 @@ test("the page runs a picture's traffic where SMIL would, without SMIL, and runs
 		WAIT,
 	);
 	expect(await browser.eval<number>(TRAFFIC_CLOCK)).toBeGreaterThanOrEqual(before);
+
+	// The existing picture answers reduced motion without another layout or read.
+	await browser.eval(
+		`document.querySelector('${SEMANTIC_SURFACE} svg').setAttribute('data-test-kept', 'motion')`,
+	);
+	const visibleTraffic = () =>
+		browser.eval<number>(
+			`[...document.querySelectorAll('${SEMANTIC_SURFACE} .ab-pulse')].filter(node => getComputedStyle(node).display !== 'none').length`,
+		);
+	const moving = await visibleTraffic();
+	expect(moving).toBeGreaterThan(0);
+	const restore = await emulateMedia(browser, "light", "reduced-motion");
+	try {
+		await pollUntil(
+			visibleTraffic,
+			(count) => count === 0,
+			"traffic hidden by reduced motion",
+			WAIT,
+		);
+		expect(
+			await browser.eval<boolean>(
+				`document.querySelector('${SEMANTIC_SURFACE} svg[data-test-kept="motion"]') !== null`,
+			),
+		).toBe(true);
+	} finally {
+		await restore();
+	}
+	await pollUntil(
+		visibleTraffic,
+		(count) => count === moving,
+		"traffic restored without another picture",
+		WAIT,
+	);
 });

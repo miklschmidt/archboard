@@ -1,0 +1,89 @@
+{
+  "order": 1001,
+  "name": "Eval CLI",
+  "kind": "module",
+  "responsibility": "run, grade, report, check and pin, and the cancellation a person's interrupt becomes: the command line of the evaluation, kept in the skills package behind its one evaluation entry",
+  "description": "Never part of the gate: every author run and the grading session call a model, and a person decides when that happens.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/skills/src/runtime/operations/evaluation/command.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "load and validate the inputs",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/evaluation/command.ts",
+        "symbol": "loadSuite"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#EZG5L7jf",
+      "to": "vKEsyHFk/IbGtfJE2#k8wziYS4"
+    },
+    {
+      "order": 3000,
+      "kind": "call",
+      "label": "run the selected arms",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/evaluation/command.ts",
+        "symbol": "runBatch"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#gkJMDrW9",
+      "to": "vKEsyHFk/IbGtfJE2#7A4Joh1m"
+    },
+    {
+      "order": 4000,
+      "kind": "call",
+      "label": "grade what has not been graded",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/evaluation/command.ts",
+        "symbol": "gradeBatch"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#DJsFb8l6",
+      "to": "vKEsyHFk/IbGtfJE2#PwYiE0Hr"
+    },
+    {
+      "order": 5000,
+      "kind": "call",
+      "label": "write the report",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/evaluation/command.ts",
+        "symbol": "writeReport"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#hlCNYU50",
+      "to": "vKEsyHFk/IbGtfJE2#LcKROPw0"
+    },
+    {
+      "order": 48000,
+      "kind": "call",
+      "label": "pin the executable versions",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/evaluation/command.ts",
+        "symbol": "pinVersions"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#7KrvUnRu",
+      "to": "vKEsyHFk/IbGtfJE2#yohDGrXU"
+    }
+  ]
+}

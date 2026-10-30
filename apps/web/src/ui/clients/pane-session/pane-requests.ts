@@ -1,23 +1,15 @@
-// What a pane says to the Archboard server over HTTP: what it is showing, which
-// board it should show, and the one control a person has over an agent's claim.
-//
-// Everything else a pane needs arrives over its socket or through the semantic
-// board cache. There is no write here, because a person does not author a
-// semantic board (ADR 0023); `takeBoardBack` is not a write to a board, it is
-// the release of somebody else's lease. Nor is `showConversation`: it says which
-// checkout's conversation the person activated, and the dock follows it.
+// Requests for pane registration, canonical navigation, and conversation activation.
 
+import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts";
+import type { z } from "zod";
+import type { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
 import {
 	SHOWN_CONVERSATION_ROUTE,
 	type ShownConversationReply,
 	type ShownConversationRequest,
 } from "@archboard/workbench/browser-contract";
 import { inVault, requestJson } from "@archboard/server-requests";
-import type {
-	BoardIdentity,
-	BrowserPaneListing,
-	LockHolder,
-} from "#ui/rules/pane-session/session-types.ts";
+import type { BrowserPaneListing } from "#ui/rules/pane-session/session-types.ts";
 
 /** What one pane tells the server it has in front of the human. */
 interface PaneReport {
@@ -91,65 +83,21 @@ function fetchPaneInventory(signal?: AbortSignal): Promise<BrowserPaneListing> {
 	return requestJson("/api/panes", { signal });
 }
 
-/** What `showBoard` asks for: which board of which vault, in which pane. */
-interface ShowBoardRequest {
-	/** The vault the board is in: a pane shown a board of another vault moves into it. */
-	vault: string;
-	/** The board key: `pipeline`, or `pipeline@variant`. */
-	board: string;
-	/** Which pane shows it. Required once more than one is open. */
-	pane?: string;
-}
-
-/** What the server answers a show with. */
-interface ShowBoardReply {
-	success: true;
-	board: string;
-	identity: BoardIdentity;
-	/** The repository the vault is listed under, or null when no listed one reads it. */
-	repository: string | null;
-	paneId: string;
-}
-
 /**
- * Point a pane at a board.
- *
- * The shell asks rather than deciding, so that one owner records which pane
- * holds what — the same owner an agent's `browser show` goes through, and the
- * same one `browser panes` is answered from (ADR 0009).
- * @param request The board and the pane to show it in.
- * @returns What the pane is showing now.
+ * Open a canonical reading through the same addressed route used by local agents.
+ * @param vault The destination vault.
+ * @param pane The registered client identity.
+ * @param reading The complete canonical navigation intent.
+ * @returns The server receipt after it accepts the destination.
  */
-function showBoard(request: ShowBoardRequest): Promise<ShowBoardReply> {
-	const { vault, ...shown } = request;
-	return requestJson(inVault("/api/panes/show", vault), { method: "POST", payload: shown });
-}
-
-/** The answer to a take-back: whether a claim was released, and which. */
-interface TakeBackReply {
-	success: true;
-	released: boolean;
-	claim?: LockHolder;
-}
-
-/**
- * Release an agent's claim on a board: the one explicit control a person has
- * over a claimed board (ADR 0022). The board goes to nobody, the agent is told
- * once that it lost the board, and nothing already written is undone.
- * @param vault The vault the board is in.
- * @param board The board key.
- * @param clientId This pane.
- * @returns Whether a claim was released.
- */
-function takeBoardBack(
+function showModel(
 	vault: string,
-	board: string | null,
-	clientId: string,
-): Promise<TakeBackReply> {
-	const query = board === null || board === "" ? "" : `?board=${encodeURIComponent(board)}`;
-	return requestJson(inVault(`/api/semantic-boards/take-back${query}`, vault), {
+	pane: string,
+	reading: z.input<typeof ArchitecturePaneReadingSchema>,
+): Promise<Pick<PaneModelRequest, "repository">> {
+	return requestJson(inVault("/api/panes/show", vault), {
 		method: "POST",
-		payload: { clientId },
+		payload: { pane, reading },
 	});
 }
 
@@ -175,12 +123,8 @@ export {
 	fetchPaneInventory,
 	loadedBundle,
 	reportPane,
-	showBoard,
+	showModel,
 	showConversation,
-	takeBoardBack,
 	type PaneReply,
 	type PaneReport,
-	type ShowBoardReply,
-	type ShowBoardRequest,
-	type TakeBackReply,
 };

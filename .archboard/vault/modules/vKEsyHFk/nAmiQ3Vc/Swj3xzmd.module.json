@@ -1,0 +1,58 @@
+{
+  "order": 5003,
+  "name": "Command catalogue",
+  "kind": "service",
+  "responsibility": "The table of every command, and the caller that hands this module its argv",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/invocation/run.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
+  "parent": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+  "outgoing": [
+    {
+      "order": 7000,
+      "kind": "call",
+      "label": "argv",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "symbol": "runCliWith"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#Xqy7fxY0",
+      "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT"
+    },
+    {
+      "order": 9000,
+      "kind": "call",
+      "label": "registryOf, for the contract audit",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "symbol": "registryOf"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#Ml9zYVzq",
+      "to": "vKEsyHFk/nAmiQ3Vc#45uNvMac"
+    },
+    {
+      "order": 13000,
+      "kind": "call",
+      "label": "routes built with contract and child",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/invocation/run.ts",
+        "symbol": "contract"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#nYQ1B3GK",
+      "to": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX"
+    }
+  ]
+}

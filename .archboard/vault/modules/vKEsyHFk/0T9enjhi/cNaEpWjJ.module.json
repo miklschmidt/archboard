@@ -1,0 +1,99 @@
+{
+  "order": 40000,
+  "name": "Canonical model read",
+  "kind": "function",
+  "responsibility": "Reads current, draft, and retained architecture before resolving explicit references and bound source",
+  "description": "Reads one live canonical model or an exact retained reading. The shared decoder orders collections and walkthroughs consistently. Legacy bytes serve explicit migration and original history only.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/read/model-read.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
+  "parent": "vKEsyHFk/0T9enjhi#1VHRyajb",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 94000,
+      "kind": "dependency",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-read.ts",
+        "symbol": "ArchitectureManifestSchema"
+      },
+      "id": "vKEsyHFk/0T9enjhi#41Ear2yX",
+      "to": "vKEsyHFk/0T9enjhi#ZLJy8ivl"
+    },
+    {
+      "order": 96000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-read.ts",
+        "symbol": "SemanticBoardConfigurationSchema"
+      },
+      "id": "vKEsyHFk/0T9enjhi#BADMPDPc",
+      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe"
+    },
+    {
+      "order": 137000,
+      "kind": "call",
+      "label": "refuse mixed current installation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-read.ts",
+        "symbol": "modelBoundaryFailure"
+      },
+      "id": "vKEsyHFk/0T9enjhi#qyBfoMqw",
+      "to": "vKEsyHFk/0T9enjhi#YREYrbYW"
+    },
+    {
+      "order": 189000,
+      "kind": "call",
+      "label": "select state",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-read.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/0T9enjhi#IFI468Vn",
+      "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
+    },
+    {
+      "order": 224000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-read.ts",
+        "symbol": "readRequestedArchitecture"
+      },
+      "id": "vKEsyHFk/0T9enjhi#SF2mgNXu",
+      "to": "vKEsyHFk/0T9enjhi#FlAxCoeb"
+    }
+  ]
+}

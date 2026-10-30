@@ -1,0 +1,63 @@
+{
+  "order": 44000,
+  "name": "Restart",
+  "kind": "module",
+  "responsibility": "Stops the server, builds the frontend from this checkout, and starts the server again",
+  "description": "It refuses a server that it could not start again before it stops it, and a refused stop leaves the bundle unbuilt. A failed build refuses with FRONTEND_BUILD_FAILED, carries the build's output and says that the server is stopped. The answer names the entry script of the new bundle, as /health reports it.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/server-lifecycle/src/runtime/operations/restart.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/XppR9owz#nvbnGOtV",
+  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 73000,
+      "kind": "dependency",
+      "label": "the checkout to build",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
+        "symbol": "SOURCE_CHECKOUT"
+      },
+      "id": "vKEsyHFk/XppR9owz#i7r1YcDJ",
+      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+    },
+    {
+      "order": 74000,
+      "kind": "call",
+      "label": "stop, then start again",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
+        "symbol": "stopServer"
+      },
+      "id": "vKEsyHFk/XppR9owz#eSv7lgu3",
+      "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
+    }
+  ]
+}

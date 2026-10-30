@@ -59,11 +59,16 @@ function digestOf(directory: string): string {
  * @param installed The installed skill directory.
  * @param source The arm's package.
  * @param checkout The archboard checkout the generated files derive from.
+ * @returns The generated artifact inventory.
  */
-function swapInPackage(installed: string, source: string, checkout: string): void {
+function swapInPackage(
+	installed: string,
+	source: string,
+	checkout: string,
+): ReturnType<typeof prepareSkillArtifacts> {
 	fs.rmSync(installed, { recursive: true, force: true });
 	fs.cpSync(source, installed, { recursive: true });
-	prepareSkillArtifacts(installed, { root: checkout });
+	return prepareSkillArtifacts(installed, { root: checkout });
 }
 
 /**
@@ -89,12 +94,8 @@ async function installSkill(
 	for (const other of fs.readdirSync(skillsRoot).filter((name) => name !== "archboard")) {
 		fs.rmSync(path.join(skillsRoot, other), { recursive: true, force: true });
 	}
-	swapInPackage(skillRoot, source, cli.checkout);
-	for (const required of [
-		"SKILL.md",
-		path.join("references", "generated", "semantic-board.schema.json"),
-		path.join("references", "generated", "INSTALL.md"),
-	]) {
+	const prepared = swapInPackage(skillRoot, source, cli.checkout);
+	for (const required of ["SKILL.md", ...prepared.files]) {
 		if (!fs.existsSync(path.join(skillRoot, required)))
 			throw new Error(`installed skill lacks ${required}`);
 	}

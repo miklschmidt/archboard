@@ -4,6 +4,10 @@ status: accepted
 
 # A board render carries its recipe, and the check keeps embeds current
 
+Canonical render recipes and Git artifact discovery supersede board-owned export tracking below. Explicit embed repair uses the existing renderer and rasterizer.
+[ADR 0062](0062-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
+
 Decided by the repository owner on 2026-10-24, in a design interview. It serves
 TASK-526 and its subtasks.
 

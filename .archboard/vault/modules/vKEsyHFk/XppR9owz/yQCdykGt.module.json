@@ -1,0 +1,79 @@
+{
+  "order": 12000,
+  "name": "Vault check",
+  "kind": "module",
+  "responsibility": "Runs canonical model and policy checks, with code and embed checks owned by their existing operations.",
+  "description": "In a Git checkout with no vault, check, check all and check embeds run embeds alone and report why semantics/code were skipped. With a vault, check semantics reads canonical model diagnostics and authored policy; legacy authority returns migration guidance without changing source. Code and embed checks keep their existing owners.",
+  "groups": [
+    "checks"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/vault/vault.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/XppR9owz#yQCdykGt",
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "e28c69457986363ac26aad68131260ae988ce723",
+      "path": "backlog/tasks/task-549.08 - Adopt-or-shelve-a-proposal-without-growing-current-history-files.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549.23 - Install-and-recover-an-explicit-vault-migration.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
+      "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 17000,
+      "kind": "call",
+      "label": "board operation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/vault/vault.ts",
+        "symbol": "checkSemanticVaultOnServer"
+      },
+      "id": "vKEsyHFk/XppR9owz#QmcmQeFK",
+      "to": "vKEsyHFk/XppR9owz#OfRn3av3"
+    },
+    {
+      "order": 42000,
+      "kind": "call",
+      "label": "the code check, in check, check all and check code",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/vault/vault.ts",
+        "symbol": "requestJson"
+      },
+      "id": "vKEsyHFk/XppR9owz#QiGtsvq5",
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    },
+    {
+      "order": 86000,
+      "kind": "call",
+      "label": "the embeds check, in check, check all and check embeds",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/vault/vault.ts",
+        "symbol": "checkEmbeds"
+      },
+      "id": "vKEsyHFk/XppR9owz#g8rnkuaR",
+      "to": "vKEsyHFk/XppR9owz#s25sE5P3"
+    }
+  ]
+}
