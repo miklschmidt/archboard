@@ -1,6 +1,6 @@
 import { ModelPanel } from "#ui/components/architecture-model/ModelPanel.tsx";
 import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 import { RiArrowLeftRightLine, RiArrowRightLine } from "@remixicon/react";
 import type { Model, projectModel } from "@archboard/board/content";
 
@@ -41,7 +41,7 @@ function ConnectionChoice(props: ModelConnectionsProps & { connection: Connectio
 	const { model, onSelect } = props;
 	const { line, joins } = props.connection;
 	const pick = useModelPick(line.id, onSelect);
-	const Arrow = line.twoWay === true ? RiArrowLeftRightLine : RiArrowRightLine;
+	const Arrow = arrowOf(line);
 	return (
 		<li className="border-border hover:bg-muted/50 has-aria-pressed:bg-sidebar-accent border-b">
 			<button
@@ -133,6 +133,8 @@ interface ConnectionSummaryProps {
 	/** The coherent base for removed endpoints. */
 	reference: Model | undefined;
 	onSelect: ModelSelection["select"];
+	/** What the code says of it. */
+	children?: ReactNode;
 }
 
 /**
@@ -151,6 +153,7 @@ function ConnectionSummary(props: ConnectionSummaryProps): JSX.Element {
 			<ModelPanel.Head title={lineEnds(ends, model, reference)}>
 				<span data-slot="model-connection-kinds">{kindNames(model, joins)}</span>
 			</ModelPanel.Head>
+			{props.children}
 			{one ? <OneRelationship {...props} edge={joins[0]} /> : <JoinedRelationships {...props} />}
 		</ModelPanel.Body>
 	);
@@ -218,24 +221,34 @@ function OneRelationship(
  * @param props.connection The line and every underlying relationship.
  * @param props.model The model that resolves authored endpoints.
  * @param props.reference The coherent base for removed endpoints.
+ * @param props.children What the code says of it.
  * @returns The complete relationship details in authored order.
  */
 function ConnectionDetails(props: {
 	connection: Connection;
 	model: Model;
 	reference: Model | undefined;
+	children?: ReactNode;
 }): JSX.Element {
-	const { connection, model } = props;
+	const { connection, model, reference } = props;
+	const { line } = connection;
+	const Arrow = arrowOf(line);
 	return (
 		<article data-slot="model-connection-details" className="space-y-8">
 			<header className="space-y-3">
-				<h3 className="title-figure [overflow-wrap:anywhere] uppercase">
-					{lineEnds(connection.line, model, props.reference)}
+				<h3
+					aria-label={lineEnds(line, model, reference)}
+					className="title-figure [overflow-wrap:anywhere] uppercase"
+				>
+					{moduleName(model, line.from, reference)}{" "}
+					<Arrow aria-hidden="true" className="inline size-[0.7em] align-baseline" />{" "}
+					{moduleName(model, line.to, reference)}
 				</h3>
 				<p data-slot="model-connection-kinds" className="text-control text-muted-foreground">
 					{kindNames(model, connection.joins)}
 				</p>
 			</header>
+			{props.children}
 			<ol className="space-y-6">
 				{connection.joins.map((edge) => (
 					<li key={edge.id} data-relationship-id={edge.id} className="text-body space-y-2">
@@ -266,6 +279,15 @@ function ConnectionDetails(props: {
 function lineEnds(line: Connection["line"], model: Model, reference: Model | undefined): string {
 	const mark = line.twoWay === true ? "↔" : "→";
 	return `${moduleName(model, line.from, reference)} ${mark} ${moduleName(model, line.to, reference)}`;
+}
+
+/**
+ * The mark between the two ends of a drawn line.
+ * @param line The line.
+ * @returns An arrow each way when it runs both ways.
+ */
+function arrowOf(line: Connection["line"]): typeof RiArrowRightLine {
+	return line.twoWay === true ? RiArrowLeftRightLine : RiArrowRightLine;
 }
 
 /**

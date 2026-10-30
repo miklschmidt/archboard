@@ -58,7 +58,9 @@ function ModelSelectionDetails(props: ModelSelectionDetailsProps): JSX.Element |
 				connection={subject.connection}
 				model={props.model}
 				reference={props.projection.reference}
-			/>
+			>
+				{props.evidence}
+			</ConnectionDetails>
 		);
 	if (subject.kind === "subjects")
 		return (

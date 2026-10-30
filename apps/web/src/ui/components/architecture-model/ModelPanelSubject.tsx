@@ -80,6 +80,9 @@ function OtherSubject(props: ModelPanelSubjectProps): JSX.Element {
 	const { model, projection, selection } = props;
 	const { ids, select } = selection;
 	const subject = selectedSubject({ ...props, ids });
+	const warnings = (
+		<ModelCodeDetails reading={props.code} selected={ids} scope={props.scope} brief />
+	);
 	if (subject.kind === "connection")
 		return (
 			<ConnectionSummary
@@ -87,10 +90,13 @@ function OtherSubject(props: ModelPanelSubjectProps): JSX.Element {
 				model={model}
 				reference={projection.reference}
 				onSelect={select}
-			/>
+			>
+				{warnings}
+			</ConnectionSummary>
 		);
 	return (
 		<ModelPanel.Body slot="model-panel-other">
+			{warnings}
 			{subject.kind === "collection" && (
 				<ModelCollectionDetails {...subject} onOpenFlow={props.onRevealFlow} />
 			)}
