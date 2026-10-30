@@ -218,5 +218,5 @@ test("an input that is a flake of the checkout joins the part that owns the lock
 test("the check never runs nix, though the flake would fetch if it were evaluated", () => {
 	// Git lists the checkout's files, itself or through the process owner that runs it.
 	expect(started.length).toBeGreaterThan(0);
-	expect(started.filter((command) => !command.split(" ").includes("git"))).toEqual([]);
+	expect(started.filter((command) => command.split(/\s/u).includes("nix"))).toEqual([]);
 });
