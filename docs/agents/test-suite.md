@@ -729,7 +729,7 @@ Runtime owners retain persistence, exact-byte, signing, and interruption-phase a
 
 The public architecture runtime owns migration installation under `legacy-preview/installation*.test.ts` and `proposal-installation.test.ts`.
 Real files and Git prove complete fingerprints, configured signing refusal, compact baselines, exact originals, and one authoritative representation.
-The existing durable crash fixture owns interruptions before installation, during mixed images, after archive append, and during cleanup.
+The existing durable crash fixture owns interruptions during mixed images, after archive append, and during cleanup. `recovery.test.ts` owns the prepared phase that every journal shares.
 Foreign bytes and the recovery journal remain intact after replay refusal.
 The private archive case uses the same installation interface and proves complete portable original dependencies.
 The history case keeps original standing, blocked ancestry, corrections, and unavailable historical beats.
