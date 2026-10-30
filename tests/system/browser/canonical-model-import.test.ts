@@ -71,6 +71,15 @@ test("imported planning models remain readable through exact history and compari
 	expect(
 		await browser.eval<string>(`new URLSearchParams(location.search).get('checkpointA')`),
 	).toBe(imported.checkpoint.id);
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-state') ?? null`,
+			),
+		(state) => state === "ready",
+		"the retained reading",
+		WAIT,
+	);
 	await browser.run(["click", '[data-slot="model-comparison-selector"]']);
 	await pollUntil(
 		() =>
