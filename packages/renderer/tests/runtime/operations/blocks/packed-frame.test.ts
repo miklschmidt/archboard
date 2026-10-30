@@ -62,6 +62,42 @@ test("a small block late in the order fills the room a short row leaves", () => 
 	expect(box("c").y + box("c").height).toBeLessThan(box("b").y);
 });
 
+test("independent foundations share a row despite different incoming label ownership", () => {
+	const card = (id: string) => ({ id, width: 300, height: 80 });
+	const placed = layoutEngine()({
+		id: "root",
+		layoutOptions: { "archboard.blocks.nesting": "blocks" },
+		children: [
+			card("a"),
+			card("d"),
+			{
+				id: "p",
+				width: 320,
+				height: 80,
+				layoutOptions: { "archboard.header.size": "80" },
+				children: [card("b"), card("c")],
+			},
+		],
+		edges: [
+			["ab", "a", "b"],
+			["ac", "a", "c"],
+			["dc", "d", "c"],
+		].map(([id, source, target]) => ({
+			id,
+			sources: [source],
+			targets: [target],
+			layoutOptions: { "archboard.relationship.kind": "call" },
+			labels: [{ id: `${id}:label`, text: "call", width: 120, height: 31 }],
+		})),
+	});
+	const { cards } = JSON.parse(placed.layoutOptions!["archboard.blocks.placed"]!) as {
+		cards: { id: string; box: DiagramBox }[];
+	};
+	const box = (id: string) => cards.find((one) => one.id === id)!.box;
+	// A private label once reserved a second row for b while c's labels stood at its callers.
+	expect(box("b").y).toBe(box("c").y);
+});
+
 test("a block connects to its caller through a direct clear route", () => {
 	const solved = layoutEngine();
 	const placed = solved({

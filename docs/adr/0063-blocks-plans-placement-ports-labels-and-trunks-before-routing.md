@@ -13,6 +13,8 @@ The planner replaces Blocks routing, including the old trunk router and its unre
 The placer can respond to the new routes with smaller gaps.
 A placement change must improve the reading and pass the reference gates.
 Small views compare guarded candidates by clear card approaches, crossings, bends, and route length.
+They also try placement without the provisional label boxes that final routing replaces.
+The original measured labels still constrain every final route.
 Extra area and long detours must not erase that gain.
 Dense scopes use a smaller wrap search, and Blocks omits the repeated side-exit hierarchy pass.
 
@@ -23,6 +25,10 @@ A source fan only splits, and a target fan only merges.
 Local conflict repair and grid windows have explicit work limits.
 A failed candidate can request bounded extra room from the legacy placer.
 No unchecked route reaches the painter.
+
+After selecting routes, the planner contracts empty coordinate bands while preserving card sizes, route topology, and clearance around bends and boundaries.
+It places labels again on those shorter runs and applies the same complete geometry guard.
+A rejected contraction retains the original geometry through that guard.
 
 Each label belongs to one real relationship and receives no semantic node ID or arrowhead.
 It occupies the midpoint of the longest clear private run that holds its measured plate.
@@ -35,6 +41,8 @@ A route never gains a bend to reach a label slot.
 
 The complete geometry guard protects cards, headers, captions, walls, labels, endpoints, and fan ownership before emission.
 The painter measures actual decorated ink for page bounds.
+Plain Blocks views omit hidden comparison subjects before placement, so those subjects reserve no space.
+The visible subject set stays the same, but turning comparison on can move the remaining cards.
 Planned crossing decoration retains its finite search limits.
 The Solver interface, text shaping, Rust core, worker pool, and Graphviz remain under ADRs 0059 and 0060.
 Track retains its existing behavior and must remain byte-identical.

@@ -8,6 +8,7 @@ const PLACEMENT_REFINEMENT_LIMIT: usize = 64;
 mod channel;
 mod choices;
 mod clearance;
+mod compact;
 mod corridors;
 mod endpoint_choices;
 mod fallback;

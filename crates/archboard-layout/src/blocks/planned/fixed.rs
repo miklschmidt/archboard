@@ -24,17 +24,32 @@ pub(super) fn route(graph: &Node, drawing: Placed) -> Result<Placed, super::Refu
     let candidates = candidates(&model, &topology, &mut shape, &previous)?;
     shape.routes = super::selection::greedy(&model, &topology, &shape, &candidates)
         .map_err(|edge| blocked(&model, edge))?;
-    super::route_labels::arrange(&model, &mut shape).ok_or("No clear private label spot")?;
+    if let Some(drawing) = super::compact::drawing(&shape)
+        && let Ok(mut compact) = placement(&model, drawing)
+        && let Ok(drawing) = finish(&model, &topology, &mut compact)
+    {
+        return Ok(drawing);
+    }
+    finish(&model, &topology, &mut shape)
+}
+
+/// Place each label on the final runs and guard every emitted part of the drawing.
+fn finish(
+    model: &Model<'_>,
+    topology: &Topology,
+    shape: &mut Shape,
+) -> Result<Placed, super::Refused> {
+    super::route_labels::arrange(model, shape).ok_or("No clear private label spot")?;
     let complete = shape.routes.iter().all(|line| {
         let edge = model.edge_index[line.id.as_str()];
-        feasible(&model, &topology, edge, &shape, &line.points)
+        feasible(model, topology, edge, shape, &line.points)
             && (line.label.is_some() == model.edges[edge].label().is_some())
     });
-    if !complete || !super::port_spacing::clear(&model, &shape.routes) {
+    if !complete || !super::port_spacing::clear(model, &shape.routes) {
         return Err("The complete hybrid drawing failed its geometry guard".into());
     }
-    super::runs::freeze(&model, &shape.routes)
-        .map(|frozen| frozen.emit(&model, (*shape.drawing).clone()))
+    super::runs::freeze(model, &shape.routes)
+        .map(|frozen| frozen.emit(model, (*shape.drawing).clone()))
         .ok_or_else(|| super::Refused::from("The hybrid drawing has an ambiguous fan tree"))
 }
 
@@ -348,5 +363,13 @@ mod tests {
         assert_eq!(left.len(), 2);
         assert_eq!(right.len(), 2);
         assert!((left[0].y - right[0].y).abs() >= 16.0);
+        // Empty bands contract while the measured cards and their ports stay intact.
+        assert!(result.width < 1000.0 && result.height < 400.0);
+        assert!(
+            result
+                .cards
+                .iter()
+                .all(|card| card.bx.width == 160.0 && card.bx.height == 80.0)
+        );
     }
 }

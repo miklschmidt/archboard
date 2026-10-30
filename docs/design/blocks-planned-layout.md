@@ -12,6 +12,12 @@ The planner owns every final Blocks route and label.
 Track retains its existing placement and routing behavior.
 The public Solver interface, text measurement, and authored board format stay the same.
 
+Plain Blocks views remove hidden comparison subjects before measurement and placement.
+They retain the subjects of the existing comparison projection that the variant also holds.
+Removed cards, their routes, and their label rows reserve no space in the plain picture.
+Turning comparison on can therefore move Blocks cards.
+Track retains its shared comparison positions and page bounds.
+
 Legacy placement uses the new routes to estimate its actual gap needs.
 Smaller placements are accepted when the six references retain their reading order and pass the geometry and route gates.
 Report raw placement area separately from the rendered page area and routing measures.
@@ -25,6 +31,23 @@ It lets the final planner choose frame attachments instead of forcing header cal
 It packs its own child shapes, then holds that packing while it settles port order.
 Each hierarchy supplies raw geometry and geometry with settled ports.
 Duplicate detection includes provisional routes, because those routes guide the final planner.
+
+The same bounded search also tries placement without provisional label boxes.
+Those boxes describe the old source-side label positions, which the final planner does not use.
+They can split independent foundations into different rows and enlarge frames around empty label positions.
+The compact alternative retains every relationship and every measured card.
+Final routing still receives all original label measurements and must pass the complete geometry guard.
+The existing candidates remain available when the compact placement leaves insufficient room for labels.
+
+After route selection, the planner contracts empty bands in both coordinate directions.
+A band is a horizontal or vertical strip.
+Cards, measured headers, captions, labels, bends, and frame boundaries protect their occupied intervals plus the existing routing clearance.
+Only straight runs cross the remaining gaps.
+The contraction translates cards without resizing them and shortens frames and routes together.
+Each shift removes whole coordinate units, so SVG rounding retains the original subpixel alignment at attachments.
+It preserves the order of every coordinate, so crossings and shared-route membership do not change.
+The planner places labels on the shorter runs and applies the complete geometry guard before emission.
+If that attempt fails, it finishes the original geometry through the same guard.
 
 The planner compares complete guarded drawings by crossings close to card attachments, then by route cost.
 A crossing within two lanes of an attachment counts as a crowded approach.

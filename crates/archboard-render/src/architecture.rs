@@ -3,18 +3,17 @@
 //! left undrawn, and the drawing handed to the painter with the look the
 //! vault's policy gives each subject.
 //!
-//! A picture without its comparison is laid out from the same content as the
-//! one with it, so every subject the two share stands in the same place and
-//! every line runs the same route: the one without leaves out what the
-//! variant's own reading of the view does not hold, and only the hops and
-//! cuts of the lines left are settled again (`archboard_layout::shown_drawing`).
-//! The page is still the whole layout's page.
+//! Plain Blocks lays out only the visible reading, so removed comparison
+//! subjects reserve no space. Track keeps the comparison layout and omits
+//! hidden subjects at painting, preserving shared positions and page bounds.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::rc::Rc;
 
 use archboard_flows::board::{Step, every_step};
-use archboard_layout::{LineLook, Measured, MeasuredGroups, Node, Standings, draw, shown_drawing};
+use archboard_layout::{
+    Engine, LineLook, Measured, MeasuredGroups, Node, Standings, draw, shown_drawing,
+};
 use archboard_scene::drawing::Painted;
 use archboard_scene::measure::{CardWords, measure_caption, measure_label, measure_node};
 use archboard_scene::request::{ArchitecturePicture, PaintRequest, Picture, Standing};
@@ -325,7 +324,12 @@ pub(crate) async fn picture<H: Host>(
     if request.told().nodes.is_empty() {
         return Ok(Outline::Nothing);
     }
-    let (laid, steps) = with_step_lines(&request.content, request.held());
+    let (mut laid, steps) = with_step_lines(&request.content, request.held());
+    if request.layout == Engine::Blocks && request.plain() {
+        let unshown = unshown_of(&laid, request.held());
+        laid.nodes.retain(|node| !unshown.contains(&node.id));
+        laid.edges.retain(|edge| !unshown.contains(&edge.id));
+    }
     let (measure, drawing) = laid_out(request, &laid, &steps, layouts, host).await?;
     let shown = shown_of(request, &laid, &drawing, &measure);
     let paint = paint_request(request, &laid, steps, shown, host)?;

@@ -1,10 +1,9 @@
 import { expect, test } from "bun:test";
 
-import { renderBoard } from "#runtime/operations/render.ts";
+import { renderArchitecture, renderBoard } from "#runtime/operations/render.ts";
 import { bothModes, expectSamePlaces } from "#tests/runtime/support/comparison-modes.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
@@ -130,21 +129,43 @@ const everyEdge = [
 	{ id: "ws", from: "worker", to: "store", kind: "call", label: "status" },
 ];
 
-test("turning the comparison off moves nothing a draft shares with its reference", async () => {
+test("turning the Track comparison off moves nothing a draft shares with its reference", async () => {
 	// The draft drops a card with its two lines, and one line between cards it keeps.
 	const removed = ["old", "ao", "os", "ws"];
 	const draft = {
 		nodes: everyNode.filter(({ id }) => !removed.includes(id)),
 		edges: everyEdge.filter(({ id }) => !removed.includes(id)),
 	};
-	for (const layout of LayoutEngineSchema.options) {
-		const drawings = await bothModes({ nodes: everyNode, edges: everyEdge }, draft, { layout });
-		expectSamePlaces(drawings, removed);
-		const routes = routePoints(drawings.compared.svg);
-		for (const [id, route] of routePoints(drawings.plain.svg)) {
-			expect(route).toEqual(routes.get(id)!);
-		}
+	const drawings = await bothModes({ nodes: everyNode, edges: everyEdge }, draft, {
+		layout: "track",
+	});
+	expectSamePlaces(drawings, removed);
+	const routes = routePoints(drawings.compared.svg);
+	for (const [id, route] of routePoints(drawings.plain.svg)) {
+		expect(route).toEqual(routes.get(id)!);
 	}
+});
+
+test("plain Blocks reserves no space for a removed intermediary or its routes", async () => {
+	const nodes = ["a", "b", "c"].map((id) => ({ id, name: id, kind: "module" }));
+	const current = {
+		nodes,
+		edges: [
+			{ id: "ab", from: "a", to: "b", kind: "call" },
+			{ id: "bc", from: "b", to: "c", kind: "call" },
+		],
+	};
+	const draft = orderedFixture({ nodes: nodes.filter(({ id }) => id !== "b"), edges: [] });
+	const drawings = await bothModes(current, draft, { layout: "blocks" });
+	const visible = await renderArchitecture({
+		content: draft,
+		policy: DEFAULT_SEMANTIC_POLICY,
+		layout: "blocks",
+	});
+	expect(drawings.plain.atlas).toEqual(visible.atlas);
+	expect(drawings.plain.width * drawings.plain.height).toBe(visible.width * visible.height);
+	expect(Object.keys(drawings.compared.atlas.nodes).toSorted()).toEqual(["a", "b", "c"]);
+	expect(Object.keys(drawings.compared.atlas.edges).toSorted()).toEqual(["ab", "bc"]);
 });
 
 // The board's lines come from its flow, which the overview does not draw.

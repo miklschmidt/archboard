@@ -375,11 +375,7 @@ pub(super) fn candidates(
             &way,
         )?)
     };
-    let alternatives = if super::planned::refines(&graph) {
-        expanded_candidates(&mut gv, &graph, way)?
-    } else {
-        Vec::new()
-    };
+    let alternatives = alternative_hierarchies(&mut gv, &graph, &way)?;
     let mut unsettled: Vec<_> = std::iter::once(first).chain(ordered).collect();
     let area = |board: &Board| {
         let root = &board.laid[&board.tree.get(board.tree.root).id];
@@ -401,13 +397,38 @@ pub(super) fn candidates(
     })
 }
 
-/// Compare the wider wrap search with axial frame approaches and its settled port order.
-fn expanded_candidates(
+/// Offer wider wraps with both provisional label rows and compact card-only ranks.
+/// The final planner places the original measured labels on guarded routes.
+fn alternative_hierarchies(
     gv: &mut Engine<'_>,
     graph: &Node,
-    mut way: Way,
+    way: &Way,
 ) -> Result<Vec<Board>, String> {
-    way.expanded = true;
+    if !super::planned::refines(graph) {
+        return Ok(Vec::new());
+    }
+    let mut candidates = expanded_candidates(gv, graph, way)?;
+    if graph
+        .edges
+        .iter()
+        .flatten()
+        .any(|edge| edge.label_count() > 0)
+    {
+        let mut compact = graph.clone();
+        for edge in compact.edges.iter_mut().flatten() {
+            Rc::make_mut(edge).labels = None;
+        }
+        candidates.extend(expanded_candidates(gv, &compact, way)?);
+    }
+    Ok(candidates)
+}
+
+/// Compare the wider wrap search with axial frame approaches and its settled port order.
+fn expanded_candidates(gv: &mut Engine<'_>, graph: &Node, way: &Way) -> Result<Vec<Board>, String> {
+    let way = Way {
+        expanded: true,
+        ..way.clone()
+    };
     let mut earlier = Earlier::default();
     let mut expanded = lay_all(gv, graph, &earlier, &way)?;
     earlier.kept.orders = held_orders(&expanded.settling());
@@ -419,6 +440,7 @@ fn expanded_candidates(
     Ok(candidates)
 }
 
+#[derive(Clone)]
 struct Way {
     nesting: Nesting,
     expanded: bool,
