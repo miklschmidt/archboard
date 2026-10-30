@@ -7,6 +7,14 @@ last section derives the hierarchy that the redesign builds. The pane sidebar
 section of [operator-canvas-shell.md](operator-canvas-shell.md) states the
 result as the visual authority.
 
+Revised 2026-10-30 (TASK-559.06). The canonical reader no longer has this tab.
+The order of the questions stands, and each answer found another place. The caption
+says what the scope is. The left column offers walkthroughs and flows. The Key at the
+picture's lower left answers what the marks mean, and it shows hidden kinds. About
+holds the long lists and names its subject. The right panel explains a selection
+only. [The reader redesign](reader-redesign.md) records why. The study below
+describes the tab as it stood, and retained board recordings still use it.
+
 Revised 2026-10-03 (TASK-388). The tab no longer lists the variants of a board
 that a reader reached by a drill-down (task 7 below). The About page of the
 pane's header lists them with the record of each and opens one in the pane. The

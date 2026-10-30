@@ -86,13 +86,57 @@ state:
 - The mockup's tool rail communicates density and placement, not a drawing
   toolset: nobody draws on a board here.
 
+## The right panel, the Key and About
+
+Revised 2026-10-30 (TASK-559.06). The canonical reader has no pane sidebar and no
+`Architecture | Selection` tabs. [The reader redesign](reader-redesign.md) records
+why. A permanent inspector cost each pane its width, so the picture refit, and it
+filled the first screen with controls, adoption prose and tours.
+
+- **The right panel is absent until a selection.** It is 360 px wide, or 46 percent
+  of a narrow pane. It lies over the picture's right edge, so the picture keeps its
+  rectangle and its camera. The camera moves only when the panel would cover the
+  selected subject, and then only far enough to show it.
+- **A click lights its subject at once, and the panel and the camera wait 220 ms.**
+  A second click starts the wait again. A double click on a card at the right edge
+  therefore lands on the card and opens it.
+- **The panel says what the subject is, how it stands, and what it touches.** A
+  module shows its name, kind, code path and responsibility, its warnings and
+  standing, then `Sends to` and `Receives from`. A door lists its real endpoints,
+  grouped by the part that reaches them. A line lists each relationship with its
+  real ends. A two-way line lists both directions, and a module's lists show each
+  direction of such a line with only what runs that way. Every row is an action
+  that selects its subject. A list shows 8 rows, then offers the rest in place.
+- **The foot of the panel holds what can be done.** `Open module`, `Open code`,
+  `Focus` and `Explain` stay pinned while the body scrolls. Escape and the close
+  control let the selection go, and the keyboard returns to the picture.
+- **Warnings sit on their subject.** The picture marks the warned subject, and the
+  panel and About give the check's words for a module, a line or a step. Only About
+  shows the count for the whole model.
+- **The Key stands at the picture's lower left and replaces `Filters`.** It is the
+  one entry point to the marks of a picture and to what it draws. A mark explains,
+  and a separate switch at the end of its row changes the reading. A kind that a
+  reader hid stays in the Key, dimmed, and the closed Key says how many are hidden.
+  A mixed line has a row and no switch, because it is no kind of relationship. Group
+  regions are off by default, and their switches turn them on.
+- **Only one overlay opens at a time.** The Key closes the panel while it is open,
+  and About covers both. The selection stays, so the panel returns.
+- **About holds every long list and names its subject.** Its bar reads `Open scope`
+  or `Selected subject`, with a link to the other one. About opens on the selection
+  when there is one. On the scope, its outline leads to the reading's state, parts,
+  nearby modules, connections, interface and groups. State prose, `Decision and
+  history`, `Model ownership` and source evidence live here, never in the panel.
+  A choice in a list keeps the page in place, so a reader builds a selection there:
+  Enter selects a row, and Ctrl or Command with Enter adds it.
+
+The rest of this section records the sidebar of retained board recordings, which
+still use it. The About page below keeps its structure for them too.
+
 ## The pane sidebar
 
 Revised 2026-10-30 (TASK-559.05). Navigation and reading controls left the sidebar
 for the left column and the pane header. The sidebar holds no way to another place.
 Its list of parts selects a part of the open scope and moves the reader nowhere.
-TASK-559.06 replaces this sidebar with the right panel of
-[the reader redesign](reader-redesign.md), which is absent until a selection.
 
 Revised 2026-09-17 (TASK-249), 2026-09-30 (TASK-383), 2026-10-03
 (TASK-388), 2026-10-04 (TASK-390) and 2026-10-06 (TASK-368.09, TASK-369.07). The generated reference above places selection details in a column

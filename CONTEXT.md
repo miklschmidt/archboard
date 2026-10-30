@@ -67,6 +67,12 @@ The browser and backend use the same projection rules.
 The browser keeps its camera, selection, reading controls, and walkthrough position locally.
 The server does not host remote rendering or remote agent work.
 
+The right panel explains the selected subject. It is absent until a selection and lies over the picture.
+Do not call it a sidebar or an inspector.
+The Key explains the marks of a picture and holds the switches that change what it draws.
+Do not call it a legend or filters.
+About holds the long lists of a reading and names whether it describes the open scope or the selected subject.
+
 A walkthrough is an authored sequence of explanatory beats.
 Each beat selects its complete reading and stable subjects.
 Pinned narrative targets name exact retained architecture.
