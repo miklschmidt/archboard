@@ -165,6 +165,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#T1wYjUBf",
       "to": "vKEsyHFk/0T9enjhi#7mTerd6Y"
+    },
+    {
+      "order": 70300,
+      "kind": "data",
+      "label": "retain the exact inputs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/retain.ts",
+        "symbol": "readModelFiles"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#8XKRkSHl",
+      "id": "vKEsyHFk#dhlSXT9F"
     }
   ]
 }
