@@ -1,10 +1,11 @@
 ---
 id: TASK-559.06
 title: Show the right panel only for a selection, and move long lists to About
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T16:44:00Z'
+updated_date: '2026-10-30T22:31:00Z'
 labels:
   - frontend
 dependencies:
@@ -31,3 +32,9 @@ The small right sidebar overwhelms the reader: the first screen spends itself on
 - [ ] #5 About holds each long list and names which subject it describes
 - [ ] #6 Warnings sit on their subject, and the owner accepts the result by eye
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+The first agent stopped on an authentication failure at 186dab972 with product code written and browser owners half migrated. Its work is saved as signed commit 2e29428e2 on feat/reader-right-panel. A second agent continues from there on the merged head.
+<!-- SECTION:NOTES:END -->
