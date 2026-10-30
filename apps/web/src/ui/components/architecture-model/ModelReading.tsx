@@ -42,7 +42,7 @@ interface ModelReadingProps {
 	/** Whether the read of this address failed, so that the model only stands in for it. */
 	failed?: boolean | undefined;
 	/** What the stage has to say over the picture, which it never moves. */
-	notices?: ReactNode;
+	children?: ReactNode;
 	paneId: string;
 	reducedMotion: boolean;
 }
@@ -190,7 +190,7 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 	);
 	const notices = (
 		<>
-			{props.notices}
+			{props.children}
 			<ModelComparisonNotice comparison={comparison} />
 		</>
 	);

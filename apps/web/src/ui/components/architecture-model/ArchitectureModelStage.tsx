@@ -431,11 +431,6 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 	const { query } = props;
 	const model = useVisibleModel(query, props.current);
 	const problem = readingProblem(query.error, props.current ? props.failure : null);
-	const notices = (
-		<>
-			<ReadingNotices {...props} problem={problem} />
-		</>
-	);
 	const { paneId, states, hasCurrent } = props;
 	const overview = useCallback(
 		(shown: NonNullable<typeof model>): JSX.Element => (
@@ -471,11 +466,12 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 						vault={props.vault}
 						model={model}
 						{...readingAnswer(query)}
-						notices={notices}
 						paneId={props.paneId}
 						reducedMotion={props.reducedMotion}
 						onCodeTargetNotice={props.onCodeTargetNotice}
-					/>
+					>
+						<ReadingNotices {...props} problem={problem} />
+					</ModelReading>
 				</ModelBookmarkReading>
 			)}
 		</ModelWalkthroughReader>
