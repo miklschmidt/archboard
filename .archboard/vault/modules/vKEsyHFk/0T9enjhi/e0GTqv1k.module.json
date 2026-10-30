@@ -34,6 +34,19 @@
   ],
   "outgoing": [
     {
+      "order": 70400,
+      "kind": "data",
+      "label": "read the inputs an edit starts from",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+        "symbol": "captureRevision"
+      },
+      "id": "vKEsyHFk#gbyUsyjt",
+      "to": "vKEsyHFk/vKEsyHFk#8XKRkSHl"
+    },
+    {
       "order": 147000,
       "kind": "call",
       "label": "decodeModel",

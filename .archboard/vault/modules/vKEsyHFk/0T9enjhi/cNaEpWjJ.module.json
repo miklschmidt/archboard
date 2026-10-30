@@ -34,6 +34,19 @@
   ],
   "outgoing": [
     {
+      "order": 70100,
+      "kind": "data",
+      "label": "read one coherent revision",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-read.ts",
+        "symbol": "readCurrentModel"
+      },
+      "id": "vKEsyHFk#25PfRoN2",
+      "to": "vKEsyHFk/vKEsyHFk#8XKRkSHl"
+    },
+    {
       "order": 94000,
       "kind": "dependency",
       "emphasis": "normal",

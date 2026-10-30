@@ -4,6 +4,10 @@
   "kind": "datastore",
   "responsibility": "Stores canonical modules, relationships, flows, proposals, and walkthroughs",
   "description": "Modules own their outgoing relationships. Independent flow collections describe exchanges. Compact proposals and authored narratives refer to stable subjects, while exact history lives in the signed archive.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": ".archboard/vault"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#8XKRkSHl",
   "formerNames": [

@@ -47,6 +47,19 @@
       "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
     },
     {
+      "order": 70300,
+      "kind": "data",
+      "label": "retain the exact inputs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/retain.ts",
+        "symbol": "prepareCheckpoint"
+      },
+      "id": "vKEsyHFk#dhlSXT9F",
+      "to": "vKEsyHFk/vKEsyHFk#8XKRkSHl"
+    },
+    {
       "order": 100000,
       "kind": "call",
       "emphasis": "normal",
