@@ -129,7 +129,9 @@ function Body(props: {
 function Head(props: { readonly title: ReactNode; readonly children?: ReactNode }): JSX.Element {
 	return (
 		<header className="flex flex-col gap-1 pr-8">
-			<h3 className="text-subtitle font-semibold [overflow-wrap:anywhere]">{props.title}</h3>
+			<h3 className="text-subtitle font-semibold text-balance [overflow-wrap:anywhere]">
+				{props.title}
+			</h3>
 			{props.children !== undefined && (
 				<div className="text-body text-muted-foreground flex min-w-0 flex-wrap gap-x-2">
 					{props.children}

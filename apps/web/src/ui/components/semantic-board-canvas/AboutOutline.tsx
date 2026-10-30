@@ -24,8 +24,8 @@ interface AboutSection<Key extends string = string> {
 	readonly key: Key;
 	readonly label: string;
 	readonly icon: RemixiconComponentType;
-	/** How many it lists. */
-	readonly count: number;
+	/** How many it lists, when it is a list. */
+	readonly count?: number | undefined;
 }
 
 /**
@@ -121,9 +121,11 @@ function OutlineEntry<Key extends string>(props: {
 				)}
 				<Icon aria-hidden="true" className="size-4 shrink-0" />
 				<span className="flex-1 text-left">{section.label}</span>
-				<span className="text-technical text-muted-foreground font-mono tabular-nums">
-					{section.count}
-				</span>
+				{section.count !== undefined && (
+					<span className="text-technical text-muted-foreground font-mono tabular-nums">
+						{section.count}
+					</span>
+				)}
 			</button>
 		</li>
 	);

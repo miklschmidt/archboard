@@ -152,7 +152,7 @@ interface ScopeSection extends AboutSection {
  * @param key Where the outline finds it.
  * @param label Its name.
  * @param icon Its mark.
- * @param count How many it lists.
+ * @param count How many it lists, when it is a list.
  * @param body What it holds.
  * @returns The section.
  */
@@ -160,7 +160,7 @@ function section(
 	key: string,
 	label: string,
 	icon: RemixiconComponentType,
-	count: number,
+	count: number | undefined,
 	body: ReactNode,
 ): ScopeSection {
 	return { key, label, icon, count, body };
@@ -178,7 +178,9 @@ function useScopeSections(props: ModelAboutProps): readonly ScopeSection[] {
 	const select = selection.select;
 	const list = { model, projection, selection, look };
 	const sections = [
-		section("state", "Reading", RiHistoryLine, 1, props.overview),
+		props.overview === null
+			? null
+			: section("state", "Reading", RiHistoryLine, undefined, props.overview),
 		flow === null
 			? null
 			: section(
@@ -235,13 +237,15 @@ function useScopeSections(props: ModelAboutProps): readonly ScopeSection[] {
 				onSelect={select}
 			/>,
 		),
-		section(
-			"interface",
-			"Interface",
-			RiInputMethodLine,
-			inspection?.holdsParts === true ? 1 : 0,
-			<ModelInterface model={model} projection={projection} onSelect={select} />,
-		),
+		inspection?.holdsParts === true
+			? section(
+					"interface",
+					"Interface",
+					RiInputMethodLine,
+					undefined,
+					<ModelInterface model={model} projection={projection} onSelect={select} />,
+				)
+			: null,
 		section(
 			"groups",
 			"Groups",
@@ -250,10 +254,7 @@ function useScopeSections(props: ModelAboutProps): readonly ScopeSection[] {
 			<ModelGroups model={model} selection={selection} />,
 		),
 	];
-	return sections.filter(
-		(entry): entry is ScopeSection =>
-			entry !== null && entry.count > 0 && (entry.key !== "state" || entry.body !== null),
-	);
+	return sections.filter((entry): entry is ScopeSection => entry !== null && entry.count !== 0);
 }
 
 /**

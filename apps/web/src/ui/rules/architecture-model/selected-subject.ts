@@ -3,6 +3,7 @@ import type { Model, projectModel } from "@archboard/board/content";
 type Projection = ReturnType<typeof projectModel>;
 type Connection = Projection["connections"][number];
 type Relationship = Connection["joins"][number];
+type Parents = ReadonlyMap<string, string | undefined>;
 
 /** What a reading holds a selection against. */
 interface SelectionReading {
@@ -36,8 +37,21 @@ function inspectedConnection(reading: SelectionReading): Connection | undefined 
 		[...ids].every((id) => joins.some((edge) => edge.id === id)),
 	);
 	if (connection === undefined) return undefined;
-	const [first, ...rest] = connection.joins.filter((edge) => ids.has(edge.id));
-	return first === undefined ? undefined : { ...connection, joins: [first, ...rest] as const };
+	return narrowed(connection, (edge) => ids.has(edge.id))[0];
+}
+
+/**
+ * A line with only some of its relationships.
+ * @param connection The line.
+ * @param keep Which relationships stay.
+ * @returns The line with them, or nothing when none does.
+ */
+function narrowed(
+	connection: Connection,
+	keep: (edge: Relationship) => boolean,
+): readonly Connection[] {
+	const [first, ...rest] = connection.joins.filter(keep);
+	return first === undefined ? [] : [{ ...connection, joins: [first, ...rest] as const }];
 }
 
 /**
@@ -106,18 +120,72 @@ function isRemoved(projection: Projection, id: string): boolean {
 }
 
 /**
- * The lines of a reading that touch a module, in each direction, each line once and the ones
- * that join the most relationships first.
+ * Whether a module is another one or holds it, as a line's end holds a relationship's real end.
+ * @param parents Each module's parent.
+ * @param id The module.
+ * @param end The other one.
+ * @returns True when the walk up from the other one meets the module.
+ */
+function holds(parents: Parents, id: string, end: string): boolean {
+	for (let at: string | undefined = end; at !== undefined; at = parents.get(at)) {
+		if (at === id) return true;
+	}
+	return false;
+}
+
+/**
+ * A line's relationships that leave a module. A two-way line runs both ways, so its real ends say
+ * which of its relationships these are.
+ * @param connection The line.
+ * @param id The module at one of its ends.
+ * @param parents Each module's parent.
+ * @returns The line with those relationships, if any.
+ */
+function leaving(connection: Connection, id: string, parents: Parents): readonly Connection[] {
+	const { line } = connection;
+	return narrowed(connection, (edge) =>
+		line.twoWay === true ? holds(parents, id, edge.from) : line.from === id,
+	);
+}
+
+/**
+ * A line's relationships that arrive at a module.
+ * @param connection The line.
+ * @param id The module at one of its ends.
+ * @param parents Each module's parent.
+ * @returns The line with those relationships, if any.
+ */
+function arriving(connection: Connection, id: string, parents: Parents): readonly Connection[] {
+	const { line } = connection;
+	return narrowed(connection, (edge) =>
+		line.twoWay === true ? !holds(parents, id, edge.from) : line.to === id && line.from !== id,
+	);
+}
+
+/**
+ * The lines of a reading that touch a module, in each direction, the ones that join the most
+ * relationships first. A two-way line stands in both directions, each with what runs that way.
  * @param projection The reading.
  * @param id The module.
  * @returns What it sends to and what it receives from.
  */
 function linesOf(projection: Projection, id: string) {
-	const lines = projection.allConnections.toSorted((a, b) => b.joins.length - a.joins.length);
+	const parents: Parents = new Map(projection.complete.nodes.map((node) => [node.id, node.parent]));
+	const lines = projection.allConnections.filter(({ line }) => line.from === id || line.to === id);
 	return {
-		sends: lines.filter(({ line }) => line.from === id),
-		receives: lines.filter(({ line }) => line.to === id && line.from !== id),
+		sends: lines.flatMap((one) => leaving(one, id, parents)).toSorted(mostJoinedFirst),
+		receives: lines.flatMap((one) => arriving(one, id, parents)).toSorted(mostJoinedFirst),
 	};
+}
+
+/**
+ * The order of a module's lines.
+ * @param one A line.
+ * @param other Another line.
+ * @returns The line with more relationships first.
+ */
+function mostJoinedFirst(one: Connection, other: Connection): number {
+	return other.joins.length - one.joins.length;
 }
 
 /**

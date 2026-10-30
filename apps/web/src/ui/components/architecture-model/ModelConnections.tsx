@@ -58,10 +58,7 @@ function ConnectionChoice(props: ModelConnectionsProps & { connection: Connectio
 					{moduleName(model, line.from, props.reference)}
 				</span>
 				<span className="text-control flex min-w-0 items-baseline gap-2">
-					<Arrow
-						aria-hidden="true"
-						className="text-muted-foreground size-4 shrink-0 self-center"
-					/>
+					<Arrow aria-hidden="true" className="text-muted-foreground size-4 shrink-0 self-center" />
 					{moduleName(model, line.to, props.reference)}
 				</span>
 				<span className="text-body text-muted-foreground min-w-0">{kindNames(model, joins)}</span>
@@ -216,7 +213,7 @@ function OneRelationship(
 }
 
 /**
- * A projected line keeps all authored relationships and their distinct labels.
+ * A projected line keeps every authored relationship with all that it says.
  * @param props The selected line and complete model.
  * @param props.connection The line and every underlying relationship.
  * @param props.model The model that resolves authored endpoints.
@@ -229,27 +226,20 @@ function ConnectionDetails(props: {
 	reference: Model | undefined;
 }): JSX.Element {
 	const { connection, model } = props;
-	const labels = [...new Set(connection.joins.flatMap((edge) => edge.label ?? []))];
 	return (
-		<article data-slot="model-connection-details" className="space-y-6">
-			<h3 className="text-title font-semibold">
-				{lineEnds(connection.line, model, props.reference)}
-			</h3>
-			<p data-slot="model-connection-kinds" className="text-body text-muted-foreground">
-				{kindNames(model, connection.joins)}
-			</p>
-			<ul data-slot="model-connection-labels" className="text-body space-y-1">
-				{labels.map((label) => (
-					<li key={label}>{label}</li>
-				))}
-			</ul>
+		<article data-slot="model-connection-details" className="space-y-8">
+			<header className="space-y-3">
+				<h3 className="title-figure [overflow-wrap:anywhere] uppercase">
+					{lineEnds(connection.line, model, props.reference)}
+				</h3>
+				<p data-slot="model-connection-kinds" className="text-control text-muted-foreground">
+					{kindNames(model, connection.joins)}
+				</p>
+			</header>
 			<ol className="space-y-6">
 				{connection.joins.map((edge) => (
 					<li key={edge.id} data-relationship-id={edge.id} className="text-body space-y-2">
-						<p>
-							{moduleName(model, edge.from, props.reference)} →{" "}
-							{moduleName(model, edge.to, props.reference)}
-						</p>
+						<p className="text-control">{lineEnds(edge, model, props.reference)}</p>
 						<p className="text-muted-foreground">
 							{model.policy.relationshipKinds[edge.kind]?.name ?? edge.kind}
 						</p>
@@ -304,11 +294,4 @@ function moduleName(model: Model, id: string, reference: Model | undefined): str
 	);
 }
 
-export {
-	ModelConnections,
-	ConnectionDetails,
-	ConnectionSummary,
-	kindNames,
-	lineEnds,
-	moduleName,
-};
+export { ModelConnections, ConnectionDetails, ConnectionSummary, kindNames, lineEnds, moduleName };

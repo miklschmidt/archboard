@@ -177,29 +177,23 @@ function ModuleLines(props: ModelPanelSubjectProps & { readonly id: string }): J
 	const { sends, receives } = linesOf(props.projection, props.id);
 	return (
 		<>
-			<LineList {...props} title="Sends to" slot="model-panel-sends" lines={sends} end="to" />
-			<LineList
-				{...props}
-				title="Receives from"
-				slot="model-panel-receives"
-				lines={receives}
-				end="from"
-			/>
+			<LineList {...props} title="Sends to" slot="model-panel-sends" lines={sends} />
+			<LineList {...props} title="Receives from" slot="model-panel-receives" lines={receives} />
 		</>
 	);
 }
 
 /**
  * One direction of a module's lines.
- * @param props The lines, and which end names the other module.
+ * @param props The module and the lines.
  * @returns The list, or nothing when it has no line.
  */
 function LineList(
 	props: ModelPanelSubjectProps & {
+		readonly id: string;
 		readonly title: string;
 		readonly slot: string;
 		readonly lines: readonly Connection[];
-		readonly end: "from" | "to";
 	},
 ): JSX.Element | null {
 	const { lines } = props;
@@ -215,16 +209,16 @@ function LineList(
 
 /**
  * One line of a module: the module at its other end, and what it joins. It selects the line.
- * @param props The line and its reading.
+ * @param props The module, the line and its reading.
  * @returns A row of the panel.
  */
 function LineRow(
 	props: ModelPanelSubjectProps & {
+		readonly id: string;
 		readonly connection: Connection;
-		readonly end: "from" | "to";
 	},
 ): JSX.Element {
-	const { connection, end, model, projection, selection } = props;
+	const { connection, id, model, projection, selection } = props;
 	const { line, joins } = connection;
 	const pick = useModelPick(line.id, selection.select);
 	const peek = usePeekRow(line.id);
@@ -236,7 +230,7 @@ function LineRow(
 			data-to={line.to}
 			{...pick}
 			{...peek}
-			name={moduleName(model, line[end], projection.reference)}
+			name={moduleName(model, line.from === id ? line.to : line.from, projection.reference)}
 			detail={joins.length === 1 ? kinds : `${joins.length} · ${kinds}`}
 		/>
 	);
