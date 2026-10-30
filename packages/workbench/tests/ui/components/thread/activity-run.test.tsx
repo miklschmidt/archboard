@@ -26,13 +26,18 @@ afterAll(async () => {
  * A command step.
  * @param id Its id.
  * @param status Where it stands.
+ * @param line The command as Codex sent it.
  * @returns The step.
  */
-function command(id: string, status: "inProgress" | "completed" | "failed"): ActivityItem {
+function command(
+	id: string,
+	status: "inProgress" | "completed" | "failed",
+	line = `run ${id}`,
+): ActivityItem {
 	return {
 		media: "command",
 		itemId: decoder.adoptItemId(id),
-		command: `run ${id}`,
+		command: line,
 		status,
 		cwd: "/work",
 		exitCode: status === "failed" ? 1 : 0,
@@ -110,4 +115,61 @@ test("a step that fails while the run is on screen opens then, and the person's 
 	expect(button?.getAttribute("aria-expanded")).toBe("true");
 	act(() => button?.click());
 	expect(button?.getAttribute("aria-expanded")).toBe("false");
+});
+
+test("a command that one shell call runs reads as its script, and any other command as Codex sent it", () => {
+	const sent = [
+		String.raw`/nix/store/10dx-bash-5.3p15/bin/bash -lc 'git status --short && echo "it'\''s done"'`,
+		"/bin/zsh -c 'ls -la $HOME'",
+		"bash -Eec 'echo hi'",
+		"sh -c 'echo ${HOME}/file'",
+		"cd /work && make",
+		"python3 -c 'print(1)'",
+	];
+	mount({
+		items: sent.map((line, index) => command(String(index), "completed", line)),
+		ended: false,
+		live: false,
+	});
+	expect(rows().map((row) => row.querySelector("span[title]")?.textContent)).toEqual([
+		`git status --short && echo "it's done"`,
+		"ls -la $HOME",
+		"echo hi",
+		"echo ${HOME}/file",
+		"cd /work && make",
+		"python3 -c 'print(1)'",
+	]);
+});
+
+test("a command outside the shell parser's grammar keeps its row", () => {
+	const line = "printf '%s\\n' \"$(printf '%s' '${')\"";
+	mount({ items: [command("unparsed", "completed", line)], ended: false, live: false });
+	expect(rows()[0]?.querySelector("span[title]")?.textContent).toBe(line);
+});
+
+test("newlines separate commands only outside the script's quotes", () => {
+	const compound = "bash\n-c\n'echo hi'";
+	const script = "echo first\necho second";
+	mount({
+		items: [
+			command("compound", "completed", compound),
+			command("multiline", "completed", `/bin/bash -c '${script}'`),
+		],
+		ended: false,
+		live: false,
+	});
+	expect(rows().map((row) => row.querySelector("span[title]")?.textContent)).toEqual([
+		compound,
+		script,
+	]);
+});
+
+test("shell expansions outside literal script quotes keep the exact command", () => {
+	const sent = [String.raw`bash -c $'echo one\necho two'`, 'bash -lc "echo ${HOME}/file"'];
+	mount({
+		items: sent.map((line, index) => command(String(index), "completed", line)),
+		ended: false,
+		live: false,
+	});
+	expect(rows().map((row) => row.querySelector("span[title]")?.textContent)).toEqual(sent);
 });

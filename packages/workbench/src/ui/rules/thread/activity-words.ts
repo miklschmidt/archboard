@@ -2,6 +2,8 @@
 // it took, what it changed. Pure, so the agent dock can say the same thing
 // about the live row as the conversation does.
 
+import { parse } from "shell-quote";
+
 import type { ActivityItem } from "#ui/rules/runtime/messages.ts";
 
 /**
@@ -75,6 +77,64 @@ function searchLabel(item: Extract<ActivityItem, { readonly media: "search" }>):
 	return item.query === null ? "Searched the web" : `Searched “${item.query}”`;
 }
 
+/** The shells whose script a row shows in place of the call that runs it. */
+const SHELLS: ReadonlySet<string> = new Set(["bash", "sh", "zsh"]);
+
+/** An option word of a shell that holds `c`, such as `-lc`: the next word is the script. */
+const SCRIPT_OPTION = /^-[a-zA-Z]*c[a-zA-Z]*$/u;
+
+/**
+ * Whether a newline separates commands rather than lines inside a quoted script.
+ * @param command The command.
+ * @returns Whether the command contains an unquoted newline.
+ */
+function hasUnquotedNewline(command: string): boolean {
+	// The parser treats newlines as whitespace. Operators expose unquoted newlines
+	// while newlines inside the script's quotes remain part of the same word.
+	return (
+		command.includes("\n") &&
+		parse(command.replaceAll("\n", ";")).some((word) => typeof word !== "string")
+	);
+}
+
+/**
+ * The three words of a command, read as a shell reads them.
+ * @param command The command.
+ * @returns The words, or null for a command of more or fewer words, or with an operator.
+ */
+function threeWords(command: string): readonly [string, string, string] | null {
+	// An expansion has no known value here. An object keeps it out of literal words.
+	const words = parse(command, () => ({}));
+	const [shell, option, script] = words;
+	return words.length === 3 &&
+		typeof shell === "string" &&
+		typeof option === "string" &&
+		typeof script === "string"
+		? [shell, option, script]
+		: null;
+}
+
+/**
+ * A command's words on its row: the script of one shell call with `-c`, the way
+ * Codex runs each command of an agent (`/nix/store/…/bin/bash -lc '<script>'`),
+ * and any other command as Codex sent it.
+ * @param command The command as Codex sent it.
+ * @returns The words.
+ */
+function commandLabel(command: string): string {
+	try {
+		if (hasUnquotedNewline(command)) return command;
+		const words = threeWords(command);
+		if (words === null) return command;
+		const [shell, option, script] = words;
+		const name = shell.slice(shell.lastIndexOf("/") + 1);
+		return SHELLS.has(name) && SCRIPT_OPTION.test(option) ? script : command;
+	} catch {
+		// Commands outside the parser's grammar still have a readable row.
+		return command;
+	}
+}
+
 /**
  * One row's words: what the work was.
  * @param item The item.
@@ -85,7 +145,7 @@ function activityLabel(item: ActivityItem): string {
 		case "reasoning":
 			return reasoningLabel(item.text);
 		case "command":
-			return item.command;
+			return commandLabel(item.command);
 		case "fileChange":
 			return filesLabel(item);
 		case "tool":
