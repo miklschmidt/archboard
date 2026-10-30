@@ -348,11 +348,15 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 		WAIT,
 	);
 	await openAbout(browser, "selection");
-	expect(
-		await browser.eval<boolean>(
-			`document.querySelector("${INSPECTOR}")?.textContent.includes('the write path') === true`,
-		),
-	).toBe(true);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector("[data-slot='model-about'] ${INSPECTOR}")?.textContent.includes('the write path') === true`,
+			),
+		Boolean,
+		"About to name the group",
+		WAIT,
+	);
 
 	// The other grammar, told in the same language: the plate is over the dots.
 	// The views are on the board tab, which the pick moved away from.

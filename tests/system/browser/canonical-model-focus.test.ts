@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
-import { openAbout, openModule, pick, openDiagram } from "./support/canonical-page.ts";
+import {
+	openAbout,
+	openModule,
+	pick,
+	openDiagram,
+	pressInPanel,
+} from "./support/canonical-page.ts";
 import type { z } from "zod";
 import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
@@ -100,7 +106,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 		"the focus action for the selected subjects",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="model-focus"]']);
+	await pressInPanel(browser, '[data-slot="model-focus"]');
 	await pollUntil(
 		() => drawnModules(browser),
 		(ids) => ids.join() === "Shop#Decode,Shop#Gateway,Shop#Worker",

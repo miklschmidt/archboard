@@ -133,7 +133,7 @@ test("canonical modules open their authored details without writing architecture
 	await pollUntil(
 		() =>
 			browser.eval<number>(
-				`document.querySelector('[data-slot="module-list"]')?.childElementCount ?? -1`,
+				`document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"]').length`,
 			),
 		(count) => count === 0,
 		"the empty model to remain readable",

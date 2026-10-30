@@ -74,7 +74,7 @@ function ModelPanelRoot(props: ModelPanelProps): JSX.Element | null {
 			data-leaving={slide.leaving ? "" : undefined}
 			inert={slide.leaving}
 			style={PANEL_STYLE}
-			className="border-border bg-sidebar absolute inset-y-0 right-0 z-30 flex min-h-0 flex-col border-l shadow-[var(--elevation-float),var(--elevation-edge-side)] in-data-presenting:hidden in-data-walkthrough:hidden"
+			className="border-border bg-sidebar absolute inset-y-0 right-0 z-30 flex min-h-0 flex-col border-l shadow-[var(--elevation-float),var(--elevation-edge-side)] in-data-presenting:hidden"
 		>
 			<IconButton
 				label="Clear selection"

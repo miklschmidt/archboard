@@ -233,28 +233,32 @@ async function pick(
 	);
 }
 
-/** Open a part of the picture from the panel, and wait for its picture. */
-async function openModule(browser: AgentBrowserSession, id: string): Promise<void> {
-	await openDiagram(browser);
-	await pick(browser, id);
-	const open = '[data-slot="model-panel"] [data-slot="module-open"]';
-	// The panel is still sliding in, so a click at a place on the screen can miss it.
+/** Press an action of the panel. It is still sliding in, so a click on the screen can miss it. */
+async function pressInPanel(browser: AgentBrowserSession, selector: string): Promise<void> {
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(`(() => {
-				const action = document.querySelector(${JSON.stringify(open)});
+				const action = document.querySelector(${JSON.stringify(`[data-slot="model-panel"] ${selector}`)});
 				action?.click();
 				return action !== null;
 			})()`),
 		Boolean,
-		"the module opening action",
+		`the panel's ${selector}`,
 		{ timeoutMs: 10_000 },
 	);
+}
+
+/** Open a part of the picture from the panel, and wait for its picture. */
+async function openModule(browser: AgentBrowserSession, id: string): Promise<void> {
+	await openDiagram(browser);
+	await pick(browser, id);
+	await pressInPanel(browser, '[data-slot="module-open"]');
 	await settledOn(browser, id);
 }
 
 export {
 	openModule,
+	pressInPanel,
 	pick,
 	settledOn,
 	editCanonicalModel,

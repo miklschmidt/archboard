@@ -226,6 +226,7 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 	flowAddress.searchParams.set("grammarA", "sequence");
 	flowAddress.searchParams.set("flowA", "Shop#Request");
 	await browser.run(["open", flowAddress.href]);
+	await openAbout(browser);
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(

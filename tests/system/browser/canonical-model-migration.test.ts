@@ -5,6 +5,7 @@ import {
 	refreshModel,
 	listedParts,
 	openDiagram,
+	openAbout,
 } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { join } from "node:path";
@@ -296,6 +297,7 @@ test("an unmigrated repository exposes migration and follows durable recovery to
 	expect(
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('modelA')`),
 	).toBe("Shop");
+	await openAbout(browser);
 	expect(
 		await browser.eval<boolean>(
 			`document.querySelector('[data-slot="model-transfer-unavailable"]') !== null`,

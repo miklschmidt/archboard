@@ -277,6 +277,7 @@ test("proposal comparison draws removed definitions from its coherent base and e
 		"the retained draft against the verified newer current base",
 		WAIT,
 	);
+	await openAbout(browser);
 	expect(
 		await browser.eval<boolean>(
 			`document.querySelector('[data-slot="model-state-details"][data-lifecycle="draft"]') !== null && document.querySelector('[data-slot="model-comparison-unavailable"]') === null`,

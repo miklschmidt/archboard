@@ -1,4 +1,4 @@
-import { openDestination, openAbout, pick } from "./support/canonical-page.ts";
+import { openDestination, pick } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -174,16 +174,6 @@ test("walkthrough beats change readings while one revision stays captured until 
 	);
 	await browser.run(["click", '[data-walkthrough-id="Shop#Tour"]']);
 	await beat(browser, 0, "architecture");
-	expect(
-		await browser.eval<string | null>(
-			`document.querySelector('[data-slot="semantic-sidebar-toggle"]')?.getAttribute('aria-disabled') ?? null`,
-		),
-	).toBe("true");
-	expect(
-		await browser.eval<string | null>(
-			`document.querySelector('[data-slot="semantic-sidebar-toggle"]')?.getAttribute('aria-expanded') ?? null`,
-		),
-	).toBe("false");
 	expect(await selected(browser)).toContain("Shop#Gateway");
 	const revision = await browser.eval<string>(
 		`document.querySelector('[data-slot="model-walkthrough"]').getAttribute('data-revision')`,

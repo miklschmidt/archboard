@@ -100,6 +100,7 @@ async function followSubject(
 		WAIT,
 	);
 	await browser.run(["click", button]);
+	await openAbout(browser, "selection");
 	await pollUntil(
 		() =>
 			browser.eval<{

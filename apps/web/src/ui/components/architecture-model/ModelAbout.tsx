@@ -178,9 +178,16 @@ function useScopeSections(props: ModelAboutProps): readonly ScopeSection[] {
 	const select = selection.select;
 	const list = { model, projection, selection, look };
 	const sections = [
-		props.overview === null
-			? null
-			: section("state", "Reading", RiHistoryLine, undefined, props.overview),
+		section(
+			"state",
+			"Reading",
+			RiHistoryLine,
+			undefined,
+			<>
+				{props.overview}
+				<ModelOwnership />
+			</>,
+		),
 		flow === null
 			? null
 			: section(
@@ -255,6 +262,22 @@ function useScopeSections(props: ModelAboutProps): readonly ScopeSection[] {
 		),
 	];
 	return sections.filter((entry): entry is ScopeSection => entry !== null && entry.count !== 0);
+}
+
+/**
+ * Why a model stays with its repository, which a reader asks only when they try to move it.
+ * @returns A closed note.
+ */
+function ModelOwnership(): JSX.Element {
+	return (
+		<details className="text-body text-muted-foreground">
+			<summary>Model ownership</summary>
+			<p data-slot="model-transfer-unavailable" className="mt-3 max-w-[68ch]">
+				Moving architecture ownership to another repository is unavailable. Export a portable model
+				to share an exact reading.
+			</p>
+		</details>
+	);
 }
 
 /**
