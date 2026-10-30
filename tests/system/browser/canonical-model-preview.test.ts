@@ -139,7 +139,18 @@ test("migration preview preserves its source while readers navigate modules and 
 		await browser.eval<boolean>(`document.querySelector('[data-slot="model-reading"]') === null`),
 	).toBe(true);
 	writeFileSync(source, before["Shop.semantic.json"]!);
-	await refreshModel(browser);
+	// The same race: a press can land while the read from before this write still runs.
+	await pollUntil(
+		async () => {
+			await refreshModel(browser);
+			return browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-error"][data-code="MAPPING_STALE"]') === null`,
+			);
+		},
+		Boolean,
+		"the stale mapping refusal to clear",
+		WAIT,
+	);
 	await visible(
 		browser,
 		'[data-slot="model-reading"][data-grammar="sequence"] [data-slot="model-diagram"] svg',
