@@ -545,8 +545,9 @@ Do not duplicate an entire shared module just to rename its folder.
 ## Tests that encode negotiable rules
 
 Do not weaken geometry assertions or generic renderer tests.
-Several tests under `operations/blocks/` actually render the default Track engine.
+Several tests under `operations/blocks/` own Track behavior, although Track was the default when they were written.
 Their folder name is not permission to change their expectations.
+They name Track explicitly after [ADR 0064](../adr/0064-blocks-is-the-default-layout-engine.md) makes Blocks the default.
 
 | Test owner                                                                                              | Treatment                                                                                                                                                |
 | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -555,7 +556,7 @@ Their folder name is not permission to change their expectations.
 | `blocks/folded-parent-line.test.ts`, `routes/walls-straight.test.ts`                                    | Preserve visible header attachment, square approaches, and clearance. Reconsider only fixed bend ceilings tied to the old fold.                          |
 | `blocks/entry-fork.test.ts`, `blocks/trunks.test.ts`                                                    | Preserve common-source and common-target meaning. Replace forced entry-wall locations only when the new plan proves the same ownership.                  |
 | `labels/label-runs.test.ts`, `labels/relayed-labels.test.ts`, `tracks/leaving-label-frame.test.ts`      | Inspect the engine parameter. Preserve horizontal or vertical on-run ownership and wall clearance. Keep Track-specific label ranks.                      |
-| `blocks/automatic-columns.test.ts`, `blocks/rank.test.ts`, `blocks/sibling-order.test.ts`               | Their inspected cases use default Track. Keep their column count, downward ranks, and sibling-order contracts unchanged.                                 |
+| `blocks/automatic-columns.test.ts`, `blocks/rank.test.ts`, `blocks/sibling-order.test.ts`               | Their inspected cases name Track explicitly. Keep their column count, downward ranks, and sibling-order contracts unchanged.                             |
 | `ports/side-hook.test.ts`, `labels/label-runs.test.ts`                                                  | Allow four-wall Blocks approaches and require labels on centered clear straight runs. Keep attachment and clearance.                                     |
 | `containers/container-packing.test.ts`, `containers/region-room.test.ts`, `blocks/packed-frame.test.ts` | Replace exact old inset and shelf coordinates. Preserve compactness with measured occupied space and no avoidable route detours.                         |
 | `blocks/placement-order.test.ts`, `blocks/candidate-cancellation.test.ts`                               | Preserve array-order independence, authored-order influence, and the one-solve host contract.                                                            |

@@ -4,6 +4,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
 import { expect, test } from "bun:test";
 import type { VariantContent } from "@archboard/board/content";
+import type { LayoutEngineName } from "@archboard/board/render-reply";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { covering, detached, masking, overlaps } from "#tests/runtime/support/drawn-labels.ts";
@@ -15,10 +16,12 @@ import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 /** Each relationship starts and ends at the frame of the subject it names. */
 async function expectReadableRoutes(
 	content: VariantContent,
+	layout?: LayoutEngineName,
 ): Promise<{ drawing: RenderedDiagram; paths: ReturnType<typeof routePoints> }> {
 	const drawing = await renderArchitecture({
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content,
+		layout,
 		theme: "light",
 	});
 	const paths = routePoints(drawing.svg);
@@ -27,8 +30,9 @@ async function expectReadableRoutes(
 	for (const edge of content.edges) {
 		const path = paths.get(edge.id);
 		expect(path?.length, `${edge.id} is drawn`).toBeGreaterThan(1);
-		expect(distanceToFrame(path![0]!, drawing.atlas.nodes[edge.from]!)).toBeLessThan(0.02);
-		expect(distanceToFrame(path!.at(-1)!, drawing.atlas.nodes[edge.to]!)).toBeLessThan(0.02);
+		// Blocks offsets contacts 0.02 beyond painted faces; allow one SVG rounding unit.
+		expect(distanceToFrame(path![0]!, drawing.atlas.nodes[edge.from]!)).toBeLessThan(0.03);
+		expect(distanceToFrame(path!.at(-1)!, drawing.atlas.nodes[edge.to]!)).toBeLessThan(0.03);
 		if (edge.label) {
 			expect(labels.has(edge.id), `${edge.id} keeps its label`).toBe(true);
 			expect(
@@ -47,7 +51,7 @@ async function expectReadableRoutes(
 	return { drawing, paths };
 }
 
-test("a fan shares a port where departures use the same card face", async () => {
+test("a Track fan shares a centered port where departures use the same card face", async () => {
 	const content = orderedFixture({
 		nodes: ["hub", "one", "two", "three", "four", "five"].map((id) => ({
 			id,
@@ -62,7 +66,7 @@ test("a fan shares a port where departures use the same card face", async () => 
 			label: `message ${index}`,
 		})),
 	});
-	const { drawing, paths } = await expectReadableRoutes(content);
+	const { drawing, paths } = await expectReadableRoutes(content, "track");
 	const starts = content.edges.map(({ id }) => paths.get(id)![0]!);
 	const hub = drawing.atlas.nodes["hub"]!;
 	const faceCenters = [

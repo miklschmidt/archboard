@@ -114,6 +114,8 @@ test("external dependencies follow their contained sources beneath the frame", a
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content,
 		theme: "light",
+		// This regression owns Track's downward fan below the frame.
+		layout: "track",
 	});
 	const frame = drawing.atlas.nodes["pool"]!;
 	const childIds = new Set(

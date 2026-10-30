@@ -117,3 +117,10 @@ options say how it draws the board's containers and group regions, in
 they say nothing. The core refuses any other value with an error that names
 the three. The core asks the host's Graphviz to place the cards, in place of
 `lib/track/graphviz.ts` and `lib/blocks/graphviz-once.ts`.
+
+Superseded in part (2026-10-30, TASK-554,
+[ADR 0064](0064-blocks-is-the-default-layout-engine.md)):
+Blocks is the default for renders, rasterized pictures, walkthroughs, and browsers that name no engine.
+An unavailable remembered engine also falls back to Blocks.
+Track stays selectable through `--layout track` and the canvas setting, with its drawings unchanged.
+The host resolves the shared default before calling the Rust core.

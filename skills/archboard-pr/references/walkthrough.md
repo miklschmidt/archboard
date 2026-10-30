@@ -79,7 +79,7 @@ and the last says where to look.
 ## Record
 
 ```bash
-archboard semantic record <board> --variant "<proposal>" --against "<below>" --walkthrough "Review: <head branch>" --layout blocks --talk "$tmp/talk" --out "$tmp/walkthrough.mp4"
+archboard semantic record <board> --variant "<proposal>" --against "<below>" --walkthrough "Review: <head branch>" --talk "$tmp/talk" --out "$tmp/walkthrough.mp4"
 ```
 
 - Pass the same `--against` as the picture, so every frame marks the same
@@ -89,8 +89,8 @@ archboard semantic record <board> --variant "<proposal>" --against "<below>" --w
   talk in `$tmp`, outside any vault.
 - Use `.mp4`. It is H.264 with AAC sound, and GitHub recommends H.264 for
   greatest compatibility [GitHub, attaching files].
-- Pass `--layout blocks`, so the video draws the layout of the picture. The
-  talk keeps the layout, so `semantic replay` draws it again.
+- The video and picture use Blocks by default.
+  The talk keeps the layout, so `semantic replay` draws it again.
 - The video is drawn in the dark theme unless you pass `--theme light`. A video
   cannot follow the reader's theme, so record one video only.
 

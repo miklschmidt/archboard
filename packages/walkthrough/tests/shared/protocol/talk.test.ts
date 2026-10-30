@@ -153,9 +153,10 @@ describe("a talk", () => {
 		);
 	});
 
-	test("keeps the layout engine it was recorded with, and one kept before talks stated it reads as Track", () => {
+	test("keeps an explicit recorded engine and defaults an omitted engine to Blocks", () => {
 		expect(TalkSchema.parse(talk({ layout: "blocks" })).layout).toBe("blocks");
-		expect(TalkSchema.parse(talk()).layout).toBe("track");
+		expect(TalkSchema.parse(talk({ layout: "track" })).layout).toBe("track");
+		expect(TalkSchema.parse(talk()).layout).toBe("blocks");
 	});
 });
 

@@ -51,7 +51,7 @@ type LegendLayout = z.infer<typeof LegendLayoutSchema>;
 const LayoutEngineSchema = z.enum(["track", "blocks"]);
 type LayoutEngineName = z.infer<typeof LayoutEngineSchema>;
 /** The engine a render uses when it names none. */
-const DEFAULT_LAYOUT_ENGINE: LayoutEngineName = "track";
+const DEFAULT_LAYOUT_ENGINE: LayoutEngineName = "blocks";
 
 /** A rectangle in the drawn document's own viewBox units. */
 const DiagramBoxSchema = z.object({

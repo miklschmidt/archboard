@@ -94,12 +94,12 @@ test("hiding comparison marks keeps the routes of continuing relationships", asy
 	});
 	const compared = await renderBoard(
 		board,
-		{ variant: "draft", theme: "light" },
+		{ variant: "draft", theme: "light", layout: "track" },
 		DEFAULT_SEMANTIC_POLICY,
 	);
 	const plain = await renderBoard(
 		board,
-		{ variant: "draft", theme: "light", comparison: false },
+		{ variant: "draft", theme: "light", layout: "track", comparison: false },
 		DEFAULT_SEMANTIC_POLICY,
 	);
 	if (!compared.ok || !plain.ok || !("svg" in compared.reply) || !("svg" in plain.reply)) {
@@ -169,7 +169,11 @@ test("plain Blocks reserves no space for a removed intermediary or its routes", 
 });
 
 // The board's lines come from its flow, which the overview does not draw.
-const EVERY_PART = { view: { grammar: "architecture", scope: { kind: "all" } } };
+// These stable-position regressions own Track; plain Blocks lays out only visible subjects.
+const EVERY_PART = {
+	layout: "track",
+	view: { grammar: "architecture", scope: { kind: "all" } },
+} as const;
 
 test("a board drawn from its flow keeps a line for every message the draft keeps", async () => {
 	const nodes = [
@@ -249,6 +253,7 @@ test("a view without its comparison draws only what the draft's own view holds",
 		{ nodes, edges: [orders, writes] },
 		{ nodes, edges: [orders] },
 		{
+			layout: "track",
 			view: {
 				grammar: "architecture",
 				scope: { kind: "selection", edges: [orders.id, writes.id] },
@@ -278,7 +283,10 @@ test("a view keeps the draft's own step lines where its comparison pulls a relat
 			flows: [{ ...flow, participants: ["web", "api", "store"], steps: [place, write] }],
 		},
 		{ nodes, edges: [wiring], flows: [{ ...flow, participants: ["web", "api"], steps: [place] }] },
-		{ view: { grammar: "architecture", scope: { kind: "selection", flows: [flow.id] } } },
+		{
+			layout: "track",
+			view: { grammar: "architecture", scope: { kind: "selection", flows: [flow.id] } },
+		},
 	);
 	expectSamePlaces(drawings, ["store", wiring.id, write.id]);
 	expect(Object.keys(drawings.plain.atlas.edges)).toEqual([place.id]);

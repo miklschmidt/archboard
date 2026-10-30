@@ -2360,9 +2360,11 @@ words a lane off, and no column is clear of both.
 [ADR 0040](../adr/0040-track-and-blocks-replace-the-graphviz-engine.md) removes
 the `graphviz` layout engine. Sections 31 to 43 describe its placement, column
 folds, routing, label reservations, settlements and finishing passes; that code
-is deleted, and those sections are history. Track and Blocks are the engines,
-behind `lib/layout/engines.ts`, and Track is the default. Graphviz still places
+is deleted, and those sections are history. Track and Blocks became the engines,
+behind `lib/layout/engines.ts`, with Track as the default at that time. Graphviz still places
 the cards for both, and libavoid still routes Blocks' trunks.
+
+[ADR 0064](../adr/0064-blocks-is-the-default-layout-engine.md) changes the default to Blocks on 2026-10-30.
 
 Every Track and Blocks drawing of the dogfood vault and of the work vault is
 byte-identical before and after the removal.

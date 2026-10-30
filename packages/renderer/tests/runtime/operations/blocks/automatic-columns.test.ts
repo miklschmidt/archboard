@@ -1,3 +1,4 @@
+// These regressions own Track placement, independent of the default engine.
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
@@ -22,6 +23,7 @@ test.each([
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content,
 		theme: "light",
+		layout: "track",
 	});
 	const routes = corridorPoints(drawing.svg);
 	expect(routesCross(routes.get("6xASyZPU")!, routes.get("xCH4TAWg")!)).toBe(false);
@@ -54,6 +56,7 @@ test("a long reading selects three downward columns when two cannot fit", async 
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content,
 		theme: "light",
+		layout: "track",
 	});
 	const columns = new Set(Object.values(drawing.atlas.nodes).map((box) => box.x));
 	expect(columns.size).toBe(3);
@@ -68,6 +71,7 @@ test("a marginal fit gain keeps the compact ownership reading in one column", as
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content,
 		theme: "light",
+		layout: "track",
 	});
 	const frame = drawing.atlas.nodes["FB5oiRXm"]!;
 	const database = drawing.atlas.nodes["kw6lbbtf"]!;

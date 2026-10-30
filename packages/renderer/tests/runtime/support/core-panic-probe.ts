@@ -54,6 +54,8 @@ WebAssembly.Instance = new Proxy(WebAssembly.Instance, {
 const core = loadCore();
 const request = JSON.stringify({
 	grammar: "architecture",
+	// Track asks the host to solve even this one-card fixture, so the resume trap runs.
+	layout: "track",
 	content: { nodes: [{ id: "a", name: "A", kind: "service" }] },
 	policy: { levels: [], nodeKinds: {}, relationshipKinds: {} },
 	clock: { farViewSwapMs: 100, trafficSpeed: 100, cycleCapMs: 1000 },

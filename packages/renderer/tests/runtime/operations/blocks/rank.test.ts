@@ -1,3 +1,4 @@
+// These regressions own Track placement, independent of the default engine.
 // Cycles use authored order, so rearranging the stored arrays cannot silently
 // change which part starts the reading.
 
@@ -27,18 +28,21 @@ test("a two-part cycle follows authored order across document array permutations
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content,
 		theme: "light",
+		layout: "track",
 	});
 	expect(first.atlas.nodes["a"]!.y).toBeLessThan(first.atlas.nodes["b"]!.y);
 	const reordered = await renderArchitecture({
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content: { ...content, nodes: content.nodes.toReversed(), edges: content.edges.toReversed() },
 		theme: "light",
+		layout: "track",
 	});
 	expect(reordered.atlas.nodes).toEqual(first.atlas.nodes);
 	const flipped = await renderArchitecture({
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content: cycle(["b", "a"]),
 		theme: "light",
+		layout: "track",
 	});
 	expect(flipped.atlas.nodes["b"]!.y).toBeLessThan(flipped.atlas.nodes["a"]!.y);
 });
@@ -57,6 +61,7 @@ test("a longer cycle drops exactly the edge that closes it from the first part, 
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content,
 		theme: "light",
+		layout: "track",
 	});
 	const y = (id: string) => drawing.atlas.nodes[id]!.y;
 	expect(y("a")).toBeLessThan(y("b"));
