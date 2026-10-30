@@ -1,14 +1,14 @@
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { git, disposeFixtures } from "#tests/runtime/operations/model-edit/fixture.ts";
+import { temporaryHome } from "#tests/runtime/support/temporary-home.ts";
 const destinations: string[] = [];
 function cleanPortableFixtures() {
 	disposeFixtures();
 	for (const root of destinations.splice(0)) rmSync(root, { recursive: true, force: true });
 }
 function destination() {
-	const root = mkdtempSync(join(tmpdir(), "archboard-import-"));
+	const root = temporaryHome("archboard-import-");
 	destinations.push(root);
 	const vault = join(root, ".archboard/vault");
 	mkdirSync(vault, { recursive: true });

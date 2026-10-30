@@ -1,6 +1,6 @@
-import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { cpSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { temporaryHome } from "#tests/runtime/support/temporary-home.ts";
 
 const homes: string[] = [];
 const originalState = process.env["XDG_STATE_HOME"];
@@ -12,7 +12,7 @@ export function cleanPrivateArchiveFixtures() {
 }
 
 export function untrackedFixture() {
-	const home = mkdtempSync(join(tmpdir(), "archboard-private-"));
+	const home = temporaryHome("archboard-private-");
 	homes.push(home);
 	process.env["XDG_STATE_HOME"] = join(home, "state");
 	const root = join(home, "notes");

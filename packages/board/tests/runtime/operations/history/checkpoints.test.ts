@@ -1,15 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
-import {
-	cpSync,
-	mkdtempSync,
-	mkdirSync,
-	readFileSync,
-	rmSync,
-	chmodSync,
-	writeFileSync,
-} from "node:fs";
+import { cpSync, mkdirSync, readFileSync, rmSync, chmodSync, writeFileSync } from "node:fs";
 import { createServer, type Socket } from "node:net";
-import { tmpdir } from "node:os";
 import { join, resolve as resolvePath } from "node:path";
 import {
 	readArchitectureModel,
@@ -17,6 +8,7 @@ import {
 	listArchitectureCheckpoints,
 } from "@archboard/board/store-read";
 import { retainArchitectureCheckpoint } from "@archboard/board/store-write";
+import { temporaryHome } from "#tests/runtime/support/temporary-home.ts";
 
 const homes: string[] = [];
 afterEach(() => {
@@ -32,7 +24,7 @@ function git(root: string, ...args: string[]): string {
 }
 
 function fixture() {
-	const home = mkdtempSync(join(tmpdir(), "archboard-checkpoint-"));
+	const home = temporaryHome("archboard-checkpoint-");
 	homes.push(home);
 	const root = join(home, "repo");
 	const vault = join(root, ".archboard/vault");

@@ -1,8 +1,8 @@
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { readArchitectureModel } from "@archboard/board/store-read";
 import { retainArchitectureCheckpoint } from "@archboard/board/store-write";
+import { temporaryHome } from "#tests/runtime/support/temporary-home.ts";
 
 const homes: string[] = [];
 
@@ -36,7 +36,7 @@ export function createSigningKey(root: string, key: string) {
 }
 
 export function publicationFixture() {
-	const home = mkdtempSync(join(tmpdir(), "archboard-publication-"));
+	const home = temporaryHome("archboard-publication-");
 	homes.push(home);
 	const root = join(home, "writer");
 	const vault = join(root, ".archboard/vault");

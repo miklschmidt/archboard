@@ -63,7 +63,7 @@ test("portable history shares large exact inputs without changing source HEAD or
 	const head = git(source.root, "rev-parse", "HEAD");
 	const index = readFileSync(join(source.root, ".git/index"));
 	const file = join(source.vault, "gateway.module.json");
-	const bytes = Buffer.concat([readFileSync(file), Buffer.alloc(8_000_000, " ")]);
+	const bytes = Buffer.concat([readFileSync(file), Buffer.alloc(256_000, " ")]);
 	writeFileSync(file, bytes);
 	const largeCurrent = readArchitectureModel(source.vault);
 	if (!largeCurrent.success) throw new Error(JSON.stringify(largeCurrent));

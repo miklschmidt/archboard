@@ -1,14 +1,14 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { readLegacyInventory } from "@archboard/board/store-read";
 import { saveLegacyMappingPlan } from "@archboard/board/store-write";
 import type { LegacyMappingPlan } from "#shared/schemas/migration.ts";
 import { createSigningKey } from "#tests/runtime/support/publication-fixture.ts";
+import { temporaryHome } from "#tests/runtime/support/temporary-home.ts";
 
 function previewFixture() {
-	const home = mkdtempSync(join(tmpdir(), "archboard-migration-preview-"));
+	const home = temporaryHome("archboard-migration-preview-");
 	const vault = join(home, ".archboard/vault");
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
 	writeFileSync(

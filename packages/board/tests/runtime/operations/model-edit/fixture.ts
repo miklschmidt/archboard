@@ -1,8 +1,8 @@
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { readArchitectureModel } from "@archboard/board/store-read";
 import { claimArchitectureSubjects } from "@archboard/board/store-write";
+import { temporaryHome } from "#tests/runtime/support/temporary-home.ts";
 const homes: string[] = [];
 function disposeFixtures() {
 	for (const home of homes.splice(0)) rmSync(home, { recursive: true, force: true });
@@ -13,7 +13,7 @@ function git(root: string, ...args: string[]): string {
 	return result.stdout.toString().trim();
 }
 function fixture() {
-	const root = mkdtempSync(join(tmpdir(), "archboard-edit-"));
+	const root = temporaryHome("archboard-edit-");
 	homes.push(root);
 	const vault = join(root, ".archboard/vault");
 	cpSync(resolve("examples/canonical-model/.archboard/vault"), vault, { recursive: true });
