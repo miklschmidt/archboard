@@ -8,6 +8,7 @@ import type { projectModel } from "@archboard/board/content";
  * @param props.name The repository model name.
  * @param props.scope The open module, or null for repository roots.
  * @param props.trail The open module and its ancestors in display order.
+ * @param props.pending Whether the picture of this destination is still on its way.
  * @param props.onOpen Navigates through the existing router.
  * @returns An accessible breadcrumb trail.
  */
@@ -15,6 +16,7 @@ function ModelBreadcrumbs(props: {
 	name: string;
 	scope: string | null;
 	trail: ReturnType<typeof projectModel>["trail"];
+	pending?: boolean;
 	onOpen: (scope: string | null) => void;
 }): JSX.Element {
 	const items = [{ id: null, name: props.name }, ...props.trail];
@@ -22,6 +24,7 @@ function ModelBreadcrumbs(props: {
 		<nav
 			aria-label="Module path"
 			data-slot="model-breadcrumbs"
+			aria-busy={props.pending === true}
 			className="border-border flex shrink-0 flex-wrap items-center gap-1 border-b px-2 py-2"
 		>
 			{items.map((item) => (

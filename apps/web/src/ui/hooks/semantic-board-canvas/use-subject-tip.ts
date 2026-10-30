@@ -17,6 +17,7 @@ import {
 
 /** What a tip opens over: the picture, and the camera it is seen through. */
 interface TipScene {
+	/** The picture, by its identity. */
 	readonly drawing: object;
 	readonly camera: Pick<BoardCamera, "subscribe">;
 }

@@ -206,7 +206,14 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	);
 	const open = useCallback(
 		(id: string, next: string | null): void => {
-			explore({ id, scope: next, focus: undefined, grammar: undefined });
+			explore({
+				id,
+				scope: next,
+				focus: undefined,
+				grammar: undefined,
+				flow: undefined,
+				subject: undefined,
+			});
 		},
 		[explore],
 	);

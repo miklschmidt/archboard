@@ -211,7 +211,7 @@ function openHint(node: SemanticNode, place: TipPlace): string | undefined {
  * @returns The tip, or null when it would say nothing the picture does not.
  */
 function subjectTip(
-	variant: SemanticVariant,
+	variant: Pick<SemanticVariant, "content">,
 	target: TipTarget,
 	appearance: AppliedAppearance | undefined,
 	far: boolean,
@@ -262,7 +262,7 @@ function cardTip(
  * @returns The tip, or null when the variant does not hold the subject.
  */
 function labelTip(
-	variant: SemanticVariant,
+	variant: Pick<SemanticVariant, "content">,
 	target: TipTarget,
 	appearance: AppliedAppearance | undefined,
 ): SubjectTip | null {
@@ -304,7 +304,7 @@ function edgeTip(edge: SemanticEdge, appearance: AppliedAppearance | undefined):
  * @returns The tip, or undefined when the line stands for one relationship.
  */
 function joinedTip(
-	variant: SemanticVariant,
+	variant: Pick<SemanticVariant, "content">,
 	target: TipTarget,
 	appearance: AppliedAppearance | undefined,
 	overview: boolean,

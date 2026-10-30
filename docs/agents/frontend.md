@@ -328,8 +328,18 @@ Captured walkthroughs keep their own selection and suspend the ordinary reader.
 Their header shares the existing presentation context and holds the sidebar control until playback ends.
 Authored beat subjects drive the shared focus, camera glide, and emphasis rules.
 An ordinary reader retains its own camera while a captured presentation runs.
+On one board, the surface that comes into sight starts from the camera that the other left and glides to its own rest.
 Leaving a remote presentation clears its request in the pane arrival owner, so another state read cannot restart it.
 Narrative buttons start playback directly and create no popup outside the suspended reader.
+
+A pane keeps one mounted surface, so no key on scope, state, model or arrival remounts the reader.
+`useAcceptedScene` keeps the requested destination apart from the accepted scene until its drawing exists.
+The header, crumbs and controls read the destination.
+The picture, inspection, Ask and pane reports read the accepted scene, through `shown`.
+A pane reports a reading as drawn only when `ready` is true.
+An empty or unavailable reading is an accepted scene with no picture, so the last picture never stands in for it.
+`rules/architecture-model/scene.ts` decides what carries, what leaves and which way, from the two readings, so every route to a reading moves the same way.
+A history entry keeps its camera, so Back and Forward return that camera. Up is a new visit, and it fits.
 
 A coherent model event resumes exact reads interrupted by an installation barrier.
 Healthy immutable readings with no live comparison keep their cached data without another read.

@@ -11,7 +11,7 @@
 // A failed refresh keeps the last picture with a disclosure and retry. Query
 // owns fetched state; the pane owns camera and selection across requests (ADR 0023).
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
@@ -26,7 +26,7 @@ import { useAutoFit } from "#ui/hooks/semantic-board-canvas/use-auto-fit.ts";
 import { useBoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import { useClearOfPanel } from "#ui/hooks/semantic-board-canvas/use-clear-of-panel.ts";
 import { useDeparture } from "#ui/hooks/semantic-board-canvas/use-departure.ts";
-import { useDive } from "#ui/hooks/semantic-board-canvas/use-dive.ts";
+import { useDive, type Destination } from "#ui/hooks/semantic-board-canvas/use-dive.ts";
 import { useDrillDown, type Dive } from "#ui/hooks/semantic-board-canvas/use-drill-down.ts";
 import { useDrillMoves } from "#ui/hooks/semantic-board-canvas/use-drill-moves.ts";
 import { useKindLook } from "#ui/hooks/semantic-board-canvas/use-kind-look.ts";
@@ -172,6 +172,17 @@ interface SemanticBoardStageProps {
 	reducedMotion?: boolean | undefined;
 }
 
+const NO_EDGES: readonly never[] = Object.freeze([]);
+
+/**
+ * The relationships of the variant on screen.
+ * @param reading What the board says about it, when that is known.
+ * @returns Its relationships, or none.
+ */
+function drawnEdges(reading: ReturnType<typeof useVariantReading>) {
+	return reading?.variant?.content.edges ?? NO_EDGES;
+}
+
 /**
  * Which view the pane asks the server to draw this variant through.
  *
@@ -290,11 +301,17 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	const attachPicture = useCallback((element: HTMLDivElement | null): void => {
 		picture.current = element;
 	}, []);
+	const client = useQueryClient();
+	const drawForDive = useCallback(
+		async (to: Destination): Promise<SemanticDrawing | null> =>
+			drawingIn(await client.fetchQuery(semanticRenderQuery({ ...to, vault, comparison, layout }))),
+		[client, vault, comparison, layout],
+	);
 	const dive = useDive({
 		camera,
 		area: picture,
 		drawn,
-		reading: { vault, comparison, layout },
+		draw: drawForDive,
 		reducedMotion,
 		presenting: narrative.open !== null,
 	});
@@ -356,7 +373,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	const onPickInPicture = useReveal({
 		camera,
 		atlas: drawn?.atlas ?? null,
-		reading,
+		edges: drawnEdges(reading),
 		selection: props.selection,
 		off: narrative.open !== null || sidebar.floating,
 		reducedMotion,

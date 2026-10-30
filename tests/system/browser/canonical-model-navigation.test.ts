@@ -1,4 +1,4 @@
-import { openModelSidebar } from "./support/canonical-page.ts";
+import { openModule } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -23,24 +23,6 @@ const WAIT = { timeoutMs: 10_000 } as const;
 async function scopeOf(browser: AgentBrowserSession): Promise<string | null> {
 	return browser.eval<string | null>(
 		`document.querySelector('[data-slot="model-reading"]')?.getAttribute('data-scope') ?? null`,
-	);
-}
-
-async function openModule(browser: AgentBrowserSession, id: string): Promise<void> {
-	await openModelSidebar(browser);
-	await browser.run(["click", `[data-slot="module-list"] [data-module-id="${id}"]`]);
-	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector('[data-slot="module-open"]') !== null`),
-		Boolean,
-		"the module opening action",
-		WAIT,
-	);
-	await browser.run(["click", '[data-slot="module-open"]']);
-	await pollUntil(
-		() => scopeOf(browser),
-		(scope) => scope === id,
-		"the selected scope",
-		WAIT,
 	);
 }
 
@@ -134,11 +116,15 @@ test("module decomposition follows breadcrumbs and browser history without chang
 		"the latest scoped scene after navigation",
 		WAIT,
 	);
-	expect(
-		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]') === null`,
-		),
-	).toBe(true);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]') === null`,
+			),
+		Boolean,
+		"the last picture gone",
+		WAIT,
+	);
 	await browser.run(["reload"]);
 	await pollUntil(
 		() => scopeOf(browser),

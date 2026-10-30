@@ -242,11 +242,15 @@ test("proposal comparison draws removed definitions from its coherent base and e
 		"the changed predecessor and unavailable comparison",
 		WAIT,
 	);
-	expect(
-		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"][data-semantic-standing="removed"]') === null`,
-		),
-	).toBe(true);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"][data-semantic-standing="removed"]') === null`,
+			),
+		Boolean,
+		"the picture without the comparison it can no longer make",
+		WAIT,
+	);
 	await selectReading(browser, created.body.checkpoint.id);
 	await pollUntil(
 		() =>

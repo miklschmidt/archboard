@@ -1,109 +1,77 @@
-import { lazy, Suspense, type JSX, type ReactNode } from "react";
-import { DiagramGrammarSchema, type DiagramGrammar } from "@archboard/board/views";
-import type { Model, projectModel } from "@archboard/board/content";
+import {
+	lazy,
+	Suspense,
+	type ComponentProps,
+	type JSX,
+	type ReactNode,
+	type RefObject,
+} from "react";
+import { StageSpinner } from "#ui/components/semantic-board-canvas/SemanticStageStates.tsx";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
+import type {
+	AcceptedScene,
+	Projection,
+	SceneRequest,
+} from "#ui/rules/architecture-model/scene.ts";
 
 const ModelDiagram = lazy(async () => {
 	const module = await import("#ui/components/architecture-model/ModelDiagram.tsx");
 	return { default: module.ModelDiagram };
 });
 
-const LOADING_DIAGRAM = (
-	<output className="text-body text-muted-foreground min-w-0 flex-1 p-8">Loading diagram…</output>
-);
+type DiagramProps = ComponentProps<typeof ModelDiagram>;
 
-interface ModelReadingCanvasProps {
+interface ModelReadingCanvasProps extends Pick<
+	DiagramProps,
+	"camera" | "pending" | "leaving" | "cut" | "floating" | "reducedMotion" | "onOpen" | "onAttention"
+> {
 	overlay?: ReactNode;
-	model: Model;
+	/** The reading that is on screen, once one is. */
+	scene: AcceptedScene | null;
+	/** The destination the address asks for. */
+	request: SceneRequest;
+	/** A drawing that failed. */
+	failure: Error | null;
+	area: RefObject<HTMLDivElement | null>;
 	warnings: ReadonlySet<string>;
 	selection: ModelSelection;
-	scope: string | null;
-	projection: ReturnType<typeof projectModel>;
-	reducedMotion: boolean;
-	onOpen: (scope: string | null) => void;
 }
 
 /**
- * A behavioral reading requires its exact authored flow, independently of the structural scope.
- * @param props The requested mode, flow, and underlying architecture reading.
- * @returns A coherent diagram or explicit unavailable state.
+ * One diagram stays mounted under every answer, so the surface and the camera wait
+ * for the reader to come back from an unavailable reading, which has no picture.
+ * @param props The accepted scene and the requested destination.
+ * @returns The diagram, and what the destination has to say about itself.
  */
-function ModelReadingCanvas(
-	props: ModelReadingCanvasProps & { grammar: string; flow: string | null },
-): JSX.Element {
-	const parsed = DiagramGrammarSchema.safeParse(props.grammar);
-	if (!parsed.success)
-		return (
-			<output data-slot="model-mode-unavailable" className="text-body p-8">
-				The requested diagram mode is unavailable: {props.grammar}. Choose a supported mode.
-			</output>
-		);
-	if (parsed.data !== "architecture") return <BehavioralReading {...props} grammar={parsed.data} />;
-	if (props.projection.missing)
-		return (
-			<output data-slot="model-missing-scope" className="text-body p-8">
-				The requested module is absent from this reading: {props.scope}. Open the repository from
-				the path above.
-			</output>
-		);
+function ModelReadingCanvas(props: ModelReadingCanvasProps): JSX.Element {
+	const { scene, request, selection, area } = props;
 	return (
 		<>
-			<FocusAvailability missing={props.projection.missingFocus} />
-			<ScopedModelReading key={props.scope ?? "root"} {...props} grammar={parsed.data} />
-		</>
-	);
-}
-
-/**
- * Never replace a missing explicit flow with another exchange.
- * @param props The complete model and exact requested flow identity.
- * @returns The whole selected behavior or its recovery instruction.
- */
-function BehavioralReading(
-	props: ModelReadingCanvasProps & { grammar: DiagramGrammar; flow: string | null },
-): JSX.Element {
-	if (props.projection.flow === null)
-		return (
-			<output
-				data-slot={props.flow === null ? "model-flow-required" : "model-flow-missing"}
-				className="text-body p-8"
-			>
-				{props.flow === null
-					? "Choose an authored flow to read its behavior."
-					: `The selected flow is unavailable: ${props.flow}. Choose another flow or restore its architecture.`}
-			</output>
-		);
-	return (
-		<ScopedModelReading key={`${props.grammar}:${props.flow}`} {...props} grammar={props.grammar} />
-	);
-}
-
-/**
- * Only selection is local state; authored content remains the query snapshot.
- * @param props The coherent model and scope projection.
- * @returns Immediate children, nearby context, and authored details.
- */
-function ScopedModelReading(
-	props: ModelReadingCanvasProps & { grammar: DiagramGrammar },
-): JSX.Element {
-	const { model } = props;
-	const { ids: selected, select } = props.selection;
-	return (
-		<div className="flex min-h-0 min-w-0 flex-1">
-			<div className="relative flex min-h-0 min-w-0 flex-1">
-				<Suspense fallback={LOADING_DIAGRAM}>
-					<ModelDiagram
-						warnings={props.warnings}
-						grammar={props.grammar}
-						model={model}
-						projection={props.projection}
-						selected={selected}
-						onSelect={select}
-						onSelectMany={props.selection.selectMany}
-						onOpen={props.onOpen}
-						reducedMotion={props.reducedMotion}
-					/>
+			{request.grammar === "architecture" && (
+				<FocusAvailability missing={request.projection.missingFocus} />
+			)}
+			<div ref={area} className="relative flex min-h-0 min-w-0 flex-1">
+				<Suspense fallback={null}>
+					{scene !== null && (
+						<ModelDiagram
+							scene={scene}
+							camera={props.camera}
+							area={area}
+							pending={props.pending}
+							leaving={props.leaving}
+							cut={props.cut}
+							floating={props.floating}
+							warnings={props.warnings}
+							selected={selection.ids}
+							onSelect={selection.select}
+							onSelectMany={selection.selectMany}
+							onOpen={props.onOpen}
+							onAttention={props.onAttention}
+							reducedMotion={props.reducedMotion}
+						/>
+					)}
 				</Suspense>
+				<DestinationState request={request} failure={props.failure} first={scene === null} />
 				<div
 					data-slot="model-stage-overlay"
 					className="pointer-events-none absolute inset-x-0 bottom-6 z-25 flex justify-center px-8"
@@ -111,8 +79,103 @@ function ScopedModelReading(
 					{props.overlay}
 				</div>
 			</div>
-		</div>
+		</>
 	);
+}
+
+/**
+ * What the destination has to say over the picture.
+ * @param props The destination and how its drawing went.
+ * @param props.request The destination.
+ * @param props.failure A drawing that failed.
+ * @param props.first Whether no picture exists yet.
+ * @returns A failure, an unavailable reading, the first wait, or nothing.
+ */
+function DestinationState(props: {
+	request: SceneRequest;
+	failure: Error | null;
+	first: boolean;
+}): JSX.Element | null {
+	const { request, failure } = props;
+	if (request.grammar === null)
+		return <UnavailableReading reading={request.reading} projection={request.projection} />;
+	if (failure !== null)
+		return (
+			<output
+				role="alert"
+				className="text-body bg-background border-border absolute inset-x-0 top-0 z-10 border-b px-8 py-4"
+			>
+				{failure.message}
+			</output>
+		);
+	return props.first ? <FirstDrawing request={request} /> : null;
+}
+
+/**
+ * What the pane shows before its first picture exists.
+ * @param props The destination.
+ * @param props.request The destination.
+ * @returns A spinner that waits before it appears, and the destination for a screen reader.
+ */
+function FirstDrawing({ request }: { request: SceneRequest }): JSX.Element {
+	return (
+		<>
+			<p aria-live="polite" className="sr-only">
+				Drawing {request.projection.trail.at(-1)?.name ?? request.model.manifest.name}…
+			</p>
+			<StageSpinner className="pointer-events-none absolute inset-0" />
+		</>
+	);
+}
+
+/**
+ * Never replace a missing destination with another reading.
+ * @param props The requested reading and its projection.
+ * @param props.reading The address fields.
+ * @param props.projection The requested reading's content.
+ * @returns The recovery instruction for that destination.
+ */
+function UnavailableReading({
+	reading,
+	projection,
+}: {
+	reading: SceneRequest["reading"];
+	projection: Projection;
+}): JSX.Element {
+	const { slot, message } = unavailableMessage(reading, projection);
+	return (
+		<output data-slot={slot} className="text-body bg-background absolute inset-0 z-10 p-8">
+			{message}
+		</output>
+	);
+}
+
+/**
+ * Name what a reading lacks.
+ * @param reading The address fields.
+ * @param projection The requested reading's content.
+ * @returns Its state and recovery instruction.
+ */
+function unavailableMessage(
+	reading: SceneRequest["reading"],
+	projection: Projection,
+): { slot: string; message: string } {
+	if (reading.grammar === "architecture")
+		return {
+			slot: "model-missing-scope",
+			message: `The requested module is absent from this reading: ${reading.scope}. Open the repository from the path above.`,
+		};
+	if (projection.flow !== null)
+		return {
+			slot: "model-mode-unavailable",
+			message: `The requested diagram mode is unavailable: ${reading.grammar}. Choose a supported mode.`,
+		};
+	return reading.flow === null
+		? { slot: "model-flow-required", message: "Choose an authored flow to read its behavior." }
+		: {
+				slot: "model-flow-missing",
+				message: `The selected flow is unavailable: ${reading.flow}. Choose another flow or restore its architecture.`,
+			};
 }
 
 /**

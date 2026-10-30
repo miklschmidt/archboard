@@ -309,7 +309,10 @@ function modelSearch(pane: AddressedPane): Record<string, string> {
 		...Object.fromEntries(
 			(["focus", "hideKinds", "showGroups"] as const).flatMap((field) => {
 				const value = model[field];
-				return value === undefined ? [] : [[`${field}${pane.paneId}`, value.join(",")]];
+				// An empty list narrows nothing, and `focus=` would read back as one empty identity.
+				return value === undefined || value.length === 0
+					? []
+					: [[`${field}${pane.paneId}`, value.join(",")]];
 			}),
 		),
 	};

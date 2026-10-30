@@ -221,7 +221,7 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 					/>
 				) : (
 					<ArchitectureModelStage
-						key={arrival}
+						arrival={arrival}
 						vault={vault}
 						paneId={paneId}
 						reducedMotion={props.reducedMotion}

@@ -17,7 +17,6 @@ import { FIT_MARGIN } from "@archboard/renderer/shell-geometry";
 import { EXPLORING_MS } from "@archboard/timing";
 import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
-import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import type { Rect } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
 import { revealCamera } from "#ui/rules/semantic-board-canvas/camera/reveal.ts";
 import { subjectBox } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
@@ -27,8 +26,8 @@ interface RevealInputs {
 	readonly camera: BoardCamera;
 	/** Where every subject of the picture on screen ended up, or null before there is one. */
 	readonly atlas: SemanticAtlas | null;
-	/** What the board says about the variant on screen, or null. */
-	readonly reading: VariantReading | null;
+	/** The relationships the picture on screen draws. */
+	readonly edges: readonly { readonly from: string; readonly to: string }[];
 	/** The subject picked out, or null. */
 	readonly selection: string | null;
 	/** Whether something else already moves the camera: a presented step, or a panel over the picture. */
@@ -38,19 +37,19 @@ interface RevealInputs {
 	/**
 	 * Pick a subject out, or clear the selection.
 	 * @param id The semantic id, or null.
+	 * @param toggle Whether the pick extends the selection.
 	 */
-	readonly onPick: (id: string | null) => void;
+	readonly onPick: (id: string | null, toggle?: boolean) => void;
 }
 
 /**
- * Whether the variant draws a relationship between two parts.
- * @param reading What the board says about the variant.
+ * Whether the picture draws a relationship between two parts.
+ * @param edges The relationships it draws.
  * @param one A part.
  * @param other Another.
  * @returns True when a relationship joins them, in either direction.
  */
-function wired(reading: VariantReading | null, one: string, other: string): boolean {
-	const edges = reading?.variant?.content.edges ?? [];
+function wired(edges: RevealInputs["edges"], one: string, other: string): boolean {
 	return edges.some(
 		(edge) => (edge.from === one && edge.to === other) || (edge.from === other && edge.to === one),
 	);
@@ -63,11 +62,11 @@ function wired(reading: VariantReading | null, one: string, other: string): bool
  * @returns Its box, or null.
  */
 function alongside(inputs: RevealInputs, previous: string | null): Rect | null {
-	const { atlas, reading, selection } = inputs;
+	const { atlas, edges, selection } = inputs;
 	if (atlas === null || previous === null || selection === null) {
 		return null;
 	}
-	return wired(reading, previous, selection) ? subjectBox(atlas, previous) : null;
+	return wired(edges, previous, selection) ? subjectBox(atlas, previous) : null;
 }
 
 /**
@@ -113,7 +112,7 @@ function showPick(inputs: RevealInputs, previous: string | null): void {
  * @param inputs The camera, the picture's atlas, the pick, whether to stand aside and how to pick.
  * @returns The picture's own pick: the reader's hand, which leaves the camera where it is.
  */
-function useReveal(inputs: RevealInputs): (id: string | null) => void {
+function useReveal(inputs: RevealInputs): RevealInputs["onPick"] {
 	const { selection, onPick } = inputs;
 	const latest = useRef(inputs);
 	const previous = useRef<string | null>(selection);
@@ -132,9 +131,9 @@ function useReveal(inputs: RevealInputs): (id: string | null) => void {
 		}
 	}, [selection]);
 	return useCallback(
-		(id: string | null): void => {
+		(id: string | null, toggle?: boolean): void => {
 			byHand.current = id;
-			onPick(id);
+			onPick(id, toggle);
 		},
 		[onPick],
 	);

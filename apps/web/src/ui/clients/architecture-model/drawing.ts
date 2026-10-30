@@ -1,4 +1,3 @@
-import { prepareContentHere } from "@archboard/renderer/browser";
 import type { DiagramGrammar } from "@archboard/board/views";
 import { queryOptions } from "@tanstack/react-query";
 import type { projectModel, Model } from "@archboard/board/content";
@@ -8,10 +7,13 @@ import {
 	cachedModelDrawing,
 } from "#ui/clients/semantic-board-canvas/reads/picture-cache.ts";
 
+type ModelDrawing = Awaited<ReturnType<typeof cachedModelDrawing>>;
+
 const storage = browserPictureStorage();
 
 /**
  * Each reading revision accepts only the scene key derived from its content and interfaces.
+ * The renderer loads only when a picture is drawn, so a reader can own this query in the first chunk.
  * @param model The coherent architecture revision.
  * @param projection The content this reading shows.
  * @param grammar The explicitly requested diagram mode.
@@ -22,7 +24,7 @@ function modelDrawingQuery(
 	projection: ReturnType<typeof projectModel>,
 	grammar: DiagramGrammar,
 ) {
-	const prepared = prepareContentHere({
+	const request = {
 		grammar,
 		content: projection.content,
 		variant: projection.complete,
@@ -30,19 +32,21 @@ function modelDrawingQuery(
 		standing: projection.standing,
 		unsettled: projection.unsettled,
 		policy: model.policy,
-	});
-	const key = JSON.stringify(["canonical", rendererBuild, model.manifest.id, prepared.key]);
+	};
+	const key = JSON.stringify(["canonical", rendererBuild, model.manifest.id, request]);
 	return queryOptions({
 		queryKey: ["model-drawing", key],
 		/**
 		 * Reuse a matching scene or render it locally.
 		 * @returns The stored or newly rendered scene.
 		 */
-		queryFn: () => cachedModelDrawing(storage, key, prepared.draw),
+		queryFn: async () => {
+			const { prepareContentHere } = await import("@archboard/renderer/browser");
+			return cachedModelDrawing(storage, key, prepareContentHere(request).draw);
+		},
 		staleTime: Infinity,
 		retry: false,
-		enabled: projection.content.nodes.length > 0,
 	});
 }
 
-export { modelDrawingQuery };
+export { modelDrawingQuery, type ModelDrawing };

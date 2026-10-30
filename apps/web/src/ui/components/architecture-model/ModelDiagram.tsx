@@ -2,148 +2,93 @@ import { useAutoFit } from "#ui/hooks/semantic-board-canvas/use-auto-fit.ts";
 import { beatFocus, subjectMarks } from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
 import { moveCameraByKey } from "#ui/clients/semantic-board-canvas/picture/camera-keys.ts";
 import { useLighting } from "#ui/hooks/semantic-board-canvas/use-lighting.ts";
-import { NOTHING_PEEKED } from "#ui/components/semantic-board-canvas/Peek.tsx";
-import { lightInk } from "#ui/clients/semantic-board-canvas/subjects/lit-ink.ts";
 import {
 	useCallback,
 	useEffect,
 	useLayoutEffect,
 	useMemo,
-	useRef,
 	useState,
 	type JSX,
 	type KeyboardEvent,
 	type PointerEvent,
+	type RefObject,
 } from "react";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { everyStep } from "@archboard/board/flow";
-import type { DiagramGrammar } from "@archboard/board/views";
 import type { DiagramBox } from "@archboard/board/render-reply";
-import type { prepareContentHere } from "@archboard/renderer/browser";
+import type { projectModel } from "@archboard/board/content";
 import { CameraSurface } from "#ui/components/semantic-board-canvas/CameraSurface.tsx";
+import { LeavingPart } from "#ui/components/semantic-board-canvas/LeavingPart.tsx";
 import {
-	useBoardCamera,
 	useCameraWith,
 	type BoardCamera,
 } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
-import { seenFromFar } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
-import { useSubjectTip } from "#ui/hooks/semantic-board-canvas/use-subject-tip.ts";
+import { seenFromFar, type FitTarget } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
 import { ModelLineTip } from "#ui/components/architecture-model/ModelLineTip.tsx";
+import { useClearOfPanel } from "#ui/hooks/semantic-board-canvas/use-clear-of-panel.ts";
 import { useDiagramGestures } from "#ui/hooks/semantic-board-canvas/use-diagram-gestures.ts";
-import { stagePicture } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
-import { clockOf } from "#ui/clients/semantic-board-canvas/picture/picture-clock.ts";
-import { stopTraffic } from "#ui/clients/semantic-board-canvas/picture/picture-traffic.ts";
+import { useLeaving } from "#ui/hooks/semantic-board-canvas/use-leaving.ts";
+import { usePeeked } from "#ui/hooks/semantic-board-canvas/use-peek.ts";
+import { usePictureTransition } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
+import { useReveal } from "#ui/hooks/semantic-board-canvas/use-reveal.ts";
+import { useStickyHeads } from "#ui/hooks/semantic-board-canvas/use-sticky-heads.ts";
+import { useSweep } from "#ui/hooks/semantic-board-canvas/use-sweep.ts";
+import { useTrafficRest } from "#ui/hooks/semantic-board-canvas/use-traffic-rest.ts";
+import { useViewerMarks } from "#ui/hooks/semantic-board-canvas/use-viewer-marks.ts";
 import { markCodeWarnings } from "#ui/clients/semantic-board-canvas/subjects/code-marks.ts";
-import {
-	markSubjects,
-	markVeil,
-	surfaceMarks,
-} from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
-import type { projectModel, Model } from "@archboard/board/content";
+import { surfaceMarks } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 import { usePresentationArrival } from "#ui/hooks/semantic-board-canvas/use-presentation-arrival.ts";
-import { modelDrawingQuery } from "#ui/clients/architecture-model/drawing.ts";
-
-type RenderedDiagram = Awaited<ReturnType<ReturnType<typeof prepareContentHere>["draw"]>>;
+import { useCameraHandover } from "#ui/hooks/architecture-model/use-camera-handover.ts";
+import { useSubjectTip } from "#ui/hooks/semantic-board-canvas/use-subject-tip.ts";
+import { SubjectTipBox } from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
+import {
+	subjectTip,
+	type TipTarget,
+} from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
+import { useCameraMemory } from "#ui/hooks/architecture-model/use-camera-memory.ts";
+import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
+import { sceneFit, type AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
 
 interface ModelDiagramProps {
-	model: Model;
-	grammar: DiagramGrammar;
-	projection: ReturnType<typeof projectModel>;
+	scene: AcceptedScene;
+	camera: BoardCamera;
+	/** The picture's area, whose right edge a floating panel is laid against. */
+	area?: RefObject<HTMLElement | null> | undefined;
+	/** Whether another reading is on its way to this surface. */
+	pending: boolean;
+	/** Where the reader went, while the next picture is too far off to keep this one on screen. */
+	leaving: Departure | null;
+	/** Whether this picture took over from a flight that already put the camera in place. */
+	cut?: boolean | undefined;
+	/** Whether a panel lies over the picture's edge. */
+	floating?: boolean | undefined;
 	reducedMotion: boolean;
 	reserve?: number;
-	presentation?: string;
-	presentedSubjects?: readonly string[];
-	onPresentation?: (picture: { key: string; arrived: boolean } | null) => void;
+	onPresentation?: ((picture: { key: string; arrived: boolean } | null) => void) | undefined;
 	selected: ReadonlySet<string>;
 	warnings?: ReadonlySet<string>;
 	onSelect: (id: string | null, toggle?: boolean) => void;
 	onSelectMany: (ids: readonly string[], toggle?: boolean) => void;
 	onOpen: (id: string | null) => void;
+	/** The reader's attention rests on a subject, which they may open next. */
+	onAttention?: ((id: string) => void) | undefined;
 }
+
+const NO_AREA: RefObject<HTMLElement | null> = { current: null };
 
 /**
- * Keep camera gestures independent from asynchronous local layout.
- * @param props The model and transient selection.
- * @returns The current scene or an explicit rendering state.
- */
-function ModelDiagram(props: ModelDiagramProps): JSX.Element {
-	const { projection, model } = props;
-	const drawingOptions = useMemo(
-		() => modelDrawingQuery(model, projection, props.grammar),
-		[model, projection, props.grammar],
-	);
-	const drawing = useQuery({
-		...drawingOptions,
-		...(props.presentation === undefined ? { placeholderData: keepPreviousData } : {}),
-	});
-	const camera = useBoardCamera(props.reducedMotion);
-	const { reserve: reserveBottom } = camera;
-	useLayoutEffect(() => reserveBottom(props.reserve ?? 0), [reserveBottom, props.reserve]);
-	if (projection.content.nodes.length === 0) return <EmptyDiagram {...props} />;
-	if (drawing.isPending)
-		return (
-			<output className="text-body text-muted-foreground min-w-0 flex-1 p-8">
-				Drawing modules…
-			</output>
-		);
-	if (drawing.isError)
-		return (
-			<output role="alert" className="text-body min-w-0 flex-1 p-8">
-				{drawing.error.message}
-			</output>
-		);
-	return (
-		<ModelScene
-			{...props}
-			drawing={drawing.data}
-			camera={camera}
-			updating={drawing.isPlaceholderData}
-		/>
-	);
-}
-
-/**
- * An empty coherent reading is a finished picture too.
- * @param props The optional presentation identity and its observer.
- * @param props.presentation The requested picture identity.
- * @param props.onPresentation Receives its completed empty picture.
- * @returns The visible empty reading.
- */
-function EmptyDiagram({ presentation, onPresentation }: ModelDiagramProps): JSX.Element {
-	useEffect(() => {
-		if (presentation === undefined) return undefined;
-		onPresentation?.({ key: presentation, arrived: true });
-		return () => onPresentation?.(null);
-	}, [presentation, onPresentation]);
-	return (
-		<output data-slot="model-empty-diagram" className="text-body text-muted-foreground flex-1 p-8">
-			No modules are visible in this reading.
-		</output>
-	);
-}
-
-interface ModelSceneProps extends ModelDiagramProps {
-	drawing: RenderedDiagram;
-	camera: BoardCamera;
-	updating: boolean;
-}
-
-/**
- * Reuse the existing atlas, pointer gestures, and camera surface.
- * @param props The accepted picture and presentation state.
+ * One mounted surface. Each accepted scene arrives as a new prop, so the surface,
+ * its gestures and its camera outlive every reading.
+ * @param props The accepted scene and the pane's presentation state.
  * @returns A selectable, pannable diagram.
  */
-function ModelScene(props: ModelSceneProps): JSX.Element {
-	const { drawing, camera, selected, onSelect, onSelectMany, onOpen, model } = props;
-	const surface = useRef<HTMLDivElement | null>(null);
-	const [arrivalSurface, setArrivalSurface] = useState<HTMLDivElement | null>(null);
-	const [settled, setSettled] = useState<string | null>(null);
-	const installed = useRef<string | null>(null);
-	const attach = useCallback((element: HTMLDivElement | null): void => {
-		surface.current = element;
-		setArrivalSurface(element);
-		installed.current = null;
-	}, []);
+function ModelDiagram(props: ModelDiagramProps): JSX.Element {
+	const { scene, camera, selected, onSelect, onSelectMany, onOpen, reducedMotion } = props;
+	const { picture: drawing, projection, model } = scene;
+	const presenting = scene.presentation !== undefined;
+	const floating = props.floating === true;
+	const { reserve: reserveBottom } = camera;
+	useLayoutEffect(() => reserveBottom(props.reserve ?? 0), [reserveBottom, props.reserve]);
+	const [surface, setSurface] = useState<HTMLDivElement | null>(null);
 	const attachViewport = useCallback(
 		(element: HTMLElement | null): void => camera.attachViewport(element),
 		[camera],
@@ -154,46 +99,245 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		},
 		[model.modules, onOpen],
 	);
-	const focus = useMemo(
-		() =>
-			beatFocus(
-				props.presentation === undefined
-					? null
-					: {
-							id: props.presentation,
-							subjects: [
-								...projectedMarks(new Set(props.presentedSubjects), props.projection.connections),
-							],
-						},
-				drawing,
-				{ content: props.projection.content },
-			),
-		[props.presentation, props.presentedSubjects, props.projection, drawing],
-	);
+	const focus = useSceneFocus(scene);
 	const veil = useMemo(
 		() => (focus.drawn.length === 0 ? null : new Set(focus.drawn)),
 		[focus.drawn],
 	);
-	useAutoFit(camera, props.presentation === undefined ? null : drawing, focus, {
-		picture: drawing.svg,
-		presenting: props.presentation !== undefined,
-		reducedMotion: props.reducedMotion,
+	// Before the picture moves, so the memory holds the camera that the reader left.
+	const recall = useCameraMemory(camera, scene);
+	const staged = usePictureTransition(surface, drawing, {
+		reducedMotion,
+		keepStill: camera.followPicture,
+		heading: scene.heading,
+		presenting,
+		cut: props.cut,
 	});
+	const leaving = useLeaving(staged, props.leaving, reducedMotion);
+	const resting = useMemo<FitTarget>(
+		() => ({
+			kind: "landing",
+			content: { width: drawing.width, height: drawing.height },
+			head: drawing.atlas.regions[projection.opened ?? ""],
+		}),
+		[drawing.width, drawing.height, drawing.atlas, projection.opened],
+	);
+	useAutoFit(camera, hasPicture(drawing), focus, {
+		picture: sceneFit(scene.reading),
+		presenting,
+		resting,
+		reducedMotion,
+		cut: props.cut,
+		recall,
+	});
+	useCameraHandover(camera, drawing.board, reducedMotion);
+	const { lighting, single } = useSceneLighting(scene, selected, leaving !== null);
+	const tip = useSceneTip(drawing, camera, lighting);
+	const selectArea = useAreaSelection(scene, camera, onSelectMany);
+	const far = useCameraWith(camera, seenFromFar);
+	const onPick = useReveal({
+		camera,
+		atlas: drawing.atlas,
+		edges: projection.content.edges,
+		selection: single,
+		off: presenting || floating,
+		reducedMotion,
+		onPick: onSelect,
+	});
+	useClearOfPanel(props.area ?? NO_AREA, floating, single, camera, reducedMotion);
+	const { pointer, gesture, rectangle, keyboard } = useDiagramGestures({
+		camera,
+		atlas: drawing.atlas,
+		onSelect: onPick,
+		onSelectArea: selectArea,
+		onHover: tip.onHover,
+		dismissTip: tip.dismiss,
+		openDown: open,
+	});
+	const onKeyDown = useCallback(
+		(event: KeyboardEvent<HTMLElement>): void => {
+			keyboard.onKeyDown?.(event);
+			if (event.defaultPrevented) return;
+			if (moveCameraByKey(event.key, camera, drawing, reducedMotion)) {
+				event.preventDefault();
+				lighting.release();
+			}
+		},
+		[keyboard, camera, drawing, reducedMotion, lighting],
+	);
+	useSceneMarks(staged, scene, { selected, warnings: props.warnings, focus, veil, lighting });
+	useSweep(staged, lighting.light, lighting.reach, reducedMotion);
+	useRelease(gesture === "dragging", lighting.release);
+	useStickyHeads(staged, drawing.atlas);
+	useTrafficRest(surface, camera, gesture === "dragging");
+	useSceneArrival(surface, scene.presentation, props.onPresentation);
+	useAttention(lighting.resting, single, props.onAttention);
+	// Like the retained diagram, this pan-and-zoom surface needs a tab stop and
+	// camera keys. No interactive ARIA role describes it. Keep its section name
+	// without falsely declaring a button, grid, or other standard widget.
+	/* oxlint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */
+	return (
+		<section
+			data-slot="model-diagram"
+			data-revision={model.revision.digest}
+			data-scene={drawing.board}
+			aria-busy={props.pending}
+			tabIndex={0}
+			aria-label="Module diagram"
+			className={diagramClass(leaving)}
+			ref={attachViewport}
+			{...pointer}
+			onPointerLeave={tip.leave}
+			onWheel={tip.dismiss}
+			onKeyDown={onKeyDown}
+		>
+			<LeavingPart departure={leaving} at="announcement" />
+			{/* The picture inside is the transition's to write, never React's. */}
+			<CameraSurface
+				camera={camera}
+				size={drawing}
+				attach={setSurface}
+				gesture={gesture}
+				reducedMotion={reducedMotion}
+				marks={
+					surfaceMarks({ veiled: veil !== null, far, probing: lighting.mode }) +
+					presentingMark(presenting)
+				}
+			/>
+			<EmptyReading scene={scene} pending={props.pending} />
+			<ModelSubjectTip target={tip.shown} scene={scene} camera={camera} />
+			<ModelLineTip target={tip.shown} model={model} projection={projection} />
+			<LeavingPart departure={leaving} at="spinner" />
+			{rectangle !== null && <ModelSelectionRectangle rectangle={rectangle} />}
+		</section>
+	);
+	/* oxlint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */
+}
+
+/**
+ * Whether a scene has a picture: an empty coherent reading has none.
+ * @param drawing The scene's picture.
+ * @returns The picture, or null.
+ */
+function hasPicture(drawing: AcceptedScene["picture"]): AcceptedScene["picture"] | null {
+	return drawing.svg === "" ? null : drawing;
+}
+
+/**
+ * The surface's mark while a walkthrough is presented.
+ * @param presenting Whether one is.
+ * @returns The class, with the space before it, or nothing.
+ */
+function presentingMark(presenting: boolean): string {
+	return presenting ? " is-presenting" : "";
+}
+
+/**
+ * The diagram's classes. A picture on its way out takes no pick, and the tab stop stays.
+ * @param leaving Where the reader went, or null while they stay.
+ * @returns The class list.
+ */
+function diagramClass(leaving: Departure | null): string {
+	const base = "relative min-h-0 min-w-0 flex-1 overflow-hidden";
+	return leaving === null ? base : `${base} pointer-events-none`;
+}
+
+/**
+ * An empty coherent reading is a finished picture too. An unavailable one says why itself.
+ * @param props The scene and whether another reading is on its way.
+ * @param props.scene The scene on screen.
+ * @param props.pending Whether another reading is on its way.
+ * @returns The statement that nothing is visible, or nothing.
+ */
+function EmptyReading(props: { scene: AcceptedScene; pending: boolean }): JSX.Element | null {
+	const { scene, pending } = props;
+	if (hasPicture(scene.picture) !== null || scene.grammar === null || pending) return null;
+	return (
+		<output
+			data-slot="model-empty-diagram"
+			className="text-body text-muted-foreground absolute inset-0 p-8"
+		>
+			No modules are visible in this reading.
+		</output>
+	);
+}
+
+/**
+ * What a presented beat asks of the picture.
+ * @param scene The accepted scene.
+ * @returns The beat's focus, or no focus outside a presentation.
+ */
+function useSceneFocus(scene: AcceptedScene) {
+	const { presentation, projection, picture } = scene;
+	return useMemo(
+		() =>
+			beatFocus(
+				presentation === undefined
+					? null
+					: {
+							id: presentation.key,
+							subjects: [...projectedMarks(new Set(presentation.subjects), projection.connections)],
+						},
+				picture,
+				{ content: projection.content },
+			),
+		[presentation, projection, picture],
+	);
+}
+
+/**
+ * Light what a person pokes in the picture on screen.
+ * @param scene The accepted scene.
+ * @param selected The selected identities.
+ * @param leaving Whether the picture is on its way out.
+ * @returns The lighting, and the one drawn subject that the selection names.
+ */
+function useSceneLighting(scene: AcceptedScene, selected: ReadonlySet<string>, leaving: boolean) {
+	const { projection, picture, reading } = scene;
+	const { connections, content } = projection;
+	const single = soleSubject(selected, connections);
+	const peeked = usePeeked();
 	const lightingInput = useMemo(
 		() => ({
-			content: props.projection.content,
-			atlas: drawing.atlas,
-			selection: selected.size === 1 ? ([...selected][0] ?? null) : null,
-			peeked: NOTHING_PEEKED,
+			content,
+			atlas: picture.atlas,
+			selection: single,
+			peeked: { ...peeked, row: lineOf(peeked.row, connections) },
 			veil: null,
 			enabled:
-				props.presentation === undefined && selected.size <= 1 && props.grammar === "architecture",
+				scene.presentation === undefined &&
+				!leaving &&
+				(selected.size === 0 || single !== null) &&
+				reading.grammar === "architecture",
 		}),
-		[props.projection.content, drawing.atlas, selected, props.presentation, props.grammar],
+		[
+			content,
+			connections,
+			picture.atlas,
+			single,
+			peeked,
+			scene.presentation,
+			leaving,
+			selected,
+			reading.grammar,
+		],
 	);
-	const lighting = useLighting(lightingInput);
-	const tip = useSubjectTip({ drawing, camera });
-	const { dismiss: dismissTip, onHover: tipHover } = tip;
+	return { lighting: useLighting(lightingInput), single };
+}
+
+/**
+ * The tip over what the pointer rests on, moved by the same hand as the light.
+ * @param drawing The picture on the surface.
+ * @param camera The pane's camera.
+ * @param lighting The light on the picture.
+ * @returns The open tip, what to do as the pointer moves, and how it closes.
+ */
+function useSceneTip(
+	drawing: AcceptedScene["picture"],
+	camera: BoardCamera,
+	lighting: ReturnType<typeof useLighting>,
+) {
+	const { shown, onHover: tipHover, dismiss } = useSubjectTip({ drawing, camera });
 	const { onHover: lightHover, release } = lighting;
 	const onHover = useCallback(
 		(event: PointerEvent<HTMLElement>): void => {
@@ -203,10 +347,57 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 		[tipHover, lightHover],
 	);
 	const leave = useCallback((): void => {
-		dismissTip();
+		dismiss();
 		release();
-	}, [dismissTip, release]);
-	const selectArea = useCallback(
+	}, [dismiss, release]);
+	return { shown, onHover, dismiss, leave };
+}
+
+/**
+ * Let go of what the pointer rested on while a drag moves it from under the pointer.
+ * @param dragging Whether a drag is under way.
+ * @param release Let go.
+ */
+function useRelease(dragging: boolean, release: () => void): void {
+	useEffect(() => {
+		if (dragging) release();
+	}, [dragging, release]);
+}
+
+/**
+ * What the tip over a part of the scene says.
+ * @param props The part and the scene.
+ * @param props.target The part under the pointer, or null.
+ * @param props.scene The scene on screen.
+ * @param props.camera The pane's camera: a card seen from far says less, and its tip the rest.
+ * @returns The tip, or nothing.
+ */
+function ModelSubjectTip(props: {
+	target: TipTarget | null;
+	scene: AcceptedScene;
+	camera: BoardCamera;
+}): JSX.Element {
+	const { target, scene } = props;
+	const far = useCameraWith(props.camera, seenFromFar);
+	const appearance = scene.picture.appearances.find((one) => one.id === target?.id);
+	const tip = target === null ? null : subjectTip(scene.projection, target, appearance, far);
+	return <SubjectTipBox target={target} tip={tip} />;
+}
+
+/**
+ * Select the subjects a rectangle on the viewport meets.
+ * @param scene The accepted scene.
+ * @param camera The pane's camera.
+ * @param onSelectMany Told what the rectangle met.
+ * @returns The rectangle's handler.
+ */
+function useAreaSelection(
+	scene: AcceptedScene,
+	camera: BoardCamera,
+	onSelectMany: ModelDiagramProps["onSelectMany"],
+) {
+	const { projection, picture } = scene;
+	return useCallback(
 		(rectangle: DiagramBox, toggle: boolean): void => {
 			const pose = camera.view().camera;
 			const area = {
@@ -217,123 +408,118 @@ function ModelScene(props: ModelSceneProps): JSX.Element {
 			};
 			const known = new Set(
 				[
-					...props.projection.content.nodes,
-					...props.projection.content.edges,
-					...projectionSteps(props.projection),
+					...projection.content.nodes,
+					...projection.content.edges,
+					...projectionSteps(projection),
 				].map((subject) => subject.id),
 			);
-			const boxes = { ...drawing.atlas.regions, ...drawing.atlas.nodes, ...drawing.atlas.edges };
+			const boxes = { ...picture.atlas.regions, ...picture.atlas.nodes, ...picture.atlas.edges };
 			const ids = Object.entries(boxes)
 				.filter(([id, box]) => known.has(id) && intersects(box, area))
 				.map(([id]) => id);
 			onSelectMany(ids, toggle);
 		},
-		[camera, drawing.atlas, onSelectMany, props.projection],
+		[camera, picture.atlas, onSelectMany, projection],
 	);
-	const { pointer, gesture, rectangle, keyboard } = useDiagramGestures({
-		camera,
-		atlas: drawing.atlas,
-		onSelect,
-		onSelectArea: selectArea,
-		onHover,
-		dismissTip: leave,
-		openDown: open,
-	});
-	const onKeyDown = useCallback(
-		(event: KeyboardEvent<HTMLElement>): void => {
-			keyboard.onKeyDown?.(event);
-			if (event.defaultPrevented) return;
-			if (moveCameraByKey(event.key, camera, drawing, props.reducedMotion)) {
-				event.preventDefault();
-				lighting.release();
-			}
-		},
-		[keyboard, camera, drawing, props.reducedMotion, lighting],
+}
+
+/** What the viewer marks on the picture of a scene. */
+interface SceneMarks {
+	selected: ReadonlySet<string>;
+	warnings: ReadonlySet<string> | undefined;
+	focus: ReturnType<typeof useSceneFocus>;
+	veil: ReadonlySet<string> | null;
+	lighting: ReturnType<typeof useLighting>;
+}
+
+/**
+ * Keep the viewer's marks on the picture on screen.
+ * @param staged The picture on the surface.
+ * @param scene The accepted scene.
+ * @param marks What to mark.
+ */
+function useSceneMarks(
+	staged: ReturnType<typeof usePictureTransition>,
+	scene: AcceptedScene,
+	marks: SceneMarks,
+): void {
+	const { selected, warnings, focus, veil, lighting } = marks;
+	const { connections } = scene.projection;
+	const warned = useMemo(() => projectedMarks(warnings, connections), [warnings, connections]);
+	// Before the viewer's marks, so a line's group made to hold a warning is lit and veiled with the rest.
+	useLayoutEffect(() => {
+		if (staged !== null) markCodeWarnings(staged.root, warned);
+	}, [staged, warned]);
+	const attended = useMemo(
+		() => projectedMarks(subjectMarks(null, focus, [...selected]), connections),
+		[focus, selected, connections],
 	);
-	useLayoutEffect(() => {
-		const root = surface.current;
-		if (root === null) return;
-		if (installed.current !== drawing.svg) {
-			stagePicture(root, drawing.svg, clockOf(root.querySelector("svg")) ?? 0);
-			installed.current = drawing.svg;
-		}
-		const marked = projectedMarks(
-			subjectMarks(null, focus, [...selected]),
-			props.projection.connections,
-		);
-		const warned = projectedMarks(props.warnings, props.projection.connections);
-		markSubjects(root, marked);
-		markCodeWarnings(root, warned);
-		markVeil(root, veil ?? lighting.standing);
-		lightInk(root);
-	}, [
-		selected,
-		drawing.svg,
-		props.projection.connections,
-		props.warnings,
-		lighting.standing,
-		veil,
-		focus,
-	]);
-	useLayoutEffect(() => {
-		if (camera.room === null || props.presentation !== undefined) return;
-		const head = drawing.atlas.regions[props.projection.opened ?? ""];
-		if (!camera.handled()) camera.fit({ kind: "landing", content: drawing, head }, true);
-	}, [camera, drawing, props.presentation, props.projection.opened]);
+	useViewerMarks(staged, { attended, veil: veil ?? lighting.standing, reach: lighting.reach });
+}
+
+/**
+ * Say which subject the reader's attention rests on.
+ * @param resting The subject under the hand, or null.
+ * @param selected The selected subject, or null.
+ * @param onAttention Told each new subject.
+ */
+function useAttention(
+	resting: string | null,
+	selected: string | null,
+	onAttention: ModelDiagramProps["onAttention"],
+): void {
+	const subject = resting ?? selected;
 	useEffect(() => {
-		const root = surface.current;
-		return () => {
-			if (root !== null) stopTraffic(root);
-		};
-	}, []);
-	const far = useCameraWith(camera, seenFromFar);
-	usePresentationArrival(arrivalSurface, props.presentation ?? null, setSettled);
-	const { onPresentation, presentation } = props;
+		if (subject !== null) onAttention?.(subject);
+	}, [subject, onAttention]);
+}
+
+/**
+ * Tell a presentation when the surface has come to rest on its beat.
+ * @param surface The surface.
+ * @param beat The beat the accepted scene shows, if a presentation is running.
+ * @param onPresentation Told whether that beat has arrived.
+ */
+function useSceneArrival(
+	surface: HTMLElement | null,
+	beat: AcceptedScene["presentation"],
+	onPresentation: ModelDiagramProps["onPresentation"],
+): void {
+	const key = beat?.key ?? null;
+	const [settled, setSettled] = useState<string | null>(null);
+	usePresentationArrival(surface, key, setSettled);
 	useEffect(() => {
-		if (arrivalSurface === null || presentation === undefined) return undefined;
-		onPresentation?.({ key: presentation, arrived: settled === presentation });
+		if (surface === null || key === null) return undefined;
+		onPresentation?.({ key, arrived: settled === key });
 		return () => onPresentation?.(null);
-	}, [onPresentation, presentation, settled, arrivalSurface]);
-	// Like the retained diagram, this pan-and-zoom surface needs a tab stop and
-	// camera keys. No interactive ARIA role describes it. Keep its section name
-	// without falsely declaring a button, grid, or other standard widget.
-	/* oxlint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */
-	return (
-		<section
-			data-slot="model-diagram"
-			aria-busy={props.updating}
-			tabIndex={0}
-			aria-label="Module diagram"
-			data-revision={props.model.revision.digest}
-			className="relative min-h-0 min-w-0 flex-1 overflow-hidden"
-			ref={attachViewport}
-			{...pointer}
-			onKeyDown={onKeyDown}
-		>
-			<CameraSurface
-				camera={camera}
-				size={drawing}
-				attach={attach}
-				gesture={gesture}
-				reducedMotion={props.reducedMotion}
-				marks={
-					surfaceMarks({
-						veiled: veil !== null,
-						far,
-						probing: lighting.mode,
-					}) + (props.presentation === undefined ? "" : " is-presenting")
-				}
-			/>
-			{props.updating && (
-				<output className="text-body text-muted-foreground bg-background absolute top-2 right-2 rounded px-2 py-1">
-					Updating diagram…
-				</output>
-			)}
-			{rectangle !== null && <ModelSelectionRectangle rectangle={rectangle} />}
-			<ModelLineTip target={tip.shown} model={model} projection={props.projection} />
-		</section>
-	);
-	/* oxlint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */
+	}, [onPresentation, key, settled, surface]);
+}
+
+/**
+ * The drawn line that carries a subject.
+ * @param id A canonical identity, or nothing.
+ * @param connections The scene's relationship groups.
+ * @returns The line that joins a relationship, or what it was given.
+ */
+function lineOf<Subject extends string | null>(
+	id: Subject,
+	connections: ReturnType<typeof projectModel>["connections"],
+): Subject | string {
+	return connections.find(({ joins }) => joins.some((edge) => edge.id === id))?.line.id ?? id;
+}
+
+/**
+ * The one drawn subject a selection names. Picking a joined line selects each of its relationships.
+ * @param selected The selected canonical identities.
+ * @param connections The scene's relationship groups.
+ * @returns The subject, or null for no selection or for several subjects.
+ */
+function soleSubject(
+	selected: ReadonlySet<string>,
+	connections: ReturnType<typeof projectModel>["connections"],
+): string | null {
+	const drawn = new Set([...selected].map((id) => lineOf(id, connections)));
+	return drawn.size === 1 ? ([...drawn][0] ?? null) : null;
 }
 
 /**
