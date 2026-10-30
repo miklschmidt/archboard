@@ -1,3 +1,4 @@
+import "#tests/runtime/operations/proposals/use-direct-git.ts";
 import { afterEach, expect, test } from "bun:test";
 import { cpSync, readFileSync } from "node:fs";
 import { join } from "node:path";

@@ -1,10 +1,11 @@
+import "#tests/runtime/operations/proposals/use-direct-git.ts";
 import { afterEach, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { BOARD_LOCK_MS } from "@archboard/timing";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/board/store-read";
 import { editArchitectureModule, recoverArchitectureModel } from "@archboard/board/store-write";
+import { writeInProcess } from "#tests/runtime/operations/proposals/fixture.ts";
 import {
 	fixture,
 	structureIntent,
@@ -27,23 +28,9 @@ test("interrupted proposal creation resumes one retained checkpoint and never in
 			{ type: "add-module" as const, module: { name: "Cache", kind: "service", order: 40 } },
 		],
 	};
-	const file = join(root, "request.json");
-	writeFileSync(file, JSON.stringify(request));
 	const gateway = readFileSync(join(vault, "gateway.module.json"));
-	const child = Bun.spawn(
-		[
-			process.execPath,
-			"--preload",
-			fileURLToPath(import.meta.resolve("#tests/runtime/operations/model-edit/crash-preload.ts")),
-			fileURLToPath(import.meta.resolve("#tests/runtime/operations/model-edit/crash-runner.ts")),
-			vault,
-			file,
-		],
-		{ env: { ...process.env, ARCHBOARD_EDIT_CRASH: "prepared" }, stdout: "pipe", stderr: "pipe" },
-	);
-	const stdout = new Response(child.stdout).text(),
-		stderr = new Response(child.stderr).text();
-	expect(await child.exited, `${await stdout} ${await stderr}`).toBe(86);
+	const { exitCode, output } = await writeInProcess(root, vault, request, "prepared");
+	expect(exitCode, output).toBe(86);
 	Date.now = () => now() + BOARD_LOCK_MS.lease;
 	const blocked = readArchitectureModel(vault);
 	expect(blocked).toMatchObject({ success: false, code: "RECOVERY_REQUIRED" });

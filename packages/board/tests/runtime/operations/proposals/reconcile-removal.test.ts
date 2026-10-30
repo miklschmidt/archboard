@@ -1,3 +1,4 @@
+import "#tests/runtime/operations/proposals/use-direct-git.ts";
 import { afterEach, expect, test } from "bun:test";
 import { editArchitectureModule } from "@archboard/board/store-write";
 import { fixture, disposeFixtures, git } from "#tests/runtime/operations/model-edit/fixture.ts";
@@ -61,4 +62,25 @@ test("settlement accepts a changed step deletion without leaving a missing sibli
 	expect(
 		(await selected(vault, draft.target.state!)).collections[0]!.flows[0]!.steps,
 	).toMatchObject([{ id: "Shop#Send" }]);
+});
+
+test("a changed collection keeps its identity when its predecessor removes it", async () => {
+	const { vault } = behaviorFixture();
+	const draft = await proposal(vault, "Named behavior", "Current", [
+		{ type: "edit-collection", collection: "Behavior", name: "Documented behavior" },
+	]);
+	const result = await editArchitectureModule(vault, {
+		...(await request(vault)),
+		changes: [{ type: "remove-collection", collection: "Behavior" }],
+	});
+	expect(result).toMatchObject({ success: true, reconciliation: true });
+	const following = await selected(vault, draft.target.state!);
+	expect(following.collections).toEqual([
+		expect.objectContaining({ id: "Behavior", name: "Documented behavior" }),
+	]);
+	expect(following.selectedState?.standing?.issues).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({ subject: "Shop#Behavior", kind: "deleted-and-changed" }),
+		]),
+	);
 });

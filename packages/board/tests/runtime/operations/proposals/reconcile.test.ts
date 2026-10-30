@@ -1,4 +1,7 @@
+import "#tests/runtime/operations/proposals/use-direct-git.ts";
 import { afterEach, expect, test } from "bun:test";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/board/store-read";
 import { editArchitectureModule } from "@archboard/board/store-write";
 import { request, selected, proposal } from "#tests/runtime/operations/proposals/fixture.ts";
@@ -7,6 +10,10 @@ afterEach(disposeFixtures);
 
 test("a predecessor edit publishes safe inherited fields through the complete dependent family", async () => {
 	const { vault } = fixture();
+	writeFileSync(
+		join(vault, "empty.flows.json"),
+		JSON.stringify({ schemaVersion: 1, id: "Empty", name: "Empty", flows: [] }),
+	);
 	const first = await proposal(vault, "Queued", "Current", [
 		{ type: "edit-module", subject: "Shop#Gateway", set: { description: "Queues work." } },
 	]);
@@ -29,6 +36,7 @@ test("a predecessor edit publishes safe inherited fields through the complete de
 		responsibility: "Batches queued work",
 	});
 	expect(following.selectedState).not.toHaveProperty("standing");
+	expect(following.collections.find((collection) => collection.id === "Empty")?.flows).toEqual([]);
 	expect(await readArchitectureCheckpoint(vault, first.checkpoint.id)).toMatchObject({
 		success: true,
 		modules: expect.arrayContaining([

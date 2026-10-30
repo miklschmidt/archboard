@@ -1,3 +1,4 @@
+import "#tests/runtime/operations/proposals/use-direct-git.ts";
 import { afterEach, expect, test } from "bun:test";
 import { readArchitectureCheckpoint } from "@archboard/board/store-read";
 import { editArchitectureModule } from "@archboard/board/store-write";

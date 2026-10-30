@@ -1,11 +1,9 @@
+import "#tests/runtime/operations/proposals/use-direct-git.ts";
 import { afterEach, expect, test } from "bun:test";
-import { writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { watchArchitectureModel } from "@archboard/board/store-read";
 import { editArchitectureModule } from "@archboard/board/store-write";
 import { fixture, disposeFixtures, git } from "#tests/runtime/operations/model-edit/fixture.ts";
-import { request, proposal } from "#tests/runtime/operations/proposals/fixture.ts";
+import { request, proposal, writeInProcess } from "#tests/runtime/operations/proposals/fixture.ts";
 import type { ArchitectureEvent } from "@archboard/board/model";
 
 afterEach(disposeFixtures);
@@ -34,8 +32,6 @@ test("another process announces an archive-only correction for its addressed log
 			},
 		],
 	};
-	const file = join(root, "request.json");
-	writeFileSync(file, JSON.stringify(intent));
 	let receive: ((event: ArchitectureEvent) => void) | undefined;
 	const changed = new Promise<ArchitectureEvent>((resolve) => {
 		receive = resolve;
@@ -45,18 +41,8 @@ test("another process announces an archive-only correction for its addressed log
 			receive?.(event);
 	});
 	try {
-		const child = Bun.spawn(
-			[
-				process.execPath,
-				fileURLToPath(import.meta.resolve("#tests/runtime/operations/model-edit/crash-runner.ts")),
-				vault,
-				file,
-			],
-			{ stdout: "pipe", stderr: "pipe" },
-		);
-		const stdout = new Response(child.stdout).text(),
-			stderr = new Response(child.stderr).text();
-		expect(await child.exited, `${await stdout} ${await stderr}`).toBe(0);
+		const { exitCode, output } = await writeInProcess(root, vault, intent);
+		expect(exitCode, output).toBe(0);
 		expect(await changed).toMatchObject({
 			type: "architecture_changed",
 			vault,
