@@ -212,6 +212,7 @@ test("historical corrections refresh the lasting reading and expose exact origin
 	expect(
 		await browser.eval<number>(`document.querySelectorAll('[data-correction-checkpoint]').length`),
 	).toBe(0);
+	await browser.run(["click", '[data-destination="history"]']);
 	await browser.run(["click", '[data-slot="model-comparison-selector"]']);
 	await pollUntil(
 		() =>

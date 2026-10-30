@@ -10,11 +10,17 @@ import { useMemo, type JSX, type ReactNode } from "react";
 import { Separator } from "@archboard/ui-kit/components";
 import {
 	type PaneChrome,
+	type PaneColumn,
 	PaneChromeContext,
 } from "#ui/components/semantic-board-canvas/PaneChrome.tsx";
 import { PaneControls, PaneLetter } from "#ui/components/shell/PaneControls.tsx";
 import { useKept } from "#ui/hooks/shell/use-kept.ts";
-import type { ShellActions, ShellPane, ShellPresentation } from "#ui/rules/shell/contracts.ts";
+import type {
+	PaneOpening,
+	ShellActions,
+	ShellPane,
+	ShellPresentation,
+} from "#ui/rules/shell/contracts.ts";
 import { paneLetter } from "#ui/rules/shell/pane-letters.ts";
 import { PresentationBar } from "#ui/components/shell/PresentationBar.tsx";
 import { RecoveryMessage } from "#ui/components/shell/RecoveryMessage.tsx";
@@ -23,6 +29,8 @@ import { RecoveryMessage } from "#ui/components/shell/RecoveryMessage.tsx";
 interface PaneStagesProps {
 	panes: readonly ShellPane[];
 	activePaneId: string;
+	/** The places in the left column that the focused pane fills. */
+	column: PaneColumn;
 	/** The pane presented fullscreen, or null in the workspace. */
 	presentation: ShellPresentation | null;
 	/** The key that starts and ends voice, for the presentation bar. */
@@ -94,7 +102,7 @@ function PresentationChrome(props: PresentationChromeProps): JSX.Element | null 
  * @returns The stage root.
  */
 function PaneStages(props: PaneStagesProps): JSX.Element {
-	const { presentation, panes, actions, attachStage, voiceControls, activePaneId } = props;
+	const { presentation, panes, actions, attachStage, voiceControls, activePaneId, column } = props;
 	const presented = presentation ? paneById(panes, presentation.paneId) : null;
 	return (
 		<div
@@ -117,6 +125,7 @@ function PaneStages(props: PaneStagesProps): JSX.Element {
 						letter={paneLetter(index)}
 						paneCount={panes.length}
 						active={pane.status.paneId === activePaneId}
+						column={column}
 						framed={panes.length > 1 && presented === null}
 						first={index === 0 || presented !== null}
 						hidden={hiddenBy(presentation, pane.status.paneId)}
@@ -166,6 +175,7 @@ interface PaneStageProps {
 	/** How many panes share the centre. */
 	paneCount: number;
 	active: boolean;
+	column: PaneColumn;
 	/** Draw the focus ring on the active stage: only while two panes share the centre. */
 	framed: boolean;
 	first: boolean;
@@ -182,9 +192,9 @@ interface PaneStageProps {
  * @returns The mounted pane.
  */
 function PaneStage(props: PaneStageProps): JSX.Element {
-	const { actions, letter, paneCount, active } = props;
+	const { actions, letter, paneCount, active, column } = props;
 	const pane = useKept(props.pane, samePane);
-	const { paneId } = pane.status;
+	const { paneId, repository } = pane.status;
 	const chrome = useMemo<PaneChrome>(
 		() => ({
 			letter: paneCount > 1 ? <PaneLetter letter={letter} active={active} /> : null,
@@ -194,8 +204,14 @@ function PaneStage(props: PaneStageProps): JSX.Element {
 			notice: null,
 			shared: paneCount > 1,
 			active,
+			column: active ? column : null,
+			openBeside:
+				repository === null
+					? null
+					: (model: string, reading: PaneOpening): void =>
+							actions.openBeside(model, repository, reading),
 		}),
-		[pane, letter, paneCount, active, actions],
+		[pane, letter, paneCount, active, actions, column, repository],
 	);
 	return (
 		<>

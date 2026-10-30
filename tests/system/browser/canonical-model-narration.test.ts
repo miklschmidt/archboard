@@ -1,4 +1,4 @@
-import { openModelSidebar } from "./support/canonical-page.ts";
+import { startModelWalkthrough } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -51,17 +51,7 @@ test("canonical narration follows the captured walkthrough in its own pane", asy
 		"both canonical panes",
 		WAIT,
 	);
-	await openModelSidebar(browser, "board", PANE);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`(() => { const choice = document.querySelector('[data-walkthrough-id="Shop#Tour"]'); return choice !== null && choice.getBoundingClientRect().height > 0; })()`,
-			),
-		Boolean,
-		"the authored walkthrough choice",
-		WAIT,
-	);
-	await browser.run(["click", `${PANE} [data-walkthrough-id="Shop#Tour"]`]);
+	await startModelWalkthrough(browser, "Shop#Tour");
 	const atBeat = (index: number) =>
 		pollUntil(
 			() =>

@@ -1,4 +1,9 @@
-import { startModelWalkthrough, refreshModel } from "./support/canonical-page.ts";
+import {
+	chooseFound,
+	openRepository,
+	startModelWalkthrough,
+	refreshModel,
+} from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -12,7 +17,6 @@ import {
 	registerServerBase,
 	serverTestEnvironment,
 } from "./support/agent-browser.ts";
-import { pickModelChoice as pick } from "./support/model-choice.ts";
 import { serverPath } from "./support/navigator-support.ts";
 import { installedNavigation, migrationNavigation } from "./support/migrated-navigation.ts";
 
@@ -53,7 +57,7 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 		"the restored pane registration",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="repository-model-open"]']);
+	await openRepository(browser, "installed-navigation");
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -63,11 +67,7 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 		"the current model after leaving the original URL",
 		WAIT,
 	);
-	await pick(
-		browser,
-		'[data-slot="preview-bookmark-selector"]',
-		'[data-preview-bookmark="Shop/System#Storage"]',
-	);
+	await chooseFound(browser, "Storage", "Shop/System#Storage");
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -85,11 +85,7 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 			`document.querySelector('[data-slot="model-migration-preview"]') === null`,
 		),
 	).toBe(true);
-	await pick(
-		browser,
-		'[data-slot="preview-address-selector"]',
-		'[data-preview-address="Store@Before"]',
-	);
+	await chooseFound(browser, "Store@Before", "Store@Before");
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -125,15 +121,6 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 		),
 	).toEqual(["Shop/System#Api"]);
 	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="repository-model-open"]') !== null`,
-			),
-		Boolean,
-		"the installed model in the repository navigator",
-		WAIT,
-	);
-	await pollUntil(
 		readPanes,
 		(result) =>
 			result.body.panes.some(
@@ -144,7 +131,7 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 		"the reloaded pane registration",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="repository-model-open"]']);
+	await openRepository(browser, "installed-navigation");
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -182,11 +169,7 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 		WAIT,
 	);
 	await browser.run(["click", '[data-slot="semantic-presentation-leave"]']);
-	await pick(
-		browser,
-		'[data-slot="preview-bookmark-selector"]',
-		'[data-preview-bookmark="Shop/System#Storage"]',
-	);
+	await chooseFound(browser, "Storage", "Shop/System#Storage");
 	const api = fixture.model.modules.find((module) => module.id === "Shop/System#Api")!;
 	const { file, ...content } = api;
 	writeFileSync(join(fixture.vault, file), JSON.stringify({ ...content, outgoing: [] }));

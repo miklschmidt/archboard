@@ -15,6 +15,7 @@ import {
 	registerServerBase,
 	serverTestEnvironment,
 } from "./support/agent-browser.ts";
+import { openDestination } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -81,9 +82,9 @@ test("a live proposal update preserves its open walkthrough until explicit resta
 		`${server.base}/?modelA=Shop&stateA=${encodeURIComponent(created.target.state!)}`,
 	]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
+	await openDestination(browser, "walkthroughs");
 	await pollUntil(
-		() =>
-			browser.eval<boolean>(`document.querySelector('[data-slot="model-walkthroughs"]') !== null`),
+		() => browser.eval<boolean>(`document.querySelector('[data-walkthrough-id]') !== null`),
 		Boolean,
 		"the proposed narrative",
 		WAIT,

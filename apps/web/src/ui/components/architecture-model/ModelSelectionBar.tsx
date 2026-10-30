@@ -3,30 +3,28 @@ import { Button } from "@archboard/ui-kit/components";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 
 /**
- * The selected set remains visible without changing the architecture reading.
- * @param props The selection and its clearing action.
+ * What can be done with the selection, without changing the size of the picture.
+ * @param props The selection and what it can do.
  * @param props.selection Canonical selected identities.
- * @param props.focus The captured focused identities, or no focus.
  * @param props.onFocus Changes the focused reading.
  * @param props.canFocus Whether selected subjects belong to architecture.
  * @param props.architectural Whether structural focus actions apply.
- * @param props.children Additional reading controls.
- * @returns Stable selection and focus controls without resizing the canvas.
+ * @param props.children Additional actions.
+ * @returns The actions.
  */
 function ModelSelectionBar(props: {
 	selection: ModelSelection;
 	architectural: boolean;
 	canFocus: boolean;
 	children?: ReactNode;
-	focus: readonly string[] | null;
 	onFocus: (ids: readonly string[] | null) => void;
 }): JSX.Element {
-	const { selection, focus, onFocus } = props;
+	const { selection, onFocus } = props;
 	const focusSelection = useCallback(
 		(): void => onFocus([...selection.ids]),
 		[onFocus, selection.ids],
 	);
-	const clearFocus = useCallback((): void => onFocus(null), [onFocus]);
+	const count = selection.ids.size;
 	return (
 		<div
 			data-slot="model-selection-bar"
@@ -34,35 +32,23 @@ function ModelSelectionBar(props: {
 		>
 			<output
 				data-slot="model-selection-count"
-				data-count={selection.ids.size}
+				data-count={count}
+				hidden={count === 0}
 				className="text-control"
 			>
-				{selection.ids.size} selected
+				{count} selected
 			</output>
-			{props.architectural && (
+			{props.architectural && count > 0 && (
 				<Button
 					data-slot="model-focus"
 					variant="outline"
 					size="sm"
-					disabled={selection.ids.size === 0 || !props.canFocus}
+					disabled={!props.canFocus}
 					onClick={focusSelection}
 				>
 					Focus
 				</Button>
 			)}
-			{props.architectural && focus !== null && (
-				<Button data-slot="model-clear-focus" variant="outline" size="sm" onClick={clearFocus}>
-					Clear focus ({focus.length})
-				</Button>
-			)}
-			<Button
-				variant="ghost"
-				size="sm"
-				onClick={selection.clear}
-				disabled={selection.ids.size === 0}
-			>
-				Clear selection
-			</Button>
 			{props.children}
 		</div>
 	);

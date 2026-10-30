@@ -21,7 +21,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { initializeSource, fixtureGit, selectReading } from "./support/canonical-model.ts";
-import { openModelSidebar } from "./support/canonical-page.ts";
+import { openModelSidebar, openRepository } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -308,14 +308,7 @@ test("foreign references preserve explicit addresses and recover pinned architec
 		"the reloaded pane registration",
 		WAIT,
 	);
-	const shopOpen = `[data-slot="repository-model-open"][title=${JSON.stringify(`Open ${before.body.manifest.name}`)}]`;
-	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector(${JSON.stringify(shopOpen)}) !== null`),
-		Boolean,
-		"the source repository action",
-		WAIT,
-	);
-	await browser.run(["click", shopOpen]);
+	await openRepository(browser, "github.com/acme/shop");
 	await pollUntil(
 		() => browser.eval<string | null>(`new URLSearchParams(location.search).get('modelA')`),
 		(model) => model === "Shop",

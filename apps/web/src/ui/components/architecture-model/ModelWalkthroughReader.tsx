@@ -1,6 +1,5 @@
 import { ModelWalkthroughContext } from "#ui/state/architecture-model/presentation.ts";
 import {
-	Activity,
 	useMemo,
 	useCallback,
 	useState,
@@ -77,12 +76,12 @@ function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
 		setSession({ source, arrival, request: null });
 		onPresentationEnd?.();
 	}, [source, arrival, onPresentationEnd]);
-	const active = request !== null;
-	const context = useMemo(() => ({ select, active }), [select, active]);
+	const context = usePlayback(request, select, leave);
 	return (
 		<ModelWalkthroughContext value={context}>
 			{props.chrome}
-			<Activity mode={request === null ? "visible" : "hidden"}>{props.children}</Activity>
+			{/* The reading hides itself, so the left column it owns stays while this plays. */}
+			<div className={context.active ? "hidden" : "contents"}>{props.children}</div>
 			{request !== null && model !== undefined && (
 				<CapturedWalkthrough
 					key={request.id}
@@ -94,6 +93,34 @@ function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
 				/>
 			)}
 		</ModelWalkthroughContext>
+	);
+}
+
+/**
+ * What a reading hears of the playback.
+ * @param request The presentation that plays, or null.
+ * @param select Start a walkthrough.
+ * @param leave End the presentation.
+ * @returns The context of the playback.
+ */
+function usePlayback(
+	request: PlaybackRequest | null,
+	select: (walkthrough: string) => void,
+	leave: () => void,
+) {
+	const active = request !== null;
+	const current = request?.walkthrough ?? null;
+	return useMemo(
+		() => ({
+			select,
+			/** Leaving is safe at any time, so a reading need not ask whether anything plays. */
+			leave: (): void => {
+				if (active) leave();
+			},
+			active,
+			current,
+		}),
+		[select, leave, active, current],
 	);
 }
 

@@ -40,10 +40,10 @@ depth, faces and wordmark have moved on from the image, and
 - Pair a neutral sans serif with monospaced secondary text for identifiers,
   paths, versions, and timing, and set a name that titles a region in the
   display face.
-- Use a board navigator on the left (see [The navigator](#the-navigator)).
-  Put one sidebar beside the picture of each pane for the board and the
+- Use a left column for navigation (see [The left column](#the-left-column)).
+  Put one sidebar beside the picture of each pane for the open scope and the
   selection (see [The pane sidebar](#the-pane-sidebar)). Put the agent in one
-  dock at the foot of the navigator (see [The agent](#the-agent)), so nothing
+  dock at the foot of the column (see [The agent](#the-agent)), so nothing
   runs under the panes. Show the conversation beside the panes only on
   request. Each region must earn the space it takes.
 
@@ -59,7 +59,7 @@ The reference introduces three product additions worth building:
 - A shell inspector for the selected element and its persisted code binding.
 - A bottom agent surface that presents real agent state and `doing` data. This
   surface shipped as the agent bar (TASK-302) and is now the agent dock at the foot of
-  the navigator.
+  the left column.
 - A non-persistent focus mode for the architecture path connected to the
   selected element.
 - A lazy navigator preview that depicts the real current board scene without
@@ -87,6 +87,12 @@ state:
   toolset: nobody draws on a board here.
 
 ## The pane sidebar
+
+Revised 2026-10-30 (TASK-559.05). Navigation and reading controls left the sidebar
+for the left column and the pane header. The sidebar holds no way to another place.
+Its list of parts selects a part of the open scope and moves the reader nowhere.
+TASK-559.06 replaces this sidebar with the right panel of
+[the reader redesign](reader-redesign.md), which is absent until a selection.
 
 Revised 2026-09-17 (TASK-249), 2026-09-30 (TASK-383), 2026-10-03
 (TASK-388), 2026-10-04 (TASK-390) and 2026-10-06 (TASK-368.09, TASK-369.07). The generated reference above places selection details in a column
@@ -245,9 +251,7 @@ docks it again. A sidebar that is away is nowhere: it leaves no strip, no row of
 icons and no empty column. A pane presented fullscreen shows the picture without
 its sidebar. There is no strip above the picture.
 
-The search for a part sits above the tabs. Its shortcut, Ctrl or Command with
-Shift and K, shows an away sidebar in the pane that has focus and takes focus in
-the field. Ctrl or Command with Shift and F is the shell's and presents the pane.
+Ctrl or Command with Shift and F is the shell's and presents the pane.
 
 The sidebar eases in and out once. A docked column takes its width over 220 ms,
 on the curve of the conversation's slide, while its panel, held at its own width,
@@ -262,8 +266,7 @@ opens at the top of it and arrives with a 120 ms fade. The durations are
 goes at once.
 
 A presented walkthrough steps the sidebar aside. While it lasts the control in the
-header is held and says so, and neither it nor the search shortcut shows or hides
-the sidebar.
+header is held and says so, and it does not show or hide the sidebar.
 
 A presented walkthrough (TASK-250, TASK-392) is the picture and one plate laid over its
 foot, with the sidebar stepped aside. The plate is as wide as the pane less the margin it
@@ -390,87 +393,77 @@ While the content of the page is narrower than 860 px, as in a pane that shares
 the centre, the view and the subjects of a step stand under its words. The
 groups of a part and the board that it opens stand under its responsibility.
 
-## The navigator
+## The left column
 
-Revised 2026-09-23 (TASK-302) and 2026-09-30 (TASK-384). The board strip
-became a navigator that stays navigable at a few hundred boards without anybody
-filing them by hand. TASK-384 put every row on one grid.
-[The navigator's structure](navigator-structure.md) measures the tree before
-that change and says why it is drawn this way.
+Revised 2026-10-30 (TASK-559.05). The left column replaces the tree of boards.
+[The reader redesign](reader-redesign.md) records why. The column is 320 px wide
+and lists where to go. The picture shows the place, and the right side explains
+the selected thing. From the top, the column holds the wordmark, Find, the
+repository switcher, the destinations and the agent dock.
 
-![The navigator: a drill hierarchy with a board's variants, two panes on
-two boards, folders with nested drafts, and a
-filter](assets/operator-shell-navigator.png)
+![The left column at 1920×1080: Find, the repository switcher, the destinations
+with the Modules tree open on a module, and Talk at the
+foot](assets/operator-shell-navigator.png)
 
-The image holds rendered captures at 1920×1080, not mockups. From the left:
-the dogfood vault reading `Board rasterizer` (light), the dogfood vault with
-pane A on `Archboard` and pane B on `Voice coordinator` (dark), a vault with
-folders and nested drafts in two panes with agents at work (light), and a
-filter that finds variants by name (dark).
-
-- **Where a board sits is decided by what the boards say**, never by activity,
-  focus or recency. `/` folders in a name come first. Then comes the board
-  that it drills up from (a container's up link, else the closest coarser board
-  that drills down to it). A container link that runs down the levels counts as
-  a down link. Then comes name order that reads numbers as numbers. A vault with
-  no drill links is one alphabetical list. The order never moves under the
-  pointer.
+- **The reader of the focused pane fills the column.** The shell owns the frame
+  and holds no model knowledge. The reader of the focused pane puts Find and the
+  destinations in the frame, so the column changes when focus changes. The other
+  pane keeps its own path in its header.
+- **Find** reaches anything a reading can open: modules by name, code path or
+  words, flows, walkthroughs, bookmarks and former addresses. An exact name or
+  path comes first. Ctrl K or Command K takes focus in the field. Enter opens,
+  Alt and Enter opens beside, and Escape clears the field and then leaves it.
+- **The repository switcher** names the repository of the focused pane. While
+  two panes are open, it also shows the pane letter. Its list opens in the
+  column, in place of the destinations. A chevron on a row lists the checkouts
+  of that repository, and the field finds a repository or a checkout by name or
+  path, so the list stays usable with hundreds of checkouts. Enter opens the
+  first row, and Alt opens it beside. Escape clears the field and then closes the
+  list. A pane that reads no repository keeps the list open.
+- **The destinations** are `Modules`, `Flows`, `Walkthroughs` and `History`.
+  `Flows` and `Walkthroughs` show a count for the open scope. A retained original
+  has no `History`. A reading that fails offers `History` alone, so the reader
+  can go on to a reading that opens.
+- **`Modules` is a tree of the containment forest.** It opens the path to the
+  open scope and the branches that the reader opened. The ancestors of the open
+  row stick to the top while the column scrolls. Siblings sort by code path.
+  Unbound modules come last, and ties use authored order. A chain of modules with
+  one part each folds into one row, and the crumbs show each step.
+- **`Flows` and `Walkthroughs` stay open while the reader walks them.** Relevant
+  entries come first. A scope with none offers `All flows (72)` style access. A
+  flow is chosen first, and `Sequence` or `Flowchart` second.
+- **`History` lists proposals first, then states, with their checkpoints folded.**
+  Its rows load only when it opens, and a click carries the picture to that
+  record. The comparison choice lives here. The state chip in the header opens
+  `History`.
 - **One grid.** Every row is four columns placed by its depth alone: the
-  disclosure, the marker, the name and the facts. Each depth moves a row 16 px
-  to the right, one disclosure column, so a row's disclosure sits under its
-  parent's marker. A guide runs down from every open row, through the middle
-  of its disclosure. A board or folder row is 36 px for one line of name, and a
-  variant or Earlier row 30 px. The filter's icon
-  and the lamps of Working now sit in the marker column of the top rows, and
-  their text starts where the names of the top rows start.
-- **One row per board.** The row shows the board's mark, its full name, and
-  facts about the whole board: how many drafts it has, that nothing it
-  describes is built, and the pane letters while none of its variants is
-  listed. A long name wraps to a second line, then ends in an ellipsis.
-  Hovering the name shows the whole name and the board's level, and the row
-  says the level to assistive technology. The header names the level of the
-  board being read.
-  A board that cannot be read says why under its name.
-- **A board's variants sit one depth in, before the boards it drills down
-  to.** A mark says each variant's lifecycle: a check for current, a branch for
-  a draft, a clock for historical and an archive box for shelved. A variant's
-  name is smaller and lighter than a board's. The variant the board's name
-  opens comes first, then the other live variants. A draft nests under the
-  variant it was derived from, so the variants read as a timeline: a line
-  through the variant the board's name opens and its history, and a branch off
-  it for each draft. The historical and
-  shelved variants wait behind one Earlier row, newest first. While a filter
-  is on, the variants it finds are listed directly under their board, with no
-  Earlier row. The header draws the same lifecycle mark before the variant it
-  names (`src/ui/variant-lifecycle`). A board lists its
-  variants while it has more than one. A board has one disclosure. Opening it lists its variants
-  and the boards it drills down to together.
-- **The tree says what each pane shows.** The way to every pane's reading is
-  open. While two panes are open, each pane letter sits on exactly one row:
-  the variant's row where it is listed, else the board's row. One row is
-  selected, the one the active pane shows. It takes the reading tone, and its name keeps the foreground colour. The tree
-  draws its levels with rails and elbows, and the line from the root to the
-  selected row is lit in Gold Mark. A row under the pointer takes half the
-  reading tone and no lit line, so it never looks selected.
-  The pane sidebar marks its choices the same way. The active pane's board
-  sets its name in semibold.
-- **Finding is the filter**: Ctrl K, `/`, or typing in the tree. It keeps tree
-  order, dims the boards a match sits under, marks the matched letters, and
-  counts what it found. Enter opens, Alt opens beside, Escape clears.
-- **The tree is one tab stop** with the keys of a tree: Right opens a closed
-  row, then steps in. Left closes an open row, then steps out. If the person
-  is not in the navigator and a pane moves, the navigator reveals the row it
-  moved to.
-- **Working now** at the navigator's foot lists the boards agents are writing
-  or claiming, in the order they started, with what each said it is doing. In
-  the tree, a lamp on a board's mark says an agent works on it, and a faint
-  ring on a closed row says an agent works inside it.
+  disclosure, the marker, the name and the facts. Each depth moves a row 16 px to
+  the right. A row is 28 px high. One row is lit, the row of the open scope. A row
+  under the pointer takes half the reading tone and no lit line, so it never looks
+  selected.
+- **Each tree is one tab stop** with the keys of a tree. Right opens a closed
+  row, then steps in. Left closes an open row, then steps out. Enter opens the
+  row, Alt and Enter opens it beside, and typing goes on to Find.
+- **Every move has a key that needs no tree**, so a presented pane keeps them.
+  Backspace goes up, or from a flow back to the structure. `[` and `]` walk a
+  selected card through its siblings, or else the open module, the flows or the
+  steps of a walkthrough. Enter opens the selected card, or else selects the first
+  card of the open module. `F` focuses the selection and clears a focus. `0` fits
+  the whole picture.
+
+The header of a pane holds the crumbs, the code path of the open module, the state
+chip and `Diagram | About`. `Bookmarks`, `Former addresses`, `Refresh` and the
+comparison menu are not in the first surface. Find reaches bookmarks and former
+addresses, and `History` holds the comparison. `Refresh` appears only when a read
+failed or the live feed is not healthy, because the feed keeps a reading current.
+A retained original is the exception, because no live feed serves it. Its header
+keeps its state, bookmarks, former addresses and `Refresh`.
 
 ## The agent
 
 Revised 2026-09-23 (TASK-302), 2026-09-29 (TASK-373) and 2026-10-11 (TASK-319). The collapsible workbench, its tabs, its session
 column and the Agent settings dialog are gone. The agent is one dock at the
-foot of the navigator. When the person asks, and only then, it is also one
+foot of the left column. When the person asks, and only then, it is also one
 conversation beside the panes:
 
 ![The agent bar and the conversation, finished and
@@ -478,9 +471,9 @@ working](assets/operator-shell-agent.png)
 
 Rendered captures at 1920×1080: a finished turn in the light theme, a turn at
 work in the dark theme. They predate the dock (TASK-373): the bar under the panes
-that they show is now the dock at the foot of the navigator.
+that they show is now the dock at the foot of the left column.
 
-- **The agent dock** sits in the navigator's column, so it takes no height
+- **The agent dock** sits in the left column, so it takes no height
   from the panes. Its line says in one phrase what
   the agent is doing: the current step of the plan, else the latest step. The
   line also says for how long, how far the agent is through its plan, what is
@@ -518,7 +511,7 @@ that they show is now the dock at the foot of the navigator.
   only, so a turn of the coordinator never makes the agent look busy. A new voice
   start replaces the coordinator, and the turns of the earlier one leave with it.
 - **The voice is read where its words are.** While the person wants subtitles and a
-  voice is live, the voice is not in the agent dock at the navigator's foot. It is
+  voice is live, the voice is not in the agent dock at the foot of the left column. It is
   in a capsule over the picture of the pane it runs for, with the orb in its round
   left end, its word and its words, and mute and the subtitles control as two keys
   that make its right end, and the dock's key reads End voice. Turning subtitles

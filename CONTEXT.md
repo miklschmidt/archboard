@@ -36,7 +36,9 @@ The reader derives incoming connections and a complete relationship list.
 Continuing relationships keep their identities through edits and endpoint changes.
 An explicit removal and addition declare a replacement.
 
-Authored order controls sibling modules, relationships, and ordered collections.
+The `Modules` tree sorts sibling modules by code path, with unbound modules last and authored order for ties.
+A code path never reparents a module.
+Authored order controls relationships and ordered collections.
 Stable identities resolve equal positions deterministically.
 The renderer chooses geometry.
 A caller never stores hand-adjusted layout as architecture.

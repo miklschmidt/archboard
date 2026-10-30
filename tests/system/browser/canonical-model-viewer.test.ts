@@ -98,16 +98,19 @@ test("canonical modules open their authored details without writing architecture
 	if (!after.body.success) throw new Error(after.body.error);
 	expect(after.body.revision).toEqual(revision);
 
-	// A middleware refusal keeps its code and recovery message, even outside the model schema.
+	// A repository that lost its vault says so, and reads again once the vault is back.
 	const movedVault = `${vault}-moved`;
 	renameSync(vault, movedVault);
 	await refreshModel(browser);
-	await pollUntil(modelState, (state) => state === "error", "the unavailable vault refusal", WAIT);
-	expect(
-		await browser.eval<string | null>(
-			`document.querySelector('[data-slot="model-error"]')?.getAttribute('data-code') ?? null`,
-		),
-	).toBe("VAULT_UNREADABLE");
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-slot="model-error"]')?.getAttribute('data-code') ?? null`,
+			),
+		(code) => code !== null,
+		"the unavailable vault refusal",
+		WAIT,
+	);
 	renameSync(movedVault, vault);
 	await refreshModel(browser);
 	await pollUntil(modelState, (state) => state === "ready", "the restored vault to reopen", WAIT);

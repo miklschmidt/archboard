@@ -169,7 +169,15 @@ test("a pick that a panel laid over the picture would cover moves the picture cl
 	// picture's edge, and in this DOM every part reaches under it.
 	const traffic = await mountWithTraffic({
 		live: true,
-		chrome: { letter: null, controls: null, notice: null, shared: true, active: true },
+		chrome: {
+			letter: null,
+			controls: null,
+			notice: null,
+			shared: true,
+			active: true,
+			column: null,
+			openBeside: null,
+		},
 	});
 	const frames = takeFrames();
 	try {

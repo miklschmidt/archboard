@@ -112,7 +112,14 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 	);
 	await openModule(browser, "Shop#Gateway");
 	await openModule(browser, "Shop#Handler");
-	await browser.run(["click", '[data-slot="module-context"] [data-module-id="Shop#Gateway"]']);
+	const nearby = '[data-slot="module-context"] [data-module-id="Shop#Gateway"]';
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector('${nearby}') !== null`),
+		Boolean,
+		"the nearby module",
+		WAIT,
+	);
+	await browser.run(["click", nearby]);
 	await openModelSidebar(browser);
 	await browser.eval(
 		`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Decode"]').dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true }))`,

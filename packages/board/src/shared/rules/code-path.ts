@@ -71,4 +71,23 @@ function codePathOf(
 	return node.binding?.path ?? spanOf(bindingsInside(node.id, childrenOf));
 }
 
-export { codePathOf };
+/**
+ * Where a module sits among its siblings: its path, or the folder its parts share.
+ * @param node The module.
+ * @param childrenOf The containment index of the complete content.
+ * @returns The folder, or nothing for a module that names no code.
+ */
+function codeFolderOf(
+	node: Node,
+	childrenOf: ReadonlyMap<string, readonly Node[]>,
+): string | undefined {
+	if (node.kind === EXTERNAL_KIND) return undefined;
+	if (node.binding !== undefined) return node.binding.path;
+	const bindings = bindingsInside(node.id, childrenOf);
+	const paths = [...new Set(bindings.map((binding) => binding.path))];
+	const folder =
+		new Set(bindings.map((binding) => binding.repo)).size === 1 ? sharedFolder(paths) : "";
+	return folder === "" ? undefined : folder;
+}
+
+export { codeFolderOf, codePathOf };

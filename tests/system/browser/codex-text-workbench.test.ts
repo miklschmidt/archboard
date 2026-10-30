@@ -23,7 +23,7 @@ import {
 	productionFixtureRecords,
 	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
-import { MODEL_STAGE, seedCanonicalModel } from "./support/canonical-page.ts";
+import { MODEL_STAGE, openRepository, seedCanonicalModel } from "./support/canonical-page.ts";
 import {
 	AGENT_DOCK,
 	AGENT_PANEL,
@@ -440,7 +440,7 @@ test(
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
 		// Opening a repository is the person's act. Its pane, capture and conversation move together.
-		await browser.run(["click", '[data-slot="repository-model-open"][title="Open ledger"]']);
+		await openRepository(browser, "orders");
 		await pollUntil(
 			() => conversationList(browser),
 			(list) => list.some(({ checkout, shown }) => checkout === orders && shown),

@@ -269,30 +269,87 @@ async function openModelSidebar(
 
 export { openModelSidebar };
 
-/** Press Refresh once it can be pressed: it refuses while a read is running. */
+/**
+ * Read again as a person does who comes back to the page. A healthy reading has no Refresh,
+ * because the feed is live, and history that changes under it has no feed.
+ */
 async function refreshModel(browser: AgentBrowserSession): Promise<void> {
-	const refresh = '[data-slot="model-refresh"]';
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector(${JSON.stringify(refresh)})?.disabled === false`,
-			),
-		Boolean,
-		"the refresh control to be free",
-	);
-	await browser.run(["click", refresh]);
+	await browser.eval(`window.dispatchEvent(new Event('visibilitychange'))`);
 }
 
 export { refreshModel };
 
-/** Start an authored narrative through the ordinary sidebar. */
-async function startModelWalkthrough(
-	browser: AgentBrowserSession,
-	id: string,
-	scope = "",
-): Promise<void> {
-	await openModelSidebar(browser, "board", scope);
-	await browser.run(["click", `${scope} [data-walkthrough-id=${JSON.stringify(id)}]`]);
+/** Open a destination of the left column, which speaks for the focused pane. */
+async function openDestination(browser: AgentBrowserSession, destination: string): Promise<void> {
+	const tab = `[data-destination="${destination}"]`;
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector('${tab}') !== null`),
+		Boolean,
+		`the ${destination} destination`,
+	);
+	await browser.run(["click", tab]);
+}
+
+export { openDestination };
+
+/** Bring a row of a list on screen, opening the row that holds the rest while it hides there. */
+async function listedRow(browser: AgentBrowserSession, row: string): Promise<void> {
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector(${JSON.stringify(row)}) !== null || void document.querySelector('[data-row-id="rest"][aria-expanded="false"]')?.click()`,
+			),
+		Boolean,
+		`the row ${row}`,
+	);
+}
+
+/** Find something by a text and choose it, which is how a bookmark or a former address opens. */
+async function chooseFound(browser: AgentBrowserSession, text: string, id: string): Promise<void> {
+	await browser.run(["fill", '[data-slot="model-find"] input', text]);
+	const row = `[data-find-id=${JSON.stringify(id)}]`;
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector(${JSON.stringify(row)}) !== null`),
+		Boolean,
+		`the found row ${id}`,
+	);
+	await browser.run(["click", row]);
+}
+
+export { chooseFound };
+
+/** Choose a flow, which draws its sequence. */
+async function chooseFlow(browser: AgentBrowserSession, id: string): Promise<void> {
+	await openDestination(browser, "flows");
+	const row = `[data-flow-id=${JSON.stringify(id)}]`;
+	await listedRow(browser, row);
+	await browser.run(["click", row]);
+}
+
+export { chooseFlow };
+
+/** Start an authored narrative from the Walkthroughs destination. */
+async function startModelWalkthrough(browser: AgentBrowserSession, id: string): Promise<void> {
+	await openDestination(browser, "walkthroughs");
+	const row = `[data-walkthrough-id=${JSON.stringify(id)}]`;
+	await listedRow(browser, row);
+	await browser.run(["click", row]);
 }
 
 export { startModelWalkthrough };
+
+/** Open a repository from the switcher, which lists every repository of the machine. */
+async function openRepository(browser: AgentBrowserSession, repository: string): Promise<void> {
+	const row = `[data-row-id=${JSON.stringify(`repository:${repository}`)}]`;
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`(document.querySelector('[data-slot="repository-switcher"][aria-expanded="false"]')?.click(), document.querySelector(${JSON.stringify(row)})?.checkVisibility() === true)`,
+			),
+		Boolean,
+		`the repository ${repository}`,
+	);
+	await browser.run(["click", row]);
+}
+
+export { openRepository };

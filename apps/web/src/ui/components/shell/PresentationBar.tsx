@@ -53,9 +53,10 @@ interface ExitControlProps {
 }
 
 /**
- * Leave the presentation. The control takes focus when the bar mounts: the
- * control that started the presentation sits outside the presented stage,
- * so keyboard focus would otherwise be stranded on something unseen.
+ * Leave the presentation. The presented pane takes focus when the bar mounts, so
+ * its keys work at once, or else this control: the control that started the
+ * presentation sits outside the presented stage, so keyboard focus would
+ * otherwise be stranded on something unseen.
  * @param props The actions.
  * @returns The exit button.
  */
@@ -64,7 +65,8 @@ function ExitControl(props: ExitControlProps): JSX.Element {
 	const exit = useRef<HTMLButtonElement | null>(null);
 	const handleExit = useCallback(() => actions.present(null), [actions]);
 	useEffect(() => {
-		exit.current?.focus();
+		const stages = exit.current?.closest('[data-slot="pane-stages"]');
+		(stages?.querySelector<HTMLElement>("section[data-active]") ?? exit.current)?.focus();
 	}, []);
 	return (
 		<Button ref={exit} variant="ghost" size="sm" onClick={handleExit}>

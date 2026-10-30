@@ -7,6 +7,14 @@
 
 import { createContext, type ReactNode } from "react";
 
+import type { PaneOpening } from "#ui/rules/shell/contracts.ts";
+
+/** The places in the left column that the focused pane fills. */
+interface PaneColumn {
+	readonly find: HTMLElement | null;
+	readonly destinations: HTMLElement | null;
+}
+
 /** The shell's parts of one pane's header. */
 interface PaneChrome {
 	/** The pane's letter, while two panes share the centre; null with one. */
@@ -19,6 +27,14 @@ interface PaneChrome {
 	readonly shared: boolean;
 	/** Whether the pane is the one with focus, which the keyboard shortcuts reach. */
 	readonly active: boolean;
+	/** The left column, while the pane has focus; null otherwise. */
+	readonly column: PaneColumn | null;
+	/**
+	 * Open a reading of this pane's repository in the other pane.
+	 * @param model The model.
+	 * @param reading What the other pane opens.
+	 */
+	readonly openBeside: ((model: string, reading: PaneOpening) => void) | null;
 }
 
 /** A pane outside the shell, such as a recording page's: a header with nothing of the shell's. */
@@ -28,9 +44,11 @@ const NO_CHROME: PaneChrome = Object.freeze({
 	notice: null,
 	shared: false,
 	active: true,
+	column: null,
+	openBeside: null,
 });
 
 /** The shell's parts of the pane being drawn. */
 const PaneChromeContext = createContext<PaneChrome>(NO_CHROME);
 
-export { PaneChromeContext, type PaneChrome };
+export { PaneChromeContext, type PaneChrome, type PaneColumn };

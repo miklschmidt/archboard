@@ -348,4 +348,4 @@ function OpenModule(props: { id: string; onOpen: (scope: string | null) => void 
 	);
 }
 
-export { ModelSelectionDetails, UnselectedDetails as ModelScopeDetails };
+export { ModelSelectionDetails, ScopeIntroduction, UnselectedDetails as ModelScopeDetails };

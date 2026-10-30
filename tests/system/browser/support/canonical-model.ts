@@ -1,4 +1,4 @@
-import { openModelSidebar } from "./canonical-page.ts";
+import { openDestination, openModelSidebar } from "./canonical-page.ts";
 import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
 
 const WAIT = { timeoutMs: 6_000 } as const;
@@ -18,10 +18,18 @@ function initializeSource(root: string): void {
 	fixtureGit(root, "remote", "add", "origin", "https://github.com/acme/shop.git");
 }
 
+/** Open History with every state's checkpoints on screen, as a reader's chevrons do. */
+async function unfoldedHistory(browser: AgentBrowserSession): Promise<void> {
+	await openDestination(browser, "history").catch(() => undefined);
+	await browser.eval(
+		`document.querySelectorAll('[data-slot="model-history"] [aria-expanded="false"] svg').forEach((chevron) => chevron.dispatchEvent(new MouseEvent('click', { bubbles: true })))`,
+	);
+}
+
 async function selectReading(browser: AgentBrowserSession, id: string): Promise<void> {
 	const item = `[data-reading-id="${id}"]`;
-	// A reading that settles closes the menu, and takes a click on it with it, so each pass
-	// takes the one step that the page now allows.
+	// A reading that settles draws the list again, and takes a click on it with it, so each
+	// pass takes the one step that the page now allows.
 	await pollUntil(
 		async () => {
 			const page = await browser.eval<{ reading: string | null; clickable: boolean }>(`(() => {
@@ -36,9 +44,8 @@ async function selectReading(browser: AgentBrowserSession, id: string): Promise<
 			})()`);
 			if (page.reading === id) return true;
 			if (page.reading === null) return false;
-			await browser
-				.run(["click", page.clickable ? item : '[data-slot="model-reading-selector"]'])
-				.catch(() => undefined);
+			if (page.clickable) await browser.run(["click", item]).catch(() => undefined);
+			else await unfoldedHistory(browser);
 			return false;
 		},
 		Boolean,
@@ -104,4 +111,12 @@ async function selectState(browser: AgentBrowserSession, id: string): Promise<vo
 	);
 }
 
-export { fixtureGit, initializeSource, selectModule, selectReading, selectState, gatewayDetails };
+export {
+	fixtureGit,
+	initializeSource,
+	selectModule,
+	selectReading,
+	selectState,
+	unfoldedHistory,
+	gatewayDetails,
+};

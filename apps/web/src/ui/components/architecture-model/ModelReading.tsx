@@ -1,298 +1,211 @@
-import { useContext } from "react";
-import { ModelCodeWarnings } from "#ui/components/architecture-model/ModelCodeFindings.tsx";
-import { useModelCodeFindings } from "#ui/hooks/architecture-model/use-model-code-findings.ts";
-import { ModelExplanationMenu } from "#ui/components/architecture-model/ModelExplanationMenu.tsx";
-import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
-import { useAcceptedScene } from "#ui/hooks/architecture-model/use-accepted-scene.ts";
-import { useModelMoves } from "#ui/hooks/architecture-model/use-model-moves.ts";
-import { useModelReading } from "#ui/hooks/architecture-model/use-model-reading.ts";
-import type { Sidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
-import { useBoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
-import { PeekProvider } from "#ui/components/semantic-board-canvas/Peek.tsx";
-import { useCallback, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import { Activity, useCallback, useRef, useState, type JSX, type ReactNode } from "react";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
-import { ModelModeControls } from "#ui/components/architecture-model/ModelModeControls.tsx";
-import {
-	flowSubjects,
-	collectionSubjects,
-	withCollectionFlows,
-} from "#ui/rules/architecture-model/flow-reading.ts";
-import { ModelCaption } from "#ui/components/architecture-model/ModelCaption.tsx";
-import { ModelFilters } from "#ui/components/architecture-model/ModelFilters.tsx";
-import { ModelComparisonNotice } from "#ui/components/architecture-model/ModelStateDetails.tsx";
+import type { Model as Content } from "@archboard/board/content";
 import { ModelBreadcrumbs } from "#ui/components/architecture-model/ModelBreadcrumbs.tsx";
-import { ModelSelectionBar } from "#ui/components/architecture-model/ModelSelectionBar.tsx";
-import { useProjectedSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
-import { ModelPaneContext } from "#ui/state/architecture-model/presentation.ts";
-import { ModelReadingCanvas } from "#ui/components/architecture-model/ModelReadingCanvas.tsx";
-import { ModelReadingSidebar } from "#ui/components/architecture-model/ModelReadingSidebar.tsx";
+import { ModelColumn, type Destination } from "#ui/components/architecture-model/ModelColumn.tsx";
+import { ModelFind } from "#ui/components/architecture-model/ModelFind.tsx";
+import { ModelFlows } from "#ui/components/architecture-model/ModelFlows.tsx";
+import {
+	ModelCodePath,
+	ModelHeading,
+	ModelStateChip,
+} from "#ui/components/architecture-model/ModelHeading.tsx";
+import { ModelReadingSurface } from "#ui/components/architecture-model/ModelReadingSurface.tsx";
+import { ModelRecords } from "#ui/components/architecture-model/ModelRecords.tsx";
+import { ModelTree } from "#ui/components/architecture-model/ModelTree.tsx";
+import { ModelWalkthroughs } from "#ui/components/architecture-model/ModelWalkthroughs.tsx";
+import { useReader, type Reader } from "#ui/hooks/architecture-model/use-reader.ts";
 
-type Model = Extract<ArchitectureModelRead, { success: true }>;
+/** Inputs for a reading. */
 interface ModelReadingProps {
 	overlay?: ReactNode;
 	/** The state the accepted scene shows, so its details never run ahead of the picture. */
-	overview?: (shown: Model) => ReactNode;
-	subject: string | null;
+	overview?: (shown: Content) => ReactNode;
 	onCodeTargetNotice: Parameters<typeof activateCodeTarget>[0]["onNotice"];
 	vault: string;
-	model: Model;
+	model: Content;
 	/** Whether the model is the answer to this address, not the last answer kept on screen. */
 	settled: boolean;
 	paneId: string;
 	reducedMotion: boolean;
 }
 
+/** What every reading offers, and what a reading with a record adds. */
+const READING: readonly Destination[] = ["modules", "flows", "walkthroughs"];
+const RECORDED: readonly Destination[] = [...READING, "history"];
+
 /**
- * A scope changes the reading of the existing model without copying its content.
- * The address asks for a destination, and everything that reads what is on screen
- * reads the accepted scene until that destination is drawn.
+ * Whether a reading keeps a record: a migration candidate has none of its own.
+ * @param model The reading.
+ * @returns True for a canonical model.
+ */
+function keepsRecord(model: Content): boolean {
+	return model.migrationPreview === undefined;
+}
+
+/**
+ * The module the reader has selected, when it is one alone.
+ * @param ids The selected identities.
+ * @returns The identity, or null.
+ */
+function soleOf(ids: ReadonlySet<string>): string | null {
+	const [only, other] = ids;
+	return other === undefined ? (only ?? null) : null;
+}
+
+/**
+ * What a walkable list calls the thing on screen.
+ * @param list The list.
+ * @param id The thing on screen.
+ * @returns Its name, or its identity while the list does not hold it.
+ */
+function nameIn(list: readonly { id: string; name: string }[], id: string): string {
+	return list.find((entry) => entry.id === id)?.name ?? id;
+}
+
+/**
+ * The last crumb, for a reading that shows more than the open module.
+ * @param reader The reader.
+ * @returns The name of the flow or the walkthrough on screen.
+ */
+function endingOf(reader: Reader): string | undefined {
+	const { model, walkthrough, location, structure } = reader;
+	const { grammar, flow } = location;
+	if (walkthrough !== null) return nameIn(model.walkthroughs, walkthrough);
+	if (flow === null || grammar === "architecture") return undefined;
+	return nameIn(structure.depicted.flows, flow);
+}
+
+/**
+ * The left column of a reading: Find and the destinations.
+ * @param props The reader.
+ * @param props.reader The reader.
+ * @returns The parts of the column.
+ */
+function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
+	const { reader } = props;
+	const { model, location, structure, tree, branches, flows, walkthroughs, choices } = reader;
+	const { opened, depicted } = structure;
+	const find = useRef<HTMLInputElement>(null);
+	const [query, setQuery] = useState("");
+	const typeAhead = useCallback((text: string): void => {
+		setQuery((current) => current + text);
+		find.current?.focus();
+	}, []);
+	const records = keepsRecord(model);
+	return (
+		<>
+			<ModelColumn.Find>
+				<ModelFind
+					input={find}
+					query={query}
+					onQuery={setQuery}
+					model={model}
+					onChoose={choices.chooseFind}
+				/>
+			</ModelColumn.Find>
+			<ModelColumn.Destinations
+				destination={reader.destination}
+				onDestination={reader.onDestination}
+				flows={flows.length}
+				walkthroughs={walkthroughs.length}
+				offered={records ? RECORDED : READING}
+			>
+				<ModelColumn.List value="modules">
+					<ModelTree
+						tree={tree}
+						open={branches.open}
+						scope={opened}
+						selected={soleOf(reader.selection.ids)}
+						onToggle={branches.toggle}
+						onOpen={choices.chooseModule}
+						onTypeAhead={typeAhead}
+					/>
+				</ModelColumn.List>
+				<ModelColumn.List value="flows">
+					<ModelFlows
+						content={depicted}
+						near={flows}
+						flow={location.flow}
+						grammar={location.grammar}
+						onChoose={choices.chooseFlow}
+						onGrammar={location.selectGrammar}
+					/>
+				</ModelColumn.List>
+				<ModelColumn.List value="walkthroughs">
+					<ModelWalkthroughs all={model.walkthroughs} near={walkthroughs} />
+				</ModelColumn.List>
+				{records && (
+					<ModelColumn.List value="history">
+						<ModelRecords
+							vault={reader.vault}
+							checkpoint={location.checkpoint}
+							state={location.state}
+							selected={model.selectedState}
+							against={location.against}
+							onCompare={location.compareAgainst}
+							onState={location.selectState}
+							onSelect={location.selectCheckpoint}
+						/>
+					</ModelColumn.List>
+				)}
+			</ModelColumn.Destinations>
+		</>
+	);
+}
+
+/**
+ * The header of a reading: the crumbs, the open module's code path, the state chip and
+ * `Diagram | About`. A code path says where a module is, so a flow shows none.
+ * @param props The reader.
+ * @param props.reader The reader.
+ * @returns The parts of the header.
+ */
+function ReadingHeading(props: { readonly reader: Reader }): JSX.Element {
+	const { reader } = props;
+	const { model, location, structure, tree, accepted, onOpen } = reader;
+	const { opened, trail } = structure;
+	const ending = endingOf(reader);
+	return (
+		<ModelHeading page={reader.page} onPage={reader.onPage}>
+			<ModelBreadcrumbs
+				name={model.manifest.name}
+				scope={opened}
+				trail={trail}
+				ending={ending}
+				pending={accepted.pending}
+				onOpen={onOpen}
+			/>
+			<ModelCodePath path={ending === undefined ? tree.owner.get(opened ?? "")?.path : undefined} />
+			{keepsRecord(model) && (
+				<ModelStateChip
+					model={model}
+					state={location.state}
+					checkpoint={location.checkpoint}
+					onOpen={reader.openHistory}
+				/>
+			)}
+		</ModelHeading>
+	);
+}
+
+/**
+ * A scope changes the reading of the existing model without copying its content. The
+ * reading owns the left column and the header of its pane, and they stay while a
+ * walkthrough has the middle.
  * @param props The coherent model.
  * @returns Recursive navigation and the selected scope.
  */
 function ModelReading(props: ModelReadingProps): JSX.Element {
-	const { model, vault, reducedMotion } = props;
-	const { location, comparison, structure, request } = useModelReading(
-		vault,
-		props.paneId,
-		model,
-		props.settled,
-	);
-	const { open, reveal, filters, focus, scope, grammar, flow, openFlow, setFocus } = location;
-	const { id: modelId } = model.manifest;
-	const pane = useContext(ModelPaneContext);
-	if (pane === null) throw new Error("A model reading requires its pane presentation.");
-	const { sidebar } = pane;
-	const { open: openTab } = sidebar;
-	const accepted = useAcceptedScene(request, pane.selection.ids);
-	const { scene, shown } = accepted;
-	const selection = useProjectedSelection(shown.projection, pane.selection);
-	const { clear, select } = selection;
-	const camera = useBoardCamera(reducedMotion);
-	const area = useRef<HTMLDivElement | null>(null);
-	const openModule = useCallback(
-		(next: string | null): void => {
-			clear();
-			open(modelId, next);
-		},
-		[clear, modelId, open],
-	);
-	const { move, cut, ahead } = useModelMoves({
-		camera,
-		area,
-		scene,
-		reading: request.reading,
-		model,
-		reference: comparison.reference,
-		reducedMotion,
-		open: openModule,
-	});
-	const onOpen = useCallback(
-		(next: string | null): void => {
-			openTab("board");
-			move(next);
-		},
-		[move, openTab],
-	);
-	const chooseSearch = useCallback(
-		(id: string): void => {
-			const module = model.modules.find((candidate) => candidate.id === id);
-			if (module === undefined) return;
-			open(modelId, module.parent ?? null);
-			select(id);
-		},
-		[model.modules, modelId, open, select],
-	);
-	const code = useModelCodeFindings(vault, shown.model);
-	const reporting = useMemo(
-		() => ({ ready: accepted.ready, presentation: null }),
-		[accepted.ready],
-	);
-	const explanation = useModelExplanation(
-		vault,
-		shown.model,
-		shown.reading,
-		accepted.selected,
-		reporting,
-	);
-	const [explanationOpen, setExplanationOpen] = useState(false);
-	const behavioralIds = useMemo(() => {
-		const collections = [model, comparison.reference].flatMap((source) =>
-			source === undefined ? [] : collectionSubjects(source),
-		);
-		return new Set(
-			[...flowSubjects(structure.depicted.flows), ...collections].map((one) => one.id),
-		);
-	}, [model, structure.depicted.flows, comparison.reference]);
-	const subjects = useMemo(() => {
-		const traced =
-			selection.ids.size > 0 ? selection.ids : new Set(focus ?? (scope === null ? [] : [scope]));
-		const expanded = withCollectionFlows(model, traced);
-		return comparison.reference === undefined
-			? expanded
-			: withCollectionFlows(comparison.reference, expanded);
-	}, [selection.ids, focus, scope, model, comparison.reference]);
-	const revealSelection = useCallback((): void => {
-		const kinds = model.relationships
-			.filter((edge) => selection.ids.has(edge.id))
-			.map((edge) => edge.kind);
-		reveal(
-			[...selection.ids].filter((id) => !behavioralIds.has(id)),
-			kinds,
-		);
-	}, [model.relationships, selection.ids, reveal, behavioralIds]);
-	const attach = useReadingKeys(clear, model, sidebar, setExplanationOpen);
-	const controls = (
-		<>
-			<ModelBreadcrumbs
-				name={model.manifest.name}
-				scope={structure.opened}
-				trail={structure.trail}
-				pending={accepted.pending}
-				onOpen={onOpen}
-			/>
-			<ModelSelectionBar
-				selection={selection}
-				focus={focus}
-				onFocus={setFocus}
-				architectural={grammar === "architecture"}
-				canFocus={![...selection.ids].some((id) => behavioralIds.has(id))}
-			>
-				{model.migrationPreview === undefined && (
-					<ModelExplanationMenu
-						open={explanationOpen}
-						onOpenChange={setExplanationOpen}
-						model={shown.model}
-						selected={selection.ids}
-						unavailable={explanation.unavailable}
-						onAction={explanation.act}
-					/>
-				)}
-				<ModelCodeWarnings reading={code.reading} onSelect={selection.select} />
-				<ModelModeControls
-					content={structure.depicted}
-					subjects={subjects}
-					grammar={grammar}
-					flow={flow}
-					onGrammar={location.selectGrammar}
-					onFlow={location.selectFlow}
-				/>
-				{grammar === "architecture" && (
-					<ModelFilters model={model} filters={filters} onToggle={location.toggleFilter} />
-				)}
-			</ModelSelectionBar>
-		</>
-	);
+	const reader = useReader(props);
 	return (
-		<PeekProvider selection={soleSelected(selection.ids)}>
-			<div
-				ref={attach}
-				data-slot="model-reading"
-				data-scope={scope ?? ""}
-				data-grammar={grammar}
-				className="flex min-h-0 min-w-0 flex-1"
-			>
-				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-					<ModelComparisonNotice comparison={comparison} />
-					<ModelCaption
-						projection={shown.projection}
-						everyLine={filters.everyLine}
-						onToggle={location.toggleEveryLine}
-					/>
-					<ModelReadingCanvas
-						scene={scene}
-						request={request}
-						pending={accepted.pending}
-						leaving={accepted.leaving}
-						failure={accepted.failure}
-						camera={camera}
-						area={area}
-						cut={cut}
-						floating={sidebar.floating}
-						selection={selection}
-						warnings={code.warnings}
-						reducedMotion={reducedMotion}
-						onOpen={onOpen}
-						onAttention={ahead}
-						overlay={props.overlay}
-					/>
-				</div>
-				<ModelReadingSidebar
-					{...props}
-					overview={props.overview?.(shown.model)}
-					model={shown.model}
-					code={code}
-					projection={shown.projection}
-					selection={selection}
-					sidebar={sidebar}
-					scope={shown.projection.opened}
-					onOpen={onOpen}
-					onSearch={chooseSearch}
-					onReveal={revealSelection}
-					onRevealFlow={openFlow}
-					grammar={shown.reading.grammar}
-					controls={controls}
-				/>
-			</div>
-		</PeekProvider>
-	);
-}
-
-/**
- * The subject a sidebar row belongs to.
- * @param ids The selected identities.
- * @returns The one selected identity, or null.
- */
-function soleSelected(ids: ReadonlySet<string>): string | null {
-	return ids.size === 1 ? ([...ids][0] ?? null) : null;
-}
-
-/**
- * Hear the reading's own keys: Escape clears the selection, and the menu key opens its actions.
- * @param clear Clear the selection.
- * @param model The coherent model.
- * @param sidebar The pane's sidebar, which holds the action menu.
- * @param openMenu Open or close the action menu.
- * @returns A callback ref for the reading's element.
- */
-function useReadingKeys(
-	clear: () => void,
-	model: Model,
-	sidebar: Sidebar,
-	openMenu: (open: boolean) => void,
-) {
-	return useCallback(
-		(element: HTMLDivElement | null) => {
-			if (element === null) return undefined;
-			/**
-			 * Clear selection only while input belongs to this reading.
-			 * @param event The key pressed within the reading.
-			 */
-			function keyDown(event: KeyboardEvent): void {
-				if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
-					contextMenu(event);
-					return;
-				}
-				if (event.key === "Escape" && !event.defaultPrevented) clear();
-			}
-			/**
-			 * Open the shared action menu for the selection already visible in this reading.
-			 * @param event The context request inside this reading.
-			 */
-			function contextMenu(event: Event): void {
-				if (model.migrationPreview !== undefined) return;
-				event.preventDefault();
-				if (!sidebar.shown) sidebar.toggle();
-				openMenu(true);
-			}
-			element.addEventListener("keydown", keyDown);
-			element.addEventListener("contextmenu", contextMenu);
-			return (): void => {
-				element.removeEventListener("keydown", keyDown);
-				element.removeEventListener("contextmenu", contextMenu);
-			};
-		},
-		[clear, model.migrationPreview, sidebar, openMenu],
+		<>
+			<ReadingColumn reader={reader} />
+			<ReadingHeading reader={reader} />
+			<Activity mode={reader.presenting ? "hidden" : "visible"}>
+				<ModelReadingSurface {...props} reader={reader} />
+			</Activity>
+		</>
 	);
 }
 

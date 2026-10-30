@@ -7,13 +7,14 @@ import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import { ModelConnections } from "#ui/components/architecture-model/ModelConnections.tsx";
 
 /**
- * Explore the modules and connections in the currently visible scope.
+ * The parts of the open scope and its connections. A row selects, and moves the reader nowhere:
+ * the left column navigates.
  * @param props The projected reading and canonical selection.
  * @param props.model The complete model.
  * @param props.projection The visible modules and context.
  * @param props.selection The immediate selection actions.
  * @param props.grammar The chosen diagram mode.
- * @returns The architecture tab navigation.
+ * @returns The architecture tab's lists.
  */
 function ModelModuleList(props: {
 	model: Model;
@@ -25,13 +26,9 @@ function ModelModuleList(props: {
 	const { ids: selected, select } = props.selection;
 	const { children, context } = props.projection;
 	return (
-		<nav
-			data-slot="model-navigation"
-			aria-label={props.grammar === "architecture" ? "Modules" : "Participants"}
-			className="space-y-4 px-4 py-4"
-		>
+		<section data-slot="model-parts" className="space-y-4 px-4 py-4">
 			<h3 className="text-body mb-3 font-semibold">
-				{props.grammar === "architecture" ? "Modules" : "Participants"}
+				{props.grammar === "architecture" ? "Parts" : "Participants"}
 			</h3>
 			{children.length === 0 && (
 				<p className="text-body text-muted-foreground">This scope has no child modules.</p>
@@ -70,7 +67,7 @@ function ModelModuleList(props: {
 				selected={selected}
 				onSelect={select}
 			/>
-		</nav>
+		</section>
 	);
 }
 

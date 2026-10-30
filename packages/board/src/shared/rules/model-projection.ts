@@ -6,6 +6,7 @@ import type { ChangeKind } from "#shared/rules/compare/variants.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
 import type { OverviewLine } from "#shared/rules/scope.ts";
 import { codePathOf } from "#shared/rules/code-path.ts";
+import { containment, foldChain } from "#shared/rules/module-fold.ts";
 import { doorEnds, drawnEnds, joinedLines, readingLines } from "#shared/rules/model-lines.ts";
 import { inspectContainer } from "#shared/rules/inspect/container-interface.ts";
 
@@ -438,42 +439,7 @@ function focusEndpoint(
  */
 function foldedScope(complete: VariantContent, scope: string | null): string | null {
 	if (scope === null) return null;
-	const childrenOf = containment(complete);
-	let at = scope;
-	for (let next = onlyContainer(childrenOf, at); next !== undefined;) {
-		at = next;
-		next = onlyContainer(childrenOf, at);
-	}
-	return at;
-}
-
-/**
- * The next step of a chain. A part with no parts of its own ends it, because it opens nothing.
- * @param childrenOf The containment index.
- * @param id The module.
- * @returns Its one part, when that part holds parts.
- */
-function onlyContainer(
-	childrenOf: ReadonlyMap<string, readonly Node[]>,
-	id: string,
-): string | undefined {
-	const parts = childrenOf.get(id) ?? [];
-	const only = parts[0]?.id ?? "";
-	return parts.length === 1 && childrenOf.has(only) ? only : undefined;
-}
-
-/**
- * Index modules by the module that holds them.
- * @param complete The complete content.
- * @returns Each container's direct parts.
- */
-function containment(complete: VariantContent): ReadonlyMap<string, readonly Node[]> {
-	const childrenOf = new Map<string, Node[]>();
-	for (const node of complete.nodes) {
-		if (node.parent === undefined) continue;
-		childrenOf.set(node.parent, [...(childrenOf.get(node.parent) ?? []), node]);
-	}
-	return childrenOf;
+	return foldChain(containment(complete), scope).at(-1) ?? scope;
 }
 
 /**

@@ -253,7 +253,7 @@ test(
 		expect(
 			await browser.eval<
 				boolean[]
-			>(`['pane-header', 'model-navigation', 'semantic-sidebar', 'model-breadcrumbs', 'model-selection-bar', 'model-state-details'].map(slot => {
+			>(`['pane-header', 'model-parts', 'semantic-sidebar', 'model-breadcrumbs', 'model-selection-bar', 'model-state-details'].map(slot => {
 				const element = document.querySelector('${PANE_SECTIONS} [data-slot="' + slot + '"]');
 				return element !== null && !element.checkVisibility();
 			})`),

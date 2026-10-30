@@ -389,7 +389,15 @@ test.each([
 	["alone", undefined],
 	[
 		"sharing the centre",
-		{ letter: null, controls: null, notice: null, shared: true, active: true },
+		{
+			letter: null,
+			controls: null,
+			notice: null,
+			shared: true,
+			active: true,
+			column: null,
+			openBeside: null,
+		},
 	],
 ] as const)(
 	"showing a part fits it in the middle of the view in a pane %s, whatever the pick moves",

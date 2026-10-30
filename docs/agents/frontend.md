@@ -131,8 +131,8 @@ Each behavior keeps its existing public boundary and one state owner.
   Retained original readings use the preview reader.
   Interrupted installation exposes recovery, and durable completion refreshes the shared queries.
   Existing pane keys resolve through captured aliases into paired original state and checkpoint addresses.
-  The repository navigator reads the same authority and opens current canonical architecture through the router.
-  Its model action targets the active pane, including a workspace that keeps only pane B.
+  The repository switcher reads the same authority and opens current canonical architecture through the router.
+  A repository row targets the active pane, including a workspace that keeps only pane B.
   The sidebar explains unavailable ownership transfer under Model ownership.
 
   Scope, focus, or grammar changes leave the bookmark and retain the displayed reading fields.
@@ -345,12 +345,18 @@ A coherent model event resumes exact reads interrupted by an installation barrie
 Healthy immutable readings with no live comparison keep their cached data without another read.
 A fresh selected set represents another pick, including a repeated choice of the same module.
 The existing sidebar opens Selection for that pick.
-Module navigation labels comparison context with its standing, including removed reference modules.
+The sidebar's list of parts labels comparison context with its standing, including removed reference modules.
 
-The sidebar search reads the complete selected model, including modules outside the visible scope.
-It searches names, responsibilities, descriptions, and code bindings without another server read.
-Choosing a result opens its containing scope and selects its canonical identity.
-The existing sidebar shortcut, combobox, Escape behavior, and focus handoff remain shared.
+The shell owns the left column's frame and holds no model knowledge.
+The reader of the focused pane portals Find, the destinations, and its lists into the column slots from `usePaneChrome`.
+The pane header slot takes the crumbs, the code path, the state chip, and `Diagram | About`.
+`useReader` gathers the reading, places, moves, and choices that the column, the header, and the surface read.
+`React.Activity` keeps the reading mounted while a walkthrough plays, so the column stays and the picture keeps its camera.
+A live `architecture_snapshot` has no `states`, so `History` reads its own `architectureRecordQuery`, which loads only when `History` opens.
+
+Find reads the complete selected model, including modules outside the visible scope.
+It searches names, code paths, responsibilities, descriptions, and code symbols without another server read.
+Choosing a module opens its containing scope, selects its canonical identity, and moves focus to the picture.
 
 Group choices use membership from the complete selected model, independently of scope and group-region filters.
 The canonical selected set determines which group choices are active.

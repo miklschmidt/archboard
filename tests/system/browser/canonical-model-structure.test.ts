@@ -13,7 +13,7 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { initializeSource, selectReading } from "./support/canonical-model.ts";
+import { initializeSource, selectReading, unfoldedHistory } from "./support/canonical-model.ts";
 import { openModelSidebar, editCanonicalModel as edit } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
@@ -107,15 +107,16 @@ test("structural writes refresh current modules while exact history and selected
 	]);
 	await browser.run(["click", '[data-slot="model-reading-selector"]']);
 	await pollUntil(
-		() =>
-			browser.eval<boolean>(
+		async () => {
+			await unfoldedHistory(browser);
+			return browser.eval<boolean>(
 				`document.querySelector('[data-reading-id="${changed.checkpoint.id}"]') !== null`,
-			),
+			);
+		},
 		Boolean,
 		"the completion event to refresh history",
 		WAIT,
 	);
-	await browser.run(["press", "Escape"]);
 	await pollUntil(
 		() => selectedName(browser),
 		(name) => name === "Gateway",

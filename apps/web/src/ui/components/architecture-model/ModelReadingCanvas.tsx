@@ -35,6 +35,8 @@ interface ModelReadingCanvasProps extends Pick<
 	area: RefObject<HTMLDivElement | null>;
 	warnings: ReadonlySet<string>;
 	selection: ModelSelection;
+	/** What stands at the picture's lower left. */
+	children?: ReactNode;
 }
 
 /**
@@ -72,6 +74,7 @@ function ModelReadingCanvas(props: ModelReadingCanvasProps): JSX.Element {
 					)}
 				</Suspense>
 				<DestinationState request={request} failure={props.failure} first={scene === null} />
+				<div className="absolute bottom-4 left-4 z-20 empty:hidden">{props.children}</div>
 				<div
 					data-slot="model-stage-overlay"
 					className="pointer-events-none absolute inset-x-0 bottom-6 z-25 flex justify-center px-8"

@@ -7,6 +7,9 @@
 // Pure: every horizontal length the navigator lays out comes from here, in
 // pixels, and every x is measured from the navigator's left edge.
 
+/** A row of one line, and how far an open row sticks below the one that holds it. */
+const ROW_HEIGHT = 28;
+
 /** The disclosure column: a chevron, or the space one would take. */
 const DISCLOSURE_WIDTH = 16;
 
@@ -77,6 +80,7 @@ export {
 	MARKER_WIDTH,
 	NAME_GAP,
 	ROW_GUTTER,
+	ROW_HEIGHT,
 	TARGET_SIZE,
 	TREE_STEP,
 	disclosureX,

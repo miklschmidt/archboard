@@ -1,5 +1,4 @@
 import { ModelGroups } from "#ui/components/architecture-model/ModelGroups.tsx";
-import { ModelSearch } from "#ui/components/architecture-model/ModelSearch.tsx";
 import { useMemo, type ComponentProps, type JSX, type ReactNode } from "react";
 import {
 	SemanticSidebar,
@@ -13,7 +12,6 @@ import {
 } from "#ui/components/architecture-model/ModelSelectionDetails.tsx";
 import { ModelHiddenSelection } from "#ui/components/architecture-model/ModelHiddenSelection.tsx";
 import { ModelCodeDetails } from "#ui/components/architecture-model/ModelCodeFindings.tsx";
-import { ModelWalkthroughChoices } from "#ui/components/architecture-model/ModelWalkthroughChoices.tsx";
 import type { useModelCodeFindings } from "#ui/hooks/architecture-model/use-model-code-findings.ts";
 
 interface ReadingSidebarProps extends ComponentProps<typeof ModelSelectionDetails> {
@@ -22,22 +20,17 @@ interface ReadingSidebarProps extends ComponentProps<typeof ModelSelectionDetail
 	overview?: ReactNode;
 	grammar: string;
 	onReveal: () => void;
-	onSearch: (id: string) => void;
 	code: ReturnType<typeof useModelCodeFindings>;
 }
 
 /**
- * Reading controls and selection share the existing single pane sidebar.
- * @param props The coherent reading, navigation actions, and shared sidebar state.
+ * What the reading says and what is selected share the existing single pane sidebar.
+ * @param props The coherent reading, selection actions, and shared sidebar state.
  * @returns The architecture and selection tabs at the shell's standard width.
  */
 function ModelReadingSidebar(props: ReadingSidebarProps): JSX.Element {
 	const available =
 		props.grammar === "architecture" ? !props.projection.missing : props.projection.flow !== null;
-	const search = useMemo(
-		() => <ModelSearch model={props.model} onChoose={props.onSearch} />,
-		[props.model, props.onSearch],
-	);
 	const evidence = useMemo(
 		() => (
 			<ModelCodeDetails
@@ -54,11 +47,9 @@ function ModelReadingSidebar(props: ReadingSidebarProps): JSX.Element {
 			overviewLabel="Architecture"
 			onClearSelection={props.selection.ids.size > 0 ? props.selection.clear : null}
 			controls={props.controls}
-			search={search}
 		>
 			<SidebarPanel tab="board">
 				{props.overview}
-				<ModelWalkthroughChoices walkthroughs={props.model.walkthroughs} />
 				{available && (
 					<>
 						<div className="px-4 py-4">

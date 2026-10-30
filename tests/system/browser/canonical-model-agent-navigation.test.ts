@@ -11,6 +11,7 @@ import {
 	pollUntil,
 	registerServerBase,
 	runServerCli,
+	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
 import { initializeSource } from "./support/canonical-model.ts";
@@ -19,6 +20,12 @@ import { startVoiceServer } from "./support/voice-box-page.ts";
 import { seedCanonicalModel, modelAddress, editCanonicalModel } from "./support/canonical-page.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
+
+/** Open the switcher and name a repository in its field. */
+async function findRepository(browser: AgentBrowserSession, name: string): Promise<void> {
+	await browser.run(["click", '[data-slot="repository-switcher"]']);
+	await browser.run(["fill", 'input[aria-label="Find a repository or checkout"]', name]);
+}
 
 test("agent navigation opens the requested canonical pane without moving its neighbor", async () => {
 	await using resources = new AsyncDisposableStack();
@@ -223,20 +230,13 @@ test("repository filtering opens canonical roots by keyboard and in the other pa
 	);
 	await pollUntil(
 		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="repository-model-open"][title="Open Orders"]') !== null`,
-			),
+			browser.eval<boolean>(`document.querySelector('[data-row-id="repository:orders"]') !== null`),
 		Boolean,
 		"both repository readings",
 		WAIT,
 	);
 	const historyBefore = await browser.eval<number>("history.length");
-	await browser.run(["fill", 'input[aria-label="Find a repository"]', "orders"]);
-	expect(
-		await browser.eval<string>(
-			`document.querySelector('[data-slot="navigator"] output')?.textContent ?? ''`,
-		),
-	).toBe("1/2");
+	await findRepository(browser, "orders");
 	await browser.run(["press", "Enter"]);
 	await pollUntil(
 		() => browser.eval<string | null>(`new URLSearchParams(location.search).get('modelA')`),
@@ -248,13 +248,13 @@ test("repository filtering opens canonical roots by keyboard and in the other pa
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(
-				`document.querySelector('[role="treeitem"][aria-selected="true"]')?.getAttribute('data-row-id') ?? null`,
+				`document.querySelector('[data-slot="repository-switcher"]')?.getAttribute('title') ?? null`,
 			),
-		(id) => id === "repository:orders",
-		"the active repository selected in the navigator",
+		(name) => name === "orders",
+		"the active repository named by the switcher",
 		WAIT,
 	);
-	await browser.run(["fill", 'input[aria-label="Find a repository"]', "shop"]);
+	await findRepository(browser, "shop");
 	await browser.run(["press", "Alt+Enter"]);
 	await pollUntil(
 		() => browser.eval<string | null>(`new URLSearchParams(location.search).get('modelB')`),
@@ -268,7 +268,7 @@ test("repository filtering opens canonical roots by keyboard and in the other pa
 	expect(
 		await browser.eval<string>(`new URLSearchParams(location.search).get('pane') ?? 'A'`),
 	).toBe("A");
-	await browser.run(["fill", 'input[aria-label="Find a repository"]', "orders"]);
+	await findRepository(browser, "orders");
 	await browser.run(["press", "ArrowDown"]);
 	await browser.run(["press", "Alt+Enter"]);
 	await pollUntil(
@@ -277,6 +277,7 @@ test("repository filtering opens canonical roots by keyboard and in the other pa
 		"the focused repository row opened beside",
 		WAIT,
 	);
+	await browser.run(["click", '[data-slot="repository-switcher"]']);
 	expect(
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-row-id="repository:orders"] [data-pane-letter]')].map(node => node.getAttribute('data-pane-letter'))`,

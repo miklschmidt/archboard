@@ -1,9 +1,14 @@
 # The navigator's structure
 
+Revised 2026-10-30 (TASK-559.05). The tree of boards is gone. Its row geometry and
+its keys live on in the `Modules` tree and the repository list of
+[the left column](operator-canvas-shell.md#the-left-column). The rest of this study
+stands as the record of how the tree of boards worked.
+
 A study for TASK-384, made on 2026-09-30. It names what a vault holds and
 what a reader does with the navigator. It measures how the tree drew both
 before this task, and it sets the representation that replaced it. The visual
-authority stays [The navigator](operator-canvas-shell.md#the-navigator) in the
+authority stays [The left column](operator-canvas-shell.md#the-left-column) in the
 shell reference.
 
 Revised 2026-10-05. The tree has since changed how it draws what this study

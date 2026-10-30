@@ -89,7 +89,7 @@ test("module search restores the sidebar and finds hidden modules without writin
 		"the hidden sidebar",
 		WAIT,
 	);
-	await browser.run(["press", "Control+Shift+K"]);
+	await browser.run(["press", "Control+k"]);
 	await pollUntil(
 		searching,
 		(state) => state.focused,
@@ -114,14 +114,14 @@ test("module search restores the sidebar and finds hidden modules without writin
 	await browser.run(["press", "Escape"]);
 	await pollUntil(searching, (state) => !state.focused, "Escape to leave the empty field", WAIT);
 	expect((await searching()).controls).toBeNull();
-	await browser.run(["press", "Control+Shift+K"]);
+	await browser.run(["press", "Control+k"]);
 	await browser.run(["keyboard", "type", "handler"]);
 	await pollUntil(searching, (state) => state.listed, "the matching hidden module", WAIT);
 	await browser.run(["press", "Enter"]);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.activeElement?.getAttribute('data-tab') === 'selection' && document.querySelector('[data-slot="module-details"]')?.getAttribute('data-module-id') === 'Shop#Handler' && document.querySelector('[data-slot="model-reading"]')?.getAttribute('data-scope') === 'Shop#Gateway'`,
+				`document.activeElement?.getAttribute('data-slot') === 'model-diagram' && document.querySelector('[data-slot="module-details"]')?.getAttribute('data-module-id') === 'Shop#Handler' && document.querySelector('[data-slot="model-reading"]')?.getAttribute('data-scope') === 'Shop#Gateway'`,
 			),
 		Boolean,
 		"the chosen module and its containing scope",

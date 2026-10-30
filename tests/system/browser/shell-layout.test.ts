@@ -291,7 +291,7 @@ test(
 						family.includes("archboard onest") && transform === "none" && weight >= 500,
 				),
 			).toBe(true);
-			expect(snapshot.titleType).toMatchObject({ weight: 650 });
+			expect(snapshot.titleType).toMatchObject({ weight: 500 });
 			expect(snapshot.sectionHeading).toMatchObject({
 				weight: 600,
 				transform: "none",

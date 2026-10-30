@@ -98,11 +98,11 @@ function Cache(children: ReactNode): JSX.Element {
 /**
  * The stage's own props a test may state as they are: a driven step, what is
  * laid over the picture, the boards above the one on screen, the shell's
- * narration, the search over parts, and what the shell hears the person changed.
+ * narration, and what the shell hears the person changed.
  */
 type StagePassThrough = Pick<
 	Parameters<typeof SemanticBoardStage>[0],
-	"driven" | "overlay" | "placeOf" | "narration" | "search" | "onUserChanged"
+	"driven" | "overlay" | "placeOf" | "narration" | "onUserChanged"
 >;
 /** What else a mounted pane may be told, beyond what it is showing. */
 interface MountOptions extends StagePassThrough {
@@ -155,7 +155,6 @@ const READING_PROPS = [
 	"overlay",
 	"placeOf",
 	"narration",
-	"search",
 	"onUserChanged",
 ] as const satisfies readonly (keyof MountOptions)[];
 

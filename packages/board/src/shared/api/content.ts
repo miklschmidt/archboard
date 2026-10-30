@@ -23,6 +23,7 @@ export {
 	type ModelFlow,
 	type ModelFilters,
 } from "#shared/rules/model-projection.ts";
+export { moduleForest } from "#shared/rules/module-fold.ts";
 export { projectFlow } from "#shared/rules/model-flow-projection.ts";
 export { doorEndpoints } from "#shared/rules/door-endpoints.ts";
 
