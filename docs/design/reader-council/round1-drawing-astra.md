@@ -40,17 +40,17 @@ The path measure is consistent across these pairs. It is not identical to the ol
 
 A projection selects the model content that one picture draws.
 
-| Reading | Immediate children | Outside context | Parent header | Drawn lines | Underlying relationships represented |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Root | 19 | 0 | 0 | 47 | 214 |
-| Browser | 8 | 2 | 1 | 44 | 102 |
-| Workspace packages | 8 | 14 | 1 | 103 | 338 |
-| renderer | 12 | 10 | 1 | 42 | 85 |
-| Layout and measuring | 7 | 7 | 1 | 22 | 29 |
-| Camera and pointer | 13 | 4 | 1 | 33 | 37 |
-| Canonical architecture | 8 | 7 | 1 | 48 | 124 |
-| Key and export | 3 | 3 | 1 | 7 | 8 |
-| Command startup | 3 | 3 | 1 | 10 | 18 |
+| Reading                | Immediate children | Outside context | Parent header | Drawn lines | Underlying relationships represented |
+| ---------------------- | -----------------: | --------------: | ------------: | ----------: | -----------------------------------: |
+| Root                   |                 19 |               0 |             0 |          47 |                                  214 |
+| Browser                |                  8 |               2 |             1 |          44 |                                  102 |
+| Workspace packages     |                  8 |              14 |             1 |         103 |                                  338 |
+| renderer               |                 12 |              10 |             1 |          42 |                                   85 |
+| Layout and measuring   |                  7 |               7 |             1 |          22 |                                   29 |
+| Camera and pointer     |                 13 |               4 |             1 |          33 |                                   37 |
+| Canonical architecture |                  8 |               7 |             1 |          48 |                                  124 |
+| Key and export         |                  3 |               3 |             1 |           7 |                                    8 |
+| Command startup        |                  3 |               3 |             1 |          10 |                                   18 |
 
 Observed: the reader already limits visible containment depth. It does not recursively expand every descendant. `projectScope` selects immediate children and opens only the selected scope (`packages/board/src/shared/rules/model-projection.ts:65`).
 
@@ -66,33 +66,33 @@ The root also gives runtime components, evaluation tools, rendering dependencies
 
 In the following table, each paired value is Blocks / Track. M means one million square diagram units. Card occupancy is card area divided by picture area.
 
-| Reading | Picture area, M | Total card area, M | Card occupancy | Mean line length | Blocks area change |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Root | 13.95 / 16.41 | 0.607 / 0.607 | 4.35% / 3.70% | 1,825 / 2,197 | −15.0% |
-| Browser | 6.12 / 9.67 | 0.301 / 0.301 | 4.91% / 3.11% | 1,234 / 1,896 | −36.7% |
-| Workspace packages | 41.84 / 67.18 | 0.588 / 0.594 | 1.40% / 0.88% | 3,423 / 5,861 | −37.7% |
-| renderer | 7.96 / 7.86 | 0.655 / 0.655 | 8.23% / 8.33% | 1,231 / 1,071 | +1.2% |
-| Layout and measuring | 3.86 / 4.60 | 0.459 / 0.459 | 11.89% / 9.98% | 1,217 / 1,408 | −16.0% |
-| Camera and pointer | 4.90 / 5.71 | 0.538 / 0.538 | 10.98% / 9.43% | 1,371 / 1,145 | −14.1% |
-| Canonical architecture | 8.27 / 8.24 | 0.461 / 0.461 | 5.57% / 5.59% | 1,737 / 1,658 | +0.3% |
-| Key and export | 0.974 / 1.258 | 0.208 / 0.208 | 21.40% / 16.56% | 470 / 616 | −22.6% |
-| Command startup | 1.280 / 1.091 | 0.197 / 0.197 | 15.40% / 18.08% | 718 / 467 | +17.4% |
+| Reading                | Picture area, M | Total card area, M |  Card occupancy | Mean line length | Blocks area change |
+| ---------------------- | --------------: | -----------------: | --------------: | ---------------: | -----------------: |
+| Root                   |   13.95 / 16.41 |      0.607 / 0.607 |   4.35% / 3.70% |    1,825 / 2,197 |             −15.0% |
+| Browser                |     6.12 / 9.67 |      0.301 / 0.301 |   4.91% / 3.11% |    1,234 / 1,896 |             −36.7% |
+| Workspace packages     |   41.84 / 67.18 |      0.588 / 0.594 |   1.40% / 0.88% |    3,423 / 5,861 |             −37.7% |
+| renderer               |     7.96 / 7.86 |      0.655 / 0.655 |   8.23% / 8.33% |    1,231 / 1,071 |              +1.2% |
+| Layout and measuring   |     3.86 / 4.60 |      0.459 / 0.459 |  11.89% / 9.98% |    1,217 / 1,408 |             −16.0% |
+| Camera and pointer     |     4.90 / 5.71 |      0.538 / 0.538 |  10.98% / 9.43% |    1,371 / 1,145 |             −14.1% |
+| Canonical architecture |     8.27 / 8.24 |      0.461 / 0.461 |   5.57% / 5.59% |    1,737 / 1,658 |              +0.3% |
+| Key and export         |   0.974 / 1.258 |      0.208 / 0.208 | 21.40% / 16.56% |        470 / 616 |             −22.6% |
+| Command startup        |   1.280 / 1.091 |      0.197 / 0.197 | 15.40% / 18.08% |        718 / 467 |             +17.4% |
 
 Blocks has less area in six of nine pairs. It has shorter average routes in five. Camera and pointer saves area but increases mean line length by 19.8%. The renderer and Canonical architecture readings offer no meaningful area advantage.
 
 The nearest-neighbor statistic also needs context. Root cards often have another card only 40 units away. Yet connections travel an average of 1,825 units, over five typical card widths. Small gaps within a row coexist with enormous gaps between useful collaborators.
 
-| Reading | Mean nearest gap, Blocks / Track | Mean gap between connected rectangles, Blocks | Area outside word boxes, Blocks / Track |
-| --- | ---: | ---: | ---: |
-| Root | 111 / 117 | 1,298 | 94.3% / 95.1% |
-| Browser | 274 / 367 | 702 | 91.7% / 94.7% |
-| Workspace packages | 280 / 466 | 2,334 | 97.6% / 98.5% |
-| renderer | 147 / 139 | 813 | 89.3% / 89.2% |
-| Layout and measuring | 80 / 93 | 870 | 84.6% / 87.1% |
-| Camera and pointer | 65 / 178 | 864 | 85.3% / 87.4% |
-| Canonical architecture | 134 / 238 | 1,206 | 92.3% / 92.3% |
-| Key and export | 42 / 137 | 315 | 71.8% / 78.2% |
-| Command startup | 70 / 108 | 557 | 78.8% / 75.1% |
+| Reading                | Mean nearest gap, Blocks / Track | Mean gap between connected rectangles, Blocks | Area outside word boxes, Blocks / Track |
+| ---------------------- | -------------------------------: | --------------------------------------------: | --------------------------------------: |
+| Root                   |                        111 / 117 |                                         1,298 |                           94.3% / 95.1% |
+| Browser                |                        274 / 367 |                                           702 |                           91.7% / 94.7% |
+| Workspace packages     |                        280 / 466 |                                         2,334 |                           97.6% / 98.5% |
+| renderer               |                        147 / 139 |                                           813 |                           89.3% / 89.2% |
+| Layout and measuring   |                          80 / 93 |                                           870 |                           84.6% / 87.1% |
+| Camera and pointer     |                         65 / 178 |                                           864 |                           85.3% / 87.4% |
+| Canonical architecture |                        134 / 238 |                                         1,206 |                           92.3% / 92.3% |
+| Key and export         |                         42 / 137 |                                           315 |                           71.8% / 78.2% |
+| Command startup        |                         70 / 108 |                                           557 |                           78.8% / 75.1% |
 
 These percentages do not mean that every unfilled unit is removable. Connections need clearance. The measured pockets below distinguish specific waste from that necessary space.
 
@@ -100,17 +100,17 @@ These percentages do not mean that every unfilled unit is removable. Connections
 
 The SVG uses 14-unit card names, 11-unit responsibility text, and 10-unit relationship labels. The full-screen captures give the drawing every pixel. The application gives it considerably less.
 
-| Reading | Blocks dimensions | Track dimensions | Full-screen name size, Blocks / Track | Actual-pane name size, Blocks | Enlargement from pane fit to scale 1.2 |
-| --- | --- | --- | ---: | ---: | ---: |
-| Root | 4,983×2,799 | 5,126×3,201 | 5.4 / 4.7 px | 3.6 px | 4.70× |
-| Browser | 3,291×1,860 | 3,639×2,656 | 8.1 / 5.7 px | 5.4 px | 3.11× |
-| Workspace packages | 7,577×5,522 | 8,718×7,706 | 2.7 / 2.0 px | 2.3 px | 7.15× |
-| renderer | 3,107×2,562 | 2,882×2,729 | 5.9 / 5.5 px | 5.4 px | 3.10× |
-| Layout and measuring | 3,106×1,244 | 2,441×1,885 | 8.7 / 8.0 px | 5.7 px | 2.93× |
-| Camera and pointer | 2,659×1,843 | 3,446×1,656 | 8.2 / 7.8 px | 6.7 px | 2.51× |
-| Canonical architecture | 2,874×2,878 | 2,786×2,959 | 5.3 / 5.1 px | 4.8 px | 3.48× |
-| Key and export | 1,162×838 | 1,206×1,043 | 18.0 / 14.5 px | 15.3 px | 1.10× |
-| Command startup | 1,168×1,096 | 1,114×979 | 13.8 / 15.4 px | 12.7 px | 1.33× |
+| Reading                | Blocks dimensions | Track dimensions | Full-screen name size, Blocks / Track | Actual-pane name size, Blocks | Enlargement from pane fit to scale 1.2 |
+| ---------------------- | ----------------- | ---------------- | ------------------------------------: | ----------------------------: | -------------------------------------: |
+| Root                   | 4,983×2,799       | 5,126×3,201      |                          5.4 / 4.7 px |                        3.6 px |                                  4.70× |
+| Browser                | 3,291×1,860       | 3,639×2,656      |                          8.1 / 5.7 px |                        5.4 px |                                  3.11× |
+| Workspace packages     | 7,577×5,522       | 8,718×7,706      |                          2.7 / 2.0 px |                        2.3 px |                                  7.15× |
+| renderer               | 3,107×2,562       | 2,882×2,729      |                          5.9 / 5.5 px |                        5.4 px |                                  3.10× |
+| Layout and measuring   | 3,106×1,244       | 2,441×1,885      |                          8.7 / 8.0 px |                        5.7 px |                                  2.93× |
+| Camera and pointer     | 2,659×1,843       | 3,446×1,656      |                          8.2 / 7.8 px |                        6.7 px |                                  2.51× |
+| Canonical architecture | 2,874×2,878       | 2,786×2,959      |                          5.3 / 5.1 px |                        4.8 px |                                  3.48× |
+| Key and export         | 1,162×838         | 1,206×1,043      |                        18.0 / 14.5 px |                       15.3 px |                                  1.10× |
+| Command startup        | 1,168×1,096       | 1,114×979        |                        13.8 / 15.4 px |                       12.7 px |                                  1.33× |
 
 Scale 1.0 makes current card names 14 pixels. Scale 1.09 makes responsibility text 12 pixels. Scale 1.2 makes relationship labels 12 pixels, names 16.8 pixels, and responsibility text 13.2 pixels. These are proposed product thresholds, not a claimed universal limit of human vision.
 
@@ -126,14 +126,14 @@ Layout and measuring exposes another limitation of area-only comparisons. Blocks
 
 These are diagnostic drawings, not proposed replacements. They alter only scratch copies of projected content.
 
-| Experiment | Nodes including parent | Lines | Area before → after | Area reduction |
-| --- | ---: | ---: | ---: | ---: |
-| Root, remove edge labels | 19 | 47 | 13.95M → 5.17M | 62.9% |
-| Browser, remove edge labels | 11 | 44 | 6.12M → 2.17M | 64.5% |
-| Root, one neutral counted line per directed pair | 19 | 29 | 13.95M → 4.24M | 69.6% |
-| Browser, one neutral counted line per directed pair | 11 | 32 | 6.12M → 3.27M | 46.6% |
-| Browser, immediate contents only | 9 | 21 | 6.12M → 2.32M | 62.1% |
-| Workspace packages, immediate contents only | 9 | 47 | 41.84M → 5.53M | 86.8% |
+| Experiment                                          | Nodes including parent | Lines | Area before → after | Area reduction |
+| --------------------------------------------------- | ---------------------: | ----: | ------------------: | -------------: |
+| Root, remove edge labels                            |                     19 |    47 |      13.95M → 5.17M |          62.9% |
+| Browser, remove edge labels                         |                     11 |    44 |       6.12M → 2.17M |          64.5% |
+| Root, one neutral counted line per directed pair    |                     19 |    29 |      13.95M → 4.24M |          69.6% |
+| Browser, one neutral counted line per directed pair |                     11 |    32 |       6.12M → 3.27M |          46.6% |
+| Browser, immediate contents only                    |                      9 |    21 |       6.12M → 2.32M |          62.1% |
+| Workspace packages, immediate contents only         |                      9 |    47 |      41.84M → 5.53M |          86.8% |
 
 Removing labels preserves module identities, relationships, kinds, directions, responsibilities, and groups. Card dimensions can change because port requirements change. The root card area changes by less than 1%. The page area changes by nearly 63%.
 

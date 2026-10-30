@@ -11,12 +11,12 @@ The cause is both, in a clear order. A reading sends far too much content into o
 
 The table shows all 131 readings of this model. A fit scale is the scale that shows a whole picture in the pane.
 
-| Change | Total area | Readings at fit 0.6 or more | Crossings |
-| --- | ---: | ---: | ---: |
-| Today | 415.0 M | 83 | 6,624 |
-| Better layout only (prototype) | 248.5 M | 96 | 6,624 |
-| Content rules only, layout unchanged | 153.9 M | 128 | 442 |
-| Both | 113.9 M | 130 | 442 |
+| Change                               | Total area | Readings at fit 0.6 or more | Crossings |
+| ------------------------------------ | ---------: | --------------------------: | --------: |
+| Today                                |    415.0 M |                          83 |     6,624 |
+| Better layout only (prototype)       |    248.5 M |                          96 |     6,624 |
+| Content rules only, layout unchanged |    153.9 M |                         128 |       442 |
+| Both                                 |    113.9 M |                         130 |       442 |
 
 The content rules alone beat the layout change, and they need no change to the layout crates.
 
@@ -50,10 +50,10 @@ Two terms recur:
 
 I use two readability levels. The 12 px target is my choice, not a product rule.
 
-| Level | Fit scale | What it means |
-| --- | ---: | --- |
-| Near-readable | 0.857 | A 14-unit name (`design.rs:30`) reaches 12 px. Notes reach 9.4 px. |
-| Far-readable | 0.6 | A 20-unit far name reaches 12 px. Long names shrink to 15 units (`far_card.rs:29-30`), so 0.6 is the best case. |
+| Level         | Fit scale | What it means                                                                                                   |
+| ------------- | --------: | --------------------------------------------------------------------------------------------------------------- |
+| Near-readable |     0.857 | A 14-unit name (`design.rs:30`) reaches 12 px. Notes reach 9.4 px.                                              |
+| Far-readable  |       0.6 | A 20-unit far name reaches 12 px. Long names shrink to 15 units (`far_card.rs:29-30`), so 0.6 is the best case. |
 
 At 0.857 the pane shows 1,483 by 1,157 units. That is the unit of one screen below.
 
@@ -61,18 +61,18 @@ At 0.857 the pane shows 1,483 by 1,157 units. That is the unit of one screen bel
 
 All values are Blocks at the current content. Blank means no card, label or frame, and no line within 16 units. Line-only space is empty except for lines, which the council's criterion K counts as empty.
 
-| Reading | Parts + context | Lines (pairs) | Picture | Cards | Line-only | Empty frame | Blank | Mean line | Crossings | Fit | Name | Screens |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Root | 19 + 0 | 47 (29) | 4983×2799 | 4.4% | 16.9% | 0% | 76.5% | 1,812 | 184 | 0.255 | 3.6 px | 8.1 |
-| Workspace packages | 8 + 14 | 103 (65) | 7577×5522 | 1.4% | 24.0% | 26.4% | 45.9% | 3,420 | 780 | 0.168 | 2.3 px | 24.4 |
-| Commands | 24 + 5 | 39 (39) | 7615×1664 | 7.6% | 16.7% | 28.6% | 40.4% | 3,148 | 81 | 0.167 | 2.3 px | 7.4 |
-| workbench | 17 + 7 | 69 (59) | 4638×3308 | 4.7% | 25.8% | 47.7% | 16.5% | 2,335 | 444 | 0.274 | 3.8 px | 8.9 |
-| Canonical architecture | 8 + 7 | 48 (46) | 2874×2878 | 5.6% | 25.3% | 48.5% | 15.1% | 1,723 | 202 | 0.345 | 4.8 px | 4.8 |
-| renderer | 12 + 10 | 42 (39) | 3107×2562 | 8.2% | 17.1% | 46.0% | 22.1% | 1,222 | 83 | 0.387 | 5.4 px | 4.6 |
-| Browser | 8 + 2 | 44 (32) | 3291×1860 | 4.9% | 22.1% | 54.7% | 9.8% | 1,220 | 155 | 0.386 | 5.4 px | 3.6 |
-| Agent CLI | 12 + 7 | 29 (26) | 2854×1913 | 11.9% | 20.5% | 41.9% | 17.8% | 1,450 | 66 | 0.445 | 6.2 px | 3.2 |
-| Archboard server | 4 + 5 | 36 (21) | 2635×1776 | 6.7% | 33.2% | 29.1% | 22.7% | 1,657 | 222 | 0.482 | 6.8 px | 2.7 |
-| Median of 131 | 3 + 5 | 13 (12) | 1554×1168 | 14.8% | 16.7% | 20.7% | 39.1% | 944 | 12 | 0.703 | 9.8 px | 1.1 |
+| Reading                | Parts + context | Lines (pairs) |   Picture | Cards | Line-only | Empty frame | Blank | Mean line | Crossings |   Fit |   Name | Screens |
+| ---------------------- | --------------: | ------------: | --------: | ----: | --------: | ----------: | ----: | --------: | --------: | ----: | -----: | ------: |
+| Root                   |          19 + 0 |       47 (29) | 4983×2799 |  4.4% |     16.9% |          0% | 76.5% |     1,812 |       184 | 0.255 | 3.6 px |     8.1 |
+| Workspace packages     |          8 + 14 |      103 (65) | 7577×5522 |  1.4% |     24.0% |       26.4% | 45.9% |     3,420 |       780 | 0.168 | 2.3 px |    24.4 |
+| Commands               |          24 + 5 |       39 (39) | 7615×1664 |  7.6% |     16.7% |       28.6% | 40.4% |     3,148 |        81 | 0.167 | 2.3 px |     7.4 |
+| workbench              |          17 + 7 |       69 (59) | 4638×3308 |  4.7% |     25.8% |       47.7% | 16.5% |     2,335 |       444 | 0.274 | 3.8 px |     8.9 |
+| Canonical architecture |           8 + 7 |       48 (46) | 2874×2878 |  5.6% |     25.3% |       48.5% | 15.1% |     1,723 |       202 | 0.345 | 4.8 px |     4.8 |
+| renderer               |         12 + 10 |       42 (39) | 3107×2562 |  8.2% |     17.1% |       46.0% | 22.1% |     1,222 |        83 | 0.387 | 5.4 px |     4.6 |
+| Browser                |           8 + 2 |       44 (32) | 3291×1860 |  4.9% |     22.1% |       54.7% |  9.8% |     1,220 |       155 | 0.386 | 5.4 px |     3.6 |
+| Agent CLI              |          12 + 7 |       29 (26) | 2854×1913 | 11.9% |     20.5% |       41.9% | 17.8% |     1,450 |        66 | 0.445 | 6.2 px |     3.2 |
+| Archboard server       |           4 + 5 |       36 (21) | 2635×1776 |  6.7% |     33.2% |       29.1% | 22.7% |     1,657 |       222 | 0.482 | 6.8 px |     2.7 |
+| Median of 131          |           3 + 5 |       13 (12) | 1554×1168 | 14.8% |     16.7% |       20.7% | 39.1% |       944 |        12 | 0.703 | 9.8 px |     1.1 |
 
 Facts over the 131 readings:
 
@@ -89,18 +89,18 @@ The root's largest rectangle with no ink is 1,805 by 1,553 units. That is 5.3 ca
 
 Each row sends different content to the same Blocks layout.
 
-| Content | Total area | Share of today | Median fit | Near-readable | Far-readable | Crossings |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Open module only, one line per pair | 90.4 M | 22% | 1.00 | 108 | 126 | 110 |
-| Cards with no lines at all | 124.6 M | 30% | 1.00 | 86 | 131 | 0 |
-| All content rules of section 7 | 153.9 M | 37% | 0.95 | 70 | 128 | 442 |
-| Context lines end on the frame, context shows names | 164.9 M | 40% | 0.95 | 70 | 121 | 658 |
-| Context lines end on the frame | 184.4 M | 44% | 0.88 | 76 | 117 | 679 |
-| One line per pair, no words | 200.9 M | 48% | 0.86 | 69 | 112 | 3,085 |
-| All lines, no words | 218.1 M | 53% | 0.85 | 62 | 112 | 5,229 |
-| One line per pair, words on single lines | 314.1 M | 76% | 0.75 | 49 | 90 | 3,851 |
-| Today, with count labels removed | 343.4 M | 83% | 0.75 | 45 | 87 | 6,244 |
-| Today | 415.0 M | 100% | 0.70 | 47 | 83 | 6,624 |
+| Content                                             | Total area | Share of today | Median fit | Near-readable | Far-readable | Crossings |
+| --------------------------------------------------- | ---------: | -------------: | ---------: | ------------: | -----------: | --------: |
+| Open module only, one line per pair                 |     90.4 M |            22% |       1.00 |           108 |          126 |       110 |
+| Cards with no lines at all                          |    124.6 M |            30% |       1.00 |            86 |          131 |         0 |
+| All content rules of section 7                      |    153.9 M |            37% |       0.95 |            70 |          128 |       442 |
+| Context lines end on the frame, context shows names |    164.9 M |            40% |       0.95 |            70 |          121 |       658 |
+| Context lines end on the frame                      |    184.4 M |            44% |       0.88 |            76 |          117 |       679 |
+| One line per pair, no words                         |    200.9 M |            48% |       0.86 |            69 |          112 |     3,085 |
+| All lines, no words                                 |    218.1 M |            53% |       0.85 |            62 |          112 |     5,229 |
+| One line per pair, words on single lines            |    314.1 M |            76% |       0.75 |            49 |           90 |     3,851 |
+| Today, with count labels removed                    |    343.4 M |            83% |       0.75 |            45 |           87 |     6,244 |
+| Today                                               |    415.0 M |           100% |       0.70 |            47 |           83 |     6,624 |
 
 Three facts decide the question.
 
@@ -116,23 +116,23 @@ I looked at the prototype's root as well. It is 41 percent smaller and no easier
 
 The owner named #24. That pull request is the Rust core, and it makes no area claim. The area claim belongs to #25 at `396bfd9ad`.
 
-| Claim | Source | Finding |
-| --- | --- | --- |
-| Plain page area falls 12.6% against main | `blocks-planned-layout.md:222-224` | The direction stands. Blocks is 23% smaller than Track here, and smaller on 91 of 131 readings. |
-| Mean page area 2.94 M, 16.5 routes per drawing | `blocks-planned-layout.md:179-182` | The canonical model is no worse: 3.17 M and 17.1 lines. The claim was true, and the picture was still poor. |
-| 1.22 bends per route | `blocks-planned-layout.md:183` | 1.83 here, against 3.01 for Track. Blocks keeps the lead. |
-| Contraction removes empty bands | `blocks-planned-layout.md:42-49` | It runs, but 97.9% of all width lies under a card in some row. See D2. |
-| Council 563: 33 better, 0 worse, K margin +1.56 | `blocks-planned-layout.md:254` | True, and only relative. Absolute K averaged 5.56, and 16 of 40 pictures scored K of 4 or less. |
+| Claim                                           | Source                             | Finding                                                                                                     |
+| ----------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Plain page area falls 12.6% against main        | `blocks-planned-layout.md:222-224` | The direction stands. Blocks is 23% smaller than Track here, and smaller on 91 of 131 readings.             |
+| Mean page area 2.94 M, 16.5 routes per drawing  | `blocks-planned-layout.md:179-182` | The canonical model is no worse: 3.17 M and 17.1 lines. The claim was true, and the picture was still poor. |
+| 1.22 bends per route                            | `blocks-planned-layout.md:183`     | 1.83 here, against 3.01 for Track. Blocks keeps the lead.                                                   |
+| Contraction removes empty bands                 | `blocks-planned-layout.md:42-49`   | It runs, but 97.9% of all width lies under a card in some row. See D2.                                      |
+| Council 563: 33 better, 0 worse, K margin +1.56 | `blocks-planned-layout.md:254`     | True, and only relative. Absolute K averaged 5.56, and 16 of 40 pictures scored K of 4 or less.             |
 
 The doc recorded the warning itself. At one build stage it reports frame occupancy falling from 8.36 percent to 7.71 percent. It also says that those results "miss every corpus compactness target" (`blocks-planned-layout.md:1089-1092`). The later gate asked for improvement against main. No gate set an absolute floor.
 
 I extracted the absolute scores from `/tmp/grading-563/verdicts/`, with `key.json` naming the after picture.
 
-| Criterion | After mean | Before mean | After below 7 | After at 4 or less |
-| --- | ---: | ---: | ---: | ---: |
-| K, compact frames | 5.56 | 4.00 | 26 of 40 | 16 of 40 |
-| R, direct lines | 6.04 | 5.42 | 24 of 40 | 15 of 40 |
-| W, readable at fit | 7.77 | 6.70 | 12 of 40 | 7 of 40 |
+| Criterion          | After mean | Before mean | After below 7 | After at 4 or less |
+| ------------------ | ---------: | ----------: | ------------: | -----------------: |
+| K, compact frames  |       5.56 |        4.00 |      26 of 40 |           16 of 40 |
+| R, direct lines    |       6.04 |        5.42 |      24 of 40 |           15 of 40 |
+| W, readable at fit |       7.77 |        6.70 |      12 of 40 |            7 of 40 |
 
 Criterion W also tests the wrong rectangle. It fits a picture into 1920 by 1080 (`criteria.md:76`), but the pane is 1,271 by 992 (`constants.rs:22-34`).
 
@@ -144,17 +144,17 @@ ADR 0052 and the comment at `scope.ts:122` also say that all relationships betwe
 
 Observed means that a counterfactual removed the cause and I measured the result. Read means that I found the cause in the code and did not test it alone.
 
-| ID | Dead area | Size | Named cause | Evidence |
-| --- | --- | --- | --- | --- |
-| D1 | Hollow frames, such as Browser | 54.7% of Browser, median 20.7% | Every part keeps its own line to each context card (`model-projection.ts:61-66`). These lines fill the frame. | Observed. Browser goes from 3291×1860 to 1463×1279. |
-| D2 | Tall bands that only lines cross | 26.7% of all height is held open by a label alone, 45.7% at the root | `compact.rs:161-184` cuts whole-picture bands. One label or bend anywhere keeps its row open across the full width, with 32 units of clearance on each side (`shape.rs:9`). | Observed. The prototype cuts height 31% and width 7%. |
-| D3 | Width that cannot shrink | 97.9% of all width lies under a card ±32 in some row | The same global cut. Cards in different ranks are staggered, so no empty column exists. | Observed. Width falls only 7%. |
-| D4 | The root's lower-right void | 20.1% of the picture | Leaf cards sit on the hub's next rank (a rank is a row of the layered layout), and nothing uses the space under them. If a line at a block's level has a label, `legacy.rs:159-170` does not pack that block. | Read. The packing condition was not instrumented. 2,141 of 2,237 lines have words. |
-| D5 | Very wide bands, such as Commands at 4.6 to 1 | 20 readings wider than 2.2 to 1 | Context lines reach all 24 parts, so all stand on one rank. Candidates then sort by raw area (`legacy.rs:316`, `:387`, `:393`), so a thin band beats a shape that fits the pane. | The first part is observed: Commands goes from fit 0.17 to 0.47. The second part is read. |
-| D6 | Doubled lines | 2,237 lines for 1,948 pairs | The split by kind (`model-projection.ts:347-353`). | Observed. Crossings fall 41%, area 8%. |
-| D7 | Bands held by count labels | 736 lines | `model-projection.ts:357`. | Observed. Area falls 17%. |
-| D8 | Frames around one card | 65 of 112 group regions | `inline.rs:72` draws a region for any group. Commands shows five of them. | Read. Seen in `drawing-opus-commands-blocks-ctxnames.png`. |
-| D9 | Wide cards | 116 of 131 readings have a median card width of 340 | `measure/cards.rs` grows a card to `CARD_MOST`. | Observed. Removing notes removes 17%, over the 130 readings that drew. |
+| ID  | Dead area                                     | Size                                                                 | Named cause                                                                                                                                                                                                   | Evidence                                                                                  |
+| --- | --------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| D1  | Hollow frames, such as Browser                | 54.7% of Browser, median 20.7%                                       | Every part keeps its own line to each context card (`model-projection.ts:61-66`). These lines fill the frame.                                                                                                 | Observed. Browser goes from 3291×1860 to 1463×1279.                                       |
+| D2  | Tall bands that only lines cross              | 26.7% of all height is held open by a label alone, 45.7% at the root | `compact.rs:161-184` cuts whole-picture bands. One label or bend anywhere keeps its row open across the full width, with 32 units of clearance on each side (`shape.rs:9`).                                   | Observed. The prototype cuts height 31% and width 7%.                                     |
+| D3  | Width that cannot shrink                      | 97.9% of all width lies under a card ±32 in some row                 | The same global cut. Cards in different ranks are staggered, so no empty column exists.                                                                                                                       | Observed. Width falls only 7%.                                                            |
+| D4  | The root's lower-right void                   | 20.1% of the picture                                                 | Leaf cards sit on the hub's next rank (a rank is a row of the layered layout), and nothing uses the space under them. If a line at a block's level has a label, `legacy.rs:159-170` does not pack that block. | Read. The packing condition was not instrumented. 2,141 of 2,237 lines have words.        |
+| D5  | Very wide bands, such as Commands at 4.6 to 1 | 20 readings wider than 2.2 to 1                                      | Context lines reach all 24 parts, so all stand on one rank. Candidates then sort by raw area (`legacy.rs:316`, `:387`, `:393`), so a thin band beats a shape that fits the pane.                              | The first part is observed: Commands goes from fit 0.17 to 0.47. The second part is read. |
+| D6  | Doubled lines                                 | 2,237 lines for 1,948 pairs                                          | The split by kind (`model-projection.ts:347-353`).                                                                                                                                                            | Observed. Crossings fall 41%, area 8%.                                                    |
+| D7  | Bands held by count labels                    | 736 lines                                                            | `model-projection.ts:357`.                                                                                                                                                                                    | Observed. Area falls 17%.                                                                 |
+| D8  | Frames around one card                        | 65 of 112 group regions                                              | `inline.rs:72` draws a region for any group. Commands shows five of them.                                                                                                                                     | Read. Seen in `drawing-opus-commands-blocks-ctxnames.png`.                                |
+| D9  | Wide cards                                    | 116 of 131 readings have a median card width of 340                  | `measure/cards.rs` grows a card to `CARD_MOST`.                                                                                                                                                               | Observed. Removing notes removes 17%, over the 130 readings that drew.                    |
 
 The label rank has a real cost on overfull pictures. `card_graph.rs:207-223` makes each label a Graphviz node on its own rank. I do not recommend removing it, for the reason in section 8.
 
@@ -168,14 +168,14 @@ A good picture answers one question: what are the parts of this module, and how 
 
 The line count predicts readability better than any other measure I took.
 
-| Lines | Readings today | Fit 0.6 today | Fit 0.857 today | Readings with context rule | Fit 0.6 with context rule |
-| ---: | ---: | ---: | ---: | ---: | ---: |
-| 0 to 6 | 35 | 100% | 91% | 47 | 100% |
-| 7 to 12 | 24 | 92% | 46% | 46 | 98% |
-| 13 to 18 | 26 | 77% | 15% | 25 | 84% |
-| 19 to 24 | 17 | 35% | 0% | 6 | 50% |
-| 25 to 32 | 12 | 0% | 0% | 5 | 20% |
-| 33 or more | 17 | 0% | 0% | 2 | 0% |
+|      Lines | Readings today | Fit 0.6 today | Fit 0.857 today | Readings with context rule | Fit 0.6 with context rule |
+| ---------: | -------------: | ------------: | --------------: | -------------------------: | ------------------------: |
+|     0 to 6 |             35 |          100% |             91% |                         47 |                      100% |
+|    7 to 12 |             24 |           92% |             46% |                         46 |                       98% |
+|   13 to 18 |             26 |           77% |             15% |                         25 |                       84% |
+|   19 to 24 |             17 |           35% |              0% |                          6 |                       50% |
+|   25 to 32 |             12 |            0% |              0% |                          5 |                       20% |
+| 33 or more |             17 |            0% |              0% |                          2 |                        0% |
 
 The limit is 18 lines. Above it, a picture stops reaching far-readable.
 
@@ -191,11 +191,11 @@ The default stays the model's root. It needs no authored choice and works for ev
 
 A childless card with at most one neighbour in the picture shows its name only and loses its line. At the root this applies to 9 of 19 cards. All 19 stay on screen.
 
-| Root picture | Size | Cards | Lines | Crossings | Fit | Far name |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Today | 4983×2799 | 19 | 47 | 184 | 0.255 | 5.1 px |
-| Names only, lines kept | 2835×1696 | 19 | 24 | 12 | 0.448 | 9.0 px |
-| Names only, lines hidden | 2118×1566 | 19 | 16 | 3 | 0.600 | 12.0 px |
+| Root picture             |      Size | Cards | Lines | Crossings |   Fit | Far name |
+| ------------------------ | --------: | ----: | ----: | --------: | ----: | -------: |
+| Today                    | 4983×2799 |    19 |    47 |       184 | 0.255 |   5.1 px |
+| Names only, lines kept   | 2835×1696 |    19 |    24 |        12 | 0.448 |   9.0 px |
+| Names only, lines hidden | 2118×1566 |    19 |    16 |         3 | 0.600 |  12.0 px |
 
 I chose the third. See `drawing-opus-root-blocks-rootrail.png`. Its name-only cards form a loose column, and section 8 tidies them.
 
@@ -230,13 +230,13 @@ Parts keep their notes. Context cards show their names only, which saves 11 perc
 
 The content rules come first, because they change the projection only. These layout changes follow, in this order.
 
-| Order | Change | Cause | Expected result | Evidence |
-| ---: | --- | --- | --- | --- |
-| 1 | Replace the global band cut in `compact.rs` with an order-preserving constraint compaction. Two objects that can see each other along an axis keep their order. Everything else can slide. | D2, D3 | A further 26% of area. 130 of 131 readings far-readable. | Prototype, section 9 |
-| 2 | Rank candidates by their fit in the reference pane, not by area, in `legacy.rs:316`, `:387`, `:393` and `reading.rs:94-99`. | D5 | Less letterboxing. The median picture fills 74% of the pane today. | Read, not tested |
-| 3 | Lay out parts with no line between them as a grid shaped to the pane, and tidy name-only cards into one row. | D4, D5 | Commands remains the worst at fit 0.47, with 24 parts and 10 lines. | Read, not tested |
-| 4 | Draw no region for a group with one visible member. Give the card the group's color. | D8 | Commands loses five frames. | Read, not tested |
-| 5 | Lower crossings in Blocks. | Blocks crosses twice as often as Track today, and 4.7 times as often after the context rule. | The median falls from 2 toward Track's 0. | Measured gap, cause not traced |
+| Order | Change                                                                                                                                                                                     | Cause                                                                                        | Expected result                                                     | Evidence                       |
+| ----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------ |
+|     1 | Replace the global band cut in `compact.rs` with an order-preserving constraint compaction. Two objects that can see each other along an axis keep their order. Everything else can slide. | D2, D3                                                                                       | A further 26% of area. 130 of 131 readings far-readable.            | Prototype, section 9           |
+|     2 | Rank candidates by their fit in the reference pane, not by area, in `legacy.rs:316`, `:387`, `:393` and `reading.rs:94-99`.                                                                | D5                                                                                           | Less letterboxing. The median picture fills 74% of the pane today.  | Read, not tested               |
+|     3 | Lay out parts with no line between them as a grid shaped to the pane, and tidy name-only cards into one row.                                                                               | D4, D5                                                                                       | Commands remains the worst at fit 0.47, with 24 parts and 10 lines. | Read, not tested               |
+|     4 | Draw no region for a group with one visible member. Give the card the group's color.                                                                                                       | D8                                                                                           | Commands loses five frames.                                         | Read, not tested               |
+|     5 | Lower crossings in Blocks.                                                                                                                                                                 | Blocks crosses twice as often as Track today, and 4.7 times as often after the context rule. | The median falls from 2 toward Track's 0.                           | Measured gap, cause not traced |
 
 The first change is the third stage of topology-shape-metrics layout, a standard method for orthogonal drawings. The planner keeps its routes, and only their lengths change.
 

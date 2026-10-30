@@ -21,26 +21,26 @@ Six decisions carry the whole redesign:
 
 The rows below are the facts that drive the design.
 
-| Moment | Observed | Evidence |
-| --- | --- | --- |
-| First screen | The pane opens the first registered repository. That repository is unmigrated, so a person reads "Migration required" under Current, Compare and Refresh controls that can do nothing. | `01-start.png` |
-| Root picture | 19 cards and 93 line groups. The picture is 4983 by 2799 in a 1319 by 1040 area, a scale of 0.265. A card is 85 by 20 px on screen. A 14 px name is 3.7 px high. | `journey-opus-02-root.png` |
-| Root sidebar | The Architecture tab scrolls 7,692 px in a 794 px view, 9.7 screens. Its first words are an agent's note about TASK-549.24. | `journey-opus-02-root.png` |
-| Model name | The name is `vKEsyHFk`, which is also the identity. The sidebar sets it as a headline. | `journey-opus-13-draft.png` |
-| Left column | The last repository row ends at y 332 and the agent dock starts at y 1023. So 691 px of a 319 px wide column are empty. | measured |
-| Selection | The Selection tab scrolls 3,638 px and holds 26 Evidence disclosures. The name takes about 100 px of height. `Open module` sits at y 872. A path breaks inside a word. | `journey-opus-03-selected.png` |
-| Sidebar hidden | Breadcrumbs, grammar, Focus, Filters and Explain leave the page. The person loses every reading control. | `journey-opus-04-sidebar-hidden.png` |
-| Opening a module | At 43 ms the text "Drawing modules…" replaces the picture. The new picture lands at 828 ms. Nothing moves. The module stays selected after it opens. | `journey-opus-05b-open-settled.png` |
-| What can open | The SVG holds 34 label parts, 1 header part and 0 drill marks. A hover shows no tip. Double-click is the only gesture on the picture. | live SVG |
-| Sideways | No control exists. | live control list |
-| Scope text | In `HTTP serving`, the scope's own heading sits 1,822 px down the tab, under the task note and all 19 walkthroughs. | live measure |
-| Flow | The person chooses Sequence first. The pane goes blank with one sentence. A second selector then appears. | `journey-opus-09b-flow-picker.png` |
-| State menu | 114 rows in one flat list: Current, 17 states and 96 checkpoints. Compare repeats the list. | `journey-opus-11-state-menu.png` |
-| Proposal | The default comparison reports 2,955 changed subjects. The proposal's own record holds 90 changes. The picture still read "Drawing modules…" after 8 s. | `journey-opus-13-draft.png` |
-| Walkthrough | The same 19 rows appear at every scope, and 18 start with "Original". The plate takes 285 px. The zoomed card reads well. | `journey-opus-14-walkthrough.png` |
-| Focus | Focus on the five parent roots gives 18 cards, 91 lines and a larger picture, 5638 by 3202. The lever does not simplify. | `journey-opus-17-focus-five-parents.png` |
-| Far view | `ModelDiagram.tsx:301` passes `far: false`. Forcing the far view on the root helps little. The picture draws too much for a name to help. | `journey-opus-16-root-far-view.png` |
-| Small model | The `shop` root has 2 cards and fits at about 3.1 times. Fit has no ceiling. "Implemented · Implemented" is the sidebar's first line. | `journey-opus-18-shop-root.png` |
+| Moment           | Observed                                                                                                                                                                               | Evidence                                 |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| First screen     | The pane opens the first registered repository. That repository is unmigrated, so a person reads "Migration required" under Current, Compare and Refresh controls that can do nothing. | `01-start.png`                           |
+| Root picture     | 19 cards and 93 line groups. The picture is 4983 by 2799 in a 1319 by 1040 area, a scale of 0.265. A card is 85 by 20 px on screen. A 14 px name is 3.7 px high.                       | `journey-opus-02-root.png`               |
+| Root sidebar     | The Architecture tab scrolls 7,692 px in a 794 px view, 9.7 screens. Its first words are an agent's note about TASK-549.24.                                                            | `journey-opus-02-root.png`               |
+| Model name       | The name is `vKEsyHFk`, which is also the identity. The sidebar sets it as a headline.                                                                                                 | `journey-opus-13-draft.png`              |
+| Left column      | The last repository row ends at y 332 and the agent dock starts at y 1023. So 691 px of a 319 px wide column are empty.                                                                | measured                                 |
+| Selection        | The Selection tab scrolls 3,638 px and holds 26 Evidence disclosures. The name takes about 100 px of height. `Open module` sits at y 872. A path breaks inside a word.                 | `journey-opus-03-selected.png`           |
+| Sidebar hidden   | Breadcrumbs, grammar, Focus, Filters and Explain leave the page. The person loses every reading control.                                                                               | `journey-opus-04-sidebar-hidden.png`     |
+| Opening a module | At 43 ms the text "Drawing modules…" replaces the picture. The new picture lands at 828 ms. Nothing moves. The module stays selected after it opens.                                   | `journey-opus-05b-open-settled.png`      |
+| What can open    | The SVG holds 34 label parts, 1 header part and 0 drill marks. A hover shows no tip. Double-click is the only gesture on the picture.                                                  | live SVG                                 |
+| Sideways         | No control exists.                                                                                                                                                                     | live control list                        |
+| Scope text       | In `HTTP serving`, the scope's own heading sits 1,822 px down the tab, under the task note and all 19 walkthroughs.                                                                    | live measure                             |
+| Flow             | The person chooses Sequence first. The pane goes blank with one sentence. A second selector then appears.                                                                              | `journey-opus-09b-flow-picker.png`       |
+| State menu       | 114 rows in one flat list: Current, 17 states and 96 checkpoints. Compare repeats the list.                                                                                            | `journey-opus-11-state-menu.png`         |
+| Proposal         | The default comparison reports 2,955 changed subjects. The proposal's own record holds 90 changes. The picture still read "Drawing modules…" after 8 s.                                | `journey-opus-13-draft.png`              |
+| Walkthrough      | The same 19 rows appear at every scope, and 18 start with "Original". The plate takes 285 px. The zoomed card reads well.                                                              | `journey-opus-14-walkthrough.png`        |
+| Focus            | Focus on the five parent roots gives 18 cards, 91 lines and a larger picture, 5638 by 3202. The lever does not simplify.                                                               | `journey-opus-17-focus-five-parents.png` |
+| Far view         | `ModelDiagram.tsx:301` passes `far: false`. Forcing the far view on the root helps little. The picture draws too much for a name to help.                                              | `journey-opus-16-root-far-view.png`      |
+| Small model      | The `shop` root has 2 cards and fits at about 3.1 times. Fit has no ceiling. "Implemented · Implemented" is the sidebar's first line.                                                  | `journey-opus-18-shop-root.png`          |
 
 The model's shape decides the rest. It has 540 modules, 19 roots and 8 tiers. Of the 130 modules with children, the median holds 3 and only 5 hold more than 12. A copy of the projection rule says that neighbors outnumber children in 50 of those 130 scopes. The model has 410 leaves. The model also holds 1,117 relationships, 72 flows, 19 walkthroughs, 17 states, 96 checkpoints, 245 imported bookmarks and 2,614 former addresses.
 
@@ -264,24 +264,24 @@ The 18 walkthroughs named "Original …" are data for an agent to rename. The re
 
 The sidebar holds one subject. That rule answers every placement question.
 
-| Item | Today | Decision |
-| --- | --- | --- |
-| Selected subject: name, kind, path, responsibility, standing | Selection tab | Stays, in the inspector |
-| Connections of the subject | Full list with 26 disclosures | Stays, grouped, at most 5 rows |
-| Flows of the subject | Absent | Added, at most 3 rows |
-| Open, Open code, Ask | Mid-column | Pinned foot |
-| Search | Sidebar head | Left column, merged into Find |
-| Breadcrumbs | Sidebar | Pane header |
-| Selection count, Focus, Clear selection, Explain | Sidebar bar | Inspector and context menu, after a selection |
-| Grammar, Filters | Sidebar bar | Read menu and Key |
-| State note and decision | Top of the tab | History panel |
-| Walkthroughs | Tab | Read menu |
-| Scope introduction | Tab, 1,822 px down | Caption and About |
-| Modules list | Tab, 1,886 px | Tree |
-| Connections list | Tab, 3,487 px | About, where it keeps its keyboard route |
-| Groups | Tab | Key |
-| Interface, code history, documents, definition | Tab | About |
-| Model ownership note | Tab | Removed. It states something unavailable and offers nothing. |
+| Item                                                         | Today                         | Decision                                                     |
+| ------------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------ |
+| Selected subject: name, kind, path, responsibility, standing | Selection tab                 | Stays, in the inspector                                      |
+| Connections of the subject                                   | Full list with 26 disclosures | Stays, grouped, at most 5 rows                               |
+| Flows of the subject                                         | Absent                        | Added, at most 3 rows                                        |
+| Open, Open code, Ask                                         | Mid-column                    | Pinned foot                                                  |
+| Search                                                       | Sidebar head                  | Left column, merged into Find                                |
+| Breadcrumbs                                                  | Sidebar                       | Pane header                                                  |
+| Selection count, Focus, Clear selection, Explain             | Sidebar bar                   | Inspector and context menu, after a selection                |
+| Grammar, Filters                                             | Sidebar bar                   | Read menu and Key                                            |
+| State note and decision                                      | Top of the tab                | History panel                                                |
+| Walkthroughs                                                 | Tab                           | Read menu                                                    |
+| Scope introduction                                           | Tab, 1,822 px down            | Caption and About                                            |
+| Modules list                                                 | Tab, 1,886 px                 | Tree                                                         |
+| Connections list                                             | Tab, 3,487 px                 | About, where it keeps its keyboard route                     |
+| Groups                                                       | Tab                           | Key                                                          |
+| Interface, code history, documents, definition               | Tab                           | About                                                        |
+| Model ownership note                                         | Tab                           | Removed. It states something unavailable and offers nothing. |
 
 About returns from the old product as the second page of the pane, with `Diagram | About` in the header. It describes the open scope. It holds what the scope is, its parts, connections, interface, flows, walkthroughs, code history and documents. It uses the full width and the old outline. A long list needs a wide page, and the study behind the old About page already showed that. Every list that the sidebar loses lands here, so nothing leaves the product.
 
@@ -289,19 +289,19 @@ About returns from the old product as the second page of the pane, with `Diagram
 
 The levers are good. They are shown all at once, at every moment, and that is the fault. Each lever below appears at the moment of its use.
 
-| Lever | Verdict | Where it lives | When it appears |
-| --- | --- | --- | --- |
-| Scope | Stays, and becomes the center | Tree, crumbs, picture gestures | Always |
-| Focus | Changes | `F`, context menu, and a `Focused on 3` chip while active | After a selection |
-| Filters | Merge with the legend | Key, on the picture's lower left | One small button always. It shows a count of hidden rows. |
-| Groups | Change | Key: select members, or show the region | Off by default, because they saturate the picture |
-| Grammar | Merges into flow | `Sequence \| Flowchart` toggle | Only while a flow is open |
-| Flow | Merges into Read | Read menu, inspector, Find | When the scope touches a flow, 93 of 130 parents |
-| Walkthroughs | Merge into Read | Read menu, root caption | When a beat touches the scope |
-| State | Merges with compare | Chip, then History panel | Chip always, panel on request |
-| Compare | Merges into state | Second chip | Only on a reading that is not current |
-| Bookmarks | Merge into Read, as Views | Read menu, Find | Only the views that touch the scope |
-| Former addresses | Leave the surface | Address resolver only | Never as a control |
+| Lever            | Verdict                       | Where it lives                                            | When it appears                                           |
+| ---------------- | ----------------------------- | --------------------------------------------------------- | --------------------------------------------------------- |
+| Scope            | Stays, and becomes the center | Tree, crumbs, picture gestures                            | Always                                                    |
+| Focus            | Changes                       | `F`, context menu, and a `Focused on 3` chip while active | After a selection                                         |
+| Filters          | Merge with the legend         | Key, on the picture's lower left                          | One small button always. It shows a count of hidden rows. |
+| Groups           | Change                        | Key: select members, or show the region                   | Off by default, because they saturate the picture         |
+| Grammar          | Merges into flow              | `Sequence \| Flowchart` toggle                            | Only while a flow is open                                 |
+| Flow             | Merges into Read              | Read menu, inspector, Find                                | When the scope touches a flow, 93 of 130 parents          |
+| Walkthroughs     | Merge into Read               | Read menu, root caption                                   | When a beat touches the scope                             |
+| State            | Merges with compare           | Chip, then History panel                                  | Chip always, panel on request                             |
+| Compare          | Merges into state             | Second chip                                               | Only on a reading that is not current                     |
+| Bookmarks        | Merge into Read, as Views     | Read menu, Find                                           | Only the views that touch the scope                       |
+| Former addresses | Leave the surface             | Address resolver only                                     | Never as a control                                        |
 
 Focus needs a real fix. It must draw the selected subjects and the lines between them, and everything else becomes a door. Today it keeps context, so it does not simplify.
 
@@ -324,19 +324,19 @@ What the old board canvas did at `origin/main`, from its code and docs. I read t
 
 The cause today is small. `ModelReadingCanvas.tsx:52` keys the scene on the scope, and `:77` keys it on the flow. So each move remounts the camera and the picture. It also defeats the `keepPreviousData` at `ModelDiagram.tsx:72`. A new state or checkpoint is a new query key, so `ArchitectureModelStage.tsx:409` shows "Reading architecture…" in place of the reading. `ModelDiagram.tsx:238` calls `stagePicture` directly, with no transition path.
 
-| The person's act | `origin/main` | Today | Required |
-| --- | --- | --- | --- |
-| First open | Entrance | Nothing | Entrance, 760 ms |
-| Open a card | Dive | Text, then a cut, 828 ms | Dive, 720 ms |
-| Up, one level or many | Reverse dive, place restored | Cut | Reverse dive, place restored |
-| Sideways | Did not exist | Did not exist | Carry: door becomes frame, 640 ms |
-| Change state or checkpoint | Carry | Text, then a cut (from code) | Carry, camera held |
-| Focus or filter | Entrance for a view | "Updating diagram…" badge | Carry, because the subjects are shared |
-| Open a flow | Entrance | Cut | Carry to the head row, then lifelines and steps |
-| Select | Lighting and sweep | Lighting only | Lighting and sweep |
-| Point at a row | `Peek` | Nothing | `Peek` |
-| Walkthrough beat | Carry and camera glide | Camera glide | Dive or carry by relation, with camera glide |
-| Inspector | Eases over `SIDEBAR_MS` | Tabs rebuild | Eases in 160 ms, leaves in 110 ms |
+| The person's act           | `origin/main`                | Today                        | Required                                        |
+| -------------------------- | ---------------------------- | ---------------------------- | ----------------------------------------------- |
+| First open                 | Entrance                     | Nothing                      | Entrance, 760 ms                                |
+| Open a card                | Dive                         | Text, then a cut, 828 ms     | Dive, 720 ms                                    |
+| Up, one level or many      | Reverse dive, place restored | Cut                          | Reverse dive, place restored                    |
+| Sideways                   | Did not exist                | Did not exist                | Carry: door becomes frame, 640 ms               |
+| Change state or checkpoint | Carry                        | Text, then a cut (from code) | Carry, camera held                              |
+| Focus or filter            | Entrance for a view          | "Updating diagram…" badge    | Carry, because the subjects are shared          |
+| Open a flow                | Entrance                     | Cut                          | Carry to the head row, then lifelines and steps |
+| Select                     | Lighting and sweep           | Lighting only                | Lighting and sweep                              |
+| Point at a row             | `Peek`                       | Nothing                      | `Peek`                                          |
+| Walkthrough beat           | Carry and camera glide       | Camera glide                 | Dive or carry by relation, with camera glide    |
+| Inspector                  | Eases over `SIDEBAR_MS`      | Tabs rebuild                 | Eases in 160 ms, leaves in 110 ms               |
 
 Two changes make this work. Remove both keys and let one surface live for the whole reading. Change `continuousPictures` from "same board and same view" to "same model and at least one shared subject", because a recursive model is one continuous thing. The header, tree and caption update at the click and never wait for a picture. Reduced motion keeps the plain moves that the hooks already provide.
 
@@ -344,26 +344,26 @@ Two changes make this work. Remove both keys and let one surface live for the wh
 
 Each row below leaves the main surface or the product.
 
-| Cut | Why |
-| --- | --- |
-| Docked sidebar and its two tabs | The sidebar's 9.7 screens answered no single question |
-| `Implemented · TASK…` as first text | An agent's note is not a system statement |
-| Modules list and Nearby modules | The tree and doors replace them |
-| `0 selected`, disabled Focus, disabled Clear selection | They describe nothing, and a selection brings its own actions |
-| `Refresh` (`ModelFrame.tsx:93`) | The feed is live. Refresh stays only inside a stale notice. |
-| `Bookmarks` and `Former addresses` selectors | 245 and 2,614 entries in the header of every reading |
-| `Compare · Default` | "Default" says nothing, and compare only means something on a proposal |
-| Grammar selector | A grammar without a flow is an empty pane |
-| Explain menu with disabled items | Ask offers what applies |
-| `Model ownership` disclosure | It states an absence |
-| The 26 Evidence disclosures | Evidence moves to About |
-| 40 px display name in the panel | The scope's name is in the crumbs and the card |
-| "Drawing modules…", "Reading architecture…", "Updating diagram…" | A picture stays on screen until the next picture replaces it |
-| `Open` on each repository row | The row is the action |
-| Second search field and second shortcut | Find is one field with `Ctrl K` |
-| "N relationships" labels | The weight carries the count, and a lit line gives the words |
-| Scope's own card inside its frame (`model-projection.ts:73`) | The frame's header is the scope |
-| Layer 0 to Layer 7 | The owner deleted them |
+| Cut                                                              | Why                                                                    |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Docked sidebar and its two tabs                                  | The sidebar's 9.7 screens answered no single question                  |
+| `Implemented · TASK…` as first text                              | An agent's note is not a system statement                              |
+| Modules list and Nearby modules                                  | The tree and doors replace them                                        |
+| `0 selected`, disabled Focus, disabled Clear selection           | They describe nothing, and a selection brings its own actions          |
+| `Refresh` (`ModelFrame.tsx:93`)                                  | The feed is live. Refresh stays only inside a stale notice.            |
+| `Bookmarks` and `Former addresses` selectors                     | 245 and 2,614 entries in the header of every reading                   |
+| `Compare · Default`                                              | "Default" says nothing, and compare only means something on a proposal |
+| Grammar selector                                                 | A grammar without a flow is an empty pane                              |
+| Explain menu with disabled items                                 | Ask offers what applies                                                |
+| `Model ownership` disclosure                                     | It states an absence                                                   |
+| The 26 Evidence disclosures                                      | Evidence moves to About                                                |
+| 40 px display name in the panel                                  | The scope's name is in the crumbs and the card                         |
+| "Drawing modules…", "Reading architecture…", "Updating diagram…" | A picture stays on screen until the next picture replaces it           |
+| `Open` on each repository row                                    | The row is the action                                                  |
+| Second search field and second shortcut                          | Find is one field with `Ctrl K`                                        |
+| "N relationships" labels                                         | The weight carries the count, and a lit line gives the words           |
+| Scope's own card inside its frame (`model-projection.ts:73`)     | The frame's header is the scope                                        |
+| Layer 0 to Layer 7                                               | The owner deleted them                                                 |
 
 Reading controls on the root: 15 today, 5 after. Before: Current, Compare, Bookmarks, Former addresses, Refresh, Find, two tabs, the crumb, Focus, Clear selection, Explain, grammar, Filters and the sidebar toggle. After: the crumb, Read, the state chip, the `Diagram | About` switch and Key. The left column adds Find and the tree, which replace the old Find and the 19 Modules rows.
 

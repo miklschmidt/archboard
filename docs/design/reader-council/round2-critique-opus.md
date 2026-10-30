@@ -39,9 +39,9 @@ The fastest test of the core idea is Slice 1 in section 7. It changes the projec
 
 Two commits landed while I worked. Both change what round 1 measured.
 
-| Commit | Time | Effect |
-| --- | --- | --- |
-| `533520c24` | 17:14 | Deletes Layer 0 to Layer 7 in the live model. Every model number in round 1 describes a model that no longer exists. |
+| Commit      | Time  | Effect                                                                                                                            |
+| ----------- | ----- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `533520c24` | 17:14 | Deletes Layer 0 to Layer 7 in the live model. Every model number in round 1 describes a model that no longer exists.              |
 | `4b970e501` | 17:26 | Merges `perf/blocks-layout-solver` and changes `crates/`. The checkout's built core is now stale, so my render scripts refuse it. |
 
 I did not rebuild in this checkout, because the brief forbids changes there. The first batch of renders used the core from before the merge. Later renders used `/tmp/integrate/wt19`, which is also from before the merge. So every geometry number has one consistent base, and every solve time is a pre-merge time.
@@ -61,25 +61,25 @@ Evidence labels in this paper:
 
 Pane A is the round 1 pane, 1271 by 992. Pane B is the proposed lone pane with no docked sidebar and a caption row, 1551 by 960. If a reading's fit scale reaches 0.6, it passes.
 
-| Content rules | Total area | Median fit, pane A | Pass, pane A | Pass, pane B | Crossings | Over 18 lines |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Today | 392.9 M | 0.70 | 79 | 83 | 5,966 | 42 |
-| Lines end on the frame, context shows names | 161.5 M | 0.97 | 112 | 113 | 618 | 12 |
-| Same, with the 18-line limit | 147.5 M | 0.97 | 119 | 119 | 363 | 0 |
-| Door line ends on its one part | 188.9 M | 0.86 | 112 | 110 | 800 | 12 |
-| Same, with reduction above 18 lines | 175.9 M | 0.86 | 113 | 113 | 560 | 5 |
-| Same, with a code path on each part | 186.3 M | 0.85 | 109 | 108 | 565 | 5 |
-| Astra's rules as written | 249.6 M | 0.95 | 103 | not computed | 3,113 | 23 |
+| Content rules                               | Total area | Median fit, pane A | Pass, pane A | Pass, pane B | Crossings | Over 18 lines |
+| ------------------------------------------- | ---------: | -----------------: | -----------: | -----------: | --------: | ------------: |
+| Today                                       |    392.9 M |               0.70 |           79 |           83 |     5,966 |            42 |
+| Lines end on the frame, context shows names |    161.5 M |               0.97 |          112 |          113 |       618 |            12 |
+| Same, with the 18-line limit                |    147.5 M |               0.97 |          119 |          119 |       363 |             0 |
+| Door line ends on its one part              |    188.9 M |               0.86 |          112 |          110 |       800 |            12 |
+| Same, with reduction above 18 lines         |    175.9 M |               0.86 |          113 |          113 |       560 |             5 |
+| Same, with a code path on each part         |    186.3 M |               0.85 |          109 |          108 |       565 |             5 |
+| Astra's rules as written                    |    249.6 M |               0.95 |          103 | not computed |     3,113 |            23 |
 
 I call the fifth row the revised rules. The sixth row uses the path as extra note text, so it is a stand-in for a real path row. The Astra row is my reading of the Astra drawing paper: lines by kind, a kind and count caption, and the three neighbors with the most relationships.
 
 Solve time, pre-merge core, in Bun, on a shared machine:
 
-| Content | All readings | Median | 90th percentile | Root | Under 140 ms |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Today | 53 s | 209 ms | 1,202 ms | 3,764 ms | 47 of 123 |
-| Revised rules | 13 s | 65 ms | 208 ms | 607 ms | 92 of 123 |
-| Astra's rules | 27 s | 96 ms | 499 ms | 3,253 ms | not computed |
+| Content       | All readings | Median | 90th percentile |     Root | Under 140 ms |
+| ------------- | -----------: | -----: | --------------: | -------: | -----------: |
+| Today         |         53 s | 209 ms |        1,202 ms | 3,764 ms |    47 of 123 |
+| Revised rules |         13 s |  65 ms |          208 ms |   607 ms |    92 of 123 |
+| Astra's rules |         27 s |  96 ms |          499 ms | 3,253 ms | not computed |
 
 The dive needs its next picture within 140 ms (`exploring.ts:152`, from round 1). Today 38 percent of readings meet that. Under the revised rules 75 percent do. The solver merge changes these numbers, so someone must measure them again on the new core.
 
@@ -87,81 +87,81 @@ The dive needs its next picture within 140 ms (`exploring.ts:152`, from round 1)
 
 ### Journey paper
 
-| Claim | Verdict | Evidence |
-| --- | --- | --- |
-| A contextual outline replaces a tree. It shows the open module, its parent and its children. | Reject | Measured: median 4 rows, in a column with room for about 31. See section 2. |
-| The left column has three destinations: Structure, Flows, Walkthroughs. | Accept | Measured and read. See section 2, Read menu. |
-| A 288 px navigator. | Reject | Measured: the column is 319 px today, and the tree needs that width. The gain is 2 percent of the pane. |
-| The application does not open an unrelated repository. A saved session continues. | Accept | Seen: the second pane also opens the migration-required repository (`critique-opus-05-two-panes.png`). |
-| `Open repository…` accepts a local checkout. | Unchecked | I found no browser route for it in this round. |
-| A repository without architecture gets a setup screen. | Accept | Unchecked in the product, because no such repository is registered. |
-| A model with no current state says "Not implemented". | Accept | Read: `ModelReadingSelector.tsx:59` already says "No implemented state". |
-| Do not discard the 10 roots to make a picture attractive. | Accept | This defeats my own root rule. See section 4. |
-| Aggregate by endpoints, direction and kind, with a kind and a count as the label. | Reject | Measured: this keeps 47 root lines. A kind word on uniform lines costs 24 percent more area and 10 passing readings. |
-| Names and paths reach 14 px at fit. | Reject as a gate | Measured: fit 1.0 holds on 60 of 123 readings in pane B, under the revised rules. The full Astra target of scale 1.2, in the docked pane of that paper, holds on 23. |
-| If a picture does not fit, keep a readable scale and pan. | Accept | My round 1 position was wrong. See section 4. |
-| Up and Back are different actions. | Accept | Both seats agree. |
-| A sibling menu on the crumb. | Reject | The tree already shows siblings. A second route adds a control and no capability. |
-| A leaf is a destination with no empty interior. | Amend | A leaf has no scope. Its panel is its page. A tree row opens its parent and selects it, as Find does today. |
-| The code path on a card is a link that opens source. | Reject | Measured: the SVG has only `header` and `label` parts, so a card has no path target. At fit the row is under 9 px high in 43 of 123 readings. `Open code` stays in the panel foot. |
-| 87 unbound modules get no synthesized path. | Amend | The count is now 79. See section 2, code paths. |
-| A responsibility can span role folders, so a path is not ownership. | Accept | Measured: `Architecture drawing` derives `apps/web/src/ui`, and 13 of 55 derived folders equal the parent's folder. |
-| `check` warns on an unbound container with no authored connections. | Reject | Measured: it flags 32 of 55, including `Painting`, `Workhorses`, `Voice` and `Canonical architecture`. |
-| Ask opens the conversation with a visible capture. | Accept | Seen: the dock already offers these prompts (`critique-opus-11-dock.png`). |
-| A flow opens with Sequence, and Flowchart is a second representation. | Accept | Both seats agree. |
-| Plan a change: the journey from Ask to Review proposal. | Accept | My round 1 paper had no such section. |
-| A review workspace with a change list. | Accept | Measured. See section 2, tree. |
-| Before, Changes and After. | Accept, after the core | Read: the picture already draws the union. Unchecked as an interaction. |
-| The default base is the retained predecessor. | Accept with a repair | Measured: `against=<predecessor>` fails on all 8 drafts, because those states are outside the catalogue. `against=<predecessorCheckpoint>` works. See section 2, History. |
-| Linked navigation for side-by-side proposals. | Unchecked | Measured only that half panes pass 47 to 56 of 123 readings. Drafts are small, so the limit is less severe there. |
-| History is a wide list in the main workspace. | Amend | It becomes a left destination, so the picture stays beside the list. See section 2. |
-| Retained tours sit in a historical section. | Accept | Measured: `target.checkpoint` separates 18 tours from the 1 current tour. No name matching is needed. |
-| Explore this step, then Resume. | Accept | A presenter takes a question and returns to the same beat. This replaces my Stay here. |
-| Saved readings, with a Save action. | Reject | No observed need (gate 2). The address already holds a reading. |
-| Structure to sequence needs no false continuity. | Accept for now | Unchecked by eye. Build the plain change first. If it reads poorly, add the lift. |
-| A slow request keeps the old picture and labels it. | Accept | Same as my held picture, and more honest. |
+| Claim                                                                                        | Verdict                | Evidence                                                                                                                                                                           |
+| -------------------------------------------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A contextual outline replaces a tree. It shows the open module, its parent and its children. | Reject                 | Measured: median 4 rows, in a column with room for about 31. See section 2.                                                                                                        |
+| The left column has three destinations: Structure, Flows, Walkthroughs.                      | Accept                 | Measured and read. See section 2, Read menu.                                                                                                                                       |
+| A 288 px navigator.                                                                          | Reject                 | Measured: the column is 319 px today, and the tree needs that width. The gain is 2 percent of the pane.                                                                            |
+| The application does not open an unrelated repository. A saved session continues.            | Accept                 | Seen: the second pane also opens the migration-required repository (`critique-opus-05-two-panes.png`).                                                                             |
+| `Open repository…` accepts a local checkout.                                                 | Unchecked              | I found no browser route for it in this round.                                                                                                                                     |
+| A repository without architecture gets a setup screen.                                       | Accept                 | Unchecked in the product, because no such repository is registered.                                                                                                                |
+| A model with no current state says "Not implemented".                                        | Accept                 | Read: `ModelReadingSelector.tsx:59` already says "No implemented state".                                                                                                           |
+| Do not discard the 10 roots to make a picture attractive.                                    | Accept                 | This defeats my own root rule. See section 4.                                                                                                                                      |
+| Aggregate by endpoints, direction and kind, with a kind and a count as the label.            | Reject                 | Measured: this keeps 47 root lines. A kind word on uniform lines costs 24 percent more area and 10 passing readings.                                                               |
+| Names and paths reach 14 px at fit.                                                          | Reject as a gate       | Measured: fit 1.0 holds on 60 of 123 readings in pane B, under the revised rules. The full Astra target of scale 1.2, in the docked pane of that paper, holds on 23.               |
+| If a picture does not fit, keep a readable scale and pan.                                    | Accept                 | My round 1 position was wrong. See section 4.                                                                                                                                      |
+| Up and Back are different actions.                                                           | Accept                 | Both seats agree.                                                                                                                                                                  |
+| A sibling menu on the crumb.                                                                 | Reject                 | The tree already shows siblings. A second route adds a control and no capability.                                                                                                  |
+| A leaf is a destination with no empty interior.                                              | Amend                  | A leaf has no scope. Its panel is its page. A tree row opens its parent and selects it, as Find does today.                                                                        |
+| The code path on a card is a link that opens source.                                         | Reject                 | Measured: the SVG has only `header` and `label` parts, so a card has no path target. At fit the row is under 9 px high in 43 of 123 readings. `Open code` stays in the panel foot. |
+| 87 unbound modules get no synthesized path.                                                  | Amend                  | The count is now 79. See section 2, code paths.                                                                                                                                    |
+| A responsibility can span role folders, so a path is not ownership.                          | Accept                 | Measured: `Architecture drawing` derives `apps/web/src/ui`, and 13 of 55 derived folders equal the parent's folder.                                                                |
+| `check` warns on an unbound container with no authored connections.                          | Reject                 | Measured: it flags 32 of 55, including `Painting`, `Workhorses`, `Voice` and `Canonical architecture`.                                                                             |
+| Ask opens the conversation with a visible capture.                                           | Accept                 | Seen: the dock already offers these prompts (`critique-opus-11-dock.png`).                                                                                                         |
+| A flow opens with Sequence, and Flowchart is a second representation.                        | Accept                 | Both seats agree.                                                                                                                                                                  |
+| Plan a change: the journey from Ask to Review proposal.                                      | Accept                 | My round 1 paper had no such section.                                                                                                                                              |
+| A review workspace with a change list.                                                       | Accept                 | Measured. See section 2, tree.                                                                                                                                                     |
+| Before, Changes and After.                                                                   | Accept, after the core | Read: the picture already draws the union. Unchecked as an interaction.                                                                                                            |
+| The default base is the retained predecessor.                                                | Accept with a repair   | Measured: `against=<predecessor>` fails on all 8 drafts, because those states are outside the catalogue. `against=<predecessorCheckpoint>` works. See section 2, History.          |
+| Linked navigation for side-by-side proposals.                                                | Unchecked              | Measured only that half panes pass 47 to 56 of 123 readings. Drafts are small, so the limit is less severe there.                                                                  |
+| History is a wide list in the main workspace.                                                | Amend                  | It becomes a left destination, so the picture stays beside the list. See section 2.                                                                                                |
+| Retained tours sit in a historical section.                                                  | Accept                 | Measured: `target.checkpoint` separates 18 tours from the 1 current tour. No name matching is needed.                                                                              |
+| Explore this step, then Resume.                                                              | Accept                 | A presenter takes a question and returns to the same beat. This replaces my Stay here.                                                                                             |
+| Saved readings, with a Save action.                                                          | Reject                 | No observed need (gate 2). The address already holds a reading.                                                                                                                    |
+| Structure to sequence needs no false continuity.                                             | Accept for now         | Unchecked by eye. Build the plain change first. If it reads poorly, add the lift.                                                                                                  |
+| A slow request keeps the old picture and labels it.                                          | Accept                 | Same as my held picture, and more honest.                                                                                                                                          |
 
 ### Drawing paper
 
-| Claim | Verdict | Evidence |
-| --- | --- | --- |
-| Both content and layout cause the dead space. | Accept | Measured. Content still comes first. |
-| Blocks wins most large pairs and loses some small ones, such as Command startup at +17.4%. | Accept | Unchecked for Track on the new model. The figure agrees with round 1 data. |
-| Removing labels removes 62.9% of the root. | True and misleading | Measured: on content within the door rules, labels cost 10 percent overall, 37 percent at the root and 3 percent at `Commands`. |
-| Replace global label ranks first. | Reject as first | The headroom is mostly a symptom of overfull pictures. Revisit the root after Slice 1. |
-| The first picture is one authored orientation reading. | Reject as a new concept | Measured and seen. See section 2, orientation. |
-| Six to ten cards and eight to fifteen lines. | Reject | A target with no consequence changes nothing, and agents author the parts. |
-| One to three interface neighbors. | Reject | The rule names no way to choose them, and the same paper forbids a silent pick. Measured with the strongest three: 3,113 crossings against 560. |
-| One connection for each meaningful family. | Reject | Measured: this is the main cause of 47 lines at the root. |
-| Do not merge unlike relationships into a majority kind. | Accept | Measured: 8 of 29 root lines mix kinds, and 37 of 214 relationships differ from the line's kind. |
-| "28 relationships" must not be the meaning of a line. | Accept | Both seats agree. |
-| Offer a complete connection reading on request. | Accept | If lines are hidden, one control shows them. |
-| Rank candidates by fitted text in the real pane. | Accept | This is my change 2. Unchecked. |
-| Repack locally around holes. | Accept, later | The content rules come first. Unchecked on the new model. |
-| An absolute floor in the real shell. | Accept | Both seats agree. The gate needs the real pane, and that pane changes with the design. |
-| Keep small cases in the corpus. | Accept | Measured: Shop gets slightly smaller under the rules, at 1352 by 850 against 1400 by 903. |
+| Claim                                                                                      | Verdict                 | Evidence                                                                                                                                        |
+| ------------------------------------------------------------------------------------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Both content and layout cause the dead space.                                              | Accept                  | Measured. Content still comes first.                                                                                                            |
+| Blocks wins most large pairs and loses some small ones, such as Command startup at +17.4%. | Accept                  | Unchecked for Track on the new model. The figure agrees with round 1 data.                                                                      |
+| Removing labels removes 62.9% of the root.                                                 | True and misleading     | Measured: on content within the door rules, labels cost 10 percent overall, 37 percent at the root and 3 percent at `Commands`.                 |
+| Replace global label ranks first.                                                          | Reject as first         | The headroom is mostly a symptom of overfull pictures. Revisit the root after Slice 1.                                                          |
+| The first picture is one authored orientation reading.                                     | Reject as a new concept | Measured and seen. See section 2, orientation.                                                                                                  |
+| Six to ten cards and eight to fifteen lines.                                               | Reject                  | A target with no consequence changes nothing, and agents author the parts.                                                                      |
+| One to three interface neighbors.                                                          | Reject                  | The rule names no way to choose them, and the same paper forbids a silent pick. Measured with the strongest three: 3,113 crossings against 560. |
+| One connection for each meaningful family.                                                 | Reject                  | Measured: this is the main cause of 47 lines at the root.                                                                                       |
+| Do not merge unlike relationships into a majority kind.                                    | Accept                  | Measured: 8 of 29 root lines mix kinds, and 37 of 214 relationships differ from the line's kind.                                                |
+| "28 relationships" must not be the meaning of a line.                                      | Accept                  | Both seats agree.                                                                                                                               |
+| Offer a complete connection reading on request.                                            | Accept                  | If lines are hidden, one control shows them.                                                                                                    |
+| Rank candidates by fitted text in the real pane.                                           | Accept                  | This is my change 2. Unchecked.                                                                                                                 |
+| Repack locally around holes.                                                               | Accept, later           | The content rules come first. Unchecked on the new model.                                                                                       |
+| An absolute floor in the real shell.                                                       | Accept                  | Both seats agree. The gate needs the real pane, and that pane changes with the design.                                                          |
+| Keep small cases in the corpus.                                                            | Accept                  | Measured: Shop gets slightly smaller under the rules, at 1352 by 850 against 1400 by 903.                                                       |
 
 ### Implementation paper
 
 I read each cited path. I did not reproduce the server timings.
 
-| Finding | Verdict | Evidence |
-| --- | --- | --- |
-| 1. Whole-model watchers, one per socket, plus activity watchers that never stop | Accept | Read: `agent-activity.ts` adds a watcher in `follow` and stops it only in `dispose`. |
-| 2. The pane reports a reading as drawn before the picture exists | Accept, and raise it | Read: `ModelReading.tsx:100` passes no readiness, and `use-model-explanation.ts:136` defaults it to true. |
-| 3. Reading changes destroy stable owners | Accept | Broader than my F2, because it names the branch in `ModelWalkthroughFrame`. |
-| 4. The diagram bypasses the choreography | Accept | Same as my F1. |
-| 5. Eager archive and whole-model reads | Accept | Same as my F5. |
-| 6. A selection downloads a whole model | Accept | Same as my F5. |
-| 7. Drawing keys hold the complete request | Accept | Same as my F6. |
-| 8. Reading aids were removed | Accept | Same as my section 3. |
-| 9. The sidebar is a catalogue | Accept | Both seats agree. |
-| 10. Dead-end connection rows and no legend | Accept | Read: `ModuleDetails.tsx` renders the endpoint as a paragraph. `SemanticLegend` has no live caller. |
-| 10. Connect the layout choice | Reject | The failing draft draws against its own base (`critique-opus-02-draft-own-base.png`). A selector moves a renderer fault onto the reader. |
-| 11. The socket and HTTP overwrite one cache entry with different coverage | Accept on code | Read: `model-watch.ts:83` and `events.ts:118`. I did not see a visible effect. The 97 menu entries in that paper count `data-reading-id` only, and state rows use `data-state-id` (`ModelReadingSelector.tsx:118`). So 97 and my 114 agree. |
-| 12. Refresh does not reach a failed drawing | Accept | Read: `drawing.ts:36` keys drawings outside the family that Refresh invalidates, with `retry: false`. |
-| 13. Two reader stacks | Accept | Keep replay for retained talks. |
-| The render endpoint does not cover the full reading | Accept | Read: `ArchitectureRenderRequestSchema` has no `against`. |
+| Finding                                                                         | Verdict              | Evidence                                                                                                                                                                                                                                    |
+| ------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Whole-model watchers, one per socket, plus activity watchers that never stop | Accept               | Read: `agent-activity.ts` adds a watcher in `follow` and stops it only in `dispose`.                                                                                                                                                        |
+| 2. The pane reports a reading as drawn before the picture exists                | Accept, and raise it | Read: `ModelReading.tsx:100` passes no readiness, and `use-model-explanation.ts:136` defaults it to true.                                                                                                                                   |
+| 3. Reading changes destroy stable owners                                        | Accept               | Broader than my F2, because it names the branch in `ModelWalkthroughFrame`.                                                                                                                                                                 |
+| 4. The diagram bypasses the choreography                                        | Accept               | Same as my F1.                                                                                                                                                                                                                              |
+| 5. Eager archive and whole-model reads                                          | Accept               | Same as my F5.                                                                                                                                                                                                                              |
+| 6. A selection downloads a whole model                                          | Accept               | Same as my F5.                                                                                                                                                                                                                              |
+| 7. Drawing keys hold the complete request                                       | Accept               | Same as my F6.                                                                                                                                                                                                                              |
+| 8. Reading aids were removed                                                    | Accept               | Same as my section 3.                                                                                                                                                                                                                       |
+| 9. The sidebar is a catalogue                                                   | Accept               | Both seats agree.                                                                                                                                                                                                                           |
+| 10. Dead-end connection rows and no legend                                      | Accept               | Read: `ModuleDetails.tsx` renders the endpoint as a paragraph. `SemanticLegend` has no live caller.                                                                                                                                         |
+| 10. Connect the layout choice                                                   | Reject               | The failing draft draws against its own base (`critique-opus-02-draft-own-base.png`). A selector moves a renderer fault onto the reader.                                                                                                    |
+| 11. The socket and HTTP overwrite one cache entry with different coverage       | Accept on code       | Read: `model-watch.ts:83` and `events.ts:118`. I did not see a visible effect. The 97 menu entries in that paper count `data-reading-id` only, and state rows use `data-state-id` (`ModelReadingSelector.tsx:118`). So 97 and my 114 agree. |
+| 12. Refresh does not reach a failed drawing                                     | Accept               | Read: `drawing.ts:36` keys drawings outside the family that Refresh invalidates, with `retry: false`.                                                                                                                                       |
+| 13. Two reader stacks                                                           | Accept               | Keep replay for retained talks.                                                                                                                                                                                                             |
+| The render endpoint does not cover the full reading                             | Accept               | Read: `ArchitectureRenderRequestSchema` has no `against`.                                                                                                                                                                                   |
 
 Astra finding 2 is the one that I missed. Without it, a transition can animate toward a picture whose hit testing and inspector belong to another reading. It belongs in the same slice as the surface repair.
 
@@ -278,12 +278,12 @@ The rule is now one sentence: the left column lists where to go, the middle show
 
 Attack: count what changed.
 
-| Draft | Changes | Modules among them | Steps among them |
-| --- | ---: | ---: | ---: |
-| `93RlBGLx` | 49 | 3 | 35 |
-| `zFIdZB1Y` | 61 | 5 | 46 |
-| `yM7DOqT4` | 15 | 4 | 6 |
-| `D0qvstE4` | 7 | 2 | 1 |
+| Draft      | Changes | Modules among them | Steps among them |
+| ---------- | ------: | -----------------: | ---------------: |
+| `93RlBGLx` |      49 |                  3 |               35 |
+| `zFIdZB1Y` |      61 |                  5 |               46 |
+| `yM7DOqT4` |      15 |                  4 |                6 |
+| `D0qvstE4` |       7 |                  2 |                1 |
 
 Result: my idea fails. A module tree can mark modules only. It shows 3 of 49 changes on the first draft, and the steps have no tree row at all.
 
@@ -323,27 +323,27 @@ The default stays the root. Let outside modules be name-only cards that keep the
 
 ## 3. Where the two seats disagree
 
-| Topic | Opus, round 1 | Astra | Position | Reason |
-| --- | --- | --- | --- | --- |
-| Left column | Full tree | Contextual outline | Tree | It shows place and reads like the repository. The outline leaves the column empty. |
-| Flows and tours | Read menu | Destinations | Destinations | A list stays open, and the nouns stay visible. |
-| History | 480 px panel | Main workspace | Left destination | One rule for the column, with the picture beside the list. |
-| Proposal contents | Tree marks | Change list | Change list | Steps have no tree row. |
-| First picture | Root | Authored orientation | Root, with a repaired Focus and a tour | No new authored concept, and the value survives. |
-| Line grouping | One per pair | One per family | One per directed pair, with a mixed style | Fewer lines, and an honest mark. |
-| Outside context | Doors, on the frame | One to three neighbors | Doors, with the line on the one part that reaches them | No pick is needed, and 59 percent stay exact. |
-| Line limit | Hard 18 | Soft 8 to 15 | Reduction above 18, stated | A cap hides foundations. A target does nothing. |
-| Text floor | 12 px at 0.6 | 14 px at fit | Name 12 px and path 9 px, landing floor 0.6 | The Astra target holds on 60 of 123. Mine ignored the path. |
-| Landing | Always fit whole | Keep readable scale | Fit whole above 0.6, otherwise land at 0.6 on the frame's head | A person reads, then pans. Fit stays one key away. |
-| Container path | Derived | None | Derived, shown as a span | The owner's decision, with honest wording. |
-| Labels | Keep the rank | Replace it first | Keep it now, and revisit the root | 10 percent inside the rules. |
-| Layout engine | Hidden | Selector | Hidden | Repair geometry in the renderer. |
-| `check` severity | Warning, and a write refusal | Warning | Warning | The owner named `check`. My refusal rule now flags 0 modules. |
-| Ask answer | In the panel | In the conversation | Conversation | The panel changes with selection, and an answer must keep its capture. |
-| Leaving a tour | Stay here | Explore and Resume | Explore and Resume | It serves a presenter's question. |
-| Bookmarks | Views in Read | Saved readings | Find only | No observed need for a surface or a Save action. |
-| Refresh | Removed | Overflow menu | Removed, with retry on the failure | The feed is live. A retry belongs at the failure. |
-| Enter a flow | Cards lift to heads | Plain change | Plain first | Prove the core motion before building a new one. |
+| Topic             | Opus, round 1                | Astra                  | Position                                                       | Reason                                                                             |
+| ----------------- | ---------------------------- | ---------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Left column       | Full tree                    | Contextual outline     | Tree                                                           | It shows place and reads like the repository. The outline leaves the column empty. |
+| Flows and tours   | Read menu                    | Destinations           | Destinations                                                   | A list stays open, and the nouns stay visible.                                     |
+| History           | 480 px panel                 | Main workspace         | Left destination                                               | One rule for the column, with the picture beside the list.                         |
+| Proposal contents | Tree marks                   | Change list            | Change list                                                    | Steps have no tree row.                                                            |
+| First picture     | Root                         | Authored orientation   | Root, with a repaired Focus and a tour                         | No new authored concept, and the value survives.                                   |
+| Line grouping     | One per pair                 | One per family         | One per directed pair, with a mixed style                      | Fewer lines, and an honest mark.                                                   |
+| Outside context   | Doors, on the frame          | One to three neighbors | Doors, with the line on the one part that reaches them         | No pick is needed, and 59 percent stay exact.                                      |
+| Line limit        | Hard 18                      | Soft 8 to 15           | Reduction above 18, stated                                     | A cap hides foundations. A target does nothing.                                    |
+| Text floor        | 12 px at 0.6                 | 14 px at fit           | Name 12 px and path 9 px, landing floor 0.6                    | The Astra target holds on 60 of 123. Mine ignored the path.                        |
+| Landing           | Always fit whole             | Keep readable scale    | Fit whole above 0.6, otherwise land at 0.6 on the frame's head | A person reads, then pans. Fit stays one key away.                                 |
+| Container path    | Derived                      | None                   | Derived, shown as a span                                       | The owner's decision, with honest wording.                                         |
+| Labels            | Keep the rank                | Replace it first       | Keep it now, and revisit the root                              | 10 percent inside the rules.                                                       |
+| Layout engine     | Hidden                       | Selector               | Hidden                                                         | Repair geometry in the renderer.                                                   |
+| `check` severity  | Warning, and a write refusal | Warning                | Warning                                                        | The owner named `check`. My refusal rule now flags 0 modules.                      |
+| Ask answer        | In the panel                 | In the conversation    | Conversation                                                   | The panel changes with selection, and an answer must keep its capture.             |
+| Leaving a tour    | Stay here                    | Explore and Resume     | Explore and Resume                                             | It serves a presenter's question.                                                  |
+| Bookmarks         | Views in Read                | Saved readings         | Find only                                                      | No observed need for a surface or a Save action.                                   |
+| Refresh           | Removed                      | Overflow menu          | Removed, with retry on the failure                             | The feed is live. A retry belongs at the failure.                                  |
+| Enter a flow      | Cards lift to heads          | Plain change           | Plain first                                                    | Prove the core motion before building a new one.                                   |
 
 ### The design after this round
 
@@ -380,67 +380,67 @@ The journey test finds these gaps. Each row names a state that the product can r
 
 ### The first minute
 
-| Gap | Observed | Position |
-| --- | --- | --- |
-| `222 warnings` at eye level | Measured: 147 and 42 are anchors on steps and relationships, 29 are module paths, and 4 are others. The control cycles and selects a hidden module (`critique-opus-03-warnings.png`), and it says "Node", a board word. | Remove it from the first surface. Show a warning on the one subject it concerns. Put the model-wide count in About. |
-| The panel's grammar | Seen: "1 selected subjects are hidden in this reading". | Show the message in correct English, or avoid the state. |
-| The root's main store has no line | Measured: `Architecture inputs` has 0 relationships and no binding. | Repair the model in Slice 0. Add a `check` warning for an unconnected root. |
+| Gap                               | Observed                                                                                                                                                                                                                | Position                                                                                                            |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `222 warnings` at eye level       | Measured: 147 and 42 are anchors on steps and relationships, 29 are module paths, and 4 are others. The control cycles and selects a hidden module (`critique-opus-03-warnings.png`), and it says "Node", a board word. | Remove it from the first surface. Show a warning on the one subject it concerns. Put the model-wide count in About. |
+| The panel's grammar               | Seen: "1 selected subjects are hidden in this reading".                                                                                                                                                                 | Show the message in correct English, or avoid the state.                                                            |
+| The root's main store has no line | Measured: `Architecture inputs` has 0 relationships and no binding.                                                                                                                                                     | Repair the model in Slice 0. Add a `check` warning for an unconnected root.                                         |
 
 ### The fifth minute
 
-| Gap | Observed | Position |
-| --- | --- | --- |
-| One-part dead stops | Measured: 25 of 122. | Fold chains, section 2. |
-| A door opens a large scope | Measured: `Browser`'s door leads to 17 parts. | The panel lists real endpoints first, and a click there selects inside the destination. |
-| The dock takes the picture | Measured: 440 px. Tree, dock and panel leave 800 px of picture. | State this layout in the acceptance test. Unchecked as a design. |
-| Group frames compete with modules | Seen in the root and in Shop. | Off by default, in the Key. |
+| Gap                               | Observed                                                        | Position                                                                                |
+| --------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| One-part dead stops               | Measured: 25 of 122.                                            | Fold chains, section 2.                                                                 |
+| A door opens a large scope        | Measured: `Browser`'s door leads to 17 parts.                   | The panel lists real endpoints first, and a click there selects inside the destination. |
+| The dock takes the picture        | Measured: 440 px. Tree, dock and panel leave 800 px of picture. | State this layout in the acceptance test. Unchecked as a design.                        |
+| Group frames compete with modules | Seen in the root and in Shop.                                   | Off by default, in the Key.                                                             |
 
 ### Returning after a week
 
 Neither paper asks the question a returning architect asks: what changed since I was here?
 
-| Gap | Observed | Position |
-| --- | --- | --- |
-| No "since you were here" | Read: checkpoints have `doing` and a date. Nothing records a last visit. | Keep the last revision in browser storage. The caption says `5 changes since Oct 23`, and it opens History at that point. This is browser state and writes no architecture. |
-| A saved link to a removed module | Measured with a deleted layer's identity: the banner and the body text blame the key and point at a path that is not there (`critique-opus-06-bad-scope.png`). | `retiredIds` holds 1,331 identities. Say that the module was removed, and offer its retained reading. If a live ancestor is known, open it. |
-| Bindings drift while away | Measured: 29 bound paths are stale after #24. | The card marks them, and Ask offers to repair them. |
-| The place was lost | Read: camera memory is lost under the scope key. | Pane memory by scope, and Continue on the Start page. |
+| Gap                              | Observed                                                                                                                                                       | Position                                                                                                                                                                    |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No "since you were here"         | Read: checkpoints have `doing` and a date. Nothing records a last visit.                                                                                       | Keep the last revision in browser storage. The caption says `5 changes since Oct 23`, and it opens History at that point. This is browser state and writes no architecture. |
+| A saved link to a removed module | Measured with a deleted layer's identity: the banner and the body text blame the key and point at a path that is not there (`critique-opus-06-bad-scope.png`). | `retiredIds` holds 1,331 identities. Say that the module was removed, and offer its retained reading. If a live ancestor is known, open it.                                 |
+| Bindings drift while away        | Measured: 29 bound paths are stale after #24.                                                                                                                  | The card marks them, and Ask offers to repair them.                                                                                                                         |
+| The place was lost               | Read: camera memory is lost under the scope key.                                                                                                               | Pane memory by scope, and Continue on the Start page.                                                                                                                       |
 
 ### Planning a change
 
 My paper did not cover this at all, and Astra's covers the happy path.
 
-| Gap | Observed | Position |
-| --- | --- | --- |
-| A draft is not the whole architecture | Measured: drafts hold 25 to 52 modules, against 532 in the current model. | The header says so. Do not imply that the rest of the model was removed. This is real data from imported fragments, and new proposals are different. Unchecked for a new proposal. |
-| The default compare is wrong for a stale base | Measured above. | Default to the base. One line offers `Compare with current`, as both seats said. |
-| Live edits during review | Read: Astra's table covers a live edit. No paper covers a change list that changes during a walk. | Keep the walk position by subject identity. A removed subject says so. |
-| Adoption has no reader control | Read: adoption goes through the agent. | The record says who can do it and offers Ask. |
+| Gap                                           | Observed                                                                                          | Position                                                                                                                                                                           |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A draft is not the whole architecture         | Measured: drafts hold 25 to 52 modules, against 532 in the current model.                         | The header says so. Do not imply that the rest of the model was removed. This is real data from imported fragments, and new proposals are different. Unchecked for a new proposal. |
+| The default compare is wrong for a stale base | Measured above.                                                                                   | Default to the base. One line offers `Compare with current`, as both seats said.                                                                                                   |
+| Live edits during review                      | Read: Astra's table covers a live edit. No paper covers a change list that changes during a walk. | Keep the walk position by subject identity. A removed subject says so.                                                                                                             |
+| Adoption has no reader control                | Read: adoption goes through the agent.                                                            | The record says who can do it and offers Ask.                                                                                                                                      |
 
 ### Presenting to someone
 
-| Gap | Observed | Position |
-| --- | --- | --- |
-| Present mode already exists | Seen: `Present fullscreen` removes all chrome and keeps `Exit presentation`, `Pane A` and `Talk` (`critique-opus-04-present.png`). Neither paper mentions it. | Every move needs a keyboard route, because the tree and crumbs are gone. Backspace, `[`, `]`, Enter, `F` and `0` cover it. My search found only `0` today (`camera-keys.ts:41`). |
-| A presenter has one screen of height | Seen: the picture gets more room, and it has no caption. | Keep the caption as a small plate, or the audience has no scope name. Unchecked. |
-| No export or link control | Read: the reader's header has neither. Export is CLI only. | Add `Copy link`. Picture export waits for a real request. |
-| The rules reach outside the reader | Read: `model render` shares the projection, so README pictures, PR bodies and videos redraw. | Regenerate them in the slice that ships the rules. A still picture must stand alone, which supports door lines on parts. |
+| Gap                                  | Observed                                                                                                                                                      | Position                                                                                                                                                                         |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Present mode already exists          | Seen: `Present fullscreen` removes all chrome and keeps `Exit presentation`, `Pane A` and `Talk` (`critique-opus-04-present.png`). Neither paper mentions it. | Every move needs a keyboard route, because the tree and crumbs are gone. Backspace, `[`, `]`, Enter, `F` and `0` cover it. My search found only `0` today (`camera-keys.ts:41`). |
+| A presenter has one screen of height | Seen: the picture gets more room, and it has no caption.                                                                                                      | Keep the caption as a small plate, or the audience has no scope name. Unchecked.                                                                                                 |
+| No export or link control            | Read: the reader's header has neither. Export is CLI only.                                                                                                    | Add `Copy link`. Picture export waits for a real request.                                                                                                                        |
+| The rules reach outside the reader   | Read: `model render` shares the projection, so README pictures, PR bodies and videos redraw.                                                                  | Regenerate them in the slice that ships the rules. A still picture must stand alone, which supports door lines on parts.                                                         |
 
 ### Empty, loading, failed and legacy states
 
-| State | Today | Position |
-| --- | --- | --- |
-| No repository registered | Unchecked. | Start page with one line: run `archboard start` in a checkout, then ask an agent to describe it. |
-| New model, no modules | Read: "No modules are visible in this reading" (`ModelDiagram.tsx:115`) and "No implemented state". | A planning screen that offers Ask. Do not use a word that sounds like a fault. |
-| Filtered to nothing | Read: the same text. | `Show whole scope`, as Astra said. |
-| A scope with no flows | Today's selector stays. | `All flows (72)` in the list. |
-| A model with no bindings | Measured on Shop: 0 of 18. | No path row, authored order, and no warning. `check` reports it once. |
-| Loading | Measured in round 1: four texts in 399 ms. | Keep the ground or the last picture. Show a message only after a delay, and name the destination. |
-| Failed draw | Read: a raw message and no action. Astra's finding 12. | Keep the last picture, name the failure, and offer Retry and Back. |
-| Server gone | Measured in round 1: a banner that moves the picture. | Lay it over the picture. Remove the false stale state. |
-| Missing source | Astra covers this well. | Accept. |
-| Legacy migration | Seen: "Migration required" under `Current` and `Compare · Default`, with no action (`critique-opus-10-legacy.png`). | No reading controls. One action fills the composer with the preview request. The preview is a reading, so it opens like a proposal. Sort these repositories last, and never open one by default. |
-| After migration | Measured: 2,614 addresses and 245 views exist for this. | An old link resolves and names the new place. Both seats agree. |
+| State                    | Today                                                                                                               | Position                                                                                                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| No repository registered | Unchecked.                                                                                                          | Start page with one line: run `archboard start` in a checkout, then ask an agent to describe it.                                                                                                 |
+| New model, no modules    | Read: "No modules are visible in this reading" (`ModelDiagram.tsx:115`) and "No implemented state".                 | A planning screen that offers Ask. Do not use a word that sounds like a fault.                                                                                                                   |
+| Filtered to nothing      | Read: the same text.                                                                                                | `Show whole scope`, as Astra said.                                                                                                                                                               |
+| A scope with no flows    | Today's selector stays.                                                                                             | `All flows (72)` in the list.                                                                                                                                                                    |
+| A model with no bindings | Measured on Shop: 0 of 18.                                                                                          | No path row, authored order, and no warning. `check` reports it once.                                                                                                                            |
+| Loading                  | Measured in round 1: four texts in 399 ms.                                                                          | Keep the ground or the last picture. Show a message only after a delay, and name the destination.                                                                                                |
+| Failed draw              | Read: a raw message and no action. Astra's finding 12.                                                              | Keep the last picture, name the failure, and offer Retry and Back.                                                                                                                               |
+| Server gone              | Measured in round 1: a banner that moves the picture.                                                               | Lay it over the picture. Remove the false stale state.                                                                                                                                           |
+| Missing source           | Astra covers this well.                                                                                             | Accept.                                                                                                                                                                                          |
+| Legacy migration         | Seen: "Migration required" under `Current` and `Compare · Default`, with no action (`critique-opus-10-legacy.png`). | No reading controls. One action fills the composer with the preview request. The preview is a reading, so it opens like a proposal. Sort these repositories last, and never open one by default. |
+| After migration          | Measured: 2,614 addresses and 245 views exist for this.                                                             | An old link resolves and names the new place. Both seats agree.                                                                                                                                  |
 
 ## 6. Acceptance changes
 
@@ -457,17 +457,17 @@ I replace my round 1 gates with these. Each is absolute, and each uses the shell
 
 Each slice leaves the product better, and the owner can judge it by eye. Two side tracks run at any time.
 
-| Slice | Work | What the owner looks at | Touches |
-| --- | --- | --- | --- |
-| 0 | Model data. Name, summary, `Architecture inputs`, 29 stale paths, 7 pass-through containers. | The header says Archboard, and the root shows the main store connected. | Vault |
-| 1 | Content rules in the projection. Doors, one line per pair, a mixed style, reduction with its statement, groups off, far view on, a whole-fit ceiling of 1.0, a landing floor. | Four pictures: root, `Browser`, `Workspace packages`, `Command startup`. | Projection, far view, fit |
-| 2 | One surface. Remove the keys, move the camera up, add the accepted scene record, keep the last picture, connect the carry. | Click through ten modules. No text flash, no lost header, and a real move. | Reader lifecycle |
-| 3 | Honest failures. Base by checkpoint, retry on a failed draw, no false stale banner, correct text for a removed module. | Open a draft. Open an old link. | Reader, one default |
-| 4 | Left column and header. Tree, four destinations, one Find, crumbs and path in the header. | Find `apps/web`, then move between siblings. | Shell column, header |
-| 5 | Panel and About. Pinned foot, actionable rows, the Key, the 220 ms hold. Then remove the sidebar's tabs. | Click a card, then double-click one at the right edge. | Panel, About, Key |
-| 6 | Start and return. Start page, legacy action, Continue, `changes since`. | Open a new tab. | Start page, browser storage |
-| 7 | Review. Change list, `N` and `P`, the walk across grammars, Before and After. | Walk a draft of 49 changes. | Left column, panel |
-| 8 | Renderer. Compaction, candidates by fit, and edge doors. If Slice 1 makes edge doors needless, drop them. | The same four pictures. | Crates |
+| Slice | Work                                                                                                                                                                          | What the owner looks at                                                    | Touches                     |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | --------------------------- |
+| 0     | Model data. Name, summary, `Architecture inputs`, 29 stale paths, 7 pass-through containers.                                                                                  | The header says Archboard, and the root shows the main store connected.    | Vault                       |
+| 1     | Content rules in the projection. Doors, one line per pair, a mixed style, reduction with its statement, groups off, far view on, a whole-fit ceiling of 1.0, a landing floor. | Four pictures: root, `Browser`, `Workspace packages`, `Command startup`.   | Projection, far view, fit   |
+| 2     | One surface. Remove the keys, move the camera up, add the accepted scene record, keep the last picture, connect the carry.                                                    | Click through ten modules. No text flash, no lost header, and a real move. | Reader lifecycle            |
+| 3     | Honest failures. Base by checkpoint, retry on a failed draw, no false stale banner, correct text for a removed module.                                                        | Open a draft. Open an old link.                                            | Reader, one default         |
+| 4     | Left column and header. Tree, four destinations, one Find, crumbs and path in the header.                                                                                     | Find `apps/web`, then move between siblings.                               | Shell column, header        |
+| 5     | Panel and About. Pinned foot, actionable rows, the Key, the 220 ms hold. Then remove the sidebar's tabs.                                                                      | Click a card, then double-click one at the right edge.                     | Panel, About, Key           |
+| 6     | Start and return. Start page, legacy action, Continue, `changes since`.                                                                                                       | Open a new tab.                                                            | Start page, browser storage |
+| 7     | Review. Change list, `N` and `P`, the walk across grammars, Before and After.                                                                                                 | Walk a draft of 49 changes.                                                | Left column, panel          |
+| 8     | Renderer. Compaction, candidates by fit, and edge doors. If Slice 1 makes edge doors needless, drop them.                                                                     | The same four pictures.                                                    | Crates                      |
 
 Side track A is server cost: split reads, one watcher per vault, hashed drawing keys. A person feels this most in Slices 2 and 4, so start it before Slice 4. Side track B is the `check` warnings and the skill text.
 
