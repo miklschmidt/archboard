@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T16:44:00Z'
-updated_date: '2026-10-30T18:23:00Z'
+updated_date: '2026-10-30T19:51:00Z'
 labels:
   - frontend
   - renderer
@@ -38,4 +38,6 @@ Round 2 measured total area of 392.9 M today against 175.9 M under these rules, 
 
 <!-- SECTION:NOTES:BEGIN -->
 Gates on the merged core: 108 of 123 at fit 0.6 with no margin, name 12 px and path 9 px on 118 readings, 133 lines left out in 13 readings and all counted. Gate 4 holds by area, but Checkout API grew from 1326 by 1240 to 1800 by 664. The tree row of rule 10 waits for TASK-559.05. Pictures are in /tmp/integrate/slice1. The owner still judges the pictures and the change to ADR 0052.
+
+Owner verdict, 2026-10-30: all four pictures read far better than today, so the interface work continues. The owner named these flaws: dead space in frames, cards with paths that lose their descriptions, some cards sized oddly, probably from the far view, and no line with arrows at both ends for a pair that works both ways. ADR 0052: a joined line may drop its stacked labels only if a combined label gives a reader enough to understand what the relationships are. A count alone is not enough, which is why ADR 0052 exists. TASK-559.12 carries this.
 <!-- SECTION:NOTES:END -->

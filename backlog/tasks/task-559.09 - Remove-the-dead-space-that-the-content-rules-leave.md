@@ -5,10 +5,11 @@ status: To Do
 assignee:
   - '@claude'
 created_date: '2026-10-30T16:45:00Z'
+updated_date: '2026-10-30T19:52:00Z'
 labels:
   - renderer
 dependencies:
-  - TASK-559.02
+  - TASK-559.12
 documentation:
   - docs/design/reader-redesign.md
 parent_task_id: TASK-559
