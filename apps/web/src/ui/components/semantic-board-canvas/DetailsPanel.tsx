@@ -2,7 +2,9 @@
 // reader asks: what it is (its title, the line it is responsible for and the
 // longer account), where it stands against the variant it is read against (only
 // in a comparison), for a part that holds parts what it offers the parts outside
-// it (`ContainerInterface`), what it is wired to, and how it has changed in code
+// it (`ContainerInterface`), the same measures on each variant of the board
+// (`InterfaceOnEachVariant`) and what its code exposes (`ExposedNames`), what it
+// is wired to, and how it has changed in code
 // (`PartHistory`). At the foot are the ways to go deeper (`GoDeeper`).
 //
 // It is the selection tab of the pane's sidebar, so it has the sidebar's one
@@ -12,11 +14,13 @@
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import type { SemanticVariant } from "@archboard/board/document";
+import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import type { VariantContent } from "@archboard/board/content";
 import { KindIcon, RelationshipChip } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import { ContainerInterface } from "#ui/components/semantic-board-canvas/ContainerInterface.tsx";
+import { ExposedNames } from "#ui/components/semantic-board-canvas/ExposedNames.tsx";
 import { GoDeeper } from "#ui/components/semantic-board-canvas/GoDeeper.tsx";
+import { InterfaceOnEachVariant } from "#ui/components/semantic-board-canvas/InterfaceOnEachVariant.tsx";
 import { PartHistory } from "#ui/components/semantic-board-canvas/PartHistory.tsx";
 import {
 	Account,
@@ -276,6 +280,8 @@ interface DetailsPanelProps {
 	readonly subject: NodeSubject;
 	/** The variant that holds the part: what it says, and whose history is read. */
 	readonly held: SemanticVariant;
+	/** The board, whose variants a container is measured on side by side. */
+	readonly board: SemanticBoard | undefined;
 	readonly look: KindLook;
 	/** What the vault calls each group, and how to select one. */
 	readonly groups: GroupControls;
@@ -316,6 +322,12 @@ function DetailsPanel(props: DetailsPanelProps): JSX.Element {
 					look={props.look}
 					onPick={props.onPick}
 				/>
+				{props.board !== undefined && props.on !== null && (
+					<InterfaceOnEachVariant board={props.board} showing={props.on.variant} part={node.id} />
+				)}
+				{props.on !== null && (
+					<ExposedNames node={node} content={props.held.content} on={props.on} />
+				)}
 				<SidebarRegion slot="semantic-inspector-wiring">
 					<Relationships
 						content={props.held.content}

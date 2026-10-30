@@ -5,10 +5,18 @@
 /** The ids panes are called by, in reading order. A third pane is refused. */
 const PANE_IDS = ["A", "B"] as const;
 
+/** Where a pane added for a board opens: the board, and the vault it is in. */
+interface PaneOpening {
+	readonly board: string;
+	readonly vault: string;
+}
+
 /** One pane's identity in the chrome. */
 interface PaneEntry {
 	readonly paneId: string;
 	readonly label: string;
+	/** The board it was added for, as a board opened beside is; absent for any other pane. */
+	readonly opensOn?: PaneOpening;
 }
 
 /** The pane list and the focused pane. */
@@ -20,10 +28,12 @@ interface PaneList {
 /**
  * The entry for one pane id.
  * @param paneId The pane.
+ * @param opensOn The board it is added for, if any.
  * @returns Its entry, labelled "Pane A" or "Pane B".
  */
-function paneEntry(paneId: string): PaneEntry {
-	return Object.freeze({ paneId, label: `Pane ${paneId}` });
+function paneEntry(paneId: string, opensOn?: PaneOpening): PaneEntry {
+	const label = `Pane ${paneId}`;
+	return Object.freeze(opensOn === undefined ? { paneId, label } : { paneId, label, opensOn });
 }
 
 /**
@@ -43,7 +53,9 @@ function initialPaneList(): PaneList {
  * @returns The list.
  */
 function paneListOf(paneIds: readonly string[], activePaneId: string | null): PaneList {
-	const panes = PANE_IDS.filter((paneId) => paneIds.includes(paneId)).map(paneEntry);
+	const panes = PANE_IDS.filter((paneId) => paneIds.includes(paneId)).map((paneId) =>
+		paneEntry(paneId),
+	);
 	const first = panes[0];
 	if (first === undefined) {
 		return initialPaneList();
@@ -66,16 +78,26 @@ function hasPane(list: PaneList, paneId: string): boolean {
 }
 
 /**
+ * The id the next pane added would have.
+ * @param list The list.
+ * @returns The id, or null when the list has every pane already.
+ */
+function freePaneId(list: PaneList): string | null {
+	return PANE_IDS.find((paneId) => !hasPane(list, paneId)) ?? null;
+}
+
+/**
  * Add a second pane and focus it. A list that already has two is returned as is.
  * @param list The list.
+ * @param opensOn The board it is added for, if any.
  * @returns The list with the new pane, or the same list.
  */
-function addPane(list: PaneList): PaneList {
-	const free = PANE_IDS.find((paneId) => !hasPane(list, paneId));
-	if (free === undefined) {
+function addPane(list: PaneList, opensOn?: PaneOpening): PaneList {
+	const free = freePaneId(list);
+	if (free === null) {
 		return list;
 	}
-	return Object.freeze({ panes: [...list.panes, paneEntry(free)], activePaneId: free });
+	return Object.freeze({ panes: [...list.panes, paneEntry(free, opensOn)], activePaneId: free });
 }
 
 /**
@@ -135,6 +157,7 @@ export {
 	addPane,
 	canClosePane,
 	closePane,
+	freePaneId,
 	hasPane,
 	initialPaneList,
 	paneListOf,
@@ -142,4 +165,5 @@ export {
 	selectPane,
 	type PaneEntry,
 	type PaneList,
+	type PaneOpening,
 };

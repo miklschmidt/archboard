@@ -87,7 +87,7 @@ A binding or anchor that names the identity of the vault's own checkout
 resolves in that checkout. A binding that names another identity resolves in
 the chosen checkout of that identity. So a proposal in a worktree is checked
 against the worktree's code, and a meta project is checked against the
-checkouts that this machine reads. `check --code` and `behind` read the one
+checkouts that this machine reads. `check code` and `behind` read the one
 vault that the command addresses.
 
 ## Servers that run other source

@@ -72,6 +72,13 @@ One of several side-by-side slots, each holding its own canvas, so that two
 boards can be worked on at once.
 _Avoid_: split, view, tab, panel, frame, window
 
+**Linked panes**:
+Two panes that show the same board of the same vault while neither presents a
+walkthrough. A part picked in one is picked in the other, and letting go clears
+both. A view chosen in one is read in both, while the other pane reads the board
+it was opened on. A drill-down or another board in either pane ends the link.
+_Avoid_: synced panes, mirrored panes
+
 **User**:
 Whoever is reading the canvas and talking to it. A user reads, picks things out
 and speaks; agents author.
@@ -356,6 +363,14 @@ same kind as every relationship it receives. The board shows its shape and not
 what its body does, so it is a question for the reader, never a fault.
 _Avoid_: wrapper, proxy, facade, shallow part
 
+**Design question**:
+A question that the Board tab asks of the board on screen: where does
+understanding or changing the code take more work than its job needs? Its
+answer names subjects and counts them, such as the pass-through entry points.
+It gives no score and no verdict. A person goes through its answer one subject
+at a time, and each step lights the whole answer (ADR 0059).
+_Avoid_: smell, lint, warning, score, finding (that is what the code check reports)
+
 **Interface measures**:
 Five counts of one container on one variant: its entry points, hidden parts,
 callers, outgoing relationships and pass-through entry points. They say what the
@@ -616,7 +631,9 @@ touches any of it, the parts at their other ends, and the containers that hold
 them. The rest recedes. A relationship is lit along the whole of its route, even
 where the picture has another relationship draw a stretch of a lane they share.
 The light is attention, like the selection: nothing is written, and a presented
-walkthrough step or a selected group takes its place.
+walkthrough step or a selected group takes its place. While nothing is picked,
+a step through a design question's answer lights the whole answer, with the
+light of the subject the step is at.
 _Avoid_: highlight, focus mode, dim, spotlight
 
 **Trace**:
@@ -742,6 +759,18 @@ step. It has the shape of a vault diagnostic, with the evidence that it rests
 on, and its severity is warning or information (ADR 0046).
 _Avoid_: diagnostic (what the Semantics check reports), issue,
 violation, drift, problem
+
+**Exposed name**:
+A top-level name that the module bound to a container offers to the code
+outside it, such as a function that a root file exports. A name that several
+places declare counts once. The code check reads the files outside the module
+that use it, and the files that pass it on. It counts the names, and it lists
+the names with the most users first. This is what the code exposes. The
+container's interface is the parts that callers reach on the board, which is a
+different thing (ADR 0044, ADR 0046).
+_Avoid_: export (the word of one language), public name, API, symbol (that is
+the name a binding or an anchor cites), entry point (that is a child on the
+board)
 
 ### Working
 

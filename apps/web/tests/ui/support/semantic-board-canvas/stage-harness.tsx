@@ -14,6 +14,7 @@ import {
 	PaneChromeContext,
 } from "#ui/components/semantic-board-canvas/PaneChrome.tsx";
 import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
+import { PaneAskContext, type PaneAsk } from "#ui/state/semantic-board-canvas/pane-ask.ts";
 import { PaneVaultContext } from "#ui/state/semantic-board-canvas/pane-vault.ts";
 import { SemanticBoardStage } from "#ui/components/semantic-board-canvas/SemanticBoardStage.tsx";
 import { type SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
@@ -71,6 +72,8 @@ const server: {
 	vault: unknown;
 	/** What the last code pass left in the server's memory, as its route answers it. */
 	findings: unknown;
+	/** What the exposure route answers about any container, or undefined for none remembered. */
+	exposure: unknown;
 	/** The locality route's answer (none: a walk that never ends), and every request to it. */
 	locality: { reply: StubReply | undefined; calls: string[] };
 } = {
@@ -80,6 +83,7 @@ const server: {
 	held: {},
 	vault: undefined,
 	findings: NO_FINDINGS,
+	exposure: undefined,
 	locality: { reply: undefined, calls: [] },
 };
 
@@ -95,6 +99,7 @@ afterEach(() => {
 	server.held = {};
 	server.vault = undefined;
 	server.findings = NO_FINDINGS;
+	server.exposure = undefined;
 	server.locality = { reply: undefined, calls: [] };
 });
 
@@ -154,11 +159,23 @@ function fakeFetch(input: RequestInfo | URL): Promise<Response> {
 	const url = urlOf(input);
 	// The findings are read on a timer, and the history when a part is picked:
 	// both are kept apart from the requests that tests count.
+	if (url.startsWith(`${FINDINGS_ROUTE}/exposure`)) return exposureReply();
 	if (url.startsWith(FINDINGS_ROUTE)) return answered({ status: 200, body: server.findings });
 	if (!url.startsWith("/api/semantic-boards/locality")) return serverReply(url);
 	server.locality.calls.push(url);
 	const { reply } = server.locality;
 	return reply === undefined ? new Promise(() => undefined) : answered(reply);
+}
+
+/**
+ * What the exposure route answers: the remembered exposure, or that none is.
+ * @returns The reply.
+ */
+async function exposureReply(): Promise<Response> {
+	const exposure = await server.exposure;
+	return exposure === undefined
+		? answered({ status: 404, body: { success: false, code: "EXPOSURE_NOT_REMEMBERED" } })
+		: answered({ status: 200, body: exposure });
 }
 
 /**
@@ -253,14 +270,16 @@ const PANE_VAULT = "/work/archboard/.archboard/vault";
 /**
  * The stage inside a cache with this product's read defaults, in one vault.
  * @param children The stage.
+ * @param ask What the pane can ask the agent, if the page has an agent.
  * @returns The providers around it.
  */
-function Cache(children: ReactNode): JSX.Element {
+function Cache(children: ReactNode, ask: PaneAsk | undefined): JSX.Element {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const asking = createElement(PaneAskContext, { value: ask ?? null }, children);
 	return createElement(
 		QueryClientProvider,
 		{ client },
-		createElement(PaneVaultContext, { value: PANE_VAULT }, children),
+		createElement(PaneVaultContext, { value: PANE_VAULT }, asking),
 	);
 }
 
@@ -315,6 +334,8 @@ interface MountOptions extends StagePassThrough {
 	readonly onOpenCode?: ((binding: CodeBinding) => void) | undefined;
 	/** What the shell puts in the pane's header; a pane alone in the shell by default. */
 	readonly chrome?: PaneChrome | undefined;
+	/** What the pane can ask the agent of its checkout; none, as on a recording page, by default. */
+	readonly ask?: PaneAsk | undefined;
 }
 
 /** Every option the harness passes straight through to the stage. */
@@ -531,7 +552,7 @@ function mountStage(selection: string | null = null, options: MountOptions = {})
 		options.live !== true && options.chrome !== undefined
 			? createElement(PaneChromeContext.Provider, { value: options.chrome }, stage)
 			: stage;
-	render(Cache(framed));
+	render(Cache(framed, options.ask));
 	return { picks };
 }
 
@@ -564,4 +585,5 @@ export {
 	NO_SUCH_BOARD,
 	UNREADABLE,
 	drawing,
+	pickablePicture,
 } from "#tests/ui/support/semantic-board-canvas/render-answers.ts";

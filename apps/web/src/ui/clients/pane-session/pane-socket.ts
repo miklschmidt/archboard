@@ -30,8 +30,11 @@ interface PaneSocketListener {
 
 /** One pane's connection to the Archboard server. */
 interface PaneSocketConnector {
-	/** Open a socket unless one is open or connecting. */
-	readonly connect: () => void;
+	/**
+	 * Open a socket unless one is open or connecting.
+	 * @param startsOn The board a pane added for one is to start on: every socket names it until one opens.
+	 */
+	readonly connect: (startsOn?: string) => void;
 	/** The current generation, or null before the first connect or after close. */
 	readonly current: () => PaneSocketGeneration | null;
 	/** Whether the current generation is this one. */
@@ -48,13 +51,18 @@ interface PaneSocketConnector {
  * The socket URL for this pane: its own identity, the tab session every pane of the tab shares,
  * and the vault the pane is in now (ADR 0049). The server moves a pane between vaults and says so
  * on the socket (ADR 0050), so a socket that comes back names the vault the pane was last put in.
+ * A pane added for a board names it too, and the server starts the pane on it.
  * @param clientId The pane's identity to the server.
  * @param vault The vault the pane is in.
+ * @param startsOn The board it is to start on, or null.
  * @returns The URL.
  */
-function socketUrl(clientId: string, vault: string): string {
+function socketUrl(clientId: string, vault: string, startsOn: string | null): string {
 	const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 	const query = new URLSearchParams({ clientId, tabSession: tabSessionId(), vault });
+	if (startsOn !== null) {
+		query.set("board", startsOn);
+	}
 	return `${protocol}//${window.location.host}/?${query.toString()}`;
 }
 
@@ -104,6 +112,8 @@ function createPaneSocketConnector(
 	let registration: PaneRegistrationLatch | null = null;
 	let generationCounter = 0;
 	let closed = false;
+	// Named until a socket opens: from then on the server holds the pane's board.
+	let startsOn: string | null = null;
 
 	/**
 	 * Whether a generation is the current one.
@@ -121,6 +131,7 @@ function createPaneSocketConnector(
 	function listen(generation: PaneSocketGeneration): void {
 		const { socket } = generation;
 		socket.addEventListener("open", () => {
+			startsOn = null;
 			if (!closed && isCurrent(generation)) {
 				listener.opened(generation);
 			}
@@ -152,12 +163,16 @@ function createPaneSocketConnector(
 		});
 	}
 
-	/** Open a socket unless one is open or connecting. */
-	function connect(): void {
+	/**
+	 * Open a socket unless one is open or connecting.
+	 * @param board The board a pane added for one is to start on.
+	 */
+	function connect(board?: string): void {
+		startsOn = board ?? startsOn;
 		if (closed || isLive(current?.socket ?? null)) {
 			return;
 		}
-		const socket = new WebSocket(socketUrl(clientId, vault()));
+		const socket = new WebSocket(socketUrl(clientId, vault(), startsOn));
 		const generation = ++generationCounter;
 		const next: PaneSocketGeneration = {
 			socket,

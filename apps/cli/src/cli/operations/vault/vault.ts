@@ -1,4 +1,3 @@
-import path from "node:path";
 import { z } from "zod";
 import {
 	CliUsageError,
@@ -17,8 +16,12 @@ import {
 	FIX_HELP,
 } from "#cli/operations/vault/check-help.ts";
 import { checkEmbeds } from "#cli/operations/vault/embeds/embeds-check.ts";
-import { requestJson } from "@archboard/server-lifecycle/server-client";
 import { checkSemanticVaultOnServer } from "#cli/clients/server/semantic-boards.ts";
+import {
+	CodeCheckInputSchema,
+	codeCheckOnServer,
+	type CodeCheckInput,
+} from "#cli/operations/vault/code-check-request.ts";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { diagnosticLine, VaultCheckSchema } from "@archboard/board/policy";
 import { SemanticBoardConfigurationSchema } from "@archboard/board/vault-policy";
@@ -42,39 +45,6 @@ const output = {
 	 */
 	select: () => "json",
 } as const;
-/** What the code check reads: `--variant`, `--every-draft` and `--plan`. */
-const CodeCheckInputSchema = z.object({
-	variant: z.string().optional(),
-	everyDraft: z.boolean().optional(),
-	plan: z.array(z.string()).optional(),
-});
-type CodeCheckInput = z.output<typeof CodeCheckInputSchema>;
-
-/**
- * Run the code check on the Archboard server.
- * @param reading What to read.
- * @param reading.variant The draft to read on every board that has one.
- * @param reading.everyDraft Whether to read every draft of every board.
- * @param reading.plan The plan JSON files named, resolved against this directory,
- * because the server runs elsewhere.
- * @param signal Cancels the request, which cancels the check.
- * @returns Its answer.
- */
-async function codeCheckOnServer(
-	reading: CodeCheckInput,
-	signal: AbortSignal,
-): Promise<CodeCheckAnswer> {
-	const asked = new URLSearchParams(
-		reading.variant === undefined ? [] : [["variant", reading.variant]],
-	);
-	if (reading.everyDraft === true) asked.append("every-draft", "true");
-	for (const plan of reading.plan ?? []) asked.append("plan", path.resolve(plan));
-	const query = asked.toString() === "" ? "" : `?${asked}`;
-	return CodeCheckAnswerSchema.parse(
-		await requestJson<unknown>(`/api/vault/code-check${query}`, { signal }),
-	);
-}
-
 /** What the embeds check reads: `--fix`. */
 const FixInputSchema = z.object({ fix: z.boolean().optional() });
 type FixInput = z.output<typeof FixInputSchema>;
@@ -281,6 +251,14 @@ const codeCheckParameters = [
 		placeholder: "file",
 		description:
 			"Read this plan JSON, from terraform show -json or tofu show -json, for the root module of its directory. The check reads only its addresses and references, for the modules it does not read itself. The file must be in the checkout that holds the vault or in the chosen checkout of another repository",
+	},
+	{
+		kind: "option",
+		key: "exposed",
+		spellings: ["--exposed"],
+		value: "none",
+		description:
+			"Add the names each judged container exposes, most used first, with the files outside it that use each name and the files that pass it on, as exposures, with exact counts where the lists are capped. Without it the answer stays small",
 	},
 ] as const;
 
@@ -512,6 +490,7 @@ const checkCodeContract = defineCommand({
 		"archboard check code --variant TASK-123",
 		"archboard check code --every-draft",
 		"archboard check code --plan infra/plan.json",
+		"archboard check code --exposed",
 	],
 	parameters: codeCheckParameters,
 	input: { ingress: CodeCheckInputSchema, stages: codeCheckStages },

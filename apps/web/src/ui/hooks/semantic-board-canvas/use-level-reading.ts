@@ -25,15 +25,19 @@ import type { z } from "zod";
 
 type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
 
+/** A view choice, or an automatic reveal that stays in this pane without a user mark. */
+type ViewChange = (view: string | null, cause?: "reveal") => void;
+
 /** What the shell says about the pane's own board. */
 interface OwnReading {
 	/** The view the pane was told to read its own board through, if any. */
 	readonly view: string | undefined;
 	/**
-	 * The person chose a way of reading the pane's own board.
+	 * Read a view chosen by hand, or reveal a subject in this pane only.
 	 * @param view The view's id, or null for the whole variant.
+	 * @param cause An automatic reveal, rather than a view chosen by hand.
 	 */
-	readonly onView: ((view: string | null) => void) | undefined;
+	readonly onView: ViewChange | undefined;
 	/**
 	 * The person chose a state of the pane's own architecture.
 	 * @param variant The variant's id, or null for whichever is current.
@@ -111,9 +115,9 @@ function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
 	// for. What the link asked for stands until somebody chooses otherwise.
 	const asked = drill.variant ?? null;
 	const { onUserChanged } = own;
-	const onView = useCallback(
-		(view: string | null): void => {
-			onUserChanged?.("view");
+	const onView = useCallback<ViewChange>(
+		(view, cause): void => {
+			if (cause !== "reveal") onUserChanged?.("view");
 			setPlace((current) => {
 				// Nothing chosen here yet and "the current one, please" are different
 				// answers that look alike: both are null. Falling through the second
@@ -174,4 +178,4 @@ function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
 	]);
 }
 
-export { useLevelReading, type OwnReading, type PaneReading };
+export { useLevelReading, type OwnReading, type PaneReading, type ViewChange };

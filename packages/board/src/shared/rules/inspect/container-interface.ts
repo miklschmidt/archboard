@@ -79,10 +79,21 @@ interface ContainerInterface {
 	readonly onContainer: readonly SemanticEdge[];
 	/** The entry points that only pass one call on, a subset of `entryPoints`. */
 	readonly passThrough: readonly SemanticNode[];
+	/**
+	 * The five interface measures (ADR 0044): the lengths of the five lists
+	 * above. They are counts, never combined into one number and never a verdict.
+	 */
+	readonly measures: InterfaceMeasures;
 }
 
 /** What one node is as a container: an interface, or the fact that it has no parts. */
 type ContainerInspection = ContainerInterface | PartlessNode;
+
+/** An entry point that only passes one call on, and the container it is on. */
+interface PassThrough {
+	readonly container: SemanticNode;
+	readonly part: SemanticNode;
+}
 
 /** The five counts, each of them read off one container on one variant. */
 interface InterfaceMeasures {
@@ -185,34 +196,42 @@ function inspectContainer(content: VariantContent, container: SemanticNode): Con
 		return edges.length === 0 ? [] : [{ node, edges, reaches }];
 	});
 	const parents = new Set(content.nodes.map((node) => node.parent));
+	const hiddenParts = children.filter((child) => !reached.has(child.id));
+	const outgoing = content.edges.filter((edge) => holders.has(edge.from) && !holders.has(edge.to));
+	const passThrough = entryPoints
+		.map((entry) => entry.node)
+		.filter((node) => !parents.has(node.id) && passesThrough(node, content.edges));
 	return {
 		container,
 		holdsParts: true,
 		entryPoints,
-		hiddenParts: children.filter((child) => !reached.has(child.id)),
+		hiddenParts,
 		callers,
-		outgoing: content.edges.filter((edge) => holders.has(edge.from) && !holders.has(edge.to)),
+		outgoing,
 		onContainer: entering.filter((edge) => edge.to === id),
-		passThrough: entryPoints
-			.map((entry) => entry.node)
-			.filter((node) => !parents.has(node.id) && passesThrough(node, content.edges)),
+		passThrough,
+		measures: {
+			entryPoints: entryPoints.length,
+			hiddenParts: hiddenParts.length,
+			callers: callers.length,
+			outgoing: outgoing.length,
+			passThrough: passThrough.length,
+		},
 	};
 }
 
 /**
- * The five interface measures of a container (ADR 0044). They are counts,
- * never combined into one number and never a verdict.
- * @param inspection A container with an interface.
- * @returns The counts.
+ * Every pass-through entry point of a variant, each with the container whose
+ * interface it is on, in document order. The deletion test asks about these
+ * first (ADR 0044): each is a question for the reader, never a fault.
+ * @param content The variant's whole content, before any view narrows it.
+ * @returns Each pass-through entry point and its container.
  */
-function interfaceMeasures(inspection: ContainerInterface): InterfaceMeasures {
-	return {
-		entryPoints: inspection.entryPoints.length,
-		hiddenParts: inspection.hiddenParts.length,
-		callers: inspection.callers.length,
-		outgoing: inspection.outgoing.length,
-		passThrough: inspection.passThrough.length,
-	};
+function passThroughEntryPoints(content: VariantContent): readonly PassThrough[] {
+	return content.nodes.flatMap((container) => {
+		const inspection = inspectContainer(content, container);
+		return inspection.holdsParts ? inspection.passThrough.map((part) => ({ container, part })) : [];
+	});
 }
 
 export {
@@ -221,6 +240,7 @@ export {
 	type ContainerInterface,
 	type EntryPoint,
 	type InterfaceMeasures,
+	type PassThrough,
 	inspectContainer,
-	interfaceMeasures,
+	passThroughEntryPoints,
 };

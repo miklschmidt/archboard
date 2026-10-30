@@ -46,7 +46,39 @@ through the CLI, report it in the board's own terms, and change nothing.
      question for the reader (does deleting it lose only a line?), never a
      fault. The counts never say that a module is deep or shallow.
 
-4. For what one variant changed,
+4. For where understanding or changing the code may take more work than its job
+   needs, across the boards of a vault (a survey before a refactor), run
+   `archboard semantic questions [--board <name>]...`. It reads the current
+   variant of every board, or only of the boards that each `--board` names, and
+   answers three questions. Each answer has `containers` and `parts` counts and
+   its `results`, and each result names its `board`, its `container` and the
+   `parts` behind it:
+   - `passThroughEntryPoints`: the entry points that only pass one call on (the
+     last bullet of step 3), listed under their container. Ask of each whether
+     its callers would lose anything if it were deleted.
+   - `containersWithNoHiddenPart`: the containers whose every child is an entry
+     point. The `parts` are those children.
+   - `containersWithNoEntryPoint`: the containers that no relationship from
+     outside reaches a child of. The `parts` are their children, all hidden.
+
+   Read `boards`, which lists each board that was read with the variant and
+   version, and `skipped`, which lists each board that was not read with its
+   `reason`: `no-current-variant` for a board nobody has built, and
+   `board-unreadable` for a file that is not a coherent board. Name a skipped
+   board as not read, never as a board with nothing to ask. A `--board` that
+   names no board refuses the command and lists the boards the vault holds.
+   Report it with these cautions:
+   - Each result is a question for the reader, never a fault. Report the lists
+     and the counts as the answer gives them. Do not add them up, rank the
+     boards by them, call a module deep or shallow, or call one board better
+     than another.
+   - A node with no children has no interface, so it is in no list. A container
+     with no entry point may have no caller drawn at all. Say that the board
+     draws none, not that the module is well hidden.
+   - To read one result further, run `semantic inspect <board> --container <id>`
+     and read its descriptions and its bound code before you say what it means.
+
+5. For what one variant changed,
    `archboard semantic compare <board> [--variant <id|name>]` reads it against
    the current variant (on a board nobody has built, the variant it came from),
    as its picture is drawn: every part, relationship, sequence, step,
@@ -65,7 +97,7 @@ through the CLI, report it in the board's own terms, and change nothing.
    read. Each `--beside <id|name>` adds one more variant, such as a competing
    proposal. Report the counts side by side as the answer gives them. Never
    rank the variants by them.
-5. For where a board's code changes most often (which parts churn, what to
+6. For where a board's code changes most often (which parts churn, what to
    look at first in a refactor, whether the board's busiest parts are the ones
    it draws as central), or which parts change together, run
    `archboard semantic locality <board> [--variant <name>] [--since <date>]`.
@@ -115,10 +147,11 @@ through the CLI, report it in the board's own terms, and change nothing.
    - Coupling describes the code, like the ranking. Change nothing because of
      it.
 
-6. Answer from what the CLI printed, naming subjects as the board names them:
+7. Answer from what the CLI printed, naming subjects as the board names them:
    members with their containers, internal relationships, boundary
    relationships as incoming or outgoing, neighbours, a container's entry
-   points, hidden parts, callers and outgoing relationships, the ranked
+   points, hidden parts, callers and outgoing relationships, the questions of
+   the survey with the boards read and skipped, the ranked
    hotspots with the large commits left out, the coupled pairs with each
    unjoined pair as a question, and anything the question asked
    about that the board does not say. Do not read the vault

@@ -97,12 +97,18 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
 - **Board**: what the board on screen is, and how to read it. The tab is
   ordered by the questions a reader asks, in the order they ask them.
   [The study behind the order](pane-sidebar-hierarchy.md) derives it from the
-  use cases and from research on how people read diagrams. There are four
+  use cases and from research on how people read diagrams. There are five
   regions, and a rule separates one region from the next:
   1. **What is this, and what does it change?** The summary of the variant on
      screen, with no heading: the board's own statement of its scope. On a
      variant read against another, the changes: a heading that names the
-     variant it is compared with, one row for each standing that occurs with
+     variant it is compared with. Under it come the interface changes first
+     (TASK-538.01), because an interface change costs every caller (ADR 0044).
+     Each container whose interface changed is a row, followed by one row for
+     each part that moved, with how it moved: entry point added or removed, now
+     an entry point, now hidden, caller gained or lost. A proposal that changed
+     no interface says so. A row lights its part, and choosing it picks the
+     part. Then one row for each standing that occurs, with
      the pin the picture draws and how many subjects stand so, and the control
      that marks the changes on the picture. The counts are of what the picture
      draws, so a view in which nothing differs says so of the view and keeps
@@ -116,9 +122,30 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      with Everything first and the summary of the view on screen under its
      name. Then the groups, each with its colour. Choosing a group selects
      every member.
-  3. **What do the marks mean?** The legend of what the picture draws: its node
+  3. **Where can the code take more work than it should?** The design
+     questions of the variant on screen (TASK-537). Each question is a heading
+     with its count and the question to the reader under it. Then one
+     row for each result, named by its part and its container. The first
+     question lists the entry points that only pass one call on (ADR 0044).
+     Each row is a step through the answer (ADR 0059). Choosing it lights every
+     result and the containers that hold them, with the result's own
+     relationships and the parts at their other ends, and the rest recedes.
+     The result carries the ring of attention, and its row is pressed. The
+     camera frames the result with those parts, nearest first, while their
+     cards still read. A lit line leads to a part it leaves past the edge.
+     If the view does not draw the result, the pane opens Everything first.
+     The Board tab stays open, so the next row is one click away. Choosing
+     the pressed row again, a group or a walkthrough lets the question go. A
+     pick shows its own light and ring, and letting go of the pick brings the
+     step back. Escape with nothing picked lets the question go. A row under the pointer lights its part,
+     except the pressed row. Ask the agent, beside the row, sends
+     the deletion question about that part to the agent of the pane's
+     checkout. A page with no agent, such as a recording page, has no Ask the
+     agent. A region with no result is absent. The region states counts and
+     names, never a verdict.
+  4. **What do the marks mean?** The legend of what the picture draws: its node
      kinds, its relationship kinds, and what a heavier line and a pulse mean.
-  4. **The layout engine**, a preference of this browser, in one row at the
+  5. **The layout engine**, a preference of this browser, in one row at the
      foot.
 
   A section with nothing to show is absent. The tab lists no variants. The
@@ -152,14 +179,33 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      Hidden parts has its count alone. Choosing a row picks the part out, and
      pointing at it lights the part. An entry point that passes one call on
      says so under its name, and a caller says which entry points it reaches.
-     If nothing outside reaches the part, Callers says so in words.
-  4. **What is it wired to?** For a part, Sends to and Receives from, each with
+     If nothing outside reaches the part, Callers says so in words. On each
+     variant then sets the five measures of the part on the current variant,
+     each draft and each shelved variant side by side (TASK-538.05), the
+     current one first. The variant on screen says so, a shelved one gives the
+     reason it was let go, and a variant where the part holds no parts or draws
+     no caller says that. Nothing ranks them.
+  4. **What does its code expose?** Only for a bound part that holds parts,
+     read from the server's memory of the last code pass (TASK-539.02). A pane
+     never starts a pass. Exposed names gives how many names the module
+     exposes and how many a file outside it uses, both exact, and the module's
+     directory. The names follow, most used first, each with its number of
+     users. The names that no file outside uses fold into one row with their
+     count, and choosing it opens them. Choosing a name lists its users, each a
+     path and the first line of its use, with the part that holds it, or Not
+     drawn. Under them are the files that pass the name on. Pointing at a user
+     lights its part. The region gives the time of the pass. If there is no
+     reading, it says why: no pass has run, the last pass did not read this
+     variant, the board changed after the pass, or the pass skipped the
+     container. A container whose binding names no module has no region. The
+     picture does not change.
+  5. **What is it wired to?** For a part, Sends to and Receives from, each with
      its number of parts and the control that traces how far it reaches. A row
      names the other part and what the relationship carries under the name,
      with the relationship's kind at the end of the name's line so the words
      keep the whole width. For a relationship, the parts at its two ends. For an
      exchange, who takes part. For a message, where it comes in its exchange.
-  5. **How has it changed in code?** Only for a part, read from Git through
+  6. **How has it changed in code?** Only for a part, read from Git through
      its binding (ADR 0045). Recent commits has its count. The day the period
      starts is at the end of its line. Under it are the newest five commits,
      each with its subject, its short hash and its day. A control under them
@@ -210,8 +256,8 @@ check.
 The pane header shows the number of warnings from the last code pass for the
 board, variant and version on screen (TASK-436.10). Each press selects the next
 warning and focuses the camera on its subject. After the last warning, the
-control returns to the first. If a view hides the subject, the pane opens the
-whole board. A pass with no warnings shows zero and disables the control.
+control returns to the first. If a view hides the subject, the pane opens
+Everything. A pass with no warnings shows zero and disables the control.
 Before a pass reads this version, the header shows no count.
 
 Both tabs share one frame. Text starts 16 px from either edge of the sidebar,
@@ -226,6 +272,15 @@ chosen. The spacing steps are 4, 8 and 16 px.
 Picking something out opens the selection tab. Letting go gives back the tab
 that was open before. The sidebar is one panel of one width whichever tab is
 open, so a pick never changes the size of the pane or moves the picture.
+
+Two panes on the same board of the same vault are linked. A part picked in one
+is picked in the other, and letting go clears both. Only the pane where the
+person picked tells the agent that the person changed it. A view chosen in one
+is read in both, and Back takes both back in one step. A pane that drilled into
+the board beside it keeps the view of its own level. A drill-down, another
+board or a presented walkthrough in either pane ends the link, and each pane
+keeps what it picked. A pane whose variant lacks the part names the variant
+beside that holds it, so a part that a proposal adds is not read as gone.
 
 Where the sidebar is depends on how many panes there are and on what the person
 asked for. One control, at the end of the pane's header, shows and hides it, in
@@ -371,7 +426,11 @@ to show is absent from the page and from the outline.
 4. The variants, on one timeline with branches, as the navigator draws them.
    Each variant has its mark, its name, where it stands and the reason in its
    record. A variant whose record gives no reason shows its summary. The one
-   on screen is marked, and choosing another reads it in the pane.
+   on screen is marked, and choosing another reads it in the pane. While the
+   pane reads the variant that the board's name opens, a draft or a shelved
+   variant ends its row with Open beside. It opens that variant in the pane
+   beside, through the view on screen. With one pane the second pane opens on
+   that variant, as one history entry, and with two the pane beside changes.
 
 Choosing a row or a chip picks its subject in the pane, and the page stays. The
 sidebar explains the subject, and the picture marks it when the diagram comes
@@ -456,7 +515,9 @@ filter that finds variants by name (dark).
   sets its name in semibold.
 - **Finding is the filter**: Ctrl K, `/`, or typing in the tree. It keeps tree
   order, dims the boards a match sits under, marks the matched letters, and
-  counts what it found. Enter opens, Alt opens beside, Escape clears.
+  counts what it found. Enter opens, Alt opens beside, Escape clears. A board
+  opened beside the board that the active pane shows, such as a proposal
+  beside the current variant, is read through the view of that pane.
 - **The tree is one tab stop** with the keys of a tree: Right opens a closed
   row, then steps in. Left closes an open row, then steps out. If the person
   is not in the navigator and a pane moves, the navigator reveals the row it

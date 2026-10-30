@@ -61,7 +61,7 @@ current variant names the documents that it was built under.
 - No comparison counts a change to the list, and no edit of one variant changes
   the list of another, as with the summary.
 - `semantic show` returns each variant with its list.
-- `archboard check --code` reads the reference of every variant that it reads,
+- `archboard check code` reads the reference of every variant that it reads,
   in the code that a binding of the same repository and ref reads: the files on
   disk, or the tree of the ref from Git. A file that is not there is the
   warning `DOCUMENT_PATH_MISSING`, at `variants.<id>.documents.<index>`. A
@@ -84,9 +84,9 @@ the variant is.
 - **A new address format, such as a URL.** It would need a second resolver and
   a second check. It also could not resolve in this machine's checkout of the
   repository, which is how a binding resolves.
-- **The plain check.** `archboard check` without `--code` reads no Git, so it
-  could test the file on disk only. A reference pinned to a branch would then
-  be wrong or unread. The code check already reads a pinned ref.
+- **The semantics check.** `archboard check semantics` reads no Git, so it
+  can test the file on disk only. It cannot test the file at a pinned branch.
+  The code check already reads that ref.
 
 ## Consequences
 

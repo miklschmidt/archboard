@@ -11,6 +11,7 @@ import { SIDEBAR_WIDTH } from "@archboard/renderer/shell-geometry";
 import { SemanticPresentation } from "#ui/components/semantic-board-canvas/SemanticPresentation.tsx";
 import type { Sidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
 import type { WalkthroughReading } from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";
+import type { ChosenQuestion } from "#ui/rules/semantic-board-canvas/board/design-questions.ts";
 import type { GroupSelection } from "#ui/rules/semantic-board-canvas/board/groups.ts";
 import type { BeatFocus } from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
 import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
@@ -38,6 +39,8 @@ interface PresentationView {
 	readonly sidebar: Pick<Sidebar, "floating">;
 	/** The selected group and its members, or null. */
 	readonly group: GroupSelection | null;
+	/** The design question chosen, the subjects its answer names and the one the person is at, or null. */
+	readonly question: ChosenQuestion | null;
 }
 
 /**
@@ -76,17 +79,23 @@ function presentationOver(view: PresentationView): ReactNode {
 
 /**
  * What the picture is told to mark beyond the single selection: the selected
- * group's members, and the veil over what a presented step is not about.
+ * group's members, the step through the chosen design question's answer, and
+ * the veil over what a presented step is not about.
  * @param view What the stage knows.
- * @returns The selected group, and what the veil leaves standing.
+ * @returns The selected group, the step, and what the veil leaves standing.
  */
 function pictureMarks(view: PresentationView): {
 	readonly group: GroupSelection | null;
+	readonly answer: ChosenQuestion | null;
 	readonly veil: ReadonlySet<string> | null;
 } {
-	const { group, narrative, focus } = view;
+	const { group, question, narrative, focus } = view;
 	const veiled = narrative.open !== null && focus.drawn.length > 0;
-	return { group, veil: veiled ? new Set(focus.drawn) : null };
+	return {
+		group,
+		answer: question,
+		veil: veiled ? new Set(focus.drawn) : null,
+	};
 }
 
 /**

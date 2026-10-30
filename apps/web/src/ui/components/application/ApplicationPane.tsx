@@ -35,6 +35,11 @@ import {
 	type SemanticTarget,
 } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import { NoBoardHeader } from "#ui/components/semantic-board-canvas/PaneHeader.tsx";
+import { PaneAskContext, type PaneAsk } from "#ui/state/semantic-board-canvas/pane-ask.ts";
+import {
+	PaneBesideContext,
+	type VariantBeside,
+} from "#ui/state/semantic-board-canvas/pane-beside.ts";
 import { PaneVaultContext } from "#ui/state/semantic-board-canvas/pane-vault.ts";
 import { RepositoryPlacesContext } from "#ui/state/semantic-board-canvas/repository-places.ts";
 import {
@@ -68,8 +73,9 @@ interface ApplicationPaneProps {
 	/**
 	 * The person chose a different way of reading this board.
 	 * @param view The view's id, or null for the overview.
+	 * @param cause An automatic reveal, which stays in this pane without a view gesture.
 	 */
-	onViewChange: (view: string | null) => void;
+	onViewChange: NonNullable<SemanticBoardStageProps["onViewChange"]>;
 	/** What the person has picked out in this pane, or null. */
 	picked: PickedSubject | null;
 	/**
@@ -77,6 +83,10 @@ interface ApplicationPaneProps {
 	 * @param subject The subject, or null.
 	 */
 	onPick: (subject: PickedSubject | null) => void;
+	/** The pane left the board its pick was made on: the pick goes, in this pane only. */
+	onLeave: () => void;
+	/** What the pane linked to this one shows, or null while it is not linked (TASK-538.02). */
+	beside: VariantBeside | null;
 	/**
 	 * The person asked for another variant of the board this pane is showing.
 	 * @param variant The variant's id or name, or null for whichever is current.
@@ -86,10 +96,14 @@ interface ApplicationPaneProps {
 	narration?: WalkthroughNarration | undefined;
 	/** What the shell lays over this pane's picture, such as subtitles of the voice running for it. */
 	overlay?: ReactNode;
+	/** Ask the agent of this pane's checkout a question, or null where the page has no agent. */
+	ask?: PaneAsk | null;
 	/** Whether the person asked for reduced motion. */
 	reducedMotion: boolean;
 	/** The vault the pane opens in, until the server moves it (ADR 0050). */
 	openingVault: string;
+	/** The board a pane added for one opens on, as a board opened beside is. */
+	openingBoard?: string | undefined;
 	/**
 	 * Show a board in this pane: where a part its search found is, or where a drill-down leads.
 	 * @param key The board key.
@@ -97,6 +111,11 @@ interface ApplicationPaneProps {
 	 * @returns Whether the pane shows it now.
 	 */
 	onOpenBoard: (key: string, repository?: string) => Promise<boolean>;
+	/**
+	 * Show a board in the pane beside this one, read through this pane's view.
+	 * @param key The board key, in this pane's repository.
+	 */
+	onOpenBeside?: (key: string) => void;
 	/** A walkthrough step the page moves this pane to itself (a recording, TASK-304), or null. */
 	step?: SemanticBoardStageProps["driven"];
 	/** The pane is a recording page's, which the server leaves out of addressing (TASK-304). */
@@ -133,6 +152,7 @@ function optionsFor(
 		recording: props.recording === true,
 		theme: props.theme,
 		openingVault: props.openingVault,
+		...(props.openingBoard === undefined ? {} : { openingBoard: props.openingBoard }),
 		onStatus: callbacks.onStatus,
 		onHolder: callbacks.onHolder,
 		onPaneStateAccepted: callbacks.onPaneStateAccepted,
@@ -250,18 +270,23 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 			{address === null ? (
 				<NoBoard />
 			) : (
-				// Every read the picture makes names the vault this pane is in (ADR 0050).
+				// Every read the picture makes names the vault this pane is in, and a
+				// question it asks goes to the agent of that vault's checkout (ADR 0050).
 				<PaneVaultContext value={vault}>
-					<PaneDiagram
-						address={address}
-						arrival={session.arrivals}
-						openCode={session.openCode}
-						onReading={showReading}
-						onUserChanged={session.userChanged}
-						driven={props.step ?? asked}
-						shown={onScreen?.board ?? null}
-						{...props}
-					/>
+					<PaneAskContext value={props.ask ?? null}>
+						<PaneBesideContext value={props.beside}>
+							<PaneDiagram
+								address={address}
+								arrival={session.arrivals}
+								openCode={session.openCode}
+								onReading={showReading}
+								onUserChanged={session.userChanged}
+								driven={props.step ?? asked}
+								shown={onScreen?.board ?? null}
+								{...props}
+							/>
+						</PaneBesideContext>
+					</PaneAskContext>
 				</PaneVaultContext>
 			)}
 		</div>
@@ -325,7 +350,7 @@ interface PaneDiagramProps extends ApplicationPaneProps {
  */
 const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Element {
 	const { address, openCode, onPick, onUserChanged, onViewChange, picked, view } = props;
-	const { shown, onOpenBoard: openBoard } = props;
+	const { shown, onOpenBoard: openBoard, onLeave: leave } = props;
 	const { boards, outline } = useVaultBoards(usePaneVault());
 	const { places, dive } = useDrillRepositories(openBoard);
 	const onOpenBoard = useCallback(
@@ -368,17 +393,25 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 	// a pane that moves has its pick cleared above this. So this is where the user's hand is.
 	const onSelect = useCallback(
 		(id: string | null, subject?: SelectedSubject): void => {
-			onUserChanged("selection");
+			// A question can clear an already empty pick without changing the reading.
+			// No mark can remain for a later pick from the linked pane to use.
+			if (id !== (picked?.id ?? null)) onUserChanged("selection");
 			onPick(id === null ? null : pickedSubject(id, subject));
 		},
-		[onPick, onUserChanged],
+		[onPick, onUserChanged, picked],
 	);
-	const onView = useCallback(
-		(next: string | null): void => {
-			onUserChanged("view");
-			onViewChange(next);
+	// Leaving the board lets the pick go by the person's hand too, but in this pane only:
+	// the pane linked to it keeps its own (TASK-538.02).
+	const onLeave = useCallback((): void => {
+		onUserChanged("selection");
+		leave();
+	}, [leave, onUserChanged]);
+	const onView = useCallback<ApplicationPaneProps["onViewChange"]>(
+		(next, cause): void => {
+			if (cause !== "reveal" && next !== view) onUserChanged("view");
+			onViewChange(next, cause);
 		},
-		[onUserChanged, onViewChange],
+		[onUserChanged, onViewChange, view],
 	);
 	const onOpenCode = useCallback((): void => {
 		if (picked !== null) {
@@ -396,6 +429,7 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 				onViewChange={onView}
 				selection={picked === null ? null : picked.id}
 				onSelect={onSelect}
+				onLeave={onLeave}
 				onUserChanged={onUserChanged}
 				onOpenCode={onOpenCode}
 				onReading={props.onReading}
@@ -406,6 +440,7 @@ const PaneDiagram = memo(function PaneDiagram(props: PaneDiagramProps): JSX.Elem
 				search={search}
 				placeOf={placeOf}
 				onDive={dive}
+				onOpenBeside={props.onOpenBeside}
 			/>
 		</RepositoryPlacesContext>
 	);

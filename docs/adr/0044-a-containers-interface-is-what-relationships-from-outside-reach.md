@@ -8,6 +8,9 @@ Accepted on 2026-10-06 for TASK-368.01 after an independent review. It
 serves TASK-368 and its subtasks TASK-368.02 to TASK-368.11, and Proposal 2 of
 the [design checks](../design/design-checks.md).
 
+ADR 0059 (TASK-537.02) amends the section on pass-through entry points: a
+design question that a person chose can light a pass-through entry point.
+
 ## Context
 
 A deep module hides a lot of behaviour behind a small interface (Ousterhout,
@@ -161,7 +164,8 @@ its own. Its own interface answers for them.
 
 A pass-through entry point has no mark of its own in the picture. Every visual
 channel is taken (ADR 0025), and the picture already shows the shape: an entry
-point with one line onward. It shows in words wherever the interface is listed:
+point with one line onward. A design question that a person chose can light it,
+as attention and not as a mark (ADR 0059). It shows in words wherever the interface is listed:
 in the answer of `semantic inspect`, beside the measures of competing proposals
 and in the pane inspector. It is reported as information, never as a warning.
 

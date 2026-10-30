@@ -47,7 +47,11 @@
 // of a draft whose ref cannot be read. TASK-498 adds `DOCUMENT_PATH_MISSING`,
 // a warning on a document reference of a variant the check reads whose file is
 // not at the version it names, with no subject: its `path` names the reference
-// as `variants.<id>.documents.<index>` (ADR 0054).
+// as `variants.<id>.documents.<index>` (ADR 0054). TASK-539.01 keeps what each
+// judged container exposes, name by name, with the files that use each name
+// (`ContainerExposureSchema`). The server remembers it for the panes. The
+// answer carries it as `exposures` only on request (`archboard check code
+// --exposed`, TASK-539.06).
 
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";
 import { z } from "zod";
@@ -352,9 +356,73 @@ const CheckTimingSchema = z.discriminatedUnion("check", [
 ]);
 type CheckTiming = z.infer<typeof CheckTimingSchema>;
 
+/** The most names that one container's exposure lists, the most used first (ADR 0046). */
+const EXPOSED_NAME_LIMIT = 200;
+
+/** The most users that one exposed name lists, in path order (ADR 0046). */
+const EXPOSED_USER_LIMIT = 25;
+
+/**
+ * One file outside the module that uses an exposed name: its path, the first
+ * line of its use, and the ids of the parts of the board that hold that line,
+ * by the rule that owns evidence. No part holds it when `parts` is empty. It
+ * quotes a path and a line, never other text of the file (ADR 0046).
+ */
+const ExposedUserSchema = z
+	.object({ path: z.string(), line: z.int().positive(), parts: z.array(z.string()) })
+	.strict();
+
+/**
+ * One name that a module exposes, once however many places declare it: where
+ * its first declaration is, the files that pass it on (root file first; empty
+ * when a root file declares it), and how many files outside the module use it.
+ * `users` is the exact count and `usedBy` lists at most `EXPOSED_USER_LIMIT`
+ * of them.
+ */
+const ExposedNameSchema = z
+	.object({
+		name: z.string(),
+		path: z.string(),
+		line: z.int().positive(),
+		via: z.array(z.string()),
+		users: z.int().nonnegative(),
+		usedBy: z.array(ExposedUserSchema).max(EXPOSED_USER_LIMIT),
+	})
+	.strict();
+
+/**
+ * What one container bound to a module exposes (TASK-539.01): the module's
+ * directory and root files, how many names it exposes and how many of them a
+ * file outside it uses, both exact, and the names with the most users first,
+ * then by name, at most `EXPOSED_NAME_LIMIT` of them. `exposed - usedOutside` is
+ * the number of names that `EXPOSED_UNUSED` lists for the container.
+ */
+const ContainerExposureSchema = z
+	.object({
+		board: z.string(),
+		variant: z.string(),
+		container: z.string(),
+		module: z.string(),
+		rootFiles: z.array(z.string()),
+		exposed: z.int().nonnegative(),
+		usedOutside: z.int().nonnegative(),
+		names: z.array(ExposedNameSchema).max(EXPOSED_NAME_LIMIT),
+	})
+	.strict();
+
+/** The two counts of one container that a pane polls; the names are asked for apart. */
+const ContainerCountsSchema = ContainerExposureSchema.pick({
+	container: true,
+	module: true,
+	exposed: true,
+	usedOutside: true,
+});
+
 /**
  * The whole answer of one code check. The route answers it beside
  * `success: true`, as every route does, and a parse keeps only the answer.
+ * `exposures` is what each judged container exposes, with the caps of a pane,
+ * and is present only when the request asked for it (`--exposed`, TASK-539.06).
  */
 const CodeCheckAnswerSchema = z.object({
 	timings: z.array(CheckTimingSchema),
@@ -362,17 +430,23 @@ const CodeCheckAnswerSchema = z.object({
 	findings: z.array(CodeFindingSchema),
 	skipped: z.array(CodeCheckSkipSchema),
 	behind: z.array(BoardBehindSchema),
+	exposures: z.array(ContainerExposureSchema).optional(),
 });
 
 /**
  * What the last pass that read one board at one variant found there, as the
  * Archboard server remembers it for a pane (TASK-367.24, ADR 0046): the
- * version of the board the pass read, when the pass ran, and its findings on
- * that board. A pane draws them only over the version they were found on.
+ * version of the board the pass read, when the pass ran, its findings on that
+ * board, what it skipped on that board and what it skipped without naming a
+ * board, and the counts of each container it judged (TASK-539.01). A pane draws
+ * them only over the version they were found on. The names behind the counts
+ * are answered apart, by `RememberedExposureSchema`.
  */
 const RememberedReadingSchema = CodeCheckBoardSchema.extend({
 	checkedAt: z.iso.datetime(),
 	findings: z.array(CodeFindingSchema),
+	skipped: z.array(CodeCheckSkipSchema).default([]),
+	containers: z.array(ContainerCountsSchema).default([]),
 }).strict();
 
 /**
@@ -381,10 +455,30 @@ const RememberedReadingSchema = CodeCheckBoardSchema.extend({
  * the server's memory and never starts a pass, so it is empty until somebody
  * runs the code check, with `archboard check` or `archboard check code`. The
  * route answers it beside `success: true`, and a parse keeps only the answer.
+ *
+ * `lastCheckedAt` is when the vault's last pass ran, absent before the first. A
+ * pass can read no board at all, as in a vault whose every board is a draft, so
+ * no readings is not the same as no pass.
  */
-const RememberedFindingsSchema = z.object({ readings: z.array(RememberedReadingSchema) });
+const RememberedFindingsSchema = z.object({
+	readings: z.array(RememberedReadingSchema),
+	lastCheckedAt: z.iso.datetime().optional(),
+});
+
+/**
+ * The answer of `GET /api/vault/code-findings/exposure`: what one container of
+ * one board and variant exposes, with the version of the board the pass read and
+ * when it ran, so a pane can tell it from a newer board (TASK-539.01).
+ */
+const RememberedExposureSchema = z.object({
+	version: z.int().nonnegative(),
+	checkedAt: z.iso.datetime(),
+	exposure: ContainerExposureSchema,
+});
 
 type CodeCheckAnswer = z.infer<typeof CodeCheckAnswerSchema>;
+type ContainerExposure = z.infer<typeof ContainerExposureSchema>;
+type RememberedExposure = z.infer<typeof RememberedExposureSchema>;
 type RememberedReading = z.infer<typeof RememberedReadingSchema>;
 type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
 type CodeCheckBoard = z.infer<typeof CodeCheckBoardSchema>;
@@ -397,6 +491,12 @@ type BehindPart = z.infer<typeof BehindPartSchema>;
 type BehindSkip = z.infer<typeof BehindSkipSchema>;
 
 export {
+	EXPOSED_NAME_LIMIT,
+	EXPOSED_USER_LIMIT,
+	ContainerExposureSchema,
+	type ContainerExposure,
+	RememberedExposureSchema,
+	type RememberedExposure,
 	CheckTimingSchema,
 	type CheckTiming,
 	BehindCommitSchema,

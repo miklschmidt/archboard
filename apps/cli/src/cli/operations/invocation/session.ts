@@ -24,7 +24,7 @@ import { helpText, usageLine } from "#cli/rules/routing/help.ts";
 import { dispatchedCommand } from "#cli/rules/routing/dispatch.ts";
 import { exitCodeFor, reportFailure } from "#cli/operations/invocation/exit-codes.ts";
 import {
-	takeBoardFlag,
+	takeBoardFlags,
 	takeDirectoryFlag,
 	takeDoingFlag,
 	takeSessionFlag,
@@ -272,7 +272,8 @@ function refuseRetiredBoardForms(name: string, rest: readonly string[]): void {
 interface StatedShared {
 	readonly url: string | null;
 	readonly directory: string | null;
-	readonly board: string | null;
+	/** Every `--board` stated, in order. */
+	readonly board: readonly string[];
 	readonly doing: string | null;
 	readonly session: string | null;
 	readonly expectVersion: number | null;
@@ -288,7 +289,7 @@ function takeShared(rest: string[], bootstrap: CliBootstrap): StatedShared {
 	return {
 		url: bootstrap.url,
 		directory: takeDirectoryFlag(rest),
-		board: takeBoardFlag(rest),
+		board: takeBoardFlags(rest),
 		doing: takeDoingFlag(rest),
 		session: takeSessionFlag(rest),
 		expectVersion: takeExpectVersionFlag(rest),
@@ -311,7 +312,36 @@ const STATED_FIELDS: Readonly<Record<SharedOptionKey, keyof StatedShared>> = {
  * @returns The keys with a value.
  */
 function statedKeys(stated: StatedShared): SharedOptionKey[] {
-	return SHARED_OPTION_KEYS.filter((key) => stated[STATED_FIELDS[key]] !== null);
+	return SHARED_OPTION_KEYS.filter((key) => {
+		const value = stated[STATED_FIELDS[key]];
+		return typeof value === "object" && value !== null ? value.length > 0 : value !== null;
+	});
+}
+
+/**
+ * What a command is given of the `--board` flags routing took out. A command
+ * that reads `--board` as an option of its own, to name the boards it narrows
+ * to, gets the flags back with its arguments, and the invocation names no one
+ * board for its requests. Any other command keeps the one shared board.
+ * @param contract - The command that will run.
+ * @param stated - What the invocation stated.
+ * @param argv - The command's local arguments.
+ * @returns What was stated and the arguments the command parses.
+ */
+function boardsAsOptions(
+	contract: AnyCommandContract,
+	stated: StatedShared,
+	argv: readonly string[],
+): { readonly stated: StatedShared; readonly argv: readonly string[] } {
+	const reads = contract.parameters.some(
+		(parameter) => parameter.kind === "option" && parameter.spellings.includes("--board"),
+	);
+	return reads
+		? {
+				stated: { ...stated, board: [] },
+				argv: [...argv, ...stated.board.flatMap((board) => ["--board", board])],
+			}
+		: { stated, argv };
 }
 
 /**
@@ -358,6 +388,12 @@ function assertSharedApplies(
 	const applicable = applicableShared(selected.contract, argv);
 	const refused = inapplicableSharedOptions(applicable, statedKeys(stated));
 	if (refused.length === 0) {
+		if (stated.board.length > 1) {
+			throw new CliUsageError(
+				`--board names one board for \`archboard ${selected.contract.path.join(" ")}\`, ` +
+					`and it was stated ${stated.board.length} times.`,
+			);
+		}
 		return;
 	}
 	const path = selected.contract.path.join(" ");
@@ -396,7 +432,7 @@ function dispatchedTo(
  */
 function applyShared(stated: StatedShared): void {
 	stateInvocation({
-		board: stated.board,
+		board: stated.board[0] ?? null,
 		doing: stated.doing,
 		session: stated.session,
 		expectedVersion: stated.expectVersion,
@@ -484,10 +520,11 @@ async function runCliWith(
 		const stated = takeShared(rest, bootstrap);
 		const dispatched = dispatchedTo(command, rest, stated);
 		selected = dispatched.selected;
-		assertSharedApplies(selected, stated, dispatched.argv);
-		applyShared(stated);
-		const addressed = await addressedVault(selected.contract, dispatched.argv, stated);
-		await runInterruptibleCommand(selected.contract, dispatched.argv, addressed);
+		const given = boardsAsOptions(selected.contract, stated, dispatched.argv);
+		assertSharedApplies(selected, given.stated, given.argv);
+		applyShared(given.stated);
+		const addressed = await addressedVault(selected.contract, given.argv, given.stated);
+		await runInterruptibleCommand(selected.contract, given.argv, addressed);
 	} catch (error) {
 		reportFailure(error, usageLine(routes, selected.contract.path));
 		process.exitCode = exitCodeFor(error, selected);

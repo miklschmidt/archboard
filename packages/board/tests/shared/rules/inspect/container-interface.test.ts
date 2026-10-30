@@ -6,7 +6,7 @@
 import { describe, expect, test } from "bun:test";
 import {
 	inspectContainer,
-	interfaceMeasures,
+	passThroughEntryPoints,
 	type ContainerInterface,
 } from "#shared/rules/inspect/container-interface.ts";
 import { VariantContentSchema, type VariantContent } from "#shared/schemas/content.ts";
@@ -127,7 +127,7 @@ describe("a container's interface", () => {
 		expect(found.callers[1]?.edges).toHaveLength(2);
 		expect(found.callers[1]?.reaches).toEqual(["index"]);
 		expect(ends(found.outgoing)).toEqual(["ledger>disk:data"]);
-		expect(interfaceMeasures(found)).toEqual({
+		expect(found.measures).toEqual({
 			entryPoints: 1,
 			hiddenParts: 2,
 			callers: 2,
@@ -147,7 +147,7 @@ describe("a container's interface", () => {
 				edge("ledger", "store"),
 			],
 		});
-		expect(interfaceMeasures(interfaceOf(wired, "store"))).toEqual(interfaceMeasures(before));
+		expect(interfaceOf(wired, "store").measures).toEqual(before.measures);
 	});
 
 	test("only relationships count: a flow step from outside makes no entry point", () => {
@@ -310,5 +310,45 @@ describe("a pass-through entry point", () => {
 		expect(
 			passing([edge("client", "route"), edge("route", "ledger")], [node("Inner", "route")]),
 		).toEqual([]);
+	});
+});
+
+describe("the pass-through entry points of a variant", () => {
+	test("each one comes with the container it is on, across containers and in a nested one", () => {
+		const variant = content({
+			nodes: [
+				node("Client"),
+				node("Ledger"),
+				node("Shop"),
+				node("Route", "shop"),
+				node("Billing"),
+				node("Charge", "billing"),
+				node("Cards", "billing"),
+				node("Token", "cards"),
+			],
+			edges: [
+				edge("client", "route"),
+				edge("route", "ledger"),
+				edge("client", "charge"),
+				edge("charge", "ledger"),
+				edge("client", "token"),
+				edge("token", "ledger"),
+			],
+		});
+		expect(
+			passThroughEntryPoints(variant).map(({ container, part }) => [container.id, part.id]),
+		).toEqual([
+			["shop", "route"],
+			["billing", "charge"],
+			["cards", "token"],
+		]);
+	});
+
+	test("a variant with no container has none", () => {
+		const variant = content({
+			nodes: [node("Client"), node("Ledger")],
+			edges: [edge("client", "ledger")],
+		});
+		expect(passThroughEntryPoints(variant)).toEqual([]);
 	});
 });

@@ -46,7 +46,12 @@ type FitTarget =
 			 * whatever the room holds beyond it below, as a flow's rows are read.
 			 */
 			readonly anchor?: "top";
-	  };
+	  }
+	/**
+	 * A subject with the parts around it, centred: as many of them as still
+	 * read ({@link READ_SCALE}), nearest first.
+	 */
+	| { readonly kind: "around"; readonly subject: Rect; readonly around: readonly Rect[] };
 
 /**
  * How far in and out a diagram can be taken.
@@ -96,6 +101,16 @@ const CONTEXT_SHARE = 0.9;
  * the start of its responsibility set to read.
  */
 const FAR_SCALE = 0.75;
+
+/**
+ * How far out a fit to a subject and the parts around it may go. Seen from far
+ * away, a card draws its name at 15 to 20 units and the start of what it does
+ * at 13 or 14 (far-card.ts): 7.5 to 10 px and 7 px at this size, read with
+ * effort. Further out the names are seen and what each card does is not read.
+ * So the fit leaves out the parts that would take it further, and the lines
+ * that reach them lead past the edge.
+ */
+const READ_SCALE = 0.5;
 
 /** The camera a diagram starts at before anything has been fitted. */
 const IDENTITY_CAMERA: Camera = Object.freeze({ x: 0, y: 0, scale: 1 });
@@ -245,21 +260,51 @@ function unionRect(rects: readonly Rect[]): Rect | null {
 }
 
 /**
- * The camera that shows whatever is being fitted to.
- *
- * The whole diagram and one region of it are the same arithmetic with two
- * ceilings: a whole picture may be magnified as far as the camera goes, and a
- * region stops at `FOCUS_MAX_SCALE` so that pointing at one card does not
- * become a wall of card. A region's context is shown in its place when it
- * reads nearly as large.
+ * How far apart the middles of two rectangles are.
+ * @param one A rectangle.
+ * @param other Another.
+ * @returns The distance, in the diagram's own units.
+ */
+function apart(one: Rect, other: Rect): number {
+	return Math.hypot(
+		one.x + one.width / 2 - (other.x + other.width / 2),
+		one.y + one.height / 2 - (other.y + other.height / 2),
+	);
+}
+
+/**
+ * The camera that shows a subject with the parts around it: all of them while
+ * they fit at {@link READ_SCALE} or closer. Otherwise the nearest part is taken
+ * in first, each part while the region still fits at that size, so a far part
+ * never pushes a near one out. That region is shown at that size, so as much
+ * beyond it as reads is in sight too.
  * @param viewport How big the pane's window on the diagram is.
- * @param target What is being shown: the whole diagram, or a region of it.
+ * @param subject Where the subject lies.
+ * @param around Where the parts around it lie.
  * @returns The fitted camera, or null when there is nothing to fit.
  */
-function cameraFor(viewport: Size, target: FitTarget): Camera | null {
-	if (target.kind === "whole") {
-		return fitCamera(viewport, target.content);
+function aroundCamera(viewport: Size, subject: Rect, around: readonly Rect[]): Camera | null {
+	const whole = fitRect(viewport, unionRect([subject, ...around]) ?? subject, FOCUS_MAX_SCALE);
+	if (whole === null || whole.scale >= READ_SCALE) {
+		return whole;
 	}
+	const nearestFirst = around.toSorted((one, other) => apart(one, subject) - apart(other, subject));
+	const region = nearestFirst.reduce((shown, box) => {
+		const wider = unionRect([shown, box]) ?? shown;
+		const fit = fitRect(viewport, wider, READ_SCALE);
+		return fit !== null && fit.scale >= READ_SCALE ? wider : shown;
+	}, subject);
+	return fitRect(viewport, region, READ_SCALE);
+}
+
+/**
+ * The camera that shows one region, or its context in its place when that
+ * reads nearly as large.
+ * @param viewport How big the pane's window on the diagram is.
+ * @param target The region, with any context around it.
+ * @returns The fitted camera, or null when there is nothing to fit.
+ */
+function focusCamera(viewport: Size, target: Extract<FitTarget, { kind: "focus" }>): Camera | null {
 	const focus = fitRect(viewport, target.rect, FOCUS_MAX_SCALE, target.anchor);
 	const context =
 		target.context === undefined
@@ -271,6 +316,28 @@ function cameraFor(viewport: Size, target: FitTarget): Camera | null {
 		context.scale >= Math.min(focus.scale, 1) * CONTEXT_SHARE
 		? context
 		: focus;
+}
+
+/**
+ * The camera that shows whatever is being fitted to.
+ *
+ * The whole diagram and one region of it are the same arithmetic with two
+ * ceilings: a whole picture may be magnified as far as the camera goes, and a
+ * region stops at `FOCUS_MAX_SCALE` so that pointing at one card does not
+ * become a wall of card. A region's context is shown in its place when it
+ * reads nearly as large. A subject takes in the parts around it as far out as
+ * {@link READ_SCALE}.
+ * @param viewport How big the pane's window on the diagram is.
+ * @param target What is being shown: the whole diagram, or a region of it.
+ * @returns The fitted camera, or null when there is nothing to fit.
+ */
+function cameraFor(viewport: Size, target: FitTarget): Camera | null {
+	if (target.kind === "whole") {
+		return fitCamera(viewport, target.content);
+	}
+	return target.kind === "around"
+		? aroundCamera(viewport, target.subject, target.around)
+		: focusCamera(viewport, target);
 }
 
 /**
@@ -309,6 +376,7 @@ export {
 	MAX_SCALE,
 	MIN_SCALE,
 	PAN_STEP,
+	READ_SCALE,
 	ZOOM_STEP,
 	cameraFor,
 	cameraOf,

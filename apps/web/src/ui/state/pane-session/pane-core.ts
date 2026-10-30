@@ -75,7 +75,7 @@ interface PaneCorePorts<Transport extends WorkbenchTransportPort> {
 
 /** One pane's wiring, as the hook holds it. */
 interface PaneCore<Transport extends WorkbenchTransportPort> {
-	readonly connect: () => void;
+	readonly connect: (startsOn?: string) => void;
 	readonly publishStatus: () => void;
 	/** The pane's facets the server hears about changed. */
 	readonly facetsChanged: () => void;
@@ -122,6 +122,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	let disposed = false;
 	// Whether a socket has ever opened here: what tells a reconnection apart.
 	let openedBefore = false;
+	let focusedBefore = ports.options().focused;
 
 	/**
 	 * Whether this pane is still mounted.
@@ -480,8 +481,15 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		void sockets.dispose().finally(connector.close);
 	}
 
-	/** The pane's facets the server hears about changed. */
+	/**
+	 * The pane's facets the server hears about changed. A focus change goes at once: every
+	 * redraw restarts the debounce, and `--pane focused` must not find two panes (TASK-544).
+	 */
 	function facetsChanged(): void {
+		if (focusedBefore !== isFocused()) {
+			focusedBefore = isFocused();
+			schedulePaneReport(true);
+		}
 		schedulePaneReport(false);
 	}
 
@@ -491,29 +499,32 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 */
 	function readingChanged(next: PaneReading): void {
 		if (next.board === null) {
-			readingThrough(null);
+			readingThrough(null, false);
 			reading.publish(NOTHING_READ);
 			return;
 		}
 		showing(next.board.key);
-		readingThrough(next.view?.id ?? null);
+		readingThrough(next.view?.id ?? null, (next.presentation ?? null) !== null);
 		reading.publish(next);
 	}
 
 	/**
-	 * The board on screen is being read through this view, or through none.
+	 * The board on screen is being read through this view, or through none, and
+	 * as a presented walkthrough or not.
 	 *
 	 * Said by the pane rather than remembered by the shell, because the shell's
 	 * memory is about the board it pointed this pane at and the pane may be a
 	 * level below that. A board arriving with nothing chosen on it clears this,
 	 * which is what keeps a view id from outliving the variant it names.
 	 * @param view The view's id, or null for the whole variant.
+	 * @param presenting Whether a walkthrough is presented.
 	 */
-	function readingThrough(view: string | null): void {
-		if (status.view === view) {
+	function readingThrough(view: string | null, presenting: boolean): void {
+		if (status.view === view && status.presenting === presenting) {
 			return;
 		}
 		status.view = view;
+		status.presenting = presenting;
 		publishStatus();
 	}
 

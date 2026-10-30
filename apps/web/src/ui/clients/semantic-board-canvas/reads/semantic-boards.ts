@@ -15,8 +15,8 @@
 
 import { z } from "zod";
 import {
+	RememberedExposureSchema,
 	RememberedFindingsSchema,
-	type RememberedFindings,
 } from "@archboard/code-intel/code-check";
 import { LocalityReplySchema, type LocalityAnswer } from "@archboard/code-intel/history";
 import { VaultCheckSchema } from "@archboard/board/policy";
@@ -32,6 +32,13 @@ import {
 	type OfferedView,
 } from "@archboard/board/render-reply";
 import type { RenderedVariantSchema } from "@archboard/board/render-reply";
+
+/** What the server remembers of every pass since it started. */
+type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
+/** What one container exposed in the last pass, with when it was read. */
+type RememberedExposure = z.infer<typeof RememberedExposureSchema>;
+/** What one judged container exposes. */
+type ContainerExposure = RememberedExposure["exposure"];
 
 type ListedBoard = z.infer<typeof BoardListingSchema>["boards"][number];
 
@@ -389,9 +396,55 @@ async function fetchLocality(
 	return parsed.data;
 }
 
+/** The route that answers what one container exposed in the last pass that judged it. */
+const EXPOSURE_URL = "/api/vault/code-findings/exposure";
+
+/** Which container's exposure: the board, the variant by id, and the container by id. */
+type ExposureSite = Pick<ContainerExposure, "board" | "variant" | "container">;
+
+/**
+ * Whether the server answered that no pass since it started judged the container.
+ * @param response The response.
+ * @param body Its body, read.
+ * @returns True for that answer.
+ */
+function unremembered(response: Response, body: unknown): boolean {
+	return response.status === 404 && isRecord(body) && body["code"] === "EXPOSURE_NOT_REMEMBERED";
+}
+
+/**
+ * What one container exposed in the last pass that judged it, as the server
+ * remembers it (TASK-539.01). The route reads memory and never starts a pass.
+ * @param vault The vault.
+ * @param at The board, variant and container.
+ * @param signal Cancels the read.
+ * @returns The reading, or null when no pass since the server started judged that container.
+ */
+async function fetchExposure(
+	vault: string,
+	at: ExposureSite,
+	signal?: AbortSignal,
+): Promise<RememberedExposure | null> {
+	const search = new URLSearchParams({ ...at });
+	const response = await requestRoute(`${EXPOSURE_URL}?${search.toString()}`, vault, signal);
+	const body: unknown = await response.json().catch(() => null);
+	if (unremembered(response, body)) {
+		return null;
+	}
+	if (!response.ok || (isRecord(body) && body["success"] === false)) {
+		throw refusalFrom(body, response.status);
+	}
+	const parsed = RememberedExposureSchema.safeParse(body);
+	if (!parsed.success) {
+		throw new SemanticBoardError("REPLY_INVALID", "The Archboard server sent no exposed names.");
+	}
+	return parsed.data;
+}
+
 export {
 	SemanticBoardError,
 	fetchCodeFindings,
+	fetchExposure,
 	fetchLocality,
 	fetchSemanticBoardDocument,
 	fetchSemanticBoards,
@@ -399,6 +452,7 @@ export {
 	fetchSemanticRender,
 	fetchVaultCheck,
 	type SemanticAtlas,
+	type ExposureSite,
 	type SemanticBoardEntry,
 	type SemanticBoardListing,
 	type SemanticBox,

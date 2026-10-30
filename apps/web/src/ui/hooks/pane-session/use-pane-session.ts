@@ -177,10 +177,16 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 		core.facetsChanged();
 	}, [box, core, options]);
 
+	const [startsOn] = useState(options.openingBoard);
 	useEffect(() => {
-		core.connect();
+		// The person chose the board a pane is added for, as they choose one they show by hand (ADR 0034).
+		if (startsOn !== undefined) {
+			core.userChanged("board");
+			core.userChanged("variant");
+		}
+		core.connect(startsOn);
 		return () => core.dispose();
-	}, [core]);
+	}, [core, startsOn]);
 
 	const attachPaneElement = useCallback(
 		(element: HTMLElement | null): void => {

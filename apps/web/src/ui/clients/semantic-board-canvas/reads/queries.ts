@@ -9,6 +9,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { BOARD_CACHE_MS } from "@archboard/timing";
 import {
 	fetchSemanticBoards,
+	type ExposureSite,
 	type SemanticRenderRequest,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { ReadingOnScreen } from "#ui/hooks/semantic-board-canvas/use-code-findings.ts";
@@ -202,6 +203,31 @@ function codeFindingsQuery(vault: string) {
 }
 
 /**
+ * What one container exposed in the last pass that judged it (TASK-539.01):
+ * asked when a person picks the container out, from the server's memory. The
+ * pass time is in the key, so a newer pass reads again; nothing else does.
+ * @param vault The vault.
+ * @param at The board, variant and container.
+ * @param checkedAt When the pass that the polled findings name ran.
+ * @returns The query's options.
+ */
+function exposureQuery(vault: string, at: ExposureSite, checkedAt: string) {
+	return queryOptions({
+		queryKey: semanticBoardKeys.exposure(vault, at, checkedAt),
+		/**
+		 * Read the remembered exposure.
+		 * @param context The query context, carrying this read's cancellation.
+		 * @returns The reading, or null.
+		 */
+		queryFn: (context) => boardReads().exposure(vault, at, context.signal),
+		staleTime: Number.POSITIVE_INFINITY,
+		refetchOnWindowFocus: false,
+		refetchOnReconnect: false,
+		retry: false,
+	});
+}
+
+/**
  * Where change concentrates in one variant of one board (ADR 0045): asked when
  * somebody picks a part out, and never on a timer.
  *
@@ -254,6 +280,7 @@ function localityQuery(on: ReadingOnScreen) {
 
 export {
 	codeFindingsQuery,
+	exposureQuery,
 	localityQuery,
 	semanticBoardDocumentQuery,
 	semanticBoardListQuery,

@@ -253,13 +253,15 @@ function referencePane(vault: string): PaneRegistration | null {
  *
  * A split is "another look at what I am working on", so a new pane starts on
  * whatever is already in front of the human and is then pointed somewhere else
- * deliberately.
+ * deliberately. A pane added for a board, as one opened beside is, names it on
+ * its socket and starts on it, so it never shows the board it was not added for.
  * @param clientId The client id of the arriving pane.
  * @param vault The vault the arriving pane named.
+ * @param asked The board its socket names, or null.
  * @returns The board key that pane starts on, or null when the vault is empty.
  */
-function boardForNewPane(clientId: string, vault: string): string | null {
-	for (const candidate of copyableBoards(clientId, vault)) {
+function boardForNewPane(clientId: string, vault: string, asked: string | null): string | null {
+	for (const candidate of copyableBoards(clientId, vault, asked)) {
 		if (stillThere(vault, candidate)) {
 			return candidate;
 		}
@@ -299,24 +301,18 @@ function stillThere(vault: string, key: string): boolean {
 
 /**
  * The boards a new pane would take over from, in order of preference: the one
- * it was showing before its socket dropped, then whatever is already in front
- * of the human.
+ * it was showing before its socket dropped, then the one its socket names, then
+ * whatever is already in front of the human.
  * @param clientId The client id of the arriving pane.
  * @param vault The vault the arriving pane named.
+ * @param asked The board its socket names, or null.
  * @returns The candidates, best first.
  */
-function copyableBoards(clientId: string, vault: string): string[] {
+function copyableBoards(clientId: string, vault: string, asked: string | null): string[] {
 	const remembered = paneVaults.get(clientId) === vault ? paneBoards.get(clientId) : undefined;
 	const reference = referencePane(vault);
-	const boards: string[] = [];
-	if (remembered !== undefined) {
-		boards.push(remembered);
-	}
 	const shown = reference === null ? null : boardForPane(reference);
-	if (shown !== null) {
-		boards.push(shown);
-	}
-	return boards;
+	return [remembered ?? null, asked, shown].filter((board) => board !== null);
 }
 
 /**

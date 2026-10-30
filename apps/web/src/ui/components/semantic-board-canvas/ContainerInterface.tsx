@@ -9,11 +9,7 @@
 
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
-import {
-	inspectContainer,
-	interfaceMeasures,
-	type Caller,
-} from "@archboard/board/container-interface";
+import { inspectContainer } from "@archboard/board/container-interface";
 import type { SemanticNode, VariantContent } from "@archboard/board/content";
 import { KindIcon } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import {
@@ -28,7 +24,8 @@ import {
 import { usePeekControl } from "#ui/hooks/semantic-board-canvas/use-peek.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 
-type Derived = Parameters<typeof interfaceMeasures>[0];
+type Derived = Extract<ReturnType<typeof inspectContainer>, { holdsParts: true }>;
+type Caller = Derived["callers"][number];
 
 /** Inputs for the interface. */
 interface ContainerInterfaceProps {
@@ -57,7 +54,7 @@ function ContainerInterface(props: ContainerInterfaceProps): JSX.Element | null 
 	if (!inspection.holdsParts) {
 		return null;
 	}
-	const measures = interfaceMeasures(inspection);
+	const { measures } = inspection;
 	return (
 		<SidebarRegion slot="semantic-inspector-interface">
 			<Measure

@@ -76,6 +76,11 @@ readBoardsFrom({
 	 */
 	codeFindings: async () => ({ readings: [] }),
 	/**
+	 * No exposed names.
+	 * @returns No reading.
+	 */
+	exposure: async () => null,
+	/**
 	 * The vault check, counted: a checker that refuses, which the poll asks again all the same.
 	 * @throws {Error} Always.
 	 */

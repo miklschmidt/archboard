@@ -315,7 +315,9 @@ test("showing a part the view on screen does not draw opens the whole board, the
 	await click(showOf(document.querySelector("[data-slot='about-part'][data-part='n1']")!));
 	await settle();
 	expect(picks.at(-1)).toBe("n1");
-	expect(server.calls.some((url) => url.includes("render") && !url.includes("view="))).toBe(true);
+	expect(
+		server.calls.some((url) => url.includes("render") && url.includes("view=Everything")),
+	).toBe(true);
 	// The whole board is 400 by 300, and the part is drawn at its corner, 80 by 40.
 	const { x, y } = middleOfView();
 	expect(Math.hypot(x - 40, y - 20)).toBeLessThan(Math.hypot(x - 200, y - 150));

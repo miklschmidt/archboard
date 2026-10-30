@@ -679,6 +679,22 @@ The check skips a container whose module has no root file that it reads, as
 `exposure-unknown`. A compose file and a plain Kubernetes manifest keep this
 skip: neither declares an interface the check can read.
 
+To see what a module exposes, and who uses each name, add `--exposed`:
+`archboard check code --exposed`. `check` and `check all` take it too, and
+without it the answer stays small. The JSON answer then carries `code.exposures`, one
+entry for each container the check judged against a module: its `board`,
+`variant`, `container`, `module` and `rootFiles`; `exposed`, the exact count of
+names the module exposes; `usedOutside`, the exact count of them that a file
+outside the module uses; and `names`, with the most used first. Each name gives
+its `path` and `line`, `via` (the files that pass it on, root file first, empty
+when a root file declares it), `users` (the exact count of files outside the
+module) and `usedBy` (those files, each with the first `line` of its use and
+the ids of the `parts` of the board that hold that line). `names` and `usedBy`
+are capped, so compare `users` and `exposed` with the length of the list. The
+text output adds one `exposed:` line for each container with its counts. Use it
+where you decide what a module's entry points are or what a change would
+reach, in place of reading the module's code for its callers.
+
 That record decides what a valid payload cannot:
 
 - **Siblings are not a chain** (rule 3).

@@ -35,8 +35,10 @@ const READ_ROUTES = [
 	"/api/semantic-boards/footprint?board=payments",
 	"/api/semantic-boards/move-preview?board=payments&to=/tmp",
 	"/api/vault/check",
+	"/api/vault/design-questions",
 	"/api/vault/code-check",
 	"/api/vault/code-findings",
+	"/api/vault/code-findings/exposure?board=payments&variant=v1&container=n1",
 	"/api/panes/semantic-context",
 ];
 const WRITE_ROUTES = [

@@ -312,6 +312,8 @@ interface RegisteredSocket {
 	clientId: string | null;
 	/** The browser tab it belongs to, or null for a socket that named none or a malformed one. */
 	tabSessionId: TabSessionId | null;
+	/** The board a pane added for one names to start on, or null. */
+	startsOn: string | null;
 	/** The token this acceptance is stamped with, so a predecessor cannot take authority back. */
 	acceptanceToken: object | null;
 	/** Its Codex browser connection instance. */
@@ -321,8 +323,8 @@ interface RegisteredSocket {
 /**
  * Register one accepted socket and attach the listeners that retire it.
  * @param ws The socket.
- * @param req The upgrade request, whose `?clientId=` names the pane, `?tabSession=` its tab and
- *   `?vault=` its vault.
+ * @param req The upgrade request, whose `?clientId=` names the pane, `?tabSession=` its tab,
+ *   `?vault=` its vault and `?board=` any board it is to start on.
  * @param vault The vault the upgrade named, already checked.
  * @returns What the socket is registered as.
  */
@@ -343,7 +345,8 @@ function registerSocket(ws: WebSocket, req: IncomingMessage, vault: string): Reg
 		logger.error("WebSocket error:", error);
 		clients.delete(ws);
 	});
-	return { vault, clientId, tabSessionId, acceptanceToken, codexInstance };
+	const startsOn = query.get("board");
+	return { vault, clientId, tabSessionId, startsOn, acceptanceToken, codexInstance };
 }
 
 /**
@@ -382,8 +385,8 @@ function admitSocket(ws: WebSocket, socket: RegisteredSocket, startingKey: strin
  * route its Codex requests. Creating and closing the server itself belongs to
  * startWebSocketServer and closeWebSocketServer; this owns one socket only.
  * @param ws The accepted socket.
- * @param req The upgrade request, whose `?clientId=` names the pane, `?tabSession=` its tab and
- *   `?vault=` its vault.
+ * @param req The upgrade request, whose `?clientId=` names the pane, `?tabSession=` its tab,
+ *   `?vault=` its vault and `?board=` any board it is to start on.
  * @param named The vault the upgrade named, already checked.
  */
 async function acceptWebSocketConnection(
@@ -397,7 +400,8 @@ async function acceptWebSocketConnection(
 	// board, which no longer exists as a single thing. A pane that has been here
 	// before (a dropped socket, not a new tab) resumes what it was holding,
 	// because a reconnect must not undo a user's scene arrangement.
-	const startingKey = socket.clientId === null ? null : boardForNewPane(socket.clientId, vault);
+	const startingKey =
+		socket.clientId === null ? null : boardForNewPane(socket.clientId, vault, socket.startsOn);
 	await sendStartingBoard(ws, startingKey, vault);
 	if (ws.readyState !== WebSocket.OPEN || !admitSocket(ws, socket, startingKey)) {
 		return;

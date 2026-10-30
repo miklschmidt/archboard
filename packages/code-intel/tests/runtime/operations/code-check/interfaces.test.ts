@@ -6,7 +6,9 @@
 // Write through the index and Cache past it; a file of the store drawn outside
 // it that calls Hook; a report no part binds that calls Audit and names Util's
 // type; a system test that calls an exposed helper nothing else uses; and a
-// file of tests beside the index.
+// file of tests beside the index; and a wide module of 205 names behind a
+// barrel file, one name used by 26 files and three by one, which is more
+// names and users than a reading lists (TASK-539.01).
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -14,6 +16,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
+import {
+	EXPOSED_NAME_LIMIT,
+	EXPOSED_USER_LIMIT,
+	ContainerExposureSchema,
+} from "#shared/protocol/code-check.ts";
+import files from "#tests/runtime/support/code-check/interfaces-files.json";
 import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 
 const caller = {
@@ -26,6 +34,8 @@ process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
 const SHOP = "github.com/test/shop";
 let outcome: CodeCheckOutcome;
 let order = 0;
+const WIDE = 205;
+const WIDE_USERS = 26;
 
 /**
  * A part bound to code in the checkout.
@@ -46,6 +56,15 @@ function part(id: string, path: string, parent?: string) {
 }
 
 /**
+ * The name of the nth export of the wide module.
+ * @param at Its place.
+ * @returns The name, which sorts as the places do.
+ */
+function wideName(at: number): string {
+	return `name${String(at).padStart(3, "0")}`;
+}
+
+/**
  * A call from one part to another.
  * @param id Its id.
  * @param from Its start.
@@ -61,77 +80,17 @@ beforeAll(async () => {
 	writeFileSync(join(scratch, "gitconfig"), "");
 	git(scratch, shop, "init", "-q", "-b", "main");
 	git(scratch, shop, "remote", "add", "origin", `https://${SHOP}.git`);
+	write(shop, files);
 	write(shop, {
-		"src/store/index.ts": [
-			'export { readShelf } from "./lib/read";',
-			'export { writeShelf } from "./lib/write";',
-			'export { auditShelf } from "./lib/audit";',
-			'export { onShelf } from "./lib/callback";',
-			'export { unusedHelper, SHELF_LIMIT, type ShelfType } from "./lib/util";',
-			"",
-		].join("\n"),
-		"src/store/lib/read.ts":
-			'import { cached } from "./cache";\nexport function readShelf(): string { return cached(); }\n',
-		"src/store/lib/cache.ts": 'export function cached(): string { return "x"; }\n',
-		"src/store/lib/write.ts": "export function writeShelf(): void {}\n",
-		"src/store/lib/audit.ts": "export function auditShelf(): void {}\n",
-		"src/store/lib/callback.ts": "export function onShelf(name: string): void {}\n",
-		"src/store/lib/hook.ts": "export function hook(): void {}\n",
-		"src/store/lib/inner.ts":
-			'import { hook } from "./hook";\nexport function inner(): void { hook(); }\n',
-		"src/store/lib/util.ts":
-			"export function unusedHelper(): void {}\nexport interface ShelfType { name: string }\nexport const SHELF_LIMIT = 3;\n",
-		// A file of tests at the store's root, which is no root file.
-		"src/store/index.test.ts": "export function shelfFixture(): void {}\n",
-		"src/server/routes.ts": [
-			'import { readShelf, writeShelf } from "../store";',
-			'import { cached } from "../store/lib/cache";',
-			"export function route(): string { writeShelf(); return readShelf() + cached(); }",
-			"",
-		].join("\n"),
-		"src/report/report.ts": [
-			'import { auditShelf, SHELF_LIMIT, type ShelfType } from "../store";',
-			"export function report(shelf: ShelfType): string { auditShelf(); return shelf.name.slice(SHELF_LIMIT); }",
-			"",
-		].join("\n"),
-		"src/report/listen.ts": [
-			'import { onShelf, SHELF_LIMIT } from "../store";',
-			"function consume(value: unknown): void {}",
-			"export function listen(names: string[]): void { names.forEach(onShelf); consume(SHELF_LIMIT); }",
-			"",
-		].join("\n"),
-		"tests/system/store.test.ts":
-			'import { unusedHelper } from "../../src/store";\nunusedHelper();\n',
-		"tests/system/private.test.ts": [
-			'import { cached } from "../../src/store/lib/cache";',
-			'import { readShelf } from "../../src/store/lib/read";',
-			'import { cached as again } from "../../src/store/lib/cache";',
-			"cached(); readShelf(); again();",
-			"",
-		].join("\n"),
-		"src/store/tests/private.test.ts": 'import { cached } from "../lib/cache";\ncached();\n',
-		"docs/guide.md": "# Guide\n",
-		"infra/flake/flake.nix": '{ outputs = { self }: { lib.version = "1"; }; }\n',
-		"infra/chart/Chart.yaml": "apiVersion: v2\nname: cart\nversion: 1.0.0\n",
-		"infra/chart/values.yaml": "replicas: 2\nimage:\n  tag: stable\n",
-		"infra/chart/templates/service.yaml":
-			"apiVersion: v1\nkind: Service\nmetadata:\n  name: cart\nspec:\n  ports:\n    - port: 80\n",
-		"infra/routes.yaml": [
-			"apiVersion: networking.k8s.io/v1",
-			"kind: Ingress",
-			"metadata:",
-			"  name: shop",
-			"spec:",
-			"  defaultBackend:",
-			"    service:",
-			"      name: cart",
-			"      port:",
-			"        number: 80",
-			"",
-		].join("\n"),
-		"infra/compose/compose.yaml": "services:\n  cart:\n    image: cart\n",
-		"infra/plain/config.yaml":
-			"apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: settings\ndata:\n  MODE: demo\n",
+		"src/wide/index.ts": 'export * from "./names";\n',
+		"src/wide/names.ts": `${Array.from({ length: WIDE }, (_, at) => `export const ${wideName(at)} = ${at};`).join("\n")}\n`,
+		...Object.fromEntries(
+			Array.from({ length: WIDE_USERS }, (_, at) => [
+				`src/wide-users/user${String(at).padStart(2, "0")}.ts`,
+				// The first name is used by every user file, the next three by one file each.
+				`import { ${wideName(0)}, ${wideName(1 + (at % 3))} } from "../wide";\nexport const sum${at} = ${wideName(0)} + ${wideName(1 + (at % 3))};\n`,
+			]),
+		),
 	});
 	git(scratch, shop, "add", "-A");
 	git(scratch, shop, "commit", "-q", "--no-gpg-sign", "-m", "the code");
@@ -180,6 +139,18 @@ beforeAll(async () => {
 					part("Read", "src/store/lib/read.ts", "Store"),
 					part("Audit", "src/store/lib/audit.ts", "Store"),
 				],
+				edges: [],
+				flows: [],
+			},
+		},
+	]);
+	board(vault, "Wide module", [
+		{
+			id: "v1",
+			name: "Built",
+			lifecycle: "current",
+			content: {
+				nodes: [part("Names", "src/wide"), part("Index", "src/wide/index.ts", "Names")],
 				edges: [],
 				flows: [],
 			},
@@ -440,4 +411,89 @@ test("containers bound to compose files and plain manifests still have unknown e
 		).toEqual(["Module"]);
 		expect(findings("EXPOSED_UNUSED", boardName)).toEqual([]);
 	}
+});
+
+/**
+ * What one container exposed.
+ * @param boardName The board.
+ * @param container The container's part id.
+ * @returns Its exposure reading.
+ */
+function exposureOf(boardName: string, container: string) {
+	return outcome.exposures.find((each) => each.board === boardName && each.container === container);
+}
+
+test("a judged container's exposure reading counts the names its module exposes and the names a file outside uses", () => {
+	const store = exposureOf("Shop", "Store");
+	expect(store).toMatchObject({
+		variant: "v1",
+		module: "src/store",
+		rootFiles: ["src/store/index.ts"],
+		exposed: 7,
+		usedOutside: 6,
+	});
+	// The names without a user are the ones EXPOSED_UNUSED lists: one rule, in one place.
+	const unlisted = store?.names.filter((name) => name.users === 0).map((name) => name.name);
+	expect(store && store.exposed - store.usedOutside).toBe(unlisted?.length);
+	const unused = findings("EXPOSED_UNUSED", "Shop")[0]?.message ?? "";
+	for (const name of store?.names ?? []) {
+		expect(unused.includes(name.name)).toBe(name.users === 0);
+	}
+	// A container whose module the pass cannot read has no reading.
+	expect(outcome.exposures.some((each) => each.board === "Docs")).toBe(false);
+	for (const each of outcome.exposures) ContainerExposureSchema.parse(each);
+});
+
+test("the names come with the most used first, then by name, each with its file, line and the files that pass it on", () => {
+	const store = exposureOf("Shop", "Store");
+	expect(store?.names.map((name) => [name.name, name.users])).toEqual([
+		["SHELF_LIMIT", 2],
+		["ShelfType", 1],
+		["auditShelf", 1],
+		["onShelf", 1],
+		["readShelf", 1],
+		["writeShelf", 1],
+		["unusedHelper", 0],
+	]);
+	const read = store?.names.find((name) => name.name === "readShelf");
+	// The index passes it on from the file that defines it.
+	expect(read).toMatchObject({
+		path: "src/store/lib/read.ts",
+		line: 2,
+		via: ["src/store/index.ts"],
+	});
+});
+
+test("a user is a file outside the module, at its first line, with the parts of the board that hold it", () => {
+	const names = new Map(exposureOf("Shop", "Store")?.names.map((name) => [name.name, name]));
+	// The server binds src/server, which holds routes.ts; no part binds the report.
+	expect(names.get("readShelf")?.usedBy).toEqual([
+		{ path: "src/server/routes.ts", line: 3, parts: ["Server"] },
+	]);
+	expect(names.get("auditShelf")?.usedBy).toEqual([
+		{ path: "src/report/report.ts", line: 2, parts: [] },
+	]);
+	expect(names.get("SHELF_LIMIT")?.usedBy.map((user) => user.path)).toEqual([
+		"src/report/listen.ts",
+		"src/report/report.ts",
+	]);
+	// A test is no user, and its parts differ by board: here no part binds the server's file.
+	expect(names.get("unusedHelper")?.usedBy).toEqual([]);
+	const alone = exposureOf("Store alone", "Store")?.names.find((name) => name.name === "readShelf");
+	expect(alone?.usedBy).toEqual([{ path: "src/server/routes.ts", line: 3, parts: [] }]);
+});
+
+test("long lists are cut to their limits, with the exact counts beside them", () => {
+	const wide = exposureOf("Wide module", "Names");
+	expect(wide).toMatchObject({ exposed: WIDE, usedOutside: 4 });
+	expect(wide?.names).toHaveLength(EXPOSED_NAME_LIMIT);
+	const first = wide?.names[0];
+	expect(first).toMatchObject({ name: wideName(0), users: WIDE_USERS });
+	expect(first?.usedBy).toHaveLength(EXPOSED_USER_LIMIT);
+	expect(first?.usedBy.map((user) => user.path)).toEqual(
+		first?.usedBy.map((user) => user.path).toSorted(),
+	);
+	// The used names come first; the rest follow by name.
+	expect(wide?.names.slice(1, 4).map((name) => name.users)).toEqual([9, 9, 8]);
+	expect(wide?.names[4]?.name).toBe(wideName(4));
 });

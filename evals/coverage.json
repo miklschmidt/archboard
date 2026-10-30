@@ -215,6 +215,13 @@
 					"owner": "grader inspect.container; packages/board/tests/shared/rules/inspect/container-interface.test.ts; tests/system/semantic-boards/container-interface.test.ts"
 				},
 				{
+					"path": "semantic questions: the pass-through entry points, the containers with no hidden part and the containers with no entry point of every current board, each with the boards, containers and parts behind its counts, the boards it read and the boards it skipped with the reason",
+					"expectedUse": "answer a survey across the boards from the CLI, report each result as a question for the reader and never as a score, a ranking or a verdict, and name a board that was skipped as not read",
+					"scenarios": ["S20"],
+					"evidence": "grader",
+					"owner": "grader questions.survey, questions.terms; packages/board/tests/shared/rules/inspect/design-questions.test.ts; packages/board/tests/shared/protocol/design-questions.test.ts (the schema refuses a score or a verdict); packages/board/tests/runtime/operations/read/design-questions.test.ts (current variants, skipped boards, --board); apps/server/tests/server/routes/design-questions/design-questions-route.test.ts; apps/cli/tests/cli/operations/semantic/questions/questions.test.ts; apps/cli/tests/cli/rules/routing/board-flags.test.ts (a repeatable --board)"
+				},
+				{
 					"path": "a node with no children holds no parts; a container nothing outside reaches has only hidden parts and no callers; a relationship to the container itself makes a caller and no entry point",
 					"expectedUse": "the answer says each in words instead of reporting zero entry points",
 					"scenarios": [],
@@ -337,6 +344,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "packages/code-intel/tests/runtime/operations/code-check/interfaces.test.ts (each finding and its severity, a use by a part on the board left to RELATIONSHIP_UNDRAWN, a type-only use no caller, a container with no caller, a test no caller and no root file, external test private imports and unrestricted internal tests, flake and Helm interface findings, compose and plain-manifest exposure-unknown); packages/code-intel/tests/runtime/operations/code-facts/infrastructure-exposure.test.ts (flake outputs and Helm key paths with source spans and no default values, malformed chart values, ordinary YAML preserved); packages/code-intel/tests/runtime/operations/code-facts/module-exposure.test.ts (what a module is and exposes: TypeScript root files, re-exports, an imported name exported again, members, package.json exports; a Python package's __init__.py, __all__ or its public names, read from the fixture package python-shop; a Swift target's files and their open, public and package declarations, read from the fixture package swift-shop; a C or C++ directory's public headers, read from the fixture project c-shop; a Terraform module's configuration files, variables and outputs, read from the fixture configuration terraform-shop); packages/code-intel/tests/runtime/operations/code-check/languages/c-check.test.ts (a C module's callers through an include); packages/code-intel/tests/runtime/operations/code-check/infrastructure/terraform-modules.test.ts (a call's arguments and outputs as uses, no ENTRY_POINT_UNEXPOSED for a Terraform module, a whole call reading every output but in depends_on, MODULE_SHALLOW with a count toggle and its evidence, VARIABLE_PASSED_THROUGH on a module that computes from its variables, whose for_each carries a variable or whose resource reads a local)"
+				},
+				{
+					"path": "archboard check code --exposed: code.exposures (for each container judged against a module: board, variant, container, module, rootFiles, the exact exposed and usedOutside counts, and names most used first, each with path, line, via, the exact users count and usedBy with path, line and parts), capped lists beside exact counts, and one exposed: line for each container; refused by check semantics and check embeds",
+					"expectedUse": "when deciding what a module's entry points are or what a change reaches, add --exposed to check code and read the names and their users in the answer in place of reading the module's code for its callers; an ordinary check code does not carry them",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "apps/cli/tests/cli/operations/vault/check-parts.test.ts (the flag asks the route, code.exposures carries the exposures, one line for each container, refused by check semantics and check embeds, no exposures without the flag); apps/server/tests/server/routes/code-check/code-findings-route.test.ts (the route answer carries exposures only with exposed=true, and the memory keeps them either way); packages/code-intel/tests/runtime/operations/code-check/interfaces.test.ts (the caps, the barrel via, the users and their parts). Mechanical validation: an author run is not asked to use the flag"
 				},
 				{
 					"path": "node.binding.branch, .commit, .confirmedAt",

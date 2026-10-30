@@ -1,0 +1,62 @@
+---
+id: TASK-538.01
+title: >-
+  A proposal's Board tab says first what it changes about each container's
+  interface
+status: Done
+assignee:
+  - '@claude'
+created_date: '2026-10-25T17:05:00Z'
+updated_date: '2026-10-25T19:25:00Z'
+labels:
+  - compare
+  - ui
+dependencies: []
+parent_task_id: TASK-538
+type: feature
+ordinal: 942000
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+The first slice of TASK-538. An interface change costs every caller, so ADR 0044 puts interface changes before other changes in a comparison. The CLI does so. The browser shows only counts of added, changed and removed subjects.
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [x] #1 On a variant read against another, the Board tab lists each container whose interface changed: entry points added and removed, parts that moved between the interface and the hidden parts, and callers gained and lost
+- [x] #2 The list holds exactly the containers and parts that semantic compare lists as interface changes for the same two variants
+- [x] #3 The list stands after the summary and before the counts of the comparison
+- [x] #4 If no interface changed, the region says so, and the current variant shows no region
+- [x] #5 Choosing a row picks the part, pointing at a row lights it, and no comparison status changes
+<!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Board: Board viewer@TASK-538.01, branched from TASK-537.01, adds List interface changes under Stage and reads (InterfaceChanges.tsx), rendered by Render stage states and fed by Resolve board meaning (interfaceChangesOf). No other board is affected: the derivation is compareInterfaces in packages/board, which semantic compare already uses.
+2. rules/semantic-board-canvas/board/board-document.ts: the reading gains contentOf(variant), and interfaceChangesOf(reading, against) returns compareInterfaces(against, on screen).changed.
+3. components/semantic-board-canvas/InterfaceChanges.tsx: under the Compared with heading and before the counts, one block per changed container with a row per moved part (entry point added or removed, now an entry point, now hidden, caller gained or lost). A container on one side only says so. No change says so. Rows light on hover and show the part when chosen; nothing sets a comparison status. SemanticChanges takes it as children.
+4. Tests: a rendered stage-harness test on a draft read against current (rows by container, part and move; no change; current shows none; choosing picks).
+5. Docs: the Board tab region 1 text in operator-canvas-shell.md and the Changes section of pane-sidebar-hierarchy.md.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Built as planned, with these deviations:
+- The reading holds every variant content by id (contents), and rules/semantic-board-canvas/board/interface-changes.ts derives the list with compareInterfaces; SemanticBoardPanel passes it to InterfaceChanges as the children of SemanticChanges, before the counts. board-document.ts stays under the 600-line limit.
+- The proposal drops the planned edge Resolve board meaning -> List interface changes: the derivation lives in a rules file no part binds, and the list reaches the component through Render stage states.
+- Moved parts are indented under their container; checked in a dark screenshot of Browser application@TASK-319 after TASK-482.07 on the served checkout.
+- Code check: archboard check --code --variant TASK-538.01 against the run without --variant shows no difference.
+- The footprint waits for the adoption of TASK-537.01, because TASK-538.01 branches from that proposal.
+
+Footprint read against base 27103d10e (the parent of ae9b9d080) once TASK-537.01 was adopted, so its current is the proposal's parent. Named and changed: Render stage states, List interface changes. Changed but not named by this task: Resolve board meaning (board-document.ts in ae9b9d080), whose reading now holds every variant's content by id; that is how it works inside, and no relationship it draws changed. The other parts in that list were changed by TASK-539.02 (242261a9b) and TASK-538.02 (e57e8945b) and are read in their closings.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A proposal's Board tab lists first each container whose interface changed, with each part and how it moved, from the same compareInterfaces that semantic compare uses, after the summary and before the counts. A proposal that changed no interface says so, and the current variant shows no list. Rows pick and light their part and change no comparison status. Verified by semantic-board-interface-changes.test.tsx and the full gate. Adopted on Board viewer.
+<!-- SECTION:FINAL_SUMMARY:END -->

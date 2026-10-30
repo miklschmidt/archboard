@@ -209,8 +209,8 @@ delete frees the name and the former names. The browser offers no delete.
 
 ## Consequences
 
-- ADR 0045, ADR 0046 and ADR 0054 are amended where they name `check --code`
-  or the plain check. Their other decisions hold.
+- ADR 0045, ADR 0046 and ADR 0054 use `check code` for the code pass and
+  `check semantics` for the former plain check. Their other decisions hold.
 - The semantics check, which the panes poll, still reads no code and no Git.
   The full `archboard check` reads Git and can reach the network.
 - A board document gains one optional board-level list. The schema version

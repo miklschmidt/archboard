@@ -219,7 +219,7 @@ The decision has these parts:
   the Archboard server cannot find gets the same skip.
 - At its start, a pass reads `repos.json` once. It takes the root and the
   servers of every checkout from that one reading. A change that another process
-  writes during the pass applies to the next pass. `check --code` runs in the
+  writes during the pass applies to the next pass. `check code` runs in the
   Archboard server. That server reads the file again for each pass, so a running
   server needs no restart for a new configuration. It looks up a command that is
   a name on the `PATH` that it started with. That `PATH` can differ from the
@@ -283,6 +283,44 @@ a pane never starts a pass. The other decisions of this ADR hold.
 [ADR 0057](0057-a-board-render-carries-its-recipe-and-the-check-keeps-embeds-current.md)
 decides the split.
 
+Amended by TASK-539.01 (2026-10-25): the pass keeps what it reads of each module
+that a container binds, and the server remembers it for the panes. For each
+judged container the pass makes an exposure reading. It holds the module's
+directory and root files, the exact count of the names the module exposes, the
+exact count of those that a file outside it uses, and the names. A name has its
+file and line, the files that pass it on (`via`), the exact count of the files
+outside the module that use it, and those files with the first line of each use
+and the ids of the parts of the board that hold that line. The parts come from
+the rule that owns evidence, so a user is held by the same parts as a finding
+puts it in. The names are listed with the most used first, then by name.
+A reading lists at most 200 names and 25 users for a name, and the counts beside
+the lists stay exact. `EXPOSED_UNUSED` and the reading take the names from one
+rule (`exposed-names.ts`), so the number of names exposed, minus the number used
+outside, is the number of names that the finding lists. A name that several
+places declare counts once, and a member of a name counts with that name.
+A reading quotes symbols, paths and lines, and no other text of a file
+("Safety" holds for it).
+
+The reading is no part of the answer of `archboard check code`. The answer is
+what it was, until a command asks for the names with an option of its own. The
+server remembers each reading with the findings of its board and variant, in
+the memory of TASK-367.24, and a later pass replaces it. Each remembered reading
+of a board now also carries what the pass skipped on that board, what it
+skipped without naming a board, and the counts of each container (module,
+names exposed, names used outside). The panes poll these, so the names stay
+out of them. `GET /api/vault/code-findings/exposure?board=&variant=&container=`
+answers the names of one container from the same memory. Like the other route,
+it requires a vault (ADR 0049), reads memory alone and never starts a pass. It
+answers 404 when no pass has judged that container since the server started.
+
+Amended by TASK-539.06 (2026-10-25): `archboard check code --exposed` is the
+option of its own. It sends `exposed=true` to the code check route, and the
+answer then carries the readings as `exposures`, with the caps above. Like
+`--variant`, it belongs to `check code`, `check` and `check all`. Without the
+option the answer has no `exposures` key. Agents asked
+for it by opting in, so an ordinary check stays small. The text output adds one
+line for each container with its counts.
+
 ## Context
 
 A board makes claims about code. Evidence rule 3 of the consumer skill makes an
@@ -318,7 +356,8 @@ section "What ADR 0045 assumed" answers each assumption.
 
 - The **code check** reads, on request, the code and the infrastructure that the
   bindings and anchors of a board name, and reports findings.
-  `archboard check --code` runs it. The plain `archboard check` never does.
+  `archboard check code`, `archboard check` and `archboard check all` run it.
+  `archboard check semantics` never does.
 - An **anchor** is the one place in code that an author cites as proof of a
   relationship or a flow step: a repository, a file in it and a symbol in that
   file.
@@ -691,12 +730,13 @@ names no subject. That is how the check says a thing once.
 
 ### The command, the route and the answer
 
-`archboard check --code [--variant <name>]` runs the plain check and then the
-code pass, and prints both. TASK-367.17 adds `--plan <file>`, which names a
-Terraform or OpenTofu plan JSON inside a registered checkout. It can repeat.
+`archboard check code [--variant <name>]` runs the code pass and prints it in
+the answer's `code` part. `archboard check` and `archboard check all` also run
+the semantics and embeds checks. TASK-367.17 adds `--plan <file>`, which names
+a Terraform or OpenTofu plan JSON inside a registered checkout. It can repeat.
 
-The CLI asks the plain check's route and then `GET /api/vault/code-check`, a
-route of its own. A pass changes nothing, so the route is a `GET`. The pass runs
+The CLI asks `GET /api/vault/code-check`, a route of its own.
+A pass changes nothing, so the route is a `GET`. The pass runs
 in the Archboard server as checkout work
 (`src/server/archboard/lib/checkout-work.ts`), the admission that the code
 opener already uses. A caller that disconnects cancels the pass. A stop cancels
@@ -705,7 +745,7 @@ refuses because of one. Before a pass settles, it stops every language server
 that it started. `/api/vault/check`, which every open canvas polls, never runs
 a pass.
 
-The answer has four parts:
+The answer's `code` part holds:
 
 - `boards`: each board that the pass read, the variant that it read, and the
   version of the board.
@@ -1006,7 +1046,7 @@ criterion as the tasks must now read it.
 - **TASK-367.24 #3** ("The pane reads cached findings"). The server keeps the
   findings of the last pass in memory, and TASK-367.24 builds that memory.
 - **TASK-367.26 #1** ("on each proposal before adoption"). One run of
-  `archboard check --code --variant TASK-<n>` reads every proposal of the
+  `archboard check code --variant TASK-<n>` reads every proposal of the
   task, because they share its name.
 
 ### What ADR 0045 assumed
@@ -1014,7 +1054,7 @@ criterion as the tasks must now read it.
 ADR 0045 assumed six things about the code check. This decision keeps four and
 changes two.
 
-1. "`archboard check --code` runs on a route of its own that only a request
+1. "`archboard check code` runs on a route of its own that only a request
    starts, never inside the polled check." Kept. The route is
    `GET /api/vault/code-check`.
 2. "The server keeps its answer in memory, keyed on the HEAD of each checkout it
@@ -1040,7 +1080,7 @@ changes two.
    decision does." Kept. A relationship or a step with such a part at an end is
    skipped with its anchor.
 
-Behind joins the answer of `archboard check --code` as information, apart from
+Behind joins the answer of `archboard check code` as information, apart from
 the findings, as ADR 0045 decides.
 
 ## Considered and rejected
@@ -1270,12 +1310,12 @@ These are the sources that TASK-367.01 rejected:
   `RELATIONSHIP_UNSUPPORTED` then says which side has no evidence.
 - TASK-367.24 builds the memory of the findings of the last pass and the route
   that reads it. The pane never starts a pass. The bell stays the plain check's.
-- TASK-367.26 runs `archboard check --code --variant TASK-<n>` once for all
+- TASK-367.26 runs `archboard check code --variant TASK-<n>` once for all
   the proposals of a task.
 - TASK-367.27 adds the `evidence` key to the dogfood configuration, and anchors
   to the dogfood boards.
 - TASK-368.10 and TASK-368.11 report under the severity rule of this decision.
-- TASK-369.02 fills `behind` in the answer of `archboard check --code`.
+- TASK-369.02 fills `behind` in the answer of `archboard check code`.
 - `CONTEXT.md` gains code check, anchor, symbol, code facts, evidence kind,
   candidate and finding. Its Binding and Logical address entries name the
   symbol.

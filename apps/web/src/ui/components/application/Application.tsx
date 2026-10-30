@@ -47,6 +47,7 @@ import {
 	useRecordedViews,
 } from "#ui/hooks/application/use-page-recording.ts";
 import { useAgentSurfaces, type AgentSurfaces } from "#ui/hooks/application/use-agent-surfaces.ts";
+import { useAskFromPane } from "#ui/hooks/application/use-ask-from-pane.ts";
 import { conversationActivation } from "#ui/clients/application/shown-conversation.ts";
 import { useWorkbench, type Workbench } from "#ui/hooks/application/use-workbench.ts";
 import { useWorkspaceAddressing } from "#ui/hooks/application/use-workspace-addressing.ts";
@@ -299,7 +300,7 @@ function ApplicationBody(): JSX.Element {
 		useCallback(() => openingPaneList(opening), [opening]),
 		recordedMedia(recorder),
 	);
-	const paneReadings = usePaneReadings();
+	const paneReadings = usePaneReadings(panes.links);
 	const [addressBinding] = useState(() => new LiveBinding<WorkspaceAddressing>());
 	const addressing = useMemo(() => addressingOver(addressBinding), [addressBinding]);
 	// Choosing a way of reading a board is the person's own move, so it is
@@ -376,7 +377,7 @@ function ApplicationBody(): JSX.Element {
 			}),
 		[setTheme, addressing, livePanes, catalog, notices, fullscreen, openSettings, activate],
 	);
-	const openBeside = useBesideOpening(panes, livePanes, composed);
+	const openBeside = useBesideOpening(livePanes, composed, paneReadings);
 	const actions = useMemo<ShellActions>(
 		() => ({ ...composed, openBeside }),
 		[composed, openBeside],
@@ -414,6 +415,10 @@ function ApplicationBody(): JSX.Element {
 		(paneId: string): void => actionsNow.read().selectPane(paneId),
 		[actionsNow],
 	);
+	const openBesidePane = useCallback(
+		(key: string, paneId: string): void => actionsNow.read().openBeside(key, undefined, paneId),
+		[actionsNow],
+	);
 	const narration = useNarration(workbench, agent.voice, panes.list.activePaneId, selectPane);
 	const overlay = useSubtitleOverlay({
 		workbench,
@@ -421,14 +426,18 @@ function ApplicationBody(): JSX.Element {
 		recording: recorder !== null,
 		presentedPaneId: fullscreen.snapshot.paneId,
 	});
-	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
+	const transport = workbench.owners?.transport ?? null;
+	const askFromPane = useAskFromPane(activate, transport, agent.ask);
+	const recorded = useRecordedViews(recorder, workbench, { narration, overlay, ask: askFromPane });
 	const mounted = usePaneViews({
 		panes,
 		theme,
 		readings,
+		links: panes.links,
 		reducedMotion,
 		onVariantChange,
 		openBoard: selectBoard,
+		openBeside: openBesidePane,
 		...recorded,
 	});
 	const view = useShellView({
@@ -462,22 +471,12 @@ function ApplicationBody(): JSX.Element {
 		[actions, panes, activate, fullscreen.snapshot.paneId],
 	);
 	useStageEvents(fullscreen.stage, stageEvents);
-	const transport = workbench.owners?.transport ?? null;
 	// The bell speaks for the repository in front of the person.
 	const diagnosed = activeVault ?? servedVault();
-	const { ask } = agent;
-	// A repair goes to the workhorse of the repository diagnosed, so its checkout is shown first.
-	// The server tells the workbench socket of the switch before it answers, but that answer can
-	// arrive first. A read on the socket comes after the news, so the repair is composed for the
-	// conversation shown now, not refused because the workbench moved under it.
+	// A repair goes to the workhorse of the repository diagnosed: the focused pane's.
 	const askAboutDiagnosed = useCallback(
-		(text: string): void => {
-			void activate(livePanes.active.status.paneId)
-				.then(() => transport?.refresh())
-				.catch(() => undefined)
-				.then(() => ask(text));
-		},
-		[activate, livePanes, ask, transport],
+		(text: string): void => askFromPane(livePanes.active.status.paneId, text),
+		[askFromPane, livePanes],
 	);
 	const diagnostics = useMemo(
 		() => <VaultDiagnostics vault={diagnosed} transport={transport} ask={askAboutDiagnosed} />,

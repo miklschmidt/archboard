@@ -4,8 +4,8 @@
 // `check semantics`, `check code` and `check embeds` run one each, the answer
 // holds a part for each check that ran, and only a diagnostic or a warning
 // fails it. Behind is information (ADR 0045), so a board many commits behind
-// never does. `--variant`, `--every-draft` and `--plan` name what the code
-// check reads, and only `check`, `check all` and `check embeds` take `--fix`.
+// never does. `--variant`, `--every-draft`, `--plan` and `--exposed` name what
+// the code check reads, and only `check`, `check all` and `check embeds` take `--fix`.
 // Only the Archboard server is a stand-in.
 
 import { afterAll, expect, spyOn, test } from "bun:test";
@@ -370,6 +370,54 @@ test("--variant, --every-draft and --plan reach the code check of check, check a
 	}
 });
 
+const exposure = (container: string): NonNullable<CodeCheckAnswer["exposures"]>[number] => ({
+	board: "Orders",
+	variant: "v1",
+	container,
+	module: `src/${container.toLowerCase()}`,
+	rootFiles: [`src/${container.toLowerCase()}/index.ts`],
+	exposed: 2,
+	usedOutside: 1,
+	names: [
+		{
+			name: "place",
+			path: "src/shipping/place.ts",
+			line: 4,
+			via: [],
+			users: 1,
+			usedBy: [{ path: "src/api.ts", line: 9, parts: ["pA"] }],
+		},
+		{ name: "cancel", path: "src/shipping/cancel.ts", line: 2, via: [], users: 0, usedBy: [] },
+	],
+});
+
+const exposedLines = (stderr: string): string[] =>
+	stderr.split("\n").filter((line) => line.startsWith("exposed: "));
+
+test("--exposed asks the code check for the exposed names and prints one line for each container, and without it the answer carries none", async () => {
+	plain = clean;
+	const exposures = [exposure("Shipping"), exposure("Billing")];
+	try {
+		answered = { ...codeCheck, exposures };
+		asked.length = 0;
+		const { stdout, stderr, exited } = await run(["check", "code", "--exposed"]);
+		expect(exited).toBe(0);
+		expect(new URL(`http://host${asked.at(-1) ?? ""}`).searchParams.get("exposed")).toBe("true");
+		expect(PartsSchema.parse(JSON.parse(stdout)).code?.exposures).toEqual(exposures);
+		const lines = exposedLines(stderr);
+		expect(lines).toHaveLength(exposures.length);
+		for (const [at, line] of lines.entries())
+			expect(line).toContain(exposures[at]?.container ?? "");
+	} finally {
+		answered = codeCheck;
+	}
+	asked.length = 0;
+	const { stdout, stderr } = await run(["check", "code"]);
+	expect(asked).toEqual([CODE_ROUTE]);
+	expect(PartsSchema.parse(JSON.parse(stdout)).code).not.toHaveProperty("exposures");
+	expect(exposedLines(stderr)).toEqual([]);
+});
+
 test("a draft no board has is refused, and --every-draft beside --variant is refused before the server", async () => {
 	plain = clean;
 	refuseDraft = true;
@@ -397,6 +445,7 @@ test("every other check subcommand refuses the code check's options before askin
 			["--variant", "TASK-1"],
 			["--every-draft"],
 			["--plan", "infra/plan.json"],
+			["--exposed"],
 		]) {
 			asked.length = 0;
 			expect((await run([...entry.name.split(" "), ...option])).exited, entry.name).toBe(2);

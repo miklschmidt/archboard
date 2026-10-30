@@ -14,6 +14,9 @@ import {
 import type { Narration } from "#ui/hooks/application/use-narration.ts";
 import type { PaneReadings, PickedSubject } from "#ui/hooks/application/use-pane-reading.ts";
 import type { Panes } from "#ui/hooks/application/use-panes.ts";
+import type { PaneSession } from "#ui/state/application/pane-handles.ts";
+import type { PaneLinks } from "#ui/rules/application/pane-link.ts";
+import type { PaneEntry } from "#ui/rules/application/pane-list.ts";
 import type { PaneTheme } from "#ui/rules/pane-session/session-contracts.ts";
 import type { SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import { servedVault } from "@archboard/server-requests";
@@ -25,6 +28,13 @@ interface PaneOverlay {
 	readonly element: ReactNode;
 }
 
+/**
+ * Ask the agent of one pane's checkout a question, sent at once.
+ * @param paneId The pane.
+ * @param text The question.
+ */
+type PaneAskFrom = (paneId: string, text: string) => void;
+
 /** What the mounted panes are assembled from. */
 interface PaneViewSources {
 	/** What a pane is made from: never the records, which change with every pane's news. */
@@ -32,6 +42,8 @@ interface PaneViewSources {
 	readonly theme: PaneTheme;
 	/** What each pane is reading, and how that changes. */
 	readonly readings: PaneReadings;
+	/** Which panes are linked (TASK-538.02). */
+	readonly links: PaneLinks;
 	readonly reducedMotion: boolean;
 	/**
 	 * The person asked for another variant of one pane's board.
@@ -47,6 +59,8 @@ interface PaneViewSources {
 	readonly narration: Narration | null;
 	/** What is laid over one pane's picture, or null: the subtitles of the voice running for it. */
 	readonly overlay: PaneOverlay | null;
+	/** Ask the agent about what a pane shows, or null where the page has no agent to ask. */
+	readonly ask: PaneAskFrom | null;
 	/** The page records its one pane (TASK-304), or null. */
 	readonly recording: PaneRecording | null;
 	/**
@@ -57,6 +71,12 @@ interface PaneViewSources {
 	 * @returns Whether the pane shows it now.
 	 */
 	readonly openBoard: (key: string, paneId: string, repository?: string) => Promise<boolean>;
+	/**
+	 * Show a board in the pane beside one pane, read through that pane's view.
+	 * @param key The board key, in the repository of the pane.
+	 * @param paneId The pane it is beside.
+	 */
+	readonly openBeside: (key: string, paneId: string) => void;
 }
 
 /** What a recording page gives its pane. */
@@ -71,27 +91,73 @@ interface PaneRecording {
 }
 
 /**
+ * Where a pane opens: in the vault and on the board it was added for, else in the
+ * vault the server serves, on the board the server gives it.
+ * @param entry The pane.
+ * @returns Its opening vault, and its opening board if it has one.
+ */
+function openingOf(entry: PaneEntry): {
+	readonly openingVault: string;
+	readonly openingBoard?: string;
+} {
+	const { opensOn } = entry;
+	return opensOn === undefined
+		? { openingVault: servedVault() }
+		: { openingVault: opensOn.vault, openingBoard: opensOn.board };
+}
+
+/**
  * One pane's mounted element.
  * @param sources Everything the panes are made from.
- * @param paneId The pane.
+ * @param entry The pane, and the board it was added for if any.
  * @param index Its place in reading order.
  * @returns The element.
  */
-function paneElement(sources: PaneViewSources, paneId: string, index: number): ReactNode {
+function paneElement(sources: PaneViewSources, entry: PaneEntry, index: number): ReactNode {
 	const { panes, readings } = sources;
+	const { paneId } = entry;
+	/**
+	 * A driven update supersedes a local gesture before its report settles.
+	 * @param target The pane receiving the update.
+	 * @param part The part whose gesture no longer explains its reading.
+	 */
+	function withdrawGesture(
+		target: string,
+		part: Parameters<PaneSession["userChangeFailed"]>[0],
+	): void {
+		panes.handles.session(target)?.userChangeFailed(part);
+	}
 	/**
 	 * The person chose a different way of reading this pane's board.
 	 * @param view The view's id, or null for the overview.
+	 * @param cause An automatic reveal, which changes only this pane and adds no history entry.
 	 */
-	function readThrough(view: string | null): void {
-		readings.showView(paneId, view);
-	}
+	const readThrough: ApplicationPaneProps["onViewChange"] = (view, cause): void => {
+		if (cause === "reveal") {
+			withdrawGesture(paneId, "view");
+			readings.showView(paneId, view);
+			return;
+		}
+		for (const reached of readings.chooseView(paneId, view)) {
+			if (reached.paneId !== paneId && reached.from !== view) {
+				withdrawGesture(reached.paneId, "view");
+			}
+		}
+	};
 	/**
 	 * The person picked a subject out in this pane, or cleared it.
 	 * @param subject The subject, or null.
 	 */
 	function pickHere(subject: PickedSubject | null): void {
+		const linked = sources.links[paneId]?.paneId;
+		if (linked !== undefined && readings.pickedIn(linked)?.id !== subject?.id) {
+			withdrawGesture(linked, "selection");
+		}
 		readings.pick(paneId, subject);
+	}
+	/** This pane left the board its pick was made on. */
+	function leaveHere(): void {
+		readings.leave(paneId);
 	}
 	/**
 	 * The person asked for a different state of this pane's architecture.
@@ -109,6 +175,14 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 	function openBoardHere(key: string, repository?: string): Promise<boolean> {
 		return sources.openBoard(key, paneId, repository);
 	}
+	/**
+	 * Show a board in the pane beside this one.
+	 * @param key The board key.
+	 */
+	function openBesideHere(key: string): void {
+		sources.openBeside(key, paneId);
+	}
+	const { ask } = sources;
 	return createElement(ApplicationPane, {
 		key: paneId,
 		paneId,
@@ -120,12 +194,16 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 		onViewChange: readThrough,
 		picked: readings.pickedIn(paneId),
 		onPick: pickHere,
+		onLeave: leaveHere,
+		beside: sources.links[paneId] ?? null,
 		onVariantChange: showVariantHere,
 		narration: sources.narration?.forPane(paneId),
 		overlay: sources.overlay?.paneId === paneId ? sources.overlay.element : undefined,
 		reducedMotion: sources.reducedMotion,
-		openingVault: servedVault(),
+		...openingOf(entry),
 		onOpenBoard: openBoardHere,
+		onOpenBeside: openBesideHere,
+		ask: ask === null ? null : (text: string): void => ask(paneId, text),
 	});
 }
 
@@ -176,12 +254,15 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		panes,
 		theme,
 		readings,
+		links,
 		reducedMotion,
 		onVariantChange,
 		narration,
 		overlay,
+		ask,
 		recording,
 		openBoard,
+		openBeside,
 	} = sources;
 	const { list, callbacks, handles } = panes;
 	return useMemo(() => {
@@ -192,14 +273,17 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 					panes: { list, callbacks, handles },
 					theme,
 					readings,
+					links,
 					reducedMotion,
 					onVariantChange,
 					narration,
 					overlay,
+					ask,
 					recording,
 					openBoard,
+					openBeside,
 				},
-				entry.paneId,
+				entry,
 				index,
 			);
 		});
@@ -210,13 +294,22 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		handles,
 		theme,
 		readings,
+		links,
 		reducedMotion,
 		onVariantChange,
 		narration,
 		overlay,
+		ask,
 		recording,
 		openBoard,
+		openBeside,
 	]);
 }
 
-export { usePaneViews, type PaneOverlay, type PaneRecording, type PaneViewSources };
+export {
+	usePaneViews,
+	type PaneAskFrom,
+	type PaneOverlay,
+	type PaneRecording,
+	type PaneViewSources,
+};

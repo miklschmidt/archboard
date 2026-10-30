@@ -3,12 +3,15 @@
 // the current variant back through its history, each at its adoption with its
 // date and its reason. Drafts branch off the variant they came from, and a
 // shelved variant ends its branch with its reason. Choosing a variant reads it
-// in the pane. The title of the page says where the variant on screen stands in
-// the same words (`VariantStanding`).
+// in the pane. While the pane reads the variant the board's name opens, a draft
+// or a shelved variant also opens in the pane beside it (TASK-538.04). The title
+// of the page says where the variant on screen stands in the same words
+// (`VariantStanding`).
 
+import { RiLayoutColumnLine } from "@remixicon/react";
 import { useCallback, useMemo, type JSX } from "react";
 
-import { cn } from "@archboard/ui-kit/components";
+import { cn, IconButton } from "@archboard/ui-kit/components";
 import type {
 	TimelineEntry,
 	VariantTimeline,
@@ -23,11 +26,18 @@ interface AboutVariantsProps {
 	readonly timeline: VariantTimeline;
 	/** The id of the variant on screen, or null when the board has no such variant. */
 	readonly showing: string | null;
+	/** The id of the variant the board's name opens, or null when it opens none. */
+	readonly opens: string | null;
 	/**
 	 * The person chose a variant to read.
 	 * @param variant The variant's id, or null for whichever is current.
 	 */
 	readonly onChoose: ((variant: string | null) => void) | undefined;
+	/**
+	 * The person asked for a variant in the pane beside; undefined when the pane cannot.
+	 * @param variant The variant's id.
+	 */
+	readonly onBeside?: ((variant: string) => void) | undefined;
 }
 
 /** Where the timeline's columns are: the navigator's rail, at the page's room. */
@@ -47,6 +57,10 @@ function AboutVariants(props: AboutVariantsProps): JSX.Element {
 		() => timelineLanes(timeline.entries.map((entry) => entry.depth)),
 		[timeline],
 	);
+	// A proposal opens beside the variant the board's name opens, so the offer
+	// stands while that variant is on screen.
+	const beside =
+		props.showing !== null && props.showing === props.opens ? props.onBeside : undefined;
 	return (
 		<div className="flex flex-col">
 			{!timeline.built && (
@@ -62,6 +76,7 @@ function AboutVariants(props: AboutVariantsProps): JSX.Element {
 						lane={lanes[index]!}
 						drawn={entry.variant.id === props.showing}
 						onChoose={props.onChoose}
+						onBeside={beside}
 					/>
 				))}
 			</ol>
@@ -125,6 +140,7 @@ function VariantStanding(props: { readonly entry: TimelineEntry }): JSX.Element 
  * @param props.lane Its lane.
  * @param props.drawn Whether it is on screen.
  * @param props.onChoose Open it, when the pane can.
+ * @param props.onBeside Open a variant beside, while the timeline offers it.
  * @returns The row.
  */
 function TimelineRow(props: {
@@ -132,8 +148,9 @@ function TimelineRow(props: {
 	readonly lane: Lane;
 	readonly drawn: boolean;
 	readonly onChoose: ((variant: string | null) => void) | undefined;
+	readonly onBeside: ((variant: string) => void) | undefined;
 }): JSX.Element {
-	const { entry, lane, drawn, onChoose } = props;
+	const { entry, lane, drawn, onChoose, onBeside } = props;
 	const { variant } = entry;
 	const markX = PAGE_LANE.origin + lane.depth * PAGE_LANE.step;
 	const reason = reasonOf(entry);
@@ -144,7 +161,7 @@ function TimelineRow(props: {
 		[onChoose, variant.id, variant.lifecycle],
 	);
 	return (
-		<li className="relative">
+		<li className="relative flex min-w-0 items-stretch">
 			<button
 				type="button"
 				aria-pressed={drawn}
@@ -153,7 +170,7 @@ function TimelineRow(props: {
 				data-variant={variant.id}
 				data-lifecycle={variant.lifecycle}
 				onClick={choose}
-				className="hover:bg-sidebar-accent/50 aria-pressed:bg-sidebar-accent aria-pressed:shadow-raised rounded-control relative flex w-full min-w-0 py-3 pr-4 text-left disabled:cursor-default"
+				className="hover:bg-sidebar-accent/50 aria-pressed:bg-sidebar-accent aria-pressed:shadow-raised rounded-control relative flex min-w-0 flex-1 py-3 pr-4 text-left disabled:cursor-default"
 				style={rowStyle}
 			>
 				{drawn && (
@@ -196,7 +213,45 @@ function TimelineRow(props: {
 					)}
 				</span>
 			</button>
+			{onBeside !== undefined && <RowBeside entry={entry} drawn={drawn} onBeside={onBeside} />}
 		</li>
+	);
+}
+
+/**
+ * The end of a row while the timeline offers to open beside: the control on a
+ * draft or a shelved variant, and room kept on every other row, so the rows
+ * stay one width.
+ * @param props The variant, and the way to open it beside.
+ * @param props.entry The variant on the timeline.
+ * @param props.drawn Whether it is on screen, where nothing opens beside it.
+ * @param props.onBeside Open a variant beside.
+ * @returns The control, or the room for one.
+ */
+function RowBeside(props: {
+	readonly entry: TimelineEntry;
+	readonly drawn: boolean;
+	readonly onBeside: (variant: string) => void;
+}): JSX.Element {
+	const { entry, onBeside } = props;
+	const { variant } = entry;
+	const open = useCallback((): void => onBeside(variant.id), [onBeside, variant.id]);
+	const offered =
+		!props.drawn && (variant.lifecycle === "draft" || variant.lifecycle === "shelved");
+	return (
+		<span className="flex w-11 shrink-0 items-center justify-center">
+			{offered && (
+				<IconButton
+					label={`Open ${variant.name} beside`}
+					tip="Open beside"
+					slot="variant-beside"
+					className="text-muted-foreground hover:text-foreground"
+					onClick={open}
+				>
+					<RiLayoutColumnLine />
+				</IconButton>
+			)}
+		</span>
 	);
 }
 

@@ -67,6 +67,7 @@ beforeEach(() => {
 		document: readDocument,
 		vaultCheck: notReadHere,
 		codeFindings: notReadHere,
+		exposure: notReadHere,
 		locality: notReadHere,
 	});
 	takePicturesFrom({ draw: drawFromDocument });

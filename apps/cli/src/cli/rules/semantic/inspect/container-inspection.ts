@@ -8,7 +8,7 @@
 // into an answer with a schema, and saying them in words for a reader.
 
 import { z } from "zod";
-import { inspectContainer, interfaceMeasures } from "@archboard/board/container-interface";
+import { inspectContainer } from "@archboard/board/container-interface";
 import { RenderedVariantSchema } from "@archboard/board/render-reply";
 import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import type { SemanticEdge, SemanticNode } from "@archboard/board/content";
@@ -22,7 +22,7 @@ import {
 } from "#cli/rules/semantic/inspect/inspected-subjects.ts";
 
 type ContainerInspection = ReturnType<typeof inspectContainer>;
-type InterfaceMeasures = ReturnType<typeof interfaceMeasures>;
+type InterfaceMeasures = Extract<ContainerInspection, { holdsParts: true }>["measures"];
 
 /** A relationship with both its ends named, because one end is often outside the container. */
 const NamedEdgeSchema = InspectedEdgeSchema.extend({ fromName: z.string(), toName: z.string() });
@@ -171,7 +171,7 @@ function containerAnswer(
 	return {
 		...head,
 		holdsParts: true,
-		measures: interfaceMeasures(inspection),
+		measures: inspection.measures,
 		entryPoints: inspection.entryPoints.map((entry) => ({
 			...inspectedNode(entry.node),
 			reachedBy: entry.reachedBy.map(named),

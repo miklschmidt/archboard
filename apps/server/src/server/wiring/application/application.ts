@@ -14,6 +14,7 @@ import { FRONTEND_DIRECTORY } from "#server/store/frontend/frontend-directory.ts
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { checkoutWork } from "#server/wiring/owners/server-owners.ts";
 import { mountCodeCheckRoute } from "#server/routes/code-check/code-check-route.ts";
+import { mountDesignQuestionsRoute } from "#server/routes/design-questions/design-questions-route.ts";
 import { mountFootprintRoute } from "#server/routes/footprint/footprint-route.ts";
 import { startServer } from "#server/lifecycle/startup/server-startup.ts";
 import {
@@ -121,6 +122,7 @@ mountSemanticBoardRoutes(app);
 mountLocalityRoute(app);
 mountCodeCheckRoute(app);
 mountFootprintRoute(app);
+mountDesignQuestionsRoute(app);
 mountSemanticPaneContextRoutes(app);
 mountVoiceStartTraceRoute(app);
 

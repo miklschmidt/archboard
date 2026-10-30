@@ -31,6 +31,13 @@ function livePanesOver(binding: LiveBinding<Panes>): Panes {
 			return binding.read().records;
 		},
 		/**
+		 * Which panes are linked now.
+		 * @returns The links.
+		 */
+		get links() {
+			return binding.read().links;
+		},
+		/**
 		 * The active pane's record now.
 		 * @returns It.
 		 */
@@ -53,9 +60,10 @@ function livePanesOver(binding: LiveBinding<Panes>): Panes {
 		},
 		/**
 		 * Open the second pane.
+		 * @param opensOn The board it is added for, if any.
 		 * @returns False when there is no pane to open.
 		 */
-		add: () => binding.read().add(),
+		add: (opensOn) => binding.read().add(opensOn),
 		/**
 		 * Close a pane.
 		 * @param paneId The pane.

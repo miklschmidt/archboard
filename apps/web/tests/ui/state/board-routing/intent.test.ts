@@ -74,7 +74,7 @@ function reading(view: string | null): WorkspaceAddress {
 
 test("choosing another way of reading a board is a move the user made", () => {
 	const navigation = createDeliberateNavigation();
-	navigation.expect({ kind: "view", paneId: "A", from: null });
+	navigation.expect({ kind: "view", panes: [{ paneId: "A", from: null }] });
 	expect(navigation.settle(reading("k3f9"))).toBe(true);
 	// And the expectation is spent: the next change is not theirs as well.
 	expect(navigation.settle(reading("q1x2"))).toBe(false);
@@ -82,16 +82,34 @@ test("choosing another way of reading a board is a move the user made", () => {
 
 test("a view that changed in another pane is not the move this user asked for", () => {
 	const navigation = createDeliberateNavigation();
-	navigation.expect({ kind: "view", paneId: "B", from: null });
-	expect(
-		navigation.settle(
-			settledAddress({
-				panes: [
-					{ paneId: "A", boardKey: "semantic:pipeline", repository: null, view: "k3f9" },
-					{ paneId: "B", boardKey: "semantic:pipeline", repository: null, view: null },
-				],
-				activePaneId: "A",
-			}),
-		),
-	).toBe(false);
+	navigation.expect({ kind: "view", panes: [{ paneId: "B", from: null }] });
+	expect(navigation.settle(twoReading("k3f9", null))).toBe(false);
 });
+
+test("a view chosen in two linked panes is the move whichever pane draws it first", () => {
+	const navigation = createDeliberateNavigation();
+	const both = [
+		{ paneId: "A", from: null },
+		{ paneId: "B", from: null },
+	];
+	navigation.expect({ kind: "view", panes: both });
+	expect(navigation.settle(twoReading(null, "k3f9"))).toBe(true);
+	// The other pane drawing it a moment later replaces that entry.
+	expect(navigation.settle(twoReading("k3f9", "k3f9"))).toBe(false);
+});
+
+/**
+ * Two panes reading one semantic board.
+ * @param a The view pane A reads, or null for the whole variant.
+ * @param b The view pane B reads.
+ * @returns The address.
+ */
+function twoReading(a: string | null, b: string | null): WorkspaceAddress {
+	return settledAddress({
+		panes: [
+			{ paneId: "A", boardKey: "semantic:pipeline", repository: null, view: a },
+			{ paneId: "B", boardKey: "semantic:pipeline", repository: null, view: b },
+		],
+		activePaneId: "A",
+	});
+}

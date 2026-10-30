@@ -43,6 +43,7 @@ import { semanticRenameContract } from "#cli/operations/semantic/board/rename.ts
 import { semanticInspectContract } from "#cli/operations/semantic/inspect/inspect.ts";
 import { semanticFootprintContract } from "#cli/operations/semantic/history/footprint.ts";
 import { semanticLocalityContract } from "#cli/operations/semantic/history/locality.ts";
+import { semanticQuestionsContract } from "#cli/operations/semantic/questions/questions.ts";
 import { semanticRenderContract } from "#cli/operations/semantic/draw/render.ts";
 import { semanticRasterizeContract } from "#cli/operations/semantic/draw/rasterize.ts";
 import { semanticViewsContract } from "#cli/operations/semantic/board/views.ts";
@@ -148,6 +149,12 @@ const COMMANDS: Record<string, CommandRoute> = {
 				contract(
 					semanticLocalityContract,
 					"apps/cli/src/cli/operations/semantic/history/locality.ts",
+				),
+			),
+			questions: child(
+				contract(
+					semanticQuestionsContract,
+					"apps/cli/src/cli/operations/semantic/questions/questions.ts",
 				),
 			),
 			views: child(

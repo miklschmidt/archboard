@@ -7,7 +7,9 @@
 // and gives the pick back when it goes. A row of the sidebar's list lights the
 // relationship it is about while it is pointed at. A trace asked of the picked
 // part lights, beyond its connections, everything it reaches in one direction,
-// each further hop more faintly.
+// each further hop more faintly. With nothing poked, a step through a chosen
+// design question lights its whole answer, and the connections of the subject
+// the person is at (ADR 0059), so letting go of a pick brings that light back.
 //
 // The light is attention only. It stands down while a presented step or a group
 // says what the picture is about, while the picture is leaving, and for a part
@@ -20,8 +22,10 @@ import type { Peeked, Trace } from "#ui/components/semantic-board-canvas/Peek.ts
 import { useRestingPart } from "#ui/hooks/semantic-board-canvas/use-resting-part.ts";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import {
+	litByAnswer,
 	litInPicture,
 	withReach,
+	type AnswerStep,
 	type Wiring,
 } from "#ui/rules/semantic-board-canvas/board/connections.ts";
 import type { GroupSelection } from "#ui/rules/semantic-board-canvas/board/groups.ts";
@@ -45,6 +49,8 @@ interface LightingInputs {
 	readonly presenting: number | null | undefined;
 	/** Whether a group is selected. */
 	readonly group: GroupSelection | null;
+	/** Where the person is in the chosen design question's answer, or null while none is chosen. */
+	readonly answer: AnswerStep | null;
 	/** Where the reader went, while the picture is on its way out. */
 	readonly departure: Departure | null;
 }
@@ -114,6 +120,17 @@ function pokedBy(
 }
 
 /**
+ * The step through the chosen question's answer, while the light is the
+ * question's: nothing is poked and nothing else says what the picture is about.
+ * @param inputs What decides the lighting.
+ * @param poked The part the light is about, or null.
+ * @returns The step, or null.
+ */
+function answerLit(inputs: LightingInputs, poked: string | null): AnswerStep | null {
+	return poked !== null || standsDown(inputs) ? null : inputs.answer;
+}
+
+/**
  * The parts and relationships the board says the variant holds.
  * @param reading What the board says about the variant, or null.
  * @returns Them, or null while that is not known.
@@ -125,9 +142,9 @@ function wiringOf(reading: VariantReading | null): Wiring | null {
 /**
  * How strongly the light answers.
  * @param lit What is lit, or null for no light.
- * @param poked The part the light is about.
+ * @param poked The part the light is about, or null for a chosen question's answer.
  * @param selection The pick.
- * @returns "pick" for the part picked out, "hover" for anything else, or null.
+ * @returns "pick" for the part picked out or a chosen question's answer, "hover" for anything else, or null.
  */
 function modeOf(
 	lit: ReadonlySet<string> | null,
@@ -170,7 +187,11 @@ function useLighting(inputs: LightingInputs): Lighting {
 	const trace = traceOf(inputs);
 	const poked = pokedBy(inputs, trace, part);
 	const wiring = wiringOf(reading);
-	const lit = useMemo(() => litInPicture(wiring, atlas, poked), [wiring, atlas, poked]);
+	const answer = answerLit(inputs, poked);
+	const lit = useMemo(
+		() => litInPicture(wiring, atlas, poked) ?? litByAnswer(wiring, atlas, answer),
+		[wiring, atlas, poked, answer],
+	);
 	const reach = useMemo(
 		() => (lit === null ? null : reachBeyond(wiring, trace, poked === selection)),
 		[lit, wiring, trace, poked, selection],

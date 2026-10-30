@@ -48,6 +48,7 @@ function emptyPaneStatus(paneId: string): PaneStatus {
 		boardKey: null,
 		opened: null,
 		view: null,
+		presenting: false,
 		lastChangeAt: null,
 		doing: [],
 		version: null,

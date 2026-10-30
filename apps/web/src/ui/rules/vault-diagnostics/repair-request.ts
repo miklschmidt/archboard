@@ -1,9 +1,9 @@
 // What "Fix with Codex" asks the agent: run the semantics check, the checker
 // the pane's diagnostics come from, against the vault the focused pane is in,
 // repair what is clear, ask about what is not, and check again. The vault is
-// named with -C on every command (ADR 0049), because the agent may work in
-// another checkout than the one the person is reading, and -C on a vault
-// directory finds that same vault.
+// named with -C on every command (ADR 0049).
+
+import { archboardIn } from "#ui/rules/agent-requests/archboard-command.ts";
 
 const REPAIR_INSTRUCTIONS =
 	"Repair clear configuration and board issues reported by the checker. Ask me when a repair is ambiguous. Use ordinary board claims and version checks for all board writes; do not bypass them. Run the checker again after repairs and report any remaining diagnostics.";
@@ -15,8 +15,7 @@ const REPAIR_INSTRUCTIONS =
  * @returns The message for the agent.
  */
 function vaultRepairRequest(serverUrl: string, vault: string): string {
-	const named = `'${vault.replaceAll("'", String.raw`'\''`)}'`;
-	return `Run archboard -C ${named} --url ${serverUrl} check semantics. Use this same -C and --url for every archboard command. ${REPAIR_INSTRUCTIONS}`;
+	return `Run ${archboardIn(serverUrl, vault)} check semantics. Use this same -C and --url for every archboard command. ${REPAIR_INSTRUCTIONS}`;
 }
 
 export { vaultRepairRequest };

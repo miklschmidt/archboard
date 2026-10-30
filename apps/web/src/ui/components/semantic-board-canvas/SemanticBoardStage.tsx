@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { memo, useCallback, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
+import type { VariantContent } from "@archboard/board/content";
 import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
 import type {
 	SemanticDrawing,
@@ -31,7 +32,10 @@ import { useDrillDown, type Dive } from "#ui/hooks/semantic-board-canvas/use-dri
 import { useDrillMoves } from "#ui/hooks/semantic-board-canvas/use-drill-moves.ts";
 import { useKindLook } from "#ui/hooks/semantic-board-canvas/use-kind-look.ts";
 import { useLayoutEngine } from "#ui/hooks/semantic-board-canvas/use-layout-engine.ts";
-import { useLevelReading } from "#ui/hooks/semantic-board-canvas/use-level-reading.ts";
+import {
+	useLevelReading,
+	type ViewChange,
+} from "#ui/hooks/semantic-board-canvas/use-level-reading.ts";
 import { usePicking } from "#ui/hooks/semantic-board-canvas/use-picking.ts";
 import { usePresentationPosition } from "#ui/hooks/semantic-board-canvas/use-presentation-position.ts";
 import { useReported } from "#ui/hooks/semantic-board-canvas/use-reported-reading.ts";
@@ -48,7 +52,14 @@ import {
 	type DrivenPlace,
 } from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";
 import type { SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
-import type { SelectedSubject } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
+import type {
+	SelectedSubject,
+	VariantReading,
+} from "#ui/rules/semantic-board-canvas/board/board-document.ts";
+import {
+	aroundStep,
+	type QuestionStep,
+} from "#ui/rules/semantic-board-canvas/board/design-questions.ts";
 import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
 import {
 	semanticBoardListQuery,
@@ -96,8 +107,9 @@ interface SemanticBoardStageProps {
 	 * Owned above the stage, because the choice belongs in the address: two
 	 * panes can read one board two ways, and a reload keeps both.
 	 * @param view The view's id, or null for the whole variant.
+	 * @param cause An automatic reveal, which stays in this pane without a view gesture.
 	 */
-	onViewChange?: ((view: string | null) => void) | undefined;
+	onViewChange?: ViewChange | undefined;
 	/**
 	 * The person chose a different state of this architecture.
 	 *
@@ -127,6 +139,12 @@ interface SemanticBoardStageProps {
 	 * @param id The semantic id, or null.
 	 */
 	onSelect: (id: string | null, subject?: SelectedSubject) => void;
+	/**
+	 * The pane leaves the board its pick was made on, by a drill-down or back out:
+	 * the pick goes in this pane only, where the linked pane keeps its own
+	 * (TASK-538.02). Without it, leaving lets the pick go as the person would.
+	 */
+	onLeave?: (() => void) | undefined;
 	/** The user changed a part of the reading by hand that the shell hears of no other way. */
 	onUserChanged?: ((part: SemanticPanePart) => void) | undefined;
 	/**
@@ -163,6 +181,12 @@ interface SemanticBoardStageProps {
 	 */
 	onDive?: Dive | undefined;
 	/**
+	 * Show a variant of the board on screen in the pane beside this one, read
+	 * through this pane's view. Without it, the About page offers none.
+	 * @param key The board key.
+	 */
+	onOpenBeside?: ((key: string) => void) | undefined;
+	/**
 	 * Whether the person asked for reduced motion.
 	 *
 	 * Passed in rather than read here: the shell owns that preference through
@@ -185,6 +209,15 @@ interface SemanticBoardStageProps {
  */
 function viewToRead(beat: WalkthroughBeat | null, asked: string | undefined): string | undefined {
 	return beat?.view ?? asked;
+}
+
+/**
+ * What the variant on screen holds, whole.
+ * @param reading What the board says about itself, or null while it has not arrived.
+ * @returns The variant's content, or null while it is not known.
+ */
+function contentOf(reading: VariantReading | null): VariantContent | null {
+	return reading?.variant?.content ?? null;
 }
 
 /**
@@ -225,7 +258,11 @@ interface BoardReadingProps extends SemanticBoardStageProps {
  */
 const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.Element {
 	const { resting, ...stage } = props;
-	const { board, variant, onSelect, onUserChanged } = props;
+	const { board, variant, onSelect, onUserChanged, onLeave } = props;
+	const leavePick = useCallback((): void => {
+		if (onLeave === undefined) onSelect(null);
+		else onLeave();
+	}, [onLeave, onSelect]);
 	const [comparison, onComparisonChange] = useState(true);
 	const vault = usePaneVault();
 	const repository = useQuery(semanticBoardListQuery(vault)).data?.repository ?? null;
@@ -311,21 +348,23 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 		choose(null);
 	}, [choose]);
 	const chooseView = level.onView;
-	const onChooseView = useCallback(
-		(view: string | null): void => {
+	const onChooseView = useCallback<ViewChange>(
+		(view, cause): void => {
 			choose(null);
-			chooseView?.(view);
+			chooseView?.(view, cause);
 		},
 		[choose, chooseView],
 	);
 
-	const { onPick, onChooseGroup, groupControls, groups, group } = usePicking({
-		board: drill.board,
-		reading,
-		presenting: narrative.open !== null,
-		choose,
-		onSelect,
-	});
+	const { onPick, onChooseGroup, groupControls, groups, group, question, onChooseQuestion } =
+		usePicking({
+			board: drill.board,
+			reading,
+			presenting: narrative.open !== null,
+			picked: props.selection !== null,
+			choose,
+			onSelect,
+		});
 	useReported(props.onReading, {
 		board: drill.board,
 		answer: render.data,
@@ -379,13 +418,25 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 		},
 		[onPick, onTab, fitSubject],
 	);
+	// A step through a design question's answer brings its subject in with what
+	// calls it and what it calls, as showing a part brings the part in.
+	const content = contentOf(reading);
+	const onStep = useCallback(
+		(step: QuestionStep | null): void => {
+			onChooseQuestion(step);
+			if (step === null || content === null) return;
+			onTab("diagram");
+			fitSubject(step.at, aroundStep(content, step.at));
+		},
+		[onChooseQuestion, content, onTab, fitSubject],
+	);
 	const { onOpenDown, onBackTo } = useDrillMoves({
 		drill,
 		flier: dive,
 		leave: departure.leave,
 		picked: props.selection,
 		ownView: props.view,
-		onSelect,
+		onLeave: leavePick,
 		onUserChanged,
 	});
 
@@ -429,6 +480,8 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 			groupControls={groupControls}
 			group={group}
 			onChooseGroup={onChooseGroup}
+			question={question}
+			onChooseQuestion={onStep}
 		/>
 	);
 });

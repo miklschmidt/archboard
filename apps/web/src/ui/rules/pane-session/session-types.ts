@@ -174,8 +174,8 @@ export interface PaneStatus {
 	 * anywhere.
 	 *
 	 * Not a second answer to "which board is this": it is where a drill starts
-	 * from, which the viewer needs to keep its trail back out. Nothing else
-	 * reads it.
+	 * from, which the viewer needs to keep its trail back out, and it tells a
+	 * linked pane whether a view chosen beside it reaches it (TASK-538.03).
 	 */
 	opened: string | null;
 	/**
@@ -190,6 +190,11 @@ export interface PaneStatus {
 	 * and reopening it would ask for a view that board has not got.
 	 */
 	view: string | null;
+	/**
+	 * Whether the board on screen is read as a presented walkthrough, which ends
+	 * the link to the other pane (TASK-538.02).
+	 */
+	presenting: boolean;
 	/** When this pane last heard its board change. */
 	lastChangeAt: string | null;
 	/**

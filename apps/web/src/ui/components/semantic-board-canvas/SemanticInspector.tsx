@@ -25,7 +25,6 @@ import type { SemanticNode } from "@archboard/board/content";
 import { RelationshipChip } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import { DetailsPanel } from "#ui/components/semantic-board-canvas/DetailsPanel.tsx";
 import { LineBody } from "#ui/components/semantic-board-canvas/SemanticInspectorLine.tsx";
-import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import {
 	Account,
@@ -42,13 +41,16 @@ import {
 	SidebarRegion,
 	SidebarSection,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
-import type { CodeStanding } from "#ui/components/semantic-board-canvas/SemanticInspectorCode.tsx";
+import { codeOn, type CodeStanding } from "#ui/rules/semantic-board-canvas/code/code-standing.ts";
 import { cn } from "@archboard/ui-kit/components";
 import {
 	useCodeFindings,
 	type ReadingOnScreen,
 } from "#ui/hooks/semantic-board-canvas/use-code-findings.ts";
 import { useSemanticBoardChanges } from "#ui/hooks/semantic-board-canvas/use-semantic-board-changes.ts";
+import { usePaneBeside } from "#ui/hooks/semantic-board-canvas/use-pane-beside.ts";
+import { missingNotice } from "#ui/rules/semantic-board-canvas/board/missing-pick.ts";
+import type { VariantBeside } from "#ui/state/semantic-board-canvas/pane-beside.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 import { semanticBoardDocumentQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import {
@@ -70,9 +72,6 @@ import type { ReconciliationIssueSchema } from "@archboard/board/reconciliation"
 import type { z } from "zod";
 
 type ReconciliationIssue = z.infer<typeof ReconciliationIssueSchema>;
-
-/** What the last pass found on one board at one variant. */
-type RememberedReading = RememberedFindings["readings"][number];
 
 /**
  * What a part is called, or the id the board names it by when the variant no
@@ -291,6 +290,8 @@ interface BodyProps {
 	groups: GroupControls;
 	/** The state that holds the subject: its relationships are read there. */
 	held: SemanticVariant | undefined;
+	/** The board read, whose variants a container is measured on side by side. */
+	board: SemanticBoard | undefined;
 	/** The level of the board drawn, which places the boards its parts open. */
 	level: string | undefined;
 	/** The board, variant and version on screen, which a part's history is read at. */
@@ -331,6 +332,7 @@ function InspectorBody(props: BodyProps): JSX.Element {
 				level={props.level}
 				on={props.on}
 				held={props.held}
+				board={props.board}
 			>
 				{standing}
 			</DetailsPanel>
@@ -354,6 +356,8 @@ interface Explanation {
 	readonly open: readonly ReconciliationIssue[];
 	/** The state that holds the subject, when one does. */
 	readonly held: SemanticVariant | undefined;
+	/** The board read, once it is. */
+	readonly board?: SemanticBoard | undefined;
 	/** The ids the selection stands for: every relationship a joined line joins, else the picked id. */
 	readonly ids: readonly string[];
 	/** The board's level, once it is read. */
@@ -423,6 +427,7 @@ function comparedSubject(
  * @param variant The id of the variant the drawing is of.
  * @param selection The picked semantic id.
  * @param overview Whether the drawing is the overview, whose joined lines are subjects of their own.
+ * @param beside What the linked pane shows, or null while the pane is not linked.
  * @returns The subject, or the words that stand in for it.
  */
 function explain(
@@ -431,6 +436,7 @@ function explain(
 	variant: string,
 	selection: string,
 	overview: boolean,
+	beside: VariantBeside | null,
 ): Explanation {
 	const { data: document } = read;
 	const nothing = {
@@ -462,6 +468,7 @@ function explain(
 		...compared,
 		subject: line ?? compared.subject,
 		ids,
+		board: reading.board,
 		level: reading.board.level,
 		open: openOn(shown, ids),
 		on: {
@@ -470,7 +477,7 @@ function explain(
 			variant: shown.id,
 			version: reading.board.version,
 		},
-		notice: "This is not on the board any more. It may have gone since the picture was drawn.",
+		notice: missingNotice(reading.board, shown, beside, selection),
 	};
 }
 
@@ -487,21 +494,6 @@ function explain(
 function openOn(shown: SemanticVariant, ids: readonly string[]): readonly ReconciliationIssue[] {
 	const issues = shown.reconciliation?.issues ?? [];
 	return issues.filter((issue) => ids.includes(issue.subject));
-}
-
-/**
- * What the last code check found about one subject, warnings first.
- * @param reading What the pass found on the board on screen, or null.
- * @param ids The ids the selection stands for.
- * @returns Its findings and when the pass ran, or null when there are none.
- */
-function codeOn(reading: RememberedReading | null, ids: readonly string[]): CodeStanding | null {
-	const findings = (reading?.findings ?? [])
-		.filter((finding) => finding.subject !== undefined && ids.includes(finding.subject.id))
-		.toSorted((a, b) => Number(b.severity === "warning") - Number(a.severity === "warning"));
-	return reading === null || findings.length === 0
-		? null
-		: { findings, checkedAt: reading.checkedAt };
 }
 
 /** Inputs for the inspector. */
@@ -550,7 +542,8 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 	// subscription that does not cover the thing being read is an
 	// infinitely-fresh answer to a question whose answer has moved.
 	useSemanticBoardChanges(vault, props.board);
-	const explained = explain(vault, document, props.variant, props.selection, props.overview);
+	const { variant, selection, overview } = props;
+	const explained = explain(vault, document, variant, selection, overview, usePaneBeside());
 	const { subject } = explained;
 	const code = codeOn(useCodeFindings(explained.on), explained.ids);
 
@@ -574,6 +567,7 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 				open={explained.open}
 				code={code}
 				held={explained.held}
+				board={explained.board}
 				level={explained.level}
 				on={explained.on}
 				look={props.look}

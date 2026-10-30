@@ -261,7 +261,11 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 		},
 		refreshBoards: ignore,
 		selectPane: ignore,
-		addPane: ignore,
+		/**
+		 * The navigator adds no pane.
+		 * @returns False, always.
+		 */
+		addPane: (): boolean => false,
 		closePane: ignore,
 		present: ignore,
 		takeBackControl: ignore,
@@ -330,6 +334,7 @@ function pane(
 			opened: boardKey,
 			board: null,
 			view: null,
+			presenting: false,
 			lastChangeAt: null,
 			doing: [],
 			version: null,

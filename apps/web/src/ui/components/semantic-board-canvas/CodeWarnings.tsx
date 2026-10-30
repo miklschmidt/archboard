@@ -1,13 +1,14 @@
 import { RiErrorWarningLine } from "@remixicon/react";
 import { useCallback, useState, type JSX } from "react";
 
-import type { RememberedFindings } from "@archboard/code-intel/code-check";
+import type { RememberedFindingsSchema } from "@archboard/code-intel/code-check";
+import type { z } from "zod";
 import type { SemanticRender } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { BoardTab } from "#ui/components/semantic-board-canvas/PaneHeader.tsx";
 import { useCodeFindings } from "#ui/hooks/semantic-board-canvas/use-code-findings.ts";
 
 /** What the last pass found on one board at one variant. */
-type RememberedReading = RememberedFindings["readings"][number];
+type RememberedReading = z.infer<typeof RememberedFindingsSchema>["readings"][number];
 
 /** The existing pane controls that a warning can use. */
 interface CodeWarningsProps {

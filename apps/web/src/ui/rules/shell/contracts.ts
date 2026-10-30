@@ -118,6 +118,13 @@ interface ShellView {
 	notices: readonly ShellNotice[];
 }
 
+/** A board a pane is added for, as a board opened beside is. */
+interface BoardBeside {
+	readonly key: string;
+	/** Its repository, when it is not that of the active pane. */
+	readonly repository?: string | undefined;
+}
+
 /** Everything a person can do from the shell. */
 interface ShellActions {
 	setTheme(theme: ThemeChoice): void;
@@ -135,12 +142,14 @@ interface ShellActions {
 	 */
 	selectBoard(key: string, paneId?: string, repository?: string): Promise<boolean>;
 	/**
-	 * Show a board beside the one being read: in the pane that is not active,
-	 * adding the second pane when there is only one.
+	 * Show a board beside the one being read: in the other pane, adding the
+	 * second pane when there is only one. A board of the name on screen in the
+	 * pane it is beside is read through that pane's view.
 	 * @param key The board key.
-	 * @param repository The repository the board is in.
+	 * @param repository The repository the board is in; that of the pane it is beside when none is named.
+	 * @param from The pane it is beside; the active one when none is named.
 	 */
-	openBeside(key: string, repository: string): void;
+	openBeside(key: string, repository?: string, from?: string): void;
 	/**
 	 * Choose which checkout of a repository this machine reads, for every tab
 	 * and every agent (ADR 0050).
@@ -150,7 +159,13 @@ interface ShellActions {
 	chooseCheckout(repository: string, root: string): void;
 	refreshBoards(): void;
 	selectPane(paneId: string): void;
-	addPane(): void;
+	/**
+	 * Add the second pane: on the board in front of the person, or on a board it is
+	 * added for, as one opened beside is, which the server starts it on.
+	 * @param beside The board it is added for, and its repository when it is not that of the active pane.
+	 * @returns Whether a pane was added.
+	 */
+	addPane(beside?: BoardBeside): boolean;
 	closePane(paneId: string): void;
 	/** Present one pane fullscreen, or null to return to the workspace. */
 	present(presentation: ShellPresentation | null): void;
@@ -173,5 +188,6 @@ export type {
 	SettingsSurface,
 	ShellRepository,
 	ShellView,
+	BoardBeside,
 	ShellActions,
 };

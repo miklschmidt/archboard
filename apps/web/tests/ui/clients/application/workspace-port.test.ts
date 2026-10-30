@@ -40,6 +40,7 @@ function placedPane(): WorkspacePortDeps["panes"] {
 	return {
 		list: initialPaneList(),
 		records: { A: record },
+		links: {},
 		/**
 		 * The panes' sessions, which only a show that is sent reaches.
 		 * @returns Never; these checks send none.

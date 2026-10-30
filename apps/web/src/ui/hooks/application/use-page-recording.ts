@@ -6,7 +6,11 @@
 import { useMemo, useState, type ReactNode } from "react";
 
 import type { Narration } from "#ui/hooks/application/use-narration.ts";
-import type { PaneOverlay, PaneRecording } from "#ui/hooks/application/use-pane-views.ts";
+import type {
+	PaneAskFrom,
+	PaneOverlay,
+	PaneRecording,
+} from "#ui/hooks/application/use-pane-views.ts";
 import type { PaneList } from "#ui/rules/application/pane-list.ts";
 import type { BrowserWorkbenchMediaOwnerOptions } from "#ui/state/application/pane-handles.ts";
 import type { Workbench } from "#ui/hooks/application/use-workbench.ts";
@@ -47,15 +51,16 @@ function recordedMedia(
 interface RecordedViews {
 	readonly narration: Narration | null;
 	readonly overlay: PaneOverlay | null;
+	readonly ask: PaneAskFrom | null;
 	readonly recording: PaneRecording | null;
 }
 
 /**
  * What a recording gives its pane, kept in step with the server's agent and voice. A recording is
- * not narrated by hand; its subtitles are the page's own.
+ * not narrated by hand, asks the agent nothing, and its subtitles are the page's own.
  * @param recorder The page's recorder, or null.
  * @param workbench The workbench.
- * @param usual The narration and the subtitles the page gives its panes.
+ * @param usual The narration, the subtitles and the ask the page gives its panes.
  * @returns What the panes are given.
  */
 function useRecordedViews(
@@ -67,13 +72,18 @@ function useRecordedViews(
 		setup: workbench.setup,
 		voice: workbench.voice,
 	});
-	const { narration, overlay } = usual;
+	const { narration, overlay, ask } = usual;
 	return useMemo(
 		() =>
 			recorder === null
-				? { narration, overlay, recording: null }
-				: { narration: null, overlay, recording: { step, onReading: recorder.reading } },
-		[recorder, step, narration, overlay],
+				? { narration, overlay, ask, recording: null }
+				: {
+						narration: null,
+						overlay,
+						ask: null,
+						recording: { step, onReading: recorder.reading },
+					},
+		[recorder, step, narration, overlay, ask],
 	);
 }
 

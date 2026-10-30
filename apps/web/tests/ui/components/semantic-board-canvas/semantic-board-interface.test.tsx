@@ -1,7 +1,9 @@
 // What picking a container tells a person about its interface (ADR 0044): the
 // entry points, how many parts are hidden and who calls it, read off the
 // variant the pane shows, and an entry point chosen from the list picked out on
-// the picture. Nothing here writes: the interface is derived, never stored.
+// the picture. The same measures stand on each variant of the board side by
+// side, for design it twice (TASK-538.05). Nothing here writes: the interface
+// is derived, never stored.
 
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
@@ -54,8 +56,18 @@ const DRAFT_EDGES = [
 	{ id: "e6", from: "w", to: "l", kind: "data" },
 ];
 
+// A shelved variant on which Orders holds nothing: the gateway calls it whole.
+const SHELVED_NODES: readonly Node[] = [
+	{ id: "orders", name: "Orders", kind: "service" },
+	{ id: "g", name: "Gateway", kind: "route" },
+];
+const SHELVED_EDGES = [{ id: "e1", from: "g", to: "orders", kind: "http" }];
+
+/** Why the shelved variant was let go. */
+const SHELVED_BECAUSE = "One service with no parts hides nothing from its callers.";
+
 /**
- * The board document: the current variant and the draft the pane shows.
+ * The board document: the current variant, the draft the pane shows, and a shelved one.
  * @returns The document.
  */
 function boardOf(): Record<string, unknown> {
@@ -84,7 +96,15 @@ function boardOf(): Record<string, unknown> {
 				parent: "v1",
 				content: { nodes: DRAFT_NODES, edges: DRAFT_EDGES },
 			},
+			{
+				id: "v3",
+				name: "whole",
+				lifecycle: "shelved",
+				parent: "v1",
+				content: { nodes: SHELVED_NODES, edges: SHELVED_EDGES },
+			},
 		],
+		shelvings: [{ variant: "v3", at: "2026-10-07T00:00:00.000Z", reason: SHELVED_BECAUSE }],
 	};
 }
 
@@ -233,4 +253,64 @@ test("a container nothing outside reaches hides every part and says that nothing
 	const callers = document.querySelector("[data-slot='semantic-inspector-callers']");
 	expect(callers?.getAttribute("data-count")).toBe("0");
 	expect(callers?.querySelector("p")).not.toBeNull();
+});
+
+/** One variant's row of the measures side by side. */
+interface VariantMeasures {
+	readonly variant: string | null;
+	readonly onScreen: boolean;
+	/** Entry points, hidden parts, callers, outgoing and pass-through; null where it holds no parts. */
+	readonly counts: readonly number[] | null;
+	/** The notes the row adds: no parts, no caller, shelved. */
+	readonly notes: readonly (string | null)[];
+}
+
+/**
+ * The picked part's measures on each variant, as the selection tab sets them side by side.
+ * @returns One row per variant, in the order shown.
+ */
+function variantMeasures(): VariantMeasures[] {
+	return [...document.querySelectorAll("[data-slot='semantic-inspector-variant-measure']")].map(
+		(row) => {
+			const counts = [...row.querySelectorAll("[data-measure] dd")].map((count) =>
+				Number(count.textContent),
+			);
+			return {
+				variant: row.getAttribute("data-variant"),
+				onScreen: row.getAttribute("aria-current") === "true",
+				counts: counts.length === 0 ? null : counts,
+				notes: [...row.querySelectorAll("p[data-slot]")].map((note) =>
+					note.getAttribute("data-slot"),
+				),
+			};
+		},
+	);
+}
+
+test("a picked container shows its measures on each current, draft and shelved variant, the variant on screen marked and nothing ranked", async () => {
+	await served();
+	await inspect("orders");
+	// The numbers semantic compare --beside gives for Orders on each variant.
+	expect(variantMeasures()).toEqual([
+		{ variant: "v1", onScreen: false, counts: [1, 1, 1, 0, 0], notes: [] },
+		{ variant: "v2", onScreen: true, counts: [2, 1, 2, 1, 1], notes: [] },
+		{
+			variant: "v3",
+			onScreen: false,
+			counts: null,
+			notes: ["variant-holds-no-parts", "variant-shelved"],
+		},
+	]);
+	const shelved = document.querySelector("[data-slot='variant-shelved']");
+	expect(shelved?.textContent).toContain(SHELVED_BECAUSE);
+
+	// Shipping is a container only on the draft, where nothing outside calls it.
+	await inspect("shipping");
+	expect(
+		variantMeasures().map(({ variant, counts, notes }) => ({ variant, counts, notes })),
+	).toEqual([
+		{ variant: "v1", counts: null, notes: ["variant-holds-no-parts"] },
+		{ variant: "v2", counts: [0, 1, 0, 1, 0], notes: ["variant-draws-no-caller"] },
+		{ variant: "v3", counts: null, notes: ["variant-holds-no-parts", "variant-shelved"] },
+	]);
 });

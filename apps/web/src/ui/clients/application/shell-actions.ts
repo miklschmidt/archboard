@@ -8,12 +8,14 @@ import { paneReady, recordFor } from "#ui/rules/application/pane-records.ts";
 import type { Fullscreen } from "#ui/hooks/application/use-fullscreen.ts";
 import type { NoticeStack } from "#ui/hooks/application/use-notices.ts";
 import type { Panes } from "#ui/hooks/application/use-panes.ts";
+import type { PaneOpening } from "#ui/rules/application/pane-list.ts";
 import type { ConversationActivation } from "#ui/clients/application/shown-conversation.ts";
 import { userMoves, type UserMove } from "#ui/rules/application/user-moves.ts";
 import { chooseCheckout } from "#ui/clients/board-catalog/repositories.ts";
 import { type BoardCatalog } from "#ui/hooks/board-catalog/use-board-catalog.ts";
 import { showBoard } from "#ui/clients/pane-session/pane-requests.ts";
 import type {
+	BoardBeside,
 	SettingsSurface,
 	ShellActions,
 	ShellNotice,
@@ -209,6 +211,23 @@ function vaultOf(catalog: Pick<BoardCatalog, "repositories">, repository: string
 	);
 }
 
+/**
+ * Where a pane added for a board opens: the vault a board of that repository is
+ * read from, as a show by hand would read it, or null once the notice that says
+ * why there is none is raised.
+ * @param deps The owners.
+ * @param beside The board, and its repository; the active pane's when none is named.
+ * @returns The board and its vault, or null.
+ */
+function openingFor(deps: ShellActionDeps, beside: BoardBeside): PaneOpening | null {
+	const place = placeFor(deps.catalog, deps.panes.active.status, beside.repository);
+	if (typeof place !== "string") {
+		deps.notices.raise(place);
+		return null;
+	}
+	return { board: beside.key, vault: place };
+}
+
 /** The pane actions. */
 type PaneActions = Pick<
 	ShellActions,
@@ -248,10 +267,18 @@ function paneActions(deps: ShellActionDeps): PaneActions {
 		selectPane: (paneId: string): void => {
 			panes.select(paneId);
 		},
-		/** Add the second pane: the person asked for a comparison. */
-		addPane: (): void => {
+		/**
+		 * Add the second pane: the person asked for a comparison.
+		 * @param beside The board it is added for, and its repository.
+		 * @returns Whether a pane was added.
+		 */
+		addPane: (beside?: BoardBeside): boolean => {
+			const opensOn = beside === undefined ? undefined : openingFor(deps, beside);
+			if (opensOn === null) {
+				return false;
+			}
 			deps.addressing.expect({ kind: "panes", count: panes.list.panes.length + 1 });
-			panes.add();
+			return panes.add(opensOn);
 		},
 		/**
 		 * Close a pane.

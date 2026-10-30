@@ -5,13 +5,16 @@
 // docs/design/pane-sidebar-hierarchy.md), one region per question:
 //
 // 1. What is this, and what does it change? The variant's own summary of its
-//    scope, and for a variant read against another the key to its marks with how
+//    scope, and for a variant read against another what it changed about each
+//    container's interface (TASK-538.01), then the key to its marks with how
 //    much each one covers.
 // 2. How do I read it? The author's walkthroughs first, the way into a first
 //    read; then the views, the reader's own; then the groups, the concerns the
 //    reader can pick out.
-// 3. What do the marks mean? The legend of what the picture draws.
-// 4. The layout engine, a preference of this browser, at the foot.
+// 3. Where might it take more work than it should? The design questions of
+//    the variant on screen (TASK-537), each a question and never a verdict.
+// 4. What do the marks mean? The legend of what the picture draws.
+// 5. The layout engine, a preference of this browser, at the foot.
 //
 // Each part decides for itself whether it has anything to offer, and a region
 // with nothing in it is not drawn.
@@ -23,7 +26,10 @@
 
 import type { JSX, ReactNode } from "react";
 
+import { passThroughEntryPoints } from "@archboard/board/container-interface";
 import type { SemanticRender } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+import { DesignQuestions } from "#ui/components/semantic-board-canvas/DesignQuestions.tsx";
+import { InterfaceChanges } from "#ui/components/semantic-board-canvas/InterfaceChanges.tsx";
 import { SemanticChanges } from "#ui/components/semantic-board-canvas/SemanticChanges.tsx";
 import { SemanticEngineBar } from "#ui/components/semantic-board-canvas/SemanticEngineBar.tsx";
 import { SemanticGroupList } from "#ui/components/semantic-board-canvas/SemanticGroupList.tsx";
@@ -37,7 +43,13 @@ import { SemanticWalkthroughBar } from "#ui/components/semantic-board-canvas/Sem
 import type { WalkthroughReading } from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";
 import { keyOf, type AppliedAppearance } from "@archboard/renderer/picture";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
+import type {
+	ChosenQuestion,
+	QuestionStep,
+} from "#ui/rules/semantic-board-canvas/board/design-questions.ts";
 import type { GroupChoice } from "#ui/rules/semantic-board-canvas/board/groups.ts";
+import { interfaceChangesOf } from "#ui/rules/semantic-board-canvas/board/interface-changes.ts";
+import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
 
 /** Inputs for the board tab. */
@@ -71,6 +83,20 @@ interface SemanticBoardPanelProps {
 	onChooseGroup: (group: string | null) => void;
 	/** What the picture on screen draws each kind with, for the key. */
 	appearances: ReadonlyMap<string, AppliedAppearance>;
+	/** How the vault's kinds look, for the parts a question names. */
+	look: KindLook;
+	/**
+	 * Pick a part out and show it on the picture.
+	 * @param id The part.
+	 */
+	onShow: (id: string) => void;
+	/** The design question chosen, the subjects its answer names and the one the person is at, or null. */
+	question: ChosenQuestion | null;
+	/**
+	 * Step to a subject of a design question's answer, which the picture lights and the camera brings in, or let the question go.
+	 * @param step The question and the subject, or null to let go.
+	 */
+	onChooseQuestion: (step: QuestionStep | null) => void;
 	/** Whether this pane draws comparison treatment. */
 	comparison: boolean;
 	/** Change the canvas comparison treatment. */
@@ -109,12 +135,18 @@ function changes(props: SemanticBoardPanelProps): ReactNode {
 	if (found === null) {
 		return null;
 	}
+	const changed =
+		props.reading === null ? null : interfaceChangesOf(props.reading, found.against.id);
 	return (
 		<SemanticChanges
 			changes={found}
 			comparison={props.comparison}
 			onComparisonChange={props.onComparisonChange}
-		/>
+		>
+			{changed !== null && (
+				<InterfaceChanges changed={changed} look={props.look} onShow={props.onShow} />
+			)}
+		</SemanticChanges>
 	);
 }
 
@@ -190,6 +222,33 @@ function groupSection(props: SemanticBoardPanelProps): ReactNode {
 }
 
 /**
+ * The design questions of the variant on screen.
+ * @param props What the tab is assembled from.
+ * @returns The section, or null before the variant has arrived or when it asks nothing.
+ */
+function questions(props: SemanticBoardPanelProps): ReactNode {
+	const { answer } = props;
+	const variant = props.reading?.variant;
+	if (answer === undefined || variant === null || variant === undefined) {
+		return null;
+	}
+	const passing = passThroughEntryPoints(variant.content);
+	if (passing.length === 0) {
+		return null;
+	}
+	return (
+		<DesignQuestions
+			board={answer.board}
+			variant={variant.id}
+			passing={passing}
+			look={props.look}
+			question={props.question}
+			onChooseQuestion={props.onChooseQuestion}
+		/>
+	);
+}
+
+/**
  * The key to the picture on screen.
  * @param props What the tab is assembled from.
  * @returns The legend, or null while nothing typed is drawn.
@@ -216,6 +275,7 @@ function SemanticBoardPanel(props: SemanticBoardPanelProps): JSX.Element {
 				{viewSection(props)}
 				{groupSection(props)}
 			</SidebarRegion>
+			<SidebarRegion slot="semantic-board-panel-questions">{questions(props)}</SidebarRegion>
 			<SidebarRegion slot="semantic-board-panel-key">{legend(props)}</SidebarRegion>
 			<SidebarRegion slot="semantic-board-panel-engine">
 				<SemanticEngineBar />

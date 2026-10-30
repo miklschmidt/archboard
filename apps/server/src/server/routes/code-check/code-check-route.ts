@@ -1,5 +1,5 @@
 // The code check's route,
-// `GET /api/vault/code-check[?variant=<draft> | ?every-draft=true][&plan=<file>]...`
+// `GET /api/vault/code-check[?variant=<draft> | ?every-draft=true][&plan=<file>][&exposed=true]...`
 // (ADR 0046).
 //
 // `archboard check code` and `archboard check all` ask it. It reads code and
@@ -23,10 +23,16 @@
 // findings in the server's memory, and `GET /api/vault/code-findings` answers
 // from that memory alone, so the panes that read it on a timer never cost a
 // reading of code. A pass the caller cancelled, or a refusal, leaves the memory
-// as it was.
+// as it was. The memory also holds what each container the pass judged
+// exposes (TASK-539.01). `GET /api/vault/code-findings/exposure?board=&variant=&container=`
+// answers one container's names and users from it, for a pane that a person
+// asked. The answer of the check carries them as `exposures` only when the
+// request says `exposed=true` (`archboard check code --exposed`, TASK-539.06),
+// so an ordinary check stays small.
 
 import type { Express, Request, Response } from "express";
 import { createCodeCheck } from "@archboard/code-intel/code-check-run";
+import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import {
 	createCodeFindingsMemory,
@@ -55,6 +61,53 @@ const codeCheck = createCodeCheck();
 
 /** The server's one memory of the last passes, so every pane reads what any pass found. */
 const codeFindings = createCodeFindingsMemory();
+
+/**
+ * The answer a caller reads: the pass, with what its containers expose only
+ * when the caller asked.
+ * @param pass The pass.
+ * @param exposed Whether the caller asked for the exposed names.
+ * @returns The answer.
+ */
+function answerOf(pass: CodeCheckAnswer, exposed: boolean): CodeCheckAnswer {
+	const { exposures: _exposures, ...answer } = pass;
+	return exposed ? pass : answer;
+}
+
+/**
+ * Answer what one container exposed in the last pass, from memory alone.
+ * @param dependencies What the route needs.
+ * @param request The request, which names a vault, a board, a variant and a container.
+ * @param response Its response.
+ */
+function answerExposure(
+	dependencies: CodeCheckRouteDependencies,
+	request: Request,
+	response: Response,
+): void {
+	const board = queryString(request, "board");
+	const variant = queryString(request, "variant");
+	const container = queryString(request, "container");
+	if (!board || !variant || !container) {
+		response.status(400).json({
+			success: false,
+			code: "EXPOSURE_QUERY_INCOMPLETE",
+			error: "Name the board, the variant and the container whose exposure you want.",
+		});
+		return;
+	}
+	const kept = dependencies.memory.exposureOf(vaultOfRequest(request), board, variant, container);
+	if (kept === undefined) {
+		response.status(404).json({
+			success: false,
+			code: "EXPOSURE_NOT_REMEMBERED",
+			error:
+				"No pass has judged that container since the server started. Run archboard check code, and ask again.",
+		});
+		return;
+	}
+	response.json({ success: true, ...kept });
+}
 
 /**
  * Whether the caller has gone, so nothing is left to answer.
@@ -101,6 +154,7 @@ async function answerCodeCheck(
 	const vault = vaultOfRequest(request);
 	const variant = variantOf(request);
 	const everyDraft = queryString(request, "every-draft") === "true";
+	const exposed = queryString(request, "exposed") === "true";
 	const plans = plansOf(request);
 	const checkedAt = new Date();
 	try {
@@ -118,7 +172,7 @@ async function answerCodeCheck(
 			},
 		);
 		if (callerGone(request, response)) return;
-		if ("boards" in answer) response.json({ success: true, ...answer });
+		if ("boards" in answer) response.json({ success: true, ...answerOf(answer, exposed) });
 		else response.status(422).json({ success: false, ...answer });
 	} catch (error) {
 		if (!callerGone(request, response)) {
@@ -128,8 +182,9 @@ async function answerCodeCheck(
 }
 
 /**
- * Mount `GET /api/vault/code-check`, and `GET /api/vault/code-findings`, which
- * answers what the finished passes found from memory and never starts one.
+ * Mount `GET /api/vault/code-check`, and `GET /api/vault/code-findings` with its
+ * `/exposure`, which answer what the finished passes found from memory and never
+ * start one.
  * @param app The application.
  * @param overrides Dependencies a test replaces.
  */
@@ -162,6 +217,9 @@ function mountCodeCheckRoute(
 	});
 	app.get("/api/vault/code-findings", requireVault, (request, response) => {
 		response.json({ success: true, ...dependencies.memory.recall(vaultOfRequest(request)) });
+	});
+	app.get("/api/vault/code-findings/exposure", requireVault, (request, response) => {
+		answerExposure(dependencies, request, response);
 	});
 }
 

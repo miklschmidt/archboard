@@ -157,23 +157,33 @@ const PAYMENTS = { board: "payments", variant: "current" };
 interface HeldCall {
 	readonly path: string;
 	readonly vault: string | null;
+	/** What the call said. */
+	readonly body: unknown;
 	readonly answer: ReturnType<typeof Promise.withResolvers<Response>>;
 }
 
 /**
  * A pane in the left vault, connected and registered, showing `payments`, with
  * every call it makes held for the test to answer.
+ * @param facets Whether the person is in the pane, which the test may change.
+ * @param facets.focused Whether the pane is the focused one.
  * @returns The pane, its socket, its calls, and what it said of itself and its holder.
  */
-async function paneOnPayments() {
+async function paneOnPayments(facets = { focused: true }) {
 	const calls: HeldCall[] = [];
 	const firstCall = Promise.withResolvers<void>();
 	const fetchMock = spyOn(globalThis, "fetch").mockImplementation(
 		Object.assign(
-			(url: Parameters<typeof fetch>[0]) => {
+			(url: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
 				const answer = Promise.withResolvers<Response>();
 				const parsed = new URL(url instanceof Request ? url.url : url, "http://localhost/");
-				calls.push({ path: parsed.pathname, vault: parsed.searchParams.get("vault"), answer });
+				const body: unknown = typeof init?.body === "string" ? JSON.parse(init.body) : null;
+				calls.push({
+					path: parsed.pathname,
+					vault: parsed.searchParams.get("vault"),
+					body,
+					answer,
+				});
 				firstCall.resolve();
 				return answer.promise;
 			},
@@ -194,7 +204,7 @@ async function paneOnPayments() {
 			theme: "dark",
 			openingVault: LEFT_VAULT,
 			primary: true,
-			focused: true,
+			focused: facets.focused,
 			/**
 			 * Record what the pane says it is.
 			 * @param status The pane's status.
@@ -296,6 +306,22 @@ test("a pane moved into another checkout's vault reports there, and the answer f
 			connected: true,
 			registered: true,
 		});
+	} finally {
+		pane.restore();
+		Object.defineProperty(globalThis, "WebSocket", socketDescriptor);
+	}
+});
+
+test("a pane the person leaves tells the server at once, not after the debounce", async () => {
+	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
+	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
+	const facets = { focused: true };
+	const pane = await paneOnPayments(facets);
+	try {
+		// Waiting would leave two focused panes on the server for an agent's next turn to refuse.
+		facets.focused = false;
+		pane.core.facetsChanged();
+		expect(pane.calls.at(-1)).toMatchObject({ path: "/api/panes", body: { focused: false } });
 	} finally {
 		pane.restore();
 		Object.defineProperty(globalThis, "WebSocket", socketDescriptor);

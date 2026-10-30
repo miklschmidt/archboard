@@ -1,7 +1,8 @@
 # archboard — agent-authored architecture boards
 
 An architecture planning tool for software and cloud architects who work with
-coding agents, public on GitHub under the Business Source License 1.1 and run from a clone. Agents author
+coding agents. It is public on GitHub under the Business Source License 1.1,
+and people run it from a clone. Agents author
 the architecture of code and infrastructure as meaning, and the renderer draws
 it. There is no way to move a box, and that is deliberate. If somebody repairs
 the layout of a diagram by hand, a renderer improvement for every board at once
@@ -30,6 +31,21 @@ Where things are written down:
   `Archboard` with `archboard` and the tracked `.archboard/vault`.
 - Work tracking: Backlog.md through the `backlog` CLI, never by editing `backlog/`
 
+## Examples for a person
+
+When you talk with a person about what archboard shows or does, take each
+example from the web shop. Use the boards in `examples/web-shop`. For code
+intelligence, such as bindings, the code check and history, use the "Checkout
+and orders" checkout that `scripts/readme-assets/evidence-fixture.ts` builds.
+If the web shop lacks what an example needs, say that the example is invented.
+
+Archboard's own boards draw archboard, so their names collide with the names
+of the product. "The board package" can be a part on the picture or
+`packages/board`. If an archboard board is itself the demonstration of the
+behavior under discussion, you can point at it. Then name the picture and the
+code apart each time: "the part Board client on the picture", "the code in
+`packages/board`".
+
 ## Environment facts you cannot derive
 
 - This box has node and bun but no npm or npx. Use `bun run <script>`, never
@@ -42,14 +58,15 @@ Where things are written down:
 - `archboard` on PATH links to one checkout's `bin/archboard`. Inside another
   archboard checkout, such as a worktree, it runs that checkout's own
   `bin/archboard` (ADR 0049). The server of the main checkout listens on
-  port 3000. The server of a linked worktree listens on a port in 10000 to
-  19999, a hash of the worktree's path, so each worktree has its own server.
+  port 3000. The server of a linked worktree listens on a port in the range
+  10000 to 19999. The port is a hash of the worktree's path, so each worktree
+  has its own server.
   `archboard status` gives the URL. A set `ARCHBOARD_URL` or `--url` still
   decides. A command whose environment sets `ARCHBOARD_URL` runs where it is
   and hands off to no checkout: the URL names its server already. The Codex
-  workbench sets it on every thread and puts the server's own `bin` first on
-  the thread's PATH, so a workhorse in an archboard worktree reaches the server
-  that started it. A command that finds a server of another checkout's source
+  workbench sets it on every thread. It also puts the server's own `bin` first
+  on the thread's PATH, so a workhorse in an archboard worktree reaches the
+  server that started it. A command that finds a server of another checkout's source
   on its port refuses and names both checkouts.
 - `bun run check` is the complete gate. Only shippable, repository-authored
   Archboard skills live under `skills/`. Tracked symlinks expose them through
@@ -64,9 +81,9 @@ The loud rules teach themselves (a call naming no board, an agent write without
 rules that will not stop you:
 
 - **The file is the board, and nothing holds a copy of it** (ADR 0015, ADR 0023).
-  One `.semantic.json` document per board holds every variant of it, and
-  `packages/board/src/runtime` (the `store` and `operations` folders of `@archboard/board`) is
-  the one place one is read or written.
+  One `.semantic.json` document per board holds every variant of it.
+  `packages/board/src/runtime` (the `store` and `operations` folders of
+  `@archboard/board`) is the one place where a board is read or written.
   Every write goes through `atomic-write.ts`, fsync included, and is committed
   before it is answered.
 - **Agents author, users read.** The browser is a viewer and writes no board
@@ -156,8 +173,8 @@ rules that will not stop you:
   with an archboard-only `CODEX_HOME` every Archboard server on the machine shares.
   Each browser tab is a tab session with one coordinator, and voice belongs to
   that coordinator. The app-server and the coordinator work in a directory of
-  their own under the state directory, which is no checkout and holds no
-  vault, so a coordinator command without `-C` is refused. A tab session has
+  their own under the state directory. That directory is no checkout and holds
+  no vault, so a coordinator command without `-C` is refused. A tab session has
   one workhorse for each checkout it works in, built on first use. Each
   workhorse works in its checkout (the directory that holds the vault) and
   has its own thread link, queue and approvals. Every pane of a tab shows the

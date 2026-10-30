@@ -17,20 +17,14 @@ import {
 	SidebarSection,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
 import { cn } from "@archboard/ui-kit/components";
+import type { CodeStanding } from "#ui/rules/semantic-board-canvas/code/code-standing.ts";
+import { whenChecked } from "#ui/rules/semantic-board-canvas/code/when-checked.ts";
 
 /** One finding of the code check. */
 type CodeFinding = CodeCheckAnswer["findings"][number];
 
 /** One piece of evidence behind a finding. */
 type CodeEvidence = NonNullable<CodeFinding["evidence"]>[number];
-
-/** What the code check said about one subject, and when. */
-interface CodeStanding {
-	/** Its findings, warnings first, and never none. */
-	readonly findings: readonly CodeFinding[];
-	/** When the pass that found them ran. */
-	readonly checkedAt: string;
-}
 
 /**
  * The picture's warning triangle, at the size of a row's glyph.
@@ -110,20 +104,6 @@ function Finding(props: { readonly finding: CodeFinding }): JSX.Element {
 }
 
 /**
- * When a pass ran, as a reader says it: the time alone today, the day and the
- * time before today.
- * @param checkedAt When, as the server wrote it.
- * @returns The words.
- */
-function whenChecked(checkedAt: string): string {
-	const at = new Date(checkedAt);
-	const time = at.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-	return at.toDateString() === new Date().toDateString()
-		? time
-		: `${at.toLocaleDateString([], { day: "numeric", month: "short" })} ${time}`;
-}
-
-/**
  * The findings of the last code check on the selected subject.
  * @param props What the check said, or null when it said nothing about it.
  * @param props.code The findings and when the pass ran.
@@ -154,4 +134,4 @@ function CodeBlock(props: { readonly code: CodeStanding | null }): JSX.Element |
 	);
 }
 
-export { CodeBlock, type CodeStanding };
+export { CodeBlock };
