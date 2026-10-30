@@ -43,14 +43,13 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 		WAIT,
 	);
 	const http = createJsonRequester(server);
+	const readPanes = () =>
+		http<{ panes: Array<{ paneId: string; clientId: string }> }>(
+			`/api/panes?vault=${encodeURIComponent(fixture.vault)}`,
+		);
 	await pollUntil(
-		async () => {
-			const result = await http<{
-				panes: Array<{ paneId: string }>;
-			}>(`/api/panes?vault=${encodeURIComponent(fixture.vault)}`);
-			return result.body.panes.some((pane) => pane.paneId === "B");
-		},
-		Boolean,
+		readPanes,
+		(result) => result.body.panes.some((pane) => pane.paneId === "B"),
 		"the restored pane registration",
 		WAIT,
 	);
@@ -109,6 +108,7 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 		checkpointB: fixture.migration.checkpoint,
 	});
 	expect(address["bookmarkB"]).toBeUndefined();
+	const beforeReload = await readPanes();
 	await browser.run(["reload"]);
 	await pollUntil(
 		() =>
@@ -131,6 +131,17 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 			),
 		Boolean,
 		"the installed model in the repository navigator",
+		WAIT,
+	);
+	await pollUntil(
+		readPanes,
+		(result) =>
+			result.body.panes.some(
+				(pane) =>
+					pane.paneId === "B" &&
+					!beforeReload.body.panes.some((old) => old.clientId === pane.clientId),
+			),
+		"the reloaded pane registration",
 		WAIT,
 	);
 	await browser.run(["click", '[data-slot="repository-model-open"]']);
