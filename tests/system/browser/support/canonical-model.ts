@@ -19,36 +19,65 @@ function initializeSource(root: string): void {
 }
 
 async function selectReading(browser: AgentBrowserSession, id: string): Promise<void> {
-	await browser.run(["click", '[data-slot="model-reading-selector"]']);
+	const item = `[data-reading-id="${id}"]`;
+	// A reading that settles closes the menu, and takes a click on it with it, so each pass
+	// takes the one step that the page now allows.
 	await pollUntil(
-		() =>
-			browser.eval<boolean>(`(() => {
-			const item = document.querySelector('[data-reading-id="${id}"]');
-			if (!item) return false;
-			const rect = item.getBoundingClientRect();
-			return rect.width > 0 && rect.height > 0 &&
-				item.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
-		})()`),
-		(available) => available,
-		"the reading choice to become clickable",
+		async () => {
+			const page = await browser.eval<{ reading: string | null; clickable: boolean }>(`(() => {
+				const stage = document.querySelector('[data-slot="architecture-model-stage"]');
+				const item = document.querySelector('${item}');
+				const rect = item?.getBoundingClientRect();
+				return {
+					reading: stage?.getAttribute('aria-busy') === 'false' ? stage.getAttribute('data-reading') : null,
+					clickable: rect !== undefined && rect.width > 0 && rect.height > 0 &&
+						item.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)),
+				};
+			})()`);
+			if (page.reading === id) return true;
+			if (page.reading === null) return false;
+			await browser
+				.run(["click", page.clickable ? item : '[data-slot="model-reading-selector"]'])
+				.catch(() => undefined);
+			return false;
+		},
+		Boolean,
+		"the selected architecture reading",
 		WAIT,
 	);
-	await browser.run(["click", `[data-reading-id="${id}"]`]);
-	await pollUntil(
+}
+
+/**
+ * Select a module from the sidebar list and read its details. A reading that settles replaces
+ * the rows and drops the selection, so each pass activates the row while no details show.
+ * @param browser The page.
+ * @param id The module.
+ * @param shows Whether the details hold what the caller waits for.
+ * @param part A selector inside the details, to read that part alone.
+ * @returns The text read.
+ */
+async function selectModule(
+	browser: AgentBrowserSession,
+	id: string,
+	shows: (text: string) => boolean = (text) => text !== "",
+	part = "",
+): Promise<string> {
+	return pollUntil(
 		() =>
-			browser.eval<string | null>(
-				`document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-reading') ?? null`,
-			),
-		(reading) => reading === id,
-		"the selected architecture reading",
+			browser.eval<string>(`(() => {
+				const details = document.querySelector('[data-slot="module-details"][data-module-id="${id}"]');
+				if (details === null) document.querySelector('[data-slot="module-list"] [data-module-id="${id}"]')?.click();
+				return document.querySelector('[data-slot="module-details"][data-module-id="${id}"] ${part}')?.textContent ?? "";
+			})()`),
+		shows,
+		`the details of ${id}`,
 		WAIT,
 	);
 }
 
 async function gatewayDetails(browser: AgentBrowserSession): Promise<string> {
 	await openModelSidebar(browser);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
-	return browser.eval<string>(`document.querySelector('[data-slot="module-details"]').textContent`);
+	return selectModule(browser, "Shop#Gateway");
 }
 
 async function selectState(browser: AgentBrowserSession, id: string): Promise<void> {
@@ -75,4 +104,4 @@ async function selectState(browser: AgentBrowserSession, id: string): Promise<vo
 	);
 }
 
-export { fixtureGit, initializeSource, selectReading, selectState, gatewayDetails };
+export { fixtureGit, initializeSource, selectModule, selectReading, selectState, gatewayDetails };

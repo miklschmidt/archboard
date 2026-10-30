@@ -21,6 +21,7 @@ import {
 import {
 	initializeSource,
 	fixtureGit,
+	selectModule,
 	selectReading,
 	selectState,
 } from "./support/canonical-model.ts";
@@ -33,18 +34,21 @@ async function openCode(
 	browser: AgentBrowserSession,
 	capture: string,
 	target: string,
+	select = true,
 ): Promise<void> {
 	rmSync(capture, { force: true });
 	await pollUntil(
-		() =>
-			browser.eval<{
+		async () => {
+			if (select) await selectModule(browser, "Shop#Gateway");
+			return browser.eval<{
 				present: boolean;
 				enabled: boolean;
 				unavailable: string | null;
 				code: string | null;
 			}>(
 				`({ present: document.querySelector('[data-slot="module-open-code"]') !== null, enabled: document.querySelector('[data-slot="module-open-code"]')?.matches(':enabled') === true, unavailable: document.querySelector('[data-slot="module-code-unavailable"]')?.textContent ?? null, code: document.querySelector('[data-slot="module-code-unavailable"]')?.getAttribute('data-code') ?? null })`,
-			),
+			);
+		},
 		(value) => value.enabled,
 		"the available selected code action",
 		WAIT,
@@ -166,7 +170,6 @@ test("canonical code controls follow current draft and exact readings while miss
 		WAIT,
 	);
 	await openModelSidebar(browser);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await openCode(browser, capture, join(root, "src/planned.ts"));
 	expect(
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('stateA')`),
@@ -183,7 +186,7 @@ test("canonical code controls follow current draft and exact readings while miss
 		WAIT,
 	);
 	await openModelSidebar(browser, "selection");
-	await openCode(browser, capture, join(root, "src/gateway.ts"));
+	await openCode(browser, capture, join(root, "src/gateway.ts"), false);
 	await pollUntil(
 		() =>
 			browser.eval<string[]>(
@@ -205,7 +208,6 @@ test("canonical code controls follow current draft and exact readings while miss
 		WAIT,
 	);
 	await openModelSidebar(browser);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await openCode(browser, capture, join(root, "src/planned.ts"));
 	rmSync(join(root, "src/planned.ts"));
 	await browser.run(["reload"]);
@@ -219,7 +221,7 @@ test("canonical code controls follow current draft and exact readings while miss
 		WAIT,
 	);
 	await openModelSidebar(browser);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
+	await selectModule(browser, "Shop#Gateway");
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -260,7 +262,7 @@ test("canonical code controls follow current draft and exact readings while miss
 		WAIT,
 	);
 	await openModelSidebar(browser);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
+	await selectModule(browser, "Shop#Gateway");
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

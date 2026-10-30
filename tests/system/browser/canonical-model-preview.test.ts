@@ -123,8 +123,18 @@ test("migration preview preserves its source while readers navigate modules and 
 	expect(live.body).toMatchObject({ success: false, code: "LEGACY_AUTHORITY" });
 	const source = join(vault, "Shop.semantic.json");
 	writeFileSync(source, `${before["Shop.semantic.json"]}\n`);
-	await refreshModel(browser);
-	await visible(browser, '[data-slot="model-error"][data-code="MAPPING_STALE"]');
+	// A read that began before this write answers the first press with the old source.
+	await pollUntil(
+		async () => {
+			await refreshModel(browser);
+			return browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-error"][data-code="MAPPING_STALE"]') !== null`,
+			);
+		},
+		Boolean,
+		"the stale mapping refusal",
+		WAIT,
+	);
 	expect(
 		await browser.eval<boolean>(`document.querySelector('[data-slot="model-reading"]') === null`),
 	).toBe(true);
