@@ -14,6 +14,7 @@ import {
 	CHECK_ALL_HELP,
 	CHECK_CODE_HELP,
 	CHECK_EMBEDS_HELP,
+	CHECK_SEMANTICS_HELP,
 	FIX_HELP,
 } from "#cli/operations/vault/check-help.ts";
 import { checkEmbeds } from "#cli/operations/vault/embeds/embeds-check.ts";
@@ -475,8 +476,7 @@ const checkSemanticsContract = defineCommand({
 	path: ["check", "semantics"],
 	shared: ["url", "directory"],
 	summary: "Check the canonical model, active proposals, and vocabulary",
-	description:
-		"Reports invalid configuration, incoherent model content, and removed vocabulary references. It changes no authored input. Exit 1 means that a diagnostic or warning remains.",
+	description: CHECK_SEMANTICS_HELP,
 	examples: ["archboard check semantics"],
 	parameters: [],
 	input: { ingress: z.object({}) },

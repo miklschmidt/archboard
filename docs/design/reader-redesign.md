@@ -122,22 +122,29 @@ Warnings sit on the one subject that they concern. The model-wide count moves to
 teaches the same rule. These are warnings. A count or a folder spread is a signal and never proves that a
 container has no job, so no write is refused.
 
+`CONTAINER_PASS_THROUGH` names a module with parts and no binding, which no relationship or flow names, and whose
+parts no relationship or flow joins. One part is the plain case. The rule reads no count and no folder, and it
+needs no escape: `Workhorses` has 17 relationships between its parts and never warns. It flags all 8 layers of the
+model before they left, and 8 other containers of 130. A model that binds no code is exempt, because an unbound
+container then says nothing. `ROOT_UNCONNECTED` names a root with no relationship to another root. A relationship
+of a part inside it counts, and a lone root is exempt.
+
 ## Rejected
 
-| Idea | Reason |
-| --- | --- |
-| A hard limit of 18 lines | It hides the many weak lines that make a foundation a foundation, and leaves six packages of `Workspace packages` with no line. |
-| Keep the strongest one to three neighbors | The rule leaves a picture with 3,113 crossings against 560, and it hides meaning by frequency. |
-| One line for each relationship family | It keeps 47 lines at the root against 29. |
-| Majority kind on a joined line | It is a false mark: 8 of 29 root lines mix kinds. |
-| A Read menu, or a history panel | A menu closes on each choice and hides three nouns. A panel adds a surface type. The column rule covers both. |
-| A contextual outline in place of the tree | A median of 4 rows leaves the column empty and does not read like a repository. |
-| An authored orientation reading | It adds one more thing to author. A repaired Focus and the tour give the same value. |
-| A layout selector | It moves a renderer fault onto the reader. |
-| Saved readings, `Copy link`, picture export, "since you were here" | No observed need. The address holds a reading. |
-| A write refusal for empty containers | The owner asked for guidance and detection. |
-| A code path as a link on the card | The picture has no such target, and the row is under 9 px high in 43 of 123 readings. |
-| Removing a stored label reservation first | Inside these rules, labels cost 10 percent overall. Revisit the root after the content rules. |
+| Idea                                                               | Reason                                                                                                                          |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| A hard limit of 18 lines                                           | It hides the many weak lines that make a foundation a foundation, and leaves six packages of `Workspace packages` with no line. |
+| Keep the strongest one to three neighbors                          | The rule leaves a picture with 3,113 crossings against 560, and it hides meaning by frequency.                                  |
+| One line for each relationship family                              | It keeps 47 lines at the root against 29.                                                                                       |
+| Majority kind on a joined line                                     | It is a false mark: 8 of 29 root lines mix kinds.                                                                               |
+| A Read menu, or a history panel                                    | A menu closes on each choice and hides three nouns. A panel adds a surface type. The column rule covers both.                   |
+| A contextual outline in place of the tree                          | A median of 4 rows leaves the column empty and does not read like a repository.                                                 |
+| An authored orientation reading                                    | It adds one more thing to author. A repaired Focus and the tour give the same value.                                            |
+| A layout selector                                                  | It moves a renderer fault onto the reader.                                                                                      |
+| Saved readings, `Copy link`, picture export, "since you were here" | No observed need. The address holds a reading.                                                                                  |
+| A write refusal for empty containers                               | The owner asked for guidance and detection.                                                                                     |
+| A code path as a link on the card                                  | The picture has no such target, and the row is under 9 px high in 43 of 123 readings.                                           |
+| Removing a stored label reservation first                          | Inside these rules, labels cost 10 percent overall. Revisit the root after the content rules.                                   |
 
 ## Gates
 

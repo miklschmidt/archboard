@@ -50,6 +50,17 @@ const CHECK_CODE_HELP = [
 	"Exit 1 means the code check has a warning. No architecture input changes.",
 ].join("\n");
 
+/** The description of `check semantics`. */
+const CHECK_SEMANTICS_HELP = [
+	"Reports invalid configuration, incoherent model content, and removed vocabulary references. It changes no authored input.",
+	"",
+	"Warnings on current architecture, which refuse no write. A shape is a signal, so read the source before you act on one:",
+	"- CONTAINER_PASS_THROUGH: in a model that binds code, a module with parts and no binding, which no relationship or flow names, and whose parts no relationship or flow joins.",
+	"- ROOT_UNCONNECTED: in a model with several roots, a root with no relationship to another root. A relationship of a part inside it counts.",
+	"",
+	"Exit 1 means that a diagnostic or warning remains.",
+].join("\n");
+
 /** The description of `check all`, which `check` runs. */
 const CHECK_ALL_HELP = [
 	"Runs the semantics check, the code check and the embeds check, in that order, and answers with one part for each (ADR 0057). --state, --every-draft and --plan say what the code check reads, as `check code` describes. --fix draws outdated embeds again, as `check embeds` describes, and the other checks still run and report.",
@@ -74,4 +85,4 @@ const CHECK_EMBEDS_HELP = [
 /** The description of explicit artifact repair. */
 const FIX_HELP =
 	"Redraw changed local SVG and PNG artifacts from their exact canonical recipes. Refresh metadata when the picture stays current. Preserve cached sources and original legacy artifacts. Report every completed repair.";
-export { CHECK_ALL_HELP, CHECK_CODE_HELP, CHECK_EMBEDS_HELP, FIX_HELP };
+export { CHECK_ALL_HELP, CHECK_CODE_HELP, CHECK_EMBEDS_HELP, CHECK_SEMANTICS_HELP, FIX_HELP };
