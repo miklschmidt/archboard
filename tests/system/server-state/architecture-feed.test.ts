@@ -28,13 +28,13 @@ afterAll(async () => {
 test("one socket follows every vault of a tab and names a vault it cannot read", async () => {
 	const socket = new WebSocket(`${server.base.replace("http", "ws")}/api/architecture/events`);
 	const frames: ArchitectureFeedFrame[] = [];
-	const heard = new Promise<void>((resolve) => {
+	const heard = new Promise<void>((settle) => {
 		socket.addEventListener("message", (message) => {
 			frames.push(ArchitectureFeedFrameSchema.parse(JSON.parse(String(message.data))));
-			if (frames.length === 3) resolve();
+			if (frames.length === 3) settle();
 		});
 	});
-	await new Promise((resolve) => socket.addEventListener("open", resolve));
+	await new Promise((settle) => socket.addEventListener("open", settle));
 	const missing = join(root, "missing");
 	for (const vault of [first, second, missing])
 		socket.send(JSON.stringify({ type: "subscribe", vault }));

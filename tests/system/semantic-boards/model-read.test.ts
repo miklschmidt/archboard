@@ -11,6 +11,7 @@ import {
 } from "@archboard/board/model";
 import { retainArchitectureCheckpoint } from "@archboard/board/store-write";
 import { readArchitectureModel } from "@archboard/board/store-read";
+import { openArchitectureFeed } from "../support/architecture-feed.ts";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";
@@ -379,11 +380,8 @@ test("CLI and HTTP share claimed edit outcomes and an event connection starts wi
 		}),
 	});
 	expect(claimResponse.status).toBe(200);
-	const {
-		ArchitectureClaimResultSchema,
-		ArchitectureModuleEditResultSchema,
-		ArchitectureEventSchema,
-	} = await import("@archboard/board/model");
+	const { ArchitectureClaimResultSchema, ArchitectureModuleEditResultSchema } =
+		await import("@archboard/board/model");
 	const claim = ArchitectureClaimResultSchema.parse(await claimResponse.json());
 	if (!claim.success) throw new Error(JSON.stringify(claim));
 	const request = {
@@ -432,19 +430,9 @@ test("CLI and HTTP share claimed edit outcomes and an event connection starts wi
 	);
 	expect(malformed.status).toBe(400);
 
-	const controller = new AbortController();
-	try {
-		const stream = await fetch(
-			`${server.base}/api/architecture/events?${new URLSearchParams({ vault })}`,
-			{ signal: controller.signal },
-		);
-		expect(stream.headers.get("content-type")).toContain("text/event-stream");
-		const reader = stream.body!.getReader();
-		const first = new TextDecoder().decode((await reader.read()).value);
-		const data = first.split("\n").find((line) => line.startsWith("data: "));
-		expect(data).toBeDefined();
-		const event = ArchitectureEventSchema.parse(JSON.parse(data!.slice(6)));
-		expect(event).toMatchObject({
+	{
+		using feed = await openArchitectureFeed(server.base, vault);
+		expect(await feed.next()).toMatchObject({
 			type: "architecture_snapshot",
 			vault,
 			reading: {
@@ -467,8 +455,6 @@ test("CLI and HTTP share claimed edit outcomes and an event connection starts wi
 			},
 			claims: { success: true, claims: [{ id: claim.claim.id }] },
 		});
-	} finally {
-		controller.abort();
 	}
 	const taken = await fetch(`${server.base}/api/architecture/claims/take-back`, {
 		method: "POST",

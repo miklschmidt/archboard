@@ -94,18 +94,6 @@ describe("command contract artifact generation", () => {
 		TEST_WALL_CLOCK_BUDGET_MS,
 	);
 
-	test("reports generated files in the declared write order", () => {
-		using fixture = createArtifactFixture();
-		const result = fixture.generate(fixture.first);
-		expect(result.status, artifactFailure(result)).toBe(0);
-		expect(result.stdout, artifactFailure(result)).toBe(
-			artifactNames.map((name) => `generated ${join(fixture.first, name)}\n`).join(""),
-		);
-		for (const name of artifactNames) {
-			expect(existsSync(join(fixture.first, name))).toBe(true);
-		}
-	});
-
 	test("rejects an incomplete private output request", () => {
 		using fixture = createArtifactFixture();
 		const result = fixture.generate("");

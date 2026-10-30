@@ -18,7 +18,12 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { initializeSource, selectReading, selectState } from "./support/canonical-model.ts";
+import {
+	initializeSource,
+	selectModule,
+	selectReading,
+	selectState,
+} from "./support/canonical-model.ts";
 import { openModelSidebar } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
@@ -143,11 +148,7 @@ test("proposal conflicts preserve coherent content, blocked ancestry, live settl
 	});
 	await standing(browser, "conflicted");
 	await openModelSidebar(browser, "selection");
-	expect(
-		await browser.eval<string>(
-			`document.querySelector('[data-slot="module-details"]')?.textContent ?? ''`,
-		),
-	).toContain("Accepts public work");
+	await selectModule(browser, "Shop#Gateway", (details) => details.includes("Accepts public work"));
 	expect(
 		await browser.eval<string>(
 			`document.querySelector('[data-slot="module-details"]')?.textContent ?? ''`,
@@ -194,12 +195,7 @@ test("proposal conflicts preserve coherent content, blocked ancestry, live settl
 	await standing(browser, "settled");
 	await selectState(browser, childId);
 	await standing(browser, "settled");
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
-	expect(
-		await browser.eval<string>(
-			`document.querySelector('[data-slot="module-details"]')?.textContent ?? ''`,
-		),
-	).toContain("Accepts public work");
+	await selectModule(browser, "Shop#Gateway", (details) => details.includes("Accepts public work"));
 	await selectReading(browser, retained.checkpoint.id);
 	await standing(browser, "conflicted");
 	expect(
@@ -227,10 +223,7 @@ test("proposal conflicts preserve coherent content, blocked ancestry, live settl
 	await edit(request, "Current", { proposal: { type: "reconcile" }, changes: [] });
 	await browser.run(["reload"]);
 	await standing(browser, "settled");
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
-	expect(
-		await browser.eval<string>(
-			`document.querySelector('[data-slot="module-details"]')?.textContent ?? ''`,
-		),
-	).toContain("Accepts external work");
+	await selectModule(browser, "Shop#Gateway", (details) =>
+		details.includes("Accepts external work"),
+	);
 }, 60_000);

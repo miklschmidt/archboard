@@ -11,7 +11,18 @@ const publicPreload = join(import.meta.dir, "../fixtures/public-codex-startup-pr
 function serverChildPids(pid: number): number[] {
 	return listProcessObservations()
 		.filter((observation) => observation.state !== "zombie" && observation.parentPid === pid)
-		.map((observation) => observation.pid);
+		.map((observation) => observation.pid)
+		.filter((child) => !isGitOrphanGuard(child));
+}
+
+/**
+ * Whether a child of the server is the shell that ends its Git commands if it dies.
+ * @param pid The child.
+ * @returns Whether it is that shell, which no Codex child ever is.
+ */
+function isGitOrphanGuard(pid: number): boolean {
+	const name = spawnSync("ps", ["-o", "comm=", "-p", String(pid)], { encoding: "utf8" });
+	return name.stdout.trim() === "sh";
 }
 
 function publicStartEnvironment(

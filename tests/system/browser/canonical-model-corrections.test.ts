@@ -18,7 +18,7 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { fixtureGit, initializeSource } from "./support/canonical-model.ts";
+import { fixtureGit, initializeSource, selectModule } from "./support/canonical-model.ts";
 import { openModelSidebar, refreshModel } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
@@ -88,16 +88,7 @@ async function visible(browser: AgentBrowserSession, selector: string): Promise<
 async function description(browser: AgentBrowserSession, value: string): Promise<void> {
 	await openModelSidebar(browser);
 	await visible(browser, '[data-slot="module-list"] [data-module-id="Shop#Gateway"]');
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
-	await pollUntil(
-		() =>
-			browser.eval<string>(
-				`document.querySelector('[data-slot="module-details"] header')?.textContent ?? ""`,
-			),
-		(text) => text.includes(value),
-		"the selected module description",
-		WAIT,
-	);
+	await selectModule(browser, "Shop#Gateway", (text) => text.includes(value), "header");
 }
 
 async function openHistory(browser: AgentBrowserSession): Promise<void> {
