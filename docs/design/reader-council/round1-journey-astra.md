@@ -18,16 +18,16 @@ The browser tool supplied by this session took precedence over the brief's shell
 
 Observed facts:
 
-| Evidence | Observation |
-| --- | --- |
-| `/tmp/integrate/reader-council/evidence/astra-01-start.png` | Opening `/` in this session showed a migration refusal for another repository. Current and Compare remained above that refusal. This is an observed session start, not proof of every first-run default. |
-| `/tmp/integrate/reader-council/evidence/astra-02-root.png` | The root title was `vKEsyHFk`. A small, widely spread diagram occupied the middle. The sidebar began with selection controls, adoption prose, and walkthroughs. |
-| `/tmp/integrate/reader-council/evidence/astra-03-selected-browser.png` | Browser's description and document references filled the inspector. Open module and Open code were below the initial viewport. |
-| `/tmp/integrate/reader-council/evidence/astra-04-browser-scope.png` | Opening Browser exposed its children inside a large frame. Wide spaces separated several cards. The left navigator still listed repositories, not Browser's position. |
-| `/tmp/integrate/reader-council/evidence/astra-05-flow-required.png` | Choosing Sequence replaced the picture with an instruction to choose a flow. The existing sidebar inventory remained. |
-| `/tmp/integrate/reader-council/evidence/astra-06-sequence.png` | Choosing “A part's code is opened” drew an exchange with Browser, Code opener, Architecture runtime API, and Code facts. |
-| `/tmp/integrate/reader-council/evidence/astra-08-walkthrough.png` | The walkthrough removed the inspector and provided a large caption plate, progress, navigation, and optional narration. The header retained general reader controls. |
-| `/tmp/integrate/reader-council/evidence/astra-09-proposal.png` | The proposal capture was still drawing. Its sidebar reported 2,955 changed subjects against the current architecture. This image does not establish the finished proposal's layout. |
+| Evidence                                                               | Observation                                                                                                                                                                                              |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/tmp/integrate/reader-council/evidence/astra-01-start.png`            | Opening `/` in this session showed a migration refusal for another repository. Current and Compare remained above that refusal. This is an observed session start, not proof of every first-run default. |
+| `/tmp/integrate/reader-council/evidence/astra-02-root.png`             | The root title was `vKEsyHFk`. A small, widely spread diagram occupied the middle. The sidebar began with selection controls, adoption prose, and walkthroughs.                                          |
+| `/tmp/integrate/reader-council/evidence/astra-03-selected-browser.png` | Browser's description and document references filled the inspector. Open module and Open code were below the initial viewport.                                                                           |
+| `/tmp/integrate/reader-council/evidence/astra-04-browser-scope.png`    | Opening Browser exposed its children inside a large frame. Wide spaces separated several cards. The left navigator still listed repositories, not Browser's position.                                    |
+| `/tmp/integrate/reader-council/evidence/astra-05-flow-required.png`    | Choosing Sequence replaced the picture with an instruction to choose a flow. The existing sidebar inventory remained.                                                                                    |
+| `/tmp/integrate/reader-council/evidence/astra-06-sequence.png`         | Choosing “A part's code is opened” drew an exchange with Browser, Code opener, Architecture runtime API, and Code facts.                                                                                 |
+| `/tmp/integrate/reader-council/evidence/astra-08-walkthrough.png`      | The walkthrough removed the inspector and provided a large caption plate, progress, navigation, and optional narration. The header retained general reader controls.                                     |
+| `/tmp/integrate/reader-council/evidence/astra-09-proposal.png`         | The proposal capture was still drawing. Its sidebar reported 2,955 changed subjects against the current architecture. This image does not establish the finished proposal's layout.                      |
 
 A filesystem count found 540 modules, 453 direct code bindings, 19 roots, 19 walkthroughs, 17 flow collections, and 72 flows. Browser had eight immediate children and two nearby modules in its structural reading. Its picture measured 3291×1860 drawing units inside a 1319×1040 CSS-pixel surface. The inspector measured 280 CSS pixels wide.
 
@@ -225,17 +225,17 @@ Removed: the model-wide tour list from the inspector, unrelated controls during 
 
 A reading remains a selection of architecture to draw. Its complete meaning stays in the address and captured agent context. The redesign changes how the person reaches those selectors.
 
-| Existing lever | Decision | When and where it appears |
-| --- | --- | --- |
-| Scope | Keep, as navigation | The module path, outline, and Open parts actions determine scope. No separate Scope control appears. |
-| Focus | Keep, after selection | “Focus on selection” appears for structural subjects. An active focus names those subjects and provides “Show whole scope.” |
-| Filters | Keep, behind the picture menu | Relationship kinds and group-region visibility appear under “Show.” Active restrictions get a visible summary and one reset action. No “Filters (0)” remains. |
-| Grammar | Merge into the flow experience | Structure is the default. Sequence and Flowchart appear only after choosing an authored flow. |
-| Flow | Promote to a named destination | Relevant flows appear in the navigator or a selected participant's flow links. The chosen flow stays named above its picture. |
-| State | Keep, with simpler entry | Current, a named proposal, or a named historical record always appears in the header. Its menu opens Proposals or History. |
-| Compare | Move into review | It appears for a proposal, a historical record, or an explicit compare action. Both sides have visible names and revisions. |
-| Bookmarks | Keep, rename the entry to Saved readings | They appear in repository navigation on request. Imported readings retain their exact definitions. “Save this reading” captures presentation only and writes no architecture. |
-| Former addresses | Remove from the main surface | Search accepts them. Exact old links resolve through retained mappings. Details remain in history and migration support. |
+| Existing lever   | Decision                                 | When and where it appears                                                                                                                                                     |
+| ---------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scope            | Keep, as navigation                      | The module path, outline, and Open parts actions determine scope. No separate Scope control appears.                                                                          |
+| Focus            | Keep, after selection                    | “Focus on selection” appears for structural subjects. An active focus names those subjects and provides “Show whole scope.”                                                   |
+| Filters          | Keep, behind the picture menu            | Relationship kinds and group-region visibility appear under “Show.” Active restrictions get a visible summary and one reset action. No “Filters (0)” remains.                 |
+| Grammar          | Merge into the flow experience           | Structure is the default. Sequence and Flowchart appear only after choosing an authored flow.                                                                                 |
+| Flow             | Promote to a named destination           | Relevant flows appear in the navigator or a selected participant's flow links. The chosen flow stays named above its picture.                                                 |
+| State            | Keep, with simpler entry                 | Current, a named proposal, or a named historical record always appears in the header. Its menu opens Proposals or History.                                                    |
+| Compare          | Move into review                         | It appears for a proposal, a historical record, or an explicit compare action. Both sides have visible names and revisions.                                                   |
+| Bookmarks        | Keep, rename the entry to Saved readings | They appear in repository navigation on request. Imported readings retain their exact definitions. “Save this reading” captures presentation only and writes no architecture. |
+| Former addresses | Remove from the main surface             | Search accepts them. Exact old links resolve through retained mappings. Details remain in history and migration support.                                                      |
 
 Saved readings are named routes, not miniature boards. Private saved readings can store a browser-local address. Shared authored entries remain agent-owned. Saving an exact shared reference requires retention through the agent. A bookmark that names unavailable history stays visibly unavailable.
 
@@ -247,15 +247,15 @@ When entering another module, clear subject focus and retain visible filter rest
 
 The old implementation treated movement as part of reading. It did not merely fade a replaced SVG.
 
-| Old behavior at `origin/main` | Source evidence | Decision for the canonical reader |
-| --- | --- | --- |
-| Shared cards moved from old geometry to new geometry. Removed subjects left before new subjects entered. Lines moved with their subjects. | `apps/web/src/ui/clients/semantic-board-canvas/picture/picture-transition.ts:1` | Restore identity-based continuity for state, comparison, and live model changes. |
-| The camera compensated for the collective movement of shared cards. | `apps/web/src/ui/clients/semantic-board-canvas/picture/picture-transition.ts:76` | Keep the selected subject stable first. Use shared subjects when there is no selection. |
-| First pictures and unrelated readings arrived as frames, cards, lines, then labels. | `apps/web/src/ui/clients/semantic-board-canvas/picture/picture-entrance.ts:1` | Preserve the hierarchy of arrival without delaying access to the picture. |
-| A prepared child picture sat inside its parent card. The camera flew into it, and the reverse flight went back out. | `apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts:1` | Restore down/up continuity for module containment. Never require prefetch completion before navigation works. |
-| Departure responded immediately, with different treatment for into, out, and across. Slow loading eventually left the pane empty. | `apps/web/src/ui/clients/semantic-board-canvas/picture/picture-departure.ts:1` | Preserve immediate response and directional meaning. Replace the empty slow-load outcome with the previous reading and a truthful progress label. |
-| Relationship emphasis swept from source to target. | `apps/web/src/ui/clients/semantic-board-canvas/picture/picture-sweep.ts:1` | Restore directional tracing when a person inspects a connection. It must not carry meaning unavailable in the static picture. |
-| The first fit followed pane size until manual pan or zoom. Presentation exit restored the prior camera. | `apps/web/src/ui/hooks/semantic-board-canvas/use-auto-fit.ts:1` | Keep camera ownership and restore the exact previous reading on exit. |
+| Old behavior at `origin/main`                                                                                                             | Source evidence                                                                  | Decision for the canonical reader                                                                                                                 |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shared cards moved from old geometry to new geometry. Removed subjects left before new subjects entered. Lines moved with their subjects. | `apps/web/src/ui/clients/semantic-board-canvas/picture/picture-transition.ts:1`  | Restore identity-based continuity for state, comparison, and live model changes.                                                                  |
+| The camera compensated for the collective movement of shared cards.                                                                       | `apps/web/src/ui/clients/semantic-board-canvas/picture/picture-transition.ts:76` | Keep the selected subject stable first. Use shared subjects when there is no selection.                                                           |
+| First pictures and unrelated readings arrived as frames, cards, lines, then labels.                                                       | `apps/web/src/ui/clients/semantic-board-canvas/picture/picture-entrance.ts:1`    | Preserve the hierarchy of arrival without delaying access to the picture.                                                                         |
+| A prepared child picture sat inside its parent card. The camera flew into it, and the reverse flight went back out.                       | `apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts:1`                      | Restore down/up continuity for module containment. Never require prefetch completion before navigation works.                                     |
+| Departure responded immediately, with different treatment for into, out, and across. Slow loading eventually left the pane empty.         | `apps/web/src/ui/clients/semantic-board-canvas/picture/picture-departure.ts:1`   | Preserve immediate response and directional meaning. Replace the empty slow-load outcome with the previous reading and a truthful progress label. |
+| Relationship emphasis swept from source to target.                                                                                        | `apps/web/src/ui/clients/semantic-board-canvas/picture/picture-sweep.ts:1`       | Restore directional tracing when a person inspects a connection. It must not carry meaning unavailable in the static picture.                     |
+| The first fit followed pane size until manual pan or zoom. Presentation exit restored the prior camera.                                   | `apps/web/src/ui/hooks/semantic-board-canvas/use-auto-fit.ts:1`                  | Keep camera ownership and restore the exact previous reading on exit.                                                                             |
 
 The old timing constants were 640 ms for picture changes, 760 ms for entrances, 280 ms for departures, and 720 ms for dives. They are evidence of deliberate choreography, not new performance requirements. Sources: `origin/main:packages/timing/src/shared/constants/diagram-motion.ts:23` and `origin/main:packages/timing/src/shared/constants/exploring.ts:133`.
 
@@ -265,20 +265,20 @@ Today, `apps/web/src/ui/components/architecture-model/ModelReadingCanvas.tsx:52`
 
 ## The transitions the journey needs
 
-| Transition | Stable reference | Required visible result |
-| --- | --- | --- |
-| Open repository | Repository name and selected checkout | The name appears immediately. Loading stays inside the picture region. Other repositories do not flash as substitutes. |
-| Enter a module | Selected parent card | The child reading grows from that card when available. The path gains one segment. |
-| Go up | Parent and returning child | The parent picture returns to its saved camera, with the returning child selected. |
-| Go sideways | Common parent in the path | The destination changes without a false descent. A short handover preserves the common context. |
-| Search jump | Matched subject identity | Its containment path appears, and the picture reveals the match. Back returns to the departure reading. |
-| Apply focus or filters | Selected subjects and surviving cards | Survivors retain identity through movement. Active restrictions remain visible. Reset restores the prior unrestricted reading. |
-| Open a flow | Launching structural reading | The flow receives its own title. A return action names the structural destination. |
-| Switch Sequence/Flowchart | Flow and selected step | The representation changes while the same step stays selected or explicitly absent. |
-| Switch comparison side | Selected subject and named pair | Shared subjects move coherently. Missing subjects remain explicit. The base never changes silently. |
-| Receive a live edit | Current camera and subject identities | Changed content updates without rebuilding the header or dismissing an open menu. |
-| Open or close the inspector | Selected card and current camera | The panel slides. A handled camera stays under reader control. The application does not refit the entire picture on every selection. |
-| Enter or leave a tour | Saved reading and beat identity | Playback captures context once. Exit restores it. Explore and Resume preserve the beat. |
+| Transition                  | Stable reference                      | Required visible result                                                                                                              |
+| --------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Open repository             | Repository name and selected checkout | The name appears immediately. Loading stays inside the picture region. Other repositories do not flash as substitutes.               |
+| Enter a module              | Selected parent card                  | The child reading grows from that card when available. The path gains one segment.                                                   |
+| Go up                       | Parent and returning child            | The parent picture returns to its saved camera, with the returning child selected.                                                   |
+| Go sideways                 | Common parent in the path             | The destination changes without a false descent. A short handover preserves the common context.                                      |
+| Search jump                 | Matched subject identity              | Its containment path appears, and the picture reveals the match. Back returns to the departure reading.                              |
+| Apply focus or filters      | Selected subjects and surviving cards | Survivors retain identity through movement. Active restrictions remain visible. Reset restores the prior unrestricted reading.       |
+| Open a flow                 | Launching structural reading          | The flow receives its own title. A return action names the structural destination.                                                   |
+| Switch Sequence/Flowchart   | Flow and selected step                | The representation changes while the same step stays selected or explicitly absent.                                                  |
+| Switch comparison side      | Selected subject and named pair       | Shared subjects move coherently. Missing subjects remain explicit. The base never changes silently.                                  |
+| Receive a live edit         | Current camera and subject identities | Changed content updates without rebuilding the header or dismissing an open menu.                                                    |
+| Open or close the inspector | Selected card and current camera      | The panel slides. A handled camera stays under reader control. The application does not refit the entire picture on every selection. |
+| Enter or leave a tour       | Saved reading and beat identity       | Playback captures context once. Exit restores it. Explore and Resume preserve the beat.                                              |
 
 The pane shell must survive all these transitions. A picture request cannot unmount the header, path, inspector, or active popup. Reading addresses belong to navigation. Camera, selection, panel state, and return points belong to the tab's presentation history.
 
@@ -317,4 +317,3 @@ Accept the redesign only when an architect unfamiliar with the model can complet
 8. Leave a walkthrough and recover the earlier reading and camera.
 
 Use the drawing council's compactness, directness, traceability, and pane-fit criteria on the actual canonical readings. Do not repair a failing picture by hiding required subjects. See `docs/design/grading-council/criteria.md:17` and `docs/design/grading-council/criteria.md:74`.
-

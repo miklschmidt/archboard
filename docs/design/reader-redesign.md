@@ -124,20 +124,20 @@ container has no job, so no write is refused.
 
 ## Rejected
 
-| Idea | Reason |
-| --- | --- |
-| A hard limit of 18 lines | It hides the many weak lines that make a foundation a foundation, and leaves six packages of `Workspace packages` with no line. |
-| Keep the strongest one to three neighbors | The rule leaves a picture with 3,113 crossings against 560, and it hides meaning by frequency. |
-| One line for each relationship family | It keeps 47 lines at the root against 29. |
-| Majority kind on a joined line | It is a false mark: 8 of 29 root lines mix kinds. |
-| A Read menu, or a history panel | A menu closes on each choice and hides three nouns. A panel adds a surface type. The column rule covers both. |
-| A contextual outline in place of the tree | A median of 4 rows leaves the column empty and does not read like a repository. |
-| An authored orientation reading | It adds one more thing to author. A repaired Focus and the tour give the same value. |
-| A layout selector | It moves a renderer fault onto the reader. |
-| Saved readings, `Copy link`, picture export, "since you were here" | No observed need. The address holds a reading. |
-| A write refusal for empty containers | The owner asked for guidance and detection. |
-| A code path as a link on the card | The picture has no such target, and the row is under 9 px high in 43 of 123 readings. |
-| Removing a stored label reservation first | Inside these rules, labels cost 10 percent overall. Revisit the root after the content rules. |
+| Idea                                                               | Reason                                                                                                                          |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| A hard limit of 18 lines                                           | It hides the many weak lines that make a foundation a foundation, and leaves six packages of `Workspace packages` with no line. |
+| Keep the strongest one to three neighbors                          | The rule leaves a picture with 3,113 crossings against 560, and it hides meaning by frequency.                                  |
+| One line for each relationship family                              | It keeps 47 lines at the root against 29.                                                                                       |
+| Majority kind on a joined line                                     | It is a false mark: 8 of 29 root lines mix kinds.                                                                               |
+| A Read menu, or a history panel                                    | A menu closes on each choice and hides three nouns. A panel adds a surface type. The column rule covers both.                   |
+| A contextual outline in place of the tree                          | A median of 4 rows leaves the column empty and does not read like a repository.                                                 |
+| An authored orientation reading                                    | It adds one more thing to author. A repaired Focus and the tour give the same value.                                            |
+| A layout selector                                                  | It moves a renderer fault onto the reader.                                                                                      |
+| Saved readings, `Copy link`, picture export, "since you were here" | No observed need. The address holds a reading.                                                                                  |
+| A write refusal for empty containers                               | The owner asked for guidance and detection.                                                                                     |
+| A code path as a link on the card                                  | The picture has no such target, and the row is under 9 px high in 43 of 123 readings.                                           |
+| Removing a stored label reservation first                          | Inside these rules, labels cost 10 percent overall. Revisit the root after the content rules.                                   |
 
 ## Gates
 

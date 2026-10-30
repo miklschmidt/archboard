@@ -32,24 +32,24 @@ Rank orders findings by cost to the user or the next implementer.
 
 Timing has three values. Before means that the fix needs no design decision and blocks fair design review. Part means that the fix needs a redesign decision. Removed means that the redesign deletes the thing.
 
-| # | Finding | Cost | Timing |
-| --- | --- | --- | --- |
-| F1 | The live reader never calls the transition engine | All picture motion is gone | Before |
-| F2 | Scope is a React key, and the camera lives under it | Every scope change destroys the canvas | Before |
-| F3 | Proposal reading fails or gives an unreadable page | The review journey is broken | Before for recovery, Part for the default reading |
-| F4 | State selection destroys the pane | Header, sidebar and open menus vanish | Before |
-| F5 | Every read returns everything | 3,810 KB per click, 8,816 KB per focus | Before |
-| F6 | The drawing key holds the complete model | Any edit redraws every scope, storage grows without limit | Before |
-| F7 | A healthy change event shows a false stale warning | A false alarm and a layout shift on every agent write | Before |
-| F8 | Walkthrough steps blank the surface and cut the camera | The presentation looks broken | Before |
-| F9 | Reading controls exist only inside the sidebar | Closing the sidebar removes the way up | Removed |
-| F10 | No picture is drawn ahead | Each first visit is a blank wait of about 2 s | Part |
-| F11 | Four of the five ADR 0042 answers are lost or partly lost | The picture stops answering the hand | Part |
-| F12 | Two reader stacks remain | 12,495 lines of replay-only code slow every change | Removed, with an owner decision |
-| F13 | Keys and URL fields overlap as state owners | Stale `subject`, hidden resets | Before for keys, Part for the rest |
-| F14 | Loading text changes four times on open | The opening stutters | Part |
-| F15 | The watcher reads the full model every second | Server cost grows with vaults and tabs | Before |
-| F16 | Whole fit scales small scopes up to 2.94 times | Leaf scopes look absurd | Part |
+| #   | Finding                                                   | Cost                                                      | Timing                                            |
+| --- | --------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------- |
+| F1  | The live reader never calls the transition engine         | All picture motion is gone                                | Before                                            |
+| F2  | Scope is a React key, and the camera lives under it       | Every scope change destroys the canvas                    | Before                                            |
+| F3  | Proposal reading fails or gives an unreadable page        | The review journey is broken                              | Before for recovery, Part for the default reading |
+| F4  | State selection destroys the pane                         | Header, sidebar and open menus vanish                     | Before                                            |
+| F5  | Every read returns everything                             | 3,810 KB per click, 8,816 KB per focus                    | Before                                            |
+| F6  | The drawing key holds the complete model                  | Any edit redraws every scope, storage grows without limit | Before                                            |
+| F7  | A healthy change event shows a false stale warning        | A false alarm and a layout shift on every agent write     | Before                                            |
+| F8  | Walkthrough steps blank the surface and cut the camera    | The presentation looks broken                             | Before                                            |
+| F9  | Reading controls exist only inside the sidebar            | Closing the sidebar removes the way up                    | Removed                                           |
+| F10 | No picture is drawn ahead                                 | Each first visit is a blank wait of about 2 s             | Part                                              |
+| F11 | Four of the five ADR 0042 answers are lost or partly lost | The picture stops answering the hand                      | Part                                              |
+| F12 | Two reader stacks remain                                  | 12,495 lines of replay-only code slow every change        | Removed, with an owner decision                   |
+| F13 | Keys and URL fields overlap as state owners               | Stale `subject`, hidden resets                            | Before for keys, Part for the rest                |
+| F14 | Loading text changes four times on open                   | The opening stutters                                      | Part                                              |
+| F15 | The watcher reads the full model every second             | Server cost grows with vaults and tabs                    | Before                                            |
+| F16 | Whole fit scales small scopes up to 2.94 times            | Leaf scopes look absurd                                   | Part                                              |
 
 ### F1. The live reader never calls the transition engine
 
@@ -75,12 +75,12 @@ Fix: delete the key. Move `useBoardCamera` and the surface above the scope and g
 
 Observed, four states sampled with the default comparison:
 
-| State | Lifecycle | Changed subjects | Outcome | Page (px) | SVG KB | Time |
-| --- | --- | --- | --- | --- | --- | --- |
-| `93RlBGLx` | draft | 2,955 | `Error: No clear planned channel for vKEsyHFk/9ncuT5DP#mAyzTmDD` | none | none | 48.8 s |
-| `D0qvstE4` | draft | 2,917 | Drawn | 8997 by 8048 | 1,087 | under 6 s |
-| `8PuyaYA8` | shelved | 2,191 | Drawn | 23223 by 15579 | 4,764 | about 32 s |
-| `vKEsyHFk` | historical | 2,194 | Drawn | 23223 by 15579 | 4,764 | about 27 s, fit scale 0.055 |
+| State      | Lifecycle  | Changed subjects | Outcome                                                          | Page (px)      | SVG KB | Time                        |
+| ---------- | ---------- | ---------------- | ---------------------------------------------------------------- | -------------- | ------ | --------------------------- |
+| `93RlBGLx` | draft      | 2,955            | `Error: No clear planned channel for vKEsyHFk/9ncuT5DP#mAyzTmDD` | none           | none   | 48.8 s                      |
+| `D0qvstE4` | draft      | 2,917            | Drawn                                                            | 8997 by 8048   | 1,087  | under 6 s                   |
+| `8PuyaYA8` | shelved    | 2,191            | Drawn                                                            | 23223 by 15579 | 4,764  | about 32 s                  |
+| `vKEsyHFk` | historical | 2,194            | Drawn                                                            | 23223 by 15579 | 4,764  | about 27 s, fit scale 0.055 |
 
 Times for the last three rows include page load. Screenshots: `impl-opus-06-state-draft-final.png` and `impl-opus-13-state-last.png`. The error text comes from `crates/archboard-layout/src/blocks/planned/fixed.rs:59`. `ModelDiagram.tsx:84` prints it with no action. The pane offers no retry and no recovery.
 
@@ -189,10 +189,10 @@ The redesign must either restore each answer or supersede the ADR in writing.
 
 Observed from an import graph of `apps/web/src`, with type-only imports excluded:
 
-| Set | Modules | Lines |
-| --- | --- | --- |
-| Reachable from the live application | 296 | 41,965 |
-| Reachable only from replay | 76 | 12,495 |
+| Set                                 | Modules | Lines  |
+| ----------------------------------- | ------- | ------ |
+| Reachable from the live application | 296     | 41,965 |
+| Reachable only from replay          | 76      | 12,495 |
 
 The replay-only set holds `SemanticBoardStage`, `SemanticDiagram`, `use-dive.ts`, the About pages and `SemanticInspector`. Section 7 has the rest.
 
@@ -232,27 +232,27 @@ Fix as part of the redesign: cap a whole fit near scale 1.
 
 Each owner below still exists at HEAD, in replay-only code, unless the row says otherwise.
 
-| Motion at main | Owner | State at HEAD | Exact cause |
-| --- | --- | --- | --- |
-| Carry one picture into the next, cards and lines moving | `use-picture-transition.ts:271` | Never runs | `ModelDiagram.tsx:238` calls `stagePicture` |
-| Part-by-part entrance | `use-picture-transition.ts:275` | Never runs | Same cause |
-| Ghost of the last picture, leaving the way the reader went | `use-picture-transition.ts:274` | Never runs | Same cause, and `useDeparture` is unused |
-| Picture leaves while the next one loads | `SemanticDiagram.tsx:292` | Never runs | `ModelScene` has no departure |
-| Camera keeps shared cards still across a new picture | `use-picture-transition.ts:269` | Never runs | No `keepStill` call. Observed: all context left the view, `impl-opus-07-*.png` |
-| Dive into a card and back | `SemanticBoardStage.tsx:293` | Never runs | `ModelDiagram.tsx:148` calls `onOpen`, which is a plain navigation |
-| Camera glide to a new reading | `use-auto-fit.ts` through `SemanticBoardStage.tsx:305` | Presentation only | `ModelDiagram.tsx:172` passes null outside a presentation, and line 261 fits instantly |
-| Camera survives across pictures | `SemanticBoardStage.tsx:287` | Lost | `ModelDiagram.tsx:74` under the key at `ModelReadingCanvas.tsx:52` |
-| Far view, larger names at a distance | `SemanticDiagram.tsx:334` | Off | `ModelDiagram.tsx:301` passes `far: false`. The landing fit is 0.255, far under `FAR_SCALE` 0.75 |
-| Line drawn on from source to target | `SemanticDiagram.tsx:328` | Not called | `useSweep` is absent from `ModelScene` |
-| Trace, each hop fainter | `SemanticDiagram.tsx:321` | Computed, then dropped | `useLighting` returns `reach`, and `ModelDiagram.tsx:246` to `:248` ignores it |
-| Row in a list lights its relationship | `Peek.tsx` provider in `SemanticStageView.tsx:266` | No effect | `ModelDiagram.tsx:182` passes `NOTHING_PEEKED`. Live rows call `usePeekControl` with no provider |
-| Hover tip on a subject | `SemanticDiagram.tsx:336` | Not called | No tip in `ModelScene`. At scale 0.255 the card text is unreadable, and no tip replaces it |
-| Bring a pick into view | `SemanticBoardStage.tsx:356` | Not called | No `useReveal`, no `useClearOfPanel` |
-| Sticky heads on a flow | `SemanticDiagram.tsx:329` | Not called | `operator-canvas-shell.md:302` still requires them |
-| Traffic rests during a pan | `SemanticDiagram.tsx:366` | Not called | Low cost, see section 8 |
-| Sidebar slide | `use-sidebar-slide.ts` | Works | Live |
-| Camera under the hand | `use-board-camera.ts` | Works | Live |
-| Lighting on hover and pick | `use-lighting.ts` | Works | Live, with a reduced input |
+| Motion at main                                             | Owner                                                  | State at HEAD          | Exact cause                                                                                      |
+| ---------------------------------------------------------- | ------------------------------------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------ |
+| Carry one picture into the next, cards and lines moving    | `use-picture-transition.ts:271`                        | Never runs             | `ModelDiagram.tsx:238` calls `stagePicture`                                                      |
+| Part-by-part entrance                                      | `use-picture-transition.ts:275`                        | Never runs             | Same cause                                                                                       |
+| Ghost of the last picture, leaving the way the reader went | `use-picture-transition.ts:274`                        | Never runs             | Same cause, and `useDeparture` is unused                                                         |
+| Picture leaves while the next one loads                    | `SemanticDiagram.tsx:292`                              | Never runs             | `ModelScene` has no departure                                                                    |
+| Camera keeps shared cards still across a new picture       | `use-picture-transition.ts:269`                        | Never runs             | No `keepStill` call. Observed: all context left the view, `impl-opus-07-*.png`                   |
+| Dive into a card and back                                  | `SemanticBoardStage.tsx:293`                           | Never runs             | `ModelDiagram.tsx:148` calls `onOpen`, which is a plain navigation                               |
+| Camera glide to a new reading                              | `use-auto-fit.ts` through `SemanticBoardStage.tsx:305` | Presentation only      | `ModelDiagram.tsx:172` passes null outside a presentation, and line 261 fits instantly           |
+| Camera survives across pictures                            | `SemanticBoardStage.tsx:287`                           | Lost                   | `ModelDiagram.tsx:74` under the key at `ModelReadingCanvas.tsx:52`                               |
+| Far view, larger names at a distance                       | `SemanticDiagram.tsx:334`                              | Off                    | `ModelDiagram.tsx:301` passes `far: false`. The landing fit is 0.255, far under `FAR_SCALE` 0.75 |
+| Line drawn on from source to target                        | `SemanticDiagram.tsx:328`                              | Not called             | `useSweep` is absent from `ModelScene`                                                           |
+| Trace, each hop fainter                                    | `SemanticDiagram.tsx:321`                              | Computed, then dropped | `useLighting` returns `reach`, and `ModelDiagram.tsx:246` to `:248` ignores it                   |
+| Row in a list lights its relationship                      | `Peek.tsx` provider in `SemanticStageView.tsx:266`     | No effect              | `ModelDiagram.tsx:182` passes `NOTHING_PEEKED`. Live rows call `usePeekControl` with no provider |
+| Hover tip on a subject                                     | `SemanticDiagram.tsx:336`                              | Not called             | No tip in `ModelScene`. At scale 0.255 the card text is unreadable, and no tip replaces it       |
+| Bring a pick into view                                     | `SemanticBoardStage.tsx:356`                           | Not called             | No `useReveal`, no `useClearOfPanel`                                                             |
+| Sticky heads on a flow                                     | `SemanticDiagram.tsx:329`                              | Not called             | `operator-canvas-shell.md:302` still requires them                                               |
+| Traffic rests during a pan                                 | `SemanticDiagram.tsx:366`                              | Not called             | Low cost, see section 8                                                                          |
+| Sidebar slide                                              | `use-sidebar-slide.ts`                                 | Works                  | Live                                                                                             |
+| Camera under the hand                                      | `use-board-camera.ts`                                  | Works                  | Live                                                                                             |
+| Lighting on hover and pick                                 | `use-lighting.ts`                                      | Works                  | Live, with a reduced input                                                                       |
 
 The canonical model allows something simpler than the old Dive. Module identities are stable across scopes. The root and the Browser scope share `Browser`, `Archboard server` and `Workspace packages` by identity. So `sharedShift` and the carry can run across a scope change with real shared subjects. Inferred: main needed a picture inside a card because a parent board and a child board shared no subjects.
 
@@ -262,23 +262,23 @@ Position: use the carry as the default for parent and child scopes. If the carry
 
 Observed, one run of each.
 
-| Action | Destroyed | Placeholder | HTTP KB | Socket KB | Longest task |
-| --- | --- | --- | --- | --- | --- |
-| Cold open | All | Four texts, picture at 5,405 ms | 6,088 | 2,816 | 200 ms |
-| Warm reload | All | Four texts, picture at 476 ms | 6,093 | 2,816 | 90 ms |
-| Click a module | Sidebar panel | None | 3,810 | 0 | None |
-| Dive, first visit | Canvas, surface, picture | "Drawing modules…" 2,264 ms | 1,077 | 0 | 147 ms |
-| Dive, drawn before | Canvas, surface, picture | None | 1,077 | 0 | 242 ms |
-| Browser Back | Canvas, surface, picture | None | 3 | 0 | 115 ms |
-| Filter toggle | Picture | "Updating diagram…" 2,062 ms | 3 | 0 | 93 ms |
-| Choose a draft state | Header, breadcrumb, sidebar, canvas | Two texts, then an error at 49.5 s | 4,152 | 0 | None |
-| Window focus | Nothing | None | 8,816 | 0 | None |
-| Change event, no selection | Nothing | False stale banner 339 ms | 2,743 | 76 | None |
-| Change event, module selected | Nothing | False stale banner 831 ms | 5,476 | 76 | None |
-| Feed socket drop | Nothing | Stale banner 3,172 ms | 11 | 2,816 | 81 ms |
-| URL `subject` change | Whole stage | None | 12,501 | 0 | 136 ms |
-| Open a walkthrough | Nothing, ordinary reader hidden | Three texts | 2,892 | 0 | 131 ms |
-| Next walkthrough step | Surface, picture | "Drawing modules…", 5 to 45 blank frames | 0 | 0 | Not recorded |
+| Action                        | Destroyed                           | Placeholder                              | HTTP KB | Socket KB | Longest task |
+| ----------------------------- | ----------------------------------- | ---------------------------------------- | ------- | --------- | ------------ |
+| Cold open                     | All                                 | Four texts, picture at 5,405 ms          | 6,088   | 2,816     | 200 ms       |
+| Warm reload                   | All                                 | Four texts, picture at 476 ms            | 6,093   | 2,816     | 90 ms        |
+| Click a module                | Sidebar panel                       | None                                     | 3,810   | 0         | None         |
+| Dive, first visit             | Canvas, surface, picture            | "Drawing modules…" 2,264 ms              | 1,077   | 0         | 147 ms       |
+| Dive, drawn before            | Canvas, surface, picture            | None                                     | 1,077   | 0         | 242 ms       |
+| Browser Back                  | Canvas, surface, picture            | None                                     | 3       | 0         | 115 ms       |
+| Filter toggle                 | Picture                             | "Updating diagram…" 2,062 ms             | 3       | 0         | 93 ms        |
+| Choose a draft state          | Header, breadcrumb, sidebar, canvas | Two texts, then an error at 49.5 s       | 4,152   | 0         | None         |
+| Window focus                  | Nothing                             | None                                     | 8,816   | 0         | None         |
+| Change event, no selection    | Nothing                             | False stale banner 339 ms                | 2,743   | 76        | None         |
+| Change event, module selected | Nothing                             | False stale banner 831 ms                | 5,476   | 76        | None         |
+| Feed socket drop              | Nothing                             | Stale banner 3,172 ms                    | 11      | 2,816     | 81 ms        |
+| URL `subject` change          | Whole stage                         | None                                     | 12,501  | 0         | 136 ms       |
+| Open a walkthrough            | Nothing, ordinary reader hidden     | Three texts                              | 2,892   | 0         | 131 ms       |
+| Next walkthrough step         | Surface, picture                    | "Drawing modules…", 5 to 45 blank frames | 0       | 0         | Not recorded |
 
 Inferred: a real agent write with reason `completed` also refetches checkpoints, `events.ts:147`. That adds 5,948 KB per tab.
 
@@ -306,24 +306,24 @@ The query cache is sound as the content owner. Its freshness settings are not, s
 
 Open costs, observed:
 
-| Item | Size | Note |
-| --- | --- | --- |
-| HTTP on open | 6,088 KB | 5,948 KB of it is checkpoints |
-| Socket on open | 2,816 KB | Full model snapshots for six vaults |
-| Requests in the first 7 s | 25 | Includes 8 model reads. In another run, 4 of 8 returned zero bytes |
-| Model reply | 2,743 KB | No compression, `Cache-Control: no-store` |
+| Item                      | Size     | Note                                                               |
+| ------------------------- | -------- | ------------------------------------------------------------------ |
+| HTTP on open              | 6,088 KB | 5,948 KB of it is checkpoints                                      |
+| Socket on open            | 2,816 KB | Full model snapshots for six vaults                                |
+| Requests in the first 7 s | 25       | Includes 8 model reads. In another run, 4 of 8 returned zero bytes |
+| Model reply               | 2,743 KB | No compression, `Cache-Control: no-store`                          |
 
 Share of the model reply, by JSON size:
 
-| Field | Share | Reader need |
-| --- | --- | --- |
-| `modules` | 30 percent | Needed |
-| `migration` | 24 percent | Only the Bookmarks and Former addresses menus |
-| `relationships` | 14 percent | A copy of `modules[].outgoing` |
-| `collections` | 13 percent | Needed for flows |
-| `walkthroughs` | 10 percent | Needed for the list. Beats can wait |
-| `proposals` | 4 percent | Needed for proposal readings |
-| `revision` | 3 percent | Only the digest |
+| Field           | Share      | Reader need                                   |
+| --------------- | ---------- | --------------------------------------------- |
+| `modules`       | 30 percent | Needed                                        |
+| `migration`     | 24 percent | Only the Bookmarks and Former addresses menus |
+| `relationships` | 14 percent | A copy of `modules[].outgoing`                |
+| `collections`   | 13 percent | Needed for flows                              |
+| `walkthroughs`  | 10 percent | Needed for the list. Beats can wait           |
+| `proposals`     | 4 percent  | Needed for proposal readings                  |
+| `revision`      | 3 percent  | Only the digest                               |
 
 Observed: `outgoing` and `relationships` both count 1,117 entries with the same fields, plus `from`. The server sends the same data twice.
 
@@ -333,13 +333,13 @@ Polling: `vaultCheckQuery` and `codeFindingsQuery` poll every 5 s, `clients/sema
 
 Duplicates that I read:
 
-| Concept | Canonical | Board | Position |
-| --- | --- | --- | --- |
-| Diagram host | `ModelDiagram.tsx` | `SemanticDiagram.tsx` | One host. Move the hooks from the old one into the new one |
-| Pane stage | `ArchitectureModelStage.tsx` | `SemanticBoardStage.tsx` | Keep the first after the repair. Take camera ownership from the second |
-| Pane header | `ModelHeader` in `ModelFrame.tsx:70` | `PaneHeader.tsx` | Keep the first |
-| Picture cache | `cachedModelDrawing` | `readCachedPicture`, `writeCachedPicture` | One path in `picture-cache.ts` |
-| Code findings | `use-model-code-findings.ts` | `use-code-findings.ts` | One owner. The second serves `CodeWarnings.tsx` and replay |
+| Concept       | Canonical                            | Board                                     | Position                                                               |
+| ------------- | ------------------------------------ | ----------------------------------------- | ---------------------------------------------------------------------- |
+| Diagram host  | `ModelDiagram.tsx`                   | `SemanticDiagram.tsx`                     | One host. Move the hooks from the old one into the new one             |
+| Pane stage    | `ArchitectureModelStage.tsx`         | `SemanticBoardStage.tsx`                  | Keep the first after the repair. Take camera ownership from the second |
+| Pane header   | `ModelHeader` in `ModelFrame.tsx:70` | `PaneHeader.tsx`                          | Keep the first                                                         |
+| Picture cache | `cachedModelDrawing`                 | `readCachedPicture`, `writeCachedPicture` | One path in `picture-cache.ts`                                         |
+| Code findings | `use-model-code-findings.ts`         | `use-code-findings.ts`                    | One owner. The second serves `CodeWarnings.tsx` and replay             |
 
 `ModelGroups`, `ModelInterface` and `ModelWalkthrough` wrap shared components. That is correct reuse.
 
