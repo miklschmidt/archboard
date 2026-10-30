@@ -5,10 +5,24 @@
   "responsibility": "Draws the warning badges and standing marks of a subject",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/svg/parts/standing.ts"
+    "path": "crates/archboard-scene/src/paint/standing.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#vbRNGERE",
   "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 60700,
+      "kind": "dependency",
+      "label": "the colours of each standing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/standing.rs",
+        "symbol": "Palette"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#u1OXg3Yy",
+      "id": "vKEsyHFk#6kjJSJqv"
+    }
+  ]
 }

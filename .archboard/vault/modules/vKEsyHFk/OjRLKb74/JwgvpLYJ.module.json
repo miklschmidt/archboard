@@ -3,7 +3,7 @@
   "name": "Layout engine",
   "kind": "function",
   "responsibility": "Lays one graph out as Track or Blocks inside a layout worker",
-  "description": "createLayoutEngine binds the initialized Graphviz and libavoid WebAssembly engines; a solve names its engine in archboard.stage and any other is refused. The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab (layout-worker.ts). Engine coordinates are never authored or persisted (ADR 0023).",
+  "description": "serveLayoutEngine takes the core that its host compiled and answers each solve with the core's layOutBoard, which runs Graphviz in the core (ADR 0059, ADR 0060). The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab. Engine coordinates are never authored or persisted (ADR 0023).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/shared/rules/engine/layout-engine.ts"
@@ -15,7 +15,7 @@
     {
       "order": 14000,
       "kind": "call",
-      "label": "lay out every block",
+      "label": "solve one graph",
       "emphasis": "hero",
       "traffic": {
         "speed": 40,
@@ -23,11 +23,24 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
-        "symbol": "placeBlocks"
+        "path": "packages/renderer/src/runtime/processes/layout-worker.ts",
+        "symbol": "layOutBoard"
       },
       "id": "vKEsyHFk/OjRLKb74#T4hTbGVM",
-      "to": "vKEsyHFk/OjRLKb74#qtwaBhit"
+      "to": "vKEsyHFk/OjRLKb74#mHYMkWdE"
+    },
+    {
+      "order": 60300,
+      "kind": "dependency",
+      "label": "whether the engine aborted",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
+        "symbol": "engineAborted"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#JzHM3KOY",
+      "id": "vKEsyHFk#kF19dfsx"
     }
   ]
 }

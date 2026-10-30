@@ -46,19 +46,6 @@
       "to": "vKEsyHFk/gbyqW4H3#4nyk76pY"
     },
     {
-      "order": 24000,
-      "kind": "call",
-      "label": "install as OffscreenCanvas, faces registered",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/services/bun-host.ts",
-        "symbol": "nodeOffscreenCanvas"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#V6JJ4OjE",
-      "to": "vKEsyHFk/gbyqW4H3#gUN928v4"
-    },
-    {
       "order": 27000,
       "kind": "call",
       "label": "Bun Workers, as the host's solve",
@@ -83,19 +70,6 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#hlcSv0hV",
       "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG"
-    },
-    {
-      "order": 30000,
-      "kind": "call",
-      "label": "measure under the Bun host, for runtime checks",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/operations/measure.ts",
-        "symbol": "measureArchitectureIn"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#YlwhO14p",
-      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
     },
     {
       "order": 73000,

@@ -9,7 +9,7 @@
       "participants": [
         "vKEsyHFk/OjRLKb74#nmyK8UOO",
         "vKEsyHFk/gbyqW4H3#J3yMo4ag",
-        "vKEsyHFk/OjRLKb74#mHYMkWdE",
+        "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
         "vKEsyHFk/OjRLKb74#oycxx6G2",
         "vKEsyHFk/gbyqW4H3#J7mPrUeP"
       ],
@@ -25,8 +25,8 @@
           "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/render/diagram.ts",
-            "symbol": "renderArchitecture"
+            "path": "crates/archboard-render/src/architecture.rs",
+            "symbol": "with_step_lines"
           }
         },
         {
@@ -46,8 +46,8 @@
                   "note": "the last 64 layouts are remembered, by content, standing, engine and policy",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/shared/rules/render/diagram.ts",
-                    "symbol": "renderArchitecture"
+                    "path": "crates/archboard-render/src/architecture.rs",
+                    "symbol": "laid"
                   }
                 }
               ]
@@ -63,8 +63,8 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/shared/rules/render/diagram.ts",
-                    "symbol": "measureArchitecture"
+                    "path": "crates/archboard-render/src/architecture.rs",
+                    "symbol": "measure_node"
                   }
                 },
                 {
@@ -75,20 +75,20 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/shared/rules/text/measurement.ts",
-                    "symbol": "measureArchitecture"
+                    "path": "crates/archboard-scene/src/measure/cards.rs",
+                    "symbol": "measure_node"
                   }
                 },
                 {
                   "id": "vKEsyHFk/OjRLKb74#kxYHJhGT",
                   "from": "vKEsyHFk/OjRLKb74#nmyK8UOO",
-                  "to": "vKEsyHFk/OjRLKb74#mHYMkWdE",
+                  "to": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
                   "label": "The engine the render names",
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/shared/rules/render/diagram.ts",
-                    "symbol": "layoutEngine"
+                    "path": "crates/archboard-render/src/architecture.rs",
+                    "symbol": "draw"
                   }
                 },
                 {
@@ -101,15 +101,15 @@
                       "steps": [
                         {
                           "id": "vKEsyHFk/OjRLKb74#ZPdck4Gv",
-                          "from": "vKEsyHFk/OjRLKb74#mHYMkWdE",
+                          "from": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
                           "to": "vKEsyHFk/OjRLKb74#oycxx6G2",
-                          "label": "layoutTracks: containers and groups drawn inline",
+                          "label": "Track: containers and groups drawn inline",
                           "kind": "sync",
                           "note": "Track unless the render asks for Blocks",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/renderer/src/shared/rules/layout/engines.ts",
-                            "symbol": "layoutTracks"
+                            "path": "crates/archboard-layout/src/architecture/mod.rs",
+                            "symbol": "placed_blocks"
                           }
                         }
                       ]
@@ -119,14 +119,14 @@
                       "steps": [
                         {
                           "id": "vKEsyHFk/OjRLKb74#TajM0vVL",
-                          "from": "vKEsyHFk/OjRLKb74#mHYMkWdE",
+                          "from": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
                           "to": "vKEsyHFk/OjRLKb74#oycxx6G2",
-                          "label": "layoutBlocks: every container a block of its own",
+                          "label": "Blocks: every container a block of its own",
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/renderer/src/shared/rules/layout/engines.ts",
-                            "symbol": "layoutBlocks"
+                            "path": "crates/archboard-layout/src/architecture/mod.rs",
+                            "symbol": "placed_blocks"
                           }
                         }
                       ]
@@ -136,13 +136,25 @@
                 {
                   "id": "vKEsyHFk/OjRLKb74#L9F90cm5",
                   "from": "vKEsyHFk/OjRLKb74#oycxx6G2",
-                  "to": "vKEsyHFk/OjRLKb74#nmyK8UOO",
+                  "to": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
                   "label": "Boxes, ports, routes and label boxes",
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
-                    "symbol": "drawnBlocks"
+                    "path": "crates/archboard-layout/src/architecture/choosing.rs",
+                    "symbol": "placed_blocks"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk#6frfbXt8",
+                  "from": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+                  "to": "vKEsyHFk/OjRLKb74#nmyK8UOO",
+                  "label": "One settled drawing",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "crates/archboard-layout/src/architecture/mod.rs",
+                    "symbol": "draw"
                   }
                 }
               ]
@@ -157,8 +169,8 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/render/diagram.ts",
-            "symbol": "paintArchitecture"
+            "path": "crates/archboard-scene/src/paint/mod.rs",
+            "symbol": "paint_architecture"
           }
         },
         {
@@ -169,20 +181,20 @@
           "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
-            "symbol": "paintArchitecture"
+            "path": "crates/archboard-scene/src/paint/architecture.rs",
+            "symbol": "paint_architecture"
           }
         },
         {
           "id": "vKEsyHFk/OjRLKb74#UMqwdfOH",
           "from": "vKEsyHFk/gbyqW4H3#J7mPrUeP",
           "to": "vKEsyHFk/OjRLKb74#nmyK8UOO",
-          "label": "SVG marks and the matching atlas",
+          "label": "Scene marks and the matching atlas",
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/svg/parts/architecture.ts",
-            "symbol": "paintArchitecture"
+            "path": "crates/archboard-scene/src/paint/architecture.rs",
+            "symbol": "paint_architecture"
           }
         }
       ]
@@ -192,9 +204,7 @@
       "name": "Sizing a card",
       "participants": [
         "vKEsyHFk/OjRLKb74#nmyK8UOO",
-        "vKEsyHFk/gbyqW4H3#J3yMo4ag",
-        "vKEsyHFk/OjRLKb74#RvOyWmEb",
-        "vKEsyHFk/gbyqW4H3#gUN928v4"
+        "vKEsyHFk/gbyqW4H3#J3yMo4ag"
       ],
       "steps": [
         {
@@ -205,8 +215,8 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/render/diagram.ts",
-            "symbol": "measureArchitecture"
+            "path": "crates/archboard-render/src/architecture.rs",
+            "symbol": "measure_node"
           }
         },
         {
@@ -225,8 +235,8 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/shared/rules/text/measurement.ts",
-                    "symbol": "measureNode"
+                    "path": "crates/archboard-scene/src/measure/cards.rs",
+                    "symbol": "measure_node"
                   }
                 }
               ]
@@ -242,8 +252,8 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/shared/rules/text/measurement.ts",
-                    "symbol": "measureNode"
+                    "path": "crates/archboard-scene/src/measure/cards.rs",
+                    "symbol": "CARD_LEAST"
                   }
                 }
               ]
@@ -266,8 +276,8 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/shared/rules/text/measurement.ts",
-                    "symbol": "measureSlab"
+                    "path": "crates/archboard-scene/src/measure/cards.rs",
+                    "symbol": "marked"
                   }
                 }
               ]
@@ -286,63 +296,25 @@
             {
               "id": "vKEsyHFk/OjRLKb74#25HE191y",
               "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
-              "to": "vKEsyHFk/OjRLKb74#RvOyWmEb",
-              "label": "prepareWithSegments(text, font)",
-              "kind": "sync",
-              "anchor": {
-                "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/renderer/src/shared/rules/text/measurement.ts",
-                "symbol": "prepareWithSegments"
-              }
-            },
-            {
-              "id": "vKEsyHFk/OjRLKb74#PmcyOckC",
-              "from": "vKEsyHFk/OjRLKb74#RvOyWmEb",
-              "to": "vKEsyHFk/gbyqW4H3#gUN928v4",
-              "label": "Measure the segments",
-              "kind": "sync"
-            },
-            {
-              "id": "vKEsyHFk/OjRLKb74#BXG2HWcT",
-              "from": "vKEsyHFk/gbyqW4H3#gUN928v4",
-              "to": "vKEsyHFk/OjRLKb74#RvOyWmEb",
-              "label": "Widths in the face the SVG will paint",
-              "kind": "return"
-            },
-            {
-              "id": "vKEsyHFk/OjRLKb74#4VDj3O5C",
-              "from": "vKEsyHFk/OjRLKb74#RvOyWmEb",
               "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
-              "label": "A reusable prepared handle",
-              "kind": "return",
+              "label": "Shape the words in their face",
+              "kind": "self",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/renderer/src/shared/rules/text/measurement.ts",
-                "symbol": "prepareWithSegments"
+                "path": "crates/archboard-scene/src/measure/cards.rs",
+                "symbol": "paragraph"
               }
             },
             {
               "id": "vKEsyHFk/OjRLKb74#5BB225La",
               "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
-              "to": "vKEsyHFk/OjRLKb74#RvOyWmEb",
-              "label": "measureNaturalWidth(handle)",
-              "kind": "sync",
-              "anchor": {
-                "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/renderer/src/shared/rules/text/measurement.ts",
-                "symbol": "measureNaturalWidth"
-              }
-            },
-            {
-              "id": "vKEsyHFk/OjRLKb74#mYPHaKGi",
-              "from": "vKEsyHFk/OjRLKb74#RvOyWmEb",
               "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
               "label": "The widest line, unbroken",
-              "kind": "return",
+              "kind": "self",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/renderer/src/shared/rules/text/measurement.ts",
-                "symbol": "measureNaturalWidth"
+                "path": "crates/archboard-scene/src/measure/cards.rs",
+                "symbol": "natural_width"
               }
             }
           ]
@@ -356,8 +328,8 @@
           "note": "a relationship label is clamped the same way, 40 to 200 wide",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/text/measurement.ts",
-            "symbol": "CARD_WIDTH"
+            "path": "crates/archboard-scene/src/measure/cards.rs",
+            "symbol": "CARD_MOST"
           }
         },
         {
@@ -368,58 +340,14 @@
             {
               "id": "vKEsyHFk/OjRLKb74#pg7iuzfp",
               "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
-              "to": "vKEsyHFk/OjRLKb74#RvOyWmEb",
-              "label": "layoutWithLines(handle, width, lineHeight)",
-              "kind": "sync",
-              "anchor": {
-                "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/renderer/src/shared/rules/text/measurement.ts",
-                "symbol": "layoutWithLines"
-              }
-            },
-            {
-              "id": "vKEsyHFk/OjRLKb74#Q7y55Dyj",
-              "from": "vKEsyHFk/OjRLKb74#RvOyWmEb",
               "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
-              "label": "Lines, widths, line count and height",
-              "kind": "return",
+              "label": "Break the words at the card's width",
+              "kind": "self",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/renderer/src/shared/rules/text/measurement.ts",
-                "symbol": "layoutWithLines"
+                "path": "crates/archboard-scene/src/measure/cards.rs",
+                "symbol": "runs_for"
               }
-            },
-            {
-              "id": "vKEsyHFk/OjRLKb74#PqSb6tfN",
-              "kind": "loop",
-              "condition": "for each wrapped line",
-              "steps": [
-                {
-                  "id": "vKEsyHFk/OjRLKb74#A3bYq29V",
-                  "from": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
-                  "to": "vKEsyHFk/gbyqW4H3#gUN928v4",
-                  "label": "Measure each wrapped line whole",
-                  "kind": "sync",
-                  "note": "the painted width wins over the sum of segments, so no character is cut",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/shared/rules/text/canvas-text.ts",
-                    "symbol": "canvasWidth"
-                  }
-                },
-                {
-                  "id": "vKEsyHFk/OjRLKb74#rLH2nWZg",
-                  "from": "vKEsyHFk/gbyqW4H3#gUN928v4",
-                  "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
-                  "label": "Its width in the painted face",
-                  "kind": "return",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/shared/rules/text/canvas-text.ts",
-                    "symbol": "canvasWidth"
-                  }
-                }
-              ]
             }
           ]
         },
@@ -431,8 +359,8 @@
           "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/text/measurement.ts",
-            "symbol": "measureSlab"
+            "path": "crates/archboard-scene/src/measure/cards.rs",
+            "symbol": "slab"
           }
         },
         {
@@ -443,8 +371,8 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/text/measurement.ts",
-            "symbol": "measureArchitecture"
+            "path": "crates/archboard-scene/src/measure/cards.rs",
+            "symbol": "measure_node"
           }
         }
       ]
@@ -453,10 +381,11 @@
       "id": "vKEsyHFk/OjRLKb74#zSKT3nqZ",
       "name": "Lay out a drawing",
       "participants": [
-        "vKEsyHFk/OjRLKb74#mHYMkWdE",
-        "vKEsyHFk/OjRLKb74#oycxx6G2",
+        "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
         "vKEsyHFk/OjRLKb74#ZRFUJrjD",
+        "vKEsyHFk/OjRLKb74#oycxx6G2",
         "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+        "vKEsyHFk/OjRLKb74#mHYMkWdE",
         "vKEsyHFk/OjRLKb74#qtwaBhit"
       ],
       "formerNames": [
@@ -464,213 +393,148 @@
       ],
       "steps": [
         {
-          "id": "vKEsyHFk/OjRLKb74#iL4N7FNL",
-          "from": "vKEsyHFk/OjRLKb74#mHYMkWdE",
-          "to": "vKEsyHFk/OjRLKb74#oycxx6G2",
-          "label": "layoutTracks or layoutBlocks",
-          "kind": "sync",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/layout/engines.ts",
-            "symbol": "layoutTracks"
-          }
-        },
-        {
           "id": "vKEsyHFk/OjRLKb74#fwbm6WZ5",
-          "from": "vKEsyHFk/OjRLKb74#oycxx6G2",
+          "from": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
           "to": "vKEsyHFk/OjRLKb74#ZRFUJrjD",
           "label": "State the graph",
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
-            "symbol": "compoundGraph"
+            "path": "crates/archboard-layout/src/architecture/mod.rs",
+            "symbol": "compound_graph"
           }
         },
         {
           "id": "vKEsyHFk/OjRLKb74#eLtscXpT",
           "from": "vKEsyHFk/OjRLKb74#ZRFUJrjD",
-          "to": "vKEsyHFk/OjRLKb74#oycxx6G2",
+          "to": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
           "label": "Containment, sizes, order and kinds as one graph",
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/layout/compound-graph.ts",
-            "symbol": "compoundGraph"
+            "path": "crates/archboard-layout/src/architecture/graph.rs",
+            "symbol": "compound_graph"
+          }
+        },
+        {
+          "id": "vKEsyHFk/OjRLKb74#iL4N7FNL",
+          "from": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+          "to": "vKEsyHFk/OjRLKb74#oycxx6G2",
+          "label": "One solve, with its nesting fixed by the graph",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "crates/archboard-layout/src/architecture/mod.rs",
+            "symbol": "placed_blocks"
           }
         },
         {
           "id": "vKEsyHFk/OjRLKb74#9PtOgYTY",
           "from": "vKEsyHFk/OjRLKb74#oycxx6G2",
           "to": "vKEsyHFk/OjRLKb74#JwgvpLYJ",
-          "label": "Solve each way to lay it out, through the host",
+          "label": "Solve it, through the host",
           "kind": "sync",
-          "note": "joins kept whole or apart; the solve runs on a layout worker",
+          "note": "the solve runs on a layout worker",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
-            "symbol": "drawnBlocks"
+            "path": "crates/archboard-layout/src/architecture/choosing.rs",
+            "symbol": "solve"
           }
         },
         {
           "id": "vKEsyHFk/OjRLKb74#YLfGDr8O",
           "from": "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+          "to": "vKEsyHFk/OjRLKb74#mHYMkWdE",
+          "label": "Solve one graph the way its options name",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/renderer/src/runtime/processes/layout-worker.ts",
+            "symbol": "layOutBoard"
+          }
+        },
+        {
+          "id": "vKEsyHFk/OjRLKb74#BglCgR5F",
+          "from": "vKEsyHFk/OjRLKb74#mHYMkWdE",
           "to": "vKEsyHFk/OjRLKb74#qtwaBhit",
           "label": "Lay every block out",
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
-            "symbol": "placeBlocks"
+            "path": "crates/archboard-layout/src/blocks/place.rs",
+            "symbol": "place"
           }
         },
         {
           "id": "vKEsyHFk/OjRLKb74#vLjbpvxS",
           "from": "vKEsyHFk/OjRLKb74#qtwaBhit",
-          "to": "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+          "to": "vKEsyHFk/OjRLKb74#mHYMkWdE",
           "label": "The drawing's geometry",
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
-            "symbol": "placeBlocks"
+            "path": "crates/archboard-layout/src/blocks/legacy.rs",
+            "symbol": "place"
+          }
+        },
+        {
+          "id": "vKEsyHFk/OjRLKb74#uVAAX22Y",
+          "from": "vKEsyHFk/OjRLKb74#mHYMkWdE",
+          "to": "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+          "label": "The drawing, in its answer's root options",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "crates/archboard-layout/src/blocks/place.rs",
+            "symbol": "lay_out_board"
           }
         },
         {
           "id": "vKEsyHFk/OjRLKb74#CDlrijzI",
           "from": "vKEsyHFk/OjRLKb74#JwgvpLYJ",
           "to": "vKEsyHFk/OjRLKb74#oycxx6G2",
-          "label": "Each solve's cards, frames, regions, routes and label boxes",
+          "label": "The solve's cards, frames, regions, routes and label boxes",
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
             "path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
-            "symbol": "createLayoutEngine"
-          }
-        },
-        {
-          "id": "vKEsyHFk/OjRLKb74#mpCTSEj5",
-          "from": "vKEsyHFk/OjRLKb74#oycxx6G2",
-          "to": "vKEsyHFk/OjRLKb74#oycxx6G2",
-          "label": "Keep the solve that reads best",
-          "kind": "self",
-          "note": "weighed as drawn: crossings, line length and fit in the reference pane of the tuned 1.4 page shape",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
-            "symbol": "drawnBlocks"
-          }
-        },
-        {
-          "id": "vKEsyHFk/OjRLKb74#hTLQ3eGY",
-          "kind": "decision",
-          "question": "Does the Track engine gather groups into regions?",
-          "alternatives": [
-            {
-              "label": "regions",
-              "steps": [
-                {
-                  "id": "vKEsyHFk/OjRLKb74#UkATOTsB",
-                  "from": "vKEsyHFk/OjRLKb74#oycxx6G2",
-                  "to": "vKEsyHFk/OjRLKb74#JwgvpLYJ",
-                  "label": "Solve again with each group packed as a block",
-                  "kind": "sync",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
-                    "symbol": "drawnBlocks"
-                  }
-                },
-                {
-                  "id": "vKEsyHFk/OjRLKb74#BglCgR5F",
-                  "from": "vKEsyHFk/OjRLKb74#JwgvpLYJ",
-                  "to": "vKEsyHFk/OjRLKb74#qtwaBhit",
-                  "label": "Lay every block out",
-                  "kind": "sync",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
-                    "symbol": "placeBlocks"
-                  }
-                },
-                {
-                  "id": "vKEsyHFk/OjRLKb74#uVAAX22Y",
-                  "from": "vKEsyHFk/OjRLKb74#qtwaBhit",
-                  "to": "vKEsyHFk/OjRLKb74#JwgvpLYJ",
-                  "label": "The drawing's geometry",
-                  "kind": "return",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
-                    "symbol": "placeBlocks"
-                  }
-                },
-                {
-                  "id": "vKEsyHFk/OjRLKb74#UGEXBQJ8",
-                  "from": "vKEsyHFk/OjRLKb74#JwgvpLYJ",
-                  "to": "vKEsyHFk/OjRLKb74#oycxx6G2",
-                  "label": "The packed solve",
-                  "kind": "return",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/shared/rules/engine/layout-engine.ts",
-                    "symbol": "createLayoutEngine"
-                  }
-                },
-                {
-                  "id": "vKEsyHFk/OjRLKb74#mVDdGjOV",
-                  "from": "vKEsyHFk/OjRLKb74#oycxx6G2",
-                  "to": "vKEsyHFk/OjRLKb74#oycxx6G2",
-                  "label": "Keep the packed solve if it reads better",
-                  "kind": "self",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
-                    "symbol": "drawnBlocks"
-                  }
-                }
-              ]
-            },
-            {
-              "label": "none",
-              "steps": []
-            }
-          ]
-        },
-        {
-          "id": "vKEsyHFk/OjRLKb74#LxoOhChw",
-          "from": "vKEsyHFk/OjRLKb74#oycxx6G2",
-          "to": "vKEsyHFk/OjRLKb74#oycxx6G2",
-          "label": "Cut the page to what it draws",
-          "kind": "self",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
-            "symbol": "drawnBlocks"
-          }
-        },
-        {
-          "id": "vKEsyHFk/OjRLKb74#5rR69oPZ",
-          "from": "vKEsyHFk/OjRLKb74#oycxx6G2",
-          "to": "vKEsyHFk/OjRLKb74#oycxx6G2",
-          "label": "Bridge the crossings as settled geometry",
-          "kind": "self",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
-            "symbol": "drawnBlocks"
+            "symbol": "serveLayoutEngine"
           }
         },
         {
           "id": "vKEsyHFk/OjRLKb74#C3xBMmQH",
           "from": "vKEsyHFk/OjRLKb74#oycxx6G2",
-          "to": "vKEsyHFk/OjRLKb74#mHYMkWdE",
+          "to": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
           "label": "One drawing: boxes, text, routes, labels",
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/blocks/tree/block-engine.ts",
-            "symbol": "drawnBlocks"
+            "path": "crates/archboard-layout/src/architecture/choosing.rs",
+            "symbol": "placed_blocks"
+          }
+        },
+        {
+          "id": "vKEsyHFk/OjRLKb74#LxoOhChw",
+          "from": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+          "to": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+          "label": "Cut the page to what it draws",
+          "kind": "self",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "crates/archboard-layout/src/architecture/mod.rs",
+            "symbol": "draw"
+          }
+        },
+        {
+          "id": "vKEsyHFk/OjRLKb74#5rR69oPZ",
+          "from": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+          "to": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+          "label": "Bridge the crossings as settled geometry",
+          "kind": "self",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "crates/archboard-layout/src/architecture/mod.rs",
+            "symbol": "draw"
           }
         }
       ]
@@ -685,7 +549,7 @@
         "vKEsyHFk/OjRLKb74#jLUi9ZuH",
         "vKEsyHFk/OjRLKb74#skrvk25Y",
         "vKEsyHFk/OjRLKb74#KdNM1Q56",
-        "vKEsyHFk/OjRLKb74#LCcblgyC"
+        "vKEsyHFk#cokLjwKT"
       ],
       "steps": [
         {
@@ -709,7 +573,7 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
+                        "path": "crates/archboard-layout/src/blocks/legacy.rs",
                         "symbol": "PackLayout"
                       }
                     },
@@ -717,12 +581,12 @@
                       "id": "vKEsyHFk/OjRLKb74#wRIl17Ia",
                       "from": "vKEsyHFk/OjRLKb74#mkxpJuY7",
                       "to": "vKEsyHFk/OjRLKb74#mkxpJuY7",
-                      "label": "Try each promising packing, keep the best scoring",
+                      "label": "Choose rows or columns from boxes and estimated routes",
                       "kind": "self",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/renderer/src/shared/rules/blocks/packing/pack.ts",
-                        "symbol": "PackLayout"
+                        "path": "crates/archboard-layout/src/blocks/packing/pack.rs",
+                        "symbol": "lay"
                       }
                     },
                     {
@@ -733,32 +597,32 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/renderer/src/shared/rules/blocks/packing/pack.ts",
+                        "path": "crates/archboard-layout/src/blocks/packing/pack.rs",
                         "symbol": "TrunkRouter"
                       }
                     },
                     {
                       "id": "vKEsyHFk/OjRLKb74#7IED3t0f",
                       "from": "vKEsyHFk/OjRLKb74#skrvk25Y",
-                      "to": "vKEsyHFk/OjRLKb74#LCcblgyC",
+                      "to": "vKEsyHFk#cokLjwKT",
                       "label": "orthogonal routes around the blocks",
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/renderer/src/shared/rules/blocks/packing/trunks.ts",
-                        "symbol": "processTransaction"
+                        "path": "crates/archboard-layout/src/blocks/packing/trunks.rs",
+                        "symbol": "route"
                       }
                     },
                     {
                       "id": "vKEsyHFk/OjRLKb74#Pd3I6jNp",
-                      "from": "vKEsyHFk/OjRLKb74#LCcblgyC",
+                      "from": "vKEsyHFk#cokLjwKT",
                       "to": "vKEsyHFk/OjRLKb74#skrvk25Y",
                       "label": "a route for each trunk",
                       "kind": "return",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/renderer/src/shared/rules/blocks/packing/trunks.ts",
-                        "symbol": "processTransaction"
+                        "path": "crates/archboard-router/src/lib.rs",
+                        "symbol": "route"
                       }
                     },
                     {
@@ -769,7 +633,7 @@
                       "kind": "return",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/renderer/src/shared/rules/blocks/packing/trunks.ts",
+                        "path": "crates/archboard-layout/src/blocks/packing/trunks.rs",
                         "symbol": "TrunkRouter"
                       }
                     },
@@ -781,7 +645,7 @@
                       "kind": "return",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/renderer/src/shared/rules/blocks/packing/pack.ts",
+                        "path": "crates/archboard-layout/src/blocks/packing/pack.rs",
                         "symbol": "PackLayout"
                       }
                     }
@@ -798,7 +662,7 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
+                        "path": "crates/archboard-layout/src/blocks/legacy.rs",
                         "symbol": "CardLayout"
                       }
                     },
@@ -810,8 +674,8 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
-                        "symbol": "entryRowEdges"
+                        "path": "crates/archboard-layout/src/blocks/card_graph.rs",
+                        "symbol": "entry_row_edges"
                       }
                     },
                     {
@@ -822,8 +686,8 @@
                       "kind": "return",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/renderer/src/shared/rules/blocks/cards/entry-row.ts",
-                        "symbol": "entryRowEdges"
+                        "path": "crates/archboard-layout/src/blocks/holding.rs",
+                        "symbol": "entry_row_edges"
                       }
                     },
                     {
@@ -834,8 +698,8 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
-                        "symbol": "renderString"
+                        "path": "crates/archboard-layout/src/blocks/card_layout.rs",
+                        "symbol": "render"
                       }
                     },
                     {
@@ -846,8 +710,8 @@
                       "kind": "return",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
-                        "symbol": "renderString"
+                        "path": "crates/archboard-layout/src/blocks/card_layout.rs",
+                        "symbol": "render"
                       }
                     },
                     {
@@ -858,7 +722,7 @@
                       "kind": "self",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
+                        "path": "crates/archboard-layout/src/blocks/card_layout.rs",
                         "symbol": "lay"
                       }
                     },
@@ -870,7 +734,7 @@
                       "kind": "return",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "packages/renderer/src/shared/rules/blocks/cards/card-layout.ts",
+                        "path": "crates/archboard-layout/src/blocks/card_layout.rs",
                         "symbol": "CardLayout"
                       }
                     }
@@ -883,25 +747,13 @@
         {
           "id": "vKEsyHFk/OjRLKb74#d0DitITp",
           "from": "vKEsyHFk/OjRLKb74#qtwaBhit",
-          "to": "vKEsyHFk/OjRLKb74#skrvk25Y",
-          "label": "weigh the routed lines, ports settled or not",
-          "kind": "sync",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
-            "symbol": "routedWeighed"
-          }
-        },
-        {
-          "id": "vKEsyHFk/OjRLKb74#CnttFwBf",
-          "from": "vKEsyHFk/OjRLKb74#skrvk25Y",
           "to": "vKEsyHFk/OjRLKb74#qtwaBhit",
-          "label": "each drawing's weighed lines",
-          "kind": "return",
+          "label": "Weigh the crossings and bends, ports settled or not",
+          "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/renderer/src/shared/rules/blocks/packing/trunks.ts",
-            "symbol": "routedWeighed"
+            "path": "crates/archboard-layout/src/blocks/legacy.rs",
+            "symbol": "crossings_and_bends"
           }
         },
         {
@@ -920,8 +772,8 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/renderer/src/shared/rules/blocks/tree/place.ts",
-                    "symbol": "settledOrNot"
+                    "path": "crates/archboard-layout/src/blocks/legacy.rs",
+                    "symbol": "lay_out"
                   }
                 }
               ]

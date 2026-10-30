@@ -2,10 +2,10 @@
   "order": 8000,
   "name": "Theme palette",
   "kind": "function",
-  "responsibility": "Resolves every drawn colour for the ground being drawn on",
+  "responsibility": "Names every drawn colour as a token of the page's theme, or a mix of tokens",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/svg/page/theme.ts"
+    "path": "crates/archboard-scene/src/paint/palette.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#u1OXg3Yy",
@@ -18,8 +18,8 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/render/diagram.ts",
-        "symbol": "PALETTE"
+        "path": "crates/archboard-scene/src/paint/mod.rs",
+        "symbol": "of_page"
       },
       "id": "vKEsyHFk/gbyqW4H3#I1lGjMES",
       "to": "vKEsyHFk/gbyqW4H3#J7mPrUeP"

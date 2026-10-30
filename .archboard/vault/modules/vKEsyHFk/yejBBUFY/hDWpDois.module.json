@@ -2,7 +2,7 @@
   "order": 11000,
   "name": "Browser renderer",
   "kind": "module",
-  "responsibility": "Installs the browser host and draws with its canvas and layout workers",
+  "responsibility": "Installs the browser host and draws with the core it loads and its layout workers",
   "groups": [
     "drawing"
   ],
@@ -55,19 +55,6 @@
       "to": "vKEsyHFk/gbyqW4H3#4nyk76pY"
     },
     {
-      "order": 25000,
-      "kind": "call",
-      "label": "load the diagram faces into the tab",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
-        "symbol": "loadDiagramFaces"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#tmrkphkd",
-      "to": "vKEsyHFk/gbyqW4H3#gUN928v4"
-    },
-    {
       "order": 28000,
       "kind": "call",
       "label": "Web Workers, as the host's solve",
@@ -81,19 +68,6 @@
       "to": "vKEsyHFk/gbyqW4H3#JzHM3KOY"
     },
     {
-      "order": 70010,
-      "kind": "call",
-      "label": "measure interface facts",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
-        "symbol": "entryPointsOf"
-      },
-      "id": "vKEsyHFk#6XCZNyGh",
-      "to": "vKEsyHFk/gbyqW4H3#ld6jjHND"
-    },
-    {
       "order": 74000,
       "kind": "call",
       "label": "render scoped semantic content",
@@ -105,6 +79,19 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#3EvpTPuC",
       "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG"
+    },
+    {
+      "order": 60600,
+      "kind": "call",
+      "label": "serve solves in a Web Worker",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/workers/layout-worker.ts",
+        "symbol": "serveLayoutEngine"
+      },
+      "to": "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+      "id": "vKEsyHFk#EwDGu9IN"
     }
   ]
 }

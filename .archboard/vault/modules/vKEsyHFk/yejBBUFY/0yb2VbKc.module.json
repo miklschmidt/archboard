@@ -41,6 +41,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#1LB0Qkb3",
       "to": "vKEsyHFk/yejBBUFY#rouptSyK"
+    },
+    {
+      "order": 60500,
+      "kind": "call",
+      "label": "break a subtitle box's lines",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/rules/subtitles/measured-lines.ts",
+        "symbol": "prepareWithSegments"
+      },
+      "to": "vKEsyHFk/OjRLKb74#RvOyWmEb",
+      "id": "vKEsyHFk#dAbW4tjz"
     }
   ]
 }

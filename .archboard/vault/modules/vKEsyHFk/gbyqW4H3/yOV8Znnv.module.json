@@ -28,19 +28,6 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#iyXO5GUb",
       "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG"
-    },
-    {
-      "order": 63000,
-      "kind": "call",
-      "label": "keep the standing to what the drawing placed",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/render/board.ts",
-        "symbol": "placedStanding"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#hRnuhqCT",
-      "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
     }
   ]
 }

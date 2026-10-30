@@ -6,7 +6,8 @@
   "description": "The geometry a reader's pointer is tested against, in viewBox units, so the picture and the inspector agree without a second measurement.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/render/atlas.ts"
+    "path": "crates/archboard-scene/src/paint/page.rs",
+    "symbol": "atlas_boxes"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#y8vuJJKu",

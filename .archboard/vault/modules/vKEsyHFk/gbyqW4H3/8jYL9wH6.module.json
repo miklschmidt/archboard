@@ -3,13 +3,27 @@
   "name": "Near and far content",
   "kind": "function",
   "responsibility": "Draws both readings of a card or header around one shared icon chip",
-  "description": "paintCardViews uses sharedChip and movingWords from far-view.ts: the chip sits outside both word layers, and the words share their first baseline while moving and scaling. From far the chip grows into a tile at the top of the face, where it stands near, and the far words start level with it. A container header and a sequence participant use the same card construction. paintHeadingViews draws a flow heading without a chip. document.ts supplies the swap rules.",
+  "description": "paint_card_views uses shared_chip and moving_words from far_view.rs: the chip sits outside both word layers, and the words share their first baseline while moving and scaling. From far the chip grows into a tile at the top of the face, where it stands near, and the far words start level with it. A container header and a sequence participant use the same card construction. paint_heading_views draws a flow heading without a chip. The SVG painter supplies the swap rules.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/svg/parts/far-card.ts"
+    "path": "crates/archboard-scene/src/paint/far_card.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#8jYL9wH6",
   "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 60800,
+      "kind": "call",
+      "label": "color words for the standing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/far_card.rs",
+        "symbol": "standing_palette"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE",
+      "id": "vKEsyHFk#qnIHdYgf"
+    }
+  ]
 }
