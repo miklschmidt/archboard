@@ -160,32 +160,41 @@ function readVault(vault: string): { boards: SemanticBoard[]; policy: Policy } {
 }
 
 /**
+ * Draw a whole board with the requested comparison content.
+ * @param job The drawing.
+ * @returns The picture, or nothing when the reading has no nodes.
+ */
+async function drawWhole(job: Job) {
+	const variant = job.board.variants.find(({ id }) => id === job.variant)!;
+	const reading = job.comparison
+		? comparisonDrawing(job.board, variant)
+		: { content: variant.content, changes: null };
+	if (reading.content.nodes.length === 0) return undefined;
+	return renderArchitecture({
+		content: reading.content,
+		...(job.comparison
+			? {
+					standing: reading.changes?.standing,
+					held: variant.content,
+					variant: variant.content,
+					paintStanding: true,
+				}
+			: {}),
+		policy: job.policy,
+		theme: job.theme,
+		layout: job.engine,
+	});
+}
+
+/**
  * Draw one job.
  * @param job The drawing.
  * @returns Its record and its SVG, or nothing when the board draws nothing there.
  */
 async function draw(job: Job): Promise<{ drawn: Drawn; svg: string } | undefined> {
-	const variant = job.board.variants.find(({ id }) => id === job.variant)!;
-	const content = variant.content;
-	const comparison =
-		job.whole && job.comparison ? comparisonDrawing(job.board, variant) : undefined;
-	if (job.whole && (comparison?.content ?? content).nodes.length === 0) return undefined;
 	const started = performance.now();
 	const reply = job.whole
-		? await renderArchitecture({
-				content: comparison?.content ?? content,
-				...(comparison === undefined
-					? {}
-					: {
-							standing: comparison.changes?.standing,
-							held: content,
-							variant: content,
-							paintStanding: true,
-						}),
-				policy: job.policy,
-				theme: job.theme,
-				layout: job.engine,
-			})
+		? await drawWhole(job)
 		: await renderBoard(
 				job.board,
 				{
