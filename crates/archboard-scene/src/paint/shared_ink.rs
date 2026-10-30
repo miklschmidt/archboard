@@ -1,7 +1,8 @@
 //! The ink of a route that another route of its trunk draws. Routes of one
 //! kind that lie on one line are a trunk: one drawn line, whose ink the
 //! heaviest of them draws (then the earliest painted), so a trunk shows one
-//! stroke, one dash pattern and one arrowhead.
+//! stroke, one dash pattern and one arrowhead. A two-way line keeps its own ink,
+//! because a trunk draws no head at its start.
 
 use std::collections::BTreeMap;
 
@@ -108,9 +109,14 @@ fn on_line(a: &Run, b: &Run) -> bool {
         && (fixed_of(a) - fixed_of(b)).abs() <= SHARED_INK
 }
 
-/// Whether two runs are one drawn line: on one line, and relationships of one kind.
+/// Whether two routes can share their ink: one-way, and relationships of one kind.
+fn one_ink(a: &Edge, b: &Edge) -> bool {
+    a.edge.kind == b.edge.kind && !a.edge.two_way && !b.edge.two_way
+}
+
+/// Whether two runs are one drawn line: on one line, and routes that can share their ink.
 fn same_ink(edges: &[Edge], a: &Run, b: &Run) -> bool {
-    on_line(a, b) && edges[a.edge_index].edge.kind == edges[b.edge_index].edge.kind
+    on_line(a, b) && one_ink(&edges[a.edge_index], &edges[b.edge_index])
 }
 
 /// Whether one route draws the ink it shares with another: the heavier, then the earlier.
@@ -212,7 +218,7 @@ pub(super) fn shared_ink(edges: &[Edge]) -> BTreeMap<usize, Vec<Curve>> {
                     *index == edge_index
                         && turns.iter().any(|(other_index, other)| {
                             *other_index != edge_index
-                                && edges[*other_index].edge.kind == edges[edge_index].edge.kind
+                                && one_ink(&edges[*other_index], &edges[edge_index])
                                 && outranks(edges, *other_index, edge_index)
                                 && same_turn(turn, other)
                         })

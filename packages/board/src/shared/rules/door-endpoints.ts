@@ -42,11 +42,13 @@ function doorEndpoints(projection: Projection, door: string): DoorEndpoints[] {
 	if (!projection.context.some((module) => module.id === door)) return [];
 	const parents = new Map(projection.complete.nodes.map((node) => [node.id, node.parent]));
 	const parts = new Set(projection.children.map((node) => node.id));
+	const doorSide = new Set([door]);
 	const groups = new Map<string, Edge[]>();
 	const lines = projection.listed.filter(({ line }) => line.from === door || line.to === door);
-	for (const { line, joins } of lines) {
+	for (const { joins } of lines) {
 		for (const edge of joins) {
-			const part = holdingPart(line.from === door ? edge.to : edge.from, parents, parts);
+			const inDoor = holdingPart(edge.from, parents, doorSide) === door;
+			const part = holdingPart(inDoor ? edge.to : edge.from, parents, parts);
 			groups.set(part, [...(groups.get(part) ?? []), edge]);
 		}
 	}

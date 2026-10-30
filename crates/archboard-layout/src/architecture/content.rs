@@ -89,6 +89,10 @@ pub struct Edge {
     /// The traffic it illustrates, when it has any.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub traffic: Option<Traffic>,
+    /// Whether a joined line holds relationships in both directions, as a reading words it;
+    /// never stored on a board.
+    #[serde(default, rename = "twoWay", skip_serializing_if = "std::ops::Not::not")]
+    pub two_way: bool,
 }
 
 impl Edge {
@@ -101,6 +105,7 @@ impl Edge {
             kind: self.kind.clone(),
             emphasis: self.emphasis,
             traffic: self.traffic,
+            two_way: self.two_way,
         }
     }
 }

@@ -3,7 +3,7 @@
 //! the same scene is the same bytes.
 
 use archboard_scene::names::word;
-use archboard_scene::scene::{Geometry, Purpose, Shape};
+use archboard_scene::scene::{Geometry, MarkerId, Purpose, Shape};
 
 use crate::colour::paint;
 use crate::definitions::{Names, marker_id};
@@ -138,13 +138,9 @@ fn key(shape: &Shape, key: Key, names: &Names, arrowhead: Spelling, out: &mut At
         }
         Place => place(shape, arrowhead, out),
         Marker => {
-            out.maybe(
-                "marker-end",
-                shape
-                    .marker
-                    .as_ref()
-                    .map(|id| format!("url(#{})", marker_id(id))),
-            );
+            let url = |id: &MarkerId| format!("url(#{})", marker_id(id));
+            out.maybe("marker-start", shape.start_marker.as_ref().map(url));
+            out.maybe("marker-end", shape.marker.as_ref().map(url));
         }
         Fill => {
             out.maybe("fill", shape.fill.as_ref().map(paint));

@@ -149,7 +149,7 @@ describe("the overview a board opens on", () => {
 		expect(overview.edges[0]).toMatchObject({ id: "e1", from: "pl", to: "ld", kind: MIXED_KIND });
 	});
 
-	test("says nothing on a joined line that only some of its relationships say", () => {
+	test("says of a joined line only what stands for all of its relationships", () => {
 		const calls = content({
 			nodes: [PLATFORM, GATEWAY, ROUTER, AUDIT, LEDGER],
 			edges: [
@@ -177,19 +177,9 @@ describe("the overview a board opens on", () => {
 			from: "pl",
 			to: "ld",
 			kind: "call",
+			label: "from Gateway",
 			emphasis: "normal",
 		});
-	});
-
-	test("draws a joined line of unlabelled relationships without a label", () => {
-		const bare = content({
-			nodes: [PLATFORM, GATEWAY, ROUTER, LEDGER],
-			edges: [
-				{ id: "e1", from: "rt", to: "ld", kind: "call" },
-				{ id: "e2", from: "gw", to: "ld", kind: "call" },
-			],
-		});
-		expect(scopedContent(bare, { kind: "overview" }).edges[0]?.label).toBeUndefined();
 	});
 
 	test("names the relationships each joined line stands for, as they were stated", () => {

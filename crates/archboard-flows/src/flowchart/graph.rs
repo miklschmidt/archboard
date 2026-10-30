@@ -100,6 +100,7 @@ impl<'a> Building<'a> {
                 emphasis: Emphasis::Normal,
                 label: exit.label.map(str::to_owned),
                 traffic: None,
+                two_way: false,
             });
         }
     }

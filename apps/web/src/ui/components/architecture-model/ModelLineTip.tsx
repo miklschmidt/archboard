@@ -1,7 +1,7 @@
 import { useMemo, type JSX } from "react";
 import { Tooltip } from "@archboard/ui-kit/components";
 import type { Model, projectModel } from "@archboard/board/content";
-import { kindNames, moduleName } from "#ui/components/architecture-model/ModelConnections.tsx";
+import { kindNames, lineEnds } from "#ui/components/architecture-model/ModelConnections.tsx";
 import {
 	tipAnchor,
 	type TipTarget,
@@ -36,33 +36,20 @@ function ModelLineTip(props: ModelLineTipProps): JSX.Element | null {
 				className="w-max max-w-96 flex-col items-stretch gap-2"
 			>
 				<p className="text-body font-semibold">
-					{ends(connection.line, model, projection.reference)}
+					{lineEnds(connection.line, model, projection.reference)}
 				</p>
 				<p className="text-technical text-muted-foreground">{kindNames(model, connection.joins)}</p>
 				<ul className="text-body space-y-1">
 					{connection.joins.map((edge) => (
 						<li key={edge.id}>
 							{edge.label === undefined ? "" : `${edge.label}: `}
-							{ends(edge, model, projection.reference)}
+							{lineEnds(edge, model, projection.reference)}
 						</li>
 					))}
 				</ul>
 			</Tooltip.Content>
 		</Tooltip>
 	);
-}
-
-/**
- * The two ends of a line or a relationship, by name.
- * @param line The line.
- * @param line.from Where it starts.
- * @param line.to Where it ends.
- * @param model The model that names its modules.
- * @param reference The comparison base, for a removed module.
- * @returns Both names.
- */
-function ends(line: { from: string; to: string }, model: Model, reference: Model | undefined) {
-	return `${moduleName(model, line.from, reference)} → ${moduleName(model, line.to, reference)}`;
 }
 
 export { ModelLineTip };

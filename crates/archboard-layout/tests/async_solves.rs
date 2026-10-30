@@ -117,7 +117,6 @@ fn board(grouped: bool) -> (Content, Measured) {
                     width: 50.0,
                     height: 20.0,
                     runs: Vec::new(),
-                    chips: Vec::new(),
                 },
             ))
             .collect(),

@@ -2,7 +2,7 @@
 //! keeps clear of.
 
 use super::{
-    Chip, DrawingBridge, Emphasis, MeasuredLabel, PlacedLabel, Rect, across, across_from, bridged,
+    DrawingBridge, Emphasis, MeasuredLabel, PlacedLabel, Rect, across, across_from, bridged,
     bulge_of, down, down_from, drawing, drawn, hops, lone_hop, points,
 };
 
@@ -81,10 +81,6 @@ fn a_hop_keeps_a_labels_clearance_from_it_bulging_away_where_it_must() {
             width: 30.0,
             height: 8.0,
             runs: Vec::new(),
-            chips: vec![Chip {
-                y: 0.0,
-                height: 8.0,
-            }],
         },
     });
     let result = bridged(&labelled);

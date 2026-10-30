@@ -12,8 +12,8 @@ mod shown;
 use std::collections::BTreeMap;
 
 use archboard_scene::drawing::{
-    ArchitectureDrawing, Bridged, Chip, DrawingBridge, DrawingEdge, EdgeFacts, Emphasis,
-    MeasuredLabel, NodeFacts, PlacedLabel, ReadingDirection,
+    ArchitectureDrawing, Bridged, DrawingBridge, DrawingEdge, EdgeFacts, Emphasis, MeasuredLabel,
+    NodeFacts, PlacedLabel, ReadingDirection,
 };
 use archboard_scene::geometry::{Curve, Point, Rect, Segment, curve_bounds, curve_through};
 use archboard_scene::request::{Arrowhead, Dash};
@@ -40,6 +40,7 @@ fn facts(index: usize) -> EdgeFacts {
         kind: "call".to_owned(),
         emphasis: Emphasis::Normal,
         traffic: None,
+        two_way: false,
     }
 }
 
@@ -344,10 +345,6 @@ fn routes_that_cross_where_they_turn_onto_one_row_hop_on_straight_runs() {
             width: 60.0,
             height: 20.0,
             runs: Vec::new(),
-            chips: vec![Chip {
-                y: 0.0,
-                height: 20.0,
-            }],
         },
     });
     let result = bridged(&before);
