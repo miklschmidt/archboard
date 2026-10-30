@@ -1,9 +1,11 @@
 ---
 id: TASK-559
 title: Scrutinize PR 19 and restore the quality of the canonical model reader
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T15:18:00Z'
+updated_date: '2026-10-30T15:48:00Z'
 labels:
   - frontend
   - review
@@ -52,3 +54,11 @@ Before PR #19, the board canvas owned the transitions. Compare with origin/main 
 - [ ] #6 A tab that is open and idle costs the server no more than a few percent of one core
 - [ ] #7 The owner approves the merge of PR 19
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Owner, 2026-10-30, on this task: the whole UX around navigating the new data model needs redesign. The Blocks renderer, which was supposed to reduce area significantly in PR 24, creates obscene amounts of dead space. The UI, the starting point, and the amount of information in the small right sidebar overwhelm the user. The levers that gather information for readable diagrams are good, and the data model suits recursive decomposition, but the UX execution is atrocious. The task needs redesign by agents, focused on the user journey, done autonomously, with a council of Astra and Opus finding the path.
+
+Owner, 2026-10-30: numbered containers such as Layer 4 and Layer 6 are too abstract, and a person cannot relate them to the code or project structure. In this repository's model, Layer 0 to Layer 7 have kind other and no code binding, and each states an import rule. Layers 1 to 4 hold one child each. The rule comes from tests/system/repository-policy/package-graph.test.ts.
+<!-- SECTION:NOTES:END -->
