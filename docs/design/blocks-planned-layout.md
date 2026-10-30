@@ -1,6 +1,6 @@
 # Planned Blocks layout
 
-Status: proposed for TASK-554 on 2026-10-28, revised for the hybrid iteration on 2026-10-29.
+Status: accepted for TASK-554 on 2026-10-30, after the hybrid revision on 2026-10-29.
 The owner selected legacy Blocks placement with planned routing after three placement trials failed the visual gates.
 The hybrid contract below supersedes the original placement proposal.
 The remaining sections preserve the investigation and its earlier checkpoints.
@@ -127,6 +127,144 @@ The six reference gates require lower route length and bend counts, no area incr
 The complete corpus must improve routing measures and area while retaining Track output and deterministic drawings.
 First renders and growing edits on the three timing boards must include painting in the 500 ms budget.
 Iteration evidence belongs in `/tmp/blocks-explore/build/report-4.md`.
+
+## Final corpus measurements, 2026-10-30
+
+The base is `feat/faster-first-render` at `09d251662`.
+Main is the TypeScript renderer at `38a8da877`, read from the saved council 562 SVGs without another render.
+Head is `568d3b0ce`, whose renderer code stays unchanged at `9f8d764da`.
+The rebuilt base and head cores report `2b007be6a7de691b` and `2a30a0f7f56851ce`.
+
+The corpus includes every saved variant, authored view, overview, and whole board in the repository and example vaults.
+Both comparison modes use the light theme.
+The tables include only drawing keys that all three sides produced.
+A key names the vault, board, variant, view, engine, theme, and comparison mode.
+Base and head use identical board content, including the two boards updated after the base commit.
+Main retains its saved inputs, which differ on 366 shared readings of Renderer layout and Semantic renderer.
+
+| Coverage                                   |  Base |  Main |  Head |
+| ------------------------------------------ | ----: | ----: | ----: |
+| Available plain drawings                   | 4,072 | 3,981 | 4,072 |
+| Available comparison drawings              | 7,823 | 7,294 | 7,788 |
+| Missing plain drawings from the union      |     0 |    91 |     0 |
+| Missing comparison drawings from the union |     0 |   529 |    35 |
+
+The shared set contains 3,981 plain drawings and 7,294 comparison drawings.
+The plain set includes 381 whole boards.
+Main lacks all 400 whole-board comparison drawings, so that category contributes no shared measurements.
+Head refuses 35 of those requests with `No clear planned channel` errors.
+The evidence records each refusal in `head/failures.json`.
+
+| Plain drawings                 |           Base |           Main |           Head |
+| ------------------------------ | -------------: | -------------: | -------------: |
+| Drawings                       |          3,981 |          3,981 |          3,981 |
+| Total page area, units²        | 15,622,638,751 | 13,406,632,342 | 11,711,717,137 |
+| Mean page area, units²         |   3,924,300.11 |   3,367,654.44 |   2,941,903.33 |
+| Mean card area, units²         |      30,415.01 |      30,414.89 |      30,418.05 |
+| Mean frame area, units²        |   1,199,756.32 |   1,010,320.46 |     989,414.33 |
+| Routes                         |         65,765 |         65,735 |         65,765 |
+| Bends per route                |         2.3509 |         2.3103 |         1.2224 |
+| Routes with four or more bends |         30.96% |         29.99% |          4.11% |
+| Total route length, units      |  79,488,464.93 |  70,732,668.46 |  64,862,959.58 |
+| Mean route length, units       |       1,208.67 |       1,076.03 |         986.28 |
+| Long detours                   |              0 |          3,935 |          2,051 |
+| Detached labels                |              0 |              0 |              0 |
+| Hard geometry findings         |          7,517 |         27,950 |              0 |
+| Drawings with hard findings    |          1,223 |          1,624 |              0 |
+
+| Comparison drawings            |           Base |           Main |           Head |
+| ------------------------------ | -------------: | -------------: | -------------: |
+| Drawings                       |          7,294 |          7,294 |          7,294 |
+| Total page area, units²        | 15,131,046,470 | 14,168,043,881 | 14,355,988,582 |
+| Mean page area, units²         |   2,074,451.12 |   1,942,424.44 |   1,968,191.47 |
+| Mean card area, units²         |      27,988.70 |      28,000.81 |      27,988.65 |
+| Mean frame area, units²        |     904,044.28 |     838,228.19 |     844,955.14 |
+| Routes                         |        118,364 |        117,163 |        118,364 |
+| Bends per route                |         1.1145 |         1.0801 |         0.8382 |
+| Routes with four or more bends |         10.22% |          9.50% |          2.73% |
+| Total route length, units      |  53,477,670.37 |  50,790,924.82 |  49,680,049.78 |
+| Mean route length, units       |         451.81 |         433.51 |         419.72 |
+| Long detours                   |              0 |          2,054 |            955 |
+| Detached labels                |              0 |              0 |              0 |
+| Hard geometry findings         |          4,548 |         10,445 |              0 |
+| Drawings with hard findings    |          1,103 |          1,634 |              0 |
+
+Page means weight drawings equally, and route means weight relationships and flow steps equally.
+Card means count painted node faces, excluding container headers.
+Frame means count container and group frames separately, including nested frames.
+The geometry inventory covers 2,351 plain and 1,989 comparison architecture drawings.
+It applies the current eleven guards, including opposite ports within one lane, and counts individual findings.
+Sixty-one historical subject-set mismatches remain separate from geometry findings at head.
+
+The route measure comes from `readability-6.ts`, with the fresh base corpus as its reference.
+A long detour exceeds its matching base route by both 50 percent and 300 units.
+For 1,672 main comparison routes without a matching base route, the reference is direct orthogonal distance.
+A detached label stands more than 12 units from its route.
+The tool measures each visible label plate separately.
+
+Against the base, head reduces plain page area by 25.03 percent and plain route length by 18.40 percent.
+Comparison area falls 5.12 percent and route length falls 7.10 percent.
+Against main, plain area falls 12.64 percent, while comparison area rises 1.33 percent.
+The changed saved inputs limit the attribution of main differences to renderer code alone.
+
+The timing harness uses `focus-5.ts` with `host-5.ts` and `FOCUS_TIMING_ONLY=1` inside `nix develop`.
+Each value below is the median of three fresh processes after the harness warm-up, including SVG painting.
+The harness uses its original dark theme and increases a card height for each growing edit.
+The six processes alternate base and head order.
+
+The machine is an Intel Core i7-13700K with 24 logical CPUs.
+Its one-minute load ranges from 3.97 to 4.42.
+These samples overlap no build, test, or corpus work from this task.
+Other work on the machine remains active.
+
+| Timing, milliseconds    | Base first | Head first | Base growing edit | Head growing edit |
+| ----------------------- | ---------: | ---------: | ----------------: | ----------------: |
+| Board viewer            |    1475.29 |     392.41 |           1376.89 |            302.98 |
+| Board persistence       |     969.62 |     246.17 |            963.59 |            246.46 |
+| Archboard server routes |    1120.44 |     194.73 |           1107.91 |            189.43 |
+
+All eighteen head samples stay below 500 milliseconds, with a maximum of 419.45 milliseconds.
+
+Councils 562 and 563 compare forty architecture pairs against main at `38a8da877`.
+Their graders are Opus, gpt-6.1-sol, and gpt-6-astra.
+Council 562 judges `7b55b3332`, the predecessor of the compaction change.
+Council 563 judges `7c9667042`, with 32 plain and eight comparison pairs.
+The margins are Blocks minus main, as recorded in TASK-554.
+
+| Council | Better | Same | Worse |     K |     R |     T |     L |     O |     W |
+| ------- | -----: | ---: | ----: | ----: | ----: | ----: | ----: | ----: | ----: |
+| 562     |     23 |    9 |     8 | -0.66 | -0.34 | -0.02 |  0.00 | -0.01 | -0.17 |
+| 563     |     33 |    7 |     0 | +1.56 | +0.62 | +0.19 | -0.07 | +0.26 | +1.07 |
+
+The [council criteria](grading-council/criteria.md) define K, R, T, L, O, and W.
+The council evidence remains under `/tmp/council-{562,563}/out/` and `/tmp/grading-{562,563}/`.
+Measurement evidence lives under `/tmp/blocks-explore/build/measure-final/`.
+It includes the SVGs, manifests, per-drawing measurements, guard findings, timing samples, source hashes, commands, and complete gate log.
+Main SVGs remain under `/tmp/council-562/mixed/runs/before/`.
+
+The temporary tools change checkout paths and output paths, add whole-board comparisons, and apply the same geometry guards to every side.
+`prepare.py` prepares the tools, and `commands.sh` records the corpus and measurement commands with their complete paths.
+The base worktree is detached at `09d251662`.
+The base renderer reads the head versions of Renderer layout and Semantic renderer through `base-current`, then `merge-base.py` replaces those records.
+`main-inputs.ts` reads `/tmp/council-main/before` only to recover semantic facts for its existing SVGs.
+The reconstructed SVG boxes match the base and head atlases within 0.011 units for every shared architecture drawing.
+
+```bash
+# From each measured checkout, before rendering:
+nix develop --command bun install
+nix develop --command bun run build
+nix develop --command bun run build:core
+
+# Full command paths and environments are recorded here:
+bash /tmp/blocks-explore/build/measure-final/commands.sh
+
+# From the head checkout, after all measurement processes finish:
+python3 /tmp/blocks-explore/build/measure-final/timings.py
+nix develop --command bun run check
+```
+
+`nix develop --command bun run check` passes all twenty tasks, including all nineteen browser owners.
+The measurement changes only this document and the status of ADR 0063.
 
 ## Original proposal and investigation
 
