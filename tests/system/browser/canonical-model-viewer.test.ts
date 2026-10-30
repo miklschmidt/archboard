@@ -1,4 +1,4 @@
-import { openAbout, refreshModel } from "./support/canonical-page.ts";
+import { openAbout, refreshModel, listedParts } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -55,11 +55,6 @@ test("canonical modules open their authored details without writing architecture
 		"the model pane to connect",
 		WAIT,
 	);
-	expect(
-		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(row => row.getAttribute('data-module-id'))`,
-		),
-	).toEqual(["Shop#Worker", "Shop#Gateway"]);
 	await pollUntil(
 		() =>
 			browser.eval<string[]>(
@@ -74,8 +69,9 @@ test("canonical modules open their authored details without writing architecture
 			`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Handler"]') === null`,
 		),
 	).toBe(true);
-	await openAbout(browser);
+	expect(await listedParts(browser)).toEqual(["Shop#Worker", "Shop#Gateway"]);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
+	await openAbout(browser, "selection");
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(
@@ -241,7 +237,7 @@ test("current model readings refresh after external edits and reconnect with exp
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"]') !== null`,
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]') !== null`,
 			),
 		Boolean,
 		"the current modules",

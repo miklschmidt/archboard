@@ -1,4 +1,4 @@
-import { openAbout } from "./support/canonical-page.ts";
+import { openAbout, pick } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -130,8 +130,7 @@ test("proposal comparison draws removed definitions from its coherent base and e
 			`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="${queue.id}"][data-semantic-standing="added"]') !== null && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"][data-semantic-standing="changed"]') !== null && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Dispatch"][data-semantic-standing="removed"]') !== null`,
 		),
 	).toBe(true);
-	await openAbout(browser);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Worker"]']);
+	await pick(browser, "Shop#Worker");
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -141,8 +140,7 @@ test("proposal comparison draws removed definitions from its coherent base and e
 		"the removed module's base definition",
 		WAIT,
 	);
-	await openAbout(browser);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
+	await pick(browser, "Shop#Gateway");
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

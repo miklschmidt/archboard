@@ -15,6 +15,7 @@ import {
 } from "./support/agent-browser.ts";
 import { fixtureGit, initializeSource, selectReading } from "./support/canonical-model.ts";
 import { serverPath } from "./support/navigator-support.ts";
+import { openAbout } from "./support/canonical-page.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
 
@@ -58,6 +59,7 @@ test("imported planning models remain readable through exact history and compari
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", `${server.base}/?modelA=Shop`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
+	await openAbout(browser);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -99,6 +101,7 @@ test("imported planning models remain readable through exact history and compari
 		WAIT,
 	);
 	await browser.run(["reload"]);
+	await openAbout(browser);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

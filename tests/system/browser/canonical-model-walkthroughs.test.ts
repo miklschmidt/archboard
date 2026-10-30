@@ -1,4 +1,4 @@
-import { openDestination, openAbout } from "./support/canonical-page.ts";
+import { openDestination, openAbout, pick } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -155,15 +155,13 @@ test("walkthrough beats change readings while one revision stays captured until 
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Handler"]') !== null`,
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Handler"]') !== null`,
 			),
 		Boolean,
 		"the original handler selection",
 		WAIT,
 	);
-	await openAbout(browser);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Handler"]']);
-	await openAbout(browser);
+	await pick(browser, "Shop#Handler");
 	await openDestination(browser, "walkthroughs");
 	await pollUntil(
 		() =>

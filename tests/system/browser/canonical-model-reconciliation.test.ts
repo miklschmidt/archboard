@@ -24,7 +24,7 @@ import {
 	selectReading,
 	selectState,
 } from "./support/canonical-model.ts";
-import { openAbout } from "./support/canonical-page.ts";
+import { openAbout, pick } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -130,13 +130,13 @@ test("proposal conflicts preserve coherent content, blocked ancestry, live settl
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"]') !== null`,
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]') !== null`,
 			),
 		Boolean,
 		"the selected proposal",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
+	await pick(browser, "Shop#Gateway");
 	await edit(request, "Current", {
 		changes: [
 			{

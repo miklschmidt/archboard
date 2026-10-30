@@ -18,6 +18,7 @@ import {
 } from "./support/agent-browser.ts";
 import { initializeSource, selectReading } from "./support/canonical-model.ts";
 import { serverPath } from "./support/navigator-support.ts";
+import { openAbout, openDiagram, pick } from "./support/canonical-page.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
 
@@ -84,6 +85,7 @@ test("planning readings use retained predecessors and preserve unavailable state
 	address.searchParams.set("stateA", "Plan");
 	await browser.run(["open", address.href]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
+	await openAbout(browser);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -159,7 +161,8 @@ test("planning readings use retained predecessors and preserve unavailable state
 		"the child compared with its retained named predecessor",
 		WAIT,
 	);
-	await browser.run(["click", `[data-slot="module-list"] [data-module-id="${plannedModule}"]`]);
+	await openDiagram(browser);
+	await pick(browser, plannedModule);
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(

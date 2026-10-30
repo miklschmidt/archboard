@@ -58,7 +58,7 @@ test("browser keyboard input keeps trusted keys, modifiers, and native focus", a
 
 const WAIT = { timeoutMs: 8_000 } as const;
 
-test("module search restores the sidebar and finds hidden modules without writing architecture", async () => {
+test("module search finds hidden modules without writing architecture", async () => {
 	await using resources = new AsyncDisposableStack();
 	const vault = vaultIn(join(browserTestRoots().ownerRoot, "module-inspection"));
 	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
@@ -81,14 +81,6 @@ test("module search restores the sidebar and finds hidden modules without writin
 		WAIT,
 	);
 	const searching = () => partSearchState(browser.eval.bind(browser));
-	await browser.run(["click", '[data-slot="semantic-sidebar-toggle"]']);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(`document.querySelector('[data-slot="semantic-sidebar"]') === null`),
-		Boolean,
-		"the hidden sidebar",
-		WAIT,
-	);
 	await browser.run(["press", "Control+k"]);
 	await pollUntil(
 		searching,

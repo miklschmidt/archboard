@@ -21,7 +21,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { initializeSource, fixtureGit, selectReading } from "./support/canonical-model.ts";
-import { openAbout, openRepository } from "./support/canonical-page.ts";
+import { openAbout, openRepository, pick } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -60,13 +60,14 @@ async function selectGateway(browser: AgentBrowserSession): Promise<void> {
 				stage: string | null;
 				modules: string[];
 			}>(
-				`({ present: document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Gateway"]') !== null, url: location.href, error: document.querySelector('[data-slot="model-error"]')?.textContent ?? null, stage: document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-state') ?? null, modules: [...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(node => node.getAttribute('data-module-id')) })`,
+				`({ present: document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]') !== null, url: location.href, error: document.querySelector('[data-slot="model-error"]')?.textContent ?? null, stage: document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-state') ?? null, modules: [...document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"]')].map(node => node.getAttribute('data-semantic-id')) })`,
 			),
 		(value) => value.present,
 		"the source module",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
+	await pick(browser, "Shop#Gateway");
+	await openAbout(browser, "selection");
 }
 
 async function followGateway(browser: AgentBrowserSession): Promise<void> {

@@ -14,12 +14,18 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { initializeSource, selectReading, unfoldedHistory } from "./support/canonical-model.ts";
-import { openAbout, editCanonicalModel as edit } from "./support/canonical-page.ts";
+import {
+	openAbout,
+	editCanonicalModel as edit,
+	openDiagram,
+	pick,
+} from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 8_000 } as const;
 
 async function roots(browser: AgentBrowserSession): Promise<string[]> {
+	await openAbout(browser);
 	return browser.eval<string[]>(
 		`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]:not([data-standing="removed"])')].map(row => row.getAttribute('data-module-id'))`,
 	);
@@ -82,8 +88,8 @@ test("structural writes refresh current modules while exact history and selected
 		"the retained architecture",
 		WAIT,
 	);
-	await openAbout(browser);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
+	await openDiagram(browser);
+	await pick(browser, "Shop#Gateway");
 	await pollUntil(
 		() => selectedName(browser),
 		(name) => name === "Gateway",
@@ -124,7 +130,6 @@ test("structural writes refresh current modules while exact history and selected
 		WAIT,
 	);
 	expect(await selectedName(browser)).toBe("Gateway");
-	await openAbout(browser);
 	expect(await roots(browser)).toEqual(["Shop#Worker", "Shop#Gateway"]);
 	await pollUntil(
 		() =>
@@ -185,8 +190,8 @@ test("structural writes refresh current modules while exact history and selected
 		WAIT,
 	);
 	expect(await selectedName(browser)).toBe("API");
-	await openAbout(browser);
-	await browser.run(["click", `[data-slot="module-list"] [data-module-id="${cache.id}"]`]);
+	await openDiagram(browser);
+	await pick(browser, cache.id);
 	await edit(request, vault, "remove-cache", [{ type: "remove-module", subject: cache.id }]);
 	await pollUntil(
 		() =>
@@ -197,11 +202,15 @@ test("structural writes refresh current modules while exact history and selected
 		"the removed selection without a replacement",
 		WAIT,
 	);
-	await openAbout(browser);
 	expect(await roots(browser)).toEqual(["Shop#Worker"]);
 	await selectReading(browser, baseline);
 	expect(await roots(browser)).toEqual(["Shop#Worker", "Shop#Gateway"]);
-	await openAbout(browser);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
-	expect(await selectedName(browser)).toBe("Gateway");
+	await openDiagram(browser);
+	await pick(browser, "Shop#Gateway");
+	await pollUntil(
+		() => selectedName(browser),
+		(name) => name === "Gateway",
+		"the selected module in the retained reading",
+		WAIT,
+	);
 }, 90_000);

@@ -251,13 +251,11 @@ test(
 		expect(presented.orb).toBe("box");
 		// Fullscreen keeps the picture and hides the reader's navigation and inspection controls.
 		expect(
-			await browser.eval<
-				boolean[]
-			>(`['pane-header', 'model-parts', 'semantic-sidebar', 'model-breadcrumbs', 'model-selection-bar', 'model-state-details'].map(slot => {
+			await browser.eval<boolean[]>(`['pane-header', 'model-breadcrumbs'].map(slot => {
 				const element = document.querySelector('${PANE_SECTIONS} [data-slot="' + slot + '"]');
 				return element !== null && !element.checkVisibility();
 			})`),
-		).toEqual([true, true, true, true, true, true]);
+		).toEqual([true, true]);
 		// The bar's key and the keys at the end of the voice box over the picture can be pressed.
 		for (const scale of ["1", "2"]) {
 			await browser.run(["set", "viewport", "1920", "1080", scale]);

@@ -1,4 +1,4 @@
-import { editCanonicalModel, openAbout } from "./support/canonical-page.ts";
+import { editCanonicalModel, openAbout, pick } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -45,8 +45,7 @@ test("an explanation keeps its captured comparison and selection after scope nav
 		},
 	]);
 	await selectReading(browser, retained.body.checkpoint.id);
-	await openAbout(browser);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
+	await pick(browser, "Shop#Gateway");
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-explain"]') !== null`),
 		Boolean,
@@ -167,7 +166,9 @@ async function openReader(resources: AsyncDisposableStack) {
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() =>
-			browser.eval<boolean>(`document.querySelector('[data-module-id="Shop#Gateway"]') !== null`),
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]') !== null`,
+			),
 		Boolean,
 		"the canonical selection",
 		WAIT,
@@ -202,7 +203,7 @@ async function menuReady(browser: AgentBrowserSession, action: string) {
 test("keyboard and context actions expose unavailable agents, captured retry, and cancellation", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { fixture, server, browser } = await openReader(resources);
-	const gateway = '[data-slot="module-list"] [data-module-id="Shop#Gateway"]';
+	const gateway = '[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]';
 	await browser.run(["click", gateway]);
 	await browser.run(["press", "Shift+F10"]);
 	await menuReady(browser, "explain-selection");
@@ -230,9 +231,7 @@ test("keyboard and context actions expose unavailable agents, captured retry, an
 	await actionStatus(browser, "cancelled");
 	await openAbout(browser);
 	await browser.run(["scrollintoview", '[data-slot="module-list"] [data-module-id="Shop#Worker"]']);
-	await openAbout(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Worker"]']);
-	await openAbout(browser);
 	const point = await browser.eval<{ x: number; y: number }>(
 		`(() => { const r = document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Worker"]').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`,
 	);

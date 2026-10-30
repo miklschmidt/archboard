@@ -82,6 +82,7 @@ test("a group selects all canonical members across scopes and changes no archite
 		WAIT,
 	);
 	await browser.run(["click", CHOICE]);
+	await openAbout(browser, "selection");
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

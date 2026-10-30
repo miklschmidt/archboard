@@ -311,7 +311,15 @@ async function openAbout(
 	);
 }
 
-export { openAbout, openDiagram };
+/** Read the parts of the reading from the list on About, where the reader stays. */
+async function listedParts(browser: AgentBrowserSession): Promise<string[]> {
+	await openAbout(browser);
+	return browser.eval<string[]>(
+		`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(row => row.getAttribute('data-module-id'))`,
+	);
+}
+
+export { listedParts, openAbout, openDiagram };
 
 /**
  * Read again as a person does who comes back to the page. A healthy reading has no Refresh,

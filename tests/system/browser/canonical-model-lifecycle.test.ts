@@ -19,7 +19,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { initializeSource, selectReading } from "./support/canonical-model.ts";
-import { refreshModel } from "./support/canonical-page.ts";
+import { refreshModel, openAbout } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -75,6 +75,7 @@ async function edit(
 }
 
 async function stateIs(browser: AgentBrowserSession, id: string, lifecycle: string): Promise<void> {
+	await openAbout(browser);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

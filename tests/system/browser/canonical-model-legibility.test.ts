@@ -341,12 +341,18 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector("${INSPECTOR} [data-slot='semantic-inspector-waiting'] [data-field='responsibility']") !== null && document.querySelector("${INSPECTOR}")?.textContent.includes('the write path') === true`,
+				`document.querySelector("[data-slot='model-panel'] ${INSPECTOR} [data-slot='semantic-inspector-waiting'] [data-field='responsibility']") !== null`,
 			),
 		Boolean,
-		"the inspector to explain the warning and name the group",
+		"the panel to explain the warning on its subject",
 		WAIT,
 	);
+	await openAbout(browser, "selection");
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector("${INSPECTOR}")?.textContent.includes('the write path') === true`,
+		),
+	).toBe(true);
 
 	// The other grammar, told in the same language: the plate is over the dots.
 	// The views are on the board tab, which the pick moved away from.

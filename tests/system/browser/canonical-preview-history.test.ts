@@ -14,6 +14,7 @@ import {
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
 import { legacyHistory } from "./support/legacy-history.ts";
+import { listedParts } from "./support/canonical-page.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
 
@@ -74,10 +75,7 @@ test("original state selection keeps its retained checkpoint and one-board histo
 	);
 	await chooseOriginal(browser, "Shop/System#Old");
 	await pollUntil(
-		() =>
-			browser.eval<string[]>(
-				`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(node => node.getAttribute('data-module-id'))`,
-			),
+		() => listedParts(browser),
 		(ids) => ids.length === 1 && ids[0] === "Shop/System#Api",
 		"the original API without current surroundings",
 		WAIT,
