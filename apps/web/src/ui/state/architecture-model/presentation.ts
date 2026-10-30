@@ -1,7 +1,6 @@
 import { createContext } from "react";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
-import type { Sidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
 
 /** Where a surface of a pane stood when it went out of sight. */
 interface LeftCamera {
@@ -44,7 +43,6 @@ function cameraHandover(): CameraHandover {
 /** Ordinary pane presentation, independent of asynchronous architecture reads. */
 const ModelPaneContext = createContext<{
 	selection: ModelSelection;
-	sidebar: Sidebar;
 	handover: CameraHandover;
 	/** Where the reading puts what it says in the pane's header. */
 	head: HTMLElement | null;

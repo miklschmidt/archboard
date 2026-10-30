@@ -1,4 +1,4 @@
-import { editCanonicalModel, openModelSidebar } from "./support/canonical-page.ts";
+import { editCanonicalModel, openAbout } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -45,7 +45,7 @@ test("an explanation keeps its captured comparison and selection after scope nav
 		},
 	]);
 	await selectReading(browser, retained.body.checkpoint.id);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-explain"]') !== null`),
@@ -228,11 +228,11 @@ test("keyboard and context actions expose unavailable agents, captured retry, an
 	).toBe(original);
 	await browser.run(["click", '[data-slot="explanation-cancel"]']);
 	await actionStatus(browser, "cancelled");
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await browser.run(["scrollintoview", '[data-slot="module-list"] [data-module-id="Shop#Worker"]']);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Worker"]']);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	const point = await browser.eval<{ x: number; y: number }>(
 		`(() => { const r = document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Worker"]').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`,
 	);

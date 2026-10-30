@@ -13,16 +13,17 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
+import { pick } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
 
 async function openFilters(browser: AgentBrowserSession): Promise<void> {
-	await browser.run(["click", '[data-slot="model-filters"]']);
+	await browser.run(["click", '[data-slot="model-key"]']);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-filters"]')?.getAttribute('aria-expanded') === 'true' && document.querySelector('[data-filter-kind="call"]') !== null`,
+				`document.querySelector('[data-slot="model-key"]')?.getAttribute('aria-expanded') === 'true' && document.querySelector('[data-filter-kind="call"]') !== null`,
 			),
 		Boolean,
 		"the opened filter controls",
@@ -35,7 +36,7 @@ async function closeFilters(browser: AgentBrowserSession): Promise<void> {
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-filters"]')?.getAttribute('aria-expanded') === 'false' && document.querySelector('[data-filter-kind="call"]') === null`,
+				`document.querySelector('[data-slot="model-key"]')?.getAttribute('aria-expanded') === 'false' && document.querySelector('[data-filter-kind="call"]') === null`,
 			),
 		Boolean,
 		"the dismissed filter controls",
@@ -84,16 +85,14 @@ test("reading filters preserve selection and authored meaning with an explicit r
 		WAIT,
 	);
 	await closeFilters(browser);
-	await browser.run([
-		"click",
-		'[data-slot="model-connections"] [data-connection-id="Shop#Dispatch"]',
-	]);
+	await pick(browser, "Shop#Dispatch");
 	await openFilters(browser);
 	await browser.run(["click", '[data-filter-kind="call"]']);
+	await closeFilters(browser);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-hidden-selection"]')?.getAttribute('data-count') === '1' && document.querySelector('[data-slot="model-connections"] [data-connection-id="Shop#Dispatch"]') === null`,
+				`document.querySelector('[data-slot="model-hidden-selection"]')?.getAttribute('data-count') === '1' && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Dispatch"]') === null`,
 			),
 		Boolean,
 		"the hidden selected connection",
@@ -109,6 +108,7 @@ test("reading filters preserve selection and authored meaning with an explicit r
 			`document.querySelector('[data-slot="model-connection-details"]') !== null`,
 		),
 	).toBe(true);
+	await openFilters(browser);
 	await browser.run(["click", '[data-filter-group="public"]']);
 	await pollUntil(
 		() =>
@@ -154,7 +154,7 @@ test("reading filters preserve selection and authored meaning with an explicit r
 	);
 	await browser.run(["reload"]);
 	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-filters"]') !== null`),
+		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-key"]') !== null`),
 		Boolean,
 		"restored filter controls",
 		WAIT,
@@ -171,7 +171,7 @@ test("reading filters preserve selection and authored meaning with an explicit r
 	);
 	expect(
 		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="model-connections"] [data-connection-id="Shop#Dispatch"]') === null && document.querySelector('[data-slot="model-diagram"] [data-semantic-kind="group-region"]') === null`,
+			`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Dispatch"]') === null && document.querySelector('[data-slot="model-diagram"] [data-semantic-kind="group-region"]') === null`,
 		),
 	).toBe(true);
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");

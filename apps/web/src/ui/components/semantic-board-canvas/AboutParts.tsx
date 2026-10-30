@@ -165,19 +165,9 @@ function PartName(props: {
 	readonly holds: number;
 }): JSX.Element {
 	const { node, look, holds } = props;
-	const ink = useMemo<CSSProperties>(
-		() => ({ "--kind": look.nodeColor(node.kind) }),
-		[look, node.kind],
-	);
 	return (
 		<span className="flex min-w-0 items-start gap-2.5">
-			<span
-				aria-hidden="true"
-				className="inline-flex size-6 shrink-0 items-center justify-center rounded-[5px] border border-(color:--kind)/45 bg-(color:--kind)/14 text-(color:--kind)"
-				style={ink}
-			>
-				<KindIcon look={look} kind={node.kind} className="size-4" />
-			</span>
+			<KindChip look={look} kind={node.kind} />
 			<span className="flex min-w-0 flex-col">
 				<span className="text-control text-foreground truncate leading-6" title={node.name}>
 					{node.name}
@@ -187,6 +177,27 @@ function PartName(props: {
 					{holds > 0 && ` · holds ${holds}`}
 				</span>
 			</span>
+		</span>
+	);
+}
+
+/**
+ * A kind's chip: its icon in its colour.
+ * @param props The kind, and how kinds look.
+ * @param props.kind The kind.
+ * @param props.look How the vault's kinds look.
+ * @returns The chip.
+ */
+function KindChip(props: { readonly kind: string; readonly look: KindLook }): JSX.Element {
+	const { kind, look } = props;
+	const ink = useMemo<CSSProperties>(() => ({ "--kind": look.nodeColor(kind) }), [look, kind]);
+	return (
+		<span
+			aria-hidden="true"
+			className="inline-flex size-6 shrink-0 items-center justify-center rounded-[5px] border border-(color:--kind)/45 bg-(color:--kind)/14 text-(color:--kind)"
+			style={ink}
+		>
+			<KindIcon look={look} kind={kind} className="size-4" />
 		</span>
 	);
 }
@@ -536,4 +547,11 @@ function heldBy(
 	return held;
 }
 
-export { AboutParts, AboutRelationships, type AboutListProps, type AboutPartsProps };
+export {
+	AboutParts,
+	AboutRelationships,
+	KindChip,
+	PickedMark,
+	type AboutListProps,
+	type AboutPartsProps,
+};

@@ -1,14 +1,20 @@
 import { AuthoredReference as Reference } from "#ui/components/architecture-model/AuthoredReference.tsx";
-import type { JSX, ReactNode } from "react";
+import { useCallback, type JSX, type ReactNode } from "react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { relationshipsOf } from "#ui/rules/architecture-model/selected-subject.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 type Module = Model["modules"][number];
+type Relationships = ReturnType<typeof relationshipsOf>;
 interface ModuleDetailsProps {
 	module: Module;
 	model: Model;
 	children?: ReactNode;
 	standing?: ReactNode;
+	/** What the module and its parts send and receive in this reading. */
+	relationships: Relationships;
+	/** Select what a connection row names. */
+	onSelect: (id: string) => void;
 }
 
 /**
@@ -54,7 +60,7 @@ function ModuleIntroduction(props: ModuleDetailsProps): JSX.Element {
 	const { module, model } = props;
 	return (
 		<header className="space-y-3">
-			<h3 className="text-figure font-display uppercase">{module.name}</h3>
+			<h3 className="title-figure [overflow-wrap:anywhere] uppercase">{module.name}</h3>
 			<p className="text-control text-muted-foreground">
 				{model.policy.nodeKinds[module.kind]?.name ?? module.kind}
 			</p>
@@ -142,27 +148,19 @@ function Fact(props: FactProps): JSX.Element | null {
 }
 
 /**
- * Show authored outgoing connections and derived incoming connections.
- * @param props The selected module and its complete model.
+ * Show every relationship in each direction, so that About agrees with the lines of the panel.
+ * @param props The selected module and what it sends and receives.
  * @returns Both directions, resolved by stable identity.
  */
 function Connections(props: ModuleDetailsProps): JSX.Element {
-	const { module, model } = props;
+	const { module, model, relationships } = props;
 	const directions = [
-		{
-			name: "Outgoing connections",
-			edges: model.relationships.filter((edge) => edge.from === module.id),
-			outgoing: true,
-		},
-		{
-			name: "Incoming connections",
-			edges: model.relationships.filter((edge) => edge.to === module.id),
-			outgoing: false,
-		},
+		{ name: "Outgoing connections", edges: relationships.outgoing },
+		{ name: "Incoming connections", edges: relationships.incoming },
 	];
 	return (
 		<div className="space-y-8">
-			{directions.map(({ name, edges, outgoing }) => (
+			{directions.map(({ name, edges }) => (
 				<section key={name} aria-label={name}>
 					<h4 className="text-title mb-3 font-semibold">{name}</h4>
 					{edges.length === 0 ? (
@@ -174,7 +172,8 @@ function Connections(props: ModuleDetailsProps): JSX.Element {
 									key={edge.id}
 									edge={edge}
 									model={model}
-									endpoint={outgoing ? edge.to : edge.from}
+									module={module.id}
+									onSelect={props.onSelect}
 								/>
 							))}
 						</ul>
@@ -186,9 +185,11 @@ function Connections(props: ModuleDetailsProps): JSX.Element {
 }
 
 interface ConnectionRowProps {
-	edge: Model["relationships"][number];
+	edge: Relationships["outgoing"][number];
 	model: Model;
-	endpoint: string;
+	/** The module that the row is listed under. */
+	module: string;
+	onSelect: (id: string) => void;
 }
 
 /**
@@ -197,13 +198,21 @@ interface ConnectionRowProps {
  * @returns One relationship row.
  */
 function ConnectionRow(props: ConnectionRowProps): JSX.Element {
-	const { edge, model, endpoint } = props;
+	const { edge, model, onSelect } = props;
+	const select = useCallback((): void => onSelect(edge.id), [onSelect, edge.id]);
 	return (
 		<li className="space-y-2 py-3">
-			<p className="text-control font-medium">{moduleName(model, endpoint)}</p>
-			<p className="text-body">
-				{edge.label ?? model.policy.relationshipKinds[edge.kind]?.name ?? edge.kind}
-			</p>
+			<button
+				type="button"
+				data-relationship-id={edge.id}
+				onClick={select}
+				className="hover:bg-muted/60 rounded-control -mx-2 block w-[calc(100%+1rem)] px-2 py-1 text-left"
+			>
+				<span className="text-control block font-medium">{rowName(model, edge, props.module)}</span>
+				<span className="text-body block">
+					{edge.label ?? model.policy.relationshipKinds[edge.kind]?.name ?? edge.kind}
+				</span>
+			</button>
 			{edge.description && (
 				<p className="text-body text-muted-foreground whitespace-pre-wrap">{edge.description}</p>
 			)}
@@ -215,6 +224,19 @@ function ConnectionRow(props: ConnectionRowProps): JSX.Element {
 			)}
 		</li>
 	);
+}
+
+/**
+ * What a row calls a relationship: the other end, or both ends when a part of the module holds it.
+ * @param model The coherent model.
+ * @param edge The relationship.
+ * @param module The module that lists it.
+ * @returns The row's name.
+ */
+function rowName(model: Model, edge: ConnectionRowProps["edge"], module: string): string {
+	if (edge.from === module) return moduleName(model, edge.to);
+	if (edge.to === module) return moduleName(model, edge.from);
+	return `${moduleName(model, edge.from)} → ${moduleName(model, edge.to)}`;
 }
 
 /**

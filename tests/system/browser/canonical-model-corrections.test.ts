@@ -19,7 +19,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { fixtureGit, initializeSource, selectModule } from "./support/canonical-model.ts";
-import { openModelSidebar, refreshModel } from "./support/canonical-page.ts";
+import { openAbout, refreshModel } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -86,13 +86,13 @@ async function visible(browser: AgentBrowserSession, selector: string): Promise<
 }
 
 async function description(browser: AgentBrowserSession, value: string): Promise<void> {
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await visible(browser, '[data-slot="module-list"] [data-module-id="Shop#Gateway"]');
 	await selectModule(browser, "Shop#Gateway", (text) => text.includes(value), "header");
 }
 
 async function openHistory(browser: AgentBrowserSession): Promise<void> {
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await visible(browser, '[data-slot="model-state-history"]');
 	if (
 		!(await browser.eval<boolean>(
@@ -239,7 +239,7 @@ test("historical corrections refresh the lasting reading and expose exact origin
 		`[data-slot="model-checkpoint"][data-checkpoint-id="${original.checkpoint.id}"]`,
 	);
 	await browser.run(["back"]);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await visible(browser, `[data-correction-checkpoint="${corrected.checkpoint.id}"]`);
 	expect(
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('stateA')`),

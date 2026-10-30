@@ -24,6 +24,26 @@ function ModuleNavigation(props: ModuleNavigationProps): JSX.Element | null {
 }
 
 /**
+ * The action that opens a module's code, for a place with no room for its references.
+ * @param props The selected module and exact reading context.
+ * @returns The action, or nothing for a module with no binding.
+ */
+function ModuleOpenCode(props: ModuleNavigationProps): JSX.Element | null {
+	if (props.module.binding === undefined) return null;
+	return <OpenCode {...props} />;
+}
+
+/**
+ * One source action, on its own read of the module.
+ * @param props The bound module.
+ * @returns The action.
+ */
+function OpenCode(props: ModuleNavigationProps): JSX.Element {
+	const navigation = useModelNavigation(props.vault, props.model, props.module);
+	return <BoundCode {...props} navigation={navigation} />;
+}
+
+/**
  * Source and architecture links share one coherent navigation read.
  * @param props The selected module and exact reading context.
  * @returns Only the actions the module actually authors.
@@ -132,4 +152,4 @@ function CodeTargetAvailability({ target }: { target: Model["codeTarget"] }): JS
 	);
 }
 
-export { ModuleNavigation };
+export { ModuleNavigation, ModuleOpenCode };

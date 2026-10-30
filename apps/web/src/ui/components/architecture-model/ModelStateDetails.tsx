@@ -15,19 +15,16 @@ import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
  * @param props.model Its state metadata and semantic comparison.
  * @param props.paneId The pane that owns deliberate ancestor navigation.
  * @param props.states The catalogue that names retained ancestors.
- * @param props.hasCurrent Whether the model has a Current, which the state's base can lack.
- * @returns Explicit lifecycle and comparison context above the diagram.
+ * @returns Explicit lifecycle and history on the About page.
  */
 function ModelStateDetails({
 	model,
 	paneId,
 	states,
-	hasCurrent,
 }: {
 	model: Model;
 	paneId: string;
 	states: Readonly<NonNullable<Model["states"]>>;
-	hasCurrent: boolean;
 }): JSX.Element {
 	const state = model.selectedState;
 	if (state === null)
@@ -37,7 +34,7 @@ function ModelStateDetails({
 				data-selected-state=""
 				data-lifecycle="none"
 				data-standing="unavailable"
-				className="border-border shrink-0 space-y-2 border-b px-6 py-3 in-data-presenting:hidden"
+				className="space-y-2"
 			>
 				<p className="text-control font-semibold">No implemented state</p>
 				<ModelStateHistory
@@ -46,7 +43,6 @@ function ModelStateDetails({
 					paneId={paneId}
 					states={states}
 				/>
-				<ModelComparisonLine model={model} paneId={paneId} hasCurrent={hasCurrent} />
 			</section>
 		);
 	return (
@@ -55,19 +51,18 @@ function ModelStateDetails({
 			data-selected-state={state.id}
 			data-lifecycle={state.lifecycle}
 			data-standing={proposalStanding(state)}
-			className="border-border shrink-0 space-y-2 border-b px-6 py-3 in-data-presenting:hidden"
+			className="space-y-2"
 		>
 			<p className="text-control font-semibold">
 				{lifecycleName(state.lifecycle)} · {state.name}
 			</p>
-			{state.summary && <p className="text-body">{state.summary}</p>}
+			{state.summary && <p className="text-body max-w-[68ch]">{state.summary}</p>}
 			<ModelStateHistory
 				state={state}
 				comparison={model.comparison}
 				paneId={paneId}
 				states={states}
 			/>
-			<ModelComparisonLine model={model} paneId={paneId} hasCurrent={hasCurrent} />
 			<ModelReconciliation model={model} paneId={paneId} />
 		</section>
 	);
@@ -96,7 +91,7 @@ function ModelComparisonLine({
 	const { comparison } = model;
 	if (comparison === undefined && against !== AFTER) return null;
 	return (
-		<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+		<div className="flex shrink-0 items-center gap-x-3">
 			{comparison === undefined ? (
 				<p data-slot="model-after" className="text-body text-muted-foreground">
 					After, with no comparison
@@ -236,4 +231,4 @@ function ModelSubjectStanding({
 	return <Standing against={against} open={open} code={null} />;
 }
 
-export { ModelStateDetails, ModelComparisonNotice, ModelSubjectStanding };
+export { ModelComparisonLine, ModelStateDetails, ModelComparisonNotice, ModelSubjectStanding };

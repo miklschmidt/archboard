@@ -1,4 +1,4 @@
-import { openModelSidebar } from "./support/canonical-page.ts";
+import { openAbout, openDiagram, pick } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -25,11 +25,18 @@ async function selectedCount(browser: AgentBrowserSession): Promise<number> {
 	);
 }
 
-async function toggleModule(browser: AgentBrowserSession, id: string): Promise<void> {
-	await openModelSidebar(browser);
-	await browser.eval(
-		`document.querySelector('[data-slot="module-list"] [data-module-id="${id}"]').dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true }))`,
-	);
+/** What the panel must not change: where the picture stands, and its camera. */
+async function pictureFrame(browser: AgentBrowserSession): Promise<string> {
+	return browser.eval<string>(`(() => {
+		const diagram = document.querySelector('[data-slot="model-diagram"]');
+		const { x, y, width, height } = diagram.getBoundingClientRect();
+		const { transform } = diagram.querySelector('[data-slot="semantic-board-surface"]').style;
+		return JSON.stringify({ x, y, width, height, transform });
+	})()`);
+}
+
+async function panelOpen(browser: AgentBrowserSession): Promise<boolean> {
+	return browser.eval<boolean>(`document.querySelector('[data-slot="model-panel"]') !== null`);
 }
 
 test("module selection supports modifiers and keyboard without layout or history changes", async () => {
@@ -50,18 +57,23 @@ test("module selection supports modifiers and keyboard without layout or history
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() =>
-			browser.eval<boolean>(`document.querySelector('[data-slot="model-diagram"] svg') !== null`),
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="semantic-board-surface"]:not([data-picture-motion]) svg') !== null`,
+			),
 		Boolean,
-		"the selectable scene",
+		"the landed scene",
 		WAIT,
 	);
 	const history = await browser.eval<number>("window.history.length");
 	await browser.eval(
 		`document.querySelector('[data-slot="model-diagram"] svg').setAttribute('data-test-scene', 'kept')`,
 	);
-	await openModelSidebar(browser);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
-	await toggleModule(browser, "Shop#Worker");
+	expect(await panelOpen(browser)).toBe(false);
+	const frame = await pictureFrame(browser);
+	await pick(browser, "Shop#Gateway");
+	await pollUntil(() => panelOpen(browser), Boolean, "the panel of the selection", WAIT);
+	expect(await pictureFrame(browser)).toBe(frame);
+	await pick(browser, "Shop#Worker", { toggle: true });
 	await pollUntil(
 		() => selectedCount(browser),
 		(count) => count === 2,
@@ -78,14 +90,14 @@ test("module selection supports modifiers and keyboard without layout or history
 			`[...new Set([...document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"].is-selected')].map(node => node.getAttribute('data-semantic-id')))].sort()`,
 		),
 	).toEqual(["Shop#Gateway", "Shop#Worker"]);
-	await toggleModule(browser, "Shop#Gateway");
+	await pick(browser, "Shop#Gateway", { toggle: true });
 	await pollUntil(
 		() => selectedCount(browser),
 		(count) => count === 1,
 		"the toggled selection",
 		WAIT,
 	);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await browser.run(["focus", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await browser.run(["press", `${editingModifier}+Enter`]);
 	await pollUntil(
@@ -94,7 +106,6 @@ test("module selection supports modifiers and keyboard without layout or history
 		"the keyboard selection",
 		WAIT,
 	);
-	await openModelSidebar(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Worker"]']);
 	await pollUntil(
 		() => selectedCount(browser),
@@ -102,6 +113,16 @@ test("module selection supports modifiers and keyboard without layout or history
 		"normal selection replacing the set",
 		WAIT,
 	);
+	await openAbout(browser, "selection");
+	expect(
+		await browser.eval<string | null>(
+			`document.querySelector('[data-slot="module-details"]')?.getAttribute('data-module-id') ?? null`,
+		),
+	).toBe("Shop#Worker");
+	await openAbout(browser);
+	await openDiagram(browser);
+	await pollUntil(() => panelOpen(browser), Boolean, "the panel back over the picture", WAIT);
+	await browser.run(["focus", '[data-slot="model-diagram"]']);
 	await browser.run(["press", "Escape"]);
 	await pollUntil(
 		() => selectedCount(browser),
@@ -109,6 +130,8 @@ test("module selection supports modifiers and keyboard without layout or history
 		"Escape clearing selection",
 		WAIT,
 	);
+	await pollUntil(async () => !(await panelOpen(browser)), Boolean, "the panel gone", WAIT);
+	expect(await pictureFrame(browser)).toBe(frame);
 	expect(await browser.eval<number>("window.history.length")).toBe(history);
 	expect(
 		await browser.eval<string | null>(

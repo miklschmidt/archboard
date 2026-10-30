@@ -33,23 +33,63 @@ interface ReaderInputs {
 	readonly reducedMotion: boolean;
 }
 
+/** Which subject About describes. */
+type AboutSubject = "scope" | "selection";
+
+/** The module that About was opened on, and what it describes there. */
+interface AboutPlace {
+	readonly scope: string | null | undefined;
+	readonly subject: AboutSubject;
+}
+
+/** About, closed on every module. */
+const NO_ABOUT: AboutPlace = { scope: undefined, subject: "scope" };
+
 /**
- * Where the left column stands and how the open module is read. The page is kept with the
- * module it was chosen on, so another module opens as a diagram.
- * @param structural Whether the reading draws the structure.
+ * How the open module is read. The page is kept with the module it was chosen on, so another
+ * module opens as a diagram. About opens on what is selected, or else on the open scope. A choice
+ * from a list leaves it where it stands, so a reader builds a selection there, and a selection let
+ * go leaves it the open scope.
  * @param opened The open module.
- * @returns The destination and the page, and how to change them.
+ * @param selecting Whether anything is selected.
+ * @returns The page and what About describes, and how to change them.
  */
-function useReaderPlaces(structural: boolean, opened: string | null) {
-	const [destination, setDestination] = useState<Destination>(structural ? "modules" : "flows");
-	const [aboutScope, setAboutScope] = useState<string | null | false>(false);
-	const page: Page = aboutScope === opened ? "about" : "diagram";
-	const onPage = useCallback(
-		(next: Page): void => setAboutScope(next === "about" ? opened : false),
+function useReaderPage(opened: string | null, selecting: boolean) {
+	const [about, setAbout] = useState(NO_ABOUT);
+	const { scope, subject } = about;
+	const open = scope === opened;
+	if (open && subject === "selection" && !selecting) setAbout({ scope, subject: "scope" });
+	const onAbout = useCallback(
+		(next: AboutSubject): void => setAbout({ scope: opened, subject: next }),
 		[opened],
 	);
+	const onPage = useCallback(
+		(next: Page): void => {
+			if (next === "about") onAbout(selecting ? "selection" : "scope");
+			else setAbout(NO_ABOUT);
+		},
+		[onAbout, selecting],
+	);
+	const page: Page = open ? "about" : "diagram";
+	return { page, onPage, aboutSubject: subject, onAbout };
+}
+
+/**
+ * Where the left column stands and how the open module is read.
+ * @param structural Whether the reading draws the structure.
+ * @param opened The open module.
+ * @param selecting Whether anything is selected.
+ * @returns The destination and the page, and how to change them.
+ */
+function useReaderPlaces(structural: boolean, opened: string | null, selecting: boolean) {
+	const [destination, setDestination] = useState<Destination>(structural ? "modules" : "flows");
 	const openHistory = useCallback((): void => setDestination("history"), []);
-	return { destination, onDestination: setDestination, page, onPage, openHistory };
+	return {
+		destination,
+		onDestination: setDestination,
+		openHistory,
+		...useReaderPage(opened, selecting),
+	};
 }
 
 /**
@@ -90,8 +130,6 @@ function useReader(inputs: ReaderInputs) {
 	if (pane === null) throw new Error("A model reading requires its pane presentation.");
 	const playback = useContext(ModelWalkthroughContext);
 	const leave = playback?.leave;
-	const { sidebar } = pane;
-	const { open: openTab } = sidebar;
 	const accepted = useAcceptedScene(request, pane.selection.ids);
 	const { scene, shown } = accepted;
 	const selection = useProjectedSelection(shown.projection, pane.selection);
@@ -120,14 +158,13 @@ function useReader(inputs: ReaderInputs) {
 	const onOpen = useCallback(
 		(next: string | null): void => {
 			leave?.();
-			openTab("board");
 			move(next);
 		},
-		[leave, move, openTab],
+		[leave, move],
 	);
 	const tree = useMemo(() => moduleTree(depicted), [depicted]);
 	const branches = useModuleBranches(tree, opened);
-	const places = useReaderPlaces(grammar === "architecture", opened);
+	const places = useReaderPlaces(grammar === "architecture", opened, selection.ids.size > 0);
 	const near = useRelevance(model, depicted, opened);
 	const choices = useReaderChoices({
 		location,
@@ -156,7 +193,6 @@ function useReader(inputs: ReaderInputs) {
 		model,
 		accepted,
 		selection,
-		sidebar,
 		camera,
 		area,
 		moves,

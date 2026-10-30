@@ -1,9 +1,12 @@
+import { ModelPanel } from "#ui/components/architecture-model/ModelPanel.tsx";
 import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
-import { type JSX } from "react";
+import type { JSX } from "react";
+import { RiArrowLeftRightLine, RiArrowRightLine } from "@remixicon/react";
 import type { Model, projectModel } from "@archboard/board/content";
 
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
+import { usePeekRow } from "#ui/hooks/architecture-model/use-peek-row.ts";
 
 type Connection = ReturnType<typeof projectModel>["connections"][number];
 interface ModelConnectionsProps {
@@ -17,19 +20,15 @@ interface ModelConnectionsProps {
 /**
  * Keyboard users inspect the same projected lines as pointer users.
  * @param props The visible connections and selection action.
- * @returns Ordered connection choices without changing the layout.
+ * @returns Ordered connection choices.
  */
-function ModelConnections(props: ModelConnectionsProps): JSX.Element | null {
-	if (props.connections.length === 0) return null;
+function ModelConnections(props: ModelConnectionsProps): JSX.Element {
 	return (
-		<section className="mt-8 space-y-3" aria-label="Connections">
-			<h3 className="text-title font-semibold">Connections</h3>
-			<ul data-slot="model-connections" className="space-y-1">
-				{props.connections.map((connection) => (
-					<ConnectionChoice key={connection.line.id} {...props} connection={connection} />
-				))}
-			</ul>
-		</section>
+		<ul data-slot="model-connections" className="border-border -mx-3 border-t">
+			{props.connections.map((connection) => (
+				<ConnectionChoice key={connection.line.id} {...props} connection={connection} />
+			))}
+		</ul>
 	);
 }
 
@@ -42,22 +41,177 @@ function ConnectionChoice(props: ModelConnectionsProps & { connection: Connectio
 	const { model, onSelect } = props;
 	const { line, joins } = props.connection;
 	const pick = useModelPick(line.id, onSelect);
+	const Arrow = line.twoWay === true ? RiArrowLeftRightLine : RiArrowRightLine;
 	return (
-		<li>
+		<li className="border-border hover:bg-muted/50 has-aria-pressed:bg-sidebar-accent border-b">
 			<button
 				type="button"
 				data-connection-id={line.id}
 				data-from={line.from}
 				data-to={line.to}
 				data-kind={line.kind}
-				aria-pressed={props.selected.has(line.id)}
+				aria-pressed={joins.every((edge) => props.selected.has(edge.id))}
 				{...pick}
-				className="hover:bg-muted aria-pressed:bg-muted rounded-control w-full space-y-1 px-3 py-3 text-left"
+				className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] items-baseline gap-x-6 px-3 py-2.5 text-left"
 			>
-				<span className="text-control block">{lineEnds(line, model, props.reference)}</span>
-				<span className="text-body text-muted-foreground block">{kindNames(model, joins)}</span>
+				<span className="text-control min-w-0">
+					{moduleName(model, line.from, props.reference)}
+				</span>
+				<span className="text-control flex min-w-0 items-baseline gap-2">
+					<Arrow
+						aria-hidden="true"
+						className="text-muted-foreground size-4 shrink-0 self-center"
+					/>
+					{moduleName(model, line.to, props.reference)}
+				</span>
+				<span className="text-body text-muted-foreground min-w-0">{kindNames(model, joins)}</span>
 			</button>
 		</li>
+	);
+}
+
+/** What a panel row of a relationship reads. */
+interface RelationshipRowProps {
+	edge: Connection["joins"][number];
+	model: Model;
+	reference: Model | undefined;
+	onSelect: ModelSelection["select"];
+}
+
+/**
+ * One real relationship behind a joined line: its real ends, and it selects like any other.
+ * @param props The relationship and its model.
+ * @returns A row of the panel.
+ */
+function RelationshipRow(props: RelationshipRowProps): JSX.Element {
+	const { edge, model, reference, onSelect } = props;
+	const pick = useModelPick(edge.id, onSelect);
+	const peek = usePeekRow(edge.id);
+	return (
+		<ModelPanel.Row
+			data-relationship-id={edge.id}
+			{...pick}
+			{...peek}
+			stacked
+			name={`${moduleName(model, edge.from, reference)} → ${moduleName(model, edge.to, reference)}`}
+			detail={edge.label ?? kindNames(model, [edge])}
+		/>
+	);
+}
+
+/**
+ * One end of a relationship, which selects that module.
+ * @param props The module and how to select it.
+ * @param props.id The module.
+ * @param props.title Which end it is.
+ * @param props.name Its name.
+ * @param props.onSelect The selection action.
+ * @returns A row of the panel.
+ */
+function RelationshipEnd(props: {
+	id: string;
+	title: string;
+	name: string;
+	onSelect: ModelSelection["select"];
+}): JSX.Element {
+	const pick = useModelPick(props.id, props.onSelect);
+	const peek = usePeekRow(props.id);
+	return (
+		<ModelPanel.Row
+			data-end-id={props.id}
+			{...pick}
+			{...peek}
+			name={props.name}
+			detail={props.title}
+		/>
+	);
+}
+
+/** What the panel reads a selected line from. */
+interface ConnectionSummaryProps {
+	/** The line, with the selected relationships behind it. */
+	connection: Connection;
+	/** The model that resolves authored endpoints. */
+	model: Model;
+	/** The coherent base for removed endpoints. */
+	reference: Model | undefined;
+	onSelect: ModelSelection["select"];
+}
+
+/**
+ * What the panel says of a selected line: a joined line lists every relationship with its real
+ * ends, and one relationship says what it carries and selects either end.
+ * @param props The selected line and complete model.
+ * @returns The details, without the evidence that About holds.
+ */
+function ConnectionSummary(props: ConnectionSummaryProps): JSX.Element {
+	const { connection, model, reference } = props;
+	const { line, joins } = connection;
+	const one = joins.length === 1;
+	const ends = one ? joins[0] : line;
+	return (
+		<ModelPanel.Body slot="model-connection-details">
+			<ModelPanel.Head title={lineEnds(ends, model, reference)}>
+				<span data-slot="model-connection-kinds">{kindNames(model, joins)}</span>
+			</ModelPanel.Head>
+			{one ? <OneRelationship {...props} edge={joins[0]} /> : <JoinedRelationships {...props} />}
+		</ModelPanel.Body>
+	);
+}
+
+/**
+ * Every relationship that a joined line stands for.
+ * @param props The selected line and complete model.
+ * @returns The list.
+ */
+function JoinedRelationships(props: ConnectionSummaryProps): JSX.Element {
+	const { model, reference, onSelect } = props;
+	const { joins } = props.connection;
+	return (
+		<ModelPanel.Section title="Relationships" count={joins.length} slot="model-connection-joins">
+			<ModelPanel.Rows items={joins}>
+				{(edge) => (
+					<RelationshipRow
+						key={edge.id}
+						edge={edge}
+						model={model}
+						reference={reference}
+						onSelect={onSelect}
+					/>
+				)}
+			</ModelPanel.Rows>
+		</ModelPanel.Section>
+	);
+}
+
+/**
+ * What one relationship carries, and its two ends.
+ * @param props The relationship and complete model.
+ * @returns Its summary.
+ */
+function OneRelationship(
+	props: ConnectionSummaryProps & { readonly edge: Connection["joins"][number] },
+): JSX.Element {
+	const { edge, model, reference, onSelect } = props;
+	return (
+		<>
+			{edge.label && <p className="text-body">{edge.label}</p>}
+			<ModelSubjectStanding model={model} subject={edge.id} />
+			<ModelPanel.Section title="Ends" slot="model-connection-ends">
+				<RelationshipEnd
+					id={edge.from}
+					title="From"
+					name={moduleName(model, edge.from, reference)}
+					onSelect={onSelect}
+				/>
+				<RelationshipEnd
+					id={edge.to}
+					title="To"
+					name={moduleName(model, edge.to, reference)}
+					onSelect={onSelect}
+				/>
+			</ModelPanel.Section>
+		</>
 	);
 }
 
@@ -101,7 +255,9 @@ function ConnectionDetails(props: {
 						</p>
 						{edge.label && <p>{edge.label}</p>}
 						{edge.description && <p className="whitespace-pre-wrap">{edge.description}</p>}
-						<code className="text-control break-all">{edge.id}</code>
+						<code className="text-technical text-muted-foreground font-mono break-all">
+							{edge.id}
+						</code>
 						<ModelSubjectStanding model={model} subject={edge.id} />
 					</li>
 				))}
@@ -148,4 +304,11 @@ function moduleName(model: Model, id: string, reference: Model | undefined): str
 	);
 }
 
-export { ModelConnections, ConnectionDetails, kindNames, lineEnds, moduleName };
+export {
+	ModelConnections,
+	ConnectionDetails,
+	ConnectionSummary,
+	kindNames,
+	lineEnds,
+	moduleName,
+};
