@@ -185,6 +185,24 @@ describe("a pass's language servers", () => {
 		},
 	);
 
+	test("ask again when a server says the content changed under a question", async () => {
+		const at = withFile();
+		const session = openLanguageServers({
+			servers: at.table("outdated-once"),
+			signal: new AbortController().signal,
+			stopMs: STOP_MS,
+		});
+		const answer = await session.definition({
+			root: at.root,
+			file: "src/load.ts",
+			line: 3,
+			symbol: "store.read",
+		});
+		await session.close();
+		expect(answer.status).toBe("answered");
+		expect(at.methods().filter((method) => method === "textDocument/definition")).toHaveLength(2);
+	});
+
 	test("keep asking a server that refused one question", async () => {
 		const at = withFile();
 		const session = openLanguageServers({

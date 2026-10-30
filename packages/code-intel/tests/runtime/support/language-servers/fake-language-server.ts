@@ -27,6 +27,8 @@
 // - `exit-on-definition`: exits with code 3 on the first definition.
 // - `deaf`: ignores `shutdown` and `exit`, so only a kill ends it.
 // - `refuse-definition`: answers every definition with an error.
+// - `outdated-once`: answers the first definition with ContentModified, as a
+//   server that reloads its project does.
 // - `indexes`: as clangd does, after the first file opened it reports the
 //   work-done progress `backgroundIndexProgress`, if the client declared
 //   `window.workDoneProgress`, and ends it 200 ms later; until then it knows
@@ -155,12 +157,19 @@ function definition(message: Message): object[] {
 	});
 }
 
+let outdatedSent = false;
+
 /**
  * Answer a definition as the mode says.
  * @param message The question.
  */
 function answerDefinition(message: Message): void {
 	if (modes.has("exit-on-definition")) process.exit(3);
+	if (modes.has("outdated-once") && !outdatedSent) {
+		outdatedSent = true;
+		send({ id: message.id, error: { code: -32_801, message: "content modified" } });
+		return;
+	}
 	const closed = modes.has("needs-open") && !opened.has(message.params?.textDocument?.uri ?? "");
 	if (modes.has("refuse-definition") || closed)
 		send({ id: message.id, error: { code: -32_603, message: "no" } });
