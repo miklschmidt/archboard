@@ -232,11 +232,14 @@ function withoutSeams(points: readonly DrawnPoint[]): DrawnPoint[] {
  * @returns True when the segment's extent reaches into the box.
  */
 function segmentMeets(one: DrawnPoint, other: DrawnPoint, box: DiagramBox): boolean {
+	// SVG coordinates have two decimals. Adding a box's size can put an exact
+	// boundary attachment a floating-point rounding error inside that box.
+	const rounding = 1e-6;
 	return (
-		Math.min(one.x, other.x) < box.x + box.width &&
-		Math.max(one.x, other.x) > box.x &&
-		Math.min(one.y, other.y) < box.y + box.height &&
-		Math.max(one.y, other.y) > box.y
+		Math.min(one.x, other.x) < box.x + box.width - rounding &&
+		Math.max(one.x, other.x) > box.x + rounding &&
+		Math.min(one.y, other.y) < box.y + box.height - rounding &&
+		Math.max(one.y, other.y) > box.y + rounding
 	);
 }
 
