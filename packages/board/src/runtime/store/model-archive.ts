@@ -254,12 +254,23 @@ async function synchronization(
 /**
  * Keep the reserved archive independent of source history and every checkout's HEAD.
  * @param context The caller's checkout.
+ * @returns The observed archive tip.
  */
-async function assertArchiveWritable(context: ArchiveContext): Promise<void> {
+async function assertArchiveWritable(context: ArchiveContext) {
+	const tip = await archiveTip(context);
+	await assertTipWritable(context, tip);
+	return tip;
+}
+
+/**
+ * Require a free archive branch and a readable record at an observed tip.
+ * @param context The caller's checkout.
+ * @param tip The observed archive tip.
+ */
+async function assertTipWritable(context: ArchiveContext, tip: string | undefined) {
 	const worktrees = await git(context.root, ["worktree", "list", "--porcelain"]);
 	if (worktrees?.split("\n").includes(`branch ${ARCHIVE_REF}`))
 		throw new ArchiveError("ARCHIVE_IN_USE", "A worktree has the archive branch checked out.");
-	const tip = await archiveTip(context);
 	if (tip === undefined) return;
 	try {
 		await readRecord(context, tip);
@@ -336,7 +347,7 @@ async function appendCheckpoint(
 			"Concurrent archive writers prevented this append. The retained operation can be retried.",
 		);
 	if (expected !== undefined && (await isArchiveAncestor(context, checkpoint, expected))) return;
-	await assertArchiveWritable(context);
+	await assertTipWritable(context, expected);
 	const candidate = await appendCandidate(context, checkpoint, expected);
 	if (await conditionalAppend(context, candidate, expected)) return;
 	return appendCheckpoint(context, candidate, await archiveTip(context), attempt + 1);
@@ -352,7 +363,7 @@ async function prepareCheckpointAppend(context: ArchiveContext, checkpoint: stri
 	const expected = await archiveTip(context);
 	if (expected !== undefined && (await isArchiveAncestor(context, checkpoint, expected)))
 		return { checkpoint, expected, candidate: expected };
-	await assertArchiveWritable(context);
+	await assertTipWritable(context, expected);
 	return { checkpoint, expected, candidate: await appendCandidate(context, checkpoint, expected) };
 }
 
@@ -367,7 +378,7 @@ async function commitCheckpointAppend(
 ): Promise<void> {
 	const latest = await archiveTip(context);
 	if (latest !== undefined && (await isArchiveAncestor(context, plan.checkpoint, latest))) return;
-	await assertArchiveWritable(context);
+	await assertTipWritable(context, latest);
 	if (!(await conditionalAppend(context, plan.candidate, plan.expected)))
 		throw new ArchiveError(
 			"ARCHIVE_BUSY",

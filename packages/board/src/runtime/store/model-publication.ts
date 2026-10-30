@@ -6,6 +6,7 @@ import { git } from "@archboard/process/git";
 import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import { ArchitecturePublicationDestinationSchema } from "#shared/schemas/model.ts";
 import {
+	ARCHIVE_REF,
 	ArchiveError,
 	archiveContext,
 	isArchiveAncestor,
@@ -189,17 +190,23 @@ function receiptPrefix(fingerprint: string) {
 }
 
 /**
- * Find retained publication closures even after the destination changes.
+ * Find the archive tip and retained publication closures, even after the destination changes.
  * @param context The resolved archive context.
- * @returns The complete operation result.
+ * @returns Each distinct retained root, the archive tip first when it exists.
  */
-async function retainedPublicationTips(context: ArchiveContext) {
+async function retainedRoots(context: ArchiveContext) {
 	const refs = await git(
 		context.root,
-		["for-each-ref", "--format=%(objectname)", "refs/archboard/published/"],
+		[
+			"for-each-ref",
+			"--sort=-refname",
+			"--format=%(objectname)",
+			ARCHIVE_REF,
+			"refs/archboard/published/",
+		],
 		{ maxOutputBytes: Infinity },
 	);
-	return (refs ?? "").split("\n").filter(Boolean);
+	return [...new Set((refs ?? "").split("\n").filter(Boolean))];
 }
 
 /**
@@ -429,7 +436,7 @@ export {
 	acknowledgePublication,
 	checkpointPublication,
 	publicationEvidence,
-	retainedPublicationTips,
+	retainedRoots,
 	withFetchedArchive,
 	requireCompleteArchive,
 	retention,

@@ -8,6 +8,7 @@ import { existsSync, readFileSync, lstatSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { z } from "zod";
 import { BOARD_LOCK_MS } from "@archboard/timing";
+import { git, GitCommandError } from "@archboard/process/git";
 import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import { mintId } from "#shared/rules/ids.ts";
 import {
@@ -23,12 +24,7 @@ import {
 } from "#shared/schemas/model-operations.ts";
 import { holdBoard, BoardHeldError } from "#runtime/store/lock/lock.ts";
 import { boardLockState, releaseHold, renewRecord } from "#runtime/store/lock/lease-state.ts";
-import {
-	ArchiveError,
-	optionalValue,
-	settledValues,
-	type ArchiveContext,
-} from "#runtime/store/model-archive.ts";
+import { ArchiveError, optionalValue, type ArchiveContext } from "#runtime/store/model-archive.ts";
 
 import {
 	PortableInstallationSchema,
@@ -217,15 +213,28 @@ function writeState(vault: string, file: string, value: unknown): void {
 	});
 }
 /**
+ * Read the branch and commit of HEAD through one Git process, so both name one moment.
+ * @param context The caller checkout or invocation context.
+ * @returns The full branch ref unless detached, and the commit unless the branch has none.
+ */
+async function headState(context: ArchiveContext) {
+	try {
+		const output = await git(context.root, ["rev-parse", "HEAD", "--symbolic-full-name", "HEAD"]);
+		const [head, name] = (output ?? "").split("\n");
+		return { branch: name === "HEAD" ? undefined : name, head };
+	} catch (error) {
+		if (!(error instanceof GitCommandError) || error.failure !== "exit") throw error;
+		// HEAD names no commit: only an unborn branch still has a name.
+		return { branch: await optionalValue(context, ["symbolic-ref", "--quiet", "HEAD"]) };
+	}
+}
+/**
  * Identify the source branch without publishing local paths.
  * @param context The caller checkout or invocation context.
  * @returns The private branch and checkout identity.
  */
 async function checkoutContext(context: ArchiveContext) {
-	const [branch, head] = await settledValues([
-		optionalValue(context, ["symbolic-ref", "--quiet", "HEAD"]),
-		optionalValue(context, ["rev-parse", "--verify", "--quiet", "HEAD"]),
-	]);
+	const { branch, head } = await headState(context);
 	return {
 		root: resolve(context.root),
 		vault: context.vault,

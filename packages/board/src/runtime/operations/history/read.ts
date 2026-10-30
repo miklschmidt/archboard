@@ -13,7 +13,6 @@ import {
 	ArchiveError,
 	CheckpointRecordSchema,
 	archiveContext,
-	archiveTip,
 	readCheckpointInputs,
 	archiveRecords,
 	readRecord,
@@ -28,7 +27,7 @@ import {
 } from "#runtime/operations/history/result.ts";
 import {
 	checkpointPublication,
-	retainedPublicationTips,
+	retainedRoots,
 	requireCompleteArchive,
 } from "#runtime/store/model-publication.ts";
 import { resolveModelReferences } from "#runtime/operations/read/model-references.ts";
@@ -450,13 +449,7 @@ async function readArchitectureCheckpoint(
 async function listArchitectureCheckpoints(vault: string): Promise<ArchitectureCheckpointList> {
 	return historyResult("ARCHIVE_UNREADABLE", async () => {
 		const context = await archiveContext(vault);
-		const tip = await archiveTip(context);
-		const records = await archiveRecords(context, [
-			...new Set([
-				...(tip === undefined ? [] : [tip]),
-				...(await retainedPublicationTips(context)),
-			]),
-		]);
+		const records = await archiveRecords(context, await retainedRoots(context));
 		return {
 			success: true as const,
 			checkpoints: await Promise.all(
