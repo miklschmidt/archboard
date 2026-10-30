@@ -4,7 +4,12 @@ import { mountArchitectureFlowRoutes } from "#server/routes/architecture/flow-ro
 import { mountArchitecturePublicationRoutes } from "#server/routes/architecture/publication-routes.ts";
 import type { Express } from "express";
 import { z } from "zod";
-import { readArchitectureModel, listArchitectureCheckpoints } from "@archboard/board/store-read";
+import {
+	readArchitectureModel,
+	readModuleNavigation,
+	listArchitectureCheckpoints,
+	listArchitectureCheckpointRows,
+} from "@archboard/board/store-read";
 import {
 	retainArchitectureCheckpoint,
 	initializeArchitectureArchive,
@@ -55,6 +60,19 @@ const QuerySchema = z
 			query.state === undefined,
 		"Select either state or checkpoint.",
 	);
+const ModuleQuerySchema = z
+	.object({
+		vault: z.string(),
+		module: z.string().min(1),
+		state: z.string().min(1).optional(),
+		checkpoint: z.string().min(1).optional(),
+		preview: z.string().min(1).optional(),
+		code: z
+			.enum(["true", "false"])
+			.transform((value) => value === "true")
+			.optional(),
+	})
+	.strict();
 const InitializeBodySchema = z.object({ vault: z.string().optional() }).strict();
 const ListQuerySchema = z.object({ vault: z.string() }).strict();
 const RetainBodySchema = ArchitectureCheckpointRequestSchema.safeExtend({
@@ -99,6 +117,27 @@ function mountArchitectureModelRoutes(app: Express): void {
 			respond(res, await readArchitectureModel(vaultOfRequest(req), module, flow, navigation));
 		},
 	);
+	app.get("/api/architecture/module", requireVault, async (req, res) => {
+		const query = ModuleQuerySchema.safeParse(req.query);
+		if (!query.success) {
+			res
+				.status(400)
+				.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(query.error) });
+			return;
+		}
+		const { vault: _vault, module, ...reading } = query.data;
+		respond(res, await readModuleNavigation(vaultOfRequest(req), module, reading));
+	});
+	app.get("/api/architecture/checkpoints/rows", requireVault, async (req, res) => {
+		const query = ListQuerySchema.safeParse(req.query);
+		if (!query.success) {
+			res
+				.status(400)
+				.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(query.error) });
+			return;
+		}
+		respond(res, await listArchitectureCheckpointRows(vaultOfRequest(req)));
+	});
 	app.get("/api/architecture/checkpoints", requireVault, async (req, res) => {
 		const query = ListQuerySchema.safeParse(req.query);
 		if (!query.success) {

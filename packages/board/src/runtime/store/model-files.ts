@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFileSync, readdirSync, type Dirent } from "node:fs";
+import { lstatSync, readFileSync, readdirSync, type Dirent } from "node:fs";
 import { join } from "node:path";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import type { ArchitectureModel, ModelDiagnostic } from "#shared/schemas/model.ts";
@@ -19,30 +19,32 @@ function isModelInput(file: string): boolean {
 }
 
 /**
- * Capture a recognized input only when it is a regular file.
+ * Walk recognized authored inputs without following links.
  * @param vault The vault directory.
- * @param file The normalized input path.
- * @param entry The discovered directory entry.
- * @param inputs The captured bytes.
- * @param diagnostics Discovery failures.
+ * @param found Receives each input path with its directory entry.
+ * @param linked Receives each symbolic link.
  */
-function captureFile(
+function walkInputs(
 	vault: string,
-	file: string,
-	entry: Dirent,
-	inputs: Map<string, Buffer>,
-	diagnostics: ModelDiagnostic[],
+	found: (file: string, entry: Dirent) => void,
+	linked: (file: string) => void,
 ): void {
-	if (!entry.isFile()) {
-		diagnostics.push({
-			code: "INVALID_FILE",
-			file,
-			message: "A model input is not a regular file.",
-			recovery: "Replace the input with a regular authored file.",
-		});
-		return;
+	/**
+	 * Discover files relative to the vault.
+	 * @param directory The normalized relative directory.
+	 */
+	function visit(directory: string): void {
+		const entries = readdirSync(join(vault, directory), { withFileTypes: true }).toSorted(
+			(one, other) => one.name.localeCompare(other.name, "en"),
+		);
+		for (const entry of entries) {
+			const file = directory === "" ? entry.name : `${directory}/${entry.name}`;
+			if (entry.isSymbolicLink()) linked(file);
+			else if (isModelInput(file)) found(file, entry);
+			else if (entry.isDirectory()) visit(file);
+		}
 	}
-	inputs.set(file, readFileSync(join(vault, file)));
+	visit("");
 }
 
 /**
@@ -57,29 +59,27 @@ function readModelFiles(vault: string): {
 } {
 	const inputs = new Map<string, Buffer>();
 	const diagnostics: ModelDiagnostic[] = [];
-	/**
-	 * Discover files relative to the vault.
-	 * @param directory The normalized relative directory.
-	 */
-	function visit(directory: string): void {
-		const entries = readdirSync(join(vault, directory), { withFileTypes: true }).toSorted(
-			(one, other) => one.name.localeCompare(other.name, "en"),
-		);
-		for (const entry of entries) {
-			const file = directory === "" ? entry.name : `${directory}/${entry.name}`;
-			if (entry.isSymbolicLink()) {
+	try {
+		walkInputs(
+			vault,
+			(file, entry) => {
+				if (entry.isFile()) inputs.set(file, readFileSync(join(vault, file)));
+				else
+					diagnostics.push({
+						code: "INVALID_FILE",
+						file,
+						message: "A model input is not a regular file.",
+						recovery: "Replace the input with a regular authored file.",
+					});
+			},
+			(file) =>
 				diagnostics.push({
 					code: "UNSAFE_PATH",
 					file,
 					message: "A model input path is a symbolic link.",
 					recovery: "Keep authored inputs inside the vault without symbolic links.",
-				});
-			} else if (isModelInput(file)) captureFile(vault, file, entry, inputs, diagnostics);
-			else if (entry.isDirectory()) visit(file);
-		}
-	}
-	try {
-		visit("");
+				}),
+		);
 	} catch (error) {
 		diagnostics.push({
 			code: "INPUT_UNREADABLE",
@@ -89,6 +89,29 @@ function readModelFiles(vault: string): {
 		});
 	}
 	return { inputs, diagnostics, revision: modelRevision(inputs) };
+}
+
+/**
+ * Identify the input set from file metadata alone, so an idle observer reads no bytes.
+ * Every write replaces a file or changes its size or time, so a new token only means "read again".
+ * @param vault The addressed vault directory.
+ * @returns A token that stays equal while no input changed.
+ */
+function modelFilesToken(vault: string): string {
+	const parts: string[] = [];
+	try {
+		walkInputs(
+			vault,
+			(file) => {
+				const { ino, size, mtimeMs } = lstatSync(join(vault, file));
+				parts.push(`${file}:${ino}:${size}:${mtimeMs}`);
+			},
+			(file) => parts.push(`${file}:link`),
+		);
+	} catch (error) {
+		parts.push(errorMessage(error));
+	}
+	return parts.join("\n");
 }
 
 /**
@@ -103,4 +126,4 @@ function modelRevision(inputs: Map<string, Buffer>): ArchitectureModel["revision
 	return { files, digest: createHash("sha256").update(JSON.stringify(files)).digest("hex") };
 }
 
-export { readModelFiles, modelRevision };
+export { readModelFiles, modelFilesToken, modelRevision };

@@ -72,7 +72,7 @@ type SettingsSurface = "opener";
 /** One repository and the canonical model of its chosen checkout (ADR 0050). */
 interface ShellRepository {
 	readonly migrationRequired?: boolean | undefined;
-	readonly model?: Model["manifest"] | undefined;
+	readonly model?: Pick<Model["manifest"], "id" | "name"> | undefined;
 	readonly repository: RepositoryEntry;
 	/** Why its model could not be read, or null. */
 	readonly error: string | null;

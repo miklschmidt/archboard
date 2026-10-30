@@ -13,8 +13,9 @@ import { SemanticIdSchema, SingleLineTextSchema } from "#shared/schemas/primitiv
 import {
 	ArchitectureModuleSchema,
 	ArchitectureCheckpointSchema,
+	ArchitectureManifestSchema,
 	ArchitectureModelFailureSchema,
-	ArchitectureModelReadSchema,
+	ArchitectureSummarySchema,
 	ModelRevisionSchema,
 	QualifiedSubjectIdSchema,
 } from "#shared/schemas/model.ts";
@@ -231,7 +232,7 @@ const ArchitectureEventSchema = z.discriminatedUnion("type", [
 		.object({
 			type: z.literal("architecture_snapshot"),
 			vault: z.string(),
-			reading: ArchitectureModelReadSchema,
+			reading: ArchitectureSummarySchema,
 			claims: ArchitectureClaimListSchema,
 		})
 		.strict(),
@@ -240,6 +241,7 @@ const ArchitectureEventSchema = z.discriminatedUnion("type", [
 			type: z.literal("architecture_changed"),
 			vault: z.string(),
 			model: SemanticIdSchema,
+			name: ArchitectureManifestSchema.shape.name,
 			state: SemanticIdSchema.nullable(),
 			revision: ModelRevisionSchema,
 			subjects: z.array(QualifiedSubjectIdSchema),

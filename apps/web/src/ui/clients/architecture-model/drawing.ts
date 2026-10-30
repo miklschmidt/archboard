@@ -6,12 +6,13 @@ import { rendererBuild } from "virtual:archboard-renderer";
 import {
 	browserPictureStorage,
 	cachedModelDrawing,
+	modelDrawingKey,
 } from "#ui/clients/semantic-board-canvas/reads/picture-cache.ts";
 
 const storage = browserPictureStorage();
 
 /**
- * Each reading revision accepts only the scene key derived from its content and interfaces.
+ * A drawing is keyed by a digest of what it is drawn from, so an edit it does not read keeps it.
  * @param model The coherent architecture revision.
  * @param projection The content this reading shows.
  * @param grammar The explicitly requested diagram mode.
@@ -31,7 +32,7 @@ function modelDrawingQuery(
 		unsettled: projection.unsettled,
 		policy: model.policy,
 	});
-	const key = JSON.stringify(["canonical", rendererBuild, model.manifest.id, prepared.key]);
+	const key = modelDrawingKey(rendererBuild, model.manifest.id, prepared.key);
 	return queryOptions({
 		queryKey: ["model-drawing", key],
 		/**

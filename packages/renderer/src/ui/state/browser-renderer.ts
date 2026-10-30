@@ -14,6 +14,7 @@
 import type { SemanticBoard } from "@archboard/board/document";
 import type { SemanticPolicy } from "@archboard/board/policy";
 import { renderSemanticView } from "#shared/rules/render/diagram.ts";
+import { drawingKey, interfaceContent } from "#shared/rules/render/drawing-key.ts";
 import type {
 	SemanticViewRenderRequest,
 	RenderedDiagram,
@@ -123,13 +124,18 @@ async function drawBoardHere(
 }
 
 /**
- * Prepare a scoped drawing with the renderer's complete interface classification.
- * @param request The visible content, complete model, and presentation policy.
+ * Prepare a scoped drawing. The key is a digest of the exact request the core receives, so
+ * whatever the drawing depends on changes the key, and nothing else does.
+ * @param scoped The visible content, complete model, and presentation policy.
  * @returns A stable scene key and its local rendering operation.
  */
-function prepareContentHere(request: Omit<SemanticViewRenderRequest, "theme">) {
+function prepareContentHere(scoped: Omit<SemanticViewRenderRequest, "theme">) {
+	const request =
+		scoped.variant === undefined
+			? scoped
+			: { ...scoped, variant: interfaceContent(scoped.variant) };
 	return {
-		key: JSON.stringify(request),
+		key: drawingKey(request),
 		/**
 		 * Render only after the renderer core and the icons are available.
 		 * @returns The picture and its interaction geometry.

@@ -3,6 +3,7 @@
 // off the whole variant, never off what a view or a comparison draws.
 import { expect, test } from "bun:test";
 import { renderArchitecture, renderBoard } from "#runtime/operations/render.ts";
+import { interfaceContent } from "#shared/rules/render/drawing-key.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
 import type { DiagramAtlas } from "@archboard/board/render-reply";
@@ -112,6 +113,26 @@ test("an entry point keeps the first row in a view that hides its caller", async
 	const atlas = await atlasOf(boardOf(service), { variant: "current", view: "inside" });
 	expect(atlas.nodes["client"]).toBeUndefined();
 	expect(standsBelow(atlas, "api", "job")).toBe(true);
+});
+
+test("the interface facts of the whole variant draw what the whole variant draws", async () => {
+	const inside = (id: string) => id !== "client";
+	const whole = orderedFixture(service);
+	const content = {
+		...whole,
+		nodes: whole.nodes.filter((node) => inside(node.id)),
+		edges: whole.edges.filter((edge) => inside(edge.from)),
+	};
+	const request = {
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "track",
+	} as const;
+	const complete = await renderArchitecture({ ...request, variant: whole });
+	const reduced = await renderArchitecture({ ...request, variant: interfaceContent(whole) });
+	expect(reduced.svg).toBe(complete.svg);
+	expect(standsBelow(reduced.atlas, "api", "job")).toBe(true);
 });
 
 test("a view holds a container's first row only where the whole variant does", async () => {

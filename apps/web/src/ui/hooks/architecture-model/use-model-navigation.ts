@@ -1,7 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 import type { Model } from "@archboard/board/content";
-import { architectureModelQuery, readModel } from "#ui/clients/architecture-model/queries.ts";
+import type { ModuleNavigationRead } from "@archboard/board/model";
+import { architectureModuleQuery, readModel } from "#ui/clients/architecture-model/queries.ts";
+
+/** The fields that make a reading one exact reading. */
+const READING_FIELDS = [
+	"model",
+	"state",
+	"checkpoint",
+	"preview",
+	"previewState",
+	"digest",
+] as const;
 
 /**
  * Navigation details belong to the exact state whose module the inspector shows.
@@ -15,14 +26,11 @@ function useModelNavigation(vault: string, model: Model, module: Model["modules"
 	const target = navigationTarget(model, subject);
 	const { checkpoint, state, preview } = target;
 	const query = useQuery(
-		architectureModelQuery(vault, checkpoint ?? null, {
-			module: subject,
-			state,
-			preview,
-			code: module.binding !== undefined,
-			references: true,
-			compare: false,
-		}),
+		architectureModuleQuery(
+			vault,
+			{ module: subject, state, checkpoint, preview, code: module.binding !== undefined },
+			model.revision.digest,
+		),
 	);
 	const coherent = !query.isError && matchingNavigation(query.data, model);
 	const data = coherent ? query.data : undefined;
@@ -41,21 +49,10 @@ function useModelNavigation(vault: string, model: Model, module: Model["modules"
 		query,
 		coherent,
 		code: data?.codeTarget,
-		references: moduleReferences(data, subject),
+		references: data?.resolvedReferences ?? [],
 		follow,
 		target,
 	};
-}
-
-/**
- * A selected module exposes only its own authored references.
- * @param model The coherent navigation reading.
- * @param subject The selected module.
- * @returns Its resolved entries in authored order.
- */
-function moduleReferences(model: Model | undefined, subject: string) {
-	if (model === undefined) return [];
-	return model.resolvedReferences?.filter((entry) => entry.module === subject) ?? [];
 }
 
 /**
@@ -64,9 +61,13 @@ function moduleReferences(model: Model | undefined, subject: string) {
  * @param shown The exact state that the person sees.
  * @returns Whether both responses identify one coherent reading.
  */
-function matchingNavigation(actual: Model | undefined, shown: Model): boolean {
+function matchingNavigation(
+	actual: Extract<ModuleNavigationRead, { success: true }> | undefined,
+	shown: Model,
+): boolean {
 	if (actual === undefined) return false;
-	return JSON.stringify(navigationIdentity(actual)) === JSON.stringify(navigationIdentity(shown));
+	const identity = readingIdentity(shown);
+	return READING_FIELDS.every((field) => actual.reading[field] === identity[field]);
 }
 
 /**
@@ -95,17 +96,17 @@ function navigationState(model: Model): string | undefined {
 /**
  * State, checkpoint, and input revision all contribute to reading identity.
  * @param model One complete query response.
- * @returns Its ordered identity fields.
+ * @returns Its identity, as the server names it on a separately read detail.
  */
-function navigationIdentity(model: Model) {
-	return [
-		model.manifest.id,
-		model.selectedState?.id,
-		model.checkpoint?.id,
-		model.migrationPreview?.origin,
-		model.migrationPreview?.selected?.legacy,
-		model.revision.digest,
-	];
+function readingIdentity(model: Model) {
+	return {
+		model: model.manifest.id,
+		state: model.selectedState?.id,
+		checkpoint: model.checkpoint?.id,
+		preview: model.migrationPreview?.origin,
+		previewState: model.migrationPreview?.selected?.legacy,
+		digest: model.revision.digest,
+	};
 }
 
 export { useModelNavigation };

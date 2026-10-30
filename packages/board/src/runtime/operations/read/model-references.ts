@@ -226,10 +226,15 @@ async function resolveReference(
 /**
  * Gather authored references without adding another identity or index authority.
  * @param model The complete source reading.
- * @returns Direct authored references in module and authored array order.
+ * @returns Direct authored references of its selected module, or of every module without one.
  */
 function modelReferences(model: ArchitectureModel): ReferenceEntry[] {
-	return model.modules.flatMap((module) =>
+	const { selectedModule } = model;
+	const modules =
+		selectedModule === undefined
+			? model.modules
+			: model.modules.filter((module) => module.id === selectedModule);
+	return modules.flatMap((module) =>
 		(module.references ?? []).map((reference, index) => ({ module: module.id, index, reference })),
 	);
 }

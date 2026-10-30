@@ -21,6 +21,9 @@ interface Entry {
 function createAgentActivity(send: (message: AgentActivityMessage) => void) {
 	const entries = new Map<string, Entry>();
 	const watched = new Map<string, () => void>();
+	/** The vaults open in connected panes, each with how many panes hold it. */
+	const held = new Map<string, number>();
+	let registered: readonly string[] = [];
 	let stopped = false;
 
 	/**
@@ -140,14 +143,41 @@ function createAgentActivity(send: (message: AgentActivityMessage) => void) {
 				break;
 		}
 	}
+	/** Watch what a connected pane can show: nothing while no pane is connected. */
+	function followWanted(): void {
+		const wanted = new Set(held.size === 0 ? [] : [...registered, ...held.keys()]);
+		for (const [vault, stop] of watched) {
+			if (wanted.has(vault)) continue;
+			stop();
+			watched.delete(vault);
+			forget(vault);
+		}
+		for (const vault of wanted)
+			if (!watched.has(vault)) watched.set(vault, watchArchitectureModel(vault, receive));
+	}
 	return {
 		/**
-		 * Follow an explicitly addressed or registered vault once.
-		 * @param vault The canonical vault path.
+		 * Replace the vaults that every connected pane hears about.
+		 * @param vaults The readable vaults of the repository registry.
 		 */
-		follow(vault: string): void {
-			if (stopped || watched.has(vault)) return;
-			watched.set(vault, watchArchitectureModel(vault, receive));
+		register(vaults: readonly string[]): void {
+			registered = vaults;
+			if (!stopped) followWanted();
+		},
+		/**
+		 * Keep the vaults a pane can show followed for as long as the pane is connected.
+		 * @param vault The pane's own vault, which the registry can omit.
+		 * @returns The function that lets go, which ends every watcher with the last pane.
+		 */
+		hold(vault: string): () => void {
+			held.set(vault, (held.get(vault) ?? 0) + 1);
+			if (!stopped) followWanted();
+			return () => {
+				const count = held.get(vault)! - 1;
+				if (count === 0) held.delete(vault);
+				else held.set(vault, count);
+				if (!stopped) followWanted();
+			};
 		},
 		/**
 		 * Fresh complete activity for a newly admitted or returning pane.

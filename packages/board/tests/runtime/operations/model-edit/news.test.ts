@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { writeFileSync } from "node:fs";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
 	readArchitectureModel,
@@ -13,6 +13,7 @@ import {
 	claimArchitectureSubjects,
 } from "@archboard/board/store-write";
 import type { ArchitectureEvent } from "@archboard/board/model";
+import { modelFilesToken } from "#runtime/store/model-files.ts";
 import {
 	fixture,
 	intent,
@@ -95,6 +96,47 @@ test("news starts with a coherent snapshot and follows claims, durable completio
 	} finally {
 		stop();
 	}
+});
+
+test("followers of a vault share one observation, and the last to leave ends it", async () => {
+	const { vault } = fixture();
+	const heard: ArchitectureEvent[][] = [[], []];
+	const stopFirst = watchArchitectureModel(vault, (event) => heard[0]!.push(event));
+	const stopSecond = watchArchitectureModel(vault, (event) => heard[1]!.push(event));
+	const digest = (event: ArchitectureEvent | undefined) =>
+		event?.type === "architecture_snapshot" && event.reading.success ? event.reading.digest : null;
+	const opening = digest(heard[0]![0]);
+	expect(opening).not.toBeNull();
+	expect(digest(heard[1]![0])).toBe(opening);
+	const external = JSON.parse(readBytes(vault).toString());
+	writeFileSync(
+		join(vault, "gateway.module.json"),
+		JSON.stringify({ ...external, description: "Seen by every follower once" }),
+	);
+	stopFirst();
+	while (heard[1]!.length < 2) await Bun.sleep(10);
+	expect(heard[0]).toHaveLength(1);
+	expect(heard[1]![1]).toMatchObject({ type: "architecture_changed", reason: "external" });
+	stopSecond();
+	writeFileSync(
+		join(vault, "gateway.module.json"),
+		JSON.stringify({ ...external, description: "Written while nothing follows" }),
+	);
+	const returning: ArchitectureEvent[] = [];
+	watchArchitectureModel(vault, (event) => returning.push(event))();
+	expect(digest(returning[0])).not.toBe(opening);
+});
+
+test("the metadata token holds while nothing changes and moves with any input", () => {
+	const { vault } = fixture();
+	const idle = modelFilesToken(vault);
+	expect(modelFilesToken(vault)).toBe(idle);
+	const file = join(vault, "gateway.module.json");
+	writeFileSync(file, `${readFileSync(file, "utf8")}\n`);
+	const edited = modelFilesToken(vault);
+	expect(edited).not.toBe(idle);
+	rmSync(file);
+	expect(modelFilesToken(vault)).not.toBe(edited);
 });
 
 test("explicit scope exclusion and take-back reject the former writer without changing architecture", async () => {

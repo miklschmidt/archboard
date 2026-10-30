@@ -187,6 +187,7 @@ test("canonical code controls follow current draft and exact readings while miss
 	);
 	await openModelSidebar(browser, "selection");
 	await openCode(browser, capture, join(root, "src/gateway.ts"), false);
+	await browser.eval(`document.querySelector('[data-slot="module-read-history"]').click()`);
 	await pollUntil(
 		() =>
 			browser.eval<string[]>(

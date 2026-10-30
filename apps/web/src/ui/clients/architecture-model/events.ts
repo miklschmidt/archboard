@@ -1,10 +1,15 @@
-import { hashKey, type Query, type QueryClient } from "@tanstack/react-query";
+import type { Query, QueryClient } from "@tanstack/react-query";
 import type { ArchitectureEvent, ArchitectureModelRead } from "@archboard/board/model";
 import { createFeedSocket } from "#ui/clients/architecture-model/feed-socket.ts";
 import {
 	ArchitectureReadError,
 	architectureModelKeys,
+	type ModelSummary,
 } from "#ui/clients/architecture-model/queries.ts";
+import { semanticBoardKeys } from "#ui/clients/semantic-board-canvas/reads/board-keys.ts";
+
+type CurrentReading = Extract<ArchitectureModelRead, { success: true }>;
+type ModelEvent = Exclude<ArchitectureEvent, { type: "architecture_claims" }>;
 
 interface FeedState {
 	connection: "connecting" | "live" | "unavailable";
@@ -59,9 +64,11 @@ function createFeed(
 	let stopFollowing: (() => void) | null = null;
 	let generation = 0;
 	let claimsGeneration = 0;
+	/** The revision this tab last heard, so a returning socket reads only after a real change. */
+	let heard: string | undefined;
 	const currentKey = architectureModelKeys.reading(vault, null);
-	const currentHash = hashKey(currentKey);
 	const claimsKey = architectureModelKeys.claims(vault);
+	const summaryKey = architectureModelKeys.summary(vault);
 	/**
 	 * Publish transport state, without copying any model content.
 	 * @param next The new state.
@@ -72,6 +79,7 @@ function createFeed(
 	}
 	/** Mark cached current content unavailable until a fresh snapshot arrives. */
 	function unavailable(): void {
+		client.setQueryData<ModelSummary>(summaryKey, (known) => known ?? { failure: null });
 		publish({ ...state, connection: "unavailable" });
 	}
 	/**
@@ -95,13 +103,33 @@ function createFeed(
 		return stopFollowing !== null && accepted === generation;
 	}
 	/**
-	 * Apply a fresh snapshot or request a coherent read after a change.
-	 * @param event The ordered model event.
+	 * Whether a snapshot names another revision than this tab holds or is reading now.
+	 * @param digest The snapshot's revision.
+	 * @returns True when a cached reading is older than the snapshot.
 	 */
-	async function receiveModel(
-		event: Exclude<ArchitectureEvent, { type: "architecture_claims" }>,
-	): Promise<void> {
-		const accepted = ++generation;
+	async function movedPast(digest: string): Promise<boolean> {
+		const reading = client.getQueryCache().find({ queryKey: currentKey, exact: true });
+		await reading?.promise?.catch(() => undefined);
+		const held = client.getQueryData<CurrentReading>(currentKey)?.revision.digest;
+		const known = heard ?? held;
+		return known !== undefined && known !== digest;
+	}
+	/**
+	 * Whether an event can change what this tab holds. A snapshot only reports a revision.
+	 * @param event The ordered model event.
+	 * @returns True when readings need a fresh read.
+	 */
+	async function changesReadings(event: ModelEvent): Promise<boolean> {
+		if (event.type !== "architecture_snapshot" || !event.reading.success) return true;
+		return movedPast(event.reading.digest);
+	}
+	/**
+	 * Request a coherent read of everything this change can reach.
+	 * @param event The ordered model event.
+	 * @param accepted The generation of this event.
+	 */
+	async function refreshReadings(event: ModelEvent, accepted: number): Promise<void> {
+		if (!isCurrent(accepted)) return;
 		const changingReadings = {
 			queryKey: architectureModelKeys.readings(vault),
 			/**
@@ -113,21 +141,21 @@ function createFeed(
 		};
 		await client.cancelQueries(changingReadings);
 		if (!isCurrent(accepted)) return;
-		const snapshot = coherentSnapshot(event);
-		if (snapshot !== null) {
-			client.setQueryData(currentKey, snapshot);
-			await client.invalidateQueries({
-				...changingReadings,
-				/**
-				 * The snapshot replaces only the default current read; other states need their own result.
-				 * @param query A cached mutable reading.
-				 * @returns Whether its selected state or comparison requires a fresh read.
-				 */
-				predicate: (query) => query.queryHash !== currentHash && changingReadings.predicate(query),
-			});
-		} else {
-			await client.invalidateQueries(changingReadings);
-		}
+		await Promise.all([
+			client.invalidateQueries(changingReadings),
+			client.invalidateQueries({ queryKey: semanticBoardKeys.vaultCheck(vault) }),
+		]);
+	}
+	/**
+	 * Update the repository row, then read only when the revision moved.
+	 * @param event The ordered model event.
+	 */
+	async function receiveModel(event: ModelEvent): Promise<void> {
+		const accepted = ++generation;
+		client.setQueryData<ModelSummary>(summaryKey, (known) => summaryAfter(event, known));
+		const moved = await changesReadings(event);
+		if (isCurrent(accepted)) heard = revisionOf(event) ?? heard;
+		if (moved) await refreshReadings(event, accepted);
 		if (!isCurrent(accepted)) return;
 		await resumeInterruptedHistory(client, vault, event);
 		if (isCurrent(accepted)) publish({ ...state, refreshing: false });
@@ -179,12 +207,28 @@ function createFeed(
 }
 
 /**
- * Only a successful full snapshot can replace the default current query.
+ * The revision that an event reports, when it reports a coherent one.
  * @param event The addressed architecture event.
- * @returns Its coherent model, or no replacement content.
+ * @returns Its digest, or null for a refusal.
  */
-function coherentSnapshot(event: ArchitectureEvent) {
-	return event.type === "architecture_snapshot" && event.reading.success ? event.reading : null;
+function revisionOf(event: ModelEvent) {
+	if (event.type === "architecture_changed") return event.revision.digest;
+	return event.type === "architecture_snapshot" && event.reading.success
+		? event.reading.digest
+		: null;
+}
+
+/**
+ * What a repository row holds after an event.
+ * @param event The addressed architecture event.
+ * @param known What it held before.
+ * @returns Its identity and any refusal.
+ */
+function summaryAfter(event: ModelEvent, known: ModelSummary | undefined): ModelSummary {
+	if (event.type === "architecture_changed")
+		return { manifest: { id: event.model, name: event.name }, failure: null };
+	if (!event.reading.success) return { manifest: known?.manifest, failure: event.reading };
+	return { manifest: event.reading.manifest, failure: null };
 }
 
 /**
@@ -197,9 +241,7 @@ function coherentSnapshot(event: ArchitectureEvent) {
 function followsChanges(client: QueryClient, query: Query, coherent: boolean): boolean {
 	if (query.queryKey[3] === null) return true;
 	if (!coherent) return false;
-	const reading = client.getQueryData<Extract<ArchitectureModelRead, { success: true }>>(
-		query.queryKey,
-	);
+	const reading = client.getQueryData<CurrentReading>(query.queryKey);
 	const comparison = reading?.comparison;
 	return (
 		comparison !== undefined && comparison.against !== null && comparison.checkpoint === undefined
@@ -216,7 +258,7 @@ function followsChanges(client: QueryClient, query: Query, coherent: boolean): b
 async function resumeInterruptedHistory(
 	client: QueryClient,
 	vault: string,
-	event: Exclude<ArchitectureEvent, { type: "architecture_claims" }>,
+	event: ModelEvent,
 ): Promise<void> {
 	if (failureOf(event) !== null) return;
 	const interrupted = client
@@ -249,9 +291,7 @@ async function resumeInterruptedHistory(
  * @param event The shared current-reading event.
  * @returns Its refusal, if any.
  */
-function failureOf(
-	event: Exclude<ArchitectureEvent, { type: "architecture_claims" }>,
-): FeedState["failure"] {
+function failureOf(event: ModelEvent): FeedState["failure"] {
 	if (event.type === "architecture_status") return event.reading;
 	if (event.type === "architecture_snapshot" && !event.reading.success) return event.reading;
 	return null;

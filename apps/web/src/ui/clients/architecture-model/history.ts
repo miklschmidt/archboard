@@ -12,7 +12,7 @@ import {
  * Read the existing Git analysis for the exact canonical architecture on screen.
  * @param vault The explicitly addressed vault.
  * @param model The coherent model, state, and optional checkpoint.
- * @returns One cached locality request, refreshed on demand rather than on a timer.
+ * @returns One cached locality request, which runs only when a person asks for it.
  */
 function modelHistoryQuery(
 	vault: string,
@@ -57,9 +57,7 @@ function modelHistoryQuery(
 				);
 			return result;
 		},
-		staleTime: 0,
-		refetchOnWindowFocus: false,
-		refetchOnReconnect: false,
+		enabled: false,
 		retry: false,
 	});
 }

@@ -312,6 +312,16 @@ const ArchitectureModelReadSchema = z.discriminatedUnion("success", [
 	ArchitectureModelSchema,
 	ArchitectureModelFailureSchema,
 ]);
+// What a follower hears on subscribing: the identity of the coherent reading or its refusal.
+// Content stays with the one HTTP reader, so a socket and a read never disagree about a resource.
+const ArchitectureSummarySchema = z.discriminatedUnion("success", [
+	z.strictObject({
+		success: z.literal(true),
+		manifest: ArchitectureManifestSchema.pick({ id: true, name: true }).strict(),
+		digest: ModelRevisionSchema.shape.digest,
+	}),
+	ArchitectureModelFailureSchema,
+]);
 const ArchitectureCheckpointRetainSchema = z.discriminatedUnion("success", [
 	z.object({ success: z.literal(true), checkpoint: ArchitectureCheckpointSchema }).strict(),
 	ArchitectureModelFailureSchema,
@@ -320,6 +330,38 @@ const ArchitectureCheckpointListSchema = z.discriminatedUnion("success", [
 	z
 		.object({ success: z.literal(true), checkpoints: z.array(ArchitectureCheckpointSchema) })
 		.strict(),
+	ArchitectureModelFailureSchema,
+]);
+// The rows of a history list: what a person chooses a reading by, and no revision or source evidence.
+const ArchitectureCheckpointRowsSchema = z.discriminatedUnion("success", [
+	z.strictObject({
+		success: z.literal(true),
+		checkpoints: z.array(
+			ArchitectureCheckpointSchema.pick({ id: true, createdAt: true }).extend({
+				state: StateMetadataSchema.pick({ name: true }).strict().nullable(),
+				doing: ArchitectureCheckpointRequestSchema.shape.doing,
+			}),
+		),
+	}),
+	ArchitectureModelFailureSchema,
+]);
+// One module's navigation details: the identity of the reading they belong to and nothing else of it.
+const ReadingIdentitySchema = z.strictObject({
+	model: ArchitectureManifestSchema.shape.id,
+	state: SelectedStateSchema.shape.id.optional(),
+	checkpoint: GitObjectIdSchema.optional(),
+	preview: z.string().optional(),
+	previewState: z.string().optional(),
+	digest: ModelRevisionSchema.shape.digest,
+});
+const ModuleNavigationReadSchema = z.discriminatedUnion("success", [
+	z.strictObject({
+		success: z.literal(true),
+		reading: ReadingIdentitySchema,
+		module: QualifiedSubjectIdSchema,
+		resolvedReferences: ArchitectureModelSchema.shape.resolvedReferences.unwrap(),
+		codeTarget: ArchitectureModelSchema.shape.codeTarget,
+	}),
 	ArchitectureModelFailureSchema,
 ]);
 const ArchitectureArchiveInitializationSchema = z.discriminatedUnion("success", [
@@ -345,6 +387,10 @@ const ArchitecturePublicationSchema = z.discriminatedUnion("success", [
 	ArchitectureModelFailureSchema,
 ]);
 type ArchitectureCheckpointRequest = z.infer<typeof ArchitectureCheckpointRequestSchema>;
+type ArchitectureSummary = z.infer<typeof ArchitectureSummarySchema>;
+type ArchitectureCheckpointRows = z.infer<typeof ArchitectureCheckpointRowsSchema>;
+type ReadingIdentity = z.infer<typeof ReadingIdentitySchema>;
+type ModuleNavigationRead = z.infer<typeof ModuleNavigationReadSchema>;
 type ArchitectureCheckpoint = z.infer<typeof ArchitectureCheckpointSchema>;
 type ArchitectureCheckpointRetain = z.infer<typeof ArchitectureCheckpointRetainSchema>;
 type ArchitectureCheckpointList = z.infer<typeof ArchitectureCheckpointListSchema>;
@@ -366,7 +412,14 @@ export {
 	ArchitectureCheckpointSchema,
 	ArchitectureCheckpointRetainSchema,
 	ArchitectureCheckpointListSchema,
+	ArchitectureCheckpointRowsSchema,
+	ArchitectureSummarySchema,
+	ModuleNavigationReadSchema,
 	type ArchitectureCheckpointRequest,
+	type ArchitectureCheckpointRows,
+	type ArchitectureSummary,
+	type ModuleNavigationRead,
+	type ReadingIdentity,
 	type ArchitectureCheckpoint,
 	type ArchitectureCheckpointRetain,
 	type ArchitectureCheckpointList,

@@ -371,7 +371,7 @@ async function acceptWebSocketConnection(
 	if (ws.readyState !== WebSocket.OPEN || !admitSocket(ws, socket, startingKey)) {
 		return;
 	}
-	agentActivity.follow(vault);
+	ws.once("close", agentActivity.hold(vault));
 	for (const snapshot of agentActivity.snapshots()) ws.send(JSON.stringify(snapshot));
 	// There is a screen again, so the lock files of what is on it are worth
 	// reading (ADR 0016).

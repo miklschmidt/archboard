@@ -12,7 +12,7 @@ import { diagramIconPaths } from "@archboard/renderer/bun";
 import { app } from "#server/wiring/http/server-app.ts";
 import { FRONTEND_DIRECTORY } from "#server/store/frontend/frontend-directory.ts";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
-import { agentActivity, checkoutWork } from "#server/wiring/owners/server-owners.ts";
+import { checkoutWork } from "#server/wiring/owners/server-owners.ts";
 import { mountCodeCheckRoute } from "#server/routes/code-check/code-check-route.ts";
 import { startServer } from "#server/lifecycle/startup/server-startup.ts";
 import {
@@ -103,10 +103,6 @@ app.use(
 mountPaneRoutes(app);
 mountRepositoryRoutes(app);
 mountArchitectureConfigurationRoutes(app);
-app.use("/api/architecture", requireVault, (req, _res, next) => {
-	agentActivity.follow(vaultOfRequest(req));
-	next();
-});
 mountArchitectureModelRoutes(app);
 mountArchitectureHistoryRoutes(app);
 mountLegacyMigrationRoutes(app);

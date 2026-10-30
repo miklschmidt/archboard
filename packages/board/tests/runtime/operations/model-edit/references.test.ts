@@ -1,7 +1,11 @@
 import { afterEach, expect, test } from "bun:test";
 import { join } from "node:path";
 import { readFileSync, writeFileSync, symlinkSync } from "node:fs";
-import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/board/store-read";
+import {
+	readArchitectureModel,
+	readArchitectureCheckpoint,
+	readModuleNavigation,
+} from "@archboard/board/store-read";
 import { editArchitectureModule } from "@archboard/board/store-write";
 import { git, retain } from "#tests/runtime/support/publication-fixture.ts";
 import {
@@ -16,6 +20,29 @@ import {
 } from "#tests/runtime/operations/proposals/fixture.ts";
 
 afterEach(disposeReferences);
+
+test("a module's navigation read answers for that module and names its exact reading", async () => {
+	const { local } = await referencedFixture();
+	const whole = readArchitectureModel(local.vault);
+	if (!whole.success) throw new Error(JSON.stringify(whole));
+	const details = await readModuleNavigation(local.vault, "Shop#Gateway", {});
+	expect(details).toEqual({
+		success: true,
+		reading: expect.objectContaining({ model: "Shop", digest: whole.revision.digest }),
+		module: "Shop#Gateway",
+		resolvedReferences: [expect.objectContaining({ module: "Shop#Gateway", status: "available" })],
+		codeTarget: undefined,
+	});
+	const other = whole.modules.find((module) => (module.references ?? []).length === 0);
+	expect(await readModuleNavigation(local.vault, other!.id, {})).toMatchObject({
+		success: true,
+		resolvedReferences: [],
+	});
+	expect(await readModuleNavigation(local.vault, "Shop#Absent", {})).toMatchObject({
+		success: false,
+		code: "MODULE_NOT_FOUND",
+	});
+});
 
 test("draft navigation and adoption preserve code, comparisons, and exact foreign pins", async () => {
 	const { local, foreign, checkpoint, reference } = await referencedFixture();

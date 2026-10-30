@@ -65,6 +65,39 @@ const ModelDrawingSchema = ArchitectureRenderResultSchema.options[0]
 			.optional(),
 	});
 
+/** The first field of a canonical drawing's key, which no board picture's key starts with. */
+const CANONICAL_KEY = "canonical";
+
+/** How many canonical drawings one browser keeps. Each holds one picture and its atlas. */
+const KEPT_DRAWINGS = 64;
+
+/**
+ * The key one canonical drawing is kept under.
+ * @param build The renderer build.
+ * @param model The canonical model identity.
+ * @param digest The digest of the exact render request.
+ * @returns The key.
+ */
+function modelDrawingKey(build: string, model: string, digest: string): string {
+	return JSON.stringify([CANONICAL_KEY, build, model, digest]);
+}
+
+/**
+ * Bound what the canonical reader keeps: another build's drawings never match again, and past the
+ * limit a redraw is the whole cost of losing one.
+ * @param storage The picture store.
+ * @param kept The drawing that was just stored.
+ */
+async function forgetOldDrawings(storage: PictureStorage, kept: string): Promise<void> {
+	const build = keyParts(kept)[1];
+	const drawings = (await storage.keys()).flatMap((key) =>
+		typeof key === "string" && keyParts(key)[0] === CANONICAL_KEY ? [key] : [],
+	);
+	const stale = drawings.filter((key) => keyParts(key)[1] !== build);
+	const others = drawings.filter((key) => keyParts(key)[1] === build && key !== kept);
+	await Promise.all([...stale, ...others.slice(KEPT_DRAWINGS - 1)].map((key) => storage.del(key)));
+}
+
 /**
  * Reuse a local scene only when its complete render input and renderer build match.
  * @param storage The existing picture store, when available.
@@ -87,6 +120,7 @@ async function cachedModelDrawing(
 	const drawing = await draw();
 	try {
 		await storage.set(key, drawing);
+		await forgetOldDrawings(storage, key);
 	} catch {
 		// A full or closed store does not prevent the scene from appearing.
 	}
@@ -215,8 +249,7 @@ async function forgetStalePictures(
 	renderer: string,
 ): Promise<void> {
 	try {
-		const stale = (await storage.keys()).filter((key): key is string => {
-			if (typeof key !== "string") return false;
+		const stale = (await storage.keys()).filter(isBoardPicture).filter((key) => {
 			const parts = keyParts(key);
 			if (parts.length !== KEY_FIELDS) return true;
 			const [ofVault, board, , , , , version, , drawnBy] = parts;
@@ -232,6 +265,15 @@ async function forgetStalePictures(
 	} catch {
 		// Unreadable storage: a stale picture still fails its stamp on lookup.
 	}
+}
+
+/**
+ * Whether a kept key names a board's picture, which a canonical drawing's key does not.
+ * @param key A stored key.
+ * @returns True for a board picture's key, or for a key of an older page.
+ */
+function isBoardPicture(key: IDBValidKey): key is string {
+	return typeof key === "string" && keyParts(key)[0] !== CANONICAL_KEY;
 }
 
 /**
@@ -251,6 +293,7 @@ function keyParts(key: string): unknown[] {
 export {
 	browserPictureStorage,
 	cachedModelDrawing,
+	modelDrawingKey,
 	forgetStalePictures,
 	readCachedPicture,
 	writeCachedPicture,

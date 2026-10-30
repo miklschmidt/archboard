@@ -6,6 +6,7 @@ import {
 	ModelReadingSelector,
 	HistoryStatus,
 } from "#ui/components/architecture-model/ModelReadingSelector.tsx";
+import { useRetainedRead } from "#ui/hooks/architecture-model/use-retained-read.ts";
 
 type ComparisonSelectorProps = Pick<
 	ComponentProps<typeof ModelReadingSelector>,
@@ -28,14 +29,7 @@ function ModelComparisonSelector(props: ComparisonSelectorProps): JSX.Element {
 		},
 		[onSelect],
 	);
-	const { refetch: readHistory } = history;
-	const { refetch: readCatalogue } = catalogue;
-	const opened = useCallback(
-		(open: boolean): void => {
-			if (open) void Promise.all([readHistory(), readCatalogue()]);
-		},
-		[readHistory, readCatalogue],
-	);
+	const opened = useRetainedRead(history, catalogue);
 	const choices = comparisonChoices(props);
 	return (
 		<Select
