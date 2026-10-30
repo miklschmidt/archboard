@@ -50,6 +50,8 @@ pub(crate) struct Band {
 pub(crate) struct Laid {
     pub width: f64,
     pub height: f64,
+    /// The card widths its independent ports needed.
+    pub port_widths: Map<String, f64>,
     /// Every item's, header's, port's and label's box, in the block's own coordinates.
     pub boxes: Map<String, Rect>,
     /// Each line's points, by key, from its source end to its target end.

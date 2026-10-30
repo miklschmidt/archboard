@@ -30,6 +30,7 @@ Views with at most thirty-two relationships also compare a wider wrap search wit
 A denser view runs that search only when its first hierarchy draws nothing.
 After a candidate draws, later candidates try only the longest-first route order.
 The other three orders rescue a view that has no drawing yet.
+A wrap candidate starts from the card widths that the block's whole layout reserved for its ports.
 That search keeps both held and free columns, and compares its first and settled port orders.
 It lets the final planner choose frame attachments instead of forcing header calls onto side walls before placement.
 It packs its own child shapes, then holds that packing while it settles port order.

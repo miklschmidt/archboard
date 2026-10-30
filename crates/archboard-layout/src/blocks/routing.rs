@@ -217,6 +217,7 @@ fn read(
     (
         Laid {
             laps: Some(laps),
+            port_widths: Map::default(),
             width,
             height,
             boxes,

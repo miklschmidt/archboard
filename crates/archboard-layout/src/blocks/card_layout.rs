@@ -302,7 +302,7 @@ impl<'t> CardLayout<'t> {
     ///
     /// What Graphviz refused the block's graph with, or answered unreadably.
     pub(crate) fn lay(&mut self, gv: &mut Engine<'_>) -> Result<Rc<Laid>, String> {
-        let lined = self.lined(gv)?;
+        let lined = self.lined(gv, &Map::default())?;
         self.finish(gv, lined)
     }
 
@@ -348,19 +348,26 @@ impl<'t> CardLayout<'t> {
         };
         Ok(Rc::new(Laid {
             reroute: Some(Rc::new(reroute)),
+            port_widths: self.port_widths.clone(),
             ..laid
         }))
     }
 
     /// The block ranked by Graphviz and lined up, its lines not yet routed:
     /// where every item stands across the block is settled here, and routing
-    /// only opens the room between its ranks.
+    /// only opens the room between its ranks. A wrap starts from the widths
+    /// the block whole reserved, so it need not find them again.
     ///
     /// # Errors
     ///
     /// What Graphviz refused the block's graph with, or answered unreadably.
-    pub(crate) fn lined(&mut self, gv: &mut Engine<'_>) -> Result<Lined, String> {
+    pub(crate) fn lined(
+        &mut self,
+        gv: &mut Engine<'_>,
+        widths: &Map<String, f64>,
+    ) -> Result<Lined, String> {
         self.build();
+        self.reserve_ports(widths);
         self.place(gv)
     }
 
