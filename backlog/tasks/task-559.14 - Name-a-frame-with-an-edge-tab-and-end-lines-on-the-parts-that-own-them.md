@@ -4,7 +4,7 @@ title: Name a frame with an edge tab and end lines on the parts that own them
 status: To Do
 assignee: []
 created_date: '2026-10-30T23:06:00Z'
-updated_date: '2026-10-30T23:32:00Z'
+updated_date: '2026-10-30T23:47:00Z'
 labels:
   - renderer
   - frontend
@@ -32,10 +32,14 @@ The owner compared header mockups in /tmp/integrate/header-mockups/ and chose th
 - [ ] #6 The owner sees the result in the real pane and accepts it by eye
 - [ ] #7 In a reading such as Commands, a reader sees which parts reach which outside card, and a part only loses its last line by a stated rule
 - [ ] #8 Cards in one frame stand on a shared grid with one column gap and one row gap, and any exception is stated in the rule
+- [ ] #9 A door is a bright button with the finish of a primary action in its chip or group colour, in both themes, and no palette colour turns pale or brown
+- [ ] #10 The arrow on a door points up, sideways or down by the depth of its target compared with the open module
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Owner accepted variant E of the header mockups, with the tab keeping a background lighter than the floor. On Commands at c68fbb308, 43 relationships give 10 lines, four frame lines hold 37, and 16 of 24 parts show no line. Those 24 cards stand at 10 left edges and 8 top edges. A threshold that keeps many-part lines on the frame does not meet the owner request.
+
+Owner chose a button look for doors, mockup dark-I.png in /tmp/integrate/header-mockups/. Across this repository, 296 doors lead up, 326 sideways and none down, because a door is a child of the common ancestor. Click behaviour stays open: a button implies that one click opens, but rule 5 and TASK-559.06 give a selected door a list of endpoints.
 <!-- SECTION:NOTES:END -->
